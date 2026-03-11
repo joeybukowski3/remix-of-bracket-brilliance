@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 10%;
+    --foreground: 210 20% 92%;
+
+    --card: 220 18% 14%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 220 18% 14%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 28 100% 55%;
+    --primary-foreground: 220 20% 6%;
+
+    --secondary: 220 16% 20%;
+    --secondary-foreground: 210 20% 88%;
+
+    --muted: 220 14% 18%;
+    --muted-foreground: 215 12% 55%;
+
+    --accent: 28 100% 55%;
+    --accent-foreground: 220 20% 6%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 14% 22%;
+    --input: 220 14% 22%;
+    --ring: 28 100% 55%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 220 18% 12%;
+    --sidebar-foreground: 210 20% 88%;
+    --sidebar-primary: 28 100% 55%;
+    --sidebar-primary-foreground: 220 20% 6%;
+    --sidebar-accent: 220 14% 18%;
+    --sidebar-accent-foreground: 210 20% 88%;
+    --sidebar-border: 220 14% 22%;
+    --sidebar-ring: 28 100% 55%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 220 20% 6%;
+    --chart-positive: 142 71% 45%;
+    --chart-negative: 0 72% 51%;
+    --highlight: 45 100% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .stat-slider-track {
+    @apply h-2 rounded-full bg-muted;
+  }
+
+  .stat-bar {
+    @apply h-3 rounded-full;
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--highlight)));
+  }
+
+  .data-table-row {
+    @apply border-b border-border transition-colors hover:bg-secondary/50;
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.15);
+  }
+
+  .bracket-line {
+    @apply border-border;
+  }
+}
