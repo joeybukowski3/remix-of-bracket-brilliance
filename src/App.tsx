@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Rankings from "./pages/Rankings";
+import Schedule from "./pages/Schedule";
+import GameDetail from "./pages/GameDetail";
 import Matchup from "./pages/Matchup";
 import Bracket from "./pages/Bracket";
 import NotFound from "./pages/NotFound";
