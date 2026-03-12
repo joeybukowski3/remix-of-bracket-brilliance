@@ -20,6 +20,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Rankings />} />
+          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/schedule/:gameId" element={<GameDetail />} />
           <Route path="/matchup" element={<Matchup />} />
           <Route path="/bracket" element={<Bracket />} />
           <Route path="*" element={<NotFound />} />

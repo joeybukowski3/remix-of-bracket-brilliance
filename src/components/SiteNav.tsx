@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import { Trophy, BarChart3, Brackets } from "lucide-react";
+import { Trophy, BarChart3, Brackets, CalendarDays } from "lucide-react";
 
 const navItems = [
   { to: "/", label: "Rankings", icon: Trophy },
+  { to: "/schedule", label: "Schedule", icon: CalendarDays },
   { to: "/matchup", label: "Game Analysis", icon: BarChart3 },
   { to: "/bracket", label: "March Madness", icon: Brackets },
 ];
