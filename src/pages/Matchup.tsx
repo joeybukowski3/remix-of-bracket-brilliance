@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
 import SiteNav from "@/components/SiteNav";
-import { teams, DEFAULT_STAT_WEIGHTS, calculateTeamScore, getTop50Average, type StatWeight, type Team, type TeamStats } from "@/data/ncaaTeams";
+import { teams, DEFAULT_STAT_WEIGHTS, calculateTeamScore, getTop50Average, findTeamByEspn, type StatWeight, type Team, type TeamStats } from "@/data/ncaaTeams";
 import StatSliders from "@/components/StatSliders";
 import { Switch } from "@/components/ui/switch";
+import { useSchedule } from "@/hooks/useSchedule";
+import { Clock } from "lucide-react";
 
 function TeamSelector({ selected, onSelect, label }: { selected: Team | null; onSelect: (t: Team) => void; label: string }) {
   const [search, setSearch] = useState("");
@@ -192,6 +194,79 @@ function VsAverageCard({ team, avg }: { team: Team; avg: TeamStats }) {
   );
 }
 
+function formatDateStr(date: Date): string {
+  return date.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+function TodaySchedulePicker({ onSelectGame }: { onSelectGame: (away: Team, home: Team) => void }) {
+  const dateStr = formatDateStr(new Date());
+  const { data: games, isLoading } = useSchedule(dateStr);
+
+  const matchedGames = useMemo(() => {
+    if (!games) return [];
+    return games.flatMap((game) => {
+      if (!game.homeTeam || !game.awayTeam) return [];
+      const home = findTeamByEspn(game.homeTeam.name, game.homeTeam.abbreviation);
+      const away = findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation);
+      if (!home || !away) return [];
+      return [{ game, home, away }];
+    });
+  }, [games]);
+
+  const allGames = games ?? [];
+  const unmatched = allGames.length - matchedGames.length;
+
+  if (isLoading) {
+    return (
+      <div className="bg-card border border-border rounded-lg p-4">
+        <p className="text-sm text-muted-foreground animate-pulse">Loading today's games...</p>
+      </div>
+    );
+  }
+
+  if (!allGames.length) return null;
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+          Today's Games
+        </h2>
+        <span className="text-xs text-muted-foreground">
+          {matchedGames.length} of {allGames.length} with full stats
+          {unmatched > 0 && ` · ${unmatched} without ratings data`}
+        </span>
+      </div>
+
+      {matchedGames.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No games today have matching team data.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {matchedGames.map(({ game, home, away }) => (
+            <button
+              key={game.id}
+              onClick={() => onSelectGame(away, home)}
+              className="flex items-center gap-2 p-2 rounded-md border border-border hover:bg-secondary hover:border-primary/40 transition-colors text-left group"
+            >
+              <img src={away.logo} alt={away.abbreviation} className="w-7 h-7 object-contain shrink-0" loading="lazy" />
+              <span className="text-xs font-bold text-foreground">{away.abbreviation}</span>
+              <span className="text-[10px] text-muted-foreground font-medium">@</span>
+              <img src={home.logo} alt={home.abbreviation} className="w-7 h-7 object-contain shrink-0" loading="lazy" />
+              <span className="text-xs font-bold text-foreground">{home.abbreviation}</span>
+              {game.status !== "Scheduled" && (
+                <span className="ml-auto text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
+                  <Clock className="w-3 h-3" />
+                  {game.status}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Matchup() {
   const [teamA, setTeamA] = useState<Team | null>(null);
   const [teamB, setTeamB] = useState<Team | null>(null);
@@ -202,6 +277,12 @@ export default function Matchup() {
 
   const handleWeightChange = (key: string, value: number) => {
     setWeights((prev) => prev.map((w) => (w.key === key ? { ...w, weight: value } : w)));
+  };
+
+  const handleSelectGame = (away: Team, home: Team) => {
+    setTeamA(away);
+    setTeamB(home);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const scoreA = teamA ? calculateTeamScore(teamA.stats, weights) : 0;
@@ -232,6 +313,8 @@ export default function Matchup() {
           <h1 className="text-3xl font-bold text-foreground">Game Analysis</h1>
           <p className="text-muted-foreground mt-1">Compare two teams head-to-head</p>
         </div>
+
+        <TodaySchedulePicker onSelectGame={handleSelectGame} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TeamSelector selected={teamA} onSelect={setTeamA} label="Team A" />

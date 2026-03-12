@@ -284,6 +284,68 @@ export function getTop50Average(): TeamStats {
   return avg as TeamStats;
 }
 
+// Maps ESPN abbreviations that differ from our local abbreviations
+const ESPN_ABBR_ALIASES: Record<string, string> = {
+  CONN: "UCONN",
+  ARI: "ARIZ",
+  NU: "NW",
+  KU: "KAN",
+  UT: "TEX",
+  SC: "SCAR",
+  MISS: "MSST",
+  MCN: "MCNS",
+  LBST: "LBSU",
+  NCSU: "NCST",
+  TAXAM: "TAMU",
+  CHAS: "CHAR",
+  SDAK: "SDST",
+  COLGAT: "COLG",
+  DRAKE: "DRAK",
+  BAYLOR: "BAY",
+  IAST: "ISU",
+  NCAR: "UNC",
+};
+
+export function findTeamByEspn(espnName: string, espnAbbr: string): Team | null {
+  const abbrUpper = espnAbbr.toUpperCase();
+
+  // 1. Direct abbreviation match
+  const byAbbr = teams.find((t) => t.abbreviation.toUpperCase() === abbrUpper);
+  if (byAbbr) return byAbbr;
+
+  // 2. Alias map
+  const aliased = ESPN_ABBR_ALIASES[abbrUpper];
+  if (aliased) {
+    const byAlias = teams.find((t) => t.abbreviation.toUpperCase() === aliased);
+    if (byAlias) return byAlias;
+  }
+
+  // 3. Full name substring (case-insensitive)
+  const normName = espnName.toLowerCase().trim();
+  const byFullName = teams.find(
+    (t) =>
+      normName.includes(t.name.toLowerCase()) ||
+      t.name.toLowerCase().includes(normName)
+  );
+  if (byFullName) return byFullName;
+
+  // 4. Word-overlap scoring — pick the team with the most significant words in common
+  const NOISE = new Set(["the", "of", "at", "a", "an", "and", "state", "university", "college"]);
+  const espnWords = normName.split(/\s+/).filter((w) => w.length > 2 && !NOISE.has(w));
+
+  let best: Team | null = null;
+  let bestScore = 0;
+  for (const t of teams) {
+    const teamWords = t.name.toLowerCase().split(/\s+/).filter((w) => w.length > 2 && !NOISE.has(w));
+    const score = espnWords.filter((w) => teamWords.includes(w)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = t;
+    }
+  }
+  return bestScore >= 1 ? best : null;
+}
+
 export function calculateTeamScore(stats: TeamStats, weights: StatWeight[]): number {
   let totalScore = 0;
   let totalWeight = 0;

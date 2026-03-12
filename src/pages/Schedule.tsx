@@ -4,28 +4,10 @@ import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import MatchupAnglesList from "@/components/MatchupAnglesList";
 import { useSchedule, type ScheduleGame } from "@/hooks/useSchedule";
-import { teams, DEFAULT_STAT_WEIGHTS, ELITE_8_PRESET_WEIGHTS, calculateTeamScore, type StatWeight, type Team } from "@/data/ncaaTeams";
+import { teams, DEFAULT_STAT_WEIGHTS, ELITE_8_PRESET_WEIGHTS, calculateTeamScore, findTeamByEspn, type StatWeight, type Team } from "@/data/ncaaTeams";
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
 import { Calendar, ChevronLeft, ChevronRight, Clock, Tv, MapPin, ArrowRight } from "lucide-react";
 
-function findMatchingTeam(espnName: string, espnAbbr: string): Team | null {
-  // Try abbreviation match first
-  const byAbbr = teams.find(
-    (t) => t.abbreviation.toLowerCase() === espnAbbr.toLowerCase()
-  );
-  if (byAbbr) return byAbbr;
-
-  // Try name includes match
-  const nameLower = espnName.toLowerCase();
-  const byName = teams.find(
-    (t) =>
-      nameLower.includes(t.name.toLowerCase().split(" ")[0]) ||
-      t.name.toLowerCase().includes(nameLower.split(" ")[0])
-  );
-  if (byName) return byName;
-
-  return null;
-}
 
 function formatGameTime(dateStr: string): string {
   const d = new Date(dateStr);
@@ -60,8 +42,8 @@ interface GameCardProps {
 }
 
 function GameCard({ game, weights }: GameCardProps) {
-  const matchedHome = game.homeTeam ? findMatchingTeam(game.homeTeam.name, game.homeTeam.abbreviation) : null;
-  const matchedAway = game.awayTeam ? findMatchingTeam(game.awayTeam.name, game.awayTeam.abbreviation) : null;
+  const matchedHome = game.homeTeam ? findTeamByEspn(game.homeTeam.name, game.homeTeam.abbreviation) : null;
+  const matchedAway = game.awayTeam ? findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation) : null;
 
   const homeScore = matchedHome ? calculateTeamScore(matchedHome.stats, weights) : null;
   const awayScore = matchedAway ? calculateTeamScore(matchedAway.stats, weights) : null;
