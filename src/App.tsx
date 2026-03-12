@@ -17,7 +17,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename="/remix-of-bracket-brilliance">
         <Routes>
           <Route path="/" element={<Rankings />} />
           <Route path="/schedule" element={<Schedule />} />
