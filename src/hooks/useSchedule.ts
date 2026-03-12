@@ -35,7 +35,7 @@ export function useSchedule(date?: string) {
     queryKey: ["schedule", date],
     queryFn: async (): Promise<ScheduleGame[]> => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
       const queryStr = date ? `?date=${date}` : '';
       const resp = await fetch(`${supabaseUrl}/functions/v1/espn-schedule${queryStr}`, {
