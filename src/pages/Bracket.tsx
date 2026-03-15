@@ -132,9 +132,9 @@ function BracketGameCard({
 
 export default function Bracket() {
   usePageSeo({
-    title: "March Madness Bracket Picks",
-    description: "Build March Madness bracket picks with NCAA team power scores, stat-weight presets, and round-by-round selection tools.",
-    path: "/bracket",
+    title: "NCAA Bracket Predictor | Joe Knows Ball",
+    description: "Build NCAA tournament bracket picks with team power scores, stat-weight presets, and matchup-driven bracket analysis.",
+    canonical: "https://joeknowsball.com/bracket",
   });
 
   const bracketTeams = useMemo(() => buildBracketTeams(), []);
@@ -234,6 +234,10 @@ export default function Bracket() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">March Madness Bracket</h1>
             <p className="text-muted-foreground mt-1">Pick winners round by round to complete your bracket</p>
+            <p className="text-sm text-muted-foreground mt-2 max-w-3xl">
+              Use NCAA team ratings, efficiency-based weights, and bracket-specific matchup context
+              to project winners and build a cleaner tournament bracket from the first round through the title game.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <button

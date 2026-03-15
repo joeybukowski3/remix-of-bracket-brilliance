@@ -225,9 +225,9 @@ function GameCard({
 
 export default function Schedule() {
   usePageSeo({
-    title: "NCAA Game Schedule and Live Slate",
-    description: "Track the current NCAA basketball slate with live and upcoming matchups, matchup angles, and game-by-game analysis tools.",
-    path: "/schedule",
+    title: "NCAA Schedule Tool | Joe Knows Ball",
+    description: "Track live and upcoming NCAA basketball games with matchup angles, advanced stat context, and full slate analysis for tournament week and beyond.",
+    canonical: "https://joeknowsball.com/schedule",
   });
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -265,6 +265,10 @@ export default function Schedule() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Game Schedule</h1>
           <p className="text-muted-foreground mt-1">Live schedule with full matchup coverage across the visible NCAA slate</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-3xl">
+            Review live and upcoming NCAA basketball games with schedule context, team strength indicators,
+            advanced efficiency metrics, and matchup-specific angles that help explain the current slate.
+          </p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">

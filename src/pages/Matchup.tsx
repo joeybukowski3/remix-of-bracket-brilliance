@@ -333,9 +333,9 @@ export default function Matchup() {
   const top50Avg = useMemo(() => getTop50Average(teamPool), [teamPool]);
 
   usePageSeo({
-    title: "NCAA Matchup Analyzer",
-    description: "Compare any supported NCAA basketball matchup with power scores, advanced stats, home-away splits, and live game selection tools.",
-    path: "/matchup",
+    title: "NCAA Matchup Tool | Joe Knows Ball",
+    description: "Compare NCAA basketball teams using offensive rating, defensive efficiency, pace, rebounding, and advanced matchup signals.",
+    canonical: "https://joeknowsball.com/matchup",
   });
 
   const handleWeightChange = (key: string, value: number) => {
@@ -377,6 +377,10 @@ export default function Matchup() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Game Analysis</h1>
           <p className="text-muted-foreground mt-1">Compare any supported NCAA matchup from the full live team pool</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-3xl">
+            Compare offensive rating, defensive efficiency, pace, rebounding, shooting, and split performance
+            to evaluate any NCAA matchup from the current supported team universe.
+          </p>
         </div>
 
         <TodaySchedulePicker teams={teamPool} onSelectGame={handleSelectGame} />

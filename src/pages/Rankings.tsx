@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import RankingsTable from "@/components/RankingsTable";
@@ -38,6 +39,17 @@ export default function Rankings() {
           <p className="text-muted-foreground mt-1">
             Adjust stat weights to create your own custom power rankings
           </p>
+          <div className="flex items-center gap-4 flex-wrap mt-3 text-sm">
+            <Link to="/schedule" className="text-primary hover:underline">
+              NCAA Schedule
+            </Link>
+            <Link to="/matchup" className="text-primary hover:underline">
+              Matchup Analyzer
+            </Link>
+            <Link to="/bracket" className="text-primary hover:underline">
+              Bracket Predictor
+            </Link>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">

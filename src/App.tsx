@@ -12,13 +12,14 @@ import TeamPage from "./pages/TeamPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+const routerBase = import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename="/remix-of-bracket-brilliance">
+      <BrowserRouter basename={routerBase}>
         <Routes>
           <Route path="/" element={<Rankings />} />
           <Route path="/schedule" element={<Schedule />} />

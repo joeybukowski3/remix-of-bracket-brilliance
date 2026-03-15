@@ -6,7 +6,8 @@ const CANONICAL_BASE = "https://joeknowsball.com";
 interface PageSeoOptions {
   title: string;
   description: string;
-  path: string;
+  path?: string;
+  canonical?: string;
   noindex?: boolean;
 }
 
@@ -32,10 +33,10 @@ function upsertLink(rel: string, href: string) {
   element.href = href;
 }
 
-export function usePageSeo({ title, description, path, noindex = false }: PageSeoOptions) {
+export function usePageSeo({ title, description, path = "/", canonical, noindex = false }: PageSeoOptions) {
   useEffect(() => {
-    const fullTitle = `${title} | ${SITE_NAME}`;
-    const canonicalUrl = `${CANONICAL_BASE}${path}`;
+    const fullTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
+    const canonicalUrl = canonical ?? `${CANONICAL_BASE}${path}`;
 
     document.title = fullTitle;
     upsertMeta('meta[name="description"]', { name: "description", content: description });
@@ -46,7 +47,7 @@ export function usePageSeo({ title, description, path, noindex = false }: PageSe
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: description });
     upsertMeta('meta[name="robots"]', { name: "robots", content: noindex ? "noindex, nofollow" : "index, follow" });
     upsertLink("canonical", canonicalUrl);
-  }, [description, noindex, path, title]);
+  }, [canonical, description, noindex, path, title]);
 }
 
 export { CANONICAL_BASE, SITE_NAME };
