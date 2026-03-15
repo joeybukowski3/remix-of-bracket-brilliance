@@ -1,338 +1,606 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Copy, Info, RefreshCw, Save, Share2, Trash2 } from "lucide-react";
 import SiteNav from "@/components/SiteNav";
-import { teams, DEFAULT_STAT_WEIGHTS, ELITE_8_PRESET_WEIGHTS, calculateTeamScore, type StatWeight, type Team } from "@/data/ncaaTeams";
 import StatSliders from "@/components/StatSliders";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { buildCanonicalTeams, type StatWeight, type Team } from "@/data/ncaaTeams";
+import {
+  BRACKET_REGION_NAMES,
+  BRACKET_ROUNDS,
+  BUILT_IN_PRESETS,
+  buildBracketTree,
+  buildPlaceholderBracketSource,
+  calculateAdjustedTeamScore,
+  createBracketSummaryText,
+  createCustomPreset,
+  createSavedBracket,
+  duplicatePreset,
+  duplicateSavedBracket,
+  loadCustomPresets,
+  loadOfficialBracketSource,
+  loadSavedBrackets,
+  rankTeamsInRegion,
+  resolveBracketSource,
+  saveCustomPresets,
+  saveSavedBrackets,
+  type BracketGame,
+  type BracketPreset,
+  type SavedBracket,
+} from "@/lib/bracket";
 
-// Build a 64-team bracket from our data, seeded
-function buildBracketTeams(): Team[] {
-  const sorted = [...teams].sort((a, b) => (a.seed ?? 99) - (b.seed ?? 99));
-  return sorted.slice(0, 64);
+function SeedBadge({ seed }: { seed: number | null | undefined }) {
+  return <Badge variant="secondary" className="rounded-md px-2 py-1 text-[11px] font-bold">{seed ?? "-"}</Badge>;
 }
 
-// Standard bracket seed matchup order for 16 teams per region
-const SEED_MATCHUPS = [
-  [1, 16], [8, 9], [5, 12], [4, 13],
-  [6, 11], [3, 14], [7, 10], [2, 15],
-];
-
-interface BracketGame {
-  id: string;
-  teamA: Team | null;
-  teamB: Team | null;
-  winner: Team | null;
-  round: number;
-  region: string;
+function PresetNote() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button className="inline-flex items-center text-primary">
+          <Info className="h-4 w-4" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>Based on the rankings from last year&apos;s Elite 8 teams.</TooltipContent>
+    </Tooltip>
+  );
 }
 
-function createInitialBracket(bracketTeams: Team[]): BracketGame[] {
-  const regions = ["East", "West", "South", "Midwest"];
-  const games: BracketGame[] = [];
-  const teamsPerRegion = 16;
-
-  regions.forEach((region, ri) => {
-    const regionTeams = bracketTeams.slice(ri * teamsPerRegion, (ri + 1) * teamsPerRegion);
-    // Sort by seed for matchups
-    const bySeed = [...regionTeams].sort((a, b) => (a.seed ?? 99) - (b.seed ?? 99));
-
-    // Round of 64
-    SEED_MATCHUPS.forEach((seeds, gi) => {
-      const teamA = bySeed.find((t) => t.seed === seeds[0]) || regionTeams[gi * 2] || null;
-      const teamB = bySeed.find((t) => t.seed === seeds[1]) || regionTeams[gi * 2 + 1] || null;
-      games.push({
-        id: `${region}-R64-${gi}`,
-        teamA,
-        teamB,
-        winner: null,
-        round: 0,
-        region,
-      });
-    });
-
-    // Rounds 2-4 (32, sweet 16, elite 8)
-    for (let round = 1; round <= 3; round++) {
-      const gamesInRound = 8 / Math.pow(2, round);
-      for (let gi = 0; gi < gamesInRound; gi++) {
-        games.push({
-          id: `${region}-R${round}-${gi}`,
-          teamA: null,
-          teamB: null,
-          winner: null,
-          round,
-          region,
-        });
-      }
-    }
-  });
-
-  // Final Four + Championship
-  games.push({ id: "FF-0", teamA: null, teamB: null, winner: null, round: 4, region: "Final Four" });
-  games.push({ id: "FF-1", teamA: null, teamB: null, winner: null, round: 4, region: "Final Four" });
-  games.push({ id: "CHAMP", teamA: null, teamB: null, winner: null, round: 5, region: "Championship" });
-
-  return games;
-}
-
-function BracketGameCard({
+function GameCard({
   game,
-  onPickWinner,
   weights,
-  compact,
+  onPick,
 }: {
   game: BracketGame;
-  onPickWinner: (gameId: string, winner: Team) => void;
   weights: StatWeight[];
-  compact?: boolean;
+  onPick: (gameId: string, teamId: string) => void;
 }) {
-  const scoreA = game.teamA ? calculateTeamScore(game.teamA.stats, weights) : 0;
-  const scoreB = game.teamB ? calculateTeamScore(game.teamB.stats, weights) : 0;
-
   return (
-    <div className={`border border-border rounded-md bg-card overflow-hidden ${compact ? "text-xs" : "text-sm"}`}>
-      {[game.teamA, game.teamB].map((team, i) => {
-        const score = i === 0 ? scoreA : scoreB;
-        const isWinner = game.winner?.id === team?.id;
-        const canPick = game.teamA && game.teamB && !game.winner;
-
-        return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        {[game.teamA, game.teamB].map((team, index) => (
           <button
-            key={i}
-            disabled={!canPick}
-            onClick={() => team && onPickWinner(game.id, team)}
-            className={`w-full flex items-center justify-between px-2 py-1.5 transition-colors ${
-              i === 0 ? "border-b border-border/50" : ""
-            } ${isWinner ? "bg-primary/20" : "hover:bg-secondary/50"} ${
-              !team ? "opacity-40" : ""
-            } disabled:cursor-default`}
+            key={`${game.id}-${index}`}
+            disabled={!team || !game.teamA || !game.teamB}
+            onClick={() => team && onPick(game.id, team.canonicalId)}
+            className={`flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors ${
+              index === 0 ? "border-b border-border/60" : ""
+            } ${game.winner?.canonicalId === team?.canonicalId ? "bg-primary/15" : "hover:bg-secondary/60"} disabled:opacity-50`}
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              {team && (
-                <img src={team.logo} alt={team.abbreviation} className="w-4 h-4 object-contain shrink-0" loading="lazy" />
-              )}
-              {team?.seed && (
-                <span className="text-[10px] font-bold text-muted-foreground w-4 text-right shrink-0">
-                  {team.seed}
-                </span>
-              )}
-              <span className={`font-medium truncate ${isWinner ? "text-primary" : "text-foreground"}`}>
-                {team?.abbreviation || "TBD"}
-              </span>
+            <div className="flex min-w-0 items-center gap-3">
+              <SeedBadge seed={team?.seed} />
+              {team && <img src={team.logo} alt={team.name} className="h-7 w-7 shrink-0 object-contain" loading="lazy" />}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{team?.name ?? "TBD"}</p>
+                <p className="text-xs text-muted-foreground">{team ? `${team.abbreviation} · ${team.record || "Record unavailable"}` : "Waiting on prior result"}</p>
+              </div>
             </div>
-            {team && game.teamA && game.teamB && (
-              <span className="text-[10px] text-muted-foreground tabular-nums ml-1">
-                {score.toFixed(0)}
-              </span>
-            )}
+            <div className="text-right">
+              <p className="text-sm font-bold tabular-nums">{team ? calculateAdjustedTeamScore(team, weights).toFixed(1) : "--"}</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Power</p>
+            </div>
           </button>
-        );
-      })}
-    </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
 export default function Bracket() {
   usePageSeo({
-    title: "NCAA Bracket Predictor | Joe Knows Ball",
-    description: "Build NCAA tournament bracket picks with team power scores, stat-weight presets, and matchup-driven bracket analysis.",
+    title: "2025 NCAA Bracket Builder | Joe Knows Ball",
+    description: "Build a polished March Madness bracket with placeholder teams now, save entries locally, compare presets, and review region-by-region breakdowns.",
     canonical: "https://joeknowsball.com/bracket",
   });
 
-  const bracketTeams = useMemo(() => buildBracketTeams(), []);
-  const [games, setGames] = useState<BracketGame[]>(() => createInitialBracket(bracketTeams));
-  const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
+  const { data: liveTeams = [] } = useLiveTeams();
+  const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
+
+  const [sourceConfig, setSourceConfig] = useState(buildPlaceholderBracketSource());
+  const [customPresets, setCustomPresets] = useState<BracketPreset[]>([]);
+  const [savedBrackets, setSavedBrackets] = useState<SavedBracket[]>([]);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(BUILT_IN_PRESETS[0].id);
+  const [weights, setWeights] = useState<StatWeight[]>(BUILT_IN_PRESETS[0].weights);
+  const [picks, setPicks] = useState<Record<string, string>>({});
+  const [selectedRegion, setSelectedRegion] = useState(BRACKET_REGION_NAMES[0]);
   const [showSliders, setShowSliders] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState("East");
+  const [presetSheetOpen, setPresetSheetOpen] = useState(false);
+  const [savePresetOpen, setSavePresetOpen] = useState(false);
+  const [saveBracketOpen, setSaveBracketOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [renamePresetId, setRenamePresetId] = useState<string | null>(null);
+  const [renameBracketId, setRenameBracketId] = useState<string | null>(null);
+  const [newPresetName, setNewPresetName] = useState("");
+  const [newBracketName, setNewBracketName] = useState("");
+  const [renameValue, setRenameValue] = useState("");
+
+  useEffect(() => {
+    setCustomPresets(loadCustomPresets());
+    setSavedBrackets(loadSavedBrackets());
+  }, []);
+
+  useEffect(() => {
+    saveCustomPresets(customPresets);
+  }, [customPresets]);
+
+  useEffect(() => {
+    saveSavedBrackets(savedBrackets);
+  }, [savedBrackets]);
+
+  useEffect(() => {
+    let ignore = false;
+    loadOfficialBracketSource().then((officialSource) => {
+      if (!ignore && officialSource) setSourceConfig(officialSource);
+    });
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const presets = useMemo(() => [...BUILT_IN_PRESETS, ...customPresets], [customPresets]);
+  const activePreset = presets.find((preset) => preset.id === selectedPresetId) ?? null;
+  const regions = useMemo(() => resolveBracketSource(sourceConfig, teamPool), [sourceConfig, teamPool]);
+  const bracketTree = useMemo(() => buildBracketTree(regions, picks), [regions, picks]);
+  const summaryText = useMemo(() => createBracketSummaryText(regions, bracketTree, weights, activePreset?.name ?? "Custom mix"), [regions, bracketTree, weights, activePreset]);
+
+  useEffect(() => {
+    if (activePreset) setWeights(activePreset.weights.map((weight) => ({ ...weight })));
+  }, [selectedPresetId]);
 
   const handleWeightChange = (key: string, value: number) => {
-    setWeights((prev) => prev.map((w) => (w.key === key ? { ...w, weight: value } : w)));
+    setSelectedPresetId(null);
+    setWeights((prev) => prev.map((weight) => (weight.key === key ? { ...weight, weight: value } : weight)));
   };
 
-  const pickWinner = (gameId: string, winner: Team) => {
-    setGames((prev) => {
-      const updated = [...prev];
-      const gameIdx = updated.findIndex((g) => g.id === gameId);
-      if (gameIdx === -1) return prev;
-
-      updated[gameIdx] = { ...updated[gameIdx], winner };
-
-      const game = updated[gameIdx];
-      const { round, region } = game;
-
-      // Find the game's index within its round/region
-      const roundRegionGames = updated.filter(
-        (g) => g.round === round && g.region === region
-      );
-      const posInRound = roundRegionGames.indexOf(updated[gameIdx]);
-      const nextGameIdx = Math.floor(posInRound / 2);
-
-      if (round < 3) {
-        // Within region rounds
-        const nextRoundGames = updated.filter(
-          (g) => g.round === round + 1 && g.region === region
-        );
-        if (nextRoundGames[nextGameIdx]) {
-          const ngi = updated.indexOf(nextRoundGames[nextGameIdx]);
-          if (posInRound % 2 === 0) {
-            updated[ngi] = { ...updated[ngi], teamA: winner };
-          } else {
-            updated[ngi] = { ...updated[ngi], teamB: winner };
-          }
-        }
-      } else if (round === 3) {
-        // Elite 8 → Final Four
-        const regions = ["East", "West", "South", "Midwest"];
-        const regionIdx = regions.indexOf(region);
-        const ffGameIdx = Math.floor(regionIdx / 2);
-        const ffGames = updated.filter((g) => g.round === 4);
-        if (ffGames[ffGameIdx]) {
-          const ngi = updated.indexOf(ffGames[ffGameIdx]);
-          if (regionIdx % 2 === 0) {
-            updated[ngi] = { ...updated[ngi], teamA: winner };
-          } else {
-            updated[ngi] = { ...updated[ngi], teamB: winner };
-          }
-        }
-      } else if (round === 4) {
-        // Final Four → Championship
-        const champGame = updated.find((g) => g.round === 5);
-        if (champGame) {
-          const ngi = updated.indexOf(champGame);
-          const ffGames = updated.filter((g) => g.round === 4);
-          const ffPos = ffGames.indexOf(updated[gameIdx]);
-          if (ffPos === 0) {
-            updated[ngi] = { ...updated[ngi], teamA: winner };
-          } else {
-            updated[ngi] = { ...updated[ngi], teamB: winner };
-          }
-        }
-      }
-
-      return updated;
-    });
+  const handlePickWinner = (gameId: string, teamId: string) => {
+    setPicks((prev) => ({ ...prev, [gameId]: teamId }));
   };
 
-  const resetBracket = () => setGames(createInitialBracket(bracketTeams));
+  const handleSavePreset = () => {
+    const preset = createCustomPreset(newPresetName.trim(), weights);
+    if (!newPresetName.trim()) return;
+    setCustomPresets((prev) => [preset, ...prev]);
+    setSelectedPresetId(preset.id);
+    setNewPresetName("");
+    setSavePresetOpen(false);
+  };
 
-  const regions = ["East", "West", "South", "Midwest"];
-  const regionGames = games.filter((g) => g.region === selectedRegion && g.round <= 3);
-  const ffGames = games.filter((g) => g.round === 4);
-  const champGame = games.find((g) => g.round === 5);
-  const champion = champGame?.winner;
+  const handleSaveBracket = () => {
+    const saved = createSavedBracket(newBracketName.trim(), selectedPresetId, weights, picks);
+    if (!newBracketName.trim()) return;
+    setSavedBrackets((prev) => [saved, ...prev]);
+    setNewBracketName("");
+    setSaveBracketOpen(false);
+  };
 
-  const rounds = [
-    { round: 0, label: "Round of 64" },
-    { round: 1, label: "Round of 32" },
-    { round: 2, label: "Sweet 16" },
-    { round: 3, label: "Elite 8" },
-  ];
+  const handleShare = async () => {
+    if (navigator.share) {
+      await navigator.share({ title: "Joe Knows Ball Bracket", text: summaryText });
+      return;
+    }
+    if (navigator.clipboard) await navigator.clipboard.writeText(summaryText);
+  };
+
+  const currentRegion = regions.find((region) => region.name === selectedRegion) ?? regions[0];
+  const sourceLabel = sourceConfig.mode === "live" ? "Official bracket loaded" : "Placeholder bracket active";
 
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">March Madness Bracket</h1>
-            <p className="text-muted-foreground mt-1">Pick winners round by round to complete your bracket</p>
-            <p className="text-sm text-muted-foreground mt-2 max-w-3xl">
-              Use NCAA team ratings, efficiency-based weights, and bracket-specific matchup context
-              to project winners and build a cleaner tournament bracket from the first round through the title game.
+      <div className="container mx-auto space-y-6 px-4 py-6 pb-28">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-3xl">
+            <h1 className="text-3xl font-bold text-foreground">March Madness Bracket Builder</h1>
+            <p className="mt-1 text-muted-foreground">Build, save, and share brackets now with placeholder teams while the app stays ready to swap to the official field automatically.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This test mode uses a placeholder field based on last year&apos;s bracket structure and current team ratings where the model can resolve them.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowSliders(!showSliders)}
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              {showSliders ? "Hide" : "Show"} Weight Controls
-            </button>
-            <button
-              onClick={resetBracket}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              Reset Bracket
-            </button>
-            <button
-              onClick={() => setWeights(ELITE_8_PRESET_WEIGHTS)}
-              className="text-sm font-semibold px-3 py-1 rounded-md bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
-            >
-              🏆 Elite 8 Preset
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={sourceConfig.mode === "live" ? "default" : "secondary"}>{sourceLabel}</Badge>
+            <Badge variant="outline">{sourceConfig.sourceLabel}</Badge>
           </div>
         </div>
 
-        {showSliders && <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />}
+        <Tabs defaultValue="builder" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="builder">Builder</TabsTrigger>
+            <TabsTrigger value="breakdown">Bracket Breakdown</TabsTrigger>
+            <TabsTrigger value="saved">Saved</TabsTrigger>
+          </TabsList>
 
-        {champion && (
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-6 text-center glow-accent">
-            <p className="text-sm font-medium text-primary uppercase tracking-wider mb-1">National Champion</p>
-            <h2 className="text-2xl font-bold text-foreground">{champion.name}</h2>
-          </div>
-        )}
+          <TabsContent value="builder" className="space-y-6">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl">Preset Controls</CardTitle>
+                <CardDescription>
+                  Apply a built-in model, save your own preset, and update regional rankings and path difficulty dynamically.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant={selectedPresetId === BUILT_IN_PRESETS[0].id ? "default" : "secondary"} onClick={() => setSelectedPresetId(BUILT_IN_PRESETS[0].id)}>
+                    Default Model
+                  </Button>
+                  <Button variant={selectedPresetId === "preset-2025-elite" ? "default" : "secondary"} onClick={() => setSelectedPresetId("preset-2025-elite")}>
+                    2025 Elite Preset*
+                  </Button>
+                  <PresetNote />
+                  <Button variant="outline" onClick={() => setPresetSheetOpen(true)}>Manage Presets</Button>
+                  <Button variant="ghost" onClick={() => setSavePresetOpen(true)}>Save Current as Preset</Button>
+                </div>
+                <div className="rounded-xl bg-secondary/60 p-4">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Active preset</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{activePreset?.name ?? "Current custom mix"}</p>
+                  <p className="text-sm text-muted-foreground">{activePreset?.note ?? "Current slider settings are unsaved and acting as a temporary custom preset."}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setShowSliders((prev) => !prev)}>{showSliders ? "Hide Weights" : "Adjust Weights"}</Button>
+                  <Button variant="outline" onClick={() => setPicks({})}>
+                    <RefreshCw className="h-4 w-4" />
+                    Reset Picks
+                  </Button>
+                </div>
+                {showSliders && <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />}
+              </CardContent>
+            </Card>
 
-        {/* Final Four + Championship */}
-        <div className="bg-card border border-border rounded-lg p-4">
-          <h2 className="text-lg font-bold text-foreground mb-3">Final Four & Championship</h2>
-          <div className="flex items-center justify-center gap-6 flex-wrap">
-            {ffGames.map((g) => (
-              <div key={g.id} className="w-44">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1 text-center">Semifinal</p>
-                <BracketGameCard game={g} onPickWinner={pickWinner} weights={weights} />
-              </div>
-            ))}
-            {champGame && (
-              <div className="w-44">
-                <p className="text-[10px] font-medium text-primary uppercase mb-1 text-center">Championship</p>
-                <BracketGameCard game={champGame} onPickWinner={pickWinner} weights={weights} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Region Tabs */}
-        <div className="flex items-center gap-2">
-          {regions.map((r) => (
-            <button
-              key={r}
-              onClick={() => setSelectedRegion(r)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                selectedRegion === r
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-
-        {/* Region Bracket */}
-        <div className="overflow-x-auto">
-          <div className="flex gap-4 min-w-[700px]">
-            {rounds.map(({ round, label }) => {
-              const roundGames = regionGames.filter((g) => g.round === round);
-              return (
-                <div key={round} className="flex-1 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    {label}
-                  </p>
-                  <div className="space-y-2 flex flex-col justify-around h-full">
-                    {roundGames.map((g) => (
-                      <BracketGameCard
-                        key={g.id}
-                        game={g}
-                        onPickWinner={pickWinner}
-                        weights={weights}
-                        compact
-                      />
+            <div className="grid gap-4 lg:grid-cols-[1.45fr,1fr]">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-xl">Bracket Builder</CardTitle>
+                  <CardDescription>
+                    Tap a team to advance it. The same UI will render the official regions automatically when the live source becomes available.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {BRACKET_REGION_NAMES.map((regionName) => (
+                      <Button key={regionName} variant={selectedRegion === regionName ? "default" : "secondary"} className="shrink-0" onClick={() => setSelectedRegion(regionName)}>
+                        {regionName}
+                      </Button>
                     ))}
                   </div>
-                </div>
-              );
-            })}
+                  {currentRegion && (
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      {[0, 1, 2, 3].map((roundIndex) => (
+                        <div key={`${currentRegion.name}-${roundIndex}`} className="space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{BRACKET_ROUNDS[roundIndex]}</p>
+                            <p className="text-sm text-muted-foreground">{currentRegion.name} region</p>
+                          </div>
+                          {(bracketTree.regionGames[currentRegion.name] ?? [])
+                            .filter((game) => game.roundIndex === roundIndex)
+                            .map((game) => (
+                              <GameCard key={game.id} game={game} weights={weights} onPick={handlePickWinner} />
+                            ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl">Final Four Snapshot</CardTitle>
+                    <CardDescription>Compact summary built for quick phone screenshots.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {bracketTree.finalFourGames.map((game) => (
+                      <div key={game.id} className="rounded-xl border border-border/70 p-3">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{game.label}</p>
+                        <p className="mt-2 text-sm font-medium text-foreground">{game.teamA?.abbreviation ?? "TBD"} vs {game.teamB?.abbreviation ?? "TBD"}</p>
+                        <p className="mt-1 text-sm font-semibold text-primary">{game.winner?.name ?? "Winner not picked yet"}</p>
+                      </div>
+                    ))}
+                    <div className="rounded-xl bg-primary/10 p-4 text-center">
+                      <p className="text-xs uppercase tracking-wide text-primary">Champion</p>
+                      <p className="mt-1 text-xl font-bold text-foreground">{bracketTree.champion?.name ?? "Choose your champion"}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="breakdown" className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Bracket Breakdown</h2>
+              <p className="mt-1 text-muted-foreground">Dynamic regional power rankings, seed visibility, and difficulty-of-path analysis tied to the active preset.</p>
+            </div>
+            <div className="grid gap-4">
+              {regions.map((region) => {
+                const rankedTeams = rankTeamsInRegion(region, weights);
+                return (
+                  <Card key={region.name}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-xl">{region.name} Region</CardTitle>
+                      <CardDescription>Rankings update live based on your selected preset and weight assumptions.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {rankedTeams.map(({ team, score, path }, index) => (
+                        <div key={team.canonicalId} className="rounded-xl border border-border/70 bg-background/60 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">#{index + 1}</span>
+                                <SeedBadge seed={team.seed} />
+                                <p className="truncate text-sm font-semibold text-foreground">{team.name}</p>
+                              </div>
+                              <p className="mt-1 text-xs text-muted-foreground">{team.conference} · {team.record || "Record unavailable"}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold tabular-nums text-foreground">{score.toFixed(1)}</p>
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Power</p>
+                            </div>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-3">
+                            <div className="rounded-lg bg-secondary/60 p-3">
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Path Difficulty</p>
+                              <div className="mt-1 flex items-center gap-2">
+                                <Badge variant={path.tier === "Brutal" ? "destructive" : path.tier === "Hard" ? "default" : "secondary"}>{path.tier}</Badge>
+                                <span className="text-sm font-semibold tabular-nums">{path.score}</span>
+                              </div>
+                            </div>
+                            <div className="rounded-lg bg-secondary/60 p-3">
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Likeliest Opponents</p>
+                              <div className="mt-2 space-y-1">
+                                {path.likelyOpponents.map((opponent) => (
+                                  <div key={`${team.canonicalId}-${opponent.round}`} className="flex items-center justify-between gap-2 text-xs">
+                                    <span className="text-muted-foreground">{opponent.round}</span>
+                                    <span className="truncate font-medium text-foreground">{opponent.team?.abbreviation ?? "TBD"}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="saved" className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Saved Brackets</h2>
+              <p className="mt-1 text-muted-foreground">Save multiple brackets locally, restore them later, or duplicate a version before lock time.</p>
+            </div>
+            {savedBrackets.length === 0 ? (
+              <Card>
+                <CardContent className="p-6 text-sm text-muted-foreground">No saved brackets yet. Save one from the builder to keep your progress.</CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {savedBrackets.map((savedBracket) => (
+                  <Card key={savedBracket.id}>
+                    <CardContent className="space-y-3 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-semibold text-foreground">{savedBracket.name}</p>
+                          <p className="text-sm text-muted-foreground">Updated {new Date(savedBracket.updatedAt).toLocaleString()}</p>
+                        </div>
+                        <Badge variant="outline">{savedBracket.presetId ? (presets.find((preset) => preset.id === savedBracket.presetId)?.name ?? "Saved preset") : "Custom mix"}</Badge>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" onClick={() => {
+                          setPicks(savedBracket.picks);
+                          setWeights(savedBracket.weights.map((weight) => ({ ...weight })));
+                          setSelectedPresetId(savedBracket.presetId);
+                        }}>
+                          Load
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => setSavedBrackets((prev) => [duplicateSavedBracket(savedBracket), ...prev])}>
+                          <Copy className="h-4 w-4" />
+                          Duplicate
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => {
+                          setRenameBracketId(savedBracket.id);
+                          setRenameValue(savedBracket.name);
+                        }}>
+                          Rename
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setSavedBrackets((prev) => prev.filter((entry) => entry.id !== savedBracket.id))}>
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur">
+        <div className="container mx-auto flex items-center justify-between gap-2 px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-foreground">{activePreset?.name ?? "Current custom mix"}</p>
+            <p className="truncate text-xs text-muted-foreground">{bracketTree.champion?.name ?? "No champion selected yet"}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setSaveBracketOpen(true)}>
+              <Save className="h-4 w-4" />
+              Save
+            </Button>
+            <Button size="sm" onClick={() => setShareOpen(true)}>
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
           </div>
         </div>
       </div>
+
+      <Sheet open={presetSheetOpen} onOpenChange={setPresetSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle>Preset Manager</SheetTitle>
+            <SheetDescription>Select, duplicate, rename, or remove presets without leaving the bracket flow.</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-3">
+            {presets.map((preset) => (
+              <Card key={preset.id}>
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-foreground">{preset.name}</p>
+                        {preset.id === "preset-2025-elite" && <>
+                          <span className="text-primary">*</span>
+                          <PresetNote />
+                        </>}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{preset.note}</p>
+                    </div>
+                    <Badge variant={preset.source === "built-in" ? "outline" : "secondary"}>{preset.source}</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => {
+                      setSelectedPresetId(preset.id);
+                      setPresetSheetOpen(false);
+                    }}>
+                      Use
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => setCustomPresets((prev) => [duplicatePreset(preset), ...prev])}>
+                      <Copy className="h-4 w-4" />
+                      Duplicate
+                    </Button>
+                    {preset.source === "custom" && (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => {
+                          setRenamePresetId(preset.id);
+                          setRenameValue(preset.name);
+                        }}>
+                          Rename
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setCustomPresets((prev) => prev.filter((entry) => entry.id !== preset.id))}>
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Dialog open={savePresetOpen} onOpenChange={setSavePresetOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Custom Preset</DialogTitle>
+            <DialogDescription>Save the current rating model so it can be reused for future bracket assumptions.</DialogDescription>
+          </DialogHeader>
+          <Input value={newPresetName} onChange={(event) => setNewPresetName(event.target.value)} placeholder="My 12-5 upset preset" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSavePresetOpen(false)}>Cancel</Button>
+            <Button onClick={handleSavePreset}>Save Preset</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={saveBracketOpen} onOpenChange={setSaveBracketOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Bracket</DialogTitle>
+            <DialogDescription>Store this bracket locally so you can revisit, duplicate, or screenshot it later.</DialogDescription>
+          </DialogHeader>
+          <Input value={newBracketName} onChange={(event) => setNewBracketName(event.target.value)} placeholder="Entry 1" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveBracketOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveBracket}>Save Bracket</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(renamePresetId || renameBracketId)} onOpenChange={() => {
+        setRenamePresetId(null);
+        setRenameBracketId(null);
+        setRenameValue("");
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename</DialogTitle>
+            <DialogDescription>Update the name without changing the bracket or preset logic.</DialogDescription>
+          </DialogHeader>
+          <Input value={renameValue} onChange={(event) => setRenameValue(event.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setRenamePresetId(null);
+              setRenameBracketId(null);
+              setRenameValue("");
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (renamePresetId) {
+                setCustomPresets((prev) => prev.map((preset) => preset.id === renamePresetId ? { ...preset, name: renameValue.trim() || preset.name } : preset));
+              }
+              if (renameBracketId) {
+                setSavedBrackets((prev) => prev.map((saved) => saved.id === renameBracketId ? { ...saved, name: renameValue.trim() || saved.name, updatedAt: new Date().toISOString() } : saved));
+              }
+              setRenamePresetId(null);
+              setRenameBracketId(null);
+              setRenameValue("");
+            }}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bracket Share Summary</DialogTitle>
+            <DialogDescription>Screenshot this card on mobile or copy/share the text summary.</DialogDescription>
+          </DialogHeader>
+          <div className="rounded-2xl border border-border bg-secondary/40 p-4">
+            <p className="text-center text-sm font-semibold uppercase tracking-wide text-primary">Joe Knows Ball</p>
+            <p className="mt-1 text-center text-xl font-bold text-foreground">{bracketTree.champion?.name ?? "Champion pending"}</p>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              {regions.map((region) => {
+                const regionChampion = (bracketTree.regionGames[region.name] ?? []).find((game) => game.roundIndex === 3)?.winner;
+                return (
+                  <div key={region.name} className="rounded-xl bg-background p-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{region.name}</p>
+                    <p className="mt-1 font-semibold text-foreground">{regionChampion?.abbreviation ?? "TBD"}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="rounded-xl border border-border/70 p-3">
+            <pre className="whitespace-pre-wrap text-xs text-foreground">{summaryText}</pre>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => navigator.clipboard?.writeText(summaryText)}>
+              <Copy className="h-4 w-4" />
+              Copy
+            </Button>
+            <Button onClick={handleShare}>
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
