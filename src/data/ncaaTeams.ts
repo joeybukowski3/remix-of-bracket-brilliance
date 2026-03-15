@@ -328,10 +328,139 @@ const ESPN_ABBR_ALIASES: Record<string, string> = {
   NORF: "NORF",
   ALST: "ALST",
   UNCW: "UNCW",
+  BAMA: "ALA",
+  MIZ: "MIZ",
 };
+
+const SCHOOL_KEY_ALIASES: Record<string, string> = {
+  auburn: "auburn",
+  auburntigers: "auburn",
+  aub: "auburn",
+  alabama: "alabama",
+  alabamacrimsontide: "alabama",
+  bama: "alabama",
+  alabamastate: "alabamastate",
+  alabamastatehornets: "alabamastate",
+  alst: "alabamastate",
+  texastech: "texastech",
+  texastechredraiders: "texastech",
+  ttu: "texastech",
+  texasam: "texasam",
+  texasamaggies: "texasam",
+  tamu: "texasam",
+  taxam: "texasam",
+  byu: "byu",
+  brighamyoung: "byu",
+  byucougars: "byu",
+  saintmarys: "saintmarys",
+  saintmarysgaels: "saintmarys",
+  stmarys: "saintmarys",
+  smc: "saintmarys",
+  uconn: "uconn",
+  connecticut: "uconn",
+  uconnhuskies: "uconn",
+  olemiss: "olemiss",
+  olemissrebels: "olemiss",
+  miss: "olemiss",
+  mississippistate: "mississippistate",
+  mississippistatebulldogs: "mississippistate",
+  missstate: "mississippistate",
+  msst: "mississippistate",
+  stjohns: "stjohns",
+  saintjohns: "stjohns",
+  stjohnsredstorm: "stjohns",
+  sju: "stjohns",
+  floridaatlantic: "floridaatlantic",
+  fau: "floridaatlantic",
+  ucsandiego: "ucsandiego",
+  ucsandiegotritons: "ucsandiego",
+  ucsd: "ucsandiego",
+  uncwilmington: "uncwilmington",
+  uncw: "uncwilmington",
+  mountsaintmarys: "mountstmarys",
+  mountstmarys: "mountstmarys",
+  mountstmarysmountaineers: "mountstmarys",
+  msm: "mountstmarys",
+  siuedwardsville: "siuedwardsville",
+  siuedwardsvillecougars: "siuedwardsville",
+  siue: "siuedwardsville",
+  xavier: "xavier",
+  xaviermusketeers: "xavier",
+  xav: "xavier",
+  highpoint: "highpoint",
+  highpointpanthers: "highpoint",
+  hpu: "highpoint",
+  norfolkstate: "norfolkstate",
+  norfolkstatespartans: "norfolkstate",
+  norf: "norfolkstate",
+  robertmorris: "robertmorris",
+  robertmorriscolonials: "robertmorris",
+  rmu: "robertmorris",
+};
+
+const MASCOT_SUFFIXES = [
+  "crimson tide", "red raiders", "blue devils", "golden eagles", "fighting illini",
+  "tar heels", "boilermakers", "bluejays", "longhorns", "antelopes", "mountaineers",
+  "terrapins", "volunteers", "gators", "wildcats", "bulldogs", "rebels", "cardinals",
+  "musketeers", "seahawks", "tigers", "gaels", "rams", "mavericks", "bruins", "trojans",
+  "panthers", "spartans", "sooners", "razorbacks", "commodores", "flames", "grizzlies",
+  "zips", "bisons", "dukes", "raiders", "peacocks", "eagles", "lobos", "huskies", "cougars",
+];
+
+function normalizeTeamToken(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[.'’`]/g, "")
+    .replace(/\bst\b/g, "saint")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function compactTeamToken(value: string) {
+  return normalizeTeamToken(value).replace(/\s+/g, "");
+}
+
+function stripMascotSuffix(name: string) {
+  const normalized = normalizeTeamToken(name);
+  for (const suffix of MASCOT_SUFFIXES) {
+    if (normalized.endsWith(` ${suffix}`)) {
+      return normalized.slice(0, -(suffix.length + 1)).trim();
+    }
+  }
+  return normalized;
+}
+
+export function getCanonicalSchoolKey(name: string, abbreviation = "") {
+  const candidates = [
+    compactTeamToken(name),
+    compactTeamToken(stripMascotSuffix(name)),
+    compactTeamToken(abbreviation),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const aliased = SCHOOL_KEY_ALIASES[candidate];
+    if (aliased) return aliased;
+  }
+
+  return candidates[1] || candidates[0] || "unknown";
+}
+
+function getTeamLookupKeys(name: string, abbreviation = "") {
+  const normalizedName = compactTeamToken(name);
+  const strippedName = compactTeamToken(stripMascotSuffix(name));
+  const normalizedAbbr = compactTeamToken(abbreviation);
+  const schoolKey = getCanonicalSchoolKey(name, abbreviation);
+  return [...new Set([schoolKey, normalizedName, strippedName, normalizedAbbr].filter(Boolean))];
+}
 
 export function findTeamByEspn(espnName: string, espnAbbr: string, teamPool: Team[] = teams): Team | null {
   const abbrUpper = espnAbbr.toUpperCase();
+  const lookupKeys = getTeamLookupKeys(espnName, espnAbbr);
+  const keyedPool = teamPool.map((team) => ({
+    team,
+    keys: getTeamLookupKeys(team.name, team.abbreviation),
+  }));
 
   // 1. Direct abbreviation match
   const byAbbr = teamPool.find((t) => t.abbreviation.toUpperCase() === abbrUpper);
@@ -344,6 +473,9 @@ export function findTeamByEspn(espnName: string, espnAbbr: string, teamPool: Tea
     if (byAlias) return byAlias;
   }
 
+  const bySchoolKey = keyedPool.find(({ keys }) => lookupKeys.some((key) => keys.includes(key)))?.team ?? null;
+  if (bySchoolKey) return bySchoolKey;
+
   // 3. Full name substring (case-insensitive)
   const normName = espnName.toLowerCase().trim();
   const byFullName = teamPool.find(
@@ -354,20 +486,20 @@ export function findTeamByEspn(espnName: string, espnAbbr: string, teamPool: Tea
   if (byFullName) return byFullName;
 
   // 4. Word-overlap scoring — pick the team with the most significant words in common
-  const NOISE = new Set(["the", "of", "at", "a", "an", "and", "state", "university", "college"]);
-  const espnWords = normName.split(/\s+/).filter((w) => w.length > 2 && !NOISE.has(w));
+  const NOISE = new Set(["the", "of", "at", "a", "an", "and", "university", "college", "team"]);
+  const espnWords = normalizeTeamToken(espnName).split(/\s+/).filter((w) => w.length > 2 && !NOISE.has(w));
 
   let best: Team | null = null;
   let bestScore = 0;
   for (const t of teamPool) {
-    const teamWords = t.name.toLowerCase().split(/\s+/).filter((w) => w.length > 2 && !NOISE.has(w));
+    const teamWords = normalizeTeamToken(t.name).split(/\s+/).filter((w) => w.length > 2 && !NOISE.has(w));
     const score = espnWords.filter((w) => teamWords.includes(w)).length;
     if (score > bestScore) {
       bestScore = score;
       best = t;
     }
   }
-  return bestScore >= 1 ? best : null;
+  return bestScore >= 2 ? best : null;
 }
 
 export function calculateTeamScore(stats: TeamStats, weights: StatWeight[]): number {
@@ -524,6 +656,29 @@ function buildGeneratedLiveTeam(liveTeam: LiveTeamMetadata, fallbackIdSeed: numb
   };
 }
 
+function mergeCanonicalTeam(existing: Team, incoming: Team): Team {
+  const existingCoverage = getStatsCoverage(existing.stats);
+  const incomingCoverage = getStatsCoverage(incoming.stats);
+  const preferIncomingStats =
+    (existingCoverage !== "full" && incomingCoverage === "full") ||
+    (existingCoverage === "none" && incomingCoverage !== "none");
+
+  return {
+    ...existing,
+    ...incoming,
+    canonicalId: existing.canonicalId,
+    slug: existing.slug || incoming.slug,
+    conference: incoming.conference && incoming.conference !== "NCAA" ? incoming.conference : existing.conference,
+    record: incoming.record || existing.record,
+    logo: incoming.logo && incoming.logo !== "/placeholder.svg" ? incoming.logo : existing.logo,
+    stats: preferIncomingStats ? incoming.stats : existing.stats,
+    homeStats: preferIncomingStats ? incoming.homeStats : existing.homeStats,
+    awayStats: preferIncomingStats ? incoming.awayStats : existing.awayStats,
+    statsCoverage: preferIncomingStats ? incoming.statsCoverage : existing.statsCoverage,
+    source: existing.source === incoming.source ? existing.source : "hybrid",
+  };
+}
+
 export function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -568,18 +723,16 @@ export function getStatsCoverage(stats: TeamStats): Team["statsCoverage"] {
 
 export function buildCanonicalTeams(liveTeams: LiveTeamMetadata[] = []): Team[] {
   const merged = new Map<string, Team>();
-  const fallbackMatchedIds = new Set<number>();
+  const fallbackMatchedKeys = new Set<string>();
 
   liveTeams.forEach((liveTeam) => {
     const fallback = findTeamByEspn(liveTeam.name, liveTeam.abbreviation, teams);
-    if (fallback) {
-      fallbackMatchedIds.add(fallback.id);
-    }
-
+    const schoolKey = getCanonicalSchoolKey(liveTeam.name || fallback?.name || "", liveTeam.abbreviation || fallback?.abbreviation || "");
+    if (fallback) fallbackMatchedKeys.add(getCanonicalSchoolKey(fallback.name, fallback.abbreviation));
     const generated = buildGeneratedLiveTeam(liveTeam, 100000 + merged.size);
-    const mergedTeam: Team = {
+    const mergedTeam = {
       ...(fallback ?? generated),
-      canonicalId: fallback?.canonicalId ?? `espn-${liveTeam.id}`,
+      canonicalId: fallback?.canonicalId ?? `school-${schoolKey}`,
       slug: fallback?.slug ?? slugify(liveTeam.name),
       espnId: liveTeam.id,
       name: liveTeam.name || fallback?.name || "",
@@ -591,13 +744,15 @@ export function buildCanonicalTeams(liveTeams: LiveTeamMetadata[] = []): Team[] 
       statsCoverage: getStatsCoverage((fallback ?? generated).stats),
       source: fallback ? "hybrid" : "live",
     };
-
-    merged.set(mergedTeam.canonicalId, mergedTeam);
+    const existing = merged.get(schoolKey);
+    merged.set(schoolKey, existing ? mergeCanonicalTeam(existing, mergedTeam) : mergedTeam);
   });
 
   teams.forEach((fallbackTeam) => {
-    if (fallbackMatchedIds.has(fallbackTeam.id)) return;
-    merged.set(fallbackTeam.canonicalId, fallbackTeam);
+    const schoolKey = getCanonicalSchoolKey(fallbackTeam.name, fallbackTeam.abbreviation);
+    if (fallbackMatchedKeys.has(schoolKey)) return;
+    const existing = merged.get(schoolKey);
+    merged.set(schoolKey, existing ? mergeCanonicalTeam(existing, fallbackTeam) : fallbackTeam);
   });
 
   return [...merged.values()].sort((a, b) => a.name.localeCompare(b.name));

@@ -5,6 +5,7 @@ import {
   emptyTeamStats,
   findTeamByCanonicalId,
   findTeamByEspn,
+  getCanonicalSchoolKey,
   getStatsCoverage,
   slugify,
   type StatWeight,
@@ -160,19 +161,57 @@ function createFallbackResolvedTeam(slot: BracketSeedSlot): Team {
   };
 }
 
+function logBracketValidation(message: string, details: Record<string, unknown>) {
+  console.warn(`[bracket-normalization] ${message}`, details);
+}
+
 export function resolveBracketSource(source: BracketSourceConfig, teamPool: Team[]): ResolvedBracketRegion[] {
-  return source.regions.map((region) => ({
-    name: region.name,
-    teams: region.slots
+  const seenOverall = new Set<string>();
+
+  return source.regions.map((region) => {
+    const seenInRegion = new Set<string>();
+    const teams = region.slots
       .map((slot) => {
         const byCanonical = slot.canonicalId ? findTeamByCanonicalId(slot.canonicalId, teamPool) : null;
         const byEspn = slot.espnId ? teamPool.find((team) => team.espnId === slot.espnId) ?? null : null;
         const byName = findTeamByEspn(slot.teamName, slot.abbreviation, teamPool);
         const resolved = byCanonical ?? byEspn ?? byName;
-        return resolved ? { ...resolved, seed: slot.seed } : createFallbackResolvedTeam(slot);
+        const team = resolved ? { ...resolved, seed: slot.seed } : createFallbackResolvedTeam(slot);
+        const schoolKey = getCanonicalSchoolKey(team.name, team.abbreviation);
+        if (!resolved) {
+          logBracketValidation("Unmatched bracket slot fell back to placeholder", {
+            region: region.name,
+            seed: slot.seed,
+            slot: slot.teamName,
+          });
+        }
+        if (seenInRegion.has(schoolKey)) {
+          logBracketValidation("Duplicate team detected inside region", {
+            region: region.name,
+            slot: slot.teamName,
+            canonicalId: team.canonicalId,
+            schoolKey,
+          });
+        }
+        if (seenOverall.has(schoolKey)) {
+          logBracketValidation("Duplicate team detected across bracket field", {
+            region: region.name,
+            slot: slot.teamName,
+            canonicalId: team.canonicalId,
+            schoolKey,
+          });
+        }
+        seenInRegion.add(schoolKey);
+        seenOverall.add(schoolKey);
+        return { ...team, canonicalId: resolved?.canonicalId ?? `school-${schoolKey}` };
       })
-      .sort((a, b) => (a.seed ?? 99) - (b.seed ?? 99)),
-  }));
+      .sort((a, b) => (a.seed ?? 99) - (b.seed ?? 99));
+
+    return {
+      name: region.name,
+      teams,
+    };
+  });
 }
 
 function getWinnerFromPick(teamA: Team | null, teamB: Team | null, winnerId?: string): Team | null {
@@ -338,7 +377,12 @@ export function computePathDifficulty(team: Team, region: ResolvedBracketRegion,
 }
 
 export function rankTeamsInRegion(region: ResolvedBracketRegion, weights: StatWeight[]) {
-  return [...region.teams]
+  const uniqueTeams = [...region.teams].filter((team, index, collection) => {
+    const schoolKey = getCanonicalSchoolKey(team.name, team.abbreviation);
+    return index === collection.findIndex((candidate) => getCanonicalSchoolKey(candidate.name, candidate.abbreviation) === schoolKey);
+  });
+
+  return uniqueTeams
     .map((team) => ({
       team,
       score: calculateAdjustedTeamScore(team, weights),
