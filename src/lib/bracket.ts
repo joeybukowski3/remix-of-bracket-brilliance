@@ -132,7 +132,7 @@ export function buildPlaceholderBracketSource(): BracketSourceConfig {
   return {
     season: "2025-placeholder",
     mode: "placeholder",
-    sourceLabel: "Placeholder field based on last year's bracket structure",
+    sourceLabel: "Current bracket builder using last year's field until the official bracket drops",
     updatedAt: new Date().toISOString(),
     regions: BRACKET_REGION_NAMES.map((regionName, regionIndex) => {
       const regionTeams = field.slice(regionIndex * regionSize, (regionIndex + 1) * regionSize);
@@ -447,6 +447,6 @@ export function createBracketSummaryText(regions: ResolvedBracketRegion[], tree:
     ...regionChampionLines,
     ...finalFourLines,
     `Champion: ${tree.champion?.name ?? "TBD"}`,
-    `Built from current placeholder bracket data with live team ratings where available.`,
+    `Built from the current live working bracket using last year's field until the official bracket is released.`,
   ].join("\n");
 }
