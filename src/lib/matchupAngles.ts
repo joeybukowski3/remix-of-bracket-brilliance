@@ -1,5 +1,5 @@
 import type { Team, TeamStats } from "@/data/ncaaTeams";
-import { getTop50Average } from "@/data/ncaaTeams";
+import { getTop50Average, hasStat } from "@/data/ncaaTeams";
 
 export interface MatchupAngle {
   id: string;
@@ -46,8 +46,8 @@ function getSeverity(pct: number): MatchupAngle["severity"] {
   return "minor";
 }
 
-export function generateMatchupAngles(teamA: Team, teamB: Team): MatchupAngle[] {
-  const top50Avg = getTop50Average();
+export function generateMatchupAngles(teamA: Team, teamB: Team, teamPool?: Team[]): MatchupAngle[] {
+  const top50Avg = getTop50Average(teamPool);
   const angles: MatchupAngle[] = [];
   let idCounter = 0;
 
@@ -55,6 +55,7 @@ export function generateMatchupAngles(teamA: Team, teamB: Team): MatchupAngle[] 
   for (const meta of STAT_META) {
     const valA = teamA.stats[meta.key] as number;
     const valB = teamB.stats[meta.key] as number;
+    if (!hasStat(valA) || !hasStat(valB)) continue;
     const diff = pctDiff(valA, valB);
     const absDiff = Math.abs(diff);
 
@@ -86,7 +87,7 @@ export function generateMatchupAngles(teamA: Team, teamB: Team): MatchupAngle[] 
     const awayA = teamA.awayStats[stat.key] as number;
     const homeB = teamB.homeStats[stat.key] as number;
     const awayB = teamB.awayStats[stat.key] as number;
-    const avgVal = top50Avg[stat.key] as number;
+    if (!hasStat(homeA) || !hasStat(awayA) || !hasStat(homeB) || !hasStat(awayB)) continue;
 
     // Calculate home-away dropoff for each team
     const dropA = pctDiff(awayA - homeA, Math.abs(homeA));
@@ -133,6 +134,7 @@ export function generateMatchupAngles(teamA: Team, teamB: Team): MatchupAngle[] 
     const aDef = teamA.stats[pair.defKey] as number;
     const avgOff = top50Avg[pair.offKey] as number;
     const avgDef = top50Avg[pair.defKey] as number;
+    if (!hasStat(aOff) || !hasStat(bDef) || !hasStat(bOff) || !hasStat(aDef) || !hasStat(avgOff) || !hasStat(avgDef)) continue;
 
     // teamA's offense vs top50 avg AND teamB's defense vs top50 avg
     const aOffVsAvg = pctDiff(aOff, avgOff);
@@ -166,6 +168,7 @@ export function generateMatchupAngles(teamA: Team, teamB: Team): MatchupAngle[] 
     const valA = teamA.stats[meta.key] as number;
     const valB = teamB.stats[meta.key] as number;
     const avg = top50Avg[meta.key] as number;
+    if (!hasStat(valA) || !hasStat(valB) || !hasStat(avg)) continue;
     
     const aVsAvg = pctDiff(valA, avg);
     const bVsAvg = pctDiff(valB, avg);

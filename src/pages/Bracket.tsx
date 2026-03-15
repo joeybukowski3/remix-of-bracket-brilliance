@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import SiteNav from "@/components/SiteNav";
 import { teams, DEFAULT_STAT_WEIGHTS, ELITE_8_PRESET_WEIGHTS, calculateTeamScore, type StatWeight, type Team } from "@/data/ncaaTeams";
 import StatSliders from "@/components/StatSliders";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 // Build a 64-team bracket from our data, seeded
 function buildBracketTeams(): Team[] {
@@ -130,6 +131,12 @@ function BracketGameCard({
 }
 
 export default function Bracket() {
+  usePageSeo({
+    title: "March Madness Bracket Picks",
+    description: "Build March Madness bracket picks with NCAA team power scores, stat-weight presets, and round-by-round selection tools.",
+    path: "/bracket",
+  });
+
   const bracketTeams = useMemo(() => buildBracketTeams(), []);
   const [games, setGames] = useState<BracketGame[]>(() => createInitialBracket(bracketTeams));
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);

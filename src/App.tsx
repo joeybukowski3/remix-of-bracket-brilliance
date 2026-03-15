@@ -8,6 +8,7 @@ import Schedule from "./pages/Schedule";
 import GameDetail from "./pages/GameDetail";
 import Matchup from "./pages/Matchup";
 import Bracket from "./pages/Bracket";
+import TeamPage from "./pages/TeamPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<Rankings />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/schedule/:gameId" element={<GameDetail />} />
+          <Route path="/team/:teamId" element={<TeamPage />} />
           <Route path="/matchup" element={<Matchup />} />
           <Route path="/bracket" element={<Bracket />} />
           <Route path="*" element={<NotFound />} />

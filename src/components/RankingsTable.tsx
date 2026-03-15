@@ -1,5 +1,6 @@
+import { Link } from "react-router-dom";
 import type { Team, StatWeight } from "@/data/ncaaTeams";
-import { calculateTeamScore } from "@/data/ncaaTeams";
+import { calculateTeamScore, formatStat } from "@/data/ncaaTeams";
 
 interface RankingsTableProps {
   teams: Team[];
@@ -43,16 +44,18 @@ export default function RankingsTable({ teams, weights }: RankingsTableProps) {
                         {team.seed}
                       </span>
                     )}
-                    <span className="truncate">{team.name}</span>
+                    <Link to={`/team/${team.slug}`} className="truncate hover:underline">
+                      {team.name}
+                    </Link>
                   </div>
                 </td>
                 <td className="py-2.5 px-2 text-muted-foreground hidden md:table-cell">{team.conference}</td>
                 <td className="py-2.5 px-2 text-muted-foreground hidden lg:table-cell tabular-nums">{team.record}</td>
-                <td className="py-2.5 px-2 text-right tabular-nums hidden md:table-cell">{team.stats.ppg}</td>
-                <td className="py-2.5 px-2 text-right tabular-nums hidden md:table-cell">{team.stats.oppPpg}</td>
-                <td className="py-2.5 px-2 text-right tabular-nums hidden lg:table-cell">{team.stats.adjOE}</td>
-                <td className="py-2.5 px-2 text-right tabular-nums hidden lg:table-cell">{team.stats.adjDE}</td>
-                <td className="py-2.5 px-2 text-right tabular-nums hidden xl:table-cell">{team.stats.sos}</td>
+                <td className="py-2.5 px-2 text-right tabular-nums hidden md:table-cell">{formatStat(team.stats.ppg)}</td>
+                <td className="py-2.5 px-2 text-right tabular-nums hidden md:table-cell">{formatStat(team.stats.oppPpg)}</td>
+                <td className="py-2.5 px-2 text-right tabular-nums hidden lg:table-cell">{formatStat(team.stats.adjOE)}</td>
+                <td className="py-2.5 px-2 text-right tabular-nums hidden lg:table-cell">{formatStat(team.stats.adjDE)}</td>
+                <td className="py-2.5 px-2 text-right tabular-nums hidden xl:table-cell">{formatStat(team.stats.sos)}</td>
                 <td className="py-2.5 px-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden hidden sm:block">
@@ -65,6 +68,11 @@ export default function RankingsTable({ teams, weights }: RankingsTableProps) {
                       {team.score.toFixed(1)}
                     </span>
                   </div>
+                  {team.statsCoverage !== "full" && (
+                    <div className="text-[10px] text-muted-foreground mt-1">
+                      {team.statsCoverage === "partial" ? "Partial stats" : "Metadata only"}
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

@@ -2,11 +2,24 @@ import { useState } from "react";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import RankingsTable from "@/components/RankingsTable";
-import { teams, DEFAULT_STAT_WEIGHTS, ELITE_8_PRESET_WEIGHTS, type StatWeight } from "@/data/ncaaTeams";
+import { buildCanonicalTeams, teams, DEFAULT_STAT_WEIGHTS, ELITE_8_PRESET_WEIGHTS, type StatWeight } from "@/data/ncaaTeams";
+import { useLiveTeams } from "@/hooks/useLiveTeams";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 export default function Rankings() {
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showSliders, setShowSliders] = useState(true);
+  const [mode, setMode] = useState<"all" | "field">("all");
+  const { data: liveTeams = [] } = useLiveTeams();
+
+  const allTeams = buildCanonicalTeams(liveTeams);
+  const rankingTeams = mode === "all" ? allTeams : teams;
+
+  usePageSeo({
+    title: "NCAA Basketball Rankings",
+    description: "Explore NCAA basketball team rankings, compare the full field or tournament teams, and customize power ratings with advanced stat weights.",
+    path: "/",
+  });
 
   const handleWeightChange = (key: string, value: number) => {
     setWeights((prev) =>
@@ -25,6 +38,32 @@ export default function Rankings() {
           <p className="text-muted-foreground mt-1">
             Adjust stat weights to create your own custom power rankings
           </p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setMode("all")}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              mode === "all"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            }`}
+          >
+            All Teams
+          </button>
+          <button
+            onClick={() => setMode("field")}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              mode === "field"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            }`}
+          >
+            NCAA Tournament Field
+          </button>
+          <span className="text-xs text-muted-foreground">
+            {rankingTeams.length} teams
+          </span>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
@@ -52,7 +91,7 @@ export default function Rankings() {
           <StatSliders weights={weights} onWeightChange={handleWeightChange} />
         )}
 
-        <RankingsTable teams={teams} weights={weights} />
+        <RankingsTable teams={rankingTeams} weights={weights} />
       </div>
     </div>
   );

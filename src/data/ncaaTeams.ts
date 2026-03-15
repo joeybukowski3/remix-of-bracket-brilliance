@@ -1,32 +1,37 @@
 export interface Team {
   id: number;
+  canonicalId: string;
+  slug: string;
+  espnId?: string | null;
   name: string;
   abbreviation: string;
   conference: string;
-  seed?: number;
+  seed?: number | null;
   record: string;
   logo: string;
   stats: TeamStats;
   homeStats: TeamStats;
   awayStats: TeamStats;
+  statsCoverage?: "full" | "partial" | "none";
+  source?: "fallback" | "live" | "hybrid";
 }
 
 export interface TeamStats {
-  ppg: number;        // Points per game
-  oppPpg: number;     // Opponent PPG
-  fgPct: number;      // FG%
-  threePct: number;   // 3PT%
-  ftPct: number;      // FT%
-  rpg: number;        // Rebounds per game
-  apg: number;        // Assists per game
-  spg: number;        // Steals per game
-  bpg: number;        // Blocks per game
-  tpg: number;        // Turnovers per game
-  sos: number;        // Strength of schedule (0-100)
-  adjOE: number;      // Adjusted offensive efficiency
-  adjDE: number;      // Adjusted defensive efficiency
-  tempo: number;      // Pace/tempo
-  luck: number;       // Luck rating (-10 to 10)
+  ppg: number | null;        // Points per game
+  oppPpg: number | null;     // Opponent PPG
+  fgPct: number | null;      // FG%
+  threePct: number | null;   // 3PT%
+  ftPct: number | null;      // FT%
+  rpg: number | null;        // Rebounds per game
+  apg: number | null;        // Assists per game
+  spg: number | null;        // Steals per game
+  bpg: number | null;        // Blocks per game
+  tpg: number | null;        // Turnovers per game
+  sos: number | null;        // Strength of schedule (0-100)
+  adjOE: number | null;      // Adjusted offensive efficiency
+  adjDE: number | null;      // Adjusted defensive efficiency
+  tempo: number | null;      // Pace/tempo
+  luck: number | null;       // Luck rating (-10 to 10)
 }
 
 export interface StatWeight {
@@ -83,20 +88,20 @@ function generateSplits(stats: TeamStats, homeBoost: number): { home: TeamStats;
   const round1 = (n: number) => Math.round(n * 10) / 10;
 
   const applyFactor = (s: TeamStats, f: number, isAway: boolean): TeamStats => ({
-    ppg: round1(s.ppg * f),
-    oppPpg: round1(s.oppPpg * (isAway ? f : 2 - f)), // opponents score more when away
-    fgPct: round1(s.fgPct * f),
-    threePct: round1(s.threePct * f),
-    ftPct: round1(s.ftPct * (1 + (f - 1) * 0.3)), // FT% less affected
-    rpg: round1(s.rpg * f),
-    apg: round1(s.apg * f),
-    spg: round1(s.spg * f),
-    bpg: round1(s.bpg * f),
-    tpg: round1(s.tpg * (isAway ? f : 2 - f)), // more turnovers away
+    ppg: round1((s.ppg ?? 0) * f),
+    oppPpg: round1((s.oppPpg ?? 0) * (isAway ? f : 2 - f)), // opponents score more when away
+    fgPct: round1((s.fgPct ?? 0) * f),
+    threePct: round1((s.threePct ?? 0) * f),
+    ftPct: round1((s.ftPct ?? 0) * (1 + (f - 1) * 0.3)), // FT% less affected
+    rpg: round1((s.rpg ?? 0) * f),
+    apg: round1((s.apg ?? 0) * f),
+    spg: round1((s.spg ?? 0) * f),
+    bpg: round1((s.bpg ?? 0) * f),
+    tpg: round1((s.tpg ?? 0) * (isAway ? f : 2 - f)), // more turnovers away
     sos: s.sos, // unchanged
-    adjOE: round1(s.adjOE * f),
-    adjDE: round1(s.adjDE * (isAway ? f : 2 - f)), // worse defense away
-    tempo: round1(s.tempo * (1 + (f - 1) * 0.2)), // tempo barely changes
+    adjOE: round1((s.adjOE ?? 0) * f),
+    adjDE: round1((s.adjDE ?? 0) * (isAway ? f : 2 - f)), // worse defense away
+    tempo: round1((s.tempo ?? 0) * (1 + (f - 1) * 0.2)), // tempo barely changes
     luck: s.luck,
   });
 
@@ -191,7 +196,7 @@ function espnLogo(teamId: number): string {
   return `https://a.espncdn.com/i/teamlogos/ncaa/500/${espnId}.png`;
 }
 
-const _rawTeams: Omit<Team, "homeStats" | "awayStats">[] = [
+const _rawTeams: Omit<Team, "homeStats" | "awayStats" | "canonicalId" | "slug" | "espnId" | "statsCoverage" | "source">[] = [
   { id: 1, name: "UConn Huskies", abbreviation: "UCONN", conference: "Big East", seed: 1, record: "31-3", logo: espnLogo(1), stats: { ppg: 82.4, oppPpg: 63.1, fgPct: 49.2, threePct: 37.8, ftPct: 74.5, rpg: 37.2, apg: 17.1, spg: 7.8, bpg: 4.2, tpg: 11.3, sos: 88, adjOE: 126.1, adjDE: 89.5, tempo: 69.2, luck: 2.1 } },
   { id: 2, name: "Houston Cougars", abbreviation: "HOU", conference: "Big 12", seed: 1, record: "32-4", logo: espnLogo(2), stats: { ppg: 75.8, oppPpg: 59.2, fgPct: 46.8, threePct: 34.5, ftPct: 72.1, rpg: 38.5, apg: 14.2, spg: 8.9, bpg: 4.8, tpg: 12.1, sos: 91, adjOE: 120.5, adjDE: 87.2, tempo: 65.8, luck: 1.5 } },
   { id: 3, name: "Purdue Boilermakers", abbreviation: "PUR", conference: "Big Ten", seed: 1, record: "29-5", logo: espnLogo(3), stats: { ppg: 80.1, oppPpg: 65.8, fgPct: 48.5, threePct: 36.2, ftPct: 76.8, rpg: 39.1, apg: 16.3, spg: 5.8, bpg: 5.1, tpg: 10.8, sos: 85, adjOE: 125.3, adjDE: 92.1, tempo: 68.5, luck: 0.8 } },
@@ -261,12 +266,20 @@ const _rawTeams: Omit<Team, "homeStats" | "awayStats">[] = [
 export const teams: Team[] = _rawTeams.map((t) => {
   const boost = HOME_BOOSTS[t.id] ?? 0.05;
   const { home, away } = generateSplits(t.stats, boost);
-  return { ...t, homeStats: home, awayStats: away };
+  return {
+    ...t,
+    canonicalId: `fallback-${t.id}`,
+    slug: slugify(t.name),
+    statsCoverage: "full",
+    source: "fallback",
+    homeStats: home,
+    awayStats: away,
+  };
 });
 
 // Calculate top-50 average stats (by overall power score with default weights)
-export function getTop50Average(): TeamStats {
-  const sorted = [...teams]
+export function getTop50Average(teamPool: Team[] = teams): TeamStats {
+  const sorted = [...teamPool]
     .map((t) => ({ ...t, score: calculateTeamScore(t.stats, DEFAULT_STAT_WEIGHTS) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 50);
@@ -278,8 +291,10 @@ export function getTop50Average(): TeamStats {
 
   const avg: any = {};
   keys.forEach((k) => {
-    const sum = sorted.reduce((s, t) => s + (t.stats[k] as number), 0);
-    avg[k] = Math.round((sum / sorted.length) * 10) / 10;
+    const values = sorted
+      .map((t) => t.stats[k])
+      .filter((value): value is number => typeof value === "number");
+    avg[k] = values.length ? Math.round((values.reduce((s, v) => s + v, 0) / values.length) * 10) / 10 : null;
   });
   return avg as TeamStats;
 }
@@ -306,23 +321,23 @@ const ESPN_ABBR_ALIASES: Record<string, string> = {
   NCAR: "UNC",
 };
 
-export function findTeamByEspn(espnName: string, espnAbbr: string): Team | null {
+export function findTeamByEspn(espnName: string, espnAbbr: string, teamPool: Team[] = teams): Team | null {
   const abbrUpper = espnAbbr.toUpperCase();
 
   // 1. Direct abbreviation match
-  const byAbbr = teams.find((t) => t.abbreviation.toUpperCase() === abbrUpper);
+  const byAbbr = teamPool.find((t) => t.abbreviation.toUpperCase() === abbrUpper);
   if (byAbbr) return byAbbr;
 
   // 2. Alias map
   const aliased = ESPN_ABBR_ALIASES[abbrUpper];
   if (aliased) {
-    const byAlias = teams.find((t) => t.abbreviation.toUpperCase() === aliased);
+    const byAlias = teamPool.find((t) => t.abbreviation.toUpperCase() === aliased);
     if (byAlias) return byAlias;
   }
 
   // 3. Full name substring (case-insensitive)
   const normName = espnName.toLowerCase().trim();
-  const byFullName = teams.find(
+  const byFullName = teamPool.find(
     (t) =>
       normName.includes(t.name.toLowerCase()) ||
       t.name.toLowerCase().includes(normName)
@@ -335,7 +350,7 @@ export function findTeamByEspn(espnName: string, espnAbbr: string): Team | null 
 
   let best: Team | null = null;
   let bestScore = 0;
-  for (const t of teams) {
+  for (const t of teamPool) {
     const teamWords = t.name.toLowerCase().split(/\s+/).filter((w) => w.length > 2 && !NOISE.has(w));
     const score = espnWords.filter((w) => teamWords.includes(w)).length;
     if (score > bestScore) {
@@ -351,7 +366,8 @@ export function calculateTeamScore(stats: TeamStats, weights: StatWeight[]): num
   let totalWeight = 0;
 
   weights.forEach((w) => {
-    const value = stats[w.key] as number;
+    const value = stats[w.key];
+    if (typeof value !== "number") return;
     const range = w.max - w.min;
     let normalized = range > 0 ? (value - w.min) / range : 0.5;
     normalized = Math.max(0, Math.min(1, normalized));
@@ -361,4 +377,121 @@ export function calculateTeamScore(stats: TeamStats, weights: StatWeight[]): num
   });
 
   return totalWeight > 0 ? (totalScore / totalWeight) * 100 : 50;
+}
+
+export interface LiveTeamMetadata {
+  id: string;
+  name: string;
+  abbreviation: string;
+  conference: string;
+  record: string;
+  logo: string;
+  seed: number | null;
+}
+
+const TEAM_STATS_KEYS: (keyof TeamStats)[] = [
+  "ppg", "oppPpg", "fgPct", "threePct", "ftPct", "rpg", "apg",
+  "spg", "bpg", "tpg", "sos", "adjOE", "adjDE", "tempo", "luck",
+];
+
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export function emptyTeamStats(): TeamStats {
+  return {
+    ppg: null,
+    oppPpg: null,
+    fgPct: null,
+    threePct: null,
+    ftPct: null,
+    rpg: null,
+    apg: null,
+    spg: null,
+    bpg: null,
+    tpg: null,
+    sos: null,
+    adjOE: null,
+    adjDE: null,
+    tempo: null,
+    luck: null,
+  };
+}
+
+export function hasStat(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+export function formatStat(value: number | null | undefined, digits = 1): string {
+  return hasStat(value) ? value.toFixed(digits) : "—";
+}
+
+export function getStatsCoverage(stats: TeamStats): Team["statsCoverage"] {
+  const available = TEAM_STATS_KEYS.filter((key) => hasStat(stats[key])).length;
+  if (available === 0) return "none";
+  if (available === TEAM_STATS_KEYS.length) return "full";
+  return "partial";
+}
+
+export function buildCanonicalTeams(liveTeams: LiveTeamMetadata[] = []): Team[] {
+  const merged = new Map<string, Team>();
+  const fallbackMatchedIds = new Set<number>();
+
+  liveTeams.forEach((liveTeam) => {
+    const fallback = findTeamByEspn(liveTeam.name, liveTeam.abbreviation, teams);
+    if (fallback) {
+      fallbackMatchedIds.add(fallback.id);
+    }
+
+    const mergedTeam: Team = {
+      ...(fallback ?? {
+        id: Number.parseInt(liveTeam.id, 10) || 100000 + merged.size,
+        canonicalId: `espn-${liveTeam.id}`,
+        slug: slugify(liveTeam.name),
+        espnId: liveTeam.id,
+        name: liveTeam.name,
+        abbreviation: liveTeam.abbreviation || liveTeam.name.slice(0, 4).toUpperCase(),
+        conference: liveTeam.conference || "NCAA",
+        seed: liveTeam.seed,
+        record: liveTeam.record,
+        logo: liveTeam.logo,
+        stats: emptyTeamStats(),
+        homeStats: emptyTeamStats(),
+        awayStats: emptyTeamStats(),
+        statsCoverage: "none" as const,
+        source: "live" as const,
+      }),
+      canonicalId: fallback?.canonicalId ?? `espn-${liveTeam.id}`,
+      slug: fallback?.slug ?? slugify(liveTeam.name),
+      espnId: liveTeam.id,
+      name: liveTeam.name || fallback?.name || "",
+      abbreviation: liveTeam.abbreviation || fallback?.abbreviation || "",
+      conference: liveTeam.conference || fallback?.conference || "NCAA",
+      seed: liveTeam.seed ?? fallback?.seed ?? null,
+      record: liveTeam.record || fallback?.record || "",
+      logo: liveTeam.logo || fallback?.logo || "/placeholder.svg",
+      statsCoverage: getStatsCoverage((fallback ?? { stats: emptyTeamStats() }).stats),
+      source: fallback ? "hybrid" : "live",
+    };
+
+    merged.set(mergedTeam.canonicalId, mergedTeam);
+  });
+
+  teams.forEach((fallbackTeam) => {
+    if (fallbackMatchedIds.has(fallbackTeam.id)) return;
+    merged.set(fallbackTeam.canonicalId, fallbackTeam);
+  });
+
+  return [...merged.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function findTeamByCanonicalId(teamId: string, teamPool: Team[] = teams): Team | null {
+  return teamPool.find((team) => team.canonicalId === teamId) ?? null;
+}
+
+export function findTeamBySlug(slug: string, teamPool: Team[] = teams): Team | null {
+  return teamPool.find((team) => team.slug === slug) ?? null;
 }

@@ -1,13 +1,24 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, Calendar, ChevronLeft, ChevronRight, Clock, Tv } from "lucide-react";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import MatchupAnglesList from "@/components/MatchupAnglesList";
 import { useSchedule, type ScheduleGame } from "@/hooks/useSchedule";
-import { teams, DEFAULT_STAT_WEIGHTS, ELITE_8_PRESET_WEIGHTS, calculateTeamScore, findTeamByEspn, type StatWeight, type Team } from "@/data/ncaaTeams";
+import { useLiveTeams } from "@/hooks/useLiveTeams";
+import { usePageSeo } from "@/hooks/usePageSeo";
+import {
+  DEFAULT_STAT_WEIGHTS,
+  ELITE_8_PRESET_WEIGHTS,
+  buildCanonicalTeams,
+  calculateTeamScore,
+  findTeamByEspn,
+  formatStat,
+  hasStat,
+  type StatWeight,
+  type Team,
+} from "@/data/ncaaTeams";
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
-import { Calendar, ChevronLeft, ChevronRight, Clock, Tv, MapPin, ArrowRight } from "lucide-react";
-
 
 function formatGameTime(dateStr: string): string {
   const d = new Date(dateStr);
@@ -36,19 +47,23 @@ function formatDisplayDate(date: Date): string {
   });
 }
 
-interface GameCardProps {
+function GameCard({
+  game,
+  weights,
+  teamPool,
+}: {
   game: ScheduleGame;
   weights: StatWeight[];
-}
-
-function GameCard({ game, weights }: GameCardProps) {
-  const matchedHome = game.homeTeam ? findTeamByEspn(game.homeTeam.name, game.homeTeam.abbreviation) : null;
-  const matchedAway = game.awayTeam ? findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation) : null;
+  teamPool: Team[];
+}) {
+  const matchedHome = game.homeTeam ? findTeamByEspn(game.homeTeam.name, game.homeTeam.abbreviation, teamPool) : null;
+  const matchedAway = game.awayTeam ? findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation, teamPool) : null;
 
   const homeScore = matchedHome ? calculateTeamScore(matchedHome.stats, weights) : null;
   const awayScore = matchedAway ? calculateTeamScore(matchedAway.stats, weights) : null;
+  const canAnalyze = Boolean(matchedHome && matchedAway);
 
-  const angles = matchedHome && matchedAway ? generateMatchupAngles(matchedAway, matchedHome) : [];
+  const angles = matchedHome && matchedAway ? generateMatchupAngles(matchedAway, matchedHome, teamPool) : [];
   const advantage = matchedHome && matchedAway ? getOverallAdvantage(matchedAway, matchedHome, angles) : null;
 
   const statRows: { label: string; key: keyof Team["stats"]; higherIsBetter: boolean }[] = [
@@ -61,30 +76,29 @@ function GameCard({ game, weights }: GameCardProps) {
     { label: "Adj DE", key: "adjDE", higherIsBetter: false },
   ];
 
+  const renderCoverage = (team: Team | null) => {
+    if (!team) return "Metadata only";
+    if (team.statsCoverage === "full") return "Full stats";
+    if (team.statsCoverage === "partial") return "Partial stats";
+    return "Metadata only";
+  };
+
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
-      {/* Advantage banner */}
-      {advantage && advantage.team !== "even" && (
-        <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 flex items-center justify-center gap-2">
-          <span className="text-xs font-bold text-primary uppercase tracking-wider">
-            {advantage.margin}:
-          </span>
-          <span className="text-sm font-bold text-foreground">
-            {advantage.team === "teamA"
-              ? game.awayTeam?.name
-              : game.homeTeam?.name}
-          </span>
-        </div>
-      )}
-      {advantage && advantage.team === "even" && (
-        <div className="bg-muted/50 border-b border-border px-4 py-2 flex items-center justify-center">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-            {advantage.margin}
+      {advantage && (
+        <div className={`px-4 py-2 flex items-center justify-center gap-2 border-b ${
+          advantage.team === "even"
+            ? "bg-muted/50 border-border"
+            : "bg-primary/10 border-primary/20"
+        }`}>
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            {advantage.team === "even"
+              ? advantage.margin
+              : `${advantage.margin}: ${advantage.team === "teamA" ? game.awayTeam?.name : game.homeTeam?.name}`}
           </span>
         </div>
       )}
 
-      {/* Teams header */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -108,35 +122,24 @@ function GameCard({ game, weights }: GameCardProps) {
           </span>
         </div>
 
-        {/* Team matchup */}
         <div className="grid grid-cols-3 items-center gap-2 mb-4">
-          {/* Away team */}
           <div className="text-center">
-            <img
-              src={game.awayTeam?.logo || "/placeholder.svg"}
-              alt={game.awayTeam?.name}
-              className="w-12 h-12 object-contain mx-auto mb-1"
-              loading="lazy"
-            />
+            <img src={game.awayTeam?.logo || "/placeholder.svg"} alt={game.awayTeam?.name} className="w-12 h-12 object-contain mx-auto mb-1" loading="lazy" />
             {game.awayTeam?.seed && (
               <span className="inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold bg-primary/20 text-primary mb-1">
                 {game.awayTeam.seed}
               </span>
             )}
-            <h3 className="text-sm font-bold text-foreground leading-tight">
-              {game.awayTeam?.abbreviation || "TBD"}
-            </h3>
-            <p className="text-[10px] text-muted-foreground">{game.awayTeam?.record}</p>
+            <h3 className="text-sm font-bold text-foreground leading-tight">{game.awayTeam?.abbreviation || "TBD"}</h3>
+            <p className="text-[10px] text-muted-foreground">{matchedAway?.record || game.awayTeam?.record || "Record unavailable"}</p>
             {awayScore !== null && (
-              <div className={`text-lg font-bold mt-1 tabular-nums ${
-                homeScore !== null && awayScore > homeScore ? "text-primary" : "text-foreground"
-              }`}>
+              <div className={`text-lg font-bold mt-1 tabular-nums ${homeScore !== null && awayScore > homeScore ? "text-primary" : "text-foreground"}`}>
                 {awayScore.toFixed(1)}
               </div>
             )}
+            <p className="text-[10px] text-muted-foreground mt-1">{renderCoverage(matchedAway)}</p>
           </div>
 
-          {/* VS / Score */}
           <div className="text-center">
             {game.completed || game.status === "In Progress" ? (
               <div className="text-xl font-bold text-foreground">
@@ -150,34 +153,24 @@ function GameCard({ game, weights }: GameCardProps) {
             )}
           </div>
 
-          {/* Home team */}
           <div className="text-center">
-            <img
-              src={game.homeTeam?.logo || "/placeholder.svg"}
-              alt={game.homeTeam?.name}
-              className="w-12 h-12 object-contain mx-auto mb-1"
-              loading="lazy"
-            />
+            <img src={game.homeTeam?.logo || "/placeholder.svg"} alt={game.homeTeam?.name} className="w-12 h-12 object-contain mx-auto mb-1" loading="lazy" />
             {game.homeTeam?.seed && (
               <span className="inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold bg-primary/20 text-primary mb-1">
                 {game.homeTeam.seed}
               </span>
             )}
-            <h3 className="text-sm font-bold text-foreground leading-tight">
-              {game.homeTeam?.abbreviation || "TBD"}
-            </h3>
-            <p className="text-[10px] text-muted-foreground">{game.homeTeam?.record}</p>
+            <h3 className="text-sm font-bold text-foreground leading-tight">{game.homeTeam?.abbreviation || "TBD"}</h3>
+            <p className="text-[10px] text-muted-foreground">{matchedHome?.record || game.homeTeam?.record || "Record unavailable"}</p>
             {homeScore !== null && (
-              <div className={`text-lg font-bold mt-1 tabular-nums ${
-                awayScore !== null && homeScore > awayScore ? "text-primary" : "text-foreground"
-              }`}>
+              <div className={`text-lg font-bold mt-1 tabular-nums ${awayScore !== null && homeScore > awayScore ? "text-primary" : "text-foreground"}`}>
                 {homeScore.toFixed(1)}
               </div>
             )}
+            <p className="text-[10px] text-muted-foreground mt-1">{renderCoverage(matchedHome)}</p>
           </div>
         </div>
 
-        {/* Quick stat comparison */}
         {matchedHome && matchedAway && (
           <div className="border-t border-border pt-3 mb-3">
             <div className="grid grid-cols-3 items-center text-[10px] font-semibold text-muted-foreground uppercase mb-1">
@@ -188,16 +181,16 @@ function GameCard({ game, weights }: GameCardProps) {
             {statRows.map((row) => {
               const valA = matchedAway.stats[row.key];
               const valB = matchedHome.stats[row.key];
-              const aWins = row.higherIsBetter ? valA > valB : valA < valB;
-              const bWins = row.higherIsBetter ? valB > valA : valB < valA;
+              const aWins = hasStat(valA) && hasStat(valB) && (row.higherIsBetter ? valA > valB : valA < valB);
+              const bWins = hasStat(valA) && hasStat(valB) && (row.higherIsBetter ? valB > valA : valB < valA);
               return (
                 <div key={row.key} className="grid grid-cols-3 items-center py-0.5">
                   <span className={`text-right tabular-nums text-xs ${aWins ? "text-primary font-semibold" : "text-foreground"}`}>
-                    {valA}
+                    {formatStat(valA)}
                   </span>
                   <span className="text-center text-[10px] text-muted-foreground">{row.label}</span>
                   <span className={`text-left tabular-nums text-xs ${bWins ? "text-primary font-semibold" : "text-foreground"}`}>
-                    {valB}
+                    {formatStat(valB)}
                   </span>
                 </div>
               );
@@ -205,12 +198,9 @@ function GameCard({ game, weights }: GameCardProps) {
           </div>
         )}
 
-        {/* Matchup angles preview */}
         {angles.length > 0 && (
           <div className="border-t border-border pt-3 mb-3">
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">
-              Top Matchup Angles
-            </h4>
+            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Top Matchup Angles</h4>
             <MatchupAnglesList
               angles={angles}
               teamAName={game.awayTeam?.abbreviation || "Away"}
@@ -220,10 +210,9 @@ function GameCard({ game, weights }: GameCardProps) {
           </div>
         )}
 
-        {/* Link to full matchup page */}
-        {matchedHome && matchedAway && (
+        {canAnalyze && matchedAway && matchedHome && (
           <Link
-            to={`/schedule/${game.id}?away=${matchedAway.id}&home=${matchedHome.id}`}
+            to={`/schedule/${game.id}?away=${encodeURIComponent(matchedAway.canonicalId)}&home=${encodeURIComponent(matchedHome.canonicalId)}`}
             className="flex items-center justify-center gap-2 w-full py-2 mt-2 rounded-md bg-secondary hover:bg-secondary/80 text-sm font-medium text-foreground transition-colors"
           >
             Full Analysis <ArrowRight className="w-4 h-4" />
@@ -235,15 +224,24 @@ function GameCard({ game, weights }: GameCardProps) {
 }
 
 export default function Schedule() {
+  usePageSeo({
+    title: "NCAA Game Schedule and Live Slate",
+    description: "Track the current NCAA basketball slate with live and upcoming matchups, matchup angles, and game-by-game analysis tools.",
+    path: "/schedule",
+  });
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showSliders, setShowSliders] = useState(false);
+  const { data: liveTeams = [] } = useLiveTeams();
 
   const dateStr = formatDate(selectedDate);
   const { data: games, isLoading, error } = useSchedule(dateStr);
 
+  const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
+
   const handleWeightChange = (key: string, value: number) => {
-    setWeights((prev) => prev.map((w) => (w.key === key ? { ...w, weight: value } : w)));
+    setWeights((prev) => prev.map((weight) => (weight.key === key ? { ...weight, weight: value } : weight)));
   };
 
   const prevDay = () => {
@@ -266,12 +264,9 @@ export default function Schedule() {
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Game Schedule</h1>
-          <p className="text-muted-foreground mt-1">
-            Live schedule with matchup analysis and angles
-          </p>
+          <p className="text-muted-foreground mt-1">Live schedule with full matchup coverage across the visible NCAA slate</p>
         </div>
 
-        {/* Date picker */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
             <button onClick={prevDay} className="p-2 hover:bg-secondary rounded-md transition-colors">
@@ -287,41 +282,28 @@ export default function Schedule() {
               <ChevronRight className="w-4 h-4 text-foreground" />
             </button>
           </div>
-          <button
-            onClick={goToToday}
-            className="text-sm font-medium text-primary hover:underline"
-          >
+          <button onClick={goToToday} className="text-sm font-medium text-primary hover:underline">
             Today
           </button>
         </div>
 
-        {/* Weight controls */}
         <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => setShowSliders(!showSliders)}
-            className="text-sm font-medium text-primary hover:underline"
-          >
+          <button onClick={() => setShowSliders(!showSliders)} className="text-sm font-medium text-primary hover:underline">
             {showSliders ? "Hide" : "Show"} Weight Controls
           </button>
-          <button
-            onClick={() => setWeights(DEFAULT_STAT_WEIGHTS)}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
+          <button onClick={() => setWeights(DEFAULT_STAT_WEIGHTS)} className="text-sm font-medium text-muted-foreground hover:text-foreground">
             Reset Defaults
           </button>
           <button
             onClick={() => setWeights(ELITE_8_PRESET_WEIGHTS)}
             className="text-sm font-semibold px-3 py-1 rounded-md bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
           >
-            🏆 2024 Elite 8 Preset
+            2024 Elite 8 Preset
           </button>
         </div>
 
-        {showSliders && (
-          <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />
-        )}
+        {showSliders && <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />}
 
-        {/* Games grid */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
             <div className="text-center space-y-3">
@@ -349,11 +331,11 @@ export default function Schedule() {
         {games && games.length > 0 && (
           <div>
             <p className="text-sm text-muted-foreground mb-4">
-              {games.length} game{games.length !== 1 ? "s" : ""} · Games with matching team data show full analysis
+              {games.length} game{games.length !== 1 ? "s" : ""} · Any resolvable live matchup is available in analysis, even with partial stat coverage
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {games.map((game) => (
-                <GameCard key={game.id} game={game} weights={weights} />
+                <GameCard key={game.id} game={game} weights={weights} teamPool={teamPool} />
               ))}
             </div>
           </div>

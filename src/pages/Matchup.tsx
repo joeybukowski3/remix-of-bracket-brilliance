@@ -1,14 +1,40 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Clock } from "lucide-react";
 import SiteNav from "@/components/SiteNav";
-import { teams, DEFAULT_STAT_WEIGHTS, calculateTeamScore, getTop50Average, findTeamByEspn, type StatWeight, type Team, type TeamStats } from "@/data/ncaaTeams";
 import StatSliders from "@/components/StatSliders";
 import { Switch } from "@/components/ui/switch";
 import { useSchedule } from "@/hooks/useSchedule";
-import { Clock } from "lucide-react";
+import { useLiveTeams } from "@/hooks/useLiveTeams";
+import { usePageSeo } from "@/hooks/usePageSeo";
+import {
+  DEFAULT_STAT_WEIGHTS,
+  buildCanonicalTeams,
+  calculateTeamScore,
+  findTeamByEspn,
+  formatStat,
+  getTop50Average,
+  hasStat,
+  type StatWeight,
+  type Team,
+  type TeamStats,
+} from "@/data/ncaaTeams";
 
-function TeamSelector({ selected, onSelect, label }: { selected: Team | null; onSelect: (t: Team) => void; label: string }) {
+function TeamSelector({
+  teams,
+  selected,
+  onSelect,
+  label,
+}: {
+  teams: Team[];
+  selected: Team | null;
+  onSelect: (team: Team | null) => void;
+  label: string;
+}) {
   const [search, setSearch] = useState("");
-  const filtered = teams.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = teams.filter((team) =>
+    team.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <div className="space-y-3">
@@ -22,14 +48,17 @@ function TeamSelector({ selected, onSelect, label }: { selected: Team | null; on
       />
       {search && !selected && (
         <div className="max-h-48 overflow-y-auto border border-border rounded-md bg-card">
-          {filtered.slice(0, 10).map((t) => (
+          {filtered.slice(0, 12).map((team) => (
             <button
-              key={t.id}
-              onClick={() => { onSelect(t); setSearch(""); }}
+              key={team.canonicalId}
+              onClick={() => {
+                onSelect(team);
+                setSearch("");
+              }}
               className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors text-foreground flex items-center gap-2"
             >
-              <img src={t.logo} alt={t.name} className="w-5 h-5 object-contain shrink-0" loading="lazy" />
-              {t.name} <span className="text-muted-foreground">({t.conference})</span>
+              <img src={team.logo} alt={team.name} className="w-5 h-5 object-contain shrink-0" loading="lazy" />
+              {team.name} <span className="text-muted-foreground">({team.conference})</span>
             </button>
           ))}
         </div>
@@ -43,75 +72,99 @@ function TeamSelector({ selected, onSelect, label }: { selected: Team | null; on
             </span>
           )}
           <h3 className="text-xl font-bold text-foreground">{selected.name}</h3>
-          <p className="text-sm text-muted-foreground">{selected.conference} · {selected.record}</p>
-          <button onClick={() => onSelect(null as any)} className="text-xs text-primary mt-2 hover:underline">Change</button>
+          <p className="text-sm text-muted-foreground">{selected.conference} · {selected.record || "Record unavailable"}</p>
+          <Link to={`/team/${selected.slug}`} className="block text-xs text-muted-foreground mt-1 hover:underline">
+            Team page
+          </Link>
+          <button onClick={() => onSelect(null)} className="text-xs text-primary mt-2 hover:underline">Change</button>
         </div>
       )}
     </div>
   );
 }
 
-interface StatCompareRowProps {
+function StatCompareRow({
+  label,
+  valueA,
+  valueB,
+  higherIsBetter,
+}: {
   label: string;
-  valueA: number;
-  valueB: number;
+  valueA: number | null;
+  valueB: number | null;
   higherIsBetter: boolean;
-}
-
-function StatCompareRow({ label, valueA, valueB, higherIsBetter }: StatCompareRowProps) {
-  const aWins = higherIsBetter ? valueA > valueB : valueA < valueB;
-  const bWins = higherIsBetter ? valueB > valueA : valueB < valueA;
+}) {
+  const aWins = hasStat(valueA) && hasStat(valueB) && (higherIsBetter ? valueA > valueB : valueA < valueB);
+  const bWins = hasStat(valueA) && hasStat(valueB) && (higherIsBetter ? valueB > valueA : valueB < valueA);
 
   return (
     <div className="grid grid-cols-3 items-center py-2 border-b border-border/50 last:border-0">
       <span className={`text-right tabular-nums font-semibold text-sm ${aWins ? "text-primary" : "text-foreground"}`}>
-        {valueA}
+        {formatStat(valueA)}
       </span>
       <span className="text-center text-xs font-medium text-muted-foreground">{label}</span>
       <span className={`text-left tabular-nums font-semibold text-sm ${bWins ? "text-primary" : "text-foreground"}`}>
-        {valueB}
+        {formatStat(valueB)}
       </span>
     </div>
   );
 }
 
-function HomeAwayRow({ label, home, away, overall, higherIsBetter }: {
-  label: string; home: number; away: number; overall: number; higherIsBetter: boolean;
+function HomeAwayRow({
+  label,
+  home,
+  away,
+  overall,
+  higherIsBetter,
+}: {
+  label: string;
+  home: number | null;
+  away: number | null;
+  overall: number | null;
+  higherIsBetter: boolean;
 }) {
-  const diff = home - away;
-  const pctDiff = overall !== 0 ? ((diff / overall) * 100) : 0;
-  const isSignificant = Math.abs(pctDiff) > 5;
+  const diff = hasStat(home) && hasStat(away) ? home - away : null;
+  const pctDiff = hasStat(diff) && hasStat(overall) && overall !== 0 ? (diff / overall) * 100 : null;
+  const isSignificant = hasStat(pctDiff) && Math.abs(pctDiff) > 5;
 
   return (
     <div className="grid grid-cols-4 items-center py-1.5 border-b border-border/50 last:border-0 text-xs">
       <span className="font-medium text-muted-foreground">{label}</span>
-      <span className="text-center tabular-nums text-foreground">{home}</span>
-      <span className="text-center tabular-nums text-foreground">{away}</span>
+      <span className="text-center tabular-nums text-foreground">{formatStat(home)}</span>
+      <span className="text-center tabular-nums text-foreground">{formatStat(away)}</span>
       <span className={`text-right tabular-nums font-semibold ${
         isSignificant
-          ? (higherIsBetter ? (diff > 0 ? "text-destructive" : "text-primary") : (diff < 0 ? "text-destructive" : "text-primary"))
+          ? (higherIsBetter ? ((diff ?? 0) > 0 ? "text-destructive" : "text-primary") : ((diff ?? 0) < 0 ? "text-destructive" : "text-primary"))
           : "text-muted-foreground"
       }`}>
-        {pctDiff > 0 ? "+" : ""}{pctDiff.toFixed(1)}%
+        {hasStat(pctDiff) ? `${pctDiff > 0 ? "+" : ""}${pctDiff.toFixed(1)}%` : "—"}
       </span>
     </div>
   );
 }
 
-function VsAverageRow({ label, value, avg, higherIsBetter }: {
-  label: string; value: number; avg: number; higherIsBetter: boolean;
+function VsAverageRow({
+  label,
+  value,
+  avg,
+  higherIsBetter,
+}: {
+  label: string;
+  value: number | null;
+  avg: number | null;
+  higherIsBetter: boolean;
 }) {
-  const diff = value - avg;
-  const pctDiff = avg !== 0 ? ((diff / avg) * 100) : 0;
-  const isGood = higherIsBetter ? diff > 0 : diff < 0;
+  const diff = hasStat(value) && hasStat(avg) ? value - avg : null;
+  const pctDiff = hasStat(diff) && hasStat(avg) && avg !== 0 ? (diff / avg) * 100 : null;
+  const isGood = hasStat(diff) ? (higherIsBetter ? diff > 0 : diff < 0) : false;
 
   return (
     <div className="grid grid-cols-4 items-center py-1.5 border-b border-border/50 last:border-0 text-xs">
       <span className="font-medium text-muted-foreground">{label}</span>
-      <span className="text-center tabular-nums text-foreground">{value}</span>
-      <span className="text-center tabular-nums text-muted-foreground">{avg}</span>
-      <span className={`text-right tabular-nums font-bold ${isGood ? "text-primary" : "text-destructive"}`}>
-        {pctDiff > 0 ? "+" : ""}{pctDiff.toFixed(1)}%
+      <span className="text-center tabular-nums text-foreground">{formatStat(value)}</span>
+      <span className="text-center tabular-nums text-muted-foreground">{formatStat(avg)}</span>
+      <span className={`text-right tabular-nums font-bold ${hasStat(pctDiff) ? (isGood ? "text-primary" : "text-destructive") : "text-muted-foreground"}`}>
+        {hasStat(pctDiff) ? `${pctDiff > 0 ? "+" : ""}${pctDiff.toFixed(1)}%` : "—"}
       </span>
     </div>
   );
@@ -133,21 +186,21 @@ function HomeAwaySplitCard({ team }: { team: Team }) {
   return (
     <div className="bg-card border border-border rounded-lg p-4">
       <h3 className="text-sm font-bold text-foreground mb-1">{team.abbreviation} Home vs Away</h3>
-      <p className="text-[10px] text-muted-foreground mb-3">Red = significant drop on the road</p>
+      <p className="text-[10px] text-muted-foreground mb-3">Shows fallbacks when a split stat is unavailable</p>
       <div className="grid grid-cols-4 items-center pb-2 border-b border-border mb-1">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase">Stat</span>
         <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">Home</span>
         <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">Away</span>
         <span className="text-[10px] font-semibold text-muted-foreground uppercase text-right">Diff</span>
       </div>
-      {statKeys.map((s) => (
+      {statKeys.map((stat) => (
         <HomeAwayRow
-          key={s.key}
-          label={s.label}
-          home={team.homeStats[s.key] as number}
-          away={team.awayStats[s.key] as number}
-          overall={team.stats[s.key] as number}
-          higherIsBetter={s.higherIsBetter}
+          key={stat.key}
+          label={stat.label}
+          home={team.homeStats[stat.key]}
+          away={team.awayStats[stat.key]}
+          overall={team.stats[stat.key]}
+          higherIsBetter={stat.higherIsBetter}
         />
       ))}
     </div>
@@ -181,13 +234,13 @@ function VsAverageCard({ team, avg }: { team: Team; avg: TeamStats }) {
         <span className="text-[10px] font-semibold text-muted-foreground uppercase text-center">Top 50</span>
         <span className="text-[10px] font-semibold text-muted-foreground uppercase text-right">+/- %</span>
       </div>
-      {statKeys.map((s) => (
+      {statKeys.map((stat) => (
         <VsAverageRow
-          key={s.key}
-          label={s.label}
-          value={team.stats[s.key] as number}
-          avg={avg[s.key] as number}
-          higherIsBetter={s.higherIsBetter}
+          key={stat.key}
+          label={stat.label}
+          value={team.stats[stat.key]}
+          avg={avg[stat.key]}
+          higherIsBetter={stat.higherIsBetter}
         />
       ))}
     </div>
@@ -198,23 +251,28 @@ function formatDateStr(date: Date): string {
   return date.toISOString().slice(0, 10).replace(/-/g, "");
 }
 
-function TodaySchedulePicker({ onSelectGame }: { onSelectGame: (away: Team, home: Team) => void }) {
+function TodaySchedulePicker({
+  teams,
+  onSelectGame,
+}: {
+  teams: Team[];
+  onSelectGame: (away: Team, home: Team) => void;
+}) {
   const dateStr = formatDateStr(new Date());
   const { data: games, isLoading } = useSchedule(dateStr);
 
-  const matchedGames = useMemo(() => {
+  const resolvedGames = useMemo(() => {
     if (!games) return [];
     return games.flatMap((game) => {
       if (!game.homeTeam || !game.awayTeam) return [];
-      const home = findTeamByEspn(game.homeTeam.name, game.homeTeam.abbreviation);
-      const away = findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation);
+      const home = findTeamByEspn(game.homeTeam.name, game.homeTeam.abbreviation, teams);
+      const away = findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation, teams);
       if (!home || !away) return [];
       return [{ game, home, away }];
     });
-  }, [games]);
+  }, [games, teams]);
 
   const allGames = games ?? [];
-  const unmatched = allGames.length - matchedGames.length;
 
   if (isLoading) {
     return (
@@ -229,20 +287,17 @@ function TodaySchedulePicker({ onSelectGame }: { onSelectGame: (away: Team, home
   return (
     <div className="bg-card border border-border rounded-lg p-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Today's Games
-        </h2>
+        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Today's Games</h2>
         <span className="text-xs text-muted-foreground">
-          {matchedGames.length} of {allGames.length} with full stats
-          {unmatched > 0 && ` · ${unmatched} without ratings data`}
+          {resolvedGames.length} of {allGames.length} available in matchup tools
         </span>
       </div>
 
-      {matchedGames.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No games today have matching team data.</p>
+      {resolvedGames.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No live games currently resolve to the canonical team pool.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {matchedGames.map(({ game, home, away }) => (
+          {resolvedGames.map(({ game, home, away }) => (
             <button
               key={game.id}
               onClick={() => onSelectGame(away, home)}
@@ -272,11 +327,19 @@ export default function Matchup() {
   const [teamB, setTeamB] = useState<Team | null>(null);
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showVsAverage, setShowVsAverage] = useState(false);
+  const { data: liveTeams = [] } = useLiveTeams();
 
-  const top50Avg = useMemo(() => getTop50Average(), []);
+  const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
+  const top50Avg = useMemo(() => getTop50Average(teamPool), [teamPool]);
+
+  usePageSeo({
+    title: "NCAA Matchup Analyzer",
+    description: "Compare any supported NCAA basketball matchup with power scores, advanced stats, home-away splits, and live game selection tools.",
+    path: "/matchup",
+  });
 
   const handleWeightChange = (key: string, value: number) => {
-    setWeights((prev) => prev.map((w) => (w.key === key ? { ...w, weight: value } : w)));
+    setWeights((prev) => prev.map((weight) => (weight.key === key ? { ...weight, weight: value } : weight)));
   };
 
   const handleSelectGame = (away: Team, home: Team) => {
@@ -305,25 +368,26 @@ export default function Matchup() {
     { label: "Tempo", key: "tempo", higherIsBetter: true },
   ];
 
+  const totalScore = scoreA + scoreB || 1;
+
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Game Analysis</h1>
-          <p className="text-muted-foreground mt-1">Compare two teams head-to-head</p>
+          <p className="text-muted-foreground mt-1">Compare any supported NCAA matchup from the full live team pool</p>
         </div>
 
-        <TodaySchedulePicker onSelectGame={handleSelectGame} />
+        <TodaySchedulePicker teams={teamPool} onSelectGame={handleSelectGame} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TeamSelector selected={teamA} onSelect={setTeamA} label="Team A" />
-          <TeamSelector selected={teamB} onSelect={setTeamB} label="Team B" />
+          <TeamSelector teams={teamPool} selected={teamA} onSelect={setTeamA} label="Team A" />
+          <TeamSelector teams={teamPool} selected={teamB} onSelect={setTeamB} label="Team B" />
         </div>
 
         {teamA && teamB && (
           <>
-            {/* Power Score Comparison */}
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="grid grid-cols-3 items-center mb-4">
                 <div className="text-right">
@@ -339,16 +403,13 @@ export default function Matchup() {
                 </div>
               </div>
 
-              <div className="w-full h-3 rounded-full bg-muted overflow-hidden flex mb-6">
-                <div
-                  className="h-full bg-primary transition-all duration-500"
-                  style={{ width: `${(scoreA / (scoreA + scoreB)) * 100}%` }}
-                />
-                <div
-                  className="h-full bg-secondary-foreground/30 transition-all duration-500"
-                  style={{ width: `${(scoreB / (scoreA + scoreB)) * 100}%` }}
-                />
+              <div className="w-full h-3 rounded-full bg-muted overflow-hidden flex mb-3">
+                <div className="h-full bg-primary transition-all duration-500" style={{ width: `${(scoreA / totalScore) * 100}%` }} />
+                <div className="h-full bg-secondary-foreground/30 transition-all duration-500" style={{ width: `${(scoreB / totalScore) * 100}%` }} />
               </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                Teams stay available even when advanced stats are partial. Missing values display as em dashes.
+              </p>
 
               {statRows.map((row) => (
                 <StatCompareRow
@@ -361,7 +422,6 @@ export default function Matchup() {
               ))}
             </div>
 
-            {/* Home vs Away Splits */}
             <div>
               <h2 className="text-lg font-bold text-foreground mb-3">Home vs Away Performance</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -370,12 +430,11 @@ export default function Matchup() {
               </div>
             </div>
 
-            {/* Top 50 Average Toggle */}
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-bold text-foreground">Compare to Top 50 League Average</h2>
-                  <p className="text-xs text-muted-foreground">See how each team ranks vs the average of the top 50 teams</p>
+                  <p className="text-xs text-muted-foreground">See how each team ranks vs the current all-team ranking pool</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">{showVsAverage ? "On" : "Off"}</span>
@@ -391,7 +450,6 @@ export default function Matchup() {
               )}
             </div>
 
-            {/* Weight Controls */}
             <div>
               <h2 className="text-lg font-bold text-foreground mb-3">Adjust Weights</h2>
               <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />
