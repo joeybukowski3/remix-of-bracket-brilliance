@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight, Clock, Tv } from "lucide-react";
+import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import MatchupAnglesList from "@/components/MatchupAnglesList";
@@ -225,8 +226,9 @@ function GameCard({
 
 export default function Schedule() {
   usePageSeo({
-    title: "NCAA Schedule Tool | Joe Knows Ball",
-    description: "Track live and upcoming NCAA basketball games with matchup angles, advanced stat context, and full slate analysis for tournament week and beyond.",
+    title: "NCAA Game Analysis & Daily Matchup Breakdown | Joe Knows Ball",
+    description:
+      "Track live and upcoming NCAA basketball games with matchup breakdowns, advanced team analytics, and daily slate analysis across Division I.",
     canonical: "https://joeknowsball.com/schedule",
   });
 
@@ -263,13 +265,30 @@ export default function Schedule() {
       <SiteNav />
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Game Schedule</h1>
-          <p className="text-muted-foreground mt-1">Live schedule with full matchup coverage across the visible NCAA slate</p>
+          <h1 className="text-3xl font-bold text-foreground">NCAA Game Analysis &amp; Daily Matchup Breakdown</h1>
+          <p className="text-muted-foreground mt-1">Live schedule with full matchup coverage across the visible NCAA slate.</p>
           <p className="text-sm text-muted-foreground mt-2 max-w-3xl">
-            Review live and upcoming NCAA basketball games with schedule context, team strength indicators,
-            advanced efficiency metrics, and matchup-specific angles that help explain the current slate.
+            Review live and upcoming NCAA basketball games with schedule context, team strength indicators, advanced
+            efficiency metrics, and matchup-specific angles that help explain the current slate.
           </p>
         </div>
+
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">NCAA Analytics for the Daily Slate</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Surface daily NCAA analysis, team strength signals, and advanced stats for upcoming games without relying
+              on charts alone.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Matchup Breakdown and Team Metrics</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Every available game card includes crawlable matchup text, team metrics, and quick-glance analysis for
+              NCAA basketball betting and tournament research.
+            </p>
+          </div>
+        </section>
 
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
@@ -335,7 +354,8 @@ export default function Schedule() {
         {games && games.length > 0 && (
           <div>
             <p className="text-sm text-muted-foreground mb-4">
-              {games.length} game{games.length !== 1 ? "s" : ""} · Any resolvable live matchup is available in analysis, even with partial stat coverage
+              {games.length} game{games.length !== 1 ? "s" : ""} | Any resolvable live matchup is available in
+              analysis, even with partial stat coverage
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {games.map((game) => (
@@ -344,6 +364,7 @@ export default function Schedule() {
             </div>
           </div>
         )}
+        <SeoFooterBlock />
       </div>
     </div>
   );

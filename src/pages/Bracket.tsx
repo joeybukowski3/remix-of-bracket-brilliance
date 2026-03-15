@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy, Info, RefreshCw, Save, Share2, SlidersHorizontal, Trash2 } from "lucide-react";
 import RegionalRankingsTable from "@/components/bracket/RegionalRankingsTable";
+import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import TeamLogo from "@/components/TeamLogo";
@@ -153,8 +154,9 @@ function RegionBuilderSection({
 
 export default function Bracket() {
   usePageSeo({
-    title: "2025 NCAA Bracket Builder | Joe Knows Ball",
-    description: "Build the 2025 NCAA bracket, update team power weights live, and compare compact region rankings with expandable path difficulty detail.",
+    title: "March Madness Bracket Analysis & Tournament Analytics | Joe Knows Ball",
+    description:
+      "Analyze the NCAA tournament bracket with advanced metrics, custom rankings, and path difficulty projections.",
     canonical: "https://joeknowsball.com/bracket",
   });
 
@@ -213,6 +215,14 @@ export default function Bracket() {
     [regions, bracketTree, weights, activePreset],
   );
   const currentRegion = regions.find((region) => region.name === selectedRegion) ?? regions[0];
+  const officialBracketLive = sourceConfig.mode === "live" && sourceConfig.season === "2026";
+  const bracketTitle = officialBracketLive ? "Official 2026 NCAA Bracket Builder" : "March Madness Bracket Builder";
+  const bracketIntro = officialBracketLive
+    ? "The official 2026 NCAA tournament bracket is live. Build picks, compare regions, and adjust the model in real time."
+    : "Build the current working NCAA tournament bracket, tune the model live, and scan every region through compact rankings tables.";
+  const bracketSubcopy = officialBracketLive
+    ? "This page is now using the validated official bracket payload from the live sync pipeline."
+    : "The builder is reading through the central bracket source. It will automatically switch to the validated official bracket as soon as the sync pipeline completes.";
 
   useEffect(() => {
     if (activePreset) {
@@ -268,17 +278,15 @@ export default function Bracket() {
         <section className="rounded-3xl border border-white/10 bg-card/95 p-5 shadow-[0_20px_40px_hsl(var(--background)/0.24)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
-              <h1 className="text-3xl font-bold text-foreground">March Madness Bracket Builder</h1>
-              <p className="mt-2 text-base text-foreground/90">
-                Build the full 2025 NCAA tournament bracket, tune the model live, and scan every region through compact rankings tables.
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                The builder now runs on the complete 2025 bracket structure by default. If a newer official bracket source is published later through the centralized feed, this page will swap over without a UI rewrite.
-              </p>
+              <h1 className="text-3xl font-bold text-foreground">
+                {officialBracketLive ? bracketTitle : "March Madness Bracket Analysis & Tournament Analytics"}
+              </h1>
+              <p className="mt-2 text-base text-foreground/90">{bracketIntro}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{bracketSubcopy}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={sourceConfig.mode === "live" ? "default" : "secondary"} className="border-white/10">
-                {sourceConfig.mode === "live" ? "Full 2025 bracket loaded" : "Working bracket source"}
+                {officialBracketLive ? "Official 2026 bracket live" : "Working bracket source"}
               </Badge>
               <Badge variant="outline" className="max-w-xs border-white/10 bg-background/55 text-foreground">
                 {sourceConfig.sourceLabel}
@@ -294,6 +302,23 @@ export default function Bracket() {
             <TabsTrigger value="saved">Saved</TabsTrigger>
           </TabsList>
           <TabsContent value="builder" className="space-y-5">
+            <section className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-card/95 p-4 shadow-[0_12px_30px_hsl(var(--background)/0.2)]">
+                <h2 className="text-lg font-semibold text-foreground">March Madness Bracket Breakdown</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Use tournament analytics, team power ratings, and region-level projections to compare how the bracket
+                  is shaping up before you finalize picks.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-card/95 p-4 shadow-[0_12px_30px_hsl(var(--background)/0.2)]">
+                <h2 className="text-lg font-semibold text-foreground">Tournament Path Difficulty Analysis</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Every region ranking includes path difficulty context so you can spot favorable routes, brutal draws,
+                  and model-driven upset pressure quickly.
+                </p>
+              </div>
+            </section>
+
             <div className="grid gap-4 xl:grid-cols-[1.2fr,0.8fr]">
               <Card className="border-white/10 bg-card/95 shadow-[0_16px_36px_hsl(var(--background)/0.22)]">
                 <CardHeader className="pb-4">
@@ -373,7 +398,9 @@ export default function Bracket() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-bold text-foreground">Bracket Builder</h2>
-                    <p className="text-sm text-muted-foreground">All four regions and every 2025 matchup slot are active now.</p>
+                    <p className="text-sm text-muted-foreground">
+                      {officialBracketLive ? "All four official 2026 regions are active now." : "All four current bracket regions are active now."}
+                    </p>
                   </div>
                   <div className="flex gap-2 overflow-x-auto">
                     {BRACKET_REGION_NAMES.map((regionName) => (
@@ -507,6 +534,7 @@ export default function Bracket() {
             )}
           </TabsContent>
         </Tabs>
+        <SeoFooterBlock />
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-background/95 backdrop-blur">

@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock } from "lucide-react";
+import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +20,7 @@ import {
   type Team,
   type TeamStats,
 } from "@/data/ncaaTeams";
+import { buildPlaceholderBracketSource, buildTournamentMatchups, loadOfficialBracketSource, type BracketSourceConfig } from "@/lib/bracket";
 
 function TeamSelector({
   teams,
@@ -327,14 +329,27 @@ export default function Matchup() {
   const [teamB, setTeamB] = useState<Team | null>(null);
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showVsAverage, setShowVsAverage] = useState(false);
+  const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
   const { data: liveTeams = [] } = useLiveTeams();
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const top50Avg = useMemo(() => getTop50Average(teamPool), [teamPool]);
+  const officialMatchups = useMemo(() => buildTournamentMatchups(bracketSource, teamPool), [bracketSource, teamPool]);
+
+  useEffect(() => {
+    let ignore = false;
+    loadOfficialBracketSource().then((payload) => {
+      if (!ignore && payload) setBracketSource(payload);
+    });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   usePageSeo({
-    title: "NCAA Matchup Tool | Joe Knows Ball",
-    description: "Compare NCAA basketball teams using offensive rating, defensive efficiency, pace, rebounding, and advanced matchup signals.",
+    title: "NCAA Matchup Analysis & Advanced Team Metrics | Joe Knows Ball",
+    description:
+      "Compare NCAA teams using advanced analytics including offensive rating, defensive efficiency, pace, rebounding, and custom model scores.",
     canonical: "https://joeknowsball.com/matchup",
   });
 
@@ -375,13 +390,95 @@ export default function Matchup() {
       <SiteNav />
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Game Analysis</h1>
-          <p className="text-muted-foreground mt-1">Compare any supported NCAA matchup from the full live team pool</p>
-          <p className="text-sm text-muted-foreground mt-2 max-w-3xl">
-            Compare offensive rating, defensive efficiency, pace, rebounding, shooting, and split performance
-            to evaluate any NCAA matchup from the current supported team universe.
+          <h1 className="text-3xl font-bold text-foreground">NCAA Matchup Analysis</h1>
+          <p className="mt-1 text-muted-foreground">Compare any supported NCAA matchup from the full live team pool.</p>
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            Use NCAA matchup analysis, advanced team metrics, and custom model scores to compare offense, defense,
+            pace, rebounding, shooting, and split performance for any Division I matchup on the board.
           </p>
         </div>
+
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Advanced NCAA Team Metrics</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Review offensive rating, defensive efficiency, pace, and rebounding metrics that power the comparison
+              model and support deeper NCAA team analysis.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">NCAA Matchup Breakdown</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Compare live or scheduled opponents, test custom weights, and surface matchup advantages with a clean,
+              crawlable NCAA basketball analytics workflow.
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card/95 p-4 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Official 2026 NCAA Tournament Matchups</h2>
+              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+                Browse all 32 official Round of 64 matchup pages with seeds, logos, region context, visible stats, and
+                model-driven NCAA tournament analysis.
+              </p>
+            </div>
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+              {officialMatchups.length} official matchups
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {officialMatchups.map((matchup) => {
+              const scoreA = calculateTeamScore(matchup.teamA.team.stats, weights);
+              const scoreB = calculateTeamScore(matchup.teamB.team.stats, weights);
+              const winProbA = (((scoreA / (scoreA + scoreB || 1)) * 100)).toFixed(0);
+              return (
+                <Link
+                  key={matchup.gameId}
+                  to={`/matchup/${matchup.gameId}`}
+                  className="rounded-2xl border border-border bg-background/70 p-4 transition-colors hover:border-primary/40 hover:bg-secondary/70"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{matchup.region}</span>
+                    <span className="text-[11px] font-semibold text-primary">{winProbA}% {matchup.teamA.team.abbreviation}</span>
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    {[matchup.teamA, matchup.teamB].map((side) => (
+                      <div key={`${matchup.gameId}-${side.seed}`} className="flex items-center gap-3">
+                        <span className="inline-flex min-w-7 items-center justify-center rounded-md bg-primary/15 px-2 py-1 text-[11px] font-bold text-primary">
+                          {side.seed}
+                        </span>
+                        <TeamLogo name={side.displayName} logo={side.team.logo} className="h-8 w-8" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">{side.displayName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {side.team.conference || "Conference unavailable"} | {side.team.record || "Record unavailable"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                    <div className="rounded-xl bg-card/90 p-2">
+                      <p className="text-muted-foreground">Off</p>
+                      <p className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.adjOE)}</p>
+                    </div>
+                    <div className="rounded-xl bg-card/90 p-2">
+                      <p className="text-muted-foreground">Def</p>
+                      <p className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.adjDE)}</p>
+                    </div>
+                    <div className="rounded-xl bg-card/90 p-2">
+                      <p className="text-muted-foreground">Pace</p>
+                      <p className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.tempo)}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
 
         <TodaySchedulePicker teams={teamPool} onSelectGame={handleSelectGame} />
 
@@ -455,11 +552,13 @@ export default function Matchup() {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold text-foreground mb-3">Adjust Weights</h2>
+              <h2 className="text-lg font-bold text-foreground mb-3">Custom NCAA Model Weights</h2>
               <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />
             </div>
           </>
         )}
+
+        <SeoFooterBlock />
       </div>
     </div>
   );

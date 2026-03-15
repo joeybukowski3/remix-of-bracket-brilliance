@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import RankingsTable from "@/components/RankingsTable";
@@ -17,9 +18,10 @@ export default function Rankings() {
   const rankingTeams = mode === "all" ? allTeams : teams;
 
   usePageSeo({
-    title: "NCAA Basketball Rankings",
-    description: "Explore NCAA basketball team rankings, compare the full field or tournament teams, and customize power ratings with advanced stat weights.",
-    path: "/",
+    title: "Joe Knows Ball | NCAA Analytics, Custom Rankings & March Madness Analysis",
+    description:
+      "Explore NCAA basketball analytics including custom rankings, matchup analysis, advanced team metrics, and March Madness bracket breakdowns.",
+    canonical: "https://joeknowsball.com/",
   });
 
   const handleWeightChange = (key: string, value: number) => {
@@ -35,9 +37,13 @@ export default function Rankings() {
       <SiteNav />
       <div className="container mx-auto px-4 py-6 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">NCAA Team Rankings</h1>
-          <p className="text-muted-foreground mt-1">
-            Adjust stat weights to create your own custom power rankings
+          <h1 className="text-3xl font-bold text-foreground">NCAA Basketball Analytics &amp; Custom Rankings</h1>
+          <p className="mt-1 text-muted-foreground">
+            Build custom NCAA power rankings with advanced metrics, model weights, and tournament-focused team analysis.
+          </p>
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            Joe Knows Ball combines NCAA analytics, team breakdowns, and March Madness analysis into one rankings tool
+            so you can compare the full Division I landscape or isolate the tournament field.
           </p>
           <div className="flex items-center gap-4 flex-wrap mt-3 text-sm">
             <Link to="/schedule" className="text-primary hover:underline">
@@ -51,6 +57,23 @@ export default function Rankings() {
             </Link>
           </div>
         </div>
+
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Advanced NCAA Team Metrics</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Re-rank teams using offense rating, defense rating, strength of schedule, pace, shooting, and rebounding
+              signals that matter in NCAA basketball analytics.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Custom NCAA Power Rankings</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Switch between all teams and the tournament field, adjust custom metrics, and create your own NCAA model
+              rankings without changing the existing workflow.
+            </p>
+          </div>
+        </section>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -104,6 +127,8 @@ export default function Rankings() {
         )}
 
         <RankingsTable teams={rankingTeams} weights={weights} />
+
+        <SeoFooterBlock />
       </div>
     </div>
   );

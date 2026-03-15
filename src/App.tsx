@@ -7,6 +7,7 @@ import Rankings from "./pages/Rankings";
 import Schedule from "./pages/Schedule";
 import GameDetail from "./pages/GameDetail";
 import Matchup from "./pages/Matchup";
+import BracketMatchupPage from "./pages/BracketMatchupPage";
 import Bracket from "./pages/Bracket";
 import TeamPage from "./pages/TeamPage";
 import NotFound from "./pages/NotFound";
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/schedule/:gameId" element={<GameDetail />} />
           <Route path="/team/:teamId" element={<TeamPage />} />
           <Route path="/matchup" element={<Matchup />} />
+          <Route path="/matchup/:matchupId" element={<BracketMatchupPage />} />
           <Route path="/bracket" element={<Bracket />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

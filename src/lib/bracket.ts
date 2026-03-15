@@ -11,7 +11,8 @@ import {
   type StatWeight,
   type Team,
 } from "@/data/ncaaTeams";
-import { WORKING_2025_BRACKET } from "@/data/bracket2025";
+import { OFFICIAL_2026_BRACKET } from "@/data/bracket2026";
+import { getActiveBracketData } from "@/lib/activeBracket";
 
 export const BRACKET_REGION_NAMES = ["East", "West", "South", "Midwest"] as const;
 export const BRACKET_ROUNDS = ["Round of 64", "Round of 32", "Sweet 16", "Elite 8", "Final Four", "Championship"] as const;
@@ -32,11 +33,23 @@ export interface BracketSeedSlot {
   abbreviation: string;
   canonicalId?: string;
   espnId?: string | null;
+  logo?: string | null;
+  sourceGameId?: string;
+  playInGameId?: string;
+  playInTeams?: BracketSeedSlot[];
 }
 
 export interface BracketRegionConfig {
   name: string;
   slots: BracketSeedSlot[];
+}
+
+export interface BracketFirstFourGame {
+  id: string;
+  region: string;
+  seed: number;
+  label: string;
+  teams: BracketSeedSlot[];
 }
 
 export interface BracketSourceConfig {
@@ -45,6 +58,7 @@ export interface BracketSourceConfig {
   sourceLabel: string;
   updatedAt: string;
   regions: BracketRegionConfig[];
+  firstFour?: BracketFirstFourGame[];
 }
 
 export interface ResolvedBracketRegion {
@@ -93,6 +107,24 @@ export interface SavedBracket {
   picks: Record<string, string>;
 }
 
+export interface TournamentMatchupSlot {
+  seed: number;
+  displayName: string;
+  team: Team;
+  options: Team[];
+  isPlayIn: boolean;
+  playInGameId?: string;
+}
+
+export interface TournamentMatchup {
+  id: string;
+  gameId: string;
+  region: string;
+  title: string;
+  teamA: TournamentMatchupSlot;
+  teamB: TournamentMatchupSlot;
+}
+
 const OFFICIAL_BRACKET_PATH = "/official-bracket.json";
 const PRESET_STORAGE_KEY = "jkb-bracket-presets-v1";
 const BRACKET_STORAGE_KEY = "jkb-saved-brackets-v1";
@@ -123,20 +155,28 @@ export function getBuiltInPreset(id: string) {
 }
 
 export function buildPlaceholderBracketSource(): BracketSourceConfig {
-  return structuredClone(WORKING_2025_BRACKET);
+  return structuredClone(OFFICIAL_2026_BRACKET);
 }
 
 export async function loadOfficialBracketSource(): Promise<BracketSourceConfig | null> {
   try {
-    const response = await fetch(OFFICIAL_BRACKET_PATH, { cache: "no-store" });
-    if (!response.ok) return null;
-    const payload = await response.json();
-    if (!payload?.enabled || !Array.isArray(payload?.regions) || payload.regions.length !== 4) {
+    const payload = await getActiveBracketData();
+    if (!Array.isArray(payload?.regions) || payload.regions.length !== 4) {
       return null;
     }
-    return payload as BracketSourceConfig;
+    return payload;
   } catch {
-    return null;
+    try {
+      const response = await fetch(OFFICIAL_BRACKET_PATH, { cache: "no-store" });
+      if (!response.ok) return null;
+      const payload = await response.json();
+      if (!payload?.enabled || !Array.isArray(payload?.regions) || payload.regions.length !== 4) {
+        return null;
+      }
+      return payload as BracketSourceConfig;
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -151,14 +191,87 @@ function createFallbackResolvedTeam(slot: BracketSeedSlot): Team {
     abbreviation: slot.abbreviation,
     conference: "NCAA",
     seed: slot.seed,
-    record: "",
-    logo: "/placeholder.svg",
+    record: "Record unavailable",
+    logo: slot.logo || "/placeholder.svg",
     stats: emptyTeamStats(),
     homeStats: emptyTeamStats(),
     awayStats: emptyTeamStats(),
     statsCoverage: getStatsCoverage(emptyTeamStats()),
     source: "live",
   };
+}
+
+function averageStat(values: Array<number | null>) {
+  const valid = values.filter((value): value is number => typeof value === "number");
+  if (!valid.length) return null;
+  return Number((valid.reduce((total, value) => total + value, 0) / valid.length).toFixed(1));
+}
+
+function averageStats(teams: Team[]) {
+  return {
+    ppg: averageStat(teams.map((team) => team.stats.ppg)),
+    oppPpg: averageStat(teams.map((team) => team.stats.oppPpg)),
+    fgPct: averageStat(teams.map((team) => team.stats.fgPct)),
+    threePct: averageStat(teams.map((team) => team.stats.threePct)),
+    ftPct: averageStat(teams.map((team) => team.stats.ftPct)),
+    rpg: averageStat(teams.map((team) => team.stats.rpg)),
+    apg: averageStat(teams.map((team) => team.stats.apg)),
+    spg: averageStat(teams.map((team) => team.stats.spg)),
+    bpg: averageStat(teams.map((team) => team.stats.bpg)),
+    tpg: averageStat(teams.map((team) => team.stats.tpg)),
+    sos: averageStat(teams.map((team) => team.stats.sos)),
+    adjOE: averageStat(teams.map((team) => team.stats.adjOE)),
+    adjDE: averageStat(teams.map((team) => team.stats.adjDE)),
+    tempo: averageStat(teams.map((team) => team.stats.tempo)),
+    luck: averageStat(teams.map((team) => team.stats.luck)),
+  };
+}
+
+function resolveSingleBracketSlot(slot: BracketSeedSlot, teamPool: Team[]) {
+  const byCanonical = slot.canonicalId ? findTeamByCanonicalId(slot.canonicalId, teamPool) : null;
+  const byEspn = slot.espnId ? teamPool.find((team) => team.espnId === slot.espnId) ?? null : null;
+  const byName = findTeamByEspn(slot.teamName, slot.abbreviation, teamPool);
+  return byCanonical ?? byEspn ?? byName ?? null;
+}
+
+function createPlayInTeam(slot: BracketSeedSlot, candidates: Team[]): Team {
+  const stats = averageStats(candidates);
+  return {
+    id: Math.abs(slot.teamName.split("").reduce((sum, ch) => sum + ch.charCodeAt(0), 0)),
+    canonicalId: slot.canonicalId ?? `play-in-${slugify(slot.teamName)}`,
+    slug: slugify(slot.teamName),
+    espnId: null,
+    name: slot.teamName,
+    abbreviation: slot.abbreviation,
+    conference: "First Four",
+    seed: slot.seed,
+    record: candidates.map((team) => team.record).filter(Boolean).join(" / ") || "Play-In",
+    logo: candidates[0]?.logo || slot.logo || "/placeholder.svg",
+    stats,
+    homeStats: stats,
+    awayStats: stats,
+    statsCoverage: getStatsCoverage(stats),
+    source: "hybrid",
+  };
+}
+
+export function resolveBracketSlotOptions(slot: BracketSeedSlot, teamPool: Team[]) {
+  if (!slot.playInTeams?.length) {
+    const resolved = resolveSingleBracketSlot(slot, teamPool);
+    return resolved ? [{ ...resolved, seed: slot.seed }] : [];
+  }
+
+  return slot.playInTeams
+    .map((candidate) => resolveSingleBracketSlot(candidate, teamPool) ?? createFallbackResolvedTeam(candidate))
+    .map((team) => ({ ...team, seed: slot.seed }));
+}
+
+function resolveBracketSlotTeam(slot: BracketSeedSlot, teamPool: Team[]) {
+  const options = resolveBracketSlotOptions(slot, teamPool);
+  if (slot.playInTeams?.length) {
+    return options.length ? createPlayInTeam(slot, options) : createFallbackResolvedTeam(slot);
+  }
+  return options[0] ?? createFallbackResolvedTeam(slot);
 }
 
 function logBracketValidation(message: string, details: Record<string, unknown>) {
@@ -172,13 +285,10 @@ export function resolveBracketSource(source: BracketSourceConfig, teamPool: Team
     const seenInRegion = new Set<string>();
     const teams = region.slots
       .map((slot) => {
-        const byCanonical = slot.canonicalId ? findTeamByCanonicalId(slot.canonicalId, teamPool) : null;
-        const byEspn = slot.espnId ? teamPool.find((team) => team.espnId === slot.espnId) ?? null : null;
-        const byName = findTeamByEspn(slot.teamName, slot.abbreviation, teamPool);
-        const resolved = byCanonical ?? byEspn ?? byName;
-        const team = resolved ? { ...resolved, seed: slot.seed } : createFallbackResolvedTeam(slot);
+        const options = resolveBracketSlotOptions(slot, teamPool);
+        const team = resolveBracketSlotTeam(slot, teamPool);
         const schoolKey = getCanonicalSchoolKey(team.name, team.abbreviation);
-        if (!resolved) {
+        if (options.length === 0) {
           logBracketValidation("Unmatched bracket slot fell back to placeholder", {
             region: region.name,
             seed: slot.seed,
@@ -203,7 +313,7 @@ export function resolveBracketSource(source: BracketSourceConfig, teamPool: Team
         }
         seenInRegion.add(schoolKey);
         seenOverall.add(schoolKey);
-        return { ...team, canonicalId: resolved?.canonicalId ?? `school-${schoolKey}` };
+        return { ...team, canonicalId: team.canonicalId || `school-${schoolKey}` };
       })
       .sort((a, b) => (a.seed ?? 99) - (b.seed ?? 99));
 
@@ -325,6 +435,55 @@ export function buildBracketTree(regions: ResolvedBracketRegion[], picks: Record
 
 export function calculateAdjustedTeamScore(team: Team, weights: StatWeight[]) {
   return calculateTeamScore(team.stats, weights);
+}
+
+function matchupTitle(slotA: TournamentMatchupSlot, slotB: TournamentMatchupSlot) {
+  return `${slotA.displayName} vs ${slotB.displayName}`;
+}
+
+export function buildTournamentMatchups(source: BracketSourceConfig, teamPool: Team[]): TournamentMatchup[] {
+  return source.regions.flatMap((region) => {
+    const slotsBySeed = new Map(region.slots.map((slot) => [slot.seed, slot]));
+
+    return REGION_MATCHUPS.map(([seedA, seedB]) => {
+      const slotA = slotsBySeed.get(seedA);
+      const slotB = slotsBySeed.get(seedB);
+      if (!slotA || !slotB) return null;
+
+      const optionsA = resolveBracketSlotOptions(slotA, teamPool);
+      const optionsB = resolveBracketSlotOptions(slotB, teamPool);
+      const teamA = resolveBracketSlotTeam(slotA, teamPool);
+      const teamB = resolveBracketSlotTeam(slotB, teamPool);
+      const gameId = slotA.sourceGameId || slotB.sourceGameId || `${region.name}-${seedA}-${seedB}`;
+
+      const resolvedSlotA: TournamentMatchupSlot = {
+        seed: seedA,
+        displayName: slotA.teamName,
+        team: teamA,
+        options: optionsA.length ? optionsA : [teamA],
+        isPlayIn: Boolean(slotA.playInTeams?.length),
+        playInGameId: slotA.playInGameId,
+      };
+
+      const resolvedSlotB: TournamentMatchupSlot = {
+        seed: seedB,
+        displayName: slotB.teamName,
+        team: teamB,
+        options: optionsB.length ? optionsB : [teamB],
+        isPlayIn: Boolean(slotB.playInTeams?.length),
+        playInGameId: slotB.playInGameId,
+      };
+
+      return {
+        id: String(gameId),
+        gameId: String(gameId),
+        region: region.name,
+        title: matchupTitle(resolvedSlotA, resolvedSlotB),
+        teamA: resolvedSlotA,
+        teamB: resolvedSlotB,
+      } satisfies TournamentMatchup;
+    }).filter((matchup): matchup is TournamentMatchup => Boolean(matchup));
+  });
 }
 
 function getLikelyOpponent(pool: Team[], excludeId: string, weights: StatWeight[]) {
@@ -466,6 +625,6 @@ export function createBracketSummaryText(regions: ResolvedBracketRegion[], tree:
     ...regionChampionLines,
     ...finalFourLines,
     `Champion: ${tree.champion?.name ?? "TBD"}`,
-    `Built from the live 2025 tournament bracket source in Joe Knows Ball.`,
+    `Built from the live 2026 tournament bracket source in Joe Knows Ball.`,
   ].join("\n");
 }

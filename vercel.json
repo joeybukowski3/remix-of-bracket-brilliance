@@ -1,5 +1,15 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    {
+      "source": "/((?!api/|assets/|favicon.ico|robots.txt|sitemap.xml).*)",
+      "destination": "/"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/sync-bracket",
+      "schedule": "*/5 * * * *"
+    }
   ]
 }
