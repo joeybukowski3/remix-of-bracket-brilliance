@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export default function TeamLogo({
@@ -9,6 +10,7 @@ export default function TeamLogo({
   logo?: string | null;
   className?: string;
 }) {
+  const [hasError, setHasError] = useState(false);
   const initials = name
     .split(/\s+/)
     .slice(0, 2)
@@ -16,8 +18,16 @@ export default function TeamLogo({
     .join("")
     .toUpperCase();
 
-  if (logo && logo !== "/placeholder.svg") {
-    return <img src={logo} alt={name} className={cn("shrink-0 object-contain", className)} loading="lazy" />;
+  if (logo && logo !== "/placeholder.svg" && !hasError) {
+    return (
+      <img
+        src={logo}
+        alt={name}
+        className={cn("shrink-0 object-contain", className)}
+        loading="lazy"
+        onError={() => setHasError(true)}
+      />
+    );
   }
 
   return (

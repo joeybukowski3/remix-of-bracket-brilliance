@@ -7,10 +7,10 @@ import {
   findTeamByEspn,
   getStatsCoverage,
   slugify,
-  teams as fallbackTeams,
   type StatWeight,
   type Team,
 } from "@/data/ncaaTeams";
+import { WORKING_2025_BRACKET } from "@/data/bracket2025";
 
 export const BRACKET_REGION_NAMES = ["East", "West", "South", "Midwest"] as const;
 export const BRACKET_ROUNDS = ["Round of 64", "Round of 32", "Sweet 16", "Elite 8", "Final Four", "Championship"] as const;
@@ -100,10 +100,6 @@ function cloneWeights(weights: StatWeight[]): StatWeight[] {
   return weights.map((weight) => ({ ...weight }));
 }
 
-function sortTeamsBySeed(teams: Team[]) {
-  return [...teams].sort((a, b) => (a.seed ?? 99) - (b.seed ?? 99));
-}
-
 export const BUILT_IN_PRESETS: BracketPreset[] = [
   {
     id: "preset-default",
@@ -126,28 +122,7 @@ export function getBuiltInPreset(id: string) {
 }
 
 export function buildPlaceholderBracketSource(): BracketSourceConfig {
-  const field = sortTeamsBySeed(fallbackTeams).slice(0, 64);
-  const regionSize = 16;
-
-  return {
-    season: "2025-placeholder",
-    mode: "placeholder",
-    sourceLabel: "Current bracket builder using last year's field until the official bracket drops",
-    updatedAt: new Date().toISOString(),
-    regions: BRACKET_REGION_NAMES.map((regionName, regionIndex) => {
-      const regionTeams = field.slice(regionIndex * regionSize, (regionIndex + 1) * regionSize);
-      return {
-        name: regionName,
-        slots: sortTeamsBySeed(regionTeams).map((team) => ({
-          seed: team.seed ?? 16,
-          teamName: team.name,
-          abbreviation: team.abbreviation,
-          canonicalId: team.canonicalId,
-          espnId: team.espnId ?? null,
-        })),
-      };
-    }),
-  };
+  return structuredClone(WORKING_2025_BRACKET);
 }
 
 export async function loadOfficialBracketSource(): Promise<BracketSourceConfig | null> {
@@ -447,6 +422,6 @@ export function createBracketSummaryText(regions: ResolvedBracketRegion[], tree:
     ...regionChampionLines,
     ...finalFourLines,
     `Champion: ${tree.champion?.name ?? "TBD"}`,
-    `Built from the current live working bracket using last year's field until the official bracket is released.`,
+    `Built from the live 2025 tournament bracket source in Joe Knows Ball.`,
   ].join("\n");
 }
