@@ -143,7 +143,7 @@ export const BUILT_IN_PRESETS: BracketPreset[] = [
   },
   {
     id: "preset-2025-elite",
-    name: "2025 Elite Preset",
+    name: "Elite 8 Preset",
     weights: cloneWeights(ELITE_8_PRESET_WEIGHTS),
     source: "built-in",
     note: "Based on the rankings from last year's Elite 8 teams.",

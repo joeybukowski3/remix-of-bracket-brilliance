@@ -14,7 +14,6 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { buildCanonicalTeams, type StatWeight } from "@/data/ncaaTeams";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
@@ -93,7 +92,7 @@ function GameCard({
               {team && <TeamLogo name={team.name} logo={team.logo} className="h-7 w-7" />}
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-foreground">{team?.name ?? "TBD"}</p>
-                <p className="text-xs text-muted-foreground">{team ? `${team.abbreviation} · ${team.record || "Record unavailable"}` : "Waiting on prior result"}</p>
+                <p className="text-xs text-muted-foreground">{team ? `${team.abbreviation} - ${team.record || "Record unavailable"}` : "Waiting on prior result"}</p>
               </div>
             </div>
             <div className="text-right">
@@ -154,13 +153,12 @@ function RegionBuilderSection({
 
 export default function Bracket() {
   usePageSeo({
-    title: "March Madness Bracket Analysis & Tournament Analytics | Joe Knows Ball",
+    title: "Official 2026 NCAA Bracket Builder & Tournament Analytics | Joe Knows Ball",
     description:
-      "Analyze the NCAA tournament bracket with advanced metrics, custom rankings, and path difficulty projections.",
+      "Build the official 2026 NCAA tournament bracket with advanced metrics, custom rankings, and path difficulty projections.",
     canonical: "https://joeknowsball.com/bracket",
   });
 
-  const isMobile = useIsMobile();
   const { data: liveTeams = [] } = useLiveTeams();
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
 
@@ -216,7 +214,7 @@ export default function Bracket() {
   );
   const currentRegion = regions.find((region) => region.name === selectedRegion) ?? regions[0];
   const officialBracketLive = sourceConfig.mode === "live" && sourceConfig.season === "2026";
-  const bracketTitle = officialBracketLive ? "Official 2026 NCAA Bracket Builder" : "March Madness Bracket Builder";
+  const bracketTitle = "Official 2026 NCAA Bracket Builder";
   const bracketIntro = officialBracketLive
     ? "The official 2026 NCAA tournament bracket is live. Build picks, compare regions, and adjust the model in real time."
     : "Build the current working NCAA tournament bracket, tune the model live, and scan every region through compact rankings tables.";
@@ -278,15 +276,13 @@ export default function Bracket() {
         <section className="rounded-3xl border border-white/10 bg-card/95 p-5 shadow-[0_20px_40px_hsl(var(--background)/0.24)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
-              <h1 className="text-3xl font-bold text-foreground">
-                {officialBracketLive ? bracketTitle : "March Madness Bracket Analysis & Tournament Analytics"}
-              </h1>
+              <h1 className="text-3xl font-bold text-foreground">{bracketTitle}</h1>
               <p className="mt-2 text-base text-foreground/90">{bracketIntro}</p>
               <p className="mt-2 text-sm text-muted-foreground">{bracketSubcopy}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={sourceConfig.mode === "live" ? "default" : "secondary"} className="border-white/10">
-                {officialBracketLive ? "Official 2026 bracket live" : "Working bracket source"}
+                {officialBracketLive ? "Official 2026 bracket live" : "2026 bracket source loading"}
               </Badge>
               <Badge variant="outline" className="max-w-xs border-white/10 bg-background/55 text-foreground">
                 {sourceConfig.sourceLabel}
@@ -333,7 +329,7 @@ export default function Bracket() {
                       Default Model
                     </Button>
                     <Button variant={selectedPresetId === "preset-2025-elite" ? "default" : "secondary"} onClick={() => setSelectedPresetId("preset-2025-elite")}>
-                      2025 Elite Preset*
+                      Elite 8 Preset*
                     </Button>
                     <PresetNote />
                     <Button variant="outline" onClick={() => setPresetSheetOpen(true)}>Manage Presets</Button>
@@ -379,7 +375,7 @@ export default function Bracket() {
                         {entry.team && <TeamLogo name={entry.team.name} logo={entry.team.logo} className="h-7 w-7" />}
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-foreground">{entry.team?.name ?? "TBD"}</p>
-                          <p className="text-xs text-muted-foreground">{entry.team ? `${entry.team.seed ?? "-"} seed · ${entry.team.record || "Record unavailable"}` : "No team resolved"}</p>
+                          <p className="text-xs text-muted-foreground">{entry.team ? `${entry.team.seed ?? "-"} seed - ${entry.team.record || "Record unavailable"}` : "No team resolved"}</p>
                         </div>
                       </div>
                       <p className="mt-2 text-sm font-semibold tabular-nums text-primary">{entry.score?.toFixed(1) ?? "--"} power</p>
@@ -417,26 +413,87 @@ export default function Bracket() {
                 </div>
               </div>
 
-              {isMobile ? (
-                currentRegion && (
+              {sourceConfig.firstFour?.length ? (
+                <Card className="border-white/10 bg-card/95 shadow-[0_16px_36px_hsl(var(--background)/0.22)]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">First Four</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      Play-in winners feed directly into the official 2026 Round of 64 bracket below.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 md:grid-cols-2">
+                    {sourceConfig.firstFour.map((game) => (
+                      <div key={game.id} className="rounded-xl border border-white/10 bg-background/72 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{game.region} Region</p>
+                            <p className="text-sm font-semibold text-foreground">No. {game.seed} play-in</p>
+                          </div>
+                          <Badge variant="outline" className="border-white/10 bg-secondary/70">
+                            {game.label}
+                          </Badge>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {game.teams.map((team) => (
+                            <div key={`${game.id}-${team.teamName}`} className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/90 px-3 py-2">
+                              <SeedBadge seed={team.seed} />
+                              <TeamLogo name={team.teamName} logo={team.logo} className="h-7 w-7" />
+                              <p className="truncate text-sm font-semibold text-foreground">{team.teamName}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {currentRegion && (
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),320px]">
                   <RegionBuilderSection
                     region={currentRegion}
                     regionGames={bracketTree.regionGames[currentRegion.name] ?? []}
                     weights={weights}
                     onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
                   />
-                )
-              ) : (
-                <div className="grid gap-4 2xl:grid-cols-2">
-                  {regions.map((region) => (
-                    <RegionBuilderSection
-                      key={region.name}
-                      region={region}
-                      regionGames={bracketTree.regionGames[region.name] ?? []}
-                      weights={weights}
-                      onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
-                    />
-                  ))}
+
+                  <Card className="border-white/10 bg-card/95 shadow-[0_16px_36px_hsl(var(--background)/0.22)]">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Tournament Snapshot</CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        Live leaders and advancing picks from the official 2026 field.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {regions.map((region) => {
+                        const regionChampion = (bracketTree.regionGames[region.name] ?? []).find((game) => game.roundIndex === 3)?.winner;
+                        const regionalLeader = rankTeamsInRegion(region, weights)[0]?.team ?? null;
+                        return (
+                          <div key={region.name} className="rounded-xl border border-white/10 bg-background/72 p-3">
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{region.name}</p>
+                            <div className="mt-2 flex items-center gap-2">
+                              {regionalLeader && <TeamLogo name={regionalLeader.name} logo={regionalLeader.logo} className="h-6 w-6" />}
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-foreground">{regionalLeader?.name ?? "TBD"}</p>
+                                <p className="text-xs text-muted-foreground">Model leader</p>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              {regionChampion && <TeamLogo name={regionChampion.name} logo={regionChampion.logo} className="h-6 w-6" />}
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-foreground">{regionChampion?.name ?? "No pick yet"}</p>
+                                <p className="text-xs text-muted-foreground">Your regional winner</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="rounded-xl border border-primary/20 bg-primary/10 p-4">
+                        <p className="text-xs uppercase tracking-wide text-primary">Champion</p>
+                        <p className="mt-1 text-xl font-bold text-foreground">{bracketTree.champion?.name ?? "Choose your champion"}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
             </section>
@@ -738,3 +795,4 @@ export default function Bracket() {
     </div>
   );
 }
+
