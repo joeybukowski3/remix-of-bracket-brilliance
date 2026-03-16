@@ -255,21 +255,35 @@ function createPlayInTeam(slot: BracketSeedSlot, candidates: Team[]): Team {
   };
 }
 
+function applySlotBranding(team: Team, slot: BracketSeedSlot): Team {
+  const nextLogo = team.logo && team.logo !== "/placeholder.svg" ? team.logo : slot.logo || team.logo;
+  const nextName = team.name || slot.teamName;
+  const nextAbbreviation = team.abbreviation || slot.abbreviation;
+
+  return {
+    ...team,
+    name: nextName,
+    abbreviation: nextAbbreviation,
+    logo: nextLogo || "/placeholder.svg",
+    seed: slot.seed,
+  };
+}
+
 export function resolveBracketSlotOptions(slot: BracketSeedSlot, teamPool: Team[]) {
   if (!slot.playInTeams?.length) {
     const resolved = resolveSingleBracketSlot(slot, teamPool);
-    return resolved ? [{ ...resolved, seed: slot.seed }] : [];
+    return resolved ? [applySlotBranding(resolved, slot)] : [];
   }
 
   return slot.playInTeams
     .map((candidate) => resolveSingleBracketSlot(candidate, teamPool) ?? createFallbackResolvedTeam(candidate))
-    .map((team) => ({ ...team, seed: slot.seed }));
+    .map((team, index) => applySlotBranding(team, slot.playInTeams?.[index] ?? slot));
 }
 
 function resolveBracketSlotTeam(slot: BracketSeedSlot, teamPool: Team[]) {
   const options = resolveBracketSlotOptions(slot, teamPool);
   if (slot.playInTeams?.length) {
-    return options.length ? createPlayInTeam(slot, options) : createFallbackResolvedTeam(slot);
+    return options.length ? applySlotBranding(createPlayInTeam(slot, options), slot) : createFallbackResolvedTeam(slot);
   }
   return options[0] ?? createFallbackResolvedTeam(slot);
 }
