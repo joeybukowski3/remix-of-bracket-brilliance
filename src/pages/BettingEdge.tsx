@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type ScheduleGame } from "@/hooks/useSchedule";
 import { useUpcomingSchedule } from "@/hooks/useUpcomingSchedule";
+import { useLiveOdds, type LiveOddsEvent } from "@/hooks/useLiveOdds";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
@@ -246,6 +247,7 @@ export default function BettingEdge() {
   const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
   const { data: liveTeams = [] } = useLiveTeams();
   const { games, isLoading, error } = useUpcomingSchedule(7);
+  const { data: liveOdds = [] } = useLiveOdds();
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const officialMatchups = useMemo(() => buildTournamentMatchups(bracketSource, teamPool), [bracketSource, teamPool]);
@@ -272,6 +274,22 @@ export default function BettingEdge() {
     [officialMatchups],
   );
 
+  // Pre-resolve Odds API team names to canonical IDs once, then reference cheaply per game
+  const resolvedOddsEvents = useMemo(
+    () =>
+      liveOdds
+        .map((event) => ({
+          event,
+          homeCanonicalId: findTeamByEspn(event.homeTeam, "", teamPool)?.canonicalId ?? null,
+          awayCanonicalId: findTeamByEspn(event.awayTeam, "", teamPool)?.canonicalId ?? null,
+        }))
+        .filter(
+          (r): r is { event: LiveOddsEvent; homeCanonicalId: string; awayCanonicalId: string } =>
+            r.homeCanonicalId !== null && r.awayCanonicalId !== null,
+        ),
+    [liveOdds, teamPool],
+  );
+
   const boardEntries = useMemo(() => {
     const entries = games.map((game) => {
       const away = game.awayTeam ? findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation, teamPool) : null;
@@ -284,14 +302,33 @@ export default function BettingEdge() {
       const modelProbAway = scoreAway !== null && scoreHome !== null && totalScore > 0 ? scoreAway / totalScore : null;
       const modelProbHome = scoreAway !== null && scoreHome !== null && totalScore > 0 ? scoreHome / totalScore : null;
 
+      // Prefer ESPN schedule odds; fall back to The Odds API when lines are missing
+      let moneylineAway: number | null = game.odds?.awayMoneyline ?? null;
+      let moneylineHome: number | null = game.odds?.homeMoneyline ?? null;
+      let oddsProvider: string | null = game.odds?.provider ?? null;
+      if ((moneylineAway === null || moneylineHome === null) && away && home) {
+        const liveMatch = resolvedOddsEvents.find(
+          (r) =>
+            (r.homeCanonicalId === home.canonicalId && r.awayCanonicalId === away.canonicalId) ||
+            (r.homeCanonicalId === away.canonicalId && r.awayCanonicalId === home.canonicalId),
+        );
+        if (liveMatch) {
+          // Odds API may list teams in either order — swap-correct so our away/home align
+          const isSwapped = liveMatch.homeCanonicalId === away.canonicalId;
+          moneylineAway = isSwapped ? liveMatch.event.homeMoneyline : liveMatch.event.awayMoneyline;
+          moneylineHome = isSwapped ? liveMatch.event.awayMoneyline : liveMatch.event.homeMoneyline;
+          oddsProvider = liveMatch.event.sportsbook;
+        }
+      }
+
       const vegas =
         modelProbAway !== null && modelProbHome !== null
           ? buildVegasProbabilityComparison({
               modelProbA: modelProbAway,
               modelProbB: modelProbHome,
-              moneylineA: game.odds?.awayMoneyline ?? null,
-              moneylineB: game.odds?.homeMoneyline ?? null,
-              sportsbook: game.odds?.provider ?? null,
+              moneylineA: moneylineAway,
+              moneylineB: moneylineHome,
+              sportsbook: oddsProvider,
             })
           : null;
 
@@ -329,7 +366,7 @@ export default function BettingEdge() {
     });
 
     return entries;
-  }, [games, officialMatchupByGameId, teamPool, weights]);
+  }, [games, officialMatchupByGameId, resolvedOddsEvents, teamPool, weights]);
 
   const groupedEntries = useMemo(() => {
     const byDate = new Map<string, BettingBoardEntry[]>();

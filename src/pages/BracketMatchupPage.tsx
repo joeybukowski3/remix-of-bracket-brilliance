@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { buildCanonicalTeams, calculateTeamScore, findTeamByEspn, formatStat, hasStat, type Team } from "@/data/ncaaTeams";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { useSchedule } from "@/hooks/useSchedule";
+import { useLiveOdds } from "@/hooks/useLiveOdds";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
   BUILT_IN_PRESETS,
@@ -120,6 +121,7 @@ export default function BracketMatchupPage() {
   const { matchupId = "" } = useParams();
   const { data: liveTeams = [] } = useLiveTeams();
   const { data: todayGames = [] } = useSchedule();
+  const { data: liveOdds = [] } = useLiveOdds();
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const [source, setSource] = useState(buildPlaceholderBracketSource());
 
@@ -183,14 +185,41 @@ export default function BracketMatchupPage() {
   const scheduledMoneylines = singleTeamMatchup
     ? resolveScheduledGameMoneylines(scheduledGame, matchup.teamA.team, matchup.teamB.team, teamPool, findTeamByEspn)
     : null;
+
+  // Resolve moneylines: ESPN schedule odds first, then live Odds API as fallback
+  let moneylineA = scheduledMoneylines?.moneylineA ?? null;
+  let moneylineB = scheduledMoneylines?.moneylineB ?? null;
+  let vegasBook = scheduledMoneylines?.sportsbook ?? null;
+  if (singleTeamMatchup && moneylineA === null && moneylineB === null && liveOdds.length > 0) {
+    const idA = matchup.teamA.team.canonicalId;
+    const idB = matchup.teamB.team.canonicalId;
+    const liveMatch = liveOdds
+      .map((e) => ({
+        e,
+        homeTeam: findTeamByEspn(e.homeTeam, "", teamPool),
+        awayTeam: findTeamByEspn(e.awayTeam, "", teamPool),
+      }))
+      .find(
+        ({ homeTeam, awayTeam }) =>
+          (homeTeam?.canonicalId === idA && awayTeam?.canonicalId === idB) ||
+          (homeTeam?.canonicalId === idB && awayTeam?.canonicalId === idA),
+      );
+    if (liveMatch) {
+      const isSwapped = liveMatch.homeTeam?.canonicalId === idB;
+      moneylineA = isSwapped ? liveMatch.e.homeMoneyline : liveMatch.e.awayMoneyline;
+      moneylineB = isSwapped ? liveMatch.e.awayMoneyline : liveMatch.e.homeMoneyline;
+      vegasBook = liveMatch.e.sportsbook;
+    }
+  }
+
   const vegasComparison =
-    singleTeamMatchup && scheduledMoneylines
+    singleTeamMatchup && (moneylineA !== null || moneylineB !== null)
       ? buildVegasProbabilityComparison({
           modelProbA: scoreA / totalScore,
           modelProbB: scoreB / totalScore,
-          moneylineA: scheduledMoneylines.moneylineA,
-          moneylineB: scheduledMoneylines.moneylineB,
-          sportsbook: scheduledMoneylines.sportsbook,
+          moneylineA,
+          moneylineB,
+          sportsbook: vegasBook,
         })
       : null;
   const playInSide = matchup.teamA.isPlayIn ? matchup.teamA : matchup.teamB.isPlayIn ? matchup.teamB : null;
