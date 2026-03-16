@@ -279,6 +279,21 @@ function logBracketValidation(message: string, details: Record<string, unknown>)
 }
 
 export function resolveBracketSource(source: BracketSourceConfig, teamPool: Team[]): ResolvedBracketRegion[] {
+  if (source.regions.length !== 4) {
+    logBracketValidation("Bracket source does not have all four regions", {
+      season: source.season,
+      regions: source.regions.map((region) => region.name),
+    });
+  }
+
+  const slotCount = source.regions.reduce((total, region) => total + region.slots.length, 0);
+  if (slotCount !== 64) {
+    logBracketValidation("Bracket source does not contain a full Round of 64 field", {
+      season: source.season,
+      slotCount,
+    });
+  }
+
   const seenOverall = new Set<string>();
 
   return source.regions.map((region) => {
@@ -309,6 +324,40 @@ export function resolveBracketSource(source: BracketSourceConfig, teamPool: Team
             slot: slot.teamName,
             canonicalId: team.canonicalId,
             schoolKey,
+          });
+        }
+        if (!team.canonicalId) {
+          logBracketValidation("Tournament team missing canonical ID", {
+            region: region.name,
+            slot: slot.teamName,
+          });
+        }
+        if (!team.logo || team.logo === "/placeholder.svg") {
+          logBracketValidation("Tournament team missing resolved logo", {
+            region: region.name,
+            slot: slot.teamName,
+            canonicalId: team.canonicalId,
+          });
+        }
+        if (!team.conference || team.conference === "NCAA") {
+          logBracketValidation("Tournament team missing conference enrichment", {
+            region: region.name,
+            slot: slot.teamName,
+            canonicalId: team.canonicalId,
+          });
+        }
+        if (!team.record || team.record === "Record unavailable") {
+          logBracketValidation("Tournament team missing record enrichment", {
+            region: region.name,
+            slot: slot.teamName,
+            canonicalId: team.canonicalId,
+          });
+        }
+        if (team.statsCoverage === "none") {
+          logBracketValidation("Tournament team missing advanced stats", {
+            region: region.name,
+            slot: slot.teamName,
+            canonicalId: team.canonicalId,
           });
         }
         seenInRegion.add(schoolKey);
@@ -473,6 +522,17 @@ export function buildTournamentMatchups(source: BracketSourceConfig, teamPool: T
         isPlayIn: Boolean(slotB.playInTeams?.length),
         playInGameId: slotB.playInGameId,
       };
+
+      [resolvedSlotA, resolvedSlotB].forEach((slot) => {
+        if (slot.team.statsCoverage === "none") {
+          logBracketValidation("Official matchup side missing advanced stats", {
+            region: region.name,
+            gameId,
+            team: slot.displayName,
+            canonicalId: slot.team.canonicalId,
+          });
+        }
+      });
 
       return {
         id: String(gameId),

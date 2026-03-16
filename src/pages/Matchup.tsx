@@ -460,18 +460,31 @@ export default function Matchup() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
-                    <div className="rounded-xl bg-card/90 p-2">
-                      <p className="text-muted-foreground">Off</p>
-                      <p className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.adjOE)}</p>
+                  <div className="mt-4 space-y-2 rounded-xl bg-card/90 p-3 text-xs">
+                    <div className="grid grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] items-center gap-2 text-muted-foreground">
+                      <span className="truncate text-left">{matchup.teamA.team.abbreviation}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide">Stat</span>
+                      <span className="truncate text-right">{matchup.teamB.team.abbreviation}</span>
                     </div>
-                    <div className="rounded-xl bg-card/90 p-2">
-                      <p className="text-muted-foreground">Def</p>
-                      <p className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.adjDE)}</p>
+                    <div className="grid grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] items-center gap-2">
+                      <span className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.adjOE)}</span>
+                      <span className="text-muted-foreground">Off</span>
+                      <span className="text-right font-semibold text-foreground">{formatStat(matchup.teamB.team.stats.adjOE)}</span>
                     </div>
-                    <div className="rounded-xl bg-card/90 p-2">
-                      <p className="text-muted-foreground">Pace</p>
-                      <p className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.tempo)}</p>
+                    <div className="grid grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] items-center gap-2">
+                      <span className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.adjDE)}</span>
+                      <span className="text-muted-foreground">Def</span>
+                      <span className="text-right font-semibold text-foreground">{formatStat(matchup.teamB.team.stats.adjDE)}</span>
+                    </div>
+                    <div className="grid grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] items-center gap-2">
+                      <span className="font-semibold text-foreground">{formatStat(matchup.teamA.team.stats.tempo)}</span>
+                      <span className="text-muted-foreground">Pace</span>
+                      <span className="text-right font-semibold text-foreground">{formatStat(matchup.teamB.team.stats.tempo)}</span>
+                    </div>
+                    <div className="grid grid-cols-[minmax(0,1fr),auto,minmax(0,1fr)] items-center gap-2">
+                      <span className="font-semibold text-foreground">{formatStat(scoreA)}</span>
+                      <span className="text-muted-foreground">Model</span>
+                      <span className="text-right font-semibold text-foreground">{formatStat(scoreB)}</span>
                     </div>
                   </div>
                 </Link>

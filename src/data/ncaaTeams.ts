@@ -1,3 +1,5 @@
+import { OFFICIAL_2026_TOURNAMENT_TEAMS } from "@/data/tournament2026Teams";
+
 export interface Team {
   id: number;
   canonicalId: string;
@@ -390,6 +392,74 @@ const SCHOOL_KEY_ALIASES: Record<string, string> = {
   highpoint: "highpoint",
   highpointpanthers: "highpoint",
   hpu: "highpoint",
+  californiabaptist: "californiabaptist",
+  calbaptist: "californiabaptist",
+  cbu: "californiabaptist",
+  longisland: "longisland",
+  liu: "longisland",
+  miamifl: "miamifl",
+  miamiflhurricanes: "miamifl",
+  miamiohio: "miamiohio",
+  miamiohredhawks: "miamiohio",
+  moh: "miamiohio",
+  southernmethodist: "smu",
+  smu: "smu",
+  saintlouis: "saintlouis",
+  saintlouisbillikens: "saintlouis",
+  stlouis: "saintlouis",
+  slu: "saintlouis",
+  queens: "queensnc",
+  queensroyals: "queensnc",
+  queensnc: "queensnc",
+  queensncroyals: "queensnc",
+  wrightstate: "wrightstate",
+  wrightstateraiders: "wrightstate",
+  wrst: "wrightstate",
+  tennesseestate: "tennesseestate",
+  tennesseestatetitans: "tennesseestate",
+  tnst: "tennesseestate",
+  prairieviewam: "prairieviewam",
+  prairieviewaandm: "prairieviewam",
+  prairieviewampanthers: "prairieviewam",
+  pvam: "prairieviewam",
+  lehigh: "lehigh",
+  lehighmountainhawks: "lehigh",
+  vanderbilt: "vanderbilt",
+  vanderbiltcommodores: "vanderbilt",
+  van: "vanderbilt",
+  santaclara: "santaclara",
+  santaclarabroncos: "santaclara",
+  scu: "santaclara",
+  hofstra: "hofstra",
+  hofstrapride: "hofstra",
+  georgia: "georgia",
+  georgiabulldogs: "georgia",
+  uga: "georgia",
+  louisville: "louisville",
+  louisvillecardinals: "louisville",
+  lou: "louisville",
+  villanova: "villanova",
+  villanovawildcats: "villanova",
+  nova: "villanova",
+  ucf: "ucf",
+  centralflorida: "ucf",
+  southflorida: "southflorida",
+  southfloridabulls: "southflorida",
+  usf: "southflorida",
+  northerniowa: "northerniowa",
+  northerniowapanthers: "northerniowa",
+  uni: "northerniowa",
+  kennesawstate: "kennesawstate",
+  kennesawstateowls: "kennesawstate",
+  hawaii: "hawaii",
+  hawaiirainbowwarriors: "hawaii",
+  penn: "penn",
+  pennquakers: "penn",
+  idaho: "idaho",
+  idahovandals: "idaho",
+  ohiostate: "ohiostate",
+  ohiostatebuckeyes: "ohiostate",
+  osu: "ohiostate",
   norfolkstate: "norfolkstate",
   norfolkstatespartans: "norfolkstate",
   norf: "norfolkstate",
@@ -485,7 +555,7 @@ export function findTeamByEspn(espnName: string, espnAbbr: string, teamPool: Tea
   );
   if (byFullName) return byFullName;
 
-  // 4. Word-overlap scoring — pick the team with the most significant words in common
+  // 4. Word-overlap scoring -- pick the team with the most significant words in common
   const NOISE = new Set(["the", "of", "at", "a", "an", "and", "university", "college", "team"]);
   const espnWords = normalizeTeamToken(espnName).split(/\s+/).filter((w) => w.length > 2 && !NOISE.has(w));
 
@@ -711,7 +781,7 @@ export function hasStat(value: number | null | undefined): value is number {
 }
 
 export function formatStat(value: number | null | undefined, digits = 1): string {
-  return hasStat(value) ? value.toFixed(digits) : "—";
+  return hasStat(value) ? value.toFixed(digits) : "--";
 }
 
 export function getStatsCoverage(stats: TeamStats): Team["statsCoverage"] {
@@ -722,10 +792,24 @@ export function getStatsCoverage(stats: TeamStats): Team["statsCoverage"] {
 }
 
 export function buildCanonicalTeams(liveTeams: LiveTeamMetadata[] = []): Team[] {
+  const metadataPool = new Map<string, LiveTeamMetadata>();
+  [...OFFICIAL_2026_TOURNAMENT_TEAMS, ...liveTeams].forEach((team) => {
+    const schoolKey = getCanonicalSchoolKey(team.name, team.abbreviation);
+    const existing = metadataPool.get(schoolKey);
+    metadataPool.set(schoolKey, {
+      ...(existing ?? team),
+      ...team,
+      conference: team.conference || existing?.conference || "NCAA",
+      record: team.record || existing?.record || "",
+      logo: team.logo || existing?.logo || "",
+      seed: team.seed ?? existing?.seed ?? null,
+    });
+  });
+
   const merged = new Map<string, Team>();
   const fallbackMatchedKeys = new Set<string>();
 
-  liveTeams.forEach((liveTeam) => {
+  [...metadataPool.values()].forEach((liveTeam) => {
     const fallback = findTeamByEspn(liveTeam.name, liveTeam.abbreviation, teams);
     const schoolKey = getCanonicalSchoolKey(liveTeam.name || fallback?.name || "", liveTeam.abbreviation || fallback?.abbreviation || "");
     if (fallback) fallbackMatchedKeys.add(getCanonicalSchoolKey(fallback.name, fallback.abbreviation));
@@ -765,3 +849,4 @@ export function findTeamByCanonicalId(teamId: string, teamPool: Team[] = teams):
 export function findTeamBySlug(slug: string, teamPool: Team[] = teams): Team | null {
   return teamPool.find((team) => team.slug === slug) ?? null;
 }
+
