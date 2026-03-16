@@ -46,41 +46,68 @@ export interface StatWeight {
 }
 
 export const DEFAULT_STAT_WEIGHTS: StatWeight[] = [
-  { key: "ppg", label: "Points/Game", weight: 50, higherIsBetter: true, min: 55, max: 95 },
-  { key: "oppPpg", label: "Opp Points/Game", weight: 50, higherIsBetter: false, min: 55, max: 80 },
+  { key: "ppg", label: "Points/Game", weight: 12, higherIsBetter: true, min: 55, max: 95 },
+  { key: "oppPpg", label: "Opp Points/Game", weight: 28, higherIsBetter: false, min: 55, max: 80 },
   { key: "fgPct", label: "FG%", weight: 30, higherIsBetter: true, min: 38, max: 52 },
-  { key: "threePct", label: "3PT%", weight: 25, higherIsBetter: true, min: 28, max: 42 },
-  { key: "ftPct", label: "FT%", weight: 15, higherIsBetter: true, min: 62, max: 82 },
-  { key: "rpg", label: "Rebounds/Game", weight: 30, higherIsBetter: true, min: 28, max: 42 },
-  { key: "apg", label: "Assists/Game", weight: 20, higherIsBetter: true, min: 10, max: 20 },
-  { key: "spg", label: "Steals/Game", weight: 15, higherIsBetter: true, min: 4, max: 10 },
-  { key: "bpg", label: "Blocks/Game", weight: 10, higherIsBetter: true, min: 2, max: 6 },
-  { key: "tpg", label: "Turnovers/Game", weight: 20, higherIsBetter: false, min: 9, max: 16 },
-  { key: "sos", label: "Strength of Schedule", weight: 40, higherIsBetter: true, min: 20, max: 100 },
-  { key: "adjOE", label: "Adj. Off. Efficiency", weight: 45, higherIsBetter: true, min: 95, max: 130 },
-  { key: "adjDE", label: "Adj. Def. Efficiency", weight: 45, higherIsBetter: false, min: 85, max: 110 },
-  { key: "tempo", label: "Tempo", weight: 10, higherIsBetter: true, min: 60, max: 76 },
+  { key: "threePct", label: "3PT%", weight: 28, higherIsBetter: true, min: 28, max: 42 },
+  { key: "ftPct", label: "FT%", weight: 12, higherIsBetter: true, min: 62, max: 82 },
+  { key: "rpg", label: "Rebounds/Game", weight: 24, higherIsBetter: true, min: 28, max: 42 },
+  { key: "apg", label: "Assists/Game", weight: 10, higherIsBetter: true, min: 10, max: 20 },
+  { key: "spg", label: "Steals/Game", weight: 8, higherIsBetter: true, min: 4, max: 10 },
+  { key: "bpg", label: "Blocks/Game", weight: 6, higherIsBetter: true, min: 2, max: 6 },
+  { key: "tpg", label: "Turnovers/Game", weight: 24, higherIsBetter: false, min: 9, max: 16 },
+  { key: "sos", label: "Strength of Schedule", weight: 72, higherIsBetter: true, min: 20, max: 100 },
+  { key: "adjOE", label: "Adj. Off. Efficiency", weight: 88, higherIsBetter: true, min: 95, max: 130 },
+  { key: "adjDE", label: "Adj. Def. Efficiency", weight: 92, higherIsBetter: false, min: 85, max: 110 },
+  { key: "tempo", label: "Tempo", weight: 4, higherIsBetter: true, min: 60, max: 76 },
 ];
 
-// 2024 Elite 8 preset: weights reflecting what last year's Elite 8 teams excelled at
-// (UConn, Purdue, NC State, Alabama, Duke, Houston, Clemson, Tennessee)
-// These teams excelled in defensive efficiency, adjusted offense, SOS, and rebounding
+// 2025 Elite 8 Team Rank Preset: weights reflecting what last year's Elite 8 teams excelled at
 export const ELITE_8_PRESET_WEIGHTS: StatWeight[] = [
-  { key: "ppg", label: "Points/Game", weight: 40, higherIsBetter: true, min: 55, max: 95 },
-  { key: "oppPpg", label: "Opp Points/Game", weight: 70, higherIsBetter: false, min: 55, max: 80 },
-  { key: "fgPct", label: "FG%", weight: 35, higherIsBetter: true, min: 38, max: 52 },
+  { key: "ppg", label: "Points/Game", weight: 10, higherIsBetter: true, min: 55, max: 95 },
+  { key: "oppPpg", label: "Opp Points/Game", weight: 34, higherIsBetter: false, min: 55, max: 80 },
+  { key: "fgPct", label: "FG%", weight: 32, higherIsBetter: true, min: 38, max: 52 },
   { key: "threePct", label: "3PT%", weight: 30, higherIsBetter: true, min: 28, max: 42 },
-  { key: "ftPct", label: "FT%", weight: 20, higherIsBetter: true, min: 62, max: 82 },
-  { key: "rpg", label: "Rebounds/Game", weight: 50, higherIsBetter: true, min: 28, max: 42 },
-  { key: "apg", label: "Assists/Game", weight: 25, higherIsBetter: true, min: 10, max: 20 },
-  { key: "spg", label: "Steals/Game", weight: 30, higherIsBetter: true, min: 4, max: 10 },
-  { key: "bpg", label: "Blocks/Game", weight: 25, higherIsBetter: true, min: 2, max: 6 },
-  { key: "tpg", label: "Turnovers/Game", weight: 35, higherIsBetter: false, min: 9, max: 16 },
-  { key: "sos", label: "Strength of Schedule", weight: 75, higherIsBetter: true, min: 20, max: 100 },
-  { key: "adjOE", label: "Adj. Off. Efficiency", weight: 80, higherIsBetter: true, min: 95, max: 130 },
-  { key: "adjDE", label: "Adj. Def. Efficiency", weight: 85, higherIsBetter: false, min: 85, max: 110 },
-  { key: "tempo", label: "Tempo", weight: 5, higherIsBetter: true, min: 60, max: 76 },
+  { key: "ftPct", label: "FT%", weight: 14, higherIsBetter: true, min: 62, max: 82 },
+  { key: "rpg", label: "Rebounds/Game", weight: 36, higherIsBetter: true, min: 28, max: 42 },
+  { key: "apg", label: "Assists/Game", weight: 12, higherIsBetter: true, min: 10, max: 20 },
+  { key: "spg", label: "Steals/Game", weight: 12, higherIsBetter: true, min: 4, max: 10 },
+  { key: "bpg", label: "Blocks/Game", weight: 10, higherIsBetter: true, min: 2, max: 6 },
+  { key: "tpg", label: "Turnovers/Game", weight: 28, higherIsBetter: false, min: 9, max: 16 },
+  { key: "sos", label: "Strength of Schedule", weight: 82, higherIsBetter: true, min: 20, max: 100 },
+  { key: "adjOE", label: "Adj. Off. Efficiency", weight: 94, higherIsBetter: true, min: 95, max: 130 },
+  { key: "adjDE", label: "Adj. Def. Efficiency", weight: 98, higherIsBetter: false, min: 85, max: 110 },
+  { key: "tempo", label: "Tempo", weight: 3, higherIsBetter: true, min: 60, max: 76 },
 ];
+
+const CORE_POWER_KEYS: (keyof TeamStats)[] = ["adjOE", "adjDE", "sos"];
+
+function normalizeStatValue(value: number | null | undefined, weight: StatWeight): number | null {
+  if (!hasStat(value)) return null;
+  const range = weight.max - weight.min;
+  let normalized = range > 0 ? (value - weight.min) / range : 0.5;
+  normalized = Math.max(0, Math.min(1, normalized));
+  return weight.higherIsBetter ? normalized : 1 - normalized;
+}
+
+function weightedAverage(
+  normalizedValues: Partial<Record<keyof TeamStats, number | null>>,
+  weightMap: Map<keyof TeamStats, StatWeight>,
+  keys: (keyof TeamStats)[],
+) {
+  let totalScore = 0;
+  let totalWeight = 0;
+
+  keys.forEach((key) => {
+    const normalized = normalizedValues[key];
+    const weight = weightMap.get(key);
+    if (normalized === null || normalized === undefined || !weight) return;
+    totalScore += normalized * weight.weight;
+    totalWeight += weight.weight;
+  });
+
+  return totalWeight > 0 ? totalScore / totalWeight : null;
+}
 
 // Helper to generate realistic home/away splits from overall stats
 // Home teams typically perform better; some teams have larger home/away gaps
@@ -573,21 +600,23 @@ export function findTeamByEspn(espnName: string, espnAbbr: string, teamPool: Tea
 }
 
 export function calculateTeamScore(stats: TeamStats, weights: StatWeight[]): number {
-  let totalScore = 0;
-  let totalWeight = 0;
+  const weightMap = new Map(weights.map((weight) => [weight.key, weight]));
+  const normalizedValues = Object.fromEntries(
+    weights.map((weight) => [weight.key, normalizeStatValue(stats[weight.key], weight)]),
+  ) as Partial<Record<keyof TeamStats, number | null>>;
 
-  weights.forEach((w) => {
-    const value = stats[w.key];
-    if (typeof value !== "number") return;
-    const range = w.max - w.min;
-    let normalized = range > 0 ? (value - w.min) / range : 0.5;
-    normalized = Math.max(0, Math.min(1, normalized));
-    if (!w.higherIsBetter) normalized = 1 - normalized;
-    totalScore += normalized * w.weight;
-    totalWeight += w.weight;
-  });
+  const supportKeys = weights.map((weight) => weight.key).filter((key) => !CORE_POWER_KEYS.includes(key));
+  const coreScore = weightedAverage(normalizedValues, weightMap, CORE_POWER_KEYS);
+  const supportScore = weightedAverage(normalizedValues, weightMap, supportKeys);
+  const efficiencyMarginScore = weightedAverage(normalizedValues, weightMap, ["adjOE", "adjDE"]);
+  const fallbackScore = weightedAverage(normalizedValues, weightMap, weights.map((weight) => weight.key));
 
-  return totalWeight > 0 ? (totalScore / totalWeight) * 100 : 50;
+  const baseScore = coreScore ?? efficiencyMarginScore ?? fallbackScore ?? 0.5;
+  const modifierScore = supportScore ?? fallbackScore ?? baseScore;
+  const marginLayer = efficiencyMarginScore ?? baseScore;
+
+  const finalScore = baseScore * 0.7 + modifierScore * 0.2 + marginLayer * 0.1;
+  return Number((finalScore * 100).toFixed(1));
 }
 
 export interface LiveTeamMetadata {
@@ -749,6 +778,33 @@ function mergeCanonicalTeam(existing: Team, incoming: Team): Team {
   };
 }
 
+function choosePreferredTeam(existing: Team, incoming: Team) {
+  const coverageRank = { full: 3, partial: 2, none: 1, undefined: 0 } as const;
+  const existingCoverage = coverageRank[existing.statsCoverage ?? "undefined"];
+  const incomingCoverage = coverageRank[incoming.statsCoverage ?? "undefined"];
+
+  if (incomingCoverage !== existingCoverage) {
+    return incomingCoverage > existingCoverage ? mergeCanonicalTeam(existing, incoming) : mergeCanonicalTeam(incoming, existing);
+  }
+
+  if ((incoming.source === "hybrid" || incoming.source === "live") && existing.source === "fallback") {
+    return mergeCanonicalTeam(existing, incoming);
+  }
+
+  return mergeCanonicalTeam(incoming, existing);
+}
+
+export function dedupeTeamsByCanonicalId(teamPool: Team[]) {
+  const deduped = new Map<string, Team>();
+
+  teamPool.forEach((team) => {
+    const existing = deduped.get(team.canonicalId);
+    deduped.set(team.canonicalId, existing ? choosePreferredTeam(existing, team) : team);
+  });
+
+  return [...deduped.values()];
+}
+
 export function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -839,7 +895,7 @@ export function buildCanonicalTeams(liveTeams: LiveTeamMetadata[] = []): Team[] 
     merged.set(schoolKey, existing ? mergeCanonicalTeam(existing, fallbackTeam) : fallbackTeam);
   });
 
-  return [...merged.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return dedupeTeamsByCanonicalId([...merged.values()]).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function findTeamByCanonicalId(teamId: string, teamPool: Team[] = teams): Team | null {

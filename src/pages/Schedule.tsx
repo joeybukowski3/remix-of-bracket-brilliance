@@ -322,7 +322,7 @@ export default function Schedule() {
             onClick={() => setWeights(ELITE_8_PRESET_WEIGHTS)}
             className="text-sm font-semibold px-3 py-1 rounded-md bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
           >
-            2024 Elite 8 Preset
+            2025 Elite 8 Team Rank Preset
           </button>
         </div>
 

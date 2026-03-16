@@ -343,7 +343,7 @@ export default function BettingEdge() {
               <Tabs value={selectedPreset} onValueChange={(value) => applyPreset(value as "default" | "elite")}>
                 <TabsList className="h-auto rounded-xl bg-secondary/80 p-1">
                   <TabsTrigger value="default">Default Model</TabsTrigger>
-                  <TabsTrigger value="elite">2025 Elite 8 Preset</TabsTrigger>
+                  <TabsTrigger value="elite">2025 Elite 8 Team Rank Preset</TabsTrigger>
                 </TabsList>
               </Tabs>
               <button

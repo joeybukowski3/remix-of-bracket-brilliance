@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import RankingsTable from "@/components/RankingsTable";
-import { buildCanonicalTeams, teams, DEFAULT_STAT_WEIGHTS, ELITE_8_PRESET_WEIGHTS, type StatWeight } from "@/data/ncaaTeams";
+import {
+  buildCanonicalTeams,
+  dedupeTeamsByCanonicalId,
+  teams,
+  DEFAULT_STAT_WEIGHTS,
+  ELITE_8_PRESET_WEIGHTS,
+  type StatWeight,
+} from "@/data/ncaaTeams";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
@@ -14,8 +21,11 @@ export default function Rankings() {
   const [mode, setMode] = useState<"all" | "field">("all");
   const { data: liveTeams = [] } = useLiveTeams();
 
-  const allTeams = buildCanonicalTeams(liveTeams);
-  const rankingTeams = mode === "all" ? allTeams : teams;
+  const allTeams = useMemo(() => dedupeTeamsByCanonicalId(buildCanonicalTeams(liveTeams)), [liveTeams]);
+  const rankingTeams = useMemo(
+    () => (mode === "all" ? allTeams : dedupeTeamsByCanonicalId(teams)),
+    [allTeams, mode],
+  );
 
   usePageSeo({
     title: "Joe Knows Ball | NCAA Analytics, Custom Rankings & March Madness Analysis",
@@ -25,9 +35,7 @@ export default function Rankings() {
   });
 
   const handleWeightChange = (key: string, value: number) => {
-    setWeights((prev) =>
-      prev.map((w) => (w.key === key ? { ...w, weight: value } : w))
-    );
+    setWeights((prev) => prev.map((weight) => (weight.key === key ? { ...weight, weight: value } : weight)));
   };
 
   const resetWeights = () => setWeights(DEFAULT_STAT_WEIGHTS);
@@ -35,7 +43,7 @@ export default function Rankings() {
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="container mx-auto space-y-6 px-4 py-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">NCAA Basketball Analytics &amp; Custom Rankings</h1>
           <p className="mt-1 text-muted-foreground">
@@ -45,7 +53,7 @@ export default function Rankings() {
             Joe Knows Ball combines NCAA analytics, team breakdowns, and March Madness analysis into one rankings tool
             so you can compare the full Division I landscape or isolate the tournament field.
           </p>
-          <div className="flex items-center gap-4 flex-wrap mt-3 text-sm">
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
             <Link to="/schedule" className="text-primary hover:underline">
               NCAA Schedule
             </Link>
@@ -75,10 +83,10 @@ export default function Rankings() {
           </div>
         </section>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setMode("all")}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               mode === "all"
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -88,7 +96,7 @@ export default function Rankings() {
           </button>
           <button
             onClick={() => setMode("field")}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               mode === "field"
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -96,35 +104,25 @@ export default function Rankings() {
           >
             NCAA Tournament Field
           </button>
-          <span className="text-xs text-muted-foreground">
-            {rankingTeams.length} teams
-          </span>
+          <span className="text-xs text-muted-foreground">{rankingTeams.length} teams</span>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => setShowSliders(!showSliders)}
-            className="text-sm font-medium text-primary hover:underline"
-          >
+        <div className="flex flex-wrap items-center gap-3">
+          <button onClick={() => setShowSliders(!showSliders)} className="text-sm font-medium text-primary hover:underline">
             {showSliders ? "Hide" : "Show"} Weight Controls
           </button>
-          <button
-            onClick={resetWeights}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
+          <button onClick={resetWeights} className="text-sm font-medium text-muted-foreground hover:text-foreground">
             Reset Defaults
           </button>
           <button
             onClick={() => setWeights(ELITE_8_PRESET_WEIGHTS)}
-            className="text-sm font-semibold px-3 py-1 rounded-md bg-accent text-accent-foreground hover:bg-accent/80 transition-colors"
+            className="rounded-md bg-accent px-3 py-1 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/80"
           >
-            🏆 2024 Elite 8 Preset
+            2025 Elite 8 Team Rank Preset
           </button>
         </div>
 
-        {showSliders && (
-          <StatSliders weights={weights} onWeightChange={handleWeightChange} />
-        )}
+        {showSliders ? <StatSliders weights={weights} onWeightChange={handleWeightChange} /> : null}
 
         <RankingsTable teams={rankingTeams} weights={weights} />
 

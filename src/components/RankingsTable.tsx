@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import TeamLogo from "@/components/TeamLogo";
 import type { Team, StatWeight } from "@/data/ncaaTeams";
-import { calculateTeamScore, formatStat } from "@/data/ncaaTeams";
+import { calculateTeamScore, dedupeTeamsByCanonicalId, formatStat } from "@/data/ncaaTeams";
 
 interface RankingsTableProps {
   teams: Team[];
@@ -9,7 +9,7 @@ interface RankingsTableProps {
 }
 
 export default function RankingsTable({ teams, weights }: RankingsTableProps) {
-  const ranked = [...teams]
+  const ranked = dedupeTeamsByCanonicalId(teams)
     .map((t) => ({ ...t, score: calculateTeamScore(t.stats, weights) }))
     .sort((a, b) => b.score - a.score);
 
@@ -33,7 +33,7 @@ export default function RankingsTable({ teams, weights }: RankingsTableProps) {
           </thead>
           <tbody>
             {ranked.map((team, i) => (
-              <tr key={team.id} className="data-table-row">
+              <tr key={team.canonicalId} className="data-table-row">
                 <td className="py-2.5 px-4 tabular-nums font-bold text-muted-foreground">
                   {i + 1}
                 </td>
