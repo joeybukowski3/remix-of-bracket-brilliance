@@ -228,6 +228,13 @@ export default function Bracket() {
     }
   }, [selectedPresetId]);
 
+  useEffect(() => {
+    if (!regions.length) return;
+    if (!regions.some((region) => region.name === selectedRegion)) {
+      setSelectedRegion(regions[0].name);
+    }
+  }, [regions, selectedRegion]);
+
   const handleWeightChange = (key: string, value: number) => {
     setSelectedPresetId(null);
     setWeights((prev) => prev.map((weight) => (weight.key === key ? { ...weight, weight: value } : weight)));
@@ -402,6 +409,7 @@ export default function Bracket() {
                     {BRACKET_REGION_NAMES.map((regionName) => (
                       <Button
                         key={regionName}
+                        type="button"
                         variant={selectedRegion === regionName ? "default" : "secondary"}
                         className="shrink-0"
                         onClick={() => setSelectedRegion(regionName)}
@@ -450,7 +458,13 @@ export default function Bracket() {
 
               {currentRegion && (
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),320px]">
+                  <div className="xl:col-span-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Viewing {currentRegion.name} Region
+                    </p>
+                  </div>
                   <RegionBuilderSection
+                    key={currentRegion.name}
                     region={currentRegion}
                     regionGames={bracketTree.regionGames[currentRegion.name] ?? []}
                     weights={weights}
