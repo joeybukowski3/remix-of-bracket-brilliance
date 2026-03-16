@@ -7,7 +7,8 @@ import StatSliders from "@/components/StatSliders";
 import TeamLogo from "@/components/TeamLogo";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSchedule, type ScheduleGame } from "@/hooks/useSchedule";
+import { type ScheduleGame } from "@/hooks/useSchedule";
+import { useUpcomingSchedule } from "@/hooks/useUpcomingSchedule";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
@@ -54,6 +55,21 @@ function formatGameTime(dateStr: string) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function getDateGroupLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const label = d.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  if (d.toDateString() === today.toDateString()) return `Today — ${label}`;
+  if (d.toDateString() === tomorrow.toDateString()) return `Tomorrow — ${label}`;
+  return label;
 }
 
 function getEdgeClass(points: number | null) {
@@ -229,7 +245,7 @@ export default function BettingEdge() {
   const [selectedPreset, setSelectedPreset] = useState<"default" | "elite">("default");
   const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
   const { data: liveTeams = [] } = useLiveTeams();
-  const { data: games = [], isLoading, error } = useSchedule();
+  const { games, isLoading, error } = useUpcomingSchedule(7);
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const officialMatchups = useMemo(() => buildTournamentMatchups(bracketSource, teamPool), [bracketSource, teamPool]);
@@ -312,8 +328,23 @@ export default function BettingEdge() {
       } satisfies BettingBoardEntry;
     });
 
-    return sortEntries(entries, sortMode);
-  }, [games, officialMatchupByGameId, sortMode, teamPool, weights]);
+    return entries;
+  }, [games, officialMatchupByGameId, teamPool, weights]);
+
+  const groupedEntries = useMemo(() => {
+    const byDate = new Map<string, BettingBoardEntry[]>();
+    for (const entry of boardEntries) {
+      const dateKey = new Date(entry.game.date).toDateString();
+      if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+      byDate.get(dateKey)!.push(entry);
+    }
+    return Array.from(byDate.entries())
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+      .map(([dateKey, entries]) => ({
+        label: getDateGroupLabel(dateKey),
+        entries: sortEntries(entries, sortMode),
+      }));
+  }, [boardEntries, sortMode]);
 
   const handleWeightChange = (key: string, value: number) => {
     setWeights((current) => current.map((weight) => (weight.key === key ? { ...weight, weight: value } : weight)));
@@ -380,7 +411,7 @@ export default function BettingEdge() {
         <section className="rounded-2xl border border-border bg-card/95 p-4 shadow-sm">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Live NCAA Edge Board</h2>
+              <h2 className="text-lg font-semibold text-foreground">Upcoming NCAA Edge Board</h2>
               <p className="mt-1 text-xs text-muted-foreground">
                 Ranked by strongest model edge against live Vegas implied probability.
               </p>
@@ -389,6 +420,12 @@ export default function BettingEdge() {
               {boardEntries.length} games
             </span>
           </div>
+
+          {boardEntries.length > 0 ? (
+            <div className="mb-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-xs font-medium text-primary">
+              Click on any game to use custom sliders and see updated model projections.
+            </div>
+          ) : null}
 
           <div className="mb-2 hidden grid-cols-[minmax(0,2.2fr),minmax(0,1fr),minmax(0,1fr),minmax(0,1fr),minmax(0,0.9fr),auto] gap-3 px-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground md:grid">
             <span>Matchup</span>
@@ -402,7 +439,7 @@ export default function BettingEdge() {
           <div className="space-y-2">
             {isLoading ? (
               <div className="rounded-2xl border border-border bg-secondary/45 px-4 py-8 text-center text-sm text-muted-foreground">
-                Loading the current betting board.
+                Loading upcoming games...
               </div>
             ) : null}
 
@@ -414,12 +451,21 @@ export default function BettingEdge() {
 
             {!isLoading && !error && boardEntries.length === 0 ? (
               <div className="rounded-2xl border border-border bg-secondary/45 px-4 py-8 text-center text-sm text-muted-foreground">
-                No current games are available on the betting board right now.
+                No upcoming games found for the next 7 days. Check back closer to game time.
               </div>
             ) : null}
 
-            {boardEntries.map((entry) => (
-              <BettingBoardRow key={entry.game.id} entry={entry} />
+            {groupedEntries.map(({ label, entries }) => (
+              <div key={label}>
+                <div className="mb-2 mt-4 first:mt-0 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                  {label}
+                </div>
+                <div className="space-y-2">
+                  {entries.map((entry) => (
+                    <BettingBoardRow key={entry.game.id} entry={entry} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </section>
