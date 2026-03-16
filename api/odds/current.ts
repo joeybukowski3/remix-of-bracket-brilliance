@@ -2,7 +2,7 @@
 // Returns current NCAAB moneyline odds from The Odds API, cached server-side for 5 minutes.
 // ODDS_API_KEY is read from server environment only — never exposed to the browser.
 
-import { getOdds } from "../_lib/odds-service";
+import { getOdds } from "./_service";
 
 export async function GET() {
   try {

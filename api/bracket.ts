@@ -1,4 +1,4 @@
-import { OFFICIAL_2026_BRACKET } from "../src/data/bracket2026";
+import { OFFICIAL_2026_BRACKET } from "./_lib/bracket-data";
 import { getStoredBracket } from "./_lib/bracket-store";
 
 const BRACKET_SYNC_SEASON = process.env.BRACKET_SYNC_SEASON || "2026";
