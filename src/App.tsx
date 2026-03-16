@@ -9,6 +9,7 @@ import GameDetail from "./pages/GameDetail";
 import Matchup from "./pages/Matchup";
 import BracketMatchupPage from "./pages/BracketMatchupPage";
 import Bracket from "./pages/Bracket";
+import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/matchup" element={<Matchup />} />
           <Route path="/matchup/:matchupId" element={<BracketMatchupPage />} />
           <Route path="/bracket" element={<Bracket />} />
+          <Route path="/donate" element={<Donate />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
