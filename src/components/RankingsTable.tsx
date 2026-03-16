@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import TeamLogo from "@/components/TeamLogo";
 import type { Team, StatWeight } from "@/data/ncaaTeams";
 import { calculateTeamScore, formatStat } from "@/data/ncaaTeams";
 
@@ -38,7 +39,7 @@ export default function RankingsTable({ teams, weights }: RankingsTableProps) {
                 </td>
                 <td className="py-2.5 px-4 font-semibold text-foreground">
                   <div className="flex items-center gap-2">
-                    <img src={team.logo} alt={team.name} className="w-6 h-6 object-contain shrink-0" loading="lazy" />
+                    <TeamLogo name={team.name} logo={team.logo} className="h-6 w-6" />
                     {team.seed && (
                       <span className="inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold bg-primary/20 text-primary">
                         {team.seed}

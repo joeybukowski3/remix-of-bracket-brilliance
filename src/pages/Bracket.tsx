@@ -336,7 +336,7 @@ export default function Bracket() {
                       Default Model
                     </Button>
                     <Button variant={selectedPresetId === "preset-2025-elite" ? "default" : "secondary"} onClick={() => setSelectedPresetId("preset-2025-elite")}>
-                      Elite 8 Preset*
+                      2025 Elite 8 Preset*
                     </Button>
                     <PresetNote />
                     <Button variant="outline" onClick={() => setPresetSheetOpen(true)}>Manage Presets</Button>

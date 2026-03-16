@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Trophy, BarChart3, Brackets, CalendarDays, HeartHandshake } from "lucide-react";
+import { Trophy, BarChart3, Brackets, CalendarDays, HeartHandshake, BadgeDollarSign } from "lucide-react";
 
 const navItems = [
   { to: "/", label: "Rankings", icon: Trophy },
   { to: "/schedule", label: "Schedule", icon: CalendarDays },
   { to: "/matchup", label: "Game Analysis", icon: BarChart3 },
+  { to: "/betting-edge", label: "Betting Edge", icon: BadgeDollarSign },
   { to: "/bracket", label: "March Madness", icon: Brackets },
   { to: "/donate", label: "Donate", icon: HeartHandshake },
 ];

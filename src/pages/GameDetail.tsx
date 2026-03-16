@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import MatchupAnglesList from "@/components/MatchupAnglesList";
+import TeamLogo from "@/components/TeamLogo";
 import { Switch } from "@/components/ui/switch";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -225,7 +226,7 @@ export default function GameDetail() {
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="grid grid-cols-3 items-center mb-4">
             <div className="text-center">
-              <img src={teamA.logo} alt={teamA.name} className="w-16 h-16 object-contain mx-auto mb-2" />
+              <TeamLogo name={teamA.name} logo={teamA.logo} className="mx-auto mb-2 h-16 w-16" />
               {teamA.seed && (
                 <span className="inline-flex items-center justify-center w-8 h-8 rounded-md text-sm font-bold bg-primary/20 text-primary mb-1">
                   {teamA.seed}
@@ -250,7 +251,7 @@ export default function GameDetail() {
               </div>
             </div>
             <div className="text-center">
-              <img src={teamB.logo} alt={teamB.name} className="w-16 h-16 object-contain mx-auto mb-2" />
+              <TeamLogo name={teamB.name} logo={teamB.logo} className="mx-auto mb-2 h-16 w-16" />
               {teamB.seed && (
                 <span className="inline-flex items-center justify-center w-8 h-8 rounded-md text-sm font-bold bg-primary/20 text-primary mb-1">
                   {teamB.seed}

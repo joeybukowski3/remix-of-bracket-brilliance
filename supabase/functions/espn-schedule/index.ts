@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
     const games = (data.events || []).map((event: any) => {
       const competition = event.competitions?.[0];
       const competitors = competition?.competitors || [];
+      const odds = competition?.odds?.[0] ?? null;
       
       const homeTeam = competitors.find((c: any) => c.homeAway === 'home');
       const awayTeam = competitors.find((c: any) => c.homeAway === 'away');
@@ -50,6 +51,23 @@ Deno.serve(async (req) => {
         completed: competition?.status?.type?.completed || false,
         venue: competition?.venue?.fullName || '',
         broadcast: competition?.broadcasts?.[0]?.names?.[0] || '',
+        odds: odds ? {
+          provider: odds.provider?.name || odds.details || 'Sportsbook',
+          details: odds.details || '',
+          overUnder: typeof odds.overUnder === 'number' ? odds.overUnder : null,
+          homeMoneyline:
+            typeof odds.homeTeamOdds?.moneyLine === 'number'
+              ? odds.homeTeamOdds.moneyLine
+              : typeof odds.homeTeamOdds?.moneyLine === 'string'
+                ? Number(odds.homeTeamOdds.moneyLine)
+                : null,
+          awayMoneyline:
+            typeof odds.awayTeamOdds?.moneyLine === 'number'
+              ? odds.awayTeamOdds.moneyLine
+              : typeof odds.awayTeamOdds?.moneyLine === 'string'
+                ? Number(odds.awayTeamOdds.moneyLine)
+                : null,
+        } : null,
         homeTeam: homeTeam ? {
           id: homeTeam.id,
           name: homeTeam.team?.displayName || homeTeam.team?.name || '',

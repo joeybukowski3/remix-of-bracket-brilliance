@@ -5,6 +5,7 @@ import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import MatchupAnglesList from "@/components/MatchupAnglesList";
+import TeamLogo from "@/components/TeamLogo";
 import { useSchedule, type ScheduleGame } from "@/hooks/useSchedule";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -125,7 +126,7 @@ function GameCard({
 
         <div className="grid grid-cols-3 items-center gap-2 mb-4">
           <div className="text-center">
-            <img src={game.awayTeam?.logo || "/placeholder.svg"} alt={game.awayTeam?.name} className="w-12 h-12 object-contain mx-auto mb-1" loading="lazy" />
+            <TeamLogo name={game.awayTeam?.name || "Away team"} logo={game.awayTeam?.logo} className="mx-auto mb-1 h-12 w-12" />
             {game.awayTeam?.seed && (
               <span className="inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold bg-primary/20 text-primary mb-1">
                 {game.awayTeam.seed}
@@ -155,7 +156,7 @@ function GameCard({
           </div>
 
           <div className="text-center">
-            <img src={game.homeTeam?.logo || "/placeholder.svg"} alt={game.homeTeam?.name} className="w-12 h-12 object-contain mx-auto mb-1" loading="lazy" />
+            <TeamLogo name={game.homeTeam?.name || "Home team"} logo={game.homeTeam?.logo} className="mx-auto mb-1 h-12 w-12" />
             {game.homeTeam?.seed && (
               <span className="inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold bg-primary/20 text-primary mb-1">
                 {game.homeTeam.seed}

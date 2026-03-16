@@ -10,6 +10,13 @@ export interface ScheduleGame {
   completed: boolean;
   venue: string;
   broadcast: string;
+  odds: {
+    provider: string;
+    details: string;
+    overUnder: number | null;
+    homeMoneyline: number | null;
+    awayMoneyline: number | null;
+  } | null;
   homeTeam: {
     id: string;
     name: string;

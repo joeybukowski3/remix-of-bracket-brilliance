@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import MatchupAnglesList from "@/components/MatchupAnglesList";
+import ModelEdgePanel from "@/components/ModelEdgePanel";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import TeamLogo from "@/components/TeamLogo";
 import { Badge } from "@/components/ui/badge";
-import { buildCanonicalTeams, calculateTeamScore, formatStat, hasStat, type Team } from "@/data/ncaaTeams";
+import { buildCanonicalTeams, calculateTeamScore, findTeamByEspn, formatStat, hasStat, type Team } from "@/data/ncaaTeams";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
+import { useSchedule } from "@/hooks/useSchedule";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
   BUILT_IN_PRESETS,
@@ -17,6 +19,7 @@ import {
   type TournamentMatchup,
 } from "@/lib/bracket";
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
+import { buildVegasProbabilityComparison, findScheduledGameForTeams, resolveScheduledGameMoneylines } from "@/lib/odds";
 
 function SeedPill({ seed }: { seed: number }) {
   return (
@@ -116,6 +119,7 @@ function buildDescription(matchup: TournamentMatchup | null) {
 export default function BracketMatchupPage() {
   const { matchupId = "" } = useParams();
   const { data: liveTeams = [] } = useLiveTeams();
+  const { data: todayGames = [] } = useSchedule();
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const [source, setSource] = useState(buildPlaceholderBracketSource());
 
@@ -173,6 +177,22 @@ export default function BracketMatchupPage() {
   const singleTeamMatchup = !matchup.teamA.isPlayIn && !matchup.teamB.isPlayIn;
   const angles = singleTeamMatchup ? generateMatchupAngles(matchup.teamA.team, matchup.teamB.team, teamPool) : [];
   const advantage = singleTeamMatchup ? getOverallAdvantage(matchup.teamA.team, matchup.teamB.team, angles) : null;
+  const scheduledGame = singleTeamMatchup
+    ? findScheduledGameForTeams(todayGames, matchup.teamA.team, matchup.teamB.team, teamPool, findTeamByEspn)
+    : null;
+  const scheduledMoneylines = singleTeamMatchup
+    ? resolveScheduledGameMoneylines(scheduledGame, matchup.teamA.team, matchup.teamB.team, teamPool, findTeamByEspn)
+    : null;
+  const vegasComparison =
+    singleTeamMatchup && scheduledMoneylines
+      ? buildVegasProbabilityComparison({
+          modelProbA: scoreA / totalScore,
+          modelProbB: scoreB / totalScore,
+          moneylineA: scheduledMoneylines.moneylineA,
+          moneylineB: scheduledMoneylines.moneylineB,
+          sportsbook: scheduledMoneylines.sportsbook,
+        })
+      : null;
   const playInSide = matchup.teamA.isPlayIn ? matchup.teamA : matchup.teamB.isPlayIn ? matchup.teamB : null;
   const fixedSide = matchup.teamA.isPlayIn ? matchup.teamB : matchup.teamA;
 
@@ -207,6 +227,16 @@ export default function BracketMatchupPage() {
           </div>
           <TeamSummaryCard team={matchup.teamB.team} seed={matchup.teamB.seed} label={matchup.region} />
         </section>
+
+        {singleTeamMatchup ? (
+          <ModelEdgePanel
+            teamAName={matchup.teamA.team.abbreviation}
+            teamBName={matchup.teamB.team.abbreviation}
+            modelProbA={scoreA / totalScore}
+            modelProbB={scoreB / totalScore}
+            vegas={vegasComparison}
+          />
+        ) : null}
 
         <section className="rounded-2xl border border-border bg-card/95 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">

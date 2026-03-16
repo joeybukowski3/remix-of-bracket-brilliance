@@ -5,6 +5,7 @@ import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import TeamLogo from "@/components/TeamLogo";
+import ModelEdgePanel from "@/components/ModelEdgePanel";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSchedule } from "@/hooks/useSchedule";
@@ -23,6 +24,7 @@ import {
   type TeamStats,
 } from "@/data/ncaaTeams";
 import { buildPlaceholderBracketSource, buildTournamentMatchups, loadOfficialBracketSource, type BracketSourceConfig } from "@/lib/bracket";
+import { buildVegasProbabilityComparison, findScheduledGameForTeams, resolveScheduledGameMoneylines } from "@/lib/odds";
 
 function TeamSelector({
   teams,
@@ -61,7 +63,7 @@ function TeamSelector({
               }}
               className="w-full text-left px-3 py-2 text-sm hover:bg-secondary transition-colors text-foreground flex items-center gap-2"
             >
-              <img src={team.logo} alt={team.name} className="w-5 h-5 object-contain shrink-0" loading="lazy" />
+              <TeamLogo name={team.name} logo={team.logo} className="h-5 w-5" />
               {team.name} <span className="text-muted-foreground">({team.conference})</span>
             </button>
           ))}
@@ -69,7 +71,7 @@ function TeamSelector({
       )}
       {selected && (
         <div className="bg-card border border-border rounded-lg p-4 text-center">
-          <img src={selected.logo} alt={selected.name} className="w-16 h-16 object-contain mx-auto mb-2" />
+          <TeamLogo name={selected.name} logo={selected.logo} className="mx-auto mb-2 h-16 w-16" />
           {selected.seed && (
             <span className="inline-flex items-center justify-center w-8 h-8 rounded-md text-sm font-bold bg-primary/20 text-primary mb-2">
               {selected.seed}
@@ -307,10 +309,10 @@ function TodaySchedulePicker({
               onClick={() => onSelectGame(away, home)}
               className="flex items-center gap-2 p-2 rounded-md border border-border hover:bg-secondary hover:border-primary/40 transition-colors text-left group"
             >
-              <img src={away.logo} alt={away.abbreviation} className="w-7 h-7 object-contain shrink-0" loading="lazy" />
+              <TeamLogo name={away.name} logo={away.logo} className="h-7 w-7" />
               <span className="text-xs font-bold text-foreground">{away.abbreviation}</span>
               <span className="text-[10px] text-muted-foreground font-medium">@</span>
-              <img src={home.logo} alt={home.abbreviation} className="w-7 h-7 object-contain shrink-0" loading="lazy" />
+              <TeamLogo name={home.name} logo={home.logo} className="h-7 w-7" />
               <span className="text-xs font-bold text-foreground">{home.abbreviation}</span>
               {game.status !== "Scheduled" && (
                 <span className="ml-auto text-[10px] text-muted-foreground flex items-center gap-0.5 shrink-0">
@@ -334,6 +336,7 @@ export default function Matchup() {
   const [selectedRegion, setSelectedRegion] = useState("All Regions");
   const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
   const { data: liveTeams = [], isLoading: liveTeamsLoading, error: liveTeamsError } = useLiveTeams();
+  const { data: todayGames = [] } = useSchedule(formatDateStr(new Date()));
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const top50Avg = useMemo(() => getTop50Average(teamPool), [teamPool]);
@@ -398,6 +401,22 @@ export default function Matchup() {
   ];
 
   const totalScore = scoreA + scoreB || 1;
+  const modelProbA = scoreA / totalScore;
+  const modelProbB = scoreB / totalScore;
+  const scheduledGame =
+    teamA && teamB ? findScheduledGameForTeams(todayGames, teamA, teamB, teamPool, findTeamByEspn) : null;
+  const scheduledMoneylines =
+    teamA && teamB ? resolveScheduledGameMoneylines(scheduledGame, teamA, teamB, teamPool, findTeamByEspn) : null;
+  const vegasComparison =
+    teamA && teamB && scheduledMoneylines
+      ? buildVegasProbabilityComparison({
+          modelProbA,
+          modelProbB,
+          moneylineA: scheduledMoneylines.moneylineA,
+          moneylineB: scheduledMoneylines.moneylineB,
+          sportsbook: scheduledMoneylines.sportsbook,
+        })
+      : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -571,6 +590,16 @@ export default function Matchup() {
               <p className="text-xs text-muted-foreground mb-4">
                 Teams stay available even when advanced stats are partial. Missing values display as em dashes.
               </p>
+
+              <div className="mb-4">
+                <ModelEdgePanel
+                  teamAName={teamA.abbreviation}
+                  teamBName={teamB.abbreviation}
+                  modelProbA={modelProbA}
+                  modelProbB={modelProbB}
+                  vegas={vegasComparison}
+                />
+              </div>
 
               {statRows.map((row) => (
                 <StatCompareRow

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import SiteNav from "@/components/SiteNav";
+import TeamLogo from "@/components/TeamLogo";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
@@ -68,7 +69,7 @@ export default function TeamPage() {
 
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="flex items-center gap-4 flex-wrap">
-            <img src={team.logo} alt={team.name} className="w-20 h-20 object-contain" />
+            <TeamLogo name={team.name} logo={team.logo} className="h-20 w-20" />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-3xl font-bold text-foreground">{team.name}</h1>

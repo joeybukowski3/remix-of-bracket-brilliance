@@ -1,5 +1,6 @@
 import type { Team, TeamStats } from "@/data/ncaaTeams";
 import { getTop50Average, hasStat } from "@/data/ncaaTeams";
+import { formatRoundedNumber, formatRoundedPercent } from "@/lib/numberFormat";
 
 export interface MatchupAngle {
   id: string;
@@ -46,6 +47,14 @@ function getSeverity(pct: number): MatchupAngle["severity"] {
   return "minor";
 }
 
+function formatAngleStatValue(key: keyof TeamStats, value: number): string {
+  if (key === "fgPct" || key === "threePct" || key === "ftPct") {
+    return formatRoundedPercent(value);
+  }
+
+  return formatRoundedNumber(value);
+}
+
 export function generateMatchupAngles(teamA: Team, teamB: Team, teamPool?: Team[]): MatchupAngle[] {
   const top50Avg = getTop50Average(teamPool);
   const angles: MatchupAngle[] = [];
@@ -64,7 +73,7 @@ export function generateMatchupAngles(teamA: Team, teamB: Team, teamPool?: Team[
       angles.push({
         id: `direct-${idCounter++}`,
         title: `${meta.label} Edge`,
-        description: `${aIsBetter ? teamA.abbreviation : teamB.abbreviation} has a ${absDiff.toFixed(1)}% advantage in ${meta.label} (${valA} vs ${valB})`,
+        description: `${aIsBetter ? teamA.abbreviation : teamB.abbreviation} has a ${absDiff.toFixed(1)}% advantage in ${meta.label} (${formatAngleStatValue(meta.key, valA)} vs ${formatAngleStatValue(meta.key, valB)})`,
         favors: aIsBetter ? "teamA" : "teamB",
         severity: getSeverity(diff),
         category: meta.category,
