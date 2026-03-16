@@ -139,11 +139,11 @@ export const BUILT_IN_PRESETS: BracketPreset[] = [
     name: "Default Model",
     weights: cloneWeights(DEFAULT_STAT_WEIGHTS),
     source: "built-in",
-    note: "Baseline power score using balanced NCAA stat weights.",
+    note: "Baseline power score emphasizing adjusted efficiency and strength of schedule.",
   },
   {
     id: "preset-2025-elite",
-    name: "2025 Elite 8 Preset",
+    name: "2025 Elite 8 Team Rank Preset",
     weights: cloneWeights(ELITE_8_PRESET_WEIGHTS),
     source: "built-in",
     note: "Based on the rankings from last year's Elite 8 teams.",

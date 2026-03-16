@@ -46,38 +46,38 @@ export interface StatWeight {
 }
 
 export const DEFAULT_STAT_WEIGHTS: StatWeight[] = [
-  { key: "ppg", label: "Points/Game", weight: 12, higherIsBetter: true, min: 55, max: 95 },
-  { key: "oppPpg", label: "Opp Points/Game", weight: 28, higherIsBetter: false, min: 55, max: 80 },
-  { key: "fgPct", label: "FG%", weight: 30, higherIsBetter: true, min: 38, max: 52 },
-  { key: "threePct", label: "3PT%", weight: 28, higherIsBetter: true, min: 28, max: 42 },
-  { key: "ftPct", label: "FT%", weight: 12, higherIsBetter: true, min: 62, max: 82 },
-  { key: "rpg", label: "Rebounds/Game", weight: 24, higherIsBetter: true, min: 28, max: 42 },
-  { key: "apg", label: "Assists/Game", weight: 10, higherIsBetter: true, min: 10, max: 20 },
+  { key: "ppg", label: "Points/Game", weight: 8, higherIsBetter: true, min: 55, max: 95 },
+  { key: "oppPpg", label: "Opp Points/Game", weight: 16, higherIsBetter: false, min: 55, max: 80 },
+  { key: "fgPct", label: "FG%", weight: 22, higherIsBetter: true, min: 38, max: 52 },
+  { key: "threePct", label: "3PT%", weight: 18, higherIsBetter: true, min: 28, max: 42 },
+  { key: "ftPct", label: "FT%", weight: 10, higherIsBetter: true, min: 62, max: 82 },
+  { key: "rpg", label: "Rebounds/Game", weight: 20, higherIsBetter: true, min: 28, max: 42 },
+  { key: "apg", label: "Assists/Game", weight: 8, higherIsBetter: true, min: 10, max: 20 },
   { key: "spg", label: "Steals/Game", weight: 8, higherIsBetter: true, min: 4, max: 10 },
   { key: "bpg", label: "Blocks/Game", weight: 6, higherIsBetter: true, min: 2, max: 6 },
-  { key: "tpg", label: "Turnovers/Game", weight: 24, higherIsBetter: false, min: 9, max: 16 },
-  { key: "sos", label: "Strength of Schedule", weight: 72, higherIsBetter: true, min: 20, max: 100 },
-  { key: "adjOE", label: "Adj. Off. Efficiency", weight: 88, higherIsBetter: true, min: 95, max: 130 },
-  { key: "adjDE", label: "Adj. Def. Efficiency", weight: 92, higherIsBetter: false, min: 85, max: 110 },
-  { key: "tempo", label: "Tempo", weight: 4, higherIsBetter: true, min: 60, max: 76 },
+  { key: "tpg", label: "Turnovers/Game", weight: 18, higherIsBetter: false, min: 9, max: 16 },
+  { key: "sos", label: "Strength of Schedule", weight: 80, higherIsBetter: true, min: 20, max: 100 },
+  { key: "adjOE", label: "Adj. Off. Efficiency", weight: 95, higherIsBetter: true, min: 95, max: 130 },
+  { key: "adjDE", label: "Adj. Def. Efficiency", weight: 95, higherIsBetter: false, min: 85, max: 110 },
+  { key: "tempo", label: "Tempo", weight: 3, higherIsBetter: true, min: 60, max: 76 },
 ];
 
 // 2025 Elite 8 Team Rank Preset: weights reflecting what last year's Elite 8 teams excelled at
 export const ELITE_8_PRESET_WEIGHTS: StatWeight[] = [
-  { key: "ppg", label: "Points/Game", weight: 10, higherIsBetter: true, min: 55, max: 95 },
-  { key: "oppPpg", label: "Opp Points/Game", weight: 34, higherIsBetter: false, min: 55, max: 80 },
-  { key: "fgPct", label: "FG%", weight: 32, higherIsBetter: true, min: 38, max: 52 },
-  { key: "threePct", label: "3PT%", weight: 30, higherIsBetter: true, min: 28, max: 42 },
-  { key: "ftPct", label: "FT%", weight: 14, higherIsBetter: true, min: 62, max: 82 },
-  { key: "rpg", label: "Rebounds/Game", weight: 36, higherIsBetter: true, min: 28, max: 42 },
-  { key: "apg", label: "Assists/Game", weight: 12, higherIsBetter: true, min: 10, max: 20 },
-  { key: "spg", label: "Steals/Game", weight: 12, higherIsBetter: true, min: 4, max: 10 },
+  { key: "ppg", label: "Points/Game", weight: 6, higherIsBetter: true, min: 55, max: 95 },
+  { key: "oppPpg", label: "Opp Points/Game", weight: 18, higherIsBetter: false, min: 55, max: 80 },
+  { key: "fgPct", label: "FG%", weight: 26, higherIsBetter: true, min: 38, max: 52 },
+  { key: "threePct", label: "3PT%", weight: 22, higherIsBetter: true, min: 28, max: 42 },
+  { key: "ftPct", label: "FT%", weight: 12, higherIsBetter: true, min: 62, max: 82 },
+  { key: "rpg", label: "Rebounds/Game", weight: 28, higherIsBetter: true, min: 28, max: 42 },
+  { key: "apg", label: "Assists/Game", weight: 10, higherIsBetter: true, min: 10, max: 20 },
+  { key: "spg", label: "Steals/Game", weight: 10, higherIsBetter: true, min: 4, max: 10 },
   { key: "bpg", label: "Blocks/Game", weight: 10, higherIsBetter: true, min: 2, max: 6 },
-  { key: "tpg", label: "Turnovers/Game", weight: 28, higherIsBetter: false, min: 9, max: 16 },
-  { key: "sos", label: "Strength of Schedule", weight: 82, higherIsBetter: true, min: 20, max: 100 },
-  { key: "adjOE", label: "Adj. Off. Efficiency", weight: 94, higherIsBetter: true, min: 95, max: 130 },
-  { key: "adjDE", label: "Adj. Def. Efficiency", weight: 98, higherIsBetter: false, min: 85, max: 110 },
-  { key: "tempo", label: "Tempo", weight: 3, higherIsBetter: true, min: 60, max: 76 },
+  { key: "tpg", label: "Turnovers/Game", weight: 22, higherIsBetter: false, min: 9, max: 16 },
+  { key: "sos", label: "Strength of Schedule", weight: 90, higherIsBetter: true, min: 20, max: 100 },
+  { key: "adjOE", label: "Adj. Off. Efficiency", weight: 100, higherIsBetter: true, min: 95, max: 130 },
+  { key: "adjDE", label: "Adj. Def. Efficiency", weight: 100, higherIsBetter: false, min: 85, max: 110 },
+  { key: "tempo", label: "Tempo", weight: 2, higherIsBetter: true, min: 60, max: 76 },
 ];
 
 const CORE_POWER_KEYS: (keyof TeamStats)[] = ["adjOE", "adjDE", "sos"];
@@ -615,7 +615,7 @@ export function calculateTeamScore(stats: TeamStats, weights: StatWeight[]): num
   const modifierScore = supportScore ?? fallbackScore ?? baseScore;
   const marginLayer = efficiencyMarginScore ?? baseScore;
 
-  const finalScore = baseScore * 0.7 + modifierScore * 0.2 + marginLayer * 0.1;
+  const finalScore = baseScore * 0.78 + modifierScore * 0.15 + marginLayer * 0.07;
   return Number((finalScore * 100).toFixed(1));
 }
 
