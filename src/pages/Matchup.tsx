@@ -6,6 +6,7 @@ import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import TeamLogo from "@/components/TeamLogo";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSchedule } from "@/hooks/useSchedule";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -330,12 +331,24 @@ export default function Matchup() {
   const [teamB, setTeamB] = useState<Team | null>(null);
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showVsAverage, setShowVsAverage] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("All Regions");
   const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
   const { data: liveTeams = [], isLoading: liveTeamsLoading, error: liveTeamsError } = useLiveTeams();
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const top50Avg = useMemo(() => getTop50Average(teamPool), [teamPool]);
   const officialMatchups = useMemo(() => buildTournamentMatchups(bracketSource, teamPool), [bracketSource, teamPool]);
+  const matchupRegions = useMemo(
+    () => ["All Regions", ...new Set(officialMatchups.map((matchup) => matchup.region))],
+    [officialMatchups],
+  );
+  const filteredOfficialMatchups = useMemo(
+    () =>
+      selectedRegion === "All Regions"
+        ? officialMatchups
+        : officialMatchups.filter((matchup) => matchup.region === selectedRegion),
+    [officialMatchups, selectedRegion],
+  );
 
   useEffect(() => {
     let ignore = false;
@@ -426,12 +439,22 @@ export default function Matchup() {
               </p>
             </div>
             <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
-              {officialMatchups.length} official matchups
+              {filteredOfficialMatchups.length} official matchups
             </span>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {officialMatchups.map((matchup) => {
+          <Tabs value={selectedRegion} onValueChange={setSelectedRegion} className="mt-4 space-y-4">
+            <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-xl bg-secondary/85 p-1">
+              {matchupRegions.map((region) => (
+                <TabsTrigger key={region} value={region} className="shrink-0">
+                  {region}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {filteredOfficialMatchups.map((matchup) => {
               const scoreA = calculateTeamScore(matchup.teamA.team.stats, weights);
               const scoreB = calculateTeamScore(matchup.teamB.team.stats, weights);
               const winProbA = (((scoreA / (scoreA + scoreB || 1)) * 100)).toFixed(0);
