@@ -4,6 +4,7 @@ import { Clock } from "lucide-react";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
+import TeamLogo from "@/components/TeamLogo";
 import { Switch } from "@/components/ui/switch";
 import { useSchedule } from "@/hooks/useSchedule";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
@@ -330,7 +331,7 @@ export default function Matchup() {
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showVsAverage, setShowVsAverage] = useState(false);
   const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
-  const { data: liveTeams = [] } = useLiveTeams();
+  const { data: liveTeams = [], isLoading: liveTeamsLoading, error: liveTeamsError } = useLiveTeams();
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const top50Avg = useMemo(() => getTop50Average(teamPool), [teamPool]);
@@ -499,6 +500,29 @@ export default function Matchup() {
           <TeamSelector teams={teamPool} selected={teamA} onSelect={setTeamA} label="Team A" />
           <TeamSelector teams={teamPool} selected={teamB} onSelect={setTeamB} label="Team B" />
         </div>
+
+        {liveTeamsLoading ? (
+          <div className="rounded-2xl border border-border bg-card/90 p-5 text-sm text-muted-foreground">
+            Loading the NCAA team pool and matchup stats.
+          </div>
+        ) : null}
+
+        {liveTeamsError ? (
+          <div className="rounded-2xl border border-border bg-card/90 p-5 text-sm text-muted-foreground">
+            Live team data is temporarily unavailable. You can still browse the official tournament matchup pages
+            below while the broader matchup pool reloads.
+          </div>
+        ) : null}
+
+        {!teamA || !teamB ? (
+          <div className="rounded-2xl border border-border bg-card/90 p-5">
+            <h2 className="text-lg font-semibold text-foreground">Select a Matchup</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Choose two teams from the selectors above, or open one of the official 2026 tournament matchup cards to
+              compare offense, defense, pace, rebounding, and model score side by side.
+            </p>
+          </div>
+        ) : null}
 
         {teamA && teamB && (
           <>
