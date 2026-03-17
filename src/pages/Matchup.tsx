@@ -28,6 +28,7 @@ import {
 } from "@/data/ncaaTeams";
 import { buildPlaceholderBracketSource, buildTournamentMatchups, loadOfficialBracketSource, type BracketSourceConfig } from "@/lib/bracket";
 import { buildVegasProbabilityComparison, findScheduledGameForTeams, resolveScheduledGameMoneylines } from "@/lib/odds";
+import MatchupStatGroups from "@/components/MatchupStatGroups";
 
 function TeamSelector({
   teams,
@@ -712,6 +713,10 @@ export default function Matchup() {
                   higherIsBetter={row.higherIsBetter}
                 />
               ))}
+
+              <div className="border-t border-border/50 mt-4 pt-4">
+                <MatchupStatGroups teamA={teamA} teamB={teamB} teamPool={teamPool} />
+              </div>
             </div>
 
             <div>

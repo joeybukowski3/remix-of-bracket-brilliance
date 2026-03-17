@@ -25,6 +25,7 @@ import {
   type TeamStats,
 } from "@/data/ncaaTeams";
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
+import MatchupStatGroups from "@/components/MatchupStatGroups";
 
 function StatCompareRow({
   label,
@@ -379,6 +380,10 @@ export default function GameDetail() {
                 higherIsBetter={row.higherIsBetter}
               />
             ))}
+
+            <div className="border-t border-border/50 mt-4 pt-4">
+              <MatchupStatGroups teamA={teamA} teamB={teamB} teamPool={teamPool} />
+            </div>
           </div>
         </div>
 

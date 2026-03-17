@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { X, ExternalLink } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   calculateTeamScore,
   computeHomeInflationMetrics,
@@ -290,7 +289,7 @@ function ModalBody({
 
       {/* Footer */}
       {fullAnalysisUrl && (
-        <div className="px-4 py-3 border-t border-border flex items-center justify-between bg-card/50">
+        <div className="px-4 py-3 border-t border-border flex items-center justify-between bg-secondary/80">
           <span className="text-[10px] text-muted-foreground">Away efficiency is weighted higher for neutral-site games.</span>
           <Link
             to={fullAnalysisUrl}
@@ -313,26 +312,15 @@ export default function BracketMatchupModal({
 }: BracketMatchupModalProps) {
   const isOpen = !!(game?.teamA && game?.teamB);
 
-  // Detect mobile via a simple media query approach — render as Sheet on narrow viewports
-  // We use CSS classes to show/hide each container
   return (
-    <>
-      {/* Desktop: Dialog */}
-      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent className="hidden md:flex flex-col p-0 max-w-[440px] max-h-[85vh] overflow-hidden gap-0 border-white/10 bg-card/98 shadow-[0_24px_60px_hsl(var(--background)/0.5)]">
-          <ModalBody game={game} weights={weights} teamPool={teamPool} onClose={onClose} />
-        </DialogContent>
-      </Dialog>
-
-      {/* Mobile: bottom Sheet */}
-      <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <SheetContent
-          side="bottom"
-          className="md:hidden p-0 max-h-[88vh] overflow-hidden flex flex-col rounded-t-2xl border-white/10 bg-card/98"
-        >
-          <ModalBody game={game} weights={weights} teamPool={teamPool} onClose={onClose} />
-        </SheetContent>
-      </Sheet>
-    </>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent
+        className="flex flex-col p-0 max-w-[440px] max-h-[85vh] overflow-hidden gap-0 border-border bg-card shadow-[0_24px_60px_hsl(var(--background)/0.5)]"
+        style={{ opacity: 1 }}
+      >
+        <DialogTitle className="sr-only">Bracket Matchup Analysis</DialogTitle>
+        <ModalBody game={game} weights={weights} teamPool={teamPool} onClose={onClose} />
+      </DialogContent>
+    </Dialog>
   );
 }

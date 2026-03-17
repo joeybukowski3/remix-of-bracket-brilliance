@@ -52,8 +52,7 @@ function normalizeMoneyline(value: number | null): number | null {
 
 function inferOpposingMoneyline(odds: number | null): number | null {
   if (odds === null) return null;
-  if (odds < 0) return Math.round((10000 / Math.abs(odds)) / 5) * 5;
-  return -Math.round((100 * odds) / (odds - 100));
+  return -odds;
 }
 
 export function buildVegasProbabilityComparison(params: {
