@@ -40,8 +40,9 @@ function StatPill({ label, value }: { label: string; value: string | null }) {
 
 function InjuryRow({ entry }: { entry: InjuryEntry }) {
   const ppgStr = entry.ppg !== null ? entry.ppg.toFixed(1) : null;
+  const mpgStr = entry.minutesPerGame !== null ? entry.minutesPerGame.toFixed(1) : null;
   const gpStr = entry.gamesPlayed !== null ? String(entry.gamesPlayed) : null;
-  const hasStats = ppgStr !== null || gpStr !== null;
+  const hasStats = ppgStr !== null || mpgStr !== null || gpStr !== null;
 
   return (
     <div className="rounded-lg border border-border/50 bg-secondary/30 px-2.5 py-2 space-y-1.5">
@@ -59,11 +60,13 @@ function InjuryRow({ entry }: { entry: InjuryEntry }) {
         </div>
       </div>
 
-      {/* Bottom row: PPG · GP · description */}
+      {/* Stats row: PPG · MPG · GP · description */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
         {hasStats && (
           <div className="flex items-center gap-2 shrink-0">
             <StatPill label="PPG " value={ppgStr} />
+            <span className="text-border/60">·</span>
+            <StatPill label="MPG " value={mpgStr} />
             <span className="text-border/60">·</span>
             <StatPill label="GP " value={gpStr} />
           </div>

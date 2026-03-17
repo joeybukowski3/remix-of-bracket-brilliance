@@ -9,7 +9,25 @@ export interface InjuryEntry {
   description: string;
   impactRating: "High" | "Medium" | "Low";
   ppg: number | null;
+  minutesPerGame: number | null;
   gamesPlayed: number | null;
+}
+
+const PPG_THRESHOLD = 5.0;
+const MPG_THRESHOLD = 10.0;
+
+function isRelevantInjury(ppg: number | null, mpg: number | null): boolean {
+  // If we have no stats at all, include the player (can't filter what we can't measure)
+  if (ppg === null && mpg === null) return true;
+  const ppgOk = ppg === null || ppg >= PPG_THRESHOLD;
+  const mpgOk = mpg === null || mpg >= MPG_THRESHOLD;
+  return ppgOk && mpgOk;
+}
+
+function getImpactRating(ppg: number | null, mpg: number | null): "High" | "Medium" | "Low" {
+  if ((ppg !== null && ppg >= 15) || (mpg !== null && mpg >= 28)) return "High";
+  if ((ppg !== null && ppg >= 8) || (mpg !== null && mpg >= 18)) return "Medium";
+  return "Low";
 }
 
 /** Keyed by ESPN full team name, e.g. "Duke Blue Devils" */
@@ -125,15 +143,26 @@ async function fetchRosterMap(teamId: string): Promise<Map<string, string>> {
   }
 }
 
-function extractFromCategories(categories: EspnStatCategory[]): { ppg: number | null; gamesPlayed: number | null } {
+function extractFromCategories(
+  categories: EspnStatCategory[],
+): { ppg: number | null; minutesPerGame: number | null; gamesPlayed: number | null } {
   let ppg: number | null = null;
+  let minutesPerGame: number | null = null;
   let gamesPlayed: number | null = null;
   for (const cat of categories) {
     for (const stat of cat.stats ?? []) {
       const name = (stat.name ?? "").toLowerCase();
-      if (["avgpoints", "ppg", "pointspergame", "avgpointspergame"].includes(name)) {
+      const numVal = (fallback: null) => {
         const v = typeof stat.value === "number" ? stat.value : parseFloat(stat.displayValue ?? "");
-        if (!isNaN(v)) ppg = Math.round(v * 10) / 10;
+        return isNaN(v) ? fallback : v;
+      };
+      if (["avgpoints", "ppg", "pointspergame", "avgpointspergame"].includes(name)) {
+        const v = numVal(null);
+        if (v !== null) ppg = Math.round(v * 10) / 10;
+      }
+      if (["avgminutes", "mpg", "minutespergame", "avgminutespergame"].includes(name)) {
+        const v = numVal(null);
+        if (v !== null) minutesPerGame = Math.round(v * 10) / 10;
       }
       if (["gamesplayed", "gp", "games"].includes(name)) {
         const v = typeof stat.value === "number" ? stat.value : parseInt(stat.displayValue ?? "", 10);
@@ -141,12 +170,12 @@ function extractFromCategories(categories: EspnStatCategory[]): { ppg: number | 
       }
     }
   }
-  return { ppg, gamesPlayed };
+  return { ppg, minutesPerGame, gamesPlayed };
 }
 
 async function fetchAthleteStats(
   athleteId: string,
-): Promise<{ ppg: number | null; gamesPlayed: number | null }> {
+): Promise<{ ppg: number | null; minutesPerGame: number | null; gamesPlayed: number | null }> {
   const urls = [
     `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/athletes/${athleteId}/statistics/0`,
     `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/athletes/${athleteId}/statistics`,
@@ -165,12 +194,12 @@ async function fetchAthleteStats(
         data?.categories ??
         [];
       const result = extractFromCategories(categories);
-      if (result.ppg !== null || result.gamesPlayed !== null) return result;
+      if (result.ppg !== null || result.minutesPerGame !== null || result.gamesPlayed !== null) return result;
     } catch {
       // try next URL
     }
   }
-  return { ppg: null, gamesPlayed: null };
+  return { ppg: null, minutesPerGame: null, gamesPlayed: null };
 }
 
 // ── Query function ────────────────────────────────────────────────────────────
@@ -209,7 +238,7 @@ async function buildInjuryMap(): Promise<InjuryMap> {
   }
 
   // Fetch stats for all unique athletes in parallel
-  const statsCache = new Map<string, { ppg: number | null; gamesPlayed: number | null }>();
+  const statsCache = new Map<string, { ppg: number | null; minutesPerGame: number | null; gamesPlayed: number | null }>();
   await Promise.all(
     [...athleteIdSet].map(async (id) => {
       statsCache.set(id, await fetchAthleteStats(id));
@@ -223,18 +252,21 @@ async function buildInjuryMap(): Promise<InjuryMap> {
       const id =
         inj.athleteId ??
         (block.espnTeamId ? (rosterCache.get(block.espnTeamId)?.get(inj.playerName.toLowerCase()) ?? null) : null);
-      const stats = id ? (statsCache.get(id) ?? { ppg: null, gamesPlayed: null }) : { ppg: null, gamesPlayed: null };
+      const stats = id
+        ? (statsCache.get(id) ?? { ppg: null, minutesPerGame: null, gamesPlayed: null })
+        : { ppg: null, minutesPerGame: null, gamesPlayed: null };
       return {
         playerName: inj.playerName,
         position: inj.position,
         status: inj.status,
         description: inj.description,
-        impactRating: "Medium" as const,
+        impactRating: getImpactRating(stats.ppg, stats.minutesPerGame),
         ppg: stats.ppg,
+        minutesPerGame: stats.minutesPerGame,
         gamesPlayed: stats.gamesPlayed,
       };
-    });
-    map.set(block.teamName, entries);
+    }).filter((entry) => isRelevantInjury(entry.ppg, entry.minutesPerGame));
+    if (entries.length > 0) map.set(block.teamName, entries);
   }
   return map;
 }
