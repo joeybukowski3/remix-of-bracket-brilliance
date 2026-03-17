@@ -834,6 +834,18 @@ export default function Bracket() {
         weights={weights}
         teamPool={teamPool}
         onClose={() => setAnalyzeGame(null)}
+        onPick={(gameId, teamId) => {
+          setPicks((prev) => ({ ...prev, [gameId]: teamId }));
+          // Sync the displayed game's winner so the pick highlight updates immediately
+          setAnalyzeGame((prev) =>
+            prev && prev.id === gameId
+              ? {
+                  ...prev,
+                  winner: prev.teamA?.canonicalId === teamId ? prev.teamA : prev.teamB,
+                }
+              : prev,
+          );
+        }}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { X, ExternalLink } from "lucide-react";
+import { X, ExternalLink, CheckCircle2 } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -243,6 +243,7 @@ interface BracketMatchupModalProps {
   weights: StatWeight[];
   teamPool: Team[];
   onClose: () => void;
+  onPick?: (gameId: string, teamId: string) => void;
 }
 
 function ModalBody({
@@ -250,6 +251,7 @@ function ModalBody({
   weights,
   teamPool,
   onClose,
+  onPick,
 }: BracketMatchupModalProps) {
   const teamA = game?.teamA;
   const teamB = game?.teamB;
@@ -299,6 +301,34 @@ function ModalBody({
         />
       </div>
 
+      {/* Pick winner */}
+      {onPick && game && (
+        <div className="shrink-0 px-4 py-3 border-t border-border bg-secondary/40">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Pick Winner</p>
+          <div className="grid grid-cols-2 gap-2">
+            {[teamA, teamB].map((team) => {
+              if (!team) return null;
+              const isPicked = game.winner?.canonicalId === team.canonicalId;
+              return (
+                <button
+                  key={team.canonicalId}
+                  onClick={() => onPick(game.id, team.canonicalId)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                    isPicked
+                      ? "bg-primary/20 border-primary/40 text-primary ring-1 ring-inset ring-primary/30"
+                      : "bg-card border-border text-foreground hover:bg-secondary hover:border-primary/30"
+                  }`}
+                >
+                  <TeamLogo name={team.name} logo={team.logo} className="h-5 w-5 shrink-0" />
+                  <span className="truncate text-xs">{team.abbreviation}</span>
+                  {isPicked && <CheckCircle2 className="h-3.5 w-3.5 ml-auto shrink-0 text-primary" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Sticky footer */}
       {fullAnalysisUrl && (
         <div className="shrink-0 px-4 py-3 border-t border-border flex items-center justify-between bg-secondary/80">
@@ -321,6 +351,7 @@ export default function BracketMatchupModal({
   weights,
   teamPool,
   onClose,
+  onPick,
 }: BracketMatchupModalProps) {
   const isOpen = !!(game?.teamA && game?.teamB);
 
@@ -331,7 +362,7 @@ export default function BracketMatchupModal({
         style={{ opacity: 1 }}
       >
         <DialogTitle className="sr-only">Bracket Matchup Analysis</DialogTitle>
-        <ModalBody game={game} weights={weights} teamPool={teamPool} onClose={onClose} />
+        <ModalBody game={game} weights={weights} teamPool={teamPool} onClose={onClose} onPick={onPick} />
       </DialogContent>
     </Dialog>
   );
