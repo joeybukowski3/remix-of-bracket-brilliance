@@ -29,6 +29,51 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function StatPill({ label, value }: { label: string; value: string | null }) {
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[10px]">
+      <span className="text-muted-foreground/70">{label}</span>
+      <span className="tabular-nums font-semibold text-foreground/80">{value ?? "—"}</span>
+    </span>
+  );
+}
+
+function InjuryRow({ entry }: { entry: InjuryEntry }) {
+  const ppgStr = entry.ppg !== null ? entry.ppg.toFixed(1) : null;
+  const gpStr = entry.gamesPlayed !== null ? String(entry.gamesPlayed) : null;
+  const hasStats = ppgStr !== null || gpStr !== null;
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-secondary/30 px-2.5 py-2 space-y-1.5">
+      {/* Top row: name, position, status badge, impact tag */}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-xs font-semibold text-foreground truncate">{entry.playerName}</span>
+          <span className="text-[10px] text-muted-foreground shrink-0">{entry.position}</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <StatusBadge status={entry.status} />
+          {entry.impactRating === "High" && (
+            <span className="text-[10px] font-semibold text-orange-400">⚡ High Impact</span>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom row: PPG · GP · description */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+        {hasStats && (
+          <div className="flex items-center gap-2 shrink-0">
+            <StatPill label="PPG " value={ppgStr} />
+            <span className="text-border/60">·</span>
+            <StatPill label="GP " value={gpStr} />
+          </div>
+        )}
+        <p className="text-[11px] text-muted-foreground leading-relaxed">{entry.description}</p>
+      </div>
+    </div>
+  );
+}
+
 function TeamInjuryList({ team, injuries }: { team: Team; injuries: InjuryEntry[] }) {
   return (
     <div className="space-y-2">
@@ -41,22 +86,7 @@ function TeamInjuryList({ team, injuries }: { team: Team; injuries: InjuryEntry[
       ) : (
         <div className="space-y-1.5">
           {injuries.map((entry, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-border/50 bg-secondary/30 px-2.5 py-2 space-y-1"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-foreground">{entry.playerName}</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] text-muted-foreground">{entry.position}</span>
-                  <StatusBadge status={entry.status} />
-                  {entry.impactRating === "High" && (
-                    <span className="text-[10px] font-semibold text-orange-400">⚡ High Impact</span>
-                  )}
-                </div>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">{entry.description}</p>
-            </div>
+            <InjuryRow key={i} entry={entry} />
           ))}
         </div>
       )}

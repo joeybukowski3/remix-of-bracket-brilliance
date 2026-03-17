@@ -356,8 +356,12 @@ function ModalBody({
                     {inj.length === 0
                       ? "No key injuries"
                       : inj
-                          .map((e) => `${e.playerName.split(" ").pop()} (${e.position}) — ${e.status}`)
-                          .join(" · ")}
+                          .map((e) => {
+                            const lastName = e.playerName.split(" ").pop();
+                            const ppgPart = e.ppg !== null ? ` · ${e.ppg.toFixed(1)} ppg` : "";
+                            return `${lastName} (${e.position}) — ${e.status}${ppgPart}`;
+                          })
+                          .join("  ")}
                   </p>
                 ))}
               </div>
