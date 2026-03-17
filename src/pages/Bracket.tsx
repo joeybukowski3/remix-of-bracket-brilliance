@@ -532,6 +532,53 @@ export default function Bracket() {
                   </Card>
                 </div>
               )}
+
+              {/* Final Four & Championship */}
+              <Card className="border-white/10 bg-card/95 shadow-[0_16px_36px_hsl(var(--background)/0.22)]">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Final Four &amp; Championship</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Pick your Final Four winners and national champion. Teams appear once your regional picks advance.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Semifinal 1 · East vs West
+                      </p>
+                      <GameCard
+                        game={bracketTree.finalFourGames[0]}
+                        weights={weights}
+                        onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
+                        onAnalyze={(game) => setAnalyzeGame(game)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Semifinal 2 · South vs Midwest
+                      </p>
+                      <GameCard
+                        game={bracketTree.finalFourGames[1]}
+                        weights={weights}
+                        onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
+                        onAnalyze={(game) => setAnalyzeGame(game)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Championship
+                      </p>
+                      <GameCard
+                        game={bracketTree.championshipGame}
+                        weights={weights}
+                        onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
+                        onAnalyze={(game) => setAnalyzeGame(game)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           </TabsContent>
 
@@ -836,15 +883,7 @@ export default function Bracket() {
         onClose={() => setAnalyzeGame(null)}
         onPick={(gameId, teamId) => {
           setPicks((prev) => ({ ...prev, [gameId]: teamId }));
-          // Sync the displayed game's winner so the pick highlight updates immediately
-          setAnalyzeGame((prev) =>
-            prev && prev.id === gameId
-              ? {
-                  ...prev,
-                  winner: prev.teamA?.canonicalId === teamId ? prev.teamA : prev.teamB,
-                }
-              : prev,
-          );
+          setAnalyzeGame(null);
         }}
       />
     </div>
