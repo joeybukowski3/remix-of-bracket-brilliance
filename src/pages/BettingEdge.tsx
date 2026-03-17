@@ -114,6 +114,28 @@ function sortEntries(entries: BettingBoardEntry[], mode: SortMode) {
   return sorted;
 }
 
+function ProbabilityRow({
+  logo,
+  name,
+  abbr,
+  prob,
+  isFavored,
+}: {
+  logo?: string | null;
+  name: string;
+  abbr: string;
+  prob: string;
+  isFavored: boolean;
+}) {
+  return (
+    <div className={`flex items-center gap-1.5 ${isFavored ? "font-bold text-primary" : "text-muted-foreground/70"}`}>
+      <TeamLogo name={name} logo={logo} className="h-4 w-4 shrink-0" />
+      <span className="text-[11px] flex-1 min-w-0 truncate">{abbr}</span>
+      <span className="text-[11px] tabular-nums shrink-0">{prob}</span>
+    </div>
+  );
+}
+
 function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
   const edgeTeam =
     entry.edgeSide === "away"
@@ -121,15 +143,6 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
       : entry.edgeSide === "home"
         ? entry.home?.abbreviation || entry.game.homeTeam?.abbreviation || "Home"
         : "Even";
-
-  const modelText =
-    entry.modelProbAway !== null && entry.modelProbHome !== null
-      ? `${formatRoundedPercent(entry.modelProbAway * 100)} / ${formatRoundedPercent(entry.modelProbHome * 100)}`
-      : "Model unavailable";
-
-  const vegasText = entry.vegas
-    ? `${formatProbabilityValue(entry.vegas.teamA.impliedProbability)} / ${formatProbabilityValue(entry.vegas.teamB.impliedProbability)}`
-    : "Line unavailable";
 
   const lineText = entry.vegas
     ? `${formatMoneyline(entry.vegas.teamA.moneyline)} / ${formatMoneyline(entry.vegas.teamB.moneyline)}`
@@ -139,6 +152,21 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
     entry.edgeValue !== null && entry.edgeSide !== "even"
       ? `${edgeTeam} +${entry.edgeValue.toFixed(1)}%`
       : "No model edge";
+
+  const awayAbbr = entry.away?.abbreviation || entry.game.awayTeam?.abbreviation || "Away";
+  const homeAbbr = entry.home?.abbreviation || entry.game.homeTeam?.abbreviation || "Home";
+  const awayLogo = entry.away?.logo || entry.game.awayTeam?.logo;
+  const homeLogo = entry.home?.logo || entry.game.homeTeam?.logo;
+  const awayName = entry.away?.name || entry.game.awayTeam?.name || "Away";
+  const homeName = entry.home?.name || entry.game.homeTeam?.name || "Home";
+
+  const modelAwayProb = entry.modelProbAway ?? 0;
+  const modelHomeProb = entry.modelProbHome ?? 0;
+  const vegasAwayProb = entry.vegas?.teamA.impliedProbability ?? 0;
+  const vegasHomeProb = entry.vegas?.teamB.impliedProbability ?? 0;
+
+  const edgeModelProb = entry.edgeSide === "away" ? entry.modelProbAway : entry.modelProbHome;
+  const edgeVegasProb = entry.edgeSide === "away" ? entry.vegas?.teamA.impliedProbability : entry.vegas?.teamB.impliedProbability;
 
   const Wrapper = entry.link ? Link : "div";
   const wrapperProps = entry.link
@@ -201,13 +229,27 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
       </div>
 
       <div className="rounded-xl bg-secondary/55 px-3 py-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Model</p>
-        <p className="mt-1 text-sm font-semibold text-foreground">{modelText}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Model</p>
+        {entry.modelProbAway !== null && entry.modelProbHome !== null ? (
+          <div className="space-y-1">
+            <ProbabilityRow logo={awayLogo} name={awayName} abbr={awayAbbr} prob={formatRoundedPercent(modelAwayProb * 100)} isFavored={modelAwayProb >= modelHomeProb} />
+            <ProbabilityRow logo={homeLogo} name={homeName} abbr={homeAbbr} prob={formatRoundedPercent(modelHomeProb * 100)} isFavored={modelHomeProb > modelAwayProb} />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Unavailable</p>
+        )}
       </div>
 
       <div className="rounded-xl bg-secondary/55 px-3 py-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Vegas</p>
-        <p className="mt-1 text-sm font-semibold text-foreground">{vegasText}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Vegas</p>
+        {entry.vegas ? (
+          <div className="space-y-1">
+            <ProbabilityRow logo={awayLogo} name={awayName} abbr={awayAbbr} prob={formatProbabilityValue(entry.vegas.teamA.impliedProbability)} isFavored={vegasAwayProb >= vegasHomeProb} />
+            <ProbabilityRow logo={homeLogo} name={homeName} abbr={homeAbbr} prob={formatProbabilityValue(entry.vegas.teamB.impliedProbability)} isFavored={vegasHomeProb > vegasAwayProb} />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Unavailable</p>
+        )}
       </div>
 
       <div className="rounded-xl bg-secondary/55 px-3 py-2">
@@ -215,6 +257,11 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
         <div className={`mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getEdgeClass(entry.edgeValue)}`}>
           {edgeText}
         </div>
+        {entry.vegas && edgeModelProb !== null && edgeVegasProb !== null && entry.edgeSide !== "even" && (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Model {formatRoundedPercent(edgeModelProb * 100)} · Vegas {formatProbabilityValue(edgeVegasProb)}
+          </p>
+        )}
       </div>
 
       <div className="rounded-xl bg-secondary/55 px-3 py-2">
@@ -368,19 +415,27 @@ export default function BettingEdge() {
     return entries;
   }, [games, officialMatchupByGameId, resolvedOddsEvents, teamPool, weights]);
 
-  const groupedEntries = useMemo(() => {
-    const byDate = new Map<string, BettingBoardEntry[]>();
-    for (const entry of boardEntries) {
-      const dateKey = new Date(entry.game.date).toDateString();
-      if (!byDate.has(dateKey)) byDate.set(dateKey, []);
-      byDate.get(dateKey)!.push(entry);
+  const displayGroups = useMemo(() => {
+    const allSorted = sortEntries(boardEntries, sortMode);
+
+    // Only show date group headers when sorting by game time
+    if (sortMode === "game-time") {
+      const byDate = new Map<string, BettingBoardEntry[]>();
+      for (const entry of allSorted) {
+        const dateKey = new Date(entry.game.date).toDateString();
+        if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+        byDate.get(dateKey)!.push(entry);
+      }
+      return Array.from(byDate.entries())
+        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+        .map(([dateKey, entries]) => ({
+          label: getDateGroupLabel(dateKey) as string | null,
+          entries,
+        }));
     }
-    return Array.from(byDate.entries())
-      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-      .map(([dateKey, entries]) => ({
-        label: getDateGroupLabel(dateKey),
-        entries: sortEntries(entries, sortMode),
-      }));
+
+    // All other modes: global flat list, no date group headers
+    return [{ label: null as string | null, entries: allSorted }];
   }, [boardEntries, sortMode]);
 
   const handleWeightChange = (key: string, value: number) => {
@@ -492,11 +547,13 @@ export default function BettingEdge() {
               </div>
             ) : null}
 
-            {groupedEntries.map(({ label, entries }) => (
-              <div key={label}>
-                <div className="mb-2 mt-4 first:mt-0 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-                  {label}
-                </div>
+            {displayGroups.map(({ label, entries }, groupIdx) => (
+              <div key={label ?? groupIdx}>
+                {label && (
+                  <div className="mb-2 mt-4 first:mt-0 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                    {label}
+                  </div>
+                )}
                 <div className="space-y-2">
                   {entries.map((entry) => (
                     <BettingBoardRow key={entry.game.id} entry={entry} />
