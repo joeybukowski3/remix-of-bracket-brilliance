@@ -31,7 +31,16 @@ import {
 } from "@/lib/odds";
 import { formatRoundedPercent } from "@/lib/numberFormat";
 
-type SortMode = "top-edge" | "smallest-edge" | "game-time" | "model-favorite";
+type SortMode = "top-edge" | "smallest-edge" | "game-time" | "model-favorite" | "spread-rank";
+
+interface SpreadRankInfo {
+  team: Team;
+  spread: number;
+  spreadRank: number;
+  modelRank: number;
+  /** spreadRank − modelRank; negative = Vegas likes more than model */
+  rankDelta: number;
+}
 
 interface BettingBoardEntry {
   game: ScheduleGame;
@@ -49,6 +58,8 @@ interface BettingBoardEntry {
   edgeValue: number | null;
   edgeSide: "away" | "home" | "even";
   link: string | null;
+  homeSpread: number | null;
+  awaySpread: number | null;
 }
 
 function formatGameTime(dateStr: string) {
@@ -87,7 +98,17 @@ function buildEntryLink(game: ScheduleGame, away: Team | null, home: Team | null
   return `/schedule/${game.id}?away=${encodeURIComponent(away.canonicalId)}&home=${encodeURIComponent(home.canonicalId)}`;
 }
 
-function sortEntries(entries: BettingBoardEntry[], mode: SortMode) {
+function getSpreadDiscrepancy(entry: BettingBoardEntry, spreadRankMap: Map<string, SpreadRankInfo>): number {
+  const awayRank = entry.away ? spreadRankMap.get(entry.away.canonicalId) : null;
+  const homeRank = entry.home ? spreadRankMap.get(entry.home.canonicalId) : null;
+  return Math.max(awayRank ? Math.abs(awayRank.rankDelta) : 0, homeRank ? Math.abs(homeRank.rankDelta) : 0);
+}
+
+function sortEntries(
+  entries: BettingBoardEntry[],
+  mode: SortMode,
+  spreadRankMap: Map<string, SpreadRankInfo> = new Map(),
+) {
   const sorted = [...entries];
   sorted.sort((a, b) => {
     const edgeA = a.edgeValue ?? -1;
@@ -102,6 +123,10 @@ function sortEntries(entries: BettingBoardEntry[], mode: SortMode) {
       const favA = Math.max(a.modelProbAway ?? 0, a.modelProbHome ?? 0);
       const favB = Math.max(b.modelProbAway ?? 0, b.modelProbHome ?? 0);
       if (favA !== favB) return favB - favA;
+    } else if (mode === "spread-rank") {
+      const discA = getSpreadDiscrepancy(a, spreadRankMap);
+      const discB = getSpreadDiscrepancy(b, spreadRankMap);
+      if (discA !== discB) return discB - discA;
     } else if (edgeA !== edgeB) {
       return edgeB - edgeA;
     }
@@ -112,6 +137,85 @@ function sortEntries(entries: BettingBoardEntry[], mode: SortMode) {
     return a.game.name.localeCompare(b.game.name);
   });
   return sorted;
+}
+
+function InterpretationBadge({ delta }: { delta: number }) {
+  if (delta <= -5)
+    return (
+      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-yellow-400/15 text-yellow-400 border border-yellow-400/25">
+        🔥 Vegas Strong Lean
+      </span>
+    );
+  if (delta < 0)
+    return (
+      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-green-500/15 text-green-400 border border-green-500/25">
+        ✅ Vegas Slight Lean
+      </span>
+    );
+  if (delta === 0)
+    return (
+      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-secondary text-muted-foreground">
+        ➖ Aligned
+      </span>
+    );
+  if (delta <= 4)
+    return (
+      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/25">
+        ⚠️ Model Lean
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/25">
+      🚨 Model Strong Lean
+    </span>
+  );
+}
+
+function SpreadRankingsTable({ entries }: { entries: SpreadRankInfo[] }) {
+  const fmtSpread = (v: number) => (v > 0 ? `+${v.toFixed(1)}` : v.toFixed(1));
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-border">
+            {["Team", "Spread", "Spread Rank", "Model Rank", "Δ Rank", "Interpretation"].map((h, i) => (
+              <th
+                key={h}
+                className={`pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground ${i === 0 ? "text-left" : i === 5 ? "text-left pl-3" : "text-right"}`}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map(({ team, spread, spreadRank, modelRank, rankDelta }) => (
+            <tr key={team.canonicalId} className="border-b border-border/40 last:border-0">
+              <td className="py-2">
+                <div className="flex items-center gap-2">
+                  <TeamLogo name={team.name} logo={team.logo} className="h-5 w-5 shrink-0" />
+                  <span className="font-medium">{team.abbreviation}</span>
+                </div>
+              </td>
+              <td className="py-2 text-right tabular-nums">{fmtSpread(spread)}</td>
+              <td className="py-2 text-right tabular-nums">#{spreadRank}</td>
+              <td className="py-2 text-right tabular-nums">#{modelRank}</td>
+              <td
+                className={`py-2 text-right tabular-nums font-semibold ${
+                  rankDelta < 0 ? "text-green-400" : rankDelta > 0 ? "text-blue-400" : "text-muted-foreground"
+                }`}
+              >
+                {rankDelta > 0 ? `+${rankDelta}` : rankDelta}
+              </td>
+              <td className="py-2 pl-3">
+                <InterpretationBadge delta={rankDelta} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function ProbabilityRow({
@@ -136,7 +240,15 @@ function ProbabilityRow({
   );
 }
 
-function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
+function BettingBoardRow({
+  entry,
+  spreadRankMap,
+}: {
+  entry: BettingBoardEntry;
+  spreadRankMap: Map<string, SpreadRankInfo>;
+}) {
+  const [spreadExpanded, setSpreadExpanded] = useState(false);
+
   const edgeTeam =
     entry.edgeSide === "away"
       ? entry.away?.abbreviation || entry.game.awayTeam?.abbreviation || "Away"
@@ -166,20 +278,18 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
   const vegasHomeProb = entry.vegas?.teamB.impliedProbability ?? 0;
 
   const edgeModelProb = entry.edgeSide === "away" ? entry.modelProbAway : entry.modelProbHome;
-  const edgeVegasProb = entry.edgeSide === "away" ? entry.vegas?.teamA.impliedProbability : entry.vegas?.teamB.impliedProbability;
+  const edgeVegasProb =
+    entry.edgeSide === "away" ? entry.vegas?.teamA.impliedProbability : entry.vegas?.teamB.impliedProbability;
 
-  const Wrapper = entry.link ? Link : "div";
-  const wrapperProps = entry.link
-    ? { to: entry.link }
-    : {};
+  const awayRank = entry.away ? spreadRankMap.get(entry.away.canonicalId) : null;
+  const homeRank = entry.home ? spreadRankMap.get(entry.home.canonicalId) : null;
+  const hasSpreadData = awayRank !== null || homeRank !== null;
 
-  return (
-    <Wrapper
-      {...wrapperProps}
-      className={`grid gap-3 rounded-2xl border border-border bg-card/90 px-4 py-3 transition-colors ${
-        entry.link ? "hover:border-primary/40 hover:bg-secondary/50" : ""
-      } md:grid-cols-[minmax(0,2.2fr),minmax(0,1fr),minmax(0,1fr),minmax(0,1fr),minmax(0,0.9fr),auto] md:items-center`}
-    >
+  const mainGridClass =
+    "grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,2.2fr),minmax(0,1fr),minmax(0,1fr),minmax(0,1fr),minmax(0,0.9fr),auto] md:items-center";
+
+  const mainContent = (
+    <>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           {entry.tournamentContext ? (
@@ -205,7 +315,9 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
                 {entry.away?.name || entry.game.awayTeam?.name || "Away team"}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                {entry.tournamentContext ? `Seed ${entry.tournamentContext.seeds[0]}` : entry.away?.record || entry.game.awayTeam?.record || "Record unavailable"}
+                {entry.tournamentContext
+                  ? `Seed ${entry.tournamentContext.seeds[0]}`
+                  : entry.away?.record || entry.game.awayTeam?.record || "Record unavailable"}
               </p>
             </div>
           </div>
@@ -221,7 +333,9 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
                 {entry.home?.name || entry.game.homeTeam?.name || "Home team"}
               </p>
               <p className="text-[11px] text-muted-foreground">
-                {entry.tournamentContext ? `Seed ${entry.tournamentContext.seeds[1]}` : entry.home?.record || entry.game.homeTeam?.record || "Record unavailable"}
+                {entry.tournamentContext
+                  ? `Seed ${entry.tournamentContext.seeds[1]}`
+                  : entry.home?.record || entry.game.homeTeam?.record || "Record unavailable"}
               </p>
             </div>
           </div>
@@ -232,8 +346,20 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Model</p>
         {entry.modelProbAway !== null && entry.modelProbHome !== null ? (
           <div className="space-y-1">
-            <ProbabilityRow logo={awayLogo} name={awayName} abbr={awayAbbr} prob={formatRoundedPercent(modelAwayProb * 100)} isFavored={modelAwayProb >= modelHomeProb} />
-            <ProbabilityRow logo={homeLogo} name={homeName} abbr={homeAbbr} prob={formatRoundedPercent(modelHomeProb * 100)} isFavored={modelHomeProb > modelAwayProb} />
+            <ProbabilityRow
+              logo={awayLogo}
+              name={awayName}
+              abbr={awayAbbr}
+              prob={formatRoundedPercent(modelAwayProb * 100)}
+              isFavored={modelAwayProb >= modelHomeProb}
+            />
+            <ProbabilityRow
+              logo={homeLogo}
+              name={homeName}
+              abbr={homeAbbr}
+              prob={formatRoundedPercent(modelHomeProb * 100)}
+              isFavored={modelHomeProb > modelAwayProb}
+            />
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">Unavailable</p>
@@ -244,8 +370,20 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
         <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">Vegas</p>
         {entry.vegas ? (
           <div className="space-y-1">
-            <ProbabilityRow logo={awayLogo} name={awayName} abbr={awayAbbr} prob={formatProbabilityValue(entry.vegas.teamA.impliedProbability)} isFavored={vegasAwayProb >= vegasHomeProb} />
-            <ProbabilityRow logo={homeLogo} name={homeName} abbr={homeAbbr} prob={formatProbabilityValue(entry.vegas.teamB.impliedProbability)} isFavored={vegasHomeProb > vegasAwayProb} />
+            <ProbabilityRow
+              logo={awayLogo}
+              name={awayName}
+              abbr={awayAbbr}
+              prob={formatProbabilityValue(entry.vegas.teamA.impliedProbability)}
+              isFavored={vegasAwayProb >= vegasHomeProb}
+            />
+            <ProbabilityRow
+              logo={homeLogo}
+              name={homeName}
+              abbr={homeAbbr}
+              prob={formatProbabilityValue(entry.vegas.teamB.impliedProbability)}
+              isFavored={vegasHomeProb > vegasAwayProb}
+            />
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">Unavailable</p>
@@ -282,7 +420,93 @@ function BettingBoardRow({ entry }: { entry: BettingBoardEntry }) {
           )}
         </div>
       </div>
-    </Wrapper>
+    </>
+  );
+
+  return (
+    <div
+      className={`rounded-2xl border border-border bg-card/90 overflow-hidden transition-colors ${
+        entry.link ? "hover:border-primary/40" : ""
+      }`}
+    >
+      {entry.link ? (
+        <Link to={entry.link} className={`${mainGridClass} hover:bg-secondary/40 transition-colors`}>
+          {mainContent}
+        </Link>
+      ) : (
+        <div className={mainGridClass}>{mainContent}</div>
+      )}
+
+      {hasSpreadData && (
+        <>
+          <button
+            onClick={() => setSpreadExpanded((v) => !v)}
+            className="flex w-full items-center gap-1.5 border-t border-border/20 px-4 py-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary/20"
+          >
+            <ChevronDown
+              className={`h-3 w-3 transition-transform duration-150 ${spreadExpanded ? "rotate-180" : ""}`}
+            />
+            Spread Analysis
+          </button>
+          {spreadExpanded && (
+            <div className="border-t border-border/30 bg-secondary/15 px-4 py-3">
+              <div className="grid grid-cols-2 gap-4">
+                {(
+                  [
+                    { rank: awayRank, abbr: awayAbbr, logo: awayLogo, name: awayName },
+                    { rank: homeRank, abbr: homeAbbr, logo: homeLogo, name: homeName },
+                  ] as const
+                ).map(({ rank, abbr, logo, name }) =>
+                  rank ? (
+                    <div key={abbr} className="space-y-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <TeamLogo name={name} logo={logo} className="h-4 w-4 shrink-0" />
+                        <span className="text-xs font-semibold text-foreground">{abbr}</span>
+                      </div>
+                      <div className="space-y-0.5 text-[11px] text-muted-foreground">
+                        <div className="flex justify-between">
+                          <span>Spread</span>
+                          <span className="tabular-nums font-medium text-foreground">
+                            {rank.spread > 0 ? `+${rank.spread.toFixed(1)}` : rank.spread.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Spread Rank</span>
+                          <span className="tabular-nums font-medium text-foreground">#{rank.spreadRank}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Model Rank</span>
+                          <span className="tabular-nums font-medium text-foreground">#{rank.modelRank}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Δ Rank</span>
+                          <span
+                            className={`tabular-nums font-semibold ${
+                              rank.rankDelta < 0
+                                ? "text-green-400"
+                                : rank.rankDelta > 0
+                                  ? "text-blue-400"
+                                  : "text-muted-foreground"
+                            }`}
+                          >
+                            {rank.rankDelta > 0 ? `+${rank.rankDelta}` : rank.rankDelta}
+                          </span>
+                        </div>
+                      </div>
+                      <InterpretationBadge delta={rank.rankDelta} />
+                    </div>
+                  ) : (
+                    <div key={abbr} className="text-[11px] text-muted-foreground">
+                      No spread data for {abbr}
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -291,6 +515,7 @@ export default function BettingEdge() {
   const [showControls, setShowControls] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("top-edge");
   const [selectedPreset, setSelectedPreset] = useState<"default" | "elite">("default");
+  const [showSpreadRankings, setShowSpreadRankings] = useState(false);
   const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
   const { data: liveTeams = [] } = useLiveTeams();
   const { games, isLoading, error } = useUpcomingSchedule(7);
@@ -298,6 +523,11 @@ export default function BettingEdge() {
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const officialMatchups = useMemo(() => buildTournamentMatchups(bracketSource, teamPool), [bracketSource, teamPool]);
+
+  const sortedPool = useMemo(
+    () => [...teamPool].sort((a, b) => calculateTeamScore(b.stats, weights) - calculateTeamScore(a.stats, weights)),
+    [teamPool, weights],
+  );
 
   useEffect(() => {
     let ignore = false;
@@ -353,7 +583,11 @@ export default function BettingEdge() {
       let moneylineAway: number | null = game.odds?.awayMoneyline ?? null;
       let moneylineHome: number | null = game.odds?.homeMoneyline ?? null;
       let oddsProvider: string | null = game.odds?.provider ?? null;
-      if ((moneylineAway === null || moneylineHome === null) && away && home) {
+      let awaySpread: number | null = null;
+      let homeSpread: number | null = null;
+
+      // Always look up live odds to get spreads; also fill in moneylines if ESPN didn't have them
+      if (away && home) {
         const liveMatch = resolvedOddsEvents.find(
           (r) =>
             (r.homeCanonicalId === home.canonicalId && r.awayCanonicalId === away.canonicalId) ||
@@ -362,9 +596,13 @@ export default function BettingEdge() {
         if (liveMatch) {
           // Odds API may list teams in either order — swap-correct so our away/home align
           const isSwapped = liveMatch.homeCanonicalId === away.canonicalId;
-          moneylineAway = isSwapped ? liveMatch.event.homeMoneyline : liveMatch.event.awayMoneyline;
-          moneylineHome = isSwapped ? liveMatch.event.awayMoneyline : liveMatch.event.homeMoneyline;
-          oddsProvider = liveMatch.event.sportsbook;
+          if (moneylineAway === null || moneylineHome === null) {
+            moneylineAway = isSwapped ? liveMatch.event.homeMoneyline : liveMatch.event.awayMoneyline;
+            moneylineHome = isSwapped ? liveMatch.event.awayMoneyline : liveMatch.event.homeMoneyline;
+            oddsProvider = liveMatch.event.sportsbook;
+          }
+          awaySpread = isSwapped ? liveMatch.event.homeSpread : liveMatch.event.awaySpread;
+          homeSpread = isSwapped ? liveMatch.event.awaySpread : liveMatch.event.homeSpread;
         }
       }
 
@@ -409,14 +647,43 @@ export default function BettingEdge() {
         edgeValue: vegas?.edge.points ?? null,
         edgeSide,
         link: buildEntryLink(game, away, home, matchup ? `/matchup/${matchup.gameId}` : null),
+        homeSpread,
+        awaySpread,
       } satisfies BettingBoardEntry;
     });
 
     return entries;
   }, [games, officialMatchupByGameId, resolvedOddsEvents, teamPool, weights]);
 
+  const spreadRankMap = useMemo(() => {
+    // Collect each team's spread from the first game they appear in
+    const teamSpreads = new Map<string, { team: Team; spread: number }>();
+    for (const entry of boardEntries) {
+      if (entry.away && entry.awaySpread !== null && !teamSpreads.has(entry.away.canonicalId)) {
+        teamSpreads.set(entry.away.canonicalId, { team: entry.away, spread: entry.awaySpread });
+      }
+      if (entry.home && entry.homeSpread !== null && !teamSpreads.has(entry.home.canonicalId)) {
+        teamSpreads.set(entry.home.canonicalId, { team: entry.home, spread: entry.homeSpread });
+      }
+    }
+    // Sort ascending — most negative spread (biggest favorite) = rank 1
+    const sorted = [...teamSpreads.values()].sort((a, b) => a.spread - b.spread);
+    const map = new Map<string, SpreadRankInfo>();
+    sorted.forEach(({ team, spread }, idx) => {
+      const spreadRank = idx + 1;
+      const modelRank = sortedPool.findIndex((t) => t.canonicalId === team.canonicalId) + 1 || sortedPool.length;
+      map.set(team.canonicalId, { team, spread, spreadRank, modelRank, rankDelta: spreadRank - modelRank });
+    });
+    return map;
+  }, [boardEntries, sortedPool]);
+
+  const spreadRankEntries = useMemo(
+    () => [...spreadRankMap.values()].sort((a, b) => Math.abs(b.rankDelta) - Math.abs(a.rankDelta)),
+    [spreadRankMap],
+  );
+
   const displayGroups = useMemo(() => {
-    const allSorted = sortEntries(boardEntries, sortMode);
+    const allSorted = sortEntries(boardEntries, sortMode, spreadRankMap);
 
     // Only show date group headers when sorting by game time
     if (sortMode === "game-time") {
@@ -436,7 +703,7 @@ export default function BettingEdge() {
 
     // All other modes: global flat list, no date group headers
     return [{ label: null as string | null, entries: allSorted }];
-  }, [boardEntries, sortMode]);
+  }, [boardEntries, sortMode, spreadRankMap]);
 
   const handleWeightChange = (key: string, value: number) => {
     setWeights((current) => current.map((weight) => (weight.key === key ? { ...weight, weight: value } : weight)));
@@ -489,6 +756,7 @@ export default function BettingEdge() {
                 <option value="smallest-edge">Smallest edge</option>
                 <option value="game-time">Game time</option>
                 <option value="model-favorite">Model favorite</option>
+                <option value="spread-rank">Spread vs. Model</option>
               </select>
             </label>
           </div>
@@ -499,6 +767,30 @@ export default function BettingEdge() {
             </div>
           ) : null}
         </section>
+
+        {spreadRankEntries.length > 0 && (
+          <section className="rounded-2xl border border-border bg-card/95 p-4 shadow-sm">
+            <button
+              onClick={() => setShowSpreadRankings((v) => !v)}
+              className="flex w-full items-center justify-between"
+            >
+              <div className="text-left">
+                <h2 className="text-lg font-semibold text-foreground">Spread vs. Model Rankings</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Vegas-implied favorability (spread rank) vs. model score rank — {spreadRankEntries.length} teams with active lines
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 ${showSpreadRankings ? "rotate-180" : ""}`}
+              />
+            </button>
+            {showSpreadRankings && (
+              <div className="mt-4">
+                <SpreadRankingsTable entries={spreadRankEntries} />
+              </div>
+            )}
+          </section>
+        )}
 
         <section className="rounded-2xl border border-border bg-card/95 p-4 shadow-sm">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -556,7 +848,7 @@ export default function BettingEdge() {
                 )}
                 <div className="space-y-2">
                   {entries.map((entry) => (
-                    <BettingBoardRow key={entry.game.id} entry={entry} />
+                    <BettingBoardRow key={entry.game.id} entry={entry} spreadRankMap={spreadRankMap} />
                   ))}
                 </div>
               </div>

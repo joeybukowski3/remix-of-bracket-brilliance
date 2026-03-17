@@ -7,6 +7,7 @@
 interface OddsApiOutcome {
   name: string;
   price: number;
+  point?: number; // present in spreads / totals markets
 }
 
 interface OddsApiMarket {
@@ -40,6 +41,10 @@ export interface NormalizedOddsEvent {
   awayMoneyline: number | null;
   homeImpliedProb: number | null;
   awayImpliedProb: number | null;
+  /** Point spread for the home team (negative = favorite, e.g. -5.5) */
+  homeSpread: number | null;
+  /** Point spread for the away team (positive = underdog, e.g. +5.5) */
+  awaySpread: number | null;
   lastUpdated: string;
 }
 
@@ -47,7 +52,7 @@ export interface NormalizedOddsEvent {
 
 const SPORT_KEY   = "basketball_ncaab";
 const REGIONS     = "us";
-const MARKETS     = "h2h";
+const MARKETS     = "h2h,spreads";
 const ODDS_FORMAT = "american";
 const PREFERRED_BOOKS = ["draftkings", "fanduel", "betmgm", "caesars", "pointsbet", "williamhill_us"];
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -92,6 +97,12 @@ function normalizeEvent(event: OddsApiEvent): NormalizedOddsEvent | null {
     if (total > 0) { homeProb /= total; awayProb /= total; }
   }
 
+  const spreadsMarket = book.markets.find((m) => m.key === "spreads");
+  const homeSpreadOutcome = spreadsMarket?.outcomes.find((o) => o.name === event.home_team);
+  const awaySpreadOutcome = spreadsMarket?.outcomes.find((o) => o.name === event.away_team);
+  const homeSpread = typeof homeSpreadOutcome?.point === "number" ? homeSpreadOutcome.point : null;
+  const awaySpread = typeof awaySpreadOutcome?.point === "number" ? awaySpreadOutcome.point : null;
+
   return {
     id: event.id,
     commenceTime: event.commence_time,
@@ -102,6 +113,8 @@ function normalizeEvent(event: OddsApiEvent): NormalizedOddsEvent | null {
     awayMoneyline: awayML,
     homeImpliedProb: homeProb,
     awayImpliedProb: awayProb,
+    homeSpread,
+    awaySpread,
     lastUpdated: book.last_update,
   };
 }

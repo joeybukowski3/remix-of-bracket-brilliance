@@ -15,6 +15,10 @@ export interface LiveOddsEvent {
   homeImpliedProb: number | null;
   /** Vig-removed win probability for away team (0–1) */
   awayImpliedProb: number | null;
+  /** Point spread for home team (negative = favorite, e.g. -5.5) */
+  homeSpread: number | null;
+  /** Point spread for away team (positive = underdog, e.g. +5.5) */
+  awaySpread: number | null;
   lastUpdated: string;
 }
 
