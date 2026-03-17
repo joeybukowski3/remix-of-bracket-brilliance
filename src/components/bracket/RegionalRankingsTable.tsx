@@ -1,9 +1,17 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import TeamLogo from "@/components/TeamLogo";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatStat, type StatWeight } from "@/data/ncaaTeams";
+import {
+  computeHomeInflationMetrics,
+  computeQuadRecord,
+  formatStat,
+  getTop50AvgDropOff,
+  hasStat,
+  type StatWeight,
+  type Team,
+} from "@/data/ncaaTeams";
 import { cn } from "@/lib/utils";
 import {
   computePathDifficulty,
@@ -11,6 +19,8 @@ import {
   type PathDifficulty,
   type ResolvedBracketRegion,
 } from "@/lib/bracket";
+
+// ── helpers ──────────────────────────────────────────────────────────────────
 
 function difficultyTone(tier: PathDifficulty["tier"]) {
   if (tier === "Brutal") return "bg-destructive/16 text-destructive border-destructive/25";
@@ -23,50 +33,162 @@ function difficultyWidth(score: number) {
   return `${Math.max(14, Math.min(100, score))}%`;
 }
 
+type SortKey =
+  | "rank"
+  | "seed"
+  | "team"
+  | "conf"
+  | "rec"
+  | "power"
+  | "off"
+  | "def"
+  | "pace"
+  | "sos"
+  | "netEff"
+  | "dropOff"
+  | "inflScore"
+  | "q1wins"
+  | "q2wins";
+
+function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
+  if (!active) return <ChevronsUpDown className="inline-block h-3 w-3 ml-0.5 text-muted-foreground/50" />;
+  return dir === "asc" ? (
+    <ChevronUp className="inline-block h-3 w-3 ml-0.5 text-primary" />
+  ) : (
+    <ChevronDown className="inline-block h-3 w-3 ml-0.5 text-primary" />
+  );
+}
+
+// ── main component ───────────────────────────────────────────────────────────
+
 export default function RegionalRankingsTable({
   region,
   weights,
+  teamPool,
 }: {
   region: ResolvedBracketRegion;
   weights: StatWeight[];
+  teamPool?: Team[];
 }) {
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("rank");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
   const rankedTeams = useMemo(() => rankTeamsInRegion(region, weights), [region, weights]);
+
+  // avg drop-off for inflation metrics
+  const avgDropOff = useMemo(() => {
+    const pool = teamPool && teamPool.length > 0 ? teamPool : region.teams;
+    return getTop50AvgDropOff(pool);
+  }, [teamPool, region.teams]);
+
+  // Enrich each entry with derived metrics
+  const enriched = useMemo(() => {
+    const total = rankedTeams.length;
+    return rankedTeams.map(({ team, score, path }, index) => {
+      const rank = index + 1;
+      const inf = computeHomeInflationMetrics(team, avgDropOff);
+      const quad = computeQuadRecord(team, rank, total);
+      const netEff =
+        hasStat(team.stats.adjOE) && hasStat(team.stats.adjDE)
+          ? team.stats.adjOE - team.stats.adjDE
+          : null;
+      return { team, score, path, rank, inf, quad, netEff };
+    });
+  }, [rankedTeams, avgDropOff]);
+
+  // Sort enriched rows
+  const sortedRows = useMemo(() => {
+    const rows = [...enriched];
+    rows.sort((a, b) => {
+      let va: number | string = 0;
+      let vb: number | string = 0;
+      switch (sortKey) {
+        case "rank": va = a.rank; vb = b.rank; break;
+        case "seed": va = a.team.seed ?? 99; vb = b.team.seed ?? 99; break;
+        case "team": va = a.team.name; vb = b.team.name; break;
+        case "conf": va = a.team.conference ?? ""; vb = b.team.conference ?? ""; break;
+        case "rec": va = a.team.record ?? ""; vb = b.team.record ?? ""; break;
+        case "power": va = a.score; vb = b.score; break;
+        case "off": va = a.team.stats.adjOE ?? -999; vb = b.team.stats.adjOE ?? -999; break;
+        case "def": va = a.team.stats.adjDE ?? 999; vb = b.team.stats.adjDE ?? 999; break;
+        case "pace": va = a.team.stats.tempo ?? -999; vb = b.team.stats.tempo ?? -999; break;
+        case "sos": va = a.team.stats.sos ?? -999; vb = b.team.stats.sos ?? -999; break;
+        case "netEff": va = a.netEff ?? -999; vb = b.netEff ?? -999; break;
+        case "dropOff": va = a.inf.dropOff ?? 999; vb = b.inf.dropOff ?? 999; break;
+        case "inflScore": va = a.inf.homeInflationScore ?? 999; vb = b.inf.homeInflationScore ?? 999; break;
+        case "q1wins": va = a.quad.q1.wins; vb = b.quad.q1.wins; break;
+        case "q2wins": va = a.quad.q2.wins; vb = b.quad.q2.wins; break;
+      }
+      if (typeof va === "string" && typeof vb === "string") {
+        return sortDir === "asc" ? va.localeCompare(vb) : vb.localeCompare(va);
+      }
+      return sortDir === "asc" ? (va as number) - (vb as number) : (vb as number) - (va as number);
+    });
+    return rows;
+  }, [enriched, sortKey, sortDir]);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      // Default direction: asc for rank/seed/name, desc for numeric stats
+      const ascByDefault: SortKey[] = ["rank", "seed", "team", "conf", "rec", "def", "dropOff", "inflScore"];
+      setSortDir(ascByDefault.includes(key) ? "asc" : "desc");
+    }
+  }
+
+  function Th({
+    col,
+    children,
+    className,
+  }: {
+    col: SortKey;
+    children: React.ReactNode;
+    className?: string;
+  }) {
+    return (
+      <TableHead
+        className={cn("h-10 cursor-pointer select-none hover:text-foreground whitespace-nowrap", className)}
+        onClick={() => handleSort(col)}
+      >
+        {children}
+        <SortIcon active={sortKey === col} dir={sortDir} />
+      </TableHead>
+    );
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/12 bg-card/95 shadow-[0_16px_34px_hsl(var(--background)/0.24)]">
-      <div className="border-b border-white/10 bg-secondary/65 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold text-foreground">{region.name} Region</h3>
-            <p className="text-xs text-muted-foreground">{region.teams.length} teams ranked live from the current model weights.</p>
-          </div>
-          <Badge variant="outline" className="border-white/10 bg-background/60 text-foreground">
-            Dynamic table
-          </Badge>
-        </div>
-      </div>
-
       <div className="overflow-x-auto">
-        <Table className="min-w-[880px] text-[13px]">
+        <Table className="min-w-[1280px] text-[13px]">
           <TableHeader className="bg-background/85">
             <TableRow className="border-white/10 hover:bg-transparent">
-              <TableHead className="h-10 w-12 px-3">Rk</TableHead>
-              <TableHead className="h-10 px-3">Team</TableHead>
-              <TableHead className="h-10 px-2">Conf</TableHead>
-              <TableHead className="h-10 px-2">Rec</TableHead>
-              <TableHead className="h-10 px-2 text-right">Power</TableHead>
-              <TableHead className="h-10 px-2 text-right">Off</TableHead>
-              <TableHead className="h-10 px-2 text-right">Def</TableHead>
-              <TableHead className="h-10 px-2 text-right">Pace</TableHead>
-              <TableHead className="h-10 px-2 text-right">Shoot</TableHead>
-              <TableHead className="h-10 px-3">Path</TableHead>
+              <Th col="rank" className="w-10 px-3 text-left">Rk</Th>
+              <Th col="seed" className="w-12 px-2 text-center">Seed</Th>
+              <Th col="team" className="px-3 min-w-[160px]">Team</Th>
+              <Th col="conf" className="px-2">Conf</Th>
+              <Th col="rec" className="px-2">Rec</Th>
+              <Th col="power" className="px-2 text-right">Power</Th>
+              <Th col="off" className="px-2 text-right">Off</Th>
+              <Th col="def" className="px-2 text-right">Def</Th>
+              <Th col="pace" className="px-2 text-right">Pace</Th>
+              <Th col="sos" className="px-2 text-right">SOS</Th>
+              <Th col="netEff" className="px-2 text-right">Net Eff</Th>
+              <Th col="dropOff" className="px-2 text-right">Drop-Off</Th>
+              <Th col="inflScore" className="px-2 text-right">Infl. Score</Th>
+              <Th col="q1wins" className="px-2 text-center">Q1</Th>
+              <Th col="q2wins" className="px-2 text-center">Q2</Th>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rankedTeams.map(({ team, score, path }, index) => {
+            {sortedRows.map(({ team, score, path, rank, inf, quad, netEff }) => {
               const isExpanded = expandedTeamId === team.canonicalId;
-              const shootingMetric = team.stats.threePct ?? team.stats.fgPct ?? team.stats.ftPct;
+              const fmtSigned = (v: number | null) => {
+                if (v === null || v === undefined) return "—";
+                return `${v > 0 ? "+" : ""}${v.toFixed(1)}`;
+              };
               return (
                 <Fragment key={team.canonicalId}>
                   <TableRow
@@ -74,15 +196,22 @@ export default function RegionalRankingsTable({
                       "cursor-pointer border-white/10 bg-background/44 hover:bg-background/72",
                       isExpanded && "bg-primary/10 hover:bg-primary/12",
                     )}
-                    onClick={() => setExpandedTeamId((prev) => (prev === team.canonicalId ? null : team.canonicalId))}
+                    onClick={() =>
+                      setExpandedTeamId((prev) => (prev === team.canonicalId ? null : team.canonicalId))
+                    }
                   >
-                    <TableCell className="px-3 py-2.5 font-semibold text-primary">{index + 1}</TableCell>
+                    <TableCell className="px-3 py-2.5 font-semibold text-primary">{rank}</TableCell>
+                    <TableCell className="px-2 py-2.5 text-center">
+                      <Badge
+                        variant="secondary"
+                        className="min-w-8 justify-center rounded-md border-white/10 px-2 py-1 text-[11px] font-bold"
+                      >
+                        {team.seed ?? "—"}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="px-3 py-2.5">
                       <div className="flex min-w-0 items-center gap-2.5">
-                        <Badge variant="secondary" className="min-w-8 justify-center rounded-md border-white/10 px-2 py-1 text-[11px] font-bold">
-                          {team.seed ?? "-"}
-                        </Badge>
-                        <TeamLogo name={team.name} logo={team.logo} className="h-7 w-7" />
+                        <TeamLogo name={team.name} logo={team.logo} className="h-7 w-7 shrink-0" />
                         <div className="min-w-0">
                           <div className="truncate font-semibold text-foreground">{team.name}</div>
                           <div className="truncate text-[11px] text-muted-foreground">{team.abbreviation}</div>
@@ -91,29 +220,41 @@ export default function RegionalRankingsTable({
                     </TableCell>
                     <TableCell className="px-2 py-2.5 text-muted-foreground">{team.conference}</TableCell>
                     <TableCell className="px-2 py-2.5 text-muted-foreground">{team.record || "N/A"}</TableCell>
-                    <TableCell className="px-2 py-2.5 text-right font-semibold tabular-nums text-foreground">{score.toFixed(1)}</TableCell>
-                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">{formatStat(team.stats.adjOE)}</TableCell>
-                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">{formatStat(team.stats.adjDE)}</TableCell>
-                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">{formatStat(team.stats.tempo)}</TableCell>
-                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">{formatStat(shootingMetric)}</TableCell>
-                    <TableCell className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <Badge className={cn("rounded-md border px-2 py-1 text-[10px] font-semibold", difficultyTone(path.tier))}>
-                          {path.tier}
-                        </Badge>
-                        <div className="w-16">
-                          <div className="h-1.5 rounded-full bg-white/8">
-                            <div className="h-1.5 rounded-full bg-primary" style={{ width: difficultyWidth(path.score) }} />
-                          </div>
-                          <div className="mt-1 text-[10px] tabular-nums text-muted-foreground">{path.score.toFixed(1)}</div>
-                        </div>
-                        {isExpanded ? <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground" /> : <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />}
-                      </div>
+                    <TableCell className="px-2 py-2.5 text-right font-semibold tabular-nums text-foreground">
+                      {score.toFixed(1)}
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
+                      {formatStat(team.stats.adjOE)}
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
+                      {formatStat(team.stats.adjDE)}
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
+                      {formatStat(team.stats.tempo)}
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
+                      {formatStat(team.stats.sos)}
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
+                      {netEff !== null ? fmtSigned(netEff) : "—"}
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
+                      {inf.dropOff !== null ? fmtSigned(inf.dropOff) : "—"}
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
+                      {inf.homeInflationScore !== null ? fmtSigned(inf.homeInflationScore) : "—"}
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-center tabular-nums">
+                      <span className="text-yellow-400 font-semibold">{quad.q1.wins}</span>
+                      <span className="text-muted-foreground">-{quad.q1.losses}</span>
+                    </TableCell>
+                    <TableCell className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">
+                      {quad.q2.wins}-{quad.q2.losses}
                     </TableCell>
                   </TableRow>
                   {isExpanded && (
                     <TableRow className="border-white/10 bg-secondary/42 hover:bg-secondary/42">
-                      <TableCell colSpan={10} className="px-4 py-4">
+                      <TableCell colSpan={15} className="px-4 py-4">
                         <ExpandedTeamDetails region={region} teamId={team.canonicalId} weights={weights} />
                       </TableCell>
                     </TableRow>
@@ -128,6 +269,8 @@ export default function RegionalRankingsTable({
   );
 }
 
+// ── expanded row ─────────────────────────────────────────────────────────────
+
 function ExpandedTeamDetails({
   region,
   teamId,
@@ -141,7 +284,10 @@ function ExpandedTeamDetails({
   if (!team) return null;
 
   const path = computePathDifficulty(team, region, weights);
-  const shootingSplit = team.stats.fgPct && team.stats.threePct ? `${formatStat(team.stats.fgPct)} FG / ${formatStat(team.stats.threePct)} 3P` : "Partial shooting coverage";
+  const shootingSplit =
+    team.stats.fgPct && team.stats.threePct
+      ? `${formatStat(team.stats.fgPct)} FG / ${formatStat(team.stats.threePct)} 3P`
+      : "Partial shooting coverage";
   const reboundSplit = team.stats.rpg ? `${formatStat(team.stats.rpg)} RPG` : "Rebounding unavailable";
   const confidence = Math.max(0, Math.min(99, Math.round((100 - path.score) * 1.05)));
 
@@ -162,31 +308,58 @@ function ExpandedTeamDetails({
         </div>
         <div className="grid gap-2">
           {path.likelyOpponents.map((opponent) => (
-            <div key={opponent.round} className="grid grid-cols-[96px,1fr,auto] items-center gap-2 rounded-lg border border-white/8 bg-card/85 px-2.5 py-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{opponent.round}</span>
+            <div
+              key={opponent.round}
+              className="grid grid-cols-[96px,1fr,auto] items-center gap-2 rounded-lg border border-white/8 bg-card/85 px-2.5 py-2"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {opponent.round}
+              </span>
               <div className="min-w-0">
-                <div className="truncate text-sm font-medium text-foreground">{opponent.team?.name ?? "TBD"}</div>
+                <div className="truncate text-sm font-medium text-foreground">
+                  {opponent.team?.name ?? "TBD"}
+                </div>
                 <div className="text-[11px] text-muted-foreground">
-                  {opponent.team ? `${opponent.team.seed ?? "-"} seed | ${opponent.team.conference}` : "Awaiting likely opponent"}
+                  {opponent.team
+                    ? `${opponent.team.seed ?? "—"} seed | ${opponent.team.conference}`
+                    : "Awaiting likely opponent"}
                 </div>
               </div>
-              <span className="text-xs font-semibold tabular-nums text-foreground">{opponent.strength.toFixed(1)}</span>
+              <span className="text-xs font-semibold tabular-nums text-foreground">
+                {opponent.strength.toFixed(1)}
+              </span>
             </div>
           ))}
         </div>
         <p className="text-[11px] leading-5 text-muted-foreground">
-          Path difficulty combines projected opponent quality across all four region rounds, weighted toward later-round strength.
+          Path difficulty combines projected opponent quality across all four region rounds, weighted toward
+          later-round strength.
         </p>
       </div>
     </div>
   );
 }
 
-function StatTile({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function StatTile({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
   return (
-    <div className={cn("rounded-xl border px-3 py-2.5", highlight ? "border-primary/20 bg-primary/10" : "border-white/10 bg-card/85")}>
+    <div
+      className={cn(
+        "rounded-xl border px-3 py-2.5",
+        highlight ? "border-primary/20 bg-primary/10" : "border-white/10 bg-card/85",
+      )}
+    >
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={cn("mt-1 text-sm font-semibold", highlight ? "text-primary" : "text-foreground")}>{value}</p>
+      <p className={cn("mt-1 text-sm font-semibold", highlight ? "text-primary" : "text-foreground")}>
+        {value}
+      </p>
     </div>
   );
 }

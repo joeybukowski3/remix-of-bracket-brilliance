@@ -189,6 +189,7 @@ export default function Bracket() {
   const [weights, setWeights] = useState<StatWeight[]>(BUILT_IN_PRESETS[0].weights);
   const [picks, setPicks] = useState<Record<string, string>>({});
   const [selectedRegion, setSelectedRegion] = useState(BRACKET_REGION_NAMES[0]);
+  const [activeBreakdownRegion, setActiveBreakdownRegion] = useState(BRACKET_REGION_NAMES[0]);
   const [showBuilderControls, setShowBuilderControls] = useState(false);
   const [showBreakdownControls, setShowBreakdownControls] = useState(false);
   const [analyzeGame, setAnalyzeGame] = useState<BracketGame | null>(null);
@@ -607,10 +608,35 @@ export default function Bracket() {
               )}
             </Card>
 
-            <div className="grid gap-4 2xl:grid-cols-2">
-              {regions.map((region) => (
-                <RegionalRankingsTable key={region.name} region={region} weights={weights} />
-              ))}
+            <div className="space-y-3">
+              {/* Region tab bar */}
+              <div className="flex overflow-x-auto gap-1 rounded-2xl border border-white/10 bg-card/90 p-1.5">
+                {regions.map((region) => (
+                  <button
+                    key={region.name}
+                    onClick={() => setActiveBreakdownRegion(region.name)}
+                    className={`shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                      activeBreakdownRegion === region.name
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                    }`}
+                  >
+                    {region.name}
+                  </button>
+                ))}
+              </div>
+              {/* Single region table — full width */}
+              {(() => {
+                const activeRegionData = regions.find((r) => r.name === activeBreakdownRegion) ?? regions[0];
+                return activeRegionData ? (
+                  <RegionalRankingsTable
+                    key={activeRegionData.name}
+                    region={activeRegionData}
+                    weights={weights}
+                    teamPool={teamPool}
+                  />
+                ) : null;
+              })()}
             </div>
           </TabsContent>
           <TabsContent value="saved" className="space-y-4">

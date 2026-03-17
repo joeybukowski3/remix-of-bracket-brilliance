@@ -29,6 +29,8 @@ import {
 import { buildPlaceholderBracketSource, buildTournamentMatchups, loadOfficialBracketSource, type BracketSourceConfig } from "@/lib/bracket";
 import { buildVegasProbabilityComparison, findScheduledGameForTeams, resolveScheduledGameMoneylines } from "@/lib/odds";
 import MatchupStatGroups from "@/components/MatchupStatGroups";
+import InjuryReport from "@/components/InjuryReport";
+import { useInjuries } from "@/hooks/useInjuries";
 
 function TeamSelector({
   teams,
@@ -458,6 +460,7 @@ export default function Matchup() {
   const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
   const { data: liveTeams = [], isLoading: liveTeamsLoading, error: liveTeamsError } = useLiveTeams();
   const { data: todayGames = [] } = useSchedule(formatDateStr(new Date()));
+  const { data: injuryMap } = useInjuries();
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
   const top50Avg = useMemo(() => getTop50Average(teamPool), [teamPool]);
@@ -723,6 +726,12 @@ export default function Matchup() {
                   vegas={vegasComparison}
                 />
               </div>
+
+              {injuryMap && injuryMap.size > 0 && (
+                <div className="mb-4 rounded-xl border border-border/50 bg-secondary/20 p-3">
+                  <InjuryReport teamA={teamA} teamB={teamB} injuryMap={injuryMap} />
+                </div>
+              )}
 
               {statRows.map((row) => (
                 <StatCompareRow

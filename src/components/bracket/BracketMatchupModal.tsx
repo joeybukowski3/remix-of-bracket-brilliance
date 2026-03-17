@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useInjuries, lookupTeamInjuries } from "@/hooks/useInjuries";
 import { Link } from "react-router-dom";
 import { X, ExternalLink, CheckCircle2 } from "lucide-react";
 import TeamLogo from "@/components/TeamLogo";
@@ -256,6 +257,8 @@ function ModalBody({
   const teamA = game?.teamA;
   const teamB = game?.teamB;
 
+  const { data: injuryMap } = useInjuries();
+
   const avgDropOff = useMemo(() => getTop50AvgDropOff(teamPool), [teamPool]);
 
   const sortedPool = useMemo(
@@ -328,6 +331,40 @@ function ModalBody({
           </div>
         </div>
       )}
+
+      {/* Compact injuries */}
+      {injuryMap && injuryMap.size > 0 && (() => {
+        const injA = lookupTeamInjuries(teamA, injuryMap).filter(
+          (e) => e.status.toLowerCase() === "out" || e.status.toLowerCase() === "doubtful",
+        );
+        const injB = lookupTeamInjuries(teamB, injuryMap).filter(
+          (e) => e.status.toLowerCase() === "out" || e.status.toLowerCase() === "doubtful",
+        );
+        const bothClean = injA.length === 0 && injB.length === 0;
+        return (
+          <div className="shrink-0 px-4 py-2.5 border-t border-border bg-secondary/20">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+              🏥 Injuries
+            </p>
+            {bothClean ? (
+              <p className="text-[11px] text-muted-foreground">✅ Both teams healthy</p>
+            ) : (
+              <div className="space-y-1">
+                {[{ team: teamA, inj: injA }, { team: teamB, inj: injB }].map(({ team, inj }) => (
+                  <p key={team.canonicalId} className="text-[11px] text-muted-foreground">
+                    <span className="font-semibold text-foreground">{team.abbreviation}:</span>{" "}
+                    {inj.length === 0
+                      ? "No key injuries"
+                      : inj
+                          .map((e) => `${e.playerName.split(" ").pop()} (${e.position}) — ${e.status}`)
+                          .join(" · ")}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Sticky footer */}
       {fullAnalysisUrl && (
