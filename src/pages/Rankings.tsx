@@ -11,6 +11,7 @@ import {
   DEFAULT_STAT_WEIGHTS,
   ELITE_8_PRESET_WEIGHTS,
   type StatWeight,
+  type ModelScoreOptions,
 } from "@/data/ncaaTeams";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -19,6 +20,9 @@ export default function Rankings() {
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showSliders, setShowSliders] = useState(true);
   const [mode, setMode] = useState<"all" | "field">("all");
+  const [homeInflationPenaltyWeight, setHomeInflationPenaltyWeight] = useState(0);
+  const [q1BonusWeight, setQ1BonusWeight] = useState(0);
+  const [showModelAdjSliders, setShowModelAdjSliders] = useState(false);
   const { data: liveTeams = [] } = useLiveTeams();
 
   const allTeams = useMemo(() => dedupeTeamsByCanonicalId(buildCanonicalTeams(liveTeams)), [liveTeams]);
@@ -26,6 +30,11 @@ export default function Rankings() {
     () => (mode === "all" ? allTeams : dedupeTeamsByCanonicalId(teams)),
     [allTeams, mode],
   );
+
+  const modelOpts: ModelScoreOptions = useMemo(() => ({
+    homeInflationPenaltyWeight,
+    q1BonusWeight,
+  }), [homeInflationPenaltyWeight, q1BonusWeight]);
 
   usePageSeo({
     title: "Joe Knows Ball | NCAA Analytics, Custom Rankings & March Madness Analysis",
@@ -120,11 +129,80 @@ export default function Rankings() {
           >
             2025 Elite 8 Team Rank Preset
           </button>
+          <button
+            onClick={() => setShowModelAdjSliders((v) => !v)}
+            className="rounded-md bg-secondary px-3 py-1 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
+          >
+            {showModelAdjSliders ? "Hide" : "Show"} Resume & Regression Adjustments
+          </button>
         </div>
 
         {showSliders ? <StatSliders weights={weights} onWeightChange={handleWeightChange} /> : null}
 
-        <RankingsTable teams={rankingTeams} weights={weights} />
+        {showModelAdjSliders && (
+          <div className="rounded-xl border border-border bg-card/90 p-4 space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Resume &amp; Home Regression Model Adjustments</h3>
+              <p className="text-xs text-muted-foreground">
+                These adjustments layer on top of the core stat weights. The neutral-site efficiency blend (80% away /
+                20% home) is always applied to efficiency stats when these are active.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Home Inflation Penalty
+                  </label>
+                  <span className="text-sm font-bold text-primary tabular-nums">{homeInflationPenaltyWeight}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={homeInflationPenaltyWeight}
+                  onChange={(e) => setHomeInflationPenaltyWeight(Number(e.target.value))}
+                  className="w-full accent-primary"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Penalizes teams whose ranking may be home-inflated (score &gt; +5 vs Top-50 avg drop-off). At 100, −1 pt per +1 inflation score.
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Q1 Win Rate Bonus
+                  </label>
+                  <span className="text-sm font-bold text-primary tabular-nums">{q1BonusWeight}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={q1BonusWeight}
+                  onChange={(e) => setQ1BonusWeight(Number(e.target.value))}
+                  className="w-full accent-primary"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Rewards teams with strong Q1 records (games vs top-50 opponents). At 100, a perfect Q1 record adds +2 pts.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => { setHomeInflationPenaltyWeight(0); setQ1BonusWeight(0); }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Reset adjustments
+            </button>
+          </div>
+        )}
+
+        <RankingsTable teams={rankingTeams} weights={weights} teamPool={allTeams} modelOpts={modelOpts} />
 
         <SeoFooterBlock />
       </div>

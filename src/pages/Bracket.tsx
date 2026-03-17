@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Info, RefreshCw, Save, Share2, SlidersHorizontal, Trash2 } from "lucide-react";
+import { BarChart2, Copy, Info, RefreshCw, Save, Share2, SlidersHorizontal, Trash2 } from "lucide-react";
 import RegionalRankingsTable from "@/components/bracket/RegionalRankingsTable";
+import BracketMatchupModal from "@/components/bracket/BracketMatchupModal";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
@@ -66,13 +67,30 @@ function GameCard({
   game,
   weights,
   onPick,
+  onAnalyze,
 }: {
   game: BracketGame;
   weights: StatWeight[];
   onPick: (gameId: string, teamId: string) => void;
+  onAnalyze: (game: BracketGame) => void;
 }) {
+  const bothKnown = !!(game.teamA && game.teamB);
+
   return (
     <Card className="overflow-hidden border-white/10 bg-card/95 shadow-[0_14px_30px_hsl(var(--background)/0.22)]">
+      {bothKnown && (
+        <div className="flex justify-end px-2 pt-1.5 pb-0">
+          <button
+            onClick={(e) => { e.stopPropagation(); onAnalyze(game); }}
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            title="Quick game analysis"
+            aria-label="Open matchup analysis"
+          >
+            <BarChart2 className="h-3 w-3" />
+            <span>Analysis</span>
+          </button>
+        </div>
+      )}
       <CardContent className="p-0">
         {[game.teamA, game.teamB].map((team, index) => (
           <button
@@ -111,11 +129,13 @@ function RegionBuilderSection({
   regionGames,
   weights,
   onPick,
+  onAnalyze,
 }: {
   region: ResolvedBracketRegion;
   regionGames: BracketGame[];
   weights: StatWeight[];
   onPick: (gameId: string, teamId: string) => void;
+  onAnalyze: (game: BracketGame) => void;
 }) {
   return (
     <Card className="border-white/10 bg-card/95 shadow-[0_16px_36px_hsl(var(--background)/0.22)]">
@@ -141,7 +161,7 @@ function RegionBuilderSection({
               {regionGames
                 .filter((game) => game.roundIndex === roundIndex)
                 .map((game) => (
-                  <GameCard key={game.id} game={game} weights={weights} onPick={onPick} />
+                  <GameCard key={game.id} game={game} weights={weights} onPick={onPick} onAnalyze={onAnalyze} />
                 ))}
             </div>
           ))}
@@ -171,6 +191,7 @@ export default function Bracket() {
   const [selectedRegion, setSelectedRegion] = useState(BRACKET_REGION_NAMES[0]);
   const [showBuilderControls, setShowBuilderControls] = useState(false);
   const [showBreakdownControls, setShowBreakdownControls] = useState(false);
+  const [analyzeGame, setAnalyzeGame] = useState<BracketGame | null>(null);
   const [presetSheetOpen, setPresetSheetOpen] = useState(false);
   const [savePresetOpen, setSavePresetOpen] = useState(false);
   const [saveBracketOpen, setSaveBracketOpen] = useState(false);
@@ -469,6 +490,7 @@ export default function Bracket() {
                     regionGames={bracketTree.regionGames[currentRegion.name] ?? []}
                     weights={weights}
                     onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
+                    onAnalyze={(game) => setAnalyzeGame(game)}
                   />
 
                   <Card className="border-white/10 bg-card/95 shadow-[0_16px_36px_hsl(var(--background)/0.22)]">
@@ -806,6 +828,13 @@ export default function Bracket() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BracketMatchupModal
+        game={analyzeGame}
+        weights={weights}
+        teamPool={teamPool}
+        onClose={() => setAnalyzeGame(null)}
+      />
     </div>
   );
 }

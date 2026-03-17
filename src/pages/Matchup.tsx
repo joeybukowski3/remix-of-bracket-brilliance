@@ -15,9 +15,12 @@ import {
   DEFAULT_STAT_WEIGHTS,
   buildCanonicalTeams,
   calculateTeamScore,
+  computeHomeInflationMetrics,
+  computeQuadRecord,
   findTeamByEspn,
   formatStat,
   getTop50Average,
+  getTop50AvgDropOff,
   hasStat,
   type StatWeight,
   type Team,
@@ -249,6 +252,105 @@ function VsAverageCard({ team, avg }: { team: Team; avg: TeamStats }) {
           higherIsBetter={stat.higherIsBetter}
         />
       ))}
+    </div>
+  );
+}
+
+function inflationLabel(label: string) {
+  if (label === "home-inflated") return <span className="font-bold text-orange-400">⚠️ Home-Inflated</span>;
+  if (label === "road-tested") return <span className="font-bold text-blue-400">💪 Road Tested</span>;
+  return <span className="font-bold text-green-400">✅ Stable</span>;
+}
+
+function QuadBadgeRow({ quad, rank }: { quad: ReturnType<typeof computeQuadRecord>; rank: number }) {
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold bg-yellow-400/15 text-yellow-400 border border-yellow-400/30">
+        Q1 {quad.q1.wins}-{quad.q1.losses}
+      </span>
+      <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">
+        Q2 {quad.q2.wins}-{quad.q2.losses}
+      </span>
+      <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">
+        Q3 {quad.q3.wins}-{quad.q3.losses}
+      </span>
+    </div>
+  );
+}
+
+function RoadReadinessSection({
+  teamA,
+  teamB,
+  teamPool,
+  isNeutralSite,
+}: {
+  teamA: Team;
+  teamB: Team;
+  teamPool: Team[];
+  isNeutralSite: boolean;
+}) {
+  const avgDropOff = useMemo(() => getTop50AvgDropOff(teamPool), [teamPool]);
+  const inflationA = useMemo(() => computeHomeInflationMetrics(teamA, avgDropOff), [teamA, avgDropOff]);
+  const inflationB = useMemo(() => computeHomeInflationMetrics(teamB, avgDropOff), [teamB, avgDropOff]);
+
+  const sortedPool = useMemo(
+    () => [...teamPool].sort((a, b) => calculateTeamScore(b.stats, DEFAULT_STAT_WEIGHTS) - calculateTeamScore(a.stats, DEFAULT_STAT_WEIGHTS)),
+    [teamPool],
+  );
+  const rankA = sortedPool.findIndex((t) => t.canonicalId === teamA.canonicalId) + 1 || sortedPool.length;
+  const rankB = sortedPool.findIndex((t) => t.canonicalId === teamB.canonicalId) + 1 || sortedPool.length;
+  const quadA = computeQuadRecord(teamA, rankA, sortedPool.length);
+  const quadB = computeQuadRecord(teamB, rankB, sortedPool.length);
+
+  const renderTeamCard = (team: Team, inflation: ReturnType<typeof computeHomeInflationMetrics>, quad: ReturnType<typeof computeQuadRecord>) => (
+    <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <TeamLogo name={team.name} logo={team.logo} className="h-7 w-7" />
+        <h3 className="font-bold text-foreground text-sm">{team.abbreviation}</h3>
+      </div>
+
+      <div className="space-y-1.5 text-xs">
+        <div className="grid grid-cols-2 gap-x-3 py-1 border-b border-border/50">
+          <span className="text-muted-foreground">Home Net Eff</span>
+          <span className="text-right tabular-nums font-semibold">{inflation.netEffHome.toFixed(1)}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 py-1 border-b border-border/50">
+          <span className="text-muted-foreground">Away Net Eff</span>
+          <span className="text-right tabular-nums font-semibold">{inflation.netEffAway.toFixed(1)}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 py-1 border-b border-border/50">
+          <span className="text-muted-foreground">Drop-Off (Δ)</span>
+          <span className={`text-right tabular-nums font-semibold ${inflation.dropOff > 8 ? "text-orange-400" : inflation.dropOff < 0 ? "text-blue-400" : "text-muted-foreground"}`}>
+            {inflation.dropOff > 0 ? "+" : ""}{inflation.dropOff.toFixed(1)}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 py-1">
+          <span className="text-muted-foreground">Inflation Score</span>
+          <span className="text-right">{inflationLabel(inflation.label)}</span>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Resume</p>
+        <QuadBadgeRow quad={quad} rank={0} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="flex items-baseline gap-3 mb-3">
+        <h2 className="text-lg font-bold text-foreground">Road Readiness &amp; Resume</h2>
+        {isNeutralSite && (
+          <span className="text-xs text-muted-foreground italic">
+            Neutral site — away efficiency is the stronger predictor here.
+          </span>
+        )}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {renderTeamCard(teamA, inflationA, quadA)}
+        {renderTeamCard(teamB, inflationB, quadB)}
+      </div>
     </div>
   );
 }
@@ -619,6 +721,8 @@ export default function Matchup() {
                 <HomeAwaySplitCard team={teamB} />
               </div>
             </div>
+
+            <RoadReadinessSection teamA={teamA} teamB={teamB} teamPool={teamPool} isNeutralSite={false} />
 
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">

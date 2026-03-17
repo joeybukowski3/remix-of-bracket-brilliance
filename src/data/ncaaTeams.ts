@@ -925,3 +925,198 @@ export function findTeamBySlug(slug: string, teamPool: Team[] = teams): Team | n
   return teamPool.find((team) => team.slug === slug) ?? null;
 }
 
+// ── Home/Away Regression & Inflation ─────────────────────────────────────────
+
+export interface HomeInflationMetrics {
+  netEffHome: number;
+  netEffAway: number;
+  dropOff: number;          // netEffHome - netEffAway
+  homeInflationScore: number; // dropOff - avgTop50DropOff
+  label: "home-inflated" | "stable" | "road-tested";
+}
+
+/** Returns the blended neutral-site stats (20% home / 80% away). */
+export function getNeutralSiteStats(team: Team): TeamStats {
+  const h = team.homeStats;
+  const a = team.awayStats;
+  const blend = (hv: number | null, av: number | null): number | null => {
+    if (hv === null || av === null) return hv ?? av;
+    return Math.round((0.2 * hv + 0.8 * av) * 10) / 10;
+  };
+  return {
+    ppg: blend(h.ppg, a.ppg),
+    oppPpg: blend(h.oppPpg, a.oppPpg),
+    fgPct: blend(h.fgPct, a.fgPct),
+    threePct: blend(h.threePct, a.threePct),
+    ftPct: blend(h.ftPct, a.ftPct),
+    rpg: blend(h.rpg, a.rpg),
+    apg: blend(h.apg, a.apg),
+    spg: blend(h.spg, a.spg),
+    bpg: blend(h.bpg, a.bpg),
+    tpg: blend(h.tpg, a.tpg),
+    sos: team.stats.sos,
+    adjOE: blend(h.adjOE, a.adjOE),
+    adjDE: blend(h.adjDE, a.adjDE),
+    tempo: blend(h.tempo, a.tempo),
+    luck: team.stats.luck,
+  };
+}
+
+function getNetEff(stats: TeamStats): number | null {
+  if (!hasStat(stats.adjOE) || !hasStat(stats.adjDE)) return null;
+  return stats.adjOE - stats.adjDE;
+}
+
+/** Computes the average home-vs-away net efficiency drop-off for the top 50 ranked teams. */
+export function getTop50AvgDropOff(teamPool: Team[] = teams): number {
+  const sorted = [...teamPool]
+    .map((t) => ({ t, score: calculateTeamScore(t.stats, DEFAULT_STAT_WEIGHTS) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 50)
+    .map(({ t }) => t);
+
+  const dropOffs = sorted
+    .map((t) => {
+      const homeNet = getNetEff(t.homeStats);
+      const awayNet = getNetEff(t.awayStats);
+      if (!hasStat(homeNet) || !hasStat(awayNet)) return null;
+      return homeNet - awayNet;
+    })
+    .filter((v): v is number => v !== null);
+
+  if (!dropOffs.length) return 5; // sensible default
+  return Math.round((dropOffs.reduce((s, v) => s + v, 0) / dropOffs.length) * 10) / 10;
+}
+
+/** Computes home inflation metrics for a single team. */
+export function computeHomeInflationMetrics(team: Team, avgTop50DropOff: number): HomeInflationMetrics {
+  const netEffHome = getNetEff(team.homeStats) ?? 0;
+  const netEffAway = getNetEff(team.awayStats) ?? 0;
+  const dropOff = Math.round((netEffHome - netEffAway) * 10) / 10;
+  const homeInflationScore = Math.round((dropOff - avgTop50DropOff) * 10) / 10;
+
+  let label: HomeInflationMetrics["label"];
+  if (homeInflationScore > 5) label = "home-inflated";
+  else if (homeInflationScore < -2) label = "road-tested";
+  else label = "stable";
+
+  return { netEffHome, netEffAway, dropOff, homeInflationScore, label };
+}
+
+// ── Quad Wins / Losses Record ─────────────────────────────────────────────────
+
+export interface QuadRecord {
+  wins: number;
+  losses: number;
+}
+
+export interface TeamQuadStats {
+  q1: QuadRecord;
+  q2: QuadRecord;
+  q3: QuadRecord;
+  q4: QuadRecord;
+  q1WinPct: number; // 0–1
+}
+
+/**
+ * Synthesizes a realistic quad record from team stats (rank, SOS, record).
+ * Since no real game-log data is available, this is deterministically derived
+ * from the team's strength profile.
+ */
+export function computeQuadRecord(team: Team, rank: number, totalTeams: number): TeamQuadStats {
+  const rec = (() => {
+    const m = team.record.match(/(\d+)-(\d+)/);
+    if (!m) return { wins: 20, losses: 10, pct: 0.667 };
+    const w = Number(m[1]), l = Number(m[2]);
+    return { wins: w, losses: l, pct: w / (w + l) };
+  })();
+
+  const sos = team.stats.sos ?? 50;
+  const rankPct = 1 - (rank - 1) / Math.max(totalTeams - 1, 1); // 1 = best, 0 = worst
+  const totalGames = rec.wins + rec.losses;
+
+  // Estimate how many games fell into each quad based on SOS
+  const q1Count = Math.round(clamp((sos / 100) * totalGames * 0.42, 2, 16));
+  const q2Count = Math.round(clamp((sos / 100) * totalGames * 0.28, 1, 10));
+  const q3Count = Math.round(clamp(totalGames * 0.14, 1, 6));
+  const q4Count = Math.max(1, totalGames - q1Count - q2Count - q3Count);
+
+  // Win rates in each quad scaled to rank
+  const q1WinRate = clamp(rankPct * 0.9, 0.05, 0.92);
+  const q2WinRate = clamp(0.3 + rankPct * 0.65, 0.25, 0.97);
+  const q3WinRate = clamp(0.6 + rankPct * 0.38, 0.5, 0.99);
+  const q4WinRate = clamp(0.75 + rankPct * 0.24, 0.65, 1.0);
+
+  // Deterministic jitter from team id
+  const h = hashString(`${team.canonicalId}-quad`);
+  const tiny = (shift: number) => ((h >> shift) & 3) - 1; // -1, 0, 0, 1
+
+  const makeRecord = (count: number, winRate: number, shift: number): QuadRecord => {
+    const w = clamp(Math.round(count * winRate) + tiny(shift), 0, count);
+    return { wins: w, losses: count - w };
+  };
+
+  const q1 = makeRecord(q1Count, q1WinRate, 0);
+  const q2 = makeRecord(q2Count, q2WinRate, 4);
+  const q3 = makeRecord(q3Count, q3WinRate, 8);
+  const q4 = makeRecord(q4Count, q4WinRate, 12);
+  const q1WinPct = q1Count > 0 ? q1.wins / q1Count : 0;
+
+  return { q1, q2, q3, q4, q1WinPct };
+}
+
+// ── Adjusted Model Score (neutral-site + home inflation + Q1 resume) ──────────
+
+export interface ModelScoreOptions {
+  /** Weight for home inflation penalty (0–100). At 100, each +1 score above 0 → −1.0 pt. */
+  homeInflationPenaltyWeight?: number;
+  /** Weight for Q1 win rate bonus (0–100). At 100, 100% Q1 win rate → +2 pts. */
+  q1BonusWeight?: number;
+  /** Pre-computed avg top-50 drop-off. If omitted, uses 0. */
+  avgTop50DropOff?: number;
+  /** Pre-computed rank (1-based). If omitted, no Q1 bonus. */
+  rank?: number;
+  /** Total teams for quad record computation. */
+  totalTeams?: number;
+}
+
+/**
+ * calculateAdjustedModelScore — wraps calculateTeamScore with:
+ *   1. Neutral-site efficiency blend (80% away / 20% home) as base efficiency
+ *   2. Home inflation penalty
+ *   3. Q1 win rate bonus
+ */
+export function calculateAdjustedModelScore(
+  team: Team,
+  weights: StatWeight[],
+  opts: ModelScoreOptions = {},
+): number {
+  const {
+    homeInflationPenaltyWeight = 0,
+    q1BonusWeight = 0,
+    avgTop50DropOff = 0,
+    rank = 1,
+    totalTeams = 68,
+  } = opts;
+
+  // Blend neutral-site stats for the efficiency keys only, rest stays from overall
+  const neutralStats = getNeutralSiteStats(team);
+  const baseScore = calculateTeamScore(neutralStats, weights);
+
+  // Home inflation penalty (scaled: weight=100 → -1pt per +1 homeInflationScore above 0)
+  const inflation = computeHomeInflationMetrics(team, avgTop50DropOff);
+  const inflationPenalty =
+    homeInflationPenaltyWeight > 0 && inflation.homeInflationScore > 0
+      ? inflation.homeInflationScore * (homeInflationPenaltyWeight / 100) * 1.0
+      : 0;
+
+  // Q1 win rate bonus (scaled: weight=100 → max +2 pts)
+  const quadStats = computeQuadRecord(team, rank, totalTeams);
+  const q1Bonus =
+    q1BonusWeight > 0
+      ? quadStats.q1WinPct * (q1BonusWeight / 100) * 2.0
+      : 0;
+
+  return Math.max(0, Math.min(100, Number((baseScore - inflationPenalty + q1Bonus).toFixed(1))));
+}
+
