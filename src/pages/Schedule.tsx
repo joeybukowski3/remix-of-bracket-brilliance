@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Calendar, ChevronLeft, ChevronRight, Clock, Tv } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Calendar, ChevronLeft, ChevronRight, Clock, Tv } from "lucide-react";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
@@ -22,9 +22,13 @@ import {
 } from "@/data/ncaaTeams";
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
 
+type SortBy = "time" | "rank" | "edge" | "conference";
+
 function formatGameTime(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const day = d.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${day} · ${time}`;
 }
 
 function formatDate(date: Date): string {
@@ -236,12 +240,46 @@ export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showSliders, setShowSliders] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>("time");
   const { data: liveTeams = [] } = useLiveTeams();
 
   const dateStr = formatDate(selectedDate);
   const { data: games, isLoading, error } = useSchedule(dateStr);
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
+
+  const sortedGames = useMemo(() => {
+    if (!games) return [];
+    const withMeta = games.map((game) => {
+      const matchedHome = game.homeTeam ? findTeamByEspn(game.homeTeam.name, game.homeTeam.abbreviation, teamPool) : null;
+      const matchedAway = game.awayTeam ? findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation, teamPool) : null;
+      const homeScore = matchedHome ? calculateTeamScore(matchedHome.stats, weights) : 0;
+      const awayScore = matchedAway ? calculateTeamScore(matchedAway.stats, weights) : 0;
+      const topScore = Math.max(homeScore, awayScore);
+      const total = homeScore + awayScore;
+      const edgeAbs = total > 0 ? Math.abs(homeScore - awayScore) / total : 0;
+      const conference = matchedAway?.conference || matchedHome?.conference || "ZZZ";
+      return { game, topScore, edgeAbs, conference };
+    });
+
+    return [...withMeta].sort((a, b) => {
+      switch (sortBy) {
+        case "time": {
+          const ta = a.game.date ? new Date(a.game.date).getTime() : Infinity;
+          const tb = b.game.date ? new Date(b.game.date).getTime() : Infinity;
+          return ta - tb;
+        }
+        case "rank":
+          return b.topScore - a.topScore;
+        case "edge":
+          return b.edgeAbs - a.edgeAbs;
+        case "conference":
+          return a.conference.localeCompare(b.conference);
+        default:
+          return 0;
+      }
+    });
+  }, [games, teamPool, weights, sortBy]);
 
   const handleWeightChange = (key: string, value: number) => {
     setWeights((prev) => prev.map((weight) => (weight.key === key ? { ...weight, weight: value } : weight)));
@@ -326,6 +364,34 @@ export default function Schedule() {
           </button>
         </div>
 
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <ArrowUpDown className="w-3 h-3" />
+            Sort by:
+          </div>
+          {(
+            [
+              { value: "time", label: "Game Time", icon: Clock },
+              { value: "rank", label: "Top Ranked", icon: null },
+              { value: "edge", label: "Biggest Edge", icon: null },
+              { value: "conference", label: "Conference", icon: null },
+            ] as { value: SortBy; label: string; icon: typeof Clock | null }[]
+          ).map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => setSortBy(value)}
+              className={`inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border transition-colors ${
+                sortBy === value
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-secondary text-secondary-foreground border-border hover:border-primary/40"
+              }`}
+            >
+              {Icon && <Icon className="w-3 h-3" />}
+              {label}
+            </button>
+          ))}
+        </div>
+
         {showSliders && <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />}
 
         {isLoading && (
@@ -359,7 +425,7 @@ export default function Schedule() {
               analysis, even with partial stat coverage
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {games.map((game) => (
+              {sortedGames.map(({ game }) => (
                 <GameCard key={game.id} game={game} weights={weights} teamPool={teamPool} />
               ))}
             </div>

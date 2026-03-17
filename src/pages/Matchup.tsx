@@ -98,24 +98,42 @@ function StatCompareRow({
   valueA,
   valueB,
   higherIsBetter,
+  logoA,
+  nameA,
+  logoB,
+  nameB,
 }: {
   label: string;
   valueA: number | null;
   valueB: number | null;
   higherIsBetter: boolean;
+  logoA?: string | null;
+  nameA?: string;
+  logoB?: string | null;
+  nameB?: string;
 }) {
   const aWins = hasStat(valueA) && hasStat(valueB) && (higherIsBetter ? valueA > valueB : valueA < valueB);
   const bWins = hasStat(valueA) && hasStat(valueB) && (higherIsBetter ? valueB > valueA : valueB < valueA);
 
   return (
-    <div className="grid grid-cols-3 items-center py-2 border-b border-border/50 last:border-0">
-      <span className={`text-right tabular-nums font-semibold text-sm ${aWins ? "text-primary" : "text-foreground"}`}>
-        {formatStat(valueA)}
-      </span>
+    <div className="grid grid-cols-3 items-center py-1.5 border-b border-border/50 last:border-0 min-h-[36px]">
+      <div className="flex items-center justify-end gap-1.5">
+        {logoA !== undefined && nameA && (
+          <TeamLogo name={nameA} logo={logoA} className="h-5 w-5 rounded hidden sm:block shrink-0" />
+        )}
+        <span className={`tabular-nums font-semibold text-sm ${aWins ? "text-primary" : "text-foreground"}`}>
+          {formatStat(valueA)}
+        </span>
+      </div>
       <span className="text-center text-xs font-medium text-muted-foreground">{label}</span>
-      <span className={`text-left tabular-nums font-semibold text-sm ${bWins ? "text-primary" : "text-foreground"}`}>
-        {formatStat(valueB)}
-      </span>
+      <div className="flex items-center justify-start gap-1.5">
+        <span className={`tabular-nums font-semibold text-sm ${bWins ? "text-primary" : "text-foreground"}`}>
+          {formatStat(valueB)}
+        </span>
+        {logoB !== undefined && nameB && (
+          <TeamLogo name={nameB} logo={logoB} className="h-5 w-5 rounded hidden sm:block shrink-0" />
+        )}
+      </div>
     </div>
   );
 }
@@ -673,16 +691,18 @@ export default function Matchup() {
           <>
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="grid grid-cols-3 items-center mb-4">
-                <div className="text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <TeamLogo name={teamA.name} logo={teamA.logo} className="h-6 w-6 rounded hidden sm:block shrink-0" />
                   <span className={`text-3xl font-bold ${scoreA >= scoreB ? "text-primary" : "text-foreground"}`}>
                     {scoreA.toFixed(1)}
                   </span>
                 </div>
                 <div className="text-center text-sm font-medium text-muted-foreground">POWER SCORE</div>
-                <div className="text-left">
+                <div className="flex items-center justify-start gap-2">
                   <span className={`text-3xl font-bold ${scoreB >= scoreA ? "text-primary" : "text-foreground"}`}>
                     {scoreB.toFixed(1)}
                   </span>
+                  <TeamLogo name={teamB.name} logo={teamB.logo} className="h-6 w-6 rounded hidden sm:block shrink-0" />
                 </div>
               </div>
 
@@ -711,6 +731,10 @@ export default function Matchup() {
                   valueA={teamA.stats[row.key]}
                   valueB={teamB.stats[row.key]}
                   higherIsBetter={row.higherIsBetter}
+                  logoA={teamA.logo}
+                  nameA={teamA.name}
+                  logoB={teamB.logo}
+                  nameB={teamB.name}
                 />
               ))}
 

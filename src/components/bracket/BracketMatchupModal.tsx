@@ -39,31 +39,39 @@ function pct(n: number) {
 
 function ModalHeader({ teamA, teamB, onClose }: { teamA: Team; teamB: Team; onClose: () => void }) {
   return (
-    <div className="flex items-start justify-between gap-3 pb-3 border-b border-border">
-      <div className="flex items-center gap-4 min-w-0">
-        <div className="flex flex-col items-center gap-1 min-w-[60px]">
-          <TeamLogo name={teamA.name} logo={teamA.logo} className="h-10 w-10" />
+    <div className="flex items-start gap-2">
+      {/* 3-column centered layout */}
+      <div className="flex-1 grid grid-cols-3 items-center gap-2">
+        {/* Team A */}
+        <div className="flex flex-col items-center gap-1">
+          <TeamLogo name={teamA.name} logo={teamA.logo} className="h-12 w-12" />
           {teamA.seed && (
             <span className="text-[10px] font-bold bg-primary/20 text-primary rounded px-1.5 py-0.5">{teamA.seed}</span>
           )}
-          <p className="text-xs font-semibold text-foreground text-center leading-tight max-w-[72px] truncate">{teamA.abbreviation}</p>
+          <p className="text-xs font-semibold text-foreground text-center leading-tight">{teamA.abbreviation}</p>
           <p className="text-[10px] text-muted-foreground text-center">{teamA.record || "—"}</p>
         </div>
 
-        <div className="flex flex-col items-center">
-          <span className="text-lg font-bold text-muted-foreground">vs</span>
-          <span className="text-[9px] text-muted-foreground/60 mt-1 uppercase tracking-wider text-center">Neutral site</span>
+        {/* VS / Site info */}
+        <div className="flex flex-col items-center justify-center gap-1">
+          <span className="text-lg font-bold text-muted-foreground">VS</span>
+          <span className="text-[9px] text-muted-foreground/60 uppercase tracking-wider text-center bg-secondary/60 px-2 py-0.5 rounded">
+            Neutral site
+          </span>
         </div>
 
-        <div className="flex flex-col items-center gap-1 min-w-[60px]">
-          <TeamLogo name={teamB.name} logo={teamB.logo} className="h-10 w-10" />
+        {/* Team B */}
+        <div className="flex flex-col items-center gap-1">
+          <TeamLogo name={teamB.name} logo={teamB.logo} className="h-12 w-12" />
           {teamB.seed && (
             <span className="text-[10px] font-bold bg-primary/20 text-primary rounded px-1.5 py-0.5">{teamB.seed}</span>
           )}
-          <p className="text-xs font-semibold text-foreground text-center leading-tight max-w-[72px] truncate">{teamB.abbreviation}</p>
+          <p className="text-xs font-semibold text-foreground text-center leading-tight">{teamB.abbreviation}</p>
           <p className="text-[10px] text-muted-foreground text-center">{teamB.record || "—"}</p>
         </div>
       </div>
+
+      {/* Close button */}
       <button
         onClick={onClose}
         className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
@@ -267,10 +275,14 @@ function ModalBody({
   if (!teamA || !teamB) return null;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 space-y-4 overflow-y-auto flex-1">
+    <div className="flex flex-col h-full min-h-0">
+      {/* Sticky header */}
+      <div className="shrink-0 bg-card z-10 px-4 pt-4 pb-3 border-b border-border">
         <ModalHeader teamA={teamA} teamB={teamB} onClose={onClose} />
+      </div>
 
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <p className="text-[10px] text-muted-foreground italic text-center">
           Neutral site — away efficiency is the stronger predictor here.
         </p>
@@ -287,9 +299,9 @@ function ModalBody({
         />
       </div>
 
-      {/* Footer */}
+      {/* Sticky footer */}
       {fullAnalysisUrl && (
-        <div className="px-4 py-3 border-t border-border flex items-center justify-between bg-secondary/80">
+        <div className="shrink-0 px-4 py-3 border-t border-border flex items-center justify-between bg-secondary/80">
           <span className="text-[10px] text-muted-foreground">Away efficiency is weighted higher for neutral-site games.</span>
           <Link
             to={fullAnalysisUrl}
