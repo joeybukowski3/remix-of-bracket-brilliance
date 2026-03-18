@@ -16,6 +16,8 @@ import {
   type Team,
 } from "@/data/ncaaTeams";
 import type { BracketGame } from "@/lib/bracket";
+import { useKenPom } from "@/hooks/useKenPom";
+import { buildKenPomMap, type KenPomEntry, formatKenPomRank, kenPomRankColor } from "@/lib/kenPom";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -150,6 +152,30 @@ function TwoColRow({
   );
 }
 
+function KenPomRankRow({
+  label,
+  rankA,
+  rankB,
+}: {
+  label: string;
+  rankA: number | null;
+  rankB: number | null;
+}) {
+  const aWins = rankA !== null && rankB !== null && rankA < rankB;
+  const bWins = rankA !== null && rankB !== null && rankB < rankA;
+  return (
+    <div className="grid grid-cols-[1fr,auto,1fr] items-center py-1.5 border-b border-border/40 last:border-0 gap-2">
+      <span className={`text-right text-xs tabular-nums font-semibold rounded px-1 py-0.5 transition-colors ${aWins ? "bg-green-500/10" : ""} ${kenPomRankColor(rankA)}`}>
+        {formatKenPomRank(rankA)}
+      </span>
+      <span className="text-[10px] text-muted-foreground text-center whitespace-nowrap px-1">{label}</span>
+      <span className={`text-left text-xs tabular-nums font-semibold rounded px-1 py-0.5 transition-colors ${bWins ? "bg-green-500/10" : ""} ${kenPomRankColor(rankB)}`}>
+        {formatKenPomRank(rankB)}
+      </span>
+    </div>
+  );
+}
+
 function EfficiencyTable({
   teamA,
   teamB,
@@ -157,6 +183,9 @@ function EfficiencyTable({
   rankA,
   rankB,
   totalTeams,
+  kpA,
+  kpB,
+  kpSource,
 }: {
   teamA: Team;
   teamB: Team;
@@ -164,6 +193,9 @@ function EfficiencyTable({
   rankA: number;
   rankB: number;
   totalTeams: number;
+  kpA: KenPomEntry | null;
+  kpB: KenPomEntry | null;
+  kpSource: "kenpom" | "torvik" | null;
 }) {
   const infA = computeHomeInflationMetrics(teamA, avgDropOff);
   const infB = computeHomeInflationMetrics(teamB, avgDropOff);
@@ -187,7 +219,17 @@ function EfficiencyTable({
           <span className="text-left text-[10px] font-semibold text-muted-foreground">{teamB.abbreviation}</span>
         </div>
         <TwoColRow label="Adj. Off. Eff" valA={teamA.stats.adjOE} valB={teamB.stats.adjOE} higherIsBetter />
+        <KenPomRankRow
+          label={kpSource === "torvik" ? "OE Rank (Torvik)" : "KenPom OE Rank"}
+          rankA={kpA?.adjOERank ?? null}
+          rankB={kpB?.adjOERank ?? null}
+        />
         <TwoColRow label="Adj. Def. Eff" valA={teamA.stats.adjDE} valB={teamB.stats.adjDE} higherIsBetter={false} />
+        <KenPomRankRow
+          label={kpSource === "torvik" ? "DE Rank (Torvik)" : "KenPom DE Rank"}
+          rankA={kpA?.adjDERank ?? null}
+          rankB={kpB?.adjDERank ?? null}
+        />
         <TwoColRow label="Net Efficiency" valA={netEff(teamA)} valB={netEff(teamB)} higherIsBetter />
         <TwoColRow label="Home Net Eff" valA={infA.netEffHome} valB={infB.netEffHome} higherIsBetter />
         <TwoColRow label="Away Net Eff" valA={infA.netEffAway} valB={infB.netEffAway} higherIsBetter />
@@ -258,6 +300,7 @@ function ModalBody({
   const teamB = game?.teamB;
 
   const { data: injuryMap } = useInjuries();
+  const { data: kenPomData } = useKenPom();
 
   const avgDropOff = useMemo(() => getTop50AvgDropOff(teamPool), [teamPool]);
 
@@ -271,6 +314,14 @@ function ModalBody({
 
   const rankA = teamA ? (sortedPool.findIndex((t) => t.canonicalId === teamA.canonicalId) + 1 || sortedPool.length) : 1;
   const rankB = teamB ? (sortedPool.findIndex((t) => t.canonicalId === teamB.canonicalId) + 1 || sortedPool.length) : 1;
+
+  const kenPomMap = useMemo(
+    () => buildKenPomMap(kenPomData?.teams ?? [], teamPool, kenPomData?.source ?? null),
+    [kenPomData, teamPool],
+  );
+  const kpA = (teamA ? kenPomMap.get(teamA.canonicalId) : null) ?? null;
+  const kpB = (teamB ? kenPomMap.get(teamB.canonicalId) : null) ?? null;
+  const kpSource = kenPomData?.source ?? null;
 
   const fullAnalysisUrl =
     teamA && teamB
@@ -301,6 +352,9 @@ function ModalBody({
           rankA={rankA}
           rankB={rankB}
           totalTeams={sortedPool.length}
+          kpA={kpA}
+          kpB={kpB}
+          kpSource={kpSource}
         />
       </div>
 

@@ -20,6 +20,7 @@ import {
   type PathDifficulty,
   type ResolvedBracketRegion,
 } from "@/lib/bracket";
+import { type KenPomEntry, formatKenPomRank, kenPomRankColor } from "@/lib/kenPom";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,8 +42,8 @@ type SortKey =
   | "conf"
   | "rec"
   | "power"
-  | "off"
-  | "def"
+  | "oeRank"
+  | "deRank"
   | "pace"
   | "sos"
   | "netEff"
@@ -67,11 +68,13 @@ export default function RegionalRankingsTable({
   weights,
   teamPool,
   modelOpts = {},
+  kenPomMap = new Map(),
 }: {
   region: ResolvedBracketRegion;
   weights: StatWeight[];
   teamPool?: Team[];
   modelOpts?: ModelScoreOptions;
+  kenPomMap?: Map<string, KenPomEntry>;
 }) {
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
@@ -113,8 +116,8 @@ export default function RegionalRankingsTable({
         case "conf": va = a.team.conference ?? ""; vb = b.team.conference ?? ""; break;
         case "rec": va = a.team.record ?? ""; vb = b.team.record ?? ""; break;
         case "power": va = a.score; vb = b.score; break;
-        case "off": va = a.team.stats.adjOE ?? -999; vb = b.team.stats.adjOE ?? -999; break;
-        case "def": va = a.team.stats.adjDE ?? 999; vb = b.team.stats.adjDE ?? 999; break;
+        case "oeRank": va = kenPomMap.get(a.team.canonicalId)?.adjOERank ?? 999; vb = kenPomMap.get(b.team.canonicalId)?.adjOERank ?? 999; break;
+        case "deRank": va = kenPomMap.get(a.team.canonicalId)?.adjDERank ?? 999; vb = kenPomMap.get(b.team.canonicalId)?.adjDERank ?? 999; break;
         case "pace": va = a.team.stats.tempo ?? -999; vb = b.team.stats.tempo ?? -999; break;
         case "sos": va = a.team.stats.sos ?? -999; vb = b.team.stats.sos ?? -999; break;
         case "netEff": va = a.netEff ?? -999; vb = b.netEff ?? -999; break;
@@ -136,8 +139,8 @@ export default function RegionalRankingsTable({
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
-      // Default direction: asc for rank/seed/name, desc for numeric stats
-      const ascByDefault: SortKey[] = ["rank", "seed", "team", "conf", "rec", "def", "dropOff", "inflScore"];
+      // Default direction: asc for rank/seed/name/kenpom-ranks (lower = better), desc for numeric stats
+      const ascByDefault: SortKey[] = ["rank", "seed", "team", "conf", "rec", "oeRank", "deRank", "dropOff", "inflScore"];
       setSortDir(ascByDefault.includes(key) ? "asc" : "desc");
     }
   }
@@ -174,8 +177,8 @@ export default function RegionalRankingsTable({
               <Th col="conf" className="px-2">Conf</Th>
               <Th col="rec" className="px-2">Rec</Th>
               <Th col="power" className="px-2 text-right">Power</Th>
-              <Th col="off" className="px-2 text-right">Off</Th>
-              <Th col="def" className="px-2 text-right">Def</Th>
+              <Th col="oeRank" className="px-2 text-right">OE Rk</Th>
+              <Th col="deRank" className="px-2 text-right">DE Rk</Th>
               <Th col="pace" className="px-2 text-right">Pace</Th>
               <Th col="sos" className="px-2 text-right">SOS</Th>
               <Th col="netEff" className="px-2 text-right">Net Eff</Th>
@@ -226,11 +229,25 @@ export default function RegionalRankingsTable({
                     <TableCell className="px-2 py-2.5 text-right font-semibold tabular-nums text-foreground">
                       {score.toFixed(1)}
                     </TableCell>
-                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
-                      {formatStat(team.stats.adjOE)}
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums">
+                      {(() => {
+                        const kp = kenPomMap.get(team.canonicalId);
+                        return (
+                          <span className={kenPomRankColor(kp?.adjOERank)}>
+                            {formatKenPomRank(kp?.adjOERank)}
+                          </span>
+                        );
+                      })()}
                     </TableCell>
-                    <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
-                      {formatStat(team.stats.adjDE)}
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums">
+                      {(() => {
+                        const kp = kenPomMap.get(team.canonicalId);
+                        return (
+                          <span className={kenPomRankColor(kp?.adjDERank)}>
+                            {formatKenPomRank(kp?.adjDERank)}
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="px-2 py-2.5 text-right tabular-nums text-foreground">
                       {formatStat(team.stats.tempo)}

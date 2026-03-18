@@ -15,6 +15,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { buildCanonicalTeams, type ModelScoreOptions, type StatWeight } from "@/data/ncaaTeams";
+import { useKenPom } from "@/hooks/useKenPom";
+import { buildKenPomMap } from "@/lib/kenPom";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
@@ -254,6 +256,12 @@ export default function Bracket() {
 
   const { data: liveTeams = [] } = useLiveTeams();
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
+
+  const { data: kenPomData } = useKenPom();
+  const kenPomMap = useMemo(
+    () => buildKenPomMap(kenPomData?.teams ?? [], teamPool, kenPomData?.source ?? null),
+    [kenPomData, teamPool],
+  );
 
   const [sourceConfig, setSourceConfig] = useState(buildPlaceholderBracketSource());
   const [customPresets, setCustomPresets] = useState<BracketPreset[]>([]);
@@ -733,6 +741,7 @@ export default function Bracket() {
                     weights={weights}
                     teamPool={teamPool}
                     modelOpts={modelOpts}
+                    kenPomMap={kenPomMap}
                   />
                 ) : null;
               })()}

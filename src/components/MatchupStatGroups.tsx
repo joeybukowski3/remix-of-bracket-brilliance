@@ -9,6 +9,8 @@ import {
   DEFAULT_STAT_WEIGHTS,
   type Team,
 } from "@/data/ncaaTeams";
+import { useKenPom } from "@/hooks/useKenPom";
+import { buildKenPomMap, formatKenPomRank, kenPomRankColor } from "@/lib/kenPom";
 
 function SectionHeader({ label }: { label: string }) {
   return (
@@ -63,6 +65,50 @@ function StatGroupRow({
   );
 }
 
+function KenPomRankRow({
+  label,
+  rankA,
+  rankB,
+  logoA,
+  nameA,
+  logoB,
+  nameB,
+}: {
+  label: string;
+  rankA: number | null;
+  rankB: number | null;
+  logoA?: string | null;
+  nameA?: string;
+  logoB?: string | null;
+  nameB?: string;
+}) {
+  // Lower rank number = better (#1 is best)
+  const aWins = rankA !== null && rankB !== null && rankA < rankB;
+  const bWins = rankA !== null && rankB !== null && rankB < rankA;
+
+  return (
+    <div className="grid grid-cols-[1fr,auto,1fr] items-center py-1.5 border-b border-border/40 last:border-0 gap-2 min-h-[34px]">
+      <div className="flex items-center justify-end gap-1.5">
+        {logoA !== undefined && nameA && (
+          <TeamLogo name={nameA} logo={logoA} className="h-5 w-5 rounded hidden sm:block shrink-0" />
+        )}
+        <span className={`text-xs tabular-nums font-semibold rounded px-1 py-0.5 ${aWins ? "bg-primary/10" : ""} ${kenPomRankColor(rankA)}`}>
+          {formatKenPomRank(rankA)}
+        </span>
+      </div>
+      <span className="text-[10px] text-muted-foreground text-center whitespace-nowrap px-1">{label}</span>
+      <div className="flex items-center justify-start gap-1.5">
+        <span className={`text-xs tabular-nums font-semibold rounded px-1 py-0.5 ${bWins ? "bg-primary/10" : ""} ${kenPomRankColor(rankB)}`}>
+          {formatKenPomRank(rankB)}
+        </span>
+        {logoB !== undefined && nameB && (
+          <TeamLogo name={nameB} logo={logoB} className="h-5 w-5 rounded hidden sm:block shrink-0" />
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface MatchupStatGroupsProps {
   teamA: Team;
   teamB: Team;
@@ -73,6 +119,15 @@ export default function MatchupStatGroups({ teamA, teamB, teamPool }: MatchupSta
   const avgDropOff = useMemo(() => getTop50AvgDropOff(teamPool), [teamPool]);
   const infA = useMemo(() => computeHomeInflationMetrics(teamA, avgDropOff), [teamA, avgDropOff]);
   const infB = useMemo(() => computeHomeInflationMetrics(teamB, avgDropOff), [teamB, avgDropOff]);
+
+  const { data: kenPomData } = useKenPom();
+  const kenPomMap = useMemo(
+    () => buildKenPomMap(kenPomData?.teams ?? [], teamPool, kenPomData?.source ?? null),
+    [kenPomData, teamPool],
+  );
+  const kpA = kenPomMap.get(teamA.canonicalId) ?? null;
+  const kpB = kenPomMap.get(teamB.canonicalId) ?? null;
+  const kpSource = kenPomData?.source ?? null;
 
   const sortedPool = useMemo(
     () => [...teamPool].sort((a, b) => calculateTeamScore(b.stats, DEFAULT_STAT_WEIGHTS) - calculateTeamScore(a.stats, DEFAULT_STAT_WEIGHTS)),
@@ -108,7 +163,19 @@ export default function MatchupStatGroups({ teamA, teamB, teamPool }: MatchupSta
         <SectionHeader label="Efficiency Ratings" />
         {colHeader}
         <StatGroupRow label="Adj. Off. Eff" valA={teamA.stats.adjOE} valB={teamB.stats.adjOE} higherIsBetter {...logos} />
+        <KenPomRankRow
+          label={kpSource === "torvik" ? "OE Rank (Torvik)" : "KenPom OE Rank"}
+          rankA={kpA?.adjOERank ?? null}
+          rankB={kpB?.adjOERank ?? null}
+          {...logos}
+        />
         <StatGroupRow label="Adj. Def. Eff" valA={teamA.stats.adjDE} valB={teamB.stats.adjDE} higherIsBetter={false} {...logos} />
+        <KenPomRankRow
+          label={kpSource === "torvik" ? "DE Rank (Torvik)" : "KenPom DE Rank"}
+          rankA={kpA?.adjDERank ?? null}
+          rankB={kpB?.adjDERank ?? null}
+          {...logos}
+        />
         <StatGroupRow label="Net Efficiency" valA={netEffA} valB={netEffB} higherIsBetter {...logos} />
         <StatGroupRow label="Home Net Eff" valA={infA.netEffHome} valB={infB.netEffHome} higherIsBetter {...logos} />
         <StatGroupRow label="Away Net Eff" valA={infA.netEffAway} valB={infB.netEffAway} higherIsBetter {...logos} />
