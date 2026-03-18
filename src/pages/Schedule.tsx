@@ -8,6 +8,7 @@ import MatchupAnglesList from "@/components/MatchupAnglesList";
 import TeamLogo from "@/components/TeamLogo";
 import { useSchedule, type ScheduleGame } from "@/hooks/useSchedule";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
+import { useLiveOdds, type LiveOddsEvent } from "@/hooks/useLiveOdds";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
   DEFAULT_STAT_WEIGHTS,
@@ -57,10 +58,12 @@ function GameCard({
   game,
   weights,
   teamPool,
+  liveSpread,
 }: {
   game: ScheduleGame;
   weights: StatWeight[];
   teamPool: Team[];
+  liveSpread?: { awaySpread: number | null; homeSpread: number | null } | null;
 }) {
   const matchedHome = game.homeTeam ? findTeamByEspn(game.homeTeam.name, game.homeTeam.abbreviation, teamPool) : null;
   const matchedAway = game.awayTeam ? findTeamByEspn(game.awayTeam.name, game.awayTeam.abbreviation, teamPool) : null;
@@ -157,17 +160,34 @@ function GameCard({
             {homeScore !== null && awayScore !== null && (
               <p className="text-[10px] text-muted-foreground mt-1">POWER SCORE</p>
             )}
-            {game.odds && (
+            {/* Live spread from Odds API */}
+            {liveSpread && liveSpread.awaySpread !== null && liveSpread.homeSpread !== null ? (
+              <div className="mt-2 space-y-0.5">
+                <div className="flex items-center justify-center gap-1.5 tabular-nums">
+                  <span className={`text-sm font-bold ${liveSpread.awaySpread < 0 ? "text-primary" : "text-foreground"}`}>
+                    {liveSpread.awaySpread > 0 ? `+${liveSpread.awaySpread.toFixed(1)}` : liveSpread.awaySpread.toFixed(1)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">/</span>
+                  <span className={`text-sm font-bold ${liveSpread.homeSpread < 0 ? "text-primary" : "text-foreground"}`}>
+                    {liveSpread.homeSpread > 0 ? `+${liveSpread.homeSpread.toFixed(1)}` : liveSpread.homeSpread.toFixed(1)}
+                  </span>
+                </div>
+                {game.odds?.overUnder != null && (
+                  <p className="text-[10px] text-muted-foreground">O/U {game.odds.overUnder}</p>
+                )}
+                <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wide">Live Spread</p>
+              </div>
+            ) : game.odds ? (
               <div className="mt-2 space-y-0.5">
                 {game.odds.details && (
                   <p className="text-xs font-semibold text-foreground">{game.odds.details}</p>
                 )}
-                {game.odds.overUnder !== null && (
+                {game.odds.overUnder != null && (
                   <p className="text-[10px] text-muted-foreground">O/U {game.odds.overUnder}</p>
                 )}
                 <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wide">Vegas Line</p>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="text-center">
@@ -253,11 +273,27 @@ export default function Schedule() {
   const [showSliders, setShowSliders] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>("time");
   const { data: liveTeams = [] } = useLiveTeams();
+  const { data: liveOdds = [] } = useLiveOdds();
 
   const dateStr = formatDate(selectedDate);
   const { data: games, isLoading, error } = useSchedule(dateStr);
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
+
+  const resolvedOddsEvents = useMemo(
+    () =>
+      liveOdds
+        .map((event) => ({
+          event,
+          homeCanonicalId: findTeamByEspn(event.homeTeam, "", teamPool)?.canonicalId ?? null,
+          awayCanonicalId: findTeamByEspn(event.awayTeam, "", teamPool)?.canonicalId ?? null,
+        }))
+        .filter(
+          (r): r is { event: LiveOddsEvent; homeCanonicalId: string; awayCanonicalId: string } =>
+            r.homeCanonicalId !== null && r.awayCanonicalId !== null,
+        ),
+    [liveOdds, teamPool],
+  );
 
   const sortedGames = useMemo(() => {
     if (!games) return [];
@@ -270,7 +306,25 @@ export default function Schedule() {
       const total = homeScore + awayScore;
       const edgeAbs = total > 0 ? Math.abs(homeScore - awayScore) / total : 0;
       const conference = matchedAway?.conference || matchedHome?.conference || "ZZZ";
-      return { game, topScore, edgeAbs, conference };
+
+      // Match live odds by canonical team ID pair
+      let liveSpread: { awaySpread: number | null; homeSpread: number | null } | null = null;
+      if (matchedAway && matchedHome) {
+        const liveMatch = resolvedOddsEvents.find(
+          (r) =>
+            (r.homeCanonicalId === matchedHome.canonicalId && r.awayCanonicalId === matchedAway.canonicalId) ||
+            (r.homeCanonicalId === matchedAway.canonicalId && r.awayCanonicalId === matchedHome.canonicalId),
+        );
+        if (liveMatch) {
+          const isSwapped = liveMatch.homeCanonicalId === matchedAway.canonicalId;
+          liveSpread = {
+            awaySpread: isSwapped ? liveMatch.event.homeSpread : liveMatch.event.awaySpread,
+            homeSpread: isSwapped ? liveMatch.event.awaySpread : liveMatch.event.homeSpread,
+          };
+        }
+      }
+
+      return { game, topScore, edgeAbs, conference, liveSpread };
     });
 
     return [...withMeta].sort((a, b) => {
@@ -436,8 +490,8 @@ export default function Schedule() {
               analysis, even with partial stat coverage
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {sortedGames.map(({ game }) => (
-                <GameCard key={game.id} game={game} weights={weights} teamPool={teamPool} />
+              {sortedGames.map(({ game, liveSpread }) => (
+                <GameCard key={game.id} game={game} weights={weights} teamPool={teamPool} liveSpread={liveSpread} />
               ))}
             </div>
           </div>
