@@ -9,6 +9,7 @@ import {
   formatStat,
   getTop50AvgDropOff,
   hasStat,
+  type ModelScoreOptions,
   type StatWeight,
   type Team,
 } from "@/data/ncaaTeams";
@@ -65,16 +66,18 @@ export default function RegionalRankingsTable({
   region,
   weights,
   teamPool,
+  modelOpts = {},
 }: {
   region: ResolvedBracketRegion;
   weights: StatWeight[];
   teamPool?: Team[];
+  modelOpts?: ModelScoreOptions;
 }) {
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const rankedTeams = useMemo(() => rankTeamsInRegion(region, weights), [region, weights]);
+  const rankedTeams = useMemo(() => rankTeamsInRegion(region, weights, modelOpts), [region, weights, modelOpts]);
 
   // avg drop-off for inflation metrics
   const avgDropOff = useMemo(() => {
@@ -255,7 +258,7 @@ export default function RegionalRankingsTable({
                   {isExpanded && (
                     <TableRow className="border-white/10 bg-secondary/42 hover:bg-secondary/42">
                       <TableCell colSpan={15} className="px-4 py-4">
-                        <ExpandedTeamDetails region={region} teamId={team.canonicalId} weights={weights} />
+                        <ExpandedTeamDetails region={region} teamId={team.canonicalId} weights={weights} modelOpts={modelOpts} />
                       </TableCell>
                     </TableRow>
                   )}
@@ -275,15 +278,17 @@ function ExpandedTeamDetails({
   region,
   teamId,
   weights,
+  modelOpts = {},
 }: {
   region: ResolvedBracketRegion;
   teamId: string;
   weights: StatWeight[];
+  modelOpts?: ModelScoreOptions;
 }) {
   const team = region.teams.find((entry) => entry.canonicalId === teamId);
   if (!team) return null;
 
-  const path = computePathDifficulty(team, region, weights);
+  const path = computePathDifficulty(team, region, weights, modelOpts);
   const shootingSplit =
     team.stats.fgPct && team.stats.threePct
       ? `${formatStat(team.stats.fgPct)} FG / ${formatStat(team.stats.threePct)} 3P`

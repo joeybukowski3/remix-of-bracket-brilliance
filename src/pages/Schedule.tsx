@@ -157,6 +157,17 @@ function GameCard({
             {homeScore !== null && awayScore !== null && (
               <p className="text-[10px] text-muted-foreground mt-1">POWER SCORE</p>
             )}
+            {game.odds && (
+              <div className="mt-2 space-y-0.5">
+                {game.odds.details && (
+                  <p className="text-xs font-semibold text-foreground">{game.odds.details}</p>
+                )}
+                {game.odds.overUnder !== null && (
+                  <p className="text-[10px] text-muted-foreground">O/U {game.odds.overUnder}</p>
+                )}
+                <p className="text-[9px] text-muted-foreground/60 uppercase tracking-wide">Vegas Line</p>
+              </div>
+            )}
           </div>
 
           <div className="text-center">

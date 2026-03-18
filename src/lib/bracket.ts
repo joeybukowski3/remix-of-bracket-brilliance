@@ -2,12 +2,14 @@ import {
   DEFAULT_STAT_WEIGHTS,
   ELITE_8_PRESET_WEIGHTS,
   calculateTeamScore,
+  calculateAdjustedModelScore,
   emptyTeamStats,
   findTeamByCanonicalId,
   findTeamByEspn,
   getCanonicalSchoolKey,
   getStatsCoverage,
   slugify,
+  type ModelScoreOptions,
   type StatWeight,
   type Team,
 } from "@/data/ncaaTeams";
@@ -496,7 +498,10 @@ export function buildBracketTree(regions: ResolvedBracketRegion[], picks: Record
   };
 }
 
-export function calculateAdjustedTeamScore(team: Team, weights: StatWeight[]) {
+export function calculateAdjustedTeamScore(team: Team, weights: StatWeight[], opts: ModelScoreOptions = {}) {
+  if ((opts.homeInflationPenaltyWeight ?? 0) > 0 || (opts.q1BonusWeight ?? 0) > 0) {
+    return calculateAdjustedModelScore(team, weights, opts);
+  }
   return calculateTeamScore(team.stats, weights);
 }
 
@@ -560,13 +565,13 @@ export function buildTournamentMatchups(source: BracketSourceConfig, teamPool: T
   });
 }
 
-function getLikelyOpponent(pool: Team[], excludeId: string, weights: StatWeight[]) {
+function getLikelyOpponent(pool: Team[], excludeId: string, weights: StatWeight[], opts: ModelScoreOptions = {}) {
   return [...pool]
     .filter((team) => team.canonicalId !== excludeId)
-    .sort((a, b) => calculateAdjustedTeamScore(b, weights) - calculateAdjustedTeamScore(a, weights))[0] ?? null;
+    .sort((a, b) => calculateAdjustedTeamScore(b, weights, opts) - calculateAdjustedTeamScore(a, weights, opts))[0] ?? null;
 }
 
-export function computePathDifficulty(team: Team, region: ResolvedBracketRegion, weights: StatWeight[]): PathDifficulty {
+export function computePathDifficulty(team: Team, region: ResolvedBracketRegion, weights: StatWeight[], opts: ModelScoreOptions = {}): PathDifficulty {
   const teamSeed = team.seed ?? 16;
   const round1Seeds = REGION_MATCHUPS.find(([seedA, seedB]) => seedA === teamSeed || seedB === teamSeed) ?? [teamSeed, teamSeed];
   const round1Pool = region.teams.filter((candidate) => candidate.seed === round1Seeds.find((seed) => seed !== teamSeed));
@@ -586,13 +591,13 @@ export function computePathDifficulty(team: Team, region: ResolvedBracketRegion,
   });
 
   const likelyOpponents = [
-    { round: "Round of 64", team: round1Pool[0] ?? null, strength: round1Pool[0] ? calculateAdjustedTeamScore(round1Pool[0], weights) : 0 },
-    { round: "Round of 32", team: getLikelyOpponent(round2Pod, team.canonicalId, weights), strength: 0 },
-    { round: "Sweet 16", team: getLikelyOpponent(sameHalf, team.canonicalId, weights), strength: 0 },
-    { round: "Elite 8", team: getLikelyOpponent(otherHalf, team.canonicalId, weights), strength: 0 },
+    { round: "Round of 64", team: round1Pool[0] ?? null, strength: round1Pool[0] ? calculateAdjustedTeamScore(round1Pool[0], weights, opts) : 0 },
+    { round: "Round of 32", team: getLikelyOpponent(round2Pod, team.canonicalId, weights, opts), strength: 0 },
+    { round: "Sweet 16", team: getLikelyOpponent(sameHalf, team.canonicalId, weights, opts), strength: 0 },
+    { round: "Elite 8", team: getLikelyOpponent(otherHalf, team.canonicalId, weights, opts), strength: 0 },
   ].map((entry) => ({
     ...entry,
-    strength: entry.team ? calculateAdjustedTeamScore(entry.team, weights) : 0,
+    strength: entry.team ? calculateAdjustedTeamScore(entry.team, weights, opts) : 0,
   }));
 
   const difficultyScore = likelyOpponents.reduce((total, opponent, index) => total + opponent.strength * [0.18, 0.22, 0.27, 0.33][index], 0);
@@ -609,7 +614,7 @@ export function computePathDifficulty(team: Team, region: ResolvedBracketRegion,
   };
 }
 
-export function rankTeamsInRegion(region: ResolvedBracketRegion, weights: StatWeight[]) {
+export function rankTeamsInRegion(region: ResolvedBracketRegion, weights: StatWeight[], opts: ModelScoreOptions = {}) {
   const uniqueTeams = [...region.teams].filter((team, index, collection) => {
     const schoolKey = getCanonicalSchoolKey(team.name, team.abbreviation);
     return index === collection.findIndex((candidate) => getCanonicalSchoolKey(candidate.name, candidate.abbreviation) === schoolKey);
@@ -618,8 +623,8 @@ export function rankTeamsInRegion(region: ResolvedBracketRegion, weights: StatWe
   return uniqueTeams
     .map((team) => ({
       team,
-      score: calculateAdjustedTeamScore(team, weights),
-      path: computePathDifficulty(team, region, weights),
+      score: calculateAdjustedTeamScore(team, weights, opts),
+      path: computePathDifficulty(team, region, weights, opts),
     }))
     .sort((a, b) => b.score - a.score);
 }

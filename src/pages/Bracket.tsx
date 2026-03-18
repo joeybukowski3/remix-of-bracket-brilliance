@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { buildCanonicalTeams, type StatWeight } from "@/data/ncaaTeams";
+import { buildCanonicalTeams, type ModelScoreOptions, type StatWeight } from "@/data/ncaaTeams";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
@@ -66,11 +66,13 @@ function PresetNote() {
 function GameCard({
   game,
   weights,
+  modelOpts = {},
   onPick,
   onAnalyze,
 }: {
   game: BracketGame;
   weights: StatWeight[];
+  modelOpts?: ModelScoreOptions;
   onPick: (gameId: string, teamId: string) => void;
   onAnalyze: (game: BracketGame) => void;
 }) {
@@ -114,7 +116,7 @@ function GameCard({
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm font-bold tabular-nums text-foreground">{team ? calculateAdjustedTeamScore(team, weights).toFixed(1) : "--"}</p>
+              <p className="text-sm font-bold tabular-nums text-foreground">{team ? calculateAdjustedTeamScore(team, weights, modelOpts).toFixed(1) : "--"}</p>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Power</p>
             </div>
           </button>
@@ -128,12 +130,14 @@ function RegionBuilderSection({
   region,
   regionGames,
   weights,
+  modelOpts = {},
   onPick,
   onAnalyze,
 }: {
   region: ResolvedBracketRegion;
   regionGames: BracketGame[];
   weights: StatWeight[];
+  modelOpts?: ModelScoreOptions;
   onPick: (gameId: string, teamId: string) => void;
   onAnalyze: (game: BracketGame) => void;
 }) {
@@ -161,13 +165,82 @@ function RegionBuilderSection({
               {regionGames
                 .filter((game) => game.roundIndex === roundIndex)
                 .map((game) => (
-                  <GameCard key={game.id} game={game} weights={weights} onPick={onPick} onAnalyze={onAnalyze} />
+                  <GameCard key={game.id} game={game} weights={weights} modelOpts={modelOpts} onPick={onPick} onAnalyze={onAnalyze} />
                 ))}
             </div>
           ))}
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ResumeRegressionSliders({
+  homeInflationPenaltyWeight,
+  q1BonusWeight,
+  onHomeInflationChange,
+  onQ1BonusChange,
+}: {
+  homeInflationPenaltyWeight: number;
+  q1BonusWeight: number;
+  onHomeInflationChange: (v: number) => void;
+  onQ1BonusChange: (v: number) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-background/75 p-4 space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-1">Resume &amp; Home Regression Adjustments</h3>
+        <p className="text-xs text-muted-foreground">
+          These layer on top of the core stat weights. Neutral-site efficiency blend (80% away / 20% home) is applied when active.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Home Inflation Penalty</label>
+            <span className="text-sm font-bold text-primary tabular-nums">{homeInflationPenaltyWeight}</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={homeInflationPenaltyWeight}
+            onChange={(e) => onHomeInflationChange(Number(e.target.value))}
+            className="w-full accent-primary"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Penalizes teams whose ranking may be home-inflated. At 100, −1 pt per +1 inflation score.
+          </p>
+        </div>
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Q1 Win Rate Bonus</label>
+            <span className="text-sm font-bold text-primary tabular-nums">{q1BonusWeight}</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={q1BonusWeight}
+            onChange={(e) => onQ1BonusChange(Number(e.target.value))}
+            className="w-full accent-primary"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Rewards teams with strong Q1 records (games vs top-50 opponents). At 100, a perfect Q1 record adds +2 pts.
+          </p>
+        </div>
+      </div>
+      {(homeInflationPenaltyWeight > 0 || q1BonusWeight > 0) && (
+        <button
+          onClick={() => { onHomeInflationChange(0); onQ1BonusChange(0); }}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Reset adjustments
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -192,6 +265,8 @@ export default function Bracket() {
   const [activeBreakdownRegion, setActiveBreakdownRegion] = useState(BRACKET_REGION_NAMES[0]);
   const [showBuilderControls, setShowBuilderControls] = useState(false);
   const [showBreakdownControls, setShowBreakdownControls] = useState(false);
+  const [homeInflationPenaltyWeight, setHomeInflationPenaltyWeight] = useState(0);
+  const [q1BonusWeight, setQ1BonusWeight] = useState(0);
   const [analyzeGame, setAnalyzeGame] = useState<BracketGame | null>(null);
   const [presetSheetOpen, setPresetSheetOpen] = useState(false);
   const [savePresetOpen, setSavePresetOpen] = useState(false);
@@ -289,13 +364,18 @@ export default function Bracket() {
     }
   };
 
+  const modelOpts = useMemo<ModelScoreOptions>(
+    () => ({ homeInflationPenaltyWeight, q1BonusWeight }),
+    [homeInflationPenaltyWeight, q1BonusWeight],
+  );
+
   const topRegionalTeams = useMemo(
     () =>
       regions.map((region) => {
-        const top = rankTeamsInRegion(region, weights)[0];
+        const top = rankTeamsInRegion(region, weights, modelOpts)[0];
         return { region: region.name, team: top?.team ?? null, score: top?.score ?? null };
       }),
-    [regions, weights],
+    [regions, weights, modelOpts],
   );
 
   return (
@@ -384,8 +464,16 @@ export default function Bracket() {
                   </div>
 
                   {showBuilderControls && (
-                    <div className="rounded-xl border border-white/10 bg-background/75 p-3">
-                      <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />
+                    <div className="space-y-3">
+                      <div className="rounded-xl border border-white/10 bg-background/75 p-3">
+                        <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />
+                      </div>
+                      <ResumeRegressionSliders
+                        homeInflationPenaltyWeight={homeInflationPenaltyWeight}
+                        q1BonusWeight={q1BonusWeight}
+                        onHomeInflationChange={setHomeInflationPenaltyWeight}
+                        onQ1BonusChange={setQ1BonusWeight}
+                      />
                     </div>
                   )}
                 </CardContent>
@@ -490,6 +578,7 @@ export default function Bracket() {
                     region={currentRegion}
                     regionGames={bracketTree.regionGames[currentRegion.name] ?? []}
                     weights={weights}
+                    modelOpts={modelOpts}
                     onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
                     onAnalyze={(game) => setAnalyzeGame(game)}
                   />
@@ -551,6 +640,7 @@ export default function Bracket() {
                       <GameCard
                         game={bracketTree.finalFourGames[0]}
                         weights={weights}
+                        modelOpts={modelOpts}
                         onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
                         onAnalyze={(game) => setAnalyzeGame(game)}
                       />
@@ -562,6 +652,7 @@ export default function Bracket() {
                       <GameCard
                         game={bracketTree.finalFourGames[1]}
                         weights={weights}
+                        modelOpts={modelOpts}
                         onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
                         onAnalyze={(game) => setAnalyzeGame(game)}
                       />
@@ -573,6 +664,7 @@ export default function Bracket() {
                       <GameCard
                         game={bracketTree.championshipGame}
                         weights={weights}
+                        modelOpts={modelOpts}
                         onPick={(gameId, teamId) => setPicks((prev) => ({ ...prev, [gameId]: teamId }))}
                         onAnalyze={(game) => setAnalyzeGame(game)}
                       />
@@ -600,10 +692,16 @@ export default function Bracket() {
                 </div>
               </CardHeader>
               {showBreakdownControls && (
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 space-y-3">
                   <div className="rounded-xl border border-white/10 bg-background/75 p-3">
                     <StatSliders weights={weights} onWeightChange={handleWeightChange} compact />
                   </div>
+                  <ResumeRegressionSliders
+                    homeInflationPenaltyWeight={homeInflationPenaltyWeight}
+                    q1BonusWeight={q1BonusWeight}
+                    onHomeInflationChange={setHomeInflationPenaltyWeight}
+                    onQ1BonusChange={setQ1BonusWeight}
+                  />
                 </CardContent>
               )}
             </Card>
@@ -634,6 +732,7 @@ export default function Bracket() {
                     region={activeRegionData}
                     weights={weights}
                     teamPool={teamPool}
+                    modelOpts={modelOpts}
                   />
                 ) : null;
               })()}
