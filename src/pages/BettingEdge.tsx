@@ -30,6 +30,7 @@ import {
   type VegasProbabilityComparison,
 } from "@/lib/odds";
 import { formatRoundedPercent } from "@/lib/numberFormat";
+import { useLast10 } from "@/hooks/useLast10";
 
 type SortMode = "top-edge" | "smallest-edge" | "game-time" | "model-favorite" | "spread-rank";
 
@@ -178,6 +179,360 @@ function InterpretationBadge({ delta }: { delta: number }) {
   );
 }
 
+type DeltaSortField = "delta" | "spread" | "spreadRank" | "modelRank";
+
+type MismatchEntry = {
+  attackerCId: string;
+  attackerAbbr: string;
+  attackerLogo?: string | null;
+  attackerName: string;
+  defenderAbbr: string;
+  defenderLogo?: string | null;
+  defenderName: string;
+  score: number;
+  context: string;
+  link: string | null;
+  gameTime: string;
+};
+
+function TopDeltaRankTable({
+  entries,
+  boardEntries,
+}: {
+  entries: SpreadRankInfo[];
+  boardEntries: BettingBoardEntry[];
+}) {
+  const [sortField, setSortField] = useState<DeltaSortField>("delta");
+  const [sortDir, setSortDir] = useState<1 | -1>(1);
+
+  const gameEntryMap = useMemo(() => {
+    const m = new Map<string, BettingBoardEntry>();
+    for (const e of boardEntries) m.set(String(e.game.id), e);
+    return m;
+  }, [boardEntries]);
+
+  const sorted = useMemo(() => {
+    return [...entries].sort((a, b) => {
+      let diff = 0;
+      if (sortField === "delta") diff = a.rankDelta - b.rankDelta;
+      else if (sortField === "spread") diff = a.spread - b.spread;
+      else if (sortField === "spreadRank") diff = a.spreadRank - b.spreadRank;
+      else if (sortField === "modelRank") diff = a.modelRank - b.modelRank;
+      return diff * sortDir;
+    });
+  }, [entries, sortField, sortDir]);
+
+  const gameColorMap = useMemo(() => {
+    const seen = new Map<string, number>();
+    let idx = 0;
+    for (const entry of sorted) {
+      if (!seen.has(entry.gameId)) seen.set(entry.gameId, idx++ % 2);
+    }
+    return seen;
+  }, [sorted]);
+
+  const toggleSort = (field: DeltaSortField) => {
+    if (sortField === field) setSortDir((d) => (d === 1 ? -1 : 1));
+    else { setSortField(field); setSortDir(1); }
+  };
+
+  const thClass = (field: DeltaSortField, align: "left" | "right" = "right") =>
+    `pb-2 ${align === "left" ? "text-left" : "text-right"} cursor-pointer select-none hover:text-foreground text-[10px] font-semibold uppercase tracking-wider ${sortField === field ? "text-foreground" : "text-muted-foreground"}`;
+
+  const sortIndicator = (field: DeltaSortField) =>
+    sortField === field ? (sortDir === 1 ? " ↑" : " ↓") : "";
+
+  const fmtSpread = (v: number) => (v > 0 ? `+${v.toFixed(1)}` : v.toFixed(1));
+  const poolSize = entries[0]?.poolSize ?? entries.length;
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-card/95 p-8 text-center shadow-sm">
+        <p className="text-sm text-muted-foreground">No spread data available. Lines populate when live odds load.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card/95 p-4 shadow-sm">
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold text-foreground">Top Delta Rank</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {entries.length} teams with live lines — sorted by model vs Vegas rank gap. Negative Δ = model likes more than Vegas; positive = Vegas likes more than model.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="pb-2 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Team</th>
+              <th className={thClass("spread")} onClick={() => toggleSort("spread")}>Spread{sortIndicator("spread")}</th>
+              <th className={thClass("spreadRank")} onClick={() => toggleSort("spreadRank")}>Spread Rk{sortIndicator("spreadRank")}</th>
+              <th className={thClass("modelRank")} onClick={() => toggleSort("modelRank")}>Model Rk{sortIndicator("modelRank")}</th>
+              <th className={thClass("delta")} onClick={() => toggleSort("delta")}>Δ{sortIndicator("delta")}</th>
+              <th className="pb-2 text-left pl-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Signal</th>
+              <th className="pb-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">vs.</th>
+              <th className="pb-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Time</th>
+              <th className="pb-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground" />
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map(({ canonicalId, gameId, name, abbreviation, logo, spread, spreadRank, modelRank, rankDelta }) => {
+              const gameEntry = gameEntryMap.get(gameId);
+              const isAlt = gameColorMap.get(gameId) === 0;
+              let opponentAbbr = "—";
+              let opponentLogo: string | undefined | null = undefined;
+              let opponentName = "";
+              if (gameEntry) {
+                if (gameEntry.away?.canonicalId === canonicalId) {
+                  opponentAbbr = gameEntry.home?.abbreviation || gameEntry.game.homeTeam?.abbreviation || "—";
+                  opponentLogo = gameEntry.home?.logo || gameEntry.game.homeTeam?.logo;
+                  opponentName = gameEntry.home?.name || gameEntry.game.homeTeam?.name || "";
+                } else {
+                  opponentAbbr = gameEntry.away?.abbreviation || gameEntry.game.awayTeam?.abbreviation || "—";
+                  opponentLogo = gameEntry.away?.logo || gameEntry.game.awayTeam?.logo;
+                  opponentName = gameEntry.away?.name || gameEntry.game.awayTeam?.name || "";
+                }
+              }
+              return (
+                <tr
+                  key={`${gameId}:${canonicalId}`}
+                  className={`border-b border-border/40 last:border-0 ${isAlt ? "bg-secondary/15" : ""}`}
+                >
+                  <td className="py-2 pr-2">
+                    <div className="flex items-center gap-1.5">
+                      <TeamLogo name={name} logo={logo} className="h-5 w-5 shrink-0" />
+                      <span className="font-medium">{abbreviation}</span>
+                    </div>
+                  </td>
+                  <td className="py-2 text-right tabular-nums">{fmtSpread(spread)}</td>
+                  <td className="py-2 text-right tabular-nums">#{spreadRank} <span className="text-muted-foreground/60">/{poolSize}</span></td>
+                  <td className="py-2 text-right tabular-nums">#{modelRank} <span className="text-muted-foreground/60">/{poolSize}</span></td>
+                  <td className={`py-2 text-right tabular-nums font-semibold ${rankDelta < 0 ? "text-purple-400" : rankDelta > 0 ? "text-green-400" : "text-muted-foreground"}`}>
+                    {rankDelta > 0 ? `+${rankDelta}` : rankDelta}
+                  </td>
+                  <td className="py-2 pl-3"><InterpretationBadge delta={rankDelta} /></td>
+                  <td className="py-2 text-right">
+                    {opponentAbbr !== "—" ? (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="text-muted-foreground">{opponentAbbr}</span>
+                        {opponentLogo !== undefined && (
+                          <TeamLogo name={opponentName} logo={opponentLogo} className="h-4 w-4 shrink-0" />
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="py-2 text-right text-muted-foreground whitespace-nowrap">
+                    {gameEntry ? formatGameTime(gameEntry.game.date) : "—"}
+                  </td>
+                  <td className="py-2 pl-2 text-right">
+                    {gameEntry?.link ? (
+                      <Link to={gameEntry.link} className="text-[10px] font-semibold uppercase tracking-wide text-primary hover:underline">
+                        View →
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function MismatchCategoryCard({
+  title,
+  description,
+  entries,
+  defaultOpen = false,
+}: {
+  title: string;
+  description: string;
+  entries: MismatchEntry[];
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  if (entries.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-border bg-secondary/20 overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-secondary/30 transition-colors"
+      >
+        <div>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-[11px] text-muted-foreground">{description}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-3">
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground">
+            {entries.length}
+          </span>
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
+        </div>
+      </button>
+      {open && (
+        <div className="border-t border-border/40 px-4 py-3 space-y-1">
+          {entries.map((e, i) => (
+            <div key={`${e.attackerCId}-${i}`} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
+              <div className="flex items-center gap-1.5 min-w-[76px]">
+                <TeamLogo name={e.attackerName} logo={e.attackerLogo} className="h-5 w-5 shrink-0" />
+                <span className="text-xs font-semibold text-foreground">{e.attackerAbbr}</span>
+              </div>
+              <span className="text-[10px] text-muted-foreground">vs</span>
+              <div className="flex items-center gap-1.5 min-w-[76px]">
+                <TeamLogo name={e.defenderName} logo={e.defenderLogo} className="h-5 w-5 shrink-0" />
+                <span className="text-xs text-foreground">{e.defenderAbbr}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] text-muted-foreground truncate">{e.context}</p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {e.gameTime}
+                </span>
+                {e.link ? (
+                  <Link to={e.link} className="text-[10px] font-semibold uppercase tracking-wide text-primary hover:underline whitespace-nowrap">
+                    View →
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MismatchSpecialsTab({ boardEntries }: { boardEntries: BettingBoardEntry[] }) {
+  function computeCategory(
+    filter: (attacker: Team, defender: Team) => { match: boolean; score: number; context: string },
+    maxResults = 7,
+  ): MismatchEntry[] {
+    const results: (MismatchEntry & { _score: number })[] = [];
+    for (const entry of boardEntries) {
+      const { away, home, link, game } = entry;
+      const pairs: [Team | null, Team | null][] = [[away, home], [home, away]];
+      for (const [attacker, defender] of pairs) {
+        if (!attacker || !defender) continue;
+        const { match, score, context } = filter(attacker, defender);
+        if (match) {
+          results.push({
+            attackerCId: attacker.canonicalId,
+            attackerAbbr: attacker.abbreviation,
+            attackerLogo: attacker.logo,
+            attackerName: attacker.name,
+            defenderAbbr: defender.abbreviation,
+            defenderLogo: defender.logo,
+            defenderName: defender.name,
+            score,
+            context,
+            link,
+            gameTime: formatGameTime(game.date),
+            _score: score,
+          });
+        }
+      }
+    }
+    results.sort((a, b) => b._score - a._score);
+    return results.slice(0, maxResults);
+  }
+
+  const sharpshooterMismatches = computeCategory((attacker, defender) => {
+    const a3 = attacker.stats.threePct;
+    const dDE = defender.stats.adjDE;
+    if (a3 === null || dDE === null) return { match: false, score: 0, context: "" };
+    const match = a3 >= 36.5 && dDE >= 98;
+    return { match, score: a3 + (dDE - 98) * 0.5, context: `${a3.toFixed(1)}% 3PT vs Adj.DE ${dDE.toFixed(0)}` };
+  });
+
+  const paceMismatches = computeCategory((attacker, defender) => {
+    const aOE = attacker.stats.adjOE;
+    const dTempo = defender.stats.tempo;
+    if (aOE === null || dTempo === null) return { match: false, score: 0, context: "" };
+    const match = aOE >= 114 && dTempo <= 67;
+    return { match, score: (aOE - 114) + (70 - dTempo) * 0.8, context: `Adj.OE ${aOE.toFixed(1)} vs tempo ${dTempo.toFixed(1)}` };
+  });
+
+  const efficiencyMismatches = computeCategory((attacker, defender) => {
+    const aOE = attacker.stats.adjOE;
+    const dDE = defender.stats.adjDE;
+    if (aOE === null || dDE === null) return { match: false, score: 0, context: "" };
+    const diff = aOE - dDE;
+    const match = diff >= 18;
+    return { match, score: diff, context: `Adj.OE ${aOE.toFixed(1)} vs Adj.DE ${dDE.toFixed(1)} (gap ${diff > 0 ? "+" : ""}${diff.toFixed(1)})` };
+  });
+
+  const turnoverMismatches = computeCategory((attacker, defender) => {
+    const aTOV = attacker.stats.tpg;
+    const dTOV = defender.stats.tpg;
+    if (aTOV === null || dTOV === null) return { match: false, score: 0, context: "" };
+    const match = aTOV <= 12.5 && dTOV >= 13.5;
+    return { match, score: dTOV - aTOV, context: `${aTOV.toFixed(1)} TOV/G vs opponent ${dTOV.toFixed(1)} TOV/G` };
+  });
+
+  const reboundingMismatches = computeCategory((attacker, defender) => {
+    const aRPG = attacker.stats.rpg;
+    const dRPG = defender.stats.rpg;
+    if (aRPG === null || dRPG === null) return { match: false, score: 0, context: "" };
+    const diff = aRPG - dRPG;
+    const match = diff >= 3;
+    return { match, score: diff, context: `${aRPG.toFixed(1)} RPG vs ${dRPG.toFixed(1)} RPG (+${diff.toFixed(1)} advantage)` };
+  });
+
+  const hasAny = sharpshooterMismatches.length > 0 || paceMismatches.length > 0 || efficiencyMismatches.length > 0 || turnoverMismatches.length > 0 || reboundingMismatches.length > 0;
+
+  if (!hasAny) {
+    return (
+      <div className="rounded-2xl border border-border bg-card/95 p-8 text-center shadow-sm">
+        <p className="text-sm text-muted-foreground">No mismatch matchups detected. Check back when more games with full stat coverage are available.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card/95 p-4 shadow-sm space-y-3">
+      <div className="mb-2">
+        <h2 className="text-lg font-semibold text-foreground">Mismatch Specials</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">Stat-driven edge opportunities across 5 matchup categories, scored by mismatch severity.</p>
+      </div>
+      <MismatchCategoryCard
+        title="🎯 Sharpshooter vs Porous Defense"
+        description="High 3PT% team (≥ 36.5%) facing a weak defense (Adj.DE ≥ 98)"
+        entries={sharpshooterMismatches}
+        defaultOpen
+      />
+      <MismatchCategoryCard
+        title="⚡ High Offense vs Slow Tempo"
+        description="High-OE offense (≥ 114) faces a tempo-control team (≤ 67 possessions/game)"
+        entries={paceMismatches}
+      />
+      <MismatchCategoryCard
+        title="🔥 Efficiency Blowout"
+        description="Adj. Offensive Efficiency significantly exceeds opponent's Adj. Defensive Efficiency (gap ≥ 18)"
+        entries={efficiencyMismatches}
+      />
+      <MismatchCategoryCard
+        title="🔄 Turnover Discipline Edge"
+        description="Ball-secure team (≤ 12.5 TOV/G) vs turnover-prone opponent (≥ 13.5 TOV/G)"
+        entries={turnoverMismatches}
+      />
+      <MismatchCategoryCard
+        title="💪 Rebounding Domination"
+        description="Significant rebounding advantage (3.0+ RPG gap)"
+        entries={reboundingMismatches}
+      />
+    </div>
+  );
+}
+
 function SpreadRankingsTable({ entries }: { entries: SpreadRankInfo[] }) {
   const fmtSpread = (v: number) => (v > 0 ? `+${v.toFixed(1)}` : v.toFixed(1));
   const poolSize = entries[0]?.poolSize ?? entries.length;
@@ -256,6 +611,16 @@ function BettingBoardRow({
   spreadRankMap: Map<string, SpreadRankInfo>;
 }) {
   const [spreadExpanded, setSpreadExpanded] = useState(false);
+  const { data: last10Data } = useLast10();
+  const l10Map = last10Data?.teams ?? {};
+  const l10Away = entry.away?.espnId ? l10Map[entry.away.espnId] : null;
+  const l10Home = entry.home?.espnId ? l10Map[entry.home.espnId] : null;
+
+  function l10Badge(record: { wins: number; losses: number } | null | undefined) {
+    if (!record) return null;
+    const color = record.wins >= 8 ? "text-green-400" : record.wins >= 5 ? "text-muted-foreground" : "text-amber-400";
+    return <span className={`text-[10px] font-semibold tabular-nums ${color}`}>L10: {record.wins}-{record.losses}</span>;
+  }
 
   const edgeTeam =
     entry.edgeSide === "away"
@@ -323,11 +688,14 @@ function BettingBoardRow({
               <p className="truncate text-sm font-semibold text-foreground">
                 {entry.away?.name || entry.game.awayTeam?.name || "Away team"}
               </p>
-              <p className="text-[11px] text-muted-foreground">
-                {entry.tournamentContext
-                  ? `Seed ${entry.tournamentContext.seeds[0]}`
-                  : entry.away?.record || entry.game.awayTeam?.record || "Record unavailable"}
-              </p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-[11px] text-muted-foreground">
+                  {entry.tournamentContext
+                    ? `Seed ${entry.tournamentContext.seeds[0]}`
+                    : entry.away?.record || entry.game.awayTeam?.record || "Record unavailable"}
+                </p>
+                {l10Badge(l10Away)}
+              </div>
             </div>
           </div>
           <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">vs</span>
@@ -341,11 +709,14 @@ function BettingBoardRow({
               <p className="truncate text-sm font-semibold text-foreground">
                 {entry.home?.name || entry.game.homeTeam?.name || "Home team"}
               </p>
-              <p className="text-[11px] text-muted-foreground">
-                {entry.tournamentContext
-                  ? `Seed ${entry.tournamentContext.seeds[1]}`
-                  : entry.home?.record || entry.game.homeTeam?.record || "Record unavailable"}
-              </p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-[11px] text-muted-foreground">
+                  {entry.tournamentContext
+                    ? `Seed ${entry.tournamentContext.seeds[1]}`
+                    : entry.home?.record || entry.game.homeTeam?.record || "Record unavailable"}
+                </p>
+                {l10Badge(l10Home)}
+              </div>
             </div>
           </div>
         </div>
@@ -529,6 +900,7 @@ export default function BettingEdge() {
   const [sortMode, setSortMode] = useState<SortMode>("top-edge");
   const [selectedPreset, setSelectedPreset] = useState<"default" | "elite">("default");
   const [showSpreadRankings, setShowSpreadRankings] = useState(false);
+  const [pageTab, setPageTab] = useState<"edge-board" | "top-delta" | "mismatch">("edge-board");
   const [bracketSource, setBracketSource] = useState<BracketSourceConfig>(buildPlaceholderBracketSource());
   const { data: liveTeams = [] } = useLiveTeams();
   const { games, isLoading, error } = useUpcomingSchedule(7);
@@ -808,21 +1180,23 @@ export default function BettingEdge() {
               </button>
             </div>
 
-            <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
-              <ArrowUpDown className="h-3.5 w-3.5" />
-              Sort
-              <select
-                value={sortMode}
-                onChange={(event) => setSortMode(event.target.value as SortMode)}
-                className="bg-transparent text-foreground outline-none"
-              >
-                <option value="top-edge">Top edge</option>
-                <option value="smallest-edge">Smallest edge</option>
-                <option value="game-time">Game time</option>
-                <option value="model-favorite">Model favorite</option>
-                <option value="spread-rank">Spread vs. Model</option>
-              </select>
-            </label>
+            {pageTab === "edge-board" && (
+              <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                Sort
+                <select
+                  value={sortMode}
+                  onChange={(event) => setSortMode(event.target.value as SortMode)}
+                  className="bg-transparent text-foreground outline-none"
+                >
+                  <option value="top-edge">Top edge</option>
+                  <option value="smallest-edge">Smallest edge</option>
+                  <option value="game-time">Game time</option>
+                  <option value="model-favorite">Model favorite</option>
+                  <option value="spread-rank">Spread vs. Model</option>
+                </select>
+              </label>
+            )}
           </div>
 
           {showControls ? (
@@ -831,6 +1205,27 @@ export default function BettingEdge() {
             </div>
           ) : null}
         </section>
+
+        {/* Page-level tab bar */}
+        <div className="rounded-2xl border border-border bg-card/95 p-1 shadow-sm">
+          <Tabs value={pageTab} onValueChange={(v) => setPageTab(v as typeof pageTab)}>
+            <TabsList className="h-auto w-full rounded-xl bg-transparent p-0">
+              <TabsTrigger value="edge-board" className="flex-1">Edge Board</TabsTrigger>
+              <TabsTrigger value="top-delta" className="flex-1">Top Delta Rank</TabsTrigger>
+              <TabsTrigger value="mismatch" className="flex-1">Mismatch Specials</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {pageTab === "top-delta" && (
+          <TopDeltaRankTable entries={spreadRankEntries} boardEntries={boardEntries} />
+        )}
+
+        {pageTab === "mismatch" && (
+          <MismatchSpecialsTab boardEntries={boardEntries} />
+        )}
+
+        {pageTab === "edge-board" && <>
 
         {spreadRankEntries.length > 0 && (
           <section className="rounded-2xl border border-border bg-card/95 p-4 shadow-sm">
@@ -919,6 +1314,8 @@ export default function BettingEdge() {
             ))}
           </div>
         </section>
+
+        </>}
 
         <SeoFooterBlock />
       </div>

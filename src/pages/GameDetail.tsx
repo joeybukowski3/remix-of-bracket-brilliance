@@ -26,6 +26,7 @@ import {
 } from "@/data/ncaaTeams";
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
 import MatchupStatGroups from "@/components/MatchupStatGroups";
+import { useLast10 } from "@/hooks/useLast10";
 
 function StatCompareRow({
   label,
@@ -217,6 +218,14 @@ export default function GameDetail() {
 
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showVsAverage, setShowVsAverage] = useState(false);
+  const { data: last10Data } = useLast10();
+  const l10Map = last10Data?.teams ?? {};
+
+  function l10Color(wins: number): string {
+    if (wins >= 8) return "text-green-400";
+    if (wins >= 5) return "text-foreground";
+    return "text-amber-400";
+  }
 
   const top50Avg = useMemo(() => getTop50Average(teamPool), [teamPool]);
 
@@ -331,6 +340,11 @@ export default function GameDetail() {
                 <Link to={`/team/${teamA.slug}`} className="hover:underline">{teamA.name}</Link>
               </h2>
               <p className="text-xs text-muted-foreground">{teamA.conference} · {teamA.record || "Record unavailable"}</p>
+              {teamA.espnId && l10Map[teamA.espnId] && (
+                <p className={`text-xs font-semibold mt-0.5 ${l10Color(l10Map[teamA.espnId].wins)}`}>
+                  L10: {l10Map[teamA.espnId].wins}-{l10Map[teamA.espnId].losses}
+                </p>
+              )}
               <p className="text-[10px] text-muted-foreground mt-1">
                 {teamA.statsCoverage === "full" ? "Full stats" : teamA.statsCoverage === "partial" ? "Partial stats" : "Metadata only"}
               </p>
@@ -356,6 +370,11 @@ export default function GameDetail() {
                 <Link to={`/team/${teamB.slug}`} className="hover:underline">{teamB.name}</Link>
               </h2>
               <p className="text-xs text-muted-foreground">{teamB.conference} · {teamB.record || "Record unavailable"}</p>
+              {teamB.espnId && l10Map[teamB.espnId] && (
+                <p className={`text-xs font-semibold mt-0.5 ${l10Color(l10Map[teamB.espnId].wins)}`}>
+                  L10: {l10Map[teamB.espnId].wins}-{l10Map[teamB.espnId].losses}
+                </p>
+              )}
               <p className="text-[10px] text-muted-foreground mt-1">
                 {teamB.statsCoverage === "full" ? "Full stats" : teamB.statsCoverage === "partial" ? "Partial stats" : "Metadata only"}
               </p>

@@ -21,6 +21,7 @@ import {
   type ResolvedBracketRegion,
 } from "@/lib/bracket";
 import { type KenPomEntry, formatKenPomRank, kenPomRankColor } from "@/lib/kenPom";
+import { useLast10 } from "@/hooks/useLast10";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ type SortKey =
   | "team"
   | "conf"
   | "rec"
+  | "l10"
   | "power"
   | "oeRank"
   | "deRank"
@@ -79,6 +81,8 @@ export default function RegionalRankingsTable({
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const { data: last10Data } = useLast10();
+  const l10Map = last10Data?.teams ?? {};
 
   const rankedTeams = useMemo(() => rankTeamsInRegion(region, weights, modelOpts), [region, weights, modelOpts]);
 
@@ -115,6 +119,11 @@ export default function RegionalRankingsTable({
         case "team": va = a.team.name; vb = b.team.name; break;
         case "conf": va = a.team.conference ?? ""; vb = b.team.conference ?? ""; break;
         case "rec": va = a.team.record ?? ""; vb = b.team.record ?? ""; break;
+        case "l10": {
+          const la = a.team.espnId ? (l10Map[a.team.espnId]?.wins ?? -1) : -1;
+          const lb = b.team.espnId ? (l10Map[b.team.espnId]?.wins ?? -1) : -1;
+          va = la; vb = lb; break;
+        }
         case "power": va = a.score; vb = b.score; break;
         case "oeRank": va = kenPomMap.get(a.team.canonicalId)?.adjOERank ?? 999; vb = kenPomMap.get(b.team.canonicalId)?.adjOERank ?? 999; break;
         case "deRank": va = kenPomMap.get(a.team.canonicalId)?.adjDERank ?? 999; vb = kenPomMap.get(b.team.canonicalId)?.adjDERank ?? 999; break;
@@ -176,6 +185,7 @@ export default function RegionalRankingsTable({
               <Th col="team" className="px-3 min-w-[160px]">Team</Th>
               <Th col="conf" className="px-2">Conf</Th>
               <Th col="rec" className="px-2">Rec</Th>
+              <Th col="l10" className="px-2 text-right">L10</Th>
               <Th col="power" className="px-2 text-right">Power</Th>
               <Th col="oeRank" className="px-2 text-right">OE Rk</Th>
               <Th col="deRank" className="px-2 text-right">DE Rk</Th>
@@ -226,6 +236,14 @@ export default function RegionalRankingsTable({
                     </TableCell>
                     <TableCell className="px-2 py-2.5 text-muted-foreground">{team.conference}</TableCell>
                     <TableCell className="px-2 py-2.5 text-muted-foreground">{team.record || "N/A"}</TableCell>
+                    <TableCell className="px-2 py-2.5 text-right tabular-nums">
+                      {(() => {
+                        const l10 = team.espnId ? l10Map[team.espnId] : null;
+                        if (!l10) return <span className="text-muted-foreground">—</span>;
+                        const colorClass = l10.wins >= 8 ? "text-green-400 font-semibold" : l10.wins >= 5 ? "text-foreground" : "text-amber-400 font-semibold";
+                        return <span className={colorClass}>{l10.wins}-{l10.losses}</span>;
+                      })()}
+                    </TableCell>
                     <TableCell className="px-2 py-2.5 text-right font-semibold tabular-nums text-foreground">
                       {score.toFixed(1)}
                     </TableCell>
@@ -274,7 +292,7 @@ export default function RegionalRankingsTable({
                   </TableRow>
                   {isExpanded && (
                     <TableRow className="border-white/10 bg-secondary/42 hover:bg-secondary/42">
-                      <TableCell colSpan={15} className="px-4 py-4">
+                      <TableCell colSpan={16} className="px-4 py-4">
                         <ExpandedTeamDetails region={region} teamId={team.canonicalId} weights={weights} modelOpts={modelOpts} />
                       </TableCell>
                     </TableRow>
