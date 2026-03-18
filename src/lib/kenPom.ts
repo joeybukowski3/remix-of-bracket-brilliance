@@ -66,6 +66,23 @@ const KENPOM_NAME_MAP: Record<string, string> = {
   "UNC Asheville": "UNC Asheville",
   "UNC Greensboro": "UNC Greensboro",
   "UNC Wilmington": "UNC Wilmington",
+  // JSON-specific name variants not handled by St.→State regex
+  "Miami FL": "Miami",
+  "Miami OH": "Miami (OH)",
+  "McNeese": "McNeese State",
+  "Nicholls": "Nicholls State",
+  "CSUN": "Cal State Northridge",
+  "Illinois Chicago": "Illinois-Chicago",
+  "Cal Baptist": "California Baptist",
+  "Sam Houston St.": "Sam Houston",
+  "Tennessee Martin": "Tennessee Martin",
+  "Texas A&M Corpus Chris": "Texas A&M-Corpus Christi",
+  "Mississippi": "Ole Miss",
+  "Connecticut": "Connecticut",
+  "Southern Miss": "Southern Miss",
+  "Florida Atlantic": "Florida Atlantic",
+  "George Washington": "George Washington",
+  "UT Rio Grande Valley": "UT Rio Grande Valley",
 };
 
 /** Expand common KenPom abbreviations to ESPN-style full names. */
