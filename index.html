@@ -30,10 +30,14 @@
           if (canonical) canonical.setAttribute('href', 'https://joeknowsball.com' + path);
         }
         // GitHub Pages SPA redirect
-        var redirect = sessionStorage.redirect;
-        delete sessionStorage.redirect;
-        if (redirect && redirect !== location.href) {
-          history.replaceState(null, null, redirect);
+        try {
+          var redirect = sessionStorage.redirect;
+          delete sessionStorage.redirect;
+          if (redirect && redirect !== location.href) {
+            history.replaceState(null, null, redirect);
+          }
+        } catch (error) {
+          console.warn('sessionStorage unavailable during bootstrap', error);
         }
       })();
     </script>
