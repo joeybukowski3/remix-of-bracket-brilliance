@@ -397,6 +397,7 @@ const SCHOOL_KEY_ALIASES: Record<string, string> = {
   texasamaggies: "texasam",
   tamu: "texasam",
   taxam: "texasam",
+  texasandm: "texasam",
   byu: "byu",
   brighamyoung: "byu",
   byucougars: "byu",

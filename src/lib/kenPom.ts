@@ -1,4 +1,4 @@
-import { findTeamByEspn } from "@/data/ncaaTeams";
+import { getCanonicalSchoolKey } from "@/data/ncaaTeams";
 import type { Team } from "@/data/ncaaTeams";
 import type { KenPomTeam } from "@/hooks/useKenPom";
 
@@ -67,22 +67,14 @@ const KENPOM_NAME_MAP: Record<string, string> = {
   "UNC Greensboro": "UNC Greensboro",
   "UNC Wilmington": "UNC Wilmington",
   // JSON-specific name variants not handled by St.→State regex
-  "Miami FL": "Miami",
-  "Miami OH": "Miami (OH)",
-  "McNeese": "McNeese State",
-  "Nicholls": "Nicholls State",
+  "Miami FL": "Miami (FL)",
+  "Miami OH": "Miami (Ohio)",
   "CSUN": "Cal State Northridge",
   "Illinois Chicago": "Illinois-Chicago",
   "Cal Baptist": "California Baptist",
-  "Sam Houston St.": "Sam Houston",
-  "Tennessee Martin": "Tennessee Martin",
   "Texas A&M Corpus Chris": "Texas A&M-Corpus Christi",
   "Mississippi": "Ole Miss",
   "Connecticut": "Connecticut",
-  "Southern Miss": "Southern Miss",
-  "Florida Atlantic": "Florida Atlantic",
-  "George Washington": "George Washington",
-  "UT Rio Grande Valley": "UT Rio Grande Valley",
 };
 
 /** Expand common KenPom abbreviations to ESPN-style full names. */
@@ -113,18 +105,19 @@ export function buildKenPomMap(
   const map = new Map<string, KenPomEntry>();
   if (!source || !teams.length || !teamPool.length) return map;
 
+  // Pre-build a school-key → Team lookup to avoid false-positive substring matches
+  // that occur when non-tournament kenpom teams (e.g. "Eastern Michigan") share
+  // a substring with tournament teams (e.g. "Michigan").
+  const poolByKey = new Map<string, Team>();
+  for (const team of teamPool) {
+    const key = getCanonicalSchoolKey(team.name, team.abbreviation);
+    if (!poolByKey.has(key)) poolByKey.set(key, team);
+  }
+
   for (const kp of teams) {
-    // Try original name
-    let matched = findTeamByEspn(kp.teamName, "", teamPool);
-
-    // Try normalized name if first attempt fails
-    if (!matched) {
-      const normalized = normalizeKenPomName(kp.teamName);
-      if (normalized !== kp.teamName) {
-        matched = findTeamByEspn(normalized, "", teamPool);
-      }
-    }
-
+    const normalized = normalizeKenPomName(kp.teamName);
+    const key = getCanonicalSchoolKey(normalized, "");
+    const matched = poolByKey.get(key);
     if (matched) {
       map.set(matched.canonicalId, {
         adjOERank: kp.adjOERank,
