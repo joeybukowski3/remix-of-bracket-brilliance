@@ -235,7 +235,6 @@ export default function GameDetail() {
       ? `Review ${teamA.name} versus ${teamB.name} with advanced stats, matchup angles, and team-level comparisons.`
       : "Review NCAA matchup analysis with advanced stat comparisons and game-level insights.",
     path: "/schedule",
-    noindex: !teamA || !teamB,
   });
 
   const handleWeightChange = (key: string, value: number) => {

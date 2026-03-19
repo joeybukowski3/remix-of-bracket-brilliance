@@ -144,7 +144,6 @@ export default function BracketMatchupPage() {
     title: buildTitle(matchup),
     description: buildDescription(matchup),
     canonical: `https://joeknowsball.com/matchup/${matchupId}`,
-    noindex: !matchup,
   });
 
   const weights = BUILT_IN_PRESETS[0].weights;

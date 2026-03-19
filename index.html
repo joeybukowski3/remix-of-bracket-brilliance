@@ -4,24 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Joe Knows Ball | NCAA Rankings, Matchups, and Bracket Tools</title>
-    <meta name="description" content="Joe Knows Ball offers NCAA rankings, matchup analysis, schedule tools, and bracket insights for college basketball fans." />
+    <meta name="description" content="Joe Knows Ball offers NCAA basketball analytics including custom rankings, matchup analysis, advanced team metrics, schedule tools, and March Madness bracket insights." />
     <meta name="author" content="Joe Knows Ball" />
     <meta name="robots" content="index, follow" />
+    <!-- Canonical is updated per-route by the app; this default covers the home page only -->
     <link rel="canonical" href="https://joeknowsball.com/" />
 
     <meta property="og:title" content="Joe Knows Ball | NCAA Rankings, Matchups, and Bracket Tools" />
-    <meta property="og:description" content="Joe Knows Ball offers NCAA rankings, matchup analysis, schedule tools, and bracket insights for college basketball fans." />
+    <meta property="og:description" content="Joe Knows Ball offers NCAA basketball analytics including custom rankings, matchup analysis, advanced team metrics, schedule tools, and March Madness bracket insights." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://joeknowsball.com/" />
     <meta property="og:image" content="https://joeknowsball.com/favicon.ico" />
+    <meta property="og:site_name" content="Joe Knows Ball" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Joe Knows Ball | NCAA Rankings, Matchups, and Bracket Tools" />
-    <meta name="twitter:description" content="Joe Knows Ball offers NCAA rankings, matchup analysis, schedule tools, and bracket insights for college basketball fans." />
+    <meta name="twitter:description" content="Joe Knows Ball offers NCAA basketball analytics including custom rankings, matchup analysis, advanced team metrics, schedule tools, and March Madness bracket insights." />
     <meta name="twitter:image" content="https://joeknowsball.com/favicon.ico" />
     <script>
-      // GitHub Pages SPA redirect
+      // Correct canonical tag for non-home routes before JS hydrates
       (function() {
+        var path = window.location.pathname;
+        if (path && path !== '/') {
+          var canonical = document.querySelector('link[rel="canonical"]');
+          if (canonical) canonical.setAttribute('href', 'https://joeknowsball.com' + path);
+        }
+        // GitHub Pages SPA redirect
         var redirect = sessionStorage.redirect;
         delete sessionStorage.redirect;
         if (redirect && redirect !== location.href) {
@@ -33,6 +41,9 @@
 
   <body>
     <div id="root"></div>
+    <noscript>
+      <p>Joe Knows Ball — NCAA basketball analytics, custom team rankings, matchup analysis, schedule breakdowns, betting edge tools, and March Madness bracket builder. Enable JavaScript to use the full interactive experience.</p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

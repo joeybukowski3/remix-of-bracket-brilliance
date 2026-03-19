@@ -1,5 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.joeknowsball.com" }],
+      "destination": "https://joeknowsball.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/march-madness",
+      "destination": "/bracket",
+      "permanent": true
+    },
+    {
+      "source": "/rankings",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/|assets/|favicon.ico|robots.txt|sitemap.xml).*)",
