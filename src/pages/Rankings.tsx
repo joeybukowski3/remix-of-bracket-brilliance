@@ -40,7 +40,7 @@ export default function Rankings() {
     title: "Joe Knows Ball | NCAA Analytics, Custom Rankings & March Madness Analysis",
     description:
       "Explore NCAA basketball analytics including custom rankings, matchup analysis, advanced team metrics, and March Madness bracket breakdowns.",
-    canonical: "https://joeknowsball.com/",
+    canonical: "https://www.joeknowsball.com/",
   });
 
   const handleWeightChange = (key: string, value: number) => {

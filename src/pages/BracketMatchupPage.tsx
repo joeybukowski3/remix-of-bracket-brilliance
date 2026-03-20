@@ -143,7 +143,7 @@ export default function BracketMatchupPage() {
   usePageSeo({
     title: buildTitle(matchup),
     description: buildDescription(matchup),
-    canonical: `https://joeknowsball.com/matchup/${matchupId}`,
+    canonical: `https://www.joeknowsball.com/matchup/${matchupId}`,
   });
 
   const weights = BUILT_IN_PRESETS[0].weights;

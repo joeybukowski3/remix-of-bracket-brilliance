@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 const SITE_NAME = "Joe Knows Ball";
-const CANONICAL_BASE = "https://joeknowsball.com";
+const CANONICAL_BASE = "https://www.joeknowsball.com";
 
 interface PageSeoOptions {
   title: string;

@@ -265,7 +265,7 @@ export default function Schedule() {
     title: "NCAA Game Analysis & Daily Matchup Breakdown | Joe Knows Ball",
     description:
       "Track live and upcoming NCAA basketball games with matchup breakdowns, advanced team analytics, and daily slate analysis across Division I.",
-    canonical: "https://joeknowsball.com/schedule",
+    canonical: "https://www.joeknowsball.com/schedule",
   });
 
   const [selectedDate, setSelectedDate] = useState(new Date());

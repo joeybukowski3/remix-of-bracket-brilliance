@@ -923,7 +923,7 @@ export default function BettingEdge() {
     title: "Betting Edge | NCAA Model vs Vegas Comparison | Joe Knows Ball",
     description:
       "Compare NCAA model probabilities against live Vegas implied odds with dynamic betting edges, sliders, and custom presets.",
-    canonical: "https://joeknowsball.com/betting-edge",
+    canonical: "https://www.joeknowsball.com/betting-edge",
   });
 
   const officialMatchupByGameId = useMemo(

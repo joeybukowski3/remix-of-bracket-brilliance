@@ -9,7 +9,7 @@ export default function Donate() {
     title: "Support Joe Knows Ball | Donate",
     description:
       "Support Joe Knows Ball, a free analytics site for sports fans, and get early access to upcoming MLB, NCAAF, NFL, and PGA models.",
-    canonical: "https://joeknowsball.com/donate",
+    canonical: "https://www.joeknowsball.com/donate",
   });
 
   return (
