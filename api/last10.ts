@@ -8,7 +8,25 @@ let cache: { data: Record<string, { wins: number; losses: number }>; at: number 
 const CACHE_MS = 30 * 60 * 1000; // 30 minutes
 
 function fmtDate(d: Date): string {
-  return d.toISOString().slice(0, 10).replace(/-/g, "");
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+}
+
+function getEasternToday() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+  const month = parts.find((part) => part.type === "month")?.value ?? "1";
+  const day = parts.find((part) => part.type === "day")?.value ?? "1";
+
+  return new Date(Number(year), Number(month) - 1, Number(day));
 }
 
 async function fetchScoreboardDate(dateStr: string): Promise<GameResult[]> {
@@ -48,7 +66,7 @@ export async function GET() {
     return Response.json({ teams: cache.data, fetchedAt: new Date(cache.at).toISOString(), cached: true });
   }
 
-  const today = new Date();
+  const today = getEasternToday();
   const dates: string[] = [];
   for (let i = 0; i < 28; i++) {
     const d = new Date(today);

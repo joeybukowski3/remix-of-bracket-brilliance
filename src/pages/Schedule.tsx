@@ -10,6 +10,7 @@ import { useSchedule, type ScheduleGame } from "@/hooks/useSchedule";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { useLiveOdds, type LiveOddsEvent } from "@/hooks/useLiveOdds";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { toLocalYyyyMmDdCompact } from "@/lib/date";
 import {
   DEFAULT_STAT_WEIGHTS,
   ELITE_8_PRESET_WEIGHTS,
@@ -33,7 +34,7 @@ function formatGameTime(dateStr: string): string {
 }
 
 function formatDate(date: Date): string {
-  return date.toISOString().slice(0, 10).replace(/-/g, "");
+  return toLocalYyyyMmDdCompact(date);
 }
 
 function formatDisplayDate(date: Date): string {

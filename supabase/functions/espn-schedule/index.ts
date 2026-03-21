@@ -3,6 +3,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+function getEasternTodayCompact() {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(new Date()).replace(/-/g, '');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -12,8 +22,8 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const dateParam = url.searchParams.get('date'); // YYYYMMDD format
     
-    // Default to today's date
-    const today = dateParam || new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    // Default to the NCAA slate date in Eastern Time instead of UTC.
+    const today = dateParam || getEasternTodayCompact();
     
     // ESPN scoreboard API - no API key needed, it's public
     const espnUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=${today}&limit=100`;

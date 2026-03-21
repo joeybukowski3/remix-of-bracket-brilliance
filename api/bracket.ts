@@ -1,4 +1,5 @@
 import { OFFICIAL_2026_BRACKET } from "./_lib/bracket-data";
+import { syncOfficialBracket } from "./_lib/bracket-sync";
 import { getStoredBracket } from "./_lib/bracket-store";
 
 const BRACKET_SYNC_SEASON = process.env.BRACKET_SYNC_SEASON || "2026";
@@ -13,6 +14,17 @@ export async function GET() {
         bracketLive: true,
         payload: stored.payload,
         validation: stored.validation,
+      });
+    }
+
+    const synced = await syncOfficialBracket(false).catch(() => null);
+    if (synced?.payload?.regions?.length === 4 && synced.validation.matchedTeams >= 64) {
+      return Response.json({
+        ok: true,
+        source: "official",
+        bracketLive: synced.active,
+        payload: synced.payload,
+        validation: synced.validation,
       });
     }
 

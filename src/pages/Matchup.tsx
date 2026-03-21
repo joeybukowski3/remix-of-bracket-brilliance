@@ -27,6 +27,7 @@ import {
   type TeamStats,
 } from "@/data/ncaaTeams";
 import { buildPlaceholderBracketSource, buildTournamentMatchups, loadOfficialBracketSource, type BracketSourceConfig } from "@/lib/bracket";
+import { toLocalYyyyMmDdCompact } from "@/lib/date";
 import { buildVegasProbabilityComparison, findScheduledGameForTeams, resolveScheduledGameMoneylines } from "@/lib/odds";
 import MatchupStatGroups from "@/components/MatchupStatGroups";
 import InjuryReport from "@/components/InjuryReport";
@@ -377,7 +378,7 @@ function RoadReadinessSection({
 }
 
 function formatDateStr(date: Date): string {
-  return date.toISOString().slice(0, 10).replace(/-/g, "");
+  return toLocalYyyyMmDdCompact(date);
 }
 
 function TodaySchedulePicker({
