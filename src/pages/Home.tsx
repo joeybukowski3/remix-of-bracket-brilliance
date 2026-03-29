@@ -36,7 +36,7 @@ const sports = [
     label: "NBA",
     route: null,
     active: false,
-    logoSrc: "/logos/nba.svg",
+    logoSrc: "/logos/nba.png",
     logoBg: "radial-gradient(circle at top, rgba(29, 66, 138, 0.42), rgba(14, 20, 32, 0.96))",
     logoBorder: "#C9082A",
     desc: "Player prop tools, pace/efficiency breakdowns, and DFS lineup edge.",
@@ -86,11 +86,12 @@ export default function Home() {
           zIndex: 10,
           backdropFilter: "blur(12px)",
           background: "rgba(10, 10, 10, 0.86)",
-          padding: "0 2rem",
+          padding: "0.9rem 2rem",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          minHeight: 64,
+          gap: 16,
+          flexWrap: "wrap",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
@@ -110,9 +111,40 @@ export default function Home() {
           >
             🏀
           </div>
-          Ball Walker
+          Joe Knows Ball
         </div>
-        <div style={{ color: "#a3a3a3", fontSize: 13, fontWeight: 600 }}>Analytics. Props. Edge.</div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {sports.map((sport) => (
+            <button
+              key={`nav-${sport.id}`}
+              type="button"
+              onClick={() => sport.active && sport.route && navigate(sport.route)}
+              aria-label={sport.label}
+              title={sport.label}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                border: `1px solid ${sport.active ? "rgba(249,115,22,0.32)" : "rgba(255,255,255,0.08)"}`,
+                background: sport.logoBg,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                cursor: sport.active ? "pointer" : "default",
+                opacity: sport.active ? 1 : 0.55,
+                boxShadow: sport.active ? "0 8px 24px rgba(0,0,0,0.2)" : "none",
+              }}
+            >
+              <img
+                src={sport.logoSrc}
+                alt={sport.label}
+                style={{ width: 24, height: 24, objectFit: "contain", display: "block" }}
+              />
+            </button>
+          ))}
+        </div>
       </nav>
 
       <section style={{ maxWidth: 1180, margin: "0 auto", padding: "4.5rem 2rem 2rem" }}>
