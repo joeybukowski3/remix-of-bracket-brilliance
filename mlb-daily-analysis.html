@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MLB Daily Analysis</title>
+  <meta name="color-scheme" content="dark light" />
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=cabinet-grotesk@500,700&display=swap" />
+  <style>
+    :root {
+      --bg: #f7f6f2;
+      --bg-elevated: rgba(255, 255, 255, 0.9);
+      --panel: rgba(255, 255, 255, 0.82);
+      --panel-strong: rgba(255, 255, 255, 0.96);
+      --text: #171a22;
+      --text-soft: #5a6070;
+      --line: rgba(18, 24, 38, 0.1);
+      --line-strong: rgba(18, 24, 38, 0.16);
+      --tint: rgba(18, 24, 38, 0.035);
+      --shadow: 0 22px 56px rgba(18, 24, 38, 0.12);
+      --accent: #bf0d3e;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+      --font-body: "Satoshi", sans-serif;
+      --font-head: "Cabinet Grotesk", sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f1117;
+      --bg-elevated: rgba(20, 23, 32, 0.9);
+      --panel: rgba(18, 21, 30, 0.84);
+      --panel-strong: rgba(18, 21, 30, 0.96);
+      --text: #eef2fb;
+      --text-soft: #98a4bc;
+      --line: rgba(255, 255, 255, 0.08);
+      --line-strong: rgba(255, 255, 255, 0.14);
+      --tint: rgba(255, 255, 255, 0.04);
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(191, 13, 62, 0.13), transparent 26%),
+        radial-gradient(circle at top right, rgba(0, 82, 204, 0.08), transparent 24%),
+        linear-gradient(180deg, var(--bg-elevated), var(--bg));
+      color: var(--text);
+      font-family: var(--font-body);
+      transition: background 200ms ease, color 200ms ease;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 60%);
+      opacity: 0.4;
+    }
+    img { max-width: 100%; display: block; }
+    button, input, select { font: inherit; }
+    a { color: inherit; }
+
+    .app-shell {
+      position: relative;
+      width: min(1240px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 64px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      padding: 18px 22px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      color: white;
+      font-family: var(--font-head);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      background: linear-gradient(135deg, var(--accent), #6f132d);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    }
+    .brand-copy h1, .page-title {
+      margin: 0;
+      font-family: var(--font-head);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .brand-copy h1 { font-size: clamp(1.65rem, 3vw, 2.2rem); }
+    .brand-copy p, .eyebrow, .section-subtitle, .muted { margin: 0; color: var(--text-soft); }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .date-chip, .theme-toggle, .back-button {
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+    .theme-toggle, .back-button { cursor: pointer; }
+    .theme-toggle:hover, .back-button:hover, .game-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--line-strong);
+    }
+    .page, .section { display: grid; gap: 22px; }
+    .home-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 18px;
+    }
+    .game-card, .panel, .empty-state {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+    .game-card {
+      text-align: left;
+      cursor: pointer;
+      padding: 20px;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .game-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -40% 28%;
+      height: 120px;
+      background: radial-gradient(circle, var(--team-accent, rgba(191, 13, 62, 0.12)), transparent 68%);
+      pointer-events: none;
+      opacity: 0.8;
+    }
+    .card-top, .team-row, .split-head, .table-titlebar, .detail-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .card-top { margin-bottom: 18px; }
+    .card-label {
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+    .game-time { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .matchup { display: grid; gap: 12px; margin-bottom: 16px; }
+    .team-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .at-symbol {
+      font-family: var(--font-head);
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+    .team-logo-wrap, .logo-fallback {
+      flex: 0 0 40px;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .team-logo-wrap.large, .logo-fallback.large {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      flex-basis: 48px;
+    }
+    .logo-fallback {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    .team-copy { min-width: 0; }
+    .team-copy strong, .player-name {
+      display: block;
+      font-size: 1rem;
+      line-height: 1.15;
+    }
+    .team-copy span, .subtext { color: var(--text-soft); font-size: 0.92rem; }
+    .card-meta {
+      display: grid;
+      gap: 8px;
+      color: var(--text-soft);
+      font-size: 0.92rem;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-end;
+    }
+    .section-title {
+      margin: 0;
+      font-family: var(--font-head);
+      font-size: clamp(1.25rem, 2vw, 1.55rem);
+      letter-spacing: -0.03em;
+    }
+    .detail-hero {
+      flex-wrap: wrap;
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+    .detail-hero-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .table-grid {
+      display: grid;
+      gap: 18px;
+    }
+    .table-grid.dual {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .panel { padding: 18px; }
+    .table-wrap {
+      overflow: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+    table {
+      width: 100%;
+      min-width: 680px;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    .compact-table { min-width: 100%; }
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: color-mix(in srgb, var(--panel-strong) 92%, transparent);
+      backdrop-filter: blur(8px);
+      font-family: var(--font-head);
+      letter-spacing: -0.02em;
+      text-align: left;
+    }
+    tbody tr:nth-child(even) td { background: var(--tint); }
+    tbody tr:last-child td { border-bottom: none; }
+    .label-cell {
+      width: 28%;
+      color: var(--text-soft);
+      font-weight: 500;
+    }
+    .stat-cell, .numeric { font-variant-numeric: tabular-nums; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .split-row th {
+      background: linear-gradient(90deg, rgba(191, 13, 62, 0.14), rgba(191, 13, 62, 0.04));
+      color: var(--text);
+    }
+    .player-cell { min-width: 170px; }
+    .player-inline, .team-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--text-soft);
+      background: var(--panel-strong);
+      white-space: nowrap;
+    }
+    .loading-stack { display: grid; gap: 18px; }
+    .skeleton-card, .skeleton-line, .skeleton-block {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(110deg, rgba(255, 255, 255, 0.04) 8%, rgba(255, 255, 255, 0.12) 18%, rgba(255, 255, 255, 0.04) 33%);
+      background-size: 200% 100%;
+      animation: shimmer 1.25s linear infinite;
+    }
+    [data-theme="light"] .skeleton-card,
+    [data-theme="light"] .skeleton-line,
+    [data-theme="light"] .skeleton-block {
+      background: linear-gradient(110deg, rgba(18, 24, 38, 0.04) 8%, rgba(18, 24, 38, 0.09) 18%, rgba(18, 24, 38, 0.04) 33%);
+      background-size: 200% 100%;
+    }
+    .skeleton-card {
+      height: 204px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+    }
+    .skeleton-line {
+      height: 16px;
+      border-radius: 999px;
+    }
+    .skeleton-block {
+      height: 340px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+    }
+    .empty-state {
+      padding: 44px 28px;
+      text-align: center;
+    }
+    .empty-state h2 {
+      margin: 0 0 10px;
+      font-family: var(--font-head);
+      font-size: 1.6rem;
+    }
+    .status-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      color: var(--text-soft);
+      font-size: 0.9rem;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(191, 13, 62, 0.12);
+    }
+    .error-box {
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(191, 13, 62, 0.28);
+      background: rgba(191, 13, 62, 0.08);
+      color: var(--text);
+    }
+    .footer-note {
+      color: var(--text-soft);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    @media (max-width: 960px) {
+      .table-grid.dual { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .app-shell {
+        width: min(100vw - 20px, 1240px);
+        padding-top: 18px;
+      }
+      .topbar {
+        padding: 16px;
+        border-radius: 20px;
+      }
+      .actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .home-grid { grid-template-columns: 1fr; }
+      table { min-width: 620px; }
+      .detail-hero { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">MLB</div>
+        <div class="brand-copy">
+          <h1>MLB Daily Analysis</h1>
+          <p>Daily game dashboards, matchup context, and pitcher-vs-lineup snapshots.</p>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="date-chip" id="today-chip">Loading date…</div>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color mode">Toggle theme</button>
+      </div>
+    </header>
+    <main id="app" class="page" aria-live="polite"></main>
+  </div>
+
+  <script>
+    (function () {
+      const TZ = "America/New_York";
+      const SEASON = 2026;
+      const DASH = "\u2014";
+      const MLB_COLORS = {
+        108: "#BD3039", 109: "#CE1141", 110: "#0C2C56", 111: "#003278", 112: "#0E3386",
+        113: "#C6011F", 114: "#DF4601", 115: "#27251F", 116: "#EB6E1F", 117: "#005A9C",
+        118: "#002B5C", 119: "#D31145", 120: "#E81828", 121: "#FF5910", 133: "#003831",
+        134: "#C41E3A", 135: "#0A2351", 136: "#2F241D", 137: "#FDB827", 138: "#BA0021",
+        139: "#005C5C", 140: "#132448", 141: "#C0111F", 142: "#003087", 143: "#E81828",
+        144: "#AB0003", 145: "#FD5A1E", 146: "#004687", 147: "#C41E3A", 158: "#00385D",
+        159: "#004680"
+      };
+
+      const state = { theme: "light", pendingFetches: 0, renderNonce: 0 };
+      window.mlbCache = window.mlbCache || {};
+      const appEl = document.getElementById("app");
+      const todayChipEl = document.getElementById("today-chip");
+      const themeToggleEl = document.getElementById("theme-toggle");
+
+      function getEasternParts(date = new Date()) {
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: TZ,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        });
+        const parts = formatter.formatToParts(date).reduce((acc, part) => {
+          if (part.type !== "literal") acc[part.type] = part.value;
+          return acc;
+        }, {});
+        return {
+          year: Number(parts.year),
+          month: Number(parts.month),
+          day: Number(parts.day),
+          hour: Number(parts.hour),
+          minute: Number(parts.minute),
+          second: Number(parts.second)
+        };
+      }
+
+      function formatDateKey(dateObj) {
+        return [
+          dateObj.getUTCFullYear(),
+          String(dateObj.getUTCMonth() + 1).padStart(2, "0"),
+          String(dateObj.getUTCDate()).padStart(2, "0")
+        ].join("-");
+      }
+
+      function getOperationalDateKey() {
+        const parts = getEasternParts(new Date());
+        const easternDateUtc = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+        if (parts.hour < 2) easternDateUtc.setUTCDate(easternDateUtc.getUTCDate() - 1);
+        return formatDateKey(easternDateUtc);
+      }
+
+      function formatDisplayDate(dateKey) {
+        const [year, month, day] = dateKey.split("-").map(Number);
+        const utcDate = new Date(Date.UTC(year, month - 1, day, 12));
+        return new Intl.DateTimeFormat("en-US", {
+          timeZone: TZ,
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        }).format(utcDate);
+      }
+
+      function formatEasternTime(dateString) {
+        if (!dateString) return DASH;
+        try {
+          return new Intl.DateTimeFormat("en-US", {
+            timeZone: TZ,
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true
+          }).format(new Date(dateString)) + " EST";
+        } catch (error) {
+          return DASH;
+        }
+      }
+
+      function formatEasternDateTime(dateString) {
+        if (!dateString) return DASH;
+        try {
+          return new Intl.DateTimeFormat("en-US", {
+            timeZone: TZ,
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true
+          }).format(new Date(dateString)) + " EST";
+        } catch (error) {
+          return DASH;
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function toSlugInitials(input) {
+        if (!input) return "MLB";
+        return String(input).split(/\s+/).map((part) => part[0] || "").join("").slice(0, 3).toUpperCase();
+      }
+
+      function asNumber(value) {
+        const num = Number(value);
+        return Number.isFinite(num) ? num : null;
+      }
+
+      function statText(value, digits = null) {
+        if (value === null || value === undefined || value === "" || Number.isNaN(value)) return DASH;
+        const num = Number(value);
+        if (Number.isFinite(num)) return digits === null ? String(num) : num.toFixed(digits);
+        return String(value);
+      }
+
+      function percentText(value, digits = 1) {
+        const num = Number(value);
+        return Number.isFinite(num) ? num.toFixed(digits) + "%" : DASH;
+      }
+
+      function safeRatio(numerator, denominator, digits = 1) {
+        const n = Number(numerator);
+        const d = Number(denominator);
+        return Number.isFinite(n) && Number.isFinite(d) && d > 0 ? (n / d * 100).toFixed(digits) + "%" : DASH;
+      }
+
+      function logoUrl(teamId) {
+        const variant = state.theme === "dark" ? "dark" : "light";
+        return "https://www.mlb.com/assets/images/teams/primary/" + variant + "/" + teamId + ".svg";
+      }
+
+      function getTheme() {
+        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+
+      function applyTheme(theme) {
+        state.theme = theme;
+        document.documentElement.setAttribute("data-theme", theme);
+        themeToggleEl.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+      }
+
+      function initTheme() {
+        applyTheme(getTheme());
+        if (window.matchMedia) {
+          const media = window.matchMedia("(prefers-color-scheme: dark)");
+          media.addEventListener("change", (event) => {
+            applyTheme(event.matches ? "dark" : "light");
+            renderRoute();
+          });
+        }
+        themeToggleEl.addEventListener("click", () => {
+          applyTheme(state.theme === "dark" ? "light" : "dark");
+          renderRoute();
+        });
+      }
+
+      function incrementPending() { state.pendingFetches += 1; }
+      function decrementPending() { state.pendingFetches = Math.max(0, state.pendingFetches - 1); }
+
+      async function fetchJson(url) {
+        incrementPending();
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) throw new Error("Request failed: " + response.status);
+          return await response.json();
+        } catch (error) {
+          return null;
+        } finally {
+          decrementPending();
+        }
+      }
+
+      async function fetchText(url) {
+        incrementPending();
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) throw new Error("Request failed: " + response.status);
+          return await response.text();
+        } catch (error) {
+          return null;
+        } finally {
+          decrementPending();
+        }
+      }
+
+      function ensureCacheShape() {
+        const date = getOperationalDateKey();
+        if (window.mlbCache.date !== date) {
+          window.mlbCache = {
+            date,
+            schedule: null,
+            schedulePromise: null,
+            games: {},
+            detailPromises: {},
+            teams: {},
+            people: {},
+            teamSchedules: {},
+            pitcherVsTeam: {},
+            teamSplits: {},
+            hitterStats: {},
+            savantPitchers: {},
+            savantBatters: {},
+            lineups: {}
+          };
+        }
+        return window.mlbCache;
+      }
+
+      function formatLeagueRecord(record) {
+        const wins = record?.wins;
+        const losses = record?.losses;
+        return wins !== undefined && losses !== undefined ? wins + "-" + losses : DASH;
+      }
+
+      function normalizeGame(game) {
+        const away = game?.teams?.away?.team || {};
+        const home = game?.teams?.home?.team || {};
+        return {
+          gamePk: game.gamePk,
+          gameDate: game.gameDate,
+          status: game.status?.detailedState || game.status?.abstractGameState || DASH,
+          venue: game.venue?.name || DASH,
+          away: {
+            id: away.id,
+            name: away.name || DASH,
+            abbreviation: away.abbreviation || away.teamCode?.toUpperCase() || toSlugInitials(away.name),
+            record: formatLeagueRecord(game?.teams?.away?.leagueRecord),
+            probablePitcher: game?.teams?.away?.probablePitcher || null
+          },
+          home: {
+            id: home.id,
+            name: home.name || DASH,
+            abbreviation: home.abbreviation || home.teamCode?.toUpperCase() || toSlugInitials(home.name),
+            record: formatLeagueRecord(game?.teams?.home?.leagueRecord),
+            probablePitcher: game?.teams?.home?.probablePitcher || null
+          }
+        };
+      }
+
+      async function loadSchedule() {
+        const cache = ensureCacheShape();
+        if (cache.schedule) return cache.schedule;
+        if (cache.schedulePromise) return cache.schedulePromise;
+        const url = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=" + cache.date + "&hydrate=team,linescore,probablePitcher";
+        cache.schedulePromise = (async () => {
+          const json = await fetchJson(url);
+          const rawGames = json?.dates?.[0]?.games || [];
+          cache.schedule = rawGames.map(normalizeGame);
+          cache.schedulePromise = null;
+          for (const game of cache.schedule) warmGameDetail(game.gamePk);
+          return cache.schedule;
+        })();
+        return cache.schedulePromise;
+      }
+
+      function findGame(gamePk) {
+        const cache = ensureCacheShape();
+        return cache.schedule?.find((game) => String(game.gamePk) === String(gamePk)) || null;
+      }
+
+      async function fetchPerson(id) {
+        if (!id) return null;
+        const cache = ensureCacheShape();
+        if (cache.people[id]) return cache.people[id];
+        const json = await fetchJson("https://statsapi.mlb.com/api/v1/people/" + id);
+        cache.people[id] = json?.people?.[0] || null;
+        return cache.people[id];
+      }
+
+      async function fetchPitcherSeasonStats(id) {
+        if (!id) return null;
+        const cache = ensureCacheShape();
+        const key = "season-" + id;
+        if (cache.people[key]) return cache.people[key];
+        const json = await fetchJson("https://statsapi.mlb.com/api/v1/people/" + id + "/stats?stats=season&season=" + SEASON + "&group=pitching");
+        cache.people[key] = json?.stats?.[0]?.splits?.[0]?.stat || null;
+        return cache.people[key];
+      }
+
+      async function fetchPitcherVsTeam(id, teamId) {
+        if (!id || !teamId) return null;
+        const cache = ensureCacheShape();
+        const key = id + "-" + teamId;
+        if (cache.pitcherVsTeam[key]) return cache.pitcherVsTeam[key];
+        const json = await fetchJson("https://statsapi.mlb.com/api/v1/people/" + id + "/stats?stats=vsTeam&opposingTeamId=" + teamId + "&season=" + SEASON + "&group=pitching");
+        cache.pitcherVsTeam[key] = json?.stats?.[0]?.splits?.[0]?.stat || null;
+        return cache.pitcherVsTeam[key];
+      }
+
+      async function fetchTeamHittingSplit(teamId, pitcherHand) {
+        if (!teamId || !pitcherHand) return null;
+        const cache = ensureCacheShape();
+        const key = teamId + "-" + pitcherHand;
+        if (cache.teamSplits[key]) return cache.teamSplits[key];
+        const sitCodes = pitcherHand.toUpperCase().startsWith("L") ? "vl" : "vr";
+        const json = await fetchJson("https://statsapi.mlb.com/api/v1/teams/" + teamId + "/stats?stats=statSplits&group=hitting&season=" + SEASON + "&sitCodes=" + sitCodes);
+        cache.teamSplits[key] = json?.stats?.[0]?.splits?.[0]?.stat || null;
+        return cache.teamSplits[key];
+      }
+
+      async function fetchTeamSeasonSchedule(teamId) {
+        if (!teamId) return [];
+        const cache = ensureCacheShape();
+        if (cache.teamSchedules[teamId]) return cache.teamSchedules[teamId];
+        const json = await fetchJson("https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=" + SEASON + "&teamId=" + teamId);
+        const games = [];
+        for (const dateBlock of json?.dates || []) {
+          for (const game of dateBlock.games || []) games.push(game);
+        }
+        cache.teamSchedules[teamId] = games;
+        return games;
+      }
+
+      function summarizeTeamSchedule(games, teamId, opponentId) {
+        const completed = games
+          .filter((game) => game?.status?.codedGameState === "F" || game?.status?.detailedState === "Final")
+          .sort((a, b) => new Date(a.gameDate) - new Date(b.gameDate));
+
+        const decorated = completed.map((game) => {
+          const isHome = game?.teams?.home?.team?.id === teamId;
+          const teamScore = isHome ? game?.teams?.home?.score : game?.teams?.away?.score;
+          const oppScore = isHome ? game?.teams?.away?.score : game?.teams?.home?.score;
+          const oppId = isHome ? game?.teams?.away?.team?.id : game?.teams?.home?.team?.id;
+          return { isHome, oppId, win: Number(teamScore) > Number(oppScore) };
+        });
+
+        const wins = decorated.filter((item) => item.win).length;
+        const losses = decorated.length - wins;
+        const lastFive = decorated.slice(-5);
+        const lastFiveWins = lastFive.filter((item) => item.win).length;
+        const homeGames = decorated.filter((item) => item.isHome);
+        const awayGames = decorated.filter((item) => !item.isHome);
+        const homeWins = homeGames.filter((item) => item.win).length;
+        const awayWins = awayGames.filter((item) => item.win).length;
+        const versus = decorated.filter((item) => item.oppId === opponentId);
+        const versusWins = versus.filter((item) => item.win).length;
+
+        return {
+          seasonRecord: decorated.length ? wins + "-" + losses : DASH,
+          lastFiveRecord: lastFive.length ? lastFiveWins + "-" + (lastFive.length - lastFiveWins) : DASH,
+          homeRecord: homeGames.length ? homeWins + "-" + (homeGames.length - homeWins) : DASH,
+          awayRecord: awayGames.length ? awayWins + "-" + (awayGames.length - awayWins) : DASH,
+          seriesRecord: versus.length ? versusWins + "-" + (versus.length - versusWins) : DASH
+        };
+      }
+
+      async function fetchTeamContext(teamId, opponentId) {
+        const games = await fetchTeamSeasonSchedule(teamId);
+        return summarizeTeamSchedule(games, teamId, opponentId);
+      }
+
+      function parseCsv(text) {
+        if (!text) return [];
+        const rows = [];
+        let row = [];
+        let cell = "";
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i += 1) {
+          const char = text[i];
+          const next = text[i + 1];
+          if (char === '"' && inQuotes && next === '"') {
+            cell += '"';
+            i += 1;
+          } else if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === "," && !inQuotes) {
+            row.push(cell);
+            cell = "";
+          } else if ((char === "\n" || char === "\r") && !inQuotes) {
+            if (char === "\r" && next === "\n") i += 1;
+            row.push(cell);
+            if (row.some((item) => item !== "")) rows.push(row);
+            row = [];
+            cell = "";
+          } else {
+            cell += char;
+          }
+        }
+        if (cell.length || row.length) {
+          row.push(cell);
+          if (row.some((item) => item !== "")) rows.push(row);
+        }
+        const headers = rows.shift() || [];
+        return rows.map((values) => {
+          const record = {};
+          headers.forEach((header, index) => { record[header] = values[index] ?? ""; });
+          return record;
+        });
+      }
+
+      function filterPitcherRowsByOpponent(rows, opponentAbbr) {
+        if (!rows?.length || !opponentAbbr) return rows || [];
+        const abbr = opponentAbbr.toUpperCase();
+        return rows.filter((row) => {
+          const home = String(row.home_team || "").toUpperCase();
+          const away = String(row.away_team || "").toUpperCase();
+          return home === abbr || away === abbr;
+        });
+      }
+
+      function aggregatePitcherBattedBall(rows) {
+        if (!rows?.length) return { barrelPct: null, xba: null, hardHitPct: null, xslg: null, xera: null };
+        let bbe = 0, barrels = 0, hardHit = 0, xbaSum = 0, xbaCount = 0, xslgSum = 0, xslgCount = 0, xeraSum = 0, xeraCount = 0;
+        for (const row of rows) {
+          const launchSpeed = asNumber(row.launch_speed);
+          const launchAngle = asNumber(row.launch_angle);
+          const estimatedBA = asNumber(row.estimated_ba_using_speedangle || row.estimated_ba_using_speed_angle || row.xba);
+          const estimatedSLG = asNumber(row.estimated_slg_using_speedangle || row.xslg || row.estimated_iso_using_speedangle);
+          const xera = asNumber(row.xera || row.estimated_era || row.est_era);
+          const hasBattedBall = launchSpeed !== null || estimatedBA !== null || estimatedSLG !== null;
+          if (hasBattedBall) {
+            bbe += 1;
+            if (launchSpeed !== null && launchSpeed >= 95) hardHit += 1;
+            if (String(row.barrel || "").toLowerCase() === "true" || Number(row.launch_speed_angle) === 6 || (launchSpeed !== null && launchAngle !== null && launchSpeed >= 98 && launchAngle >= 26 && launchAngle <= 30)) barrels += 1;
+          }
+          if (estimatedBA !== null) { xbaSum += estimatedBA; xbaCount += 1; }
+          if (estimatedSLG !== null) { xslgSum += estimatedSLG; xslgCount += 1; }
+          if (xera !== null) { xeraSum += xera; xeraCount += 1; }
+        }
+        return {
+          barrelPct: bbe ? barrels / bbe * 100 : null,
+          xba: xbaCount ? xbaSum / xbaCount : null,
+          hardHitPct: bbe ? hardHit / bbe * 100 : null,
+          xslg: xslgCount ? xslgSum / xslgCount : null,
+          xera: xeraCount ? xeraSum / xeraCount : null
+        };
+      }
+
+      function aggregateHitterRows(rows) {
+        if (!rows?.length) return { xba: null, kPct: null, hardHitPct: null, barrelPct: null, xslg: null };
+        let pa = 0, xbaSum = 0, xbaCount = 0, hardHit = 0, bbe = 0, strikeouts = 0, xslgSum = 0, xslgCount = 0, barrels = 0;
+        for (const row of rows) {
+          pa += 1;
+          const event = String(row.events || "").toLowerCase();
+          const launchSpeed = asNumber(row.launch_speed);
+          const launchAngle = asNumber(row.launch_angle);
+          const estimatedBA = asNumber(row.estimated_ba_using_speedangle || row.estimated_ba_using_speed_angle || row.xba);
+          const estimatedSLG = asNumber(row.estimated_slg_using_speedangle || row.xslg || row.estimated_iso_using_speedangle);
+          if (estimatedBA !== null) { xbaSum += estimatedBA; xbaCount += 1; }
+          if (estimatedSLG !== null) { xslgSum += estimatedSLG; xslgCount += 1; }
+          if (launchSpeed !== null) { bbe += 1; if (launchSpeed >= 95) hardHit += 1; }
+          if (String(row.barrel || "").toLowerCase() === "true" || Number(row.launch_speed_angle) === 6 || (launchSpeed !== null && launchAngle !== null && launchSpeed >= 98 && launchAngle >= 26 && launchAngle <= 30)) barrels += 1;
+          if (event === "strikeout" || event === "strikeout_double_play") strikeouts += 1;
+        }
+        return {
+          xba: xbaCount ? xbaSum / xbaCount : null,
+          kPct: pa ? strikeouts / pa * 100 : null,
+          hardHitPct: bbe ? hardHit / bbe * 100 : null,
+          barrelPct: bbe ? barrels / bbe * 100 : null,
+          xslg: xslgCount ? xslgSum / xslgCount : null
+        };
+      }
+
+      async function fetchPitcherSavant(playerId, opponentAbbr) {
+        if (!playerId) return null;
+        const cache = ensureCacheShape();
+        if (!cache.savantPitchers[playerId]) {
+          const url = "https://baseballsavant.mlb.com/statcast_search/csv?player_type=pitcher&pitchers_lookup[]=" + playerId + "&season=" + SEASON + "&type=details";
+          cache.savantPitchers[playerId] = parseCsv(await fetchText(url) || "");
+        }
+        const seasonRows = cache.savantPitchers[playerId];
+        const filtered = filterPitcherRowsByOpponent(seasonRows, opponentAbbr);
+        return {
+          season: aggregatePitcherBattedBall(seasonRows),
+          versus: filtered.length ? aggregatePitcherBattedBall(filtered) : aggregatePitcherBattedBall(seasonRows)
+        };
+      }
+
+      async function fetchHitterSavant(playerId) {
+        if (!playerId) return null;
+        const cache = ensureCacheShape();
+        if (!cache.savantBatters[playerId]) {
+          const url = "https://baseballsavant.mlb.com/statcast_search/csv?player_type=batter&batters_lookup[]=" + playerId + "&season=" + SEASON + "&type=details";
+          cache.savantBatters[playerId] = aggregateHitterRows(parseCsv(await fetchText(url) || ""));
+        }
+        return cache.savantBatters[playerId];
+      }
+
+      async function fetchHitterSeasonStats(playerId) {
+        if (!playerId) return null;
+        const cache = ensureCacheShape();
+        if (cache.hitterStats[playerId]) return cache.hitterStats[playerId];
+        const json = await fetchJson("https://statsapi.mlb.com/api/v1/people/" + playerId + "/stats?stats=season&season=" + SEASON + "&group=hitting");
+        cache.hitterStats[playerId] = json?.stats?.[0]?.splits?.[0]?.stat || null;
+        return cache.hitterStats[playerId];
+      }
+
+      async function fetchBoxscore(gamePk) {
+        return await fetchJson("https://statsapi.mlb.com/api/v1/game/" + gamePk + "/boxscore");
+      }
+
+      function extractWeather(boxscore) {
+        const info = boxscore?.info || [];
+        const weather = info.find((item) => /weather/i.test(item.label || ""));
+        const wind = info.find((item) => /wind/i.test(item.label || ""));
+        const cleaned = [weather?.value || "", wind?.value || ""].filter(Boolean).join(", ");
+        return cleaned || DASH;
+      }
+
+      function extractLineupFromTeamBox(boxTeam) {
+        if (!boxTeam) return [];
+        const order = Array.isArray(boxTeam.battingOrder) ? boxTeam.battingOrder : [];
+        const players = boxTeam.players || {};
+        const lineup = [];
+        if (order.length) {
+          for (const playerRef of order) {
+            const id = Number(String(playerRef).replace(/..$/, ""));
+            const player = players["ID" + id];
+            if (player) lineup.push(player.person);
+            if (lineup.length === 9) break;
+          }
+        }
+        if (lineup.length < 9) {
+          const fallback = Object.values(players)
+            .filter((player) => player?.battingOrder)
+            .sort((a, b) => String(a.battingOrder).localeCompare(String(b.battingOrder)))
+            .map((player) => player.person);
+          for (const person of fallback) {
+            if (!lineup.some((item) => item.id === person.id)) lineup.push(person);
+            if (lineup.length === 9) break;
+          }
+        }
+        return lineup.slice(0, 9);
+      }
+
+      async function fetchLastKnownLineup(teamId) {
+        if (!teamId) return [];
+        const cache = ensureCacheShape();
+        if (cache.lineups[teamId]) return cache.lineups[teamId];
+        const games = await fetchTeamSeasonSchedule(teamId);
+        const latestComplete = games
+          .filter((game) => game?.status?.codedGameState === "F" || game?.status?.detailedState === "Final")
+          .sort((a, b) => new Date(b.gameDate) - new Date(a.gameDate))[0];
+        if (!latestComplete?.gamePk) {
+          cache.lineups[teamId] = [];
+          return [];
+        }
+        const boxscore = await fetchBoxscore(latestComplete.gamePk);
+        const teamSide = boxscore?.teams?.home?.team?.id === teamId ? boxscore?.teams?.home : boxscore?.teams?.away;
+        cache.lineups[teamId] = extractLineupFromTeamBox(teamSide);
+        return cache.lineups[teamId];
+      }
+
+      async function buildLineup(team, currentLineup) {
+        const lineup = currentLineup?.length ? currentLineup.slice(0, 9) : await fetchLastKnownLineup(team.id);
+        const rows = [];
+        for (const person of lineup.slice(0, 9)) {
+          const [hitting, savant] = await Promise.all([fetchHitterSeasonStats(person.id), fetchHitterSavant(person.id)]);
+          rows.push({
+            id: person.id,
+            name: person.fullName || person.name || DASH,
+            xba: savant?.xba ?? null,
+            war: hitting?.war ?? null,
+            kPct: hitting?.strikeOuts && hitting?.plateAppearances ? hitting.strikeOuts / hitting.plateAppearances * 100 : savant?.kPct ?? null,
+            hardHitPct: savant?.hardHitPct ?? null,
+            barrelPct: savant?.barrelPct ?? null,
+            xslg: savant?.xslg ?? null
+          });
+        }
+        while (rows.length < 9) rows.push({ name: DASH, xba: null, war: null, kPct: null, hardHitPct: null, barrelPct: null, xslg: null });
+        const validRows = rows.filter((row) => row.name !== DASH);
+        const summary = {
+          xba: average(validRows.map((row) => row.xba)),
+          hardHitPct: average(validRows.map((row) => row.hardHitPct)),
+          barrelPct: average(validRows.map((row) => row.barrelPct)),
+          xslg: average(validRows.map((row) => row.xslg))
+        };
+        return { rows, summary };
+      }
+
+      function average(values) {
+        const filtered = values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
+        return filtered.length ? filtered.reduce((sum, value) => sum + value, 0) / filtered.length : null;
+      }
+
+      async function buildGameDetail(gamePk) {
+        const cache = ensureCacheShape();
+        const game = findGame(gamePk);
+        if (!game) {
+          cache.games[gamePk] = { error: "Game not found for the current operational date." };
+          return cache.games[gamePk];
+        }
+        const boxscore = await fetchBoxscore(gamePk);
+        const currentHomeLineup = extractLineupFromTeamBox(boxscore?.teams?.home);
+        const currentAwayLineup = extractLineupFromTeamBox(boxscore?.teams?.away);
+        const homeStarterId = game.home.probablePitcher?.id || null;
+        const awayStarterId = game.away.probablePitcher?.id || null;
+
+        const [
+          homeContext,
+          awayContext,
+          homePitcherPerson,
+          awayPitcherPerson,
+          homePitcherStat,
+          awayPitcherStat,
+          homePitcherVsTeam,
+          awayPitcherVsTeam,
+          homePitcherSavant,
+          awayPitcherSavant,
+          homeLineupData,
+          awayLineupData
+        ] = await Promise.all([
+          fetchTeamContext(game.home.id, game.away.id),
+          fetchTeamContext(game.away.id, game.home.id),
+          fetchPerson(homeStarterId),
+          fetchPerson(awayStarterId),
+          fetchPitcherSeasonStats(homeStarterId),
+          fetchPitcherSeasonStats(awayStarterId),
+          fetchPitcherVsTeam(homeStarterId, game.away.id),
+          fetchPitcherVsTeam(awayStarterId, game.home.id),
+          fetchPitcherSavant(homeStarterId, game.away.abbreviation),
+          fetchPitcherSavant(awayStarterId, game.home.abbreviation),
+          buildLineup(game.home, currentHomeLineup),
+          buildLineup(game.away, currentAwayLineup)
+        ]);
+
+        const [awayBattingVsHomeStarter, homeBattingVsAwayStarter] = await Promise.all([
+          fetchTeamHittingSplit(game.away.id, homePitcherPerson?.pitchHand?.code || "R"),
+          fetchTeamHittingSplit(game.home.id, awayPitcherPerson?.pitchHand?.code || "R")
+        ]);
+
+        cache.games[gamePk] = {
+          game,
+          weather: extractWeather(boxscore),
+          homeContext,
+          awayContext,
+          starters: {
+            home: {
+              id: homeStarterId,
+              name: game.home.probablePitcher?.fullName || homePitcherPerson?.fullName || DASH,
+              hand: homePitcherPerson?.pitchHand?.description || homePitcherPerson?.pitchHand?.code || DASH,
+              record: homePitcherStat?.wins !== undefined && homePitcherStat?.losses !== undefined ? homePitcherStat.wins + "-" + homePitcherStat.losses : DASH,
+              era: homePitcherStat?.era ?? null,
+              whip: homePitcherStat?.whip ?? null,
+              xera: homePitcherSavant?.season?.xera ?? null,
+              savantVsTeam: homePitcherSavant?.versus || null,
+              savantSeason: homePitcherSavant?.season || null,
+              vsTeam: homePitcherVsTeam
+            },
+            away: {
+              id: awayStarterId,
+              name: game.away.probablePitcher?.fullName || awayPitcherPerson?.fullName || DASH,
+              hand: awayPitcherPerson?.pitchHand?.description || awayPitcherPerson?.pitchHand?.code || DASH,
+              record: awayPitcherStat?.wins !== undefined && awayPitcherStat?.losses !== undefined ? awayPitcherStat.wins + "-" + awayPitcherStat.losses : DASH,
+              era: awayPitcherStat?.era ?? null,
+              whip: awayPitcherStat?.whip ?? null,
+              xera: awayPitcherSavant?.season?.xera ?? null,
+              savantVsTeam: awayPitcherSavant?.versus || null,
+              savantSeason: awayPitcherSavant?.season || null,
+              vsTeam: awayPitcherVsTeam
+            }
+          },
+          opponentSplits: {
+            awayBattingVsHomeStarter,
+            homeBattingVsAwayStarter
+          },
+          lineupSummaries: {
+            home: homeLineupData.summary,
+            away: awayLineupData.summary
+          },
+          lineups: { home: homeLineupData.rows, away: awayLineupData.rows }
+        };
+        return cache.games[gamePk];
+      }
+
+      async function warmGameDetail(gamePk) {
+        const cache = ensureCacheShape();
+        if (cache.games[gamePk]) return cache.games[gamePk];
+        if (cache.detailPromises[gamePk]) return cache.detailPromises[gamePk];
+        cache.detailPromises[gamePk] = buildGameDetail(gamePk).finally(() => { cache.detailPromises[gamePk] = null; });
+        return cache.detailPromises[gamePk];
+      }
+
+      function renderLogo(team, sizeClass) {
+        const initials = escapeHtml(team.abbreviation || toSlugInitials(team.name));
+        return [
+          '<span class="team-logo-wrap ' + (sizeClass || "") + '">',
+          '<img src="' + logoUrl(team.id) + '" alt="' + escapeHtml(team.name) + ' logo" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\';">',
+          '<span class="logo-fallback ' + (sizeClass || "") + '" style="display:none">' + initials + "</span>",
+          "</span>"
+        ].join("");
+      }
+
+      function renderHomeLoading() {
+        return '<section class="section"><div class="section-header"><div><p class="eyebrow">Today\'s slate</p><h2 class="section-title">Loading MLB schedule</h2></div><div class="status-note"><span class="status-dot"></span>Fetching live data</div></div><div class="loading-stack home-grid"><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div></div></section>';
+      }
+
+      function renderDetailLoading() {
+        return '<div class="loading-stack"><div class="skeleton-line" style="width:160px"></div><div class="skeleton-block"></div><div class="table-grid dual"><div class="skeleton-block"></div><div class="skeleton-block"></div></div><div class="skeleton-block"></div></div>';
+      }
+
+      function renderHome(games) {
+        document.title = "MLB Daily Analysis";
+        if (!games.length) {
+          return '<section class="section"><div class="section-header"><div><p class="eyebrow">Today\'s slate</p><h2 class="section-title">No games on the board</h2></div><div class="status-note"><span class="status-dot"></span>Next refresh at 2:00 AM EST</div></div><div class="empty-state"><h2>No MLB games scheduled today.</h2><p class="muted">Check back after the next daily refresh window or when the league schedule updates.</p></div></section>';
+        }
+        const cards = games.map((game) => {
+          const teamAccent = MLB_COLORS[game.home.id] || MLB_COLORS[game.away.id] || "#bf0d3e";
+          return '<button class="game-card" type="button" onclick="window.location.hash=\'#game-' + game.gamePk + '\'" style="--team-accent:' + teamAccent + '22"><div class="card-top"><span class="card-label">' + escapeHtml(game.status) + '</span><span class="game-time">' + escapeHtml(formatEasternTime(game.gameDate)) + '</span></div><div class="matchup"><div class="team-line">' + renderLogo(game.away) + '<div class="team-copy"><strong>' + escapeHtml(game.away.name) + '</strong><span>' + escapeHtml(game.away.abbreviation) + " • " + escapeHtml(game.away.record) + '</span></div></div><div class="at-symbol">@</div><div class="team-line">' + renderLogo(game.home) + '<div class="team-copy"><strong>' + escapeHtml(game.home.name) + '</strong><span>' + escapeHtml(game.home.abbreviation) + " • " + escapeHtml(game.home.record) + '</span></div></div></div><div class="card-meta"><div>' + escapeHtml(game.away.probablePitcher?.fullName || DASH) + " vs " + escapeHtml(game.home.probablePitcher?.fullName || DASH) + "</div><div>" + escapeHtml(game.venue) + "</div></div></button>";
+        }).join("");
+        return '<section class="section"><div class="section-header"><div><p class="eyebrow">Today\'s slate</p><h2 class="section-title">' + games.length + " Game" + (games.length === 1 ? "" : "s") + " on " + escapeHtml(formatDisplayDate(ensureCacheShape().date)) + '</h2></div><div class="status-note"><span class="status-dot"></span>Daily cache refreshes at 2:00 AM EST</div></div><div class="home-grid">' + cards + "</div></section>";
+      }
+
+      function detailTableRows(detail) {
+        return [
+          ["Game Date/Time (EST)", formatEasternDateTime(detail.game.gameDate), "Game Date/Time (EST)", formatEasternDateTime(detail.game.gameDate)],
+          ["Location", detail.game.venue, "Location", detail.game.venue],
+          ["Weather", detail.weather, "Weather", detail.weather],
+          ["Season Record", detail.homeContext.seasonRecord, "Season Record", detail.awayContext.seasonRecord],
+          ["Last 5 Record", detail.homeContext.lastFiveRecord, "Last 5 Record", detail.awayContext.lastFiveRecord],
+          ["Home/Away Record", detail.homeContext.homeRecord, "Home/Away Record", detail.awayContext.awayRecord],
+          ["Season Series Record vs opponent", detail.homeContext.seriesRecord, "Season Series Record vs opponent", detail.awayContext.seriesRecord]
+        ];
+      }
+
+      function renderGameDetailsSection(detail) {
+        const rows = detailTableRows(detail).map((row, index) => {
+          if (index === 3) {
+            return '<tr class="split-row"><th>' + escapeHtml(detail.game.home.name) + '</th><th class="label-cell">Category</th><th>' + escapeHtml(detail.game.away.name) + '</th></tr><tr><td class="stat-cell numeric">' + escapeHtml(row[1]) + '</td><td class="label-cell">' + escapeHtml(row[0]) + '</td><td class="stat-cell numeric">' + escapeHtml(row[3]) + "</td></tr>";
+          }
+          const numericClass = index < 3 ? "stat-cell" : "stat-cell numeric";
+          return '<tr><td class="' + numericClass + '">' + escapeHtml(row[1]) + '</td><td class="label-cell">' + escapeHtml(row[0]) + '</td><td class="' + numericClass + '">' + escapeHtml(row[3]) + "</td></tr>";
+        }).join("");
+        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 1</p><h3 class="section-title">Game Details</h3></div></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>' + escapeHtml(detail.game.home.name) + '</th><th class="label-cell">Detail</th><th>' + escapeHtml(detail.game.away.name) + "</th></tr></thead><tbody>" + rows + "</tbody></table></div></section>";
+      }
+
+      function renderPitcherComparison(detail) {
+        const home = detail.starters.home;
+        const away = detail.starters.away;
+        const rows = [
+          ['<span class="team-inline">' + renderLogo(detail.game.home, "large") + '<span class="player-name">' + escapeHtml(home.name) + '</span></span>', "2026 Stats", '<span class="team-inline">' + renderLogo(detail.game.away, "large") + '<span class="player-name">' + escapeHtml(away.name) + '</span></span>'],
+          [escapeHtml(home.record), "Record", escapeHtml(away.record)],
+          [escapeHtml(statText(home.era, 2)), "ERA", escapeHtml(statText(away.era, 2))],
+          [escapeHtml(statText(home.xera, 2)), "xERA", escapeHtml(statText(away.xera, 2))],
+          [escapeHtml(statText(home.whip, 2)), "WHIP", escapeHtml(statText(away.whip, 2))]
+        ];
+        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 2</p><h3 class="section-title">Starting Pitchers Comparison</h3></div><span class="tag">Client-side xERA aggregation with fallback</span></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>' + escapeHtml(detail.game.home.name) + '</th><th class="label-cell center">2026 Stats</th><th>' + escapeHtml(detail.game.away.name) + '</th></tr></thead><tbody>' + rows.map((row) => '<tr><td class="player-cell">' + row[0] + '</td><td class="label-cell center">' + row[1] + '</td><td class="player-cell right">' + row[2] + '</td></tr>').join("") + "</tbody></table></div></section>";
+      }
+
+      function renderAdvancedStatsPanel(title, pitcher, battingTeam, labels) {
+        const rows = [
+          [percentText(pitcher?.barrelPct), "Barrel%", percentText(battingTeam?.barrelPct)],
+          [statText(pitcher?.xba, 3), "xBA", statText(battingTeam?.xba, 3)],
+          [percentText(pitcher?.hardHitPct), "Hard Hit%", percentText(battingTeam?.hardHitPct)],
+          [statText(pitcher?.xslg, 3), "xSLG%", statText(battingTeam?.xslg, 3)]
+        ];
+        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 3</p><h3 class="section-title">' + escapeHtml(title) + '</h3></div></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>' + escapeHtml(labels.left) + '</th><th class="label-cell center">Stat</th><th>' + escapeHtml(labels.right) + '</th></tr></thead><tbody>' + rows.map((row) => '<tr><td class="numeric">' + escapeHtml(row[0]) + '</td><td class="label-cell center">' + escapeHtml(row[1]) + '</td><td class="numeric">' + escapeHtml(row[2]) + '</td></tr>').join("") + "</tbody></table></div></section>";
+      }
+
+      function renderSplitPanel(title, pitcher, battingSplit, leftLabel, rightLabel) {
+        const pitcherBF = pitcher?.vsTeam?.battersFaced ?? null;
+        const splitLabel = battingSplit ? (battingSplit.note || battingSplit.description || battingSplit.type || battingSplit.split || "vs split") : DASH;
+        const rows = [
+          [pitcher?.hand || DASH, "Pitching Hand / vs Split", splitLabel],
+          [statText(pitcher?.vsTeam?.inningsPitched, 1), "Innings Pitched / Plate Appearances", statText(battingSplit?.plateAppearances, 0)],
+          [safeRatio(pitcher?.vsTeam?.strikeOuts, pitcherBF, 1), "K%", safeRatio(battingSplit?.strikeOuts, battingSplit?.plateAppearances, 1)],
+          [safeRatio(pitcher?.vsTeam?.baseOnBalls, pitcherBF, 1), "BB%", safeRatio(battingSplit?.baseOnBalls, battingSplit?.plateAppearances, 1)]
+        ];
+        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 4</p><h3 class="section-title">' + escapeHtml(title) + '</h3></div></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>' + escapeHtml(leftLabel) + '</th><th class="label-cell center">Split</th><th>' + escapeHtml(rightLabel) + '</th></tr></thead><tbody>' + rows.map((row) => '<tr><td class="numeric">' + escapeHtml(row[0]) + '</td><td class="label-cell center">' + escapeHtml(row[1]) + '</td><td class="numeric">' + escapeHtml(row[2]) + '</td></tr>').join("") + "</tbody></table></div></section>";
+      }
+
+      function renderLineupSection(detail) {
+        const rows = [];
+        for (let i = 0; i < 9; i += 1) {
+          const home = detail.lineups.home[i] || {};
+          const away = detail.lineups.away[i] || {};
+          rows.push("<tr><td class=\"player-cell\">" + escapeHtml(home.name || DASH) + "</td><td class=\"numeric\">" + escapeHtml(statText(home.xba, 3)) + "</td><td class=\"numeric\">" + escapeHtml(statText(home.war, 1)) + "</td><td class=\"numeric\">" + escapeHtml(percentText(home.hardHitPct)) + "</td><td class=\"center numeric\">" + (i + 1) + "</td><td class=\"numeric\">" + escapeHtml(statText(away.xba, 3)) + "</td><td class=\"numeric\">" + escapeHtml(percentText(away.kPct)) + "</td><td class=\"numeric\">" + escapeHtml(percentText(away.hardHitPct)) + "</td><td class=\"player-cell right\">" + escapeHtml(away.name || DASH) + "</td></tr>");
+        }
+        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 5</p><h3 class="section-title">Projected Lineup Comparison</h3></div><span class="tag">Uses live boxscore lineup, then last known lineup fallback</span></div><div class="table-wrap"><table><thead><tr><th colspan="4">' + escapeHtml(detail.game.home.name) + '</th><th class="center">Order</th><th colspan="4">' + escapeHtml(detail.game.away.name) + '</th></tr><tr><th>Player</th><th>xBA</th><th>WAR</th><th>Hard Hit%</th><th class="center">1-9</th><th>xBA</th><th>K%</th><th>Hard Hit%</th><th class="right">Player</th></tr></thead><tbody>' + rows.join("") + "</tbody></table></div></section>";
+      }
+
+      function renderGameDetail(detail) {
+        if (detail?.error) {
+          document.title = "MLB Daily Analysis";
+          return '<div class="error-box">' + escapeHtml(detail.error) + "</div>";
+        }
+        const game = detail.game;
+        document.title = game.away.name + " @ " + game.home.name;
+        return '<div class="detail-hero"><div class="detail-hero-main"><button class="back-button" type="button" onclick="window.location.hash=\'#home\'">\u2190 Back</button>' + renderLogo(game.away, "large") + '<div><p class="eyebrow">Game Detail</p><h2 class="page-title">' + escapeHtml(game.away.name) + " @ " + escapeHtml(game.home.name) + '</h2><p class="section-subtitle">' + escapeHtml(formatEasternDateTime(game.gameDate)) + " • " + escapeHtml(game.venue) + '</p></div></div><div class="actions"><span class="tag">' + escapeHtml(game.status) + '</span><span class="tag">' + escapeHtml(detail.weather) + "</span></div></div>" + renderGameDetailsSection(detail) + renderPitcherComparison(detail) + '<div class="table-grid dual">' + renderAdvancedStatsPanel("Advanced Stats vs Opponent", detail.starters.home.savantVsTeam || detail.starters.home.savantSeason, detail.lineupSummaries.away, { left: detail.starters.home.name, right: detail.game.away.name }) + renderAdvancedStatsPanel("Opponent Advanced Stats vs " + game.home.name, detail.starters.away.savantVsTeam || detail.starters.away.savantSeason, detail.lineupSummaries.home, { left: detail.starters.away.name, right: detail.game.home.name }) + '</div><div class="table-grid dual">' + renderSplitPanel("Advanced Stats vs Opponent Splits", detail.starters.home, detail.opponentSplits.awayBattingVsHomeStarter, detail.starters.home.name, detail.game.away.name) + renderSplitPanel("Opponent Advanced Stats vs " + game.home.name + " Splits", detail.starters.away, detail.opponentSplits.homeBattingVsAwayStarter, detail.starters.away.name, detail.game.home.name) + '</div>' + renderLineupSection(detail) + '<p class="footer-note">Stats fall back to ' + DASH + " when an endpoint, CORS policy, or lineup feed is unavailable.</p>";
+      }
+
+      function parseRoute() {
+        const hash = window.location.hash || "#home";
+        if (hash === "#home" || hash === "#") return { view: "home" };
+        const match = hash.match(/^#game-(\d+)$/);
+        if (match) return { view: "game", gamePk: match[1] };
+        return { view: "home" };
+      }
+
+      async function renderRoute() {
+        const nonce = ++state.renderNonce;
+        const route = parseRoute();
+        const cache = ensureCacheShape();
+        todayChipEl.textContent = formatDisplayDate(cache.date);
+        if (route.view === "home") {
+          appEl.innerHTML = renderHomeLoading();
+          const games = await loadSchedule();
+          if (nonce !== state.renderNonce) return;
+          appEl.innerHTML = renderHome(games || []);
+          return;
+        }
+        appEl.innerHTML = renderDetailLoading();
+        await loadSchedule();
+        const detail = await warmGameDetail(route.gamePk);
+        if (nonce !== state.renderNonce) return;
+        appEl.innerHTML = renderGameDetail(detail || { error: "Unable to load game details." });
+      }
+
+      function initRouter() {
+        window.addEventListener("hashchange", renderRoute);
+        if (!window.location.hash || window.location.hash === "#") {
+          window.location.hash = "#home";
+          return;
+        }
+        renderRoute();
+      }
+
+      initTheme();
+      initRouter();
+    })();
+  </script>
+</body>
+</html>
