@@ -858,7 +858,7 @@
         if (!teamId) return [];
         const cache = ensureCacheShape();
         if (cache.teamSchedules[teamId]) return cache.teamSchedules[teamId];
-        const json = await fetchJson("https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=" + SEASON + "&teamId=" + teamId);
+        const json = await fetchJson("https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=" + SEASON + "&teamId=" + teamId + "&hydrate=linescore");
         const games = [];
         for (const dateBlock of json?.dates || []) {
           for (const game of dateBlock.games || []) games.push(game);
@@ -1110,25 +1110,26 @@
         const lineup = currentLineup?.length ? currentLineup.slice(0, 9) : await fetchLastKnownLineup(team.id);
         const rows = [];
         for (const person of lineup.slice(0, 9)) {
-          const [hitting, savant] = await Promise.all([fetchHitterSeasonStats(person.id), fetchHitterSavant(person.id)]);
+          const hitting = await fetchHitterSeasonStats(person.id);
           rows.push({
             id: person.id,
             name: person.fullName || person.name || DASH,
-            xba: savant?.xba ?? null,
-            war: hitting?.war ?? null,
-            kPct: hitting?.strikeOuts && hitting?.plateAppearances ? hitting.strikeOuts / hitting.plateAppearances * 100 : savant?.kPct ?? null,
-            hardHitPct: savant?.hardHitPct ?? null,
-            barrelPct: savant?.barrelPct ?? null,
-            xslg: savant?.xslg ?? null
+            avg: hitting?.avg ?? null,
+            obp: hitting?.obp ?? null,
+            slg: hitting?.slg ?? null,
+            ops: hitting?.ops ?? null,
+            kPct: hitting?.strikeOuts && hitting?.plateAppearances ? hitting.strikeOuts / hitting.plateAppearances * 100 : null,
+            hr: hitting?.homeRuns ?? null
           });
         }
-        while (rows.length < 9) rows.push({ name: DASH, xba: null, war: null, kPct: null, hardHitPct: null, barrelPct: null, xslg: null });
+        while (rows.length < 9) rows.push({ name: DASH, avg: null, obp: null, slg: null, ops: null, kPct: null, hr: null });
         const validRows = rows.filter((row) => row.name !== DASH);
         const summary = {
-          xba: average(validRows.map((row) => row.xba)),
-          hardHitPct: average(validRows.map((row) => row.hardHitPct)),
-          barrelPct: average(validRows.map((row) => row.barrelPct)),
-          xslg: average(validRows.map((row) => row.xslg))
+          avg: average(validRows.map((row) => row.avg)),
+          obp: average(validRows.map((row) => row.obp)),
+          slg: average(validRows.map((row) => row.slg)),
+          ops: average(validRows.map((row) => row.ops)),
+          kPct: average(validRows.map((row) => row.kPct))
         };
         return { rows, summary };
       }
@@ -1201,11 +1202,11 @@
               record: homePitcherStat?.wins !== undefined && homePitcherStat?.losses !== undefined ? homePitcherStat.wins + "-" + homePitcherStat.losses : DASH,
               era: homePitcherStat?.era ?? null,
               whip: homePitcherStat?.whip ?? null,
-              xera: homePitcherSavant?.season?.xera ?? null,
               strikeOuts: homePitcherStat?.strikeOuts ?? null,
               inningsPitched: homePitcherStat?.inningsPitched ?? null,
-              savantVsTeam: homePitcherSavant?.versus || null,
-              savantSeason: homePitcherSavant?.season || null,
+              homeRuns: homePitcherStat?.homeRuns ?? null,
+              battersFaced: homePitcherStat?.battersFaced ?? null,
+              baseOnBalls: homePitcherStat?.baseOnBalls ?? null,
               vsTeam: homePitcherVsTeam
             },
             away: {
@@ -1215,11 +1216,11 @@
               record: awayPitcherStat?.wins !== undefined && awayPitcherStat?.losses !== undefined ? awayPitcherStat.wins + "-" + awayPitcherStat.losses : DASH,
               era: awayPitcherStat?.era ?? null,
               whip: awayPitcherStat?.whip ?? null,
-              xera: awayPitcherSavant?.season?.xera ?? null,
               strikeOuts: awayPitcherStat?.strikeOuts ?? null,
               inningsPitched: awayPitcherStat?.inningsPitched ?? null,
-              savantVsTeam: awayPitcherSavant?.versus || null,
-              savantSeason: awayPitcherSavant?.season || null,
+              homeRuns: awayPitcherStat?.homeRuns ?? null,
+              battersFaced: awayPitcherStat?.battersFaced ?? null,
+              baseOnBalls: awayPitcherStat?.baseOnBalls ?? null,
               vsTeam: awayPitcherVsTeam
             }
           },
@@ -1305,20 +1306,26 @@
           ['<span class="team-inline">' + renderLogo(detail.game.home, "large") + '<span class="player-name">' + escapeHtml(home.name) + '</span></span>', "2026 Stats", '<span class="team-inline">' + renderLogo(detail.game.away, "large") + '<span class="player-name">' + escapeHtml(away.name) + '</span></span>'],
           [escapeHtml(home.record), "Record", escapeHtml(away.record)],
           [escapeHtml(statText(home.era, 2)), "ERA", escapeHtml(statText(away.era, 2))],
-          [escapeHtml(statText(home.xera, 2)), "xERA", escapeHtml(statText(away.xera, 2))],
-          [escapeHtml(statText(home.whip, 2)), "WHIP", escapeHtml(statText(away.whip, 2))]
+          [escapeHtml(statText(home.whip, 2)), "WHIP", escapeHtml(statText(away.whip, 2))],
+          [escapeHtml(computeK9(home.strikeOuts, home.inningsPitched) !== null ? computeK9(home.strikeOuts, home.inningsPitched).toFixed(1) : DASH), "K/9", escapeHtml(computeK9(away.strikeOuts, away.inningsPitched) !== null ? computeK9(away.strikeOuts, away.inningsPitched).toFixed(1) : DASH)],
+          [escapeHtml(home.battersFaced ? safeRatio(home.baseOnBalls, home.battersFaced) : DASH), "BB%", escapeHtml(away.battersFaced ? safeRatio(away.baseOnBalls, away.battersFaced) : DASH)]
         ];
-        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 2</p><h3 class="section-title">Starting Pitchers Comparison</h3></div><span class="tag">Client-side xERA aggregation with fallback</span></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>' + escapeHtml(detail.game.home.name) + '</th><th class="label-cell center">2026 Stats</th><th>' + escapeHtml(detail.game.away.name) + '</th></tr></thead><tbody>' + rows.map((row) => '<tr><td class="player-cell">' + row[0] + '</td><td class="label-cell center">' + row[1] + '</td><td class="player-cell right">' + row[2] + '</td></tr>').join("") + "</tbody></table></div></section>";
+        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 2</p><h3 class="section-title">Starting Pitchers Comparison</h3></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>' + escapeHtml(detail.game.home.name) + '</th><th class="label-cell center">2026 Stats</th><th>' + escapeHtml(detail.game.away.name) + '</th></tr></thead><tbody>' + rows.map((row) => '<tr><td class="player-cell">' + row[0] + '</td><td class="label-cell center">' + row[1] + '</td><td class="player-cell right">' + row[2] + '</td></tr>').join("") + "</tbody></table></div></section>";
       }
 
-      function renderAdvancedStatsPanel(title, pitcher, battingTeam, labels) {
+      function renderAdvancedStatsPanel(title, starter, lineupSummary, labels) {
+        const k9 = computeK9(starter?.strikeOuts, starter?.inningsPitched);
+        const ipDec = starter?.inningsPitched ? parseIP(starter.inningsPitched) : null;
+        const hr9 = starter?.homeRuns !== null && starter?.homeRuns !== undefined && ipDec ? (Number(starter.homeRuns) / ipDec * 9).toFixed(2) : DASH;
+        const bbPct = starter?.battersFaced ? safeRatio(starter.baseOnBalls, starter.battersFaced) : DASH;
         const rows = [
-          [percentText(pitcher?.barrelPct), "Barrel%", percentText(battingTeam?.barrelPct)],
-          [statText(pitcher?.xba, 3), "xBA", statText(battingTeam?.xba, 3)],
-          [percentText(pitcher?.hardHitPct), "Hard Hit%", percentText(battingTeam?.hardHitPct)],
-          [statText(pitcher?.xslg, 3), "xSLG%", statText(battingTeam?.xslg, 3)]
+          [k9 !== null ? k9.toFixed(1) : DASH, "Pitcher K/9 · Lineup K%", percentText(lineupSummary?.kPct)],
+          [statText(starter?.whip, 2), "Pitcher WHIP · Lineup OBP", statText(lineupSummary?.obp, 3)],
+          [statText(starter?.era, 2), "Pitcher ERA · Lineup SLG", statText(lineupSummary?.slg, 3)],
+          [bbPct, "Pitcher BB% · Lineup OPS", statText(lineupSummary?.ops, 3)],
+          [hr9, "Pitcher HR/9 · Lineup AVG", statText(lineupSummary?.avg, 3)]
         ];
-        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 3</p><h3 class="section-title">' + escapeHtml(title) + '</h3></div></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>' + escapeHtml(labels.left) + '</th><th class="label-cell center">Stat</th><th>' + escapeHtml(labels.right) + '</th></tr></thead><tbody>' + rows.map((row) => '<tr><td class="numeric">' + escapeHtml(row[0]) + '</td><td class="label-cell center">' + escapeHtml(row[1]) + '</td><td class="numeric">' + escapeHtml(row[2]) + '</td></tr>').join("") + "</tbody></table></div></section>";
+        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 3</p><h3 class="section-title">' + escapeHtml(title) + '</h3></div></div><div class="table-wrap"><table class="compact-table"><thead><tr><th>' + escapeHtml(labels.left) + '</th><th class="label-cell center">Matchup</th><th>' + escapeHtml(labels.right) + '</th></tr></thead><tbody>' + rows.map((row) => '<tr><td class="numeric">' + escapeHtml(row[0]) + '</td><td class="label-cell center">' + escapeHtml(row[1]) + '</td><td class="numeric">' + escapeHtml(row[2]) + '</td></tr>').join("") + "</tbody></table></div></section>";
       }
 
       function renderSplitPanel(title, pitcher, battingSplit, leftLabel, rightLabel) {
@@ -1338,9 +1345,9 @@
         for (let i = 0; i < 9; i += 1) {
           const home = detail.lineups.home[i] || {};
           const away = detail.lineups.away[i] || {};
-          rows.push("<tr><td class=\"player-cell\">" + escapeHtml(home.name || DASH) + "</td><td class=\"numeric\">" + escapeHtml(statText(home.xba, 3)) + "</td><td class=\"numeric\">" + escapeHtml(statText(home.war, 1)) + "</td><td class=\"numeric\">" + escapeHtml(percentText(home.hardHitPct)) + "</td><td class=\"center numeric\">" + (i + 1) + "</td><td class=\"numeric\">" + escapeHtml(statText(away.xba, 3)) + "</td><td class=\"numeric\">" + escapeHtml(percentText(away.kPct)) + "</td><td class=\"numeric\">" + escapeHtml(percentText(away.hardHitPct)) + "</td><td class=\"player-cell right\">" + escapeHtml(away.name || DASH) + "</td></tr>");
+          rows.push("<tr><td class=\"player-cell\">" + escapeHtml(home.name || DASH) + "</td><td class=\"numeric\">" + escapeHtml(statText(home.avg, 3)) + "</td><td class=\"numeric\">" + escapeHtml(statText(home.obp, 3)) + "</td><td class=\"numeric\">" + escapeHtml(statText(home.slg, 3)) + "</td><td class=\"center numeric\">" + (i + 1) + "</td><td class=\"numeric\">" + escapeHtml(statText(away.avg, 3)) + "</td><td class=\"numeric\">" + escapeHtml(percentText(away.kPct)) + "</td><td class=\"numeric\">" + escapeHtml(statText(away.slg, 3)) + "</td><td class=\"player-cell right\">" + escapeHtml(away.name || DASH) + "</td></tr>");
         }
-        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 5</p><h3 class="section-title">Projected Lineup Comparison</h3></div><span class="tag">Uses live boxscore lineup, then last known lineup fallback</span></div><div class="table-wrap"><table><thead><tr><th colspan="4">' + escapeHtml(detail.game.home.name) + '</th><th class="center">Order</th><th colspan="4">' + escapeHtml(detail.game.away.name) + '</th></tr><tr><th>Player</th><th>xBA</th><th>WAR</th><th>Hard Hit%</th><th class="center">1-9</th><th>xBA</th><th>K%</th><th>Hard Hit%</th><th class="right">Player</th></tr></thead><tbody>' + rows.join("") + "</tbody></table></div></section>";
+        return '<section class="section panel"><div class="table-titlebar"><div><p class="eyebrow">Section 5</p><h3 class="section-title">Projected Lineup Comparison</h3></div><span class="tag">Uses live boxscore lineup, then last known lineup fallback</span></div><div class="table-wrap"><table><thead><tr><th colspan="4">' + escapeHtml(detail.game.home.name) + '</th><th class="center">Order</th><th colspan="4">' + escapeHtml(detail.game.away.name) + '</th></tr><tr><th>Player</th><th>AVG</th><th>OBP</th><th>SLG</th><th class="center">1-9</th><th>AVG</th><th>K%</th><th>SLG</th><th class="right">Player</th></tr></thead><tbody>' + rows.join("") + "</tbody></table></div></section>";
       }
 
       function parseIP(ip) {
@@ -1426,14 +1433,16 @@
         const awayKV = kVerdict(awayK9, homeKPct);
 
         const hrF = park?.hr ?? 100;
-        const homeBarrel = asNumber(hs.savantSeason?.barrelPct);
-        const awayBarrel = asNumber(as_.savantSeason?.barrelPct);
-        const avgBarrel = homeBarrel !== null && awayBarrel !== null ? (homeBarrel + awayBarrel) / 2 : homeBarrel ?? awayBarrel ?? null;
+        const homeIpDec = hs.inningsPitched ? parseIP(hs.inningsPitched) : null;
+        const awayIpDec = as_.inningsPitched ? parseIP(as_.inningsPitched) : null;
+        const homeHr9 = hs.homeRuns !== null && hs.homeRuns !== undefined && homeIpDec ? Number(hs.homeRuns) / homeIpDec * 9 : null;
+        const awayHr9 = as_.homeRuns !== null && as_.homeRuns !== undefined && awayIpDec ? Number(as_.homeRuns) / awayIpDec * 9 : null;
+        const avgHr9 = homeHr9 !== null && awayHr9 !== null ? (homeHr9 + awayHr9) / 2 : homeHr9 ?? awayHr9 ?? null;
 
         let hrVerdictLabel = "NEUTRAL", hrVerdictCls = "verdict-neutral";
-        if (hrF >= 110 && avgBarrel !== null && avgBarrel >= 9) { hrVerdictLabel = "LEAN HR PROPS"; hrVerdictCls = "verdict-over"; }
+        if (hrF >= 110 && avgHr9 !== null && avgHr9 >= 1.3) { hrVerdictLabel = "LEAN HR PROPS"; hrVerdictCls = "verdict-over"; }
         else if (hrF >= 108) { hrVerdictLabel = "PARK PLAYS HR"; hrVerdictCls = "verdict-over"; }
-        else if (hrF <= 88 && avgBarrel !== null && avgBarrel <= 6) { hrVerdictLabel = "FADE HR PROPS"; hrVerdictCls = "verdict-under"; }
+        else if (hrF <= 88 && avgHr9 !== null && avgHr9 <= 0.8) { hrVerdictLabel = "FADE HR PROPS"; hrVerdictCls = "verdict-under"; }
         else if (hrF <= 90) { hrVerdictLabel = "PITCHER'S PARK"; hrVerdictCls = "verdict-under"; }
 
         const cards = [
@@ -1443,7 +1452,7 @@
             rows: [
               ["K/9 (season)", homeK9 !== null ? homeK9.toFixed(1) : DASH],
               [escapeHtml(detail.game.away.name) + " K% vs hand", awayKPct !== null ? percentText(awayKPct) : DASH],
-              ["xERA", statText(hs.xera, 2)]
+              ["BB%", hs.battersFaced ? safeRatio(hs.baseOnBalls, hs.battersFaced) : DASH]
             ]
           },
           {
@@ -1452,16 +1461,16 @@
             rows: [
               ["K/9 (season)", awayK9 !== null ? awayK9.toFixed(1) : DASH],
               [escapeHtml(detail.game.home.name) + " K% vs hand", homeKPct !== null ? percentText(homeKPct) : DASH],
-              ["xERA", statText(as_.xera, 2)]
+              ["BB%", as_.battersFaced ? safeRatio(as_.baseOnBalls, as_.battersFaced) : DASH]
             ]
           },
           {
-            label: "HR Props — Park + Barrel",
+            label: "HR Props — Park + HR/9",
             verdict: { label: hrVerdictLabel, cls: hrVerdictCls },
             rows: [
               ["Park HR Factor", hrF + " (100 = avg)"],
-              [escapeHtml(hs.name) + " Barrel%", homeBarrel !== null ? percentText(homeBarrel) : DASH],
-              [escapeHtml(as_.name) + " Barrel%", awayBarrel !== null ? percentText(awayBarrel) : DASH]
+              [escapeHtml(hs.name) + " HR/9", homeHr9 !== null ? homeHr9.toFixed(2) : DASH],
+              [escapeHtml(as_.name) + " HR/9", awayHr9 !== null ? awayHr9.toFixed(2) : DASH]
             ]
           }
         ];
@@ -1505,7 +1514,7 @@
         }
         const game = detail.game;
         document.title = game.away.name + " @ " + game.home.name;
-        return '<div class="detail-hero"><div class="detail-hero-main"><button class="back-button" type="button" onclick="window.location.hash=\'#home\'">\u2190 Back</button>' + renderLogo(game.away, "large") + '<div><p class="eyebrow">Game Detail</p><h2 class="page-title">' + escapeHtml(game.away.name) + " @ " + escapeHtml(game.home.name) + '</h2><p class="section-subtitle">' + escapeHtml(formatEasternDateTime(game.gameDate)) + " • " + escapeHtml(game.venue) + '</p></div></div><div class="actions"><span class="tag">' + escapeHtml(game.status) + '</span><span class="tag">' + escapeHtml(detail.weather) + "</span></div></div>" + renderGameDetailsSection(detail) + renderPitcherComparison(detail) + '<div class="table-grid dual">' + renderAdvancedStatsPanel("Advanced Stats vs Opponent", detail.starters.home.savantVsTeam || detail.starters.home.savantSeason, detail.lineupSummaries.away, { left: detail.starters.home.name, right: detail.game.away.name }) + renderAdvancedStatsPanel("Opponent Advanced Stats vs " + game.home.name, detail.starters.away.savantVsTeam || detail.starters.away.savantSeason, detail.lineupSummaries.home, { left: detail.starters.away.name, right: detail.game.home.name }) + '</div><div class="table-grid dual">' + renderSplitPanel("Advanced Stats vs Opponent Splits", detail.starters.home, detail.opponentSplits.awayBattingVsHomeStarter, detail.starters.home.name, detail.game.away.name) + renderSplitPanel("Opponent Advanced Stats vs " + game.home.name + " Splits", detail.starters.away, detail.opponentSplits.homeBattingVsAwayStarter, detail.starters.away.name, detail.game.home.name) + '</div>' + renderLineupSection(detail) + renderParkContextSection(detail) + renderPropAnglesSection(detail) + renderTeamPitchingSection(detail) + '<p class="footer-note">Stats fall back to ' + DASH + " when an endpoint, CORS policy, or lineup feed is unavailable. Park factors are 2024–2025 three-year averages.</p>";
+        return '<div class="detail-hero"><div class="detail-hero-main"><button class="back-button" type="button" onclick="window.location.hash=\'#home\'">\u2190 Back</button>' + renderLogo(game.away, "large") + '<div><p class="eyebrow">Game Detail</p><h2 class="page-title">' + escapeHtml(game.away.name) + " @ " + escapeHtml(game.home.name) + '</h2><p class="section-subtitle">' + escapeHtml(formatEasternDateTime(game.gameDate)) + " • " + escapeHtml(game.venue) + '</p></div></div><div class="actions"><span class="tag">' + escapeHtml(game.status) + '</span><span class="tag">' + escapeHtml(detail.weather) + "</span></div></div>" + renderGameDetailsSection(detail) + renderPitcherComparison(detail) + '<div class="table-grid dual">' + renderAdvancedStatsPanel(detail.starters.home.name + " vs " + detail.game.away.name + " Lineup", detail.starters.home, detail.lineupSummaries.away, { left: detail.starters.home.name, right: detail.game.away.name + " Lineup" }) + renderAdvancedStatsPanel(detail.starters.away.name + " vs " + detail.game.home.name + " Lineup", detail.starters.away, detail.lineupSummaries.home, { left: detail.starters.away.name, right: detail.game.home.name + " Lineup" }) + '</div><div class="table-grid dual">' + renderSplitPanel("Advanced Stats vs Opponent Splits", detail.starters.home, detail.opponentSplits.awayBattingVsHomeStarter, detail.starters.home.name, detail.game.away.name) + renderSplitPanel("Opponent Advanced Stats vs " + game.home.name + " Splits", detail.starters.away, detail.opponentSplits.homeBattingVsAwayStarter, detail.starters.away.name, detail.game.home.name) + '</div>' + renderLineupSection(detail) + renderParkContextSection(detail) + renderPropAnglesSection(detail) + renderTeamPitchingSection(detail) + '<p class="footer-note">Stats fall back to ' + DASH + " when an endpoint, CORS policy, or lineup feed is unavailable. Park factors are 2024–2025 three-year averages.</p>";
       }
 
       function parseRoute() {
