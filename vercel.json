@@ -14,7 +14,11 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|favicon.ico|favicon-32x32.png|apple-touch-icon.png|icon-192.png|official-bracket.json|placeholder.svg|robots.txt|sitemap.xml).*)",
+      "source": "/mlb",
+      "destination": "/mlb-daily-analysis.html"
+    },
+    {
+      "source": "/((?!api/|assets/|favicon.ico|favicon-32x32.png|apple-touch-icon.png|icon-192.png|official-bracket.json|placeholder.svg|robots.txt|sitemap.xml|mlb-daily-analysis.html).*)",
       "destination": "/index.html"
     }
   ]

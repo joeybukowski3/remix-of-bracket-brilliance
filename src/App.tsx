@@ -13,7 +13,6 @@ import Bracket from "./pages/Bracket";
 import BettingEdge from "./pages/BettingEdge";
 import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
-import MLB from "./pages/MLB";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,7 +26,6 @@ const App = () => (
       <BrowserRouter basename={routerBase}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/mlb" element={<MLB />} />
           <Route path="/ncaa" element={<Rankings />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/schedule/:gameId" element={<GameDetail />} />
