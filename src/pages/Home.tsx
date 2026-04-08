@@ -6,6 +6,7 @@ const sports = [
     label: "MLB",
     route: "/mlb",
     active: true,
+    external: true,
     logoSrc: "/logos/mlb.svg",
     logoBg: "radial-gradient(circle at top, rgba(34, 94, 168, 0.45), rgba(4, 30, 66, 0.98))",
     logoBorder: "#E31937",
@@ -119,7 +120,7 @@ export default function Home() {
             <button
               key={`nav-${sport.id}`}
               type="button"
-              onClick={() => sport.active && sport.route && navigate(sport.route)}
+              onClick={() => { if (sport.active && sport.route) { if ('external' in sport && sport.external) { window.location.href = sport.route; } else { navigate(sport.route); } } }}
               aria-label={sport.label}
               title={sport.label}
               style={{
@@ -207,7 +208,7 @@ export default function Home() {
           <button
             key={sport.id}
             type="button"
-            onClick={() => sport.active && sport.route && navigate(sport.route)}
+            onClick={() => { if (sport.active && sport.route) { if ('external' in sport && sport.external) { window.location.href = sport.route; } else { navigate(sport.route); } } }}
             style={{
               background: "linear-gradient(180deg, rgba(34,34,34,0.98), rgba(24,24,24,0.98))",
               border: `1px solid ${sport.active ? "rgba(249,115,22,0.45)" : "rgba(255,255,255,0.08)"}`,
