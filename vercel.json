@@ -1,5 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
   "redirects": [
     {
       "source": "/march-madness",
@@ -10,15 +12,16 @@
       "source": "/rankings",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/mlb-daily-analysis",
+      "destination": "/mlb",
+      "permanent": true
     }
   ],
   "rewrites": [
     {
-      "source": "/mlb",
-      "destination": "/mlb-daily-analysis.html"
-    },
-    {
-      "source": "/((?!api/|assets/|favicon.ico|favicon-32x32.png|apple-touch-icon.png|icon-192.png|official-bracket.json|placeholder.svg|robots.txt|sitemap.xml|mlb-daily-analysis.html).*)",
+      "source": "/((?!api/|assets/|favicon.ico|favicon-32x32.png|apple-touch-icon.png|icon-192.png|official-bracket.json|placeholder.svg|robots.txt|sitemap.xml|mlb).*)",
       "destination": "/index.html"
     }
   ]
