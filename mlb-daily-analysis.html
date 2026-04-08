@@ -553,6 +553,16 @@
         159: { runs: 102, hr: 108, name: "Chase Field" }
       };
 
+      const TEAM_LOGO = {
+        108: "laa", 109: "ari", 110: "bal", 111: "bos", 112: "chc",
+        113: "cin", 114: "cle", 115: "col", 116: "det", 117: "hou",
+        118: "kc",  119: "lad", 120: "wsh", 121: "nym", 133: "ath",
+        134: "pit", 135: "sd",  136: "sea", 137: "sf",  138: "stl",
+        139: "tb",  140: "tex", 141: "tor", 142: "min", 143: "phi",
+        144: "atl", 145: "cws", 146: "mia", 147: "nyy", 158: "mil",
+        159: "ari"
+      };
+
       const state = { theme: "light", pendingFetches: 0, renderNonce: 0 };
       window.mlbCache = window.mlbCache || {};
       const appEl = document.getElementById("app");
@@ -680,8 +690,8 @@
       }
 
       function logoUrl(teamId) {
-        const variant = state.theme === "dark" ? "dark" : "light";
-        return "https://www.mlb.com/assets/images/teams/primary/" + variant + "/" + teamId + ".svg";
+        const abbr = TEAM_LOGO[teamId];
+        return abbr ? "/logos/mlb/" + abbr + ".svg" : "/logos/mlb/generic.svg";
       }
 
       function getTheme() {
