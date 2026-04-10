@@ -13,6 +13,7 @@ import Bracket from "./pages/Bracket";
 import BettingEdge from "./pages/BettingEdge";
 import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
+import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/betting-edge" element={<BettingEdge />} />
           <Route path="/bracket" element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
