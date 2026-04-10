@@ -28,29 +28,69 @@ import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles"
 import MatchupStatGroups from "@/components/MatchupStatGroups";
 import { useLast10 } from "@/hooks/useLast10";
 
+function percentileToClass(p: number, higherIsBetter: boolean) {
+  // p is 0–100; for "lower is better" stats, flip the scale so high percentiles are still good
+  const centered = higherIsBetter ? p : 100 - p;
+
+  if (centered >= 90) return "bg-red-900/70 text-red-50";
+  if (centered >= 75) return "bg-red-800/60 text-red-50";
+  if (centered >= 60) return "bg-red-700/40 text-red-100";
+  if (centered >= 50) return "bg-red-600/30 text-red-100";
+
+  if (centered >= 40) return "bg-slate-800/40 text-slate-100";
+  if (centered >= 25) return "bg-blue-900/50 text-blue-100";
+  if (centered >= 10) return "bg-blue-950/60 text-blue-100";
+  return "bg-blue-950/80 text-blue-50";
+}
+
 function StatCompareRow({
   label,
   valueA,
   valueB,
   higherIsBetter,
+  percentileA,
+  percentileB,
 }: {
   label: string;
   valueA: number | null;
   valueB: number | null;
   higherIsBetter: boolean;
+  percentileA?: number | null;
+  percentileB?: number | null;
 }) {
-  const aWins = hasStat(valueA) && hasStat(valueB) && (higherIsBetter ? valueA > valueB : valueA < valueB);
-  const bWins = hasStat(valueA) && hasStat(valueB) && (higherIsBetter ? valueB > valueA : valueB < valueA);
+  const hasA = hasStat(valueA);
+  const hasB = hasStat(valueB);
+
+  const aWins = hasA && hasB && (higherIsBetter ? valueA! > valueB! : valueA! < valueB!);
+  const bWins = hasA && hasB && (higherIsBetter ? valueB! > valueA! : valueB! < valueA!);
+
+  const pctA = typeof percentileA === "number" ? Math.max(0, Math.min(100, percentileA)) : null;
+  const pctB = typeof percentileB === "number" ? Math.max(0, Math.min(100, percentileB)) : null;
+
+  const classA = pctA != null ? percentileToClass(pctA, higherIsBetter) : "";
+  const classB = pctB != null ? percentileToClass(pctB, higherIsBetter) : "";
 
   return (
-    <div className="grid grid-cols-3 items-center py-2 border-b border-border/50 last:border-0">
-      <span className={`text-right tabular-nums font-semibold text-sm ${aWins ? "text-primary" : "text-foreground"}`}>
-        {formatStat(valueA)}
-      </span>
-      <span className="text-center text-xs font-medium text-muted-foreground">{label}</span>
-      <span className={`text-left tabular-nums font-semibold text-sm ${bWins ? "text-primary" : "text-foreground"}`}>
-        {formatStat(valueB)}
-      </span>
+    <div className="grid grid-cols-3 items-center py-1.5 border-b border-border/50 last:border-0 text-xs">
+      <div className={`flex flex-col items-end px-2 py-1 rounded-l-md tabular-nums font-semibold ${classA || (aWins ? "text-primary" : "text-foreground")}`}>
+        <span>{formatStat(valueA)}</span>
+        {pctA != null && (
+          <span className="text-[10px] opacity-80">
+            {pctA.toFixed(0)}th %ile
+          </span>
+        )}
+      </div>
+      <div className="text-center text-[11px] font-medium text-muted-foreground px-2">
+        {label}
+      </div>
+      <div className={`flex flex-col items-start px-2 py-1 rounded-r-md tabular-nums font-semibold ${classB || (bWins ? "text-primary" : "text-foreground")}`}>
+        <span>{formatStat(valueB)}</span>
+        {pctB != null && (
+          <span className="text-[10px] opacity-80">
+            {pctB.toFixed(0)}th %ile
+          </span>
+        )}
+      </div>
     </div>
   );
 }
