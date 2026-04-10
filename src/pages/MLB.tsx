@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { MLB_TEAMS } from "@/data/mlb-teams";
 
 export default function MLB() {
   const navigate = useNavigate();
@@ -33,6 +34,36 @@ export default function MLB() {
             <p className="mt-2 text-sm text-zinc-400">Faster slate review, cleaner ranking views, and sharper bet surfacing.</p>
           </div>
         </div>
+
+        <section className="pt-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">MLB Teams</h2>
+            <p className="text-xs text-zinc-400">
+              Logos are wired in and ready for Statcast + matchup tools.
+            </p>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+            {MLB_TEAMS.map((team) => (
+              <button
+                key={team.id}
+                type="button"
+                className="group flex flex-col items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900/70 px-3 py-3 transition hover:border-orange-500/60 hover:bg-zinc-900"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-950 shadow-inner shadow-black/60">
+                  <img
+                    src={team.logo}
+                    alt={team.name}
+                    className="h-8 w-8 object-contain transition group-hover:scale-105"
+                  />
+                </div>
+                <span className="text-[0.7rem] font-semibold tracking-wide text-zinc-300">
+                  {team.short}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <div className="flex flex-wrap gap-3 pt-2">
           <button
             type="button"
