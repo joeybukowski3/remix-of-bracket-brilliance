@@ -138,6 +138,26 @@ export function storePgaAppliedWeights(weights: PgaWeights) {
   window.localStorage.setItem(PGA_MODEL_APPLIED_WEIGHTS_STORAGE_KEY, JSON.stringify(weights));
 }
 
+export function getStoredPgaActivePreset(): PgaPresetKey | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PGA_ACTIVE_PRESET_STORAGE_KEY);
+    if (!raw || !(raw in PGA_PRESETS)) return null;
+    return raw as PgaPresetKey;
+  } catch {
+    return null;
+  }
+}
+
+export function storePgaActivePreset(preset: PgaPresetKey | null) {
+  if (typeof window === "undefined") return;
+  if (preset) {
+    window.localStorage.setItem(PGA_ACTIVE_PRESET_STORAGE_KEY, preset);
+    return;
+  }
+  window.localStorage.removeItem(PGA_ACTIVE_PRESET_STORAGE_KEY);
+}
+
 export function getWeightsForPreset(preset: PgaPresetKey): PgaWeights {
   return { ...PGA_PRESETS[preset].weights };
 }

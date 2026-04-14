@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PgaModelMobileCard from "@/components/pga/PgaModelMobileCard";
-import { PGA_WEIGHT_DEFINITIONS, RBC_HERITAGE_WEIGHTS } from "@/lib/pga/pgaWeights";
+import { PGA_WEIGHT_DEFINITIONS, PGA_PRESETS, RBC_HERITAGE_WEIGHTS, type PgaPresetKey } from "@/lib/pga/pgaWeights";
 import { getWeightTotal, areWeightsEqual } from "@/lib/pga/pgaModelHelpers";
 import type { PlayerModelRow, PgaWeights } from "@/lib/pga/pgaTypes";
 
@@ -10,6 +10,15 @@ type Props = {
   onExpandFullPage?: () => void;
   draftWeights?: PgaWeights;
   appliedWeights?: PgaWeights;
+  selectedPreset?: PgaPresetKey;
+  activePreset?: PgaPresetKey | null;
+  draftPreset?: PgaPresetKey | null;
+  presetOptions?: Array<{
+    key: PgaPresetKey;
+    label: string;
+    description: string;
+  }>;
+  onPresetSelect?: (preset: PgaPresetKey) => void;
   onWeightChange?: (key: keyof PgaWeights, value: number) => void;
   onApply?: () => void;
   onReset?: () => void;
@@ -70,10 +79,19 @@ const CATEGORIES = ["Ball Striking", "Short Game", "Scoring", "Form"] as const;
 
 // ── Inline weight sliders ─────────────────────────────────────────────
 function WeightSliderRow({
-  draftWeights, appliedWeights, onWeightChange, onApply, onReset,
+  draftWeights, appliedWeights, selectedPreset, activePreset, draftPreset, presetOptions, onPresetSelect, onWeightChange, onApply, onReset,
 }: {
   draftWeights: PgaWeights;
   appliedWeights: PgaWeights;
+  selectedPreset: PgaPresetKey;
+  activePreset: PgaPresetKey | null;
+  draftPreset: PgaPresetKey | null;
+  presetOptions: Array<{
+    key: PgaPresetKey;
+    label: string;
+    description: string;
+  }>;
+  onPresetSelect: (preset: PgaPresetKey) => void;
   onWeightChange: (key: keyof PgaWeights, value: number) => void;
   onApply: () => void;
   onReset: () => void;
@@ -82,13 +100,22 @@ function WeightSliderRow({
   const hasDraftChanges = !areWeightsEqual(draftWeights, appliedWeights);
   const isPreset = areWeightsEqual(draftWeights, RBC_HERITAGE_WEIGHTS) && areWeightsEqual(appliedWeights, RBC_HERITAGE_WEIGHTS);
   const totalOk = Math.abs(draftTotal - 100) < 5;
+  const visibleActivePreset = activePreset ? PGA_PRESETS[activePreset].label : "Custom";
+  const visibleDraftPreset = draftPreset ? PGA_PRESETS[draftPreset].label : "Custom";
+  const selectedPresetDescription = presetOptions.find((preset) => preset.key === selectedPreset)?.description;
 
   return (
     <div className="border-b border-border/60 bg-secondary/20 px-5 py-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Model Weights
+          </span>
+          <span className="rounded-full bg-card px-2.5 py-0.5 text-[10px] font-semibold text-foreground ring-1 ring-border/70">
+            Active: {visibleActivePreset}
+          </span>
+          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
+            Draft: {visibleDraftPreset}
           </span>
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${totalOk ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400"}`}>
             {draftTotal}% total
@@ -100,6 +127,19 @@ function WeightSliderRow({
           )}
         </div>
         <div className="flex items-center gap-2">
+          <label className="sr-only" htmlFor="pga-preset-select">Model preset</label>
+          <select
+            id="pga-preset-select"
+            value={selectedPreset}
+            onChange={(event) => onPresetSelect(event.target.value as PgaPresetKey)}
+            className="rounded-full border border-border bg-card px-3 py-1 text-[11px] font-medium text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+          >
+            {presetOptions.map((preset) => (
+              <option key={preset.key} value={preset.key}>
+                {preset.label}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
             onClick={onReset}
@@ -118,6 +158,12 @@ function WeightSliderRow({
           </button>
         </div>
       </div>
+
+      <p className="mb-4 text-[11px] leading-5 text-muted-foreground">
+        Preset: <span className="font-medium text-foreground">{PGA_PRESETS[selectedPreset].label}</span>
+        {" "}
+        {selectedPresetDescription}
+      </p>
 
       <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-4">
         {CATEGORIES.map((cat) => {
@@ -155,7 +201,7 @@ function WeightSliderRow({
 // ── Main component ────────────────────────────────────────────────────
 export default function PgaModelTable({
   rows, isFullPage = false, onExpandFullPage,
-  draftWeights, appliedWeights, onWeightChange, onApply, onReset,
+  draftWeights, appliedWeights, selectedPreset, activePreset, draftPreset, presetOptions, onPresetSelect, onWeightChange, onApply, onReset,
 }: Props) {
   const [visibleStats, setVisibleStats] = useState<Set<StatColKey>>(
     new Set(["sgApproachRank", "par4Rank", "drivingAccuracyRank", "bogeyAvoidanceRank", "sgAroundGreenRank", "birdie125150Rank", "sgPuttingRank", "birdieUnder125Rank"])
@@ -176,7 +222,15 @@ export default function PgaModelTable({
   }
 
   const visibleCols = STAT_COLUMNS.filter((c) => visibleStats.has(c.key));
-  const hasWeights = draftWeights && appliedWeights && onWeightChange && onApply && onReset;
+  const hasWeights =
+    draftWeights &&
+    appliedWeights &&
+    selectedPreset &&
+    presetOptions &&
+    onPresetSelect &&
+    onWeightChange &&
+    onApply &&
+    onReset;
 
   return (
     <section className="rounded-[30px] bg-card shadow-[0_2px_12px_hsl(var(--foreground)/0.06)] ring-1 ring-border/60">
@@ -231,6 +285,11 @@ export default function PgaModelTable({
         <WeightSliderRow
           draftWeights={draftWeights!}
           appliedWeights={appliedWeights!}
+          selectedPreset={selectedPreset!}
+          activePreset={activePreset ?? null}
+          draftPreset={draftPreset ?? null}
+          presetOptions={presetOptions!}
+          onPresetSelect={onPresetSelect!}
           onWeightChange={onWeightChange!}
           onApply={onApply!}
           onReset={onReset!}

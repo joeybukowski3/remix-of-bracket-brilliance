@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import PgaCourseInsightsCard from "@/components/pga/PgaCourseInsightsCard";
-import PgaCustomizationPanel from "@/components/pga/PgaCustomizationPanel";
 import PgaFooterMeta from "@/components/pga/PgaFooterMeta";
 import PgaMainHeader from "@/components/pga/PgaMainHeader";
 import PgaModelTable from "@/components/pga/PgaModelTable";
@@ -18,16 +17,28 @@ import {
 import type { PgaWeights, RawPgaPlayer } from "@/lib/pga/pgaTypes";
 import {
   getStoredPgaAppliedWeights,
+  getStoredPgaActivePreset,
+  getWeightsForPreset,
+  detectActivePreset,
+  PGA_PRESETS,
+  type PgaPresetKey,
   RBC_HERITAGE_WEIGHTS,
   storePgaAppliedWeights,
+  storePgaActivePreset,
 } from "@/lib/pga/pgaWeights";
 
 export default function PGAModel() {
+  const initialWeights = useMemo(() => getStoredPgaAppliedWeights(), []);
+  const initialPreset = useMemo(
+    () => detectActivePreset(initialWeights) ?? getStoredPgaActivePreset() ?? "balanced",
+    [initialWeights],
+  );
   const [players, setPlayers] = useState<RawPgaPlayer[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
-  const [draftWeights, setDraftWeights] = useState<PgaWeights>(() => getStoredPgaAppliedWeights());
-  const [appliedWeights, setAppliedWeights] = useState<PgaWeights>(() => getStoredPgaAppliedWeights());
+  const [draftWeights, setDraftWeights] = useState<PgaWeights>(initialWeights);
+  const [appliedWeights, setAppliedWeights] = useState<PgaWeights>(initialWeights);
+  const [selectedPreset, setSelectedPreset] = useState<PgaPresetKey>(initialPreset);
   const [isFullPage, setIsFullPage] = useState(false);
 
   usePageSeo({
@@ -62,6 +73,11 @@ export default function PGAModel() {
     storePgaAppliedWeights(appliedWeights);
   }, [appliedWeights]);
 
+  useEffect(() => {
+    const detectedPreset = detectActivePreset(appliedWeights);
+    storePgaActivePreset(detectedPreset ?? selectedPreset);
+  }, [appliedWeights, selectedPreset]);
+
   // Lock body scroll in full-page mode
   useEffect(() => {
     document.body.style.overflow = isFullPage ? "hidden" : "";
@@ -72,14 +88,29 @@ export default function PGAModel() {
   const topProjections = useMemo(() => getTopProjections(rows), [rows]);
   const meta = useMemo(() => buildTournamentMeta(players.length), [players.length]);
   const hasDraftChanges = useMemo(() => !areWeightsEqual(draftWeights, appliedWeights), [draftWeights, appliedWeights]);
+  const activePreset = useMemo(() => detectActivePreset(appliedWeights), [appliedWeights]);
+  const draftPreset = useMemo(() => detectActivePreset(draftWeights), [draftWeights]);
 
-  function applyDraftWeights() { setAppliedWeights({ ...draftWeights }); }
+  function applyDraftWeights() {
+    setAppliedWeights({ ...draftWeights });
+    const detectedPreset = detectActivePreset(draftWeights);
+    if (detectedPreset) {
+      setSelectedPreset(detectedPreset);
+    }
+  }
   function resetToPreset() {
     setDraftWeights({ ...RBC_HERITAGE_WEIGHTS });
     setAppliedWeights({ ...RBC_HERITAGE_WEIGHTS });
+    setSelectedPreset("balanced");
   }
   function updateWeight(key: keyof PgaWeights, value: number) {
     setDraftWeights((current) => ({ ...current, [key]: value }));
+  }
+  function selectPreset(preset: PgaPresetKey) {
+    const nextWeights = getWeightsForPreset(preset);
+    setSelectedPreset(preset);
+    setDraftWeights(nextWeights);
+    setAppliedWeights(nextWeights);
   }
 
   // ── Loading state ─────────────────────────────────────────────────────
@@ -163,6 +194,15 @@ export default function PGAModel() {
             isFullPage
             draftWeights={draftWeights}
             appliedWeights={appliedWeights}
+            selectedPreset={selectedPreset}
+            activePreset={activePreset}
+            draftPreset={draftPreset}
+            presetOptions={Object.entries(PGA_PRESETS).map(([key, preset]) => ({
+              key: key as PgaPresetKey,
+              label: preset.label,
+              description: preset.description,
+            }))}
+            onPresetSelect={selectPreset}
             onWeightChange={updateWeight}
             onApply={applyDraftWeights}
             onReset={resetToPreset}
@@ -186,6 +226,15 @@ export default function PGAModel() {
         onExpandFullPage={() => setIsFullPage(true)}
         draftWeights={draftWeights}
         appliedWeights={appliedWeights}
+        selectedPreset={selectedPreset}
+        activePreset={activePreset}
+        draftPreset={draftPreset}
+        presetOptions={Object.entries(PGA_PRESETS).map(([key, preset]) => ({
+          key: key as PgaPresetKey,
+          label: preset.label,
+          description: preset.description,
+        }))}
+        onPresetSelect={selectPreset}
         onWeightChange={updateWeight}
         onApply={applyDraftWeights}
         onReset={resetToPreset}
