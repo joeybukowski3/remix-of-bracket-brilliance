@@ -9,10 +9,10 @@ type Props = {
 
 export default function PgaWeightSlider({ label, value, min, max, step, onChange }: Props) {
   return (
-    <div className="rounded-[22px] bg-secondary/65 p-3">
-      <div className="flex items-center justify-between gap-3">
-        <label className="text-sm text-foreground">{label}</label>
-        <span className="text-sm font-medium text-primary">{value}%</span>
+    <div className="min-w-0 rounded-[22px] bg-secondary/65 p-3">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <label className="min-w-0 truncate text-sm text-foreground">{label}</label>
+        <span className="shrink-0 text-sm font-medium text-primary">{value}%</span>
       </div>
       <input
         type="range"
@@ -21,7 +21,7 @@ export default function PgaWeightSlider({ label, value, min, max, step, onChange
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-3 h-2 w-full cursor-pointer accent-primary"
+        className="mt-3 block h-2 w-full min-w-0 cursor-pointer accent-primary"
       />
     </div>
   );

@@ -27,8 +27,8 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 shadow-[0_8px_24px_hsl(var(--foreground)/0.04)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <Link to="/" className="text-lg font-semibold tracking-[-0.03em] text-foreground transition hover:text-primary sm:text-xl">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3 lg:px-8">
+        <Link to="/" className="text-base font-semibold tracking-[-0.03em] text-foreground transition hover:text-primary sm:text-xl">
           Joe Knows Ball
         </Link>
 
@@ -59,14 +59,14 @@ export default function SiteHeader() {
           type="button"
           onClick={() => setMobileOpen((value) => !value)}
           aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-foreground transition hover:bg-accent md:hidden"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground transition hover:bg-accent md:hidden"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {mobileOpen ? (
-        <div className="px-4 pb-4 md:hidden">
+        <div className="px-4 pb-3 md:hidden">
           <div className="rounded-3xl bg-card p-3 shadow-[0_12px_32px_hsl(var(--foreground)/0.05)]">
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => {
@@ -75,7 +75,7 @@ export default function SiteHeader() {
                   <Link
                     key={item.to}
                     to={item.to}
-                    className={`rounded-2xl px-4 py-3 text-sm transition ${
+                    className={`rounded-2xl px-4 py-2.5 text-sm transition ${
                       active ? "bg-primary/10 text-primary" : "bg-secondary/70 text-foreground hover:bg-secondary"
                     }`}
                   >
@@ -83,7 +83,7 @@ export default function SiteHeader() {
                   </Link>
                 );
               })}
-              <Link to="/pga/rbc-heritage-2026-picks" className="rounded-2xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90">
+              <Link to="/pga/rbc-heritage-2026-picks" className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90">
                 View Picks
               </Link>
             </nav>

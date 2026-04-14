@@ -13,7 +13,7 @@ export default function PgaHeatmapCell({ value, maxRank, className = "", childre
 
   return (
     <span
-      className={`inline-flex min-w-[3rem] justify-center rounded-xl px-2.5 py-1 text-sm font-medium ${className}`}
+      className={`inline-flex min-w-[2.4rem] justify-center rounded-xl px-2 py-1 text-sm font-medium tabular-nums ${className}`}
       style={getRankHeatmapStyle(numericValue, maxRank)}
     >
       {children ?? value ?? "—"}
