@@ -15,6 +15,7 @@ import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NotFound from "./pages/NotFound";
+import PGA from "./pages/PGA";
 
 const queryClient = new QueryClient();
 const routerBase = import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL;
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/bracket" element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
+          <Route path="/pga" element={<PGA />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

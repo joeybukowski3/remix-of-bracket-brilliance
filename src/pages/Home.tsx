@@ -45,8 +45,8 @@ const sports = [
   {
     id: "pga",
     label: "PGA Tour",
-    route: null,
-    active: false,
+    route: "/pga",
+    active: true,
     logoSrc: "/logos/pga.svg",
     logoBg: "radial-gradient(circle at top, rgba(26, 92, 56, 0.42), rgba(9, 24, 18, 0.96))",
     logoBorder: "#C9A227",
