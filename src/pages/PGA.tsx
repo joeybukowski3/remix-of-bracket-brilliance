@@ -6,35 +6,56 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqSchema } from "@/lib/seo/pgaSeo";
 import { rbcHeritage2026Content } from "@/lib/seo/pgaTournamentContent";
 
+// ── Preset cards data ─────────────────────────────────────────────────
+const MODEL_PRESETS = [
+  {
+    key: "outright",
+    label: "Outright Winner",
+    href: "/pga/model?preset=outright",
+    badge: "Highest Upside",
+    badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300",
+    description: "Targets players with elite recent form and peak birdie-making ability. Weights lean hard into TrendRank, SG: Approach, and scoring inside 150 yards. Course history is de-emphasized — hot form wins outrights.",
+    topPlayers: ["Collin Morikawa", "Scottie Scheffler", "Matt Fitzpatrick"],
+    icon: "🏆",
+  },
+  {
+    key: "top10",
+    label: "Top 10 Finish",
+    href: "/pga/model?preset=top10",
+    badge: "Upside + Form",
+    badgeColor: "bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300",
+    description: "Balances peak upside with enough course awareness to catch consistent Harbour Town performers. Form leads, but approach play and par-4 scoring are weighted to filter for course fit.",
+    topPlayers: ["Morikawa", "Cantlay", "Spieth"],
+    icon: "📈",
+  },
+  {
+    key: "top20",
+    label: "Top 20 Finish",
+    href: "/pga/model?preset=top20",
+    badge: "Balanced",
+    badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
+    description: "Equal weight on form and course fit. Driving accuracy and bogey avoidance both rise — this range rewards players who don't blow up a round. The Harbour Town consistency profile matters here.",
+    topPlayers: ["Fitzpatrick", "Fleetwood", "Henley"],
+    icon: "⚖️",
+  },
+  {
+    key: "top40",
+    label: "Top 40 Finish",
+    href: "/pga/model?preset=top40",
+    badge: "Floor Play",
+    badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+    description: "Pure floor model. Course history (Course True SG), driving accuracy, and bogey avoidance dominate the weights. Built specifically for safe parlay legs where not blowing up matters more than upside.",
+    topPlayers: ["Cantlay", "Conners", "Berger"],
+    icon: "🛡️",
+  },
+] as const;
+
+// ── Static page data (same as original PGA.tsx) ───────────────────────
 const tierOneBets = [
-  {
-    player: "Collin Morikawa",
-    odds: "+176 T10",
-    edge: "Edge 16",
-    analysis:
-      "One of the strongest RBC Heritage 2026 picks on the board. Elite Harbour Town course history, the best SG: Approach profile in the field, and an ideal post-Masters momentum bucket create the clearest value gap.",
-  },
-  {
-    player: "Patrick Cantlay",
-    odds: "+188 T10",
-    edge: "Edge 14",
-    analysis:
-      "A top-tier RBC Heritage best bet with 30 rounds of Harbour Town experience and the No. 2 Course SG profile in the field. The approach weakness is offset by short-game strength and elite course fit.",
-  },
-  {
-    player: "Jordan Spieth",
-    odds: "+230 T10",
-    edge: "Edge 12",
-    analysis:
-      "Harbour Town course history picks rarely get cleaner than Spieth. He owns a win here, 36 rounds of experience, and the scrambling profile that keeps his floor intact on this layout.",
-  },
-  {
-    player: "Sam Burns",
-    odds: "+230 T10",
-    edge: "Edge 12",
-    analysis:
-      "Burns grades as one of the better golf betting model picks this week thanks to strong Harbour Town history, DG Rank No. 15, and a stable momentum profile at a still-reasonable price.",
-  },
+  { player: "Collin Morikawa", odds: "+176 T10", edge: "Edge 16", analysis: "One of the strongest RBC Heritage 2026 picks on the board. Elite Harbour Town course history, the best SG: Approach profile in the field, and an ideal post-Masters momentum bucket create the clearest value gap." },
+  { player: "Patrick Cantlay", odds: "+188 T10", edge: "Edge 14", analysis: "A top-tier RBC Heritage best bet with 30 rounds of Harbour Town experience and the No. 2 Course SG profile in the field. The approach weakness is offset by short-game strength and elite course fit." },
+  { player: "Jordan Spieth", odds: "+230 T10", edge: "Edge 12", analysis: "Harbour Town course history picks rarely get cleaner than Spieth. He owns a win here, 36 rounds of experience, and the scrambling profile that keeps his floor intact on this layout." },
+  { player: "Sam Burns", odds: "+230 T10", edge: "Edge 12", analysis: "Burns grades as one of the better golf betting model picks this week thanks to strong Harbour Town history, DG Rank No. 15, and a stable momentum profile at a still-reasonable price." },
 ] as const;
 
 const tierTwoBets = [
@@ -50,10 +71,10 @@ const tierThreeBets = [
 ] as const;
 
 const fades = [
-  "Russell Henley -> T1-5 Masters group historically underperforms here.",
-  "Cameron Young -> Augusta-driven pricing without the same Harbour Town fit.",
-  "Jake Knapp -> Worst Course SG profile in the field.",
-  "Ludvig Aberg -> Limited Harbour Town sample with a price inflated by talent and ranking.",
+  "Russell Henley → T1-5 Masters group historically underperforms here.",
+  "Cameron Young → Augusta-driven pricing without the same Harbour Town fit.",
+  "Jake Knapp → Worst Course SG profile in the field.",
+  "Ludvig Aberg → Limited Harbour Town sample with a price inflated by talent and ranking.",
 ] as const;
 
 const summaryRows = [
@@ -130,21 +151,15 @@ export default function PGA() {
       <SeoJsonLd
         id="rbc-heritage-2026-schema"
         data={[
-          buildArticleSchema({
-            headline: rbcHeritage2026Content.title,
-            description: rbcHeritage2026Content.description,
-            path: rbcHeritage2026Content.path,
-            dateModified,
-          }),
-          buildBreadcrumbSchema([
-            { name: "Home", path: "/" },
-            { name: "PGA Picks", path: rbcHeritage2026Content.path },
-          ]),
+          buildArticleSchema({ headline: rbcHeritage2026Content.title, description: rbcHeritage2026Content.description, path: rbcHeritage2026Content.path, dateModified }),
+          buildBreadcrumbSchema([{ name: "Home", path: "/" }, { name: "PGA Picks", path: rbcHeritage2026Content.path }]),
           buildFaqSchema(rbcHeritage2026Content.faqs),
         ]}
       />
       <main className="site-page pb-16 pt-10">
         <div className="site-container site-stack">
+
+          {/* ── Hero ── */}
           <section className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
             <div className="surface-card md:p-10">
               <div className="inline-flex rounded-full bg-primary/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
@@ -154,17 +169,17 @@ export default function PGA() {
                 RBC Heritage 2026 Picks &amp; Best Bets
               </h1>
               <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">
-                Looking for the best RBC Heritage 2026 picks? This page breaks down top golf bets, top 40 parlay plays, and model-driven insights using course history at Harbour Town, recent form, and key PGA Tour statistics. The goal is to identify high-value players based on how they fit this course - not just market odds.
-              </p>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
-                These are the RBC Heritage best bets and Harbour Town course history picks the model likes most, with added context for PGA best bets today, golf betting picks today, and safer RBC Heritage parlays.
+                Looking for the best RBC Heritage 2026 picks? This page breaks down top golf bets, top 40 parlay plays, and model-driven insights using course history at Harbour Town, recent form, and key PGA Tour statistics. The goal is to identify high-value players based on how they fit this course — not just market odds.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
-                <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">View Full Model</Link>
-                <a href="#best-bets" className="inline-flex items-center rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-foreground transition hover:bg-accent">View top 10 golf bets</a>
+                <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">
+                  Open Free Model
+                </Link>
+                <a href="#best-bets" className="inline-flex items-center rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-foreground transition hover:bg-accent">
+                  View top 10 golf bets
+                </a>
               </div>
             </div>
-
             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
               {[
                 ["Primary Signals", "Form, Harbour Town course history, and weighted stat fit are the three biggest inputs before price is considered."],
@@ -179,6 +194,67 @@ export default function PGA() {
             </div>
           </section>
 
+          {/* ── FREE MODEL PRESETS ── */}
+          <section className="surface-card md:p-8">
+            <div className="mb-2 flex flex-wrap items-center gap-3">
+              <div className="eyebrow-label text-primary/80">Free Interactive Model</div>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                100% Free
+              </span>
+            </div>
+            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-foreground md:text-3xl">
+              Four Preset Models — Built for Every Bet Type
+            </h2>
+            <p className="mt-3 max-w-3xl text-base leading-8 text-muted-foreground">
+              Most golf betting models are locked behind paywalls. This one is completely free and fully interactive. Choose a preset below to instantly load a weight profile built for that market, then fine-tune any stat to match your own read. The table re-ranks all 83 players in real time.
+            </p>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {MODEL_PRESETS.map((preset) => (
+                <Link
+                  key={preset.key}
+                  to={preset.href}
+                  className="group flex flex-col rounded-[24px] bg-secondary/50 p-5 ring-1 ring-border/50 transition hover:bg-secondary hover:ring-primary/30"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-2xl">{preset.icon}</span>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${preset.badgeColor}`}>
+                      {preset.badge}
+                    </span>
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold tracking-[-0.02em] text-foreground">
+                    {preset.label}
+                  </h3>
+                  <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">
+                    {preset.description}
+                  </p>
+                  <div className="mt-4 border-t border-border/40 pt-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      Model favors
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-foreground">
+                      {preset.topPlayers.join(", ")}
+                    </p>
+                  </div>
+                  <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:gap-2 transition-all">
+                    Open model
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                    </svg>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-[20px] bg-primary/5 px-5 py-4 ring-1 ring-primary/10">
+              <p className="text-sm leading-7 text-muted-foreground">
+                <span className="font-semibold text-foreground">How it works: </span>
+                Each preset loads a specific distribution of stat weights into the interactive model. Outright presets maximize ceiling by front-loading form and birdie-making. Top 40 presets flip the script — course history, driving accuracy, and bogey avoidance dominate to surface the most reliable floor plays. All presets can be customized further using the sliders in the model view, completely free.
+              </p>
+            </div>
+          </section>
+
+          {/* ── How Model Works ── */}
           <SectionCard title="How the Model Works" eyebrow="Model Overview">
             <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
               <p className="text-base leading-8 text-muted-foreground">
@@ -192,6 +268,7 @@ export default function PGA() {
             </div>
           </SectionCard>
 
+          {/* ── Top 10 Best Bets ── */}
           <SectionCard title="Top 10 Best Bets" eyebrow="RBC Heritage Best Bets">
             <div id="best-bets" className="space-y-6">
               <p className="max-w-3xl text-base leading-8 text-muted-foreground">These top 10 golf bets are the strongest value plays from the board, balancing price, Harbour Town fit, and recent form.</p>
@@ -217,12 +294,8 @@ export default function PGA() {
                     ))}
                   </div>
                 </div>
-
                 <div className="grid gap-6">
-                  {[
-                    ["Tier 2", "Solid Value", tierTwoBets],
-                    ["Tier 3", "Upside Plays", tierThreeBets],
-                  ].map(([eyebrow, title, bets]) => (
+                  {([["Tier 2", "Solid Value", tierTwoBets], ["Tier 3", "Upside Plays", tierThreeBets]] as const).map(([eyebrow, title, bets]) => (
                     <div key={String(title)} className="surface-card">
                       <div className="eyebrow-label text-primary/80">{eyebrow}</div>
                       <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">{title}</h3>
@@ -244,13 +317,15 @@ export default function PGA() {
             </div>
           </SectionCard>
 
+          {/* ── Top 40 ── */}
           <SectionCard title="Top 40 Parlay Golfers" eyebrow="Safe Plays">
             <div className="space-y-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <p className="max-w-3xl text-base leading-8 text-muted-foreground">High-floor players identified by the model based on course history, consistency, and Harbour Town fit. Ideal for RBC Heritage top 40 picks, RBC Heritage parlays, and safer betting structures.</p>
-                <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-secondary px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent">PGA betting picks today</Link>
+                <Link to="/pga/model?preset=top40" className="inline-flex items-center rounded-xl bg-secondary px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent">
+                  Open Top 40 model →
+                </Link>
               </div>
-
               <div className="overflow-hidden rounded-[28px] bg-card shadow-[0_18px_40px_hsl(var(--foreground)/0.05)]">
                 <div className="overflow-x-auto">
                   <table className="min-w-full border-collapse text-sm">
@@ -271,41 +346,27 @@ export default function PGA() {
                   </table>
                 </div>
               </div>
-
-              <div className="surface-card">
-                <div className="eyebrow-label text-primary/80">How These Players Were Selected</div>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <div className="surface-card-muted text-sm leading-7 text-muted-foreground">Based on the model's weighting of SG: Approach, Driving Accuracy, Bogey Avoidance, and course history at Harbour Town.</div>
-                  <div className="surface-card-muted text-sm leading-7 text-muted-foreground">Focused on high consistency, low missed-cut rates, and strong historical performance at this course.</div>
-                  <div className="surface-card-muted text-sm leading-7 text-muted-foreground md:col-span-2">Designed specifically for Top 40 parlays and safer betting strategies where floor matters more than outright win equity.</div>
-                </div>
-              </div>
             </div>
           </SectionCard>
 
+          {/* Fades + Summary */}
           <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
             <SectionCard title="Notable Fades" eyebrow="Fades">
               <div className="grid gap-3">
-                {fades.map((fade) => (
-                  <div key={fade} className="surface-card-muted text-sm leading-7 text-muted-foreground">{fade}</div>
-                ))}
+                {fades.map((fade) => <div key={fade} className="surface-card-muted text-sm leading-7 text-muted-foreground">{fade}</div>)}
               </div>
             </SectionCard>
-
             <SectionCard title="Summary Table" eyebrow="Quick Board">
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse text-sm">
                   <thead className="bg-secondary/65">
                     <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                      <th className="px-3 py-3">Player</th>
-                      <th className="px-3 py-3">Odds</th>
-                      <th className="px-3 py-3">Edge</th>
-                      <th className="px-3 py-3">Key Reason</th>
+                      <th className="px-3 py-3">Player</th><th className="px-3 py-3">Odds</th><th className="px-3 py-3">Edge</th><th className="px-3 py-3">Key Reason</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {summaryRows.map((row, index) => (
-                      <tr key={row[0]} className={`border-t border-border/60 first:border-t-0 ${index % 2 === 0 ? "bg-card" : "bg-secondary/30"}`}>
+                    {summaryRows.map((row, i) => (
+                      <tr key={row[0]} className={`border-t border-border/60 first:border-t-0 ${i % 2 === 0 ? "bg-card" : "bg-secondary/30"}`}>
                         <td className="px-3 py-4 font-semibold text-foreground">{row[0]}</td>
                         <td className="px-3 py-4 text-muted-foreground">{row[1]}</td>
                         <td className="px-3 py-4 text-[hsl(var(--success))]">{row[2]}</td>
@@ -320,17 +381,13 @@ export default function PGA() {
 
           <SectionCard title="Harbour Town Betting Strategy" eyebrow="Course Strategy">
             <div className="grid gap-3">
-              {strategyBullets.map((item) => (
-                <div key={item} className="surface-card-muted text-sm leading-7 text-muted-foreground">{item}</div>
-              ))}
+              {strategyBullets.map((item) => <div key={item} className="surface-card-muted text-sm leading-7 text-muted-foreground">{item}</div>)}
             </div>
           </SectionCard>
 
           <SectionCard title="How to Build Golf Parlays" eyebrow="Parlay Strategy">
             <div className="grid gap-3">
-              {parlayBullets.map((item) => (
-                <div key={item} className="surface-card-muted text-sm leading-7 text-muted-foreground">{item}</div>
-              ))}
+              {parlayBullets.map((item) => <div key={item} className="surface-card-muted text-sm leading-7 text-muted-foreground">{item}</div>)}
             </div>
           </SectionCard>
 
@@ -345,16 +402,22 @@ export default function PGA() {
             </div>
           </SectionCard>
 
+          {/* ── CTA ── */}
           <section className="surface-card text-center md:p-10">
-            <div className="eyebrow-label text-primary/80">Access The Full Board</div>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground md:text-4xl">Open the live Harbour Town model and adjust the weights yourself.</h2>
-            <p className="mx-auto mt-4 max-w-3xl text-base leading-8 text-muted-foreground">The full model lets you sort the board, search the field, and rebalance the stat buckets to match your own view of Harbour Town.</p>
+            <div className="eyebrow-label text-primary/80">Free Interactive Model</div>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground md:text-4xl">
+              The only free customizable golf model you'll find online.
+            </h2>
+            <p className="mx-auto mt-4 max-w-3xl text-base leading-8 text-muted-foreground">
+              Adjust stat weights, switch presets, search the field, and re-rank all 83 players in real time — no subscription, no login, completely free. Built around Harbour Town's course profile and updated for 2026.
+            </p>
             <div className="mt-7 flex flex-wrap justify-center gap-4">
-              <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition hover:bg-primary/90">View Full Model</Link>
-              <Link to="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl bg-secondary px-6 py-3 text-base font-medium text-foreground transition hover:bg-accent">Top 40 golf parlays</Link>
-              <Link to="/" className="inline-flex items-center rounded-xl bg-secondary px-6 py-3 text-base font-medium text-foreground transition hover:bg-accent">Back to Home</Link>
+              <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition hover:bg-primary/90">Open Free Model</Link>
+              <Link to="/pga/model?preset=top40" className="inline-flex items-center rounded-xl bg-secondary px-6 py-3 text-base font-medium text-foreground transition hover:bg-accent">Top 40 preset</Link>
+              <Link to="/pga/model?preset=outright" className="inline-flex items-center rounded-xl bg-secondary px-6 py-3 text-base font-medium text-foreground transition hover:bg-accent">Outright preset</Link>
             </div>
           </section>
+
         </div>
       </main>
     </SiteShell>
