@@ -1,9 +1,18 @@
+import { Link } from "react-router-dom";
 import PgaModelMobileCard from "@/components/pga/PgaModelMobileCard";
 import PgaModelTableHeader from "@/components/pga/PgaModelTableHeader";
 import PgaModelTableRow from "@/components/pga/PgaModelTableRow";
 import type { PlayerModelRow } from "@/lib/pga/pgaTypes";
 
-export default function PgaModelTable({ rows }: { rows: PlayerModelRow[] }) {
+type Props = {
+  rows: PlayerModelRow[];
+  tableLink?: {
+    href: string;
+    label: string;
+  };
+};
+
+export default function PgaModelTable({ rows, tableLink }: Props) {
   const rankValues = rows.flatMap((row) => [
     row.trendRank,
     row.sgApproachRank,
@@ -25,7 +34,17 @@ export default function PgaModelTable({ rows }: { rows: PlayerModelRow[] }) {
           <h2 className="text-lg font-semibold tracking-[-0.03em] text-foreground">Full Model Table</h2>
           <p className="mt-1 text-sm text-muted-foreground">Score sorts the field and rank columns use a soft green-to-red heatmap.</p>
         </div>
-        <p className="text-sm text-muted-foreground">{rows.length} golfers</p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">{rows.length} golfers</p>
+          {tableLink ? (
+            <Link
+              to={tableLink.href}
+              className="inline-flex items-center rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
+            >
+              {tableLink.label}
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       {rows.length === 0 ? (

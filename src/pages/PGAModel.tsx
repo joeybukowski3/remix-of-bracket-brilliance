@@ -14,14 +14,14 @@ import PgaTopStats from "@/components/pga/PgaTopStats";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { areWeightsEqual, buildTournamentMeta, getTopProjections, rankPlayersByScore } from "@/lib/pga/pgaModelHelpers";
 import type { PgaWeights, RawPgaPlayer } from "@/lib/pga/pgaTypes";
-import { RBC_HERITAGE_WEIGHTS } from "@/lib/pga/pgaWeights";
+import { getStoredPgaAppliedWeights, RBC_HERITAGE_WEIGHTS, storePgaAppliedWeights } from "@/lib/pga/pgaWeights";
 
 export default function PGAModel() {
   const [players, setPlayers] = useState<RawPgaPlayer[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
-  const [draftWeights, setDraftWeights] = useState<PgaWeights>({ ...RBC_HERITAGE_WEIGHTS });
-  const [appliedWeights, setAppliedWeights] = useState<PgaWeights>({ ...RBC_HERITAGE_WEIGHTS });
+  const [draftWeights, setDraftWeights] = useState<PgaWeights>(() => getStoredPgaAppliedWeights());
+  const [appliedWeights, setAppliedWeights] = useState<PgaWeights>(() => getStoredPgaAppliedWeights());
 
   usePageSeo({
     title: "RBC Heritage 2026 PGA Model Picks",
@@ -61,6 +61,10 @@ export default function PGAModel() {
     };
   }, []);
 
+  useEffect(() => {
+    storePgaAppliedWeights(appliedWeights);
+  }, [appliedWeights]);
+
   const rows = useMemo(() => rankPlayersByScore(players, appliedWeights), [players, appliedWeights]);
   const topProjections = useMemo(() => getTopProjections(rows), [rows]);
   const meta = useMemo(() => buildTournamentMeta(players.length), [players.length]);
@@ -88,7 +92,7 @@ export default function PGAModel() {
         <PgaCourseInsightsCard />
       </div>
       <PgaRecalculateBar onApply={applyDraftWeights} onReset={resetToPreset} hasDraftChanges={hasDraftChanges} />
-      <PgaModelTable rows={rows} />
+      <PgaModelTable rows={rows} tableLink={{ href: "/pga/model/table", label: "Full Table View" }} />
       <PgaFooterMeta />
     </div>
   );

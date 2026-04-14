@@ -1,5 +1,7 @@
 import type { PgaWeightDefinition, PgaWeights } from "@/lib/pga/pgaTypes";
 
+export const PGA_MODEL_APPLIED_WEIGHTS_STORAGE_KEY = "pga:model:applied-weights";
+
 export const RBC_HERITAGE_WEIGHTS: PgaWeights = {
   sgApproach: 22,
   par4: 14,
@@ -25,3 +27,26 @@ export const PGA_WEIGHT_DEFINITIONS: PgaWeightDefinition[] = [
   { key: "trendRank", label: "TrendRank", category: "Form", min: 0, max: 20, step: 1, rankKey: "TrendRank" },
   { key: "courseTrueSg", label: "Course True SG", category: "Form", min: 0, max: 15, step: 1 },
 ];
+
+export function getStoredPgaAppliedWeights() {
+  if (typeof window === "undefined") return { ...RBC_HERITAGE_WEIGHTS };
+
+  try {
+    const raw = window.localStorage.getItem(PGA_MODEL_APPLIED_WEIGHTS_STORAGE_KEY);
+    if (!raw) return { ...RBC_HERITAGE_WEIGHTS };
+
+    const parsed = JSON.parse(raw) as Partial<PgaWeights>;
+    return {
+      ...RBC_HERITAGE_WEIGHTS,
+      ...parsed,
+    };
+  } catch {
+    return { ...RBC_HERITAGE_WEIGHTS };
+  }
+}
+
+export function storePgaAppliedWeights(weights: PgaWeights) {
+  if (typeof window === "undefined") return;
+
+  window.localStorage.setItem(PGA_MODEL_APPLIED_WEIGHTS_STORAGE_KEY, JSON.stringify(weights));
+}
