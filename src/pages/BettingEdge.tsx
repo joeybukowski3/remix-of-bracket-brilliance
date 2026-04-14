@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpDown, ChevronDown, Clock } from "lucide-react";
+import SiteShell from "@/components/layout/SiteShell";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
-import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import TeamLogo from "@/components/TeamLogo";
 import { Badge } from "@/components/ui/badge";
@@ -1152,18 +1152,17 @@ export default function BettingEdge() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteNav />
-      <div className="container mx-auto space-y-5 px-4 py-6">
+    <SiteShell>
+      <div className="site-container space-y-5 py-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Betting Edge</h1>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+          <h1 className="page-title text-foreground">Betting Edge</h1>
+          <p className="mt-3 max-w-3xl page-copy text-sm">
             Compare model probabilities against live Vegas implied odds across all current matchups. Adjust sliders and
             presets to see the board reorder in real time.
           </p>
         </div>
 
-        <section className="sticky top-[73px] z-40 rounded-2xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur">
+        <section className="surface-card sticky top-[73px] z-40 p-3 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Tabs value={selectedPreset} onValueChange={(value) => applyPreset(value as "default" | "elite")}>
@@ -1207,7 +1206,7 @@ export default function BettingEdge() {
         </section>
 
         {/* Page-level tab bar */}
-        <div className="rounded-2xl border border-border bg-card/95 p-1 shadow-sm">
+        <div className="surface-card p-1">
           <Tabs value={pageTab} onValueChange={(v) => setPageTab(v as typeof pageTab)}>
             <TabsList className="h-auto w-full rounded-xl bg-transparent p-0">
               <TabsTrigger value="edge-board" className="flex-1">Edge Board</TabsTrigger>
@@ -1319,6 +1318,6 @@ export default function BettingEdge() {
 
         <SeoFooterBlock />
       </div>
-    </div>
+    </SiteShell>
   );
 }

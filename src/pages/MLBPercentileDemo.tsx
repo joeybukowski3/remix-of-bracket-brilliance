@@ -1,4 +1,4 @@
-import SiteNav from "@/components/SiteNav";
+import SiteShell from "@/components/layout/SiteShell";
 import { useMLBPercentilesSample } from "@/hooks/useMLBPercentilesSample";
 
 export default function MLBPercentileDemo() {
@@ -7,10 +7,9 @@ export default function MLBPercentileDemo() {
   const players = data?.players ?? [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteNav />
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        <h1 className="text-xl font-bold text-foreground">MLB Percentile Styling Demo</h1>
+    <SiteShell>
+      <div className="site-container site-stack py-6">
+        <h1 className="text-2xl font-semibold text-foreground">MLB Percentile Styling Demo</h1>
         <p className="text-sm text-muted-foreground max-w-xl">
           This demo uses a static JSON sample to show how Statcast-style percentiles will render with color coding.
         </p>
@@ -21,7 +20,7 @@ export default function MLBPercentileDemo() {
         {!isLoading && !error && players.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2">
             {players.map((p) => (
-              <div key={p.id} className="bg-card border border-border rounded-lg p-4 space-y-2">
+              <div key={p.id} className="surface-card space-y-2 p-4">
                 <div className="flex items-baseline justify-between">
                   <div>
                     <h2 className="text-sm font-bold text-foreground">{p.name}</h2>
@@ -64,6 +63,6 @@ export default function MLBPercentileDemo() {
           </div>
         )}
       </div>
-    </div>
+    </SiteShell>
   );
 }

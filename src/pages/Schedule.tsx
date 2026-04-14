@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowUpDown, Calendar, ChevronLeft, ChevronRight, Clock, Tv } from "lucide-react";
+import SiteShell from "@/components/layout/SiteShell";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
-import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import MatchupAnglesList from "@/components/MatchupAnglesList";
 import TeamLogo from "@/components/TeamLogo";
@@ -366,27 +366,26 @@ export default function Schedule() {
   const goToToday = () => setSelectedDate(new Date());
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteNav />
-      <div className="container mx-auto px-4 py-6 space-y-6">
+    <SiteShell>
+      <div className="site-container site-stack py-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">NCAA Game Analysis &amp; Daily Matchup Breakdown</h1>
-          <p className="text-muted-foreground mt-1">Live schedule with full matchup coverage across the visible NCAA slate.</p>
-          <p className="text-sm text-muted-foreground mt-2 max-w-3xl">
+          <h1 className="page-title text-foreground">NCAA Game Analysis &amp; Daily Matchup Breakdown</h1>
+          <p className="page-copy mt-2">Live schedule with full matchup coverage across the visible NCAA slate.</p>
+          <p className="page-copy mt-3 max-w-3xl text-sm">
             Review live and upcoming NCAA basketball games with schedule context, team strength indicators, advanced
             efficiency metrics, and matchup-specific angles that help explain the current slate.
           </p>
         </div>
 
         <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+          <div className="surface-card-muted">
             <h2 className="text-lg font-semibold text-foreground">NCAA Analytics for the Daily Slate</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Surface daily NCAA analysis, team strength signals, and advanced stats for upcoming games without relying
               on charts alone.
             </p>
           </div>
-          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+          <div className="surface-card-muted">
             <h2 className="text-lg font-semibold text-foreground">Matchup Breakdown and Team Metrics</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Every available game card includes crawlable matchup text, team metrics, and quick-glance analysis for
@@ -499,6 +498,6 @@ export default function Schedule() {
         )}
         <SeoFooterBlock />
       </div>
-    </div>
+    </SiteShell>
   );
 }

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import SiteShell from "@/components/layout/SiteShell";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
-import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import RankingsTable from "@/components/RankingsTable";
 import {
@@ -50,15 +50,14 @@ export default function Rankings() {
   const resetWeights = () => setWeights(DEFAULT_STAT_WEIGHTS);
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteNav />
-      <div className="container mx-auto space-y-6 px-4 py-6">
+    <SiteShell>
+      <div className="site-container site-stack py-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">NCAA Basketball Analytics &amp; Custom Rankings</h1>
-          <p className="mt-1 text-muted-foreground">
+          <h1 className="page-title text-foreground">NCAA Basketball Analytics &amp; Custom Rankings</h1>
+          <p className="mt-2 page-copy">
             Build custom NCAA power rankings with advanced metrics, model weights, and tournament-focused team analysis.
           </p>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+          <p className="mt-3 max-w-3xl page-copy text-sm">
             Joe Knows Ball combines NCAA analytics, team breakdowns, and March Madness analysis into one rankings tool
             so you can compare the full Division I landscape or isolate the tournament field.
           </p>
@@ -76,14 +75,14 @@ export default function Rankings() {
         </div>
 
         <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+          <div className="surface-card-muted">
             <h2 className="text-lg font-semibold text-foreground">Advanced NCAA Team Metrics</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Re-rank teams using offense rating, defense rating, strength of schedule, pace, shooting, and rebounding
               signals that matter in NCAA basketball analytics.
             </p>
           </div>
-          <div className="rounded-2xl border border-border bg-card/90 p-4 shadow-sm">
+          <div className="surface-card-muted">
             <h2 className="text-lg font-semibold text-foreground">Custom NCAA Power Rankings</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Switch between all teams and the tournament field, adjust custom metrics, and create your own NCAA model
@@ -140,7 +139,7 @@ export default function Rankings() {
         {showSliders ? <StatSliders weights={weights} onWeightChange={handleWeightChange} /> : null}
 
         {showModelAdjSliders && (
-          <div className="rounded-xl border border-border bg-card/90 p-4 space-y-4">
+          <div className="surface-card space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-1">Resume &amp; Home Regression Model Adjustments</h3>
               <p className="text-xs text-muted-foreground">
@@ -206,6 +205,6 @@ export default function Rankings() {
 
         <SeoFooterBlock />
       </div>
-    </div>
+    </SiteShell>
   );
 }

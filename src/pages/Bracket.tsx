@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart2, Copy, Info, RefreshCw, Save, Share2, SlidersHorizontal, Trash2 } from "lucide-react";
 import RegionalRankingsTable from "@/components/bracket/RegionalRankingsTable";
 import BracketMatchupModal from "@/components/bracket/BracketMatchupModal";
+import SiteShell from "@/components/layout/SiteShell";
 import SeoFooterBlock from "@/components/SeoFooterBlock";
-import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
 import TeamLogo from "@/components/TeamLogo";
 import { Badge } from "@/components/ui/badge";
@@ -387,21 +387,20 @@ export default function Bracket() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteNav />
-      <div className="container mx-auto space-y-6 px-4 py-6 pb-28">
-        <section className="rounded-3xl border border-white/10 bg-card/95 p-5 shadow-[0_20px_40px_hsl(var(--background)/0.24)]">
+    <SiteShell>
+      <div className="site-container site-stack py-6 pb-28">
+        <section className="surface-card">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
-              <h1 className="text-3xl font-bold text-foreground">{bracketTitle}</h1>
-              <p className="mt-2 text-base text-foreground/90">{bracketIntro}</p>
+              <h1 className="page-title text-foreground">{bracketTitle}</h1>
+              <p className="mt-3 text-base text-foreground/90">{bracketIntro}</p>
               <p className="mt-2 text-sm text-muted-foreground">{bracketSubcopy}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={sourceConfig.mode === "live" ? "default" : "secondary"} className="border-white/10">
+              <Badge variant={sourceConfig.mode === "live" ? "default" : "secondary"}>
                 {officialBracketLive ? "Official 2026 bracket live" : "2026 bracket source loading"}
               </Badge>
-              <Badge variant="outline" className="max-w-xs border-white/10 bg-background/55 text-foreground">
+              <Badge variant="outline" className="max-w-xs bg-background/55 text-foreground">
                 {sourceConfig.sourceLabel}
               </Badge>
             </div>
@@ -416,14 +415,14 @@ export default function Bracket() {
           </TabsList>
           <TabsContent value="builder" className="space-y-5">
             <section className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-card/95 p-4 shadow-[0_12px_30px_hsl(var(--background)/0.2)]">
+              <div className="surface-card-muted">
                 <h2 className="text-lg font-semibold text-foreground">March Madness Bracket Breakdown</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Use tournament analytics, team power ratings, and region-level projections to compare how the bracket
                   is shaping up before you finalize picks.
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-card/95 p-4 shadow-[0_12px_30px_hsl(var(--background)/0.2)]">
+              <div className="surface-card-muted">
                 <h2 className="text-lg font-semibold text-foreground">Tournament Path Difficulty Analysis</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Every region ranking includes path difficulty context so you can spot favorable routes, brutal draws,
@@ -1020,6 +1019,6 @@ export default function Bracket() {
           setAnalyzeGame(null);
         }}
       />
-    </div>
+    </SiteShell>
   );
 }

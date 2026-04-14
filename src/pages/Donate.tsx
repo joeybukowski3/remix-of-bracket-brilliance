@@ -1,4 +1,4 @@
-import SiteNav from "@/components/SiteNav";
+import SiteShell from "@/components/layout/SiteShell";
 import { Button } from "@/components/ui/button";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
@@ -13,11 +13,10 @@ export default function Donate() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteNav />
-      <main className="container mx-auto px-4 py-8">
-        <section className="mx-auto max-w-3xl rounded-3xl border border-border bg-card/95 p-6 shadow-sm sm:p-8">
-          <h1 className="text-3xl font-bold text-foreground">Support Joe Knows Ball</h1>
+    <SiteShell>
+      <main className="site-container py-8">
+        <section className="surface-card mx-auto max-w-3xl sm:p-8">
+          <h1 className="page-title text-foreground">Support Joe Knows Ball</h1>
           <div className="mt-4 space-y-4 text-sm leading-7 text-muted-foreground sm:text-base">
             <p>Joe Knows Ball was built to be a free tool for analytics-minded fans.</p>
             <p>
@@ -43,6 +42,6 @@ export default function Donate() {
           </div>
         </section>
       </main>
-    </div>
+    </SiteShell>
   );
 }

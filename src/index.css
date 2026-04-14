@@ -69,6 +69,38 @@
 }
 
 @layer components {
+  .site-page {
+    @apply min-h-screen bg-background text-foreground;
+  }
+
+  .site-container {
+    @apply mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8;
+  }
+
+  .site-stack {
+    @apply space-y-6 md:space-y-8;
+  }
+
+  .surface-card {
+    @apply rounded-[30px] bg-card p-5 shadow-[0_18px_40px_hsl(var(--foreground)/0.05)] md:p-6;
+  }
+
+  .surface-card-muted {
+    @apply rounded-[24px] bg-secondary/55 p-4;
+  }
+
+  .eyebrow-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground;
+  }
+
+  .page-title {
+    @apply text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl lg:text-5xl;
+  }
+
+  .page-copy {
+    @apply text-sm leading-7 text-muted-foreground sm:text-base;
+  }
+
   .stat-slider-track {
     @apply h-2 rounded-full bg-muted;
   }

@@ -1,19 +1,18 @@
 import { useNavigate } from "react-router-dom";
-import SiteNav from "@/components/SiteNav";
+import SiteShell from "@/components/layout/SiteShell";
 import { MLB_TEAMS } from "@/data/mlb-teams";
 
 export default function MLB() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <SiteNav />
-      <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-12">
-        <div className="inline-flex w-fit items-center rounded-full border border-border bg-card px-3 py-1 text-sm font-semibold text-primary">
+    <SiteShell>
+      <div className="site-container flex flex-col gap-6 py-12">
+        <div className="inline-flex w-fit items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
           MLB is live next
         </div>
         <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground">MLB tools are the priority build.</h1>
+          <h1 className="page-title max-w-3xl text-foreground">MLB tools are the priority build.</h1>
           <p className="mt-3 max-w-2xl text-base leading-8 text-muted-foreground">
             Home run props, hits props, strikeout props, matchup analysis, and Statcast-powered recommendations are the
             next modules going live in Joe Knows Ball.
@@ -25,8 +24,8 @@ export default function MLB() {
             ["Focus 2", "Hits + Strikeouts", "Contact quality, lineup spot, leash, and swing-and-miss indicators."],
             ["Focus 3", "Workflow + UX", "Faster slate review, cleaner ranking views, and sharper bet surfacing."],
           ].map(([eyebrow, title, body]) => (
-            <div key={title} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <div className="text-sm font-semibold text-primary">{eyebrow}</div>
+            <div key={title} className="surface-card-muted">
+              <div className="eyebrow-label text-primary/80">{eyebrow}</div>
               <div className="mt-2 text-lg font-semibold text-foreground">{title}</div>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">{body}</p>
             </div>
@@ -71,6 +70,6 @@ export default function MLB() {
           </button>
         </div>
       </div>
-    </div>
+    </SiteShell>
   );
 }
