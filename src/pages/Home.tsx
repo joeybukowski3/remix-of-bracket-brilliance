@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import SiteNav from "@/components/SiteNav";
 
 const sports = [
   {
@@ -8,8 +9,8 @@ const sports = [
     active: true,
     external: true,
     logoSrc: "/logos/mlb.svg",
-    logoBg: "radial-gradient(circle at top, rgba(34, 94, 168, 0.45), rgba(4, 30, 66, 0.98))",
-    logoBorder: "#E31937",
+    logoBg: "linear-gradient(180deg, rgba(59,110,165,0.12), rgba(59,110,165,0.04))",
+    logoBorder: "#BFD4E7",
     desc: "HR prop analyzer, daily slate matchups, and Statcast-powered recommendations.",
   },
   {
@@ -18,8 +19,8 @@ const sports = [
     route: "/ncaa",
     active: true,
     logoSrc: "/logos/ncaa.svg",
-    logoBg: "radial-gradient(circle at top, rgba(41, 98, 176, 0.42), rgba(26, 58, 107, 0.96))",
-    logoBorder: "#F97316",
+    logoBg: "linear-gradient(180deg, rgba(76,111,255,0.12), rgba(76,111,255,0.04))",
+    logoBorder: "#CAD5FF",
     desc: "Custom power rankings, matchup analysis, and March Madness bracket tools.",
   },
   {
@@ -28,8 +29,8 @@ const sports = [
     route: null,
     active: false,
     logoSrc: "/logos/nfl.svg",
-    logoBg: "radial-gradient(circle at top, rgba(1, 51, 105, 0.42), rgba(7, 16, 31, 0.96))",
-    logoBorder: "#D50A0A",
+    logoBg: "linear-gradient(180deg, rgba(120,144,156,0.16), rgba(120,144,156,0.05))",
+    logoBorder: "#D7DEE5",
     desc: "Game analysis, line movement, player props, and weekly picks.",
   },
   {
@@ -38,25 +39,25 @@ const sports = [
     route: null,
     active: false,
     logoSrc: "/logos/nba.png",
-    logoBg: "radial-gradient(circle at top, rgba(29, 66, 138, 0.42), rgba(14, 20, 32, 0.96))",
-    logoBorder: "#C9082A",
+    logoBg: "linear-gradient(180deg, rgba(120,144,156,0.16), rgba(120,144,156,0.05))",
+    logoBorder: "#D7DEE5",
     desc: "Player prop tools, pace/efficiency breakdowns, and DFS lineup edge.",
   },
   {
     id: "pga",
-    label: "PGA Tour",
-    route: "/pga",
+    label: "PGA Picks",
+    route: "/rbc-heritage-2026-picks",
     active: true,
     logoSrc: "/logos/pga.svg",
-    logoBg: "radial-gradient(circle at top, rgba(26, 92, 56, 0.42), rgba(9, 24, 18, 0.96))",
-    logoBorder: "#C9A227",
-    desc: "Course fit analysis, SG breakdowns, and tournament prop edge.",
+    logoBg: "linear-gradient(180deg, rgba(60,140,106,0.14), rgba(60,140,106,0.04))",
+    logoBorder: "#C9E4D8",
+    desc: "RBC Heritage best bets, PGA betting picks today, top 40 parlays, and course-fit model analysis.",
   },
 ] as const;
 
 const LockIcon = () => (
   <svg
-    style={{ position: "absolute", top: 16, right: 16, width: 18, height: 18, color: "#6b7280" }}
+    style={{ position: "absolute", top: 16, right: 16, width: 18, height: 18, color: "#94a3b8" }}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -75,80 +76,14 @@ export default function Home() {
       style={{
         minHeight: "100vh",
         background:
-          "radial-gradient(circle at top, rgba(249,115,22,0.12), transparent 28%), linear-gradient(180deg, #0d0d0d 0%, #141414 45%, #111111 100%)",
+          "radial-gradient(circle at top, rgba(76,111,255,0.08), transparent 28%), linear-gradient(180deg, #f8fafc 0%, #f5f7fa 45%, #fafaf9 100%)",
         fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-        color: "#fff",
+        color: "#1f2937",
       }}
     >
-      <nav
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          backdropFilter: "blur(12px)",
-          background: "rgba(10, 10, 10, 0.86)",
-          padding: "0.9rem 2rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-          flexWrap: "wrap",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, fontSize: 18 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              background: "linear-gradient(135deg, #F97316, #fb923c)",
-              borderRadius: 8,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 15,
-              boxShadow: "0 10px 30px rgba(249,115,22,0.28)",
-            }}
-          >
-            🏀
-          </div>
-          Joe Knows Ball
-        </div>
+      <SiteNav />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          {sports.map((sport) => (
-            <button
-              key={`nav-${sport.id}`}
-              type="button"
-              onClick={() => { if (sport.active && sport.route) { if ('external' in sport && sport.external) { window.location.href = sport.route; } else { navigate(sport.route); } } }}
-              aria-label={sport.label}
-              title={sport.label}
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 12,
-                border: `1px solid ${sport.active ? "rgba(249,115,22,0.32)" : "rgba(255,255,255,0.08)"}`,
-                background: sport.logoBg,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-                cursor: sport.active ? "pointer" : "default",
-                opacity: sport.active ? 1 : 0.55,
-                boxShadow: sport.active ? "0 8px 24px rgba(0,0,0,0.2)" : "none",
-              }}
-            >
-              <img
-                src={sport.logoSrc}
-                alt={sport.label}
-                style={{ width: 24, height: 24, objectFit: "contain", display: "block" }}
-              />
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      <section style={{ maxWidth: 1180, margin: "0 auto", padding: "4.5rem 2rem 2rem" }}>
+      <section style={{ maxWidth: 1180, margin: "0 auto", padding: "4rem 1.25rem 1.5rem" }}>
         <div style={{ maxWidth: 760 }}>
           <div
             style={{
@@ -157,11 +92,11 @@ export default function Home() {
               gap: 8,
               padding: "6px 12px",
               borderRadius: 999,
-              border: "1px solid rgba(249,115,22,0.28)",
-              background: "rgba(249,115,22,0.08)",
-              color: "#fdba74",
+              border: "1px solid #dbe4f0",
+              background: "#ffffff",
+              color: "#4c6fff",
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 600,
               letterSpacing: 0.3,
               textTransform: "uppercase",
             }}
@@ -170,22 +105,23 @@ export default function Home() {
           </div>
           <h1
             style={{
-              fontSize: "clamp(2.5rem, 5vw, 4.5rem)",
-              fontWeight: 900,
+              fontSize: "clamp(2.2rem, 5vw, 4rem)",
+              fontWeight: 700,
               margin: "1rem 0 0.85rem",
-              letterSpacing: "-0.05em",
-              lineHeight: 1,
+              letterSpacing: "-0.04em",
+              lineHeight: 1.02,
+              color: "#1f2937",
             }}
           >
-            Betting tools built for <span style={{ color: "#F97316" }}>sharp decisions</span>.
+            Betting tools built for <span style={{ color: "#3b6ea5" }}>clearer decisions</span>.
           </h1>
           <p
             style={{
-              color: "#b3b3b3",
-              fontSize: "clamp(1rem, 1.8vw, 1.1rem)",
+              color: "#667085",
+              fontSize: "clamp(1rem, 1.8vw, 1.08rem)",
               margin: 0,
-              lineHeight: 1.7,
-              maxWidth: 640,
+              lineHeight: 1.8,
+              maxWidth: 680,
             }}
           >
             Jump into sport-specific dashboards for prop analysis, matchup tools, rankings, projections, and workflow
@@ -201,59 +137,64 @@ export default function Home() {
           gap: 22,
           maxWidth: 1180,
           margin: "0 auto",
-          padding: "1rem 2rem 5rem",
+          padding: "1rem 1.25rem 5rem",
         }}
       >
         {sports.map((sport) => (
           <button
             key={sport.id}
             type="button"
-            onClick={() => { if (sport.active && sport.route) { if ('external' in sport && sport.external) { window.location.href = sport.route; } else { navigate(sport.route); } } }}
+            onClick={() => {
+              if (sport.active && sport.route) {
+                if ("external" in sport && sport.external) {
+                  window.location.href = sport.route;
+                } else {
+                  navigate(sport.route);
+                }
+              }
+            }}
             style={{
-              background: "linear-gradient(180deg, rgba(34,34,34,0.98), rgba(24,24,24,0.98))",
-              border: `1px solid ${sport.active ? "rgba(249,115,22,0.45)" : "rgba(255,255,255,0.08)"}`,
-              borderRadius: 20,
-              padding: "1.6rem",
+              background: "#ffffff",
+              border: `1px solid ${sport.active ? "#dbe4f0" : "#e6eaf0"}`,
+              borderRadius: 22,
+              padding: "1.5rem",
               display: "flex",
               flexDirection: "column",
               alignItems: "flex-start",
-              minHeight: 320,
+              minHeight: 300,
               gap: 16,
               position: "relative",
               cursor: sport.active ? "pointer" : "default",
               opacity: sport.active ? 1 : 0.72,
               transition: "transform 0.18s ease, border-color 0.2s ease, box-shadow 0.2s ease",
               textAlign: "left",
-              boxShadow: sport.active ? "0 18px 40px rgba(0,0,0,0.28)" : "0 14px 30px rgba(0,0,0,0.18)",
+              boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
             }}
             onMouseEnter={(e) => {
               if (sport.active) {
-                e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.borderColor = "rgba(249,115,22,0.8)";
-                e.currentTarget.style.boxShadow = "0 22px 44px rgba(0,0,0,0.34)";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.borderColor = "#bfd4e7";
+                e.currentTarget.style.boxShadow = "0 14px 30px rgba(15, 23, 42, 0.09)";
               }
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.borderColor = sport.active ? "rgba(249,115,22,0.45)" : "rgba(255,255,255,0.08)";
-              e.currentTarget.style.boxShadow = sport.active
-                ? "0 18px 40px rgba(0,0,0,0.28)"
-                : "0 14px 30px rgba(0,0,0,0.18)";
+              e.currentTarget.style.borderColor = sport.active ? "#dbe4f0" : "#e6eaf0";
+              e.currentTarget.style.boxShadow = "0 8px 24px rgba(15, 23, 42, 0.06)";
             }}
           >
             {!sport.active && <LockIcon />}
 
             <div
               style={{
-                width: 86,
-                height: 86,
+                width: 84,
+                height: 84,
                 borderRadius: 22,
                 background: sport.logoBg,
                 border: `1px solid ${sport.logoBorder}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
               }}
             >
               <img
@@ -264,41 +205,41 @@ export default function Home() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
-              <div style={{ fontSize: "1.18rem", fontWeight: 800, letterSpacing: "-0.02em" }}>{sport.label}</div>
+              <div style={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "-0.02em", color: "#24303f" }}>{sport.label}</div>
 
               {sport.active ? (
                 <span
                   style={{
                     width: "fit-content",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     padding: "5px 11px",
                     borderRadius: 999,
-                    background: "rgba(249,115,22,0.16)",
-                    color: "#fb923c",
-                    border: "1px solid rgba(249,115,22,0.35)",
+                    background: "#eef4ff",
+                    color: "#3b6ea5",
+                    border: "1px solid #d7e4f3",
                   }}
                 >
-                  Free for a Limited Time
+                  Available Now
                 </span>
               ) : (
                 <span
                   style={{
                     width: "fit-content",
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     padding: "5px 11px",
                     borderRadius: 999,
-                    background: "rgba(163,163,163,0.1)",
-                    color: "#a3a3a3",
-                    border: "1px solid rgba(163,163,163,0.2)",
+                    background: "#f8fafc",
+                    color: "#667085",
+                    border: "1px solid #e6eaf0",
                   }}
                 >
                   Subscription Required
                 </span>
               )}
 
-              <p style={{ fontSize: "0.88rem", color: "#9ca3af", margin: 0, lineHeight: 1.65 }}>{sport.desc}</p>
+              <p style={{ fontSize: "0.92rem", color: "#667085", margin: 0, lineHeight: 1.7 }}>{sport.desc}</p>
             </div>
 
             <div
@@ -307,10 +248,10 @@ export default function Home() {
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                color: sport.active ? "#f5f5f5" : "#737373",
+                color: sport.active ? "#24303f" : "#94a3b8",
                 fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: 0.2,
+                fontWeight: 600,
+                letterSpacing: 0.1,
               }}
             >
               {sport.active ? "Open tools" : "Locked"}

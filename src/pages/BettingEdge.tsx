@@ -93,9 +93,9 @@ function getDateGroupLabel(dateStr: string): string {
 
 function getEdgeClass(points: number | null) {
   const intensity = getModelEdgeIntensity(points);
-  if (intensity === "high") return "border-[#7CFF6B] bg-[#7CFF6B]/20 text-[#D8FFD2] shadow-[0_0_18px_rgba(124,255,107,0.35)]";
-  if (intensity === "medium") return "border-[#6AF15A] bg-[#6AF15A]/14 text-[#D8FFD2] shadow-[0_0_12px_rgba(106,241,90,0.22)]";
-  if (intensity === "low") return "border-[#59D84A] bg-[#59D84A]/10 text-[#D8FFD2]";
+  if (intensity === "high") return "border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success)/0.12)] text-[hsl(var(--success))]";
+  if (intensity === "medium") return "border-primary/20 bg-primary/10 text-primary";
+  if (intensity === "low") return "border-border bg-secondary/70 text-foreground";
   return "border-border bg-secondary/60 text-muted-foreground";
 }
 
@@ -150,13 +150,13 @@ function sortEntries(
 function InterpretationBadge({ delta }: { delta: number }) {
   if (delta <= -5)
     return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/25">
+      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border border-primary/20 bg-primary/10 text-primary">
         🚨 Model Strong Lean
       </span>
     );
   if (delta < 0)
     return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/25">
+      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border border-primary/15 bg-primary/5 text-primary">
         ✅ Model Slight Lean
       </span>
     );
@@ -168,12 +168,12 @@ function InterpretationBadge({ delta }: { delta: number }) {
     );
   if (delta <= 4)
     return (
-      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-green-500/15 text-green-400 border border-green-500/25">
+      <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border border-[hsl(var(--success)/0.2)] bg-[hsl(var(--success)/0.08)] text-[hsl(var(--success))]">
         ⚠️ Vegas Slight Lean
       </span>
     );
   return (
-    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-yellow-400/15 text-yellow-400 border border-yellow-400/25">
+    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border border-amber-200 bg-amber-50 text-amber-700">
       🔥 Vegas Strong Lean
     </span>
   );

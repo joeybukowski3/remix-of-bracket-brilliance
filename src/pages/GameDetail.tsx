@@ -32,15 +32,15 @@ function percentileToClass(p: number, higherIsBetter: boolean) {
   // p is 0–100; for "lower is better" stats, flip the scale so high percentiles are still good
   const centered = higherIsBetter ? p : 100 - p;
 
-  if (centered >= 90) return "bg-red-900/70 text-red-50";
-  if (centered >= 75) return "bg-red-800/60 text-red-50";
-  if (centered >= 60) return "bg-red-700/40 text-red-100";
-  if (centered >= 50) return "bg-red-600/30 text-red-100";
+  if (centered >= 90) return "bg-rose-100 text-rose-700";
+  if (centered >= 75) return "bg-rose-50 text-rose-600";
+  if (centered >= 60) return "bg-amber-50 text-amber-700";
+  if (centered >= 50) return "bg-slate-100 text-slate-700";
 
-  if (centered >= 40) return "bg-slate-800/40 text-slate-100";
-  if (centered >= 25) return "bg-blue-900/50 text-blue-100";
-  if (centered >= 10) return "bg-blue-950/60 text-blue-100";
-  return "bg-blue-950/80 text-blue-50";
+  if (centered >= 40) return "bg-slate-100 text-slate-600";
+  if (centered >= 25) return "bg-blue-50 text-blue-700";
+  if (centered >= 10) return "bg-blue-100 text-blue-700";
+  return "bg-primary/10 text-primary";
 }
 
 function StatCompareRow({

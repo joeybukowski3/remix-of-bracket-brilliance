@@ -8,9 +8,9 @@ import {
 
 function getGlowClass(edgePoints: number) {
   const intensity = getModelEdgeIntensity(edgePoints);
-  if (intensity === "high") return "border-[#7CFF6B] bg-[#7CFF6B]/20 text-[#D8FFD2] shadow-[0_0_18px_rgba(124,255,107,0.45)]";
-  if (intensity === "medium") return "border-[#6AF15A] bg-[#6AF15A]/15 text-[#D8FFD2] shadow-[0_0_14px_rgba(106,241,90,0.28)]";
-  return "border-[#59D84A] bg-[#59D84A]/10 text-[#D8FFD2]";
+  if (intensity === "high") return "border-[hsl(var(--success)/0.25)] bg-[hsl(var(--success)/0.12)] text-[hsl(var(--success))]";
+  if (intensity === "medium") return "border-primary/20 bg-primary/10 text-primary";
+  return "border-border bg-secondary text-muted-foreground";
 }
 
 export default function ModelEdgePanel({
@@ -76,14 +76,14 @@ export default function ModelEdgePanel({
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Model Edge</p>
           {vegas && vegas.edge.team !== "even" && vegas.edge.points !== null ? (
             <>
-              <div className={`mt-2 inline-flex rounded-full border px-3 py-1 text-sm font-bold ${getGlowClass(vegas.edge.points)}`}>
+              <div className={`mt-2 inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${getGlowClass(vegas.edge.points)}`}>
                 {vegas.edge.team === "teamA" ? teamAName : teamBName} {vegas.edge.points > 0 ? "+" : ""}
                 {vegas.edge.points.toFixed(1)}%
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-background/80">
                 <div
-                  className="h-full rounded-full bg-[#7CFF6B] transition-all"
-                  style={{ width: `${Math.min(100, Math.max(12, vegas.edge.points * 10))}%`, boxShadow: "0 0 14px rgba(124,255,107,0.45)" }}
+                  className="h-full rounded-full bg-[hsl(var(--success))] transition-all"
+                  style={{ width: `${Math.min(100, Math.max(12, vegas.edge.points * 10))}%` }}
                 />
               </div>
             </>

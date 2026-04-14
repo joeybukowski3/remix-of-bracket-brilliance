@@ -37,15 +37,15 @@ export default function MLBPercentileDemo() {
 
                     // Reuse the same color logic as GameDetail's percentileToClass
                     const centered = key === "kPct" ? 100 - pct : pct; // for K% lower is better
-                    let bg = "bg-slate-800/40 text-slate-100";
-                    if (centered >= 90) bg = "bg-red-900/70 text-red-50";
-                    else if (centered >= 75) bg = "bg-red-800/60 text-red-50";
-                    else if (centered >= 60) bg = "bg-red-700/40 text-red-100";
-                    else if (centered >= 50) bg = "bg-red-600/30 text-red-100";
-                    else if (centered >= 40) bg = "bg-slate-800/40 text-slate-100";
-                    else if (centered >= 25) bg = "bg-blue-900/50 text-blue-100";
-                    else if (centered >= 10) bg = "bg-blue-950/60 text-blue-100";
-                    else bg = "bg-blue-950/80 text-blue-50";
+                    let bg = "bg-slate-100 text-slate-600";
+                    if (centered >= 90) bg = "bg-rose-100 text-rose-700";
+                    else if (centered >= 75) bg = "bg-rose-50 text-rose-600";
+                    else if (centered >= 60) bg = "bg-amber-50 text-amber-700";
+                    else if (centered >= 50) bg = "bg-slate-100 text-slate-700";
+                    else if (centered >= 40) bg = "bg-slate-100 text-slate-600";
+                    else if (centered >= 25) bg = "bg-blue-50 text-blue-700";
+                    else if (centered >= 10) bg = "bg-blue-100 text-blue-700";
+                    else bg = "bg-primary/10 text-primary";
 
                     return (
                       <div key={key} className={`flex items-center justify-between rounded-md px-2 py-1 ${bg}`}>
