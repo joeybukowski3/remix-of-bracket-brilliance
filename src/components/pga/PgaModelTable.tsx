@@ -2,6 +2,7 @@ import { useState } from "react";
 import PgaHeatmapCell from "@/components/pga/PgaHeatmapCell";
 import PgaModelMobileCard from "@/components/pga/PgaModelMobileCard";
 import { areWeightsEqual, getWeightTotal } from "@/lib/pga/pgaModelHelpers";
+import { getRankColor, RANK_COLOR_LEGEND } from "@/lib/pga/rankColors";
 import { PGA_PRESETS, PGA_WEIGHT_DEFINITIONS, RBC_HERITAGE_WEIGHTS, type PgaPresetKey } from "@/lib/pga/pgaWeights";
 import type { PlayerModelRow, PgaWeights } from "@/lib/pga/pgaTypes";
 
@@ -379,6 +380,20 @@ export default function PgaModelTable({
 
       {rows.length > 0 ? (
         <div className="hidden md:block">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/40 px-4 py-3 text-[12px] text-muted-foreground sm:px-5">
+            {RANK_COLOR_LEGEND.map((tier) => (
+              <div key={tier.label} className="inline-flex items-center gap-2">
+                <span
+                  className="inline-block h-[18px] w-[32px] rounded"
+                  style={{
+                    background: tier.bg,
+                    border: tier.border ?? "none",
+                  }}
+                />
+                <span>{tier.label}</span>
+              </div>
+            ))}
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-xs" style={{ minWidth: "1100px" }}>
               <thead>
@@ -475,6 +490,7 @@ export default function PgaModelTable({
 
                       {visibleCols.map((col, i) => {
                         const rank = row[col.key as keyof PlayerModelRow] as number | null;
+                        const { bg, text } = getRankColor(rank, rows.length);
                         return (
                           <td
                             key={col.key}
@@ -482,11 +498,21 @@ export default function PgaModelTable({
                               i === 0 ? "border-l border-sky-100/60 dark:border-sky-900/30" : ""
                             } ${i === visibleCols.length - 1 ? "border-r border-sky-100/60 dark:border-sky-900/30" : ""}`}
                           >
-                            <PgaHeatmapCell
-                              value={rank}
-                              maxRank={maxRank}
-                              className="min-w-[2.65rem] rounded-lg px-2 py-1 text-[11px] font-medium"
-                            />
+                            <span
+                              style={{
+                                background: bg,
+                                color: text,
+                                borderRadius: "5px",
+                                display: "inline-block",
+                                minWidth: "32px",
+                                padding: "3px 6px",
+                                fontWeight: 500,
+                                fontSize: "12px",
+                                textAlign: "center",
+                              }}
+                            >
+                              {rank ?? "—"}
+                            </span>
                           </td>
                         );
                       })}

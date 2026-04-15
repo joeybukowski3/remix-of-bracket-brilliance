@@ -1,5 +1,5 @@
-import PgaHeatmapCell from "@/components/pga/PgaHeatmapCell";
 import { formatCompositeScore } from "@/lib/pga/pgaModelHelpers";
+import { getRankColor } from "@/lib/pga/rankColors";
 import type { PlayerModelRow } from "@/lib/pga/pgaTypes";
 
 const STAT_GROUPS = [
@@ -111,17 +111,28 @@ export default function PgaModelMobileCard({
       <div className="mt-3 grid grid-cols-4 gap-1.5">
         {STAT_GROUPS.map((stat) => {
           const rank = player[stat.key as keyof PlayerModelRow] as number | null;
+          const { bg, text } = getRankColor(rank, maxRank);
           return (
             <div key={stat.key} className="min-w-0 rounded-[12px] bg-secondary/30 px-2 py-2 text-center">
               <p className="text-[8px] font-semibold uppercase leading-tight tracking-[0.08em] text-muted-foreground/80">
                 {stat.label}
               </p>
               <div className="mt-1 flex justify-center">
-                <PgaHeatmapCell
-                  value={rank}
-                  maxRank={maxRank}
-                  className="min-w-0 rounded-[10px] px-2 py-1 text-xs font-semibold"
-                />
+                <span
+                  style={{
+                    background: bg,
+                    color: text,
+                    borderRadius: "5px",
+                    display: "inline-block",
+                    minWidth: "32px",
+                    padding: "3px 6px",
+                    fontWeight: 500,
+                    fontSize: "12px",
+                    textAlign: "center",
+                  }}
+                >
+                  {rank ?? "—"}
+                </span>
               </div>
             </div>
           );
