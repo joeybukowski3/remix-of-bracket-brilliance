@@ -26,6 +26,7 @@ import {
   storePgaAppliedWeights,
   storePgaActivePreset,
 } from "@/lib/pga/pgaWeights";
+import { CURRENT_TOURNAMENT_PATH } from "@/lib/seo/pgaSeo";
 
 export default function PGAModel() {
   const initialWeights = useMemo(() => getStoredPgaAppliedWeights(), []);
@@ -119,7 +120,7 @@ export default function PGAModel() {
       <SiteShell>
         <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-8">
           <div className="rounded-[32px] bg-card p-8 shadow-[0_18px_40px_hsl(var(--foreground)/0.05)]">
-            <Link to="/pga/rbc-heritage-2026-picks" className="text-sm text-primary transition hover:text-primary/80">RBC Heritage best bets</Link>
+            <Link to={CURRENT_TOURNAMENT_PATH} className="text-sm text-primary transition hover:text-primary/80">PGA best bets</Link>
             <h1 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-foreground">PGA Model Dashboard</h1>
             <p className="mt-2 text-sm text-muted-foreground">Loading RBC Heritage model data...</p>
           </div>
@@ -133,7 +134,7 @@ export default function PGAModel() {
       <SiteShell>
         <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-8">
           <div className="rounded-[32px] bg-card p-8 shadow-[0_18px_40px_hsl(var(--foreground)/0.05)]">
-            <Link to="/pga/rbc-heritage-2026-picks" className="text-sm text-primary transition hover:text-primary/80">RBC Heritage best bets</Link>
+            <Link to={CURRENT_TOURNAMENT_PATH} className="text-sm text-primary transition hover:text-primary/80">PGA best bets</Link>
             <h1 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-foreground">PGA Model Dashboard</h1>
             <p className="mt-2 text-sm text-destructive">Unable to load rbc_data.json.</p>
             <p className="mt-1 text-sm text-muted-foreground">{errorMessage}</p>

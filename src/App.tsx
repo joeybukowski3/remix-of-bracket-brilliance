@@ -16,6 +16,7 @@ import TeamPage from "./pages/TeamPage";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
+import PGAWellsFargo2026 from "./pages/PGAWellsFargo2026";
 import PGAModel from "./pages/PGAModel";
 import PGAModelTableView from "./pages/PGAModelTableView";
 import PGATop40Picks from "./pages/PGATop40Picks";
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<PGA />} />
           <Route path="/pga/rbc-heritage-2026-picks" element={<PGA />} />
+          <Route path="/pga/wells-fargo-championship-2026-picks" element={<PGAWellsFargo2026 />} />
           <Route path="/rbc-heritage-2026-picks" element={<PGA />} />
           <Route path="/pga/top-40-golf-picks" element={<PGATop40Picks />} />
           <Route path="/pga/model" element={<PGAModel />} />

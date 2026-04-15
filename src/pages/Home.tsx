@@ -47,7 +47,7 @@ const sports = [
     active: true,
     logoSrc: "/logos/pga.svg",
     tone: "success",
-    desc: "RBC Heritage best bets, PGA betting picks today, top 40 parlays, and course-fit model analysis.",
+    desc: "Latest tournament picks, Top 40 golf picks, golf betting model analysis, and weekly PGA best bets.",
   },
 ] as const;
 
@@ -80,10 +80,10 @@ export default function Home() {
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <a href="/pga/rbc-heritage-2026-picks" className="inline-flex items-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">
-                  PGA Picks
+                  latest tournament picks
                 </a>
                 <a href="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-foreground transition hover:bg-accent">
-                  Best Bets Today
+                  Top 40 golf picks
                 </a>
               </div>
             </div>

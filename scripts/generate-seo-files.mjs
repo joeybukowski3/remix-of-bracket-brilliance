@@ -5,6 +5,7 @@ const site = "https://www.joeknowsball.com";
 const pages = [
   { path: "/", changefreq: "daily", priority: "1.0" },
   { path: "/pga/rbc-heritage-2026-picks", changefreq: "daily", priority: "0.95" },
+  { path: "/pga/wells-fargo-championship-2026-picks", changefreq: "daily", priority: "0.93" },
   { path: "/pga/model", changefreq: "daily", priority: "0.9" },
   { path: "/pga/top-40-golf-picks", changefreq: "weekly", priority: "0.88" },
   { path: "/ncaa", changefreq: "daily", priority: "0.8" },
