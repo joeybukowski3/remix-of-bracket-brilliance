@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import SiteShell from "@/components/layout/SiteShell";
 import { MLB_TEAMS } from "@/data/mlb-teams";
 
@@ -45,7 +46,9 @@ export default function MLB() {
                 className="group flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-3 py-3 transition hover:border-primary/30 hover:bg-secondary"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
-                  <img src={team.logo} alt={team.name} className="h-8 w-8 object-contain transition group-hover:scale-105" />
+                  <div className="transition group-hover:scale-105">
+                    <MlbTeamLogo team={team.short} size={32} />
+                  </div>
                 </div>
                 <span className="text-[0.7rem] font-semibold tracking-wide text-muted-foreground">{team.short}</span>
               </button>

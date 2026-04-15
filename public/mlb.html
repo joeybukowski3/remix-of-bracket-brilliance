@@ -570,6 +570,39 @@
         159: "ari"
       };
 
+      const TEAM_LOGO_URL = {
+        ari: "https://a.espncdn.com/i/teamlogos/mlb/500/ari.png",
+        atl: "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png",
+        ath: "https://a.espncdn.com/i/teamlogos/mlb/500/oak.png",
+        bal: "https://a.espncdn.com/i/teamlogos/mlb/500/bal.png",
+        bos: "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png",
+        chc: "https://a.espncdn.com/i/teamlogos/mlb/500/chc.png",
+        cin: "https://a.espncdn.com/i/teamlogos/mlb/500/cin.png",
+        cle: "https://a.espncdn.com/i/teamlogos/mlb/500/cle.png",
+        col: "https://a.espncdn.com/i/teamlogos/mlb/500/col.png",
+        cws: "https://a.espncdn.com/i/teamlogos/mlb/500/cws.png",
+        det: "https://a.espncdn.com/i/teamlogos/mlb/500/det.png",
+        hou: "https://a.espncdn.com/i/teamlogos/mlb/500/hou.png",
+        kc: "https://a.espncdn.com/i/teamlogos/mlb/500/kc.png",
+        laa: "https://a.espncdn.com/i/teamlogos/mlb/500/laa.png",
+        lad: "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",
+        mia: "https://a.espncdn.com/i/teamlogos/mlb/500/mia.png",
+        mil: "https://a.espncdn.com/i/teamlogos/mlb/500/mil.png",
+        min: "https://a.espncdn.com/i/teamlogos/mlb/500/min.png",
+        nym: "https://a.espncdn.com/i/teamlogos/mlb/500/nym.png",
+        nyy: "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",
+        phi: "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png",
+        pit: "https://a.espncdn.com/i/teamlogos/mlb/500/pit.png",
+        sd: "https://a.espncdn.com/i/teamlogos/mlb/500/sd.png",
+        sea: "https://a.espncdn.com/i/teamlogos/mlb/500/sea.png",
+        sf: "https://a.espncdn.com/i/teamlogos/mlb/500/sf.png",
+        stl: "https://a.espncdn.com/i/teamlogos/mlb/500/stl.png",
+        tb: "https://a.espncdn.com/i/teamlogos/mlb/500/tb.png",
+        tex: "https://a.espncdn.com/i/teamlogos/mlb/500/tex.png",
+        tor: "https://a.espncdn.com/i/teamlogos/mlb/500/tor.png",
+        wsh: "https://a.espncdn.com/i/teamlogos/mlb/500/wsh.png"
+      };
+
       const state = { theme: "light", pendingFetches: 0, renderNonce: 0 };
       window.mlbCache = window.mlbCache || {};
       const appEl = document.getElementById("app");
@@ -698,7 +731,7 @@
 
       function logoUrl(teamId) {
         const abbr = TEAM_LOGO[teamId];
-        return abbr ? "/logos/mlb/" + abbr + ".svg" : "/logos/mlb/generic.svg";
+        return abbr ? TEAM_LOGO_URL[abbr] || "" : "";
       }
 
       function getTheme() {
