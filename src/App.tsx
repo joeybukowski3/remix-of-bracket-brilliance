@@ -13,6 +13,7 @@ import Bracket from "./pages/Bracket";
 import BettingEdge from "./pages/BettingEdge";
 import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
+import MLB from "./pages/MLB";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/betting-edge" element={<BettingEdge />} />
           <Route path="/bracket" element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/mlb" element={<MLB />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<PGA />} />
           <Route path="/pga/rbc-heritage-2026-picks" element={<PGA />} />

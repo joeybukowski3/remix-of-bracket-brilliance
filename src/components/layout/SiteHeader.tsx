@@ -3,18 +3,28 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
 const navItems = [
-  { to: "/pga/rbc-heritage-2026-picks", label: "PGA Picks" },
-  { to: "/pga/model", label: "PGA Model" },
-  { to: "/ncaa", label: "Rankings" },
-  { to: "/schedule", label: "Schedule" },
-  { to: "/betting-edge", label: "Betting" },
+  { to: "/", label: "Home" },
+  { to: "/mlb", label: "MLB" },
+  { to: "/ncaa", label: "NCAA" },
+  { to: "/", label: "NFL" },
+  { to: "/", label: "NBA" },
+  { to: "/pga", label: "PGA" },
 ];
 
-function isActive(pathname: string, to: string) {
-  if (to === "/pga/rbc-heritage-2026-picks") {
-    return pathname === "/pga/rbc-heritage-2026-picks" || pathname === "/rbc-heritage-2026-picks" || pathname === "/pga";
+function isActive(pathname: string, item: { to: string; label: string }) {
+  if (item.label === "Home") {
+    return pathname === "/";
   }
-  return pathname === to || pathname.startsWith(`${to}/`);
+
+  if (item.label === "PGA") {
+    return pathname === "/pga" || pathname.startsWith("/pga/") || pathname === "/rbc-heritage-2026-picks";
+  }
+
+  if (item.label === "NFL" || item.label === "NBA") {
+    return false;
+  }
+
+  return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
 
 export default function SiteHeader() {
@@ -34,10 +44,10 @@ export default function SiteHeader() {
 
         <nav className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => {
-            const active = isActive(location.pathname, item.to);
+            const active = isActive(location.pathname, item);
             return (
               <Link
-                key={item.to}
+                key={`${item.label}-${item.to}`}
                 to={item.to}
                 className={`rounded-full px-4 py-2 text-sm transition ${
                   active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -47,12 +57,6 @@ export default function SiteHeader() {
               </Link>
             );
           })}
-          <Link
-            to="/pga/rbc-heritage-2026-picks"
-            className="ml-2 inline-flex rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-          >
-            View Picks
-          </Link>
         </nav>
 
         <button
@@ -70,10 +74,10 @@ export default function SiteHeader() {
           <div className="rounded-3xl bg-card p-3 shadow-[0_12px_32px_hsl(var(--foreground)/0.05)]">
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => {
-                const active = isActive(location.pathname, item.to);
+                const active = isActive(location.pathname, item);
                 return (
                   <Link
-                    key={item.to}
+                    key={`${item.label}-${item.to}`}
                     to={item.to}
                     className={`rounded-2xl px-4 py-2.5 text-sm transition ${
                       active ? "bg-primary/10 text-primary" : "bg-secondary/70 text-foreground hover:bg-secondary"
@@ -83,9 +87,6 @@ export default function SiteHeader() {
                   </Link>
                 );
               })}
-              <Link to="/pga/rbc-heritage-2026-picks" className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90">
-                View Picks
-              </Link>
             </nav>
           </div>
         </div>
