@@ -1,9 +1,9 @@
-import type { ReactNode } from "react";
+import type { ReactNode, SVGProps } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import SeoJsonLd from "@/components/seo/SeoJsonLd";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import type { PgaTournamentContent } from "@/lib/seo/pgaTournamentContent";
+import type { PgaTournamentBet, PgaTournamentContent } from "@/lib/seo/pgaTournamentContent";
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqSchema } from "@/lib/seo/pgaSeo";
 
 const MODEL_PRESETS = [
@@ -49,13 +49,166 @@ const MODEL_PRESETS = [
   },
 ] as const;
 
-function SectionCard({ title, eyebrow, children }: { title: string; eyebrow?: string; children: ReactNode }) {
+const HERO_SIGNALS = [
+  ["Primary Signals", "Recent form, course history, and weighted stat fit are the biggest model inputs before price is considered."],
+  ["Course Lean", "Each tournament page is weighted for the specific course test rather than using one generic PGA setup."],
+  ["Betting Use", "The output is built to compare expected performance against market pricing and isolate mispriced names for best bets and Top 40 parlays."],
+] as const;
+
+const HERO_STATS = [
+  { value: "83", label: "Players ranked" },
+  { value: "SG: App", label: "Top model signal" },
+  { value: "Par 71", label: "Harbour Town" },
+  { value: "Top 40", label: "Safest bet type" },
+  { value: "4", label: "Preset models" },
+] as const;
+
+const MODEL_FLOW = [
+  "Recent form",
+  "Course history",
+  "Stat profile fit",
+  "Composite score",
+  "Value vs. odds",
+] as const;
+
+const TOP_40_FITS: Record<string, "strong" | "moderate"> = {
+  "Collin Morikawa": "strong",
+  "Patrick Cantlay": "strong",
+  "Matt Fitzpatrick": "strong",
+  "Tommy Fleetwood": "strong",
+  "Daniel Berger": "strong",
+  "Russell Henley": "moderate",
+  "Corey Conners": "moderate",
+  "Si Woo Kim": "moderate",
+};
+
+const PARLAY_CARD_META = [
+  { title: "Target Top 40 markets", icon: BarChartIcon },
+  { title: "Avoid missed-cut risk", icon: ClockIcon },
+  { title: "Focus on course consistency", icon: LineChartIcon },
+  { title: "Model over public perception", icon: ScatterIcon },
+] as const;
+
+function SectionCard({
+  title,
+  eyebrow,
+  children,
+  className = "",
+}: {
+  title: string;
+  eyebrow?: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <section className="surface-card p-4 md:p-8">
-      {eyebrow ? <div className="eyebrow-label mb-2.5">{eyebrow}</div> : null}
-      <h2 className="text-xl font-semibold tracking-[-0.03em] text-foreground sm:text-2xl md:text-3xl">{title}</h2>
+    <section className={`pga-card ${className}`}>
+      {eyebrow ? <div className="pga-label mb-2.5">{eyebrow}</div> : null}
+      <h2 className="pga-section-title">{title}</h2>
       <div className="mt-4 md:mt-5">{children}</div>
     </section>
+  );
+}
+
+function parseEdgeScore(edge?: string) {
+  if (!edge) return null;
+  const match = edge.match(/(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+function getEdgePercent(edge?: string, maxEdge = 16) {
+  const score = parseEdgeScore(edge);
+  if (!score) return 0;
+  return Math.min(100, Math.round((score / maxEdge) * 100));
+}
+
+function getSummaryEdgeTone(edgeText: string) {
+  const score = Number(edgeText);
+  if (score >= 14) return "pga-edge-chip-high";
+  return "pga-edge-chip-mid";
+}
+
+function getCourseFit(player: string) {
+  return TOP_40_FITS[player] ?? "moderate";
+}
+
+function BetList({
+  bets,
+  tier,
+}: {
+  bets: readonly PgaTournamentBet[];
+  tier: "tier1" | "tier2" | "tier3";
+}) {
+  const barClass = tier === "tier1" ? "bg-[var(--pga-green-bar)]" : "bg-[var(--pga-orange)]";
+
+  return (
+    <div className="divide-y divide-[color:var(--pga-border)]">
+      {bets.map((bet) => (
+        <article key={bet.player} className="py-4 first:pt-0 last:pb-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-[14px] font-medium text-foreground">{bet.player}</h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="pga-odds-badge">{bet.odds}</span>
+              {bet.edge ? <span className="pga-edge-badge">{bet.edge}</span> : null}
+            </div>
+          </div>
+          {bet.edge ? (
+            <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-secondary/80">
+              <div className={`h-full rounded-full ${barClass}`} style={{ width: `${getEdgePercent(bet.edge)}%` }} />
+            </div>
+          ) : null}
+          <p className="mt-3 text-[12px] leading-6 text-muted-foreground">{bet.analysis}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function IconFrame({ children }: { children: ReactNode }) {
+  return <div className="pga-icon-frame">{children}</div>;
+}
+
+function BarChartIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M5 19V9" />
+      <path d="M12 19V5" />
+      <path d="M19 19v-7" />
+      <path d="M3 19h18" />
+    </svg>
+  );
+}
+
+function ClockIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l3 2" />
+    </svg>
+  );
+}
+
+function LineChartIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4 18h16" />
+      <path d="m5 15 4-5 4 3 6-7" />
+      <circle cx="9" cy="10" r="1" fill="currentColor" stroke="none" />
+      <circle cx="13" cy="13" r="1" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="6" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function ScatterIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="7" cy="7" r="2" />
+      <circle cx="17" cy="8" r="2" />
+      <circle cx="10" cy="16" r="2" />
+      <circle cx="18" cy="16" r="2" />
+      <path d="m8.5 8.5 2.5 5.5" />
+      <path d="m15.2 9.3-3.4 5.3" />
+    </svg>
   );
 }
 
@@ -87,16 +240,12 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
           buildFaqSchema(content.faqs),
         ]}
       />
-      <main className="site-page pb-10 pt-6 sm:pb-16 sm:pt-10">
+      <main className="site-page pga-picks-page pb-10 pt-6 sm:pb-16 sm:pt-10">
         <div className="site-container site-stack">
-          <section className="grid gap-4 sm:gap-5 lg:grid-cols-[1.25fr_0.75fr] lg:items-end lg:gap-8">
-            <div className="surface-card p-4 md:p-10">
-              <div className="inline-flex rounded-full bg-primary/10 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary sm:px-4 sm:py-1 sm:text-[11px] sm:tracking-[0.24em]">
-                {content.heroBadge}
-              </div>
-              <h1 className="mt-3 max-w-4xl text-[2rem] font-semibold leading-[1.02] tracking-[-0.05em] text-foreground sm:mt-4 sm:text-4xl md:mt-5 md:text-6xl">
-                {content.heroTitle}
-              </h1>
+          <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:gap-6">
+            <div className="pga-card p-5 md:p-8">
+              <div className="pga-badge">{content.heroBadge}</div>
+              <h1 className="pga-hero-title mt-3 max-w-4xl sm:mt-4 md:mt-5">{content.heroTitle}</h1>
               <p className="mt-3 max-w-3xl text-[15px] leading-7 text-muted-foreground sm:mt-4 sm:text-lg sm:leading-8">
                 {content.heroIntro}
               </p>
@@ -104,39 +253,42 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
                 {content.heroSupport}
               </p>
               <div className="mt-5 flex flex-wrap gap-3 sm:mt-6 sm:gap-4 md:mt-8">
-                <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 sm:px-5 sm:py-3">
+                <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 sm:px-5 sm:py-3">
                   {content.heroCtaLabel}
                 </Link>
-                <Link to="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl bg-secondary px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent sm:px-5 sm:py-3">
+                <Link to="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-5 sm:py-3">
                   {content.heroSecondaryLabel}
                 </Link>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-1">
-              {[
-                ["Primary Signals", "Recent form, course history, and weighted stat fit are the biggest model inputs before price is considered."],
-                ["Course Lean", "Each tournament page is weighted for the specific course test rather than using one generic PGA setup."],
-                ["Betting Use", "The output is built to compare expected performance against market pricing and isolate mispriced names for best bets and Top 40 parlays."],
-              ].map(([title, body]) => (
-                <div key={title} className="surface-card-muted p-3 sm:p-4">
-                  <div className="eyebrow-label text-primary/80">{title}</div>
-                  <div className="mt-2 text-sm leading-6 text-muted-foreground sm:mt-3 sm:leading-7">{body}</div>
+            <div className="grid gap-3">
+              {HERO_SIGNALS.map(([title, body]) => (
+                <div key={title} className="pga-pill-card">
+                  <div className="pga-label">{title}</div>
+                  <div className="mt-2 text-sm leading-6 text-muted-foreground">{body}</div>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="surface-card p-4 md:p-8">
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {HERO_STATS.map((stat) => (
+              <div key={stat.label} className="pga-stat-card">
+                <div className="pga-stat-value">{stat.value}</div>
+                <div className="mt-2 text-[12px] font-medium text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
+          </section>
+
+          <section className="pga-card p-4 md:p-8">
             <div className="mb-2 flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="eyebrow-label text-primary/80">Free Interactive Model</div>
-              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 sm:px-3 sm:py-1 sm:text-[11px]">
+              <div className="pga-label">Free Interactive Model</div>
+              <span className="rounded-full bg-[var(--pga-green-fill)] px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--pga-green-dark)] sm:px-3 sm:py-1 sm:text-[11px]">
                 100% Free
               </span>
             </div>
-            <h2 className="text-xl font-semibold tracking-[-0.03em] text-foreground sm:text-2xl md:text-3xl">
-              {content.presetsHeading}
-            </h2>
+            <h2 className="pga-section-title">{content.presetsHeading}</h2>
             <p className="mt-2.5 max-w-3xl text-sm leading-7 text-muted-foreground sm:mt-3 sm:text-base sm:leading-8">
               {content.presetsIntro}
             </p>
@@ -146,21 +298,19 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
                 <Link
                   key={preset.key}
                   to={preset.href}
-                  className="group flex flex-col rounded-[22px] bg-secondary/50 p-4 ring-1 ring-border/50 transition hover:bg-secondary hover:ring-primary/30 sm:rounded-[24px] sm:p-5"
+                  className="group flex flex-col rounded-xl border border-[color:var(--pga-border)] bg-card p-4 transition hover:bg-secondary/40 sm:p-5"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-xl sm:text-2xl">{preset.icon}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] sm:px-2.5 sm:py-1 sm:text-[10px] ${preset.badgeColor}`}>
+                    <span className="pga-icon-frame text-sm font-medium text-[var(--pga-green-dark)] sm:text-base">{preset.icon}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] sm:px-2.5 sm:py-1 sm:text-[10px] ${preset.badgeColor}`}>
                       {preset.badge}
                     </span>
                   </div>
-                  <h3 className="mt-2.5 text-base font-semibold tracking-[-0.02em] text-foreground sm:mt-3 sm:text-lg">
-                    {preset.label}
-                  </h3>
+                  <h3 className="mt-2.5 text-base font-medium tracking-[-0.02em] text-foreground sm:mt-3 sm:text-lg">{preset.label}</h3>
                   <p className="mt-1.5 flex-1 text-[13px] leading-5 text-muted-foreground sm:mt-2 sm:text-sm sm:leading-6">
                     {preset.description}
                   </p>
-                  <div className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-primary transition-all group-hover:gap-2 sm:mt-3">
+                  <div className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-primary transition-all group-hover:gap-2 sm:mt-3">
                     Open model
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M5 12h14" />
@@ -173,13 +323,21 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
           </section>
 
           <SectionCard title="How the Model Works" eyebrow="Model Overview">
-            <div className="grid gap-5 sm:gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-              <p className="text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
+            <div className="grid gap-5 sm:gap-6">
+              <p className="max-w-4xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
                 This model is built to stay fast and explainable. It ranks the field with a composite score that blends recent form, event-specific course fit, and the stat profile most likely to translate this week. The goal is not just to predict who plays well, but to spot where the market is underpricing that profile.
               </p>
-              <div className="grid gap-2.5 sm:gap-3">
+              <div className="pga-flow">
+                {MODEL_FLOW.map((node, index) => (
+                  <div key={node} className="contents">
+                    <div className={`pga-flow-node ${node === "Composite score" ? "pga-flow-node-active" : ""}`}>{node}</div>
+                    {index < MODEL_FLOW.length - 1 ? <div className="pga-flow-arrow" aria-hidden="true">&rarr;</div> : null}
+                  </div>
+                ))}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {content.overviewBullets.map((item) => (
-                  <div key={item} className="surface-card-muted p-3 text-sm leading-6 text-muted-foreground sm:p-4 sm:leading-7">
+                  <div key={item} className="rounded-lg border border-[color:var(--pga-border)] bg-secondary/40 p-3 text-sm leading-6 text-muted-foreground sm:p-4 sm:leading-7">
                     {item}
                   </div>
                 ))}
@@ -192,64 +350,34 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
               <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
                 {content.top10Intro}
               </p>
-              <div className="grid gap-4 sm:gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-                <div className="surface-card">
-                  <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4 sm:gap-4">
-                    <div>
-                      <div className="eyebrow-label text-primary/80">Tier 1</div>
-                      <h3 className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-foreground sm:mt-2 sm:text-2xl">
-                        Strong Model + Sweet Spot Odds
-                      </h3>
-                    </div>
-                    <div className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground sm:px-3 sm:py-1 sm:text-xs">
-                      Highest-confidence price edges
-                    </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="overflow-hidden rounded-xl border border-[color:var(--pga-border)] bg-card">
+                  <div className="bg-[var(--pga-green-dark)] px-4 py-3 text-[13px] font-medium text-[var(--pga-tier-header-text)]">
+                    Tier 1 &mdash; Strong model + sweet spot odds
                   </div>
-                  <div className="grid gap-3 sm:gap-4">
-                    {content.tierOneBets.map((bet) => (
-                      <article key={bet.player} className="surface-card-muted p-3 sm:p-4">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <h3 className="text-lg font-semibold text-foreground sm:text-xl">{bet.player}</h3>
-                          <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-primary sm:px-3 sm:py-1 sm:text-xs">
-                            {bet.odds}
-                          </span>
-                          {bet.edge ? (
-                            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground sm:px-3 sm:py-1 sm:text-xs">
-                              {bet.edge}
-                            </span>
-                          ) : null}
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground sm:mt-3 sm:leading-7">{bet.analysis}</p>
-                      </article>
-                    ))}
+                  <div className="p-4">
+                    <BetList bets={content.tierOneBets} tier="tier1" />
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:gap-6">
-                  {([
-                    ["Tier 2", "Solid Value", content.tierTwoBets],
-                    ["Tier 3", "Upside Plays", content.tierThreeBets],
-                  ] as const).map(([eyebrow, title, bets]) => (
-                    <div key={title} className="surface-card">
-                      <div className="eyebrow-label text-primary/80">{eyebrow}</div>
-                      <h3 className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-foreground sm:mt-2 sm:text-2xl">
-                        {title}
-                      </h3>
-                      <div className="mt-4 grid gap-3 sm:mt-5 sm:gap-4">
-                        {bets.map((bet) => (
-                          <article key={bet.player} className="surface-card-muted p-3 sm:p-4">
-                            <div className="flex items-center justify-between gap-3">
-                              <h3 className="text-base font-semibold text-foreground sm:text-lg">{bet.player}</h3>
-                              <span className="rounded-full bg-card px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground sm:px-3 sm:py-1 sm:text-xs">
-                                {bet.odds}
-                              </span>
-                            </div>
-                            <p className="mt-2 text-sm leading-6 text-muted-foreground sm:mt-3 sm:leading-7">{bet.analysis}</p>
-                          </article>
-                        ))}
-                      </div>
+                  <div className="overflow-hidden rounded-xl border border-[color:var(--pga-border)] bg-card">
+                    <div className="bg-secondary/70 px-4 py-3 text-[13px] font-medium text-muted-foreground">
+                      Tier 2 &mdash; Solid value
                     </div>
-                  ))}
+                    <div className="p-4">
+                      <BetList bets={content.tierTwoBets} tier="tier2" />
+                    </div>
+                  </div>
+
+                  <div className="overflow-hidden rounded-xl border border-[color:var(--pga-border)] bg-card">
+                    <div className="bg-secondary/40 px-4 py-3 text-[13px] font-medium text-muted-foreground">
+                      Tier 3 &mdash; Upside Plays
+                    </div>
+                    <div className="p-4">
+                      <BetList bets={content.tierThreeBets} tier="tier3" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -261,23 +389,44 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
                 <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
                   {content.top40Intro}
                 </p>
-                <Link to="/pga/model?preset=top40" className="inline-flex items-center rounded-xl bg-secondary px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent sm:px-5 sm:py-2.5">
+                <Link to="/pga/model?preset=top40" className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-5 sm:py-2.5">
                   Top 40 golf picks
                 </Link>
               </div>
-              <div className="overflow-hidden rounded-[28px] bg-card shadow-[0_18px_40px_hsl(var(--foreground)/0.05)]">
+              <div className="flex flex-wrap items-center gap-4 text-[12px] text-muted-foreground">
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--pga-green-bar)]" />
+                  Strong fit
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[var(--pga-orange)]" />
+                  Moderate fit
+                </span>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-[color:var(--pga-border)] bg-card">
                 <div className="overflow-x-auto">
                   <table className="min-w-full border-collapse text-sm">
-                    <thead className="bg-secondary/65">
-                      <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    <thead>
+                      <tr className="border-b border-[color:var(--pga-border)] text-left text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                        <th className="px-4 py-3">#</th>
                         <th className="px-4 py-3">Player</th>
+                        <th className="px-4 py-3">Course fit</th>
                         <th className="px-4 py-3">Why They're a Strong Top 40 Play</th>
                       </tr>
                     </thead>
                     <tbody>
                       {content.top40Rows.map((row, index) => (
-                        <tr key={row[0]} className={`border-t border-border/60 align-top first:border-t-0 ${index % 2 === 0 ? "bg-card" : "bg-secondary/30"}`}>
-                          <td className="px-4 py-3 font-semibold text-foreground sm:py-4">{row[0]}</td>
+                        <tr key={row[0]} className="border-t border-[color:var(--pga-border)] align-top first:border-t-0">
+                          <td className="px-4 py-3 sm:py-4">
+                            <span className={`pga-rank-circle ${index < 3 ? "pga-rank-circle-top" : "pga-rank-circle-rest"}`}>{index + 1}</span>
+                          </td>
+                          <td className="px-4 py-3 font-medium text-foreground sm:py-4">{row[0]}</td>
+                          <td className="px-4 py-3 sm:py-4">
+                            <span className="inline-flex items-center gap-2 text-[12px] text-muted-foreground">
+                              <span className={`h-2.5 w-2.5 rounded-full ${getCourseFit(row[0]) === "strong" ? "bg-[var(--pga-green-bar)]" : "bg-[var(--pga-orange)]"}`} />
+                              {getCourseFit(row[0]) === "strong" ? "Strong fit" : "Moderate fit"}
+                            </span>
+                          </td>
                           <td className="px-4 py-3 leading-6 text-muted-foreground sm:py-4 sm:leading-7">{row[1]}</td>
                         </tr>
                       ))}
@@ -290,11 +439,12 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
 
           <div className="grid gap-6 sm:gap-8 lg:grid-cols-[0.78fr_1.22fr]">
             <SectionCard title="Notable Fades" eyebrow="Fades">
-              <div className="grid gap-2.5 sm:gap-3">
+              <div className="grid gap-2">
                 {content.fades.map((fade) => (
-                  <div key={fade} className="surface-card-muted p-3 text-sm leading-6 text-muted-foreground sm:p-4 sm:leading-7">
-                    {fade}
-                  </div>
+                  <article key={fade} className="pga-fade-card">
+                    <div className="text-[13px] font-medium text-[var(--pga-fade-text)]">{fade.split(" -> ")[0]}</div>
+                    <p className="mt-1 text-[12px] leading-6 text-muted-foreground">{fade.split(" -> ")[1] ?? ""}</p>
+                  </article>
                 ))}
               </div>
             </SectionCard>
@@ -302,8 +452,8 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
             <SectionCard title="Summary Table" eyebrow="Quick Board">
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse text-sm">
-                  <thead className="bg-secondary/65">
-                    <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  <thead>
+                    <tr className="border-b border-[color:var(--pga-border)] text-left text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                       <th className="px-3 py-3">Player</th>
                       <th className="px-3 py-3">Odds</th>
                       <th className="px-3 py-3">Edge</th>
@@ -311,11 +461,13 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
                     </tr>
                   </thead>
                   <tbody>
-                    {content.summaryRows.map((row, i) => (
-                      <tr key={row[0]} className={`border-t border-border/60 first:border-t-0 ${i % 2 === 0 ? "bg-card" : "bg-secondary/30"}`}>
-                        <td className="px-3 py-3 font-semibold text-foreground sm:py-4">{row[0]}</td>
+                    {content.summaryRows.map((row) => (
+                      <tr key={row[0]} className="border-t border-[color:var(--pga-border)] first:border-t-0">
+                        <td className="px-3 py-3 font-medium text-foreground sm:py-4">{row[0]}</td>
                         <td className="px-3 py-3 text-muted-foreground sm:py-4">{row[1]}</td>
-                        <td className="px-3 py-3 text-[hsl(var(--success))] sm:py-4">{row[2]}</td>
+                        <td className="px-3 py-3 sm:py-4">
+                          <span className={`pga-edge-chip ${getSummaryEdgeTone(row[2])}`}>{row[2]}</span>
+                        </td>
                         <td className="px-3 py-3 text-muted-foreground sm:py-4">{row[3]}</td>
                       </tr>
                     ))}
@@ -326,9 +478,9 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
           </div>
 
           <SectionCard title="Harbour Town Betting Strategy" eyebrow="Course Strategy">
-            <div className="grid gap-2.5 sm:gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {content.strategyBullets.map((item) => (
-                <div key={item} className="surface-card-muted p-3 text-sm leading-6 text-muted-foreground sm:p-4 sm:leading-7">
+                <div key={item} className="rounded-lg border border-[color:var(--pga-border)] bg-card p-4 text-sm leading-6 text-muted-foreground sm:leading-7">
                   {item}
                 </div>
               ))}
@@ -336,39 +488,48 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
           </SectionCard>
 
           <SectionCard title="How to Build Golf Parlays" eyebrow="Parlay Strategy">
-            <div className="grid gap-2.5 sm:gap-3">
-              {content.parlayBullets.map((item) => (
-                <div key={item} className="surface-card-muted p-3 text-sm leading-6 text-muted-foreground sm:p-4 sm:leading-7">
-                  {item}
-                </div>
-              ))}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {content.parlayBullets.map((item, index) => {
+                const meta = PARLAY_CARD_META[index];
+                const Icon = meta.icon;
+
+                return (
+                  <div key={item} className="rounded-lg border border-[color:var(--pga-border)] bg-card p-4">
+                    <IconFrame>
+                      <Icon className="h-4 w-4 text-[var(--pga-green-dark)]" />
+                    </IconFrame>
+                    <h3 className="mt-3 text-[13px] font-medium text-foreground">{meta.title}</h3>
+                    <p className="mt-2 text-[12px] leading-6 text-muted-foreground">{item}</p>
+                  </div>
+                );
+              })}
             </div>
           </SectionCard>
 
           <SectionCard title={`${content.heroTitle.replace(" Picks & Best Bets", "")} FAQ`} eyebrow="FAQ">
-            <div className="grid gap-2.5 sm:gap-3">
+            <div className="grid gap-3">
               {content.faqs.map((entry) => (
-                <article key={entry.question} className="surface-card-muted p-3 sm:p-4">
-                  <h3 className="text-base font-semibold text-foreground">{entry.question}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground sm:mt-2 sm:leading-7">{entry.answer}</p>
+                <article key={entry.question} className="rounded-lg border border-[color:var(--pga-border)] bg-card p-4">
+                  <h3 className="text-[15px] font-medium text-foreground">{entry.question}</h3>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">{entry.answer}</p>
                 </article>
               ))}
             </div>
           </SectionCard>
 
-          <section className="surface-card p-4 text-center md:p-10">
-            <div className="eyebrow-label text-primary/80">Golf betting model</div>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-foreground sm:mt-3 sm:text-3xl md:text-4xl">
+          <section className="pga-card p-4 text-center md:p-10">
+            <div className="pga-label">Golf betting model</div>
+            <h2 className="pga-section-title mt-2">
               Use the live model to compare PGA best bets, Top 40 golf picks, and custom weight profiles.
             </h2>
             <p className="mx-auto mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:mt-4 sm:text-base sm:leading-8">
               Open the interactive board, switch betting presets, and move between the current tournament page, the golf betting model, and the evergreen Top 40 page.
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3 sm:mt-7 sm:gap-4">
-              <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 sm:px-6 sm:py-3 sm:text-base">
+              <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 sm:px-6 sm:py-3 sm:text-base">
                 golf betting model
               </Link>
-              <Link to="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl bg-secondary px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-accent sm:px-6 sm:py-3 sm:text-base">
+              <Link to="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-6 sm:py-3 sm:text-base">
                 Top 40 golf picks
               </Link>
             </div>

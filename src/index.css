@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Playfair+Display:wght@600&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -120,5 +122,222 @@
 
   .bracket-line {
     @apply border-border;
+  }
+
+  .pga-picks-page {
+    --pga-green-dark: #1a3a2a;
+    --pga-green-fill: #e8f5ee;
+    --pga-green-bar: #2d6a4f;
+    --pga-orange: #f4a261;
+    --pga-warm-fill: #fef3e2;
+    --pga-warm-text: #854f0b;
+    --pga-fade-bg: #fff8f6;
+    --pga-fade-border: #f5c4b3;
+    --pga-fade-text: #993c1d;
+    --pga-border: hsl(var(--border));
+    --pga-surface: hsl(var(--card));
+    --pga-muted-surface: hsl(var(--secondary) / 0.55);
+    --pga-tier-header-text: #a8d5b5;
+    font-family: "DM Sans", system-ui, sans-serif;
+  }
+
+  .dark .pga-picks-page {
+    --pga-green-fill: rgba(45, 106, 79, 0.2);
+    --pga-fade-bg: rgba(153, 60, 29, 0.16);
+    --pga-fade-border: rgba(245, 196, 179, 0.34);
+    --pga-border: hsl(var(--border) / 0.9);
+    --pga-surface: hsl(var(--card));
+    --pga-muted-surface: hsl(var(--secondary) / 0.4);
+    --pga-warm-fill: rgba(244, 162, 97, 0.18);
+    --pga-warm-text: #f4c588;
+  }
+
+  .pga-card {
+    background: var(--pga-surface);
+    border: 0.5px solid var(--pga-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .pga-label {
+    color: hsl(var(--muted-foreground));
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .pga-section-title,
+  .pga-hero-title {
+    color: hsl(var(--foreground));
+    font-family: "Playfair Display", Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+  }
+
+  .pga-section-title {
+    font-size: 26px;
+  }
+
+  .pga-hero-title {
+    font-size: clamp(2.6rem, 6vw, 4.9rem);
+  }
+
+  .pga-badge {
+    display: inline-flex;
+    border-radius: 999px;
+    background: var(--pga-green-fill);
+    color: var(--pga-green-dark);
+    padding: 0.35rem 0.8rem;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .pga-pill-card,
+  .pga-stat-card {
+    background: var(--pga-muted-surface);
+    border: 0.5px solid var(--pga-border);
+    border-radius: 8px;
+  }
+
+  .pga-pill-card {
+    padding: 0.75rem 1rem;
+  }
+
+  .pga-stat-card {
+    background: var(--pga-surface);
+    padding: 0.95rem 1rem;
+    text-align: center;
+  }
+
+  .pga-stat-value {
+    color: var(--pga-green-dark);
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .pga-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .pga-flow-node {
+    border: 0.5px solid var(--pga-border);
+    border-radius: 8px;
+    background: var(--pga-muted-surface);
+    color: hsl(var(--foreground));
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0.75rem 0.95rem;
+  }
+
+  .pga-flow-node-active {
+    background: var(--pga-green-dark);
+    border-color: var(--pga-green-dark);
+    color: var(--pga-green-fill);
+  }
+
+  .pga-flow-arrow {
+    color: hsl(var(--muted-foreground));
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .pga-odds-badge,
+  .pga-edge-badge,
+  .pga-edge-chip,
+  .pga-rank-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pga-odds-badge {
+    border-radius: 999px;
+    background: var(--pga-green-fill);
+    color: var(--pga-green-dark);
+    padding: 0.2rem 0.6rem;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .pga-edge-badge {
+    border-radius: 999px;
+    background: hsl(var(--secondary));
+    color: hsl(var(--muted-foreground));
+    padding: 0.2rem 0.6rem;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .pga-rank-circle {
+    height: 1.9rem;
+    width: 1.9rem;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .pga-rank-circle-top {
+    background: var(--pga-green-fill);
+    color: var(--pga-green-dark);
+  }
+
+  .pga-rank-circle-rest {
+    background: hsl(var(--secondary));
+    color: hsl(var(--muted-foreground));
+  }
+
+  .pga-fade-card {
+    background: var(--pga-fade-bg);
+    border: 0.5px solid var(--pga-fade-border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+  }
+
+  .pga-edge-chip {
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .pga-edge-chip-high {
+    background: var(--pga-green-fill);
+    color: var(--pga-green-dark);
+  }
+
+  .pga-edge-chip-mid {
+    background: var(--pga-warm-fill);
+    color: var(--pga-warm-text);
+  }
+
+  .pga-icon-frame {
+    display: inline-flex;
+    height: 28px;
+    width: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--pga-green-fill);
+  }
+
+  @media (max-width: 600px) {
+    .pga-flow {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .pga-flow-arrow {
+      align-self: center;
+      transform: rotate(90deg);
+    }
   }
 }
