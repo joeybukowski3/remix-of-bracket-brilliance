@@ -15,6 +15,7 @@ import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
 import MlbGameDetail from "./pages/MlbGameDetail";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
+import NFL from "./pages/NFL";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
 import PGAModel from "./pages/PGAModel";
@@ -69,6 +70,7 @@ const App = () => (
           <Route path="/bracket" element={<Navigate to={NCAA_BRACKET_PATH} replace />} />
           <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/nfl" element={<NFL />} />
           <Route path="/mlb" element={<MlbGameDetail />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<Navigate to={getTournamentPicksPath(FEATURED_PGA_TOURNAMENT)} replace />} />

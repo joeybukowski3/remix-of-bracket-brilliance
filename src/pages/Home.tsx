@@ -1,6 +1,11 @@
 import { ArrowRight, Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import { usePageSeo } from "@/hooks/usePageSeo";
+import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
+import { getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
+
+const featuredTournamentPath = getTournamentPicksPath(FEATURED_PGA_TOURNAMENT);
 
 const sports = [
   {
@@ -25,10 +30,10 @@ const sports = [
   {
     id: "nfl",
     label: "NFL",
-    route: null,
-    active: false,
+    route: "/nfl",
+    active: true,
     logoSrc: "/logos/nfl.svg",
-    tone: "muted",
+    tone: "primary",
     desc: "Game analysis, line movement, player props, and weekly picks.",
   },
   {
@@ -43,7 +48,7 @@ const sports = [
   {
     id: "pga",
     label: "PGA Picks",
-    route: "/pga/rbc-heritage-2026-picks",
+    route: featuredTournamentPath,
     active: true,
     logoSrc: "/logos/pga.svg",
     tone: "success",
@@ -64,6 +69,13 @@ function badgeTone(active: boolean) {
 export default function Home() {
   const navigate = useNavigate();
 
+  usePageSeo({
+    title: "Joe Knows Ball | Sports Analytics, Picks, Models, and Matchup Tools",
+    description:
+      "Joe Knows Ball features NCAA, MLB, and PGA tools with matchup analysis, rankings, tournament picks, and model-driven betting workflows.",
+    path: "/",
+  });
+
   return (
     <SiteShell>
       <main className="site-page pb-16 pt-10">
@@ -79,12 +91,12 @@ export default function Home() {
                 advantages that make slate review faster.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <a href="/pga/rbc-heritage-2026-picks" className="inline-flex items-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">
+                <Link to={featuredTournamentPath} className="inline-flex items-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">
                   latest tournament picks
-                </a>
-                <a href="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-foreground transition hover:bg-accent">
+                </Link>
+                <Link to="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-foreground transition hover:bg-accent">
                   Top 40 golf picks
-                </a>
+                </Link>
               </div>
             </div>
           </section>
