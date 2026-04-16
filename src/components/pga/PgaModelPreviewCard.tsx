@@ -67,28 +67,28 @@ export default function PgaModelPreviewCard({
   liveModelLabel,
   ctaHref,
 }: Props) {
+  const visibleThemes = themes.slice(0, 4);
+  const visibleSliders = sliders.slice(0, 3);
+
   return (
     <div className="grid content-start gap-5 lg:gap-6">
-      <section className="rounded-[28px] border border-[#d7e1da] bg-[linear-gradient(180deg,#f9fcf8_0%,#f4f8f4_100%)] p-5 shadow-[0_18px_40px_rgba(26,58,42,0.08)] sm:p-6">
+      <section className="rounded-[28px] border border-[#d7e1da] bg-[linear-gradient(180deg,#f9fcf8_0%,#f4f8f4_100%)] p-4 shadow-[0_18px_40px_rgba(26,58,42,0.08)] sm:p-5">
         <div className="mx-auto max-w-[40rem] lg:max-w-none">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[#1a3a2a] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
-              Build Your RBC Heritage Model
-            </span>
-            <span className="rounded-full bg-[#e6efe8] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#355343]">
-              Live preview
+              Build your RBC Heritage model
             </span>
           </div>
 
-          <h2 className="mt-4 font-['Playfair_Display'] text-[2rem] font-semibold leading-[1.02] tracking-[-0.03em] text-[#1a3a2a]">
-            Shift the weights. See who rises at Harbour Town.
+          <h2 className="mt-3 font-['Playfair_Display'] text-[1.75rem] font-semibold leading-[1.04] tracking-[-0.03em] text-[#1a3a2a] sm:text-[1.9rem]">
+            Shift the weights. See who rises.
           </h2>
-          <p className="mt-3 text-sm leading-7 text-[#52675b] sm:text-[15px]">
-            Adjust the angle, preview the leaderboard, then open the full model room to work every slider and stat column.
+          <p className="mt-2.5 max-w-[32rem] text-[13px] leading-6 text-[#52675b] sm:text-sm sm:leading-6">
+            Preview the board, then open the full model room to customize every ranking.
           </p>
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            {themes.map((theme) => {
+          <div className="mt-4 flex flex-wrap gap-2">
+            {visibleThemes.map((theme) => {
               const isActive = theme.key === activeThemeKey;
               return (
                 <button
@@ -96,7 +96,7 @@ export default function PgaModelPreviewCard({
                   type="button"
                   aria-pressed={isActive}
                   onClick={() => onThemeChange(theme.key)}
-                  className={`rounded-full px-3 py-2 text-[11px] font-semibold transition ${
+                  className={`rounded-full px-3 py-1.5 text-[10px] font-semibold transition sm:text-[11px] ${
                     isActive
                       ? "bg-[#1a3a2a] text-white shadow-[0_10px_24px_rgba(26,58,42,0.18)]"
                       : "border border-[#d7e1da] bg-white text-[#355343] hover:border-[#1a3a2a]/25 hover:bg-[#f6faf7]"
@@ -108,47 +108,25 @@ export default function PgaModelPreviewCard({
             })}
           </div>
 
-          <p className="mt-4 text-[13px] leading-6 text-[#52675b]">{activeThemeDescription}</p>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {sliders.map((slider) => (
+          <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+            {visibleSliders.map((slider) => (
               <SliderPreview key={slider.label} {...slider} />
             ))}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-[#d7e1da] bg-white/80 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a7d72]">Full model room</div>
-                <div className="mt-1 text-sm font-semibold text-[#1a3a2a]">{liveModelLabel}</div>
-              </div>
-              <span className="rounded-full bg-[#e6efe8] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#355343]">
-                /pga/model
-              </span>
-            </div>
-            <p className="mt-2 text-[12px] leading-6 text-[#52675b]">
-              This preview uses the same Harbour Town dataset and heat-map logic as the full table. The full room is where the live sliders and complete rankings live.
-            </p>
-          </div>
-
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-4 flex flex-col items-start gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-[11px] leading-5 text-[#6a7d72]">{liveModelLabel}</div>
             <Link
               to={ctaHref}
-              className="inline-flex items-center justify-center rounded-xl bg-[#1a3a2a] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#143021]"
+              className="inline-flex items-center justify-center rounded-xl bg-[#1a3a2a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#143021]"
             >
               Open Full Model
             </Link>
-            <a
-              href="#best-bets"
-              className="inline-flex items-center justify-center rounded-xl border border-[#d7e1da] bg-white px-4 py-3 text-sm font-semibold text-[#355343] transition hover:bg-[#f6faf7]"
-            >
-              Read written picks
-            </a>
           </div>
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-[28px] border border-[#d7e1da] bg-white shadow-[0_18px_40px_rgba(26,58,42,0.08)]">
+      <section className="overflow-hidden rounded-[28px] border border-[#d7e1da] bg-white shadow-[0_18px_40px_rgba(26,58,42,0.08)] lg:min-h-[36rem]">
         <div className="p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
