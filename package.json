@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "export:pga:rbc": "python scripts/export_pga_workbook.py --workbook C:\\Users\\jbloo\\Downloads\\RBC_Heritage_DK.xlsx --output public/data/pga/rbc-heritage-2026.json --output public/rbc_data.json",
     "seo:generate": "node scripts/generate-seo-files.mjs",
     "lint": "eslint .",
     "preview": "vite preview",

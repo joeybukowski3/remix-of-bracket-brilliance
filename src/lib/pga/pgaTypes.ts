@@ -28,6 +28,9 @@ export type RawPgaPlayer = {
   "Bogey Avoidance_rank": number | null;
   "Birdie or Better 125-150 yds_rank": number | null;
   "Birdie or Better <125 yds_rank": number | null;
+  hasStatProfile?: boolean;
+  missingStatFields?: string[];
+  dataCompletenessScore?: number;
 };
 
 export type PgaWeightKey =

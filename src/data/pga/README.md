@@ -32,6 +32,19 @@ Weekly PGA rollout is now file-driven.
 ## Weekly Workflow
 
 - Update the tournament config file
-- Drop in the weekly player data JSON
+- Export the weekly player JSON from the workbook source
+  - `npm run export:pga:rbc`
 - Verify the picks page and model routes
 - Adjust written analysis only where needed
+
+## Export Notes
+
+- The checked-in exporter lives at [scripts/export_pga_workbook.py](/C:/Users/jbloo/remix-of-bracket-brilliance/scripts/export_pga_workbook.py:1).
+- It merges the base DK sheet with the raw trend, history, and stat tabs.
+- Stat joins use normalized player names:
+  - lowercase
+  - diacritics removed
+  - punctuation removed
+  - single-letter middle initials removed
+  - explicit nickname aliases for known variants such as `Matthew` -> `Matt`
+- Missing stat joins stay `null` and are emitted with completeness metadata instead of worst-rank placeholders.
