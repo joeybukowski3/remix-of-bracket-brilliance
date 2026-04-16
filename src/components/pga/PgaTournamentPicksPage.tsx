@@ -349,8 +349,8 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
       />
       <main className="site-page pga-picks-page pb-28 pt-6 sm:pb-16 sm:pt-10">
         <div className="site-container site-stack">
-          <section className="grid gap-4 lg:grid-cols-[0.92fr_1.08fr] lg:gap-6">
-            <div className="pga-card p-5 md:p-8">
+          <section className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div className="pga-card h-full p-5 md:p-8">
               <div className="pga-badge">{content.heroBadge}</div>
               <h1 className="pga-hero-title mt-3 max-w-4xl sm:mt-4 md:mt-5">{content.heroTitle}</h1>
               <p className="mt-3 max-w-3xl text-[15px] leading-7 text-muted-foreground sm:mt-4 sm:text-lg sm:leading-8">

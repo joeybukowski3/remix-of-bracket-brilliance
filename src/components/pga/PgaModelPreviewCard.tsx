@@ -68,9 +68,9 @@ export default function PgaModelPreviewCard({
   ctaHref,
 }: Props) {
   return (
-    <section className="overflow-hidden rounded-[28px] border border-[#d7e1da] bg-[linear-gradient(180deg,#f9fcf8_0%,#f4f8f4_100%)] shadow-[0_18px_40px_rgba(26,58,42,0.08)]">
-      <div className="grid lg:grid-cols-[0.82fr_1.18fr]">
-        <div className="border-b border-[#d7e1da] p-5 sm:p-6 lg:border-b-0 lg:border-r">
+    <div className="grid content-start gap-5 lg:gap-6">
+      <section className="rounded-[28px] border border-[#d7e1da] bg-[linear-gradient(180deg,#f9fcf8_0%,#f4f8f4_100%)] p-5 shadow-[0_18px_40px_rgba(26,58,42,0.08)] sm:p-6">
+        <div className="mx-auto max-w-[40rem] lg:max-w-none">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[#1a3a2a] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
               Build Your RBC Heritage Model
@@ -146,7 +146,9 @@ export default function PgaModelPreviewCard({
             </a>
           </div>
         </div>
+      </section>
 
+      <section className="overflow-hidden rounded-[28px] border border-[#d7e1da] bg-white shadow-[0_18px_40px_rgba(26,58,42,0.08)]">
         <div className="p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -163,7 +165,7 @@ export default function PgaModelPreviewCard({
             </Link>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-[#d7e1da] bg-white/80 px-4 py-3 text-[11px] text-[#52675b]">
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-[#d7e1da] bg-[#f6faf7] px-4 py-3 text-[11px] text-[#52675b]">
             {RANK_COLOR_LEGEND.map((tier) => (
               <div key={tier.label} className="inline-flex items-center gap-2">
                 <span
@@ -191,7 +193,7 @@ export default function PgaModelPreviewCard({
           {status === "ready" ? (
             <div className="mt-4 overflow-hidden rounded-[22px] border border-[#d7e1da] bg-white/95">
               <div className="overflow-x-auto">
-                <table className="min-w-[560px] w-full border-collapse text-left">
+                <table className="w-full min-w-[560px] border-collapse text-left">
                   <thead>
                     <tr className="border-b border-[#e3ece5] bg-[#f3f7f3] text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a7d72]">
                       <th className="px-4 py-3">Rank</th>
@@ -221,11 +223,7 @@ export default function PgaModelPreviewCard({
                         <td className="px-3 py-3 text-[12px] font-semibold text-[#355343]">
                           {row.courseTrueSg != null ? row.courseTrueSg.toFixed(2) : "—"}
                         </td>
-                        {[
-                          row.sgApproachRank,
-                          row.drivingAccuracyRank,
-                          row.sgAroundGreenRank,
-                        ].map((rank, cellIndex) => {
+                        {[row.sgApproachRank, row.drivingAccuracyRank, row.sgAroundGreenRank].map((rank, cellIndex) => {
                           const tone = getRankColor(rank, 83);
                           return (
                             <td key={`${row.id}-${cellIndex}`} className="px-3 py-3">
@@ -246,23 +244,23 @@ export default function PgaModelPreviewCard({
             </div>
           ) : null}
         </div>
-      </div>
 
-      <Link
-        to={ctaHref}
-        className="flex items-center justify-between gap-4 border-t border-[#d7e1da] bg-[#1a3a2a] px-5 py-4 text-white transition hover:bg-[#143021] sm:px-6"
-      >
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70">Model Room CTA</div>
-          <div className="mt-1 text-sm font-semibold">Open the full Harbour Town model, adjust every weight, and scan the entire field.</div>
-        </div>
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-          </svg>
-        </span>
-      </Link>
-    </section>
+        <Link
+          to={ctaHref}
+          className="flex items-center justify-between gap-4 border-t border-[#d7e1da] bg-[#1a3a2a] px-5 py-4 text-white transition hover:bg-[#143021] sm:px-6"
+        >
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70">Model Room CTA</div>
+            <div className="mt-1 text-sm font-semibold">Open the full Harbour Town model, adjust every weight, and scan the entire field.</div>
+          </div>
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
+          </span>
+        </Link>
+      </section>
+    </div>
   );
 }
