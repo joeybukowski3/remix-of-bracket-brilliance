@@ -7,6 +7,7 @@ import PgaMainHeader from "@/components/pga/PgaMainHeader";
 import PgaModelTable from "@/components/pga/PgaModelTable";
 import PgaSidebar from "@/components/pga/PgaSidebar";
 import PgaTopProjectionsCard from "@/components/pga/PgaTopProjectionsCard";
+import { useRbcFieldPlayers } from "@/hooks/useRbcFieldPlayers";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
   areWeightsEqual,
@@ -14,7 +15,7 @@ import {
   getTopProjections,
   rankPlayersByScore,
 } from "@/lib/pga/pgaModelHelpers";
-import type { PgaWeights, RawPgaPlayer } from "@/lib/pga/pgaTypes";
+import type { PgaWeights } from "@/lib/pga/pgaTypes";
 import {
   getStoredPgaAppliedWeights,
   getStoredPgaActivePreset,
@@ -34,9 +35,7 @@ export default function PGAModel() {
     () => detectActivePreset(initialWeights) ?? getStoredPgaActivePreset() ?? "balanced",
     [initialWeights],
   );
-  const [players, setPlayers] = useState<RawPgaPlayer[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [errorMessage, setErrorMessage] = useState("");
+  const { players, status, errorMessage } = useRbcFieldPlayers();
   const [draftWeights, setDraftWeights] = useState<PgaWeights>(initialWeights);
   const [appliedWeights, setAppliedWeights] = useState<PgaWeights>(initialWeights);
   const [selectedPreset, setSelectedPreset] = useState<PgaPresetKey>(initialPreset);
@@ -48,27 +47,6 @@ export default function PGAModel() {
       "Interactive PGA model picks for RBC Heritage 2026 with weighted stats, Harbour Town course history, and form-driven rankings.",
     path: "/pga/model",
   });
-
-  useEffect(() => {
-    let active = true;
-    async function loadPlayers() {
-      try {
-        const response = await fetch("/rbc_data.json", { cache: "no-store" });
-        if (!response.ok) throw new Error(`Failed to load RBC data (${response.status})`);
-        const data = await response.json();
-        if (!active) return;
-        if (!Array.isArray(data)) throw new Error("RBC data is not an array.");
-        setPlayers(data as RawPgaPlayer[]);
-        setStatus("ready");
-      } catch (error) {
-        if (!active) return;
-        setErrorMessage(error instanceof Error ? error.message : "Unknown error");
-        setStatus("error");
-      }
-    }
-    loadPlayers();
-    return () => { active = false; };
-  }, []);
 
   useEffect(() => {
     storePgaAppliedWeights(appliedWeights);
