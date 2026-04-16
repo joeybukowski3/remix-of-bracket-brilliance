@@ -1,17 +1,6 @@
-import { formatCompositeScore } from "@/lib/pga/pgaModelHelpers";
+import { formatCompositeScore } from "@/lib/pga/modelEngine";
 import { getRankColor } from "@/lib/pga/rankColors";
-import type { PlayerModelRow } from "@/lib/pga/pgaTypes";
-
-const STAT_GROUPS = [
-  { label: "Approach", key: "sgApproachRank" },
-  { label: "Par 4", key: "par4Rank" },
-  { label: "Drive Acc", key: "drivingAccuracyRank" },
-  { label: "Bogey Av", key: "bogeyAvoidanceRank" },
-  { label: "ARG", key: "sgAroundGreenRank" },
-  { label: "125-150", key: "birdie125150Rank" },
-  { label: "Putting", key: "sgPuttingRank" },
-  { label: "<125", key: "birdieUnder125Rank" },
-] as const;
+import type { PgaModelTableConfig, PlayerModelRow } from "@/lib/pga/pgaTypes";
 
 function finishColor(val: string | null) {
   if (!val || val === "CUT") return val === "CUT" ? "text-red-500" : "text-muted-foreground";
@@ -25,7 +14,7 @@ function finishColor(val: string | null) {
   return "text-foreground";
 }
 
-function csgColor(v: number | null) {
+function courseHistoryColor(v: number | null) {
   if (v == null) return "text-muted-foreground";
   if (v > 1.0) return "text-emerald-700 dark:text-emerald-400 font-semibold";
   if (v > 0.3) return "text-emerald-600 dark:text-emerald-500";
@@ -36,12 +25,15 @@ function csgColor(v: number | null) {
 export default function PgaModelMobileCard({
   player,
   maxRank,
+  tableConfig,
 }: {
   player: PlayerModelRow;
   maxRank: number;
+  tableConfig: PgaModelTableConfig;
 }) {
   const isTop5 = player.rank <= 5;
   const isTop10 = player.rank <= 10;
+  const statGroups = tableConfig.statColumns.slice(0, 8);
 
   return (
     <article
@@ -69,7 +61,7 @@ export default function PgaModelMobileCard({
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-sm font-semibold text-foreground">{player.player}</h2>
           <p className="text-[11px] text-muted-foreground">
-            {player.htRounds != null ? `${player.htRounds} HT rounds` : "No HT history"} · {player.cutsLast5} cuts
+            {player.courseHistoryRounds != null ? `${player.courseHistoryRounds} ${tableConfig.mobileCourseHistoryLabel}` : tableConfig.mobileNoCourseHistoryLabel} · {player.cutsLastFive} cuts
           </p>
         </div>
 
@@ -79,11 +71,7 @@ export default function PgaModelMobileCard({
           }`}
         >
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Score</p>
-          <p
-            className={`mt-0.5 font-mono text-sm font-bold ${
-              isTop5 ? "text-emerald-800 dark:text-emerald-300" : "text-foreground"
-            }`}
-          >
+          <p className={`mt-0.5 font-mono text-sm font-bold ${isTop5 ? "text-emerald-800 dark:text-emerald-300" : "text-foreground"}`}>
             {formatCompositeScore(player.score)}
           </p>
         </div>
@@ -91,31 +79,31 @@ export default function PgaModelMobileCard({
 
       <div className="mt-3 flex gap-2">
         <div className="min-w-0 flex-1 rounded-[14px] bg-secondary/50 px-3 py-2">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Masters 2026</p>
-          <p className={`mt-0.5 truncate font-mono text-xs ${finishColor(player.masters2026)}`}>
-            {player.masters2026 || "—"}
+          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{tableConfig.historyLabels.relatedEventLabel}</p>
+          <p className={`mt-0.5 truncate font-mono text-xs ${finishColor(player.relatedEventFinish)}`}>
+            {player.relatedEventFinish || "—"}
           </p>
         </div>
         <div className="min-w-0 flex-1 rounded-[14px] bg-secondary/50 px-3 py-2">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Course SG</p>
-          <p className={`mt-0.5 font-mono text-xs ${csgColor(player.courseTrueSg)}`}>
-            {player.courseTrueSg != null ? player.courseTrueSg.toFixed(2) : "—"}
+          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{tableConfig.historyLabels.courseHistoryScoreLabel}</p>
+          <p className={`mt-0.5 font-mono text-xs ${courseHistoryColor(player.courseHistoryScore)}`}>
+            {player.courseHistoryScore != null ? player.courseHistoryScore.toFixed(2) : "—"}
           </p>
         </div>
         <div className="min-w-0 flex-1 rounded-[14px] bg-secondary/50 px-3 py-2">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">DG Rank</p>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{tableConfig.historyLabels.trendLabel}</p>
           <p className="mt-0.5 font-mono text-xs text-foreground">{player.trendRank ?? "—"}</p>
         </div>
       </div>
 
       <div className="mt-3 grid grid-cols-4 gap-1.5">
-        {STAT_GROUPS.map((stat) => {
+        {statGroups.map((stat) => {
           const rank = player[stat.key as keyof PlayerModelRow] as number | null;
           const { bg, text } = getRankColor(rank, maxRank);
           return (
             <div key={stat.key} className="min-w-0 rounded-[12px] bg-secondary/30 px-2 py-2 text-center">
               <p className="text-[8px] font-semibold uppercase leading-tight tracking-[0.08em] text-muted-foreground/80">
-                {stat.label}
+                {stat.mobileLabel}
               </p>
               <div className="mt-1 flex justify-center">
                 <span

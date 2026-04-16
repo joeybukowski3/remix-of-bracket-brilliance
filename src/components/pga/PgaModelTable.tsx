@@ -1,30 +1,33 @@
 import { useState } from "react";
-import PgaHeatmapCell from "@/components/pga/PgaHeatmapCell";
 import PgaModelMobileCard from "@/components/pga/PgaModelMobileCard";
-import { areWeightsEqual, getWeightTotal } from "@/lib/pga/pgaModelHelpers";
+import { areWeightsEqual, getWeightTotal } from "@/lib/pga/modelEngine";
 import { getRankColor, RANK_COLOR_LEGEND } from "@/lib/pga/rankColors";
-import { PGA_PRESETS, PGA_WEIGHT_DEFINITIONS, RBC_HERITAGE_WEIGHTS, type PgaPresetKey } from "@/lib/pga/pgaWeights";
-import type { PlayerModelRow, PgaWeights } from "@/lib/pga/pgaTypes";
+import { PGA_WEIGHT_DEFINITIONS } from "@/lib/pga/pgaWeights";
+import type { PgaModelTableConfig, PlayerModelRow, PgaWeights } from "@/lib/pga/pgaTypes";
 
 type Props = {
   rows: PlayerModelRow[];
+  tableConfig: PgaModelTableConfig;
   isFullPage?: boolean;
   onExpandFullPage?: () => void;
   draftWeights?: PgaWeights;
   appliedWeights?: PgaWeights;
-  selectedPreset?: PgaPresetKey;
-  activePreset?: PgaPresetKey | null;
-  draftPreset?: PgaPresetKey | null;
+  selectedPreset?: string;
+  activePreset?: string | null;
+  draftPreset?: string | null;
   presetOptions?: Array<{
-    key: PgaPresetKey;
+    key: string;
     label: string;
     description: string;
   }>;
-  onPresetSelect?: (preset: PgaPresetKey) => void;
+  onPresetSelect?: (preset: string) => void;
   onWeightChange?: (key: keyof PgaWeights, value: number) => void;
   onApply?: () => void;
   onReset?: () => void;
 };
+
+type StatColKey = NonNullable<PgaModelTableConfig["statColumns"]>[number]["key"];
+const CATEGORIES = ["Ball Striking", "Short Game", "Scoring", "Form"] as const;
 
 function finishColor(val: string | null): string {
   if (!val || val === "—") return "text-muted-foreground";
@@ -39,35 +42,13 @@ function finishColor(val: string | null): string {
   return "text-foreground";
 }
 
-function csgColor(v: number | null): string {
+function courseHistoryColor(v: number | null): string {
   if (v == null) return "text-muted-foreground";
   if (v > 1.0) return "font-semibold text-emerald-700 dark:text-emerald-400";
   if (v > 0.3) return "text-emerald-600 dark:text-emerald-500";
   if (v >= 0) return "text-foreground";
   return "text-red-500 dark:text-red-400";
 }
-
-const STAT_COLUMNS = [
-  { key: "sgApproachRank", abbr: "App", tooltip: "SG: Approach the Green — Strokes Gained on approach shots. Most important stat at Harbour Town." },
-  { key: "par4Rank", abbr: "P4", tooltip: "Par 4 Scoring Average — average score on par 4s. Lower score = better rank." },
-  { key: "drivingAccuracyRank", abbr: "DA", tooltip: "Driving Accuracy % — percentage of fairways hit. Key at narrow Harbour Town." },
-  { key: "bogeyAvoidanceRank", abbr: "BAvd", tooltip: "Bogey Avoidance % — how often a player avoids making bogey or worse." },
-  { key: "sgAroundGreenRank", abbr: "ARG", tooltip: "SG: Around the Green — Strokes Gained chipping and pitching from off the green." },
-  { key: "birdie125150Rank", abbr: "125", tooltip: "Birdie or Better from 125–150 yards — key Harbour Town scoring distance." },
-  { key: "sgPuttingRank", abbr: "Putt", tooltip: "SG: Putting — Strokes Gained on the Bermuda greens." },
-  { key: "birdieUnder125Rank", abbr: "<125", tooltip: "Birdie or Better from inside 125 yards — scoring from close range." },
-] as const;
-
-const HISTORY_COLS = [
-  { label: "DG Rank", tooltip: "DataGolf Trend Rank — current global player ranking per the DataGolf model" },
-  { label: "HT Rnds", tooltip: "Rounds at Harbour Town — total career rounds played at this course" },
-  { label: "Masters", tooltip: "2026 Masters Tournament final finish position" },
-  { label: "Cuts/5", tooltip: "Cuts Made — out of the last 5 RBC Heritage appearances" },
-  { label: "Course SG", tooltip: "Course True SG — historical Strokes Gained specifically at Harbour Town Golf Links" },
-] as const;
-
-type StatColKey = (typeof STAT_COLUMNS)[number]["key"];
-const CATEGORIES = ["Ball Striking", "Short Game", "Scoring", "Form"] as const;
 
 function WeightSliderRow({
   draftWeights,
@@ -83,26 +64,24 @@ function WeightSliderRow({
 }: {
   draftWeights: PgaWeights;
   appliedWeights: PgaWeights;
-  selectedPreset: PgaPresetKey;
-  activePreset: PgaPresetKey | null;
-  draftPreset: PgaPresetKey | null;
+  selectedPreset: string;
+  activePreset: string | null;
+  draftPreset: string | null;
   presetOptions: Array<{
-    key: PgaPresetKey;
+    key: string;
     label: string;
     description: string;
   }>;
-  onPresetSelect: (preset: PgaPresetKey) => void;
+  onPresetSelect: (preset: string) => void;
   onWeightChange: (key: keyof PgaWeights, value: number) => void;
   onApply: () => void;
   onReset: () => void;
 }) {
   const draftTotal = getWeightTotal(draftWeights);
   const hasDraftChanges = !areWeightsEqual(draftWeights, appliedWeights);
-  const isPreset =
-    areWeightsEqual(draftWeights, RBC_HERITAGE_WEIGHTS) && areWeightsEqual(appliedWeights, RBC_HERITAGE_WEIGHTS);
   const totalOk = Math.abs(draftTotal - 100) < 5;
-  const visibleActivePreset = activePreset ? PGA_PRESETS[activePreset].label : "Custom";
-  const visibleDraftPreset = draftPreset ? PGA_PRESETS[draftPreset].label : "Custom";
+  const visibleActivePreset = presetOptions.find((preset) => preset.key === activePreset)?.label ?? "Custom";
+  const visibleDraftPreset = presetOptions.find((preset) => preset.key === draftPreset)?.label ?? "Custom";
   const selectedPresetDescription = presetOptions.find((preset) => preset.key === selectedPreset)?.description;
 
   return (
@@ -139,7 +118,7 @@ function WeightSliderRow({
           <select
             id="pga-preset-select"
             value={selectedPreset}
-            onChange={(event) => onPresetSelect(event.target.value as PgaPresetKey)}
+            onChange={(event) => onPresetSelect(event.target.value)}
             className="w-full min-w-0 rounded-full border border-border bg-card px-3 py-2 text-[11px] font-medium text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 sm:w-auto sm:py-1"
           >
             {presetOptions.map((preset) => (
@@ -153,8 +132,7 @@ function WeightSliderRow({
             <button
               type="button"
               onClick={onReset}
-              disabled={isPreset}
-              className="rounded-full border border-border bg-card px-3 py-2 text-[11px] font-medium text-muted-foreground transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40 sm:py-1"
+              className="rounded-full border border-border bg-card px-3 py-2 text-[11px] font-medium text-muted-foreground transition hover:bg-secondary sm:py-1"
             >
               Reset
             </button>
@@ -171,32 +149,32 @@ function WeightSliderRow({
       </div>
 
       <p className="mb-4 text-[11px] leading-5 text-muted-foreground sm:max-w-[44rem]">
-        Preset: <span className="font-medium text-foreground">{PGA_PRESETS[selectedPreset].label}</span>{" "}
+        Preset: <span className="font-medium text-foreground">{presetOptions.find((preset) => preset.key === selectedPreset)?.label}</span>{" "}
         {selectedPresetDescription}
       </p>
 
       <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
-        {CATEGORIES.map((cat) => {
-          const defs = PGA_WEIGHT_DEFINITIONS.filter((d) => d.category === cat);
+        {CATEGORIES.map((category) => {
+          const defs = PGA_WEIGHT_DEFINITIONS.filter((definition) => definition.category === category);
           return (
-            <div key={cat} className="min-w-0">
-              <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60">{cat}</p>
+            <div key={category} className="min-w-0">
+              <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60">{category}</p>
               <div className="space-y-2.5">
-                {defs.map((def) => (
-                  <div key={def.key} className="min-w-0 overflow-hidden rounded-2xl bg-card/80 px-3 py-2.5" title={def.label}>
+                {defs.map((definition) => (
+                  <div key={definition.key} className="min-w-0 overflow-hidden rounded-2xl bg-card/80 px-3 py-2.5" title={definition.label}>
                     <div className="flex min-w-0 items-center justify-between gap-3">
-                      <span className="min-w-0 truncate text-[10px] text-muted-foreground">{def.label}</span>
+                      <span className="min-w-0 truncate text-[10px] text-muted-foreground">{definition.label}</span>
                       <span className="shrink-0 text-right text-[10px] font-semibold tabular-nums text-foreground">
-                        {draftWeights[def.key]}%
+                        {draftWeights[definition.key]}%
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={def.min}
-                      max={def.max}
-                      step={def.step}
-                      value={draftWeights[def.key]}
-                      onChange={(e) => onWeightChange(def.key, Number(e.target.value))}
+                      min={definition.min}
+                      max={definition.max}
+                      step={definition.step}
+                      value={draftWeights[definition.key]}
+                      onChange={(event) => onWeightChange(definition.key, Number(event.target.value))}
                       className="mt-2 block h-2 w-full min-w-0 cursor-pointer accent-primary"
                     />
                   </div>
@@ -212,6 +190,7 @@ function WeightSliderRow({
 
 export default function PgaModelTable({
   rows,
+  tableConfig,
   isFullPage = false,
   onExpandFullPage,
   draftWeights,
@@ -225,18 +204,7 @@ export default function PgaModelTable({
   onApply,
   onReset,
 }: Props) {
-  const [visibleStats, setVisibleStats] = useState<Set<StatColKey>>(
-    new Set([
-      "sgApproachRank",
-      "par4Rank",
-      "drivingAccuracyRank",
-      "bogeyAvoidanceRank",
-      "sgAroundGreenRank",
-      "birdie125150Rank",
-      "sgPuttingRank",
-      "birdieUnder125Rank",
-    ]),
-  );
+  const [visibleStats, setVisibleStats] = useState<Set<StatColKey>>(new Set(tableConfig.statColumns.map((column) => column.key)));
   const [showColPicker, setShowColPicker] = useState(false);
 
   const rankValues = rows
@@ -251,12 +219,12 @@ export default function PgaModelTable({
       row.sgPuttingRank,
       row.birdieUnder125Rank,
     ])
-    .filter((v): v is number => typeof v === "number");
+    .filter((value): value is number => typeof value === "number");
   const maxRank = rankValues.length > 0 ? Math.max(...rankValues) : rows.length;
 
   function toggleStat(key: StatColKey) {
-    setVisibleStats((prev) => {
-      const next = new Set(prev);
+    setVisibleStats((current) => {
+      const next = new Set(current);
       if (next.has(key)) {
         if (next.size > 1) next.delete(key);
       } else {
@@ -266,7 +234,7 @@ export default function PgaModelTable({
     });
   }
 
-  const visibleCols = STAT_COLUMNS.filter((c) => visibleStats.has(c.key));
+  const visibleCols = tableConfig.statColumns.filter((column) => visibleStats.has(column.key));
   const hasWeights =
     draftWeights &&
     appliedWeights &&
@@ -281,10 +249,8 @@ export default function PgaModelTable({
     <section className="rounded-[30px] bg-card shadow-[0_2px_12px_hsl(var(--foreground)/0.06)] ring-1 ring-border/60">
       <div className="flex flex-col gap-2 border-b border-border/70 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold tracking-[-0.02em] text-foreground">Harbour Town Model — Full Field</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Ranked by composite score · lower stat rank = better · hover column headers for full name
-          </p>
+          <h2 className="text-base font-semibold tracking-[-0.02em] text-foreground">{tableConfig.title}</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">{tableConfig.subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground">{rows.length} golfers</span>
@@ -292,7 +258,7 @@ export default function PgaModelTable({
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowColPicker((v) => !v)}
+              onClick={() => setShowColPicker((value) => !value)}
               className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -308,15 +274,15 @@ export default function PgaModelTable({
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                   Toggle stat columns
                 </p>
-                {STAT_COLUMNS.map((col) => (
-                  <label key={col.key} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-secondary">
+                {tableConfig.statColumns.map((column) => (
+                  <label key={column.key} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-secondary">
                     <input
                       type="checkbox"
-                      checked={visibleStats.has(col.key)}
-                      onChange={() => toggleStat(col.key)}
+                      checked={visibleStats.has(column.key)}
+                      onChange={() => toggleStat(column.key)}
                       className="accent-primary"
                     />
-                    <span className="text-xs text-foreground">{col.tooltip.split(" — ")[0]}</span>
+                    <span className="text-xs text-foreground">{column.tooltip.split(" — ")[0]}</span>
                   </label>
                 ))}
                 <button
@@ -366,14 +332,14 @@ export default function PgaModelTable({
       {rows.length === 0 ? (
         <div className="px-5 py-12 text-center">
           <p className="text-sm font-medium text-foreground">No player rows available.</p>
-          <p className="mt-1.5 text-xs text-muted-foreground">Check that `rbc_data.json` is in `/public` and reload.</p>
+          <p className="mt-1.5 text-xs text-muted-foreground">Check that the tournament player data file is available and reload.</p>
         </div>
       ) : null}
 
       {rows.length > 0 ? (
         <div className="space-y-3 p-4 md:hidden">
           {rows.map((row) => (
-            <PgaModelMobileCard key={row.id} player={row} maxRank={maxRank} />
+            <PgaModelMobileCard key={row.id} player={row} maxRank={maxRank} tableConfig={tableConfig} />
           ))}
         </div>
       ) : null}
@@ -383,13 +349,7 @@ export default function PgaModelTable({
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/40 px-4 py-3 text-[12px] text-muted-foreground sm:px-5">
             {RANK_COLOR_LEGEND.map((tier) => (
               <div key={tier.label} className="inline-flex items-center gap-2">
-                <span
-                  className="inline-block h-[18px] w-[32px] rounded"
-                  style={{
-                    background: tier.bg,
-                    border: tier.border ?? "none",
-                  }}
-                />
+                <span className="inline-block h-[18px] w-[32px] rounded" style={{ background: tier.bg, border: tier.border ?? "none" }} />
                 <span>{tier.label}</span>
               </div>
             ))}
@@ -402,13 +362,13 @@ export default function PgaModelTable({
                     Rank
                   </th>
                   <th colSpan={5} className="border-r border-border/30 bg-emerald-50/60 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
-                    Harbour Town History
+                    {tableConfig.historySectionTitle}
                   </th>
                   <th colSpan={visibleCols.length} className="border-r border-border/30 bg-sky-50/60 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-700 dark:bg-sky-950/20 dark:text-sky-400">
-                    Weighted Stats — Field Rank (lower = better)
+                    {tableConfig.statsSectionTitle}
                   </th>
                   <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-purple-700 dark:text-purple-400">
-                    Score
+                    {tableConfig.scoreSectionTitle}
                   </th>
                 </tr>
                 <tr className="border-b-2 border-border bg-secondary/20">
@@ -418,26 +378,32 @@ export default function PgaModelTable({
                   <th title="Player name" className="min-w-[180px] px-3 py-2.5 text-left text-[11px] font-semibold text-foreground">
                     Player
                   </th>
-                  {HISTORY_COLS.map((col, i) => (
+                  {[
+                    [tableConfig.historyLabels.trendLabel, tableConfig.historyLabels.trendTooltip],
+                    [tableConfig.historyLabels.courseRoundsLabel, tableConfig.historyLabels.courseRoundsTooltip],
+                    [tableConfig.historyLabels.relatedEventLabel, tableConfig.historyLabels.relatedEventTooltip],
+                    [tableConfig.historyLabels.cutsLabel, tableConfig.historyLabels.cutsTooltip],
+                    [tableConfig.historyLabels.courseHistoryScoreLabel, tableConfig.historyLabels.courseHistoryScoreTooltip],
+                  ].map(([label, tooltip], index) => (
                     <th
-                      key={col.label}
-                      title={col.tooltip}
+                      key={label}
+                      title={tooltip}
                       className={`cursor-help px-2.5 py-2.5 text-center text-[11px] font-semibold text-emerald-700 underline decoration-dotted underline-offset-2 dark:text-emerald-400 ${
-                        i === 0 ? "border-l border-emerald-200/50 dark:border-emerald-900/50" : ""
-                      } ${i === 4 ? "border-r border-emerald-200/50 dark:border-emerald-900/50" : ""}`}
+                        index === 0 ? "border-l border-emerald-200/50 dark:border-emerald-900/50" : ""
+                      } ${index === 4 ? "border-r border-emerald-200/50 dark:border-emerald-900/50" : ""}`}
                     >
-                      {col.label}
+                      {label}
                     </th>
                   ))}
-                  {visibleCols.map((col, i) => (
+                  {visibleCols.map((column, index) => (
                     <th
-                      key={col.key}
-                      title={col.tooltip}
+                      key={column.key}
+                      title={column.tooltip}
                       className={`cursor-help px-2.5 py-2.5 text-center text-[11px] font-semibold text-sky-700 underline decoration-dotted underline-offset-2 dark:text-sky-400 ${
-                        i === 0 ? "border-l border-sky-200/50 dark:border-sky-900/50" : ""
-                      } ${i === visibleCols.length - 1 ? "border-r border-sky-200/50 dark:border-sky-900/50" : ""}`}
+                        index === 0 ? "border-l border-sky-200/50 dark:border-sky-900/50" : ""
+                      } ${index === visibleCols.length - 1 ? "border-r border-sky-200/50 dark:border-sky-900/50" : ""}`}
                     >
-                      {col.abbr}
+                      {column.abbr}
                     </th>
                   ))}
                   <th title="Composite model score — higher is better" className="px-3 py-2.5 text-center text-[11px] font-semibold text-purple-700 dark:text-purple-400">
@@ -447,25 +413,21 @@ export default function PgaModelTable({
               </thead>
 
               <tbody className="divide-y divide-border/40">
-                {rows.map((row, idx) => {
+                {rows.map((row, index) => {
                   const isTop5 = row.rank <= 5;
                   const isTop10 = row.rank <= 10;
 
                   return (
                     <tr
                       key={row.id}
-                      className={`${idx % 2 !== 0 ? "bg-secondary/20" : ""} transition-colors hover:bg-accent/40 ${
+                      className={`${index % 2 !== 0 ? "bg-secondary/20" : ""} transition-colors hover:bg-accent/40 ${
                         isTop5 ? "ring-inset ring-1 ring-emerald-200/60 dark:ring-emerald-900/40" : ""
                       }`}
                     >
                       <td className="w-10 px-3 py-2 text-center">
                         <span
                           className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
-                            isTop5
-                              ? "bg-emerald-600 text-white"
-                              : isTop10
-                                ? "bg-primary/15 text-primary"
-                                : "text-muted-foreground"
+                            isTop5 ? "bg-emerald-600 text-white" : isTop10 ? "bg-primary/15 text-primary" : "text-muted-foreground"
                           }`}
                         >
                           {row.rank}
@@ -479,29 +441,29 @@ export default function PgaModelTable({
                       <td className="border-l border-emerald-100/60 px-2.5 py-2 text-center text-[11px] text-muted-foreground dark:border-emerald-900/30">
                         {row.trendRank ?? "—"}
                       </td>
-                      <td className="px-2.5 py-2 text-center text-[11px] text-foreground">{row.htRounds ?? "—"}</td>
-                      <td className={`px-2.5 py-2 text-center font-mono text-[11px] ${finishColor(row.masters2026)}`}>
-                        {row.masters2026 || "—"}
+                      <td className="px-2.5 py-2 text-center text-[11px] text-foreground">{row.courseHistoryRounds ?? "—"}</td>
+                      <td className={`px-2.5 py-2 text-center font-mono text-[11px] ${finishColor(row.relatedEventFinish)}`}>
+                        {row.relatedEventFinish || "—"}
                       </td>
-                      <td className="px-2.5 py-2 text-center text-[11px] font-medium text-foreground">{row.cutsLast5}</td>
-                      <td className={`border-r border-emerald-100/60 px-2.5 py-2 text-center font-mono text-[11px] dark:border-emerald-900/30 ${csgColor(row.courseTrueSg)}`}>
-                        {row.courseTrueSg != null ? row.courseTrueSg.toFixed(2) : "—"}
+                      <td className="px-2.5 py-2 text-center text-[11px] font-medium text-foreground">{row.cutsLastFive}</td>
+                      <td className={`border-r border-emerald-100/60 px-2.5 py-2 text-center font-mono text-[11px] dark:border-emerald-900/30 ${courseHistoryColor(row.courseHistoryScore)}`}>
+                        {row.courseHistoryScore != null ? row.courseHistoryScore.toFixed(2) : "—"}
                       </td>
 
-                      {visibleCols.map((col, i) => {
-                        const rank = row[col.key as keyof PlayerModelRow] as number | null;
-                        const { bg, text } = getRankColor(rank, rows.length);
+                      {visibleCols.map((column, columnIndex) => {
+                        const rank = row[column.key as keyof PlayerModelRow] as number | null;
+                        const tone = getRankColor(rank, rows.length);
                         return (
                           <td
-                            key={col.key}
+                            key={column.key}
                             className={`px-2 py-2 text-center ${
-                              i === 0 ? "border-l border-sky-100/60 dark:border-sky-900/30" : ""
-                            } ${i === visibleCols.length - 1 ? "border-r border-sky-100/60 dark:border-sky-900/30" : ""}`}
+                              columnIndex === 0 ? "border-l border-sky-100/60 dark:border-sky-900/30" : ""
+                            } ${columnIndex === visibleCols.length - 1 ? "border-r border-sky-100/60 dark:border-sky-900/30" : ""}`}
                           >
                             <span
                               style={{
-                                background: bg,
-                                color: text,
+                                background: tone.bg,
+                                color: tone.text,
                                 borderRadius: "5px",
                                 display: "inline-block",
                                 minWidth: "32px",
@@ -520,11 +482,7 @@ export default function PgaModelTable({
                       <td className="px-3 py-2 text-center">
                         <span
                           className={`inline-block rounded-lg px-2 py-0.5 font-mono text-[11px] font-semibold ${
-                            isTop5
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                              : isTop10
-                                ? "bg-primary/10 text-primary"
-                                : "text-muted-foreground"
+                            isTop5 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" : isTop10 ? "bg-primary/10 text-primary" : "text-muted-foreground"
                           }`}
                         >
                           {row.score.toFixed(3)}

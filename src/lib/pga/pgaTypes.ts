@@ -1,3 +1,5 @@
+import type { PgaModelStatColumn } from "@/lib/pga/tournamentConfig";
+
 export type RawPgaPlayer = {
   "Player Name": string;
   Salary?: number | null;
@@ -41,7 +43,28 @@ export type PgaWeightDefinition = {
   min: number;
   max: number;
   step: number;
-  rankKey?: keyof RawPgaPlayer;
+};
+
+export type PgaPlayerInput = {
+  id: string;
+  player: string;
+  salary?: number | null;
+  courseHistoryRounds: number | null;
+  courseHistoryScore: number | null;
+  cutsLastFive: string;
+  relatedEventFinish: string | null;
+  recentFinishes: Array<string | null>;
+  statRanks: {
+    trendRank: number | null;
+    sgApproachRank: number | null;
+    par4Rank: number | null;
+    drivingAccuracyRank: number | null;
+    bogeyAvoidanceRank: number | null;
+    sgAroundGreenRank: number | null;
+    birdie125150Rank: number | null;
+    sgPuttingRank: number | null;
+    birdieUnder125Rank: number | null;
+  };
 };
 
 export type PlayerModelRow = {
@@ -50,14 +73,10 @@ export type PlayerModelRow = {
   score: number;
   rank: number;
   trendRank: number | null;
-  htRounds: number | null;
-  cutsLast5: string;
-  finish2025: string | null;
-  finish2024: string | null;
-  finish2023: string | null;
-  finish2022: string | null;
-  finish2021: string | null;
-  masters2026: string | null;
+  courseHistoryRounds: number | null;
+  cutsLastFive: string;
+  recentFinishes: Array<string | null>;
+  relatedEventFinish: string | null;
   sgApproachRank: number | null;
   par4Rank: number | null;
   drivingAccuracyRank: number | null;
@@ -66,7 +85,7 @@ export type PlayerModelRow = {
   birdie125150Rank: number | null;
   sgPuttingRank: number | null;
   birdieUnder125Rank: number | null;
-  courseTrueSg: number | null;
+  courseHistoryScore: number | null;
 };
 
 export type PgaTournamentMeta = {
@@ -77,6 +96,8 @@ export type PgaTournamentMeta = {
   fieldAverage: string;
   cutLine: string;
   eventType: string;
+  noCutLabel: string;
+  picksPath: string;
 };
 
 export type PgaTopProjection = {
@@ -85,4 +106,29 @@ export type PgaTopProjection = {
   rank: number;
   score: number;
   note: string;
+};
+
+export type PgaModelHistoryLabels = {
+  trendLabel: string;
+  trendTooltip: string;
+  courseRoundsLabel: string;
+  courseRoundsTooltip: string;
+  relatedEventLabel: string;
+  relatedEventTooltip: string;
+  cutsLabel: string;
+  cutsTooltip: string;
+  courseHistoryScoreLabel: string;
+  courseHistoryScoreTooltip: string;
+};
+
+export type PgaModelTableConfig = {
+  title: string;
+  subtitle: string;
+  historySectionTitle: string;
+  statsSectionTitle: string;
+  scoreSectionTitle: string;
+  statColumns: PgaModelStatColumn[];
+  historyLabels: PgaModelHistoryLabels;
+  mobileCourseHistoryLabel: string;
+  mobileNoCourseHistoryLabel: string;
 };

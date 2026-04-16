@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import SeoJsonLd from "@/components/seo/SeoJsonLd";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
+import { getTournamentModelPath } from "@/lib/pga/tournamentConfig";
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqSchema, CURRENT_TOURNAMENT_PATH } from "@/lib/seo/pgaSeo";
 
 const top40Rows = [
@@ -18,6 +20,8 @@ const top40Rows = [
   ["Sepp Straka", "Controlled driving and solid approach numbers keep his floor more stable than the market implies."],
   ["Sungjae Im", "Balanced skill set and a dependable made-cut baseline make him useful in conservative betting structures."],
 ] as const;
+
+const featuredModelPath = getTournamentModelPath(FEATURED_PGA_TOURNAMENT);
 
 const faqEntries = [
   {
@@ -79,7 +83,7 @@ export default function PGATop40Picks() {
               <Link to={CURRENT_TOURNAMENT_PATH} className="inline-flex items-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">
                 latest tournament picks
               </Link>
-              <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-foreground transition hover:bg-accent">
+              <Link to={featuredModelPath} className="inline-flex items-center rounded-xl bg-secondary px-5 py-3 text-sm font-medium text-foreground transition hover:bg-accent">
                 golf betting model
               </Link>
             </div>

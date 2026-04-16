@@ -1,6 +1,15 @@
+import { useParams } from "react-router-dom";
 import PgaTournamentPicksPage from "@/components/pga/PgaTournamentPicksPage";
-import { rbcHeritage2026Content } from "@/lib/seo/pgaTournamentContent";
+import NotFound from "@/pages/NotFound";
+import { FEATURED_PGA_TOURNAMENT, getPgaTournamentBySlug } from "@/lib/pga/tournaments";
 
 export default function PGA() {
-  return <PgaTournamentPicksPage content={rbcHeritage2026Content} />;
+  const { tournamentSlug } = useParams();
+  const tournament = tournamentSlug ? getPgaTournamentBySlug(tournamentSlug) : FEATURED_PGA_TOURNAMENT;
+
+  if (!tournament) {
+    return <NotFound />;
+  }
+
+  return <PgaTournamentPicksPage tournament={tournament} />;
 }

@@ -20,11 +20,18 @@ type Props = {
   themes: PreviewTheme[];
   activeThemeKey: string;
   onThemeChange: (key: string) => void;
-  activeThemeDescription: string;
   previewRows: PlayerModelRow[];
   sliders: PreviewSlider[];
   liveModelLabel: string;
   ctaHref: string;
+  eyebrow: string;
+  headline: string;
+  body: string;
+  rankingTitle: string;
+  rankingBody: string;
+  railCtaTitle: string;
+  railCtaBody: string;
+  courseHistoryLabel: string;
 };
 
 function ScorePill({ score }: { score: number }) {
@@ -61,11 +68,18 @@ export default function PgaModelPreviewCard({
   themes,
   activeThemeKey,
   onThemeChange,
-  activeThemeDescription,
   previewRows,
   sliders,
   liveModelLabel,
   ctaHref,
+  eyebrow,
+  headline,
+  body,
+  rankingTitle,
+  rankingBody,
+  railCtaTitle,
+  railCtaBody,
+  courseHistoryLabel,
 }: Props) {
   const visibleThemes = themes.slice(0, 4);
   const visibleSliders = sliders.slice(0, 3);
@@ -76,15 +90,15 @@ export default function PgaModelPreviewCard({
         <div className="mx-auto max-w-[40rem] lg:max-w-none">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[#1a3a2a] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
-              Build your RBC Heritage model
+              {eyebrow}
             </span>
           </div>
 
           <h2 className="mt-3 font-['Playfair_Display'] text-[1.75rem] font-semibold leading-[1.04] tracking-[-0.03em] text-[#1a3a2a] sm:text-[1.9rem]">
-            Shift the weights. See who rises.
+            {headline}
           </h2>
           <p className="mt-2.5 max-w-[32rem] text-[13px] leading-6 text-[#52675b] sm:text-sm sm:leading-6">
-            Preview the board, then open the full model room to customize every ranking.
+            {body}
           </p>
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -131,8 +145,8 @@ export default function PgaModelPreviewCard({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a7d72]">Mini Rankings Table</div>
-              <h3 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#1a3a2a]">Harbour Town ranking preview</h3>
-              <p className="mt-1 text-[12px] leading-6 text-[#52675b]">Tap a weight view to change the board. Lower rank cells grade better.</p>
+              <h3 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#1a3a2a]">{rankingTitle}</h3>
+              <p className="mt-1 text-[12px] leading-6 text-[#52675b]">{rankingBody}</p>
             </div>
             <Link to={ctaHref} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1a3a2a] transition hover:text-[#143021]">
               Customize full rankings
@@ -146,10 +160,7 @@ export default function PgaModelPreviewCard({
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-[#d7e1da] bg-[#f6faf7] px-4 py-3 text-[11px] text-[#52675b]">
             {RANK_COLOR_LEGEND.map((tier) => (
               <div key={tier.label} className="inline-flex items-center gap-2">
-                <span
-                  className="inline-block h-[16px] w-[28px] rounded"
-                  style={{ background: tier.bg, border: tier.border ?? "none" }}
-                />
+                <span className="inline-block h-[16px] w-[28px] rounded" style={{ background: tier.bg, border: tier.border ?? "none" }} />
                 <span>{tier.label}</span>
               </div>
             ))}
@@ -157,7 +168,7 @@ export default function PgaModelPreviewCard({
 
           {status === "loading" ? (
             <div className="mt-4 rounded-[22px] border border-[#d7e1da] bg-white/90 p-5 text-sm text-[#52675b]">
-              Loading the RBC Heritage model preview...
+              Loading the tournament model preview...
             </div>
           ) : null}
 
@@ -177,7 +188,7 @@ export default function PgaModelPreviewCard({
                       <th className="px-4 py-3">Rank</th>
                       <th className="px-4 py-3">Player</th>
                       <th className="px-4 py-3">Score</th>
-                      <th className="px-3 py-3">Course SG</th>
+                      <th className="px-3 py-3">{courseHistoryLabel}</th>
                       <th className="px-3 py-3">App</th>
                       <th className="px-3 py-3">Acc</th>
                       <th className="px-3 py-3">ARG</th>
@@ -193,13 +204,13 @@ export default function PgaModelPreviewCard({
                         </td>
                         <td className="px-4 py-3">
                           <div className="font-semibold text-[#1c2a21]">{row.player}</div>
-                          <div className="mt-1 text-[11px] text-[#6a7d72]">{row.cutsLast5} cuts made in last five starts here</div>
+                          <div className="mt-1 text-[11px] text-[#6a7d72]">{row.cutsLastFive} cuts made in last five starts here</div>
                         </td>
                         <td className="px-4 py-3">
                           <ScorePill score={row.score} />
                         </td>
                         <td className="px-3 py-3 text-[12px] font-semibold text-[#355343]">
-                          {row.courseTrueSg != null ? row.courseTrueSg.toFixed(2) : "—"}
+                          {row.courseHistoryScore != null ? row.courseHistoryScore.toFixed(2) : "—"}
                         </td>
                         {[row.sgApproachRank, row.drivingAccuracyRank, row.sgAroundGreenRank].map((rank, cellIndex) => {
                           const tone = getRankColor(rank, 83);
@@ -228,8 +239,8 @@ export default function PgaModelPreviewCard({
           className="flex items-center justify-between gap-4 border-t border-[#d7e1da] bg-[#1a3a2a] px-5 py-4 text-white transition hover:bg-[#143021] sm:px-6"
         >
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70">Model Room CTA</div>
-            <div className="mt-1 text-sm font-semibold">Open the full Harbour Town model, adjust every weight, and scan the entire field.</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/70">{railCtaTitle}</div>
+            <div className="mt-1 text-sm font-semibold">{railCtaBody}</div>
           </div>
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
