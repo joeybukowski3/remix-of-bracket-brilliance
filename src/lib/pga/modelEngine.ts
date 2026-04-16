@@ -2,6 +2,8 @@ import type { PgaTournamentConfig } from "@/lib/pga/tournamentConfig";
 import type { PgaPlayerInput, PgaWeightKey, PgaWeights, PlayerModelRow, PgaTopProjection, RawPgaPlayer } from "@/lib/pga/pgaTypes";
 
 const FALLBACK_FIELD_SIZE = 83;
+const MIN_AVAILABLE_WEIGHTED_METRICS_RATIO = 0.5;
+const MIN_AVAILABLE_WEIGHTED_METRICS_ABSOLUTE = 4;
 
 const RANK_FIELD_MAP: Record<Exclude<PgaWeightKey, "courseTrueSg">, keyof PgaPlayerInput["statRanks"]> = {
   sgApproach: "sgApproachRank",
@@ -38,44 +40,64 @@ export function normalizeTournamentPlayerData(players: RawPgaPlayer[]): PgaPlaye
   return players.map((player) => ({
     id: player["Player Name"],
     player: player["Player Name"],
-    salary: player.Salary ?? null,
-    courseHistoryRounds: player["HT # Rounds"],
-    courseHistoryScore: player["Course True SG"],
+    salary: sanitizeNullableNumber(player.Salary),
+    courseHistoryRounds: sanitizeNullableNumber(player["HT # Rounds"]),
+    courseHistoryScore: sanitizeNullableNumber(player["Course True SG"]),
     cutsLastFive: buildCutsLastFive(player),
     relatedEventFinish: player["Masters 2026"],
     recentFinishes: [player["2025"], player["2024"], player["2023"], player["2022"], player["2021"]],
     statRanks: {
-      trendRank: player.TrendRank,
-      sgApproachRank: player["SG: Approach the Green_rank"],
-      par4Rank: player["Par 4 Scoring Average_rank"],
-      drivingAccuracyRank: player["Driving Accuracy %_rank"],
-      bogeyAvoidanceRank: player["Bogey Avoidance_rank"],
-      sgAroundGreenRank: player["SG: Around the Green_rank"],
-      birdie125150Rank: player["Birdie or Better 125-150 yds_rank"],
-      sgPuttingRank: player["SG: Putting_rank"],
-      birdieUnder125Rank: player["Birdie or Better <125 yds_rank"],
+      trendRank: sanitizeNullableRank(player.TrendRank),
+      sgApproachRank: sanitizeRankWithRawStat(player["SG: Approach the Green_rank"], player["SG: Approach the Green"]),
+      par4Rank: sanitizeRankWithRawStat(player["Par 4 Scoring Average_rank"], player["Par 4 Scoring Average"]),
+      drivingAccuracyRank: sanitizeRankWithRawStat(player["Driving Accuracy %_rank"], player["Driving Accuracy %"]),
+      bogeyAvoidanceRank: sanitizeRankWithRawStat(player["Bogey Avoidance_rank"], player["Bogey Avoidance"]),
+      sgAroundGreenRank: sanitizeRankWithRawStat(player["SG: Around the Green_rank"], player["SG: Around the Green"]),
+      birdie125150Rank: sanitizeRankWithRawStat(player["Birdie or Better 125-150 yds_rank"], player["Birdie or Better 125-150 yds"]),
+      sgPuttingRank: sanitizeRankWithRawStat(player["SG: Putting_rank"], player["SG: Putting"]),
+      birdieUnder125Rank: sanitizeRankWithRawStat(player["Birdie or Better <125 yds_rank"], player["Birdie or Better <125 yds"]),
     },
   }));
 }
 
 export function calculateCompositeScore(player: PgaPlayerInput, weights: PgaWeights, fieldSize: number) {
-  const normalizedWeights = normalizeWeights(weights);
-  let score = 0;
+  let weightedScore = 0;
+  let availableWeightTotal = 0;
+  let availableMetricCount = 0;
+  let totalWeightedMetricCount = 0;
 
   (Object.entries(RANK_FIELD_MAP) as [Exclude<PgaWeightKey, "courseTrueSg">, keyof PgaPlayerInput["statRanks"]][])
     .forEach(([weightKey, rankField]) => {
       const rank = player.statRanks[rankField];
-      const weight = normalizedWeights[weightKey];
-      if (rank == null || weight <= 0) return;
-      score += ((fieldSize + 1 - rank) / fieldSize) * weight;
+      const weight = weights[weightKey];
+      if (weight <= 0) return;
+
+      totalWeightedMetricCount += 1;
+      if (rank == null) return;
+
+      availableMetricCount += 1;
+      availableWeightTotal += weight;
+      weightedScore += ((fieldSize + 1 - rank) / fieldSize) * weight;
     });
 
-  const courseWeight = normalizedWeights.courseTrueSg;
+  const courseWeight = weights.courseTrueSg;
   if (player.courseHistoryScore != null && courseWeight > 0) {
-    score += Math.min(Math.max((player.courseHistoryScore + 2) / 5, 0), 1) * courseWeight;
+    availableMetricCount += 1;
+    availableWeightTotal += courseWeight;
+    weightedScore += Math.min(Math.max((player.courseHistoryScore + 2) / 5, 0), 1) * courseWeight;
+  }
+  if (courseWeight > 0) {
+    totalWeightedMetricCount += 1;
   }
 
-  return score;
+  const requiredMetricCount = Math.min(
+    totalWeightedMetricCount,
+    Math.max(MIN_AVAILABLE_WEIGHTED_METRICS_ABSOLUTE, Math.ceil(totalWeightedMetricCount * MIN_AVAILABLE_WEIGHTED_METRICS_RATIO)),
+  );
+  const isEligible = availableMetricCount >= requiredMetricCount && availableWeightTotal > 0;
+  const score = availableWeightTotal > 0 ? weightedScore / availableWeightTotal : 0;
+
+  return { score, isEligible };
 }
 
 export function rankPlayersByScore(players: PgaPlayerInput[], weights: PgaWeights) {
@@ -83,8 +105,9 @@ export function rankPlayersByScore(players: PgaPlayerInput[], weights: PgaWeight
   const sorted = [...players]
     .map((player) => ({
       raw: player,
-      score: calculateCompositeScore(player, weights, fieldSize),
+      ...calculateCompositeScore(player, weights, fieldSize),
     }))
+    .filter((player) => player.isEligible)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       return a.raw.player.localeCompare(b.raw.player);
@@ -157,4 +180,20 @@ function buildCutsLastFive(player: RawPgaPlayer) {
   const finishes = [player["2025"], player["2024"], player["2023"], player["2022"], player["2021"]];
   const cuts = finishes.filter((finish) => finish && finish !== "CUT").length;
   return `${cuts}/5`;
+}
+
+function sanitizeNullableNumber(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return value;
+}
+
+function sanitizeNullableRank(value: unknown) {
+  const numericValue = sanitizeNullableNumber(value);
+  if (numericValue == null || numericValue <= 0) return null;
+  return numericValue;
+}
+
+function sanitizeRankWithRawStat(rankValue: unknown, rawStatValue: unknown) {
+  if (sanitizeNullableNumber(rawStatValue) == null) return null;
+  return sanitizeNullableRank(rankValue);
 }

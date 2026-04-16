@@ -10,6 +10,14 @@ export type RawPgaPlayer = {
   "2023": string | null;
   "2024": string | null;
   "2025": string | null;
+  "SG: Approach the Green"?: number | null;
+  "SG: Around the Green"?: number | null;
+  "SG: Putting"?: number | null;
+  "Par 4 Scoring Average"?: number | null;
+  "Driving Accuracy %"?: number | null;
+  "Bogey Avoidance"?: number | null;
+  "Birdie or Better 125-150 yds"?: number | null;
+  "Birdie or Better <125 yds"?: number | null;
   TrendRank: number | null;
   "Masters 2026": string | null;
   "SG: Approach the Green_rank": number | null;
