@@ -15,6 +15,7 @@ import {
 } from "@/data/ncaaTeams";
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { NCAA_BRACKET_PATH, NCAA_MATCHUP_PATH, NCAA_SCHEDULE_PATH } from "@/lib/routes";
 
 export default function Rankings() {
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
@@ -40,7 +41,7 @@ export default function Rankings() {
     title: "Joe Knows Ball | NCAA Analytics, Custom Rankings & March Madness Analysis",
     description:
       "Explore NCAA basketball analytics including custom rankings, matchup analysis, advanced team metrics, and March Madness bracket breakdowns.",
-    canonical: "https://www.joeknowsball.com/",
+    path: "/ncaa",
   });
 
   const handleWeightChange = (key: string, value: number) => {
@@ -62,13 +63,13 @@ export default function Rankings() {
             so you can compare the full Division I landscape or isolate the tournament field.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
-            <Link to="/schedule" className="text-primary hover:underline">
+            <Link to={NCAA_SCHEDULE_PATH} className="text-primary hover:underline">
               NCAA Schedule
             </Link>
-            <Link to="/matchup" className="text-primary hover:underline">
+            <Link to={NCAA_MATCHUP_PATH} className="text-primary hover:underline">
               Matchup Analyzer
             </Link>
-            <Link to="/bracket" className="text-primary hover:underline">
+            <Link to={NCAA_BRACKET_PATH} className="text-primary hover:underline">
               Bracket Predictor
             </Link>
           </div>

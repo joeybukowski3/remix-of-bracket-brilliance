@@ -31,6 +31,11 @@ import {
 } from "@/lib/odds";
 import { formatRoundedPercent } from "@/lib/numberFormat";
 import { useLast10 } from "@/hooks/useLast10";
+import {
+  NCAA_BETTING_EDGE_PATH,
+  getNcaaMatchupDetailPath,
+  getNcaaScheduleGamePath,
+} from "@/lib/routes";
 
 type SortMode = "top-edge" | "smallest-edge" | "game-time" | "model-favorite" | "spread-rank";
 
@@ -102,7 +107,7 @@ function getEdgeClass(points: number | null) {
 function buildEntryLink(game: ScheduleGame, away: Team | null, home: Team | null, tournamentRoute: string | null) {
   if (tournamentRoute) return tournamentRoute;
   if (!away || !home) return null;
-  return `/schedule/${game.id}?away=${encodeURIComponent(away.canonicalId)}&home=${encodeURIComponent(home.canonicalId)}`;
+  return getNcaaScheduleGamePath(String(game.id));
 }
 
 function getSpreadDiscrepancy(entry: BettingBoardEntry, spreadRankMap: Map<string, SpreadRankInfo>): number {
@@ -923,7 +928,7 @@ export default function BettingEdge() {
     title: "Betting Edge | NCAA Model vs Vegas Comparison | Joe Knows Ball",
     description:
       "Compare NCAA model probabilities against live Vegas implied odds with dynamic betting edges, sliders, and custom presets.",
-    canonical: "https://www.joeknowsball.com/betting-edge",
+    canonical: `https://www.joeknowsball.com${NCAA_BETTING_EDGE_PATH}`,
   });
 
   const officialMatchupByGameId = useMemo(
@@ -1017,7 +1022,7 @@ export default function BettingEdge() {
           ? {
               region: `${matchup.region} Region`,
               seeds: [matchup.teamA.seed, matchup.teamB.seed] as [number, number],
-              route: `/matchup/${matchup.gameId}`,
+              route: getNcaaMatchupDetailPath(matchup.gameId),
             }
           : null,
         modelProbAway,
@@ -1026,7 +1031,7 @@ export default function BettingEdge() {
         modelFavorite,
         edgeValue: vegas?.edge.points ?? null,
         edgeSide,
-        link: buildEntryLink(game, away, home, matchup ? `/matchup/${matchup.gameId}` : null),
+        link: buildEntryLink(game, away, home, matchup ? getNcaaMatchupDetailPath(matchup.gameId) : null),
         homeSpread,
         awaySpread,
       } satisfies BettingBoardEntry;

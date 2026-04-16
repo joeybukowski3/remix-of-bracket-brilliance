@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,13 +17,33 @@ import MlbGameDetail from "./pages/MlbGameDetail";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
-import PGAWellsFargo2026 from "./pages/PGAWellsFargo2026";
 import PGAModel from "./pages/PGAModel";
 import PGAModelTableView from "./pages/PGAModelTableView";
 import PGATop40Picks from "./pages/PGATop40Picks";
+import { FEATURED_PGA_TOURNAMENT, PGA_TOURNAMENTS } from "@/lib/pga/tournaments";
+import { getTournamentModelPath, getTournamentModelTablePath, getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
+import {
+  NCAA_BASE_PATH,
+  NCAA_BETTING_EDGE_PATH,
+  NCAA_BRACKET_PATH,
+  NCAA_MATCHUP_PATH,
+  NCAA_SCHEDULE_PATH,
+  getNcaaMatchupDetailPath,
+  getNcaaScheduleGamePath,
+} from "@/lib/routes";
 
 const queryClient = new QueryClient();
 const routerBase = import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL;
+
+function LegacyScheduleRedirect() {
+  const { gameId = "" } = useParams();
+  return <Navigate to={getNcaaScheduleGamePath(gameId)} replace />;
+}
+
+function LegacyMatchupRedirect() {
+  const { matchupId = "" } = useParams();
+  return <Navigate to={getNcaaMatchupDetailPath(matchupId)} replace />;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -33,24 +53,52 @@ const App = () => (
       <BrowserRouter basename={routerBase}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/ncaa" element={<Rankings />} />
-          <Route path="/schedule" element={<Schedule />} />
-          <Route path="/schedule/:gameId" element={<GameDetail />} />
+          <Route path="/rankings" element={<Rankings />} />
+          <Route path={NCAA_BASE_PATH} element={<Rankings />} />
+          <Route path="/schedule" element={<Navigate to={NCAA_SCHEDULE_PATH} replace />} />
+          <Route path="/schedule/:gameId" element={<LegacyScheduleRedirect />} />
+          <Route path={NCAA_SCHEDULE_PATH} element={<Schedule />} />
+          <Route path={`${NCAA_SCHEDULE_PATH}/:gameId`} element={<GameDetail />} />
           <Route path="/team/:teamId" element={<TeamPage />} />
-          <Route path="/matchup" element={<Matchup />} />
-          <Route path="/matchup/:matchupId" element={<BracketMatchupPage />} />
-          <Route path="/betting-edge" element={<BettingEdge />} />
-          <Route path="/bracket" element={<Bracket />} />
+          <Route path="/matchup" element={<Navigate to={NCAA_MATCHUP_PATH} replace />} />
+          <Route path="/matchup/:matchupId" element={<LegacyMatchupRedirect />} />
+          <Route path={NCAA_MATCHUP_PATH} element={<Matchup />} />
+          <Route path={`${NCAA_MATCHUP_PATH}/:matchupId`} element={<BracketMatchupPage />} />
+          <Route path="/betting-edge" element={<Navigate to={NCAA_BETTING_EDGE_PATH} replace />} />
+          <Route path={NCAA_BETTING_EDGE_PATH} element={<BettingEdge />} />
+          <Route path="/bracket" element={<Navigate to={NCAA_BRACKET_PATH} replace />} />
+          <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/mlb" element={<MlbGameDetail />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
-          <Route path="/pga" element={<PGA />} />
-          <Route path="/pga/rbc-heritage-2026-picks" element={<PGA />} />
-          <Route path="/pga/wells-fargo-championship-2026-picks" element={<PGAWellsFargo2026 />} />
-          <Route path="/rbc-heritage-2026-picks" element={<PGA />} />
+          <Route path="/pga" element={<Navigate to={getTournamentPicksPath(FEATURED_PGA_TOURNAMENT)} replace />} />
+          <Route path="/pga/:tournamentSlug" element={<PGA />} />
+          <Route
+            path={`/pga/${FEATURED_PGA_TOURNAMENT.slug}/model`}
+            element={<Navigate to={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)} replace />}
+          />
+          <Route
+            path={`/pga/${FEATURED_PGA_TOURNAMENT.slug}/model/table`}
+            element={<Navigate to={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)} replace />}
+          />
+          <Route
+            path={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)}
+            element={<PGAModel />}
+          />
+          <Route
+            path={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)}
+            element={<PGAModelTableView />}
+          />
+          <Route path="/pga/:tournamentSlug/model" element={<PGAModel />} />
+          <Route path="/pga/:tournamentSlug/model/table" element={<PGAModelTableView />} />
+          {PGA_TOURNAMENTS.map((tournament) => (
+            <Route
+              key={`${tournament.slug}-legacy-alias`}
+              path={`/${tournament.slug}`}
+              element={<Navigate to={getTournamentPicksPath(tournament)} replace />}
+            />
+          ))}
           <Route path="/pga/top-40-golf-picks" element={<PGATop40Picks />} />
-          <Route path="/pga/model" element={<PGAModel />} />
-          <Route path="/pga/model/table" element={<PGAModelTableView />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

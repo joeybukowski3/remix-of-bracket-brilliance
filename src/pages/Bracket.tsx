@@ -43,6 +43,7 @@ import {
   type ResolvedBracketRegion,
   type SavedBracket,
 } from "@/lib/bracket";
+import { NCAA_BRACKET_PATH } from "@/lib/routes";
 
 function SeedBadge({ seed }: { seed: number | null | undefined }) {
   return (
@@ -251,7 +252,7 @@ export default function Bracket() {
     title: "Official 2026 NCAA Bracket Builder & Tournament Analytics | Joe Knows Ball",
     description:
       "Build the official 2026 NCAA tournament bracket with advanced metrics, custom rankings, and path difficulty projections.",
-    canonical: "https://www.joeknowsball.com/bracket",
+    canonical: `https://www.joeknowsball.com${NCAA_BRACKET_PATH}`,
   });
 
   const { data: liveTeams = [] } = useLiveTeams();

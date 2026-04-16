@@ -18,6 +18,7 @@ import {
 import type { BracketGame } from "@/lib/bracket";
 import { useKenPom } from "@/hooks/useKenPom";
 import { buildKenPomMap, type KenPomEntry, formatKenPomRank, kenPomRankColor } from "@/lib/kenPom";
+import { NCAA_SCHEDULE_PATH } from "@/lib/routes";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -325,7 +326,7 @@ function ModalBody({
 
   const fullAnalysisUrl =
     teamA && teamB
-      ? `/schedule?away=${encodeURIComponent(teamA.canonicalId)}&home=${encodeURIComponent(teamB.canonicalId)}`
+      ? `${NCAA_SCHEDULE_PATH}?away=${encodeURIComponent(teamA.canonicalId)}&home=${encodeURIComponent(teamB.canonicalId)}`
       : null;
 
   if (!teamA || !teamB) return null;

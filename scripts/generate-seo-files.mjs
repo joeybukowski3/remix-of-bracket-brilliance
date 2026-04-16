@@ -9,9 +9,10 @@ const pages = [
   { path: "/pga/model", changefreq: "daily", priority: "0.9" },
   { path: "/pga/top-40-golf-picks", changefreq: "weekly", priority: "0.88" },
   { path: "/ncaa", changefreq: "daily", priority: "0.8" },
-  { path: "/schedule", changefreq: "daily", priority: "0.8" },
-  { path: "/betting-edge", changefreq: "daily", priority: "0.8" },
-  { path: "/bracket", changefreq: "weekly", priority: "0.75" },
+  { path: "/ncaa/schedule", changefreq: "daily", priority: "0.8" },
+  { path: "/ncaa/matchup", changefreq: "daily", priority: "0.8" },
+  { path: "/ncaa/betting-edge", changefreq: "daily", priority: "0.8" },
+  { path: "/ncaa/bracket", changefreq: "weekly", priority: "0.75" },
   { path: "/donate", changefreq: "monthly", priority: "0.3" },
 ];
 

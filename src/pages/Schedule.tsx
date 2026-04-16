@@ -23,6 +23,7 @@ import {
   type Team,
 } from "@/data/ncaaTeams";
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
+import { NCAA_SCHEDULE_PATH, getNcaaScheduleGamePath } from "@/lib/routes";
 
 type SortBy = "time" | "rank" | "edge" | "conference";
 
@@ -250,7 +251,7 @@ function GameCard({
 
         {canAnalyze && matchedAway && matchedHome && (
           <Link
-            to={`/schedule/${game.id}?away=${encodeURIComponent(matchedAway.canonicalId)}&home=${encodeURIComponent(matchedHome.canonicalId)}`}
+            to={getNcaaScheduleGamePath(String(game.id))}
             className="flex items-center justify-center gap-2 w-full py-2 mt-2 rounded-md bg-secondary hover:bg-secondary/80 text-sm font-medium text-foreground transition-colors"
           >
             Full Analysis <ArrowRight className="w-4 h-4" />
@@ -266,7 +267,7 @@ export default function Schedule() {
     title: "NCAA Game Analysis & Daily Matchup Breakdown | Joe Knows Ball",
     description:
       "Track live and upcoming NCAA basketball games with matchup breakdowns, advanced team analytics, and daily slate analysis across Division I.",
-    canonical: "https://www.joeknowsball.com/schedule",
+    canonical: `https://www.joeknowsball.com${NCAA_SCHEDULE_PATH}`,
   });
 
   const [selectedDate, setSelectedDate] = useState(new Date());

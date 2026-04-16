@@ -1,16 +1,22 @@
 import { BarChart3, Gauge, Settings, Target, Trophy } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { NCAA_BETTING_EDGE_PATH, NCAA_SCHEDULE_PATH } from "@/lib/routes";
 
-const items = [
-  { to: "/pga/rbc-heritage-2026-picks", label: "Dashboard", icon: Gauge },
-  { to: "/pga/model", label: "PGA Model", icon: BarChart3 },
-  { to: "/pga/rbc-heritage-2026-picks#best-bets", label: "Tournament Hub", icon: Trophy },
-  { to: "/betting-edge", label: "Prop Tool", icon: Target },
-  { to: "/schedule", label: "Settings", icon: Settings },
-];
-
-export default function PgaSidebar() {
+export default function PgaSidebar({
+  picksPath,
+  modelPath,
+}: {
+  picksPath: string;
+  modelPath: string;
+}) {
   const location = useLocation();
+  const items = [
+    { to: picksPath, label: "Dashboard", icon: Gauge },
+    { to: modelPath, label: "PGA Model", icon: BarChart3 },
+    { to: `${picksPath}#best-bets`, label: "Tournament Hub", icon: Trophy },
+    { to: NCAA_BETTING_EDGE_PATH, label: "Prop Tool", icon: Target },
+    { to: NCAA_SCHEDULE_PATH, label: "Settings", icon: Settings },
+  ];
 
   return (
     <div className="rounded-[28px] bg-card p-5 shadow-[0_16px_36px_hsl(var(--foreground)/0.05)]">

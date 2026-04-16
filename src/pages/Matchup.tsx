@@ -32,6 +32,7 @@ import { buildVegasProbabilityComparison, findScheduledGameForTeams, resolveSche
 import MatchupStatGroups from "@/components/MatchupStatGroups";
 import InjuryReport from "@/components/InjuryReport";
 import { useInjuries } from "@/hooks/useInjuries";
+import { NCAA_MATCHUP_PATH, getNcaaMatchupDetailPath } from "@/lib/routes";
 
 function TeamSelector({
   teams,
@@ -492,7 +493,7 @@ export default function Matchup() {
     title: "NCAA Matchup Analysis & Advanced Team Metrics | Joe Knows Ball",
     description:
       "Compare NCAA teams using advanced analytics including offensive rating, defensive efficiency, pace, rebounding, and custom model scores.",
-    canonical: "https://www.joeknowsball.com/matchup",
+    canonical: `https://www.joeknowsball.com${NCAA_MATCHUP_PATH}`,
   });
 
   const handleWeightChange = (key: string, value: number) => {
@@ -605,7 +606,7 @@ export default function Matchup() {
               return (
                 <Link
                   key={matchup.gameId}
-                  to={`/matchup/${matchup.gameId}`}
+                  to={getNcaaMatchupDetailPath(matchup.gameId)}
                   className="rounded-2xl border border-border bg-background/70 p-4 transition-colors hover:border-primary/40 hover:bg-secondary/70"
                 >
                   <div className="flex items-center justify-between gap-2">

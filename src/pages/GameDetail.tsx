@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import SiteNav from "@/components/SiteNav";
 import StatSliders from "@/components/StatSliders";
@@ -15,6 +15,7 @@ import {
   calculateTeamScore,
   computeHomeInflationMetrics,
   computeQuadRecord,
+  findTeamByEspn,
   findTeamByCanonicalId,
   formatStat,
   getTop50Average,
@@ -27,6 +28,8 @@ import {
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
 import MatchupStatGroups from "@/components/MatchupStatGroups";
 import { useLast10 } from "@/hooks/useLast10";
+import { useUpcomingSchedule } from "@/hooks/useUpcomingSchedule";
+import { NCAA_SCHEDULE_PATH, getNcaaScheduleGamePath } from "@/lib/routes";
 
 function percentileToClass(p: number, higherIsBetter: boolean) {
   // p is 0–100; for "lower is better" stats, flip the scale so high percentiles are still good
@@ -247,14 +250,23 @@ function RoadReadinessSection({
 }
 
 export default function GameDetail() {
-  const [searchParams] = useSearchParams();
-  const awayId = searchParams.get("away") ?? "";
-  const homeId = searchParams.get("home") ?? "";
+  const { gameId = "" } = useParams();
   const { data: liveTeams = [] } = useLiveTeams();
+  const { games: upcomingGames = [] } = useUpcomingSchedule(7);
 
   const teamPool = useMemo(() => buildCanonicalTeams(liveTeams), [liveTeams]);
-  const teamA = findTeamByCanonicalId(awayId, teamPool);
-  const teamB = findTeamByCanonicalId(homeId, teamPool);
+  const scheduleGame = useMemo(
+    () => upcomingGames.find((game) => String(game.id) === gameId) ?? null,
+    [gameId, upcomingGames],
+  );
+  const teamA = useMemo(
+    () => (scheduleGame?.awayTeam ? findTeamByEspn(scheduleGame.awayTeam.name, scheduleGame.awayTeam.abbreviation, teamPool) : null),
+    [scheduleGame, teamPool],
+  );
+  const teamB = useMemo(
+    () => (scheduleGame?.homeTeam ? findTeamByEspn(scheduleGame.homeTeam.name, scheduleGame.homeTeam.abbreviation, teamPool) : null),
+    [scheduleGame, teamPool],
+  );
 
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showVsAverage, setShowVsAverage] = useState(false);
@@ -274,7 +286,8 @@ export default function GameDetail() {
     description: teamA && teamB
       ? `Review ${teamA.name} versus ${teamB.name} with advanced stats, matchup angles, and team-level comparisons.`
       : "Review NCAA matchup analysis with advanced stat comparisons and game-level insights.",
-    path: "/schedule",
+    path: gameId ? getNcaaScheduleGamePath(gameId) : NCAA_SCHEDULE_PATH,
+    noindex: true,
   });
 
   const handleWeightChange = (key: string, value: number) => {
@@ -287,7 +300,7 @@ export default function GameDetail() {
         <SiteNav />
         <div className="container mx-auto px-4 py-12 text-center">
           <p className="text-lg text-muted-foreground">Team data not found for this matchup.</p>
-          <Link to="/schedule" className="text-primary hover:underline text-sm mt-4 inline-block">
+          <Link to={NCAA_SCHEDULE_PATH} className="text-primary hover:underline text-sm mt-4 inline-block">
             Back to Schedule
           </Link>
         </div>
@@ -351,7 +364,7 @@ export default function GameDetail() {
     <div className="min-h-screen bg-background">
       <SiteNav />
       <div className="container mx-auto px-4 py-6 space-y-6">
-        <Link to="/schedule" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <Link to={NCAA_SCHEDULE_PATH} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to Schedule
         </Link>
 

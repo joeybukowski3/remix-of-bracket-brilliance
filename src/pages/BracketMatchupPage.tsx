@@ -21,6 +21,7 @@ import {
 } from "@/lib/bracket";
 import { generateMatchupAngles, getOverallAdvantage } from "@/lib/matchupAngles";
 import { buildVegasProbabilityComparison, findScheduledGameForTeams, resolveScheduledGameMoneylines } from "@/lib/odds";
+import { NCAA_BRACKET_PATH, NCAA_MATCHUP_PATH, getNcaaMatchupDetailPath } from "@/lib/routes";
 
 function SeedPill({ seed }: { seed: number }) {
   return (
@@ -143,7 +144,8 @@ export default function BracketMatchupPage() {
   usePageSeo({
     title: buildTitle(matchup),
     description: buildDescription(matchup),
-    canonical: `https://www.joeknowsball.com/matchup/${matchupId}`,
+    canonical: `https://www.joeknowsball.com${getNcaaMatchupDetailPath(matchupId)}`,
+    noindex: true,
   });
 
   const weights = BUILT_IN_PRESETS[0].weights;
@@ -162,7 +164,7 @@ export default function BracketMatchupPage() {
             This tournament matchup was not found. Return to the official matchup board to browse all first-round NCAA
             bracket analysis pages.
           </div>
-          <Link to="/matchup" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+          <Link to={NCAA_MATCHUP_PATH} className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
             <ArrowLeft className="h-4 w-4" /> Back to official matchup board
           </Link>
         </div>
@@ -228,7 +230,7 @@ export default function BracketMatchupPage() {
     <div className="min-h-screen bg-background">
       <SiteNav />
       <div className="container mx-auto space-y-6 px-4 py-8">
-        <Link to="/matchup" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+        <Link to={NCAA_MATCHUP_PATH} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Back to all official matchups
         </Link>
@@ -370,10 +372,10 @@ export default function BracketMatchupPage() {
         <section className="rounded-2xl border border-border bg-card/95 p-5 shadow-sm">
           <h2 className="text-xl font-bold text-foreground">Continue Exploring</h2>
           <div className="mt-3 flex flex-wrap gap-3">
-            <Link to="/bracket" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+            <Link to={NCAA_BRACKET_PATH} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
               Open live bracket <ChevronRight className="h-4 w-4" />
             </Link>
-            <Link to="/matchup" className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground">
+            <Link to={NCAA_MATCHUP_PATH} className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground">
               Browse all tournament matchups <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
