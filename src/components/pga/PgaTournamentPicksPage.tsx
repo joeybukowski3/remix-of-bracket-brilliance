@@ -1,75 +1,161 @@
-import type { ReactNode, SVGProps } from "react";
+import { useMemo, useState, type ReactNode, type SVGProps } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import PgaModelPreviewCard from "@/components/pga/PgaModelPreviewCard";
 import SeoJsonLd from "@/components/seo/SeoJsonLd";
+import { useRbcFieldPlayers } from "@/hooks/useRbcFieldPlayers";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { rankPlayersByScore } from "@/lib/pga/pgaModelHelpers";
+import type { PgaWeights } from "@/lib/pga/pgaTypes";
+import { detectActivePreset, getStoredPgaAppliedWeights, PGA_PRESETS, RBC_HERITAGE_WEIGHTS } from "@/lib/pga/pgaWeights";
 import type { PgaTournamentBet, PgaTournamentContent } from "@/lib/seo/pgaTournamentContent";
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqSchema } from "@/lib/seo/pgaSeo";
 
-const MODEL_PRESETS = [
+const HERO_STEPS = [
   {
-    key: "outright",
-    label: "Outright Winner",
-    href: "/pga/model?preset=outright",
-    badge: "Highest Upside",
-    badgeColor: "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300",
-    description:
-      "Targets players with elite recent form and peak birdie-making ability. Weights lean hard into TrendRank, SG: Approach, and scoring inside 150 yards.",
-    icon: "T",
+    step: "01",
+    title: "Customize the Harbour Town model",
+    body: "Start with the course-fit lens you want, then push the live board toward the stat profile you trust most.",
   },
   {
-    key: "top10",
-    label: "Top 10 Finish",
-    href: "/pga/model?preset=top10",
-    badge: "Upside + Form",
-    badgeColor: "bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300",
-    description:
-      "Balances peak upside with enough course awareness to catch consistent high-end performers. Form leads, but approach play and scoring are still weighted.",
-    icon: "10",
+    step: "02",
+    title: "Preview who rises",
+    body: "Watch the ranking table react before you commit to outrights, Top 10s, or safer Top 40 structures.",
   },
   {
-    key: "top20",
-    label: "Top 20 Finish",
-    href: "/pga/model?preset=top20",
-    badge: "Balanced",
-    badgeColor: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300",
-    description:
-      "Equal weight on form and course fit. Accuracy, bogey avoidance, and all-around consistency matter more in this middle range.",
-    icon: "20",
+    step: "03",
+    title: "Open the full model room",
+    body: "Use the complete slider board on `/pga/model` to fine-tune every major input across the field.",
   },
   {
-    key: "top40",
-    label: "Top 40 Finish",
-    href: "/pga/model?preset=top40",
-    badge: "Floor Play",
-    badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
-    description:
-      "Pure floor model. Course fit, driving control, and bogey avoidance dominate to surface safer parlay legs.",
-    icon: "40",
+    step: "04",
+    title: "Then read the card",
+    body: "Once the board is set, use the written picks, fades, and parlay notes as the betting layer on top.",
   },
-] as const;
-
-const HERO_SIGNALS = [
-  ["Primary Signals", "Recent form, course history, and weighted stat fit are the biggest model inputs before price is considered."],
-  ["Course Lean", "Each tournament page is weighted for the specific course test rather than using one generic PGA setup."],
-  ["Betting Use", "The output is built to compare expected performance against market pricing and isolate mispriced names for best bets and Top 40 parlays."],
 ] as const;
 
 const HERO_STATS = [
   { value: "83", label: "Players ranked" },
-  { value: "SG: App", label: "Top model signal" },
-  { value: "Par 71", label: "Harbour Town" },
-  { value: "Top 40", label: "Safest bet type" },
-  { value: "4", label: "Preset models" },
+  { value: "5", label: "Quick weight views" },
+  { value: "4", label: "Slider lanes previewed" },
+  { value: "Live", label: "Heat-map table" },
+  { value: "/pga/model", label: "Full model room" },
 ] as const;
 
 const MODEL_FLOW = [
-  "Recent form",
-  "Course history",
-  "Stat profile fit",
-  "Composite score",
-  "Value vs. odds",
+  "Adjust weights",
+  "Re-rank the field",
+  "Compare Harbour Town fits",
+  "Open full model room",
+  "Bet the board",
 ] as const;
+
+const MODEL_VALUE_STRIP = [
+  {
+    title: "Adjust weights your way",
+    body: "Lean harder into Harbour Town course history, ball striking, accuracy, or short-game touch before you place a bet.",
+  },
+  {
+    title: "Compare Harbour Town fits",
+    body: "See which names climb when the setup favors precision, wedge play, and course-control instead of raw power.",
+  },
+  {
+    title: "See full-field rankings instantly",
+    body: "The preview shows the model logic fast. The full room opens the complete table with every golfer and slider.",
+  },
+] as const;
+
+const WEIGHT_SHIFT_NOTES = [
+  {
+    title: "Course history pressure test",
+    body: "Boosting Harbour Town history gives more lift to players with repeat reps and true course SG staying power.",
+  },
+  {
+    title: "Ball-striking lens",
+    body: "When approach and control matter more, the board tilts toward clean iron players who can keep the round stress-free.",
+  },
+  {
+    title: "Short-game fallback",
+    body: "Raising around-the-green and putting weight rewards players who can scramble when Harbour Town starts defending itself.",
+  },
+] as const;
+
+const PREVIEW_THEMES = [
+  {
+    key: "default",
+    label: "Default Model",
+    description: "Balanced Harbour Town weighting across approach play, accuracy, scoring, and course-fit context.",
+    weights: RBC_HERITAGE_WEIGHTS,
+  },
+  {
+    key: "courseHistory",
+    label: "Course History",
+    description: "Leans harder on Harbour Town course SG and repeat comfort on this course without dropping approach out of the mix.",
+    weights: {
+      sgApproach: 18,
+      par4: 12,
+      drivingAccuracy: 10,
+      bogeyAvoidance: 10,
+      sgAroundGreen: 8,
+      trendRank: 8,
+      birdie125150: 5,
+      sgPutting: 5,
+      birdieUnder125: 2,
+      courseTrueSg: 22,
+    },
+  },
+  {
+    key: "ballStriking",
+    label: "Ball Striking",
+    description: "Turns the board toward elite iron play, precise par-4 scoring, and fairway control for a sharper tee-to-green lean.",
+    weights: {
+      sgApproach: 28,
+      par4: 15,
+      drivingAccuracy: 17,
+      bogeyAvoidance: 8,
+      sgAroundGreen: 6,
+      trendRank: 10,
+      birdie125150: 6,
+      sgPutting: 3,
+      birdieUnder125: 1,
+      courseTrueSg: 6,
+    },
+  },
+  {
+    key: "accuracy",
+    label: "Accuracy",
+    description: "Pushes the preview toward fairways found, bogey avoidance, and steady Harbour Town navigation.",
+    weights: {
+      sgApproach: 18,
+      par4: 13,
+      drivingAccuracy: 24,
+      bogeyAvoidance: 18,
+      sgAroundGreen: 6,
+      trendRank: 7,
+      birdie125150: 4,
+      sgPutting: 3,
+      birdieUnder125: 1,
+      courseTrueSg: 6,
+    },
+  },
+  {
+    key: "shortGame",
+    label: "Short Game",
+    description: "Raises the value of scrambling and Bermuda putting when you want more recovery skill built into the board.",
+    weights: {
+      sgApproach: 17,
+      par4: 10,
+      drivingAccuracy: 9,
+      bogeyAvoidance: 11,
+      sgAroundGreen: 20,
+      trendRank: 8,
+      birdie125150: 5,
+      sgPutting: 12,
+      birdieUnder125: 3,
+      courseTrueSg: 5,
+    },
+  },
+] as const satisfies readonly { key: string; label: string; description: string; weights: PgaWeights }[];
 
 const TOP_40_FITS: Record<string, "strong" | "moderate"> = {
   "Collin Morikawa": "strong",
@@ -221,6 +307,27 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
   });
 
   const dateModified = "2026-04-14";
+  const { players, status: previewStatus, errorMessage } = useRbcFieldPlayers();
+  const [activePreviewThemeKey, setActivePreviewThemeKey] = useState<(typeof PREVIEW_THEMES)[number]["key"]>("default");
+  const storedWeights = useMemo(() => getStoredPgaAppliedWeights(), []);
+  const activePreviewTheme = PREVIEW_THEMES.find((theme) => theme.key === activePreviewThemeKey) ?? PREVIEW_THEMES[0];
+  const previewRows = useMemo(
+    () => rankPlayersByScore(players, activePreviewTheme.weights).slice(0, 6),
+    [players, activePreviewTheme],
+  );
+  const liveModelLabel = useMemo(() => {
+    const presetKey = detectActivePreset(storedWeights);
+    return presetKey ? `${PGA_PRESETS[presetKey].label} preset currently saved` : "Custom weight profile currently saved";
+  }, [storedWeights]);
+  const previewSliders = useMemo(
+    () => [
+      { label: "SG: Approach", value: activePreviewTheme.weights.sgApproach, max: 30 },
+      { label: "Driving Accuracy", value: activePreviewTheme.weights.drivingAccuracy, max: 30 },
+      { label: "Short Game", value: activePreviewTheme.weights.sgAroundGreen, max: 30 },
+      { label: "Course History", value: activePreviewTheme.weights.courseTrueSg, max: 30 },
+    ],
+    [activePreviewTheme],
+  );
 
   return (
     <SiteShell>
@@ -240,36 +347,55 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
           buildFaqSchema(content.faqs),
         ]}
       />
-      <main className="site-page pga-picks-page pb-10 pt-6 sm:pb-16 sm:pt-10">
+      <main className="site-page pga-picks-page pb-28 pt-6 sm:pb-16 sm:pt-10">
         <div className="site-container site-stack">
-          <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:gap-6">
-            <div className="pga-card p-5 md:p-8">
+          <section className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div className="pga-card h-full p-5 md:p-8">
               <div className="pga-badge">{content.heroBadge}</div>
               <h1 className="pga-hero-title mt-3 max-w-4xl sm:mt-4 md:mt-5">{content.heroTitle}</h1>
               <p className="mt-3 max-w-3xl text-[15px] leading-7 text-muted-foreground sm:mt-4 sm:text-lg sm:leading-8">
-                {content.heroIntro}
+                Build your Harbour Town model first, then read the board. This page now leads with a live ranking preview so the model feels like the product, not the footnote.
               </p>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
-                {content.heroSupport}
+                {content.heroIntro} {content.heroSupport}
               </p>
               <div className="mt-5 flex flex-wrap gap-3 sm:mt-6 sm:gap-4 md:mt-8">
                 <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 sm:px-5 sm:py-3">
-                  {content.heroCtaLabel}
+                  Open Full Model
                 </Link>
-                <Link to="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-5 sm:py-3">
-                  {content.heroSecondaryLabel}
-                </Link>
+                <a href="#best-bets" className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-5 sm:py-3">
+                  Read written picks
+                </a>
+              </div>
+              <div className="mt-6 grid gap-3">
+                {HERO_STEPS.map((item) => (
+                  <div key={item.step} className="rounded-xl border border-[color:var(--pga-border)] bg-secondary/35 p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--pga-green-fill)] text-[12px] font-semibold text-[var(--pga-green-dark)]">
+                        {item.step}
+                      </span>
+                      <div>
+                        <h2 className="text-[15px] font-medium text-foreground">{item.title}</h2>
+                        <p className="mt-1 text-[13px] leading-6 text-muted-foreground">{item.body}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="grid gap-3">
-              {HERO_SIGNALS.map(([title, body]) => (
-                <div key={title} className="pga-pill-card">
-                  <div className="pga-label">{title}</div>
-                  <div className="mt-2 text-sm leading-6 text-muted-foreground">{body}</div>
-                </div>
-              ))}
-            </div>
+            <PgaModelPreviewCard
+              status={previewStatus}
+              errorMessage={errorMessage}
+              themes={PREVIEW_THEMES}
+              activeThemeKey={activePreviewTheme.key}
+              onThemeChange={setActivePreviewThemeKey}
+              activeThemeDescription={activePreviewTheme.description}
+              previewRows={previewRows}
+              sliders={previewSliders}
+              liveModelLabel={liveModelLabel}
+              ctaHref="/pga/model"
+            />
           </section>
 
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -281,51 +407,20 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
             ))}
           </section>
 
-          <section className="pga-card p-4 md:p-8">
-            <div className="mb-2 flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="pga-label">Free Interactive Model</div>
-              <span className="rounded-full bg-[var(--pga-green-fill)] px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--pga-green-dark)] sm:px-3 sm:py-1 sm:text-[11px]">
-                100% Free
-              </span>
-            </div>
-            <h2 className="pga-section-title">{content.presetsHeading}</h2>
-            <p className="mt-2.5 max-w-3xl text-sm leading-7 text-muted-foreground sm:mt-3 sm:text-base sm:leading-8">
-              {content.presetsIntro}
-            </p>
-
-            <div className="mt-4 grid gap-3 sm:mt-5 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-              {MODEL_PRESETS.map((preset) => (
-                <Link
-                  key={preset.key}
-                  to={preset.href}
-                  className="group flex flex-col rounded-xl border border-[color:var(--pga-border)] bg-card p-4 transition hover:bg-secondary/40 sm:p-5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="pga-icon-frame text-sm font-medium text-[var(--pga-green-dark)] sm:text-base">{preset.icon}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.12em] sm:px-2.5 sm:py-1 sm:text-[10px] ${preset.badgeColor}`}>
-                      {preset.badge}
-                    </span>
-                  </div>
-                  <h3 className="mt-2.5 text-base font-medium tracking-[-0.02em] text-foreground sm:mt-3 sm:text-lg">{preset.label}</h3>
-                  <p className="mt-1.5 flex-1 text-[13px] leading-5 text-muted-foreground sm:mt-2 sm:text-sm sm:leading-6">
-                    {preset.description}
-                  </p>
-                  <div className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-primary transition-all group-hover:gap-2 sm:mt-3">
-                    Open model
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14" />
-                      <path d="m12 5 7 7-7 7" />
-                    </svg>
-                  </div>
-                </Link>
-              ))}
-            </div>
+          <section className="grid gap-3 lg:grid-cols-3">
+            {MODEL_VALUE_STRIP.map((item) => (
+              <div key={item.title} className="rounded-xl border border-[color:var(--pga-border)] bg-card p-5">
+                <div className="pga-label">Why use the model?</div>
+                <h2 className="mt-2 text-[20px] font-medium tracking-[-0.02em] text-foreground">{item.title}</h2>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.body}</p>
+              </div>
+            ))}
           </section>
 
-          <SectionCard title="How the Model Works" eyebrow="Model Overview">
+          <SectionCard title="What Changes When You Adjust Weights" eyebrow="Model Overview">
             <div className="grid gap-5 sm:gap-6">
               <p className="max-w-4xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
-                This model is built to stay fast and explainable. It ranks the field with a composite score that blends recent form, event-specific course fit, and the stat profile most likely to translate this week. The goal is not just to predict who plays well, but to spot where the market is underpricing that profile.
+                This model is built to stay fast and explainable. Move the weights, re-rank the field, and use the written picks after you know which Harbour Town profile you want to bet. The preview above is a front door to the full slider room on `/pga/model`.
               </p>
               <div className="pga-flow">
                 {MODEL_FLOW.map((node, index) => (
@@ -335,10 +430,11 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
                   </div>
                 ))}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {content.overviewBullets.map((item) => (
-                  <div key={item} className="rounded-lg border border-[color:var(--pga-border)] bg-secondary/40 p-3 text-sm leading-6 text-muted-foreground sm:p-4 sm:leading-7">
-                    {item}
+              <div className="grid gap-3 xl:grid-cols-3">
+                {WEIGHT_SHIFT_NOTES.map((item) => (
+                  <div key={item.title} className="rounded-lg border border-[color:var(--pga-border)] bg-secondary/40 p-4">
+                    <h3 className="text-[14px] font-medium text-foreground">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.body}</p>
                   </div>
                 ))}
               </div>
@@ -520,20 +616,29 @@ export default function PgaTournamentPicksPage({ content }: { content: PgaTourna
           <section className="pga-card p-4 text-center md:p-10">
             <div className="pga-label">Golf betting model</div>
             <h2 className="pga-section-title mt-2">
-              Use the live model to compare PGA best bets, Top 40 golf picks, and custom weight profiles.
+              Use the full model room to tune the Harbour Town board before you lock in the bets below.
             </h2>
             <p className="mx-auto mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:mt-4 sm:text-base sm:leading-8">
-              Open the interactive board, switch betting presets, and move between the current tournament page, the golf betting model, and the evergreen Top 40 page.
+              Open the interactive board, adjust the real sliders, and compare the full-field rankings against the written outrights, Top 40 plays, and fades on this page.
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3 sm:mt-7 sm:gap-4">
               <Link to="/pga/model" className="inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 sm:px-6 sm:py-3 sm:text-base">
-                golf betting model
+                Open Full Model
               </Link>
-              <Link to="/pga/top-40-golf-picks" className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-6 sm:py-3 sm:text-base">
-                Top 40 golf picks
-              </Link>
+              <a href="#best-bets" className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-6 sm:py-3 sm:text-base">
+                Back to picks
+              </a>
             </div>
           </section>
+        </div>
+
+        <div className="fixed inset-x-4 bottom-4 z-30 md:hidden">
+          <Link
+            to="/pga/model"
+            className="flex items-center justify-center rounded-2xl bg-[#1a3a2a] px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_32px_rgba(26,58,42,0.28)]"
+          >
+            Open Full Model
+          </Link>
         </div>
       </main>
     </SiteShell>

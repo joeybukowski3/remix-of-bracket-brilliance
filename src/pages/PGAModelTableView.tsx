@@ -1,16 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import PgaModelTable from "@/components/pga/PgaModelTable";
+import { useRbcFieldPlayers } from "@/hooks/useRbcFieldPlayers";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { rankPlayersByScore } from "@/lib/pga/pgaModelHelpers";
-import type { RawPgaPlayer } from "@/lib/pga/pgaTypes";
 import { getStoredPgaAppliedWeights } from "@/lib/pga/pgaWeights";
 
 export default function PGAModelTableView() {
-  const [players, setPlayers] = useState<RawPgaPlayer[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [errorMessage, setErrorMessage] = useState("");
+  const { players, status, errorMessage } = useRbcFieldPlayers();
   const appliedWeights = useMemo(() => getStoredPgaAppliedWeights(), []);
 
   usePageSeo({
@@ -19,38 +17,6 @@ export default function PGAModelTableView() {
     path: "/pga/model/table",
     noindex: true,
   });
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadPlayers() {
-      try {
-        const response = await fetch("/rbc_data.json", { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(`Failed to load RBC data (${response.status})`);
-        }
-
-        const data = await response.json();
-        if (!active) return;
-        if (!Array.isArray(data)) {
-          throw new Error("RBC data is not an array.");
-        }
-
-        setPlayers(data as RawPgaPlayer[]);
-        setStatus("ready");
-      } catch (error) {
-        if (!active) return;
-        setErrorMessage(error instanceof Error ? error.message : "Unknown error");
-        setStatus("error");
-      }
-    }
-
-    loadPlayers();
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const rows = useMemo(() => rankPlayersByScore(players, appliedWeights), [players, appliedWeights]);
 
