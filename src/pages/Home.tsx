@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import HomeHeroBackdrop from "@/components/home/HomeHeroBackdrop";
 import HomeSportCard from "@/components/home/HomeSportCard";
 import SiteShell from "@/components/layout/SiteShell";
@@ -88,21 +87,6 @@ export default function Home() {
                   route={sport.route}
                 />
               ))}
-            </div>
-
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 xl:mt-10">
-              <Link
-                to={featuredTournamentPath}
-                className="inline-flex items-center rounded-full border border-white/18 bg-white/10 px-5 py-3 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/16"
-              >
-                Latest tournament picks
-              </Link>
-              <Link
-                to="/pga/top-40-golf-picks"
-                className="inline-flex items-center rounded-full border border-white/18 bg-transparent px-5 py-3 text-sm font-medium text-white/90 transition hover:bg-white/10"
-              >
-                Top 40 golf picks
-              </Link>
             </div>
           </section>
         </div>

@@ -7,12 +7,13 @@ const navItems = [
   { to: "/", label: "Home" },
   { to: "/mlb", label: "MLB" },
   { to: "/ncaa", label: "NCAA" },
-  { to: "/", label: "NFL" },
-  { to: "/", label: "NBA" },
+  { to: "/nfl", label: "NFL" },
+  // TODO: wire the NBA nav item once an NBA landing route exists.
+  { to: null, label: "NBA" },
   { to: "/pga", label: "PGA" },
 ];
 
-function isActive(pathname: string, item: { to: string; label: string }) {
+function isActive(pathname: string, item: { to: string | null; label: string }) {
   if (item.label === "Home") {
     return pathname === "/";
   }
@@ -21,7 +22,7 @@ function isActive(pathname: string, item: { to: string; label: string }) {
     return pathname === "/pga" || pathname.startsWith("/pga/") || pathname === "/rbc-heritage-2026-picks";
   }
 
-  if (item.label === "NFL" || item.label === "NBA") {
+  if (item.label === "NBA" || !item.to) {
     return false;
   }
 
@@ -37,21 +38,36 @@ export default function SiteHeader() {
   }, [location.pathname]);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 shadow-[0_8px_24px_hsl(var(--foreground)/0.04)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3 lg:px-8">
-        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-          <Logo clickable size={28} className="max-w-[172px] sm:max-w-[205px]" />
+    <header className="sticky top-0 z-50 border-b border-black/5 bg-white shadow-[0_8px_24px_rgba(17,17,17,0.04)]">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center">
+          <div className="sm:hidden">
+            <Logo clickable size={34} />
+          </div>
+          <div className="hidden sm:block">
+            <Logo clickable size={46} />
+          </div>
         </div>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-2 md:flex lg:gap-3">
           {navItems.map((item) => {
             const active = isActive(location.pathname, item);
+            if (!item.to) {
+              return (
+                <span
+                  key={`${item.label}-disabled`}
+                  className="rounded-full px-4 py-2 text-sm text-muted-foreground/80"
+                >
+                  {item.label}
+                </span>
+              );
+            }
             return (
               <Link
                 key={`${item.label}-${item.to}`}
                 to={item.to}
                 className={`rounded-full px-4 py-2 text-sm transition ${
-                  active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  active ? "bg-primary/10 font-medium text-primary" : "text-foreground/80 hover:bg-secondary hover:text-foreground"
                 }`}
               >
                 {item.label}
@@ -76,6 +92,16 @@ export default function SiteHeader() {
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => {
                 const active = isActive(location.pathname, item);
+                if (!item.to) {
+                  return (
+                    <span
+                      key={`${item.label}-disabled-mobile`}
+                      className="rounded-2xl bg-secondary/40 px-4 py-2.5 text-sm text-muted-foreground"
+                    >
+                      {item.label}
+                    </span>
+                  );
+                }
                 return (
                   <Link
                     key={`${item.label}-${item.to}`}
