@@ -40,7 +40,7 @@ export default function SiteHeader() {
     <header className="sticky top-0 z-50 bg-white/90 shadow-[0_8px_24px_hsl(var(--foreground)/0.04)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3 lg:px-8">
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-          <Logo clickable size={36} className="h-8 sm:h-9" />
+          <Logo clickable size={28} className="max-w-[172px] sm:max-w-[205px]" />
         </div>
 
         <nav className="hidden items-center gap-1 md:flex">
