@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import Logo from "@/components/ui/Logo";
 
 const navItems = [
   { to: "/", label: "Home" },
@@ -38,9 +39,9 @@ export default function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 bg-white/90 shadow-[0_8px_24px_hsl(var(--foreground)/0.04)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3 lg:px-8">
-        <Link to="/" className="text-base font-semibold tracking-[-0.03em] text-foreground transition hover:text-primary sm:text-xl">
-          Joe Knows Ball
-        </Link>
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <Logo clickable size={36} className="h-8 sm:h-9" />
+        </div>
 
         <nav className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => {
