@@ -42,10 +42,10 @@ export default function SiteHeader() {
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center">
           <div className="sm:hidden">
-            <Logo clickable size={34} />
+            <Logo clickable width={140} className="max-w-[140px]" />
           </div>
           <div className="hidden sm:block">
-            <Logo clickable size={46} />
+            <Logo clickable width={210} className="max-w-[210px]" />
           </div>
         </div>
 

@@ -3,16 +3,17 @@ import { cn } from "@/lib/utils";
 
 type LogoProps = {
   size?: number;
+  width?: number;
   className?: string;
   clickable?: boolean;
 };
 
-export default function Logo({ size = 36, className, clickable = false }: LogoProps) {
+export default function Logo({ size = 36, width, className, clickable = false }: LogoProps) {
   const image = (
     <img
       src="/assets/logo.svg"
       alt="JoeKnowsBall"
-      style={{ height: `${size}px` }}
+      style={width ? { width: `${width}px` } : { height: `${size}px` }}
       className={cn("block w-auto max-w-none object-contain", className)}
     />
   );
