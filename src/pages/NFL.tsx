@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
@@ -6,6 +6,8 @@ const NFL_DRAFT_STYLES = `
   .draft-section{max-width:1200px;margin:2rem auto;padding:0 1rem}
   .draft-section h2{font-size:1.8rem;font-weight:700;margin-bottom:.3rem;color:#111;border-left:5px solid #1a3a5c;padding-left:12px}
   .draft-section .subtitle{font-size:.82rem;color:#666;margin-bottom:1.2rem;padding-left:17px}
+  .draft-section .table-scroll-shell{position:relative}
+  .draft-section .table-scroll-hint{display:none}
   .draft-section .table-scroll{overflow-x:auto;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.13)}
   .draft-section table{width:100%;min-width:900px;border-collapse:collapse;background:#fff;font-size:12px}
   .draft-section thead tr{background:#1a3a5c;color:#fff}
@@ -35,8 +37,116 @@ const NFL_DRAFT_STYLES = `
   .draft-section .dl{background:#e8e6df;color:#3a3a38}
   .draft-section .g{background:#e0f0e8;color:#1a5c3a}
   .draft-section .note{font-size:10.5px;color:#444;line-height:1.5}
+  .draft-section .note-toggle{display:none}
   .draft-section tr.divider td{background:#1a3a5c;color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;text-align:center}
   @media(max-width:700px){.draft-section h2{font-size:1.3rem}}
+  @media(max-width:768px){
+    .draft-section .table-scroll-shell{padding-top:30px}
+    .draft-section .table-scroll-shell::after{
+      content:"";
+      position:absolute;
+      top:30px;
+      right:0;
+      bottom:0;
+      width:26px;
+      border-radius:0 8px 8px 0;
+      background:linear-gradient(to left, rgba(255,255,255,.96), rgba(255,255,255,0));
+      pointer-events:none;
+      z-index:4;
+    }
+    .draft-section .table-scroll-hint{
+      display:block;
+      position:absolute;
+      top:0;
+      right:0;
+      font-size:13px;
+      font-weight:600;
+      color:#5b6470;
+      letter-spacing:.02em;
+    }
+    .draft-section .table-scroll{
+      -webkit-overflow-scrolling:touch;
+      overflow-x:auto;
+    }
+    .draft-section table{font-size:13px;min-width:960px}
+    .draft-section thead th{
+      font-size:13px;
+      padding:10px 12px;
+    }
+    .draft-section td{
+      padding:10px 12px;
+      font-size:13px;
+    }
+    .draft-section td.notes-col{padding-top:10px}
+    .draft-section .team-cell{
+      min-width:116px;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:6px;
+    }
+    .draft-section .team-logo,
+    .draft-section .team-logo-fallback{
+      width:34px;
+      height:34px;
+    }
+    .draft-section .team-info .team-name,
+    .draft-section .player-name,
+    .draft-section .note,
+    .draft-section .school,
+    .draft-section .source-tag,
+    .draft-section .team-info .pick-num,
+    .draft-section .team-info .trade-note{
+      font-size:13px;
+    }
+    .draft-section .team-info .pick-num,
+    .draft-section .team-info .trade-note,
+    .draft-section .school,
+    .draft-section .source-tag{
+      font-size:12px;
+    }
+    .draft-section .pos{
+      font-size:11px;
+      padding:2px 6px;
+    }
+    .draft-section thead th:first-child,
+    .draft-section tbody td:first-child{
+      position:sticky;
+      left:0;
+      z-index:3;
+      background:#fff;
+      box-shadow:8px 0 10px rgba(17,17,17,.05);
+    }
+    .draft-section thead th:first-child{
+      background:#1a3a5c;
+      z-index:5;
+    }
+    .draft-section tbody tr:nth-child(even) td:first-child{background:#f7f9fc}
+    .draft-section tbody tr:hover td:first-child{background:#e8f2fb}
+    .draft-section tr.divider td{
+      position:static;
+      box-shadow:none;
+    }
+    .draft-section .note{
+      font-size:13px;
+    }
+    .draft-section .note.is-collapsed{
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+    .draft-section .note-toggle{
+      display:inline-flex;
+      margin-top:6px;
+      border:0;
+      padding:0;
+      background:none;
+      color:#1a3a5c;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+    }
+  }
 `;
 
 interface TeamCellProps {
@@ -88,6 +198,24 @@ function TeamCell({ abbr, alt, color, logo, name, pick, tradeNote }: TeamCellPro
   );
 }
 
+function NotesCell({ children }: { children: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <td className="notes-col">
+      <div className={`note ${expanded ? "" : "is-collapsed"}`}>{children}</div>
+      <button
+        type="button"
+        className="note-toggle"
+        onClick={() => setExpanded((current) => !current)}
+        aria-expanded={expanded}
+      >
+        {expanded ? "Show less" : "Read more"}
+      </button>
+    </td>
+  );
+}
+
 function Player({ name, position, school, note }: { name: string; position: string; school: string; note: string }) {
   return (
     <tr>
@@ -95,7 +223,7 @@ function Player({ name, position, school, note }: { name: string; position: stri
       <td><div className="player-name">{name}</div></td>
       <td><span className={`pos ${position.toLowerCase()}`}>{position}</span></td>
       <td><div className="school">{school}</div></td>
-      <td className="notes-col"><div className="note">{note}</div></td>
+      <NotesCell>{note}</NotesCell>
     </tr>
   );
 }
@@ -130,7 +258,9 @@ export default function NFL() {
           <section className="draft-section">
             <h2>2026 NFL Mock Draft - Full Round 1</h2>
             <p className="subtitle">Charlie Campbell / WalterFootball · April 13-16, 2026 · Logos via ESPN CDN</p>
-            <div className="table-scroll">
+            <div className="table-scroll-shell">
+              <div className="table-scroll-hint">← scroll →</div>
+              <div className="table-scroll">
               <table>
                 <thead>
                   <tr>
@@ -149,70 +279,70 @@ export default function NFL() {
                     <td><div className="player-name">Fernando Mendoza</div></td>
                     <td><span className="pos qb">QB</span></td>
                     <td><div className="school">Indiana</div></td>
-                    <td className="notes-col"><div className="note">Team-sourced signal. Raiders operated entire offseason around Mendoza. Kirk Cousins signed as bridge. GM Spytek: "Meritocracy - best guy will play." Lock pick.</div></td>
+                    <NotesCell>Team-sourced signal. Raiders operated entire offseason around Mendoza. Kirk Cousins signed as bridge. GM Spytek: "Meritocracy - best guy will play." Lock pick.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="NYJ" alt="NY Jets" color="#125740" logo="https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png" name="New York Jets" pick="Pick #2" /></td>
                     <td><div className="player-name">David Bailey</div></td>
                     <td><span className="pos edge">EDGE</span></td>
                     <td><div className="school">Texas Tech</div></td>
-                    <td className="notes-col"><div className="note">Rising team signal. Both Bailey and Reese visited facility. Breer (SI): "Bailey makes more sense." HC Glenn: "If we love the player, we go get him." Jets ranked 31st in sacks in 2025.</div></td>
+                    <NotesCell>Rising team signal. Both Bailey and Reese visited facility. Breer (SI): "Bailey makes more sense." HC Glenn: "If we love the player, we go get him." Jets ranked 31st in sacks in 2025.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="ARI" alt="Arizona Cardinals" color="#97233f" logo="https://a.espncdn.com/i/teamlogos/nfl/500/ari.png" name="Arizona Cardinals" pick="Pick #3" /></td>
                     <td><div className="player-name">David Bailey</div></td>
                     <td><span className="pos edge">EDGE</span></td>
                     <td><div className="school">Texas Tech</div></td>
-                    <td className="notes-col"><div className="note">Board-driven. Assumes Bailey falls from #2. Cardinals signed 4 OL but zero EDGE in FA - by design. GM Ossenfort trade-down possible. If Bailey goes #2, Reese likely lands here.</div></td>
+                    <NotesCell>Board-driven. Assumes Bailey falls from #2. Cardinals signed 4 OL but zero EDGE in FA - by design. GM Ossenfort trade-down possible. If Bailey goes #2, Reese likely lands here.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="TEN" alt="Tennessee Titans" color="#4b92db" logo="https://a.espncdn.com/i/teamlogos/nfl/500/ten.png" name="Tennessee Titans" pick="Pick #4" /></td>
                     <td><div className="player-name">Jeremiyah Love</div></td>
                     <td><span className="pos rb">RB</span></td>
                     <td><div className="school">Notre Dame</div></td>
-                    <td className="notes-col"><div className="note">Team-sourced signal. ESPN: Love fits Jahmyr Gibbs mold Saleh valued in SF. HC Saleh "would-be" interest confirmed. 6.9 ypc, 18 TDs in 2025. Whoever escapes #2/#3 between Bailey/Reese likely lands here instead.</div></td>
+                    <NotesCell>Team-sourced signal. ESPN: Love fits Jahmyr Gibbs mold Saleh valued in SF. HC Saleh "would-be" interest confirmed. 6.9 ypc, 18 TDs in 2025. Whoever escapes #2/#3 between Bailey/Reese likely lands here instead.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="NYG" alt="NY Giants" color="#0b2265" logo="https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png" name="New York Giants" pick="Pick #5" /></td>
                     <td><div className="player-name">Caleb Downs</div></td>
                     <td><span className="pos s">S</span></td>
                     <td><div className="school">Ohio State</div></td>
-                    <td className="notes-col"><div className="note">Board-driven. GM Schoen praised Downs and Styles by name; watched "a lot of Ohio State defensive film." Said "we like our RB room" - signal against Love. HC Harbaugh reportedly loves Love. True BPA pick.</div></td>
+                    <NotesCell>Board-driven. GM Schoen praised Downs and Styles by name; watched "a lot of Ohio State defensive film." Said "we like our RB room" - signal against Love. HC Harbaugh reportedly loves Love. True BPA pick.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="CLE" alt="Cleveland Browns" color="#ff3c00" logo="https://a.espncdn.com/i/teamlogos/nfl/500/cle.png" name="Cleveland Browns" pick="Pick #6" /></td>
                     <td><div className="player-name">Carnell Tate</div></td>
                     <td><span className="pos wr">WR</span></td>
                     <td><div className="school">Ohio State</div></td>
-                    <td className="notes-col"><div className="note">Speculative. Berry: BPA, won't typecast tackle by side. Visited Proctor and Freeling (OT). Also WR in play. Trade-down actively being explored per Breer. Have Shedeur Sanders - no QB needed here.</div></td>
+                    <NotesCell>Speculative. Berry: BPA, won't typecast tackle by side. Visited Proctor and Freeling (OT). Also WR in play. Trade-down actively being explored per Breer. Have Shedeur Sanders - no QB needed here.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="WSH" alt="Washington Commanders" color="#773141" logo="https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png" name="Washington Commanders" pick="Pick #7" /></td>
                     <td><div className="player-name">Sonny Styles</div></td>
                     <td><span className="pos lb">LB</span></td>
                     <td><div className="school">Ohio State</div></td>
-                    <td className="notes-col"><div className="note">Board-driven. Peters confirmed: "We don't have to pick for need." Spent $250M+ in FA. Combine: "Pass rush will weigh more." Downs checks nearly every Peters draft-tendency box per Hogs Haven analysis.</div></td>
+                    <NotesCell>Board-driven. Peters confirmed: "We don't have to pick for need." Spent $250M+ in FA. Combine: "Pass rush will weigh more." Downs checks nearly every Peters draft-tendency box per Hogs Haven analysis.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="NO" alt="New Orleans Saints" color="#9f8958" logo="https://a.espncdn.com/i/teamlogos/nfl/500/no.png" name="New Orleans Saints" pick="Pick #8" /></td>
                     <td><div className="player-name">Carnell Tate</div></td>
                     <td><span className="pos wr">WR</span></td>
                     <td><div className="school">Ohio State</div></td>
-                    <td className="notes-col"><div className="note">Team-sourced signal. Ex-coach Mike Smith: "Saints will be all over Tate." Loomis had extended Delane chat at LSU pro day. No EDGE signed in FA - defense also in play. WR and EDGE co-favorite paths.</div></td>
+                    <NotesCell>Team-sourced signal. Ex-coach Mike Smith: "Saints will be all over Tate." Loomis had extended Delane chat at LSU pro day. No EDGE signed in FA - defense also in play. WR and EDGE co-favorite paths.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="KC" alt="Kansas City Chiefs" color="#e31837" logo="https://a.espncdn.com/i/teamlogos/nfl/500/kc.png" name="Kansas City Chiefs" pick="Pick #9" /></td>
                     <td><div className="player-name">Rueben Bain Jr.</div></td>
                     <td><span className="pos edge">EDGE</span></td>
                     <td><div className="school">Miami (FL)</div></td>
-                    <td className="notes-col"><div className="note">Team visit confirmed. Veach named WR, EDGE, DB as priorities. 4 WR top-30 visits but zero EDGE - possible smoke-screen. Chiefs had 26 sacks in 2025, tied for worst. Veach history of pre-draft deception.</div></td>
+                    <NotesCell>Team visit confirmed. Veach named WR, EDGE, DB as priorities. 4 WR top-30 visits but zero EDGE - possible smoke-screen. Chiefs had 26 sacks in 2025, tied for worst. Veach history of pre-draft deception.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="CIN" alt="Cincinnati Bengals" color="#fb4f14" logo="https://a.espncdn.com/i/teamlogos/nfl/500/cin.png" name="Cincinnati Bengals" pick="Pick #10" /></td>
                     <td><div className="player-name">Jermod McCoy</div></td>
                     <td><span className="pos cb">CB</span></td>
                     <td><div className="school">Tennessee</div></td>
-                    <td className="notes-col"><div className="note">Speculative/board-driven. CB is Round 1 priority after FA moves. Delane now safer option after McCoy medical red-flag (degenerative knee per Pauline). Tobin: "Big enough, fast enough, strong enough."</div></td>
+                    <NotesCell>Speculative/board-driven. CB is Round 1 priority after FA moves. Delane now safer option after McCoy medical red-flag (degenerative knee per Pauline). Tobin: "Big enough, fast enough, strong enough."</NotesCell>
                   </tr>
 
                   <tr className="divider"><td colSpan={5}>Picks 11-16</td></tr>
@@ -222,42 +352,42 @@ export default function NFL() {
                     <td><div className="player-name">Makai Lemon</div></td>
                     <td><span className="pos wr">WR</span></td>
                     <td><div className="school">USC</div></td>
-                    <td className="notes-col"><div className="note">Tyreek Hill and Jaylen Waddle gone; Dolphins receiver room is barren. Lemon wins contested catches and has first-round talent despite poor combine interview. Campbell: Dolphins desperately need WR1.</div></td>
+                    <NotesCell>Tyreek Hill and Jaylen Waddle gone; Dolphins receiver room is barren. Lemon wins contested catches and has first-round talent despite poor combine interview. Campbell: Dolphins desperately need WR1.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="DAL" alt="Dallas Cowboys" color="#003594" logo="https://a.espncdn.com/i/teamlogos/nfl/500/dal.png" name="Dallas Cowboys" pick="Pick #12" /></td>
                     <td><div className="player-name">Mansoor Delane</div></td>
                     <td><span className="pos cb">CB</span></td>
                     <td><div className="school">LSU</div></td>
-                    <td className="notes-col"><div className="note">Trevon Diggs released - CB is glaring need. Delane had 45 tackles, 2 INTs, 11 PBUs in 2025. 4.35 40 at LSU pro day. Campbell has Cowboys addressing CB with this pick. Cowboys also have pick #20 (ex-Packers).</div></td>
+                    <NotesCell>Trevon Diggs released - CB is glaring need. Delane had 45 tackles, 2 INTs, 11 PBUs in 2025. 4.35 40 at LSU pro day. Campbell has Cowboys addressing CB with this pick. Cowboys also have pick #20 (ex-Packers).</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="LAR" alt="Los Angeles Rams" color="#003594" logo="https://a.espncdn.com/i/teamlogos/nfl/500/lar.png" name="LA Rams" pick="Pick #13" tradeNote="via Falcons" /></td>
                     <td><div className="player-name">Omar Cooper Jr.</div></td>
                     <td><span className="pos wr">WR</span></td>
                     <td><div className="school">Indiana</div></td>
-                    <td className="notes-col"><div className="note">Rams add slot receiver alongside Puka Nacua and Davante Adams. Cooper: 69 catches, 937 yds, 13 TDs in 2025. Schemed as Deebo Samuel comp. Falcons traded this pick - LA selecting here.</div></td>
+                    <NotesCell>Rams add slot receiver alongside Puka Nacua and Davante Adams. Cooper: 69 catches, 937 yds, 13 TDs in 2025. Schemed as Deebo Samuel comp. Falcons traded this pick - LA selecting here.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="BAL" alt="Baltimore Ravens" color="#241773" logo="https://a.espncdn.com/i/teamlogos/nfl/500/bal.png" name="Baltimore Ravens" pick="Pick #14" /></td>
                     <td><div className="player-name">Jordyn Tyson</div></td>
                     <td><span className="pos wr">WR</span></td>
                     <td><div className="school">Arizona State</div></td>
-                    <td className="notes-col"><div className="note">Ravens add a true outside receiver for Lamar Jackson. Tyson: 75 catches, 1,101 yds, 10 TDs in 2024. Durability concerns flagged by team sources - missed time each college season. High upside, elevated risk.</div></td>
+                    <NotesCell>Ravens add a true outside receiver for Lamar Jackson. Tyson: 75 catches, 1,101 yds, 10 TDs in 2024. Durability concerns flagged by team sources - missed time each college season. High upside, elevated risk.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="TB" alt="Tampa Bay Buccaneers" color="#d50a0a" logo="https://a.espncdn.com/i/teamlogos/nfl/500/tb.png" name="Tampa Bay Buccaneers" pick="Pick #15" /></td>
                     <td><div className="player-name">C.J. Allen</div></td>
                     <td><span className="pos lb">LB</span></td>
                     <td><div className="school">Georgia</div></td>
-                    <td className="notes-col"><div className="note">Lavonte David retired - LB is a clear need. Allen: 88 tackles, 3.5 sacks, 2 FFs in 2025. Smart, instinctive linebacker with versatility. Campbell: plug-and-play starter next to Alex Anzalone.</div></td>
+                    <NotesCell>Lavonte David retired - LB is a clear need. Allen: 88 tackles, 3.5 sacks, 2 FFs in 2025. Smart, instinctive linebacker with versatility. Campbell: plug-and-play starter next to Alex Anzalone.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="NYJ" alt="NY Jets" color="#125740" logo="https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png" name="New York Jets" pick="Pick #16" tradeNote="via Colts" /></td>
                     <td><div className="player-name">Jermod McCoy</div></td>
                     <td><span className="pos cb">CB</span></td>
                     <td><div className="school">Tennessee</div></td>
-                    <td className="notes-col"><div className="note">Jets use 2nd first-rounder on CB to replace Sauce Gardner. McCoy: instinctive tackler, coming off torn ACL - healthy per team sources. Jets need CB depth across roster after Gardner trade. 5 first-round picks in next 2 years.</div></td>
+                    <NotesCell>Jets use 2nd first-rounder on CB to replace Sauce Gardner. McCoy: instinctive tackler, coming off torn ACL - healthy per team sources. Jets need CB depth across roster after Gardner trade. 5 first-round picks in next 2 years.</NotesCell>
                   </tr>
 
                   <tr className="divider"><td colSpan={5}>Picks 17-20</td></tr>
@@ -267,28 +397,28 @@ export default function NFL() {
                     <td><div className="player-name">Kadyn Proctor</div></td>
                     <td><span className="pos ot">OT</span></td>
                     <td><div className="school">Alabama</div></td>
-                    <td className="notes-col"><div className="note">Taylor Decker released - Lions must replace LT. Proctor: 6-7, 360 lbs. Colossal run blocker with upside. Character concerns flagged. Campbell: Lions will love his big-time potential and SEC experience.</div></td>
+                    <NotesCell>Taylor Decker released - Lions must replace LT. Proctor: 6-7, 360 lbs. Colossal run blocker with upside. Character concerns flagged. Campbell: Lions will love his big-time potential and SEC experience.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="MIN" alt="Minnesota Vikings" color="#4f2683" logo="https://a.espncdn.com/i/teamlogos/nfl/500/min.png" name="Minnesota Vikings" pick="Pick #18" /></td>
                     <td><div className="player-name">Lee Hunter</div></td>
                     <td><span className="pos dl">DL</span></td>
                     <td><div className="school">Texas Tech</div></td>
-                    <td className="notes-col"><div className="note">Vikings need young interior DL talent. Hunter: quick off ball, surprising athleticism for a heavy NT. 41 tackles, 2.5 sacks in 2025. Campbell: good gap filler and pass rusher at the position.</div></td>
+                    <NotesCell>Vikings need young interior DL talent. Hunter: quick off ball, surprising athleticism for a heavy NT. 41 tackles, 2.5 sacks in 2025. Campbell: good gap filler and pass rusher at the position.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="CAR" alt="Carolina Panthers" color="#0085ca" logo="https://a.espncdn.com/i/teamlogos/nfl/500/car.png" name="Carolina Panthers" pick="Pick #19" /></td>
                     <td><div className="player-name">Keldric Faulk</div></td>
                     <td><span className="pos edge">EDGE</span></td>
                     <td><div className="school">Auburn</div></td>
-                    <td className="notes-col"><div className="note">Panthers grab big-bodied EDGE to help stop the run. Faulk: 6-6, 270 lbs. 7 sacks in 2024; only 2 in 2025 due to scheme restrictions. Campbell: Auburn coaches two-gapped him rather than letting him rush. High upside if used properly.</div></td>
+                    <NotesCell>Panthers grab big-bodied EDGE to help stop the run. Faulk: 6-6, 270 lbs. 7 sacks in 2024; only 2 in 2025 due to scheme restrictions. Campbell: Auburn coaches two-gapped him rather than letting him rush. High upside if used properly.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="DAL" alt="Dallas Cowboys" color="#003594" logo="https://a.espncdn.com/i/teamlogos/nfl/500/dal.png" name="Dallas Cowboys" pick="Pick #20" tradeNote="via Packers" /></td>
                     <td><div className="player-name">Francis Mauigoa</div></td>
                     <td><span className="pos ot">OT</span></td>
                     <td><div className="school">Miami (FL)</div></td>
-                    <td className="notes-col"><div className="note">Cowboys use 2nd first-rounder on top OT. Mauigoa: 6-5, 329 lbs. 85.9 PFF pass-block grade. Run blocker who could protect Dak Prescott. Campbell has Dallas doubling up - CB at #12, OT at #20.</div></td>
+                    <NotesCell>Cowboys use 2nd first-rounder on top OT. Mauigoa: 6-5, 329 lbs. 85.9 PFF pass-block grade. Run blocker who could protect Dak Prescott. Campbell has Dallas doubling up - CB at #12, OT at #20.</NotesCell>
                   </tr>
 
                   <tr className="divider"><td colSpan={5}>Picks 21-32</td></tr>
@@ -298,87 +428,88 @@ export default function NFL() {
                     <td><div className="player-name">Olaivavega Ioane</div></td>
                     <td><span className="pos g">G</span></td>
                     <td><div className="school">Penn State</div></td>
-                    <td className="notes-col"><div className="note">Isaac Seumalo left in FA - interior OL upgrade needed. Ioane: 6-4, 334 lbs. Power blocker, nasty at point of attack. Campbell: protects Aaron Rodgers and opens holes for ground game. No sacks allowed since 2023.</div></td>
+                    <NotesCell>Isaac Seumalo left in FA - interior OL upgrade needed. Ioane: 6-4, 334 lbs. Power blocker, nasty at point of attack. Campbell: protects Aaron Rodgers and opens holes for ground game. No sacks allowed since 2023.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="LAC" alt="LA Chargers" color="#0080c6" logo="https://a.espncdn.com/i/teamlogos/nfl/500/lac.png" name="LA Chargers" pick="Pick #22" /></td>
                     <td><div className="player-name">Kayden McDonald</div></td>
                     <td><span className="pos dl">DL</span></td>
                     <td><div className="school">Ohio State</div></td>
-                    <td className="notes-col"><div className="note">Chargers had massive OL and DL issues in 2025. McDonald: disruptive defender, plus athleticism at big size. Campbell: Chargers need defensive line help to sweep Mahomes - McDonald provides interior pass rush.</div></td>
+                    <NotesCell>Chargers had massive OL and DL issues in 2025. McDonald: disruptive defender, plus athleticism at big size. Campbell: Chargers need defensive line help to sweep Mahomes - McDonald provides interior pass rush.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="PHI" alt="Philadelphia Eagles" color="#004c54" logo="https://a.espncdn.com/i/teamlogos/nfl/500/phi.png" name="Philadelphia Eagles" pick="Pick #23" /></td>
                     <td><div className="player-name">Caleb Lomu</div></td>
                     <td><span className="pos ot">OT</span></td>
                     <td><div className="school">Utah</div></td>
-                    <td className="notes-col"><div className="note">Lane Johnson missed 8 games last season - Eagles need OT depth/succession. Lomu: 6-6, 304 lbs. Athletic, adept at handling speed rushers. Campbell: could be LT long-term once Johnson's time is done. Needs to get stronger.</div></td>
+                    <NotesCell>Lane Johnson missed 8 games last season - Eagles need OT depth/succession. Lomu: 6-6, 304 lbs. Athletic, adept at handling speed rushers. Campbell: could be LT long-term once Johnson's time is done. Needs to get stronger.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="CLE" alt="Cleveland Browns" color="#ff3c00" logo="https://a.espncdn.com/i/teamlogos/nfl/500/cle.png" name="Cleveland Browns" pick="Pick #24" tradeNote="via Jaguars" /></td>
                     <td><div className="player-name">Monroe Freeling</div></td>
                     <td><span className="pos ot">OT</span></td>
                     <td><div className="school">Georgia</div></td>
-                    <td className="notes-col"><div className="note">Browns use 2nd first-rounder on OT. Freeling: #2 OT prospect, 13th on Kiper big board. Berry confirmed Browns "spent extended time" with Freeling in predraft process. One-year full-time LT starter at Georgia.</div></td>
+                    <NotesCell>Browns use 2nd first-rounder on OT. Freeling: #2 OT prospect, 13th on Kiper big board. Berry confirmed Browns "spent extended time" with Freeling in predraft process. One-year full-time LT starter at Georgia.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="CHI" alt="Chicago Bears" color="#0b162a" logo="https://a.espncdn.com/i/teamlogos/nfl/500/chi.png" name="Chicago Bears" pick="Pick #25" /></td>
                     <td><div className="player-name">Vega Ioane</div></td>
                     <td><span className="pos g">G</span></td>
                     <td><div className="school">Penn State</div></td>
-                    <td className="notes-col"><div className="note">Steelers grabbed Ioane at #21 in this mock - Bears get the next best interior OL. Campbell notes Bears OL needs help protecting Caleb Williams. Explosive guard with nasty streak, fits scheme well.</div></td>
+                    <NotesCell>Steelers grabbed Ioane at #21 in this mock - Bears get the next best interior OL. Campbell notes Bears OL needs help protecting Caleb Williams. Explosive guard with nasty streak, fits scheme well.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="BUF" alt="Buffalo Bills" color="#00338d" logo="https://a.espncdn.com/i/teamlogos/nfl/500/buf.png" name="Buffalo Bills" pick="Pick #26" /></td>
                     <td><div className="player-name">Cashius Howell</div></td>
                     <td><span className="pos edge">EDGE</span></td>
                     <td><div className="school">West Virginia</div></td>
-                    <td className="notes-col"><div className="note">Bills could draft a speed rusher to rotate with veteran ends. Howell: 11.5 sacks, 6 PBUs, 31 tackles in 2025. 6-2, 248 lbs. Fast off edge with pass-rush repertoire. Size makes him a tweener - but production earns early-round status.</div></td>
+                    <NotesCell>Bills could draft a speed rusher to rotate with veteran ends. Howell: 11.5 sacks, 6 PBUs, 31 tackles in 2025. 6-2, 248 lbs. Fast off edge with pass-rush repertoire. Size makes him a tweener - but production earns early-round status.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="SF" alt="San Francisco 49ers" color="#aa0000" logo="https://a.espncdn.com/i/teamlogos/nfl/500/sf.png" name="San Francisco 49ers" pick="Pick #27" /></td>
                     <td><div className="player-name">K.C. Concepcion</div></td>
                     <td><span className="pos wr">WR</span></td>
                     <td><div className="school">NC State</div></td>
-                    <td className="notes-col"><div className="note">Mike Evans aging, Ricky Pearsall injury-prone - 49ers need WR for Purdy. Concepcion: 61 catches, 919 yds, 9 TDs; 2 punt return TDs. 5-11, 190 lbs. Quick and shifty, dangerous with ball in hands. Similar to other SF receiver targets.</div></td>
+                    <NotesCell>Mike Evans aging, Ricky Pearsall injury-prone - 49ers need WR for Purdy. Concepcion: 61 catches, 919 yds, 9 TDs; 2 punt return TDs. 5-11, 190 lbs. Quick and shifty, dangerous with ball in hands. Similar to other SF receiver targets.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="HOU" alt="Houston Texans" color="#03202f" logo="https://a.espncdn.com/i/teamlogos/nfl/500/hou.png" name="Houston Texans" pick="Pick #28" /></td>
                     <td><div className="player-name">Spencer Fano</div></td>
                     <td><span className="pos ot">OT</span></td>
                     <td><div className="school">Utah</div></td>
-                    <td className="notes-col"><div className="note">Texans need OL help. Fano: 6-6, 310 lbs. Fast, athletic, plays with mean streak. Force as run blocker. Versatile - started at both LT and RT in college. Campbell: lots of teams will fall in love with his tape.</div></td>
+                    <NotesCell>Texans need OL help. Fano: 6-6, 310 lbs. Fast, athletic, plays with mean streak. Force as run blocker. Versatile - started at both LT and RT in college. Campbell: lots of teams will fall in love with his tape.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="KC" alt="Kansas City Chiefs" color="#e31837" logo="https://a.espncdn.com/i/teamlogos/nfl/500/kc.png" name="Kansas City Chiefs" pick="Pick #29" tradeNote="via Rams" /></td>
                     <td><div className="player-name">Dillon Thieneman</div></td>
                     <td><span className="pos s">S</span></td>
                     <td><div className="school">Purdue</div></td>
-                    <td className="notes-col"><div className="note">Chiefs use 2nd first-rounder on safety to replace aging depth. Thieneman: 8 career INTs, elite instincts in coverage. Kiper has long had him to Minnesota - Campbell has him sliding to KC. Veach also has 2nd pick from Rams deal here.</div></td>
+                    <NotesCell>Chiefs use 2nd first-rounder on safety to replace aging depth. Thieneman: 8 career INTs, elite instincts in coverage. Kiper has long had him to Minnesota - Campbell has him sliding to KC. Veach also has 2nd pick from Rams deal here.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="MIA" alt="Miami Dolphins" color="#008e97" logo="https://a.espncdn.com/i/teamlogos/nfl/500/mia.png" name="Miami Dolphins" pick="Pick #30" tradeNote="via Broncos" /></td>
                     <td><div className="player-name">Avieon Terrell</div></td>
                     <td><span className="pos cb">CB</span></td>
                     <td><div className="school">Clemson</div></td>
-                    <td className="notes-col"><div className="note">Dolphins use 2nd first-rounder (acquired from Denver) on CB depth. Terrell: brother of A.J. Terrell, instinctive press-man corner. Campbell: plays bigger than 5-11 frame. Dolphins secondary still needs reinforcement.</div></td>
+                    <NotesCell>Dolphins use 2nd first-rounder (acquired from Denver) on CB depth. Terrell: brother of A.J. Terrell, instinctive press-man corner. Campbell: plays bigger than 5-11 frame. Dolphins secondary still needs reinforcement.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="NE" alt="New England Patriots" color="#002244" logo="https://a.espncdn.com/i/teamlogos/nfl/500/ne.png" name="New England Patriots" pick="Pick #31" /></td>
                     <td><div className="player-name">Max Iheanachor</div></td>
                     <td><span className="pos ot">OT</span></td>
                     <td><div className="school">Arizona State</div></td>
-                    <td className="notes-col"><div className="note">Patriots add RT to pair with Will Campbell. Iheanachor: 6-6, 330 lbs. Power run blocker, nasty at point of attack. Drake Maye took 5+ sacks in every playoff game - OL upgrade is critical. Needs to improve pass-pro consistency.</div></td>
+                    <NotesCell>Patriots add RT to pair with Will Campbell. Iheanachor: 6-6, 330 lbs. Power run blocker, nasty at point of attack. Drake Maye took 5+ sacks in every playoff game - OL upgrade is critical. Needs to improve pass-pro consistency.</NotesCell>
                   </tr>
                   <tr>
                     <td><TeamCell abbr="SEA" alt="Seattle Seahawks" color="#002244" logo="https://a.espncdn.com/i/teamlogos/nfl/500/sea.png" name="Seattle Seahawks" pick="Pick #32" /></td>
                     <td><div className="player-name">Colton Hood</div></td>
                     <td><span className="pos cb">CB</span></td>
                     <td><div className="school">Tennessee</div></td>
-                    <td className="notes-col"><div className="note">Seahawks lost Riq Woolen in FA - CB is priority. Hood: 50 tackles, 1 INT, 8 PBUs in 2025. 6-0, 195 lbs. Stepped up as #1 corner when McCoy was out with ACL. Campbell: could trade down given only 4 draft picks, but stays put here.</div></td>
+                    <NotesCell>Seahawks lost Riq Woolen in FA - CB is priority. Hood: 50 tackles, 1 INT, 8 PBUs in 2025. 6-0, 195 lbs. Stepped up as #1 corner when McCoy was out with ACL. Campbell: could trade down given only 4 draft picks, but stays put here.</NotesCell>
                   </tr>
                 </tbody>
               </table>
+            </div>
             </div>
           </section>
         </div>
