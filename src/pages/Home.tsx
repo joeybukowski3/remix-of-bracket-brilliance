@@ -1,96 +1,167 @@
-import HomeHeroBackdrop from "@/components/home/HomeHeroBackdrop";
-import HomeSportCard from "@/components/home/HomeSportCard";
-import SiteShell from "@/components/layout/SiteShell";
+import { Link } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
-import { getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
-
-const featuredTournamentPath = getTournamentPicksPath(FEATURED_PGA_TOURNAMENT);
 
 const sports = [
   {
     id: "mlb",
-    label: "MLB",
+    name: "MLB",
     route: "/mlb",
-    active: true,
-    external: true,
-    logoSrc: "/logos/mlb.svg",
-    desc: "Game analysis, player prop insights, and advanced metrics.",
+    logo: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+    description: "Game analysis, player prop insights, and advanced metrics.",
   },
   {
     id: "ncaa",
-    label: "NCAA",
+    name: "NCAA",
     route: "/ncaa",
-    active: true,
-    logoSrc: "/logos/ncaa.svg",
-    desc: "Tournament brackets, power rankings, and matchup data.",
+    logo: "https://a.espncdn.com/i/teamlogos/leagues/500/ncaa.png",
+    description: "Tournament brackets, power rankings, and matchup data.",
   },
   {
     id: "nfl",
-    label: "NFL",
+    name: "NFL",
     route: "/nfl",
-    active: true,
-    logoSrc: "/logos/nfl.svg",
-    desc: "Weekly game picks, line movement analysis, and DFS projections.",
+    logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png",
+    description: "Weekly game picks, line movement analysis, and DFS projections.",
+    featured: true,
   },
   {
     id: "nba",
-    label: "NBA",
-    route: null,
-    active: false,
-    logoSrc: "/logos/nba.png",
-    desc: "Player efficiency ratings, lineup analysis, and pace breakdown.",
+    name: "NBA",
+    route: "/nba",
+    logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png",
+    description: "Player efficiency ratings, lineup analysis, and pace breakdown.",
   },
   {
     id: "pga",
-    label: "PGA",
-    route: featuredTournamentPath,
-    active: true,
-    logoSrc: "/logos/pga.svg",
-    desc: "Tournament picks, model analysis, and golf betting tools.",
+    name: "PGA",
+    route: "/pga",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/9/9e/PGA_Tour_logo.svg/200px-PGA_Tour_logo.svg.png",
+    description: "Tournament picks, model analysis, and golf betting tools.",
   },
 ] as const;
 
+const navItems = [
+  { label: "Home", route: "/" },
+  { label: "MLB", route: "/mlb" },
+  { label: "NCAA", route: "/ncaa" },
+  { label: "NFL", route: "/nfl" },
+  { label: "NBA", route: "/nba" },
+  { label: "PGA", route: "/pga" },
+] as const;
+
+function SportCard({
+  description,
+  featured = false,
+  logo,
+  name,
+  route,
+}: {
+  description: string;
+  featured?: boolean;
+  logo: string;
+  name: string;
+  route: string;
+}) {
+  return (
+    <article
+      className={`flex w-full max-w-[200px] flex-col rounded-[12px] bg-white px-6 py-7 shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-md:max-w-none ${
+        featured ? "min-h-[320px]" : "min-h-[300px]"
+      }`}
+      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}
+    >
+      <div className="flex h-[108px] items-center justify-center">
+        <img
+          src={logo}
+          alt={`${name} logo`}
+          className="max-h-[100px] w-auto object-contain"
+          onError={(event) => {
+            event.currentTarget.style.display = "none";
+            const fallback = event.currentTarget.nextElementSibling as HTMLDivElement | null;
+            if (fallback) fallback.style.display = "flex";
+          }}
+        />
+        <div
+          style={{ display: "none" }}
+          className="hidden h-[100px] items-center justify-center text-[28px] font-bold tracking-[0.02em] text-[#111111]"
+        >
+          {name}
+        </div>
+      </div>
+
+      <h2 className="mt-4 text-left text-[18px] font-bold text-[#111111]">{name}</h2>
+      <p className="mt-3 text-left text-[13px] leading-[1.5] text-[#555555]">{description}</p>
+
+      <Link to={route} className="mt-auto pt-7 text-left text-[14px] font-semibold text-[#111111] no-underline">
+        Explore Tools →
+      </Link>
+    </article>
+  );
+}
+
 export default function Home() {
   usePageSeo({
-    title: "Joe Knows Ball | Sports Analytics, Picks, Models, and Matchup Tools",
-    description:
-      "Joe Knows Ball features advanced sports analytics tools across MLB, NCAA, NFL, NBA, and PGA for smarter, faster betting decisions.",
+    title: "Joe Knows Ball | Sports Analytics",
+    description: "Data-driven insights and tools for informed decision-making.",
     path: "/",
   });
 
   return (
-    <SiteShell>
-      <main className="relative isolate overflow-hidden bg-[#191b1d]">
-        <HomeHeroBackdrop />
+    <main className="min-h-screen bg-[#f8f8f8]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}>
+      <header className="w-full bg-white">
+        <div className="mx-auto flex min-h-[60px] max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="text-[22px] font-bold text-[#111111] no-underline">
+            Joe Knows Ball
+          </Link>
 
-        <div className="relative mx-auto flex min-h-[calc(100vh-76px)] max-w-[1280px] flex-col px-4 pb-16 pt-14 sm:px-6 lg:px-8">
-          <section className="mx-auto flex w-full max-w-[1160px] flex-1 flex-col items-center">
-            <div className="mt-8 text-center sm:mt-12 lg:mt-[72px]">
-              <h1 className="text-[42px] font-bold leading-[0.98] tracking-[-0.045em] text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)] sm:text-[54px] lg:text-[60px]">
-                Advanced Sports Analytics
-              </h1>
-              <p className="mx-auto mt-4 max-w-[760px] text-[20px] font-normal leading-[1.45] text-white/90 sm:text-[22px]">
-                Data-driven insights and tools for informed decision-making
-              </p>
-            </div>
+          <nav className="hidden items-center gap-9 md:flex">
+            {navItems.map((item) => (
+              <Link key={item.label} to={item.route} className="text-[15px] font-normal text-[#111111] no-underline">
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </header>
 
-            <div className="mt-12 grid w-full gap-5 md:grid-cols-2 xl:mt-16 xl:grid-cols-5">
+      <section
+        className="relative h-[700px] w-full overflow-visible"
+        style={{
+          backgroundImage: "url('/images/joeknowsball_hero_bg.png')",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }}
+      >
+        <div className="absolute inset-0 bg-[rgba(0,0,0,0.50)]" />
+
+        <div className="relative z-10 mx-auto flex h-full max-w-[1280px] flex-col items-center px-4 text-center sm:px-6 lg:px-8">
+          <div className="flex h-[60%] w-full flex-col items-center justify-center">
+            <h1 className="text-[36px] font-bold leading-[1.05] text-white sm:text-[44px] lg:text-[52px]">
+              Advanced Sports Analytics
+            </h1>
+            <p className="mt-4 max-w-[760px] text-[16px] font-normal leading-[1.45] text-[rgba(255,255,255,0.85)] lg:text-[18px]">
+              Data-driven insights and tools for informed decision-making
+            </p>
+          </div>
+
+          <div className="relative z-20 mt-auto w-full translate-y-1/2">
+            <div className="mx-auto flex max-w-[1120px] flex-col items-center gap-4 px-4 md:flex-row md:items-stretch md:justify-center md:gap-5 md:px-0">
               {sports.map((sport) => (
-                <HomeSportCard
+                <SportCard
                   key={sport.id}
-                  active={sport.active}
-                  desc={sport.desc}
-                  external={"external" in sport && Boolean(sport.external)}
-                  label={sport.label}
-                  logoSrc={sport.logoSrc}
+                  description={sport.description}
+                  featured={Boolean("featured" in sport && sport.featured)}
+                  logo={sport.logo}
+                  name={sport.name}
                   route={sport.route}
                 />
               ))}
             </div>
-          </section>
+          </div>
         </div>
-      </main>
-    </SiteShell>
+      </section>
+
+      <section id="content" className="bg-[#f8f8f8] px-4 pb-[80px] pt-[240px] md:pt-[180px]" />
+    </main>
   );
 }
