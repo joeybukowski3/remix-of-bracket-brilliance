@@ -215,7 +215,7 @@ export default function NFL() {
                     <td className="notes-col"><div className="note">Speculative/board-driven. CB is Round 1 priority after FA moves. Delane now safer option after McCoy medical red-flag (degenerative knee per Pauline). Tobin: "Big enough, fast enough, strong enough."</div></td>
                   </tr>
 
-                  <tr className="divider"><td colSpan={5}>Picks 11-20</td></tr>
+                  <tr className="divider"><td colSpan={5}>Picks 11-16</td></tr>
 
                   <tr>
                     <td><TeamCell abbr="MIA" alt="Miami Dolphins" color="#008e97" logo="https://a.espncdn.com/i/teamlogos/nfl/500/mia.png" name="Miami Dolphins" pick="Pick #11" /></td>
@@ -260,7 +260,7 @@ export default function NFL() {
                     <td className="notes-col"><div className="note">Jets use 2nd first-rounder on CB to replace Sauce Gardner. McCoy: instinctive tackler, coming off torn ACL - healthy per team sources. Jets need CB depth across roster after Gardner trade. 5 first-round picks in next 2 years.</div></td>
                   </tr>
 
-                  <tr className="divider"><td colSpan={5}>Picks 17-26</td></tr>
+                  <tr className="divider"><td colSpan={5}>Picks 17-20</td></tr>
 
                   <tr>
                     <td><TeamCell abbr="DET" alt="Detroit Lions" color="#0076b6" logo="https://a.espncdn.com/i/teamlogos/nfl/500/det.png" name="Detroit Lions" pick="Pick #17" /></td>
