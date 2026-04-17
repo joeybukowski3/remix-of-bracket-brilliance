@@ -63,8 +63,9 @@ function SportCard({
   route: string;
 }) {
   return (
-    <article
-      className={`flex w-full max-w-[200px] flex-col rounded-[12px] bg-white px-6 py-7 shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-md:max-w-none ${
+    <Link
+      to={route}
+      className={`flex w-full max-w-[200px] flex-col rounded-[12px] bg-white px-6 py-7 text-left no-underline shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 max-md:max-w-none ${
         featured ? "min-h-[320px]" : "min-h-[300px]"
       }`}
       style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}
@@ -91,10 +92,10 @@ function SportCard({
       <h2 className="mt-4 text-left text-[18px] font-bold text-[#111111]">{name}</h2>
       <p className="mt-3 text-left text-[13px] leading-[1.5] text-[#555555]">{description}</p>
 
-      <Link to={route} className="mt-auto pt-7 text-left text-[14px] font-semibold text-[#111111] no-underline">
+      <span className="mt-auto pt-7 text-left text-[14px] font-semibold text-[#111111]">
         Explore Tools →
-      </Link>
-    </article>
+      </span>
+    </Link>
   );
 }
 
@@ -109,8 +110,13 @@ export default function Home() {
     <main className="min-h-screen bg-[#f8f8f8]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}>
       <header className="w-full bg-white">
         <div className="mx-auto flex min-h-[60px] max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="text-[22px] font-bold text-[#111111] no-underline">
-            Joe Knows Ball
+          <Link to="/" className="inline-flex items-center gap-3 no-underline">
+            <img
+              src="/images/IconOnly_Transparent.png"
+              alt="Joe Knows Ball icon"
+              className="h-[30px] w-[30px] object-contain sm:h-[34px] sm:w-[34px]"
+            />
+            <span className="text-[22px] font-bold text-[#111111]">Joe Knows Ball</span>
           </Link>
 
           <nav className="hidden items-center gap-9 md:flex">
