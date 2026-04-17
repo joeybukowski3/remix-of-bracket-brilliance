@@ -126,7 +126,7 @@ export default function Home() {
       <section
         className="relative h-[700px] w-full overflow-visible"
         style={{
-          backgroundImage: "url('/images/sitebackground1.png')",
+          backgroundImage: "url('/images/Gemini_Generated_Image_r6ys4br6ys4br6ys.png')",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           backgroundSize: "cover",
