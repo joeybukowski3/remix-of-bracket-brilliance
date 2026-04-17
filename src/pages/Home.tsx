@@ -126,16 +126,16 @@ export default function Home() {
       <section
         className="relative h-[700px] w-full overflow-visible"
         style={{
-          backgroundImage: "url('/images/joeknowsball_hero_bg.png')",
+          backgroundImage: "url('/images/sitebackground1.png')",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
           backgroundSize: "cover",
         }}
       >
-        <div className="absolute inset-0 bg-[rgba(0,0,0,0.50)]" />
+        <div className="absolute inset-0 bg-[rgba(0,0,0,0.55)]" />
 
         <div className="relative z-10 mx-auto flex h-full max-w-[1280px] flex-col items-center px-4 text-center sm:px-6 lg:px-8">
-          <div className="flex h-[60%] w-full flex-col items-center justify-center">
+          <div className="flex h-[38%] w-full flex-col items-center justify-end pt-10">
             <h1 className="text-[36px] font-bold leading-[1.05] text-white sm:text-[44px] lg:text-[52px]">
               Advanced Sports Analytics
             </h1>
@@ -144,7 +144,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="relative z-20 mt-auto w-full translate-y-1/2">
+          <div className="relative z-20 mt-10 w-full">
             <div className="mx-auto flex max-w-[1120px] flex-col items-center gap-4 px-4 md:flex-row md:items-stretch md:justify-center md:gap-5 md:px-0">
               {sports.map((sport) => (
                 <SportCard
@@ -161,7 +161,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="content" className="bg-[#f8f8f8] px-4 pb-[80px] pt-[240px] md:pt-[180px]" />
+      <section id="content" className="bg-[#f8f8f8] px-4 pb-[80px] pt-[96px] md:pt-[120px]" />
     </main>
   );
 }
