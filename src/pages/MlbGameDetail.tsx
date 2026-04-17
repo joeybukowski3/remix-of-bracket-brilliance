@@ -14,6 +14,7 @@ import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamBadge from "@/components/mlb/MlbTeamBadge";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
 import { formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
@@ -580,6 +581,13 @@ export default function MlbGameDetail() {
   const [detail, setDetail] = useState<MlbGameDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+
+  usePageSeo({
+    title: "MLB Matchup Analysis & Daily Slate Dashboard",
+    description:
+      "Review today's MLB slate with team context, projected lineups, pitcher comparisons, park effects, and prop angles in one matchup dashboard.",
+    path: "/mlb",
+  });
 
   useEffect(() => {
     const onHashChange = () => setRouteState(parseHash(window.location.hash));

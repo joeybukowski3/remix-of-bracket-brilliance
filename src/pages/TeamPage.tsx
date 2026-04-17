@@ -24,7 +24,7 @@ export default function TeamPage() {
       ? `View ${team.name} team stats, home-away splits, and advanced NCAA basketball metrics.`
       : "View NCAA basketball team stats and advanced metrics.",
     path: team ? `/team/${team.slug}` : "/team",
-    noindex: !team,
+    noindex: true,
   });
 
   const statRows: { label: string; key: keyof TeamStats }[] = [
