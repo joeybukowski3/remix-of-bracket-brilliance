@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import Logo from "@/components/ui/Logo";
-
 const navItems = [
   { to: "/", label: "Home" },
   { to: "/mlb", label: "MLB" },
@@ -38,25 +36,27 @@ export default function SiteHeader() {
   }, [location.pathname]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/5 bg-white shadow-[0_8px_24px_rgba(17,17,17,0.04)]">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center">
-          <div className="sm:hidden">
-            <Logo clickable width={140} className="max-w-[140px]" />
-          </div>
-          <div className="hidden sm:block">
-            <Logo clickable width={210} className="max-w-[210px]" />
-          </div>
-        </div>
+    <header className="sticky top-0 z-[100] border-b border-[#eeeeee] bg-white">
+      <div className="mx-auto flex min-h-[64px] max-w-[1440px] items-center justify-between px-4 sm:px-8">
+        <Link to="/" className="inline-flex items-center gap-[10px] no-underline">
+          <img
+            src="/images/IconOnly_Transparent.png"
+            alt="Joe Knows Ball icon"
+            className="h-9 w-9 object-contain"
+          />
+          <span className="text-[18px] font-bold tracking-normal text-[#1a1a1a] normal-case">
+            Joe Knows Ball
+          </span>
+        </Link>
 
-        <nav className="hidden items-center gap-2 md:flex lg:gap-3">
+        <nav className="hidden items-center gap-7 md:flex">
           {navItems.map((item) => {
             const active = isActive(location.pathname, item);
             if (!item.to) {
               return (
                 <span
                   key={`${item.label}-disabled`}
-                  className="rounded-full px-4 py-2 text-sm text-muted-foreground/80"
+                  className="text-[15px] font-medium text-[#333333]"
                 >
                   {item.label}
                 </span>
@@ -66,8 +66,10 @@ export default function SiteHeader() {
               <Link
                 key={`${item.label}-${item.to}`}
                 to={item.to}
-                className={`rounded-full px-4 py-2 text-sm transition ${
-                  active ? "bg-primary/10 font-medium text-primary" : "text-foreground/80 hover:bg-secondary hover:text-foreground"
+                className={`transition ${
+                  active
+                    ? "rounded-[20px] bg-[#f0f0f0] px-[14px] py-1 text-[15px] font-semibold text-[#111111]"
+                    : "px-0 py-0 text-[15px] font-medium text-[#333333] hover:text-[#000000]"
                 }`}
               >
                 {item.label}
@@ -80,15 +82,15 @@ export default function SiteHeader() {
           type="button"
           onClick={() => setMobileOpen((value) => !value)}
           aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground transition hover:bg-accent md:hidden"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#1a1a1a] transition hover:bg-[#f5f5f5] md:hidden"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {mobileOpen ? (
-        <div className="px-4 pb-3 md:hidden">
-          <div className="rounded-3xl bg-card p-3 shadow-[0_12px_32px_hsl(var(--foreground)/0.05)]">
+        <div className="border-t border-[#eeeeee] px-4 py-3 md:hidden">
+          <div className="rounded-2xl bg-white p-3 shadow-[0_12px_32px_rgba(17,17,17,0.05)]">
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => {
                 const active = isActive(location.pathname, item);
@@ -96,7 +98,7 @@ export default function SiteHeader() {
                   return (
                     <span
                       key={`${item.label}-disabled-mobile`}
-                      className="rounded-2xl bg-secondary/40 px-4 py-2.5 text-sm text-muted-foreground"
+                      className="rounded-2xl px-4 py-2.5 text-sm text-[#333333]"
                     >
                       {item.label}
                     </span>
@@ -107,7 +109,7 @@ export default function SiteHeader() {
                     key={`${item.label}-${item.to}`}
                     to={item.to}
                     className={`rounded-2xl px-4 py-2.5 text-sm transition ${
-                      active ? "bg-primary/10 text-primary" : "bg-secondary/70 text-foreground hover:bg-secondary"
+                      active ? "bg-[#f0f0f0] font-semibold text-[#111111]" : "text-[#333333] hover:bg-[#f5f5f5] hover:text-[#000000]"
                     }`}
                   >
                     {item.label}
