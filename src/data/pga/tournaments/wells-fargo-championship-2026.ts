@@ -1,6 +1,8 @@
-import { definePgaTournamentConfig } from "@/lib/pga/tournamentConfig";
+import { definePgaTournamentConfig, type PgaTournamentConfigInput } from "@/lib/pga/tournamentConfig";
+import { applyPgaTournamentOverride } from "@/lib/pga/tournamentOverrides";
+import { wellsFargoChampionship2026Override } from "@/data/pga/overrides/wells-fargo-championship-2026-picks";
 
-export const wellsFargoChampionship2026Tournament = definePgaTournamentConfig({
+const baseWellsFargoChampionship2026Tournament = {
   id: "wells-fargo-championship-2026",
   slug: "wells-fargo-championship-2026-picks",
   season: 2026,
@@ -9,6 +11,23 @@ export const wellsFargoChampionship2026Tournament = definePgaTournamentConfig({
   courseName: "Quail Hollow Club",
   location: "Charlotte",
   indexable: false,
+  schedule: {
+    weekLabel: "May 7-10, 2026",
+    startDate: "2026-05-07",
+    endDate: "2026-05-10",
+  },
+  summary: {
+    blurb: "Quail Hollow leans toward complete tee-to-green players, with long-iron quality, difficult par-4 scoring, and bogey avoidance carrying more value than one-week putting spikes.",
+    bullets: [
+      "Demanding par-4 setup with real ball-striking separation",
+      "Form still matters, but tee-to-green control drives the board",
+      "Useful event for weighing floor-first Top 40 profiles",
+    ],
+  },
+  homepageFeature: {
+    eyebrow: "Featured PGA model",
+    ctaLabel: "Open full Wells Fargo board",
+  },
   hero: {
     badge: "PGA best bets today",
     title: "Wells Fargo Championship 2026 Picks & Best Bets",
@@ -217,4 +236,8 @@ export const wellsFargoChampionship2026Tournament = definePgaTournamentConfig({
       ["Straka", "+300", "10", "Fairway + approach value"],
     ],
   },
-});
+} satisfies PgaTournamentConfigInput;
+
+export const wellsFargoChampionship2026Tournament = definePgaTournamentConfig(
+  applyPgaTournamentOverride(baseWellsFargoChampionship2026Tournament, wellsFargoChampionship2026Override),
+);

@@ -1,6 +1,8 @@
-import { definePgaTournamentConfig } from "@/lib/pga/tournamentConfig";
+import { definePgaTournamentConfig, type PgaTournamentConfigInput } from "@/lib/pga/tournamentConfig";
+import { applyPgaTournamentOverride } from "@/lib/pga/tournamentOverrides";
+import { rbcHeritage2026Override } from "@/data/pga/overrides/rbc-heritage-2026-picks";
 
-export const rbcHeritage2026Tournament = definePgaTournamentConfig({
+const baseRbcHeritage2026Tournament = {
   id: "rbc-heritage-2026",
   slug: "rbc-heritage-2026-picks",
   season: 2026,
@@ -9,6 +11,23 @@ export const rbcHeritage2026Tournament = definePgaTournamentConfig({
   courseName: "Harbour Town Golf Links",
   location: "Hilton Head Island",
   featured: true,
+  schedule: {
+    weekLabel: "April 16-19, 2026",
+    startDate: "2026-04-16",
+    endDate: "2026-04-19",
+  },
+  summary: {
+    blurb: "Harbour Town is a precision-first signature event where approach play, fairway control, wedge proximity, and repeat course history all matter more than pure power.",
+    bullets: [
+      "Signature-event field with no-cut scoring pressure",
+      "Harbour Town rewards accuracy, wedges, and patience",
+      "Course history carries more weight here than at many TOUR stops",
+    ],
+  },
+  homepageFeature: {
+    eyebrow: "Featured PGA model",
+    ctaLabel: "Open full RBC board",
+  },
   hero: {
     badge: "golf betting model picks",
     title: "RBC Heritage 2026 Picks & Best Bets",
@@ -263,4 +282,8 @@ export const rbcHeritage2026Tournament = definePgaTournamentConfig({
       ["Si Woo Kim", "+196", "11", "Elite approach + experience"],
     ],
   },
-});
+} satisfies PgaTournamentConfigInput;
+
+export const rbcHeritage2026Tournament = definePgaTournamentConfig(
+  applyPgaTournamentOverride(baseRbcHeritage2026Tournament, rbcHeritage2026Override),
+);

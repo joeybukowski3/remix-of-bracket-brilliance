@@ -1,0 +1,138 @@
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
+import { usePgaTournamentPlayers } from "@/hooks/usePgaTournamentPlayers";
+import { rankPlayersByScore } from "@/lib/pga/modelEngine";
+import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
+import { getTournamentModelPath, getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
+
+const FEATURED_ROW_COUNT = 5;
+
+export default function HomepagePgaFeature() {
+  const tournament = FEATURED_PGA_TOURNAMENT;
+  const { players, status, errorMessage } = usePgaTournamentPlayers(tournament);
+  const defaultWeights = tournament.model.presets[0].weights;
+  const rows = useMemo(
+    () => rankPlayersByScore(players, defaultWeights, tournament.manual?.playerAdjustments).slice(0, FEATURED_ROW_COUNT),
+    [players, defaultWeights, tournament.manual?.playerAdjustments],
+  );
+
+  const primaryStats = tournament.model.statColumns.slice(0, 3);
+  const picksPath = getTournamentPicksPath(tournament);
+  const modelPath = getTournamentModelPath(tournament);
+  const narrative = tournament.manual?.featuredNarrative ?? tournament.summary?.blurb ?? tournament.hero.support;
+
+  return (
+    <section className="mx-auto w-full max-w-[1240px] px-4 pb-20 pt-6 sm:px-6 lg:px-8">
+      <div className="overflow-hidden rounded-[28px] border border-black/8 bg-white shadow-[0_18px_44px_rgba(17,17,17,0.08)]">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)]">
+          <div className="border-b border-black/8 px-6 py-6 sm:px-8 lg:border-b-0 lg:border-r">
+            <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#6a6a6a]">
+              {tournament.homepageFeature?.eyebrow ?? "Featured PGA model"}
+            </div>
+            <h2 className="mt-3 text-[28px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
+              {tournament.name} power rankings
+            </h2>
+            <div className="mt-3 flex flex-wrap gap-2 text-[13px] text-[#666666]">
+              <span>{tournament.courseName}</span>
+              <span>&bull;</span>
+              <span>{tournament.location}</span>
+              {tournament.schedule?.weekLabel ? (
+                <>
+                  <span>&bull;</span>
+                  <span>{tournament.schedule.weekLabel}</span>
+                </>
+              ) : null}
+            </div>
+            <p className="mt-5 max-w-[56ch] text-[15px] leading-7 text-[#4c4c4c]">{narrative}</p>
+
+            {(tournament.manual?.courseFitNotes?.length ?? 0) > 0 ? (
+              <div className="mt-5 grid gap-2">
+                {tournament.manual?.courseFitNotes?.slice(0, 3).map((note) => (
+                  <div key={note} className="rounded-2xl bg-[#f7f7f7] px-4 py-3 text-[14px] leading-6 text-[#4c4c4c]">
+                    {note}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to={picksPath}
+                className="inline-flex items-center rounded-full bg-[#111111] px-5 py-3 text-[14px] font-semibold text-white transition hover:bg-black"
+              >
+                {tournament.homepageFeature?.ctaLabel ?? "Open tournament page"}
+              </Link>
+              <Link
+                to={modelPath}
+                className="inline-flex items-center rounded-full border border-black/10 bg-white px-5 py-3 text-[14px] font-semibold text-[#111111] transition hover:bg-[#f7f7f7]"
+              >
+                Open full model
+              </Link>
+            </div>
+          </div>
+
+          <div className="px-4 py-5 sm:px-6 sm:py-6">
+            <div className="rounded-[22px] border border-black/8 bg-[#fbfbfb] p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-3 border-b border-black/8 px-3 pb-3">
+                <div>
+                  <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#6a6a6a]">Live preview</div>
+                  <div className="mt-1 text-[18px] font-bold text-[#111111]">Current model leaderboard</div>
+                </div>
+                <div className="rounded-full bg-white px-3 py-1 text-[12px] font-medium text-[#4c4c4c] shadow-[0_4px_12px_rgba(17,17,17,0.05)]">
+                  {status === "ready" ? `${rows.length} shown` : "Loading"}
+                </div>
+              </div>
+
+              {status === "loading" ? (
+                <div className="px-3 py-8 text-sm text-[#666666]">Loading current tournament rankings...</div>
+              ) : null}
+              {status === "error" ? (
+                <div className="px-3 py-8 text-sm text-[#666666]">
+                  Unable to load the featured PGA table.
+                  <div className="mt-2 text-[#8a8a8a]">{errorMessage}</div>
+                </div>
+              ) : null}
+              {status === "ready" ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-collapse">
+                    <thead>
+                      <tr className="text-left text-[11px] uppercase tracking-[0.16em] text-[#7a7a7a]">
+                        <th className="px-3 py-3 font-semibold">Rank</th>
+                        <th className="px-3 py-3 font-semibold">Golfer</th>
+                        <th className="px-3 py-3 font-semibold">Power</th>
+                        {primaryStats.map((stat) => (
+                          <th key={stat.key} className="px-3 py-3 font-semibold">
+                            {stat.abbr}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => (
+                        <tr key={row.id} className="border-t border-black/6 text-[14px] text-[#222222]">
+                          <td className="px-3 py-3 font-semibold">#{row.rank}</td>
+                          <td className="px-3 py-3 font-medium">{row.player}</td>
+                          <td className="px-3 py-3">{row.score.toFixed(2)}</td>
+                          {primaryStats.map((stat) => (
+                            <td key={`${row.id}-${stat.key}`} className="px-3 py-3">
+                              {formatRankValue(row[stat.key])}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function formatRankValue(value: number | null) {
+  if (value == null) return "—";
+  return `#${value}`;
+}

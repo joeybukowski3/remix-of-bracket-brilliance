@@ -59,7 +59,10 @@ export default function PGAModel() {
     };
   }, [isFullPage]);
 
-  const rows = useMemo(() => rankPlayersByScore(players, appliedWeights), [players, appliedWeights]);
+  const rows = useMemo(
+    () => rankPlayersByScore(players, appliedWeights, tournament.manual?.playerAdjustments),
+    [players, appliedWeights, tournament.manual?.playerAdjustments],
+  );
   const topProjections = useMemo(() => getTopProjections(rows, tournament), [rows, tournament]);
   const meta = useMemo(() => buildTournamentMeta(tournament, players.length), [tournament, players.length]);
   const hasDraftChanges = useMemo(() => !areWeightsEqual(draftWeights, appliedWeights), [draftWeights, appliedWeights]);

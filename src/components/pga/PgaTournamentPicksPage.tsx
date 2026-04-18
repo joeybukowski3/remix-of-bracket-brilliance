@@ -155,7 +155,10 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
     [tournament.slug, tournament.model.presets],
   );
   const previewTheme = tournament.model.previewThemes.find((theme) => theme.key === activePreviewThemeKey) ?? tournament.model.previewThemes[0];
-  const previewRows = useMemo(() => rankPlayersByScore(players, previewTheme.weights).slice(0, 6), [players, previewTheme.weights]);
+  const previewRows = useMemo(
+    () => rankPlayersByScore(players, previewTheme.weights, tournament.manual?.playerAdjustments).slice(0, 6),
+    [players, previewTheme.weights, tournament.manual?.playerAdjustments],
+  );
   const activePresetKey = useMemo(() => detectActivePreset(storedWeights, tournament.model.presets), [storedWeights, tournament.model.presets]);
   const liveModelLabel = activePresetKey
     ? `${tournament.model.presets.find((preset) => preset.key === activePresetKey)?.label} preset currently saved`
@@ -419,6 +422,39 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
               ))}
             </div>
           </SectionCard>
+
+          {tournament.manual?.courseFitNotes?.length || tournament.manual?.statPriorityTweaks?.length ? (
+            <SectionCard title="Weekly Tournament Adjustments" eyebrow="Manual Override Layer">
+              <div className="grid gap-3 lg:grid-cols-2">
+                {tournament.manual?.courseFitNotes?.length ? (
+                  <div className="rounded-lg border border-[color:var(--pga-border)] bg-card p-4">
+                    <h3 className="text-[14px] font-medium text-foreground">Course-fit notes</h3>
+                    <div className="mt-3 grid gap-2">
+                      {tournament.manual.courseFitNotes.map((note) => (
+                        <div key={note} className="rounded-lg bg-secondary/40 px-3 py-2.5 text-sm leading-6 text-muted-foreground">
+                          {note}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {tournament.manual?.statPriorityTweaks?.length ? (
+                  <div className="rounded-lg border border-[color:var(--pga-border)] bg-card p-4">
+                    <h3 className="text-[14px] font-medium text-foreground">Stat priority tweaks</h3>
+                    <div className="mt-3 grid gap-2">
+                      {tournament.manual.statPriorityTweaks.map((tweak) => (
+                        <div key={`${tweak.key}-${tweak.note}`} className="rounded-lg bg-secondary/40 px-3 py-2.5">
+                          <div className="text-[13px] font-medium text-foreground">{tweak.key}</div>
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">{tweak.note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </SectionCard>
+          ) : null}
 
           <SectionCard title="How to Build Golf Parlays" eyebrow="Parlay Strategy">
             <div className="grid gap-3 sm:grid-cols-2">

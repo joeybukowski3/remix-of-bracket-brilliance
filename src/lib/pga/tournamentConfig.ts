@@ -76,6 +76,18 @@ const heroStatSchema = z.object({
   label: z.string(),
 });
 
+const playerAdjustmentSchema = z.object({
+  player: z.string(),
+  scoreDelta: z.number(),
+  note: z.string().optional(),
+});
+
+const statPriorityTweakSchema = z.object({
+  key: weightKeySchema,
+  delta: z.number(),
+  note: z.string(),
+});
+
 const modelStatColumnSchema = z.object({
   key: z.enum([
     "sgApproachRank",
@@ -102,6 +114,19 @@ const tournamentConfigSchema = z.object({
   location: z.string(),
   featured: z.boolean().optional(),
   indexable: z.boolean().optional(),
+  schedule: z.object({
+    weekLabel: z.string(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+  }).optional(),
+  summary: z.object({
+    blurb: z.string(),
+    bullets: z.array(z.string()).optional(),
+  }).optional(),
+  homepageFeature: z.object({
+    eyebrow: z.string(),
+    ctaLabel: z.string(),
+  }).optional(),
   hero: z.object({
     badge: z.string(),
     title: z.string(),
@@ -155,6 +180,12 @@ const tournamentConfigSchema = z.object({
     top40Rows: z.array(top40RowSchema),
     summaryRows: z.array(tableSummaryRowSchema),
   }),
+  manual: z.object({
+    featuredNarrative: z.string().optional(),
+    playerAdjustments: z.array(playerAdjustmentSchema).optional(),
+    courseFitNotes: z.array(z.string()).optional(),
+    statPriorityTweaks: z.array(statPriorityTweakSchema).optional(),
+  }).optional(),
 }) satisfies z.ZodTypeAny;
 
 export type PgaTournamentConfigInput = z.input<typeof tournamentConfigSchema>;

@@ -1,5 +1,6 @@
 import type { PgaTournamentConfig } from "@/lib/pga/tournamentConfig";
 import type { PgaPlayerInput, PgaWeightKey, PgaWeights, PlayerModelRow, PgaTopProjection, RawPgaPlayer } from "@/lib/pga/pgaTypes";
+import type { PgaTournamentPlayerAdjustment } from "@/lib/pga/tournamentOverrides";
 
 const FALLBACK_FIELD_SIZE = 83;
 const MIN_AVAILABLE_WEIGHTED_METRICS_RATIO = 0.5;
@@ -100,31 +101,38 @@ export function calculateCompositeScore(player: PgaPlayerInput, weights: PgaWeig
   return { score, isEligible };
 }
 
-export function rankPlayersByScore(players: PgaPlayerInput[], weights: PgaWeights) {
+export function rankPlayersByScore(players: PgaPlayerInput[], weights: PgaWeights, playerAdjustments: PgaTournamentPlayerAdjustment[] = []) {
   const fieldSize = Math.max(players.length, FALLBACK_FIELD_SIZE);
+  const adjustmentMap = new Map(
+    playerAdjustments.map((adjustment) => [normalizePlayerAdjustmentName(adjustment.player), adjustment]),
+  );
   const sorted = [...players]
     .map((player) => ({
       raw: player,
       ...calculateCompositeScore(player, weights, fieldSize),
+      scoreDelta: adjustmentMap.get(normalizePlayerAdjustmentName(player.player))?.scoreDelta ?? 0,
     }))
     .filter((player) => player.isEligible)
     .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
+      const leftScore = a.score + a.scoreDelta;
+      const rightScore = b.score + b.scoreDelta;
+      if (rightScore !== leftScore) return rightScore - leftScore;
       return a.raw.player.localeCompare(b.raw.player);
     });
 
   let lastScore: number | null = null;
   let lastRank = 0;
 
-  return sorted.map(({ raw, score }, index): PlayerModelRow => {
-    const rank = lastScore !== null && score === lastScore ? lastRank : index + 1;
-    lastScore = score;
+  return sorted.map(({ raw, score, scoreDelta }, index): PlayerModelRow => {
+    const adjustedScore = score + scoreDelta;
+    const rank = lastScore !== null && adjustedScore === lastScore ? lastRank : index + 1;
+    lastScore = adjustedScore;
     lastRank = rank;
 
     return {
       id: raw.id,
       player: raw.player,
-      score,
+      score: adjustedScore,
       rank,
       trendRank: raw.statRanks.trendRank,
       courseHistoryRounds: raw.courseHistoryRounds,
@@ -142,6 +150,10 @@ export function rankPlayersByScore(players: PgaPlayerInput[], weights: PgaWeight
       courseHistoryScore: raw.courseHistoryScore,
     };
   });
+}
+
+function normalizePlayerAdjustmentName(player: string) {
+  return player.trim().toLowerCase();
 }
 
 export function getTopProjections(rows: PlayerModelRow[], tournament: PgaTournamentConfig): PgaTopProjection[] {

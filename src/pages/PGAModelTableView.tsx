@@ -19,7 +19,10 @@ export default function PGAModelTableView() {
 
   const { players, status, errorMessage } = usePgaTournamentPlayers(tournament);
   const appliedWeights = useMemo(() => getStoredPgaAppliedWeights(tournament.slug, tournament.model.presets[0].weights), [tournament.slug, tournament.model.presets]);
-  const rows = useMemo(() => rankPlayersByScore(players, appliedWeights), [players, appliedWeights]);
+  const rows = useMemo(
+    () => rankPlayersByScore(players, appliedWeights, tournament.manual?.playerAdjustments),
+    [players, appliedWeights, tournament.manual?.playerAdjustments],
+  );
   const modelPath = getTournamentModelPath(tournament);
   const tableConfig = useMemo(() => buildPgaModelTableConfig(tournament), [tournament]);
 

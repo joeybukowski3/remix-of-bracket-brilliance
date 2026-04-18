@@ -8,6 +8,19 @@ export const tournamentTemplate = definePgaTournamentConfig({
   shortName: "Replace Short Name",
   courseName: "Replace Course Name",
   location: "Replace Location",
+  schedule: {
+    weekLabel: "Replace week label",
+    startDate: "2026-01-01",
+    endDate: "2026-01-04",
+  },
+  summary: {
+    blurb: "Replace summary blurb.",
+    bullets: ["Replace summary bullet", "Replace summary bullet", "Replace summary bullet"],
+  },
+  homepageFeature: {
+    eyebrow: "Featured PGA model",
+    ctaLabel: "Open tournament page",
+  },
   hero: {
     badge: "replace hero badge",
     title: "Replace Tournament Picks & Best Bets",
@@ -106,5 +119,11 @@ export const tournamentTemplate = definePgaTournamentConfig({
     fades: ["Replace fade -> replace analysis."],
     top40Rows: [["Replace Player", "Replace top-40 note."]],
     summaryRows: [["Replace", "+100", "10", "Replace reason"]],
+  },
+  manual: {
+    featuredNarrative: "Optional homepage override narrative.",
+    playerAdjustments: [{ player: "Replace Player", scoreDelta: 0.03, note: "Optional player boost" }],
+    courseFitNotes: ["Optional course-fit note"],
+    statPriorityTweaks: [{ key: "sgApproach", delta: 4, note: "Optional stat priority note" }],
   },
 });

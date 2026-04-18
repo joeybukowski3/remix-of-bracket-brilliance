@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import HomepagePgaFeature from "@/components/pga/HomepagePgaFeature";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
 const sports = [
@@ -167,7 +168,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="content" className="bg-[#f8f8f8] px-4 pb-[80px] pt-[96px] md:pt-[120px]" />
+      <section id="content" className="bg-[#f8f8f8] pt-[96px] md:pt-[120px]">
+        <HomepagePgaFeature />
+      </section>
     </main>
   );
 }
