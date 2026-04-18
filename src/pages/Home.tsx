@@ -22,7 +22,7 @@ const sports = [
     name: "NFL",
     route: "/nfl",
     logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png",
-    description: "Weekly game picks, line movement analysis, and DFS projections.",
+    description: "NFL Mock Draft Analysis",
     featured: true,
   },
   {
