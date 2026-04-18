@@ -21,6 +21,13 @@ export const tournamentTemplate = definePgaTournamentConfig({
     eyebrow: "Featured PGA model",
     ctaLabel: "Open tournament page",
   },
+  tournamentInfo: {
+    previousWinner: "Replace previous winner",
+    purse: "$0",
+    winningScore: "Replace winning score or TODO",
+    averageCutLineLast5Years: "Replace cut-line note or TODO",
+    courseFitProfile: ["Replace course-fit note", "Replace course-fit note", "Replace course-fit note"],
+  },
   hero: {
     badge: "replace hero badge",
     title: "Replace Tournament Picks & Best Bets",
@@ -122,8 +129,11 @@ export const tournamentTemplate = definePgaTournamentConfig({
   },
   manual: {
     featuredNarrative: "Optional homepage override narrative.",
+    modelFocusNote: "Optional model focus note.",
     playerAdjustments: [{ player: "Replace Player", scoreDelta: 0.03, note: "Optional player boost" }],
     courseFitNotes: ["Optional course-fit note"],
     statPriorityTweaks: [{ key: "sgApproach", delta: 4, note: "Optional stat priority note" }],
+    elevatedGolfers: [{ player: "Replace Player", note: "Optional elevated golfer note" }],
+    downgradedGolfers: [{ player: "Replace Player", note: "Optional downgraded golfer note" }],
   },
 });

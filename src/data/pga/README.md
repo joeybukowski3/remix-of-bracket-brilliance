@@ -15,6 +15,7 @@ Weekly PGA rollout is now file-driven.
 - Tournament registration:
   - [tournaments.ts](/C:/Users/jbloo/remix-of-bracket-brilliance/src/lib/pga/tournaments.ts:1)
   - [featuredTournament.ts](/C:/Users/jbloo/remix-of-bracket-brilliance/src/data/pga/featuredTournament.ts:1)
+  - [pgaSchedule.ts](/C:/Users/jbloo/remix-of-bracket-brilliance/src/lib/pga/pgaSchedule.ts:1)
 - Weekly schedule source of truth:
   - [schedule.json](/C:/Users/jbloo/remix-of-bracket-brilliance/src/data/pga/schedule.json:1)
 - Manual override layer:
@@ -34,19 +35,23 @@ npm run pga:generate:next
 What it does:
 
 1. Reads [schedule.json](/C:/Users/jbloo/remix-of-bracket-brilliance/src/data/pga/schedule.json:1)
-2. Picks the next tournament by `startDate`
+2. Picks:
+   - the current upcoming event for the week
+   - the next week's event
 3. If the entry is `registration: "generated"`, it creates or refreshes:
    - `src/data/pga/generated/<slug>.ts`
    - `src/data/pga/overrides/<slug>.ts` if missing
    - [registry.ts](/C:/Users/jbloo/remix-of-bracket-brilliance/src/data/pga/generated/registry.ts:1)
-4. If a workbook path is configured or passed, it runs:
+4. It creates placeholder JSON files when a generated tournament does not yet have a workbook export, so the page shell can still publish safely.
+5. If a workbook path is configured or passed, it runs:
    - [generate-pga-tournament-package.mjs](/C:/Users/jbloo/remix-of-bracket-brilliance/scripts/generate-pga-tournament-package.mjs:1)
    - [export_pga_workbook.py](/C:/Users/jbloo/remix-of-bracket-brilliance/scripts/export_pga_workbook.py:1)
-5. Updates [featuredTournament.ts](/C:/Users/jbloo/remix-of-bracket-brilliance/src/data/pga/featuredTournament.ts:1) so:
+6. Updates [featuredTournament.ts](/C:/Users/jbloo/remix-of-bracket-brilliance/src/data/pga/featuredTournament.ts:1) so:
    - `/pga`
    - featured homepage PGA module
    - featured PGA SEO helpers
    all point at the new tournament
+7. The homepage PGA module also resolves the next week's event card from the same schedule source of truth.
 
 ## Manual Override Workflow
 
@@ -58,9 +63,12 @@ Use it for:
 
 - `weightOverrides`
 - `manual.featuredNarrative`
+- `manual.modelFocusNote`
 - `manual.playerAdjustments`
 - `manual.courseFitNotes`
 - `manual.statPriorityTweaks`
+- `manual.elevatedGolfers`
+- `manual.downgradedGolfers`
 - any focused `hero`, `seo`, `model`, or `picksPage` copy overrides
 
 The override layer merges onto the baseline package. You do not need to rebuild the tournament shell.
@@ -80,6 +88,14 @@ The override layer merges onto the baseline package. You do not need to rebuild 
    - set `registration` to `"legacy"`
 5. If a workbook export should run automatically, add `workbook.defaultPath` and sheet names
 6. Run `npm run pga:generate:next` or `npm run pga:generate -- --slug <slug> --feature`
+
+## Current Upcoming + Next Week Logic
+
+- Current upcoming event = the first tournament whose `startDate` is on or after the current date
+- Next week's event = the first primary event in the following tournament week
+- Same-week alternate-field events stay in the schedule and can be surfaced without breaking the primary event selection
+- `/pga` and the homepage PGA module follow the current upcoming event
+- The homepage also shows a separate next-week card linking to the next event shell
 
 ## Where the Model Gets Its Data
 
@@ -125,7 +141,13 @@ Recommended trigger:
 ## Manual Test Before Automating
 
 ```bash
-npm run pga:generate -- --slug wells-fargo-championship-2026-picks --feature --today 2026-04-18
+npm run pga:generate:next -- --today 2026-04-18
 cmd /c npm run build
 cmd /c npm run test -- src/lib/pga/modelEngine.test.ts
 ```
+
+Browser-side date override for local preview:
+
+- add `?pgaDate=2026-04-27` to the URL, or
+- set `localStorage["pga:date-override"] = "2026-04-27"`, or
+- use `VITE_PGA_DATE_OVERRIDE=2026-04-27`

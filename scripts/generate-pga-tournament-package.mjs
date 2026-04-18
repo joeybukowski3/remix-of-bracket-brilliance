@@ -151,31 +151,34 @@ main();
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const schedule = readJson(schedulePath);
-  const target = args.slug
-    ? schedule.find((entry) => entry.slug === args.slug)
-    : findNextTournament(schedule, args.today ?? new Date().toISOString().slice(0, 10));
+  const today = args.today ?? new Date().toISOString().slice(0, 10);
+  const targets = args.slug
+    ? [schedule.find((entry) => entry.slug === args.slug)].filter(Boolean)
+    : getCurrentAndNextTargets(schedule, today);
 
-  if (!target) {
-    throw new Error("No target PGA tournament found. Add it to src/data/pga/schedule.json or pass --slug.");
+  if (!targets.length) {
+    throw new Error("No PGA tournament targets found. Add them to src/data/pga/schedule.json or pass --slug.");
   }
 
   fs.mkdirSync(generatedDir, { recursive: true });
   fs.mkdirSync(overridesDir, { recursive: true });
 
-  if (target.registration === "generated") {
-    writeGeneratedTournamentModule(target);
-    ensureOverrideStub(target);
-  }
+  targets.forEach((target) => {
+    if (target.registration === "generated") {
+      writeGeneratedTournamentModule(target);
+      ensureOverrideStub(target);
+    }
+
+    ensureTournamentData(target, args.workbook);
+  });
 
   updateGeneratedRegistry();
-  ensureTournamentData(target, args.workbook);
 
   if (args.feature) {
-    updateFeaturedTournament(target.slug);
+    updateFeaturedTournament(targets[0].slug);
   }
 
-  console.log(`PGA weekly package ready for ${target.slug}`);
-  console.log(`- registration: ${target.registration}`);
+  console.log(`PGA weekly package ready for ${targets.map((target) => target.slug).join(", ")}`);
   console.log(`- featured slug updated: ${args.feature ? "yes" : "no"}`);
 }
 
@@ -200,6 +203,19 @@ function findNextTournament(schedule, today) {
   return [...schedule]
     .sort((left, right) => left.startDate.localeCompare(right.startDate))
     .find((entry) => normalizeDate(entry.startDate) >= todayValue);
+}
+
+function getCurrentAndNextTargets(schedule, today) {
+  const ordered = [...schedule].sort((left, right) => {
+    if (left.startDate !== right.startDate) return left.startDate.localeCompare(right.startDate);
+    return Number(Boolean(left.alternateField)) - Number(Boolean(right.alternateField));
+  });
+
+  const current = findNextTournament(ordered, today);
+  if (!current) return [];
+
+  const nextWeek = ordered.find((entry) => entry.startDate > current.startDate);
+  return [current, nextWeek].filter(Boolean);
 }
 
 function normalizeDate(value) {
@@ -240,9 +256,12 @@ export const ${overrideName}: PgaTournamentOverride = {
   // },
   // manual: {
   //   featuredNarrative: "Short homepage blurb for this tournament week.",
+  //   modelFocusNote: "Add the weekly model-focus note here.",
   //   playerAdjustments: [{ player: "Example Golfer", scoreDelta: 0.03, note: "Course-fit boost" }],
   //   courseFitNotes: ["Add a tournament-specific course note here."],
   //   statPriorityTweaks: [{ key: "sgApproach", delta: 4, note: "Explain why approach should matter more this week." }],
+  //   elevatedGolfers: [{ player: "Example Golfer", note: "Why this player is elevated versus the baseline power ranking." }],
+  //   downgradedGolfers: [{ player: "Example Golfer", note: "Why this player is downgraded versus the baseline power ranking." }],
   // },
 };
 `;
@@ -295,7 +314,8 @@ function ensureTournamentData(entry, workbookOverride) {
   const workbookPath = workbookOverride || entry.workbook?.defaultPath || "";
   if (!workbookPath) {
     if (!fs.existsSync(dataOutput)) {
-      throw new Error(`Missing player data for ${entry.slug}. Provide --workbook or add an exported JSON at ${dataOutput}.`);
+      fs.mkdirSync(path.dirname(dataOutput), { recursive: true });
+      fs.writeFileSync(dataOutput, "[]\n", "utf8");
     }
     return;
   }
@@ -331,7 +351,7 @@ function ensureTournamentData(entry, workbookOverride) {
 function updateFeaturedTournament(slug) {
   fs.writeFileSync(
     featuredTournamentPath,
-    `export const FEATURED_PGA_TOURNAMENT_SLUG = "${slug}";
+    `export const FEATURED_PGA_TOURNAMENT_OVERRIDE_SLUG: string | null = "${slug}";
 `,
     "utf8",
   );
@@ -371,10 +391,18 @@ function buildGeneratedBaseConfig(entry) {
     summary: {
       blurb: courseSummary,
       bullets: courseTraits.slice(0, 3),
+      modelFocus: entry.modelFocus || "This week's model starts from the site's standard power-ranking framework, then leans into the stats most likely to translate to this venue. Use the override layer to make sharper tournament-specific adjustments once the first baseline package is live.",
     },
     homepageFeature: {
       eyebrow: entry.homepageEyebrow || "Featured PGA model",
       ctaLabel: `Open full ${entry.shortName} board`,
+    },
+    tournamentInfo: {
+      previousWinner: entry.previousWinner,
+      purse: entry.purse,
+      winningScore: entry.winningScore,
+      averageCutLineLast5Years: entry.averageCutLineLast5Years,
+      courseFitProfile: entry.courseFitProfile ?? courseTraits.slice(0, 4),
     },
     hero: {
       badge: "pga model auto-generated",
@@ -492,13 +520,29 @@ function buildGeneratedBaseConfig(entry) {
         ["TBD", "TBD", "0", "Add a weekly betting summary in the override file."],
       ],
     },
+    manual: {
+      modelFocusNote: entry.modelFocus,
+      elevatedGolfers: [
+        { player: "Use tournament override file", note: "Baseline generated output. Add elevated golfers after the first model pass." },
+      ],
+      downgradedGolfers: [
+        { player: "Use tournament override file", note: "Baseline generated output. Add downgraded golfers after the first model pass." },
+      ],
+    },
   };
 }
 
 function buildWeekLabel(startDate, endDate) {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const startLabel = start.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-  const endLabel = end.toLocaleDateString("en-US", { month: start.getMonth() === end.getMonth() ? undefined : "long", day: "numeric", year: start.getFullYear() === end.getFullYear() ? undefined : "numeric" });
-  return `${startLabel} - ${endLabel}`;
+  const start = parseDateParts(startDate);
+  const end = parseDateParts(endDate);
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const startLabel = `${monthNames[start.month - 1]} ${start.day}, ${start.year}`;
+  const endMonth = start.month === end.month ? "" : `${monthNames[end.month - 1]} `;
+  const endYear = start.year === end.year ? "" : `, ${end.year}`;
+  return `${startLabel} - ${endMonth}${end.day}${endYear}`;
+}
+
+function parseDateParts(value) {
+  const [year, month, day] = String(value).split("-").map(Number);
+  return { year, month, day };
 }

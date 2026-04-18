@@ -1,7 +1,8 @@
 import { rbcHeritage2026Tournament } from "@/data/pga/tournaments/rbc-heritage-2026";
 import { wellsFargoChampionship2026Tournament } from "@/data/pga/tournaments/wells-fargo-championship-2026";
-import { FEATURED_PGA_TOURNAMENT_SLUG } from "@/data/pga/featuredTournament";
+import { FEATURED_PGA_TOURNAMENT_OVERRIDE_SLUG } from "@/data/pga/featuredTournament";
 import { GENERATED_PGA_TOURNAMENTS } from "@/data/pga/generated/registry";
+import { getPgaDateOverride, getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
 import type { PgaTournamentConfig } from "@/lib/pga/tournamentConfig";
 
 const LEGACY_PGA_TOURNAMENTS = [
@@ -14,12 +15,28 @@ export const PGA_TOURNAMENTS = dedupeTournamentsBySlug([
   ...GENERATED_PGA_TOURNAMENTS,
 ]);
 
+const pgaScheduleSelection = getPgaScheduleSelection();
+const hasPgaDateOverride = Boolean(getPgaDateOverride());
+
 export const FEATURED_PGA_TOURNAMENT =
-  PGA_TOURNAMENTS.find((tournament) => tournament.slug === FEATURED_PGA_TOURNAMENT_SLUG)
+  (hasPgaDateOverride
+    ? getScheduleDrivenTournament(pgaScheduleSelection.currentUpcoming?.slug)
+    : PGA_TOURNAMENTS.find((tournament) => tournament.slug === FEATURED_PGA_TOURNAMENT_OVERRIDE_SLUG)
+      ?? getScheduleDrivenTournament(pgaScheduleSelection.currentUpcoming?.slug))
+  ?? PGA_TOURNAMENTS.find((tournament) => tournament.featured)
+  ?? PGA_TOURNAMENTS[0];
+
+export const NEXT_PGA_TOURNAMENT =
+  getScheduleDrivenTournament(pgaScheduleSelection.nextWeek?.slug)
   ?? PGA_TOURNAMENTS.find((tournament) => tournament.featured)
   ?? PGA_TOURNAMENTS[0];
 
 export function getPgaTournamentBySlug(slug: string | undefined) {
+  if (!slug) return null;
+  return PGA_TOURNAMENTS.find((tournament) => tournament.slug === slug) ?? null;
+}
+
+function getScheduleDrivenTournament(slug: string | undefined) {
   if (!slug) return null;
   return PGA_TOURNAMENTS.find((tournament) => tournament.slug === slug) ?? null;
 }

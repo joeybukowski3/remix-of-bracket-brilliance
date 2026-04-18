@@ -85,6 +85,15 @@ function IconFrame({ children }: { children: ReactNode }) {
   return <div className="pga-icon-frame">{children}</div>;
 }
 
+function InfoStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-[color:var(--pga-border)] bg-secondary/30 p-3">
+      <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-2 text-[14px] font-medium leading-6 text-foreground">{value}</div>
+    </div>
+  );
+}
+
 function BarChartIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -241,6 +250,82 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
               courseHistoryLabel={tournament.model.courseHistoryDisplay}
             />
           </section>
+
+          {(tournament.tournamentInfo || tournament.summary?.modelFocus || tournament.manual?.modelFocusNote || tournament.manual?.elevatedGolfers?.length || tournament.manual?.downgradedGolfers?.length) ? (
+            <section className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)]">
+              <div className="grid gap-4">
+                {tournament.tournamentInfo ? (
+                  <section className="pga-card p-5">
+                    <div className="pga-label">Tournament Snapshot</div>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      <InfoStat label="Tournament" value={tournament.name} />
+                      <InfoStat label="Course" value={tournament.courseName} />
+                      <InfoStat label="Location" value={tournament.location} />
+                      <InfoStat label="Previous Winner" value={tournament.tournamentInfo.previousWinner ?? "TBD"} />
+                      <InfoStat label="Winning Score" value={tournament.tournamentInfo.winningScore ?? "TODO / pending exact score source"} />
+                      <InfoStat label="Avg Cut Line (5 yrs)" value={tournament.tournamentInfo.averageCutLineLast5Years ?? "TODO / pending cut-line history source"} />
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {(tournament.tournamentInfo.courseFitProfile ?? []).map((item) => (
+                        <span key={item} className="rounded-full border border-[color:var(--pga-border)] bg-secondary/40 px-3 py-1.5 text-[12px] font-medium text-foreground">
+                          {item}
+                        </span>
+                      ))}
+                      {tournament.tournamentInfo.purse ? (
+                        <span className="rounded-full border border-[color:var(--pga-border)] bg-card px-3 py-1.5 text-[12px] font-medium text-muted-foreground">
+                          Purse {tournament.tournamentInfo.purse}
+                        </span>
+                      ) : null}
+                    </div>
+                  </section>
+                ) : null}
+
+                {(tournament.manual?.modelFocusNote || tournament.summary?.modelFocus) ? (
+                  <section className="pga-card p-5">
+                    <div className="pga-label">Model Focus</div>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-[15px]">
+                      {tournament.manual?.modelFocusNote ?? tournament.summary?.modelFocus}
+                    </p>
+                  </section>
+                ) : null}
+              </div>
+
+              <section className="pga-card p-5">
+                <div className="pga-label">Ranking Deltas</div>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <h2 className="text-[15px] font-medium text-foreground">Elevated vs general power ranking</h2>
+                    <div className="mt-3 grid gap-2">
+                      {(tournament.manual?.elevatedGolfers?.length
+                        ? tournament.manual.elevatedGolfers
+                        : [{ player: "Use tournament override file", note: "Baseline generated output. Add elevated golfers in the override layer." }]
+                      ).map((entry) => (
+                        <div key={`${entry.player}-${entry.note}`} className="rounded-lg border border-[color:var(--pga-border)] bg-secondary/35 px-3 py-3">
+                          <div className="text-[13px] font-medium text-foreground">{entry.player}</div>
+                          <p className="mt-1 text-[12px] leading-6 text-muted-foreground">{entry.note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h2 className="text-[15px] font-medium text-foreground">Downgraded vs general power ranking</h2>
+                    <div className="mt-3 grid gap-2">
+                      {(tournament.manual?.downgradedGolfers?.length
+                        ? tournament.manual.downgradedGolfers
+                        : [{ player: "Use tournament override file", note: "Baseline generated output. Add downgraded golfers in the override layer." }]
+                      ).map((entry) => (
+                        <div key={`${entry.player}-${entry.note}`} className="rounded-lg border border-[color:var(--pga-border)] bg-secondary/35 px-3 py-3">
+                          <div className="text-[13px] font-medium text-foreground">{entry.player}</div>
+                          <p className="mt-1 text-[12px] leading-6 text-muted-foreground">{entry.note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </section>
+          ) : null}
 
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {tournament.model.heroStats.map((stat) => (

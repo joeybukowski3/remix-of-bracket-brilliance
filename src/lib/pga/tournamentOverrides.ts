@@ -7,6 +7,11 @@ export type PgaTournamentPlayerAdjustment = {
   note?: string;
 };
 
+export type PgaTournamentGolferDelta = {
+  player: string;
+  note: string;
+};
+
 export type PgaTournamentStatPriorityTweak = {
   key: PgaWeightKey;
   delta: number;
@@ -19,6 +24,7 @@ export type PgaTournamentOverride = {
   schedule?: Partial<NonNullable<PgaTournamentConfig["schedule"]>>;
   summary?: Partial<NonNullable<PgaTournamentConfig["summary"]>>;
   homepageFeature?: Partial<NonNullable<PgaTournamentConfig["homepageFeature"]>>;
+  tournamentInfo?: Partial<NonNullable<PgaTournamentConfig["tournamentInfo"]>>;
   hero?: Partial<PgaTournamentConfigInput["hero"]>;
   seo?: Partial<PgaTournamentConfigInput["seo"]>;
   model?: Partial<Omit<PgaTournamentConfigInput["model"], "presets" | "previewThemes" | "statColumns">> & {
@@ -31,9 +37,12 @@ export type PgaTournamentOverride = {
   };
   manual?: {
     featuredNarrative?: string;
+    modelFocusNote?: string;
     playerAdjustments?: PgaTournamentPlayerAdjustment[];
     courseFitNotes?: string[];
     statPriorityTweaks?: PgaTournamentStatPriorityTweak[];
+    elevatedGolfers?: PgaTournamentGolferDelta[];
+    downgradedGolfers?: PgaTournamentGolferDelta[];
   };
 };
 
@@ -65,6 +74,7 @@ export function applyPgaTournamentOverride(
       schedule: override.schedule ? { ...(base.schedule ?? {}), ...override.schedule } : base.schedule,
       summary: override.summary ? { ...(base.summary ?? {}), ...override.summary } : base.summary,
       homepageFeature: override.homepageFeature ? { ...(base.homepageFeature ?? {}), ...override.homepageFeature } : base.homepageFeature,
+      tournamentInfo: override.tournamentInfo ? { ...(base.tournamentInfo ?? {}), ...override.tournamentInfo } : base.tournamentInfo,
     }),
     hero: {
       ...base.hero,
@@ -100,6 +110,8 @@ export function applyPgaTournamentOverride(
       playerAdjustments: override.manual?.playerAdjustments ?? base.manual?.playerAdjustments,
       courseFitNotes: override.manual?.courseFitNotes ?? base.manual?.courseFitNotes,
       statPriorityTweaks: override.manual?.statPriorityTweaks ?? base.manual?.statPriorityTweaks,
+      elevatedGolfers: override.manual?.elevatedGolfers ?? base.manual?.elevatedGolfers,
+      downgradedGolfers: override.manual?.downgradedGolfers ?? base.manual?.downgradedGolfers,
     },
   };
 }

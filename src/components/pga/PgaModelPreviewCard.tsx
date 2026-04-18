@@ -179,7 +179,13 @@ export default function PgaModelPreviewCard({
             </div>
           ) : null}
 
-          {status === "ready" ? (
+          {status === "ready" && previewRows.length === 0 ? (
+            <div className="mt-4 rounded-[22px] border border-[#d7e1da] bg-white/95 p-5 text-sm text-[#52675b]">
+              Baseline tournament shell is live. Add the weekly player export to populate the preview rankings table.
+            </div>
+          ) : null}
+
+          {status === "ready" && previewRows.length > 0 ? (
             <div className="mt-4 overflow-hidden rounded-[22px] border border-[#d7e1da] bg-white/95">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] border-collapse text-left">

@@ -1,1 +1,1 @@
-export const FEATURED_PGA_TOURNAMENT_SLUG = "rbc-heritage-2026-picks";
+export const FEATURED_PGA_TOURNAMENT_OVERRIDE_SLUG: string | null = "zurich-classic-of-new-orleans-2026-picks";

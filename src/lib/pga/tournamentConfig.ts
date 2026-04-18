@@ -76,6 +76,11 @@ const heroStatSchema = z.object({
   label: z.string(),
 });
 
+const golferDeltaSchema = z.object({
+  player: z.string(),
+  note: z.string(),
+});
+
 const playerAdjustmentSchema = z.object({
   player: z.string(),
   scoreDelta: z.number(),
@@ -122,10 +127,18 @@ const tournamentConfigSchema = z.object({
   summary: z.object({
     blurb: z.string(),
     bullets: z.array(z.string()).optional(),
+    modelFocus: z.string().optional(),
   }).optional(),
   homepageFeature: z.object({
     eyebrow: z.string(),
     ctaLabel: z.string(),
+  }).optional(),
+  tournamentInfo: z.object({
+    previousWinner: z.string().optional(),
+    purse: z.string().optional(),
+    winningScore: z.string().optional(),
+    averageCutLineLast5Years: z.string().optional(),
+    courseFitProfile: z.array(z.string()).optional(),
   }).optional(),
   hero: z.object({
     badge: z.string(),
@@ -182,9 +195,12 @@ const tournamentConfigSchema = z.object({
   }),
   manual: z.object({
     featuredNarrative: z.string().optional(),
+    modelFocusNote: z.string().optional(),
     playerAdjustments: z.array(playerAdjustmentSchema).optional(),
     courseFitNotes: z.array(z.string()).optional(),
     statPriorityTweaks: z.array(statPriorityTweakSchema).optional(),
+    elevatedGolfers: z.array(golferDeltaSchema).optional(),
+    downgradedGolfers: z.array(golferDeltaSchema).optional(),
   }).optional(),
 }) satisfies z.ZodTypeAny;
 
