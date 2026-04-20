@@ -51,7 +51,7 @@ export default function PgaModelMobileCard({
           <p className="text-[11px] text-muted-foreground">
             {player.courseHistoryRounds != null ? `${player.courseHistoryRounds} ${tableConfig.mobileCourseHistoryLabel}` : tableConfig.mobileNoCourseHistoryLabel}
             {" · "}
-            {player.cutsLastFive} cuts
+            {player.cutsLastFive ? `${player.cutsLastFive} prior cuts made` : "Prior cuts unavailable"}
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export default function PgaModelMobileCard({
         </div>
         <div className="min-w-0 flex-1 rounded-[14px] bg-secondary/50 px-3 py-2">
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{tableConfig.historyLabels.cutsLabel}</p>
-          <p className="mt-0.5 font-mono text-xs text-foreground">{player.cutsLastFive}</p>
+          <p className="mt-0.5 font-mono text-xs text-foreground">{player.cutsLastFive ?? "—"}</p>
         </div>
       </div>
 

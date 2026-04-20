@@ -23,6 +23,7 @@ export default function PGAModelTableView() {
     () => rankPlayersByScore(players, appliedWeights, tournament.manual?.playerAdjustments),
     [players, appliedWeights, tournament.manual?.playerAdjustments],
   );
+  const withheldPlayerCount = Math.max(players.length - rows.length, 0);
   const modelPath = getTournamentModelPath(tournament);
   const tableConfig = useMemo(() => buildPgaModelTableConfig(tournament), [tournament]);
 
@@ -50,6 +51,11 @@ export default function PGAModelTableView() {
               <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
                 This view is optimized for scanning the full table with every column visible at once. It uses the most recently applied model weights from the dashboard.
               </p>
+              {withheldPlayerCount > 0 ? (
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+                  {withheldPlayerCount} field entrants are currently withheld from the scored table because the source feed does not yet provide a complete stat profile for them.
+                </p>
+              ) : null}
             </section>
 
             {status === "loading" ? <section className="surface-card"><p className="text-sm text-muted-foreground">Loading full table view...</p></section> : null}

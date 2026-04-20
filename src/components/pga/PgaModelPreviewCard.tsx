@@ -210,7 +210,9 @@ export default function PgaModelPreviewCard({
                         </td>
                         <td className="px-4 py-3">
                           <div className="font-semibold text-[#1c2a21]">{row.player}</div>
-                          <div className="mt-1 text-[11px] text-[#6a7d72]">{row.cutsLastFive} cuts made in last five starts here</div>
+                          <div className="mt-1 text-[11px] text-[#6a7d72]">
+                            {row.cutsLastFive ? `${row.cutsLastFive} prior cuts made` : "Prior cuts unavailable"}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <ScorePill score={row.score} />

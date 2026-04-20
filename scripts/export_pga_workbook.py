@@ -325,6 +325,27 @@ def write_json(path: Path, payload: list[dict[str, Any]]):
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def load_field_players(path: Path) -> list[str]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(payload, list):
+        return [str(entry).strip() for entry in payload if str(entry).strip()]
+
+    if isinstance(payload, dict):
+        if isinstance(payload.get("players"), list):
+            return [str(entry).strip() for entry in payload["players"] if str(entry).strip()]
+        if isinstance(payload.get("teams"), list):
+            players: list[str] = []
+            for team in payload["teams"]:
+                if isinstance(team, dict):
+                    for player in team.get("players", []):
+                        name = str(player).strip()
+                        if name:
+                            players.append(name)
+            return players
+
+    raise ValueError(f"Unsupported field file structure in {path}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Export a PGA tournament JSON file from a workbook.")
     parser.add_argument("--workbook", required=True, type=Path, help="Workbook containing DK/base, trend, history, and stat sheets.")
@@ -334,6 +355,7 @@ def main() -> int:
     parser.add_argument("--history-sheet", default="HarbourTownHistory")
     parser.add_argument("--stats-sheet", default="PGA_Stats_Master")
     parser.add_argument("--base-mode", choices=("sheet", "stats"), default="sheet")
+    parser.add_argument("--field-file", type=Path)
     parser.add_argument("--strict-missing-stats", action="store_true")
     args = parser.parse_args()
 
@@ -345,7 +367,22 @@ def main() -> int:
     stat_index, stat_duplicates = build_index(stat_rows)
 
     if args.base_mode == "stats":
-        base_rows = build_stats_only_base_rows(stat_rows, trend_index)
+        if args.field_file:
+            field_players = load_field_players(args.field_file)
+            base_rows = []
+            for player_name in field_players:
+                trend = resolve_join(player_name, trend_index)
+                base_rows.append(
+                    {
+                        "Player Name": player_name,
+                        "Salary": None,
+                        "DK Avg PPG": None,
+                        "Adj Proj Score": trend.values.get("TrendRank") if trend.values else None,
+                        "Adj Value": None,
+                    }
+                )
+        else:
+            base_rows = build_stats_only_base_rows(stat_rows, trend_index)
         history_rows: list[dict[str, Any]] = []
     else:
         base_rows = load_base_rows(workbook, args.base_sheet)

@@ -14,10 +14,15 @@ export default function HomepagePgaFeature() {
   const scheduleSelection = getPgaScheduleSelection();
   const { players, status, errorMessage } = usePgaTournamentPlayers(tournament);
   const defaultWeights = tournament.model.presets[0].weights;
-  const rows = useMemo(
-    () => rankPlayersByScore(players, defaultWeights, tournament.manual?.playerAdjustments).slice(0, FEATURED_ROW_COUNT),
+  const rankedRows = useMemo(
+    () => rankPlayersByScore(players, defaultWeights, tournament.manual?.playerAdjustments),
     [players, defaultWeights, tournament.manual?.playerAdjustments],
   );
+  const rows = useMemo(
+    () => rankedRows.slice(0, FEATURED_ROW_COUNT),
+    [rankedRows],
+  );
+  const missingStatProfiles = Math.max(players.length - rankedRows.length, 0);
 
   const primaryStats = tournament.model.statColumns.slice(0, 3);
   const picksPath = getTournamentPicksPath(tournament);
@@ -130,35 +135,42 @@ export default function HomepagePgaFeature() {
                 </div>
               ) : null}
               {status === "ready" && rows.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border-collapse">
-                    <thead>
-                      <tr className="text-left text-[11px] uppercase tracking-[0.16em] text-[#7a7a7a]">
-                        <th className="px-3 py-3 font-semibold">Rank</th>
-                        <th className="px-3 py-3 font-semibold">Golfer</th>
-                        <th className="px-3 py-3 font-semibold">Power</th>
-                        {primaryStats.map((stat) => (
-                          <th key={stat.key} className="px-3 py-3 font-semibold">
-                            {stat.abbr}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row) => (
-                        <tr key={row.id} className="border-t border-black/6 text-[14px] text-[#222222]">
-                          <td className="px-3 py-3 font-semibold">#{row.rank}</td>
-                          <td className="px-3 py-3 font-medium">{row.player}</td>
-                          <td className="px-3 py-3">{row.score.toFixed(2)}</td>
+                <div>
+                  {missingStatProfiles > 0 ? (
+                    <div className="px-3 py-3 text-[12px] leading-6 text-[#666666]">
+                      {missingStatProfiles} field entrants are currently withheld from the scored preview because the active source feed does not yet include a usable stat profile for them.
+                    </div>
+                  ) : null}
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border-collapse">
+                      <thead>
+                        <tr className="text-left text-[11px] uppercase tracking-[0.16em] text-[#7a7a7a]">
+                          <th className="px-3 py-3 font-semibold">Rank</th>
+                          <th className="px-3 py-3 font-semibold">Golfer</th>
+                          <th className="px-3 py-3 font-semibold">Power</th>
                           {primaryStats.map((stat) => (
-                            <td key={`${row.id}-${stat.key}`} className="px-3 py-3">
-                              {formatRankValue(row[stat.key])}
-                            </td>
+                            <th key={stat.key} className="px-3 py-3 font-semibold">
+                              {stat.abbr}
+                            </th>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {rows.map((row) => (
+                          <tr key={row.id} className="border-t border-black/6 text-[14px] text-[#222222]">
+                            <td className="px-3 py-3 font-semibold">#{row.rank}</td>
+                            <td className="px-3 py-3 font-medium">{row.player}</td>
+                            <td className="px-3 py-3">{row.score.toFixed(2)}</td>
+                            {primaryStats.map((stat) => (
+                              <td key={`${row.id}-${stat.key}`} className="px-3 py-3">
+                                {formatRankValue(row[stat.key])}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : null}
             </div>

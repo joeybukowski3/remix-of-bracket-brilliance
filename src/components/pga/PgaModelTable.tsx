@@ -428,7 +428,7 @@ export default function PgaModelTable({
                         {row.trendRank ?? "—"}
                       </td>
                       <td className="px-2.5 py-2 text-center text-[11px] text-foreground">{row.courseHistoryRounds ?? "—"}</td>
-                      <td className="px-2.5 py-2 text-center text-[11px] font-medium text-foreground">{row.cutsLastFive}</td>
+                      <td className="px-2.5 py-2 text-center text-[11px] font-medium text-foreground">{row.cutsLastFive ?? "—"}</td>
                       <td className={`border-r border-emerald-100/60 px-2.5 py-2 text-center font-mono text-[11px] dark:border-emerald-900/30 ${courseHistoryColor(row.courseHistoryScore)}`}>
                         {row.courseHistoryScore != null ? row.courseHistoryScore.toFixed(2) : "—"}
                       </td>

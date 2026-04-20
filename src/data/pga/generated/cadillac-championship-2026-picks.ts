@@ -396,13 +396,13 @@ const basecadillacChampionship2026PicksTournament = {
     ],
     "top40Rows": [
       [
-        "Baseline top-40 anchor",
+        "Top-40 model anchor",
         "Use the first model pass to identify the safest floor-first golfers before adding manual placement-market edits."
       ]
     ],
     "summaryRows": [
       [
-        "Baseline board",
+        "Current model board",
         "Model lean",
         "8",
         "Initial weekly summary generated from the active tournament configuration and live ranking table."
@@ -413,13 +413,13 @@ const basecadillacChampionship2026PicksTournament = {
     "modelFocusNote": "The default Cadillac shell should stay balanced until manual adjustments are added, with enough emphasis on approach quality, tee-to-green stability, and difficult-hole scoring to act as a clean baseline.",
     "elevatedGolfers": [
       {
-        "player": "Baseline elevated golfer",
+        "player": "Neutral model lift",
         "note": "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments."
       }
     ],
     "downgradedGolfers": [
       {
-        "player": "Baseline downgraded golfer",
+        "player": "Neutral model fade",
         "note": "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments."
       }
     ]

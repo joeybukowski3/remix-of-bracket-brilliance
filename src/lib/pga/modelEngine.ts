@@ -188,6 +188,8 @@ export function buildTournamentMeta(tournament: PgaTournamentConfig, fieldSize: 
 
 function buildCutsLastFive(player: RawPgaPlayer) {
   const finishes = [player["2025"], player["2024"], player["2023"], player["2022"], player["2021"]];
+  const hasHistory = finishes.some((finish) => Boolean(finish));
+  if (!hasHistory) return null;
   const cuts = finishes.filter((finish) => finish && finish !== "CUT").length;
   return `${cuts}/5`;
 }

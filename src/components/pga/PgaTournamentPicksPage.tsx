@@ -192,10 +192,10 @@ function buildRankingDeltaEntries(
 
   const fallbackNote =
     direction === "elevated"
-      ? "The live board is using baseline tournament weights right now. Add manual player boosts in the override file if you want a more aggressive Zurich-specific stance."
-      : "The live board is using baseline tournament weights right now. Add manual downgrades in the override file if you want a sharper fade list for the week.";
+      ? "The live board is using the current neutral tournament weighting. Add manual player boosts in the override file if you want a more aggressive Zurich-specific stance."
+      : "The live board is using the current neutral tournament weighting. Add manual downgrades in the override file if you want a sharper fade list for the week.";
 
-  return [{ player: "Baseline board active", note: fallbackNote }];
+  return [{ player: "Neutral model adjustments", note: fallbackNote }];
 }
 
 function buildGeneratedBetRows(rows: ReturnType<typeof rankPlayersByScore>, tournament: PgaTournamentConfig) {

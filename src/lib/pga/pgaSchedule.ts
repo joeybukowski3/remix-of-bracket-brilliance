@@ -30,6 +30,7 @@ export type PgaScheduleEntry = {
   workbook?: {
     defaultPath?: string;
     baseMode?: "sheet" | "stats";
+    fieldFile?: string;
     baseSheet?: string;
     trendSheet?: string;
     historySheet?: string;

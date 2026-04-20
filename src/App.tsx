@@ -74,6 +74,8 @@ const App = () => (
           <Route path="/mlb" element={<MlbGameDetail />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<Navigate to={getTournamentPicksPath(FEATURED_PGA_TOURNAMENT)} replace />} />
+          <Route path="/pga/model" element={<Navigate to={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)} replace />} />
+          <Route path="/pga/model/table" element={<Navigate to={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)} replace />} />
           <Route path="/pga/:tournamentSlug" element={<PGA />} />
           <Route
             path={`/pga/${FEATURED_PGA_TOURNAMENT.slug}/model`}

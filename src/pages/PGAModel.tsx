@@ -63,6 +63,7 @@ export default function PGAModel() {
     () => rankPlayersByScore(players, appliedWeights, tournament.manual?.playerAdjustments),
     [players, appliedWeights, tournament.manual?.playerAdjustments],
   );
+  const withheldPlayerCount = Math.max(players.length - rows.length, 0);
   const topProjections = useMemo(() => getTopProjections(rows, tournament), [rows, tournament]);
   const meta = useMemo(() => buildTournamentMeta(tournament, players.length), [tournament, players.length]);
   const hasDraftChanges = useMemo(() => !areWeightsEqual(draftWeights, appliedWeights), [draftWeights, appliedWeights]);
@@ -202,6 +203,11 @@ export default function PGAModel() {
                   <PgaTopProjectionsCard rows={topProjections} />
                   <PgaCourseInsightsCard insights={tournament.model.courseInsights} />
                 </div>
+                {withheldPlayerCount > 0 ? (
+                  <div className="rounded-[24px] border border-border/60 bg-card px-5 py-4 text-sm leading-7 text-muted-foreground shadow-[0_10px_24px_hsl(var(--foreground)/0.04)]">
+                    {withheldPlayerCount} field entrants are currently excluded from the scored model because the active source feed does not yet provide a usable stat profile for them. They remain part of the tracked field, but they are not allowed to distort rankings with fake fallback values.
+                  </div>
+                ) : null}
                 <PgaModelTable
                   rows={rows}
                   tableConfig={tableConfig}

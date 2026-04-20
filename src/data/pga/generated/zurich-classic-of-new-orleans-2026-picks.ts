@@ -397,13 +397,13 @@ const basezurichClassicOfNewOrleans2026PicksTournament = {
     ],
     "top40Rows": [
       [
-        "Baseline top-40 anchor",
+        "Top-40 model anchor",
         "Use the first model pass to identify the safest floor-first golfers before adding manual placement-market edits."
       ]
     ],
     "summaryRows": [
       [
-        "Baseline board",
+        "Current model board",
         "Model lean",
         "8",
         "Initial weekly summary generated from the active tournament configuration and live ranking table."
@@ -414,13 +414,13 @@ const basezurichClassicOfNewOrleans2026PicksTournament = {
     "modelFocusNote": "This week's tournament-specific model places added weight on the stats that best translate to TPC Louisiana and the Zurich format, while still grounding player evaluation in the site's core power-ranking framework. The emphasis should lean toward scoring efficiency, iron play, and the player traits most likely to convert opportunities at this venue. Final tournament-specific adjustments can be layered in through the override system.",
     "elevatedGolfers": [
       {
-        "player": "Baseline elevated golfer",
+        "player": "Neutral model lift",
         "note": "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments."
       }
     ],
     "downgradedGolfers": [
       {
-        "player": "Baseline downgraded golfer",
+        "player": "Neutral model fade",
         "note": "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments."
       }
     ]

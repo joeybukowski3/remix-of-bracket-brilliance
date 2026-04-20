@@ -61,7 +61,7 @@ export type PgaPlayerInput = {
   salary?: number | null;
   courseHistoryRounds: number | null;
   courseHistoryScore: number | null;
-  cutsLastFive: string;
+  cutsLastFive: string | null;
   recentFinishes: Array<string | null>;
   statRanks: {
     trendRank: number | null;
@@ -83,7 +83,7 @@ export type PlayerModelRow = {
   rank: number;
   trendRank: number | null;
   courseHistoryRounds: number | null;
-  cutsLastFive: string;
+  cutsLastFive: string | null;
   recentFinishes: Array<string | null>;
   sgApproachRank: number | null;
   par4Rank: number | null;

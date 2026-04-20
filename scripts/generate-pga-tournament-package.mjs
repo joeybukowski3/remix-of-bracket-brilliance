@@ -338,6 +338,7 @@ function ensureTournamentData(entry, workbookOverride) {
   if (entry.workbook?.historySheet) exportArgs.push("--history-sheet", entry.workbook.historySheet);
   if (entry.workbook?.statsSheet) exportArgs.push("--stats-sheet", entry.workbook.statsSheet);
   if (entry.workbook?.baseMode) exportArgs.push("--base-mode", entry.workbook.baseMode);
+  if (entry.workbook?.fieldFile) exportArgs.push("--field-file", path.join(repoRoot, entry.workbook.fieldFile));
 
   const result = spawnSync("python", exportArgs, {
     cwd: repoRoot,
@@ -525,19 +526,19 @@ function buildGeneratedBaseConfig(entry) {
         "Use the baseline board to identify golfers whose public perception exceeds their weighted statistical fit this week.",
       ],
       top40Rows: [
-        ["Baseline top-40 anchor", "Use the first model pass to identify the safest floor-first golfers before adding manual placement-market edits."],
+        ["Top-40 model anchor", "Use the first model pass to identify the safest floor-first golfers before adding manual placement-market edits."],
       ],
       summaryRows: [
-        ["Baseline board", "Model lean", "8", "Initial weekly summary generated from the active tournament configuration and live ranking table."],
+        ["Current model board", "Model lean", "8", "Initial weekly summary generated from the active tournament configuration and live ranking table."],
       ],
     },
     manual: {
       modelFocusNote: entry.modelFocus,
       elevatedGolfers: [
-        { player: "Baseline elevated golfer", note: "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments." },
+        { player: "Neutral model lift", note: "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments." },
       ],
       downgradedGolfers: [
-        { player: "Baseline downgraded golfer", note: "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments." },
+        { player: "Neutral model fade", note: "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments." },
       ],
     },
   };
