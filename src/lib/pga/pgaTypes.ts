@@ -19,7 +19,6 @@ export type RawPgaPlayer = {
   "Birdie or Better 125-150 yds"?: number | null;
   "Birdie or Better <125 yds"?: number | null;
   TrendRank: number | null;
-  "Masters 2026": string | null;
   "SG: Approach the Green_rank": number | null;
   "SG: Around the Green_rank": number | null;
   "SG: Putting_rank": number | null;
@@ -63,7 +62,6 @@ export type PgaPlayerInput = {
   courseHistoryRounds: number | null;
   courseHistoryScore: number | null;
   cutsLastFive: string;
-  relatedEventFinish: string | null;
   recentFinishes: Array<string | null>;
   statRanks: {
     trendRank: number | null;
@@ -87,7 +85,6 @@ export type PlayerModelRow = {
   courseHistoryRounds: number | null;
   cutsLastFive: string;
   recentFinishes: Array<string | null>;
-  relatedEventFinish: string | null;
   sgApproachRank: number | null;
   par4Rank: number | null;
   drivingAccuracyRank: number | null;
@@ -124,8 +121,6 @@ export type PgaModelHistoryLabels = {
   trendTooltip: string;
   courseRoundsLabel: string;
   courseRoundsTooltip: string;
-  relatedEventLabel: string;
-  relatedEventTooltip: string;
   cutsLabel: string;
   cutsTooltip: string;
   courseHistoryScoreLabel: string;

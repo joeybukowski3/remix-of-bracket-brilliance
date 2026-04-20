@@ -12,7 +12,6 @@ export type PgaScheduleEntry = {
   endDate: string;
   eventType?: string;
   courseHistoryDisplay?: string;
-  relatedEventLabel?: string;
   fieldAverage?: string;
   cutLine?: string;
   noCutLabel?: string;
@@ -30,6 +29,7 @@ export type PgaScheduleEntry = {
   alternateField?: boolean;
   workbook?: {
     defaultPath?: string;
+    baseMode?: "sheet" | "stats";
     baseSheet?: string;
     trendSheet?: string;
     historySheet?: string;

@@ -45,7 +45,6 @@ export function normalizeTournamentPlayerData(players: RawPgaPlayer[]): PgaPlaye
     courseHistoryRounds: sanitizeNullableNumber(player["HT # Rounds"]),
     courseHistoryScore: sanitizeNullableNumber(player["Course True SG"]),
     cutsLastFive: buildCutsLastFive(player),
-    relatedEventFinish: player["Masters 2026"],
     recentFinishes: [player["2025"], player["2024"], player["2023"], player["2022"], player["2021"]],
     statRanks: {
       trendRank: sanitizeNullableRank(player.TrendRank),
@@ -138,7 +137,6 @@ export function rankPlayersByScore(players: PgaPlayerInput[], weights: PgaWeight
       courseHistoryRounds: raw.courseHistoryRounds,
       cutsLastFive: raw.cutsLastFive,
       recentFinishes: raw.recentFinishes,
-      relatedEventFinish: raw.relatedEventFinish,
       sgApproachRank: raw.statRanks.sgApproachRank,
       par4Rank: raw.statRanks.par4Rank,
       drivingAccuracyRank: raw.statRanks.drivingAccuracyRank,

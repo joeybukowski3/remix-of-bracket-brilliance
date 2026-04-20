@@ -10,17 +10,5 @@ export const zurichClassicOfNewOrleans2026PicksOverride: PgaTournamentOverride =
       "Approach play, scoring opportunities, par-5 performance, and overall birdie conversion should stay near the center of the baseline model.",
       "Keep the course-fit view flexible until tournament-specific adjustments and any team-event context are finalized.",
     ],
-    elevatedGolfers: [
-      {
-        player: "Use tournament override file",
-        note: "Baseline generated output. Add golfers elevated versus the general power ranking once manual Zurich adjustments are ready.",
-      },
-    ],
-    downgradedGolfers: [
-      {
-        player: "Use tournament override file",
-        note: "Baseline generated output. Add golfers downgraded versus the general power ranking once manual Zurich adjustments are ready.",
-      },
-    ],
   },
 };

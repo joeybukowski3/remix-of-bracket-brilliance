@@ -146,6 +146,102 @@ const PARLAY_CARD_META = [
   { title: "Model over public perception", icon: ScatterIcon },
 ] as const;
 
+function isPlaceholderText(value?: string | null) {
+  if (!value) return true;
+  const normalized = value.toLowerCase();
+  return (
+    normalized.includes("manual review pending")
+    || normalized.includes("use tournament override file")
+    || normalized.includes("replace this placeholder")
+    || normalized.includes("baseline generated output")
+    || normalized.includes("add the first automated")
+    || normalized.includes("add elevated golfers")
+    || normalized.includes("add downgraded golfers")
+    || normalized.includes("add a weekly betting summary")
+    || normalized === "tbd"
+    || normalized.includes("todo / pending")
+  );
+}
+
+function buildRankingDeltaEntries(
+  rows: ReturnType<typeof rankPlayersByScore>,
+  direction: "elevated" | "downgraded",
+  tournament: PgaTournamentConfig,
+) {
+  const ranked = rows
+    .filter((row) => row.trendRank != null)
+    .map((row) => ({
+      player: row.player,
+      rank: row.rank,
+      trendRank: row.trendRank as number,
+      delta: (row.trendRank as number) - row.rank,
+    }))
+    .filter((row) => (direction === "elevated" ? row.delta > 0 : row.delta < 0))
+    .sort((left, right) => direction === "elevated" ? right.delta - left.delta : left.delta - right.delta)
+    .slice(0, 3);
+
+  if (ranked.length > 0) {
+    return ranked.map((row) => ({
+      player: row.player,
+      note:
+        direction === "elevated"
+          ? `Model rank No. ${row.rank} versus DataGolf rank No. ${row.trendRank}. The weighted ${tournament.shortName} board is giving this profile a stronger course-fit push this week.`
+          : `Model rank No. ${row.rank} versus DataGolf rank No. ${row.trendRank}. The weighted ${tournament.shortName} board is less aggressive on this profile than the baseline power ranking.`,
+    }));
+  }
+
+  const fallbackNote =
+    direction === "elevated"
+      ? "The live board is using baseline tournament weights right now. Add manual player boosts in the override file if you want a more aggressive Zurich-specific stance."
+      : "The live board is using baseline tournament weights right now. Add manual downgrades in the override file if you want a sharper fade list for the week.";
+
+  return [{ player: "Baseline board active", note: fallbackNote }];
+}
+
+function buildGeneratedBetRows(rows: ReturnType<typeof rankPlayersByScore>, tournament: PgaTournamentConfig) {
+  const topRows = rows.slice(0, 6);
+  const buildBet = (row: ReturnType<typeof rankPlayersByScore>[number], label: string, note: string) => ({
+    player: row.player,
+    odds: label,
+    analysis: `${note} Model rank No. ${row.rank} with a composite score of ${row.score.toFixed(3)} on the current ${tournament.shortName} build.`,
+  });
+
+  return {
+    tierOneBets: topRows.slice(0, 2).map((row) => buildBet(row, "Model anchor", `This golfer is surfacing near the top of the live ${tournament.courseHistoryDisplay} board.`)),
+    tierTwoBets: topRows.slice(2, 4).map((row) => buildBet(row, "Model value", "This profile is grading well enough to stay on the shortlist while the market card is still being finalized.")),
+    tierThreeBets: topRows.slice(4, 6).map((row) => buildBet(row, "Upside lean", "This golfer is not at the top of the board, but the weighted model still sees enough venue fit to keep in consideration.")),
+  };
+}
+
+function buildGeneratedTop40Rows(rows: ReturnType<typeof rankPlayersByScore>, tournament: PgaTournamentConfig) {
+  return rows.slice(0, 8).map((row) => [
+    row.player,
+    `Model rank No. ${row.rank} on the current ${tournament.shortName} build. This profile grades as a steadier floor candidate for placement markets until manual refinements are added.`,
+  ] as [string, string]);
+}
+
+function buildGeneratedSummaryRows(rows: ReturnType<typeof rankPlayersByScore>, tournament: PgaTournamentConfig) {
+  return rows.slice(0, 6).map((row) => [
+    row.player,
+    "Model lean",
+    row.rank <= 3 ? "14" : row.rank <= 6 ? "11" : "8",
+    `Top-${row.rank} model fit on the live ${tournament.courseHistoryDisplay} board.`,
+  ] as [string, string, string, string]);
+}
+
+function buildGeneratedFades(rows: ReturnType<typeof rankPlayersByScore>, tournament: PgaTournamentConfig) {
+  const fades = rows
+    .filter((row) => row.trendRank != null && row.rank - row.trendRank >= 8)
+    .slice(0, 3)
+    .map((row) => `${row.player} -> Model rank No. ${row.rank} versus DataGolf rank No. ${row.trendRank}. The current ${tournament.shortName} weighting is less enthusiastic on this setup.`);
+
+  return fades.length > 0
+    ? fades
+    : [
+        `No major fade flags from the baseline board -> Use the override file if you want to build a more opinionated fade list for ${tournament.shortName}.`,
+      ];
+}
+
 export default function PgaTournamentPicksPage({ tournament }: { tournament: PgaTournamentConfig }) {
   const { picksPath, modelPath } = getTournamentNavLinks(tournament);
   usePageSeo({
@@ -163,6 +259,10 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
     () => getStoredPgaAppliedWeights(tournament.slug, tournament.model.presets[0].weights),
     [tournament.slug, tournament.model.presets],
   );
+  const liveRows = useMemo(
+    () => rankPlayersByScore(players, storedWeights, tournament.manual?.playerAdjustments),
+    [players, storedWeights, tournament.manual?.playerAdjustments],
+  );
   const previewTheme = tournament.model.previewThemes.find((theme) => theme.key === activePreviewThemeKey) ?? tournament.model.previewThemes[0];
   const previewRows = useMemo(
     () => rankPlayersByScore(players, previewTheme.weights, tournament.manual?.playerAdjustments).slice(0, 6),
@@ -173,6 +273,43 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
     ? `${tournament.model.presets.find((preset) => preset.key === activePresetKey)?.label} preset currently saved`
     : "Custom weight profile currently saved";
   const previewSliders = buildPreviewSliders(tournament, previewTheme.key);
+  const winningScoreValue = tournament.tournamentInfo?.winningScore && !isPlaceholderText(tournament.tournamentInfo.winningScore)
+    ? tournament.tournamentInfo.winningScore
+    : "Official score archive unavailable in current feed";
+  const cutLineValue = tournament.tournamentInfo?.averageCutLineLast5Years && !isPlaceholderText(tournament.tournamentInfo.averageCutLineLast5Years)
+    ? tournament.tournamentInfo.averageCutLineLast5Years
+    : "Historical cut-line average unavailable in current feed";
+  const elevatedGolfers = tournament.manual?.elevatedGolfers?.length && !tournament.manual.elevatedGolfers.some((entry) => isPlaceholderText(entry.player) || isPlaceholderText(entry.note))
+    ? tournament.manual.elevatedGolfers
+    : buildRankingDeltaEntries(liveRows, "elevated", tournament);
+  const downgradedGolfers = tournament.manual?.downgradedGolfers?.length && !tournament.manual.downgradedGolfers.some((entry) => isPlaceholderText(entry.player) || isPlaceholderText(entry.note))
+    ? tournament.manual.downgradedGolfers
+    : buildRankingDeltaEntries(liveRows, "downgraded", tournament);
+  const generatedBets = buildGeneratedBetRows(liveRows, tournament);
+  const tierOneBets = tournament.picksPage.tierOneBets.some((entry) => isPlaceholderText(entry.player) || isPlaceholderText(entry.analysis))
+    ? generatedBets.tierOneBets
+    : tournament.picksPage.tierOneBets;
+  const tierTwoBets = tournament.picksPage.tierTwoBets.some((entry) => isPlaceholderText(entry.player) || isPlaceholderText(entry.analysis))
+    ? generatedBets.tierTwoBets
+    : tournament.picksPage.tierTwoBets;
+  const tierThreeBets = tournament.picksPage.tierThreeBets.some((entry) => isPlaceholderText(entry.player) || isPlaceholderText(entry.analysis))
+    ? generatedBets.tierThreeBets
+    : tournament.picksPage.tierThreeBets;
+  const top40Rows = tournament.picksPage.top40Rows.some((row) => row.some((cell) => isPlaceholderText(cell)))
+    ? buildGeneratedTop40Rows(liveRows, tournament)
+    : tournament.picksPage.top40Rows;
+  const summaryRows = tournament.picksPage.summaryRows.some((row) => row.some((cell) => isPlaceholderText(cell)))
+    ? buildGeneratedSummaryRows(liveRows, tournament)
+    : tournament.picksPage.summaryRows;
+  const fades = tournament.picksPage.fades.some((entry) => isPlaceholderText(entry))
+    ? buildGeneratedFades(liveRows, tournament)
+    : tournament.picksPage.fades;
+  const top10Intro = isPlaceholderText(tournament.picksPage.top10Intro)
+    ? `The live ${tournament.shortName} board is active now. Use the top of the current model as the baseline shortlist, then layer in any team-event or market-specific adjustments through the override file.`
+    : tournament.picksPage.top10Intro;
+  const top40Intro = isPlaceholderText(tournament.picksPage.top40Intro)
+    ? `The placement-market view starts with the safest profiles on the current weighted board. This baseline list is ready to use now and can be tightened later with manual weekly revisions.`
+    : tournament.picksPage.top40Intro;
 
   return (
     <SiteShell>
@@ -261,9 +398,9 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                       <InfoStat label="Tournament" value={tournament.name} />
                       <InfoStat label="Course" value={tournament.courseName} />
                       <InfoStat label="Location" value={tournament.location} />
-                      <InfoStat label="Previous Winner" value={tournament.tournamentInfo.previousWinner ?? "TBD"} />
-                      <InfoStat label="Winning Score" value={tournament.tournamentInfo.winningScore ?? "TODO / pending exact score source"} />
-                      <InfoStat label="Avg Cut Line (5 yrs)" value={tournament.tournamentInfo.averageCutLineLast5Years ?? "TODO / pending cut-line history source"} />
+                      <InfoStat label="Previous Winner" value={tournament.tournamentInfo.previousWinner ?? "Recent champion data unavailable in current feed"} />
+                      <InfoStat label="Winning Score" value={winningScoreValue} />
+                      <InfoStat label="Avg Cut Line (5 yrs)" value={cutLineValue} />
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {(tournament.tournamentInfo.courseFitProfile ?? []).map((item) => (
@@ -296,10 +433,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                   <div>
                     <h2 className="text-[15px] font-medium text-foreground">Elevated vs general power ranking</h2>
                     <div className="mt-3 grid gap-2">
-                      {(tournament.manual?.elevatedGolfers?.length
-                        ? tournament.manual.elevatedGolfers
-                        : [{ player: "Use tournament override file", note: "Baseline generated output. Add elevated golfers in the override layer." }]
-                      ).map((entry) => (
+                      {elevatedGolfers.map((entry) => (
                         <div key={`${entry.player}-${entry.note}`} className="rounded-lg border border-[color:var(--pga-border)] bg-secondary/35 px-3 py-3">
                           <div className="text-[13px] font-medium text-foreground">{entry.player}</div>
                           <p className="mt-1 text-[12px] leading-6 text-muted-foreground">{entry.note}</p>
@@ -311,10 +445,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                   <div>
                     <h2 className="text-[15px] font-medium text-foreground">Downgraded vs general power ranking</h2>
                     <div className="mt-3 grid gap-2">
-                      {(tournament.manual?.downgradedGolfers?.length
-                        ? tournament.manual.downgradedGolfers
-                        : [{ player: "Use tournament override file", note: "Baseline generated output. Add downgraded golfers in the override layer." }]
-                      ).map((entry) => (
+                      {downgradedGolfers.map((entry) => (
                         <div key={`${entry.player}-${entry.note}`} className="rounded-lg border border-[color:var(--pga-border)] bg-secondary/35 px-3 py-3">
                           <div className="text-[13px] font-medium text-foreground">{entry.player}</div>
                           <p className="mt-1 text-[12px] leading-6 text-muted-foreground">{entry.note}</p>
@@ -372,14 +503,14 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
 
           <SectionCard title="Top 10 Best Bets" eyebrow="PGA Best Bets">
             <div id="best-bets" className="space-y-4 sm:space-y-6">
-              <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">{tournament.picksPage.top10Intro}</p>
+              <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">{top10Intro}</p>
               <div className="grid gap-4 lg:grid-cols-2">
                 <div className="overflow-hidden rounded-xl border border-[color:var(--pga-border)] bg-card">
                   <div className="bg-[var(--pga-green-dark)] px-4 py-3 text-[13px] font-medium text-[var(--pga-tier-header-text)]">
                     Tier 1 &mdash; Strong model + sweet spot odds
                   </div>
                   <div className="p-4">
-                    <BetList bets={tournament.picksPage.tierOneBets} tier="tier1" />
+                    <BetList bets={tierOneBets} tier="tier1" />
                   </div>
                 </div>
 
@@ -389,7 +520,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                       Tier 2 &mdash; Solid value
                     </div>
                     <div className="p-4">
-                      <BetList bets={tournament.picksPage.tierTwoBets} tier="tier2" />
+                      <BetList bets={tierTwoBets} tier="tier2" />
                     </div>
                   </div>
 
@@ -398,7 +529,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                       Tier 3 &mdash; Upside Plays
                     </div>
                     <div className="p-4">
-                      <BetList bets={tournament.picksPage.tierThreeBets} tier="tier3" />
+                      <BetList bets={tierThreeBets} tier="tier3" />
                     </div>
                   </div>
                 </div>
@@ -409,7 +540,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
           <SectionCard title="Top 40 Parlay Golfers" eyebrow="Safe Plays">
             <div className="space-y-4 sm:space-y-6">
               <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">{tournament.picksPage.top40Intro}</p>
+                <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">{top40Intro}</p>
                 <Link to={`${modelPath}?preset=top40`} className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-5 sm:py-2.5">
                   Top 40 golf picks
                 </Link>
@@ -436,7 +567,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                       </tr>
                     </thead>
                     <tbody>
-                      {tournament.picksPage.top40Rows.map((row, index) => (
+                      {top40Rows.map((row, index) => (
                         <tr key={row[0]} className="border-t border-[color:var(--pga-border)] align-top first:border-t-0">
                           <td className="px-4 py-3 sm:py-4">
                             <span className={`pga-rank-circle ${index < 5 ? "pga-rank-circle-top" : "pga-rank-circle-rest"}`}>{index + 1}</span>
@@ -461,7 +592,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
           <div className="grid gap-6 sm:gap-8 lg:grid-cols-[0.78fr_1.22fr]">
             <SectionCard title="Notable Fades" eyebrow="Fades">
               <div className="grid gap-2">
-                {tournament.picksPage.fades.map((fade) => (
+                {fades.map((fade) => (
                   <article key={fade} className="pga-fade-card">
                     <div className="text-[13px] font-medium text-[var(--pga-fade-text)]">{fade.split(" -> ")[0]}</div>
                     <p className="mt-1 text-[12px] leading-6 text-muted-foreground">{fade.split(" -> ")[1] ?? ""}</p>
@@ -482,7 +613,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                     </tr>
                   </thead>
                   <tbody>
-                    {tournament.picksPage.summaryRows.map((row) => (
+                    {summaryRows.map((row) => (
                       <tr key={row[0]} className="border-t border-[color:var(--pga-border)] first:border-t-0">
                         <td className="px-3 py-3 font-medium text-foreground sm:py-4">{row[0]}</td>
                         <td className="px-3 py-3 text-muted-foreground sm:py-4">{row[1]}</td>

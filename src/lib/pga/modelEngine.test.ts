@@ -21,7 +21,6 @@ function buildRawPlayer(overrides: Partial<RawPgaPlayer>): RawPgaPlayer {
     "Birdie or Better 125-150 yds": 0.4,
     "Birdie or Better <125 yds": 0.3,
     TrendRank: 12,
-    "Masters 2026": null,
     "SG: Approach the Green_rank": 10,
     "SG: Around the Green_rank": 18,
     "SG: Putting_rank": 22,

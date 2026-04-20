@@ -2,18 +2,6 @@ import { formatCompositeScore } from "@/lib/pga/modelEngine";
 import { getRankColor } from "@/lib/pga/rankColors";
 import type { PgaModelTableConfig, PlayerModelRow } from "@/lib/pga/pgaTypes";
 
-function finishColor(val: string | null) {
-  if (!val || val === "CUT") return val === "CUT" ? "text-red-500" : "text-muted-foreground";
-  try {
-    const n = parseInt(val.replace("T", ""), 10);
-    if (n <= 5) return "text-emerald-700 dark:text-emerald-400 font-semibold";
-    if (n <= 20) return "text-sky-700 dark:text-sky-400";
-  } catch {
-    // Ignore parse failures and fall back to the default text color.
-  }
-  return "text-foreground";
-}
-
 function courseHistoryColor(v: number | null) {
   if (v == null) return "text-muted-foreground";
   if (v > 1.0) return "text-emerald-700 dark:text-emerald-400 font-semibold";
@@ -61,7 +49,9 @@ export default function PgaModelMobileCard({
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-sm font-semibold text-foreground">{player.player}</h2>
           <p className="text-[11px] text-muted-foreground">
-            {player.courseHistoryRounds != null ? `${player.courseHistoryRounds} ${tableConfig.mobileCourseHistoryLabel}` : tableConfig.mobileNoCourseHistoryLabel} · {player.cutsLastFive} cuts
+            {player.courseHistoryRounds != null ? `${player.courseHistoryRounds} ${tableConfig.mobileCourseHistoryLabel}` : tableConfig.mobileNoCourseHistoryLabel}
+            {" · "}
+            {player.cutsLastFive} cuts
           </p>
         </div>
 
@@ -79,12 +69,6 @@ export default function PgaModelMobileCard({
 
       <div className="mt-3 flex gap-2">
         <div className="min-w-0 flex-1 rounded-[14px] bg-secondary/50 px-3 py-2">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{tableConfig.historyLabels.relatedEventLabel}</p>
-          <p className={`mt-0.5 truncate font-mono text-xs ${finishColor(player.relatedEventFinish)}`}>
-            {player.relatedEventFinish || "—"}
-          </p>
-        </div>
-        <div className="min-w-0 flex-1 rounded-[14px] bg-secondary/50 px-3 py-2">
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{tableConfig.historyLabels.courseHistoryScoreLabel}</p>
           <p className={`mt-0.5 font-mono text-xs ${courseHistoryColor(player.courseHistoryScore)}`}>
             {player.courseHistoryScore != null ? player.courseHistoryScore.toFixed(2) : "—"}
@@ -93,6 +77,10 @@ export default function PgaModelMobileCard({
         <div className="min-w-0 flex-1 rounded-[14px] bg-secondary/50 px-3 py-2">
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{tableConfig.historyLabels.trendLabel}</p>
           <p className="mt-0.5 font-mono text-xs text-foreground">{player.trendRank ?? "—"}</p>
+        </div>
+        <div className="min-w-0 flex-1 rounded-[14px] bg-secondary/50 px-3 py-2">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{tableConfig.historyLabels.cutsLabel}</p>
+          <p className="mt-0.5 font-mono text-xs text-foreground">{player.cutsLastFive}</p>
         </div>
       </div>
 

@@ -126,7 +126,7 @@ export default function HomepagePgaFeature() {
               ) : null}
               {status === "ready" && rows.length === 0 ? (
                 <div className="px-3 py-8 text-sm text-[#666666]">
-                  Baseline tournament shell is live. Player rankings will appear here after the weekly Zurich field export is added.
+                  Current tournament page is live. The featured leaderboard will populate automatically as soon as the latest field export is available.
                 </div>
               ) : null}
               {status === "ready" && rows.length > 0 ? (

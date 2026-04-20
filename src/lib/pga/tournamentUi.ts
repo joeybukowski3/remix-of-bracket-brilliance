@@ -27,8 +27,6 @@ export function buildPgaModelTableConfig(tournament: PgaTournamentConfig): PgaMo
       trendTooltip: "DataGolf Trend Rank - current global player ranking per the DataGolf model.",
       courseRoundsLabel: `${tournament.model.courseHistoryDisplay} Rnds`,
       courseRoundsTooltip: `Rounds played at ${tournament.courseName}.`,
-      relatedEventLabel: tournament.model.relatedEventLabel,
-      relatedEventTooltip: `Most relevant recent finish marker for ${tournament.shortName}.`,
       cutsLabel: "Cuts/5",
       cutsTooltip: `Cuts made in the last five ${tournament.shortName} appearances.`,
       courseHistoryScoreLabel: `${tournament.model.courseHistoryDisplay} SG`,

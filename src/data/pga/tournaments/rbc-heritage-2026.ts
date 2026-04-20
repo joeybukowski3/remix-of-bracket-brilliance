@@ -71,7 +71,6 @@ const baseRbcHeritage2026Tournament = {
     fieldAverage: "70.4",
     cutLine: "-1",
     noCutLabel: "No cut",
-    relatedEventLabel: "Masters 2026",
     courseHistoryDisplay: "Harbour Town",
     previewEyebrow: "Build your RBC Heritage model",
     previewHeadline: "Shift the weights. See who rises.",

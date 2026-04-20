@@ -159,7 +159,6 @@ const tournamentConfigSchema = z.object({
     fieldAverage: z.string(),
     cutLine: z.string(),
     noCutLabel: z.string(),
-    relatedEventLabel: z.string(),
     courseHistoryDisplay: z.string(),
     previewEyebrow: z.string(),
     previewHeadline: z.string(),

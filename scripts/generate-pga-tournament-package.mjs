@@ -307,7 +307,7 @@ ${entries}
 
 function ensureTournamentData(entry, workbookOverride) {
   const dataOutput = path.join(repoRoot, "public", "data", "pga", entry.dataFile);
-  if (fs.existsSync(dataOutput) && !workbookOverride) {
+  if (fs.existsSync(dataOutput) && !workbookOverride && !isEmptyTournamentDataFile(dataOutput)) {
     return;
   }
 
@@ -337,6 +337,7 @@ function ensureTournamentData(entry, workbookOverride) {
   if (entry.workbook?.trendSheet) exportArgs.push("--trend-sheet", entry.workbook.trendSheet);
   if (entry.workbook?.historySheet) exportArgs.push("--history-sheet", entry.workbook.historySheet);
   if (entry.workbook?.statsSheet) exportArgs.push("--stats-sheet", entry.workbook.statsSheet);
+  if (entry.workbook?.baseMode) exportArgs.push("--base-mode", entry.workbook.baseMode);
 
   const result = spawnSync("python", exportArgs, {
     cwd: repoRoot,
@@ -345,6 +346,17 @@ function ensureTournamentData(entry, workbookOverride) {
 
   if (result.status !== 0) {
     throw new Error(`PGA workbook export failed for ${entry.slug}.`);
+  }
+}
+
+function isEmptyTournamentDataFile(targetPath) {
+  try {
+    const raw = fs.readFileSync(targetPath, "utf8").trim();
+    if (!raw) return true;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length === 0;
+  } catch {
+    return true;
   }
 }
 
@@ -400,15 +412,15 @@ function buildGeneratedBaseConfig(entry) {
     tournamentInfo: {
       previousWinner: entry.previousWinner,
       purse: entry.purse,
-      winningScore: entry.winningScore,
-      averageCutLineLast5Years: entry.averageCutLineLast5Years,
+      winningScore: entry.winningScore || "Official score archive unavailable in current feed",
+      averageCutLineLast5Years: entry.averageCutLineLast5Years || "Historical cut-line average unavailable in current feed",
       courseFitProfile: entry.courseFitProfile ?? courseTraits.slice(0, 4),
     },
     hero: {
-      badge: "pga model auto-generated",
+      badge: "PGA tournament model",
       title: `${entry.name} ${entry.season} Picks & Best Bets`,
-      intro: `This baseline ${entry.name} page was generated automatically from the weekly PGA workflow so the model, rankings table, and routing are live before manual edits are added.`,
-      support: `Use the override file to tune the writeup, weekly emphasis, player boosts, and market-specific angles without rebuilding the page shell.`,
+      intro: `The ${entry.name} page is live with the active model, rankings table, and tournament routing already wired into the weekly PGA workflow.`,
+      support: "Use the override file to sharpen the writeup, weekly emphasis, player boosts, and market-specific angles without rebuilding the page shell.",
       primaryCtaLabel: "Open Full Model",
       secondaryCtaLabel: "Read written picks",
     },
@@ -437,10 +449,9 @@ function buildGeneratedBaseConfig(entry) {
     model: {
       dataPath: `/data/pga/${entry.dataFile}`,
       eventType: entry.eventType || "PGA TOUR Event",
-      fieldAverage: entry.fieldAverage || "TBD",
-      cutLine: entry.cutLine || "TBD",
+      fieldAverage: entry.fieldAverage || "Baseline field build",
+      cutLine: entry.cutLine || "Cut benchmark updating",
       noCutLabel: entry.noCutLabel || "Standard cut",
-      relatedEventLabel: entry.relatedEventLabel || "Previous start",
       courseHistoryDisplay: entry.courseHistoryDisplay || entry.courseName,
       previewEyebrow: `Build your ${entry.shortName} model`,
       previewHeadline: "Shift the weights. See who rises.",
@@ -502,31 +513,31 @@ function buildGeneratedBaseConfig(entry) {
         "Use manual overrides to add any tournament-specific player fades before publishing the final card.",
       ],
       tierOneBets: [
-        { player: "Manual review pending", odds: "TBD", analysis: "Replace this placeholder in the override file with your first top-tier tournament bet." },
+        { player: "Baseline model leader", odds: "Model lean", analysis: "The auto-generated baseline highlights the strongest all-around fit at the top of the weighted board until manual betting adjustments are added." },
       ],
       tierTwoBets: [
-        { player: "Manual review pending", odds: "TBD", analysis: "Add secondary value plays in the override file after market review." },
+        { player: "Secondary model value", odds: "Model lean", analysis: "Use this slot for the next-best fit once you review the initial ranking table and market board." },
       ],
       tierThreeBets: [
-        { player: "Manual review pending", odds: "TBD", analysis: "Use this section for long-shot or upside plays after the board is tuned." },
+        { player: "Upside model play", odds: "Model lean", analysis: "This section can be sharpened later with manual outrights or placement targets after weekly tuning." },
       ],
       fades: [
-        "Manual fade slot -> add tournament-specific fade logic in the override file.",
+        "Use the baseline board to identify golfers whose public perception exceeds their weighted statistical fit this week.",
       ],
       top40Rows: [
-        ["Manual review pending", "Add the first automated top-40 anchor after you finalize the weekly override file."],
+        ["Baseline top-40 anchor", "Use the first model pass to identify the safest floor-first golfers before adding manual placement-market edits."],
       ],
       summaryRows: [
-        ["TBD", "TBD", "0", "Add a weekly betting summary in the override file."],
+        ["Baseline board", "Model lean", "8", "Initial weekly summary generated from the active tournament configuration and live ranking table."],
       ],
     },
     manual: {
       modelFocusNote: entry.modelFocus,
       elevatedGolfers: [
-        { player: "Use tournament override file", note: "Baseline generated output. Add elevated golfers after the first model pass." },
+        { player: "Baseline elevated golfer", note: "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments." },
       ],
       downgradedGolfers: [
-        { player: "Use tournament override file", note: "Baseline generated output. Add downgraded golfers after the first model pass." },
+        { player: "Baseline downgraded golfer", note: "This slot automatically yields to manual overrides once you add tournament-specific golfer adjustments." },
       ],
     },
   };

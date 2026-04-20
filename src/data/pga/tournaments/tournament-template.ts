@@ -52,7 +52,6 @@ export const tournamentTemplate = definePgaTournamentConfig({
     fieldAverage: "70.0",
     cutLine: "E",
     noCutLabel: "No cut",
-    relatedEventLabel: "Previous start",
     courseHistoryDisplay: "Course history",
     previewEyebrow: "Build your tournament model",
     previewHeadline: "Shift the weights. See who rises.",

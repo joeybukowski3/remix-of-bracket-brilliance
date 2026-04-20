@@ -172,10 +172,25 @@ def load_base_rows(workbook, sheet_name: str) -> list[dict[str, Any]]:
                 "Player Name": str(row[5]).strip(),
                 "Salary": parse_number(row[6]),
                 "DK Avg PPG": parse_number(row[7]),
-                "Masters 2026": normalize_text(row[11]),
-                "Masters Group": normalize_text(row[12]),
                 "Adj Proj Score": parse_number(row[9]),
                 "Adj Value": parse_number(row[10]),
+            }
+        )
+    return rows
+
+
+def build_stats_only_base_rows(stat_rows: list[dict[str, Any]], trend_index: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for stat_row in stat_rows:
+        player_name = str(stat_row["Player Name"]).strip()
+        trend = resolve_join(player_name, trend_index)
+        rows.append(
+            {
+                "Player Name": player_name,
+                "Salary": None,
+                "DK Avg PPG": None,
+                "Adj Proj Score": trend.values.get("TrendRank") if trend.values else None,
+                "Adj Value": None,
             }
         )
     return rows
@@ -290,8 +305,6 @@ def build_player_export(
         "2024": history.values.get("2024") if history.values else None,
         "2025": history.values.get("2025") if history.values else None,
         "TrendRank": trend.values.get("TrendRank") if trend.values else None,
-        "Masters 2026": base_row.get("Masters 2026"),
-        "Masters Group": base_row.get("Masters Group"),
         "Adj Proj Score": base_row.get("Adj Proj Score"),
         "Adj Value": base_row.get("Adj Value"),
         "Model Rank": None,
@@ -320,18 +333,25 @@ def main() -> int:
     parser.add_argument("--trend-sheet", default="TrendTable")
     parser.add_argument("--history-sheet", default="HarbourTownHistory")
     parser.add_argument("--stats-sheet", default="PGA_Stats_Master")
+    parser.add_argument("--base-mode", choices=("sheet", "stats"), default="sheet")
     parser.add_argument("--strict-missing-stats", action="store_true")
     args = parser.parse_args()
 
     workbook = load_workbook(args.workbook)
-    base_rows = load_base_rows(workbook, args.base_sheet)
     trend_rows = load_trend_rows(workbook, args.trend_sheet)
-    history_rows = load_history_rows(workbook, args.history_sheet)
     stat_rows = load_stat_rows(workbook, args.stats_sheet)
 
     trend_index, trend_duplicates = build_index(trend_rows)
-    history_index, history_duplicates = build_index(history_rows)
     stat_index, stat_duplicates = build_index(stat_rows)
+
+    if args.base_mode == "stats":
+        base_rows = build_stats_only_base_rows(stat_rows, trend_index)
+        history_rows: list[dict[str, Any]] = []
+    else:
+        base_rows = load_base_rows(workbook, args.base_sheet)
+        history_rows = load_history_rows(workbook, args.history_sheet)
+
+    history_index, history_duplicates = build_index(history_rows)
 
     warnings: list[str] = []
     for label, duplicates in [("trend", trend_duplicates), ("history", history_duplicates), ("stats", stat_duplicates)]:

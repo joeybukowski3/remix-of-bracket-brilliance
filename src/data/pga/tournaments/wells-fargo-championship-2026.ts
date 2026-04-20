@@ -71,7 +71,6 @@ const baseWellsFargoChampionship2026Tournament = {
     fieldAverage: "71.8",
     cutLine: "+1",
     noCutLabel: "No cut",
-    relatedEventLabel: "Previous start",
     courseHistoryDisplay: "Quail Hollow",
     previewEyebrow: "Build your Wells Fargo model",
     previewHeadline: "Shift the weights. See who rises.",
