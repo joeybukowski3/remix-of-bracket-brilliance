@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 
 export default function PgaFooterMeta({
+  hubPath,
   tournamentPath,
   tournamentLabel,
 }: {
+  hubPath: string;
   tournamentPath: string;
   tournamentLabel: string;
 }) {
@@ -15,11 +17,11 @@ export default function PgaFooterMeta({
           <Link to="/" className="transition hover:text-primary">
             Home
           </Link>
-          <Link to={tournamentPath} className="transition hover:text-primary">
-            {tournamentLabel} best bets
+          <Link to={hubPath} className="transition hover:text-primary">
+            PGA rankings hub
           </Link>
-          <Link to="/pga/top-40-golf-picks" className="transition hover:text-primary">
-            Top 40 golf parlays
+          <Link to={tournamentPath} className="transition hover:text-primary">
+            {tournamentLabel} picks
           </Link>
         </div>
       </div>

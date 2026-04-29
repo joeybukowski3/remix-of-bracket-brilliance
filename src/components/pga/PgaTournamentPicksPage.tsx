@@ -8,6 +8,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { rankPlayersByScore } from "@/lib/pga/modelEngine";
 import { detectActivePreset, getStoredPgaAppliedWeights } from "@/lib/pga/pgaWeights";
 import type { PgaTournamentConfig } from "@/lib/pga/tournamentConfig";
+import { FEATURED_PGA_TOURNAMENT, getFeaturedPgaHubContext } from "@/lib/pga/tournaments";
 import { buildPreviewSliders, getTournamentNavLinks } from "@/lib/pga/tournamentUi";
 import { buildArticleSchema, buildBreadcrumbSchema, buildFaqSchema } from "@/lib/seo/pgaSeo";
 
@@ -154,6 +155,15 @@ function isPlaceholderText(value?: string | null) {
     || normalized.includes("use tournament override file")
     || normalized.includes("replace this placeholder")
     || normalized.includes("baseline generated output")
+    || normalized.includes("baseline model leader")
+    || normalized.includes("secondary model value")
+    || normalized.includes("upside model play")
+    || normalized.includes("top-40 model anchor")
+    || normalized.includes("current model board")
+    || normalized.includes("neutral model lift")
+    || normalized.includes("neutral model fade")
+    || normalized.includes("use the baseline board")
+    || normalized.includes("auto-generated baseline")
     || normalized.includes("add the first automated")
     || normalized.includes("add elevated golfers")
     || normalized.includes("add downgraded golfers")
@@ -192,8 +202,8 @@ function buildRankingDeltaEntries(
 
   const fallbackNote =
     direction === "elevated"
-      ? "The live board is using the current neutral tournament weighting. Add manual player boosts in the override file if you want a more aggressive Zurich-specific stance."
-      : "The live board is using the current neutral tournament weighting. Add manual downgrades in the override file if you want a sharper fade list for the week.";
+      ? `The current ${tournament.shortName} board is staying close to the baseline power ranking, so the biggest lifts this week are modest rather than dramatic.`
+      : `The current ${tournament.shortName} board is not showing many sharp downgrades versus the broader power ranking, which keeps the fade list tighter this week.`;
 
   return [{ player: "Neutral model adjustments", note: fallbackNote }];
 }
@@ -216,7 +226,7 @@ function buildGeneratedBetRows(rows: ReturnType<typeof rankPlayersByScore>, tour
 function buildGeneratedTop40Rows(rows: ReturnType<typeof rankPlayersByScore>, tournament: PgaTournamentConfig) {
   return rows.slice(0, 8).map((row) => [
     row.player,
-    `Model rank No. ${row.rank} on the current ${tournament.shortName} build. This profile grades as a steadier floor candidate for placement markets until manual refinements are added.`,
+    `Model rank No. ${row.rank} on the current ${tournament.shortName} board. This profile grades as a steadier floor candidate for placement markets based on the live stat mix and course fit.`,
   ] as [string, string]);
 }
 
@@ -238,12 +248,16 @@ function buildGeneratedFades(rows: ReturnType<typeof rankPlayersByScore>, tourna
   return fades.length > 0
     ? fades
     : [
-        `No major fade flags from the baseline board -> Use the override file if you want to build a more opinionated fade list for ${tournament.shortName}.`,
+        `No major fade flags stand out on the live ${tournament.shortName} board, so the weaker fits are more subtle than aggressive this week.`,
       ];
 }
 
 export default function PgaTournamentPicksPage({ tournament }: { tournament: PgaTournamentConfig }) {
-  const { picksPath, modelPath } = getTournamentNavLinks(tournament);
+  const { picksPath, modelPath: tournamentModelPath } = getTournamentNavLinks(tournament);
+  const featuredHub = getFeaturedPgaHubContext();
+  const modelPath = tournament.slug === FEATURED_PGA_TOURNAMENT.slug ? featuredHub.modelPath : tournamentModelPath;
+  const heroPrimaryHref = resolveTournamentHref(tournament.hero.primaryCtaHref, { picksPath, modelPath, hubPath: featuredHub.hubPath });
+  const heroSecondaryHref = resolveTournamentHref(tournament.hero.secondaryCtaHref, { picksPath, modelPath, hubPath: featuredHub.hubPath });
   usePageSeo({
     title: tournament.seo.title,
     description: tournament.seo.description,
@@ -305,10 +319,10 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
     ? buildGeneratedFades(liveRows, tournament)
     : tournament.picksPage.fades;
   const top10Intro = isPlaceholderText(tournament.picksPage.top10Intro)
-    ? `The live ${tournament.shortName} board is active now. Use the top of the current model as the baseline shortlist, then layer in any team-event or market-specific adjustments through the override file.`
+    ? `The live ${tournament.shortName} board is active now. Start with the top of the current model, then narrow the card to the outrights and placement angles that best fit this week's setup.`
     : tournament.picksPage.top10Intro;
   const top40Intro = isPlaceholderText(tournament.picksPage.top40Intro)
-    ? `The placement-market view starts with the safest profiles on the current weighted board. This baseline list is ready to use now and can be tightened later with manual weekly revisions.`
+    ? `The placement-market view starts with the safest profiles on the current weighted board. Use this list to identify steadier floor plays before you branch into riskier outright exposure.`
     : tournament.picksPage.top40Intro;
 
   return (
@@ -337,18 +351,24 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
               <div className="pga-badge">{tournament.hero.badge}</div>
               <h1 className="pga-hero-title mt-3 max-w-4xl sm:mt-4 md:mt-5">{tournament.hero.title}</h1>
               <p className="mt-3 max-w-3xl text-[15px] leading-7 text-muted-foreground sm:mt-4 sm:text-lg sm:leading-8">
-                Build your {tournament.model.courseHistoryDisplay} model first, then read the board. This page leads with a live ranking preview so the model feels like the product, not the footnote.
+                {tournament.hero.intro}
               </p>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
-                {tournament.hero.intro} {tournament.hero.support}
+                {tournament.hero.support}
               </p>
               <div className="mt-5 flex flex-wrap gap-3 sm:mt-6 sm:gap-4 md:mt-8">
-                <Link to={modelPath} className="inline-flex items-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 sm:px-5 sm:py-3">
+                <Link to={heroPrimaryHref} className="inline-flex items-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 sm:px-5 sm:py-3">
                   {tournament.hero.primaryCtaLabel}
                 </Link>
-                <a href="#best-bets" className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-5 sm:py-3">
-                  {tournament.hero.secondaryCtaLabel}
-                </a>
+                {heroSecondaryHref.startsWith("#") ? (
+                  <a href={heroSecondaryHref} className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-5 sm:py-3">
+                    {tournament.hero.secondaryCtaLabel}
+                  </a>
+                ) : (
+                  <Link to={heroSecondaryHref} className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary sm:px-5 sm:py-3">
+                    {tournament.hero.secondaryCtaLabel}
+                  </Link>
+                )}
               </div>
               <div className="mt-6 grid gap-3">
                 {tournament.model.heroSteps.map((item, index) => (
@@ -380,8 +400,11 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
               eyebrow={tournament.model.previewEyebrow}
               headline={tournament.model.previewHeadline}
               body={tournament.model.previewBody}
+              ctaLabel={tournament.model.previewCtaLabel}
+              tableEyebrow={tournament.model.previewTableEyebrow}
               rankingTitle={tournament.model.previewRankingTitle}
               rankingBody={tournament.model.previewRankingBody}
+              tableCtaLabel={tournament.model.previewTableCtaLabel}
               railCtaTitle={tournament.model.previewRailCtaTitle}
               railCtaBody={tournament.model.previewRailCtaBody}
               courseHistoryLabel={tournament.model.courseHistoryDisplay}
@@ -640,7 +663,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
           </SectionCard>
 
           {tournament.manual?.courseFitNotes?.length || tournament.manual?.statPriorityTweaks?.length ? (
-            <SectionCard title="Weekly Tournament Adjustments" eyebrow="Manual Override Layer">
+            <SectionCard title="Weekly Tournament Adjustments" eyebrow="Weekly Board Notes">
               <div className="grid gap-3 lg:grid-cols-2">
                 {tournament.manual?.courseFitNotes?.length ? (
                   <div className="rounded-lg border border-[color:var(--pga-border)] bg-card p-4">
@@ -729,4 +752,19 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
       </main>
     </SiteShell>
   );
+}
+
+function resolveTournamentHref(
+  href: string | undefined,
+  paths: {
+    picksPath: string;
+    modelPath: string;
+    hubPath: string;
+  },
+) {
+  if (!href || href === "model") return paths.modelPath;
+  if (href === "picks") return paths.picksPath;
+  if (href === "hub") return paths.hubPath;
+  if (href === "best-bets") return "#best-bets";
+  return href;
 }

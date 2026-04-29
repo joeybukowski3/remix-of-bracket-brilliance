@@ -11,7 +11,7 @@ import { usePgaTournamentPlayers } from "@/hooks/usePgaTournamentPlayers";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { areWeightsEqual, buildTournamentMeta, getTopProjections, rankPlayersByScore } from "@/lib/pga/modelEngine";
 import { detectActivePreset, getStoredPgaActivePreset, getStoredPgaAppliedWeights, getWeightsForPreset, storePgaActivePreset, storePgaAppliedWeights } from "@/lib/pga/pgaWeights";
-import { FEATURED_PGA_TOURNAMENT, getPgaTournamentBySlug } from "@/lib/pga/tournaments";
+import { FEATURED_PGA_TOURNAMENT, getFeaturedPgaHubContext, getPgaTournamentBySlug } from "@/lib/pga/tournaments";
 import { type PgaWeights } from "@/lib/pga/pgaTypes";
 import { getTournamentModelPath, getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
 import { buildPgaModelTableConfig } from "@/lib/pga/tournamentUi";
@@ -19,6 +19,7 @@ import NotFound from "@/pages/NotFound";
 
 export default function PGAModel() {
   const { tournamentSlug } = useParams();
+  const featuredHub = getFeaturedPgaHubContext();
   const requestedTournament = tournamentSlug ? getPgaTournamentBySlug(tournamentSlug) : FEATURED_PGA_TOURNAMENT;
   const tournament = requestedTournament ?? FEATURED_PGA_TOURNAMENT;
   const isMissingTournament = Boolean(tournamentSlug) && !requestedTournament;
@@ -36,10 +37,13 @@ export default function PGAModel() {
   const [selectedPreset, setSelectedPreset] = useState(initialPreset);
   const [isFullPage, setIsFullPage] = useState(false);
 
+  const picksPath = tournamentSlug ? getTournamentPicksPath(tournament) : featuredHub.picksPath;
+  const modelPath = tournamentSlug ? getTournamentModelPath(tournament) : featuredHub.modelPath;
+
   usePageSeo({
     title: `${tournament.name} ${tournament.season} PGA Model Picks`,
     description: `Interactive PGA model picks for ${tournament.name} ${tournament.season} with weighted stats, course history, and form-driven rankings.`,
-    path: getTournamentModelPath(tournament),
+    path: modelPath,
     noindex: tournament.indexable === false,
   });
 
@@ -70,9 +74,6 @@ export default function PGAModel() {
   const activePreset = useMemo(() => detectActivePreset(appliedWeights, tournament.model.presets), [appliedWeights, tournament.model.presets]);
   const draftPreset = useMemo(() => detectActivePreset(draftWeights, tournament.model.presets), [draftWeights, tournament.model.presets]);
   const tableConfig = useMemo(() => buildPgaModelTableConfig(tournament), [tournament]);
-  const picksPath = getTournamentPicksPath(tournament);
-  const modelPath = getTournamentModelPath(tournament);
-
   if (isMissingTournament) {
     return <NotFound />;
   }
@@ -223,11 +224,11 @@ export default function PGAModel() {
                   onApply={applyDraftWeights}
                   onReset={resetToPreset}
                 />
-                <PgaFooterMeta tournamentPath={picksPath} tournamentLabel={tournament.shortName} />
+                <PgaFooterMeta hubPath={featuredHub.hubPath} tournamentPath={picksPath} tournamentLabel={tournament.shortName} />
               </div>
             </section>
             <aside className="order-2 xl:order-1 xl:sticky xl:top-24 xl:self-start">
-              <PgaSidebar picksPath={picksPath} modelPath={modelPath} />
+              <PgaSidebar hubPath={featuredHub.hubPath} picksPath={picksPath} modelPath={modelPath} />
             </aside>
           </div>
         </div>

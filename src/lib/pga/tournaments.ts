@@ -3,6 +3,7 @@ import { wellsFargoChampionship2026Tournament } from "@/data/pga/tournaments/wel
 import { FEATURED_PGA_TOURNAMENT_OVERRIDE_SLUG } from "@/data/pga/featuredTournament";
 import { GENERATED_PGA_TOURNAMENTS } from "@/data/pga/generated/registry";
 import { getPgaDateOverride, getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
+import { getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
 import type { PgaTournamentConfig } from "@/lib/pga/tournamentConfig";
 
 const LEGACY_PGA_TOURNAMENTS = [
@@ -34,6 +35,17 @@ export const NEXT_PGA_TOURNAMENT =
 export function getPgaTournamentBySlug(slug: string | undefined) {
   if (!slug) return null;
   return PGA_TOURNAMENTS.find((tournament) => tournament.slug === slug) ?? null;
+}
+
+export function getFeaturedPgaHubContext() {
+  return {
+    featuredTournament: FEATURED_PGA_TOURNAMENT,
+    featuredPgaBoard: FEATURED_PGA_TOURNAMENT,
+    currentTournamentSlug: FEATURED_PGA_TOURNAMENT.slug,
+    hubPath: "/pga",
+    modelPath: "/pga/model",
+    picksPath: getTournamentPicksPath(FEATURED_PGA_TOURNAMENT),
+  };
 }
 
 function getScheduleDrivenTournament(slug: string | undefined) {

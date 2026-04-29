@@ -18,6 +18,7 @@ import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NFL from "./pages/NFL";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
+import PgaHub from "./pages/PgaHub";
 import PGAModel from "./pages/PGAModel";
 import PGAModelTableView from "./pages/PGAModelTableView";
 import PGATop40Picks from "./pages/PGATop40Picks";
@@ -73,18 +74,10 @@ const App = () => (
           <Route path="/nfl" element={<NFL />} />
           <Route path="/mlb" element={<MlbGameDetail />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
-          <Route path="/pga" element={<Navigate to={getTournamentPicksPath(FEATURED_PGA_TOURNAMENT)} replace />} />
-          <Route path="/pga/model" element={<Navigate to={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)} replace />} />
-          <Route path="/pga/model/table" element={<Navigate to={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)} replace />} />
+          <Route path="/pga" element={<PgaHub />} />
+          <Route path="/pga/model" element={<PGAModel />} />
+          <Route path="/pga/model/table" element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug" element={<PGA />} />
-          <Route
-            path={`/pga/${FEATURED_PGA_TOURNAMENT.slug}/model`}
-            element={<Navigate to={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)} replace />}
-          />
-          <Route
-            path={`/pga/${FEATURED_PGA_TOURNAMENT.slug}/model/table`}
-            element={<Navigate to={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)} replace />}
-          />
           <Route
             path={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)}
             element={<PGAModel />}

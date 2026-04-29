@@ -1,21 +1,20 @@
-import { BarChart3, Gauge, Settings, Target, Trophy } from "lucide-react";
+import { BarChart3, Compass, Trophy } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { NCAA_BETTING_EDGE_PATH, NCAA_SCHEDULE_PATH } from "@/lib/routes";
 
 export default function PgaSidebar({
+  hubPath,
   picksPath,
   modelPath,
 }: {
+  hubPath: string;
   picksPath: string;
   modelPath: string;
 }) {
   const location = useLocation();
   const items = [
-    { to: picksPath, label: "Dashboard", icon: Gauge },
-    { to: modelPath, label: "PGA Model", icon: BarChart3 },
-    { to: `${picksPath}#best-bets`, label: "Tournament Hub", icon: Trophy },
-    { to: NCAA_BETTING_EDGE_PATH, label: "Prop Tool", icon: Target },
-    { to: NCAA_SCHEDULE_PATH, label: "Settings", icon: Settings },
+    { to: hubPath, label: "PGA Rankings Hub", icon: Compass },
+    { to: modelPath, label: "Model Room", icon: BarChart3 },
+    { to: picksPath, label: "This Week's Picks", icon: Trophy },
   ];
 
   return (

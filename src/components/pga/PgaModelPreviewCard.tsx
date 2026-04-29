@@ -27,8 +27,11 @@ type Props = {
   eyebrow: string;
   headline: string;
   body: string;
+  ctaLabel?: string;
+  tableEyebrow?: string;
   rankingTitle: string;
   rankingBody: string;
+  tableCtaLabel?: string;
   railCtaTitle: string;
   railCtaBody: string;
   courseHistoryLabel: string;
@@ -75,8 +78,11 @@ export default function PgaModelPreviewCard({
   eyebrow,
   headline,
   body,
+  ctaLabel = "Open Full Model",
+  tableEyebrow = "Mini Rankings Table",
   rankingTitle,
   rankingBody,
+  tableCtaLabel = "Customize full rankings",
   railCtaTitle,
   railCtaBody,
   courseHistoryLabel,
@@ -134,7 +140,7 @@ export default function PgaModelPreviewCard({
               to={ctaHref}
               className="inline-flex items-center justify-center rounded-xl bg-[#1a3a2a] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#143021]"
             >
-              Open Full Model
+              {ctaLabel}
             </Link>
           </div>
         </div>
@@ -144,12 +150,12 @@ export default function PgaModelPreviewCard({
         <div className="p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a7d72]">Mini Rankings Table</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6a7d72]">{tableEyebrow}</div>
               <h3 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[#1a3a2a]">{rankingTitle}</h3>
               <p className="mt-1 text-[12px] leading-6 text-[#52675b]">{rankingBody}</p>
             </div>
             <Link to={ctaHref} className="inline-flex items-center gap-2 text-sm font-semibold text-[#1a3a2a] transition hover:text-[#143021]">
-              Customize full rankings
+              {tableCtaLabel}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14" />
                 <path d="m12 5 7 7-7 7" />
