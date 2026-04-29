@@ -14,7 +14,7 @@ const sports = [
     id: "ncaa",
     name: "NCAA",
     route: "/ncaa",
-    logo: "https://a.espncdn.com/i/teamlogos/leagues/500/ncaa.png",
+    logo: "/logos/ncaa.svg",
     description: "Tournament brackets, power rankings, and matchup data.",
   },
   {
@@ -36,7 +36,7 @@ const sports = [
     id: "pga",
     name: "PGA",
     route: "/pga",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/9/9e/PGA_Tour_logo.svg/200px-PGA_Tour_logo.svg.png",
+    logo: "/logos/pga.svg",
     description: "Tournament picks, model analysis, and golf betting tools.",
   },
 ] as const;
