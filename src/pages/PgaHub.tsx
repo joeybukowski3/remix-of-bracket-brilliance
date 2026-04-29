@@ -1,14 +1,17 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import PgaLeaderboardPreviewTable from "@/components/pga/PgaLeaderboardPreviewTable";
 import { usePgaTournamentPlayers } from "@/hooks/usePgaTournamentPlayers";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { formatCompositeScore, getTopProjections, rankPlayersByScore } from "@/lib/pga/modelEngine";
 import { getFeaturedPgaHubContext } from "@/lib/pga/tournaments";
+import { buildPgaHubBoardContext } from "@/lib/pga/tournamentUi";
 
 export default function PgaHub() {
   const featured = getFeaturedPgaHubContext();
-  const tournament = featured.featuredTournament;
+  const tournament = featured.featuredPgaBoard;
+  const boardContext = buildPgaHubBoardContext(tournament, featured.scheduleEntry);
   const { players, status, errorMessage } = usePgaTournamentPlayers(tournament);
   const rows = useMemo(
     () => rankPlayersByScore(players, tournament.model.presets[0].weights, tournament.manual?.playerAdjustments),
@@ -31,12 +34,12 @@ export default function PgaHub() {
           <section className="overflow-hidden rounded-[30px] border border-[color:var(--pga-border)] bg-[linear-gradient(135deg,#f8fcf7_0%,#ffffff_58%,#eef5ef_100%)] shadow-[0_18px_40px_rgba(26,58,42,0.08)]">
             <div className="grid gap-0 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
               <div className="p-6 md:p-8">
-                <div className="pga-label">This week&apos;s PGA board</div>
+                <div className="pga-label">{boardContext.eyebrow}</div>
                 <h1 className="mt-3 max-w-3xl text-[2.1rem] font-semibold tracking-[-0.04em] text-foreground sm:text-[3rem]">
-                  Current rankings and course-fit leaders for {tournament.shortName}
+                  {boardContext.headline}
                 </h1>
                 <p className="mt-4 max-w-2xl text-[15px] leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-                  Start with the live leaderboard, scan the strongest fits for {tournament.courseName}, then branch into the full model room or this week&apos;s written picks card.
+                  {boardContext.intro}
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link to={featured.modelPath} className="inline-flex items-center rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90">
@@ -47,22 +50,22 @@ export default function PgaHub() {
                   </Link>
                 </div>
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  <HubStat label="Event" value={tournament.shortName} />
-                  <HubStat label="Course" value={tournament.courseName} />
-                  <HubStat label="Week" value={tournament.schedule?.weekLabel ?? "Current week"} />
+                  {boardContext.statCards.map((item) => (
+                    <HubStat key={item.label} label={item.label} value={item.value} />
+                  ))}
                 </div>
               </div>
 
               <div className="border-t border-[color:var(--pga-border)] bg-secondary/20 p-6 md:p-8 lg:border-l lg:border-t-0">
                 <div className="pga-label">Board context</div>
                 <h2 className="mt-3 text-[1.45rem] font-semibold tracking-[-0.03em] text-foreground">
-                  {tournament.courseName} rewards the right stat mix
+                  {boardContext.contextTitle}
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-[15px]">
-                  {tournament.summary?.modelFocus ?? tournament.summary?.blurb}
+                  {boardContext.contextBody}
                 </p>
                 <div className="mt-5 grid gap-2">
-                  {(tournament.summary?.bullets ?? []).slice(0, 3).map((item) => (
+                  {boardContext.contextBullets.map((item) => (
                     <div key={item} className="rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-3 text-sm leading-6 text-muted-foreground">
                       {item}
                     </div>
@@ -76,9 +79,9 @@ export default function PgaHub() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="pga-label">Rankings First</div>
-                <h2 className="pga-section-title mt-2">Live {tournament.shortName} leaderboard preview</h2>
+                <h2 className="pga-section-title mt-2">{boardContext.leaderboardTitle}</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">
-                  The main PGA page now leads with the current board, using the featured tournament dataset to surface the top-ranked players and the stat profile driving the week.
+                  {boardContext.leaderboardBody}
                 </p>
               </div>
               <Link to={featured.modelPath} className="inline-flex items-center rounded-xl border border-[color:var(--pga-border)] bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-secondary">
@@ -90,34 +93,7 @@ export default function PgaHub() {
             {status === "error" ? <div className="mt-6 text-sm text-destructive">Unable to load the current board: {errorMessage}</div> : null}
             {status === "ready" && previewRows.length > 0 ? (
               <div className="mt-6 overflow-hidden rounded-2xl border border-[color:var(--pga-border)] bg-card">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-[color:var(--pga-border)] text-left text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-                        <th className="px-4 py-3">Rank</th>
-                        <th className="px-4 py-3">Player</th>
-                        <th className="px-4 py-3">Score</th>
-                        {statColumns.map((stat) => (
-                          <th key={stat.key} className="px-4 py-3">{stat.abbr}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewRows.map((row) => (
-                        <tr key={row.id} className="border-t border-[color:var(--pga-border)] first:border-t-0">
-                          <td className="px-4 py-3 font-semibold text-foreground">#{row.rank}</td>
-                          <td className="px-4 py-3 font-medium text-foreground">{row.player}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{formatCompositeScore(row.score)}</td>
-                          {statColumns.map((stat) => (
-                            <td key={`${row.id}-${stat.key}`} className="px-4 py-3 text-muted-foreground">
-                              {formatBoardRank(row[stat.key])}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <PgaLeaderboardPreviewTable rows={previewRows} statColumns={statColumns} totalRankCount={rows.length} />
               </div>
             ) : null}
           </section>
@@ -199,9 +175,4 @@ function ValueCard({ title, body }: { title: string; body: string }) {
       <p className="mt-2 text-sm leading-7 text-muted-foreground">{body}</p>
     </div>
   );
-}
-
-function formatBoardRank(value: number | null) {
-  if (value == null) return "-";
-  return `#${value}`;
 }

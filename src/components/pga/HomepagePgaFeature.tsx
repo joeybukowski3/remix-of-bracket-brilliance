@@ -1,15 +1,17 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import PgaLeaderboardPreviewTable from "@/components/pga/PgaLeaderboardPreviewTable";
 import { usePgaTournamentPlayers } from "@/hooks/usePgaTournamentPlayers";
 import { rankPlayersByScore } from "@/lib/pga/modelEngine";
 import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
-import { FEATURED_PGA_TOURNAMENT, NEXT_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
-import { getTournamentModelPath, getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
+import { getFeaturedPgaHubContext, NEXT_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
+import { getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
 
 const FEATURED_ROW_COUNT = 5;
 
 export default function HomepagePgaFeature() {
-  const tournament = FEATURED_PGA_TOURNAMENT;
+  const featured = getFeaturedPgaHubContext();
+  const tournament = featured.featuredPgaBoard;
   const nextTournament = NEXT_PGA_TOURNAMENT?.slug === tournament.slug ? null : NEXT_PGA_TOURNAMENT;
   const scheduleSelection = getPgaScheduleSelection();
   const { players, status, errorMessage } = usePgaTournamentPlayers(tournament);
@@ -26,7 +28,7 @@ export default function HomepagePgaFeature() {
 
   const primaryStats = tournament.model.statColumns.slice(0, 3);
   const picksPath = getTournamentPicksPath(tournament);
-  const modelPath = getTournamentModelPath(tournament);
+  const modelPath = featured.modelPath;
   const narrative = tournament.manual?.featuredNarrative ?? tournament.summary?.blurb ?? tournament.hero.support;
 
   return (
@@ -141,36 +143,7 @@ export default function HomepagePgaFeature() {
                       {missingStatProfiles} field entrants are currently withheld from the scored preview because the active source feed does not yet include a usable stat profile for them.
                     </div>
                   ) : null}
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse">
-                      <thead>
-                        <tr className="text-left text-[11px] uppercase tracking-[0.16em] text-[#7a7a7a]">
-                          <th className="px-3 py-3 font-semibold">Rank</th>
-                          <th className="px-3 py-3 font-semibold">Golfer</th>
-                          <th className="px-3 py-3 font-semibold">Power</th>
-                          {primaryStats.map((stat) => (
-                            <th key={stat.key} className="px-3 py-3 font-semibold">
-                              {stat.abbr}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((row) => (
-                          <tr key={row.id} className="border-t border-black/6 text-[14px] text-[#222222]">
-                            <td className="px-3 py-3 font-semibold">#{row.rank}</td>
-                            <td className="px-3 py-3 font-medium">{row.player}</td>
-                            <td className="px-3 py-3">{row.score.toFixed(2)}</td>
-                            {primaryStats.map((stat) => (
-                              <td key={`${row.id}-${stat.key}`} className="px-3 py-3">
-                                {formatRankValue(row[stat.key])}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <PgaLeaderboardPreviewTable rows={rows} statColumns={primaryStats} totalRankCount={rankedRows.length} />
                 </div>
               ) : null}
             </div>
@@ -179,9 +152,4 @@ export default function HomepagePgaFeature() {
       </div>
     </section>
   );
-}
-
-function formatRankValue(value: number | null) {
-  if (value == null) return "—";
-  return `#${value}`;
 }

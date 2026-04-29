@@ -138,3 +138,15 @@ export type PgaModelTableConfig = {
   mobileCourseHistoryLabel: string;
   mobileNoCourseHistoryLabel: string;
 };
+
+export type PgaHubBoardContext = {
+  eyebrow: string;
+  headline: string;
+  intro: string;
+  statCards: Array<{ label: string; value: string }>;
+  contextTitle: string;
+  contextBody: string;
+  contextBullets: string[];
+  leaderboardTitle: string;
+  leaderboardBody: string;
+};

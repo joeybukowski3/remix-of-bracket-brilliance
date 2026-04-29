@@ -19,13 +19,19 @@ export const PGA_TOURNAMENTS = dedupeTournamentsBySlug([
 const pgaScheduleSelection = getPgaScheduleSelection();
 const hasPgaDateOverride = Boolean(getPgaDateOverride());
 
+export const ACTIVE_PGA_BOARD_TOURNAMENT =
+  getScheduleDrivenTournament(pgaScheduleSelection.currentUpcoming?.slug)
+  ?? PGA_TOURNAMENTS.find((tournament) => tournament.featured)
+  ?? PGA_TOURNAMENTS[0];
+
 export const FEATURED_PGA_TOURNAMENT =
   (hasPgaDateOverride
     ? getScheduleDrivenTournament(pgaScheduleSelection.currentUpcoming?.slug)
-    : PGA_TOURNAMENTS.find((tournament) => tournament.slug === FEATURED_PGA_TOURNAMENT_OVERRIDE_SLUG)
-      ?? getScheduleDrivenTournament(pgaScheduleSelection.currentUpcoming?.slug))
-  ?? PGA_TOURNAMENTS.find((tournament) => tournament.featured)
-  ?? PGA_TOURNAMENTS[0];
+    : (FEATURED_PGA_TOURNAMENT_OVERRIDE_SLUG
+      ? PGA_TOURNAMENTS.find((tournament) => tournament.slug === FEATURED_PGA_TOURNAMENT_OVERRIDE_SLUG)
+      : null)
+      ?? ACTIVE_PGA_BOARD_TOURNAMENT)
+  ?? ACTIVE_PGA_BOARD_TOURNAMENT;
 
 export const NEXT_PGA_TOURNAMENT =
   getScheduleDrivenTournament(pgaScheduleSelection.nextWeek?.slug)
@@ -39,12 +45,13 @@ export function getPgaTournamentBySlug(slug: string | undefined) {
 
 export function getFeaturedPgaHubContext() {
   return {
-    featuredTournament: FEATURED_PGA_TOURNAMENT,
-    featuredPgaBoard: FEATURED_PGA_TOURNAMENT,
-    currentTournamentSlug: FEATURED_PGA_TOURNAMENT.slug,
+    featuredTournament: ACTIVE_PGA_BOARD_TOURNAMENT,
+    featuredPgaBoard: ACTIVE_PGA_BOARD_TOURNAMENT,
+    currentTournamentSlug: ACTIVE_PGA_BOARD_TOURNAMENT.slug,
+    scheduleEntry: pgaScheduleSelection.currentUpcoming,
     hubPath: "/pga",
     modelPath: "/pga/model",
-    picksPath: getTournamentPicksPath(FEATURED_PGA_TOURNAMENT),
+    picksPath: getTournamentPicksPath(ACTIVE_PGA_BOARD_TOURNAMENT),
   };
 }
 
