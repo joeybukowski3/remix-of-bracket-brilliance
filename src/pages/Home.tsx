@@ -24,6 +24,7 @@ const sports = [
     logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png",
     description: "NFL Mock Draft Analysis",
     featured: true,
+    locked: true,
   },
   {
     id: "nba",
@@ -31,6 +32,7 @@ const sports = [
     route: "/nba",
     logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png",
     description: "Player efficiency ratings, lineup analysis, and pace breakdown.",
+    locked: true,
   },
   {
     id: "pga",
@@ -51,26 +53,28 @@ const navItems = [
 ] as const;
 
 function SportCard({
+  locked = false,
   description,
   featured = false,
   logo,
   name,
   route,
 }: {
+  locked?: boolean;
   description: string;
   featured?: boolean;
   logo: string;
   name: string;
   route: string;
 }) {
-  return (
-    <Link
-      to={route}
-      className={`flex w-full max-w-[200px] flex-col rounded-[12px] bg-white px-6 py-7 text-left no-underline shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 max-md:max-w-none ${
-        featured ? "min-h-[320px]" : "min-h-[300px]"
-      }`}
-      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}
-    >
+  const cardClassName = `flex w-full max-w-[200px] flex-col rounded-[12px] bg-white px-6 py-7 text-left no-underline shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-md:max-w-none ${
+    locked
+      ? "cursor-default opacity-80"
+      : "transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+  } ${featured ? "min-h-[320px]" : "min-h-[300px]"}`;
+
+  const cardContent = (
+    <>
       <div className="flex h-[108px] items-center justify-center">
         <img
           src={logo}
@@ -94,8 +98,30 @@ function SportCard({
       <p className="mt-3 text-left text-[13px] leading-[1.5] text-[#555555]">{description}</p>
 
       <span className="mt-auto pt-7 text-left text-[14px] font-semibold text-[#111111]">
-        Explore Tools →
+        {locked ? "Subscription Required" : "Explore Tools ->"}
       </span>
+    </>
+  );
+
+  if (locked) {
+    return (
+      <div
+        aria-disabled="true"
+        className={cardClassName}
+        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}
+      >
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={route}
+      className={cardClassName}
+      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}
+    >
+      {cardContent}
     </Link>
   );
 }
@@ -158,6 +184,7 @@ export default function Home() {
                   key={sport.id}
                   description={sport.description}
                   featured={Boolean("featured" in sport && sport.featured)}
+                  locked={Boolean("locked" in sport && sport.locked)}
                   logo={sport.logo}
                   name={sport.name}
                   route={sport.route}
