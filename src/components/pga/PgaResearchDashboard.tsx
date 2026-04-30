@@ -405,20 +405,6 @@ export default function PgaResearchDashboard({
             </div>
           </FilterBlock>
 
-          <FilterBlock label="Percentile Context" help={PERCENTILE_CONTEXT_OPTIONS.find((option) => option.value === percentileContext)?.description ?? ""}>
-            <div className="grid grid-cols-2 gap-2">
-              {PERCENTILE_CONTEXT_OPTIONS.map((option) => (
-                <ToggleButton
-                  key={option.value}
-                  active={percentileContext === option.value}
-                  onClick={() => setPercentileContext(option.value)}
-                >
-                  {option.label}
-                </ToggleButton>
-              ))}
-            </div>
-          </FilterBlock>
-
           <FilterBlock label="Course Profile" help={effectiveCourseContext === "event" ? "Keeps current-event course history in the board." : "Turns off event-specific course history so the board stays neutral."}>
             <select
               value={effectiveCourseContext}
@@ -458,6 +444,38 @@ export default function PgaResearchDashboard({
               </button>
             </div>
           </FilterBlock>
+        </div>
+
+        <div className="rounded-[20px] border border-[color:var(--pga-border)] bg-[linear-gradient(135deg,#f4faf4_0%,#ffffff_100%)] p-4 shadow-[0_10px_24px_rgba(26,58,42,0.05)]">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Percentile Context</div>
+                <span className="rounded-full bg-[var(--pga-green-fill)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--pga-green-dark)]">
+                  Changes heat map + percentile sorting
+                </span>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {PERCENTILE_CONTEXT_OPTIONS.find((option) => option.value === percentileContext)?.description}
+              </p>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[420px]">
+              {PERCENTILE_CONTEXT_OPTIONS.map((option) => (
+                <ContextToggleCard
+                  key={option.value}
+                  active={percentileContext === option.value}
+                  title={option.label}
+                  description={
+                    option.value === "tour"
+                      ? "Benchmarks each golfer against the loaded PGA universe."
+                      : "Benchmarks each golfer only against this week's field."
+                  }
+                  onClick={() => setPercentileContext(option.value)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
@@ -691,6 +709,44 @@ function ContextChip({ label, value }: { label: string; value: string }) {
       <span className="mr-1 text-muted-foreground">{label}:</span>
       {value}
     </span>
+  );
+}
+
+function ContextToggleCard({
+  active,
+  title,
+  description,
+  onClick,
+}: {
+  active: boolean;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-[18px] border px-4 py-3 text-left transition ${
+        active
+          ? "border-[var(--pga-green-dark)] bg-[var(--pga-green-dark)] text-[#f4fbf6] shadow-[0_12px_28px_rgba(26,58,42,0.18)]"
+          : "border-[color:var(--pga-border)] bg-card text-foreground hover:bg-secondary"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-semibold">{title}</span>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+            active ? "bg-[#f4fbf6]/14 text-[#f4fbf6]" : "bg-secondary text-muted-foreground"
+          }`}
+        >
+          {active ? "Active" : "Select"}
+        </span>
+      </div>
+      <div className={`mt-2 text-xs leading-5 ${active ? "text-[#d9eee0]" : "text-muted-foreground"}`}>
+        {description}
+      </div>
+    </button>
   );
 }
 
