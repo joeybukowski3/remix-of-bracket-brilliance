@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 12,13 * * 1"
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sync-pga-data.yml"
+      - "scripts/sync-pga-sheet.mjs"
 
 permissions:
   contents: write
@@ -15,6 +21,11 @@ jobs:
       - name: Check Eastern runtime window
         id: gate
         run: |
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           if [ "$(TZ=America/New_York date +%H)" != "08" ]; then
             echo "should_run=false" >> "$GITHUB_OUTPUT"
             echo "Not 8 AM in America/New_York. Skipping this UTC slot."
@@ -52,7 +63,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json
+          git add public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json
           if git diff --cached --quiet; then
             echo "No PGA data changes to commit."
             exit 0
