@@ -1,22 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SiteShell from "@/components/layout/SiteShell";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { formatCompositeScore, normalizeTournamentPlayerData, rankPlayersByScore } from "@/lib/pga/modelEngine";
-import type { RawPgaPlayer, PgaWeights } from "@/lib/pga/pgaTypes";
-import { PGA_TOURNAMENTS } from "@/lib/pga/tournaments";
 import { cn } from "@/lib/utils";
-
-type PgaSheetRow = {
-  rank: number;
-  player: string;
-  modelScore: string;
-  sgTotal: string;
-  sgOtt: string;
-  sgApp: string;
-  sgAtg: string;
-  sgPutt: string;
-};
 
 type PgaSheetSection = {
   section: string;
@@ -24,7 +10,7 @@ type PgaSheetSection = {
   tournamentName: string;
   courseName: string;
   generatedAt: string;
-  rows: PgaSheetRow[];
+  rows: unknown[];
 };
 
 type PgaScheduleFeedEntry = {
@@ -46,22 +32,39 @@ type PgaScheduleFeedEntry = {
   sourceCountry: string;
 };
 
+type CourseWeightSet = {
+  sgTotal: number;
+  sgOTT: number;
+  sgApp: number;
+  sgAtG: number;
+  sgPutt: number;
+  drivingAccuracy: number;
+  bogeyAvoidance: number;
+  birdieBogeyRatio: number;
+};
+
 type CourseWeightFeedEntry = {
   tournament: string;
   course: string;
-  weights: {
-    sgTotal: number;
-    sgOTT: number;
-    sgApp: number;
-    sgAtG: number;
-    sgPutt: number;
-    drivingAccuracy: number;
-    bogeyAvoidance: number;
-    birdieBogeyRatio: number;
-  };
+  weights: CourseWeightSet;
 };
 
-type PgaDisplayRow = PgaSheetRow;
+type RawPlayerStat = {
+  player: string;
+  sgTotal: number;
+  sgOTT: number;
+  sgApp: number;
+  sgAtG: number;
+  sgPutt: number;
+  drivingAccuracy: number;
+  bogeyAvoidance: number;
+  birdieBogeyRatio: number;
+};
+
+type RankedPlayerRow = RawPlayerStat & {
+  rank: number;
+  score: number;
+};
 
 type SectionState = {
   loading: boolean;
@@ -70,16 +73,7 @@ type SectionState = {
 
 type SidebarFilter = "all" | "major" | "wgc" | "signature" | "standard";
 type BaseView = "power" | "current" | "next";
-
-type BuiltModelState = {
-  loading: boolean;
-  title: string;
-  tournamentName: string;
-  courseName: string;
-  rows: PgaDisplayRow[];
-  weights: PgaWeights | null;
-  weightBreakdown: CourseWeightFeedEntry | null;
-};
+type MovementDirection = "up" | "down";
 
 const DATA_SOURCES = [
   { id: "power", section: "power-rankings", title: "Power Rankings", path: "/data/pga/power-rankings.json", scoreLabel: "Power Score" },
@@ -90,7 +84,7 @@ const DATA_SOURCES = [
 const TABLE_COLUMNS = [
   { key: "rank", label: "Rank", className: "w-[68px]" },
   { key: "player", label: "Player", className: "min-w-[220px]" },
-  { key: "modelScore", label: "Score", className: "min-w-[120px]" },
+  { key: "score", label: "Score", className: "min-w-[120px]" },
   { key: "sgTotal", label: "SG Total" },
   { key: "sgOtt", label: "SG OTT" },
   { key: "sgApp", label: "SG APP" },
@@ -104,6 +98,17 @@ const FILTER_OPTIONS: Array<{ key: SidebarFilter; label: string }> = [
   { key: "wgc", label: "WGC" },
   { key: "signature", label: "Signature Events" },
   { key: "standard", label: "Standard Events" },
+];
+
+const STAT_KEYS: Array<keyof CourseWeightSet> = [
+  "sgTotal",
+  "sgOTT",
+  "sgApp",
+  "sgAtG",
+  "sgPutt",
+  "drivingAccuracy",
+  "bogeyAvoidance",
+  "birdieBogeyRatio",
 ];
 
 const EMPTY_MESSAGE = "Data updating - check back Monday";
@@ -122,7 +127,7 @@ function normalizeEventKey(value: string) {
 function isValidSectionData(value: unknown): value is PgaSheetSection {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<PgaSheetSection>;
-  return Array.isArray(candidate.rows) && typeof candidate.title === "string";
+  return typeof candidate.title === "string" && typeof candidate.section === "string";
 }
 
 function isValidScheduleData(value: unknown): value is PgaScheduleFeedEntry[] {
@@ -130,6 +135,10 @@ function isValidScheduleData(value: unknown): value is PgaScheduleFeedEntry[] {
 }
 
 function isValidCourseWeightsData(value: unknown): value is CourseWeightFeedEntry[] {
+  return Array.isArray(value);
+}
+
+function isValidPlayerStatsData(value: unknown): value is RawPlayerStat[] {
   return Array.isArray(value);
 }
 
@@ -144,48 +153,6 @@ function buildEmptySection(section: string, title: string): PgaSheetSection {
   };
 }
 
-function formatTableNumber(value: number | null | undefined, digits = 3) {
-  if (value == null || !Number.isFinite(value)) return "--";
-  return value.toFixed(digits);
-}
-
-function formatWeightValue(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-function computeSgTotal(player: RawPgaPlayer) {
-  const values = [
-    player["SG: Approach the Green"],
-    player["SG: Around the Green"],
-    player["SG: Putting"],
-  ].filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-
-  if (values.length === 0) return null;
-  return values.reduce((sum, value) => sum + value, 0);
-}
-
-function buildDisplayRowsFromRawPlayers(rawPlayers: RawPgaPlayer[], weights: PgaWeights) {
-  const normalizedPlayers = normalizeTournamentPlayerData(rawPlayers);
-  const rankedRows = rankPlayersByScore(normalizedPlayers, weights);
-  const rawByPlayer = new Map(rawPlayers.map((player) => [player["Player Name"], player]));
-
-  return rankedRows.map((row) => {
-    const raw = rawByPlayer.get(row.player);
-    const sgTotal = raw ? computeSgTotal(raw) : null;
-
-    return {
-      rank: row.rank,
-      player: row.player,
-      modelScore: formatCompositeScore(row.score * 100),
-      sgTotal: formatTableNumber(sgTotal),
-      sgOtt: "--",
-      sgApp: formatTableNumber(raw?.["SG: Approach the Green"]),
-      sgAtg: formatTableNumber(raw?.["SG: Around the Green"]),
-      sgPutt: formatTableNumber(raw?.["SG: Putting"]),
-    };
-  });
-}
-
 function getCurrentAndNextEvents(schedule: PgaScheduleFeedEntry[]) {
   const sorted = [...schedule].sort((left, right) => left.startDate.localeCompare(right.startDate));
   const current = sorted.find((entry) => entry.status !== "complete") ?? sorted.at(-1) ?? null;
@@ -196,26 +163,12 @@ function getCurrentAndNextEvents(schedule: PgaScheduleFeedEntry[]) {
   return { current, next };
 }
 
-function resolveTournamentConfig(name: string) {
-  const normalized = normalizeEventKey(name);
-
-  return PGA_TOURNAMENTS.find((tournament) =>
-    [tournament.name, tournament.shortName, tournament.slug]
-      .map((value) => normalizeEventKey(value))
-      .includes(normalized),
-  ) ?? null;
-}
-
 function isFutureOrCurrent(entry: PgaScheduleFeedEntry, currentEvent: PgaScheduleFeedEntry | null) {
   if (!currentEvent) return entry.status !== "complete";
   return entry.startDate >= currentEvent.startDate;
 }
 
-function findCourseWeightEntry(
-  entries: CourseWeightFeedEntry[],
-  tournamentName: string,
-  courseName: string,
-) {
+function findCourseWeightEntry(entries: CourseWeightFeedEntry[], tournamentName: string, courseName: string) {
   const tournamentKey = normalizeEventKey(tournamentName);
   const courseKey = normalizeEventKey(courseName);
 
@@ -227,32 +180,77 @@ function findCourseWeightEntry(
   );
 }
 
-function WeightChips({ weights }: { weights: PgaWeights | null }) {
-  if (!weights) {
-    return (
-      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm text-emerald-50/80">
-        Published sheet output. Course-weight detail is not available for this feed yet.
-      </div>
-    );
-  }
+function findDefaultWeightEntry(entries: CourseWeightFeedEntry[]) {
+  return entries.find((entry) => normalizeEventKey(entry.tournament) === "default") ?? null;
+}
 
-  return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-      {Object.entries(weights).map(([key, value]) => (
-        <div key={key} className="rounded-2xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-2">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200/70">{key}</div>
-          <div className="mt-1 text-sm font-semibold text-emerald-50">{formatWeightValue(value)}</div>
-        </div>
-      ))}
-    </div>
-  );
+export function rankPlayers(players: RawPlayerStat[], weights: CourseWeightSet) {
+  const ranges = Object.fromEntries(
+    STAT_KEYS.map((key) => {
+      const values = players.map((player) => player[key]);
+      return [key, { min: Math.min(...values), max: Math.max(...values) }];
+    }),
+  ) as Record<keyof CourseWeightSet, { min: number; max: number }>;
+
+  const ranked = players
+    .map((player) => {
+      const score = STAT_KEYS.reduce((total, key) => {
+        const { min, max } = ranges[key];
+        const normalized = max === min ? 100 : ((player[key] - min) / (max - min)) * 100;
+        return total + normalized * weights[key];
+      }, 0);
+
+      return {
+        ...player,
+        score,
+      };
+    })
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score;
+      return left.player.localeCompare(right.player);
+    })
+    .map((player, index) => ({
+      ...player,
+      rank: index + 1,
+    }));
+
+  return ranked;
+}
+
+function formatPercent(value: number) {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatScore(value: number) {
+  return value.toFixed(2);
+}
+
+function formatSg(value: number) {
+  return value.toFixed(3);
+}
+
+function formatDrivingAccuracy(value: number) {
+  return value.toFixed(1);
+}
+
+function buildTableRows(rows: RankedPlayerRow[]) {
+  return rows.map((row) => ({
+    rank: row.rank,
+    player: row.player,
+    score: formatScore(row.score),
+    sgTotal: formatSg(row.sgTotal),
+    sgOtt: formatSg(row.sgOTT),
+    sgApp: formatSg(row.sgApp),
+    sgAtg: formatSg(row.sgAtG),
+    sgPutt: formatSg(row.sgPutt),
+  }));
 }
 
 function WeightBreakdown({ entry }: { entry: CourseWeightFeedEntry | null }) {
   if (!entry) {
     return (
       <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm text-emerald-50/80">
-        Course-weight detail is updating. Check back Monday.
+        {EMPTY_MESSAGE}
       </div>
     );
   }
@@ -278,7 +276,7 @@ function WeightBreakdown({ entry }: { entry: CourseWeightFeedEntry | null }) {
           <div key={bar.label}>
             <div className="mb-1 flex items-center justify-between gap-3 text-xs font-semibold text-emerald-50/84">
               <span>{bar.label}</span>
-              <span>{(bar.value * 100).toFixed(1)}%</span>
+              <span>{formatPercent(bar.value)}</span>
             </div>
             <div className="h-2 rounded-full bg-white/8">
               <div
@@ -296,9 +294,11 @@ function WeightBreakdown({ entry }: { entry: CourseWeightFeedEntry | null }) {
 function PgaTable({
   rows,
   scoreLabel,
+  movementMap,
 }: {
-  rows: PgaDisplayRow[];
+  rows: ReturnType<typeof buildTableRows>;
   scoreLabel: string;
+  movementMap: Record<string, MovementDirection>;
 }) {
   return (
     <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#07110d]">
@@ -307,7 +307,7 @@ function PgaTable({
           <TableRow className="border-white/10 hover:bg-transparent">
             {TABLE_COLUMNS.map((column) => (
               <TableHead key={column.key} className={cn("text-emerald-100/72", column.className)}>
-                {column.key === "modelScore" ? scoreLabel : column.label}
+                {column.key === "score" ? scoreLabel : column.label}
               </TableHead>
             ))}
           </TableRow>
@@ -315,18 +315,21 @@ function PgaTable({
         <TableBody>
           {rows.map((row, index) => {
             const topTen = row.rank <= 10 || index < 10;
+            const movement = movementMap[row.player];
 
             return (
               <TableRow
                 key={`${row.player}-${row.rank}-${index}`}
                 className={cn(
-                  "border-white/8 text-emerald-50/90 hover:bg-white/4",
+                  "border-white/8 text-emerald-50/90 transition-colors duration-700 hover:bg-white/4",
                   topTen && "bg-emerald-500/12 hover:bg-emerald-500/16",
+                  movement === "up" && "bg-emerald-400/22 hover:bg-emerald-400/24",
+                  movement === "down" && "bg-rose-400/16 hover:bg-rose-400/18",
                 )}
               >
                 <TableCell className="font-semibold">{row.rank}</TableCell>
                 <TableCell className="font-medium text-white">{row.player}</TableCell>
-                <TableCell>{row.modelScore}</TableCell>
+                <TableCell>{row.score}</TableCell>
                 <TableCell>{row.sgTotal}</TableCell>
                 <TableCell>{row.sgOtt}</TableCell>
                 <TableCell>{row.sgApp}</TableCell>
@@ -352,19 +355,14 @@ export default function PgaHub() {
   );
   const [schedule, setSchedule] = useState<PgaScheduleFeedEntry[]>([]);
   const [courseWeights, setCourseWeights] = useState<CourseWeightFeedEntry[]>([]);
+  const [playerStats, setPlayerStats] = useState<RawPlayerStat[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
   const [activeView, setActiveView] = useState<BaseView>("power");
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
-  const [builtModel, setBuiltModel] = useState<BuiltModelState>({
-    loading: false,
-    title: "",
-    tournamentName: "",
-    courseName: "",
-    rows: [],
-    weights: null,
-    weightBreakdown: null,
-  });
+  const [movementMap, setMovementMap] = useState<Record<string, MovementDirection>>({});
+  const movementTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasAnimatedRef = useRef(false);
 
   usePageSeo({
     title: "PGA Rankings Hub",
@@ -376,27 +374,37 @@ export default function PgaHub() {
     let active = true;
 
     async function loadBaseData() {
-      const [scheduleResponse, courseWeightsResponse, ...sectionResponses] = await Promise.all([
+      const [scheduleResponse, courseWeightsResponse, playerStatsResponse, ...sectionResponses] = await Promise.all([
         fetch("/data/pga/schedule.json", { cache: "no-store" }),
         fetch("/data/pga/course-weights.json", { cache: "no-store" }),
+        fetch("/data/pga/player-stats-raw.json", { cache: "no-store" }),
         ...DATA_SOURCES.map((source) => fetch(source.path, { cache: "no-store" })),
       ]);
 
-      if (active) {
-        if (scheduleResponse.ok) {
-          const payload: unknown = await scheduleResponse.json();
-          setSchedule(isValidScheduleData(payload) ? payload : []);
-        } else {
-          setSchedule([]);
-        }
-        if (courseWeightsResponse.ok) {
-          const payload: unknown = await courseWeightsResponse.json();
-          setCourseWeights(isValidCourseWeightsData(payload) ? payload : []);
-        } else {
-          setCourseWeights([]);
-        }
-        setScheduleLoading(false);
+      if (!active) return;
+
+      if (scheduleResponse.ok) {
+        const payload: unknown = await scheduleResponse.json();
+        setSchedule(isValidScheduleData(payload) ? payload : []);
+      } else {
+        setSchedule([]);
       }
+
+      if (courseWeightsResponse.ok) {
+        const payload: unknown = await courseWeightsResponse.json();
+        setCourseWeights(isValidCourseWeightsData(payload) ? payload : []);
+      } else {
+        setCourseWeights([]);
+      }
+
+      if (playerStatsResponse.ok) {
+        const payload: unknown = await playerStatsResponse.json();
+        setPlayerStats(isValidPlayerStatsData(payload) ? payload : []);
+      } else {
+        setPlayerStats([]);
+      }
+
+      setScheduleLoading(false);
 
       const loadedSections = await Promise.all(
         sectionResponses.map(async (response, index) => {
@@ -426,127 +434,136 @@ export default function PgaHub() {
 
     return () => {
       active = false;
+      if (movementTimeoutRef.current) {
+        clearTimeout(movementTimeoutRef.current);
+      }
     };
   }, []);
 
   const { current: currentEvent, next: nextEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
-
-  useEffect(() => {
-    if (!selectedScheduleId) {
-      setBuiltModel((previous) => ({ ...previous, loading: false }));
-      return;
-    }
-
-    const scheduleEntry = schedule.find((entry) => entry.id === selectedScheduleId) ?? null;
-    const config = scheduleEntry ? resolveTournamentConfig(scheduleEntry.name) : null;
-
-    if (!scheduleEntry || !config) {
-      setBuiltModel({
-        loading: false,
-        title: scheduleEntry?.name ?? "",
-        tournamentName: scheduleEntry?.name ?? "",
-        courseName: scheduleEntry?.courseName ?? "",
-        rows: [],
-        weights: null,
-        weightBreakdown: scheduleEntry ? findCourseWeightEntry(courseWeights, scheduleEntry.name, scheduleEntry.courseName) : null,
-      });
-      return;
-    }
-
-    const weightBreakdown = findCourseWeightEntry(courseWeights, scheduleEntry.name, scheduleEntry.courseName);
-
-    let active = true;
-
-    async function loadTournamentModel() {
-      setBuiltModel({
-        loading: true,
-        title: config.name,
-        tournamentName: config.name,
-        courseName: config.courseName,
-        rows: [],
-        weights: config.model.presets[0]?.weights ?? null,
-        weightBreakdown,
-      });
-
-      try {
-        const response = await fetch(config.model.dataPath, { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error("Missing tournament dataset.");
-        }
-
-        const payload: unknown = await response.json();
-        if (!Array.isArray(payload)) {
-          throw new Error("Tournament dataset is not an array.");
-        }
-
-        const rows = buildDisplayRowsFromRawPlayers(payload as RawPgaPlayer[], config.model.presets[0].weights);
-        if (!active) return;
-
-        setBuiltModel({
-          loading: false,
-          title: config.name,
-          tournamentName: config.name,
-          courseName: config.courseName,
-          rows,
-          weights: config.model.presets[0].weights,
-          weightBreakdown,
-        });
-      } catch {
-        if (!active) return;
-        setBuiltModel({
-          loading: false,
-          title: config.name,
-          tournamentName: config.name,
-          courseName: config.courseName,
-          rows: [],
-          weights: config.model.presets[0]?.weights ?? null,
-          weightBreakdown,
-        });
-      }
-    }
-
-    void loadTournamentModel();
-
-    return () => {
-      active = false;
-    };
-  }, [courseWeights, schedule, selectedScheduleId]);
-
   const filteredSchedule = useMemo(
     () => schedule.filter((entry) => sidebarFilter === "all" || entry.category === sidebarFilter),
     [schedule, sidebarFilter],
   );
 
-  const activeSection = sections[activeView]?.data ?? buildEmptySection(DATA_SOURCES[0].section, DATA_SOURCES[0].title);
-  const activeScoreLabel = DATA_SOURCES.find((source) => source.id === activeView)?.scoreLabel ?? "Model Score";
-  const activeSectionConfig = resolveTournamentConfig(activeSection.tournamentName);
-  const activeSectionWeightBreakdown = findCourseWeightEntry(courseWeights, activeSection.tournamentName, activeSection.courseName);
+  const defaultWeightEntry = useMemo(() => findDefaultWeightEntry(courseWeights), [courseWeights]);
+  const currentWeightEntry = useMemo(
+    () => currentEvent ? findCourseWeightEntry(courseWeights, currentEvent.name, currentEvent.courseName) : null,
+    [courseWeights, currentEvent],
+  );
+  const nextWeightEntry = useMemo(
+    () => nextEvent ? findCourseWeightEntry(courseWeights, nextEvent.name, nextEvent.courseName) : null,
+    [courseWeights, nextEvent],
+  );
+  const selectedFutureEvent = useMemo(
+    () => schedule.find((entry) => entry.id === selectedScheduleId) ?? null,
+    [schedule, selectedScheduleId],
+  );
+  const selectedFutureWeightEntry = useMemo(
+    () => selectedFutureEvent ? findCourseWeightEntry(courseWeights, selectedFutureEvent.name, selectedFutureEvent.courseName) : null,
+    [courseWeights, selectedFutureEvent],
+  );
 
-  const contentHeader = useMemo(() => {
-    if (selectedScheduleId) {
+  const activeContent = useMemo(() => {
+    if (selectedFutureEvent) {
       return {
         eyebrow: "Future Tournament Model",
-        title: builtModel.tournamentName || "Tournament model",
-        subtitle: builtModel.courseName || EMPTY_MESSAGE,
-        rows: builtModel.rows,
-        loading: builtModel.loading,
+        title: selectedFutureEvent.name,
+        subtitle: selectedFutureEvent.courseName || EMPTY_MESSAGE,
         scoreLabel: "Model Score",
-        weights: builtModel.weights,
-        weightBreakdown: builtModel.weightBreakdown,
+        weightEntry: selectedFutureWeightEntry,
+      };
+    }
+
+    if (activeView === "current") {
+      return {
+        eyebrow: sections.current?.data.title ?? "Current Tournament Model",
+        title: currentEvent?.name ?? sections.current?.data.tournamentName ?? "Current Tournament Model",
+        subtitle: currentEvent?.courseName ?? sections.current?.data.courseName ?? EMPTY_MESSAGE,
+        scoreLabel: "Model Score",
+        weightEntry: currentWeightEntry,
+      };
+    }
+
+    if (activeView === "next") {
+      return {
+        eyebrow: sections.next?.data.title ?? "Next Week Tournament Model",
+        title: nextEvent?.name ?? sections.next?.data.tournamentName ?? "Next Week Tournament Model",
+        subtitle: nextEvent?.courseName ?? sections.next?.data.courseName ?? EMPTY_MESSAGE,
+        scoreLabel: "Model Score",
+        weightEntry: nextWeightEntry,
       };
     }
 
     return {
-      eyebrow: activeSection.title,
-      title: activeSection.tournamentName || activeSection.title,
-      subtitle: activeSection.courseName || EMPTY_MESSAGE,
-      rows: activeSection.rows,
-      loading: sections[activeView]?.loading ?? true,
-      scoreLabel: activeScoreLabel,
-      weights: activeSectionConfig?.model.presets[0]?.weights ?? null,
-      weightBreakdown: activeSectionWeightBreakdown,
+      eyebrow: sections.power?.data.title ?? "Power Rankings",
+      title: "Power Rankings",
+      subtitle: defaultWeightEntry ? "Default all-course baseline weights across the full PGA player pool." : EMPTY_MESSAGE,
+      scoreLabel: "Power Score",
+      weightEntry: defaultWeightEntry,
     };
-  }, [selectedScheduleId, builtModel, activeSection, activeScoreLabel, sections, activeView, activeSectionConfig, activeSectionWeightBreakdown]);
+  }, [
+    activeView,
+    currentEvent,
+    currentWeightEntry,
+    defaultWeightEntry,
+    nextEvent,
+    nextWeightEntry,
+    sections.current,
+    sections.next,
+    sections.power,
+    selectedFutureEvent,
+    selectedFutureWeightEntry,
+  ]);
+
+  const baselineRankedRows = useMemo(
+    () => defaultWeightEntry ? rankPlayers(playerStats, defaultWeightEntry.weights) : [],
+    [defaultWeightEntry, playerStats],
+  );
+
+  const activeRankedRows = useMemo(
+    () => activeContent.weightEntry ? rankPlayers(playerStats, activeContent.weightEntry.weights) : [],
+    [activeContent.weightEntry, playerStats],
+  );
+
+  const baselineRankMap = useMemo(
+    () => Object.fromEntries(baselineRankedRows.map((row) => [row.player, row.rank])),
+    [baselineRankedRows],
+  );
+
+  useEffect(() => {
+    if (!activeRankedRows.length || !baselineRankedRows.length) {
+      setMovementMap({});
+      return;
+    }
+
+    if (!hasAnimatedRef.current) {
+      hasAnimatedRef.current = true;
+      return;
+    }
+
+    const nextMovementMap = Object.fromEntries(
+      activeRankedRows.flatMap((row) => {
+        const baselineRank = baselineRankMap[row.player];
+        if (!baselineRank || baselineRank === row.rank) return [];
+        return [[row.player, row.rank < baselineRank ? "up" : "down"] as const];
+      }),
+    );
+
+    setMovementMap(nextMovementMap);
+
+    if (movementTimeoutRef.current) {
+      clearTimeout(movementTimeoutRef.current);
+    }
+
+    movementTimeoutRef.current = setTimeout(() => {
+      setMovementMap({});
+    }, 1100);
+  }, [activeRankedRows, baselineRankMap, baselineRankedRows.length]);
+
+  const tableRows = useMemo(() => buildTableRows(activeRankedRows), [activeRankedRows]);
+  const loading = scheduleLoading || DATA_SOURCES.some((source) => sections[source.id]?.loading);
+  const hasRankingData = Boolean(playerStats.length && activeContent.weightEntry);
 
   return (
     <SiteShell>
@@ -558,7 +575,7 @@ export default function PgaHub() {
                 <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300/70">2026 PGA Tour</div>
                 <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white">Schedule</h1>
                 <p className="mt-3 text-sm leading-7 text-emerald-50/68">
-                  Full season slate with the current week pinned, completed events faded, and future tournaments ready for pre-built model views when local data exists.
+                  The active tournament weights now drive the ranking table directly. Switching events changes both the weight bars and the player order from the same weight object.
                 </p>
               </div>
 
@@ -602,10 +619,9 @@ export default function PgaHub() {
                         type="button"
                         disabled={!isSelectable}
                         onClick={() => {
+                          if (!isSelectable) return;
                           setSelectedScheduleId(entry.id);
-                          if (isSelectable) {
-                            setActiveView("power");
-                          }
+                          setActiveView("power");
                         }}
                         className={cn(
                           "w-full rounded-[24px] border px-4 py-4 text-left transition",
@@ -640,16 +656,16 @@ export default function PgaHub() {
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300/70">PGA Model Room</div>
                     <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-                      Power board, current week, next week, and future-event lookups
+                      Live course weights now re-rank the table client-side
                     </h2>
                     <p className="mt-4 max-w-[66ch] text-sm leading-7 text-emerald-50/72">
-                      Default view opens the live Power Rankings feed. Tabs switch to the published current-week and next-week tables, while the schedule rail can load checked-in future tournament models when a local dataset exists.
+                      Power, current, next, and future tournament views all recalculate from the same raw player stat feed. The course-weight bars and player order stay in sync every time you switch events.
                     </p>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3">
                     {[
-                      { label: "Schedule feed", value: `${schedule.length || "--"} events` },
+                      { label: "Player pool", value: `${playerStats.length || "--"} players` },
                       { label: "Current week", value: currentEvent?.shortName ?? "--" },
                       { label: "Next week", value: nextEvent?.shortName ?? "--" },
                     ].map((item) => (
@@ -697,32 +713,36 @@ export default function PgaHub() {
                   <div className="flex flex-col gap-4 border-b border-white/8 pb-6">
                     <div>
                       <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300/66">
-                        {contentHeader.eyebrow}
+                        {activeContent.eyebrow}
                       </div>
                       <h3 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white">
-                        {contentHeader.title}
+                        {activeContent.title}
                       </h3>
-                      <p className="mt-3 text-sm leading-7 text-emerald-50/70">{contentHeader.subtitle}</p>
+                      <p className="mt-3 text-sm leading-7 text-emerald-50/70">{activeContent.subtitle}</p>
                     </div>
-                    {selectedScheduleId || contentHeader.weightBreakdown
-                      ? <WeightBreakdown entry={contentHeader.weightBreakdown} />
-                      : <WeightChips weights={contentHeader.weights} />}
+                    <WeightBreakdown entry={activeContent.weightEntry} />
                   </div>
 
                   <div className="mt-6">
-                    {contentHeader.loading ? (
+                    {loading ? (
                       <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-5 py-8 text-sm text-emerald-50/70">
                         Loading PGA data...
                       </div>
-                    ) : contentHeader.rows.length === 0 ? (
+                    ) : !hasRankingData || !tableRows.length ? (
                       <div className="rounded-[24px] border border-white/8 bg-white/[0.03] px-5 py-8 text-sm text-emerald-50/70">
                         {EMPTY_MESSAGE}
                       </div>
                     ) : (
-                      <PgaTable rows={contentHeader.rows} scoreLabel={contentHeader.scoreLabel} />
+                      <PgaTable rows={tableRows} scoreLabel={activeContent.scoreLabel} movementMap={movementMap} />
                     )}
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-[24px] border border-white/8 bg-[#06100c] px-5 py-4 text-sm text-emerald-50/70">
+                Active weights also affect hidden stats in the ranking engine: Driving Accuracy currently ranges from{" "}
+                {playerStats.length ? formatDrivingAccuracy(Math.min(...playerStats.map((player) => player.drivingAccuracy))) : "--"} to{" "}
+                {playerStats.length ? formatDrivingAccuracy(Math.max(...playerStats.map((player) => player.drivingAccuracy))) : "--"} across the loaded field.
               </div>
             </section>
           </div>

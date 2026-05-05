@@ -39,6 +39,7 @@ const SITE_OUTPUT_TAB_NAME = "SITE OUTPUT";
 const SCHEDULE_TAB_NAME = "2026 Schedule DG";
 const COURSE_WEIGHTS_TAB_NAME = "Course Weights";
 const COURSE_STATS_TAB_NAME = "Course Stats DG";
+const PLAYER_STATS_MASTER_TAB_NAME = "PGA Stats Master";
 
 const COURSE_WEIGHT_FALLBACK_DEFAULTS = {
   sgTotal: 0.3,
@@ -101,6 +102,13 @@ function parseNumberCell(value) {
   if (value == null || value === "") return null;
   const numeric = Number.parseFloat(String(value).trim());
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+function parsePercentCell(value, asFraction = false) {
+  if (value == null || value === "") return null;
+  const numeric = Number.parseFloat(String(value).replace(/%/g, "").trim());
+  if (!Number.isFinite(numeric)) return null;
+  return asFraction ? numeric / 100 : numeric;
 }
 
 function isBlankRow(row) {
@@ -753,8 +761,7 @@ function buildCourseWeightsFeed(scheduleRows, courseStatsRows, courseWeightRowsR
   const parsedCourseWeightRows = parseCourseWeightRows(courseWeightRowsRaw);
   const defaultWeights = getDefaultCourseWeights(parsedCourseWeightRows);
   const customWeightRows = parsedCourseWeightRows.filter((row) => normalizeEventKey(row.label) !== "default");
-
-  return scheduleRows.map((row) => {
+  const tournamentRows = scheduleRows.map((row) => {
     const explicitWeightRow = customWeightRows.find((entry) => {
       const labelKey = normalizeLooseKey(entry.label);
       return labelKey === normalizeLooseKey(row.name) || labelKey === normalizeLooseKey(row.courseName);
@@ -781,6 +788,71 @@ function buildCourseWeightsFeed(scheduleRows, courseStatsRows, courseWeightRowsR
       },
     };
   });
+
+  return [
+    {
+      tournament: "DEFAULT",
+      course: "",
+      weights: {
+        sgTotal: roundWeight(defaultWeights.sgTotal),
+        sgOTT: roundWeight(defaultWeights.sgOTT),
+        sgApp: roundWeight(defaultWeights.sgApp),
+        sgAtG: roundWeight(defaultWeights.sgAtG),
+        sgPutt: roundWeight(defaultWeights.sgPutt),
+        drivingAccuracy: roundWeight(defaultWeights.drivingAccuracy),
+        bogeyAvoidance: roundWeight(defaultWeights.bogeyAvoidance),
+        birdieBogeyRatio: roundWeight(defaultWeights.birdieBogeyRatio),
+      },
+    },
+    ...tournamentRows,
+  ];
+}
+
+function parsePlayerStatsRows(rows) {
+  if (rows.length < 3) {
+    return [];
+  }
+
+  const headerRow = rows[1].map((cell) => String(cell ?? "").trim());
+  const headerIndex = Object.fromEntries(headerRow.map((header, index) => [header, index]));
+
+  return rows
+    .slice(2)
+    .map((row) => ({
+      player: String(row[headerIndex["Player Name"]] ?? "").trim(),
+      sgTotal: parseNumberCell(row[headerIndex["SG: Total"]]),
+      sgOTT: parseNumberCell(row[headerIndex["SG: Off the Tee"]]),
+      sgApp: parseNumberCell(row[headerIndex["SG: Approach the Green"]]),
+      sgAtG: parseNumberCell(row[headerIndex["SG: Around the Green"]]),
+      sgPutt: parseNumberCell(row[headerIndex["SG: Putting"]]),
+      drivingAccuracy: parsePercentCell(row[headerIndex["Driving Accuracy %"]]),
+      bogeyAvoidance: parsePercentCell(row[headerIndex["Bogey Avoidance"]], true),
+      birdieBogeyRatio: parseNumberCell(row[headerIndex["Birdie to Bogey Ratio"]]),
+    }))
+    .filter((row) => row.player)
+    .filter((row) =>
+      [
+        row.sgTotal,
+        row.sgOTT,
+        row.sgApp,
+        row.sgAtG,
+        row.sgPutt,
+        row.drivingAccuracy,
+        row.bogeyAvoidance,
+        row.birdieBogeyRatio,
+      ].every((value) => typeof value === "number" && Number.isFinite(value)),
+    )
+    .map((row) => ({
+      player: row.player,
+      sgTotal: roundWeight(row.sgTotal),
+      sgOTT: roundWeight(row.sgOTT),
+      sgApp: roundWeight(row.sgApp),
+      sgAtG: roundWeight(row.sgAtG),
+      sgPutt: roundWeight(row.sgPutt),
+      drivingAccuracy: roundWeight(row.drivingAccuracy),
+      bogeyAvoidance: roundWeight(row.bogeyAvoidance),
+      birdieBogeyRatio: roundWeight(row.birdieBogeyRatio),
+    }));
 }
 
 async function writeJsonFile(relativePath, payload) {
@@ -803,11 +875,13 @@ async function main() {
     scheduleRowsPrimary,
     courseWeightsRowsPrimary,
     courseStatsRowsPrimary,
+    playerStatsRowsPrimary,
   ] = await Promise.all([
     loadSheetRows(sheetId, SITE_OUTPUT_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, SCHEDULE_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, COURSE_WEIGHTS_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, COURSE_STATS_TAB_NAME, serviceAccount),
+    loadSheetRows(sheetId, PLAYER_STATS_MASTER_TAB_NAME, serviceAccount),
   ]);
 
   if (siteOutputRowsPrimary.length === 0) {
@@ -818,6 +892,7 @@ async function main() {
   let scheduleRowsRaw = scheduleRowsPrimary;
   let courseWeightsRowsRaw = courseWeightsRowsPrimary;
   let courseStatsRowsRaw = courseStatsRowsPrimary;
+  let playerStatsRowsRaw = playerStatsRowsPrimary;
   let referenceDate = parseReferenceDate(siteOutputRows);
   let scheduleRows = parseScheduleRows(scheduleRowsRaw);
   let scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
@@ -834,6 +909,7 @@ async function main() {
     scheduleRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, SCHEDULE_TAB_NAME);
     courseWeightsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, COURSE_WEIGHTS_TAB_NAME);
     courseStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, COURSE_STATS_TAB_NAME);
+    playerStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, PLAYER_STATS_MASTER_TAB_NAME);
     referenceDate = parseReferenceDate(siteOutputRows);
     scheduleRows = parseScheduleRows(scheduleRowsRaw);
     scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
@@ -842,6 +918,7 @@ async function main() {
 
   const courseStatsRows = parseCourseStatsRows(courseStatsRowsRaw);
   const courseWeightsFeed = buildCourseWeightsFeed(scheduleRows, courseStatsRows, courseWeightsRowsRaw);
+  const playerStatsFeed = parsePlayerStatsRows(playerStatsRowsRaw);
 
   await Promise.all([
     ...SECTION_CONFIG.map((section) => {
@@ -853,6 +930,7 @@ async function main() {
     }),
     writeJsonFile("public/data/pga/schedule.json", scheduleRows),
     writeJsonFile("public/data/pga/course-weights.json", courseWeightsFeed),
+    writeJsonFile("public/data/pga/player-stats-raw.json", playerStatsFeed),
   ]);
 
   for (const section of parsedSections) {
@@ -860,6 +938,7 @@ async function main() {
   }
   console.log(`Wrote ${scheduleRows.length} schedule rows to public/data/pga/schedule.json`);
   console.log(`Wrote ${courseWeightsFeed.length} course weight rows to public/data/pga/course-weights.json`);
+  console.log(`Wrote ${playerStatsFeed.length} player stat rows to public/data/pga/player-stats-raw.json`);
 }
 
 main().catch((error) => {
