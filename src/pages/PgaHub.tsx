@@ -46,6 +46,21 @@ type PgaScheduleFeedEntry = {
   sourceCountry: string;
 };
 
+type CourseWeightFeedEntry = {
+  tournament: string;
+  course: string;
+  weights: {
+    sgTotal: number;
+    sgOTT: number;
+    sgApp: number;
+    sgAtG: number;
+    sgPutt: number;
+    drivingAccuracy: number;
+    bogeyAvoidance: number;
+    birdieBogeyRatio: number;
+  };
+};
+
 type PgaDisplayRow = PgaSheetRow;
 
 type SectionState = {
@@ -63,6 +78,7 @@ type BuiltModelState = {
   courseName: string;
   rows: PgaDisplayRow[];
   weights: PgaWeights | null;
+  weightBreakdown: CourseWeightFeedEntry | null;
 };
 
 const DATA_SOURCES = [
@@ -110,6 +126,10 @@ function isValidSectionData(value: unknown): value is PgaSheetSection {
 }
 
 function isValidScheduleData(value: unknown): value is PgaScheduleFeedEntry[] {
+  return Array.isArray(value);
+}
+
+function isValidCourseWeightsData(value: unknown): value is CourseWeightFeedEntry[] {
   return Array.isArray(value);
 }
 
@@ -191,6 +211,22 @@ function isFutureOrCurrent(entry: PgaScheduleFeedEntry, currentEvent: PgaSchedul
   return entry.startDate >= currentEvent.startDate;
 }
 
+function findCourseWeightEntry(
+  entries: CourseWeightFeedEntry[],
+  tournamentName: string,
+  courseName: string,
+) {
+  const tournamentKey = normalizeEventKey(tournamentName);
+  const courseKey = normalizeEventKey(courseName);
+
+  return (
+    entries.find((entry) => normalizeEventKey(entry.tournament) === tournamentKey && normalizeEventKey(entry.course) === courseKey)
+    ?? entries.find((entry) => normalizeEventKey(entry.tournament) === tournamentKey)
+    ?? entries.find((entry) => normalizeEventKey(entry.course) === courseKey)
+    ?? null
+  );
+}
+
 function WeightChips({ weights }: { weights: PgaWeights | null }) {
   if (!weights) {
     return (
@@ -208,6 +244,51 @@ function WeightChips({ weights }: { weights: PgaWeights | null }) {
           <div className="mt-1 text-sm font-semibold text-emerald-50">{formatWeightValue(value)}</div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function WeightBreakdown({ entry }: { entry: CourseWeightFeedEntry | null }) {
+  if (!entry) {
+    return (
+      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-3 text-sm text-emerald-50/80">
+        Course-weight detail is updating. Check back Monday.
+      </div>
+    );
+  }
+
+  const bars = [
+    { label: "SG Total", value: entry.weights.sgTotal },
+    { label: "SG Off Tee", value: entry.weights.sgOTT },
+    { label: "SG Approach", value: entry.weights.sgApp },
+    { label: "SG Around Green", value: entry.weights.sgAtG },
+    { label: "SG Putting", value: entry.weights.sgPutt },
+    { label: "Driving Accuracy", value: entry.weights.drivingAccuracy },
+    { label: "Bogey Avoidance", value: entry.weights.bogeyAvoidance },
+    { label: "Birdie/Bogey Ratio", value: entry.weights.birdieBogeyRatio },
+  ];
+
+  return (
+    <div className="rounded-[24px] border border-emerald-500/20 bg-emerald-500/8 p-4">
+      <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200/68">
+        Course Weight Breakdown
+      </div>
+      <div className="space-y-3">
+        {bars.map((bar) => (
+          <div key={bar.label}>
+            <div className="mb-1 flex items-center justify-between gap-3 text-xs font-semibold text-emerald-50/84">
+              <span>{bar.label}</span>
+              <span>{(bar.value * 100).toFixed(1)}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-white/8">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-emerald-400 to-lime-300"
+                style={{ width: `${Math.max(6, bar.value * 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -270,6 +351,7 @@ export default function PgaHub() {
     ),
   );
   const [schedule, setSchedule] = useState<PgaScheduleFeedEntry[]>([]);
+  const [courseWeights, setCourseWeights] = useState<CourseWeightFeedEntry[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
   const [activeView, setActiveView] = useState<BaseView>("power");
@@ -281,6 +363,7 @@ export default function PgaHub() {
     courseName: "",
     rows: [],
     weights: null,
+    weightBreakdown: null,
   });
 
   usePageSeo({
@@ -293,8 +376,9 @@ export default function PgaHub() {
     let active = true;
 
     async function loadBaseData() {
-      const [scheduleResponse, ...sectionResponses] = await Promise.all([
+      const [scheduleResponse, courseWeightsResponse, ...sectionResponses] = await Promise.all([
         fetch("/data/pga/schedule.json", { cache: "no-store" }),
+        fetch("/data/pga/course-weights.json", { cache: "no-store" }),
         ...DATA_SOURCES.map((source) => fetch(source.path, { cache: "no-store" })),
       ]);
 
@@ -304,6 +388,12 @@ export default function PgaHub() {
           setSchedule(isValidScheduleData(payload) ? payload : []);
         } else {
           setSchedule([]);
+        }
+        if (courseWeightsResponse.ok) {
+          const payload: unknown = await courseWeightsResponse.json();
+          setCourseWeights(isValidCourseWeightsData(payload) ? payload : []);
+        } else {
+          setCourseWeights([]);
         }
         setScheduleLoading(false);
       }
@@ -358,9 +448,12 @@ export default function PgaHub() {
         courseName: scheduleEntry?.courseName ?? "",
         rows: [],
         weights: null,
+        weightBreakdown: scheduleEntry ? findCourseWeightEntry(courseWeights, scheduleEntry.name, scheduleEntry.courseName) : null,
       });
       return;
     }
+
+    const weightBreakdown = findCourseWeightEntry(courseWeights, scheduleEntry.name, scheduleEntry.courseName);
 
     let active = true;
 
@@ -372,6 +465,7 @@ export default function PgaHub() {
         courseName: config.courseName,
         rows: [],
         weights: config.model.presets[0]?.weights ?? null,
+        weightBreakdown,
       });
 
       try {
@@ -395,6 +489,7 @@ export default function PgaHub() {
           courseName: config.courseName,
           rows,
           weights: config.model.presets[0].weights,
+          weightBreakdown,
         });
       } catch {
         if (!active) return;
@@ -405,6 +500,7 @@ export default function PgaHub() {
           courseName: config.courseName,
           rows: [],
           weights: config.model.presets[0]?.weights ?? null,
+          weightBreakdown,
         });
       }
     }
@@ -414,7 +510,7 @@ export default function PgaHub() {
     return () => {
       active = false;
     };
-  }, [schedule, selectedScheduleId]);
+  }, [courseWeights, schedule, selectedScheduleId]);
 
   const filteredSchedule = useMemo(
     () => schedule.filter((entry) => sidebarFilter === "all" || entry.category === sidebarFilter),
@@ -424,6 +520,7 @@ export default function PgaHub() {
   const activeSection = sections[activeView]?.data ?? buildEmptySection(DATA_SOURCES[0].section, DATA_SOURCES[0].title);
   const activeScoreLabel = DATA_SOURCES.find((source) => source.id === activeView)?.scoreLabel ?? "Model Score";
   const activeSectionConfig = resolveTournamentConfig(activeSection.tournamentName);
+  const activeSectionWeightBreakdown = findCourseWeightEntry(courseWeights, activeSection.tournamentName, activeSection.courseName);
 
   const contentHeader = useMemo(() => {
     if (selectedScheduleId) {
@@ -435,6 +532,7 @@ export default function PgaHub() {
         loading: builtModel.loading,
         scoreLabel: "Model Score",
         weights: builtModel.weights,
+        weightBreakdown: builtModel.weightBreakdown,
       };
     }
 
@@ -446,8 +544,9 @@ export default function PgaHub() {
       loading: sections[activeView]?.loading ?? true,
       scoreLabel: activeScoreLabel,
       weights: activeSectionConfig?.model.presets[0]?.weights ?? null,
+      weightBreakdown: activeSectionWeightBreakdown,
     };
-  }, [selectedScheduleId, builtModel, activeSection, activeScoreLabel, sections, activeView, activeSectionConfig]);
+  }, [selectedScheduleId, builtModel, activeSection, activeScoreLabel, sections, activeView, activeSectionConfig, activeSectionWeightBreakdown]);
 
   return (
     <SiteShell>
@@ -605,7 +704,9 @@ export default function PgaHub() {
                       </h3>
                       <p className="mt-3 text-sm leading-7 text-emerald-50/70">{contentHeader.subtitle}</p>
                     </div>
-                    <WeightChips weights={contentHeader.weights} />
+                    {selectedScheduleId || contentHeader.weightBreakdown
+                      ? <WeightBreakdown entry={contentHeader.weightBreakdown} />
+                      : <WeightChips weights={contentHeader.weights} />}
                   </div>
 
                   <div className="mt-6">
