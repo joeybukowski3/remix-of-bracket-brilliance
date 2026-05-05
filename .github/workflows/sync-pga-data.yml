@@ -1,0 +1,61 @@
+name: Sync PGA Data
+
+on:
+  schedule:
+    - cron: "0 12,13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Eastern runtime window
+        id: gate
+        run: |
+          if [ "$(TZ=America/New_York date +%H)" != "08" ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Not 8 AM in America/New_York. Skipping this UTC slot."
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out repository
+        if: steps.gate.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node
+        if: steps.gate.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.gate.outputs.should_run == 'true'
+        run: npm ci
+
+      - name: Sync PGA JSON from Google Sheet
+        if: steps.gate.outputs.should_run == 'true'
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        run: node scripts/sync-pga-sheet.mjs
+
+      - name: Commit and push updates
+        if: steps.gate.outputs.should_run == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json
+          if git diff --cached --quiet; then
+            echo "No PGA data changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: sync PGA sheet data"
+          git push origin HEAD:main
