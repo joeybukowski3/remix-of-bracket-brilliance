@@ -70,12 +70,25 @@ const PERCENTILE_CONTEXT_OPTIONS: Array<{ value: PgaDashboardPercentileContext; 
 ];
 
 function getMetricLabel(key: StatMetricKey, tournament: PgaTournamentConfig) {
-  if (key === "trendRank") return { label: "Trend", mobile: "Trend" };
-  if (key === "courseFit") return { label: "Course Fit", mobile: tournament.model.courseHistoryDisplay };
+  if (key === "trendRank") {
+    return {
+      label: "Trend",
+      mobile: "Trend",
+      description: "DataGolf trend rank measured against the active comparison sample.",
+    };
+  }
+  if (key === "courseFit") {
+    return {
+      label: "Course Fit",
+      mobile: tournament.model.courseHistoryDisplay,
+      description: `${tournament.model.courseHistoryDisplay} course-history percentile based on course true strokes gained in the active sample.`,
+    };
+  }
   const column = tournament.model.statColumns.find((item) => item.key === key);
   return {
     label: column?.abbr ?? key,
     mobile: column?.mobileLabel ?? column?.abbr ?? key,
+    description: column?.tooltip ?? key,
   };
 }
 
@@ -565,13 +578,13 @@ export default function PgaResearchDashboard({
                     <SortableHeader stickyLeft="58px" onClick={() => onSort("player")} active={sortKey === "player"} direction={sortDirection}>
                       Player
                     </SortableHeader>
-                    <SortableHeader onClick={() => onSort("model")} active={sortKey === "model"} direction={sortDirection} align="center">
+                    <SortableHeader onClick={() => onSort("model")} active={sortKey === "model"} direction={sortDirection} align="center" title="Composite model rank from the current weighted board.">
                       Model
                     </SortableHeader>
-                    <SortableHeader onClick={() => onSort("score")} active={sortKey === "score"} direction={sortDirection} align="center">
+                    <SortableHeader onClick={() => onSort("score")} active={sortKey === "score"} direction={sortDirection} align="center" title="Composite model score from the current weighted board.">
                       Score
                     </SortableHeader>
-                    <SortableHeader onClick={() => onSort("rounds")} active={sortKey === "rounds"} direction={sortDirection} align="center">
+                    <SortableHeader onClick={() => onSort("rounds")} active={sortKey === "rounds"} direction={sortDirection} align="center" title="Course-history rounds available in the current dataset.">
                       Rnds
                     </SortableHeader>
                     {statMetricKeys.map((metricKey) => {
@@ -583,6 +596,7 @@ export default function PgaResearchDashboard({
                           active={sortKey === metricKey}
                           direction={sortDirection}
                           align="center"
+                          title={label.description}
                         >
                           {label.label}
                         </SortableHeader>
@@ -615,9 +629,6 @@ export default function PgaResearchDashboard({
 
                         <td className="sticky left-[58px] z-10 min-w-[220px] bg-inherit px-4 py-3">
                           <div className="font-medium text-foreground">{row.player}</div>
-                          <div className="mt-1 text-xs text-muted-foreground">
-                            {row.cutsLastFive ? `${row.cutsLastFive} recent cuts made` : "No recent event-cut history"}
-                          </div>
                         </td>
 
                         <td className="px-3 py-3 text-center">
@@ -767,6 +778,7 @@ function SortableHeader({
   direction,
   align = "left",
   stickyLeft,
+  title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
@@ -774,6 +786,7 @@ function SortableHeader({
   direction: SortDirection;
   align?: "left" | "center";
   stickyLeft?: string;
+  title?: string;
 }) {
   return (
     <th
@@ -783,6 +796,7 @@ function SortableHeader({
       <button
         type="button"
         onClick={onClick}
+        title={title}
         className={`inline-flex items-center gap-1 ${align === "center" ? "justify-center" : ""} text-[11px] font-semibold uppercase tracking-[0.14em] ${
           active ? "text-foreground" : "text-muted-foreground"
         }`}
