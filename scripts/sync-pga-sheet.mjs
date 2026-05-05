@@ -541,17 +541,34 @@ async function main() {
   }
 
   const serviceAccount = rawServiceAccount ? JSON.parse(rawServiceAccount) : null;
-  const siteOutputRows = await loadSheetRows(sheetId, SITE_OUTPUT_TAB_NAME, serviceAccount);
-  const scheduleRowsRaw = await loadSheetRows(sheetId, SCHEDULE_TAB_NAME, serviceAccount);
+  const siteOutputRowsPrimary = await loadSheetRows(sheetId, SITE_OUTPUT_TAB_NAME, serviceAccount);
+  const scheduleRowsPrimary = await loadSheetRows(sheetId, SCHEDULE_TAB_NAME, serviceAccount);
 
-  if (siteOutputRows.length === 0) {
+  if (siteOutputRowsPrimary.length === 0) {
     throw new Error(`The "${SITE_OUTPUT_TAB_NAME}" tab returned no rows.`);
   }
 
-  const referenceDate = parseReferenceDate(siteOutputRows);
-  const scheduleRows = parseScheduleRows(scheduleRowsRaw);
-  const scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
-  const parsedSections = parseSiteOutputRows(siteOutputRows, scheduleContext);
+  let siteOutputRows = siteOutputRowsPrimary;
+  let scheduleRowsRaw = scheduleRowsPrimary;
+  let referenceDate = parseReferenceDate(siteOutputRows);
+  let scheduleRows = parseScheduleRows(scheduleRowsRaw);
+  let scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
+  let parsedSections;
+
+  try {
+    parsedSections = parseSiteOutputRows(siteOutputRows, scheduleContext);
+  } catch (primaryError) {
+    if (!serviceAccount) {
+      throw primaryError;
+    }
+
+    siteOutputRows = await fetchSheetRowsViaPublicCsv(sheetId, SITE_OUTPUT_TAB_NAME);
+    scheduleRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, SCHEDULE_TAB_NAME);
+    referenceDate = parseReferenceDate(siteOutputRows);
+    scheduleRows = parseScheduleRows(scheduleRowsRaw);
+    scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
+    parsedSections = parseSiteOutputRows(siteOutputRows, scheduleContext);
+  }
 
   await Promise.all([
     ...SECTION_CONFIG.map((section) => {
