@@ -127,7 +127,7 @@ export default function PgaHub() {
   const [modelMode, setModelMode] = useState<ModelMode>("tournament");
   const [tournamentMode, setTournamentMode] = useState<TournamentMode>("current");
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
-  const [displayMode, setDisplayMode] = useState<StatDisplayMode>("raw");
+  const [displayMode, setDisplayMode] = useState<StatDisplayMode>("percentile");
   const [currentOverride, setCurrentOverride] = useState<CourseWeightSet | null>(null);
   const [customPercentWeights, setCustomPercentWeights] = useState<Record<keyof CourseWeightSet, number> | null>(null);
   const [movementMap, setMovementMap] = useState<Record<string, MovementDirection>>({});

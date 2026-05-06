@@ -545,16 +545,16 @@ export function PgaCompactTable({
         <Table className="min-w-[880px] text-xs text-slate-700">
           <TableHeader>
             <TableRow className="border-slate-200 hover:bg-transparent">
-              <TableHead className="sticky left-0 z-30 h-9 min-w-[48px] bg-white px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">Rank</TableHead>
+              <TableHead className="sticky left-0 z-30 h-9 min-w-[48px] bg-white px-2 py-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-500">Rank</TableHead>
               <TableHead className="sticky left-[48px] z-30 h-9 min-w-[160px] bg-white px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">Player</TableHead>
-              <TableHead className="h-9 min-w-[72px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">{scoreLabel}</TableHead>
+              <TableHead className="h-9 min-w-[72px] px-2 py-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-500">{scoreLabel}</TableHead>
               {visibleDesktopColumns.map((column) => (
-                <TableHead key={column.key} className="hidden h-9 min-w-[62px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500 md:table-cell">
+                <TableHead key={column.key} className="hidden h-9 min-w-[62px] px-2 py-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-500 md:table-cell">
                   <CompactHeaderTooltip short={column.short} full={column.full} />
                 </TableHead>
               ))}
               {STAT_CONFIG.slice(5).map((column) => (
-                <TableHead key={column.key} className="hidden h-9 min-w-[62px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500 lg:table-cell">
+                <TableHead key={column.key} className="hidden h-9 min-w-[62px] px-2 py-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-500 lg:table-cell">
                   <CompactHeaderTooltip short={column.short} full={column.full} />
                 </TableHead>
               ))}
@@ -578,21 +578,21 @@ export function PgaCompactTable({
                       movement === "down" && "bg-rose-100 hover:bg-rose-100",
                     )}
                   >
-                    <TableCell className="sticky left-0 z-20 bg-inherit px-2 py-1 font-semibold text-slate-700">{row.rank}</TableCell>
+                    <TableCell className="sticky left-0 z-20 bg-inherit px-2 py-1 text-center font-semibold text-slate-700">{row.rank}</TableCell>
                     <TableCell className="sticky left-[48px] z-20 bg-inherit px-2 py-1 font-medium text-slate-900">
                       <div className="flex items-center gap-2">
                         <span className="truncate">{row.player}</span>
                         <ChevronDown className={cn("h-3 w-3 shrink-0 md:hidden", expanded && "rotate-180")} />
                       </div>
                     </TableCell>
-                    <TableCell className="px-2 py-1 font-semibold text-slate-900">{formatScore(row.score)}</TableCell>
+                    <TableCell className="px-2 py-1 text-center font-semibold text-slate-900">{formatScore(row.score)}</TableCell>
                     {STAT_CONFIG.slice(0, 5).map((column) => {
                       const percentile = statPercentiles[column.key][row.player];
                       const cellStyle = getCellStyle(percentile, displayMode);
                       const displayValue = displayMode === "percentile" ? String(percentile) : formatRawStat(column.key, row[column.key]);
 
                       return (
-                        <TableCell key={column.key} className="hidden px-2 py-1 md:table-cell" style={cellStyle}>
+                        <TableCell key={column.key} className="hidden px-2 py-1 text-center md:table-cell" style={cellStyle}>
                           {displayValue}
                         </TableCell>
                       );
@@ -603,7 +603,7 @@ export function PgaCompactTable({
                       const displayValue = displayMode === "percentile" ? String(percentile) : formatRawStat(column.key, row[column.key]);
 
                       return (
-                        <TableCell key={column.key} className="hidden px-2 py-1 lg:table-cell" style={cellStyle}>
+                        <TableCell key={column.key} className="hidden px-2 py-1 text-center lg:table-cell" style={cellStyle}>
                           {displayValue}
                         </TableCell>
                       );
@@ -619,7 +619,7 @@ export function PgaCompactTable({
                             const displayValue = displayMode === "percentile" ? String(percentile) : formatRawStat(column.key, row[column.key]);
 
                             return (
-                              <div key={column.key} className="rounded-lg border border-slate-200 px-2 py-1" style={cellStyle}>
+                              <div key={column.key} className="rounded-lg border border-slate-200 px-2 py-1 text-center" style={cellStyle}>
                                 <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500">{column.short}</div>
                                 <div className="mt-0.5 text-xs font-semibold text-inherit">{displayValue}</div>
                               </div>
