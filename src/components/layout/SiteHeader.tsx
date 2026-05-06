@@ -42,9 +42,9 @@ export default function SiteHeader() {
           <img
             src="/images/IconOnly_Transparent.png"
             alt="Joe Knows Ball icon"
-            className="h-9 w-9 object-contain"
+            className="h-10 w-auto shrink-0 object-contain"
           />
-          <span className="text-[18px] font-bold tracking-normal text-[#1a1a1a] normal-case">
+          <span className="whitespace-nowrap text-xl font-bold tracking-normal text-[#1a1a1a] normal-case">
             Joe Knows Ball
           </span>
         </Link>

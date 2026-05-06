@@ -101,6 +101,7 @@ const STAT_CONFIG = [
 ] as const;
 
 type StatKey = (typeof STAT_CONFIG)[number]["key"];
+const LOWER_IS_BETTER_STATS = new Set(["bogeyavoidance", "bog", "bogey avoidance"]);
 
 function isValidScheduleData(value: unknown): value is PgaScheduleFeedEntry[] {
   return Array.isArray(value);
@@ -112,6 +113,10 @@ function isValidCourseWeightsData(value: unknown): value is CourseWeightFeedEntr
 
 function isValidPlayerStatsData(value: unknown): value is RawPlayerStat[] {
   return Array.isArray(value);
+}
+
+function isLowerBetterStat(statKey: string) {
+  return LOWER_IS_BETTER_STATS.has(statKey.toLowerCase());
 }
 
 export function normalizeEventKey(value: string) {
@@ -231,7 +236,10 @@ function getPercentileMaps(rows: RankedPlayerRow[]) {
     STAT_CONFIG.map(({ key }) => {
       const sorted = [...rows]
         .map((row) => ({ player: row.player, value: row[key] }))
-        .sort((left, right) => right.value - left.value || left.player.localeCompare(right.player));
+        .sort((left, right) => {
+          const valueDelta = isLowerBetterStat(key) ? left.value - right.value : right.value - left.value;
+          return valueDelta || left.player.localeCompare(right.player);
+        });
 
       const map: Record<string, number> = {};
       const total = sorted.length;
