@@ -37,14 +37,14 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-[100] border-b border-[#eeeeee] bg-white">
-      <div className="mx-auto flex min-h-[64px] max-w-[1440px] items-center justify-between px-4 sm:px-8">
-        <Link to="/" className="inline-flex items-center gap-[10px] no-underline">
+      <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between px-4 sm:px-8">
+        <Link to="/" className="site-logo-link">
           <img
-            src="/images/IconOnly_Transparent.png"
+            src="/images/jkb-icon-trimmed.png"
             alt="Joe Knows Ball icon"
-            className="h-10 w-auto shrink-0 object-contain"
+            className="site-logo-img"
           />
-          <span className="whitespace-nowrap text-xl font-bold tracking-normal text-[#1a1a1a] normal-case">
+          <span className="site-logo-text tracking-normal normal-case">
             Joe Knows Ball
           </span>
         </Link>

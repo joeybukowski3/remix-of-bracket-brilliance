@@ -83,6 +83,18 @@
     @apply space-y-6 md:space-y-8;
   }
 
+  .site-logo-link {
+    @apply inline-flex min-w-0 items-center gap-3 no-underline;
+  }
+
+  .site-logo-img {
+    @apply block h-10 w-auto shrink-0 object-contain sm:h-12;
+  }
+
+  .site-logo-text {
+    @apply whitespace-nowrap text-lg font-bold leading-none text-[#1a1a1a] sm:text-xl;
+  }
+
   .surface-card {
     @apply rounded-[30px] bg-card p-5 shadow-[0_18px_40px_hsl(var(--foreground)/0.05)] md:p-6;
   }

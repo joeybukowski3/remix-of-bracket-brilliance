@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import HomepagePgaFeature from "@/components/pga/HomepagePgaFeature";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
 const sports = [
@@ -8,22 +7,18 @@ const sports = [
     name: "MLB",
     route: "/mlb",
     logo: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
-    description: "Game analysis, player prop insights, and advanced metrics.",
   },
   {
     id: "ncaa",
     name: "NCAA",
     route: "/ncaa",
     logo: "/logos/ncaa.svg",
-    description: "Tournament brackets, power rankings, and matchup data.",
   },
   {
     id: "nfl",
     name: "NFL",
     route: "/nfl",
     logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png",
-    description: "NFL Mock Draft Analysis",
-    featured: true,
     locked: true,
   },
   {
@@ -31,7 +26,6 @@ const sports = [
     name: "NBA",
     route: "/nba",
     logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png",
-    description: "Player efficiency ratings, lineup analysis, and pace breakdown.",
     locked: true,
   },
   {
@@ -39,7 +33,6 @@ const sports = [
     name: "PGA",
     route: "/pga",
     logo: "/logos/pga.svg",
-    description: "Tournament picks, model analysis, and golf betting tools.",
   },
 ] as const;
 
@@ -54,32 +47,28 @@ const navItems = [
 
 function SportCard({
   locked = false,
-  description,
-  featured = false,
   logo,
   name,
   route,
 }: {
   locked?: boolean;
-  description: string;
-  featured?: boolean;
   logo: string;
   name: string;
   route: string;
 }) {
-  const cardClassName = `flex w-full max-w-[200px] flex-col rounded-[12px] bg-white px-6 py-7 text-left no-underline shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-md:max-w-none ${
+  const cardClassName = `flex w-full max-w-[160px] flex-col items-center rounded-[14px] border border-black/8 bg-white px-4 py-5 text-center no-underline shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-md:max-w-none ${
     locked
       ? "cursor-default opacity-80"
-      : "transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
-  } ${featured ? "min-h-[320px]" : "min-h-[300px]"}`;
+      : "transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(0,0,0,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+  }`;
 
   const cardContent = (
     <>
-      <div className="flex h-[108px] items-center justify-center">
+      <div className="flex h-[84px] items-center justify-center">
         <img
           src={logo}
           alt={`${name} logo`}
-          className="max-h-[100px] w-auto object-contain"
+          className="max-h-[72px] w-auto object-contain"
           onError={(event) => {
             event.currentTarget.style.display = "none";
             const fallback = event.currentTarget.nextElementSibling as HTMLDivElement | null;
@@ -88,17 +77,15 @@ function SportCard({
         />
         <div
           style={{ display: "none" }}
-          className="hidden h-[100px] items-center justify-center text-[28px] font-bold tracking-[0.02em] text-[#111111]"
+          className="hidden h-[72px] items-center justify-center text-[24px] font-bold tracking-[0.02em] text-[#111111]"
         >
           {name}
         </div>
       </div>
 
-      <h2 className="mt-4 text-left text-[18px] font-bold text-[#111111]">{name}</h2>
-      <p className="mt-3 text-left text-[13px] leading-[1.5] text-[#555555]">{description}</p>
-
-      <span className="mt-auto pt-7 text-left text-[14px] font-semibold text-[#111111]">
-        {locked ? "Subscription Required" : "Explore Tools ->"}
+      <span className="mt-3 text-[16px] font-bold text-[#111111]">{name}</span>
+      <span className="mt-2 text-[12px] font-semibold text-[#111111]">
+        {locked ? "Subscription Required" : "Open"}
       </span>
     </>
   );
@@ -136,14 +123,14 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#f8f8f8]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}>
       <header className="w-full bg-white">
-        <div className="mx-auto flex min-h-[60px] max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="inline-flex items-center gap-3 no-underline">
+        <div className="mx-auto flex min-h-[72px] max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="site-logo-link">
             <img
-              src="/images/IconOnly_Transparent.png"
+              src="/images/jkb-icon-trimmed.png"
               alt="Joe Knows Ball icon"
-              className="h-[30px] w-[30px] object-contain sm:h-[34px] sm:w-[34px]"
+              className="site-logo-img"
             />
-            <span className="text-[22px] font-bold text-[#111111]">Joe Knows Ball</span>
+            <span className="site-logo-text">Joe Knows Ball</span>
           </Link>
 
           <nav className="hidden items-center gap-9 md:flex">
@@ -156,34 +143,14 @@ export default function Home() {
         </div>
       </header>
 
-      <section
-        className="relative h-[700px] w-full overflow-visible"
-        style={{
-          backgroundImage: "url('/images/Gemini_Generated_Image_r6ys4br6ys4br6ys.png')",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-        }}
-      >
-        <div className="absolute inset-0 bg-[rgba(0,0,0,0.55)]" />
-
-        <div className="relative z-10 mx-auto flex h-full max-w-[1280px] flex-col items-center px-4 text-center sm:px-6 lg:px-8">
-          <div className="flex h-[38%] w-full flex-col items-center justify-end pt-10">
-            <h1 className="text-[36px] font-bold leading-[1.05] text-white sm:text-[44px] lg:text-[52px]">
-              Advanced Sports Analytics
-            </h1>
-            <p className="mt-4 max-w-[760px] text-[16px] font-normal leading-[1.45] text-[rgba(255,255,255,0.85)] lg:text-[18px]">
-              Data-driven insights and tools for informed decision-making
-            </p>
-          </div>
-
-          <div className="relative z-20 mt-10 w-full">
-            <div className="mx-auto flex max-w-[1120px] flex-col items-center gap-4 px-4 md:flex-row md:items-stretch md:justify-center md:gap-5 md:px-0">
+      <section className="mx-auto flex min-h-[calc(100vh-72px)] max-w-[1280px] items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[920px]">
+          <div className="mx-auto flex max-w-[820px] flex-col items-center gap-5 text-center">
+            <h1 className="text-[22px] font-bold text-[#111111] sm:text-[28px]">Select a League</h1>
+            <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {sports.map((sport) => (
                 <SportCard
                   key={sport.id}
-                  description={sport.description}
-                  featured={Boolean("featured" in sport && sport.featured)}
                   locked={Boolean("locked" in sport && sport.locked)}
                   logo={sport.logo}
                   name={sport.name}
@@ -193,10 +160,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
-
-      <section id="content" className="bg-[#f8f8f8] pt-[96px] md:pt-[120px]">
-        <HomepagePgaFeature />
       </section>
     </main>
   );
