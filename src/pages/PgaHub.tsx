@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { usePageSeo } from "@/hooks/usePageSeo";
+import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import {
   EMPTY_MESSAGE,
   type CourseWeightFeedEntry,
@@ -26,6 +26,7 @@ import {
   PgaScheduleRail,
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
+import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 type ModelMode = "tournament" | "custom" | "standard";
@@ -124,6 +125,7 @@ function buildMetaLine(parts: Array<string | null | undefined>) {
 }
 
 export default function PgaHub() {
+  const seo = getSeoMeta("pga");
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
   const [modelMode, setModelMode] = useState<ModelMode>("tournament");
@@ -137,9 +139,16 @@ export default function PgaHub() {
   const hasAnimatedRef = useRef(false);
 
   usePageSeo({
-    title: "PGA Rankings Hub",
-    description: "Weekly PGA power rankings, tournament-specific rankings, and custom weighting tools in one schedule-driven dashboard.",
-    path: "/pga",
+    title: seo.title,
+    description: seo.description,
+    path: seo.path,
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "SportsOrganization",
+      name: "Joe Knows Ball PGA Tour Models",
+      sport: "Golf",
+      url: `${CANONICAL_BASE}/pga`,
+    },
   });
 
   useEffect(() => {
@@ -319,6 +328,15 @@ export default function PgaHub() {
             />
 
             <section className="space-y-4">
+              <div className="space-y-1 px-1">
+                <p className="text-sm text-muted-foreground">
+                  PGA Tour player rankings updated every Monday using strokes gained data from the PGA Tour, DataGolf course stats, and player trend tables.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Switch between the power rankings, this week&apos;s course-weighted tournament model, or build your own.
+                </p>
+              </div>
+
               <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">

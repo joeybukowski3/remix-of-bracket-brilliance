@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { usePageSeo } from "@/hooks/usePageSeo";
+import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
 
 const sports = [
   {
@@ -114,10 +115,23 @@ function SportCard({
 }
 
 export default function Home() {
+  const seo = getSeoMeta("home");
+
   usePageSeo({
-    title: "Joe Knows Ball | Sports Analytics",
-    description: "Data-driven insights and tools for informed decision-making.",
-    path: "/",
+    title: seo.title,
+    description: seo.description,
+    path: seo.path,
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Joe Knows Ball",
+      url: CANONICAL_BASE,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${CANONICAL_BASE}/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
   });
 
   return (
@@ -169,6 +183,33 @@ export default function Home() {
                   />
                 ))}
               </div>
+              <section className="mt-4 w-full rounded-[18px] border border-white/15 bg-white/8 px-4 py-5 backdrop-blur-sm sm:px-5">
+                <h2 className="text-base font-bold text-white sm:text-lg">What You Get at Joe Knows Ball</h2>
+                <div className="mt-4 grid gap-3 text-left md:grid-cols-3">
+                  <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
+                    <div aria-hidden="true" className="text-lg">⛳</div>
+                    <div className="mt-2 text-sm font-bold text-white">Course-Weighted Golf Models</div>
+                    <p className="mt-1 text-sm leading-6 text-white/80">
+                      Every PGA tournament gets its own player rankings built from real course stats, strokes gained data, and adjustable weights you control.
+                    </p>
+                  </div>
+                  <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
+                    <div aria-hidden="true" className="text-lg">⚾</div>
+                    <div className="mt-2 text-sm font-bold text-white">MLB Matchup Intelligence</div>
+                    <p className="mt-1 text-sm leading-6 text-white/80">
+                      Pitcher-vs-lineup breakdowns, park factors, team form, and run total context for every game on the slate.
+                    </p>
+                  </div>
+                  <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
+                    <div aria-hidden="true" className="text-lg">📈</div>
+                    <div className="mt-2 text-sm font-bold text-white">DFS Value Finder</div>
+                    <p className="mt-1 text-sm leading-6 text-white/80">
+                      Upload your DraftKings or FanDuel salary sheet and instantly see which players are undervalued or overpriced against our model rankings.
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm text-white/68">Free. No account required. Built by someone who actually bets.</p>
+              </section>
             </div>
           </div>
         </div>

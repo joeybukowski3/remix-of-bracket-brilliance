@@ -10,6 +10,7 @@ interface PageSeoOptions {
   canonical?: string;
   noindex?: boolean;
   type?: "website" | "article";
+  structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
 function upsertMeta(selector: string, attrs: Record<string, string>) {
@@ -55,7 +56,21 @@ function buildCanonicalUrl(pathOrUrl: string) {
   return `${CANONICAL_BASE}${normalizePath(pathOrUrl)}`;
 }
 
-export function usePageSeo({ title, description, path = "/", canonical, noindex = false, type = "website" }: PageSeoOptions) {
+function clearStructuredData() {
+  document.head
+    .querySelectorAll('script[data-jkb-structured-data="true"]')
+    .forEach((node) => node.parentNode?.removeChild(node));
+}
+
+export function usePageSeo({
+  title,
+  description,
+  path = "/",
+  canonical,
+  noindex = false,
+  type = "website",
+  structuredData,
+}: PageSeoOptions) {
   useEffect(() => {
     const fullTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
     const canonicalUrl = buildCanonicalUrl(canonical ?? path);
@@ -72,7 +87,17 @@ export function usePageSeo({ title, description, path = "/", canonical, noindex 
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: description });
     upsertMeta('meta[name="robots"]', { name: "robots", content: noindex ? "noindex, follow" : "index, follow, max-image-preview:large" });
     upsertLink("canonical", canonicalUrl);
-  }, [canonical, description, noindex, path, title, type]);
+    clearStructuredData();
+
+    const schemaItems = Array.isArray(structuredData) ? structuredData : structuredData ? [structuredData] : [];
+    schemaItems.forEach((item) => {
+      const script = document.createElement("script");
+      script.type = "application/ld+json";
+      script.dataset.jkbStructuredData = "true";
+      script.textContent = JSON.stringify(item);
+      document.head.appendChild(script);
+    });
+  }, [canonical, description, noindex, path, structuredData, title, type]);
 }
 
 export { CANONICAL_BASE, SITE_NAME };

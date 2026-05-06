@@ -29,6 +29,7 @@ import {
   PgaScheduleRail,
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
+import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 type DfsPlatform = "DraftKings" | "FanDuel";
@@ -210,6 +211,7 @@ function sortRows(rows: ComparisonRow[], sortKey: SortKey, sortDirection: SortDi
 }
 
 export default function PgaDfsUpload() {
+  const seo = getSeoMeta("pga-dfs");
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
@@ -227,9 +229,9 @@ export default function PgaDfsUpload() {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   usePageSeo({
-    title: "PGA DFS Upload",
-    description: "Upload DraftKings or FanDuel PGA salaries and compare DFS salary rank against Joe Knows Ball model rankings.",
-    path: "/pga/dfs",
+    title: seo.title,
+    description: seo.description,
+    path: seo.path,
   });
 
   const { current: currentEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);

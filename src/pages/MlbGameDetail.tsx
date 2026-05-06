@@ -20,6 +20,7 @@ import { formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
+import { getSeoMeta } from "@/lib/seo";
 
 const SEASON = new Date().getFullYear();
 
@@ -542,6 +543,9 @@ function HomeSchedule({
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Today&apos;s slate</div>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">{games.length} MLB matchups</h2>
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            Daily matchup intelligence for every MLB game. Click any game for a full breakdown including starting pitcher edges, lineup context, park factors, and run total lean.
+          </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {games.map((game) => {
@@ -585,6 +589,7 @@ function HomeSchedule({
 }
 
 export default function MlbGameDetail() {
+  const seo = getSeoMeta("mlb");
   const [routeState, setRouteState] = useState<MlbRouteState>(() => parseHash(window.location.hash));
   const [schedule, setSchedule] = useState<MlbScheduleGame[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(true);
@@ -594,10 +599,9 @@ export default function MlbGameDetail() {
   const [detailError, setDetailError] = useState<string | null>(null);
 
   usePageSeo({
-    title: "MLB Matchup Analysis & Daily Slate Dashboard",
-    description:
-      "Review today's MLB slate with team context, projected lineups, pitcher comparisons, park effects, and prop angles in one matchup dashboard.",
-    path: "/mlb",
+    title: seo.title,
+    description: seo.description,
+    path: seo.path,
   });
 
   useEffect(() => {

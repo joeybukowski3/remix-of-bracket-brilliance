@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
 
 const NFL_DRAFT_STYLES = `
   .draft-section{max-width:1200px;margin:2rem auto;padding:0 1rem}
@@ -229,13 +230,13 @@ function Player({ name, position, school, note }: { name: string; position: stri
 }
 
 export default function NFL() {
+  const seo = getSeoMeta("nfl");
   useNflDraftStyles();
 
   usePageSeo({
-    title: "NFL Mock Draft Full Round 1",
-    description:
-      "Joe Knows Ball NFL landing page featuring the 2026 NFL Mock Draft full Round 1 board with Charlie Campbell picks and team notes.",
-    path: "/nfl",
+    title: seo.title,
+    description: seo.description,
+    path: seo.path,
   });
 
   return (

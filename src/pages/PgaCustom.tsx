@@ -38,6 +38,7 @@ import {
   PgaScheduleRail,
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
+import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 const CUSTOM_KEYS: Array<{ key: keyof CourseWeightSet; label: string }> = [
@@ -107,6 +108,7 @@ function rebalanceWeights(current: Record<keyof CourseWeightSet, number>, key: k
 }
 
 export default function PgaCustom() {
+  const seo = getSeoMeta("pga-custom");
   const navigate = useNavigate();
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
@@ -126,9 +128,9 @@ export default function PgaCustom() {
   const [customPercentWeights, setCustomPercentWeights] = useState<Record<keyof CourseWeightSet, number> | null>(null);
 
   usePageSeo({
-    title: "Custom PGA Model Builder",
-    description: "Build a custom PGA ranking model with live normalized sliders, presets, and schedule-aware tournament context.",
-    path: "/pga/custom",
+    title: seo.title,
+    description: seo.description,
+    path: seo.path,
   });
 
   useEffect(() => {
@@ -182,6 +184,10 @@ export default function PgaCustom() {
             />
 
             <section className="space-y-3">
+              <div className="rounded-[22px] border border-white/8 bg-[#06100c] p-3 text-sm leading-6 text-emerald-50/76 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+                Adjust the sliders to weight each strokes gained category based on what you think matters most for this week&apos;s course. Rankings update in real time. Save your model as a preset to reuse it each week.
+              </div>
+
               <div className="rounded-[22px] border border-white/8 bg-[#06100c] p-3 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
                 <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">
