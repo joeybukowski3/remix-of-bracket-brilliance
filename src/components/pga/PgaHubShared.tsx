@@ -359,10 +359,85 @@ export function PgaScheduleRail({
   selectedScheduleId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const [previousExpanded, setPreviousExpanded] = useState(false);
   const filteredSchedule = useMemo(
     () => schedule.filter((entry) => sidebarFilter === "all" || entry.category === sidebarFilter),
     [schedule, sidebarFilter],
   );
+
+  const groupedSchedule = useMemo(() => {
+    const sorted = [...filteredSchedule].sort((left, right) => left.startDate.localeCompare(right.startDate));
+
+    if (sorted.length === 0) {
+      return {
+        featuredRows: [] as PgaScheduleFeedEntry[],
+        previousRows: [] as PgaScheduleFeedEntry[],
+      };
+    }
+
+    const currentRows = currentEvent
+      ? sorted.filter((entry) => entry.status !== "complete" && entry.startDate === currentEvent.startDate)
+      : [];
+
+    if (currentRows.length > 0) {
+      const currentIds = new Set(currentRows.map((entry) => entry.id));
+      const futureRows = sorted.filter((entry) => entry.startDate > currentEvent!.startDate);
+      const previousRows = sorted.filter((entry) => !currentIds.has(entry.id) && entry.startDate < currentEvent!.startDate);
+
+      return {
+        featuredRows: [...currentRows, ...futureRows],
+        previousRows,
+      };
+    }
+
+    const upcomingRows = sorted.filter((entry) => entry.status !== "complete");
+    if (upcomingRows.length > 0) {
+      const upcomingIds = new Set(upcomingRows.map((entry) => entry.id));
+      const previousRows = sorted.filter((entry) => !upcomingIds.has(entry.id));
+
+      return {
+        featuredRows: upcomingRows,
+        previousRows,
+      };
+    }
+
+    const reversePastRows = [...sorted].reverse();
+    return {
+      featuredRows: reversePastRows.slice(0, 1),
+      previousRows: reversePastRows.slice(1),
+    };
+  }, [currentEvent, filteredSchedule]);
+
+  const renderScheduleRow = (entry: PgaScheduleFeedEntry) => {
+    const isCurrent = currentEvent?.id === entry.id;
+    const isPast = entry.status === "complete";
+    const isSelectable = isFutureOrCurrent(entry, currentEvent);
+    const isSelected = selectedScheduleId === entry.id;
+
+    return (
+      <button
+        key={entry.id}
+        type="button"
+        disabled={!isSelectable}
+        onClick={() => isSelectable && onSelect(entry.id)}
+        className={cn(
+          "flex w-full items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left text-xs transition",
+          isPast && "cursor-default border-white/6 bg-white/[0.03] text-white/34",
+          !isPast && !isCurrent && !isSelected && "border-white/8 bg-white/[0.03] text-white/78 hover:border-emerald-400/40 hover:bg-emerald-500/8",
+          isCurrent && "border-emerald-400/60 bg-emerald-500/12 text-white",
+          isSelected && "border-emerald-300 bg-emerald-400/18 text-white",
+        )}
+      >
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/58">
+          {entry.dateLabel}
+        </span>
+        <span className="min-w-0 flex-1 truncate font-medium">{entry.name}</span>
+        <span className="shrink-0 rounded-full border border-current/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em]">
+          {isCurrent ? "Now" : entry.category === "major" ? "Maj" : entry.category === "wgc" ? "WGC" : entry.category === "signature" ? "Sig" : "Std"}
+        </span>
+      </button>
+    );
+  };
 
   const rail = (
     <div className="space-y-3">
@@ -393,36 +468,29 @@ export function PgaScheduleRail({
             {EMPTY_MESSAGE}
           </div>
         ) : (
-          filteredSchedule.map((entry) => {
-            const isCurrent = currentEvent?.id === entry.id;
-            const isPast = entry.status === "complete";
-            const isSelectable = isFutureOrCurrent(entry, currentEvent);
-            const isSelected = selectedScheduleId === entry.id;
+          <>
+            {groupedSchedule.featuredRows.map((entry) => renderScheduleRow(entry))}
 
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                disabled={!isSelectable}
-                onClick={() => isSelectable && onSelect(entry.id)}
-                className={cn(
-                  "flex w-full items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left text-xs transition",
-                  isPast && "cursor-default border-white/6 bg-white/[0.03] text-white/34",
-                  !isPast && !isCurrent && !isSelected && "border-white/8 bg-white/[0.03] text-white/78 hover:border-emerald-400/40 hover:bg-emerald-500/8",
-                  isCurrent && "border-emerald-400/60 bg-emerald-500/12 text-white",
-                  isSelected && "border-emerald-300 bg-emerald-400/18 text-white",
-                )}
-              >
-                <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/58">
-                  {entry.dateLabel}
-                </span>
-                <span className="min-w-0 flex-1 truncate font-medium">{entry.name}</span>
-                <span className="shrink-0 rounded-full border border-current/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em]">
-                  {isCurrent ? "Now" : entry.category === "major" ? "Maj" : entry.category === "wgc" ? "WGC" : entry.category === "signature" ? "Sig" : "Std"}
-                </span>
-              </button>
-            );
-          })
+            {groupedSchedule.previousRows.length > 0 ? (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  aria-expanded={previousExpanded}
+                  onClick={() => setPreviousExpanded((current) => !current)}
+                  className="flex w-full items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-2.5 py-1.5 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-50/74 transition hover:border-emerald-300/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40"
+                >
+                  <span>Previous Tournaments</span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", previousExpanded && "rotate-180")} />
+                </button>
+
+                {previousExpanded ? (
+                  <div className="mt-1 space-y-1">
+                    {groupedSchedule.previousRows.map((entry) => renderScheduleRow(entry))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </>
         )}
       </div>
     </div>
