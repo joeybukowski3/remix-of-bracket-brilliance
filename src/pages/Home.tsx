@@ -143,20 +143,32 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mx-auto flex min-h-[calc(100vh-72px)] max-w-[1280px] items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-        <div className="w-full max-w-[920px]">
-          <div className="mx-auto flex max-w-[820px] flex-col items-center gap-5 text-center">
-            <h1 className="text-[22px] font-bold text-[#111111] sm:text-[28px]">Select a League</h1>
-            <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {sports.map((sport) => (
-                <SportCard
-                  key={sport.id}
-                  locked={Boolean("locked" in sport && sport.locked)}
-                  logo={sport.logo}
-                  name={sport.name}
-                  route={sport.route}
-                />
-              ))}
+      <section
+        className="relative overflow-hidden"
+        style={{
+          backgroundImage: "url('/images/Gemini_Generated_Image_r6ys4br6ys4br6ys.png')",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }}
+      >
+        <div className="absolute inset-0 bg-[rgba(0,0,0,0.55)]" />
+
+        <div className="relative mx-auto flex min-h-[calc(100vh-72px)] max-w-[1280px] items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
+          <div className="w-full max-w-[920px]">
+            <div className="mx-auto flex max-w-[820px] flex-col items-center gap-5 text-center">
+              <h1 className="text-[22px] font-bold text-white sm:text-[28px]">Select a League</h1>
+              <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                {sports.map((sport) => (
+                  <SportCard
+                    key={sport.id}
+                    locked={Boolean("locked" in sport && sport.locked)}
+                    logo={sport.logo}
+                    name={sport.name}
+                    route={sport.route}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
