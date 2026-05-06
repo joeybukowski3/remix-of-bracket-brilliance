@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import {
@@ -28,9 +28,11 @@ import {
   WeightBadgeRow,
   findDefaultWeightEntry,
   getCurrentAndNextEvents,
+  getSavedCustomWeights,
   loadCustomPresets,
   rankPlayers,
   saveCustomPreset,
+  setSavedCustomWeights,
   setThisWeekOverride,
   PgaCompactTable,
   PgaScheduleRail,
@@ -129,6 +131,18 @@ export default function PgaCustom() {
     path: "/pga/custom",
   });
 
+  useEffect(() => {
+    if (customPercentWeights) return;
+    const savedWeights = getSavedCustomWeights();
+    if (savedWeights) {
+      setCustomPercentWeights(toPercentWeights(savedWeights));
+      return;
+    }
+    if (defaultWeightEntry) {
+      setCustomPercentWeights(toPercentWeights(defaultWeightEntry.weights));
+    }
+  }, [customPercentWeights, defaultWeightEntry]);
+
   const activePercentWeights = useMemo(() => {
     if (customPercentWeights) return customPercentWeights;
     if (defaultWeightEntry) return toPercentWeights(defaultWeightEntry.weights);
@@ -139,6 +153,11 @@ export default function PgaCustom() {
     () => activePercentWeights ? toFractionWeights(activePercentWeights) : null,
     [activePercentWeights],
   );
+
+  useEffect(() => {
+    if (!activeWeights) return;
+    setSavedCustomWeights(activeWeights);
+  }, [activeWeights]);
 
   const rankedRows = useMemo(
     () => activeWeights ? rankPlayers(playerStats, activeWeights) : [],

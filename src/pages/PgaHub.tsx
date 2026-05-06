@@ -18,7 +18,9 @@ import {
   findDefaultWeightEntry,
   getCurrentAndNextEvents,
   getThisWeekOverride,
+  getSavedCustomWeights,
   rankPlayers,
+  setSavedCustomWeights,
   setThisWeekOverride,
   PgaCompactTable,
   PgaScheduleRail,
@@ -181,9 +183,20 @@ export default function PgaHub() {
   );
 
   useEffect(() => {
+    if (customPercentWeights) return;
+    const savedCustomWeights = getSavedCustomWeights();
+    if (savedCustomWeights) {
+      setCustomPercentWeights(toPercentWeights(savedCustomWeights));
+      return;
+    }
     if (!defaultWeightEntry) return;
-    setCustomPercentWeights((current) => current ?? toPercentWeights(defaultWeightEntry.weights));
+    setCustomPercentWeights(toPercentWeights(defaultWeightEntry.weights));
   }, [defaultWeightEntry]);
+
+  useEffect(() => {
+    if (!customPercentWeights) return;
+    setSavedCustomWeights(toFractionWeights(customPercentWeights));
+  }, [customPercentWeights]);
 
   const tournamentWeightEntry = useMemo(() => {
     if (selectedFutureEvent) return selectedFutureWeightEntry;
@@ -338,6 +351,12 @@ export default function PgaHub() {
                             {option.label}
                           </button>
                         ))}
+                        <Link
+                          to="/pga/dfs"
+                          className="flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold text-slate-500 transition hover:text-slate-900 xl:flex-none"
+                        >
+                          DFS Upload
+                        </Link>
                       </div>
 
                       <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">

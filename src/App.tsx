@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
 import PgaHub from "./pages/PgaHub";
 import PgaCustom from "./pages/PgaCustom";
+import PgaDfsUpload from "./pages/PgaDfsUpload";
 import PGAModel from "./pages/PGAModel";
 import PGAModelTableView from "./pages/PGAModelTableView";
 import PGATop40Picks from "./pages/PGATop40Picks";
@@ -77,6 +78,7 @@ const App = () => (
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<PgaHub />} />
           <Route path="/pga/custom" element={<PgaCustom />} />
+          <Route path="/pga/dfs" element={<PgaDfsUpload />} />
           <Route path="/pga/model" element={<PGAModel />} />
           <Route path="/pga/model/table" element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug" element={<PGA />} />

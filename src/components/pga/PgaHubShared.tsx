@@ -74,6 +74,7 @@ export type StatDisplayMode = "raw" | "percentile";
 export const EMPTY_MESSAGE = "Data updating - check back Monday";
 export const THIS_WEEK_OVERRIDE_KEY = "pga:this-week-override";
 export const PGA_PRESET_STORAGE_KEY = "pga:custom-presets";
+export const PGA_CUSTOM_WORKING_WEIGHTS_KEY = "pga:custom-working-weights";
 
 export const FILTER_OPTIONS: Array<{ key: SidebarFilter; label: string }> = [
   { key: "all", label: "All" },
@@ -218,6 +219,23 @@ export function saveCustomPreset(name: string, weights: CourseWeightSet) {
   const current = loadCustomPresets();
   current[name] = weights;
   window.localStorage.setItem(PGA_PRESET_STORAGE_KEY, JSON.stringify(current));
+}
+
+export function getSavedCustomWeights() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(PGA_CUSTOM_WORKING_WEIGHTS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as CourseWeightSet;
+  } catch {
+    return null;
+  }
+}
+
+export function setSavedCustomWeights(weights: CourseWeightSet) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PGA_CUSTOM_WORKING_WEIGHTS_KEY, JSON.stringify(weights));
 }
 
 export function formatScore(value: number) {
