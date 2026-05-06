@@ -278,7 +278,7 @@ function CompactHeaderTooltip({ short, full }: { short: string; full: string }) 
 export function WeightBadgeRow({ entry }: { entry: CourseWeightFeedEntry | null }) {
   if (!entry) {
     return (
-      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-2 text-xs text-emerald-50/80">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
         {EMPTY_MESSAGE}
       </div>
     );
@@ -289,7 +289,7 @@ export function WeightBadgeRow({ entry }: { entry: CourseWeightFeedEntry | null 
       {STAT_CONFIG.map(({ key, short, full }) => (
         <Tooltip key={key}>
           <TooltipTrigger asChild>
-            <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-emerald-50/90">
+            <div className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold tracking-[0.12em] text-slate-600">
               {short} {(entry.weights[key] * 100).toFixed(1)}%
             </div>
           </TooltipTrigger>
@@ -422,13 +422,13 @@ export function PgaScheduleRail({
         onClick={() => isSelectable && onSelect(entry.id)}
         className={cn(
           "flex w-full items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left text-xs transition",
-          isPast && "cursor-default border-white/6 bg-white/[0.03] text-white/34",
-          !isPast && !isCurrent && !isSelected && "border-white/8 bg-white/[0.03] text-white/78 hover:border-emerald-400/40 hover:bg-emerald-500/8",
-          isCurrent && "border-emerald-400/60 bg-emerald-500/12 text-white",
-          isSelected && "border-emerald-300 bg-emerald-400/18 text-white",
+          isPast && "cursor-default border-slate-200 bg-slate-50 text-slate-400",
+          !isPast && !isCurrent && !isSelected && "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900",
+          isCurrent && "border-sky-200 bg-sky-50 text-slate-900",
+          isSelected && "border-slate-900 bg-slate-900 text-white",
         )}
       >
-        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/58">
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-current/70">
           {entry.dateLabel}
         </span>
         <span className="min-w-0 flex-1 truncate font-medium">{entry.name}</span>
@@ -441,8 +441,8 @@ export function PgaScheduleRail({
 
   const rail = (
     <div className="space-y-3">
-      <div className="border-b border-white/8 pb-3">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-300/70">2026 PGA Tour</div>
+      <div className="border-b border-slate-200 pb-3">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">2026 PGA Tour</div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {FILTER_OPTIONS.map((option) => (
             <button
@@ -452,8 +452,8 @@ export function PgaScheduleRail({
               className={cn(
                 "rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition",
                 sidebarFilter === option.key
-                  ? "border-emerald-400 bg-emerald-400 text-[#04110a]"
-                  : "border-white/10 bg-white/4 text-emerald-50/70 hover:border-emerald-300/50 hover:text-white",
+                  ? "border-slate-900 bg-slate-900 text-white"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900",
               )}
             >
               {option.label}
@@ -464,7 +464,7 @@ export function PgaScheduleRail({
 
       <div className="space-y-1">
         {filteredSchedule.length === 0 ? (
-          <div className="rounded-xl border border-white/8 bg-white/4 px-3 py-4 text-xs text-emerald-50/70">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-xs text-slate-500">
             {EMPTY_MESSAGE}
           </div>
         ) : (
@@ -477,7 +477,7 @@ export function PgaScheduleRail({
                   type="button"
                   aria-expanded={previousExpanded}
                   onClick={() => setPreviousExpanded((current) => !current)}
-                  className="flex w-full items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-2.5 py-1.5 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-50/74 transition hover:border-emerald-300/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40"
+                  className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600 transition hover:border-slate-300 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200"
                 >
                   <span>Previous Tournaments</span>
                   <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", previousExpanded && "rotate-180")} />
@@ -498,21 +498,21 @@ export function PgaScheduleRail({
 
   return (
     <>
-      <aside className="hidden rounded-[24px] border border-white/8 bg-[#06100c] p-3 shadow-[0_20px_60px_rgba(0,0,0,0.28)] md:block md:sticky md:top-20 md:h-[calc(100vh-6rem)] md:overflow-y-auto">
+      <aside className="hidden rounded-[24px] border border-slate-200 bg-[#f8fafc] p-3 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:block md:sticky md:top-20 md:h-[calc(100vh-6rem)] md:overflow-y-auto">
         {rail}
       </aside>
 
       <Drawer>
         <DrawerTrigger asChild>
-          <Button className="fixed bottom-4 left-4 z-40 rounded-full bg-emerald-500 px-3 py-2 text-xs font-semibold text-[#04110a] shadow-lg md:hidden">
+          <Button className="fixed bottom-4 left-4 z-40 rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-lg md:hidden">
             <CalendarDays className="h-3.5 w-3.5" />
             Schedule
           </Button>
         </DrawerTrigger>
-        <DrawerContent className="max-h-[80vh] border-white/10 bg-[#06100c] text-white">
+        <DrawerContent className="max-h-[80vh] border-slate-200 bg-[#f8fafc] text-slate-900">
           <DrawerHeader className="pb-2">
             <DrawerTitle className="text-sm">Schedule</DrawerTitle>
-            <DrawerDescription className="text-xs text-emerald-50/60">
+            <DrawerDescription className="text-xs text-slate-500">
               Pick a future tournament to re-rank the field.
             </DrawerDescription>
           </DrawerHeader>
@@ -540,21 +540,21 @@ export function PgaCompactTable({
   const visibleDesktopColumns = STAT_CONFIG.slice(0, 5);
 
   return (
-    <div className="overflow-hidden rounded-[20px] border border-white/10 bg-[#07110d]">
+    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
       <div className="overflow-x-auto">
-        <Table className="min-w-[880px] text-xs">
+        <Table className="min-w-[880px] text-xs text-slate-700">
           <TableHeader>
-            <TableRow className="border-white/10 hover:bg-transparent">
-              <TableHead className="sticky left-0 z-30 h-8 min-w-[48px] bg-[#07110d] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100/72">Rank</TableHead>
-              <TableHead className="sticky left-[48px] z-30 h-8 min-w-[160px] bg-[#07110d] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100/72">Player</TableHead>
-              <TableHead className="h-8 min-w-[72px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100/72">{scoreLabel}</TableHead>
+            <TableRow className="border-slate-200 hover:bg-transparent">
+              <TableHead className="sticky left-0 z-30 h-9 min-w-[48px] bg-white px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">Rank</TableHead>
+              <TableHead className="sticky left-[48px] z-30 h-9 min-w-[160px] bg-white px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">Player</TableHead>
+              <TableHead className="h-9 min-w-[72px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">{scoreLabel}</TableHead>
               {visibleDesktopColumns.map((column) => (
-                <TableHead key={column.key} className="hidden h-8 min-w-[62px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100/72 md:table-cell">
+                <TableHead key={column.key} className="hidden h-9 min-w-[62px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500 md:table-cell">
                   <CompactHeaderTooltip short={column.short} full={column.full} />
                 </TableHead>
               ))}
               {STAT_CONFIG.slice(5).map((column) => (
-                <TableHead key={column.key} className="hidden h-8 min-w-[62px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100/72 lg:table-cell">
+                <TableHead key={column.key} className="hidden h-9 min-w-[62px] px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-500 lg:table-cell">
                   <CompactHeaderTooltip short={column.short} full={column.full} />
                 </TableHead>
               ))}
@@ -572,20 +572,20 @@ export function PgaCompactTable({
                     key={`${row.player}-${row.rank}`}
                     onClick={() => setExpandedPlayers((current) => ({ ...current, [row.player]: !current[row.player] }))}
                     className={cn(
-                      "cursor-pointer border-white/8 text-emerald-50/90 transition-colors duration-700 hover:bg-white/4",
-                      topTen && "bg-emerald-500/10 hover:bg-emerald-500/12",
-                      movement === "up" && "bg-emerald-400/22 hover:bg-emerald-400/24",
-                      movement === "down" && "bg-rose-400/16 hover:bg-rose-400/18",
+                      "cursor-pointer border-slate-100 transition-colors duration-700 hover:bg-slate-50",
+                      topTen && "bg-emerald-50 hover:bg-emerald-50",
+                      movement === "up" && "bg-emerald-100 hover:bg-emerald-100",
+                      movement === "down" && "bg-rose-100 hover:bg-rose-100",
                     )}
                   >
-                    <TableCell className="sticky left-0 z-20 bg-[#07110d] px-2 py-1 font-semibold">{row.rank}</TableCell>
-                    <TableCell className="sticky left-[48px] z-20 bg-[#07110d] px-2 py-1 font-medium text-white">
+                    <TableCell className="sticky left-0 z-20 bg-inherit px-2 py-1 font-semibold text-slate-700">{row.rank}</TableCell>
+                    <TableCell className="sticky left-[48px] z-20 bg-inherit px-2 py-1 font-medium text-slate-900">
                       <div className="flex items-center gap-2">
                         <span className="truncate">{row.player}</span>
                         <ChevronDown className={cn("h-3 w-3 shrink-0 md:hidden", expanded && "rotate-180")} />
                       </div>
                     </TableCell>
-                    <TableCell className="px-2 py-1">{formatScore(row.score)}</TableCell>
+                    <TableCell className="px-2 py-1 font-semibold text-slate-900">{formatScore(row.score)}</TableCell>
                     {STAT_CONFIG.slice(0, 5).map((column) => {
                       const percentile = statPercentiles[column.key][row.player];
                       const cellStyle = getCellStyle(percentile, displayMode);
@@ -610,7 +610,7 @@ export function PgaCompactTable({
                     })}
                   </TableRow>
                   {expanded ? (
-                    <TableRow className="border-white/8 bg-white/[0.03] md:hidden">
+                    <TableRow className="border-slate-200 bg-slate-50 md:hidden">
                       <TableCell colSpan={11} className="px-3 py-2">
                         <div className="grid grid-cols-2 gap-2">
                           {STAT_CONFIG.map((column) => {
@@ -619,9 +619,9 @@ export function PgaCompactTable({
                             const displayValue = displayMode === "percentile" ? String(percentile) : formatRawStat(column.key, row[column.key]);
 
                             return (
-                              <div key={column.key} className="rounded-lg border border-white/8 px-2 py-1" style={cellStyle}>
-                                <div className="text-[10px] uppercase tracking-[0.14em]">{column.short}</div>
-                                <div className="mt-0.5 text-xs font-semibold">{displayValue}</div>
+                              <div key={column.key} className="rounded-lg border border-slate-200 px-2 py-1" style={cellStyle}>
+                                <div className="text-[10px] uppercase tracking-[0.14em] text-slate-500">{column.short}</div>
+                                <div className="mt-0.5 text-xs font-semibold text-inherit">{displayValue}</div>
                               </div>
                             );
                           })}
