@@ -1,25 +1,33 @@
 import MlbLineupMiniStat from "@/components/mlb/MlbLineupMiniStat";
 import MlbPlayerHeadshot from "@/components/mlb/MlbPlayerHeadshot";
 import { formatAvgLike, formatPercent } from "@/lib/mlb/mlbFormatters";
+import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import type { MlbLineupRow as MlbLineupRowType } from "@/lib/mlb/mlbTypes";
 
 export default function MlbLineupRow({
   order,
   away,
   home,
+  awayTeamAbbreviation,
+  homeTeamAbbreviation,
 }: {
   order: number;
   away: MlbLineupRowType;
   home: MlbLineupRowType;
+  awayTeamAbbreviation: string;
+  homeTeamAbbreviation: string;
 }) {
+  const awayColors = getMlbTeamColors(awayTeamAbbreviation);
+  const homeColors = getMlbTeamColors(homeTeamAbbreviation);
+
   return (
     <div className="rounded-[24px] bg-secondary/25 px-3 py-3">
       <div className="hidden items-center gap-4 lg:grid lg:grid-cols-[1.2fr_56px_1.2fr]">
         <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,64px)] items-center gap-2">
           <div className="flex min-w-0 items-center gap-3">
-            <MlbPlayerHeadshot playerId={away.id} name={away.name} size={38} />
+            <MlbPlayerHeadshot playerId={away.id} name={away.name} size={38} teamAbbreviation={awayTeamAbbreviation} />
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-foreground">{away.name}</div>
+              <div className="truncate text-sm font-semibold" style={{ color: awayColors.primary }}>{away.name}</div>
             </div>
           </div>
           <MlbLineupMiniStat label="AVG" value={formatAvgLike(away.avg)} />
@@ -35,9 +43,9 @@ export default function MlbLineupRow({
           <MlbLineupMiniStat label="SLG" value={formatAvgLike(home.slg)} />
           <div className="flex min-w-0 items-center justify-end gap-3 text-right">
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-foreground">{home.name}</div>
+              <div className="truncate text-sm font-semibold" style={{ color: homeColors.primary }}>{home.name}</div>
             </div>
-            <MlbPlayerHeadshot playerId={home.id} name={home.name} size={38} />
+            <MlbPlayerHeadshot playerId={home.id} name={home.name} size={38} teamAbbreviation={homeTeamAbbreviation} />
           </div>
         </div>
       </div>
@@ -50,8 +58,8 @@ export default function MlbLineupRow({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl bg-card/80 p-3">
             <div className="flex items-center gap-3">
-              <MlbPlayerHeadshot playerId={away.id} name={away.name} size={34} />
-              <div className="text-sm font-semibold text-foreground">{away.name}</div>
+              <MlbPlayerHeadshot playerId={away.id} name={away.name} size={34} teamAbbreviation={awayTeamAbbreviation} />
+              <div className="text-sm font-semibold" style={{ color: awayColors.primary }}>{away.name}</div>
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2">
               <MlbLineupMiniStat label="AVG" value={formatAvgLike(away.avg)} />
@@ -61,8 +69,8 @@ export default function MlbLineupRow({
           </div>
           <div className="rounded-2xl bg-card/80 p-3">
             <div className="flex items-center gap-3">
-              <MlbPlayerHeadshot playerId={home.id} name={home.name} size={34} />
-              <div className="text-sm font-semibold text-foreground">{home.name}</div>
+              <MlbPlayerHeadshot playerId={home.id} name={home.name} size={34} teamAbbreviation={homeTeamAbbreviation} />
+              <div className="text-sm font-semibold" style={{ color: homeColors.primary }}>{home.name}</div>
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2">
               <MlbLineupMiniStat label="AVG" value={formatAvgLike(home.avg)} />

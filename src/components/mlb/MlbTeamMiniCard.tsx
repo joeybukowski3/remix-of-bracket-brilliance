@@ -1,37 +1,60 @@
+import { TrendingDown, TrendingUp } from "lucide-react";
 import MlbTeamBadge from "@/components/mlb/MlbTeamBadge";
+import { getMlbTeamColors, getTrendArrow } from "@/lib/mlbTeamColors";
 import type { MlbScheduleGame, MlbTeamContext } from "@/lib/mlb/mlbTypes";
+
+function winsFromRecord(record: string) {
+  const [wins] = record.split("-").map((value) => Number(value));
+  return Number.isFinite(wins) ? wins : null;
+}
+
+function betterRecord(left: string, right: string) {
+  const leftWins = winsFromRecord(left);
+  const rightWins = winsFromRecord(right);
+  if (leftWins == null || rightWins == null) return false;
+  return leftWins > rightWins;
+}
 
 export default function MlbTeamMiniCard({
   team,
   context,
   venueMode,
+  comparisonContext,
 }: {
   team: MlbScheduleGame["away"] | MlbScheduleGame["home"];
   context: MlbTeamContext;
   venueMode: "home" | "away";
+  comparisonContext: MlbTeamContext;
 }) {
   const splitRecord = venueMode === "home" ? context.homeRecord : context.awayRecord;
+  const comparisonSplitRecord = venueMode === "home" ? comparisonContext.homeRecord : comparisonContext.awayRecord;
+  const colors = getMlbTeamColors(team.abbreviation);
+  const trend = getTrendArrow(context.lastFiveRecord);
+
+  const rows = [
+    { label: "Season", value: context.seasonRecord, better: betterRecord(context.seasonRecord, comparisonContext.seasonRecord) },
+    { label: "Last 5", value: context.lastFiveRecord, better: betterRecord(context.lastFiveRecord, comparisonContext.lastFiveRecord) },
+    { label: venueMode === "home" ? "Home split" : "Away split", value: splitRecord, better: betterRecord(splitRecord, comparisonSplitRecord) },
+    { label: "Season series", value: context.seriesRecord, better: false },
+  ];
 
   return (
-    <div className="rounded-2xl bg-secondary/40 p-4">
-      <MlbTeamBadge abbreviation={team.abbreviation} name={team.name} record={team.record} size={30} />
+    <div className="rounded-2xl p-4" style={{ backgroundColor: colors.tint }}>
+      <MlbTeamBadge abbreviation={team.abbreviation} name={team.name} record={team.record} size={30} compact />
       <dl className="mt-4 grid gap-3 text-sm">
-        <div className="flex items-center justify-between gap-3">
-          <dt className="text-muted-foreground">Season</dt>
-          <dd className="font-medium text-foreground">{context.seasonRecord}</dd>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <dt className="text-muted-foreground">Last 5</dt>
-          <dd className="font-medium text-foreground">{context.lastFiveRecord}</dd>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <dt className="text-muted-foreground">{venueMode === "home" ? "Home split" : "Away split"}</dt>
-          <dd className="font-medium text-foreground">{splitRecord}</dd>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <dt className="text-muted-foreground">Season series</dt>
-          <dd className="font-medium text-foreground">{context.seriesRecord}</dd>
-        </div>
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between gap-3">
+            <dt className="text-muted-foreground">{row.label}</dt>
+            <dd
+              className="rounded-full px-2.5 py-1 font-medium text-foreground"
+              style={row.better ? { backgroundColor: colors.tint, color: colors.primary } : undefined}
+            >
+              {row.label === "Last 5" && trend === "up" ? <TrendingUp className="mr-1 inline h-3 w-3" /> : null}
+              {row.label === "Last 5" && trend === "down" ? <TrendingDown className="mr-1 inline h-3 w-3" /> : null}
+              {row.value}
+            </dd>
+          </div>
+        ))}
       </dl>
     </div>
   );

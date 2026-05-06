@@ -1,5 +1,6 @@
 import MlbContextChip from "@/components/mlb/MlbContextChip";
 import MlbStatComparisonRow from "@/components/mlb/MlbStatComparisonRow";
+import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 
 export default function MlbParkContextPanel({
   venue,
@@ -10,6 +11,8 @@ export default function MlbParkContextPanel({
   starterEraMetrics,
   runFactor,
   hrFactor,
+  awayAbbreviation,
+  homeAbbreviation,
 }: {
   venue: string;
   weather: string;
@@ -27,12 +30,17 @@ export default function MlbParkContextPanel({
   }>;
   runFactor: number | null;
   hrFactor: number | null;
+  awayAbbreviation: string;
+  homeAbbreviation: string;
 }) {
+  const awayColors = getMlbTeamColors(awayAbbreviation);
+  const homeColors = getMlbTeamColors(homeAbbreviation);
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap gap-2">
-        <MlbContextChip label={parkType} />
-        <MlbContextChip label={totalLean} />
+        <MlbContextChip label={parkType} style={{ backgroundColor: awayColors.tint, color: awayColors.primary }} />
+        <MlbContextChip label={totalLean} style={{ backgroundColor: homeColors.tint, color: homeColors.primary }} />
         <MlbContextChip label={factorLabel} />
       </div>
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.25fr]">
@@ -61,7 +69,12 @@ export default function MlbParkContextPanel({
         </div>
         <div className="space-y-3">
           {starterEraMetrics.map((metric) => (
-            <MlbStatComparisonRow key={metric.key} {...metric} />
+            <MlbStatComparisonRow
+              key={metric.key}
+              {...metric}
+              leftTeam={awayAbbreviation}
+              rightTeam={homeAbbreviation}
+            />
           ))}
         </div>
       </div>

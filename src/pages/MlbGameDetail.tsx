@@ -18,6 +18,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
 import { formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
+import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 
 const SEASON = new Date().getFullYear();
@@ -543,30 +544,40 @@ function HomeSchedule({
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">{games.length} MLB matchups</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {games.map((game) => (
-            <button
-              key={game.gamePk}
-              type="button"
-              onClick={() => onOpenGame(game.gamePk)}
-              className="rounded-[28px] bg-card p-5 text-left shadow-[0_12px_28px_hsl(var(--foreground)/0.05)] ring-1 ring-border/60 transition hover:bg-secondary/25"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <MlbValuePill>{game.status}</MlbValuePill>
-                <span className="text-xs text-muted-foreground">
-                  {new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(game.gameDate))}
-                </span>
-              </div>
-              <div className="mt-5 space-y-4">
-                <MlbTeamBadge abbreviation={game.away.abbreviation} name={game.away.name} record={game.away.record} size={30} />
-                <div className="pl-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">@</div>
-                <MlbTeamBadge abbreviation={game.home.abbreviation} name={game.home.name} record={game.home.record} size={30} />
-              </div>
-              <div className="mt-5 rounded-2xl bg-secondary/45 p-4 text-sm text-muted-foreground">
-                <div>{game.away.probablePitcher?.fullName || MLB_DASH} vs {game.home.probablePitcher?.fullName || MLB_DASH}</div>
-                <div className="mt-1">{game.venue}</div>
-              </div>
-            </button>
-          ))}
+          {games.map((game) => {
+            const awayColors = getMlbTeamColors(game.away.abbreviation);
+            const homeColors = getMlbTeamColors(game.home.abbreviation);
+            const statusTheme = getStatusBadgeTheme(game.status);
+
+            return (
+              <button
+                key={game.gamePk}
+                type="button"
+                onClick={() => onOpenGame(game.gamePk)}
+                className="overflow-hidden rounded-[28px] bg-card text-left shadow-[0_12px_28px_hsl(var(--foreground)/0.05)] ring-1 ring-border/60 transition hover:-translate-y-0.5"
+              >
+                <div className="flex items-center justify-between gap-3 px-5 pt-5">
+                  <MlbValuePill style={statusTheme}>{game.status}</MlbValuePill>
+                  <span className="text-xs text-muted-foreground">
+                    {new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(game.gameDate))}
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-stretch">
+                  <div className="p-4" style={{ backgroundColor: awayColors.tint }}>
+                    <MlbTeamBadge abbreviation={game.away.abbreviation} name={game.away.name} record={game.away.record} size={30} compact />
+                  </div>
+                  <div className="flex items-center justify-center px-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">@</div>
+                  <div className="p-4" style={{ backgroundColor: homeColors.tint }}>
+                    <MlbTeamBadge abbreviation={game.home.abbreviation} name={game.home.name} record={game.home.record} size={30} compact />
+                  </div>
+                </div>
+                <div className="border-t border-border/50 px-5 py-4 text-sm text-muted-foreground">
+                  <div>{game.away.probablePitcher?.fullName || MLB_DASH} vs {game.home.probablePitcher?.fullName || MLB_DASH}</div>
+                  <div className="mt-1">{game.venue}</div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </section>
     </div>
@@ -715,9 +726,13 @@ export default function MlbGameDetail() {
               ]}
             />
 
-            <MlbMatchupSummaryRow cards={summaryCards} />
+            <MlbMatchupSummaryRow
+              cards={summaryCards}
+              awayAbbreviation={detail.game.away.abbreviation}
+              homeAbbreviation={detail.game.home.abbreviation}
+            />
 
-            <MlbSectionCard>
+            <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary}>
               <MlbSectionHeader
                 eyebrow="Team context"
                 title="Overall team snapshot"
@@ -728,7 +743,7 @@ export default function MlbGameDetail() {
               </div>
             </MlbSectionCard>
 
-            <MlbSectionCard>
+            <MlbSectionCard accentColor={getMlbTeamColors(detail.game.home.abbreviation).primary}>
               <MlbSectionHeader
                 eyebrow="Starting pitchers"
                 title="Pitcher edge at a glance"
@@ -739,12 +754,14 @@ export default function MlbGameDetail() {
                   awayPitcher={detail.starters.away}
                   homePitcher={detail.starters.home}
                   metrics={pitcherMetrics}
+                  awayAbbreviation={detail.game.away.abbreviation}
+                  homeAbbreviation={detail.game.home.abbreviation}
                 />
               </div>
             </MlbSectionCard>
 
             <div className="grid gap-6 xl:grid-cols-2">
-              <MlbSectionCard>
+              <MlbSectionCard accentColor={getMlbTeamColors(detail.game.home.abbreviation).primary}>
                 <MlbSectionHeader
                   eyebrow="Pitcher vs lineup"
                   title={`${detail.starters.home.name} vs ${detail.game.away.abbreviation}`}
@@ -757,11 +774,13 @@ export default function MlbGameDetail() {
                     lineupLabel={`${detail.game.away.name} split profile`}
                     split={detail.opponentSplits.awayBattingVsHomeStarter}
                     lineupSummary={detail.lineupSummaries.away}
+                    pitcherTeamAbbreviation={detail.game.home.abbreviation}
+                    lineupTeamAbbreviation={detail.game.away.abbreviation}
                   />
                 </div>
               </MlbSectionCard>
 
-              <MlbSectionCard>
+              <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary}>
                 <MlbSectionHeader
                   eyebrow="Pitcher vs lineup"
                   title={`${detail.starters.away.name} vs ${detail.game.home.abbreviation}`}
@@ -774,13 +793,15 @@ export default function MlbGameDetail() {
                     lineupLabel={`${detail.game.home.name} split profile`}
                     split={detail.opponentSplits.homeBattingVsAwayStarter}
                     lineupSummary={detail.lineupSummaries.home}
+                    pitcherTeamAbbreviation={detail.game.away.abbreviation}
+                    lineupTeamAbbreviation={detail.game.home.abbreviation}
                   />
                 </div>
               </MlbSectionCard>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
-              <MlbSectionCard>
+              <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary}>
                 <MlbSectionHeader
                   eyebrow="Split performance"
                   title={`${detail.game.away.abbreviation} relevant split vs league`}
@@ -796,7 +817,7 @@ export default function MlbGameDetail() {
                 </div>
               </MlbSectionCard>
 
-              <MlbSectionCard>
+              <MlbSectionCard accentColor={getMlbTeamColors(detail.game.home.abbreviation).primary}>
                 <MlbSectionHeader
                   eyebrow="Split performance"
                   title={`${detail.game.home.abbreviation} relevant split vs league`}
@@ -813,7 +834,7 @@ export default function MlbGameDetail() {
               </MlbSectionCard>
             </div>
 
-            <MlbSectionCard>
+            <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary}>
               <MlbSectionHeader
                 eyebrow="Projected lineups"
                 title="Order-by-order lineup comparison"
@@ -838,11 +859,16 @@ export default function MlbGameDetail() {
                     </div>
                   </div>
                 </div>
-                <MlbProjectedLineupPanel away={detail.lineups.away} home={detail.lineups.home} />
+                <MlbProjectedLineupPanel
+                  away={detail.lineups.away}
+                  home={detail.lineups.home}
+                  awayTeamAbbreviation={detail.game.away.abbreviation}
+                  homeTeamAbbreviation={detail.game.home.abbreviation}
+                />
               </div>
             </MlbSectionCard>
 
-            <MlbSectionCard>
+            <MlbSectionCard accentColor={getMlbTeamColors(detail.game.home.abbreviation).primary}>
               <MlbSectionHeader
                 eyebrow="Park context"
                 title="Environment and total-setting context"
@@ -857,6 +883,8 @@ export default function MlbGameDetail() {
                   factorLabel={parkContext?.factorLabel || `${formatFactor(MLB_LEAGUE_AVERAGES.runsFactor)} avg run factor`}
                   runFactor={parkContext?.runFactor || MLB_LEAGUE_AVERAGES.runsFactor}
                   hrFactor={parkContext?.hrFactor || MLB_LEAGUE_AVERAGES.hrFactor}
+                  awayAbbreviation={detail.game.away.abbreviation}
+                  homeAbbreviation={detail.game.home.abbreviation}
                   starterEraMetrics={[
                     {
                       key: "starter-era",
@@ -881,7 +909,7 @@ export default function MlbGameDetail() {
               </div>
             </MlbSectionCard>
 
-            <MlbSectionCard>
+            <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary}>
               <MlbSectionHeader
                 eyebrow="Betting angles"
                 title="Data-backed prop and total setups"

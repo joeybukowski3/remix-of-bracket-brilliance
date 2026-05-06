@@ -4,9 +4,13 @@ import type { MlbLineupRow as MlbLineupRowType } from "@/lib/mlb/mlbTypes";
 export default function MlbProjectedLineupPanel({
   away,
   home,
+  awayTeamAbbreviation,
+  homeTeamAbbreviation,
 }: {
   away: MlbLineupRowType[];
   home: MlbLineupRowType[];
+  awayTeamAbbreviation: string;
+  homeTeamAbbreviation: string;
 }) {
   const rows = Array.from({ length: 9 }, (_, index) => ({
     order: index + 1,
@@ -32,7 +36,14 @@ export default function MlbProjectedLineupPanel({
         </div>
       </div>
       {rows.map((row) => (
-        <MlbLineupRow key={row.order} order={row.order} away={row.away} home={row.home} />
+        <MlbLineupRow
+          key={row.order}
+          order={row.order}
+          away={row.away}
+          home={row.home}
+          awayTeamAbbreviation={awayTeamAbbreviation}
+          homeTeamAbbreviation={homeTeamAbbreviation}
+        />
       ))}
     </div>
   );
