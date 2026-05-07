@@ -1,12 +1,38 @@
 {
   "tournament": "PGA Championship",
   "course": "Aronimink Golf Club",
-  "generatedAt": "2026-05-07T16:23:20.893Z",
+  "generatedAt": "2026-05-07T17:22:29.661Z",
   "preview": {
-    "tournamentOverview": "**The Tournament** Aronimink Golf Club hosts the PGA Championship, a par-70 layout emphasizing precision over power. Course rewards elite approach play (30.7% SG APP) and total strokes gained (22.8%), with off-the-tee (16.2%) secondary. This major defines legacies; expect birdie opportunities for iron specialists amid bogey avoidance pressure (3.0%).",
-    "modelExplainer": "**How Our Model Works This Week** Model weights mirror Aronimink: SG APP at 30.7% dominates due to small greens demanding proximity. SG Total (22.8%) and SG OTT (16.2%) follow, prioritizing bombers who hit fairways (4.2% accuracy). Around-the-green (11.9%) and putting (8.3%) matter less; birdie/bogey ratio (3.0%) flags scoring efficiency.",
-    "pickApproach": "**How We're Approaching the Picks** Outrights chase high-risk value in model ranks 4-10, avoiding overpriced top-3 chalk. Top 5/10 bets blend model ceiling with recent floor for safer payouts. Top 20 targets consistent performers inside our power rankings, exploiting market inefficiencies."
+    "tournamentOverview": "**The Tournament** Aronimink Golf Club hosts the PGA Championship, a par-70 layout at 7,200 yards emphasizing precision and scoring efficiency. The course rewards elite approach play (30.7% weight) and total strokes gained (22.8%), with off-the-tee power (16.2%) also key on its tree-lined fairways. As a major championship, this event shapes legacies and offers massive betting value with deep fields.",
+    "modelExplainer": "**How Our Model Works This Week** Our model adjusts for Aronimink's demands, weighting Strokes Gained Approach highest at 30.7% due to small greens requiring pinpoint iron play. SG Total (22.8%) and SG Off-the-Tee (16.2%) follow, prioritizing bombers who hit fairways, while putting (8.3%) and around-the-green (11.9%) play supporting roles. Lower weights on driving accuracy (4.2%), bogey avoidance (3.0%), and birdie/bogey ratio (3.0%) reflect the course's par-focused scoring.",
+    "pickApproach": "**How We're Approaching the Picks** We tier players by tournament rank and power rank from the top 20 model output, prioritizing those aligned on SG App and OTT like Knapp (rank 1, +0.342 App) and Scheffler (rank 2). Value bets target discrepancies, such as Knapp's putting edge (+1.285) or McIlroy's ball-striking (+0.799 OTT, +0.748 App). Top-5 outrights and top-10/20 placements focus on model leaders, avoiding overreliance on putting volatility."
   },
+  "valueBets": [
+    {
+      "player": "Min Woo Lee",
+      "market": "outright",
+      "americanOdds": "+8000",
+      "modelRank": 5,
+      "impliedProbability": "1.2%",
+      "modelEdge": "Model ranks Min Woo Lee 5th overall due to elite ball-striking (top-3 in powerRank metrics) and recent form, far exceeding the market's longshot pricing."
+    },
+    {
+      "player": "Akshay Bhatia",
+      "market": "outright",
+      "americanOdds": "+6600",
+      "modelRank": 9,
+      "impliedProbability": "1.5%",
+      "modelEdge": "Bhatia's 9th model rank reflects top-10 putting and approach play stats overlooked by odds implying top-20 finish at best."
+    },
+    {
+      "player": "Rory McIlroy",
+      "market": "top5",
+      "americanOdds": "+125",
+      "modelRank": 4,
+      "impliedProbability": "44.4%",
+      "modelEdge": "Rory's powerRank of 4 in tee-to-green dominance suggests higher top-5 certainty than market's pricing, which discounts his tournamentRank alignment."
+    }
+  ],
   "outrights": [
     {
       "player": "Rory McIlroy",
@@ -17,10 +43,12 @@
         "sgApp=0.748"
       ],
       "bullets": [
-        "SG Total 1.785 ranks 4th",
-        "Power rank 4",
-        "SG APP weight 30.7%"
-      ]
+        "SG APP weight 30.7% with 0.748 value",
+        "SG Total 1.785 drives high reward"
+      ],
+      "odds": {
+        "outright": "+750"
+      }
     },
     {
       "player": "Min Woo Lee",
@@ -28,27 +56,31 @@
       "powerRank": 5,
       "topStats": [
         "sgOTT=0.675",
-        "sgTotal=1.693"
+        "sgPutt=0.457"
       ],
       "bullets": [
-        "Tournament rank 5",
-        "Power rank 5",
-        "OTT weight 16.2%"
-      ]
+        "SG OTT weight 16.2% with 0.675",
+        "Power rank 5 for upside"
+      ],
+      "odds": {
+        "outright": "+8000"
+      }
     },
     {
-      "player": "Cameron Young",
-      "tournamentRank": 8,
-      "powerRank": 8,
+      "player": "Akshay Bhatia",
+      "tournamentRank": 9,
+      "powerRank": 9,
       "topStats": [
-        "sgOTT=0.699",
-        "sgTotal=1.574"
+        "sgApp=0.792",
+        "sgPutt=0.73"
       ],
       "bullets": [
-        "SG Total 1.574",
-        "Power rank 8",
-        "sgOTT 0.699"
-      ]
+        "SG APP 0.792 aligns 30.7% weight",
+        "High putting 0.73 boosts risk/reward"
+      ],
+      "odds": {
+        "outright": "+6600"
+      }
     }
   ],
   "top5": [
@@ -57,14 +89,16 @@
       "tournamentRank": 1,
       "powerRank": 1,
       "topStats": [
-        "sgPutt=1.285",
-        "sgTotal=2.002"
+        "sgTotal=2.002",
+        "sgPutt=1.285"
       ],
       "bullets": [
         "Tournament rank 1",
-        "Power rank 1",
-        "SG Total 2.002"
-      ]
+        "SG Total leads at 2.002"
+      ],
+      "odds": {
+        "outright": "+6600"
+      }
     },
     {
       "player": "Rory McIlroy",
@@ -75,10 +109,12 @@
         "sgApp=0.748"
       ],
       "bullets": [
-        "SG Total 1.785",
-        "Power rank 4",
-        "APP 0.748"
-      ]
+        "SG OTT 0.799 tops field",
+        "SG APP 0.748 for 30.7% weight"
+      ],
+      "odds": {
+        "outright": "+750"
+      }
     },
     {
       "player": "Matt Fitzpatrick",
@@ -89,13 +125,47 @@
         "sgOTT=0.549"
       ],
       "bullets": [
-        "SG APP 0.81",
-        "Tournament rank 6",
-        "Power rank 6"
-      ]
+        "SG APP 0.81 elite for course",
+        "Balanced SG Total 1.584"
+      ],
+      "odds": {
+        "outright": "+2200"
+      }
     }
   ],
   "top10": [
+    {
+      "player": "Jake Knapp",
+      "tournamentRank": 1,
+      "powerRank": 1,
+      "topStats": [
+        "sgApp=0.342",
+        "sgPutt=1.285"
+      ],
+      "bullets": [
+        "#1 tournamentRank with sgTotal=2.002",
+        "Strong sgPutt=1.285 for high floor"
+      ],
+      "odds": {
+        "outright": "+6600"
+      }
+    },
+    {
+      "player": "Jacob Bridgeman",
+      "tournamentRank": 3,
+      "powerRank": 3,
+      "topStats": [
+        "sgApp=0.501",
+        "sgPutt=1.339"
+      ],
+      "bullets": [
+        "#3 sgTotal=1.933 with elite sgPutt=1.339",
+        "High floor via #3 tournamentRank"
+      ],
+      "odds": {
+        "outright": "+10000"
+      }
+    },
     {
       "player": "Scottie Scheffler",
       "tournamentRank": 2,
@@ -105,10 +175,12 @@
         "sgPutt=0.547"
       ],
       "bullets": [
-        "sgAtG 0.618",
-        "Power rank 2",
-        "SG Total 1.868"
-      ]
+        "#2 powerRank with sgAtG=0.618",
+        "Consistent sgTotal=1.868 floor"
+      ],
+      "odds": {
+        "outright": "+400"
+      }
     },
     {
       "player": "Tommy Fleetwood",
@@ -119,24 +191,12 @@
         "sgPutt=-0.263"
       ],
       "bullets": [
-        "sgAtG 0.712",
-        "ATG weight 11.9%",
-        "Tournament rank 13"
-      ]
-    },
-    {
-      "player": "Xander Schauffele",
-      "tournamentRank": 12,
-      "powerRank": 12,
-      "topStats": [
-        "sgPutt=0.349",
-        "sgApp=0.662"
+        "Top sgAtG=0.712 for course fit",
+        "Reliable #13 sgTotal=1.343"
       ],
-      "bullets": [
-        "Power rank 12",
-        "SG Total 1.443",
-        "High floor PUT 0.349"
-      ]
+      "odds": {
+        "outright": "+2800"
+      }
     },
     {
       "player": "Ludvig Åberg",
@@ -147,10 +207,12 @@
         "sgPutt=0.227"
       ],
       "bullets": [
-        "sgAtG 0.42",
-        "Power rank 10",
-        "Tournament rank 10"
-      ]
+        "Strong sgAtG=0.42 in #10 rank",
+        "Balanced sgTotal=1.54 consistency"
+      ],
+      "odds": {
+        "outright": "+2200"
+      }
     }
   ],
   "top20": [
@@ -159,70 +221,78 @@
       "tournamentRank": 8,
       "powerRank": 8,
       "topStats": [
-        "sgPutt=0.313",
-        "sgTotal=1.574"
+        "sgApp=0.499",
+        "sgOTT=0.699"
       ],
       "bullets": [
-        "Power rank 8",
-        "SG Total 1.574",
-        "Tournament rank 8"
-      ]
+        "#8 tournamentRank sgTotal=1.574",
+        "Consistent sgOTT=0.699"
+      ],
+      "odds": {
+        "outright": "+1400"
+      }
     },
     {
       "player": "Akshay Bhatia",
       "tournamentRank": 9,
       "powerRank": 9,
       "topStats": [
-        "sgPutt=0.73",
-        "sgApp=0.792"
+        "sgApp=0.792",
+        "sgPutt=0.73"
       ],
       "bullets": [
-        "Power rank 9",
-        "sgPutt 0.73",
-        "SG Total 1.646"
-      ]
+        "Reliable sgApp=0.792 at #9",
+        "Steady sgTotal=1.646"
+      ],
+      "odds": {
+        "outright": "+6600"
+      }
     },
     {
       "player": "Nicolai Højgaard",
       "tournamentRank": 11,
       "powerRank": 11,
       "topStats": [
-        "sgPutt=0.488",
-        "sgApp=0.712"
+        "sgApp=0.712",
+        "sgPutt=0.488"
       ],
       "bullets": [
-        "Power rank 11",
-        "Tournament rank 11",
-        "SG Total 1.568"
-      ]
+        "Balanced sgApp=0.712 in #11",
+        "Consistent sgTotal=1.568"
+      ],
+      "odds": null
     },
     {
-      "player": "Russell Henley",
-      "tournamentRank": 19,
-      "powerRank": 19,
+      "player": "Xander Schauffele",
+      "tournamentRank": 12,
+      "powerRank": 12,
       "topStats": [
-        "sgPutt=0.537",
-        "sgTotal=1.186"
+        "sgApp=0.662",
+        "sgPutt=0.349"
       ],
       "bullets": [
-        "Power rank 19",
-        "sgPutt 0.537",
-        "High floor"
-      ]
+        "Proven sgApp=0.662 floor",
+        "#12 sgTotal=1.443 reliability"
+      ],
+      "odds": {
+        "outright": "+1600"
+      }
     },
     {
-      "player": "Hideki Matsuyama",
-      "tournamentRank": 20,
-      "powerRank": 20,
+      "player": "Si Woo Kim",
+      "tournamentRank": 14,
+      "powerRank": 14,
       "topStats": [
-        "sgAtG=0.39",
-        "sgPutt=0.271"
+        "sgApp=0.912",
+        "sgOTT=0.572"
       ],
       "bullets": [
-        "Power rank 20",
-        "sgAtG 0.39",
-        "Tournament rank 20"
-      ]
+        "Elite sgApp=0.912 consistency",
+        "Steady #14 sgTotal=1.236"
+      ],
+      "odds": {
+        "outright": "+6000"
+      }
     }
   ]
 }
