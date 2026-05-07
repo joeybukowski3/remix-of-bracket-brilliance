@@ -393,7 +393,7 @@ async function callGrokWithRetry(prompt, maxRetries = 3, validate) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.GROK_API_KEY || process.env.XAI_API_KEY}`,
         },
-        body: JSON.stringify({ model: MODEL, max_tokens: 4000, temperature: 0.2, messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({ model: MODEL, max_tokens: 8000, temperature: 0.2, messages: [{ role: "user", content: prompt }] }),
       });
       const data = await response.json();
       const content = extractMessageContent(data?.choices?.[0]?.message?.content);
@@ -429,19 +429,29 @@ function validateSectionCount(name, value, expectedCount, rawResponse) {
   return validatePickArray(value);
 }
 
-async function generateCombinedPicks(apiKey, prompt) {
-  const rawPayload = await callGrokWithRetry(prompt, 3, (parsed, rawResponse) => {
-    if (!parsed.outrights || !parsed.top5 || !parsed.top10 || !parsed.top20) {
-      console.log(`INVALID COMBINED PICKS RESPONSE:\n${rawResponse}\n`);
-      throw new Error("Missing sections in response");
-    }
-  });
-  const rawResponse = JSON.stringify(rawPayload, null, 2);
+async function generateCombinedPicks(apiKey, summary) {
+  const basePrompt = `You are a sharp data-driven golf betting analyst. Based on this tournament model data:\n${summary}\n\nReturn ONLY a raw JSON object with no markdown, no code fences, no explanation. Each pick object has these exact fields: player (string), tournamentRank (number), powerRank (number), topStats (array of exactly 2 strings showing stat=value), bullets (array of exactly 2 strings each referencing a specific number from the data).`;
+
+  const prompt1 = `${basePrompt}\n\nReturn an object with exactly two keys:\noutrights: array of exactly 3 picks from tournament ranks 4-15, high risk high reward.\ntop5: array of exactly 3 picks mixing one from ranks 1-3 and two from ranks 4-12.`;
+
+  const prompt2 = `${basePrompt}\n\nReturn an object with exactly two keys:\ntop10: array of exactly 4 picks prioritizing players with strong ATG and PUT scores and high floor.\ntop20: array of exactly 5 picks from ranks 8-20 prioritizing consistency over upside.`;
+
+  const [result1, result2] = await Promise.all([
+    callGrokWithRetry(prompt1, 3, (parsed) => {
+      if (!parsed.outrights || !parsed.top5) throw new Error("Missing outrights or top5");
+    }),
+    callGrokWithRetry(prompt2, 3, (parsed) => {
+      if (!parsed.top10 || !parsed.top20) throw new Error("Missing top10 or top20");
+    }),
+  ]);
+
+  await new Promise((r) => setTimeout(r, 1000));
+
   return {
-    outrights: validateSectionCount("outrights", rawPayload.outrights, 3, rawResponse),
-    top5: validateSectionCount("top5", rawPayload.top5, 3, rawResponse),
-    top10: validateSectionCount("top10", rawPayload.top10, 4, rawResponse),
-    top20: validateSectionCount("top20", rawPayload.top20, 5, rawResponse),
+    outrights: validatePickArray(result1.outrights),
+    top5: validatePickArray(result1.top5),
+    top10: validatePickArray(result2.top10),
+    top20: validatePickArray(result2.top20),
   };
 }
 
@@ -499,14 +509,12 @@ async function main() {
   // Fetch odds first
   const oddsLookup = await fetchOdds(oddsApiKey, tournamentName);
 
-  const combinedPrompt = `You are a sharp data-driven golf betting analyst. Based on this tournament model data: ${summary}. Return ONLY a raw JSON object with no markdown, no code fences, no explanation. The object must have exactly four keys: outrights, top5, top10, top20. Each key is an array of player pick objects. outrights: 3 picks from tournament ranks 4-15, high risk high reward. top5: 3 picks mixing one from ranks 1-3 and two from ranks 4-12. top10: 4 picks prioritizing players with strong ATG and PUT scores and high floor. top20: 5 picks from ranks 8-20 prioritizing consistency over upside. Each pick object has these exact fields: player (string), tournamentRank (number), powerRank (number), topStats (array of exactly 2 strings showing stat=value), bullets (array of exactly 3 strings each referencing a specific number from the data). Do not include any text outside the JSON object.`;
-
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
   let outrights = [], top5 = [], top10 = [], top20 = [], preview = null, valueBets = [];
 
   if (apiKey) {
-    const combined = await generateCombinedPicks(apiKey, combinedPrompt);
+    const combined = await generateCombinedPicks(apiKey, summary);
     outrights = attachOddsToPickArray(combined.outrights, oddsLookup);
     top5 = attachOddsToPickArray(combined.top5, oddsLookup);
     top10 = attachOddsToPickArray(combined.top10, oddsLookup);
