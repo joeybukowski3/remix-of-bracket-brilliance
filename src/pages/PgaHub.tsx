@@ -407,6 +407,69 @@ export default function PgaHub() {
             </section>
           ) : null}
 
+          {hasBestBetsPanel ? (
+            <section className="mb-4 rounded-[28px] border border-green-800 bg-green-900 p-4 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-green-200/80">Best Bets</div>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
+                    {bestBets?.tournament ?? "PGA Best Bets"}
+                  </h2>
+                </div>
+                <Link
+                  to="/pga/best-bets"
+                  className="text-sm font-semibold text-green-100 transition hover:text-white"
+                >
+                  View Full Analysis -&gt;
+                </Link>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-green-200/82">
+                <span>Outrights: {bestBets?.outrights?.length ?? 0} picks</span>
+                <span aria-hidden="true">·</span>
+                <span>Value Bets: {bestBets?.valueBets?.length ?? 0} identified</span>
+                <span aria-hidden="true">·</span>
+                <span>Generated: {bestBetsGeneratedLabel || EMPTY_MESSAGE}</span>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {[
+                  { key: "outrights", title: "Outright Winners", description: "High upside plays" },
+                  { key: "top5", title: "Top 5 Finishes", description: "Value with win equity" },
+                  { key: "top10", title: "Top 10 Finishes", description: "High floor targets" },
+                  { key: "top20", title: "Top 20 Finishes", description: "Consistency plays" },
+                ].map((card) => {
+                  const picks = bestBets?.[card.key as keyof BestBetsPreviewData] as BestBetPickPreview[] | undefined;
+                  return (
+                    <Link
+                      key={card.key}
+                      to={`/pga/best-bets#${card.key}`}
+                      className="rounded-[20px] border border-green-700 bg-green-800/70 p-4 transition hover:-translate-y-0.5 hover:bg-green-800"
+                    >
+                      <div className="text-sm font-semibold text-white">{card.title}</div>
+                      <div className="mt-1 text-xs text-green-200/88">{card.description}</div>
+                      <div className="mt-4 text-lg font-semibold tracking-[-0.02em] text-white">
+                        {picks?.[0]?.player ?? EMPTY_MESSAGE}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm italic text-green-100/75">
+                <span>
+                  Our model analyzes strokes gained, course weights, and current odds to surface the best values. Click any
+                  category for the full breakdown.
+                </span>
+                <Link to="/pga/best-bets" className="font-semibold not-italic text-green-100 transition hover:text-white">
+                  View Full Analysis →
+                </Link>
+              </div>
+            </section>
+          ) : (
+            <div className="mb-4 px-1 text-sm text-slate-500">Best bets analysis drops every Monday</div>
+          )}
+
           <div className="mb-4 rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
             <SportsbookBar />
           </div>
@@ -604,69 +667,6 @@ export default function PgaHub() {
                   ) : null}
                 </div>
               </div>
-
-              {hasBestBetsPanel ? (
-                <section className="rounded-[28px] border border-green-800 bg-green-900 p-4 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-green-200/80">Best Bets</div>
-                      <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
-                        {bestBets?.tournament ?? "PGA Best Bets"}
-                      </h2>
-                    </div>
-                    <Link
-                      to="/pga/best-bets"
-                      className="text-sm font-semibold text-green-100 transition hover:text-white"
-                    >
-                      View Full Analysis -&gt;
-                    </Link>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-green-200/82">
-                    <span>Outrights: {bestBets?.outrights?.length ?? 0} picks</span>
-                    <span aria-hidden="true">·</span>
-                    <span>Value Bets: {bestBets?.valueBets?.length ?? 0} identified</span>
-                    <span aria-hidden="true">·</span>
-                    <span>Generated: {bestBetsGeneratedLabel || EMPTY_MESSAGE}</span>
-                  </div>
-
-                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    {[
-                      { key: "outrights", title: "Outright Winners", description: "High upside plays" },
-                      { key: "top5", title: "Top 5 Finishes", description: "Value with win equity" },
-                      { key: "top10", title: "Top 10 Finishes", description: "High floor targets" },
-                      { key: "top20", title: "Top 20 Finishes", description: "Consistency plays" },
-                    ].map((card) => {
-                      const picks = bestBets?.[card.key as keyof BestBetsPreviewData] as BestBetPickPreview[] | undefined;
-                      return (
-                        <Link
-                          key={card.key}
-                          to={`/pga/best-bets#${card.key}`}
-                          className="rounded-[20px] border border-green-700 bg-green-800/70 p-4 transition hover:-translate-y-0.5 hover:bg-green-800"
-                        >
-                          <div className="text-sm font-semibold text-white">{card.title}</div>
-                          <div className="mt-1 text-xs text-green-200/88">{card.description}</div>
-                          <div className="mt-4 text-lg font-semibold tracking-[-0.02em] text-white">
-                            {picks?.[0]?.player ?? EMPTY_MESSAGE}
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-2 text-sm italic text-green-100/75">
-                    <span>
-                      Our model analyzes strokes gained, course weights, and current odds to surface the best values. Click any
-                      category for the full breakdown.
-                    </span>
-                    <Link to="/pga/best-bets" className="font-semibold not-italic text-green-100 transition hover:text-white">
-                      View Full Analysis →
-                    </Link>
-                  </div>
-                </section>
-              ) : (
-                <div className="px-1 text-sm text-slate-500">Best bets analysis drops every Monday</div>
-              )}
 
               <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
                 {loading || !activeContent.rows.length ? (
