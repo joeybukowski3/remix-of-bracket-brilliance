@@ -9,7 +9,6 @@ const API_URL = "https://api.x.ai/v1/chat/completions";
 const MODEL = "grok-4-1-fast-non-reasoning";
 const FORCE = process.argv.includes("--force");
 
-const SYSTEM_PROMPT = "You are a sharp data-driven golf betting analyst. You have access to a proprietary PGA Tour player model. Your job is to identify value plays based strictly on the model data provided. Be concise. Do not write paragraphs. Use short bullet points referencing specific stat ranks and model scores. Avoid generic phrases like \"strong ball striker\" or \"has been playing well lately\". Every point must reference a specific number from the data. Output only valid JSON with no markdown.";
 const PREVIEW_SYSTEM_PROMPT = "You are writing a concise tournament betting preview for a sports analytics website. Stay factual, sharp, and concise. Do not use filler. Output only valid JSON with no markdown.";
 
 function loadJson(relativePath) {
@@ -112,7 +111,7 @@ function findWeightEntry(courseWeights, tournamentName, courseName) {
   );
 }
 
-function buildSummary(tournamentData, powerRankings, playerStats, courseWeights, topLimit = 30) {
+function buildSummary(tournamentData, powerRankings, playerStats, courseWeights, topLimit = 25) {
   const { powerByName, rawByName, rawByLastName } = buildPlayerMaps(powerRankings, playerStats);
   const weightEntry = findWeightEntry(courseWeights, tournamentData.tournamentName, tournamentData.courseName);
   const topRows = tournamentData.rows.slice(0, topLimit);
@@ -122,23 +121,15 @@ function buildSummary(tournamentData, powerRankings, playerStats, courseWeights,
     const powerRow = powerByName.get(normalized);
     const rawRow = rawByName.get(normalized) ?? rawByLastName.get(getLastNameKey(row.player)) ?? null;
 
-    const drivingAccuracy = rawRow?.drivingAccuracy;
-    const bogeyAvoidance = rawRow?.bogeyAvoidance;
-    const birdieBogeyRatio = rawRow?.birdieBogeyRatio;
-
     return [
-      `#${row.rank} ${row.player}`,
-      `modelScore=${row.modelScore}`,
+      `name=${row.player}`,
+      `tournamentRank=${row.rank}`,
       `powerRank=${powerRow?.rank ?? "NA"}`,
-      `powerScore=${powerRow?.modelScore ?? "NA"}`,
-      `SGT=${row.sgTotal}`,
-      `OTT=${row.sgOtt}`,
-      `APP=${row.sgApp}`,
-      `ATG=${row.sgAtg}`,
-      `PUT=${row.sgPutt}`,
-      `DRV%=${Number.isFinite(drivingAccuracy) ? Number(drivingAccuracy).toFixed(2) : "NA"}`,
-      `BOG=${Number.isFinite(bogeyAvoidance) ? Number(bogeyAvoidance).toFixed(4) : "NA"}`,
-      `B/B=${Number.isFinite(birdieBogeyRatio) ? Number(birdieBogeyRatio).toFixed(2) : "NA"}`,
+      `sgTotal=${rawRow?.sgTotal ?? row.sgTotal}`,
+      `sgOTT=${rawRow?.sgOTT ?? row.sgOtt}`,
+      `sgApp=${rawRow?.sgApp ?? row.sgApp}`,
+      `sgAtG=${rawRow?.sgAtG ?? row.sgAtg}`,
+      `sgPutt=${rawRow?.sgPutt ?? row.sgPutt}`,
     ].join(" | ");
   });
 
@@ -233,20 +224,6 @@ function cleanJsonText(rawText) {
   return rawText.replace(/```json\n?/gi, "").replace(/```\n?/gi, "").trim();
 }
 
-function parseJsonPayload(rawText, label) {
-  const cleaned = cleanJsonText(rawText);
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const snippet = cleanJsonText(extractJsonSnippet(rawText));
-    try {
-      return JSON.parse(snippet);
-    } catch (error) {
-      throw new Error(`${label} JSON parse failed. ${error instanceof Error ? error.message : error}`);
-    }
-  }
-}
-
 function validatePickArray(value) {
   return Array.isArray(value)
     ? value.map((entry) => ({
@@ -268,55 +245,46 @@ function validatePreview(value) {
   return { tournamentOverview, modelExplainer, pickApproach };
 }
 
-async function callGrok(apiKey, systemPrompt, userPrompt, label) {
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
+async function callGrokWithRetry(prompt, maxRetries = 3, validate) {
+  for (let index = 0; index < maxRetries; index += 1) {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.GROK_API_KEY || process.env.XAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 4000,
+          temperature: 0.2,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
 
-  const rawText = await response.text();
-  console.log("RAW RESPONSE:", rawText);
-
-  if (!response.ok) {
-    throw new Error(`Grok API ${response.status}: ${rawText}`);
-  }
-
-  const json = JSON.parse(rawText);
-  const content = extractMessageContent(json?.choices?.[0]?.message?.content);
-  if (!content || typeof content !== "string") {
-    throw new Error("Grok API returned no message content.");
-  }
-  return parseJsonPayload(content, label);
-}
-
-async function generateSection(apiKey, label, prompt) {
-  try {
-    const result = await callGrok(apiKey, SYSTEM_PROMPT, prompt, label);
-    const picks = validatePickArray(result);
-    if (!Array.isArray(result) || picks.length === 0) {
-      console.log(`${label.toUpperCase()} PARSED EMPTY:`, JSON.stringify(result, null, 2));
+      const data = await response.json();
+      const content = extractMessageContent(data?.choices?.[0]?.message?.content);
+      console.log("RAW RESPONSE:", content);
+      const cleaned = cleanJsonText(content);
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON block found in response");
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (validate) validate(parsed, content);
+      return parsed;
+    } catch (error) {
+      console.log(`Attempt ${index + 1} failed: ${error instanceof Error ? error.message : error}`);
+      if (index < maxRetries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, index) * 1500));
+      } else {
+        throw error;
+      }
     }
-    return picks;
-  } catch (error) {
-    console.error(`Failed to generate ${label}:`, error instanceof Error ? error.message : error);
-    return [];
   }
 }
 
 async function generatePreview(apiKey, prompt) {
   try {
-    const result = await callGrok(apiKey, PREVIEW_SYSTEM_PROMPT, prompt, "preview");
+    const result = await callGrokWithRetry(`${PREVIEW_SYSTEM_PROMPT}\n\n${prompt}`, 3);
     return validatePreview(result);
   } catch (error) {
     console.error("Failed to generate preview:", error instanceof Error ? error.message : error);
@@ -333,14 +301,13 @@ function validateSectionCount(name, value, expectedCount, rawResponse) {
 }
 
 async function generateCombinedPicks(apiKey, prompt) {
-  const rawPayload = await callGrok(apiKey, SYSTEM_PROMPT, prompt, "combined-picks");
+  const rawPayload = await callGrokWithRetry(prompt, 3, (parsed, rawResponse) => {
+    if (!parsed.outrights || !parsed.top5 || !parsed.top10 || !parsed.top20) {
+      console.log(`INVALID COMBINED PICKS RESPONSE:\n${rawResponse}\n`);
+      throw new Error("Missing sections in response");
+    }
+  });
   const rawResponse = JSON.stringify(rawPayload, null, 2);
-
-  if (!rawPayload || typeof rawPayload !== "object" || Array.isArray(rawPayload)) {
-    console.log(`INVALID COMBINED PICKS RESPONSE:\n${rawResponse}\n`);
-    throw new Error("Combined picks response was not a JSON object.");
-  }
-
   return {
     outrights: validateSectionCount("outrights", rawPayload.outrights, 3, rawResponse),
     top5: validateSectionCount("top5", rawPayload.top5, 3, rawResponse),
@@ -393,7 +360,7 @@ async function main() {
   }
 
   const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
-  const summary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 30);
+  const summary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 25);
   const previewSummary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 20);
   const tournamentName = tournamentData.tournamentName;
   const courseName = tournamentData.courseName;
@@ -402,7 +369,6 @@ async function main() {
     console.warn("GROK_API_KEY is not set. Writing empty best-bets sections.");
   }
 
-  const promptBase = `Based on this tournament model data for ${tournamentName} at ${courseName}: ${summary}`;
   const combinedPrompt = `You are a sharp data-driven golf betting analyst. Based on this tournament model data: ${summary}. Return ONLY a raw JSON object with no markdown, no code fences, no explanation. The object must have exactly four keys: outrights, top5, top10, top20. Each key is an array of player pick objects. outrights: 3 picks from tournament ranks 4-15, high risk high reward. top5: 3 picks mixing one from ranks 1-3 and two from ranks 4-12. top10: 4 picks prioritizing players with strong ATG and PUT scores and high floor. top20: 5 picks from ranks 8-20 prioritizing consistency over upside. Each pick object has these exact fields: player (string), tournamentRank (number), powerRank (number), topStats (array of exactly 2 strings showing stat=value), bullets (array of exactly 3 strings each referencing a specific number from the data). Do not include any text outside the JSON object.`;
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic: outrights are high risk/high reward targeting model value outside the top 3, top 5 and top 10 mix floor and value, top 20 targets consistency. Keep each section to 3-4 sentences max. Sound like a sharp analyst, not a copywriter. Do not use filler phrases. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
