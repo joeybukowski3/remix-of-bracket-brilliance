@@ -228,8 +228,8 @@ export default function PgaBestBets() {
   const [loading, setLoading] = useState(true);
 
   usePageSeo({
-    title: "PGA Championship Best Bets & Model Picks - Joe Knows Ball",
-    description: "Data-driven PGA Championship picks for outright winners, top 5, top 10, and top 20 finishes. Built from course-weighted strokes gained models, not gut feelings.",
+    title: "2026 PGA Championship Best Bets & Model Picks — Joe Knows Ball",
+    description: "Data-driven 2026 PGA Championship picks for outright winners, top 5, top 10, and top 20 finishes at Aronimink Golf Club. Built from course-weighted strokes gained models and live odds.",
     path: "/pga/best-bets",
   });
 

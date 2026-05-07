@@ -27,7 +27,6 @@ import {
   PgaScheduleRail,
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
-import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 type ModelMode = "tournament" | "custom" | "standard";
@@ -160,7 +159,6 @@ type BestBetsPreviewData = {
 };
 
 export default function PgaHub() {
-  const seo = getSeoMeta("pga");
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
   const [modelMode, setModelMode] = useState<ModelMode>("tournament");
@@ -175,9 +173,9 @@ export default function PgaHub() {
   const hasAnimatedRef = useRef(false);
 
   usePageSeo({
-    title: seo.title,
-    description: seo.description,
-    path: seo.path,
+    title: "PGA Championship 2026 Picks & Model Rankings — Joe Knows Ball",
+    description: "Course-weighted player rankings and betting models for the 2026 PGA Championship at Aronimink Golf Club. Updated weekly using strokes gained data and DataGolf course stats.",
+    path: "/pga",
     structuredData: {
       "@context": "https://schema.org",
       "@type": "SportsOrganization",
