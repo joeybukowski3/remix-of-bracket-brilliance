@@ -229,11 +229,16 @@ function extractJsonSnippet(text) {
   throw new Error("Could not find a complete JSON block in Grok response.");
 }
 
+function cleanJsonText(rawText) {
+  return rawText.replace(/```json\n?/gi, "").replace(/```\n?/gi, "").trim();
+}
+
 function parseJsonPayload(rawText, label) {
+  const cleaned = cleanJsonText(rawText);
   try {
-    return JSON.parse(rawText);
+    return JSON.parse(cleaned);
   } catch {
-    const snippet = extractJsonSnippet(rawText);
+    const snippet = cleanJsonText(extractJsonSnippet(rawText));
     try {
       return JSON.parse(snippet);
     } catch (error) {
@@ -280,24 +285,29 @@ async function callGrok(apiKey, systemPrompt, userPrompt, label) {
     }),
   });
 
+  const rawText = await response.text();
+  console.log("RAW RESPONSE:", rawText);
+
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Grok API ${response.status}: ${errorText}`);
+    throw new Error(`Grok API ${response.status}: ${rawText}`);
   }
 
-  const json = await response.json();
+  const json = JSON.parse(rawText);
   const content = extractMessageContent(json?.choices?.[0]?.message?.content);
   if (!content || typeof content !== "string") {
     throw new Error("Grok API returned no message content.");
   }
-  console.log(`RAW ${label.toUpperCase()} RESPONSE:\n${content}\n`);
   return parseJsonPayload(content, label);
 }
 
 async function generateSection(apiKey, label, prompt) {
   try {
     const result = await callGrok(apiKey, SYSTEM_PROMPT, prompt, label);
-    return validatePickArray(result);
+    const picks = validatePickArray(result);
+    if (!Array.isArray(result) || picks.length === 0) {
+      console.log(`${label.toUpperCase()} PARSED EMPTY:`, JSON.stringify(result, null, 2));
+    }
+    return picks;
   } catch (error) {
     console.error(`Failed to generate ${label}:`, error instanceof Error ? error.message : error);
     return [];
@@ -375,15 +385,23 @@ async function main() {
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic: outrights are high risk/high reward targeting model value outside the top 3, top 5 and top 10 mix floor and value, top 20 targets consistency. Keep each section to 3-4 sentences max. Sound like a sharp analyst, not a copywriter. Do not use filler phrases. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
   const emptySection = [];
-  const [outrights, top5, top10, top20, preview] = apiKey
-    ? await Promise.all([
-        generateSection(apiKey, "outrights", outrightsPrompt),
-        generateSection(apiKey, "top5", top5Prompt),
-        generateSection(apiKey, "top10", top10Prompt),
-        generateSection(apiKey, "top20", top20Prompt),
-        generatePreview(apiKey, previewPrompt),
-      ])
-    : [emptySection, emptySection, emptySection, emptySection, null];
+  let outrights = emptySection;
+  let top5 = emptySection;
+  let top10 = emptySection;
+  let top20 = emptySection;
+  let preview = null;
+
+  if (apiKey) {
+    outrights = await generateSection(apiKey, "outrights", outrightsPrompt);
+    await new Promise((r) => setTimeout(r, 1500));
+    top5 = await generateSection(apiKey, "top5", top5Prompt);
+    await new Promise((r) => setTimeout(r, 1500));
+    top10 = await generateSection(apiKey, "top10", top10Prompt);
+    await new Promise((r) => setTimeout(r, 1500));
+    top20 = await generateSection(apiKey, "top20", top20Prompt);
+    await new Promise((r) => setTimeout(r, 1500));
+    preview = await generatePreview(apiKey, previewPrompt);
+  }
 
   const payload = {
     tournament: tournamentName,
