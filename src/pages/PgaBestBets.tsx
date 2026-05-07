@@ -89,11 +89,31 @@ function isEmpty(payload: BestBetsPayload | null) {
   return SECTIONS.every(({ key }) => !payload[key]?.length);
 }
 
+function stripMarkdown(text: string) {
+  return text.replace(/\*\*(.*?)\*\*/g, "$1");
+}
+
+function OddsBadge({ value }: { value?: string | null }) {
+  if (!value) return null;
+  const positive = value.startsWith("+");
+  return (
+    <span
+      className={
+        positive
+          ? "rounded-full border border-green-300 bg-green-100 px-3 py-1 text-lg font-bold text-green-800"
+          : "rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-lg font-bold text-gray-700"
+      }
+    >
+      {value}
+    </span>
+  );
+}
+
 function PreviewCard({ label, text }: { label: string; text: string }) {
   return (
     <article className="rounded-xl border border-gray-200 border-t-4 border-t-[#166534] bg-white p-4 shadow-sm">
       <div className="text-sm font-bold text-[#166534]">{label}</div>
-      <p className="mt-3 text-sm leading-7 text-gray-700">{text}</p>
+      <p className="mt-3 text-sm leading-7 text-gray-700">{stripMarkdown(text)}</p>
     </article>
   );
 }
@@ -120,27 +140,55 @@ function ValueBetCard({
               {bet.market}
             </span>
             <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
-              {bet.americanOdds}
-            </span>
-            <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
               Model #{bet.modelRank}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 text-sm font-medium text-amber-900">Implied probability: {bet.impliedProbability}</div>
+      <div className="mt-4">
+        <div
+          className={
+            bet.americanOdds?.startsWith("+")
+              ? "text-2xl font-bold text-green-800"
+              : "text-2xl font-bold text-gray-700"
+          }
+        >
+          {bet.americanOdds}
+        </div>
+        <div className="mt-1 text-sm text-amber-900/72">Implied probability: {bet.impliedProbability}</div>
+      </div>
       <p className="mt-3 text-sm leading-6 text-amber-950/84">{bet.modelEdge}</p>
     </article>
   );
 }
 
-function PickCard({ pick, tierNote }: { pick: BestBetPick; tierNote: string }) {
+function PickCard({
+  pick,
+  tierNote,
+  marketKey,
+}: {
+  pick: BestBetPick;
+  tierNote: string;
+  marketKey: "outrights" | "top5" | "top10" | "top20";
+}) {
+  const oddsValue =
+    marketKey === "outrights"
+      ? pick.odds?.outright
+      : marketKey === "top5"
+        ? pick.odds?.top5 ?? pick.odds?.outright
+        : marketKey === "top10"
+          ? pick.odds?.top10 ?? pick.odds?.outright
+          : pick.odds?.top20 ?? pick.odds?.outright;
+
   return (
     <article className="rounded-xl border border-gray-200 border-l-4 border-l-[#166534] bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-xl font-semibold tracking-[-0.03em] text-gray-900">{pick.player}</h3>
+          <div className="mt-3">
+            <OddsBadge value={oddsValue} />
+          </div>
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">
               Tournament #{pick.tournamentRank}
@@ -290,7 +338,12 @@ export default function PgaBestBets() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {data?.[section.key].map((pick) => (
-                    <PickCard key={`${section.key}-${pick.player}`} pick={pick} tierNote={section.tierNote} />
+                    <PickCard
+                      key={`${section.key}-${pick.player}`}
+                      pick={pick}
+                      tierNote={section.tierNote}
+                      marketKey={section.key}
+                    />
                   ))}
                 </div>
               </section>
