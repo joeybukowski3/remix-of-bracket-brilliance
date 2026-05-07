@@ -10,6 +10,7 @@ const MODEL = "grok-4-1-fast-non-reasoning";
 const FORCE = process.argv.includes("--force");
 
 const SYSTEM_PROMPT = "You are a sharp data-driven golf betting analyst. You have access to a proprietary PGA Tour player model. Your job is to identify value plays based strictly on the model data provided. Be concise. Do not write paragraphs. Use short bullet points referencing specific stat ranks and model scores. Avoid generic phrases like \"strong ball striker\" or \"has been playing well lately\". Every point must reference a specific number from the data. Output only valid JSON with no markdown.";
+const PREVIEW_SYSTEM_PROMPT = "You are writing a concise tournament betting preview for a sports analytics website. Stay factual, sharp, and concise. Do not use filler. Output only valid JSON with no markdown.";
 
 function loadJson(relativePath) {
   return JSON.parse(readFileSync(path.join(ROOT, relativePath), "utf8"));
@@ -111,10 +112,10 @@ function findWeightEntry(courseWeights, tournamentName, courseName) {
   );
 }
 
-function buildSummary(tournamentData, powerRankings, playerStats, courseWeights) {
+function buildSummary(tournamentData, powerRankings, playerStats, courseWeights, topLimit = 30) {
   const { powerByName, rawByName, rawByLastName } = buildPlayerMaps(powerRankings, playerStats);
   const weightEntry = findWeightEntry(courseWeights, tournamentData.tournamentName, tournamentData.courseName);
-  const topRows = tournamentData.rows.slice(0, 30);
+  const topRows = tournamentData.rows.slice(0, topLimit);
 
   const playerLines = topRows.map((row) => {
     const normalized = normalizeName(row.player);
@@ -158,12 +159,111 @@ function buildSummary(tournamentData, powerRankings, playerStats, courseWeights)
     `Tournament: ${tournamentData.tournamentName}`,
     `Course: ${tournamentData.courseName}`,
     `Course Weights: ${weightLines}`,
-    "Top 30 Tournament Model:",
+    `Top ${topLimit} Tournament Model:`,
     ...playerLines,
   ].join("\n");
 }
 
-async function callGrok(apiKey, userPrompt) {
+function extractMessageContent(rawContent) {
+  if (typeof rawContent === "string") return rawContent;
+  if (Array.isArray(rawContent)) {
+    return rawContent
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item.text === "string") return item.text;
+        return "";
+      })
+      .join("")
+      .trim();
+  }
+  return "";
+}
+
+function extractJsonSnippet(text) {
+  const trimmed = text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+  const firstArray = trimmed.indexOf("[");
+  const firstObject = trimmed.indexOf("{");
+  const firstIndex = [firstArray, firstObject].filter((value) => value >= 0).sort((left, right) => left - right)[0];
+  if (firstIndex === undefined) {
+    throw new Error("No JSON opening bracket found in Grok response.");
+  }
+
+  const opening = trimmed[firstIndex];
+  const closing = opening === "[" ? "]" : "}";
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = firstIndex; index < trimmed.length; index += 1) {
+    const char = trimmed[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (char === opening) depth += 1;
+    if (char === closing) {
+      depth -= 1;
+      if (depth === 0) {
+        return trimmed.slice(firstIndex, index + 1);
+      }
+    }
+  }
+
+  throw new Error("Could not find a complete JSON block in Grok response.");
+}
+
+function parseJsonPayload(rawText, label) {
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    const snippet = extractJsonSnippet(rawText);
+    try {
+      return JSON.parse(snippet);
+    } catch (error) {
+      throw new Error(`${label} JSON parse failed. ${error instanceof Error ? error.message : error}`);
+    }
+  }
+}
+
+function validatePickArray(value) {
+  return Array.isArray(value)
+    ? value.map((entry) => ({
+        player: entry?.player ?? "",
+        tournamentRank: Number(entry?.tournamentRank ?? 0),
+        powerRank: Number(entry?.powerRank ?? 0),
+        topStats: Array.isArray(entry?.topStats) ? entry.topStats.slice(0, 2).map(String) : [],
+        bullets: Array.isArray(entry?.bullets) ? entry.bullets.slice(0, 3).map(String) : [],
+      })).filter((entry) => entry.player && entry.topStats.length && entry.bullets.length)
+    : [];
+}
+
+function validatePreview(value) {
+  if (!value || typeof value !== "object") return null;
+  const tournamentOverview = typeof value.tournamentOverview === "string" ? value.tournamentOverview.trim() : "";
+  const modelExplainer = typeof value.modelExplainer === "string" ? value.modelExplainer.trim() : "";
+  const pickApproach = typeof value.pickApproach === "string" ? value.pickApproach.trim() : "";
+  if (!tournamentOverview || !modelExplainer || !pickApproach) return null;
+  return { tournamentOverview, modelExplainer, pickApproach };
+}
+
+async function callGrok(apiKey, systemPrompt, userPrompt, label) {
   const response = await fetch(API_URL, {
     method: "POST",
     headers: {
@@ -174,7 +274,7 @@ async function callGrok(apiKey, userPrompt) {
       model: MODEL,
       temperature: 0.3,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
     }),
@@ -186,22 +286,31 @@ async function callGrok(apiKey, userPrompt) {
   }
 
   const json = await response.json();
-  const content = json?.choices?.[0]?.message?.content;
+  const content = extractMessageContent(json?.choices?.[0]?.message?.content);
   if (!content || typeof content !== "string") {
     throw new Error("Grok API returned no message content.");
   }
-
-  const cleaned = content.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
-  return JSON.parse(cleaned);
+  console.log(`RAW ${label.toUpperCase()} RESPONSE:\n${content}\n`);
+  return parseJsonPayload(content, label);
 }
 
 async function generateSection(apiKey, label, prompt) {
   try {
-    const result = await callGrok(apiKey, prompt);
-    return Array.isArray(result) ? result : [];
+    const result = await callGrok(apiKey, SYSTEM_PROMPT, prompt, label);
+    return validatePickArray(result);
   } catch (error) {
     console.error(`Failed to generate ${label}:`, error instanceof Error ? error.message : error);
     return [];
+  }
+}
+
+async function generatePreview(apiKey, prompt) {
+  try {
+    const result = await callGrok(apiKey, PREVIEW_SYSTEM_PROMPT, prompt, "preview");
+    return validatePreview(result);
+  } catch (error) {
+    console.error("Failed to generate preview:", error instanceof Error ? error.message : error);
+    return null;
   }
 }
 
@@ -249,7 +358,8 @@ async function main() {
   }
 
   const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
-  const summary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights);
+  const summary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 30);
+  const previewSummary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 20);
   const tournamentName = tournamentData.tournamentName;
   const courseName = tournamentData.courseName;
 
@@ -262,21 +372,24 @@ async function main() {
   const top5Prompt = `${promptBase}. Identify 3 top-5 finish best bets. Mix one chalk play (top 3 model rank) and two value plays (ranks 5-12). Return same JSON shape.`;
   const top10Prompt = `${promptBase}. Identify 4 top-10 finish best bets. Prioritize players with high floor stats - strong ATG, BOG, and consistent APP scores. Avoid boom-or-bust profiles. Return same JSON shape.`;
   const top20Prompt = `${promptBase}. Identify 5 top-20 finish best bets. These are safe floor plays - players ranked 8 through 20 in the tournament model with no significant red cells in ATG or PUT. Prioritize consistency over upside. Return same JSON shape.`;
+  const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic: outrights are high risk/high reward targeting model value outside the top 3, top 5 and top 10 mix floor and value, top 20 targets consistency. Keep each section to 3-4 sentences max. Sound like a sharp analyst, not a copywriter. Do not use filler phrases. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
   const emptySection = [];
-  const [outrights, top5, top10, top20] = apiKey
+  const [outrights, top5, top10, top20, preview] = apiKey
     ? await Promise.all([
         generateSection(apiKey, "outrights", outrightsPrompt),
         generateSection(apiKey, "top5", top5Prompt),
         generateSection(apiKey, "top10", top10Prompt),
         generateSection(apiKey, "top20", top20Prompt),
+        generatePreview(apiKey, previewPrompt),
       ])
-    : [emptySection, emptySection, emptySection, emptySection];
+    : [emptySection, emptySection, emptySection, emptySection, null];
 
   const payload = {
     tournament: tournamentName,
     course: courseName,
     generatedAt: new Date().toISOString(),
+    preview,
     outrights,
     top5,
     top10,
