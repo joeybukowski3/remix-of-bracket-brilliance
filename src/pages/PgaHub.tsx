@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import SportsbookBar from "@/components/SportsbookBar";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
@@ -124,9 +125,34 @@ function buildMetaLine(parts: Array<string | null | undefined>) {
   return parts.filter(Boolean).join(" | ");
 }
 
+function stripMarkdown(value: string | null | undefined) {
+  return (value ?? "").replace(/\*\*(.*?)\*\*/g, "$1").trim();
+}
+
+function truncateTeaser(value: string | null | undefined, maxLength: number) {
+  const clean = stripMarkdown(value);
+  if (clean.length <= maxLength) return clean;
+  return `${clean.slice(0, maxLength).trimEnd()}...`;
+}
+
+function formatGeneratedDate(value: string | null | undefined) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
 type BestBetPickPreview = { player: string };
 type BestBetsPreviewData = {
   tournament: string;
+  course?: string;
+  generatedAt?: string;
+  preview?: {
+    tournamentOverview?: string;
+  } | null;
+  valueBets?: Array<unknown>;
   outrights?: BestBetPickPreview[];
   top5?: BestBetPickPreview[];
   top10?: BestBetPickPreview[];
@@ -332,6 +358,9 @@ export default function PgaHub() {
       (section) => Array.isArray(section) && section.length > 0,
     );
   }, [bestBets]);
+  const bestBetsBannerTitle = [bestBets?.tournament, bestBets?.course].filter(Boolean).join(" — ");
+  const bestBetsTeaser = truncateTeaser(bestBets?.preview?.tournamentOverview, 120);
+  const bestBetsGeneratedLabel = formatGeneratedDate(bestBets?.generatedAt);
 
   useEffect(() => {
     if (!activeContent.rows.length || !baselineRows.length || modelMode === "standard") {
@@ -353,6 +382,35 @@ export default function PgaHub() {
     <SiteShell>
       <main className="site-page bg-[#eef3f8] pb-16 pt-4 text-slate-900">
         <div className="site-container">
+          {hasBestBetsPanel ? (
+            <section className="mb-4 rounded-[30px] border border-green-800 bg-green-950 px-5 py-5 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0 space-y-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-300/80">
+                    THIS WEEK'S BETTING PREVIEW
+                  </div>
+                  <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-[2rem]">
+                    {bestBetsBannerTitle || "PGA Best Bets"}
+                  </h2>
+                  <p className="max-w-4xl text-sm text-green-100/88">
+                    {bestBetsTeaser || "Model-driven tournament betting analysis, picks, and odds for this week's PGA event."}
+                  </p>
+                </div>
+
+                <Link
+                  to="/pga/best-bets"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-green-700 bg-green-800 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-green-700 lg:w-auto"
+                >
+                  View Full Picks &amp; Odds →
+                </Link>
+              </div>
+            </section>
+          ) : null}
+
+          <div className="mb-4 rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+            <SportsbookBar />
+          </div>
+
           <div className="grid gap-4 md:grid-cols-[292px_minmax(0,1fr)]">
             <PgaScheduleRail
               schedule={schedule}
@@ -564,6 +622,14 @@ export default function PgaHub() {
                     </Link>
                   </div>
 
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-green-200/82">
+                    <span>Outrights: {bestBets?.outrights?.length ?? 0} picks</span>
+                    <span aria-hidden="true">·</span>
+                    <span>Value Bets: {bestBets?.valueBets?.length ?? 0} identified</span>
+                    <span aria-hidden="true">·</span>
+                    <span>Generated: {bestBetsGeneratedLabel || EMPTY_MESSAGE}</span>
+                  </div>
+
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     {[
                       { key: "outrights", title: "Outright Winners", description: "High upside plays" },
@@ -586,6 +652,16 @@ export default function PgaHub() {
                         </Link>
                       );
                     })}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2 text-sm italic text-green-100/75">
+                    <span>
+                      Our model analyzes strokes gained, course weights, and current odds to surface the best values. Click any
+                      category for the full breakdown.
+                    </span>
+                    <Link to="/pga/best-bets" className="font-semibold not-italic text-green-100 transition hover:text-white">
+                      View Full Analysis →
+                    </Link>
                   </div>
                 </section>
               ) : (
