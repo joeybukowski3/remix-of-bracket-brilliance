@@ -94,6 +94,7 @@ jobs:
       - name: Generate PGA best bets
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: npm run pga:best-bets
 
       - name: Commit and push best bets

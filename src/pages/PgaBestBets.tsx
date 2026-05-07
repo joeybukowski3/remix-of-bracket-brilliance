@@ -9,6 +9,12 @@ type BestBetPick = {
   powerRank: number;
   topStats: string[];
   bullets: string[];
+  odds?: {
+    outright?: string | null;
+    top5?: string | null;
+    top10?: string | null;
+    top20?: string | null;
+  } | null;
 };
 
 type BestBetsPayload = {
@@ -20,6 +26,14 @@ type BestBetsPayload = {
     modelExplainer: string;
     pickApproach: string;
   } | null;
+  valueBets?: Array<{
+    player: string;
+    market: string;
+    americanOdds: string;
+    modelRank: number;
+    impliedProbability: string;
+    modelEdge: string;
+  }>;
   outrights: BestBetPick[];
   top5: BestBetPick[];
   top10: BestBetPick[];
@@ -80,6 +94,43 @@ function PreviewCard({ label, text }: { label: string; text: string }) {
     <article className="rounded-xl border border-gray-200 border-t-4 border-t-[#166534] bg-white p-4 shadow-sm">
       <div className="text-sm font-bold text-[#166534]">{label}</div>
       <p className="mt-3 text-sm leading-7 text-gray-700">{text}</p>
+    </article>
+  );
+}
+
+function ValueBetCard({
+  bet,
+}: {
+  bet: {
+    player: string;
+    market: string;
+    americanOdds: string;
+    modelRank: number;
+    impliedProbability: string;
+    modelEdge: string;
+  };
+}) {
+  return (
+    <article className="rounded-xl border border-amber-200 border-l-4 border-l-amber-500 bg-amber-50 p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-xl font-semibold tracking-[-0.03em] text-amber-950">{bet.player}</h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+              {bet.market}
+            </span>
+            <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+              {bet.americanOdds}
+            </span>
+            <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+              Model #{bet.modelRank}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 text-sm font-medium text-amber-900">Implied probability: {bet.impliedProbability}</div>
+      <p className="mt-3 text-sm leading-6 text-amber-950/84">{bet.modelEdge}</p>
     </article>
   );
 }
@@ -211,6 +262,21 @@ export default function PgaBestBets() {
                     <PreviewCard label="The Tournament" text={data.preview.tournamentOverview} />
                     <PreviewCard label="How Our Model Works This Week" text={data.preview.modelExplainer} />
                     <PreviewCard label="How We're Approaching the Picks" text={data.preview.pickApproach} />
+                  </div>
+                </section>
+              ) : null}
+
+              {Array.isArray(data?.valueBets) && data.valueBets.length ? (
+                <section id="value" className="space-y-4 scroll-mt-24">
+                  <div>
+                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-amber-950">Value Bets</h2>
+                    <p className="mt-1 text-sm text-amber-900/70">Best model-versus-market mismatches from the current board.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {data.valueBets.map((bet) => (
+                      <ValueBetCard key={`${bet.player}-${bet.market}`} bet={bet} />
+                    ))}
                   </div>
                 </section>
               ) : null}
