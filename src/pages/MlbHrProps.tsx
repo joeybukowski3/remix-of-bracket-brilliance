@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import SiteShell from "@/components/layout/SiteShell";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -65,6 +66,14 @@ type SortKey =
 type SortDirection = "asc" | "desc";
 
 const EMPTY_MESSAGE = "Today's HR prop model generates daily at 10 AM ET. Check back after lineups are posted.";
+const ESPN_TEAM_ABBR: Record<string, string> = {
+  AZ: "ari", ATH: "oak", WSH: "wsh", CWS: "chw", KCR: "kc",
+  SDP: "sd", SFG: "sf", TBR: "tb", NYY: "nyy", NYM: "nym",
+  LAD: "lad", LAA: "laa", BOS: "bos", CHC: "chc", CIN: "cin",
+  CLE: "cle", COL: "col", DET: "det", HOU: "hou", MIA: "mia",
+  MIL: "mil", MIN: "min", PHI: "phi", PIT: "pit", SEA: "sea",
+  STL: "stl", TEX: "tex", TOR: "tor", ATL: "atl", BAL: "bal",
+};
 
 function formatDateLabel(value?: string) {
   if (!value) return "";
@@ -103,58 +112,118 @@ function sortRows(rows: HrPropRow[], sortKey: SortKey, direction: SortDirection)
   });
 }
 
+function getEspnTeamLogo(team: string) {
+  return `https://a.espncdn.com/i/teamlogos/mlb/500/${ESPN_TEAM_ABBR[team] ?? team.toLowerCase()}.png`;
+}
+
+function TeamLogoBadge({
+  team,
+  size = 28,
+  showLabel = true,
+}: {
+  team: string;
+  size?: number;
+  showLabel?: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const colors = getMlbTeamColors(team);
+
+  if (failed) {
+    return (
+      <span
+        className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+        style={{ backgroundColor: colors.primary, minWidth: size }}
+      >
+        {team}
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      <img
+        src={getEspnTeamLogo(team)}
+        alt={`${team} logo`}
+        width={size}
+        height={size}
+        className="object-contain"
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+      {showLabel ? <span className="text-sm font-medium text-slate-500">{team}</span> : null}
+    </span>
+  );
+}
+
 function PickCard({
   pick,
+  row,
   tier,
 }: {
   pick: HrPropPick;
+  row?: HrPropRow;
   tier: "Best Bet" | "Value Play" | "Longshot";
 }) {
-  const colors = getMlbTeamColors(pick.team);
+  const parkFactor = row?.parkFactor ?? 1;
   const tierClass =
     tier === "Best Bet"
       ? "bg-green-100 text-green-800"
       : tier === "Value Play"
         ? "bg-amber-100 text-amber-800"
         : "bg-purple-100 text-purple-800";
+  const tierBorderClass =
+    tier === "Best Bet"
+      ? "border-l-4 border-l-green-600"
+      : tier === "Value Play"
+        ? "border-l-4 border-l-amber-400"
+        : "border-l-4 border-l-purple-400";
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article className={cn("rounded-2xl border border-slate-200 bg-white p-4 shadow-sm", tierBorderClass)}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xl font-semibold tracking-[-0.03em] text-slate-900">{pick.player}</div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="rounded-full px-2.5 py-1 text-xs font-semibold text-white" style={{ backgroundColor: colors.primary }}>
-              {pick.team}
-            </span>
-            <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-              vs {pick.opponent}
-            </span>
+          <div className="text-lg font-bold leading-tight text-gray-900">{pick.player}</div>
+          <div className="mb-3 mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+            <TeamLogoBadge team={pick.team} />
+            <span>vs</span>
+            <TeamLogoBadge team={pick.opponent} />
           </div>
         </div>
-        <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", tierClass)}>{tier}</span>
+        <div className="flex flex-col items-end gap-2">
+          <span className={cn("rounded-full border px-2 py-0.5 text-xs font-semibold", getParkFactorTone(parkFactor))}>
+            Park {parkFactor.toFixed(2)}
+          </span>
+          <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", tierClass)}>{tier}</span>
+        </div>
       </div>
 
-      <div className="mt-3 text-sm text-slate-500">
-        {pick.opposingPitcher}
+      {/* TODO: map ESPN player IDs so player headshots can be added here. */}
+
+      <div className="mb-2 text-sm text-gray-500">
+        ⚾ {pick.opposingPitcher}{row?.pitcherHand ? ` (${row.pitcherHand})` : ""}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap gap-1.5">
         {pick.topStats?.map((stat) => (
-          <span key={`${pick.player}-${stat}`} className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800">
+          <span key={`${pick.player}-${stat}`} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
             {stat}
           </span>
         ))}
       </div>
 
-      <ul className="mt-4 space-y-2 text-sm text-slate-700">
+      <ul className="mb-3 space-y-1 text-sm text-gray-700">
         {pick.bullets?.map((bullet) => (
           <li key={`${pick.player}-${bullet}`} className="flex gap-2">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-sky-700" />
+            <span className="text-green-600">•</span>
             <span>{bullet}</span>
           </li>
         ))}
       </ul>
+
+      <div className="flex items-center justify-between gap-3">
+        <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", tierClass)}>{tier}</span>
+        <span className="text-right text-xs text-gray-400">{row?.ballpark ?? "Ballpark TBD"}</span>
+      </div>
     </article>
   );
 }
@@ -212,6 +281,10 @@ export default function MlbHrProps() {
   const hasContent = rawRows.length > 0 && bestBets && (
     bestBets.bestBets.length > 0 || bestBets.valueBets.length > 0 || bestBets.longshots.length > 0
   );
+  const rawRowLookup = useMemo(
+    () => new Map(rawRows.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])),
+    [rawRows],
+  );
 
   const handleSort = (key: SortKey) => {
     setSortDirection((current) => (sortKey === key ? (current === "asc" ? "desc" : "asc") : "asc"));
@@ -255,9 +328,30 @@ export default function MlbHrProps() {
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                  {bestBets?.bestBets.map((pick) => <PickCard key={`best-${pick.player}`} pick={pick} tier="Best Bet" />)}
-                  {bestBets?.valueBets.map((pick) => <PickCard key={`value-${pick.player}`} pick={pick} tier="Value Play" />)}
-                  {bestBets?.longshots.map((pick) => <PickCard key={`long-${pick.player}`} pick={pick} tier="Longshot" />)}
+                  {bestBets?.bestBets.map((pick) => (
+                    <PickCard
+                      key={`best-${pick.player}`}
+                      pick={pick}
+                      row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
+                      tier="Best Bet"
+                    />
+                  ))}
+                  {bestBets?.valueBets.map((pick) => (
+                    <PickCard
+                      key={`value-${pick.player}`}
+                      pick={pick}
+                      row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
+                      tier="Value Play"
+                    />
+                  ))}
+                  {bestBets?.longshots.map((pick) => (
+                    <PickCard
+                      key={`long-${pick.player}`}
+                      pick={pick}
+                      row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
+                      tier="Longshot"
+                    />
+                  ))}
                 </div>
               </section>
 
@@ -307,7 +401,16 @@ export default function MlbHrProps() {
                         <tr key={`${row.player}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/50">
                           <td className="border-b border-slate-100 px-3 py-2">{row.hrScoreRank}</td>
                           <td className="border-b border-slate-100 px-3 py-2 font-medium text-slate-900">{row.player}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.team}</td>
+                          <td className="border-b border-slate-100 px-3 py-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center">
+                                  <TeamLogoBadge team={row.team} size={20} showLabel={false} />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>{row.team}</TooltipContent>
+                            </Tooltip>
+                          </td>
                           <td className="border-b border-slate-100 px-3 py-2">{row.opponent}</td>
                           <td className="border-b border-slate-100 px-3 py-2">{row.opposingPitcher}</td>
                           <td className="border-b border-slate-100 px-3 py-2">
