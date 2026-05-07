@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
 type BestBetPick = {
@@ -261,6 +262,11 @@ export default function PgaBestBets() {
     <SiteShell>
       <main className="site-page bg-gray-50 pb-16 pt-4 text-gray-900">
         <div className="site-container space-y-6">
+          <div className="space-y-4">
+            <SportsbookBar />
+            <div className="border-b border-gray-200" />
+          </div>
+
           <div className="sticky top-0 z-10 hidden rounded-xl border border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur md:flex md:items-center md:justify-between">
             <div className="min-w-0">
               <div className="truncate text-lg font-semibold text-gray-900">{data?.tournament ?? "PGA Best Bets"}</div>

@@ -1,0 +1,42 @@
+export const SPORTSBOOKS = [
+  {
+    name: "DraftKings",
+    shortName: "DK",
+    referralUrl: "https://sportsbook.draftkings.com/r/sb/Joeywins100/US-SB/US-SC",
+    bgColor: "#000000",
+    textColor: "#ffffff",
+    accentColor: "#53d337",
+  },
+  {
+    name: "FanDuel",
+    shortName: "FD",
+    referralUrl: "https://fndl.co/20gmq7y",
+    bgColor: "#1493ff",
+    textColor: "#ffffff",
+    accentColor: "#ffffff",
+  },
+  {
+    name: "Fanatics",
+    shortName: "FAN",
+    referralUrl: "https://fanatics.onelink.me/5kut/jhd5jbks",
+    bgColor: "#cc0000",
+    textColor: "#ffffff",
+    accentColor: "#ffffff",
+  },
+  {
+    name: "BetMGM",
+    shortName: "MGM",
+    referralUrl: "https://playmgmsports.onelink.me/TkMx?af_xp=custom&pid=RAF&c=BMGM_RAF&af_ios_url=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_android_url=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_web_dp=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_dp=playmgmsportswrp%3A%2F%2Fnavigation%3Fscheme%3Dhttps%26url%3Dwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123",
+    bgColor: "#d4af37",
+    textColor: "#000000",
+    accentColor: "#000000",
+  },
+  {
+    name: "Caesars",
+    shortName: "CZR",
+    referralUrl: "https://caesars.com/sportsbook-and-casino/referral?AR=RAF-TDS-8JA",
+    bgColor: "#003087",
+    textColor: "#ffffff",
+    accentColor: "#c8a84b",
+  },
+] as const;
