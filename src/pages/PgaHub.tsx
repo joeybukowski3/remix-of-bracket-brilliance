@@ -124,6 +124,15 @@ function buildMetaLine(parts: Array<string | null | undefined>) {
   return parts.filter(Boolean).join(" | ");
 }
 
+type BestBetPickPreview = { player: string };
+type BestBetsPreviewData = {
+  tournament: string;
+  outrights?: BestBetPickPreview[];
+  top5?: BestBetPickPreview[];
+  top10?: BestBetPickPreview[];
+  top20?: BestBetPickPreview[];
+};
+
 export default function PgaHub() {
   const seo = getSeoMeta("pga");
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
@@ -135,6 +144,7 @@ export default function PgaHub() {
   const [currentOverride, setCurrentOverride] = useState<CourseWeightSet | null>(null);
   const [customPercentWeights, setCustomPercentWeights] = useState<Record<keyof CourseWeightSet, number> | null>(null);
   const [movementMap, setMovementMap] = useState<Record<string, MovementDirection>>({});
+  const [bestBets, setBestBets] = useState<BestBetsPreviewData | null>(null);
   const movementTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasAnimatedRef = useRef(false);
 
@@ -167,6 +177,28 @@ export default function PgaHub() {
     return () => {
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/data/pga/best-bets.json", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Missing best bets feed.");
+        return response.json();
+      })
+      .then((payload) => {
+        if (!active) return;
+        setBestBets(payload as BestBetsPreviewData);
+      })
+      .catch(() => {
+        if (!active) return;
+        setBestBets(null);
+      });
+
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -293,6 +325,13 @@ export default function PgaHub() {
     tournamentRows,
     tournamentWeightEntry,
   ]);
+
+  const hasBestBetsPanel = useMemo(() => {
+    if (!bestBets) return false;
+    return [bestBets.outrights, bestBets.top5, bestBets.top10, bestBets.top20].every(
+      (section) => Array.isArray(section) && section.length > 0,
+    );
+  }, [bestBets]);
 
   useEffect(() => {
     if (!activeContent.rows.length || !baselineRows.length || modelMode === "standard") {
@@ -507,6 +546,51 @@ export default function PgaHub() {
                   ) : null}
                 </div>
               </div>
+
+              {hasBestBetsPanel ? (
+                <section className="rounded-[28px] border border-green-800 bg-green-900 p-4 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-green-200/80">Best Bets</div>
+                      <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
+                        {bestBets?.tournament ?? "PGA Best Bets"}
+                      </h2>
+                    </div>
+                    <Link
+                      to="/pga/best-bets"
+                      className="text-sm font-semibold text-green-100 transition hover:text-white"
+                    >
+                      View Full Analysis -&gt;
+                    </Link>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    {[
+                      { key: "outrights", title: "Outright Winners", description: "High upside plays" },
+                      { key: "top5", title: "Top 5 Finishes", description: "Value with win equity" },
+                      { key: "top10", title: "Top 10 Finishes", description: "High floor targets" },
+                      { key: "top20", title: "Top 20 Finishes", description: "Consistency plays" },
+                    ].map((card) => {
+                      const picks = bestBets?.[card.key as keyof BestBetsPreviewData] as BestBetPickPreview[] | undefined;
+                      return (
+                        <Link
+                          key={card.key}
+                          to={`/pga/best-bets#${card.key}`}
+                          className="rounded-[20px] border border-green-700 bg-green-800/70 p-4 transition hover:-translate-y-0.5 hover:bg-green-800"
+                        >
+                          <div className="text-sm font-semibold text-white">{card.title}</div>
+                          <div className="mt-1 text-xs text-green-200/88">{card.description}</div>
+                          <div className="mt-4 text-lg font-semibold tracking-[-0.02em] text-white">
+                            {picks?.[0]?.player ?? EMPTY_MESSAGE}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : (
+                <div className="px-1 text-sm text-slate-500">Best bets analysis drops every Monday</div>
+              )}
 
               <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
                 {loading || !activeContent.rows.length ? (

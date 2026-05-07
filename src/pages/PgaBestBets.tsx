@@ -32,6 +32,7 @@ const SECTIONS: Array<{
   key: keyof Pick<BestBetsPayload, "outrights" | "top5" | "top10" | "top20">;
   title: string;
   description: string;
+  tierNote: string;
 }> = [
   {
     key: "outrights",
@@ -215,7 +216,7 @@ export default function PgaBestBets() {
               ) : null}
 
               {SECTIONS.map((section) => (
-              <section key={section.key} className="space-y-4">
+              <section key={section.key} id={section.key} className="space-y-4 scroll-mt-24">
                 <div>
                   <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">{section.title}</h2>
                   <p className="mt-1 text-sm text-gray-500">{section.description}</p>

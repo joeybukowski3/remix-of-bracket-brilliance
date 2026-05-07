@@ -324,6 +324,31 @@ async function generatePreview(apiKey, prompt) {
   }
 }
 
+function validateSectionCount(name, value, expectedCount, rawResponse) {
+  if (!Array.isArray(value) || value.length !== expectedCount) {
+    console.log(`INVALID ${name.toUpperCase()} RESPONSE:\n${rawResponse}\n`);
+    throw new Error(`${name} is missing or returned ${Array.isArray(value) ? value.length : 0} picks; expected ${expectedCount}.`);
+  }
+  return validatePickArray(value);
+}
+
+async function generateCombinedPicks(apiKey, prompt) {
+  const rawPayload = await callGrok(apiKey, SYSTEM_PROMPT, prompt, "combined-picks");
+  const rawResponse = JSON.stringify(rawPayload, null, 2);
+
+  if (!rawPayload || typeof rawPayload !== "object" || Array.isArray(rawPayload)) {
+    console.log(`INVALID COMBINED PICKS RESPONSE:\n${rawResponse}\n`);
+    throw new Error("Combined picks response was not a JSON object.");
+  }
+
+  return {
+    outrights: validateSectionCount("outrights", rawPayload.outrights, 3, rawResponse),
+    top5: validateSectionCount("top5", rawPayload.top5, 3, rawResponse),
+    top10: validateSectionCount("top10", rawPayload.top10, 4, rawResponse),
+    top20: validateSectionCount("top20", rawPayload.top20, 5, rawResponse),
+  };
+}
+
 function pickTournamentData(currentTournament, nextTournament) {
   const today = new Date();
   const isMondayEt = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long" }).format(today) === "Monday";
@@ -378,10 +403,7 @@ async function main() {
   }
 
   const promptBase = `Based on this tournament model data for ${tournamentName} at ${courseName}: ${summary}`;
-  const outrightsPrompt = `${promptBase}. Identify 3 outright winner best bets. These should be high risk high reward plays - players ranked 4 through 15 in the tournament model who represent value over favorites. For each pick return: player name, their tournament model rank, power ranking rank, their two strongest stat categories with values, and exactly 3 bullet points explaining the pick using only numbers from the data. Return as JSON array with fields: player, tournamentRank, powerRank, topStats (array of 2 strings), bullets (array of 3 strings).`;
-  const top5Prompt = `${promptBase}. Identify 3 top-5 finish best bets. Mix one chalk play (top 3 model rank) and two value plays (ranks 5-12). Return same JSON shape.`;
-  const top10Prompt = `${promptBase}. Identify 4 top-10 finish best bets. Prioritize players with high floor stats - strong ATG, BOG, and consistent APP scores. Avoid boom-or-bust profiles. Return same JSON shape.`;
-  const top20Prompt = `${promptBase}. Identify 5 top-20 finish best bets. These are safe floor plays - players ranked 8 through 20 in the tournament model with no significant red cells in ATG or PUT. Prioritize consistency over upside. Return same JSON shape.`;
+  const combinedPrompt = `You are a sharp data-driven golf betting analyst. Based on this tournament model data: ${summary}. Return ONLY a raw JSON object with no markdown, no code fences, no explanation. The object must have exactly four keys: outrights, top5, top10, top20. Each key is an array of player pick objects. outrights: 3 picks from tournament ranks 4-15, high risk high reward. top5: 3 picks mixing one from ranks 1-3 and two from ranks 4-12. top10: 4 picks prioritizing players with strong ATG and PUT scores and high floor. top20: 5 picks from ranks 8-20 prioritizing consistency over upside. Each pick object has these exact fields: player (string), tournamentRank (number), powerRank (number), topStats (array of exactly 2 strings showing stat=value), bullets (array of exactly 3 strings each referencing a specific number from the data). Do not include any text outside the JSON object.`;
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic: outrights are high risk/high reward targeting model value outside the top 3, top 5 and top 10 mix floor and value, top 20 targets consistency. Keep each section to 3-4 sentences max. Sound like a sharp analyst, not a copywriter. Do not use filler phrases. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
   const emptySection = [];
@@ -392,13 +414,11 @@ async function main() {
   let preview = null;
 
   if (apiKey) {
-    outrights = await generateSection(apiKey, "outrights", outrightsPrompt);
-    await new Promise((r) => setTimeout(r, 1500));
-    top5 = await generateSection(apiKey, "top5", top5Prompt);
-    await new Promise((r) => setTimeout(r, 1500));
-    top10 = await generateSection(apiKey, "top10", top10Prompt);
-    await new Promise((r) => setTimeout(r, 1500));
-    top20 = await generateSection(apiKey, "top20", top20Prompt);
+    const combined = await generateCombinedPicks(apiKey, combinedPrompt);
+    outrights = combined.outrights;
+    top5 = combined.top5;
+    top10 = combined.top10;
+    top20 = combined.top20;
     await new Promise((r) => setTimeout(r, 1500));
     preview = await generatePreview(apiKey, previewPrompt);
   }
