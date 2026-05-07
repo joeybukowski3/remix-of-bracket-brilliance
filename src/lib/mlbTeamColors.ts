@@ -58,6 +58,9 @@ export function getStatusBadgeTheme(status: string) {
   if (normalized.includes("progress") || normalized.includes("live") || normalized.includes("delayed")) {
     return { background: "#166534", color: "#f0fdf4" };
   }
+  if (normalized.includes("pre-game") || normalized.includes("warmup")) {
+    return { background: "#2563eb", color: "#eff6ff" };
+  }
   if (normalized.includes("final")) {
     return { background: "#0f172a", color: "#f8fafc" };
   }

@@ -7,6 +7,7 @@ export type MlbTeamSide = {
   name: string;
   abbreviation: string;
   record: string;
+  score?: number | null;
   probablePitcher?: {
     id?: number;
     fullName?: string;

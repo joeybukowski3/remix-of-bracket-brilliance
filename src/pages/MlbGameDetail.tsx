@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
 import MlbMatchupLayout from "@/components/mlb/MlbMatchupLayout";
@@ -11,7 +12,7 @@ import MlbPropAnglesPanel from "@/components/mlb/MlbPropAnglesPanel";
 import MlbSectionCard from "@/components/mlb/MlbSectionCard";
 import MlbSectionHeader from "@/components/mlb/MlbSectionHeader";
 import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
-import MlbTeamBadge from "@/components/mlb/MlbTeamBadge";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -21,6 +22,7 @@ import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
+import { cn } from "@/lib/utils";
 
 const SEASON = new Date().getFullYear();
 
@@ -96,6 +98,7 @@ function normalizeGame(game: any): MlbScheduleGame {
       name: away.name || MLB_DASH,
       abbreviation: away.abbreviation || away.teamCode?.toUpperCase() || MLB_DASH,
       record: formatLeagueRecord(game?.teams?.away?.leagueRecord),
+      score: game?.teams?.away?.score ?? null,
       probablePitcher: game?.teams?.away?.probablePitcher || null,
     },
     home: {
@@ -103,6 +106,7 @@ function normalizeGame(game: any): MlbScheduleGame {
       name: home.name || MLB_DASH,
       abbreviation: home.abbreviation || home.teamCode?.toUpperCase() || MLB_DASH,
       record: formatLeagueRecord(game?.teams?.home?.leagueRecord),
+      score: game?.teams?.home?.score ?? null,
       probablePitcher: game?.teams?.home?.probablePitcher || null,
     },
   };
@@ -514,71 +518,228 @@ function buildSplitMetrics(split: MlbOpponentSplit, labelPrefix: string): MlbCom
   ];
 }
 
+type SlateFilter = "all" | "in-progress" | "pre-game" | "scheduled" | "final";
+
+function getSlateStatusCategory(status: string): Exclude<SlateFilter, "all"> {
+  const normalized = status.toLowerCase();
+  if (normalized.includes("progress") || normalized.includes("live") || normalized.includes("delayed")) return "in-progress";
+  if (normalized.includes("pre-game") || normalized.includes("warmup")) return "pre-game";
+  if (normalized.includes("final")) return "final";
+  return "scheduled";
+}
+
+function formatSlateDate(value: Date) {
+  return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(value);
+}
+
+function formatGameTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(value));
+}
+
+function getPitcherSubline(detail: MlbGameDetail | undefined, side: "away" | "home") {
+  const starter = detail?.starters?.[side];
+  if (!starter) return `${MLB_DASH} • ${MLB_DASH}`;
+  return `${starter.hand || MLB_DASH} • ${starter.record || MLB_DASH}`;
+}
+
+function getPreviewPills(detail: MlbGameDetail | undefined) {
+  if (!detail) {
+    return [
+      { label: "PITCH", value: "Loading", team: null as string | null },
+      { label: "LINEUP", value: "Loading", team: null as string | null },
+      { label: "TOTAL", value: "Loading", team: null as string | null },
+    ];
+  }
+
+  const cards = getSummaryCards(detail);
+  const pitch = cards.find((card) => card.label === "Pitching Edge");
+  const lineup = cards.find((card) => card.label === "Lineup Edge");
+  const total = cards.find((card) => card.label === "Run Total Lean");
+
+  const getTeam = (value: string) => {
+    const normalized = value.toLowerCase();
+    if (normalized.includes(detail.game.away.abbreviation.toLowerCase())) return detail.game.away.abbreviation;
+    if (normalized.includes(detail.game.home.abbreviation.toLowerCase())) return detail.game.home.abbreviation;
+    return null;
+  };
+
+  return [
+    { label: "PITCH", value: pitch?.value ?? "Neutral", team: pitch ? getTeam(pitch.value) : null },
+    { label: "LINEUP", value: lineup?.value ?? "Neutral", team: lineup ? getTeam(lineup.value) : null },
+    { label: "TOTAL", value: total?.value ?? "Neutral", team: null as string | null },
+  ];
+}
+
 function HomeSchedule({
   games,
+  detailPreviews,
   onOpenGame,
 }: {
   games: MlbScheduleGame[];
+  detailPreviews: Record<number, MlbGameDetail>;
   onOpenGame: (gamePk: number) => void;
 }) {
+  const [filter, setFilter] = useState<SlateFilter>("all");
+  const counts = useMemo(() => {
+    const summary = { "in-progress": 0, "pre-game": 0, scheduled: 0, final: 0 };
+    games.forEach((game) => {
+      summary[getSlateStatusCategory(game.status)] += 1;
+    });
+    return summary;
+  }, [games]);
+
+  const filteredGames = useMemo(() => {
+    if (filter === "all") return games;
+    return games.filter((game) => getSlateStatusCategory(game.status) === filter);
+  }, [filter, games]);
+
+  const filterOptions: Array<{ key: SlateFilter; label: string }> = [
+    { key: "all", label: "All" },
+    { key: "in-progress", label: "In Progress" },
+    { key: "pre-game", label: "Pre-Game" },
+    { key: "scheduled", label: "Scheduled" },
+    { key: "final", label: "Final" },
+  ];
+
   return (
     <div className="space-y-6">
-      <section className="rounded-[32px] bg-card p-6 shadow-[0_16px_36px_hsl(var(--foreground)/0.06)] ring-1 ring-border/60 sm:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">MLB Dashboard</div>
-            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
-              Matchup-first MLB intelligence for today&apos;s slate
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">
-              Open any game to compare team context, starting pitchers, lineup pressure points, handedness splits, park
-              environment, and prop angles in one view.
-            </p>
-          </div>
-          <MlbValuePill>Live from MLB StatsAPI</MlbValuePill>
+      <section className="space-y-2">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+          <h1 className="text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">Today&apos;s MLB Slate</h1>
+          <div className="text-sm font-medium text-slate-600">{formatSlateDate(new Date())}</div>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {games.length} games · {counts["in-progress"]} in progress · {counts["scheduled"] + counts["pre-game"]} scheduled
         </div>
       </section>
 
+      <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+        <SportsbookBar />
+      </div>
+
       <section className="space-y-4">
-        <div>
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Today&apos;s slate</div>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-foreground">{games.length} MLB matchups</h2>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Daily matchup intelligence for every MLB game. Click any game for a full breakdown including starting pitcher edges, lineup context, park factors, and run total lean.
-          </p>
+        <div className="sticky top-20 z-20 flex flex-col gap-3 rounded-[22px] border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap gap-2">
+            {filterOptions.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setFilter(option.key)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-sm font-semibold transition",
+                  filter === option.key
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="text-sm text-muted-foreground">Showing {filteredGames.length} of {games.length} games</div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {games.map((game) => {
-            const awayColors = getMlbTeamColors(game.away.abbreviation);
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredGames.map((game) => {
+            const detail = detailPreviews[game.gamePk];
             const homeColors = getMlbTeamColors(game.home.abbreviation);
             const statusTheme = getStatusBadgeTheme(game.status);
+            const previewPills = getPreviewPills(detail);
+            const statusCategory = getSlateStatusCategory(game.status);
+            const awayScore = Number(game.away.score);
+            const homeScore = Number(game.home.score);
+            const showScore = (statusCategory === "in-progress" || statusCategory === "final")
+              && Number.isFinite(awayScore)
+              && Number.isFinite(homeScore);
+            const awayWinning = showScore ? awayScore > homeScore : false;
+            const homeWinning = showScore ? homeScore > awayScore : false;
 
             return (
               <button
                 key={game.gamePk}
                 type="button"
                 onClick={() => onOpenGame(game.gamePk)}
-                className="overflow-hidden rounded-[28px] bg-card text-left shadow-[0_12px_28px_hsl(var(--foreground)/0.05)] ring-1 ring-border/60 transition hover:-translate-y-0.5"
+                className="cursor-pointer rounded-2xl border border-gray-200 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                style={{ borderLeft: `4px solid ${homeColors.primary}` }}
               >
-                <div className="flex items-center justify-between gap-3 px-5 pt-5">
-                  <MlbValuePill style={statusTheme}>{game.status}</MlbValuePill>
-                  <span className="text-xs text-muted-foreground">
-                    {new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(game.gameDate))}
+                <div className="flex items-center justify-between gap-3 px-4 py-3">
+                  <span
+                    className="rounded-full px-2.5 py-1 text-xs font-semibold"
+                    style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
+                  >
+                    {game.status}
                   </span>
+                  <span className="text-xs font-medium text-slate-500">{formatGameTime(game.gameDate)}</span>
                 </div>
-                <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-stretch">
-                  <div className="p-4" style={{ backgroundColor: awayColors.tint }}>
-                    <MlbTeamBadge abbreviation={game.away.abbreviation} name={game.away.name} record={game.away.record} size={30} compact />
+
+                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                      <MlbTeamLogo team={game.away.abbreviation} size={40} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-base font-bold text-slate-900">{game.away.name}</div>
+                      <div className={cn("text-xs text-slate-500", awayWinning && "font-semibold text-slate-900")}>
+                        {game.away.abbreviation} • {game.away.record}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-center px-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">@</div>
-                  <div className="p-4" style={{ backgroundColor: homeColors.tint }}>
-                    <MlbTeamBadge abbreviation={game.home.abbreviation} name={game.home.name} record={game.home.record} size={30} compact />
+
+                  <div className="min-w-[56px] text-center">
+                    {showScore ? (
+                      <div className="text-xl font-bold tracking-tight text-slate-900">{awayScore}-{homeScore}</div>
+                    ) : (
+                      <div className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">@</div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 text-right">
+                    <div className="min-w-0">
+                      <div className="truncate text-base font-bold text-slate-900">{game.home.name}</div>
+                      <div className={cn("text-xs text-slate-500", homeWinning && "font-semibold text-slate-900")}>
+                        {game.home.abbreviation} • {game.home.record}
+                      </div>
+                    </div>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                      <MlbTeamLogo team={game.home.abbreviation} size={40} />
+                    </div>
                   </div>
                 </div>
-                <div className="border-t border-border/50 px-5 py-4 text-sm text-muted-foreground">
-                  <div>{game.away.probablePitcher?.fullName || MLB_DASH} vs {game.home.probablePitcher?.fullName || MLB_DASH}</div>
-                  <div className="mt-1">{game.venue}</div>
+
+                <div className="border-t border-gray-200 px-4 py-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="truncate text-sm font-bold text-slate-900">{game.away.probablePitcher?.fullName || MLB_DASH}</div>
+                      <div className="mt-1 text-xs text-slate-500">{getPitcherSubline(detail, "away")}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="truncate text-sm font-bold text-slate-900">{game.home.probablePitcher?.fullName || MLB_DASH}</div>
+                      <div className="mt-1 text-xs text-slate-500">{getPitcherSubline(detail, "home")}</div>
+                    </div>
+                  </div>
                 </div>
+
+                <div className="border-t border-gray-200 px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    {previewPills.map((pill) => {
+                      const pillTeamColors = pill.team ? getMlbTeamColors(pill.team) : null;
+                      return (
+                        <span
+                          key={`${game.gamePk}-${pill.label}`}
+                          className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                          style={{
+                            backgroundColor: pillTeamColors?.primary ?? "#e5e7eb",
+                            color: pillTeamColors ? "#ffffff" : "#4b5563",
+                          }}
+                        >
+                          {pill.label} {pill.value}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="px-4 pb-4 text-xs text-slate-500">{game.venue}</div>
               </button>
             );
           })}
@@ -592,6 +753,7 @@ export default function MlbGameDetail() {
   const seo = getSeoMeta("mlb");
   const [routeState, setRouteState] = useState<MlbRouteState>(() => parseHash(window.location.hash));
   const [schedule, setSchedule] = useState<MlbScheduleGame[]>([]);
+  const [detailPreviews, setDetailPreviews] = useState<Record<number, MlbGameDetail>>({});
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [detail, setDetail] = useState<MlbGameDetail | null>(null);
@@ -614,6 +776,7 @@ export default function MlbGameDetail() {
     let cancelled = false;
     setScheduleLoading(true);
     setScheduleError(null);
+    setDetailPreviews({});
 
     loadSchedule()
       .then((games) => {
@@ -621,7 +784,12 @@ export default function MlbGameDetail() {
         setSchedule(games);
         setScheduleLoading(false);
         games.forEach((game) => {
-          void warmGameDetail(game.gamePk);
+          void warmGameDetail(game.gamePk)
+            .then((data) => {
+              if (cancelled) return;
+              setDetailPreviews((current) => ({ ...current, [game.gamePk]: data }));
+            })
+            .catch(() => {});
         });
       })
       .catch((error) => {
@@ -691,7 +859,7 @@ export default function MlbGameDetail() {
             {scheduleError}
           </div>
         ) : routeState.view === "home" ? (
-          <HomeSchedule games={schedule} onOpenGame={openGame} />
+          <HomeSchedule games={schedule} detailPreviews={detailPreviews} onOpenGame={openGame} />
         ) : detailLoading && !detail ? (
           <div className="rounded-[32px] bg-card p-8 text-sm text-muted-foreground shadow-[0_16px_36px_hsl(var(--foreground)/0.06)] ring-1 ring-border/60">
             Building matchup dashboard.
