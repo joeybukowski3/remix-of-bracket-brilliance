@@ -345,6 +345,11 @@ export default function PgaHub() {
                       <div className="truncate text-2xl font-semibold tracking-[-0.03em] text-slate-900">{activeContent.title}</div>
                       <div className="truncate text-sm text-slate-500">{activeContent.meta}</div>
                       <div className="text-xs text-slate-400">{activeContent.rows.length} active players ranked</div>
+                      <div className="pt-1">
+                        <Link to="/pga/best-bets" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+                          Best Bets -&gt;
+                        </Link>
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-2 xl:items-end">
