@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import SiteShell from "@/components/layout/SiteShell";
 import { MLB_TEAMS } from "@/data/mlb-teams";
@@ -19,6 +19,23 @@ export default function MLB() {
             next modules going live in Joe Knows Ball.
           </p>
         </div>
+        <section className="rounded-[28px] border border-sky-900 bg-slate-950 px-5 py-5 text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)]">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-300/85">MLB HR Prop Model</div>
+              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">Today&apos;s Best Bets →</h2>
+              <p className="max-w-3xl text-sm text-slate-300">
+                Daily home run prop rankings built from barrel rate, exit velocity, park factors, and pitcher home-run risk.
+              </p>
+            </div>
+            <Link
+              to="/mlb/hr-props"
+              className="inline-flex w-full items-center justify-center rounded-full border border-sky-700 bg-sky-800 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-sky-700 lg:w-auto"
+            >
+              Open HR Prop Board
+            </Link>
+          </div>
+        </section>
         <div className="grid gap-4 md:grid-cols-3">
           {[
             ["Focus 1", "Home Run Props", "Batter power, park context, pitcher profile, and weather edge."],

@@ -14,6 +14,7 @@ import BettingEdge from "./pages/BettingEdge";
 import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
 import MlbGameDetail from "./pages/MlbGameDetail";
+import MlbHrProps from "./pages/MlbHrProps";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NFL from "./pages/NFL";
 import NotFound from "./pages/NotFound";
@@ -76,6 +77,7 @@ const App = () => (
           <Route path="/donate" element={<Donate />} />
           <Route path="/nfl" element={<NFL />} />
           <Route path="/mlb" element={<MlbGameDetail />} />
+          <Route path="/mlb/hr-props" element={<MlbHrProps />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<PgaHub />} />
           <Route path="/pga/custom" element={<PgaCustom />} />
