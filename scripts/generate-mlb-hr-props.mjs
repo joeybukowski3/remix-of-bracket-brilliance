@@ -7,9 +7,15 @@ const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const RAW_OUTPUT_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const BEST_BETS_OUTPUT_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
 const FORCE = process.argv.includes("--force");
+const MIN_GENERATION_HOUR_ET = 10;
 const GROK_API_URL = "https://api.x.ai/v1/chat/completions";
 const GROK_MODEL = "grok-4-1-fast-non-reasoning";
 const SEASON = new Date().getFullYear();
+const PICK_LIMITS = {
+  bestBets: 5,
+  valueBets: 3,
+  longshots: 2,
+};
 
 const DEFAULT_PARK_FACTORS = {
   "Coors Field": 1.4,
@@ -38,6 +44,15 @@ function getTodayEt() {
   }).format(new Date());
 }
 
+function getCurrentEtHour() {
+  const hourText = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    hour12: false,
+  }).format(new Date());
+  return Number(hourText);
+}
+
 function normalizeName(value) {
   return String(value ?? "")
     .normalize("NFKD")
@@ -48,6 +63,27 @@ function normalizeName(value) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+function normalizeTeamCode(value) {
+  return String(value ?? "").trim().toUpperCase();
+}
+
+function normalizeText(value) {
+  return String(value ?? "").trim();
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function toFiniteNumber(value, fallback = null) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function pickKey(value) {
+  return `${normalizeName(value.player)}|${normalizeTeamCode(value.team)}|${normalizeTeamCode(value.opponent)}`;
 }
 
 function parseInningsPitched(value) {
@@ -299,6 +335,204 @@ function formatTopStats(player) {
     .map((entry) => `${entry.label}=${Number(entry.value).toFixed(entry.label === "EV" ? 1 : 1)}`);
 }
 
+function validateRawRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) {
+    throw new Error("Generated zero HR prop rows. Existing files were preserved.");
+  }
+
+  const validated = rows.map((row) => {
+    if (!isPlainObject(row)) {
+      throw new Error("Generated HR prop payload contains a non-object row.");
+    }
+
+    const normalized = {
+      player: normalizeText(row.player),
+      team: normalizeTeamCode(row.team),
+      opponent: normalizeTeamCode(row.opponent),
+      opposingPitcher: normalizeText(row.opposingPitcher) || "TBD",
+      pitcherHand: normalizeText(row.pitcherHand) || "R",
+      ballpark: normalizeText(row.ballpark) || "Unknown Venue",
+      parkFactor: toFiniteNumber(row.parkFactor),
+      barrelRate: toFiniteNumber(row.barrelRate),
+      hardHitRate: toFiniteNumber(row.hardHitRate),
+      exitVelo: toFiniteNumber(row.exitVelo),
+      iso: toFiniteNumber(row.iso),
+      hrFBRatio: toFiniteNumber(row.hrFBRatio),
+      pullRate: toFiniteNumber(row.pullRate),
+      last7HR: toFiniteNumber(row.last7HR),
+      last30HR: toFiniteNumber(row.last30HR),
+      hrScore: toFiniteNumber(row.hrScore),
+      hrScoreRank: toFiniteNumber(row.hrScoreRank),
+    };
+
+    if (!normalized.player || !normalized.team || !normalized.opponent) {
+      throw new Error(`Generated HR prop row is missing identity fields: ${JSON.stringify(row)}`);
+    }
+
+    const requiredNumbers = [
+      normalized.parkFactor,
+      normalized.barrelRate,
+      normalized.hardHitRate,
+      normalized.exitVelo,
+      normalized.iso,
+      normalized.hrFBRatio,
+      normalized.pullRate,
+      normalized.last7HR,
+      normalized.last30HR,
+      normalized.hrScore,
+      normalized.hrScoreRank,
+    ];
+
+    if (requiredNumbers.some((value) => value == null)) {
+      throw new Error(`Generated HR prop row has invalid numeric fields for ${normalized.player}.`);
+    }
+
+    return normalized;
+  });
+
+  return validated;
+}
+
+function toStringList(value, limit = 2) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => normalizeText(entry))
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
+function buildFallbackBullets(player) {
+  return [
+    `HR score ${player.hrScore.toFixed(1)} (#${player.hrScoreRank})`,
+    `Park ${player.parkFactor.toFixed(2)} vs ${player.opposingPitcher}${player.pitcherHand ? ` (${player.pitcherHand})` : ""}`,
+  ];
+}
+
+function buildFallbackPick(player) {
+  return {
+    player: player.player,
+    team: player.team,
+    opponent: player.opponent,
+    opposingPitcher: player.opposingPitcher,
+    hrScoreRank: player.hrScoreRank,
+    topStats: formatTopStats(player),
+    bullets: buildFallbackBullets(player),
+  };
+}
+
+function createRowLookups(rows) {
+  const byExact = new Map();
+  const byPlayerTeam = new Map();
+
+  for (const row of rows) {
+    byExact.set(pickKey(row), row);
+    const playerTeamKey = `${normalizeName(row.player)}|${row.team}`;
+    const existing = byPlayerTeam.get(playerTeamKey);
+    if (!existing) {
+      byPlayerTeam.set(playerTeamKey, row);
+    } else {
+      byPlayerTeam.set(playerTeamKey, null);
+    }
+  }
+
+  return { byExact, byPlayerTeam };
+}
+
+function normalizePickCandidate(candidate, lookups) {
+  if (!isPlainObject(candidate)) return null;
+
+  const player = normalizeText(candidate.player);
+  const team = normalizeTeamCode(candidate.team);
+  const candidateOpponent = normalizeTeamCode(candidate.opponent ?? candidate.opp);
+  const exactKey = `${normalizeName(player)}|${team}|${candidateOpponent}`;
+  const playerTeamKey = `${normalizeName(player)}|${team}`;
+  const matchedRow = lookups.byExact.get(exactKey) ?? lookups.byPlayerTeam.get(playerTeamKey) ?? null;
+
+  if (!matchedRow) return null;
+
+  return {
+    player: matchedRow.player,
+    team: matchedRow.team,
+    opponent: matchedRow.opponent,
+    opposingPitcher: matchedRow.opposingPitcher,
+    hrScoreRank: matchedRow.hrScoreRank,
+    topStats: toStringList(candidate.topStats).length ? toStringList(candidate.topStats) : formatTopStats(matchedRow),
+    bullets: toStringList(candidate.bullets).length ? toStringList(candidate.bullets) : buildFallbackBullets(matchedRow),
+  };
+}
+
+function buildFallbackSections(rows) {
+  return {
+    bestBets: rows.slice(0, PICK_LIMITS.bestBets).map(buildFallbackPick),
+    valueBets: rows.slice(PICK_LIMITS.bestBets, PICK_LIMITS.bestBets + PICK_LIMITS.valueBets).map(buildFallbackPick),
+    longshots: rows
+      .slice(PICK_LIMITS.bestBets + PICK_LIMITS.valueBets, PICK_LIMITS.bestBets + PICK_LIMITS.valueBets + PICK_LIMITS.longshots)
+      .map(buildFallbackPick),
+  };
+}
+
+function mergePickSection(sectionName, sourceValue, fallbackPicks, lookups) {
+  const limit = PICK_LIMITS[sectionName];
+  const picks = Array.isArray(sourceValue)
+    ? sourceValue.map((entry) => normalizePickCandidate(entry, lookups)).filter(Boolean)
+    : [];
+  const merged = [];
+  const seen = new Set();
+
+  for (const pick of picks) {
+    const key = pickKey(pick);
+    if (seen.has(key)) continue;
+    merged.push(pick);
+    seen.add(key);
+    if (merged.length === limit) break;
+  }
+
+  for (const pick of fallbackPicks) {
+    const key = pickKey(pick);
+    if (seen.has(key)) continue;
+    merged.push(pick);
+    seen.add(key);
+    if (merged.length === limit) break;
+  }
+
+  if (merged.length < limit) {
+    console.warn(`MLB HR props ${sectionName} only produced ${merged.length}/${limit} validated picks.`);
+  }
+
+  return merged;
+}
+
+function buildFallbackSlatePreview(rows) {
+  const featuredParks = Array.from(new Set(rows.slice(0, 8).map((row) => row.ballpark))).slice(0, 3);
+  return {
+    slateOverview: rows.length
+      ? `Model ranked ${rows.length} hitters for today's slate. The strongest park environments in the top of the board are ${featuredParks.join(", ")}.`
+      : "No validated HR prop rows were available for today's slate.",
+    modelNote: "When AI commentary is unavailable, picks fall back to the model's top-ranked hitters using barrel rate, hard-hit rate, exit velocity, park factor, pitcher HR/9, and recent HR form.",
+  };
+}
+
+function normalizeSlatePreview(value, fallbackPreview) {
+  if (!isPlainObject(value)) return fallbackPreview;
+  const slateOverview = normalizeText(value.slateOverview);
+  const modelNote = normalizeText(value.modelNote);
+  if (!slateOverview || !modelNote) return fallbackPreview;
+  return { slateOverview, modelNote };
+}
+
+function buildBestBetsPayload(rows, picksResult, previewResult) {
+  const fallbackSections = buildFallbackSections(rows);
+  const lookups = createRowLookups(rows);
+  return {
+    date: getTodayEt(),
+    generatedAt: new Date().toISOString(),
+    slatePreview: normalizeSlatePreview(previewResult, buildFallbackSlatePreview(rows)),
+    bestBets: mergePickSection("bestBets", picksResult?.bestBets, fallbackSections.bestBets, lookups),
+    valueBets: mergePickSection("valueBets", picksResult?.valueBets, fallbackSections.valueBets, lookups),
+    longshots: mergePickSection("longshots", picksResult?.longshots, fallbackSections.longshots, lookups),
+  };
+}
+
 function extractMessageContent(rawContent) {
   if (typeof rawContent === "string") return rawContent;
   if (Array.isArray(rawContent)) {
@@ -416,12 +650,21 @@ function buildSummary(players, limit) {
 
 async function main() {
   ensureDataDir();
+  if (!FORCE && getCurrentEtHour() < MIN_GENERATION_HOUR_ET) {
+    console.log(`Skipping MLB HR props generation before ${MIN_GENERATION_HOUR_ET}:00 AM ET. Pass --force to override.`);
+    return;
+  }
+
   if (shouldSkip(FORCE)) {
     console.log("MLB HR props already generated today. Pass --force to regenerate.");
     return;
   }
 
   const schedule = await loadSchedule();
+  if (!schedule.length) {
+    throw new Error("MLB schedule returned zero games for today. Existing HR props files were preserved.");
+  }
+
   const statcastBatters = await fetchStatcastBatterMap();
   const statcastPitchers = await fetchStatcastPitcherMap();
   const batterPool = [];
@@ -543,54 +786,46 @@ async function main() {
       hrScoreRank: index + 1,
     }));
 
-  writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify(scored, null, 2)}\n`, "utf8");
+  const validatedRows = validateRawRows(scored);
+  console.log(`Validated ${validatedRows.length} MLB HR prop rows across ${schedule.length} games.`);
 
   const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
-  let slatePreview = null;
-  let bestBets = [];
-  let valueBets = [];
-  let longshots = [];
+  let picksResult = null;
+  let previewResult = null;
 
-  if (apiKey && scored.length) {
-    const top20Summary = buildSummary(scored, 20);
-    const top10Summary = buildSummary(scored, 10);
+  if (apiKey && validatedRows.length) {
+    const top20Summary = buildSummary(validatedRows, 20);
+    const top10Summary = buildSummary(validatedRows, 10);
     const picksPrompt = `You are a sharp MLB prop betting analyst. Based on today's HR prop model data:\n${top20Summary}\n\nReturn ONLY a raw JSON object with no markdown. The object has three keys: bestBets (array of 5 top HR prop picks - highest model score players with strong matchup context), valueBets (array of 3 players where HR score is high but they may be underpriced - ranks 4-12 in the model), longshots (array of 2 high upside lower probability picks from ranks 8-20). Each pick has: player (string), team (string), opponent (string), opposingPitcher (string), hrScoreRank (number), topStats (array of exactly 2 strings highlighting their strongest metrics with values), bullets (array of exactly 2 strings referencing specific numbers from the data - barrel rate, exit velo, park factor, pitcher HR/9, or recent form). Do not include any text outside the JSON.`;
     const previewPrompt = `Based on today's MLB HR prop model data:\n${top10Summary}\n\nWrite a short slate preview. Return JSON with two fields: slateOverview (2-3 sentences describing today's slate conditions - parks, pitcher matchups, weather angles that create HR opportunities), modelNote (1-2 sentences explaining how the model is weighting today's picks). Sound like a sharp analyst. No filler. No markdown.`;
 
-    const picksResult = await callGrokWithRetry(picksPrompt, 3, (parsed) => {
-      if (!parsed.bestBets || !parsed.valueBets || !parsed.longshots) throw new Error("Missing MLB HR prop sections.");
-    });
-    bestBets = Array.isArray(picksResult.bestBets) ? picksResult.bestBets : [];
-    valueBets = Array.isArray(picksResult.valueBets) ? picksResult.valueBets : [];
-    longshots = Array.isArray(picksResult.longshots) ? picksResult.longshots : [];
+    try {
+      picksResult = await callGrokWithRetry(picksPrompt, 3, (parsed) => {
+        if (!parsed.bestBets || !parsed.valueBets || !parsed.longshots) throw new Error("Missing MLB HR prop sections.");
+      });
+    } catch (error) {
+      console.warn(`Grok HR prop picks were invalid. Falling back to model-ranked picks. ${error instanceof Error ? error.message : error}`);
+    }
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    const previewResult = await callGrokWithRetry(previewPrompt, 3);
-    slatePreview = previewResult && typeof previewResult === "object"
-      ? {
-          slateOverview: String(previewResult.slateOverview ?? "").trim(),
-          modelNote: String(previewResult.modelNote ?? "").trim(),
-        }
-      : null;
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      previewResult = await callGrokWithRetry(previewPrompt, 3);
+    } catch (error) {
+      console.warn(`Grok slate preview was invalid. Falling back to model-generated preview. ${error instanceof Error ? error.message : error}`);
+    }
   } else if (!apiKey) {
-    console.warn("GROK_API_KEY is not set. Writing empty MLB HR prop best-bets sections.");
+    console.warn("GROK_API_KEY is not set. Falling back to model-generated HR prop sections.");
   }
 
-  const bestBetsPayload = {
-    date: getTodayEt(),
-    generatedAt: new Date().toISOString(),
-    slatePreview,
-    bestBets,
-    valueBets,
-    longshots,
-  };
+  const bestBetsPayload = buildBestBetsPayload(validatedRows, picksResult, previewResult);
 
+  writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify(validatedRows, null, 2)}\n`, "utf8");
   writeFileSync(BEST_BETS_OUTPUT_PATH, `${JSON.stringify(bestBetsPayload, null, 2)}\n`, "utf8");
   console.log(`Wrote ${RAW_OUTPUT_PATH}`);
   console.log(`Wrote ${BEST_BETS_OUTPUT_PATH}`);
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
+  console.error(`MLB HR props generation failed before publish. Existing output files were preserved. ${error instanceof Error ? error.message : error}`);
   process.exitCode = 1;
 });

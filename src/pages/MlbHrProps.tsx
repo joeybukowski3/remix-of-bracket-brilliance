@@ -75,6 +75,108 @@ const ESPN_TEAM_ABBR: Record<string, string> = {
   STL: "stl", TEX: "tex", TOR: "tor", ATL: "atl", BAL: "bal",
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeText(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeTeamValue(value: unknown) {
+  return normalizeText(value).toUpperCase();
+}
+
+function normalizeNumber(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function normalizeStringList(value: unknown) {
+  return Array.isArray(value)
+    ? value.map((entry) => normalizeText(entry)).filter(Boolean)
+    : [];
+}
+
+export function normalizeHrPropRows(value: unknown): HrPropRow[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((entry) => {
+      if (!isRecord(entry)) return null;
+
+      const row = {
+        player: normalizeText(entry.player),
+        team: normalizeTeamValue(entry.team),
+        opponent: normalizeTeamValue(entry.opponent),
+        opposingPitcher: normalizeText(entry.opposingPitcher) || "TBD",
+        pitcherHand: normalizeText(entry.pitcherHand) || "R",
+        ballpark: normalizeText(entry.ballpark) || "Unknown Venue",
+        parkFactor: normalizeNumber(entry.parkFactor),
+        barrelRate: normalizeNumber(entry.barrelRate),
+        hardHitRate: normalizeNumber(entry.hardHitRate),
+        exitVelo: normalizeNumber(entry.exitVelo),
+        iso: normalizeNumber(entry.iso),
+        hrFBRatio: normalizeNumber(entry.hrFBRatio),
+        pullRate: normalizeNumber(entry.pullRate),
+        last7HR: normalizeNumber(entry.last7HR),
+        last30HR: normalizeNumber(entry.last30HR),
+        hrScore: normalizeNumber(entry.hrScore),
+        hrScoreRank: normalizeNumber(entry.hrScoreRank),
+      };
+
+      if (!row.player || !row.team || !row.opponent) return null;
+      if (Object.values(row).some((field) => field === null)) return null;
+      return row as HrPropRow;
+    })
+    .filter((entry): entry is HrPropRow => Boolean(entry));
+}
+
+export function normalizeHrBestBetsPayload(value: unknown): HrBestBetsPayload | null {
+  if (!isRecord(value)) return null;
+
+  const normalizePick = (entry: unknown): HrPropPick | null => {
+    if (!isRecord(entry)) return null;
+
+    const player = normalizeText(entry.player);
+    const team = normalizeTeamValue(entry.team);
+    const opponent = normalizeTeamValue(entry.opponent ?? entry.opp);
+    const opposingPitcher = normalizeText(entry.opposingPitcher) || "TBD";
+    const hrScoreRank = normalizeNumber(entry.hrScoreRank);
+
+    if (!player || !team || !opponent || hrScoreRank == null) return null;
+
+    return {
+      player,
+      team,
+      opponent,
+      opposingPitcher,
+      hrScoreRank,
+      topStats: normalizeStringList(entry.topStats).slice(0, 2),
+      bullets: normalizeStringList(entry.bullets).slice(0, 2),
+    };
+  };
+
+  const normalizePickList = (entry: unknown) =>
+    Array.isArray(entry) ? entry.map(normalizePick).filter((pick): pick is HrPropPick => Boolean(pick)) : [];
+
+  const slatePreview = isRecord(value.slatePreview)
+    ? {
+        slateOverview: normalizeText(value.slatePreview.slateOverview),
+        modelNote: normalizeText(value.slatePreview.modelNote),
+      }
+    : null;
+
+  return {
+    date: normalizeText(value.date),
+    generatedAt: normalizeText(value.generatedAt),
+    slatePreview: slatePreview?.slateOverview && slatePreview?.modelNote ? slatePreview : null,
+    bestBets: normalizePickList(value.bestBets),
+    valueBets: normalizePickList(value.valueBets),
+    longshots: normalizePickList(value.longshots),
+  };
+}
+
 function formatDateLabel(value?: string) {
   if (!value) return "";
   const date = new Date(`${value}T12:00:00Z`);
@@ -112,8 +214,9 @@ function sortRows(rows: HrPropRow[], sortKey: SortKey, direction: SortDirection)
   });
 }
 
-function getEspnTeamLogo(team: string) {
-  return `https://a.espncdn.com/i/teamlogos/mlb/500/${ESPN_TEAM_ABBR[team] ?? team.toLowerCase()}.png`;
+function getEspnTeamLogo(team?: string) {
+  const safeTeam = normalizeTeamValue(team) || "TBD";
+  return `https://a.espncdn.com/i/teamlogos/mlb/500/${ESPN_TEAM_ABBR[safeTeam] ?? safeTeam.toLowerCase()}.png`;
 }
 
 function TeamLogoBadge({
@@ -121,12 +224,13 @@ function TeamLogoBadge({
   size = 28,
   showLabel = true,
 }: {
-  team: string;
+  team?: string;
   size?: number;
   showLabel?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const colors = getMlbTeamColors(team);
+  const safeTeam = normalizeTeamValue(team) || "TBD";
+  const colors = getMlbTeamColors(safeTeam);
 
   if (failed) {
     return (
@@ -134,7 +238,7 @@ function TeamLogoBadge({
         className="inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold text-white"
         style={{ backgroundColor: colors.primary, minWidth: size }}
       >
-        {team}
+        {safeTeam}
       </span>
     );
   }
@@ -142,15 +246,15 @@ function TeamLogoBadge({
   return (
     <span className="inline-flex items-center gap-1">
       <img
-        src={getEspnTeamLogo(team)}
-        alt={`${team} logo`}
+        src={getEspnTeamLogo(safeTeam)}
+        alt={`${safeTeam} logo`}
         width={size}
         height={size}
         className="object-contain"
         loading="lazy"
         onError={() => setFailed(true)}
       />
-      {showLabel ? <span className="text-sm font-medium text-slate-500">{team}</span> : null}
+      {showLabel ? <span className="text-sm font-medium text-slate-500">{safeTeam}</span> : null}
     </span>
   );
 }
@@ -256,8 +360,8 @@ export default function MlbHrProps() {
         }
         const [rawPayload, bestPayload] = await Promise.all([rawResponse.json(), bestResponse.json()]);
         if (!active) return;
-        setRawRows(Array.isArray(rawPayload) ? rawPayload : []);
-        setBestBets(bestPayload as HrBestBetsPayload);
+        setRawRows(normalizeHrPropRows(rawPayload));
+        setBestBets(normalizeHrBestBetsPayload(bestPayload));
       })
       .catch(() => {
         if (!active) return;
@@ -278,9 +382,10 @@ export default function MlbHrProps() {
     return sortRows(rows, sortKey, sortDirection);
   }, [rawRows, search, sortKey, sortDirection]);
 
-  const hasContent = rawRows.length > 0 && bestBets && (
+  const hasTopPicks = Boolean(bestBets && (
     bestBets.bestBets.length > 0 || bestBets.valueBets.length > 0 || bestBets.longshots.length > 0
-  );
+  ));
+  const hasRankings = rawRows.length > 0;
   const rawRowLookup = useMemo(
     () => new Map(rawRows.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])),
     [rawRows],
@@ -304,137 +409,149 @@ export default function MlbHrProps() {
             <div className="text-sm text-slate-500">{formatDateLabel(bestBets?.date)}</div>
           </section>
 
-          {!hasContent ? (
+          {!hasTopPicks && !hasRankings ? (
             <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
               {EMPTY_MESSAGE}
             </div>
           ) : (
             <>
-              <section className="grid gap-4 md:grid-cols-2">
-                <article className="rounded-2xl border border-slate-200 border-l-4 border-l-sky-800 bg-white p-5 shadow-sm">
-                  <div className="text-sm font-semibold uppercase tracking-[0.14em] text-sky-800">Slate Overview</div>
-                  <p className="mt-3 text-sm leading-7 text-slate-700">{bestBets?.slatePreview?.slateOverview}</p>
-                </article>
-                <article className="rounded-2xl border border-slate-200 border-l-4 border-l-sky-800 bg-white p-5 shadow-sm">
-                  <div className="text-sm font-semibold uppercase tracking-[0.14em] text-sky-800">Model Note</div>
-                  <p className="mt-3 text-sm leading-7 text-slate-700">{bestBets?.slatePreview?.modelNote}</p>
-                </article>
-              </section>
+              {hasTopPicks ? (
+                <>
+                  <section className="grid gap-4 md:grid-cols-2">
+                    <article className="rounded-2xl border border-slate-200 border-l-4 border-l-sky-800 bg-white p-5 shadow-sm">
+                      <div className="text-sm font-semibold uppercase tracking-[0.14em] text-sky-800">Slate Overview</div>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">{bestBets?.slatePreview?.slateOverview}</p>
+                    </article>
+                    <article className="rounded-2xl border border-slate-200 border-l-4 border-l-sky-800 bg-white p-5 shadow-sm">
+                      <div className="text-sm font-semibold uppercase tracking-[0.14em] text-sky-800">Model Note</div>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">{bestBets?.slatePreview?.modelNote}</p>
+                    </article>
+                  </section>
 
-              <section className="space-y-4">
-                <div>
-                  <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">Top HR Props Today</h2>
-                  <p className="mt-2 text-sm text-slate-500">Highest model score plays for today&apos;s slate.</p>
-                </div>
+                  <section className="space-y-4">
+                    <div>
+                      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">Top HR Props Today</h2>
+                      <p className="mt-2 text-sm text-slate-500">Highest model score plays for today&apos;s slate.</p>
+                    </div>
 
-                <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                  {bestBets?.bestBets.map((pick) => (
-                    <PickCard
-                      key={`best-${pick.player}`}
-                      pick={pick}
-                      row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
-                      tier="Best Bet"
-                    />
-                  ))}
-                  {bestBets?.valueBets.map((pick) => (
-                    <PickCard
-                      key={`value-${pick.player}`}
-                      pick={pick}
-                      row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
-                      tier="Value Play"
-                    />
-                  ))}
-                  {bestBets?.longshots.map((pick) => (
-                    <PickCard
-                      key={`long-${pick.player}`}
-                      pick={pick}
-                      row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
-                      tier="Longshot"
-                    />
-                  ))}
-                </div>
-              </section>
-
-              <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">Full Rankings Table</h2>
-                    <p className="mt-1 text-sm text-slate-500">All batters ranked by today&apos;s HR model.</p>
-                  </div>
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search player"
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
-                  />
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border-separate border-spacing-0 text-sm">
-                    <thead>
-                      <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
-                        {[
-                          ["hrScoreRank", "Rank"],
-                          ["player", "Player"],
-                          ["team", "Team"],
-                          ["opponent", "Opp"],
-                          ["opposingPitcher", "Pitcher"],
-                          ["parkFactor", "Park Factor"],
-                          ["barrelRate", "Barrel%"],
-                          ["hardHitRate", "Hard Hit%"],
-                          ["exitVelo", "Exit Velo"],
-                          ["iso", "ISO"],
-                          ["last7HR", "Last 7 HR"],
-                          ["last30HR", "Last 30 HR"],
-                          ["hrScore", "HR Score"],
-                        ].map(([key, label]) => (
-                          <th key={key} className="border-b border-slate-200 px-3 py-2 text-left font-semibold">
-                            <button type="button" onClick={() => handleSort(key as SortKey)} className="transition hover:text-slate-900">
-                              {label}
-                            </button>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredRows.map((row, index) => (
-                        <tr key={`${row.player}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/50">
-                          <td className="border-b border-slate-100 px-3 py-2">{row.hrScoreRank}</td>
-                          <td className="border-b border-slate-100 px-3 py-2 font-medium text-slate-900">{row.player}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-flex items-center">
-                                  <TeamLogoBadge team={row.team} size={20} showLabel={false} />
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>{row.team}</TooltipContent>
-                            </Tooltip>
-                          </td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.opponent}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.opposingPitcher}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">
-                            <span className={cn("rounded-full border px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>
-                              {row.parkFactor.toFixed(2)}
-                            </span>
-                          </td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.barrelRate.toFixed(1)}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.hardHitRate.toFixed(1)}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.exitVelo.toFixed(1)}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.iso.toFixed(3)}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.last7HR}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">{row.last30HR}</td>
-                          <td className="border-b border-slate-100 px-3 py-2">
-                            <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getHrScoreTone(index, filteredRows.length))}>
-                              {row.hrScore.toFixed(1)}
-                            </span>
-                          </td>
-                        </tr>
+                    <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                      {bestBets?.bestBets.map((pick) => (
+                        <PickCard
+                          key={`best-${pick.player}`}
+                          pick={pick}
+                          row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
+                          tier="Best Bet"
+                        />
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+                      {bestBets?.valueBets.map((pick) => (
+                        <PickCard
+                          key={`value-${pick.player}`}
+                          pick={pick}
+                          row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
+                          tier="Value Play"
+                        />
+                      ))}
+                      {bestBets?.longshots.map((pick) => (
+                        <PickCard
+                          key={`long-${pick.player}`}
+                          pick={pick}
+                          row={rawRowLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)}
+                          tier="Longshot"
+                        />
+                      ))}
+                    </div>
+                  </section>
+                </>
+              ) : null}
+
+              {hasRankings ? (
+                <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                  {!hasTopPicks ? (
+                    <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                      HR prop picks are temporarily unavailable, but the underlying model rankings are still online.
+                    </div>
+                  ) : null}
+
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">Full Rankings Table</h2>
+                      <p className="mt-1 text-sm text-slate-500">All batters ranked by today&apos;s HR model.</p>
+                    </div>
+                    <input
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Search player"
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border-separate border-spacing-0 text-sm">
+                      <thead>
+                        <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                          {[
+                            ["hrScoreRank", "Rank"],
+                            ["player", "Player"],
+                            ["team", "Team"],
+                            ["opponent", "Opp"],
+                            ["opposingPitcher", "Pitcher"],
+                            ["parkFactor", "Park Factor"],
+                            ["barrelRate", "Barrel%"],
+                            ["hardHitRate", "Hard Hit%"],
+                            ["exitVelo", "Exit Velo"],
+                            ["iso", "ISO"],
+                            ["last7HR", "Last 7 HR"],
+                            ["last30HR", "Last 30 HR"],
+                            ["hrScore", "HR Score"],
+                          ].map(([key, label]) => (
+                            <th key={key} className="border-b border-slate-200 px-3 py-2 text-left font-semibold">
+                              <button type="button" onClick={() => handleSort(key as SortKey)} className="transition hover:text-slate-900">
+                                {label}
+                              </button>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRows.map((row, index) => (
+                          <tr key={`${row.player}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/50">
+                            <td className="border-b border-slate-100 px-3 py-2">{row.hrScoreRank}</td>
+                            <td className="border-b border-slate-100 px-3 py-2 font-medium text-slate-900">{row.player}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center">
+                                    <TeamLogoBadge team={row.team} size={20} showLabel={false} />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>{row.team}</TooltipContent>
+                              </Tooltip>
+                            </td>
+                            <td className="border-b border-slate-100 px-3 py-2">{row.opponent}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">{row.opposingPitcher}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">
+                              <span className={cn("rounded-full border px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>
+                                {row.parkFactor.toFixed(2)}
+                              </span>
+                            </td>
+                            <td className="border-b border-slate-100 px-3 py-2">{row.barrelRate.toFixed(1)}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">{row.hardHitRate.toFixed(1)}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">{row.exitVelo.toFixed(1)}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">{row.iso.toFixed(3)}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">{row.last7HR}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">{row.last30HR}</td>
+                            <td className="border-b border-slate-100 px-3 py-2">
+                              <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getHrScoreTone(index, filteredRows.length))}>
+                                {row.hrScore.toFixed(1)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              ) : null}
             </>
           )}
         </div>

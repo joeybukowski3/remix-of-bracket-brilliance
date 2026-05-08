@@ -3,7 +3,18 @@ name: Generate MLB HR Props
 on:
   schedule:
     - cron: "0 14 * * *"
+    - cron: "0 15 * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Force regeneration before 10 AM ET or rerun after today's file already exists"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: generate-mlb-hr-props
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -24,10 +35,15 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Generate HR props
-        run: npm run mlb:hr-props
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then
+            npm run mlb:hr-props -- --force
+          else
+            npm run mlb:hr-props
+          fi
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
 
