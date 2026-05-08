@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_BATTER_SORT,
+  DEFAULT_MATCHUP_SORT,
+  DEFAULT_PITCHER_SORT,
+  DEFAULT_TAB,
   buildHeatStatRanges,
+  buildParkSidebarRows,
+  buildPitcherVsBatterRows,
+  buildSlateSummary,
   getHeatCellStyle,
   normalizeHrBestBetsPayload,
   normalizeHrDashboardPayload,
@@ -106,7 +112,7 @@ describe("MLB HR props dashboard guards", () => {
           weatherBoost: 3.2,
           hrScore: 71.4,
           hrScoreRank: 1,
-          angleTags: ["Power vs HR arm"],
+          angleTags: ["HR damage edge"],
         },
         {
           player: "Broken Row",
@@ -238,7 +244,14 @@ describe("MLB HR props dashboard guards", () => {
     expect(hrScore).toBeLessThanOrEqual(100);
   });
 
-  it("uses the production default batter sort and ranks highest HR score first", () => {
+  it("uses the production default tab and sort states", () => {
+    expect(DEFAULT_TAB).toBe("pitchers");
+    expect(DEFAULT_PITCHER_SORT).toEqual({ key: "hrVs", direction: "desc" });
+    expect(DEFAULT_BATTER_SORT).toEqual({ key: "hrScore", direction: "desc" });
+    expect(DEFAULT_MATCHUP_SORT).toEqual({ key: "combinedScore", direction: "desc" });
+  });
+
+  it("ranks highest HR score first in batter sorting", () => {
     const rows = normalizeHrPropRows([
       { player: "Low", team: "AAA", opponent: "BBB", opposingPitcher: "Pitcher A", hrScore: 21, hrScoreRank: 3 },
       { player: "High", team: "AAA", opponent: "BBB", opposingPitcher: "Pitcher B", hrScore: 78, hrScoreRank: 1 },
@@ -246,9 +259,72 @@ describe("MLB HR props dashboard guards", () => {
     ]);
 
     const sorted = sortBatters(rows, DEFAULT_BATTER_SORT.key, DEFAULT_BATTER_SORT.direction);
-
-    expect(DEFAULT_BATTER_SORT).toEqual({ key: "hrScore", direction: "desc" });
     expect(sorted.map((row) => row.player)).toEqual(["High", "Mid", "Low"]);
+  });
+
+  it("builds a park sidebar sorted by highest park factor first", () => {
+    const parks = buildParkSidebarRows([
+      { gameKey: "A@B", matchup: "A @ B", awayTeam: "A", homeTeam: "B", stadium: "Neutral Park", roofType: "Open", temperature: 70, precipitation: 5, windSpeed: 8, windDirection: "SW", conditions: "Clear", parkFactor: 1 },
+      { gameKey: "C@D", matchup: "C @ D", awayTeam: "C", homeTeam: "D", stadium: "Coors Field", roofType: "Open", temperature: 75, precipitation: 0, windSpeed: 10, windDirection: "NW", conditions: "Clear", parkFactor: 1.4 },
+    ]);
+
+    expect(parks[0].stadium).toBe("Coors Field");
+    expect(parks[0].parkFactor).toBe(1.4);
+  });
+
+  it("builds slate summary from the strongest park, top arm, and top bat", () => {
+    const summary = buildSlateSummary(
+      [{ gameKey: "A@B", pitcher: "Pitcher A", team: "B", opponent: "A", hand: "R", ballpark: "Big Park", parkFactor: 1.2, xera: 4.1, hardHitRate: 45, flyBallRate: 37, barrelRate: 10, kRate: 22, bbRate: 8, whiffRate: 25, hrVs: 71.2, hitsVs: 60, kVs: 44 }],
+      [{ gameKey: "A@B", player: "Batter A", team: "A", opponent: "B", opposingPitcher: "Pitcher A", opposingPitcherId: 1, pitcherHand: "R", ballpark: "Big Park", parkFactor: 1.2, barrelRate: 14, hardHitRate: 52, exitVelo: 92, iso: 0.3, hrFBRatio: 8, pullRate: 42, xba: 0.289, kRate: 19, bbRate: 10, whiffRate: 24, last7HR: 2, last30HR: 7, opposingPitcherHrVs: 71.2, opposingPitcherHitsVs: 60, opposingPitcherKVs: 44, weatherBoost: 4, hrScore: 77.4, hrScoreRank: 1, angleTags: ["HR damage edge"] }],
+      [{ gameKey: "A@B", matchup: "A @ B", awayTeam: "A", homeTeam: "B", stadium: "Big Park", roofType: "Open", temperature: 72, precipitation: 5, windSpeed: 9, windDirection: "SW", conditions: "Clear", parkFactor: 1.2 }],
+    );
+
+    expect(summary.strongestParks).toContain("Big Park");
+    expect(summary.topArm).toContain("Pitcher A");
+    expect(summary.topBat).toContain("Batter A");
+    expect(summary.hitterCount).toBe(1);
+  });
+
+  it("builds combined matchup rows from live batter data", () => {
+    const rows = buildPitcherVsBatterRows(
+      [
+        {
+          gameKey: "NYM@AZ",
+          player: "Juan Soto",
+          team: "NYM",
+          opponent: "AZ",
+          opposingPitcher: "Ryne Nelson",
+          opposingPitcherId: 1,
+          pitcherHand: "R",
+          ballpark: "Chase Field",
+          parkFactor: 1,
+          barrelRate: 18,
+          hardHitRate: 54,
+          exitVelo: 93,
+          iso: 0.33,
+          hrFBRatio: 8,
+          pullRate: 40,
+          xba: 0.301,
+          kRate: 16,
+          bbRate: 12,
+          whiffRate: 21,
+          last7HR: 2,
+          last30HR: 8,
+          opposingPitcherHrVs: 74.9,
+          opposingPitcherHitsVs: 63,
+          opposingPitcherKVs: 34,
+          weatherBoost: 3,
+          hrScore: 70.1,
+          hrScoreRank: 1,
+          angleTags: ["HR damage edge"],
+        },
+      ],
+      [{ gameKey: "NYM@AZ", matchup: "NYM @ AZ", awayTeam: "NYM", homeTeam: "AZ", stadium: "Chase Field", roofType: "Retractable", temperature: 78, precipitation: 0, windSpeed: 6, windDirection: "N", conditions: "Roof likely closed", parkFactor: 1 }],
+    );
+
+    expect(rows[0].combinedScore).toBe(145);
+    expect(rows[0].scoreDiff).toBe(-4.8);
+    expect(rows[0].park).toBe("Chase Field");
   });
 
   it("keeps batter rows aligned with the correct opposing pitcher matchup score", () => {
@@ -267,7 +343,6 @@ describe("MLB HR props dashboard guards", () => {
     });
 
     const pitcherMap = new Map(payload?.pitchers.map((pitcher) => [pitcher.pitcherId, pitcher.hrVs]));
-
     expect(pitcherMap.get(payload?.batters[0].opposingPitcherId ?? null)).toBe(payload?.batters[0].opposingPitcherHrVs);
     expect(pitcherMap.get(payload?.batters[1].opposingPitcherId ?? null)).toBe(payload?.batters[1].opposingPitcherHrVs);
   });
