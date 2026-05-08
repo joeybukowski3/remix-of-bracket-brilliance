@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { pathToFileURL } from "node:url";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -108,6 +109,58 @@ function safeNumber(value, fallback = 0) {
 function average(values) {
   const filtered = values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
   return filtered.length ? filtered.reduce((sum, value) => sum + value, 0) / filtered.length : null;
+}
+
+function logValidationWarning(message, context) {
+  console.warn(`[hr-props] ${message}${context ? ` ${JSON.stringify(context)}` : ""}`);
+}
+
+function parseCsvLine(line) {
+  const values = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === "\"") {
+      if (inQuotes && line[index + 1] === "\"") {
+        current += "\"";
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      values.push(current);
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+
+  values.push(current);
+  return values;
+}
+
+export function sanitizePercentStat(value, label, context) {
+  const parsed = toFiniteNumber(value);
+  if (parsed == null) return null;
+  if (parsed < 0 || parsed > 100) {
+    logValidationWarning(`Invalid ${label} percentage from source; dropping stat value.`, { ...context, value: parsed });
+    return null;
+  }
+  return parsed;
+}
+
+function sanitizeMetric(value, label, context) {
+  const parsed = toFiniteNumber(value);
+  if (parsed == null) return null;
+  if (parsed < 0) {
+    logValidationWarning(`Invalid ${label} metric from source; dropping stat value.`, { ...context, value: parsed });
+    return null;
+  }
+  return parsed;
 }
 
 function parkFactorForVenue(venue) {
@@ -257,33 +310,12 @@ function sumRecentHomeRuns(gameLogs, days) {
   }, 0);
 }
 
-function parseCsv(text) {
+export function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map((value) => value.replace(/^"|"$/g, "").trim());
+  const headers = parseCsvLine(lines[0]).map((value) => value.replace(/^"|"$/g, "").trim());
   return lines.slice(1).map((line) => {
-    const values = [];
-    let current = "";
-    let inQuotes = false;
-    for (let index = 0; index < line.length; index += 1) {
-      const char = line[index];
-      if (char === "\"") {
-        if (inQuotes && line[index + 1] === "\"") {
-          current += "\"";
-          index += 1;
-        } else {
-          inQuotes = !inQuotes;
-        }
-        continue;
-      }
-      if (char === "," && !inQuotes) {
-        values.push(current);
-        current = "";
-        continue;
-      }
-      current += char;
-    }
-    values.push(current);
+    const values = parseCsvLine(line);
     return Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""]));
   });
 }
@@ -292,11 +324,20 @@ async function fetchStatcastBatterMap() {
   const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=batter&filter=&min=1&selections=player_id,player_name,barrel_batted_rate,hard_hit_percent,exit_velocity_avg,isolated_power,pull_percent&sort=barrel_batted_rate&sortDir=desc&chart=false&csv=true`;
   try {
     const text = await fetchText(url);
-    if (!text || text.startsWith("<!DOCTYPE")) return new Map();
+    if (!text || text.startsWith("<!DOCTYPE")) return { rowsByPlayerId: new Map(), averages: {} };
     const rows = parseCsv(text);
-    return new Map(rows.map((row) => [String(row.player_id), row]));
+    const rowsByPlayerId = new Map(rows.map((row) => [String(row.player_id), row]));
+    return {
+      rowsByPlayerId,
+      averages: {
+        barrelRate: average(rows.map((row) => sanitizePercentStat(row.barrel_batted_rate, "Barrel%", { playerId: row.player_id }))),
+        hardHitRate: average(rows.map((row) => sanitizePercentStat(row.hard_hit_percent, "Hard Hit%", { playerId: row.player_id }))),
+        exitVelo: average(rows.map((row) => sanitizeMetric(row.exit_velocity_avg, "Exit Velo", { playerId: row.player_id }))),
+        pullRate: average(rows.map((row) => sanitizePercentStat(row.pull_percent, "Pull%", { playerId: row.player_id }))),
+      },
+    };
   } catch {
-    return new Map();
+    return { rowsByPlayerId: new Map(), averages: {} };
   }
 }
 
@@ -304,11 +345,18 @@ async function fetchStatcastPitcherMap() {
   const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1&selections=player_id,player_name,hard_hit_percent,exit_velocity_avg&sort=hard_hit_percent&sortDir=desc&chart=false&csv=true`;
   try {
     const text = await fetchText(url);
-    if (!text || text.startsWith("<!DOCTYPE")) return new Map();
+    if (!text || text.startsWith("<!DOCTYPE")) return { rowsByPlayerId: new Map(), averages: {} };
     const rows = parseCsv(text);
-    return new Map(rows.map((row) => [String(row.player_id), row]));
+    const rowsByPlayerId = new Map(rows.map((row) => [String(row.player_id), row]));
+    return {
+      rowsByPlayerId,
+      averages: {
+        hardHitRate: average(rows.map((row) => sanitizePercentStat(row.hard_hit_percent, "Pitcher Hard Hit%", { playerId: row.player_id }))),
+        exitVelo: average(rows.map((row) => sanitizeMetric(row.exit_velocity_avg, "Pitcher Exit Velo", { playerId: row.player_id }))),
+      },
+    };
   } catch {
-    return new Map();
+    return { rowsByPlayerId: new Map(), averages: {} };
   }
 }
 
@@ -667,6 +715,16 @@ async function main() {
 
   const statcastBatters = await fetchStatcastBatterMap();
   const statcastPitchers = await fetchStatcastPitcherMap();
+  const batterStatcastDefaults = {
+    barrelRate: statcastBatters.averages.barrelRate ?? 7,
+    hardHitRate: statcastBatters.averages.hardHitRate ?? 37,
+    exitVelo: statcastBatters.averages.exitVelo ?? 89,
+    pullRate: statcastBatters.averages.pullRate ?? 40,
+  };
+  const pitcherStatcastDefaults = {
+    hardHitRate: statcastPitchers.averages.hardHitRate ?? 37,
+    exitVelo: statcastPitchers.averages.exitVelo ?? 89,
+  };
   const batterPool = [];
 
   for (const game of schedule) {
@@ -680,8 +738,8 @@ async function main() {
     const homePitcherPerson = await fetchPerson(game.home.probablePitcher?.id ?? null);
     const awayPitcherStats = await fetchPitcherSeasonStats(game.away.probablePitcher?.id ?? null);
     const homePitcherStats = await fetchPitcherSeasonStats(game.home.probablePitcher?.id ?? null);
-    const awayPitcherStatcast = statcastPitchers.get(String(game.away.probablePitcher?.id ?? ""));
-    const homePitcherStatcast = statcastPitchers.get(String(game.home.probablePitcher?.id ?? ""));
+    const awayPitcherStatcast = statcastPitchers.rowsByPlayerId.get(String(game.away.probablePitcher?.id ?? ""));
+    const homePitcherStatcast = statcastPitchers.rowsByPlayerId.get(String(game.home.probablePitcher?.id ?? ""));
 
     const pitcherContexts = [
       {
@@ -692,8 +750,8 @@ async function main() {
         opposingPitcherId: game.home.probablePitcher?.id ?? null,
         pitcherHand: homePitcherPerson?.pitchHand?.code ?? "R",
         pitcherHr9: computeHr9(homePitcherStats?.homeRuns, homePitcherStats?.inningsPitched),
-        pitcherHardHitAllowed: safeNumber(homePitcherStatcast?.hard_hit_percent, 37),
-        pitcherExitVeloAllowed: safeNumber(homePitcherStatcast?.exit_velocity_avg, 89),
+        pitcherHardHitAllowed: sanitizePercentStat(homePitcherStatcast?.hard_hit_percent, "Pitcher Hard Hit%", { pitcherId: game.home.probablePitcher?.id }) ?? pitcherStatcastDefaults.hardHitRate,
+        pitcherExitVeloAllowed: sanitizeMetric(homePitcherStatcast?.exit_velocity_avg, "Pitcher Exit Velo", { pitcherId: game.home.probablePitcher?.id }) ?? pitcherStatcastDefaults.exitVelo,
       },
       {
         lineup: homeLineup,
@@ -703,8 +761,8 @@ async function main() {
         opposingPitcherId: game.away.probablePitcher?.id ?? null,
         pitcherHand: awayPitcherPerson?.pitchHand?.code ?? "R",
         pitcherHr9: computeHr9(awayPitcherStats?.homeRuns, awayPitcherStats?.inningsPitched),
-        pitcherHardHitAllowed: safeNumber(awayPitcherStatcast?.hard_hit_percent, 37),
-        pitcherExitVeloAllowed: safeNumber(awayPitcherStatcast?.exit_velocity_avg, 89),
+        pitcherHardHitAllowed: sanitizePercentStat(awayPitcherStatcast?.hard_hit_percent, "Pitcher Hard Hit%", { pitcherId: game.away.probablePitcher?.id }) ?? pitcherStatcastDefaults.hardHitRate,
+        pitcherExitVeloAllowed: sanitizeMetric(awayPitcherStatcast?.exit_velocity_avg, "Pitcher Exit Velo", { pitcherId: game.away.probablePitcher?.id }) ?? pitcherStatcastDefaults.exitVelo,
       },
     ];
 
@@ -713,10 +771,14 @@ async function main() {
         const person = await fetchPerson(hitter.id);
         const season = await fetchBatterSeasonStats(hitter.id);
         const gameLogs = await fetchBatterHrGameLog(hitter.id);
-        const statcast = statcastBatters.get(String(hitter.id));
+        const statcast = statcastBatters.rowsByPlayerId.get(String(hitter.id));
         const avg = safeNumber(season?.avg, 0.24);
         const slg = safeNumber(season?.slg, 0.39);
         const iso = Number(Math.max(0, slg - avg).toFixed(3));
+        const barrelRate = sanitizePercentStat(statcast?.barrel_batted_rate, "Barrel%", { player: hitter.fullName || hitter.name, playerId: hitter.id });
+        const hardHitRate = sanitizePercentStat(statcast?.hard_hit_percent, "Hard Hit%", { player: hitter.fullName || hitter.name, playerId: hitter.id });
+        const exitVelo = sanitizeMetric(statcast?.exit_velocity_avg, "Exit Velo", { player: hitter.fullName || hitter.name, playerId: hitter.id });
+        const pullRate = sanitizePercentStat(statcast?.pull_percent, "Pull%", { player: hitter.fullName || hitter.name, playerId: hitter.id });
         batterPool.push({
           player: hitter.fullName || hitter.name || "Unknown Player",
           team: context.battingTeam.abbreviation,
@@ -725,12 +787,12 @@ async function main() {
           pitcherHand: context.pitcherHand,
           ballpark: game.venue,
           parkFactor: parkFactorForVenue(game.venue),
-          barrelRate: safeNumber(statcast?.barrel_batted_rate, Math.max(4, iso * 55)),
-          hardHitRate: safeNumber(statcast?.hard_hit_percent, Math.max(25, slg * 100)),
-          exitVelo: safeNumber(statcast?.exit_velocity_avg, 88 + iso * 10),
+          barrelRate: barrelRate ?? batterStatcastDefaults.barrelRate,
+          hardHitRate: hardHitRate ?? batterStatcastDefaults.hardHitRate,
+          exitVelo: exitVelo ?? batterStatcastDefaults.exitVelo,
           iso,
           hrFBRatio: safeNumber(season?.homeRuns && season?.atBats ? (season.homeRuns / Math.max(1, season.atBats)) * 100 : iso * 100, 10),
-          pullRate: safeNumber(statcast?.pull_percent, 40),
+          pullRate: pullRate ?? batterStatcastDefaults.pullRate,
           last7HR: sumRecentHomeRuns(gameLogs, 7),
           last30HR: sumRecentHomeRuns(gameLogs, 30),
           opposingPitcherHr9: safeNumber(context.pitcherHr9, 1.1),
@@ -825,7 +887,9 @@ async function main() {
   console.log(`Wrote ${BEST_BETS_OUTPUT_PATH}`);
 }
 
-main().catch((error) => {
-  console.error(`MLB HR props generation failed before publish. Existing output files were preserved. ${error instanceof Error ? error.message : error}`);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(`MLB HR props generation failed before publish. Existing output files were preserved. ${error instanceof Error ? error.message : error}`);
+    process.exitCode = 1;
+  });
+}

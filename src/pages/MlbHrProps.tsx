@@ -65,6 +65,28 @@ type SortKey =
 
 type SortDirection = "asc" | "desc";
 
+type HeatStatKey =
+  | "parkFactor"
+  | "barrelRate"
+  | "hardHitRate"
+  | "exitVelo"
+  | "iso"
+  | "last7HR"
+  | "last30HR"
+  | "hrScore";
+
+type StatRange = {
+  low: number;
+  high: number;
+};
+
+type ParkFactorCardRow = {
+  key: string;
+  ballpark: string;
+  matchup: string;
+  parkFactor: number;
+};
+
 const EMPTY_MESSAGE = "Today's HR prop model generates daily at 10 AM ET. Check back after lineups are posted.";
 const ESPN_TEAM_ABBR: Record<string, string> = {
   AZ: "ari", ATH: "oak", WSH: "wsh", CWS: "chw", KCR: "kc",
@@ -175,6 +197,72 @@ export function normalizeHrBestBetsPayload(value: unknown): HrBestBetsPayload | 
     valueBets: normalizePickList(value.valueBets),
     longshots: normalizePickList(value.longshots),
   };
+}
+
+function quantile(values: number[], percentile: number) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((left, right) => left - right);
+  const position = (sorted.length - 1) * percentile;
+  const lowerIndex = Math.floor(position);
+  const upperIndex = Math.ceil(position);
+  const lower = sorted[lowerIndex];
+  const upper = sorted[upperIndex];
+  if (lowerIndex === upperIndex) return lower;
+  return lower + (upper - lower) * (position - lowerIndex);
+}
+
+export function buildHeatStatRanges(rows: HrPropRow[]) {
+  const statKeys: HeatStatKey[] = ["parkFactor", "barrelRate", "hardHitRate", "exitVelo", "iso", "last7HR", "last30HR", "hrScore"];
+  return Object.fromEntries(
+    statKeys.map((key) => {
+      const values = rows.map((row) => row[key]).filter((value) => Number.isFinite(value));
+      const low = quantile(values, 0.1);
+      const high = quantile(values, 0.9);
+      return [key, {
+        low: low ?? 0,
+        high: high ?? 0,
+      } satisfies StatRange];
+    }),
+  ) as Record<HeatStatKey, StatRange>;
+}
+
+export function getHeatCellStyle(value: number, range: StatRange) {
+  if (!Number.isFinite(value) || !Number.isFinite(range.low) || !Number.isFinite(range.high) || range.high <= range.low) {
+    return undefined;
+  }
+
+  const midpoint = (range.low + range.high) / 2;
+  const denominator = Math.max((range.high - range.low) / 2, 0.0001);
+  const normalized = Math.max(-1, Math.min(1, (value - midpoint) / denominator));
+  const alpha = 0.08 + Math.abs(normalized) * 0.16;
+
+  return {
+    backgroundColor: normalized >= 0
+      ? `rgba(220, 38, 38, ${alpha.toFixed(3)})`
+      : `rgba(37, 99, 235, ${alpha.toFixed(3)})`,
+    color: normalized >= 0 ? "#7f1d1d" : "#1e3a8a",
+  };
+}
+
+export function getTopParkFactorRows(rows: HrPropRow[], limit = 5): ParkFactorCardRow[] {
+  const deduped = new Map<string, ParkFactorCardRow>();
+
+  for (const row of rows) {
+    const matchup = [row.team, row.opponent].sort().join(" vs ");
+    const key = `${row.ballpark}|${matchup}`;
+    if (!deduped.has(key)) {
+      deduped.set(key, {
+        key,
+        ballpark: row.ballpark,
+        matchup,
+        parkFactor: row.parkFactor,
+      });
+    }
+  }
+
+  return [...deduped.values()]
+    .sort((left, right) => right.parkFactor - left.parkFactor || left.ballpark.localeCompare(right.ballpark))
+    .slice(0, limit);
 }
 
 function formatDateLabel(value?: string) {
@@ -390,6 +478,8 @@ export default function MlbHrProps() {
     () => new Map(rawRows.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])),
     [rawRows],
   );
+  const heatRanges = useMemo(() => buildHeatStatRanges(rawRows), [rawRows]);
+  const topParkFactors = useMemo(() => getTopParkFactorRows(rawRows), [rawRows]);
 
   const handleSort = (key: SortKey) => {
     setSortDirection((current) => (sortKey === key ? (current === "asc" ? "desc" : "asc") : "asc"));
@@ -465,7 +555,8 @@ export default function MlbHrProps() {
               ) : null}
 
               {hasRankings ? (
-                <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+                  <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
                   {!hasTopPicks ? (
                     <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                       HR prop picks are temporarily unavailable, but the underlying model rankings are still online.
@@ -529,18 +620,18 @@ export default function MlbHrProps() {
                             </td>
                             <td className="border-b border-slate-100 px-3 py-2">{row.opponent}</td>
                             <td className="border-b border-slate-100 px-3 py-2">{row.opposingPitcher}</td>
-                            <td className="border-b border-slate-100 px-3 py-2">
+                            <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.parkFactor, heatRanges.parkFactor)}>
                               <span className={cn("rounded-full border px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>
                                 {row.parkFactor.toFixed(2)}
                               </span>
                             </td>
-                            <td className="border-b border-slate-100 px-3 py-2">{row.barrelRate.toFixed(1)}</td>
-                            <td className="border-b border-slate-100 px-3 py-2">{row.hardHitRate.toFixed(1)}</td>
-                            <td className="border-b border-slate-100 px-3 py-2">{row.exitVelo.toFixed(1)}</td>
-                            <td className="border-b border-slate-100 px-3 py-2">{row.iso.toFixed(3)}</td>
-                            <td className="border-b border-slate-100 px-3 py-2">{row.last7HR}</td>
-                            <td className="border-b border-slate-100 px-3 py-2">{row.last30HR}</td>
-                            <td className="border-b border-slate-100 px-3 py-2">
+                            <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.barrelRate, heatRanges.barrelRate)}>{row.barrelRate.toFixed(1)}</td>
+                            <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.hardHitRate, heatRanges.hardHitRate)}>{row.hardHitRate.toFixed(1)}</td>
+                            <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.exitVelo, heatRanges.exitVelo)}>{row.exitVelo.toFixed(1)}</td>
+                            <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.iso, heatRanges.iso)}>{row.iso.toFixed(3)}</td>
+                            <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.last7HR, heatRanges.last7HR)}>{row.last7HR}</td>
+                            <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.last30HR, heatRanges.last30HR)}>{row.last30HR}</td>
+                            <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.hrScore, heatRanges.hrScore)}>
                               <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getHrScoreTone(index, filteredRows.length))}>
                                 {row.hrScore.toFixed(1)}
                               </span>
@@ -550,6 +641,29 @@ export default function MlbHrProps() {
                       </tbody>
                     </table>
                   </div>
+                  </div>
+
+                  <aside className="space-y-4">
+                    <article className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="text-sm font-semibold uppercase tracking-[0.14em] text-sky-800">Top Park Factors</div>
+                      <div className="mt-3 space-y-3">
+                        {topParkFactors.map((park, index) => (
+                          <div key={park.key} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <div className="text-sm font-semibold text-slate-900">{park.ballpark}</div>
+                                <div className="mt-1 text-xs text-slate-500">{park.matchup}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs font-semibold text-slate-400">#{index + 1}</div>
+                                <div className="mt-1 text-sm font-semibold text-slate-900">{park.parkFactor.toFixed(2)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </article>
+                  </aside>
                 </section>
               ) : null}
             </>
