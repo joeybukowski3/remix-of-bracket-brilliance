@@ -3,7 +3,6 @@ import SiteShell from "@/components/layout/SiteShell";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
-import { cn } from "@/lib/utils";
 
 type HrDashboardGame = {
   gameKey: string;
@@ -541,8 +540,6 @@ function ThBtn({ onClick, children, style }: { onClick: () => void; children: Re
 export default function MlbHrProps() {
   const [dashboard, setDashboard] = useState<HrDashboardPayload | null>(null);
   const [bestBets, setBestBets] = useState<HrBestBetsPayload | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
   const [pitcherSortDirection, setPitcherSortDirection] = useState<SortDirection>(DEFAULT_PITCHER_SORT.direction);
@@ -590,20 +587,6 @@ export default function MlbHrProps() {
     return () => {
       active = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const syncMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (!mobile) {
-        setIsSidebarOpen(false);
-      }
-    };
-
-    syncMobile();
-    window.addEventListener("resize", syncMobile);
-    return () => window.removeEventListener("resize", syncMobile);
   }, []);
 
   const games = dashboard?.games ?? [];
@@ -687,15 +670,15 @@ export default function MlbHrProps() {
 
   return (
     <SiteShell>
-      <main className={cn("site-page bg-[#edf2f7] pb-16 pt-4 text-slate-900", isMobile ? "text-[14px]" : "")}>
-        <div className="site-container" style={{ maxWidth: "none", width: "100%" }}>
+      <main className="site-page bg-[#edf2f7] pb-16 pt-4 text-slate-900">
+        <div className="site-container">
           {!hasData ? (
             <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
               {EMPTY_MESSAGE}
             </div>
           ) : (
             <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
-              <aside className={cn("space-y-4 xl:sticky xl:top-4 xl:self-start", isMobile ? "hidden" : "")}>
+              <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
                 <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -735,68 +718,18 @@ export default function MlbHrProps() {
                 </div>
               </aside>
 
-              {isMobile && isSidebarOpen ? (
-                <div className="fixed inset-0 z-40 bg-slate-950/35" onClick={() => setIsSidebarOpen(false)}>
-                  <aside
-                    className="absolute left-0 top-0 h-full w-[88vw] max-w-[320px] overflow-y-auto border-r border-slate-200 bg-white p-4 shadow-xl"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="text-sm font-semibold uppercase tracking-[0.14em] text-sky-900">🏟️ Park Factors</div>
-                      <button
-                        type="button"
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600"
-                      >
-                        Close
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {parkRows.map((park) => (
-                        <article key={`mobile-${park.key}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900">{park.matchup}</div>
-                              <div className="mt-1 text-xs text-slate-500">{park.stadium}</div>
-                            </div>
-                            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", getParkFactorTone(park.parkFactor))}>
-                              {park.parkFactor.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">{getRoofLabel(park.roofType)}</span>
-                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                              {park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}
-                            </span>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </aside>
-                </div>
-              ) : null}
-
-              <section className="min-w-0 flex-1 space-y-5">
+              <section className="space-y-5">
                 <div className="rounded-[30px] bg-[#0f2748] px-5 py-5 text-white shadow-sm">
-                  <div className={cn("flex flex-col gap-4", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                      <div className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB HR Prop Dashboard</div>
-                      <p className={cn("mt-2 max-w-3xl leading-6 text-sky-100", isMobile ? "text-[13px]" : "text-sm")}>
+                      <div className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">MLB HR Prop Dashboard</div>
+                      <p className="mt-2 max-w-3xl text-sm leading-6 text-sky-100">
                         Starting pitcher vulnerability, park environment, and batter power/contact angles for today&apos;s slate.
                       </p>
                     </div>
-                    <div className={cn("flex flex-wrap gap-2", isMobile ? "items-center justify-between" : "")}>
-                      {isMobile ? (
-                        <button
-                          type="button"
-                          onClick={() => setIsSidebarOpen(true)}
-                          className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-semibold text-white"
-                        >
-                          ☰ Parks
-                        </button>
-                      ) : null}
-                      <span className={cn("rounded-full bg-white/10 px-3 py-1 font-semibold text-white", isMobile ? "text-[13px]" : "text-sm")}>👥 {slateSummary.hitterCount} hitters</span>
-                      <span className={cn("rounded-full bg-emerald-400/20 px-3 py-1 font-semibold text-emerald-100", isMobile ? "text-[13px]" : "text-sm")}>🟢 Live Slate</span>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white">👥 {slateSummary.hitterCount} hitters</span>
+                      <span className="rounded-full bg-emerald-400/20 px-3 py-1 text-sm font-semibold text-emerald-100">🟢 Live Slate</span>
                     </div>
                   </div>
                   <div className="mt-4 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-sky-200">
@@ -832,7 +765,7 @@ export default function MlbHrProps() {
 
                 <div className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
                   <div className="border-b border-slate-200 px-4">
-                    <div className="flex flex-nowrap gap-6 overflow-x-auto whitespace-nowrap" style={{ WebkitOverflowScrolling: "touch" }}>
+                    <div className="flex gap-6 overflow-x-auto">
                       {[
                         { key: "pitchers", label: "🔥 Pitchers" },
                         { key: "batters", label: "💥 Batters" },
@@ -874,7 +807,7 @@ export default function MlbHrProps() {
                           </div>
                         </div>
                         <DataLegend />
-                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                        <div className="overflow-x-auto">
                           <table className="min-w-full border-separate border-spacing-0 text-sm">
                             <thead className="sticky top-0 z-10 bg-white">
                               <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
@@ -892,7 +825,7 @@ export default function MlbHrProps() {
                                   ["hitsVs", "Hits VS"],
                                   ["kVs", "K VS"],
                                 ].map(([key, label]) => (
-                                  <th key={key} className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">
+                                  <th key={key} className="border-b border-slate-200 bg-white px-3 py-2 text-left font-semibold whitespace-nowrap">
                                     <button type="button" onClick={() => handlePitcherSort(key as PitcherSortKey)} className="transition hover:text-slate-900">
                                       {label}{makeSortIndicator(pitcherSortKey === key, pitcherSortDirection)}
                                     </button>
@@ -903,11 +836,11 @@ export default function MlbHrProps() {
                             <tbody>
                               {filteredPitchers.length ? filteredPitchers.map((pitcher) => (
                                 <tr key={`${pitcher.gameKey}-${pitcher.team}-${pitcher.pitcher}`} className="odd:bg-white even:bg-slate-50/60">
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
+                                  <td className="border-b border-slate-100 px-3 py-2 min-w-[180px]">
                                     <div className="font-medium text-slate-900">{pitcher.pitcher}</div>
                                     <div className="mt-1 text-xs text-slate-500">{pitcher.ballpark}</div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3 whitespace-nowrap">
+                                  <td className="border-b border-slate-100 px-3 py-2 whitespace-nowrap">
                                     <div className="flex items-center gap-2">
                                       <TeamLogoBadge team={pitcher.team} size={20} showLabel={false} />
                                       <span>{pitcher.team}</span>
@@ -916,20 +849,20 @@ export default function MlbHrProps() {
                                       <span>{pitcher.opponent}</span>
                                     </div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3">
+                                  <td className="border-b border-slate-100 px-3 py-2">
                                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(pitcher.parkFactor))}>
                                       {pitcher.parkFactor.toFixed(2)}
                                     </span>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.xera, pitcherHeat.xera, { intent: "warm", weight: "secondary" })}>{formatNumber(pitcher.xera, 2)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.hardHitRate, pitcherHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.barrelRate, pitcherHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.kRate, pitcherHeat.kRate, { intent: "cool", weight: "secondary" })}>{formatPercent(pitcher.kRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.bbRate, pitcherHeat.bbRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.bbRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.whiffRate, pitcherHeat.whiffRate, { intent: "cool", weight: "secondary" })}>{formatPercent(pitcher.whiffRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.hrVs, pitcherHeat.hrVs, { intent: "warm", weight: "primary" })}><ScorePill value={pitcher.hrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.hitsVs, pitcherHeat.hitsVs, { intent: "warm", weight: "primary" })}><ScorePill value={pitcher.hitsVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.kVs, pitcherHeat.kVs, { intent: "cool", weight: "primary" })}><ScorePill value={pitcher.kVs} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.xera, pitcherHeat.xera, { intent: "warm", weight: "secondary" })}>{formatNumber(pitcher.xera, 2)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.hardHitRate, pitcherHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.barrelRate, pitcherHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.barrelRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.kRate, pitcherHeat.kRate, { intent: "cool", weight: "secondary" })}>{formatPercent(pitcher.kRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.bbRate, pitcherHeat.bbRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.bbRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.whiffRate, pitcherHeat.whiffRate, { intent: "cool", weight: "secondary" })}>{formatPercent(pitcher.whiffRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.hrVs, pitcherHeat.hrVs, { intent: "warm", weight: "primary" })}><ScorePill value={pitcher.hrVs} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.hitsVs, pitcherHeat.hitsVs, { intent: "warm", weight: "primary" })}><ScorePill value={pitcher.hitsVs} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(pitcher.kVs, pitcherHeat.kVs, { intent: "cool", weight: "primary" })}><ScorePill value={pitcher.kVs} /></td>
                                 </tr>
                               )) : (
                                 <tr>
@@ -962,7 +895,7 @@ export default function MlbHrProps() {
                           </div>
                         </div>
                         <DataLegend />
-                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                        <div className="overflow-x-auto">
                           <table className="min-w-full border-separate border-spacing-0 text-sm">
                             <thead className="sticky top-0 z-10 bg-white">
                               <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
@@ -983,44 +916,44 @@ export default function MlbHrProps() {
                                   ["opposingPitcherHrVs", "Pitcher HR VS"],
                                   ["hrScore", "HR Score"],
                                 ].map(([key, label]) => (
-                                  <th key={key} className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">
+                                  <th key={key} className="border-b border-slate-200 bg-white px-3 py-2 text-left font-semibold whitespace-nowrap">
                                     <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="transition hover:text-slate-900">
                                       {label}{makeSortIndicator(batterSortKey === key, batterSortDirection)}
                                     </button>
                                   </th>
                                 ))}
-                                <th className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">Angle</th>
+                                <th className="border-b border-slate-200 bg-white px-3 py-2 text-left font-semibold whitespace-nowrap">Angle</th>
                               </tr>
                             </thead>
                             <tbody>
                               {filteredBatters.length ? filteredBatters.map((row) => (
                                 <tr key={`${row.player}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/60">
-                                  <td className="border-b border-slate-100 px-4 py-3">{row.hrScoreRank}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
+                                  <td className="border-b border-slate-100 px-3 py-2">{row.hrScoreRank}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2 min-w-[180px]">
                                     <div className="font-medium text-slate-900">{row.player}</div>
                                     <div className="mt-1 text-xs text-slate-500">{row.ballpark}</div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]">
+                                  <td className="border-b border-slate-100 px-3 py-2"><TeamLogoBadge team={row.team} size={20} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2 min-w-[150px]">
                                     <div>{row.opposingPitcher}</div>
                                     <div className="mt-1 text-xs text-slate-500">{row.opponent} • {row.pitcherHand}</div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3">
+                                  <td className="border-b border-slate-100 px-3 py-2">
                                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>
                                       {row.parkFactor.toFixed(2)}
                                     </span>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.kRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.bbRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, batterHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, batterHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.whiffRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.last7HR, batterHeat.last7HR, { intent: "warm", weight: "secondary" })}>{formatNumber(row.last7HR, 0)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.last30HR, batterHeat.last30HR, { intent: "warm", weight: "secondary" })}>{formatNumber(row.last30HR, 0)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, batterHeat.opposingPitcherHrVs, { intent: "warm", weight: "primary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, batterHeat.hrScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrScore} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3">
+                                  <td className="border-b border-slate-100 px-3 py-2">{formatPercent(row.kRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2">{formatPercent(row.bbRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.barrelRate, batterHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.hardHitRate, batterHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2">{formatDecimal(row.xba, 3)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2">{formatPercent(row.whiffRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.last7HR, batterHeat.last7HR, { intent: "warm", weight: "secondary" })}>{formatNumber(row.last7HR, 0)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.last30HR, batterHeat.last30HR, { intent: "warm", weight: "secondary" })}>{formatNumber(row.last30HR, 0)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.opposingPitcherHrVs, batterHeat.opposingPitcherHrVs, { intent: "warm", weight: "primary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.hrScore, batterHeat.hrScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrScore} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2">
                                     <div className="flex flex-wrap gap-1.5">
                                       {row.angleTags.length ? row.angleTags.map((tag) => (
                                         <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
@@ -1059,7 +992,7 @@ export default function MlbHrProps() {
                           </div>
                         </div>
 
-                        <div className={cn("grid gap-4 xl:grid-cols-2 2xl:grid-cols-4", isMobile ? "grid-cols-1" : "")}>
+                        <div className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-4">
                           {topMatchupCards.length ? topMatchupCards.map((row) => (
                             <article key={`${row.rank}-${row.player}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                               <div className="flex items-start justify-between gap-3">
@@ -1094,7 +1027,7 @@ export default function MlbHrProps() {
                         </div>
 
                         <DataLegend />
-                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                        <div className="overflow-x-auto">
                           <table className="min-w-full border-separate border-spacing-0 text-sm">
                             <thead className="sticky top-0 z-10 bg-white">
                               <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
@@ -1112,38 +1045,38 @@ export default function MlbHrProps() {
                                   ["hardHitRate", "Hard Hit%"],
                                   ["xba", "xBA"],
                                 ].map(([key, label]) => (
-                                  <th key={key} className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">
+                                  <th key={key} className="border-b border-slate-200 bg-white px-3 py-2 text-left font-semibold whitespace-nowrap">
                                     <button type="button" onClick={() => handleMatchupSort(key as MatchupSortKey)} className="transition hover:text-slate-900">
                                       {label}{makeSortIndicator(matchupSortKey === key, matchupSortDirection)}
                                     </button>
                                   </th>
                                 ))}
-                                <th className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">Angle</th>
+                                <th className="border-b border-slate-200 bg-white px-3 py-2 text-left font-semibold whitespace-nowrap">Angle</th>
                               </tr>
                             </thead>
                             <tbody>
                               {filteredMatchups.length ? filteredMatchups.map((row) => (
                                 <tr key={`${row.rank}-${row.player}-${row.opposingPitcher}`} className="odd:bg-white even:bg-slate-50/60">
-                                  <td className="border-b border-slate-100 px-4 py-3">{row.rank}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
+                                  <td className="border-b border-slate-100 px-3 py-2">{row.rank}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2 min-w-[180px]">
                                     <div className="font-medium text-slate-900">{row.player}</div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]">{row.opposingPitcher}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">
+                                  <td className="border-b border-slate-100 px-3 py-2"><TeamLogoBadge team={row.team} size={20} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2 min-w-[150px]">{row.opposingPitcher}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2">
                                     <div className="font-medium text-slate-900">{row.park}</div>
                                     <div className="mt-1">
                                       <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
                                     </div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.combinedScore, matchupHeat.combinedScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.combinedScore} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.scoreDiff, matchupHeat.scoreDiff, { intent: "balance", weight: "primary" })}>{row.scoreDiff.toFixed(1)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, matchupHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, matchupHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.combinedScore, matchupHeat.combinedScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.combinedScore} /></td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.scoreDiff, matchupHeat.scoreDiff, { intent: "balance", weight: "primary" })}>{row.scoreDiff.toFixed(1)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.barrelRate, matchupHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2" style={getHeatCellStyle(row.hardHitRate, matchupHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2">{formatDecimal(row.xba, 3)}</td>
+                                  <td className="border-b border-slate-100 px-3 py-2">
                                     <div className="flex flex-wrap gap-1.5">
                                       {row.angleTags.length ? row.angleTags.map((tag) => (
                                         <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
