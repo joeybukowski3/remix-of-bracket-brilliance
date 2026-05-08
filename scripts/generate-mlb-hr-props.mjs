@@ -106,6 +106,10 @@ function safeNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 function average(values) {
   const filtered = values.map((value) => Number(value)).filter((value) => Number.isFinite(value));
   return filtered.length ? filtered.reduce((sum, value) => sum + value, 0) / filtered.length : null;
@@ -153,6 +157,16 @@ export function sanitizePercentStat(value, label, context) {
   return parsed;
 }
 
+function sanitizeRatioStat(value, label, context) {
+  const parsed = toFiniteNumber(value);
+  if (parsed == null) return null;
+  if (parsed < 0 || parsed > 1) {
+    logValidationWarning(`Invalid ${label} ratio from source; dropping stat value.`, { ...context, value: parsed });
+    return null;
+  }
+  return parsed;
+}
+
 function sanitizeMetric(value, label, context) {
   const parsed = toFiniteNumber(value);
   if (parsed == null) return null;
@@ -165,6 +179,70 @@ function sanitizeMetric(value, label, context) {
 
 function parkFactorForVenue(venue) {
   return DEFAULT_PARK_FACTORS[venue] ?? 1;
+}
+
+function percentileRank(values, value, { invert = false } = {}) {
+  const filtered = values.map((entry) => Number(entry)).filter((entry) => Number.isFinite(entry)).sort((left, right) => left - right);
+  if (!filtered.length || !Number.isFinite(value)) return null;
+  const lessThanOrEqual = filtered.filter((entry) => entry <= value).length;
+  const rank = filtered.length === 1 ? 0.5 : (lessThanOrEqual - 1) / (filtered.length - 1);
+  const scaled = clampNumber(rank * 100, 0, 100);
+  return invert ? 100 - scaled : scaled;
+}
+
+function scaleToRange(value, min, max, { invert = false } = {}) {
+  if (!Number.isFinite(value)) return null;
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return 50;
+  const scaled = clampNumber(((value - min) / (max - min)) * 100, 0, 100);
+  return invert ? 100 - scaled : scaled;
+}
+
+function blendRawAndPercentile(value, values, min, max, options) {
+  const rawScore = scaleToRange(value, min, max, options);
+  const percentileScore = percentileRank(values, value, options);
+  const components = [
+    Number.isFinite(rawScore) ? { value: rawScore, weight: 0.6 } : null,
+    Number.isFinite(percentileScore) ? { value: percentileScore, weight: 0.4 } : null,
+  ].filter(Boolean);
+  return computeWeightedScore(components);
+}
+
+function computeWeightedScore(components) {
+  let total = 0;
+  let weightTotal = 0;
+  for (const component of components) {
+    if (!component || !Number.isFinite(component.value) || !Number.isFinite(component.weight) || component.weight <= 0) continue;
+    total += component.value * component.weight;
+    weightTotal += component.weight;
+  }
+  return weightTotal ? total / weightTotal : null;
+}
+
+function roundNumber(value, digits = 1) {
+  if (!Number.isFinite(value)) return null;
+  return Number(value.toFixed(digits));
+}
+
+function deriveRatePercent(numerator, denominator) {
+  const top = toFiniteNumber(numerator);
+  const bottom = toFiniteNumber(denominator);
+  if (top == null || bottom == null || bottom <= 0) return null;
+  return (top / bottom) * 100;
+}
+
+function deriveFlyBallRate(seasonStats) {
+  const airOuts = toFiniteNumber(seasonStats?.airOuts);
+  const groundOuts = toFiniteNumber(seasonStats?.groundOuts);
+  if (airOuts == null || groundOuts == null || airOuts + groundOuts <= 0) return null;
+  return (airOuts / (airOuts + groundOuts)) * 100;
+}
+
+function directionToCompass(degrees) {
+  const value = toFiniteNumber(degrees);
+  if (value == null) return "—";
+  const normalized = ((value % 360) + 360) % 360;
+  const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+  return directions[Math.round(normalized / 22.5) % directions.length];
 }
 
 async function fetchJson(url) {
@@ -321,7 +399,7 @@ export function parseCsv(text) {
 }
 
 async function fetchStatcastBatterMap() {
-  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=batter&filter=&min=1&selections=player_id,player_name,barrel_batted_rate,hard_hit_percent,exit_velocity_avg,isolated_power,pull_percent&sort=barrel_batted_rate&sortDir=desc&chart=false&csv=true`;
+  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=batter&filter=&min=1&selections=player_id,player_name,barrel_batted_rate,hard_hit_percent,exit_velocity_avg,isolated_power,pull_percent,xba,whiff_percent,k_percent,bb_percent&sort=barrel_batted_rate&sortDir=desc&chart=false&csv=true`;
   try {
     const text = await fetchText(url);
     if (!text || text.startsWith("<!DOCTYPE")) return { rowsByPlayerId: new Map(), averages: {} };
@@ -334,6 +412,10 @@ async function fetchStatcastBatterMap() {
         hardHitRate: average(rows.map((row) => sanitizePercentStat(row.hard_hit_percent, "Hard Hit%", { playerId: row.player_id }))),
         exitVelo: average(rows.map((row) => sanitizeMetric(row.exit_velocity_avg, "Exit Velo", { playerId: row.player_id }))),
         pullRate: average(rows.map((row) => sanitizePercentStat(row.pull_percent, "Pull%", { playerId: row.player_id }))),
+        xba: average(rows.map((row) => sanitizeRatioStat(row.xba, "xBA", { playerId: row.player_id }))),
+        whiffRate: average(rows.map((row) => sanitizePercentStat(row.whiff_percent, "Whiff%", { playerId: row.player_id }))),
+        kRate: average(rows.map((row) => sanitizePercentStat(row.k_percent, "K%", { playerId: row.player_id }))),
+        bbRate: average(rows.map((row) => sanitizePercentStat(row.bb_percent, "BB%", { playerId: row.player_id }))),
       },
     };
   } catch {
@@ -342,7 +424,7 @@ async function fetchStatcastBatterMap() {
 }
 
 async function fetchStatcastPitcherMap() {
-  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1&selections=player_id,player_name,hard_hit_percent,exit_velocity_avg&sort=hard_hit_percent&sortDir=desc&chart=false&csv=true`;
+  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1&selections=player_id,player_name,xera,hard_hit_percent,barrel_batted_rate,whiff_percent,k_percent,bb_percent,fb_rate,exit_velocity_avg&sort=hard_hit_percent&sortDir=desc&chart=false&csv=true`;
   try {
     const text = await fetchText(url);
     if (!text || text.startsWith("<!DOCTYPE")) return { rowsByPlayerId: new Map(), averages: {} };
@@ -351,12 +433,102 @@ async function fetchStatcastPitcherMap() {
     return {
       rowsByPlayerId,
       averages: {
+        xera: average(rows.map((row) => sanitizeMetric(row.xera, "xERA", { playerId: row.player_id }))),
         hardHitRate: average(rows.map((row) => sanitizePercentStat(row.hard_hit_percent, "Pitcher Hard Hit%", { playerId: row.player_id }))),
+        barrelRate: average(rows.map((row) => sanitizePercentStat(row.barrel_batted_rate, "Pitcher Barrel%", { playerId: row.player_id }))),
+        flyBallRate: average(rows.map((row) => sanitizePercentStat(row.fb_rate, "Pitcher Fly Ball%", { playerId: row.player_id }))),
+        whiffRate: average(rows.map((row) => sanitizePercentStat(row.whiff_percent, "Pitcher Whiff%", { playerId: row.player_id }))),
+        kRate: average(rows.map((row) => sanitizePercentStat(row.k_percent, "Pitcher K%", { playerId: row.player_id }))),
+        bbRate: average(rows.map((row) => sanitizePercentStat(row.bb_percent, "Pitcher BB%", { playerId: row.player_id }))),
         exitVelo: average(rows.map((row) => sanitizeMetric(row.exit_velocity_avg, "Pitcher Exit Velo", { playerId: row.player_id }))),
       },
     };
   } catch {
     return { rowsByPlayerId: new Map(), averages: {} };
+  }
+}
+
+export function extractPropFinderWeatherGames(html) {
+  const results = [];
+  let start = 0;
+
+  while ((start = html.indexOf("{\\\"id\\\":", start)) >= 0) {
+    let depth = 0;
+    let end = -1;
+
+    for (let index = start; index < html.length; index += 1) {
+      const char = html[index];
+      if (char === "{") depth += 1;
+      if (char === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          end = index + 1;
+          break;
+        }
+      }
+    }
+
+    if (end < 0) break;
+    const candidate = html.slice(start, end);
+    start = end;
+
+    if (!candidate.includes("weatherData\\\":[")) continue;
+    if (!candidate.includes("ballpark\\\":{")) continue;
+    if (!candidate.includes("homeTeam\\\":{") || !candidate.includes("visitorTeam\\\":{")) continue;
+
+    try {
+      results.push(JSON.parse(candidate.replace(/\\"/g, "\"")));
+    } catch {
+      continue;
+    }
+  }
+
+  return results;
+}
+
+function pickWeatherPoint(weatherData, gameDate) {
+  if (!Array.isArray(weatherData) || !weatherData.length) return null;
+  const targetEpoch = Math.round(new Date(gameDate).getTime() / 1000);
+  if (!Number.isFinite(targetEpoch)) return weatherData[0];
+
+  return weatherData.reduce((closest, entry) => {
+    if (!closest) return entry;
+    const currentDiff = Math.abs(safeNumber(entry.dateTimeEpoch, targetEpoch) - targetEpoch);
+    const closestDiff = Math.abs(safeNumber(closest.dateTimeEpoch, targetEpoch) - targetEpoch);
+    return currentDiff < closestDiff ? entry : closest;
+  }, null);
+}
+
+async function fetchPropFinderWeatherMap() {
+  try {
+    const html = await fetchText("https://propfinder.app/weather");
+    const games = extractPropFinderWeatherGames(html);
+    const byGameKey = new Map();
+
+    for (const game of games) {
+      const awayCode = normalizeTeamCode(game?.visitorTeam?.code);
+      const homeCode = normalizeTeamCode(game?.homeTeam?.code);
+      if (!awayCode || !homeCode) continue;
+
+      const weatherPoint = pickWeatherPoint(game.weatherData, game.gameDate);
+      const roofType = normalizeText(game?.ballpark?.roofType) || "Unknown";
+      const precipitation = toFiniteNumber(weatherPoint?.precipProb ?? weatherPoint?.precip, null);
+
+      byGameKey.set(`${awayCode}@${homeCode}`, {
+        stadium: normalizeText(game?.ballpark?.name) || "Unknown Venue",
+        roofType,
+        temperature: toFiniteNumber(weatherPoint?.temp, null),
+        precipitation,
+        windSpeed: toFiniteNumber(weatherPoint?.windSpeed, null),
+        windDirection: directionToCompass(weatherPoint?.windDir),
+        conditions: normalizeText(weatherPoint?.conditions) || "—",
+      });
+    }
+
+    return byGameKey;
+  } catch (error) {
+    console.warn(`PropFinder weather data unavailable. Proceeding without weather context. ${error instanceof Error ? error.message : error}`);
+    return new Map();
   }
 }
 
@@ -369,21 +541,106 @@ function normalizeMetric(values, value) {
   return ((value - min) / (max - min)) * 100;
 }
 
+export function computePitcherMatchupRatings(pitcher, contexts) {
+  const hrVs = computeWeightedScore([
+    { value: scaleToRange(pitcher.xera, 2.5, 6.5), weight: 0.3 },
+    { value: blendRawAndPercentile(pitcher.hardHitRate, contexts.hardHitValues, 28, 55), weight: 0.25 },
+    { value: blendRawAndPercentile(pitcher.flyBallRate, contexts.flyBallValues, 25, 50), weight: 0.2 },
+    { value: blendRawAndPercentile(pitcher.barrelRate, contexts.barrelValues, 4, 14), weight: 0.25 },
+  ]);
+
+  const hitsVs = computeWeightedScore([
+    { value: scaleToRange(pitcher.xera, 2.5, 6.5), weight: 0.25 },
+    { value: blendRawAndPercentile(pitcher.hardHitRate, contexts.hardHitValues, 28, 55), weight: 0.15 },
+    { value: blendRawAndPercentile(pitcher.flyBallRate, contexts.flyBallValues, 25, 50), weight: 0.1 },
+    { value: blendRawAndPercentile(pitcher.barrelRate, contexts.barrelValues, 4, 14), weight: 0.1 },
+    { value: scaleToRange(pitcher.bbRate, 3, 12), weight: 0.15 },
+    { value: scaleToRange(pitcher.kRate, 15, 32, { invert: true }), weight: 0.15 },
+    { value: scaleToRange(pitcher.whiffRate, 18, 35, { invert: true }), weight: 0.1 },
+  ]);
+
+  const kVs = computeWeightedScore([
+    { value: blendRawAndPercentile(pitcher.kRate, contexts.kValues, 15, 32), weight: 0.45 },
+    { value: blendRawAndPercentile(pitcher.whiffRate, contexts.whiffValues, 18, 35), weight: 0.35 },
+    { value: blendRawAndPercentile(pitcher.bbRate, contexts.bbValues, 3, 12, { invert: true }), weight: 0.2 },
+  ]);
+
+  return {
+    hrVs: roundNumber(hrVs, 1),
+    hitsVs: roundNumber(hitsVs, 1),
+    kVs: roundNumber(kVs, 1),
+  };
+}
+
+function computeWeatherBoost(gameContext) {
+  if (!gameContext || gameContext.roofType !== "Open") return 0;
+  let boost = 0;
+
+  if (Number.isFinite(gameContext.temperature)) {
+    boost += clampNumber((gameContext.temperature - 68) * 0.35, -6, 6);
+  }
+  if (Number.isFinite(gameContext.precipitation)) {
+    boost += clampNumber((12 - gameContext.precipitation) * 0.2, -4, 2.4);
+  }
+
+  return roundNumber(clampNumber(boost, -10, 10), 1) ?? 0;
+}
+
+export function computeBatterHrScore(batter, contexts) {
+  return roundNumber(computeWeightedScore([
+    { value: blendRawAndPercentile(batter.barrelRate, contexts.barrelValues, 3, 20), weight: 0.22 },
+    { value: blendRawAndPercentile(batter.hardHitRate, contexts.hardHitValues, 25, 60), weight: 0.18 },
+    { value: blendRawAndPercentile(batter.xba, contexts.xbaValues, 0.18, 0.34), weight: 0.12 },
+    { value: blendRawAndPercentile(batter.whiffRate, contexts.whiffValues, 15, 38, { invert: true }), weight: 0.08 },
+    { value: normalizeMetric(contexts.last7Values, batter.last7HR), weight: 0.1 },
+    { value: normalizeMetric(contexts.last30Values, batter.last30HR), weight: 0.1 },
+    { value: batter.opposingPitcherHrVs, weight: 0.15 },
+    { value: normalizeMetric(contexts.parkValues, batter.parkFactor), weight: 0.03 },
+    { value: scaleToRange((batter.weatherBoost ?? 0) + 10, 0, 20), weight: 0.02 },
+  ]), 1);
+}
+
+export function deriveAngleTags(batter, gameContext) {
+  const tags = [];
+  if (normalizeText(batter.opposingPitcher).toUpperCase() === "TBD") return tags;
+
+  const powerBase = computeWeightedScore([
+    { value: blendRawAndPercentile(batter.barrelRate, [batter.barrelRate], 3, 20), weight: 0.5 },
+    { value: blendRawAndPercentile(batter.hardHitRate, [batter.hardHitRate], 25, 60), weight: 0.5 },
+  ]);
+  const hrScore = toFiniteNumber(batter.hrScore);
+
+  if (Number.isFinite(powerBase) && powerBase >= 68 && safeNumber(batter.opposingPitcherHrVs, 0) >= 60) {
+    tags.push("HR damage edge");
+  }
+  if (toFiniteNumber(batter.kRate) != null && batter.kRate <= 18 && safeNumber(batter.opposingPitcherHitsVs, 0) >= 60 && safeNumber(hrScore, 0) >= 45) {
+    tags.push("Contact edge");
+  }
+  if (toFiniteNumber(batter.whiffRate) != null && batter.whiffRate <= 24 && safeNumber(batter.opposingPitcherKVs, 100) <= 40 && safeNumber(hrScore, 0) >= 45) {
+    tags.push("Low-K matchup");
+  }
+  if (safeNumber(gameContext?.parkFactor, 1) >= 1.15 || safeNumber(batter.weatherBoost, 0) >= 4.5) {
+    tags.push("Park boost");
+  }
+
+  return tags.slice(0, 2);
+}
+
 function formatTopStats(player) {
   const stats = [
     { label: "Barrel%", value: player.barrelRate },
     { label: "Hard Hit%", value: player.hardHitRate },
-    { label: "EV", value: player.exitVelo },
-    { label: "ISO", value: player.iso },
+    { label: "xBA", value: player.xba },
+    { label: "Pitcher HR VS", value: player.opposingPitcherHrVs },
     { label: "Last 7 HR", value: player.last7HR },
   ];
   return stats
     .sort((left, right) => safeNumber(right.value) - safeNumber(left.value))
     .slice(0, 2)
-    .map((entry) => `${entry.label}=${Number(entry.value).toFixed(entry.label === "EV" ? 1 : 1)}`);
+    .map((entry) => `${entry.label}=${Number(entry.value).toFixed(entry.label === "xBA" ? 3 : 1)}`);
 }
 
-function validateRawRows(rows) {
+function validateBatterRows(rows) {
   if (!Array.isArray(rows) || !rows.length) {
     throw new Error("Generated zero HR prop rows. Existing files were preserved.");
   }
@@ -398,6 +655,8 @@ function validateRawRows(rows) {
       team: normalizeTeamCode(row.team),
       opponent: normalizeTeamCode(row.opponent),
       opposingPitcher: normalizeText(row.opposingPitcher) || "TBD",
+      opposingPitcherId: toFiniteNumber(row.opposingPitcherId),
+      gameKey: normalizeText(row.gameKey),
       pitcherHand: normalizeText(row.pitcherHand) || "R",
       ballpark: normalizeText(row.ballpark) || "Unknown Venue",
       parkFactor: toFiniteNumber(row.parkFactor),
@@ -407,10 +666,19 @@ function validateRawRows(rows) {
       iso: toFiniteNumber(row.iso),
       hrFBRatio: toFiniteNumber(row.hrFBRatio),
       pullRate: toFiniteNumber(row.pullRate),
+      xba: toFiniteNumber(row.xba),
+      kRate: toFiniteNumber(row.kRate),
+      bbRate: toFiniteNumber(row.bbRate),
+      whiffRate: toFiniteNumber(row.whiffRate),
       last7HR: toFiniteNumber(row.last7HR),
       last30HR: toFiniteNumber(row.last30HR),
+      opposingPitcherHrVs: toFiniteNumber(row.opposingPitcherHrVs),
+      opposingPitcherHitsVs: toFiniteNumber(row.opposingPitcherHitsVs),
+      opposingPitcherKVs: toFiniteNumber(row.opposingPitcherKVs),
+      weatherBoost: toFiniteNumber(row.weatherBoost, 0),
       hrScore: toFiniteNumber(row.hrScore),
       hrScoreRank: toFiniteNumber(row.hrScoreRank),
+      angleTags: Array.isArray(row.angleTags) ? row.angleTags.map((entry) => normalizeText(entry)).filter(Boolean).slice(0, 3) : [],
     };
 
     if (!normalized.player || !normalized.team || !normalized.opponent) {
@@ -419,14 +687,11 @@ function validateRawRows(rows) {
 
     const requiredNumbers = [
       normalized.parkFactor,
-      normalized.barrelRate,
-      normalized.hardHitRate,
-      normalized.exitVelo,
-      normalized.iso,
-      normalized.hrFBRatio,
-      normalized.pullRate,
       normalized.last7HR,
       normalized.last30HR,
+      normalized.opposingPitcherHrVs,
+      normalized.opposingPitcherHitsVs,
+      normalized.opposingPitcherKVs,
       normalized.hrScore,
       normalized.hrScoreRank,
     ];
@@ -441,6 +706,80 @@ function validateRawRows(rows) {
   return validated;
 }
 
+function validatePitcherRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) {
+    throw new Error("Generated zero pitcher matchup rows. Existing files were preserved.");
+  }
+
+  return rows.map((row) => {
+    const normalized = {
+      gameKey: normalizeText(row.gameKey),
+      pitcher: normalizeText(row.pitcher),
+      pitcherId: toFiniteNumber(row.pitcherId),
+      team: normalizeTeamCode(row.team),
+      opponent: normalizeTeamCode(row.opponent),
+      hand: normalizeText(row.hand) || "R",
+      ballpark: normalizeText(row.ballpark) || "Unknown Venue",
+      parkFactor: toFiniteNumber(row.parkFactor),
+      xera: toFiniteNumber(row.xera),
+      hardHitRate: toFiniteNumber(row.hardHitRate),
+      flyBallRate: toFiniteNumber(row.flyBallRate),
+      barrelRate: toFiniteNumber(row.barrelRate),
+      kRate: toFiniteNumber(row.kRate),
+      bbRate: toFiniteNumber(row.bbRate),
+      whiffRate: toFiniteNumber(row.whiffRate),
+      hrVs: toFiniteNumber(row.hrVs),
+      hitsVs: toFiniteNumber(row.hitsVs),
+      kVs: toFiniteNumber(row.kVs),
+    };
+
+    if (!normalized.pitcher || !normalized.team || !normalized.opponent) {
+      throw new Error(`Generated pitcher row is missing identity fields: ${JSON.stringify(row)}`);
+    }
+
+    if ([normalized.hrVs, normalized.hitsVs, normalized.kVs].some((value) => value == null)) {
+      throw new Error(`Generated pitcher row has invalid matchup scores for ${normalized.pitcher}.`);
+    }
+
+    return normalized;
+  });
+}
+
+function validateGameRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) {
+    throw new Error("Generated zero game context rows. Existing files were preserved.");
+  }
+
+  return rows.map((row) => ({
+    gameKey: normalizeText(row.gameKey),
+    matchup: normalizeText(row.matchup),
+    awayTeam: normalizeTeamCode(row.awayTeam),
+    homeTeam: normalizeTeamCode(row.homeTeam),
+    stadium: normalizeText(row.stadium) || "Unknown Venue",
+    roofType: normalizeText(row.roofType) || "Unknown",
+    temperature: toFiniteNumber(row.temperature),
+    precipitation: toFiniteNumber(row.precipitation),
+    windSpeed: toFiniteNumber(row.windSpeed),
+    windDirection: normalizeText(row.windDirection) || "—",
+    conditions: normalizeText(row.conditions) || "—",
+    parkFactor: toFiniteNumber(row.parkFactor),
+  }));
+}
+
+function validateRawPayload(payload) {
+  if (!isPlainObject(payload)) {
+    throw new Error("Generated raw HR props payload is not an object.");
+  }
+
+  return {
+    date: normalizeText(payload.date) || getTodayEt(),
+    generatedAt: normalizeText(payload.generatedAt) || new Date().toISOString(),
+    games: validateGameRows(payload.games),
+    pitchers: validatePitcherRows(payload.pitchers),
+    batters: validateBatterRows(payload.batters),
+  };
+}
+
 function toStringList(value, limit = 2) {
   if (!Array.isArray(value)) return [];
   return value
@@ -452,7 +791,7 @@ function toStringList(value, limit = 2) {
 function buildFallbackBullets(player) {
   return [
     `HR score ${player.hrScore.toFixed(1)} (#${player.hrScoreRank})`,
-    `Park ${player.parkFactor.toFixed(2)} vs ${player.opposingPitcher}${player.pitcherHand ? ` (${player.pitcherHand})` : ""}`,
+    `Pitcher HR VS ${safeNumber(player.opposingPitcherHrVs, 0).toFixed(1)} at park ${player.parkFactor.toFixed(2)}`,
   ];
 }
 
@@ -685,12 +1024,17 @@ function buildSummary(players, limit) {
     `parkFactor=${player.parkFactor}`,
     `barrelRate=${player.barrelRate}`,
     `hardHitRate=${player.hardHitRate}`,
+    `xba=${player.xba}`,
+    `kRate=${player.kRate}`,
+    `bbRate=${player.bbRate}`,
+    `whiffRate=${player.whiffRate}`,
     `exitVelo=${player.exitVelo}`,
     `iso=${player.iso}`,
     `hrFBRatio=${player.hrFBRatio}`,
     `pullRate=${player.pullRate}`,
     `last7HR=${player.last7HR}`,
     `last30HR=${player.last30HR}`,
+    `opposingPitcherHrVs=${player.opposingPitcherHrVs}`,
     `hrScore=${player.hrScore}`,
     `hrScoreRank=${player.hrScoreRank}`,
   ].join(" | ")).join("\n");
@@ -715,19 +1059,13 @@ async function main() {
 
   const statcastBatters = await fetchStatcastBatterMap();
   const statcastPitchers = await fetchStatcastPitcherMap();
-  const batterStatcastDefaults = {
-    barrelRate: statcastBatters.averages.barrelRate ?? 7,
-    hardHitRate: statcastBatters.averages.hardHitRate ?? 37,
-    exitVelo: statcastBatters.averages.exitVelo ?? 89,
-    pullRate: statcastBatters.averages.pullRate ?? 40,
-  };
-  const pitcherStatcastDefaults = {
-    hardHitRate: statcastPitchers.averages.hardHitRate ?? 37,
-    exitVelo: statcastPitchers.averages.exitVelo ?? 89,
-  };
+  const weatherByGameKey = await fetchPropFinderWeatherMap();
   const batterPool = [];
+  const pitcherPool = [];
+  const gamePool = [];
 
   for (const game of schedule) {
+    const gameKey = `${game.away.abbreviation}@${game.home.abbreviation}`;
     const boxscore = await fetchBoxscore(game.gamePk).catch(() => null);
     const currentAwayLineup = extractLineupFromTeamBox(boxscore?.teams?.away);
     const currentHomeLineup = extractLineupFromTeamBox(boxscore?.teams?.home);
@@ -740,6 +1078,75 @@ async function main() {
     const homePitcherStats = await fetchPitcherSeasonStats(game.home.probablePitcher?.id ?? null);
     const awayPitcherStatcast = statcastPitchers.rowsByPlayerId.get(String(game.away.probablePitcher?.id ?? ""));
     const homePitcherStatcast = statcastPitchers.rowsByPlayerId.get(String(game.home.probablePitcher?.id ?? ""));
+    const weatherContext = weatherByGameKey.get(gameKey) ?? {
+      stadium: game.venue,
+      roofType: "Unknown",
+      temperature: null,
+      precipitation: null,
+      windSpeed: null,
+      windDirection: "—",
+      conditions: "—",
+    };
+    const parkFactor = parkFactorForVenue(game.venue);
+    const gameContext = {
+      gameKey,
+      matchup: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
+      awayTeam: game.away.abbreviation,
+      homeTeam: game.home.abbreviation,
+      stadium: weatherContext.stadium || game.venue,
+      roofType: weatherContext.roofType,
+      temperature: weatherContext.temperature,
+      precipitation: weatherContext.precipitation,
+      windSpeed: weatherContext.windSpeed,
+      windDirection: weatherContext.windDirection,
+      conditions: weatherContext.conditions,
+      parkFactor,
+    };
+    gamePool.push(gameContext);
+
+    const starterContexts = [
+      {
+        pitcherId: game.away.probablePitcher?.id ?? null,
+        pitcherName: game.away.probablePitcher?.fullName ?? "TBD",
+        pitcherPerson: awayPitcherPerson,
+        seasonStats: awayPitcherStats,
+        statcast: awayPitcherStatcast,
+        team: game.away.abbreviation,
+        opponent: game.home.abbreviation,
+      },
+      {
+        pitcherId: game.home.probablePitcher?.id ?? null,
+        pitcherName: game.home.probablePitcher?.fullName ?? "TBD",
+        pitcherPerson: homePitcherPerson,
+        seasonStats: homePitcherStats,
+        statcast: homePitcherStatcast,
+        team: game.home.abbreviation,
+        opponent: game.away.abbreviation,
+      },
+    ];
+
+    for (const starter of starterContexts) {
+      pitcherPool.push({
+        gameKey,
+        pitcher: starter.pitcherName,
+        pitcherId: starter.pitcherId,
+        team: starter.team,
+        opponent: starter.opponent,
+        hand: starter.pitcherPerson?.pitchHand?.code ?? "R",
+        ballpark: game.venue,
+        parkFactor,
+        xera: sanitizeMetric(starter.statcast?.xera, "xERA", { pitcherId: starter.pitcherId }),
+        hardHitRate: sanitizePercentStat(starter.statcast?.hard_hit_percent, "Pitcher Hard Hit%", { pitcherId: starter.pitcherId }),
+        flyBallRate: sanitizePercentStat(starter.statcast?.fb_rate, "Pitcher Fly Ball%", { pitcherId: starter.pitcherId })
+          ?? sanitizePercentStat(deriveFlyBallRate(starter.seasonStats), "Pitcher Fly Ball%", { pitcherId: starter.pitcherId, source: "season-stats" }),
+        barrelRate: sanitizePercentStat(starter.statcast?.barrel_batted_rate, "Pitcher Barrel%", { pitcherId: starter.pitcherId }),
+        kRate: sanitizePercentStat(starter.statcast?.k_percent, "Pitcher K%", { pitcherId: starter.pitcherId })
+          ?? sanitizePercentStat(deriveRatePercent(starter.seasonStats?.strikeOuts, starter.seasonStats?.battersFaced), "Pitcher K%", { pitcherId: starter.pitcherId, source: "season-stats" }),
+        bbRate: sanitizePercentStat(starter.statcast?.bb_percent, "Pitcher BB%", { pitcherId: starter.pitcherId })
+          ?? sanitizePercentStat(deriveRatePercent(starter.seasonStats?.baseOnBalls, starter.seasonStats?.battersFaced), "Pitcher BB%", { pitcherId: starter.pitcherId, source: "season-stats" }),
+        whiffRate: sanitizePercentStat(starter.statcast?.whiff_percent, "Pitcher Whiff%", { pitcherId: starter.pitcherId }),
+      });
+    }
 
     const pitcherContexts = [
       {
@@ -750,8 +1157,8 @@ async function main() {
         opposingPitcherId: game.home.probablePitcher?.id ?? null,
         pitcherHand: homePitcherPerson?.pitchHand?.code ?? "R",
         pitcherHr9: computeHr9(homePitcherStats?.homeRuns, homePitcherStats?.inningsPitched),
-        pitcherHardHitAllowed: sanitizePercentStat(homePitcherStatcast?.hard_hit_percent, "Pitcher Hard Hit%", { pitcherId: game.home.probablePitcher?.id }) ?? pitcherStatcastDefaults.hardHitRate,
-        pitcherExitVeloAllowed: sanitizeMetric(homePitcherStatcast?.exit_velocity_avg, "Pitcher Exit Velo", { pitcherId: game.home.probablePitcher?.id }) ?? pitcherStatcastDefaults.exitVelo,
+        gameKey,
+        gameContext,
       },
       {
         lineup: homeLineup,
@@ -761,8 +1168,8 @@ async function main() {
         opposingPitcherId: game.away.probablePitcher?.id ?? null,
         pitcherHand: awayPitcherPerson?.pitchHand?.code ?? "R",
         pitcherHr9: computeHr9(awayPitcherStats?.homeRuns, awayPitcherStats?.inningsPitched),
-        pitcherHardHitAllowed: sanitizePercentStat(awayPitcherStatcast?.hard_hit_percent, "Pitcher Hard Hit%", { pitcherId: game.away.probablePitcher?.id }) ?? pitcherStatcastDefaults.hardHitRate,
-        pitcherExitVeloAllowed: sanitizeMetric(awayPitcherStatcast?.exit_velocity_avg, "Pitcher Exit Velo", { pitcherId: game.away.probablePitcher?.id }) ?? pitcherStatcastDefaults.exitVelo,
+        gameKey,
+        gameContext,
       },
     ];
 
@@ -779,60 +1186,92 @@ async function main() {
         const hardHitRate = sanitizePercentStat(statcast?.hard_hit_percent, "Hard Hit%", { player: hitter.fullName || hitter.name, playerId: hitter.id });
         const exitVelo = sanitizeMetric(statcast?.exit_velocity_avg, "Exit Velo", { player: hitter.fullName || hitter.name, playerId: hitter.id });
         const pullRate = sanitizePercentStat(statcast?.pull_percent, "Pull%", { player: hitter.fullName || hitter.name, playerId: hitter.id });
+        const xba = sanitizeRatioStat(statcast?.xba, "xBA", { player: hitter.fullName || hitter.name, playerId: hitter.id });
+        const kRate = sanitizePercentStat(statcast?.k_percent, "K%", { player: hitter.fullName || hitter.name, playerId: hitter.id })
+          ?? sanitizePercentStat(deriveRatePercent(season?.strikeOuts, season?.plateAppearances), "K%", { player: hitter.fullName || hitter.name, playerId: hitter.id, source: "season-stats" });
+        const bbRate = sanitizePercentStat(statcast?.bb_percent, "BB%", { player: hitter.fullName || hitter.name, playerId: hitter.id })
+          ?? sanitizePercentStat(deriveRatePercent(season?.baseOnBalls, season?.plateAppearances), "BB%", { player: hitter.fullName || hitter.name, playerId: hitter.id, source: "season-stats" });
+        const whiffRate = sanitizePercentStat(statcast?.whiff_percent, "Whiff%", { player: hitter.fullName || hitter.name, playerId: hitter.id });
         batterPool.push({
+          gameKey: context.gameKey,
           player: hitter.fullName || hitter.name || "Unknown Player",
           team: context.battingTeam.abbreviation,
           opponent: context.opponent.abbreviation,
           opposingPitcher: context.opposingPitcher,
           pitcherHand: context.pitcherHand,
+          opposingPitcherId: context.opposingPitcherId,
           ballpark: game.venue,
-          parkFactor: parkFactorForVenue(game.venue),
-          barrelRate: barrelRate ?? batterStatcastDefaults.barrelRate,
-          hardHitRate: hardHitRate ?? batterStatcastDefaults.hardHitRate,
-          exitVelo: exitVelo ?? batterStatcastDefaults.exitVelo,
+          parkFactor,
+          barrelRate,
+          hardHitRate,
+          exitVelo,
           iso,
           hrFBRatio: safeNumber(season?.homeRuns && season?.atBats ? (season.homeRuns / Math.max(1, season.atBats)) * 100 : iso * 100, 10),
-          pullRate: pullRate ?? batterStatcastDefaults.pullRate,
+          pullRate,
+          xba,
+          kRate,
+          bbRate,
+          whiffRate,
           last7HR: sumRecentHomeRuns(gameLogs, 7),
           last30HR: sumRecentHomeRuns(gameLogs, 30),
           opposingPitcherHr9: safeNumber(context.pitcherHr9, 1.1),
-          opposingPitcherHardHitAllowed: context.pitcherHardHitAllowed,
-          opposingPitcherExitVeloAllowed: context.pitcherExitVeloAllowed,
+          weatherBoost: computeWeatherBoost(context.gameContext),
           batterHand: person?.batSide?.code ?? "R",
         });
       }
     }
   }
 
+  const dedupedPitchers = Array.from(new Map(pitcherPool.map((pitcher) => [`${pitcher.gameKey}|${pitcher.team}`, pitcher])).values());
+  const pitcherContexts = {
+    hardHitValues: dedupedPitchers.map((pitcher) => pitcher.hardHitRate),
+    flyBallValues: dedupedPitchers.map((pitcher) => pitcher.flyBallRate),
+    barrelValues: dedupedPitchers.map((pitcher) => pitcher.barrelRate),
+    kValues: dedupedPitchers.map((pitcher) => pitcher.kRate),
+    bbValues: dedupedPitchers.map((pitcher) => pitcher.bbRate),
+    whiffValues: dedupedPitchers.map((pitcher) => pitcher.whiffRate),
+  };
+  const scoredPitchers = dedupedPitchers
+    .map((pitcher) => ({
+      ...pitcher,
+      ...computePitcherMatchupRatings(pitcher, pitcherContexts),
+    }))
+    .sort((left, right) => right.hrVs - left.hrVs || left.pitcher.localeCompare(right.pitcher));
+  const pitcherLookup = new Map(scoredPitchers.map((pitcher) => [String(pitcher.pitcherId ?? `${pitcher.gameKey}|${pitcher.team}`), pitcher]));
+
   const dedupedPool = Array.from(new Map(batterPool.map((player) => [`${normalizeName(player.player)}-${player.team}-${player.opponent}`, player])).values());
-  const barrelValues = dedupedPool.map((player) => player.barrelRate);
-  const hardHitValues = dedupedPool.map((player) => player.hardHitRate);
-  const exitVeloValues = dedupedPool.map((player) => player.exitVelo);
-  const pitcherHr9Values = dedupedPool.map((player) => player.opposingPitcherHr9);
-  const parkValues = dedupedPool.map((player) => player.parkFactor);
-  const pullValues = dedupedPool.map((player) => player.pullRate);
-  const recentValues = dedupedPool.map((player) => player.last7HR);
+  const batterContexts = {
+    barrelValues: dedupedPool.map((player) => player.barrelRate),
+    hardHitValues: dedupedPool.map((player) => player.hardHitRate),
+    xbaValues: dedupedPool.map((player) => player.xba),
+    whiffValues: dedupedPool.map((player) => player.whiffRate),
+    last7Values: dedupedPool.map((player) => player.last7HR),
+    last30Values: dedupedPool.map((player) => player.last30HR),
+    parkValues: dedupedPool.map((player) => player.parkFactor),
+  };
 
   const scored = dedupedPool.map((player) => {
-    const hrScore = (
-      normalizeMetric(barrelValues, player.barrelRate) * 0.30
-      + normalizeMetric(hardHitValues, player.hardHitRate) * 0.20
-      + normalizeMetric(exitVeloValues, player.exitVelo) * 0.15
-      + normalizeMetric(pitcherHr9Values, player.opposingPitcherHr9) * 0.15
-      + normalizeMetric(parkValues, player.parkFactor) * 0.10
-      + normalizeMetric(pullValues, player.pullRate) * 0.05
-      + normalizeMetric(recentValues, player.last7HR) * 0.05
-    );
-    return {
+    const opposingPitcher = pitcherLookup.get(String(player.opposingPitcherId ?? ""));
+    const enriched = {
       ...player,
-      hrScore: Number(hrScore.toFixed(1)),
+      opposingPitcherHrVs: opposingPitcher?.hrVs ?? normalizeMetric(dedupedPool.map((entry) => entry.opposingPitcherHr9), player.opposingPitcherHr9),
+      opposingPitcherHitsVs: opposingPitcher?.hitsVs ?? 50,
+      opposingPitcherKVs: opposingPitcher?.kVs ?? 50,
+    };
+    const hrScore = computeBatterHrScore(enriched, batterContexts);
+    return {
+      ...enriched,
+      hrScore,
+      angleTags: deriveAngleTags({ ...enriched, hrScore }, gamePool.find((game) => game.gameKey === enriched.gameKey)),
     };
   }).sort((left, right) => right.hrScore - left.hrScore || left.player.localeCompare(right.player))
     .map((player, index) => ({
+      gameKey: player.gameKey,
       player: player.player,
       team: player.team,
       opponent: player.opponent,
       opposingPitcher: player.opposingPitcher,
+      opposingPitcherId: player.opposingPitcherId,
       pitcherHand: player.pitcherHand,
       ballpark: player.ballpark,
       parkFactor: Number(player.parkFactor.toFixed(2)),
@@ -842,22 +1281,48 @@ async function main() {
       iso: Number(player.iso.toFixed(3)),
       hrFBRatio: Number(player.hrFBRatio.toFixed(1)),
       pullRate: Number(player.pullRate.toFixed(1)),
+      xba: Number(player.xba.toFixed(3)),
+      kRate: Number(player.kRate.toFixed(1)),
+      bbRate: Number(player.bbRate.toFixed(1)),
+      whiffRate: Number(player.whiffRate.toFixed(1)),
       last7HR: player.last7HR,
       last30HR: player.last30HR,
+      opposingPitcherHrVs: Number(safeNumber(player.opposingPitcherHrVs, 50).toFixed(1)),
+      opposingPitcherHitsVs: Number(safeNumber(player.opposingPitcherHitsVs, 50).toFixed(1)),
+      opposingPitcherKVs: Number(safeNumber(player.opposingPitcherKVs, 50).toFixed(1)),
+      weatherBoost: Number(safeNumber(player.weatherBoost, 0).toFixed(1)),
+      angleTags: player.angleTags,
       hrScore: player.hrScore,
       hrScoreRank: index + 1,
     }));
 
-  const validatedRows = validateRawRows(scored);
-  console.log(`Validated ${validatedRows.length} MLB HR prop rows across ${schedule.length} games.`);
+  const validatedPitchers = validatePitcherRows(scoredPitchers.map((pitcher) => ({
+    ...pitcher,
+    xera: roundNumber(pitcher.xera, 2),
+    hardHitRate: roundNumber(pitcher.hardHitRate, 1),
+    flyBallRate: roundNumber(pitcher.flyBallRate, 1),
+    barrelRate: roundNumber(pitcher.barrelRate, 1),
+    kRate: roundNumber(pitcher.kRate, 1),
+    bbRate: roundNumber(pitcher.bbRate, 1),
+    whiffRate: roundNumber(pitcher.whiffRate, 1),
+  })));
+  const validatedRows = validateBatterRows(scored);
+  const validatedPayload = validateRawPayload({
+    date: getTodayEt(),
+    generatedAt: new Date().toISOString(),
+    games: gamePool,
+    pitchers: validatedPitchers,
+    batters: validatedRows,
+  });
+  console.log(`Validated ${validatedPayload.batters.length} batters, ${validatedPayload.pitchers.length} pitchers, and ${validatedPayload.games.length} games for the MLB HR dashboard.`);
 
   const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
   let picksResult = null;
   let previewResult = null;
 
-  if (apiKey && validatedRows.length) {
-    const top20Summary = buildSummary(validatedRows, 20);
-    const top10Summary = buildSummary(validatedRows, 10);
+  if (apiKey && validatedPayload.batters.length) {
+    const top20Summary = buildSummary(validatedPayload.batters, 20);
+    const top10Summary = buildSummary(validatedPayload.batters, 10);
     const picksPrompt = `You are a sharp MLB prop betting analyst. Based on today's HR prop model data:\n${top20Summary}\n\nReturn ONLY a raw JSON object with no markdown. The object has three keys: bestBets (array of 5 top HR prop picks - highest model score players with strong matchup context), valueBets (array of 3 players where HR score is high but they may be underpriced - ranks 4-12 in the model), longshots (array of 2 high upside lower probability picks from ranks 8-20). Each pick has: player (string), team (string), opponent (string), opposingPitcher (string), hrScoreRank (number), topStats (array of exactly 2 strings highlighting their strongest metrics with values), bullets (array of exactly 2 strings referencing specific numbers from the data - barrel rate, exit velo, park factor, pitcher HR/9, or recent form). Do not include any text outside the JSON.`;
     const previewPrompt = `Based on today's MLB HR prop model data:\n${top10Summary}\n\nWrite a short slate preview. Return JSON with two fields: slateOverview (2-3 sentences describing today's slate conditions - parks, pitcher matchups, weather angles that create HR opportunities), modelNote (1-2 sentences explaining how the model is weighting today's picks). Sound like a sharp analyst. No filler. No markdown.`;
 
@@ -879,9 +1344,9 @@ async function main() {
     console.warn("GROK_API_KEY is not set. Falling back to model-generated HR prop sections.");
   }
 
-  const bestBetsPayload = buildBestBetsPayload(validatedRows, picksResult, previewResult);
+  const bestBetsPayload = buildBestBetsPayload(validatedPayload.batters, picksResult, previewResult);
 
-  writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify(validatedRows, null, 2)}\n`, "utf8");
+  writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify(validatedPayload, null, 2)}\n`, "utf8");
   writeFileSync(BEST_BETS_OUTPUT_PATH, `${JSON.stringify(bestBetsPayload, null, 2)}\n`, "utf8");
   console.log(`Wrote ${RAW_OUTPUT_PATH}`);
   console.log(`Wrote ${BEST_BETS_OUTPUT_PATH}`);
