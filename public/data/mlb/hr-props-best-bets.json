@@ -1,163 +1,178 @@
 {
-  "date": "2026-05-07",
-  "generatedAt": "2026-05-07T19:38:21.131Z",
+  "date": "2026-05-08",
+  "generatedAt": "2026-05-08T11:55:55.255Z",
   "slatePreview": {
-    "slateOverview": "Coors Field lights up the slate with its 1.4 park factor, boosting Mickey Moniak and Juan Soto against hittable arms in thin air. Citizens Bank Park's 1.2 factor favors Phillies sluggers like Harper and Schwarber versus weak rookie J.T. Ginn. Yankee Stadium's short porch aids Judge against lefty Gore, while loanDepot suppresses Ruiz despite his elite metrics; mild weather across venues enhances fly ball carry without wind interference.",
-    "modelNote": "Model heavily weights recent power surges (last7HR, last30HR) and barrel/hard-hit rates, amplified by park factors above 1.1 and favorable platoon splits. ISO and hrFBRatio dominate for pull-heavy bats (40% rate) facing vulnerable pitchers like Povich and Scott."
+    "slateOverview": "Great American Ball Park's 1.25 park factor headlines today's slate, fueling CIN's top-four model hits against vulnerable RHP Mike Burrows. Citizens Bank Park (1.2 factor) boosts PHI-COL matchup with weak arms like Chase Dollander. Neutral parks like Dodger Stadium and Camden Yards still offer edges via hot bats facing middling pitchers in mild weather with low wind suppression.",
+    "modelNote": "Model heavily weights barrel rate, ISO, and recent HR pace, amplified by park factors up to 1.25 and favorable RHP matchups. HR score integrates exit velo and pull tendencies for precise projection, ranking Blake Dunn's elite 93.4 atop the board."
   },
   "bestBets": [
     {
-      "player": "Esteury Ruiz",
-      "team": "MIA",
-      "opponent": "BAL",
-      "opposingPitcher": "Cade Povich",
+      "player": "Blake Dunn",
+      "team": "CIN",
+      "opp": "HOU",
+      "opposingPitcher": "Mike Burrows",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate=25.6",
-        "hardHitRate=73.3"
+        "barrelRate=41.3",
+        "hardHitRate=125"
       ],
       "bullets": [
-        "#1 hrScoreRank (82.1)",
-        "iso=0.466 vs LHP"
-      ]
-    },
-    {
-      "player": "Mickey Moniak",
-      "team": "COL",
-      "opponent": "NYM",
-      "opposingPitcher": "Christian Scott",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hardHitRate=71.3",
-        "last7HR=3"
-      ],
-      "bullets": [
-        "Coors Field parkFactor=1.4",
-        "last30HR=8"
+        "hrScore=93.4 at GABP (parkFactor=1.25)",
+        "last7HR=1 vs RHP Burrows"
       ]
     },
     {
       "player": "JJ Bleday",
       "team": "CIN",
-      "opponent": "CHC",
-      "opposingPitcher": "Shota Imanaga",
-      "hrScoreRank": 3,
+      "opp": "HOU",
+      "opposingPitcher": "Mike Burrows",
+      "hrScoreRank": 2,
       "topStats": [
-        "iso=0.42",
-        "barrelRate=23.1"
+        "iso=0.424",
+        "last7HR=3"
       ],
       "bullets": [
-        "last7HR=3",
-        "exitVelo=92.2"
+        "Hot streak with 3 HR last 7 days",
+        "GABP parkFactor=1.25 boosts HR"
+      ]
+    },
+    {
+      "player": "Matt Olson",
+      "team": "ATL",
+      "opp": "LAD",
+      "opposingPitcher": "Emmet Sheehan",
+      "hrScoreRank": 3,
+      "topStats": [
+        "last30HR=10",
+        "iso=0.37"
+      ],
+      "bullets": [
+        "10 HR in last 30 days",
+        "3 HR in last 7 vs RHP"
+      ]
+    },
+    {
+      "player": "Mickey Moniak",
+      "team": "COL",
+      "opp": "PHI",
+      "opposingPitcher": "Jesús Luzardo",
+      "hrScoreRank": 4,
+      "topStats": [
+        "exitVelo=91.8",
+        "iso=0.382"
+      ],
+      "bullets": [
+        "CBP parkFactor=1.2",
+        "8 HR last 30 days"
       ]
     },
     {
       "player": "Aaron Judge",
       "team": "NYY",
-      "opponent": "TEX",
-      "opposingPitcher": "MacKenzie Gore",
-      "hrScoreRank": 4,
-      "topStats": [
-        "parkFactor=1.18",
-        "last30HR=12"
-      ],
-      "bullets": [
-        "last7HR=3",
-        "Yankee Stadium short porch"
-      ]
-    },
-    {
-      "player": "Shea Langeliers",
-      "team": "ATH",
-      "opponent": "PHI",
-      "opposingPitcher": "Andrew Painter",
+      "opp": "MIL",
+      "opposingPitcher": "Jacob Misiorowski",
       "hrScoreRank": 5,
       "topStats": [
-        "parkFactor=1.2",
-        "Citizens Bank Park"
+        "last30HR=12",
+        "barrelRate=20.5"
       ],
       "bullets": [
-        "last7HR=2",
-        "hrFBRatio=7.5"
+        "12 HR in last 30",
+        "3 HR last 7 days"
       ]
     }
   ],
   "valueBets": [
     {
-      "player": "Bryce Harper",
-      "team": "PHI",
-      "opponent": "ATH",
-      "opposingPitcher": "J.T. Ginn",
+      "player": "Sal Stewart",
+      "team": "CIN",
+      "opp": "HOU",
+      "opposingPitcher": "Mike Burrows",
       "hrScoreRank": 6,
       "topStats": [
-        "parkFactor=1.2",
-        "last7HR=3"
+        "iso=0.252",
+        "last30HR=7"
       ],
       "bullets": [
-        "Citizens Bank Park",
-        "last30HR=7"
+        "GABP parkFactor=1.25",
+        "7 HR last 30 vs RHP"
       ]
     },
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "ATH",
-      "opposingPitcher": "J.T. Ginn",
+      "player": "Shea Langeliers",
+      "team": "ATH",
+      "opp": "BAL",
+      "opposingPitcher": "Kyle Bradish",
       "hrScoreRank": 7,
       "topStats": [
-        "iso=0.312",
-        "last30HR=8"
+        "last7HR=3",
+        "iso=0.302"
       ],
       "bullets": [
-        "parkFactor=1.2",
-        "barrelRate=17.2"
+        "3 HR in last 7",
+        "Camden Yards parkFactor=1"
       ]
     },
     {
-      "player": "CJ Abrams",
-      "team": "WSH",
-      "opponent": "MIN",
-      "opposingPitcher": "Simeon Woods Richardson",
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opp": "HOU",
+      "opposingPitcher": "Mike Burrows",
       "hrScoreRank": 8,
       "topStats": [
-        "exitVelo=90.5",
-        "hardHitRate=54.6"
+        "last30HR=7",
+        "exitVelo=90.5"
       ],
       "bullets": [
-        "vs RHP matchup",
-        "hrFBRatio=6.9"
+        "GABP parkFactor=1.25",
+        "7 HR last 30"
+      ]
+    },
+    {
+      "player": "Bryce Harper",
+      "team": "PHI",
+      "opp": "COL",
+      "opposingPitcher": "Chase Dollander",
+      "hrScoreRank": 9,
+      "topStats": [
+        "last7HR=3",
+        "iso=0.276"
+      ],
+      "bullets": [
+        "3 HR last 7 days",
+        "CBP parkFactor=1.2"
       ]
     }
   ],
   "longshots": [
     {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "COL",
-      "opposingPitcher": "Jose Quintana",
-      "hrScoreRank": 9,
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opp": "COL",
+      "opposingPitcher": "Chase Dollander",
+      "hrScoreRank": 11,
       "topStats": [
-        "Coors Field parkFactor=1.4",
-        "pullRate=40"
+        "iso=0.324",
+        "exitVelo=91.2"
       ],
       "bullets": [
-        "parkFactor=1.4 boost",
-        "Coors upside vs LHP"
+        "9 HR last 30",
+        "CBP parkFactor=1.2 vs weak RHP"
       ]
     },
     {
-      "player": "Byron Buxton",
-      "team": "MIN",
-      "opponent": "WSH",
-      "opposingPitcher": "Jake Irvin",
-      "hrScoreRank": 12,
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opp": "NYY",
+      "opposingPitcher": "Max Fried",
+      "hrScoreRank": 15,
       "topStats": [
-        "last7HR=3",
-        "last30HR=11"
+        "hardHitRate=100",
+        "hrFBRatio=33.3"
       ],
       "bullets": [
-        "hot streak last7HR=3",
-        "hrFBRatio=7.5"
+        "hardHitRate=100",
+        "hrFBRatio=33.3"
       ]
     }
   ]
