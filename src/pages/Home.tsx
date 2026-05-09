@@ -46,6 +46,69 @@ const navItems = [
   { label: "PGA", route: "/pga" },
 ] as const;
 
+const featuredContent = [
+  {
+    title: "Top HR Props for Today",
+    description: "Daily home run angles with park context, pitcher vulnerability, and ranked hitter power signals.",
+    route: "/mlb/hr-props",
+    eyebrow: "MLB",
+    asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+    cta: "Open dashboard",
+    accent: "#0f3b82",
+    tone: "primary",
+  },
+  {
+    title: "MLB Matchup Analytics",
+    description: "Starting pitchers, team context, and full-game matchup detail built for the current slate.",
+    route: "/mlb",
+    eyebrow: "MLB",
+    asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+    cta: "View matchups",
+    accent: "#153e75",
+    tone: "primary",
+  },
+  {
+    title: "MLB Strikeout Prop Model",
+    description: "Strikeout-specific pitcher projections are planned, but a dedicated public page is not live yet.",
+    eyebrow: "MLB",
+    asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+    cta: "Page not live yet",
+    accent: "#334155",
+    tone: "secondary",
+    unavailable: true,
+  },
+  {
+    title: "Customized Golf Model",
+    description: "Adjust weightings yourself and build a tailored PGA model around the stats you trust most.",
+    route: "/pga/custom",
+    eyebrow: "PGA",
+    asset: "/logos/pga.svg",
+    cta: "Build your model",
+    accent: "#0f5132",
+    tone: "secondary",
+  },
+  {
+    title: "PGA Championship Golf Model",
+    description: "A dedicated PGA Championship model page is not published in this repo yet, so this preview stays offline.",
+    eyebrow: "PGA Championship",
+    asset: "/logos/pga.svg",
+    cta: "Tournament page not live",
+    accent: "#6b4f1d",
+    tone: "primary",
+    unavailable: true,
+  },
+  {
+    title: "PGA Championship Top 5 Picks",
+    description: "Top-5 pick coverage for the PGA Championship does not have a dedicated live route yet.",
+    eyebrow: "PGA Championship",
+    asset: "/logos/pga.svg",
+    cta: "Picks page not live",
+    accent: "#5b4a2f",
+    tone: "secondary",
+    unavailable: true,
+  },
+] as const;
+
 function SportCard({
   locked = false,
   logo,
@@ -110,6 +173,83 @@ function SportCard({
       style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}
     >
       {cardContent}
+    </Link>
+  );
+}
+
+function FeaturedContentCard({
+  asset,
+  cta,
+  description,
+  eyebrow,
+  route,
+  title,
+  accent,
+  tone,
+  unavailable = false,
+}: {
+  asset: string;
+  cta: string;
+  description: string;
+  eyebrow: string;
+  route?: string;
+  title: string;
+  accent: string;
+  tone: "primary" | "secondary";
+  unavailable?: boolean;
+}) {
+  const primary = tone === "primary";
+  const cardClassName = `group relative overflow-hidden rounded-[24px] border border-black/8 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] ${primary ? "xl:col-span-2" : ""} ${unavailable ? "opacity-90" : "transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]"}`;
+
+  const content = (
+    <>
+      <div
+        className="absolute inset-x-0 top-0 h-[4px]"
+        style={{ background: accent }}
+      />
+      <div className="relative flex h-full flex-col">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#5b6472]">{eyebrow}</div>
+            <h3 className="mt-3 text-[20px] font-bold leading-tight text-[#111111]">{title}</h3>
+          </div>
+          <div
+            className="flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-[18px] border border-black/6 bg-[#f7f9fc]"
+            style={{ boxShadow: `inset 0 0 0 1px ${accent}1a` }}
+          >
+            <img src={asset} alt="" className="max-h-[34px] w-auto object-contain" />
+          </div>
+        </div>
+        <p className="mt-4 max-w-[52ch] text-[14px] leading-6 text-[#4b5563]">{description}</p>
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <span
+            className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]"
+            style={{
+              backgroundColor: `${accent}14`,
+              color: accent,
+            }}
+          >
+            {unavailable ? "Not Published Yet" : "Latest Analysis"}
+          </span>
+          <span className="text-[13px] font-semibold text-[#111111]">
+            {cta} {unavailable ? "" : "→"}
+          </span>
+        </div>
+      </div>
+    </>
+  );
+
+  if (unavailable || !route) {
+    return (
+      <div className={cardClassName} aria-disabled="true">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link to={route} className={cardClassName}>
+      {content}
     </Link>
   );
 }
@@ -211,6 +351,26 @@ export default function Home() {
                 <p className="mt-4 text-sm text-white/68">Free. No account required. Built by someone who actually bets.</p>
               </section>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-black/6 bg-[#f8f8f8]">
+        <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
+          <div className="max-w-[760px]">
+            <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#5b6472]">Featured Today</div>
+            <h2 className="mt-3 text-[30px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
+              Most Recent Models & Picks
+            </h2>
+            <p className="mt-3 max-w-[62ch] text-[15px] leading-7 text-[#4b5563]">
+              Jump straight into the newest MLB dashboards and golf model pages currently driving the site, with fast previews built to get you into the full analysis.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {featuredContent.map((item) => (
+              <FeaturedContentCard key={item.title} {...item} />
+            ))}
           </div>
         </div>
       </section>
