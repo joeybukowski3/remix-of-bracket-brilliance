@@ -168,6 +168,11 @@ function normalizeStringList(v: unknown) {
   return Array.isArray(v) ? v.map((e) => normalizeText(e)).filter(Boolean) : [];
 }
 
+function isStarterPlaceholder(value: unknown) {
+  const normalized = normalizeText(value).toUpperCase();
+  return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "TO BE ANNOUNCED" || normalized === "TO BE DETERMINED";
+}
+
 function normalizeGame(entry: unknown): HrDashboardGame | null {
   if (!isRecord(entry)) return null;
   const g = {
@@ -323,7 +328,7 @@ function buildMatchupHeatRanges(rows: PitcherVsBatterRow[]) {
 export function getHeatCellStyle(
   value: number | null | undefined,
   range: HeatRange | undefined,
-  options?: { intent?: HeatIntent; weight?: HeatWeight },
+  options?: { intent?: HeatIntent; weight?: HeatWeight; invert?: boolean },
 ): React.CSSProperties | undefined {
   if (!Number.isFinite(value) || !range || !Number.isFinite(range.low) || !Number.isFinite(range.high) || range.high <= range.low) return undefined;
 
@@ -345,7 +350,8 @@ export function getHeatCellStyle(
   const cool = weight === "primary"
     ? { text: "#1d4ed8", softFill: "rgba(37, 99, 235, 0.08)", strongFill: "rgba(37, 99, 235, 0.16)" }
     : { text: "#1d4ed8", softFill: "rgba(37, 99, 235, 0.05)", strongFill: "rgba(37, 99, 235, 0.10)" };
-  const palette = intent === "balance" ? (norm >= 0 ? warm : cool) : intent === "cool" ? cool : warm;
+  const directionalNorm = options?.invert ? norm * -1 : norm;
+  const palette = intent === "balance" ? (directionalNorm >= 0 ? warm : cool) : intent === "cool" ? cool : warm;
 
   if (magnitude >= fillCutoff) {
     return { backgroundColor: palette.strongFill, color: palette.text, fontWeight: 700 };
@@ -421,6 +427,44 @@ export function buildPitcherVsBatterRows(batters: HrDashboardBatter[], games: Hr
     };
   }).sort((a, b) => b.combinedScore - a.combinedScore || b.hrScore - a.hrScore || a.player.localeCompare(b.player))
     .map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
+export function buildTbdGameKeySet(pitchers: HrDashboardPitcher[], batters: HrDashboardBatter[]) {
+  const gameKeys = new Set<string>();
+  pitchers.forEach((pitcher) => {
+    if (pitcher.gameKey && isStarterPlaceholder(pitcher.pitcher)) {
+      gameKeys.add(pitcher.gameKey);
+    }
+  });
+  batters.forEach((batter) => {
+    if (batter.gameKey && isStarterPlaceholder(batter.opposingPitcher)) {
+      gameKeys.add(batter.gameKey);
+    }
+  });
+  return gameKeys;
+}
+
+export function buildTbdFootnotes(
+  tbdGameKeys: Set<string>,
+  games: HrDashboardGame[],
+  pitchers: HrDashboardPitcher[],
+  batters: HrDashboardBatter[],
+) {
+  if (!tbdGameKeys.size) return [];
+  const gameByKey = new Map(games.map((game) => [game.gameKey, game]));
+  const fallbackMatchupByKey = new Map<string, string>();
+  pitchers.forEach((pitcher) => {
+    if (!pitcher.gameKey || fallbackMatchupByKey.has(pitcher.gameKey)) return;
+    if (pitcher.team && pitcher.opponent) fallbackMatchupByKey.set(pitcher.gameKey, `${pitcher.team} @ ${pitcher.opponent}`);
+  });
+  batters.forEach((batter) => {
+    if (!batter.gameKey || fallbackMatchupByKey.has(batter.gameKey)) return;
+    if (batter.team && batter.opponent) fallbackMatchupByKey.set(batter.gameKey, `${batter.team} @ ${batter.opponent}`);
+  });
+  return [...tbdGameKeys]
+    .map((gameKey) => gameByKey.get(gameKey)?.matchup || fallbackMatchupByKey.get(gameKey) || gameKey)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
 }
 
 function sortPitchers(rows: HrDashboardPitcher[], key: PitcherSortKey, dir: SortDirection) {
@@ -598,6 +642,17 @@ export default function MlbHrProps() {
     title: "MLB HR Prop Dashboard Today - Joe Knows Ball",
     description: "Daily MLB HR prop dashboard with park factors, pitcher vulnerability, batter power signals, and combined matchup edges.",
     path: "/mlb/hr-props",
+    structuredData: [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://www.joeknowsball.com/" },
+          { "@type": "ListItem", position: 2, name: "MLB", item: "https://www.joeknowsball.com/mlb" },
+          { "@type": "ListItem", position: 3, name: "MLB HR Props", item: "https://www.joeknowsball.com/mlb/hr-props" },
+        ],
+      },
+    ],
   });
 
   useEffect(() => {
@@ -643,9 +698,20 @@ export default function MlbHrProps() {
     return () => window.removeEventListener("resize", syncMobile);
   }, []);
 
-  const games = dashboard?.games ?? [];
-  const pitchers = dashboard?.pitchers ?? [];
-  const batters = dashboard?.batters ?? [];
+  const allGames = dashboard?.games ?? [];
+  const allPitchers = dashboard?.pitchers ?? [];
+  const allBatters = dashboard?.batters ?? [];
+  const tbdGameKeys = useMemo(() => buildTbdGameKeySet(allPitchers, allBatters), [allBatters, allPitchers]);
+  const games = useMemo(() => allGames.filter((game) => !tbdGameKeys.has(game.gameKey)), [allGames, tbdGameKeys]);
+  const pitchers = useMemo(
+    () => allPitchers.filter((pitcher) => !tbdGameKeys.has(pitcher.gameKey) && !isStarterPlaceholder(pitcher.pitcher)),
+    [allPitchers, tbdGameKeys],
+  );
+  const batters = useMemo(
+    () => allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher)),
+    [allBatters, tbdGameKeys],
+  );
+  const tbdFootnotes = useMemo(() => buildTbdFootnotes(tbdGameKeys, allGames, allPitchers, allBatters), [allBatters, allGames, allPitchers, tbdGameKeys]);
   const parkRows = useMemo(() => buildParkSidebarRows(games), [games]);
   const slateSummary = useMemo(() => buildSlateSummary(pitchers, batters, games), [pitchers, batters, games]);
   const pitcherHeat = useMemo(() => buildPitcherHeatRanges(pitchers), [pitchers]);
@@ -653,6 +719,10 @@ export default function MlbHrProps() {
   const matchupRows = useMemo(() => buildPitcherVsBatterRows(batters, games), [batters, games]);
   const matchupHeat = useMemo(() => buildMatchupHeatRanges(matchupRows), [matchupRows]);
   const batterLookup = useMemo(() => new Map(batters.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])), [batters]);
+  const visibleBestBets = useMemo(
+    () => bestBets?.bestBets.filter((pick) => !isStarterPlaceholder(pick.opposingPitcher) && batterLookup.has(`${pick.player}|${pick.team}|${pick.opponent}`)) ?? [],
+    [bestBets, batterLookup],
+  );
 
   const gameOptions = useMemo(
     () => [{ label: "All games", value: "all" }, ...games.map((game) => ({ label: game.matchup, value: game.gameKey }))],
@@ -705,7 +775,7 @@ export default function MlbHrProps() {
   }, [matchupGameFilter, matchupRows, matchupSearch, matchupSortDirection, matchupSortKey]);
 
   const topMatchupCards = filteredMatchups.slice(0, 4);
-  const hasData = games.length > 0 || pitchers.length > 0 || batters.length > 0;
+  const hasData = allGames.length > 0 || allPitchers.length > 0 || allBatters.length > 0 || tbdFootnotes.length > 0;
 
   const handlePitcherSort = (key: PitcherSortKey) => {
     setPitcherSortDirection((current) => (pitcherSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "pitcher" || key === "gameKey" ? "asc" : "desc"));
@@ -867,6 +937,22 @@ export default function MlbHrProps() {
                   ) : null}
                 </div>
 
+                <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <p className="max-w-4xl text-sm leading-7 text-slate-600">
+                    Use this MLB HR props board to compare park factors, pitcher vulnerability, and batter power signals
+                    across the current slate, then cross-check full-game context on the{" "}
+                    <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
+                      MLB matchup analytics page
+                    </a>
+                    .
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                    <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
+                      View today&apos;s MLB matchup analytics
+                    </a>
+                  </div>
+                </section>
+
                 <div className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
                   <div className="border-b border-slate-200 px-4">
                     <div className="flex flex-nowrap gap-6 overflow-x-auto whitespace-nowrap" style={{ WebkitOverflowScrolling: "touch" }}>
@@ -958,9 +1044,9 @@ export default function MlbHrProps() {
                                       {pitcher.parkFactor.toFixed(2)}
                                     </span>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.xera, pitcherHeat.xera, { intent: "warm", weight: "secondary" })}>{formatNumber(pitcher.xera, 2)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.hardHitRate, pitcherHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.barrelRate, pitcherHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.barrelRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.xera, pitcherHeat.xera, { intent: "balance", weight: "secondary", invert: true })}>{formatNumber(pitcher.xera, 2)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.hardHitRate, pitcherHeat.hardHitRate, { intent: "balance", weight: "secondary", invert: true })}>{formatPercent(pitcher.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.barrelRate, pitcherHeat.barrelRate, { intent: "balance", weight: "secondary", invert: true })}>{formatPercent(pitcher.barrelRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.kRate, pitcherHeat.kRate, { intent: "cool", weight: "secondary" })}>{formatPercent(pitcher.kRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.bbRate, pitcherHeat.bbRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.bbRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.whiffRate, pitcherHeat.whiffRate, { intent: "cool", weight: "secondary" })}>{formatPercent(pitcher.whiffRate)}</td>
@@ -1207,7 +1293,7 @@ export default function MlbHrProps() {
                   <SportsbookBar />
                 </div>
 
-                {bestBets && (bestBets.slatePreview || bestBets.bestBets.length > 0) ? (
+                {bestBets && (bestBets.slatePreview || visibleBestBets.length > 0) ? (
                   <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
                     <div className="space-y-4">
                       {bestBets.slatePreview ? (
@@ -1224,14 +1310,24 @@ export default function MlbHrProps() {
                       ) : null}
                     </div>
 
-                    {bestBets.bestBets.length > 0 ? (
+                    {visibleBestBets.length > 0 ? (
                       <aside className="space-y-4">
                         <div className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">💥 Top HR Props Today</div>
-                        {bestBets.bestBets.slice(0, 3).map((pick) => (
+                        {visibleBestBets.slice(0, 3).map((pick) => (
                           <PickCard key={`${pick.player}-${pick.team}`} pick={pick} row={batterLookup.get(`${pick.player}|${pick.team}|${pick.opponent}`)} />
                         ))}
                       </aside>
                     ) : null}
+                  </section>
+                ) : null}
+
+                {tbdFootnotes.length > 0 ? (
+                  <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                    <div className="space-y-1 text-xs leading-6 text-slate-500">
+                      {tbdFootnotes.map((matchup) => (
+                        <p key={matchup}>The {matchup} matchup is TBD and will be updated once the starting pitcher is announced.</p>
+                      ))}
+                    </div>
                   </section>
                 ) : null}
               </section>
