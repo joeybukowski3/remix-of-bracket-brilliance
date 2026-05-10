@@ -16,10 +16,12 @@ import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
+import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
 import { formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
+import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
@@ -43,6 +45,7 @@ type MlbCache = {
 };
 
 let mlbCache: MlbCache | null = null;
+const DEV_FIXTURE_GAME_PK = String(DEV_MLB_MATCHUP_FIXTURE.detail.game.gamePk);
 
 function getOperationalDate() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -455,6 +458,9 @@ async function buildGameDetail(gamePk: string | number) {
 
 function warmGameDetail(gamePk: number | string) {
   const cache = ensureCache();
+  if (import.meta.env.DEV && String(gamePk) === DEV_FIXTURE_GAME_PK) {
+    return Promise.resolve(DEV_MLB_MATCHUP_FIXTURE.detail);
+  }
   if (cache.games[String(gamePk)]) return Promise.resolve(cache.games[String(gamePk)]);
   if (cache.detailPromises[String(gamePk)]) return cache.detailPromises[String(gamePk)];
   cache.detailPromises[String(gamePk)] = buildGameDetail(gamePk).finally(() => {
@@ -611,6 +617,19 @@ function HomeSchedule({
         </div>
         <div className="text-sm text-muted-foreground">
           {games.length} games · {counts["in-progress"]} in progress · {counts["scheduled"] + counts["pre-game"]} scheduled
+        </div>
+        <p className="max-w-4xl text-sm leading-7 text-muted-foreground">
+          Review the full MLB slate with starting pitcher matchups, park context, projected lineups, and game-level prop
+          angles before you move into the dedicated{" "}
+          <Link to="/mlb/hr-props" className="font-semibold text-primary hover:underline">
+            MLB HR props dashboard
+          </Link>
+          .
+        </p>
+        <div className="flex flex-wrap gap-4 text-sm">
+          <Link to="/mlb/hr-props" className="font-semibold text-primary hover:underline">
+            Open today&apos;s MLB home run prop model
+          </Link>
         </div>
       </section>
 
@@ -778,11 +797,18 @@ export default function MlbGameDetail() {
   const [detail, setDetail] = useState<MlbGameDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [usingDevFixture, setUsingDevFixture] = useState(false);
 
   usePageSeo({
     title: seo.title,
     description: seo.description,
     path: seo.path,
+    structuredData: [
+      buildBreadcrumbSchema([
+        { name: "Home", path: "/" },
+        { name: "MLB", path: "/mlb" },
+      ]),
+    ],
   });
 
   useEffect(() => {
@@ -796,6 +822,7 @@ export default function MlbGameDetail() {
     setScheduleLoading(true);
     setScheduleError(null);
     setDetailPreviews({});
+    setUsingDevFixture(false);
 
     loadSchedule()
       .then((games) => {
@@ -813,6 +840,13 @@ export default function MlbGameDetail() {
       })
       .catch((error) => {
         if (cancelled) return;
+        if (import.meta.env.DEV) {
+          setSchedule(DEV_MLB_MATCHUP_FIXTURE.schedule);
+          setDetailPreviews({ [DEV_MLB_MATCHUP_FIXTURE.detail.game.gamePk]: DEV_MLB_MATCHUP_FIXTURE.detail });
+          setScheduleLoading(false);
+          setUsingDevFixture(true);
+          return;
+        }
         setScheduleError(error instanceof Error ? error.message : "Unable to load MLB schedule.");
         setScheduleLoading(false);
       });
@@ -842,6 +876,12 @@ export default function MlbGameDetail() {
       })
       .catch((error) => {
         if (cancelled) return;
+        if (import.meta.env.DEV && String(routeState.gamePk) === DEV_FIXTURE_GAME_PK) {
+          setDetail(DEV_MLB_MATCHUP_FIXTURE.detail);
+          setDetailLoading(false);
+          setUsingDevFixture(true);
+          return;
+        }
         setDetailError(error instanceof Error ? error.message : "Unable to load MLB matchup detail.");
         setDetailLoading(false);
       });
@@ -907,6 +947,12 @@ export default function MlbGameDetail() {
               <div className="text-xs text-muted-foreground">/mlb#game-{detail.game.gamePk}</div>
             </div>
 
+            {usingDevFixture ? (
+              <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-6 text-amber-900 shadow-sm">
+                Dev-only MLB matchup fixture loaded for local UI verification because live MLB API requests are unavailable in this environment.
+              </div>
+            ) : null}
+
             <MlbMatchupHero
               detail={detail}
               quickChips={[
@@ -956,7 +1002,7 @@ export default function MlbGameDetail() {
                 <MlbSectionHeader
                   eyebrow="Pitcher vs lineup"
                   title={`${detail.starters.home.name} vs ${detail.game.away.abbreviation}`}
-                  subtitle="How the home starter's profile collides with the opposing offense."
+                  subtitle="How the home starter's profile collides with the opposing offense, with matchup percentile ranks for the key edge stats."
                 />
                 <div className="mt-6">
                   <MlbPitcherVsLineupPanel
@@ -975,7 +1021,7 @@ export default function MlbGameDetail() {
                 <MlbSectionHeader
                   eyebrow="Pitcher vs lineup"
                   title={`${detail.starters.away.name} vs ${detail.game.home.abbreviation}`}
-                  subtitle="Same comparison from the away starter's side of the game tree."
+                  subtitle="Same comparison from the away starter's side of the game tree, with matchup percentile ranks for the key edge stats."
                 />
                 <div className="mt-6">
                   <MlbPitcherVsLineupPanel
