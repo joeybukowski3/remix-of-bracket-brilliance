@@ -101,9 +101,10 @@ type HrBestBetsPayload = {
 
 type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
+type MatchupLens = "best" | "hr" | "strikeout";
 type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "hrVs" | "hitsVs" | "kVs";
 type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore";
-type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "hrTargetScore" | "barrelRate" | "hardHitRate" | "xba";
+type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
 
 type HeatRange = { low: number; high: number };
 type HeatIntent = "warm" | "cool" | "balance";
@@ -132,20 +133,26 @@ type PitcherVsBatterRow = {
   parkFactor: number;
   hrScore: number;
   opposingPitcherHrVs: number;
+  opposingPitcherHitsVs: number;
+  opposingPitcherKVs: number;
   hrTargetScore: number;
+  bestMatchupScore: number;
+  strikeoutMatchupScore: number;
   batterPowerScore: number;
   pitcherVulnerabilityScore: number;
   contextScore: number;
   barrelRate: number | null;
   hardHitRate: number | null;
   xba: number | null;
+  kRate: number | null;
+  whiffRate: number | null;
   angleTags: string[];
 };
 
 export const DEFAULT_TAB: TabKey = "pitchers";
 export const DEFAULT_PITCHER_SORT = { key: "hrVs" as PitcherSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction: "desc" as SortDirection };
-export const DEFAULT_MATCHUP_SORT = { key: "hrTargetScore" as MatchupSortKey, direction: "desc" as SortDirection };
+export const DEFAULT_MATCHUP_SORT = { key: "bestMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
 
 const DASH = "--";
 const EMPTY_MESSAGE = "Today's matchup dashboard generates daily at 10 AM ET. Check back after lineups are posted.";
@@ -324,7 +331,7 @@ function buildPitcherHeatRanges(rows: HrDashboardPitcher[]) {
   return buildHeatRanges(rows, ["xera","hardHitRate","flyBallRate","barrelRate","kRate","bbRate","whiffRate","hrVs","hitsVs","kVs"]);
 }
 function buildMatchupHeatRanges(rows: PitcherVsBatterRow[]) {
-  return buildHeatRanges(rows, ["hrScore","opposingPitcherHrVs","hrTargetScore","barrelRate","hardHitRate","xba"]);
+  return buildHeatRanges(rows, ["hrScore","opposingPitcherHrVs","opposingPitcherHitsVs","opposingPitcherKVs","hrTargetScore","bestMatchupScore","strikeoutMatchupScore","barrelRate","hardHitRate","xba","kRate","whiffRate"]);
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -347,6 +354,12 @@ function weightedAverageAvailable(entries: Array<{ value: number | null; weight:
   });
   if (!totalWeight) return null;
   return weightedTotal / totalWeight;
+}
+
+function getDefaultMatchupSortForLens(lens: MatchupLens) {
+  if (lens === "hr") return { key: "hrTargetScore" as MatchupSortKey, direction: "desc" as SortDirection };
+  if (lens === "strikeout") return { key: "strikeoutMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
+  return DEFAULT_MATCHUP_SORT;
 }
 
 export function getHeatCellStyle(
@@ -457,6 +470,8 @@ export function buildPitcherVsBatterRows(
       ?? null;
 
     const hrVs = b.opposingPitcherHrVs ?? pitcher?.hrVs ?? 0;
+    const hitsVs = b.opposingPitcherHitsVs ?? pitcher?.hitsVs ?? 0;
+    const kVs = b.opposingPitcherKVs ?? pitcher?.kVs ?? 0;
     const batterPowerScore = weightedAverageAvailable([
       { value: normalizeRange(b.hrScore, 35, 85), weight: 0.5 },
       { value: normalizeRange(b.barrelRate, 4, 22), weight: 0.2 },
@@ -479,20 +494,36 @@ export function buildPitcherVsBatterRows(
 
     const pitcherBoostMultiplier = clamp(0.85 + 0.25 * (pitcherVulnerabilityScore / 100), 0.9, 1.08);
     const hrTargetScore = Number((batterPowerScore * pitcherBoostMultiplier + 0.15 * contextScore).toFixed(1));
+    const bestMatchupScore = Number((
+      0.65 * hrTargetScore
+      + 0.2 * (normalizeRange(hitsVs, 20, 85) ?? 0)
+      + 0.15 * contextScore
+    ).toFixed(1));
+    const strikeoutMatchupScore = Number((
+      weightedAverageAvailable([
+        { value: normalizeRange(kVs, 15, 85), weight: 0.55 },
+        { value: normalizeRange(b.kRate, 10, 38), weight: 0.3 },
+        { value: normalizeRange(b.whiffRate, 12, 42), weight: 0.15 },
+      ]) ?? 0
+    ).toFixed(1));
 
     return {
       rank: 0, gameKey: b.gameKey, player: b.player, team: b.team,
       opposingPitcher: b.opposingPitcher, park: game?.stadium ?? b.ballpark,
       parkFactor: game?.parkFactor ?? b.parkFactor, hrScore: b.hrScore,
       opposingPitcherHrVs: hrVs,
+      opposingPitcherHitsVs: hitsVs,
+      opposingPitcherKVs: kVs,
       hrTargetScore,
+      bestMatchupScore,
+      strikeoutMatchupScore,
       batterPowerScore: Number(batterPowerScore.toFixed(1)),
       pitcherVulnerabilityScore: Number(pitcherVulnerabilityScore.toFixed(1)),
       contextScore: Number(contextScore.toFixed(1)),
-      barrelRate: b.barrelRate, hardHitRate: b.hardHitRate, xba: b.xba, angleTags: b.angleTags,
+      barrelRate: b.barrelRate, hardHitRate: b.hardHitRate, xba: b.xba, kRate: b.kRate, whiffRate: b.whiffRate, angleTags: b.angleTags,
     };
   }).sort((a, b) =>
-    b.hrTargetScore - a.hrTargetScore
+    b.bestMatchupScore - a.bestMatchupScore
     || b.hrScore - a.hrScore
     || (Number(b.barrelRate) - Number(a.barrelRate))
     || a.player.localeCompare(b.player))
@@ -695,6 +726,7 @@ export default function MlbHrProps() {
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
+  const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
   const [pitcherSortDirection, setPitcherSortDirection] = useState<SortDirection>(DEFAULT_PITCHER_SORT.direction);
   const [batterSortKey, setBatterSortKey] = useState<BatterSortKey>(DEFAULT_BATTER_SORT.key);
@@ -844,8 +876,19 @@ export default function MlbHrProps() {
     return sortMatchups(rows, matchupSortKey, matchupSortDirection);
   }, [matchupGameFilter, matchupRows, matchupSearch, matchupSortDirection, matchupSortKey]);
 
+  useEffect(() => {
+    const next = getDefaultMatchupSortForLens(activeMatchupLens);
+    setMatchupSortKey(next.key);
+    setMatchupSortDirection(next.direction);
+  }, [activeMatchupLens]);
+
   const topMatchupCards = filteredMatchups.slice(0, 4);
   const hasData = allGames.length > 0 || allPitchers.length > 0 || allBatters.length > 0 || tbdFootnotes.length > 0;
+  const matchupSectionCopy = activeMatchupLens === "best"
+    ? "Balanced overall hitter-vs-pitcher attackability, blending HR upside with broader pitcher weakness and game context."
+    : activeMatchupLens === "hr"
+      ? "HR-specific damage lens that keeps batter power first, then layers in pitcher home-run vulnerability and park context."
+      : "Strikeout-pressure lens built from batter K% and whiff risk plus pitcher K VS from the current page data.";
 
   const handlePitcherSort = (key: PitcherSortKey) => {
     setPitcherSortDirection((current) => (pitcherSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "pitcher" || key === "gameKey" ? "asc" : "desc"));
@@ -1203,12 +1246,12 @@ export default function MlbHrProps() {
                                       {row.parkFactor.toFixed(2)}
                                     </span>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.kRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.bbRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.kRate, batterHeat.kRate, { intent: "balance", weight: "secondary" })}>{formatPercent(row.kRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.bbRate, batterHeat.bbRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.bbRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, batterHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, batterHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.whiffRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.xba, batterHeat.xba, { intent: "warm", weight: "secondary" })}>{formatDecimal(row.xba, 3)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.whiffRate, batterHeat.whiffRate, { intent: "balance", weight: "secondary" })}>{formatPercent(row.whiffRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.last7HR, batterHeat.last7HR, { intent: "warm", weight: "secondary" })}>{formatNumber(row.last7HR, 0)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.last30HR, batterHeat.last30HR, { intent: "warm", weight: "secondary" })}>{formatNumber(row.last30HR, 0)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, batterHeat.opposingPitcherHrVs, { intent: "warm", weight: "primary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
@@ -1239,7 +1282,7 @@ export default function MlbHrProps() {
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
                             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">⚔️ Pitchers vs Batters</h2>
-                            <p className="mt-1 text-sm text-slate-500">HR Target Score blends batter power, pitcher vulnerability, and game context with batter skill weighted most heavily.</p>
+                            <p className="mt-1 text-sm text-slate-500">{matchupSectionCopy}</p>
                           </div>
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                             <input
@@ -1252,6 +1295,34 @@ export default function MlbHrProps() {
                           </div>
                         </div>
 
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { key: "best", label: "Best Matchups" },
+                            { key: "hr", label: "HR Matchups" },
+                            { key: "strikeout", label: "Strikeout Matchup" },
+                          ].map((lens) => (
+                            <button
+                              key={lens.key}
+                              type="button"
+                              onClick={() => setActiveMatchupLens(lens.key as MatchupLens)}
+                              className={cn(
+                                "rounded-full px-3 py-1.5 text-sm font-semibold transition",
+                                activeMatchupLens === lens.key
+                                  ? "bg-slate-900 text-white shadow-sm"
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900",
+                              )}
+                            >
+                              {lens.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {activeMatchupLens === "strikeout" ? (
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">
+                            Strikeout Matchup uses batter K% and whiff risk plus Pitcher K VS from the current page data. It is not a full opponent-team strikeout model.
+                          </div>
+                        ) : null}
+
                         <div className={cn("grid gap-4 xl:grid-cols-2 2xl:grid-cols-4", isMobile ? "grid-cols-1" : "")}>
                           {topMatchupCards.length ? topMatchupCards.map((row) => (
                             <article key={`${row.rank}-${row.player}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -1260,17 +1331,25 @@ export default function MlbHrProps() {
                                   <div className="text-base font-bold text-slate-900">{row.player}</div>
                                   <div className="mt-1 text-sm text-slate-500">{row.team} vs {row.opposingPitcher}</div>
                                 </div>
-                                <ScorePill value={row.hrTargetScore} />
+                                <ScorePill value={activeMatchupLens === "best" ? row.bestMatchupScore : activeMatchupLens === "hr" ? row.hrTargetScore : row.strikeoutMatchupScore} />
                               </div>
                               <div className="mt-3 text-sm text-slate-600">{row.park}</div>
                               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                                 <div>
-                                  <div className="text-xs uppercase tracking-[0.14em] text-slate-400">💥 Batter HR</div>
-                                  <div className="mt-1 font-semibold text-slate-900">{row.hrScore.toFixed(1)}</div>
+                                  <div className="text-xs uppercase tracking-[0.14em] text-slate-400">
+                                    {activeMatchupLens === "best" ? "🎯 Balanced Score" : activeMatchupLens === "hr" ? "💥 HR Target Score" : "🌀 Batter K Pressure"}
+                                  </div>
+                                  <div className="mt-1 font-semibold text-slate-900">
+                                    {activeMatchupLens === "best" ? row.bestMatchupScore.toFixed(1) : activeMatchupLens === "hr" ? row.hrTargetScore.toFixed(1) : formatPercent(row.kRate)}
+                                  </div>
                                 </div>
                                 <div>
-                                  <div className="text-xs uppercase tracking-[0.14em] text-slate-400">🔥 Pitcher HR VS</div>
-                                  <div className="mt-1 font-semibold text-slate-900">{row.opposingPitcherHrVs.toFixed(1)}</div>
+                                  <div className="text-xs uppercase tracking-[0.14em] text-slate-400">
+                                    {activeMatchupLens === "best" ? "🧨 Pitcher Attackability" : activeMatchupLens === "hr" ? "🔥 Pitcher HR VS" : "❄️ Pitcher K VS"}
+                                  </div>
+                                  <div className="mt-1 font-semibold text-slate-900">
+                                    {activeMatchupLens === "best" ? row.opposingPitcherHitsVs.toFixed(1) : activeMatchupLens === "hr" ? row.opposingPitcherHrVs.toFixed(1) : row.opposingPitcherKVs.toFixed(1)}
+                                  </div>
                                 </div>
                               </div>
                               <div className="mt-3 flex flex-wrap gap-1.5">
@@ -1281,7 +1360,7 @@ export default function MlbHrProps() {
                             </article>
                           )) : (
                             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500 xl:col-span-2 2xl:col-span-4">
-                              No combined matchups match the current search or game filter.
+                              No matchup rows match the current search or game filter.
                             </div>
                           )}
                         </div>
@@ -1291,19 +1370,47 @@ export default function MlbHrProps() {
                           <table className="min-w-full border-separate border-spacing-0 text-sm">
                             <thead className="sticky top-0 z-10 bg-white">
                               <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
-                                {[
-                                  ["rank", "Rank"],
-                                  ["player", "Batter"],
-                                  ["team", "Team"],
-                                  ["opposingPitcher", "Vs Pitcher"],
-                                  ["parkFactor", "Park"],
-                                  ["hrScore", "Batter HR"],
-                                  ["opposingPitcherHrVs", "Pitcher HR VS"],
-                                  ["hrTargetScore", "HR Target Score"],
-                                  ["barrelRate", "Barrel%"],
-                                  ["hardHitRate", "Hard Hit%"],
-                                  ["xba", "xBA"],
-                                ].map(([key, label]) => (
+                                {(
+                                  activeMatchupLens === "best"
+                                    ? [
+                                        ["rank", "Rank"],
+                                        ["player", "Batter"],
+                                        ["team", "Team"],
+                                        ["opposingPitcher", "Vs Pitcher"],
+                                        ["parkFactor", "Park"],
+                                        ["hrScore", "Batter HR"],
+                                        ["opposingPitcherHitsVs", "Pitcher Hits VS"],
+                                        ["opposingPitcherHrVs", "Pitcher HR VS"],
+                                        ["bestMatchupScore", "Balanced Matchup"],
+                                        ["xba", "xBA"],
+                                      ]
+                                    : activeMatchupLens === "hr"
+                                      ? [
+                                          ["rank", "Rank"],
+                                          ["player", "Batter"],
+                                          ["team", "Team"],
+                                          ["opposingPitcher", "Vs Pitcher"],
+                                          ["parkFactor", "Park"],
+                                          ["hrScore", "Batter HR"],
+                                          ["opposingPitcherHrVs", "Pitcher HR VS"],
+                                          ["hrTargetScore", "HR Target Score"],
+                                          ["barrelRate", "Barrel%"],
+                                          ["hardHitRate", "Hard Hit%"],
+                                          ["xba", "xBA"],
+                                        ]
+                                      : [
+                                          ["rank", "Rank"],
+                                          ["player", "Batter"],
+                                          ["team", "Team"],
+                                          ["opposingPitcher", "Vs Pitcher"],
+                                          ["parkFactor", "Park"],
+                                          ["kRate", "Batter K%"],
+                                          ["whiffRate", "Whiff%"],
+                                          ["opposingPitcherKVs", "Pitcher K VS"],
+                                          ["strikeoutMatchupScore", "Strikeout Pressure"],
+                                          ["xba", "xBA"],
+                                        ]
+                                ).map(([key, label]) => (
                                   <th key={key} className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">
                                     <button type="button" onClick={() => handleMatchupSort(key as MatchupSortKey)} className="transition hover:text-slate-900">
                                       {label}{makeSortIndicator(matchupSortKey === key, matchupSortDirection)}
@@ -1328,12 +1435,32 @@ export default function MlbHrProps() {
                                       <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
                                     </div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrTargetScore, matchupHeat.hrTargetScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrTargetScore} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, matchupHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, matchupHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
+                                  {activeMatchupLens === "best" ? (
+                                    <>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHitsVs, matchupHeat.opposingPitcherHitsVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHitsVs} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.bestMatchupScore, matchupHeat.bestMatchupScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.bestMatchupScore} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
+                                    </>
+                                  ) : activeMatchupLens === "hr" ? (
+                                    <>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrTargetScore, matchupHeat.hrTargetScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrTargetScore} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, matchupHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, matchupHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
+                                      <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.kRate)}</td>
+                                      <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.whiffRate)}</td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherKVs, matchupHeat.opposingPitcherKVs, { intent: "cool", weight: "primary" })}><ScorePill value={row.opposingPitcherKVs} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.strikeoutMatchupScore, matchupHeat.strikeoutMatchupScore, { intent: "cool", weight: "primary" })}><ScorePill value={row.strikeoutMatchupScore} /></td>
+                                      <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
+                                    </>
+                                  )}
                                   <td className="border-b border-slate-100 px-4 py-3">
                                     <div className="flex flex-wrap gap-1.5">
                                       {row.angleTags.length ? row.angleTags.map((tag) => (
@@ -1344,8 +1471,8 @@ export default function MlbHrProps() {
                                 </tr>
                               )) : (
                                 <tr>
-                                  <td colSpan={12} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
-                                    No combined matchups match the current search or game filter.
+                                  <td colSpan={activeMatchupLens === "hr" ? 12 : 11} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                    No matchup rows match the current search or game filter.
                                   </td>
                                 </tr>
                               )}

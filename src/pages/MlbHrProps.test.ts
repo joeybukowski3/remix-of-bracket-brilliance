@@ -250,7 +250,7 @@ describe("MLB HR props dashboard guards", () => {
     expect(DEFAULT_TAB).toBe("pitchers");
     expect(DEFAULT_PITCHER_SORT).toEqual({ key: "hrVs", direction: "desc" });
     expect(DEFAULT_BATTER_SORT).toEqual({ key: "hrScore", direction: "desc" });
-    expect(DEFAULT_MATCHUP_SORT).toEqual({ key: "hrTargetScore", direction: "desc" });
+    expect(DEFAULT_MATCHUP_SORT).toEqual({ key: "bestMatchupScore", direction: "desc" });
   });
 
   it("ranks highest HR score first in batter sorting", () => {
@@ -287,7 +287,7 @@ describe("MLB HR props dashboard guards", () => {
     expect(summary.hitterCount).toBe(1);
   });
 
-  it("builds batter-first matchup rows from live batter and pitcher data", () => {
+  it("builds matchup rows with best, HR, and strikeout lenses from live batter and pitcher data", () => {
     const rows = buildPitcherVsBatterRows(
       [
         {
@@ -347,8 +347,12 @@ describe("MLB HR props dashboard guards", () => {
     );
 
     expect(rows[0].hrTargetScore).toBeGreaterThan(rows[0].hrScore);
+    expect(rows[0].bestMatchupScore).toBeGreaterThan(0);
+    expect(rows[0].strikeoutMatchupScore).toBeGreaterThan(0);
     expect(rows[0].batterPowerScore).toBeGreaterThan(60);
     expect(rows[0].pitcherVulnerabilityScore).toBeGreaterThan(60);
+    expect(rows[0].opposingPitcherHitsVs).toBe(63);
+    expect(rows[0].opposingPitcherKVs).toBe(34);
     expect(rows[0].park).toBe("Chase Field");
   });
 
