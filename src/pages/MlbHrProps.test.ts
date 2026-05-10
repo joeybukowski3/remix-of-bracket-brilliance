@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildTbdFootnotes,
+  buildTbdGameKeySet,
   DEFAULT_BATTER_SORT,
   DEFAULT_MATCHUP_SORT,
   DEFAULT_PITCHER_SORT,
@@ -248,7 +250,7 @@ describe("MLB HR props dashboard guards", () => {
     expect(DEFAULT_TAB).toBe("pitchers");
     expect(DEFAULT_PITCHER_SORT).toEqual({ key: "hrVs", direction: "desc" });
     expect(DEFAULT_BATTER_SORT).toEqual({ key: "hrScore", direction: "desc" });
-    expect(DEFAULT_MATCHUP_SORT).toEqual({ key: "combinedScore", direction: "desc" });
+    expect(DEFAULT_MATCHUP_SORT).toEqual({ key: "hrTargetScore", direction: "desc" });
   });
 
   it("ranks highest HR score first in batter sorting", () => {
@@ -285,7 +287,7 @@ describe("MLB HR props dashboard guards", () => {
     expect(summary.hitterCount).toBe(1);
   });
 
-  it("builds combined matchup rows from live batter data", () => {
+  it("builds batter-first matchup rows from live batter and pitcher data", () => {
     const rows = buildPitcherVsBatterRows(
       [
         {
@@ -320,11 +322,112 @@ describe("MLB HR props dashboard guards", () => {
         },
       ],
       [{ gameKey: "NYM@AZ", matchup: "NYM @ AZ", awayTeam: "NYM", homeTeam: "AZ", stadium: "Chase Field", roofType: "Retractable", temperature: 78, precipitation: 0, windSpeed: 6, windDirection: "N", conditions: "Roof likely closed", parkFactor: 1 }],
+      [
+        {
+          gameKey: "NYM@AZ",
+          pitcher: "Ryne Nelson",
+          pitcherId: 1,
+          team: "AZ",
+          opponent: "NYM",
+          hand: "R",
+          ballpark: "Chase Field",
+          parkFactor: 1,
+          xera: 5.11,
+          hardHitRate: 43,
+          flyBallRate: 39,
+          barrelRate: 9.2,
+          kRate: 20,
+          bbRate: 8,
+          whiffRate: 24,
+          hrVs: 74.9,
+          hitsVs: 63,
+          kVs: 34,
+        },
+      ],
     );
 
-    expect(rows[0].combinedScore).toBe(145);
-    expect(rows[0].scoreDiff).toBe(-4.8);
+    expect(rows[0].hrTargetScore).toBeGreaterThan(rows[0].hrScore);
+    expect(rows[0].batterPowerScore).toBeGreaterThan(60);
+    expect(rows[0].pitcherVulnerabilityScore).toBeGreaterThan(60);
     expect(rows[0].park).toBe("Chase Field");
+  });
+
+  it("keeps elite hitter quality ahead of weak bats even when pitcher vulnerability is lower", () => {
+    const rows = buildPitcherVsBatterRows(
+      [
+        {
+          gameKey: "NYY@BOS",
+          player: "Aaron Judge",
+          team: "NYY",
+          opponent: "BOS",
+          opposingPitcher: "Pitcher A",
+          opposingPitcherId: 1,
+          pitcherHand: "R",
+          ballpark: "Fenway Park",
+          parkFactor: 1.04,
+          barrelRate: 22,
+          hardHitRate: 59,
+          exitVelo: 95,
+          iso: 0.39,
+          hrFBRatio: 24,
+          pullRate: 43,
+          xba: 0.31,
+          kRate: 24,
+          bbRate: 15,
+          whiffRate: 24,
+          last7HR: 3,
+          last30HR: 11,
+          opposingPitcherHrVs: 22,
+          opposingPitcherHitsVs: 38,
+          opposingPitcherKVs: 52,
+          weatherBoost: 2,
+          hrScore: 84,
+          hrScoreRank: 1,
+          angleTags: ["HR damage edge"],
+        },
+        {
+          gameKey: "SEA@COL",
+          player: "Weak Bat",
+          team: "SEA",
+          opponent: "COL",
+          opposingPitcher: "Pitcher B",
+          opposingPitcherId: 2,
+          pitcherHand: "R",
+          ballpark: "Coors Field",
+          parkFactor: 1.28,
+          barrelRate: 7,
+          hardHitRate: 34,
+          exitVelo: 88,
+          iso: 0.14,
+          hrFBRatio: 8,
+          pullRate: 38,
+          xba: 0.228,
+          kRate: 28,
+          bbRate: 7,
+          whiffRate: 31,
+          last7HR: 0,
+          last30HR: 2,
+          opposingPitcherHrVs: 78,
+          opposingPitcherHitsVs: 70,
+          opposingPitcherKVs: 30,
+          weatherBoost: 4,
+          hrScore: 43,
+          hrScoreRank: 25,
+          angleTags: [],
+        },
+      ],
+      [
+        { gameKey: "NYY@BOS", matchup: "NYY @ BOS", awayTeam: "NYY", homeTeam: "BOS", stadium: "Fenway Park", roofType: "Open", temperature: 65, precipitation: 0, windSpeed: 8, windDirection: "SW", conditions: "Clear", parkFactor: 1.04 },
+        { gameKey: "SEA@COL", matchup: "SEA @ COL", awayTeam: "SEA", homeTeam: "COL", stadium: "Coors Field", roofType: "Open", temperature: 73, precipitation: 0, windSpeed: 10, windDirection: "NW", conditions: "Clear", parkFactor: 1.28 },
+      ],
+      [
+        { gameKey: "NYY@BOS", pitcher: "Pitcher A", pitcherId: 1, team: "BOS", opponent: "NYY", hand: "R", ballpark: "Fenway Park", parkFactor: 1.04, xera: 3.8, hardHitRate: 36, flyBallRate: 33, barrelRate: 7, kRate: 24, bbRate: 7, whiffRate: 27, hrVs: 22, hitsVs: 38, kVs: 52 },
+        { gameKey: "SEA@COL", pitcher: "Pitcher B", pitcherId: 2, team: "COL", opponent: "SEA", hand: "R", ballpark: "Coors Field", parkFactor: 1.28, xera: 5.7, hardHitRate: 46, flyBallRate: 42, barrelRate: 11, kRate: 18, bbRate: 9, whiffRate: 21, hrVs: 78, hitsVs: 70, kVs: 30 },
+      ],
+    );
+
+    expect(rows[0].player).toBe("Aaron Judge");
+    expect(rows[0].hrTargetScore).toBeGreaterThan(rows[1].hrTargetScore);
   });
 
   it("keeps batter rows aligned with the correct opposing pitcher matchup score", () => {
@@ -376,6 +479,31 @@ describe("MLB HR props dashboard guards", () => {
 
     expect(tags).toContain("HR damage edge");
     expect(tags.length).toBeLessThanOrEqual(2);
+  });
+
+  it("marks TBD starter games once and builds one footnote per affected matchup", () => {
+    const payload = normalizeHrDashboardPayload({
+      date: "2026-05-09",
+      generatedAt: "2026-05-09T10:30:00Z",
+      games: [
+        { gameKey: "NYM@AZ", matchup: "NYM @ AZ", awayTeam: "NYM", homeTeam: "AZ", stadium: "Chase Field", roofType: "Retractable", parkFactor: 1 },
+        { gameKey: "ATL@LAD", matchup: "ATL @ LAD", awayTeam: "ATL", homeTeam: "LAD", stadium: "Dodger Stadium", roofType: "Open", parkFactor: 1 },
+      ],
+      pitchers: [
+        { gameKey: "ATL@LAD", pitcherId: 7, pitcher: "Emmet Sheehan", team: "LAD", opponent: "ATL", hrVs: 50, hitsVs: 45, kVs: 60 },
+      ],
+      batters: [
+        { gameKey: "NYM@AZ", player: "Juan Soto", team: "NYM", opponent: "AZ", opposingPitcher: "TBD", hrScore: 70, hrScoreRank: 1 },
+        { gameKey: "ATL@LAD", player: "Matt Olson", team: "ATL", opponent: "LAD", opposingPitcher: "Emmet Sheehan", hrScore: 76, hrScoreRank: 2 },
+      ],
+    });
+
+    expect(payload).not.toBeNull();
+    const tbdGameKeys = buildTbdGameKeySet(payload!.pitchers, payload!.batters);
+    const footnotes = buildTbdFootnotes(tbdGameKeys, payload!.games, payload!.pitchers, payload!.batters);
+
+    expect([...tbdGameKeys]).toEqual(["NYM@AZ"]);
+    expect(footnotes).toEqual(["NYM @ AZ"]);
   });
 
   it("builds deterministic red-blue heat styles from slate-relative values", () => {

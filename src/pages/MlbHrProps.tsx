@@ -103,7 +103,7 @@ type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
 type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "hrVs" | "hitsVs" | "kVs";
 type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore";
-type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "combinedScore" | "scoreDiff" | "barrelRate" | "hardHitRate" | "xba";
+type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "hrTargetScore" | "barrelRate" | "hardHitRate" | "xba";
 
 type HeatRange = { low: number; high: number };
 type HeatIntent = "warm" | "cool" | "balance";
@@ -132,8 +132,10 @@ type PitcherVsBatterRow = {
   parkFactor: number;
   hrScore: number;
   opposingPitcherHrVs: number;
-  combinedScore: number;
-  scoreDiff: number;
+  hrTargetScore: number;
+  batterPowerScore: number;
+  pitcherVulnerabilityScore: number;
+  contextScore: number;
   barrelRate: number | null;
   hardHitRate: number | null;
   xba: number | null;
@@ -143,7 +145,7 @@ type PitcherVsBatterRow = {
 export const DEFAULT_TAB: TabKey = "pitchers";
 export const DEFAULT_PITCHER_SORT = { key: "hrVs" as PitcherSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction: "desc" as SortDirection };
-export const DEFAULT_MATCHUP_SORT = { key: "combinedScore" as MatchupSortKey, direction: "desc" as SortDirection };
+export const DEFAULT_MATCHUP_SORT = { key: "hrTargetScore" as MatchupSortKey, direction: "desc" as SortDirection };
 
 const DASH = "--";
 const EMPTY_MESSAGE = "Today's matchup dashboard generates daily at 10 AM ET. Check back after lineups are posted.";
@@ -322,7 +324,29 @@ function buildPitcherHeatRanges(rows: HrDashboardPitcher[]) {
   return buildHeatRanges(rows, ["xera","hardHitRate","flyBallRate","barrelRate","kRate","bbRate","whiffRate","hrVs","hitsVs","kVs"]);
 }
 function buildMatchupHeatRanges(rows: PitcherVsBatterRow[]) {
-  return buildHeatRanges(rows, ["hrScore","opposingPitcherHrVs","combinedScore","scoreDiff","barrelRate","hardHitRate","xba"]);
+  return buildHeatRanges(rows, ["hrScore","opposingPitcherHrVs","hrTargetScore","barrelRate","hardHitRate","xba"]);
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeRange(value: number | null | undefined, min: number, max: number) {
+  if (!Number.isFinite(value)) return null;
+  if (max <= min) return null;
+  return clamp(((Number(value) - min) / (max - min)) * 100, 0, 100);
+}
+
+function weightedAverageAvailable(entries: Array<{ value: number | null; weight: number }>) {
+  let weightedTotal = 0;
+  let totalWeight = 0;
+  entries.forEach(({ value, weight }) => {
+    if (value == null || !Number.isFinite(value) || weight <= 0) return;
+    weightedTotal += value * weight;
+    totalWeight += weight;
+  });
+  if (!totalWeight) return null;
+  return weightedTotal / totalWeight;
 }
 
 export function getHeatCellStyle(
@@ -412,20 +436,66 @@ export function buildSlateSummary(pitchers: HrDashboardPitcher[], batters: HrDas
   };
 }
 
-export function buildPitcherVsBatterRows(batters: HrDashboardBatter[], games: HrDashboardGame[]): PitcherVsBatterRow[] {
+export function buildPitcherVsBatterRows(
+  batters: HrDashboardBatter[],
+  games: HrDashboardGame[],
+  pitchers: HrDashboardPitcher[] = [],
+) {
   const gameByKey = new Map(games.map((g) => [g.gameKey, g]));
+  const pitcherById = new Map(pitchers.filter((pitcher) => pitcher.pitcherId != null).map((pitcher) => [pitcher.pitcherId as number, pitcher]));
+  const pitcherByGameAndName = new Map(
+    pitchers
+      .filter((pitcher) => pitcher.gameKey && pitcher.pitcher)
+      .map((pitcher) => [`${pitcher.gameKey}|${pitcher.pitcher.toLowerCase()}`, pitcher] as const),
+  );
+
   return [...batters].map((b) => {
     const game = gameByKey.get(b.gameKey);
-    const hrVs = b.opposingPitcherHrVs ?? 0;
+    const pitcher =
+      (b.opposingPitcherId != null ? pitcherById.get(b.opposingPitcherId) : null)
+      ?? pitcherByGameAndName.get(`${b.gameKey}|${b.opposingPitcher.toLowerCase()}`)
+      ?? null;
+
+    const hrVs = b.opposingPitcherHrVs ?? pitcher?.hrVs ?? 0;
+    const batterPowerScore = weightedAverageAvailable([
+      { value: normalizeRange(b.hrScore, 35, 85), weight: 0.5 },
+      { value: normalizeRange(b.barrelRate, 4, 22), weight: 0.2 },
+      { value: normalizeRange(b.hardHitRate, 28, 60), weight: 0.2 },
+      { value: normalizeRange(b.hrFBRatio, 4, 28), weight: 0.1 },
+    ]) ?? normalizeRange(b.hrScore, 35, 85) ?? 0;
+
+    const pitcherVulnerabilityScore = weightedAverageAvailable([
+      { value: normalizeRange(hrVs, 20, 85), weight: 0.3 },
+      { value: normalizeRange(pitcher?.xera, 2.5, 6.5), weight: 0.25 },
+      { value: normalizeRange(pitcher?.flyBallRate, 22, 48), weight: 0.2 },
+      { value: normalizeRange(pitcher?.barrelRate, 3, 14), weight: 0.15 },
+      { value: normalizeRange(pitcher?.hardHitRate, 28, 50), weight: 0.1 },
+    ]) ?? normalizeRange(hrVs, 20, 85) ?? 0;
+
+    const contextScore = weightedAverageAvailable([
+      { value: normalizeRange(game?.parkFactor ?? b.parkFactor, 0.8, 1.3), weight: 0.7 },
+      { value: normalizeRange(b.weatherBoost, -8, 8), weight: 0.2 },
+    ]) ?? normalizeRange(game?.parkFactor ?? b.parkFactor, 0.8, 1.3) ?? 0;
+
+    const pitcherBoostMultiplier = clamp(0.85 + 0.25 * (pitcherVulnerabilityScore / 100), 0.9, 1.08);
+    const hrTargetScore = Number((batterPowerScore * pitcherBoostMultiplier + 0.15 * contextScore).toFixed(1));
+
     return {
       rank: 0, gameKey: b.gameKey, player: b.player, team: b.team,
       opposingPitcher: b.opposingPitcher, park: game?.stadium ?? b.ballpark,
       parkFactor: game?.parkFactor ?? b.parkFactor, hrScore: b.hrScore,
-      opposingPitcherHrVs: hrVs, combinedScore: Number((b.hrScore + hrVs).toFixed(1)),
-      scoreDiff: Number((b.hrScore - hrVs).toFixed(1)),
+      opposingPitcherHrVs: hrVs,
+      hrTargetScore,
+      batterPowerScore: Number(batterPowerScore.toFixed(1)),
+      pitcherVulnerabilityScore: Number(pitcherVulnerabilityScore.toFixed(1)),
+      contextScore: Number(contextScore.toFixed(1)),
       barrelRate: b.barrelRate, hardHitRate: b.hardHitRate, xba: b.xba, angleTags: b.angleTags,
     };
-  }).sort((a, b) => b.combinedScore - a.combinedScore || b.hrScore - a.hrScore || a.player.localeCompare(b.player))
+  }).sort((a, b) =>
+    b.hrTargetScore - a.hrTargetScore
+    || b.hrScore - a.hrScore
+    || (Number(b.barrelRate) - Number(a.barrelRate))
+    || a.player.localeCompare(b.player))
     .map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
@@ -716,7 +786,7 @@ export default function MlbHrProps() {
   const slateSummary = useMemo(() => buildSlateSummary(pitchers, batters, games), [pitchers, batters, games]);
   const pitcherHeat = useMemo(() => buildPitcherHeatRanges(pitchers), [pitchers]);
   const batterHeat = useMemo(() => buildHeatStatRanges(batters), [batters]);
-  const matchupRows = useMemo(() => buildPitcherVsBatterRows(batters, games), [batters, games]);
+  const matchupRows = useMemo(() => buildPitcherVsBatterRows(batters, games, pitchers), [batters, games, pitchers]);
   const matchupHeat = useMemo(() => buildMatchupHeatRanges(matchupRows), [matchupRows]);
   const batterLookup = useMemo(() => new Map(batters.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])), [batters]);
   const visibleBestBets = useMemo(
@@ -1169,7 +1239,7 @@ export default function MlbHrProps() {
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
                             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">⚔️ Pitchers vs Batters</h2>
-                            <p className="mt-1 text-sm text-slate-500">Combined Score = Batter HR Score + Pitcher HR VS. Score Diff = Batter HR Score minus Pitcher HR VS.</p>
+                            <p className="mt-1 text-sm text-slate-500">HR Target Score blends batter power, pitcher vulnerability, and game context with batter skill weighted most heavily.</p>
                           </div>
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                             <input
@@ -1190,7 +1260,7 @@ export default function MlbHrProps() {
                                   <div className="text-base font-bold text-slate-900">{row.player}</div>
                                   <div className="mt-1 text-sm text-slate-500">{row.team} vs {row.opposingPitcher}</div>
                                 </div>
-                                <ScorePill value={row.combinedScore} />
+                                <ScorePill value={row.hrTargetScore} />
                               </div>
                               <div className="mt-3 text-sm text-slate-600">{row.park}</div>
                               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -1229,8 +1299,7 @@ export default function MlbHrProps() {
                                   ["parkFactor", "Park"],
                                   ["hrScore", "Batter HR"],
                                   ["opposingPitcherHrVs", "Pitcher HR VS"],
-                                  ["combinedScore", "Combined"],
-                                  ["scoreDiff", "Score Diff"],
+                                  ["hrTargetScore", "HR Target Score"],
                                   ["barrelRate", "Barrel%"],
                                   ["hardHitRate", "Hard Hit%"],
                                   ["xba", "xBA"],
@@ -1261,8 +1330,7 @@ export default function MlbHrProps() {
                                   </td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.combinedScore, matchupHeat.combinedScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.combinedScore} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.scoreDiff, matchupHeat.scoreDiff, { intent: "balance", weight: "primary" })}>{row.scoreDiff.toFixed(1)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrTargetScore, matchupHeat.hrTargetScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrTargetScore} /></td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, matchupHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, matchupHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
@@ -1276,7 +1344,7 @@ export default function MlbHrProps() {
                                 </tr>
                               )) : (
                                 <tr>
-                                  <td colSpan={13} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={12} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No combined matchups match the current search or game filter.
                                   </td>
                                 </tr>
