@@ -18,6 +18,8 @@ concurrency:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   generate-hr-props:
@@ -37,14 +39,37 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Gate scheduled run to the correct 3 AM ET cron slot
+        id: schedule_gate
+        shell: bash
+        run: |
+          SHOULD_RUN="true"
+          MESSAGE=""
+
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ET_ZONE="$(TZ=America/New_York date +%Z)"
+            EXPECTED_CRON="0 8 * * *"
+            if [ "$ET_ZONE" = "EDT" ]; then
+              EXPECTED_CRON="0 7 * * *"
+            fi
+
+            if [ "${{ github.event.schedule }}" != "$EXPECTED_CRON" ]; then
+              SHOULD_RUN="false"
+              MESSAGE="Skipping duplicate cron for $ET_ZONE. Expected ${EXPECTED_CRON}, received ${{ github.event.schedule }}."
+            fi
+          fi
+
+          echo "should_run=${SHOULD_RUN}" >> "$GITHUB_OUTPUT"
+          echo "message=${MESSAGE}" >> "$GITHUB_OUTPUT"
+
+      - name: Report skipped duplicate cron
+        if: steps.schedule_gate.outputs.should_run != 'true'
+        run: echo "${{ steps.schedule_gate.outputs.message }}"
+
       - name: Generate HR props
+        if: steps.schedule_gate.outputs.should_run == 'true'
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            CURRENT_ET_HOUR="$(TZ=America/New_York date +%H)"
-            if [ "$CURRENT_ET_HOUR" != "03" ]; then
-              echo "Skipping duplicate cron outside 3:00 AM America/New_York (current ET hour: $CURRENT_ET_HOUR)."
-              exit 0
-            fi
             npm run mlb:hr-props -- --force
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then
             npm run mlb:hr-props -- --force
@@ -55,8 +80,32 @@ jobs:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
 
       - name: Commit and push updated MLB HR prop data
+        if: steps.schedule_gate.outputs.should_run == 'true'
+        id: commit_data
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/mlb/hr-props-raw.json public/data/mlb/hr-props-best-bets.json
-          git diff --cached --quiet || (git commit -m "chore: update MLB HR prop data" && git push)
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "chore: update MLB HR prop data"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build site for GitHub Pages
+        if: steps.schedule_gate.outputs.should_run == 'true'
+        run: npm run build
+
+      - name: Upload GitHub Pages artifact
+        if: steps.schedule_gate.outputs.should_run == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy refreshed site to GitHub Pages
+        if: steps.schedule_gate.outputs.should_run == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
