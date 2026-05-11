@@ -131,12 +131,27 @@ export function normalizeEventKey(value: string) {
     .trim();
 }
 
+function getEasternDateKey(date: Date) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  return formatter.format(date);
+}
+
 export function getCurrentAndNextEvents(schedule: PgaScheduleFeedEntry[]) {
   const sorted = [...schedule].sort((left, right) => left.startDate.localeCompare(right.startDate));
-  const current = sorted.find((entry) => entry.status !== "complete") ?? sorted.at(-1) ?? null;
+  const todayKey = getEasternDateKey(new Date());
+  const activeRows = sorted.filter((entry) => entry.startDate <= todayKey && entry.endDate >= todayKey);
+  const active = activeRows[0] ?? null;
+  const firstUpcoming = sorted.find((entry) => entry.startDate > todayKey) ?? null;
+  const current = active ?? firstUpcoming ?? sorted.at(-1) ?? null;
   const next = current ? sorted.find((entry) => entry.startDate > current.startDate) ?? null : null;
 
-  return { current, next };
+  return { active, current, next };
 }
 
 export function isFutureOrCurrent(entry: PgaScheduleFeedEntry, currentEvent: PgaScheduleFeedEntry | null) {
@@ -372,14 +387,16 @@ export function usePgaHubData() {
 
 export function PgaScheduleRail({
   schedule,
-  currentEvent,
+  activeEvent,
+  resolvedEvent,
   sidebarFilter,
   setSidebarFilter,
   selectedScheduleId,
   onSelect,
 }: {
   schedule: PgaScheduleFeedEntry[];
-  currentEvent: PgaScheduleFeedEntry | null;
+  activeEvent: PgaScheduleFeedEntry | null;
+  resolvedEvent: PgaScheduleFeedEntry | null;
   sidebarFilter: SidebarFilter;
   setSidebarFilter: (filter: SidebarFilter) => void;
   selectedScheduleId: string | null;
@@ -401,14 +418,14 @@ export function PgaScheduleRail({
       };
     }
 
-    const currentRows = currentEvent
-      ? sorted.filter((entry) => entry.status !== "complete" && entry.startDate === currentEvent.startDate)
+    const currentRows = activeEvent
+      ? sorted.filter((entry) => entry.startDate === activeEvent.startDate && entry.endDate === activeEvent.endDate)
       : [];
 
     if (currentRows.length > 0) {
       const currentIds = new Set(currentRows.map((entry) => entry.id));
-      const futureRows = sorted.filter((entry) => entry.startDate > currentEvent!.startDate);
-      const previousRows = sorted.filter((entry) => !currentIds.has(entry.id) && entry.startDate < currentEvent!.startDate);
+      const futureRows = sorted.filter((entry) => entry.startDate > activeEvent!.startDate);
+      const previousRows = sorted.filter((entry) => !currentIds.has(entry.id) && entry.startDate < activeEvent!.startDate);
 
       return {
         featuredRows: [...currentRows, ...futureRows],
@@ -432,13 +449,13 @@ export function PgaScheduleRail({
       featuredRows: reversePastRows.slice(0, 1),
       previousRows: reversePastRows.slice(1),
     };
-  }, [currentEvent, filteredSchedule]);
+  }, [activeEvent, filteredSchedule]);
 
   const renderScheduleRow = (entry: PgaScheduleFeedEntry) => {
-    const isCurrent = currentEvent?.id === entry.id;
+    const isCurrent = activeEvent?.id === entry.id;
     const isPast = entry.status === "complete";
-    const isSelectable = isFutureOrCurrent(entry, currentEvent);
-    const isSelected = selectedScheduleId === entry.id;
+    const isSelectable = isFutureOrCurrent(entry, resolvedEvent);
+    const isSelected = selectedScheduleId === entry.id || (!selectedScheduleId && resolvedEvent?.id === entry.id);
 
     return (
       <button
@@ -450,7 +467,7 @@ export function PgaScheduleRail({
           "flex w-full items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left text-xs transition",
           isPast && "cursor-default border-slate-200 bg-slate-50 text-slate-400",
           !isPast && !isCurrent && !isSelected && "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900",
-          isCurrent && "border-sky-200 bg-sky-50 text-slate-900",
+          isCurrent && !isSelected && "border-sky-200 bg-sky-50 text-slate-900",
           isSelected && "border-slate-900 bg-slate-900 text-white",
         )}
       >

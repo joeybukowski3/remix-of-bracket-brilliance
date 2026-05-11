@@ -119,7 +119,7 @@ export default function PgaCustom() {
   const [presetVersion, setPresetVersion] = useState(0);
 
   const defaultWeightEntry = useMemo(() => findDefaultWeightEntry(courseWeights), [courseWeights]);
-  const { current: currentEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
+  const { active: activeEvent, current: currentEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
   const selectedEvent = useMemo(
     () => schedule.find((entry) => entry.id === selectedScheduleId) ?? currentEvent ?? null,
     [currentEvent, schedule, selectedScheduleId],
@@ -176,7 +176,8 @@ export default function PgaCustom() {
           <div className="grid gap-4 md:grid-cols-[280px_minmax(0,1fr)]">
             <PgaScheduleRail
               schedule={schedule}
-              currentEvent={currentEvent}
+              activeEvent={activeEvent}
+              resolvedEvent={currentEvent}
               sidebarFilter={sidebarFilter}
               setSidebarFilter={setSidebarFilter}
               selectedScheduleId={selectedScheduleId}

@@ -226,7 +226,7 @@ export default function PgaHub() {
     };
   }, []);
 
-  const { current: currentEvent, next: nextEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
+  const { active: activeEvent, current: currentEvent, next: nextEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
   const selectedFutureEvent = useMemo(
     () => schedule.find((entry) => entry.id === selectedScheduleId) ?? null,
     [schedule, selectedScheduleId],
@@ -475,7 +475,8 @@ export default function PgaHub() {
           <div className="grid gap-4 md:grid-cols-[292px_minmax(0,1fr)]">
             <PgaScheduleRail
               schedule={schedule}
-              currentEvent={currentEvent}
+              activeEvent={activeEvent}
+              resolvedEvent={currentEvent}
               sidebarFilter={sidebarFilter}
               setSidebarFilter={setSidebarFilter}
               selectedScheduleId={selectedScheduleId}
