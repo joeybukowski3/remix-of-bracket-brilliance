@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "pga");
@@ -234,7 +235,7 @@ async function generateValueBets(apiKey, allPicks, oddsLookup) {
   const prompt = `You are a sharp golf betting analyst identifying value bets. Here are the model picks with their American odds:\n${picksSummary}\n\nIdentify the 3 best value bets where the model ranking significantly outperforms what the odds imply — meaning the player ranks much higher in our model than their odds suggest. Return ONLY a raw JSON array named valueBets with no markdown. Each element has these exact fields: player (string), market (string: outright/top5/top10/top20), americanOdds (string like "+650"), modelRank (number), impliedProbability (string like "13.3%"), modelEdge (string: one sentence explaining why our model likes them more than the market does, referencing specific stat ranks).`;
 
   try {
-    const result = await callGrokWithRetry(prompt, 3);
+    const result = await callGrokWithRetry(prompt, 3, undefined, "value-bets");
     const arr = Array.isArray(result) ? result : result?.valueBets;
     if (!Array.isArray(arr) || !arr.length) return [];
     return arr.map((v) => ({
@@ -358,7 +359,64 @@ function extractJsonSnippet(text) {
 }
 
 function cleanJsonText(rawText) {
-  return rawText.replace(/```json\n?/gi, "").replace(/```\n?/gi, "").trim();
+  return rawText
+    .replace(/^\s*```json\s*/i, "")
+    .replace(/^\s*```\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .replace(/^\s*json\s*/i, "")
+    .replace(/\uFEFF/g, "")
+    .trim();
+}
+
+function sanitizeResponseSnippet(text) {
+  return text
+    .replace(/\s+/g, " ")
+    .replace(/[`]+/g, "")
+    .slice(0, 260)
+    .trim();
+}
+
+function normalizeJsonCandidate(text) {
+  return text
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\u00A0/g, " ")
+    .trim();
+}
+
+function removeTrailingCommas(text) {
+  return text.replace(/,\s*([}\]])/g, "$1");
+}
+
+function describeJsonParseError(error, source) {
+  if (!(error instanceof SyntaxError)) return error instanceof Error ? error.message : String(error);
+  const match = error.message.match(/position\s+(\d+)/i);
+  const position = match ? Number(match[1]) : null;
+  if (!Number.isFinite(position)) return error.message;
+  const start = Math.max(0, position - 80);
+  const end = Math.min(source.length, position + 80);
+  const excerpt = source.slice(start, end).replace(/\s+/g, " ");
+  return `${error.message} near: ${excerpt}`;
+}
+
+export function parseModelJson(text) {
+  const cleaned = cleanJsonText(text);
+  const snippet = extractJsonSnippet(cleaned);
+  const normalized = normalizeJsonCandidate(snippet);
+  const candidates = [
+    normalized,
+    removeTrailingCommas(normalized),
+  ].filter((candidate, index, array) => array.indexOf(candidate) === index);
+
+  let lastError = null;
+  for (const candidate of candidates) {
+    try {
+      return { parsed: JSON.parse(candidate), snippet: candidate };
+    } catch (error) {
+      lastError = new Error(describeJsonParseError(error, candidate));
+    }
+  }
+  throw lastError ?? new Error("Unable to parse model JSON response.");
 }
 
 function validatePickArray(value) {
@@ -384,7 +442,7 @@ function validatePreview(value) {
   return { tournamentOverview, modelExplainer, pickApproach };
 }
 
-async function callGrokWithRetry(prompt, maxRetries = 3, validate) {
+async function callGrokWithRetry(prompt, maxRetries = 3, validate, label = "grok-call") {
   for (let index = 0; index < maxRetries; index++) {
     try {
       const response = await fetch(API_URL, {
@@ -395,16 +453,18 @@ async function callGrokWithRetry(prompt, maxRetries = 3, validate) {
         },
         body: JSON.stringify({ model: MODEL, max_tokens: 8000, temperature: 0.2, messages: [{ role: "user", content: prompt }] }),
       });
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(`HTTP ${response.status} from Grok: ${sanitizeResponseSnippet(detail)}`);
+      }
       const data = await response.json();
       const content = extractMessageContent(data?.choices?.[0]?.message?.content);
-      console.log("RAW RESPONSE:", content.slice(0, 300), "...");
-      const cleaned = cleanJsonText(content);
-      const snippet = extractJsonSnippet(cleaned);
-      const parsed = JSON.parse(snippet);
+      console.log(`[${label}] attempt ${index + 1} raw snippet: ${sanitizeResponseSnippet(content)}`);
+      const { parsed } = parseModelJson(content);
       if (validate) validate(parsed, content);
       return parsed;
     } catch (error) {
-      console.log(`Attempt ${index + 1} failed: ${error instanceof Error ? error.message : error}`);
+      console.log(`[${label}] attempt ${index + 1} failed: ${error instanceof Error ? error.message : error}`);
       if (index < maxRetries - 1) await new Promise((r) => setTimeout(r, Math.pow(2, index) * 1500));
       else throw error;
     }
@@ -413,7 +473,7 @@ async function callGrokWithRetry(prompt, maxRetries = 3, validate) {
 
 async function generatePreview(apiKey, prompt) {
   try {
-    const result = await callGrokWithRetry(`${PREVIEW_SYSTEM_PROMPT}\n\n${prompt}`, 3);
+    const result = await callGrokWithRetry(`${PREVIEW_SYSTEM_PROMPT}\n\n${prompt}`, 3, undefined, "preview");
     return validatePreview(result);
   } catch (error) {
     console.error("Failed to generate preview:", error instanceof Error ? error.message : error);
@@ -439,10 +499,10 @@ async function generateCombinedPicks(apiKey, summary) {
   const [result1, result2] = await Promise.all([
     callGrokWithRetry(prompt1, 3, (parsed) => {
       if (!parsed.outrights || !parsed.top5) throw new Error("Missing outrights or top5");
-    }),
+    }, "combined-picks-1"),
     callGrokWithRetry(prompt2, 3, (parsed) => {
       if (!parsed.top10 || !parsed.top20) throw new Error("Missing top10 or top20");
-    }),
+    }, "combined-picks-2"),
   ]);
 
   await new Promise((r) => setTimeout(r, 1000));
@@ -544,7 +604,11 @@ async function main() {
   console.log(JSON.stringify(payload, null, 2));
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}
