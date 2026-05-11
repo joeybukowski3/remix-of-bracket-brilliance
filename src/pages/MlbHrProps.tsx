@@ -109,6 +109,28 @@ type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFact
 type HeatRange = { low: number; high: number };
 type HeatIntent = "warm" | "cool" | "balance";
 type HeatWeight = "primary" | "secondary";
+type HeatStyleOptions = { intent?: HeatIntent; weight?: HeatWeight; invert?: boolean };
+type PitcherHeatKey =
+  | "xera"
+  | "hardHitRate"
+  | "barrelRate"
+  | "kRate"
+  | "bbRate"
+  | "whiffRate"
+  | "hrVs"
+  | "hitsVs"
+  | "kVs";
+type BatterHeatKey =
+  | "kRate"
+  | "bbRate"
+  | "barrelRate"
+  | "hardHitRate"
+  | "xba"
+  | "whiffRate"
+  | "last7HR"
+  | "last30HR"
+  | "opposingPitcherHrVs"
+  | "hrScore";
 
 type ParkSidebarRow = {
   key: string;
@@ -324,8 +346,38 @@ function buildHeatRanges<T extends Record<string, unknown>>(rows: T[], keys: str
   })) as Record<string, HeatRange>;
 }
 
+const BATTER_TABLE_HEAT_CONFIG: Record<BatterHeatKey, HeatStyleOptions> = {
+  kRate: { intent: "balance", weight: "secondary", invert: true },
+  bbRate: { intent: "balance", weight: "secondary" },
+  barrelRate: { intent: "balance", weight: "secondary" },
+  hardHitRate: { intent: "balance", weight: "secondary" },
+  xba: { intent: "balance", weight: "secondary" },
+  whiffRate: { intent: "balance", weight: "secondary", invert: true },
+  last7HR: { intent: "balance", weight: "secondary" },
+  last30HR: { intent: "balance", weight: "secondary" },
+  opposingPitcherHrVs: { intent: "warm", weight: "primary" },
+  hrScore: { intent: "warm", weight: "primary" },
+};
+
+const PITCHER_TABLE_HEAT_CONFIG: Record<PitcherHeatKey, HeatStyleOptions> = {
+  xera: { intent: "balance", weight: "secondary", invert: true },
+  hardHitRate: { intent: "balance", weight: "secondary", invert: true },
+  barrelRate: { intent: "balance", weight: "secondary", invert: true },
+  kRate: { intent: "balance", weight: "secondary" },
+  bbRate: { intent: "balance", weight: "secondary", invert: true },
+  whiffRate: { intent: "balance", weight: "secondary" },
+  hrVs: { intent: "balance", weight: "primary", invert: true },
+  hitsVs: { intent: "balance", weight: "primary", invert: true },
+  kVs: { intent: "balance", weight: "primary" },
+};
+
 export function buildHeatStatRanges(rows: HrDashboardBatter[]) {
-  return buildHeatRanges(rows, ["barrelRate","hardHitRate","xba","kRate","bbRate","whiffRate","last7HR","last30HR","opposingPitcherHrVs","hrScore"]);
+  const ranges = buildHeatRanges(rows, ["barrelRate","hardHitRate","xba","kRate","bbRate","whiffRate","opposingPitcherHrVs","hrScore"]);
+  return {
+    ...ranges,
+    last7HR: { low: 0, high: 5 },
+    last30HR: { low: 0, high: 10 },
+  };
 }
 function buildPitcherHeatRanges(rows: HrDashboardPitcher[]) {
   return buildHeatRanges(rows, ["xera","hardHitRate","flyBallRate","barrelRate","kRate","bbRate","whiffRate","hrVs","hitsVs","kVs"]);
@@ -365,7 +417,7 @@ function getDefaultMatchupSortForLens(lens: MatchupLens) {
 export function getHeatCellStyle(
   value: number | null | undefined,
   range: HeatRange | undefined,
-  options?: { intent?: HeatIntent; weight?: HeatWeight; invert?: boolean },
+  options?: HeatStyleOptions,
 ): React.CSSProperties | undefined {
   if (!Number.isFinite(value) || !range || !Number.isFinite(range.low) || !Number.isFinite(range.high) || range.high <= range.low) return undefined;
 
@@ -397,6 +449,22 @@ export function getHeatCellStyle(
     return { backgroundColor: palette.softFill, color: palette.text, fontWeight: 600 };
   }
   return { color: palette.text, fontWeight: 600 };
+}
+
+function getBatterTableHeatStyle(
+  stat: BatterHeatKey,
+  value: number | null | undefined,
+  ranges: Record<string, HeatRange>,
+) {
+  return getHeatCellStyle(value, ranges[stat], BATTER_TABLE_HEAT_CONFIG[stat]);
+}
+
+function getPitcherTableHeatStyle(
+  stat: PitcherHeatKey,
+  value: number | null | undefined,
+  ranges: Record<string, HeatRange>,
+) {
+  return getHeatCellStyle(value, ranges[stat], PITCHER_TABLE_HEAT_CONFIG[stat]);
 }
 
 function formatDateLabel(v?: string) {
@@ -1157,15 +1225,15 @@ export default function MlbHrProps() {
                                       {pitcher.parkFactor.toFixed(2)}
                                     </span>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.xera, pitcherHeat.xera, { intent: "balance", weight: "secondary", invert: true })}>{formatNumber(pitcher.xera, 2)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.hardHitRate, pitcherHeat.hardHitRate, { intent: "balance", weight: "secondary", invert: true })}>{formatPercent(pitcher.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.barrelRate, pitcherHeat.barrelRate, { intent: "balance", weight: "secondary", invert: true })}>{formatPercent(pitcher.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.kRate, pitcherHeat.kRate, { intent: "cool", weight: "secondary" })}>{formatPercent(pitcher.kRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.bbRate, pitcherHeat.bbRate, { intent: "warm", weight: "secondary" })}>{formatPercent(pitcher.bbRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.whiffRate, pitcherHeat.whiffRate, { intent: "cool", weight: "secondary" })}>{formatPercent(pitcher.whiffRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.hrVs, pitcherHeat.hrVs, { intent: "warm", weight: "primary" })}><ScorePill value={pitcher.hrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.hitsVs, pitcherHeat.hitsVs, { intent: "warm", weight: "primary" })}><ScorePill value={pitcher.hitsVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(pitcher.kVs, pitcherHeat.kVs, { intent: "cool", weight: "primary" })}><ScorePill value={pitcher.kVs} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("xera", pitcher.xera, pitcherHeat)}>{formatNumber(pitcher.xera, 2)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("hardHitRate", pitcher.hardHitRate, pitcherHeat)}>{formatPercent(pitcher.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("barrelRate", pitcher.barrelRate, pitcherHeat)}>{formatPercent(pitcher.barrelRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("kRate", pitcher.kRate, pitcherHeat)}>{formatPercent(pitcher.kRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("bbRate", pitcher.bbRate, pitcherHeat)}>{formatPercent(pitcher.bbRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("whiffRate", pitcher.whiffRate, pitcherHeat)}>{formatPercent(pitcher.whiffRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("hrVs", pitcher.hrVs, pitcherHeat)}><ScorePill value={pitcher.hrVs} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("hitsVs", pitcher.hitsVs, pitcherHeat)}><ScorePill value={pitcher.hitsVs} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getPitcherTableHeatStyle("kVs", pitcher.kVs, pitcherHeat)}><ScorePill value={pitcher.kVs} /></td>
                                 </tr>
                               )) : (
                                 <tr>
@@ -1246,16 +1314,16 @@ export default function MlbHrProps() {
                                       {row.parkFactor.toFixed(2)}
                                     </span>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.kRate, batterHeat.kRate, { intent: "balance", weight: "secondary" })}>{formatPercent(row.kRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.bbRate, batterHeat.bbRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.bbRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, batterHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, batterHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.xba, batterHeat.xba, { intent: "warm", weight: "secondary" })}>{formatDecimal(row.xba, 3)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.whiffRate, batterHeat.whiffRate, { intent: "balance", weight: "secondary" })}>{formatPercent(row.whiffRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.last7HR, batterHeat.last7HR, { intent: "warm", weight: "secondary" })}>{formatNumber(row.last7HR, 0)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.last30HR, batterHeat.last30HR, { intent: "warm", weight: "secondary" })}>{formatNumber(row.last30HR, 0)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, batterHeat.opposingPitcherHrVs, { intent: "warm", weight: "primary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, batterHeat.hrScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrScore} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("kRate", row.kRate, batterHeat)}>{formatPercent(row.kRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("bbRate", row.bbRate, batterHeat)}>{formatPercent(row.bbRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("barrelRate", row.barrelRate, batterHeat)}>{formatPercent(row.barrelRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("hardHitRate", row.hardHitRate, batterHeat)}>{formatPercent(row.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("xba", row.xba, batterHeat)}>{formatDecimal(row.xba, 3)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("whiffRate", row.whiffRate, batterHeat)}>{formatPercent(row.whiffRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("last7HR", row.last7HR, batterHeat)}>{formatNumber(row.last7HR, 0)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("last30HR", row.last30HR, batterHeat)}>{formatNumber(row.last30HR, 0)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("opposingPitcherHrVs", row.opposingPitcherHrVs, batterHeat)}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("hrScore", row.hrScore, batterHeat)}><ScorePill value={row.hrScore} /></td>
                                   <td className="border-b border-slate-100 px-4 py-3">
                                     <div className="flex flex-wrap gap-1.5">
                                       {row.angleTags.length ? row.angleTags.map((tag) => (

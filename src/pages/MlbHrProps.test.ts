@@ -551,8 +551,55 @@ describe("MLB HR props dashboard guards", () => {
     const ranges = buildHeatStatRanges(rows);
     const hot = getHeatCellStyle(60, ranges.hardHitRate);
     const cold = getHeatCellStyle(30, ranges.hardHitRate);
+    const lowK = getHeatCellStyle(17, ranges.kRate, { intent: "balance", weight: "secondary", invert: true });
+    const highK = getHeatCellStyle(28, ranges.kRate, { intent: "balance", weight: "secondary", invert: true });
+    const lowWhiff = getHeatCellStyle(18, ranges.whiffRate, { intent: "balance", weight: "secondary", invert: true });
+    const highWhiff = getHeatCellStyle(33, ranges.whiffRate, { intent: "balance", weight: "secondary", invert: true });
+    const lowXba = getHeatCellStyle(0.201, ranges.xba, { intent: "balance", weight: "secondary" });
+    const highXba = getHeatCellStyle(0.324, ranges.xba, { intent: "balance", weight: "secondary" });
+    const coldLast7 = getHeatCellStyle(0, ranges.last7HR, { intent: "balance", weight: "secondary" });
+    const hotLast7 = getHeatCellStyle(5, ranges.last7HR, { intent: "balance", weight: "secondary" });
+    const coldLast30 = getHeatCellStyle(0, ranges.last30HR, { intent: "balance", weight: "secondary" });
+    const hotLast30 = getHeatCellStyle(10, ranges.last30HR, { intent: "balance", weight: "secondary" });
 
     expect(hot?.backgroundColor).toContain("220, 38, 38");
     expect(cold?.backgroundColor).toContain("37, 99, 235");
+    expect(lowK?.backgroundColor).toContain("220, 38, 38");
+    expect(highK?.backgroundColor).toContain("37, 99, 235");
+    expect(lowWhiff?.backgroundColor).toContain("220, 38, 38");
+    expect(highWhiff?.backgroundColor).toContain("37, 99, 235");
+    expect(lowXba?.backgroundColor).toContain("37, 99, 235");
+    expect(highXba?.backgroundColor).toContain("220, 38, 38");
+    expect(coldLast7?.backgroundColor).toContain("37, 99, 235");
+    expect(hotLast7?.backgroundColor).toContain("220, 38, 38");
+    expect(coldLast30?.backgroundColor).toContain("37, 99, 235");
+    expect(hotLast30?.backgroundColor).toContain("220, 38, 38");
+    expect(ranges.last7HR).toEqual({ low: 0, high: 5 });
+    expect(ranges.last30HR).toEqual({ low: 0, high: 10 });
+  });
+
+  it("supports pitcher-table semantics where high K/Whiff are red and high HR VS is blue", () => {
+    const ranges = {
+      kRate: { low: 15, high: 35 },
+      whiffRate: { low: 15, high: 35 },
+      hrVs: { low: 10, high: 80 },
+      hitsVs: { low: 10, high: 80 },
+      xera: { low: 2, high: 6 },
+      bbRate: { low: 4, high: 12 },
+    };
+
+    const highPitcherK = getHeatCellStyle(33.3, ranges.kRate, { intent: "balance", weight: "secondary" });
+    const highPitcherWhiff = getHeatCellStyle(35, ranges.whiffRate, { intent: "balance", weight: "secondary" });
+    const highHrVs = getHeatCellStyle(59.7, ranges.hrVs, { intent: "balance", weight: "primary", invert: true });
+    const highHitsVs = getHeatCellStyle(63.2, ranges.hitsVs, { intent: "balance", weight: "primary", invert: true });
+    const lowXera = getHeatCellStyle(2.5, ranges.xera, { intent: "balance", weight: "secondary", invert: true });
+    const highBb = getHeatCellStyle(12, ranges.bbRate, { intent: "balance", weight: "secondary", invert: true });
+
+    expect(highPitcherK?.backgroundColor).toContain("220, 38, 38");
+    expect(highPitcherWhiff?.backgroundColor).toContain("220, 38, 38");
+    expect(highHrVs?.backgroundColor).toContain("37, 99, 235");
+    expect(highHitsVs?.backgroundColor).toContain("37, 99, 235");
+    expect(lowXera?.backgroundColor).toContain("220, 38, 38");
+    expect(highBb?.backgroundColor).toContain("37, 99, 235");
   });
 });
