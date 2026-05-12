@@ -38,6 +38,7 @@ export type CourseWeightSet = {
   sgApp: number;
   sgAtG: number;
   sgPutt: number;
+  trendRank: number;
   drivingAccuracy: number;
   bogeyAvoidance: number;
   birdieBogeyRatio: number;
@@ -56,6 +57,7 @@ export type RawPlayerStat = {
   sgApp: number;
   sgAtG: number;
   sgPutt: number;
+  trendRank: number | null;
   drivingAccuracy: number;
   bogeyAvoidance: number;
   birdieBogeyRatio: number;
@@ -90,19 +92,43 @@ export const DATA_SOURCES = [
   { id: "next", title: "Next Week Tournament Model", scoreLabel: "Model Score" },
 ] as const;
 
-const STAT_CONFIG = [
+export const CUSTOM_WEIGHT_CONTROLS = [
   { key: "sgTotal", short: "SGT", full: "SG Total" },
   { key: "sgOTT", short: "OTT", full: "SG Off Tee" },
   { key: "sgApp", short: "APP", full: "SG Approach" },
   { key: "sgAtG", short: "ATG", full: "SG Around Green" },
   { key: "sgPutt", short: "PUT", full: "SG Putting" },
+  { key: "trendRank", short: "TREND", full: "DataGolf Trend" },
   { key: "drivingAccuracy", short: "DRV%", full: "Driving Accuracy" },
   { key: "bogeyAvoidance", short: "BOG", full: "Bogey Avoidance" },
   { key: "birdieBogeyRatio", short: "B/B", full: "Birdie/Bogey Ratio" },
 ] as const;
 
-type StatKey = (typeof STAT_CONFIG)[number]["key"];
-const LOWER_IS_BETTER_STATS = new Set(["bogeyavoidance", "bog", "bogey avoidance"]);
+type StatKey = (typeof CUSTOM_WEIGHT_CONTROLS)[number]["key"];
+const LOWER_IS_BETTER_STATS = new Set(["trendrank", "bogeyavoidance", "bog", "bogey avoidance"]);
+
+const DEFAULT_CUSTOM_WEIGHT_BASE: CourseWeightSet = {
+  sgTotal: 0,
+  sgOTT: 0,
+  sgApp: 0,
+  sgAtG: 0,
+  sgPutt: 0,
+  trendRank: 0,
+  drivingAccuracy: 0,
+  bogeyAvoidance: 0,
+  birdieBogeyRatio: 0,
+};
+
+export function normalizeCustomWeights(
+  weights: Partial<CourseWeightSet> | null | undefined,
+  fallback?: Partial<CourseWeightSet> | null,
+): CourseWeightSet {
+  return {
+    ...DEFAULT_CUSTOM_WEIGHT_BASE,
+    ...(fallback ?? {}),
+    ...(weights ?? {}),
+  };
+}
 
 function isValidScheduleData(value: unknown): value is PgaScheduleFeedEntry[] {
   return Array.isArray(value);
@@ -177,21 +203,37 @@ export function findDefaultWeightEntry(entries: CourseWeightFeedEntry[]) {
 
 export function rankPlayers(players: RawPlayerStat[], weights: CourseWeightSet) {
   const ranges = Object.fromEntries(
-    STAT_CONFIG.map(({ key }) => {
-      const values = players.map((player) => player[key]);
-      return [key, { min: Math.min(...values), max: Math.max(...values) }];
+    CUSTOM_WEIGHT_CONTROLS.map(({ key }) => {
+      const values = players
+        .map((player) => player[key] as number | null)
+        .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+      return [key, values.length > 0 ? { min: Math.min(...values), max: Math.max(...values) } : null];
     }),
-  ) as Record<StatKey, { min: number; max: number }>;
+  ) as Record<StatKey, { min: number; max: number } | null>;
 
   return players
     .map((player) => {
-      const score = STAT_CONFIG.reduce((total, { key }) => {
-        const { min, max } = ranges[key];
-        const normalized = max === min ? 100 : ((player[key] - min) / (max - min)) * 100;
-        return total + normalized * weights[key];
-      }, 0);
+      let weightedScore = 0;
+      let availableWeightTotal = 0;
 
-      return { ...player, score };
+      CUSTOM_WEIGHT_CONTROLS.forEach(({ key }) => {
+        const value = player[key] as number | null;
+        const weight = weights[key] ?? 0;
+        const range = ranges[key];
+        if (weight <= 0 || value == null || range == null) return;
+
+        const normalized = isLowerBetterStat(key)
+          ? range.max === range.min
+            ? 100
+            : ((range.max - value) / (range.max - range.min)) * 100
+          : range.max === range.min
+            ? 100
+            : ((value - range.min) / (range.max - range.min)) * 100;
+        weightedScore += normalized * weight;
+        availableWeightTotal += weight;
+      });
+
+      return { ...player, score: availableWeightTotal > 0 ? weightedScore / availableWeightTotal : 0 };
     })
     .sort((left, right) => {
       if (right.score !== left.score) return right.score - left.score;
@@ -217,13 +259,16 @@ export function setThisWeekOverride(weights: CourseWeightSet) {
   window.localStorage.setItem(THIS_WEEK_OVERRIDE_KEY, JSON.stringify(weights));
 }
 
-export function loadCustomPresets() {
+export function loadCustomPresets(fallbackWeights?: Partial<CourseWeightSet> | null) {
   if (typeof window === "undefined") return {};
 
   try {
     const raw = window.localStorage.getItem(PGA_PRESET_STORAGE_KEY);
     if (!raw) return {} as Record<string, CourseWeightSet>;
-    return JSON.parse(raw) as Record<string, CourseWeightSet>;
+    const parsed = JSON.parse(raw) as Record<string, Partial<CourseWeightSet>>;
+    return Object.fromEntries(
+      Object.entries(parsed).map(([name, weights]) => [name, normalizeCustomWeights(weights, fallbackWeights)]),
+    ) as Record<string, CourseWeightSet>;
   } catch {
     return {} as Record<string, CourseWeightSet>;
   }
@@ -236,13 +281,13 @@ export function saveCustomPreset(name: string, weights: CourseWeightSet) {
   window.localStorage.setItem(PGA_PRESET_STORAGE_KEY, JSON.stringify(current));
 }
 
-export function getSavedCustomWeights() {
+export function getSavedCustomWeights(fallbackWeights?: Partial<CourseWeightSet> | null) {
   if (typeof window === "undefined") return null;
 
   try {
     const raw = window.localStorage.getItem(PGA_CUSTOM_WORKING_WEIGHTS_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as CourseWeightSet;
+    return normalizeCustomWeights(JSON.parse(raw) as Partial<CourseWeightSet>, fallbackWeights);
   } catch {
     return null;
   }
@@ -257,7 +302,9 @@ export function formatScore(value: number) {
   return value.toFixed(2);
 }
 
-export function formatRawStat(key: StatKey, value: number) {
+export function formatRawStat(key: StatKey, value: number | null) {
+  if (value == null) return "—";
+  if (key === "trendRank") return value.toFixed(0);
   if (key === "drivingAccuracy") return value.toFixed(1);
   if (key === "bogeyAvoidance") return (value * 100).toFixed(1);
   if (key === "birdieBogeyRatio") return value.toFixed(2);
@@ -266,28 +313,35 @@ export function formatRawStat(key: StatKey, value: number) {
 
 function getPercentileMaps(rows: RankedPlayerRow[]) {
   const statPercentiles = Object.fromEntries(
-    STAT_CONFIG.map(({ key }) => {
+    CUSTOM_WEIGHT_CONTROLS.map(({ key }) => {
       const sorted = [...rows]
-        .map((row) => ({ player: row.player, value: row[key] }))
+        .map((row) => ({ player: row.player, value: row[key] as number | null }))
+        .filter((row): row is { player: string; value: number } => typeof row.value === "number" && Number.isFinite(row.value))
         .sort((left, right) => {
           const valueDelta = isLowerBetterStat(key) ? left.value - right.value : right.value - left.value;
           return valueDelta || left.player.localeCompare(right.player);
         });
 
-      const map: Record<string, number> = {};
+      const map: Record<string, number | null> = {};
       const total = sorted.length;
       sorted.forEach((row, index) => {
         const percentile = total <= 1 ? 99 : Math.max(1, Math.round(((total - 1 - index) / (total - 1)) * 98 + 1));
         map[row.player] = percentile;
       });
+      rows.forEach((row) => {
+        if (row[key] == null) {
+          map[row.player] = null;
+        }
+      });
       return [key, map];
     }),
-  ) as Record<StatKey, Record<string, number>>;
+  ) as Record<StatKey, Record<string, number | null>>;
 
   return statPercentiles;
 }
 
-function getCellStyle(percentile: number, mode: StatDisplayMode) {
+function getCellStyle(percentile: number | null, mode: StatDisplayMode) {
+  if (percentile == null) return undefined;
   const value = percentile;
 
   if (mode === "percentile") {
@@ -327,15 +381,15 @@ export function WeightBadgeRow({ entry }: { entry: CourseWeightFeedEntry | null 
 
   return (
     <div className="flex flex-wrap gap-1.5">
-      {STAT_CONFIG.map(({ key, short, full }) => (
-        <Tooltip key={key}>
-          <TooltipTrigger asChild>
-            <div className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold tracking-[0.12em] text-slate-600">
-              {short} {(entry.weights[key] * 100).toFixed(1)}%
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>{full}</TooltipContent>
-        </Tooltip>
+      {CUSTOM_WEIGHT_CONTROLS.map(({ key, short, full }) => (
+      <Tooltip key={key}>
+        <TooltipTrigger asChild>
+          <div className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-semibold tracking-[0.12em] text-slate-600">
+            {short} {((entry.weights[key] ?? 0) * 100).toFixed(1)}%
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>{full}</TooltipContent>
+      </Tooltip>
       ))}
     </div>
   );
@@ -580,7 +634,7 @@ export function PgaCompactTable({
   const [expandedPlayers, setExpandedPlayers] = useState<Record<string, boolean>>({});
   const statPercentiles = useMemo(() => getPercentileMaps(rows), [rows]);
 
-  const visibleDesktopColumns = STAT_CONFIG.slice(0, 5);
+  const visibleDesktopColumns = CUSTOM_WEIGHT_CONTROLS.slice(0, 6);
 
   return (
     <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.05)]">
@@ -596,7 +650,7 @@ export function PgaCompactTable({
                   <CompactHeaderTooltip short={column.short} full={column.full} />
                 </TableHead>
               ))}
-              {STAT_CONFIG.slice(5).map((column) => (
+              {CUSTOM_WEIGHT_CONTROLS.slice(6).map((column) => (
                 <TableHead key={column.key} className="hidden h-9 min-w-[62px] px-2 py-1 text-center text-[10px] uppercase tracking-[0.16em] text-slate-500 lg:table-cell">
                   <CompactHeaderTooltip short={column.short} full={column.full} />
                 </TableHead>
@@ -629,10 +683,10 @@ export function PgaCompactTable({
                       </div>
                     </TableCell>
                     <TableCell className="px-2 py-1 text-center font-semibold text-slate-900">{formatScore(row.score)}</TableCell>
-                    {STAT_CONFIG.slice(0, 5).map((column) => {
-                      const percentile = statPercentiles[column.key][row.player];
+                    {CUSTOM_WEIGHT_CONTROLS.slice(0, 6).map((column) => {
+                      const percentile = statPercentiles[column.key][row.player] ?? null;
                       const cellStyle = getCellStyle(percentile, displayMode);
-                      const displayValue = displayMode === "percentile" ? String(percentile) : formatRawStat(column.key, row[column.key]);
+                      const displayValue = displayMode === "percentile" ? (percentile != null ? String(percentile) : "—") : formatRawStat(column.key, row[column.key]);
 
                       return (
                         <TableCell key={column.key} className="hidden px-2 py-1 text-center md:table-cell" style={cellStyle}>
@@ -640,10 +694,10 @@ export function PgaCompactTable({
                         </TableCell>
                       );
                     })}
-                    {STAT_CONFIG.slice(5).map((column) => {
-                      const percentile = statPercentiles[column.key][row.player];
+                    {CUSTOM_WEIGHT_CONTROLS.slice(6).map((column) => {
+                      const percentile = statPercentiles[column.key][row.player] ?? null;
                       const cellStyle = getCellStyle(percentile, displayMode);
-                      const displayValue = displayMode === "percentile" ? String(percentile) : formatRawStat(column.key, row[column.key]);
+                      const displayValue = displayMode === "percentile" ? (percentile != null ? String(percentile) : "—") : formatRawStat(column.key, row[column.key]);
 
                       return (
                         <TableCell key={column.key} className="hidden px-2 py-1 text-center lg:table-cell" style={cellStyle}>
@@ -654,12 +708,12 @@ export function PgaCompactTable({
                   </TableRow>
                   {expanded ? (
                     <TableRow className="border-slate-200 bg-slate-50 md:hidden">
-                      <TableCell colSpan={11} className="px-3 py-2">
+                      <TableCell colSpan={3 + CUSTOM_WEIGHT_CONTROLS.length} className="px-3 py-2">
                         <div className="grid grid-cols-2 gap-2">
-                          {STAT_CONFIG.map((column) => {
-                            const percentile = statPercentiles[column.key][row.player];
+                          {CUSTOM_WEIGHT_CONTROLS.map((column) => {
+                            const percentile = statPercentiles[column.key][row.player] ?? null;
                             const cellStyle = getCellStyle(percentile, displayMode);
-                            const displayValue = displayMode === "percentile" ? String(percentile) : formatRawStat(column.key, row[column.key]);
+                            const displayValue = displayMode === "percentile" ? (percentile != null ? String(percentile) : "—") : formatRawStat(column.key, row[column.key]);
 
                             return (
                               <div key={column.key} className="rounded-lg border border-slate-200 px-2 py-1 text-center" style={cellStyle}>

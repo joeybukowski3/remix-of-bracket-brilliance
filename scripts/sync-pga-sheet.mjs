@@ -39,6 +39,7 @@ const SITE_OUTPUT_TAB_NAME = "SITE OUTPUT";
 const SCHEDULE_TAB_NAME = "2026 Schedule DG";
 const COURSE_WEIGHTS_TAB_NAME = "Course Weights";
 const COURSE_STATS_TAB_NAME = "Course Stats DG";
+const TREND_TABLE_TAB_NAME = "TrendTable";
 const PLAYER_STATS_MASTER_TAB_NAME = "PGA Stats Master";
 
 const COURSE_WEIGHT_FALLBACK_DEFAULTS = {
@@ -109,6 +110,14 @@ function parsePercentCell(value, asFraction = false) {
   const numeric = Number.parseFloat(String(value).replace(/%/g, "").trim());
   if (!Number.isFinite(numeric)) return null;
   return asFraction ? numeric / 100 : numeric;
+}
+
+function convertLastFirstName(value) {
+  const text = String(value ?? "").trim();
+  if (!text.includes(",")) return text || null;
+  const [last, first] = text.split(",", 2);
+  const combined = `${String(first ?? "").trim()} ${String(last ?? "").trim()}`.trim();
+  return combined || null;
 }
 
 function isBlankRow(row) {
@@ -251,6 +260,32 @@ async function loadSheetRows(sheetId, tabName, serviceAccount) {
   }
 
   return fetchSheetRowsViaPublicCsv(sheetId, tabName);
+}
+
+function parseTrendRows(rows) {
+  if (rows.length < 2) return [];
+
+  return rows
+    .slice(1)
+    .map((row) => {
+      if (!row || row[0] == null) return null;
+      const playerName = row[10] ? String(row[10]).trim() : convertLastFirstName(row[0]);
+      const trendRank = parseNumberCell(row[2]);
+      if (!playerName || trendRank == null) return null;
+      return { "Player Name": playerName, TrendRank: trendRank };
+    })
+    .filter((row) => row != null);
+}
+
+function buildTrendIndex(rows) {
+  const index = new Map();
+  rows.forEach((row) => {
+    const key = normalizeLooseKey(row["Player Name"]);
+    if (key && !index.has(key)) {
+      index.set(key, row.TrendRank);
+    }
+  });
+  return index;
 }
 
 function buildHeaderIndexMap(headerRow) {
@@ -808,7 +843,7 @@ function buildCourseWeightsFeed(scheduleRows, courseStatsRows, courseWeightRowsR
   ];
 }
 
-function parsePlayerStatsRows(rows) {
+function parsePlayerStatsRows(rows, trendIndex) {
   if (rows.length < 3) {
     return [];
   }
@@ -820,6 +855,7 @@ function parsePlayerStatsRows(rows) {
     .slice(2)
     .map((row) => ({
       player: String(row[headerIndex["Player Name"]] ?? "").trim(),
+      trendRank: trendIndex.get(normalizeLooseKey(String(row[headerIndex["Player Name"]] ?? "").trim())) ?? null,
       sgTotal: parseNumberCell(row[headerIndex["SG: Total"]]),
       sgOTT: parseNumberCell(row[headerIndex["SG: Off the Tee"]]),
       sgApp: parseNumberCell(row[headerIndex["SG: Approach the Green"]]),
@@ -844,6 +880,7 @@ function parsePlayerStatsRows(rows) {
     )
     .map((row) => ({
       player: row.player,
+      trendRank: row.trendRank,
       sgTotal: roundWeight(row.sgTotal),
       sgOTT: roundWeight(row.sgOTT),
       sgApp: roundWeight(row.sgApp),
@@ -875,12 +912,14 @@ async function main() {
     scheduleRowsPrimary,
     courseWeightsRowsPrimary,
     courseStatsRowsPrimary,
+    trendRowsPrimary,
     playerStatsRowsPrimary,
   ] = await Promise.all([
     loadSheetRows(sheetId, SITE_OUTPUT_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, SCHEDULE_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, COURSE_WEIGHTS_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, COURSE_STATS_TAB_NAME, serviceAccount),
+    loadSheetRows(sheetId, TREND_TABLE_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, PLAYER_STATS_MASTER_TAB_NAME, serviceAccount),
   ]);
 
@@ -892,6 +931,7 @@ async function main() {
   let scheduleRowsRaw = scheduleRowsPrimary;
   let courseWeightsRowsRaw = courseWeightsRowsPrimary;
   let courseStatsRowsRaw = courseStatsRowsPrimary;
+  let trendRowsRaw = trendRowsPrimary;
   let playerStatsRowsRaw = playerStatsRowsPrimary;
   let referenceDate = parseReferenceDate(siteOutputRows);
   let scheduleRows = parseScheduleRows(scheduleRowsRaw);
@@ -909,6 +949,7 @@ async function main() {
     scheduleRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, SCHEDULE_TAB_NAME);
     courseWeightsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, COURSE_WEIGHTS_TAB_NAME);
     courseStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, COURSE_STATS_TAB_NAME);
+    trendRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, TREND_TABLE_TAB_NAME);
     playerStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, PLAYER_STATS_MASTER_TAB_NAME);
     referenceDate = parseReferenceDate(siteOutputRows);
     scheduleRows = parseScheduleRows(scheduleRowsRaw);
@@ -918,7 +959,9 @@ async function main() {
 
   const courseStatsRows = parseCourseStatsRows(courseStatsRowsRaw);
   const courseWeightsFeed = buildCourseWeightsFeed(scheduleRows, courseStatsRows, courseWeightsRowsRaw);
-  const playerStatsFeed = parsePlayerStatsRows(playerStatsRowsRaw);
+  const trendRows = parseTrendRows(trendRowsRaw);
+  const trendIndex = buildTrendIndex(trendRows);
+  const playerStatsFeed = parsePlayerStatsRows(playerStatsRowsRaw, trendIndex);
 
   await Promise.all([
     ...SECTION_CONFIG.map((section) => {

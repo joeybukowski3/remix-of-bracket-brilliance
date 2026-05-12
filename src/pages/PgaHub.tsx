@@ -5,8 +5,11 @@ import SportsbookBar from "@/components/SportsbookBar";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
+import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
+import { getSeoMeta } from "@/lib/seo";
 import {
   EMPTY_MESSAGE,
+  CUSTOM_WEIGHT_CONTROLS,
   type CourseWeightFeedEntry,
   type CourseWeightSet,
   type MovementDirection,
@@ -21,6 +24,7 @@ import {
   getThisWeekOverride,
   getSavedCustomWeights,
   rankPlayers,
+  normalizeCustomWeights,
   setSavedCustomWeights,
   setThisWeekOverride,
   PgaCompactTable,
@@ -41,17 +45,6 @@ const MODEL_OPTIONS: Array<{ key: ModelMode; label: string }> = [
 const TOURNAMENT_OPTIONS: Array<{ key: TournamentMode; label: string }> = [
   { key: "current", label: "This Week" },
   { key: "next", label: "Next Week" },
-];
-
-const CUSTOM_KEYS: Array<{ key: keyof CourseWeightSet; label: string; short: string }> = [
-  { key: "sgTotal", label: "SG Total", short: "SGT" },
-  { key: "sgOTT", label: "SG Off Tee", short: "OTT" },
-  { key: "sgApp", label: "SG Approach", short: "APP" },
-  { key: "sgAtG", label: "SG Around Green", short: "ATG" },
-  { key: "sgPutt", label: "SG Putting", short: "PUT" },
-  { key: "drivingAccuracy", label: "Driving Accuracy", short: "DRV%" },
-  { key: "bogeyAvoidance", label: "Bogey Avoidance", short: "BOG" },
-  { key: "birdieBogeyRatio", label: "Birdie/Bogey Ratio", short: "B/B" },
 ];
 
 function buildMovementMap(activeRows: RankedPlayerRow[], baselineRows: RankedPlayerRow[]) {
@@ -101,7 +94,7 @@ function normalizePercentageWeights(weights: Record<keyof CourseWeightSet, numbe
 
 function rebalanceWeights(current: Record<keyof CourseWeightSet, number>, key: keyof CourseWeightSet, nextValue: number) {
   const clamped = Math.max(0, Math.min(100, nextValue));
-  const otherKeys = CUSTOM_KEYS.map((entry) => entry.key).filter((entryKey) => entryKey !== key);
+  const otherKeys = CUSTOM_WEIGHT_CONTROLS.map((entry) => entry.key).filter((entryKey) => entryKey !== key);
   const otherTotal = otherKeys.reduce((sum, entryKey) => sum + current[entryKey], 0);
   const remaining = Math.max(0, 100 - clamped);
   const nextWeights = { ...current, [key]: clamped };
@@ -159,6 +152,7 @@ type BestBetsPreviewData = {
 };
 
 export default function PgaHub() {
+  const seo = getSeoMeta("pga");
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
   const [modelMode, setModelMode] = useState<ModelMode>("tournament");
@@ -173,16 +167,22 @@ export default function PgaHub() {
   const hasAnimatedRef = useRef(false);
 
   usePageSeo({
-    title: "PGA Championship 2026 Picks & Model Rankings — Joe Knows Ball",
-    description: "Course-weighted player rankings and betting models for the 2026 PGA Championship at Aronimink Golf Club. Updated weekly using strokes gained data and DataGolf course stats.",
-    path: "/pga",
-    structuredData: {
-      "@context": "https://schema.org",
-      "@type": "SportsOrganization",
-      name: "Joe Knows Ball PGA Tour Models",
-      sport: "Golf",
-      url: `${CANONICAL_BASE}/pga`,
-    },
+    title: seo.title,
+    description: seo.description,
+    path: seo.path,
+    structuredData: [
+      buildBreadcrumbSchema([
+        { name: "Home", path: "/" },
+        { name: "PGA", path: "/pga" },
+      ]),
+      {
+        "@context": "https://schema.org",
+        "@type": "SportsOrganization",
+        name: "Joe Knows Ball PGA Tour Models",
+        sport: "Golf",
+        url: `${CANONICAL_BASE}/pga`,
+      },
+    ],
   });
 
   useEffect(() => {
@@ -233,30 +233,46 @@ export default function PgaHub() {
   );
 
   const defaultWeightEntry = useMemo(() => findDefaultWeightEntry(courseWeights), [courseWeights]);
+  const normalizedDefaultWeights = useMemo(
+    () => (defaultWeightEntry ? normalizeCustomWeights(defaultWeightEntry.weights) : null),
+    [defaultWeightEntry],
+  );
   const currentWeightEntry = useMemo(() => {
     if (!currentEvent) return null;
     const matched = findCourseWeightEntry(courseWeights, currentEvent.name, currentEvent.courseName);
-    return currentOverride && matched ? { ...matched, weights: currentOverride } : matched;
-  }, [courseWeights, currentEvent, currentOverride]);
+    if (!matched) return null;
+
+    return currentOverride
+      ? { ...matched, weights: normalizeCustomWeights(currentOverride, matched.weights) }
+      : { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) };
+  }, [courseWeights, currentEvent, currentOverride, normalizedDefaultWeights]);
   const nextWeightEntry = useMemo(
-    () => (nextEvent ? findCourseWeightEntry(courseWeights, nextEvent.name, nextEvent.courseName) : null),
-    [courseWeights, nextEvent],
+    () => {
+      if (!nextEvent) return null;
+      const matched = findCourseWeightEntry(courseWeights, nextEvent.name, nextEvent.courseName);
+      return matched ? { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) } : null;
+    },
+    [courseWeights, nextEvent, normalizedDefaultWeights],
   );
   const selectedFutureWeightEntry = useMemo(
-    () => (selectedFutureEvent ? findCourseWeightEntry(courseWeights, selectedFutureEvent.name, selectedFutureEvent.courseName) : null),
-    [courseWeights, selectedFutureEvent],
+    () => {
+      if (!selectedFutureEvent) return null;
+      const matched = findCourseWeightEntry(courseWeights, selectedFutureEvent.name, selectedFutureEvent.courseName);
+      return matched ? { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) } : null;
+    },
+    [courseWeights, normalizedDefaultWeights, selectedFutureEvent],
   );
 
   useEffect(() => {
     if (customPercentWeights) return;
-    const savedCustomWeights = getSavedCustomWeights();
+    const savedCustomWeights = getSavedCustomWeights(normalizedDefaultWeights);
     if (savedCustomWeights) {
       setCustomPercentWeights(toPercentWeights(savedCustomWeights));
       return;
     }
-    if (!defaultWeightEntry) return;
-    setCustomPercentWeights(toPercentWeights(defaultWeightEntry.weights));
-  }, [defaultWeightEntry]);
+    if (!normalizedDefaultWeights) return;
+    setCustomPercentWeights(toPercentWeights(normalizedDefaultWeights));
+  }, [normalizedDefaultWeights, customPercentWeights]);
 
   useEffect(() => {
     if (!customPercentWeights) return;
@@ -295,8 +311,8 @@ export default function PgaHub() {
   );
 
   const baselineRows = useMemo(
-    () => (defaultWeightEntry ? rankPlayers(playerStats, defaultWeightEntry.weights) : []),
-    [defaultWeightEntry, playerStats],
+    () => (normalizedDefaultWeights ? rankPlayers(playerStats, normalizedDefaultWeights) : []),
+    [normalizedDefaultWeights, playerStats],
   );
   const tournamentRows = useMemo(
     () => (tournamentWeightEntry ? rankPlayers(playerStats, tournamentWeightEntry.weights) : []),
@@ -313,7 +329,13 @@ export default function PgaHub() {
         title: "Standard Model",
         meta: "Default baseline weights across the full active PGA field",
         scoreLabel: "Power Score",
-        weightEntry: defaultWeightEntry,
+        weightEntry: normalizedDefaultWeights
+          ? {
+              tournament: defaultWeightEntry?.tournament ?? "DEFAULT",
+              course: defaultWeightEntry?.course ?? "",
+              weights: normalizedDefaultWeights,
+            }
+          : null,
         rows: baselineRows,
       };
     }
@@ -345,6 +367,7 @@ export default function PgaHub() {
     defaultWeightEntry,
     modelMode,
     selectedFutureEvent,
+    normalizedDefaultWeights,
     tournamentMeta,
     tournamentRows,
     tournamentWeightEntry,
@@ -359,6 +382,26 @@ export default function PgaHub() {
   const bestBetsBannerTitle = [bestBets?.tournament, bestBets?.course].filter(Boolean).join(" — ");
   const bestBetsTeaser = truncateTeaser(bestBets?.preview?.tournamentOverview, 120);
   const bestBetsGeneratedLabel = formatGeneratedDate(bestBets?.generatedAt);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
+    const totalPlayers = playerStats.length;
+    const playersWithTrend = playerStats.filter((row) => row.trendRank != null).length;
+    const activeTrendWeight =
+      (modelMode === "custom" ? customWeights?.trendRank : null) ??
+      (modelMode === "tournament" ? tournamentWeightEntry?.weights.trendRank : null) ??
+      normalizedDefaultWeights?.trendRank ??
+      0;
+
+    console.info("[PGA] Trend diagnostics", {
+      totalPlayers,
+      playersWithTrend,
+      missingTrend: totalPlayers - playersWithTrend,
+      activeTrendWeight,
+      modelMode,
+    });
+  }, [customWeights, modelMode, normalizedDefaultWeights, playerStats, tournamentWeightEntry?.weights.trendRank]);
 
   useEffect(() => {
     if (!activeContent.rows.length || !baselineRows.length || modelMode === "standard") {
@@ -494,6 +537,17 @@ export default function PgaHub() {
                 <p className="text-sm text-muted-foreground">
                   Switch between the power rankings, this week&apos;s course-weighted tournament model, or build your own.
                 </p>
+                <div className="flex flex-wrap gap-4 pt-1 text-sm">
+                  <Link to="/pga/model" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
+                    Tournament model rankings
+                  </Link>
+                  <Link to="/pga/best-bets" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
+                    PGA best bets board
+                  </Link>
+                  <Link to="/pga/top-40-golf-picks" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
+                    Top 40 golf picks
+                  </Link>
+                </div>
               </div>
 
               <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
@@ -602,7 +656,7 @@ export default function PgaHub() {
                   {modelMode === "custom" ? (
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        {CUSTOM_KEYS.map((entry) => (
+                    {CUSTOM_WEIGHT_CONTROLS.map((entry) => (
                           <div key={entry.key} className="rounded-[22px] border border-slate-200 bg-slate-50 px-3 py-3">
                             <div className="mb-2 flex items-center justify-between gap-3">
                               <div>
@@ -634,7 +688,7 @@ export default function PgaHub() {
                           <Button
                             variant="outline"
                             className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                            onClick={() => defaultWeightEntry && setCustomPercentWeights(toPercentWeights(defaultWeightEntry.weights))}
+                            onClick={() => normalizedDefaultWeights && setCustomPercentWeights(toPercentWeights(normalizedDefaultWeights))}
                           >
                             Reset to Default
                           </Button>
@@ -688,3 +742,4 @@ export default function PgaHub() {
     </SiteShell>
   );
 }
+

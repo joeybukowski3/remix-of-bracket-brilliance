@@ -22,6 +22,7 @@ import { Slider } from "@/components/ui/slider";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
   EMPTY_MESSAGE,
+  CUSTOM_WEIGHT_CONTROLS,
   type CourseWeightSet,
   type SidebarFilter,
   type StatDisplayMode,
@@ -31,6 +32,7 @@ import {
   getSavedCustomWeights,
   loadCustomPresets,
   rankPlayers,
+  normalizeCustomWeights,
   saveCustomPreset,
   setSavedCustomWeights,
   setThisWeekOverride,
@@ -40,17 +42,6 @@ import {
 } from "@/components/pga/PgaHubShared";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-
-const CUSTOM_KEYS: Array<{ key: keyof CourseWeightSet; label: string }> = [
-  { key: "sgTotal", label: "SG Total" },
-  { key: "sgOTT", label: "SG OTT" },
-  { key: "sgApp", label: "SG Approach" },
-  { key: "sgAtG", label: "SG Around Green" },
-  { key: "sgPutt", label: "SG Putting" },
-  { key: "drivingAccuracy", label: "Driving Accuracy" },
-  { key: "bogeyAvoidance", label: "Bogey Avoidance" },
-  { key: "birdieBogeyRatio", label: "Birdie/Bogey Ratio" },
-] as const;
 
 function toPercentWeights(weights: CourseWeightSet) {
   return Object.fromEntries(
@@ -88,7 +79,7 @@ function normalizePercentageWeights(weights: Record<keyof CourseWeightSet, numbe
 
 function rebalanceWeights(current: Record<keyof CourseWeightSet, number>, key: keyof CourseWeightSet, nextValue: number) {
   const clamped = Math.max(0, Math.min(100, nextValue));
-  const otherKeys = CUSTOM_KEYS.map((entry) => entry.key).filter((entryKey) => entryKey !== key);
+  const otherKeys = CUSTOM_WEIGHT_CONTROLS.map((entry) => entry.key).filter((entryKey) => entryKey !== key);
   const otherTotal = otherKeys.reduce((sum, entryKey) => sum + current[entryKey], 0);
   const remaining = Math.max(0, 100 - clamped);
   const nextWeights = { ...current, [key]: clamped };
@@ -119,6 +110,10 @@ export default function PgaCustom() {
   const [presetVersion, setPresetVersion] = useState(0);
 
   const defaultWeightEntry = useMemo(() => findDefaultWeightEntry(courseWeights), [courseWeights]);
+  const normalizedDefaultWeights = useMemo(
+    () => (defaultWeightEntry ? normalizeCustomWeights(defaultWeightEntry.weights) : null),
+    [defaultWeightEntry],
+  );
   const { active: activeEvent, current: currentEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
   const selectedEvent = useMemo(
     () => schedule.find((entry) => entry.id === selectedScheduleId) ?? currentEvent ?? null,
@@ -135,21 +130,21 @@ export default function PgaCustom() {
 
   useEffect(() => {
     if (customPercentWeights) return;
-    const savedWeights = getSavedCustomWeights();
+    const savedWeights = getSavedCustomWeights(normalizedDefaultWeights);
     if (savedWeights) {
       setCustomPercentWeights(toPercentWeights(savedWeights));
       return;
     }
-    if (defaultWeightEntry) {
-      setCustomPercentWeights(toPercentWeights(defaultWeightEntry.weights));
+    if (normalizedDefaultWeights) {
+      setCustomPercentWeights(toPercentWeights(normalizedDefaultWeights));
     }
-  }, [customPercentWeights, defaultWeightEntry]);
+  }, [customPercentWeights, normalizedDefaultWeights]);
 
   const activePercentWeights = useMemo(() => {
     if (customPercentWeights) return customPercentWeights;
-    if (defaultWeightEntry) return toPercentWeights(defaultWeightEntry.weights);
+    if (normalizedDefaultWeights) return toPercentWeights(normalizedDefaultWeights);
     return null;
-  }, [customPercentWeights, defaultWeightEntry]);
+  }, [customPercentWeights, normalizedDefaultWeights]);
 
   const activeWeights = useMemo(
     () => activePercentWeights ? toFractionWeights(activePercentWeights) : null,
@@ -166,7 +161,7 @@ export default function PgaCustom() {
     [activeWeights, playerStats],
   );
 
-  const presetMap = useMemo(() => loadCustomPresets(), [presetVersion]);
+  const presetMap = useMemo(() => loadCustomPresets(normalizedDefaultWeights), [normalizedDefaultWeights, presetVersion]);
   const presetNames = Object.keys(presetMap).sort((left, right) => left.localeCompare(right));
 
   return (
@@ -228,7 +223,7 @@ export default function PgaCustom() {
 
                 <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {CUSTOM_KEYS.map((entry) => (
+                    {CUSTOM_WEIGHT_CONTROLS.map((entry) => (
                       <div key={entry.key} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
                         <div className="mb-1 flex items-center justify-between gap-3 text-[11px] font-semibold text-emerald-50/84">
                           <span>{entry.label}</span>
@@ -256,7 +251,7 @@ export default function PgaCustom() {
                     <Button
                       variant="outline"
                       className="w-full border-white/10 bg-white/4 text-xs text-white hover:bg-white/10"
-                      onClick={() => defaultWeightEntry && setCustomPercentWeights(toPercentWeights(defaultWeightEntry.weights))}
+                      onClick={() => normalizedDefaultWeights && setCustomPercentWeights(toPercentWeights(normalizedDefaultWeights))}
                     >
                       Reset to Default
                     </Button>

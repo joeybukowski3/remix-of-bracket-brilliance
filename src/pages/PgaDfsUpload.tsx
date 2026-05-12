@@ -15,16 +15,18 @@ import { Slider } from "@/components/ui/slider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { buildPgaDfsComparisonData, type PgaDfsComparisonEntry, type PgaDfsSalaryRow } from "@/lib/pga/dfsUpload";
+import { normalizePgaPlayerExactName, normalizePgaPlayerName } from "@/lib/pga/playerIdentity";
 import {
   EMPTY_MESSAGE,
   type CourseWeightSet,
-  type RawPlayerStat,
   type SidebarFilter,
   findCourseWeightEntry,
   findDefaultWeightEntry,
   getCurrentAndNextEvents,
   getSavedCustomWeights,
   getThisWeekOverride,
+  normalizeCustomWeights,
   rankPlayers,
   PgaScheduleRail,
   usePgaHubData,
@@ -45,13 +47,6 @@ type SortKey =
   | "vsModel"
   | "vsTournament"
   | "vsCustom";
-
-type UploadedSalaryPlayer = {
-  player: string;
-  salary: number;
-  normalizedName: string;
-  lastName: string;
-};
 
 type ComparisonRow = {
   salaryRank: number;
@@ -133,22 +128,6 @@ function parseCsvText(text: string) {
   return rows;
 }
 
-function normalizePlayerName(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/\./g, "")
-    .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, "")
-    .replace(/[^a-z\s'-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function getLastNameKey(value: string) {
-  const normalized = normalizePlayerName(value);
-  const parts = normalized.split(" ").filter(Boolean);
-  return parts.at(-1) ?? normalized;
-}
-
 function detectPlatform(headers: string[]) {
   const normalized = headers.map((header) => header.toLowerCase().trim());
   if (normalized.includes("salary") && normalized.includes("name")) {
@@ -217,7 +196,7 @@ export default function PgaDfsUpload() {
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
   const [platform, setPlatform] = useState<DfsPlatform | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [parsedPlayers, setParsedPlayers] = useState<UploadedSalaryPlayer[]>([]);
+  const [parsedPlayers, setParsedPlayers] = useState<PgaDfsSalaryRow[]>([]);
   const [search, setSearch] = useState("");
   const [salaryBounds, setSalaryBounds] = useState<[number, number]>([0, 0]);
   const [showValueOnly, setShowValueOnly] = useState(false);
@@ -241,22 +220,28 @@ export default function PgaDfsUpload() {
   );
 
   const defaultWeightEntry = useMemo(() => findDefaultWeightEntry(courseWeights), [courseWeights]);
+  const normalizedDefaultWeights = useMemo(
+    () => (defaultWeightEntry ? normalizeCustomWeights(defaultWeightEntry.weights) : null),
+    [defaultWeightEntry],
+  );
   const currentOverride = useMemo(() => getThisWeekOverride(), []);
   const customWeights = useMemo(
-    () => getSavedCustomWeights() ?? defaultWeightEntry?.weights ?? null,
-    [defaultWeightEntry],
+    () => getSavedCustomWeights(normalizedDefaultWeights) ?? normalizedDefaultWeights,
+    [normalizedDefaultWeights],
   );
   const tournamentWeightEntry = useMemo(() => {
     if (!selectedEvent) return null;
     const matched = findCourseWeightEntry(courseWeights, selectedEvent.name, selectedEvent.courseName);
     return currentOverride && matched && selectedEvent.id === currentEvent?.id
-      ? { ...matched, weights: currentOverride }
-      : matched;
-  }, [courseWeights, currentEvent?.id, currentOverride, selectedEvent]);
+      ? { ...matched, weights: normalizeCustomWeights(currentOverride, matched.weights) }
+      : matched
+        ? { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) }
+        : null;
+  }, [courseWeights, currentEvent?.id, currentOverride, normalizedDefaultWeights, selectedEvent]);
 
   const modelRows = useMemo(
-    () => (defaultWeightEntry ? rankPlayers(playerStats, defaultWeightEntry.weights) : []),
-    [defaultWeightEntry, playerStats],
+    () => (normalizedDefaultWeights ? rankPlayers(playerStats, normalizedDefaultWeights) : []),
+    [normalizedDefaultWeights, playerStats],
   );
   const tournamentRows = useMemo(
     () => (tournamentWeightEntry ? rankPlayers(playerStats, tournamentWeightEntry.weights) : []),
@@ -281,64 +266,31 @@ export default function PgaDfsUpload() {
     setSalaryBounds(salaryLimits);
   }, [salaryLimits]);
 
-  const comparisonData = useMemo(() => {
-    if (!parsedPlayers.length) return { rows: [] as ComparisonRow[], unmatched: [] as string[] };
+  const comparisonData = useMemo(
+    () => buildPgaDfsComparisonData(parsedPlayers, playerStats, modelRankMap, tournamentRankMap, customRankMap),
+    [customRankMap, modelRankMap, parsedPlayers, playerStats, tournamentRankMap],
+  );
 
-    const exactMap = new Map<string, RawPlayerStat>();
-    const lastNameMap = new Map<string, RawPlayerStat[]>();
+  const comparisonRows = useMemo(
+    () =>
+      comparisonData.entries
+        .filter((entry): entry is PgaDfsComparisonEntry & { status: "matched" } => entry.status === "matched")
+        .map((entry): ComparisonRow => ({
+          salaryRank: entry.salaryRank,
+          player: entry.matchedPlayer ?? entry.uploadedPlayer,
+          salary: entry.salary,
+          modelRank: entry.modelRank!,
+          tournamentRank: entry.tournamentRank!,
+          customRank: entry.customRank!,
+          vsModel: entry.vsModel!,
+          vsTournament: entry.vsTournament!,
+          vsCustom: entry.vsCustom!,
+        })),
+    [comparisonData.entries],
+  );
 
-    playerStats.forEach((player) => {
-      const normalized = normalizePlayerName(player.player);
-      const lastName = getLastNameKey(player.player);
-      exactMap.set(normalized, player);
-      const lastNameMatches = lastNameMap.get(lastName) ?? [];
-      lastNameMatches.push(player);
-      lastNameMap.set(lastName, lastNameMatches);
-    });
-
-    const matchedRows: ComparisonRow[] = [];
-    const unmatched: string[] = [];
-
-    parsedPlayers.forEach((player, index) => {
-      let matchedPlayer = exactMap.get(player.normalizedName) ?? null;
-
-      if (!matchedPlayer) {
-        const fallbackMatches = lastNameMap.get(player.lastName) ?? [];
-        matchedPlayer = fallbackMatches.length === 1 ? fallbackMatches[0] : null;
-      }
-
-      if (!matchedPlayer) {
-        unmatched.push(player.player);
-        return;
-      }
-
-      const modelRank = modelRankMap.get(matchedPlayer.player);
-      const tournamentRank = tournamentRankMap.get(matchedPlayer.player);
-      const customRank = customRankMap.get(matchedPlayer.player);
-
-      if (!modelRank || !tournamentRank || !customRank) {
-        unmatched.push(player.player);
-        return;
-      }
-
-      matchedRows.push({
-        salaryRank: index + 1,
-        player: matchedPlayer.player,
-        salary: player.salary,
-        modelRank,
-        tournamentRank,
-        customRank,
-        vsModel: index + 1 - modelRank,
-        vsTournament: index + 1 - tournamentRank,
-        vsCustom: index + 1 - customRank,
-      });
-    });
-
-    return { rows: matchedRows, unmatched };
-  }, [customRankMap, modelRankMap, parsedPlayers, playerStats, tournamentRankMap]);
-
-  const comparisonRows = comparisonData.rows;
-  const unmatchedPlayers = comparisonData.unmatched;
+  const unmatchedPlayers = comparisonData.summary.unmatchedPlayers;
+  const missingRankPlayers = comparisonData.summary.missingRankPlayers;
 
   const filteredRows = useMemo(() => {
     const searchValue = search.trim().toLowerCase();
@@ -418,11 +370,11 @@ export default function PgaDfsUpload() {
         return {
           player: player.trim(),
           salary,
-          normalizedName: normalizePlayerName(player),
-          lastName: getLastNameKey(player),
-        } satisfies UploadedSalaryPlayer;
+          normalizedName: normalizePgaPlayerExactName(player),
+          canonicalName: normalizePgaPlayerName(player),
+        } satisfies PgaDfsSalaryRow;
       })
-      .filter((player): player is UploadedSalaryPlayer => Boolean(player))
+      .filter((player): player is PgaDfsSalaryRow => Boolean(player))
       .sort((left, right) => right.salary - left.salary || left.player.localeCompare(right.player));
 
     setPlatform(platformConfig.platform);
@@ -459,6 +411,24 @@ export default function PgaDfsUpload() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || !parsedPlayers.length) return;
+
+    console.info("[PgaDfsUpload] match summary", {
+      uploadedRows: comparisonData.summary.uploadedRows,
+      matchedRows: comparisonData.summary.matchedRows,
+      unmatchedRows: comparisonData.summary.unmatchedRows,
+      missingRankRows: comparisonData.summary.missingRankRows,
+      matchMethods: comparisonData.summary.matchMethods,
+      unmatchedPlayers: comparisonData.summary.unmatchedPlayers,
+      missingRankPlayers: comparisonData.summary.missingRankPlayers,
+    });
+
+    if (comparisonData.summary.resolvedPlayers.length > 0) {
+      console.table(comparisonData.summary.resolvedPlayers);
+    }
+  }, [comparisonData.summary, parsedPlayers.length]);
 
   return (
     <SiteShell>
@@ -548,7 +518,7 @@ export default function PgaDfsUpload() {
                     <div className="space-y-1 text-sm text-slate-600">
                       <div><span className="font-semibold text-slate-900">Platform:</span> {platform ?? "No file uploaded"}</div>
                       <div><span className="font-semibold text-slate-900">File:</span> {fileName ?? "--"}</div>
-                      <div><span className="font-semibold text-slate-900">Matched Players:</span> {comparisonRows.length}</div>
+                      <div><span className="font-semibold text-slate-900">Matched Players:</span> {comparisonData.summary.matchedRows}</div>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -576,13 +546,49 @@ export default function PgaDfsUpload() {
                     </div>
                   ) : null}
 
-                  {unmatchedPlayers.length > 0 ? (
+                  {parsedPlayers.length > 0 ? (
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3">
+                      <div className="grid gap-3 md:grid-cols-4">
+                        <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Uploaded</div>
+                          <div className="mt-1 text-lg font-semibold text-slate-900">{comparisonData.summary.uploadedRows}</div>
+                        </div>
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">Matched</div>
+                          <div className="mt-1 text-lg font-semibold text-emerald-950">{comparisonData.summary.matchedRows}</div>
+                        </div>
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">Unmatched</div>
+                          <div className="mt-1 text-lg font-semibold text-amber-950">{comparisonData.summary.unmatchedRows}</div>
+                        </div>
+                        <div className="rounded-2xl border border-sky-200 bg-sky-50 px-3 py-2">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700">Missing Rank Data</div>
+                          <div className="mt-1 text-lg font-semibold text-sky-950">{comparisonData.summary.missingRankRows}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {Object.entries(comparisonData.summary.matchMethods).map(([method, count]) => (
+                          <span key={method} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700">
+                            {method}: {count}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {unmatchedPlayers.length > 0 || missingRankPlayers.length > 0 ? (
                     <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-3">
-                      <div className="text-sm font-semibold text-amber-900">Unmatched Players</div>
+                      <div className="text-sm font-semibold text-amber-900">Players Requiring Review</div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {unmatchedPlayers.map((player) => (
-                          <span key={player} className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-xs text-amber-800">
-                            {player}
+                          <span key={`unmatched-${player}`} className="rounded-full border border-amber-200 bg-white px-2.5 py-1 text-xs text-amber-800">
+                            {player} <span className="text-amber-600">(none)</span>
+                          </span>
+                        ))}
+                        {missingRankPlayers.map((player) => (
+                          <span key={`missing-${player}`} className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs text-sky-800">
+                            {player} <span className="text-sky-600">(missing ranks)</span>
                           </span>
                         ))}
                       </div>
