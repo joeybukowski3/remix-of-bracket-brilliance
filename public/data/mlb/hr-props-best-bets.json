@@ -1,163 +1,208 @@
 {
-  "date": "2026-05-11",
-  "generatedAt": "2026-05-11T12:05:55.014Z",
+  "date": "2026-05-12",
+  "generatedAt": "2026-05-12T09:40:40.412Z",
   "slatePreview": {
-    "slateOverview": "Model ranked 108 hitters for today's slate. The strongest park environments in the top of the board are Oriole Park at Camden Yards, Globe Life Field, Daikin Park.",
-    "modelNote": "When AI commentary is unavailable, picks fall back to the model's top-ranked hitters using barrel rate, hard-hit rate, exit velocity, park factor, pitcher HR/9, and recent HR form."
+    "slateOverview": "Today's HR slate pops with Great American Ball Park's 1.25 park factor fueling dual threats in CIN-WSH, while neutral venues like Dodger Stadium, Truist, and Camden Yards host prime matchups against HR-prone righties like Houser (64.5 HrVs), Singer (63.7), and Rea (53.3). TBD pitchers for NYY-BAL inflate Judge and Rice's edges against assumed RHP vulnerability. Mild weather across boards with no suppressing winds keeps fly balls carry-friendly, spotlighting barrel-heavy bats in these spots.",
+    "modelNote": "Model heavily weights barrel% (20%+ for top-3), hardHit%, exit velo, and hrFBRatio against pitcher HrVs, blending with recent form (last30HR) and pull rates for optimal launch angles. Park-adjusted hrScore ranks prioritize matchup exploits over raw power, fading high-whiff profiles unless park/pitcher juice overrides."
   },
   "bestBets": [
     {
-      "player": "Aaron Judge",
-      "team": "NYY",
-      "opponent": "BAL",
-      "opposingPitcher": "Brandon Young",
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "SF",
+      "opposingPitcher": "Adrian Houser",
       "hrScoreRank": 1,
       "topStats": [
-        "Hard Hit%=57.6",
-        "Pitcher HR VS=47.5"
+        "barrelRate=19.6",
+        "hardHitRate=55.4"
       ],
       "bullets": [
-        "HR score 73.1 (#1)",
-        "Pitcher HR VS 47.5 at park 1.00"
-      ]
-    },
-    {
-      "player": "Justin Foscue",
-      "team": "TEX",
-      "opponent": "AZ",
-      "opposingPitcher": "Michael Soroka",
-      "hrScoreRank": 2,
-      "topStats": [
-        "Hard Hit%=66.7",
-        "Pitcher HR VS=60.1"
-      ],
-      "bullets": [
-        "HR score 71.4 (#2)",
-        "Pitcher HR VS 60.1 at park 1.00"
-      ]
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "BAL",
-      "opposingPitcher": "Brandon Young",
-      "hrScoreRank": 3,
-      "topStats": [
-        "Hard Hit%=57.8",
-        "Pitcher HR VS=47.5"
-      ],
-      "bullets": [
-        "HR score 68.4 (#3)",
-        "Pitcher HR VS 47.5 at park 1.00"
+        "hrFBRatio=8.3, last30HR=7",
+        "opposingPitcherHrVs=64.5"
       ]
     },
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "SEA",
-      "opposingPitcher": "George Kirby",
-      "hrScoreRank": 4,
+      "opposingPitcher": "Bryan Woo",
+      "hrScoreRank": 2,
       "topStats": [
-        "Hard Hit%=52.4",
-        "Pitcher HR VS=20.0"
+        "xba=0.358",
+        "exitVelo=94.4"
       ],
       "bullets": [
-        "HR score 66.9 (#4)",
-        "Pitcher HR VS 20.0 at park 1.00"
+        "iso=0.314, whiffRate=19.9",
+        "last30HR=7, opposingPitcherHrVs=49.8"
       ]
     },
     {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "CLE",
-      "opposingPitcher": "Joey Cantillo",
-      "hrScoreRank": 5,
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "CIN",
+      "opposingPitcher": "Brady Singer",
+      "hrScoreRank": 3,
       "topStats": [
-        "Hard Hit%=49.5",
-        "Pitcher HR VS=41.7"
+        "barrelRate=27.1",
+        "hardHitRate=60.4"
       ],
       "bullets": [
-        "HR score 66.0 (#5)",
-        "Pitcher HR VS 41.7 at park 1.00"
+        "parkFactor=1.25, exitVelo=96",
+        "opposingPitcherHrVs=63.7"
+      ]
+    },
+    {
+      "player": "JJ Bleday",
+      "team": "CIN",
+      "opponent": "WSH",
+      "opposingPitcher": "Miles Mikolas",
+      "hrScoreRank": 4,
+      "topStats": [
+        "xba=0.343",
+        "iso=0.381"
+      ],
+      "bullets": [
+        "parkFactor=1.25, hrFBRatio=9.5",
+        "opposingPitcherHrVs=62.5"
+      ]
+    },
+    {
+      "player": "Matt Olson",
+      "team": "ATL",
+      "opponent": "CHC",
+      "opposingPitcher": "Colin Rea",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrelRate=19.7",
+        "iso=0.358"
+      ],
+      "bullets": [
+        "last30HR=10, opposingPitcherHrVs=53.3",
+        "hrFBRatio=8.8"
       ]
     }
   ],
   "valueBets": [
     {
-      "player": "Casey Schmitt",
-      "team": "SF",
-      "opponent": "LAD",
-      "opposingPitcher": "Roki Sasaki",
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "CLE",
+      "opposingPitcher": "Slade Cecconi",
       "hrScoreRank": 6,
       "topStats": [
-        "Pitcher HR VS=72.2",
-        "Hard Hit%=47.9"
+        "barrelRate=23.4",
+        "bbRate=20.4"
       ],
       "bullets": [
-        "HR score 65.5 (#6)",
-        "Pitcher HR VS 72.2 at park 1.00"
+        "last30HR=9, opposingPitcherHrVs=58.5",
+        "hrFBRatio=7.6"
       ]
     },
     {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "SF",
-      "opposingPitcher": "Trevor McDonald",
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "BAL",
+      "opposingPitcher": "TBD",
       "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=53.9",
-        "Pitcher HR VS=37.6"
+        "hardHitRate=59.3",
+        "iso=0.384"
       ],
       "bullets": [
-        "HR score 62.7 (#7)",
-        "Pitcher HR VS 37.6 at park 1.00"
+        "hrFBRatio=10.4, opposingPitcherHrVs=0",
+        "last30HR=9"
       ]
     },
     {
-      "player": "Luke Raley",
-      "team": "SEA",
-      "opponent": "HOU",
-      "opposingPitcher": "Peter Lambert",
-      "hrScoreRank": 8,
+      "player": "Aaron Judge",
+      "team": "NYY",
+      "opponent": "BAL",
+      "opposingPitcher": "TBD",
+      "hrScoreRank": 9,
       "topStats": [
-        "Hard Hit%=54.2",
-        "Pitcher HR VS=31.3"
+        "barrelRate=26.9",
+        "iso=0.366"
       ],
       "bullets": [
-        "HR score 61.8 (#8)",
-        "Pitcher HR VS 31.3 at park 1.00"
+        "last30HR=12, last7HR=2",
+        "hrFBRatio=10.7, opposingPitcherHrVs=0"
+      ]
+    },
+    {
+      "player": "Michael Harris II",
+      "team": "ATL",
+      "opponent": "CHC",
+      "opposingPitcher": "Colin Rea",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Hard Hit%=58.7",
+        "Pitcher HR VS=53.3"
+      ],
+      "bullets": [
+        "HR score 63.8 (#8)",
+        "Pitcher HR VS 53.3 at park 1.00"
       ]
     }
   ],
   "longshots": [
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Ryan Weathers",
-      "hrScoreRank": 9,
+      "player": "Michael Harris II",
+      "team": "ATL",
+      "opponent": "CHC",
+      "opposingPitcher": "Colin Rea",
+      "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=59.7",
-        "Hard Hit%=54.6"
+        "hardHitRate=58.7",
+        "exitVelo=95.1"
       ],
       "bullets": [
-        "HR score 61.4 (#9)",
-        "Pitcher HR VS 59.7 at park 1.00"
+        "xba=0.326, opposingPitcherHrVs=53.3",
+        "whiffRate=27.1"
       ]
     },
     {
-      "player": "Andy Pages",
-      "team": "LAD",
-      "opponent": "SF",
-      "opposingPitcher": "Trevor McDonald",
-      "hrScoreRank": 10,
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "BOS",
+      "opposingPitcher": "TBD",
+      "hrScoreRank": 11,
       "topStats": [
-        "Hard Hit%=54.0",
-        "Pitcher HR VS=37.6"
+        "barrelRate=23.2",
+        "pullRate=55.8"
       ],
       "bullets": [
-        "HR score 61.1 (#10)",
-        "Pitcher HR VS 37.6 at park 1.00"
+        "last7HR=5, parkFactor=1.12",
+        "hrFBRatio=10.4, opposingPitcherHrVs=0"
+      ]
+    },
+    {
+      "player": "Aaron Judge",
+      "team": "NYY",
+      "opponent": "BAL",
+      "opposingPitcher": "TBD",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Hard Hit%=58.1",
+        "Barrel%=26.9"
+      ],
+      "bullets": [
+        "HR score 63.2 (#9)",
+        "Pitcher HR VS 0.0 at park 1.00"
+      ]
+    },
+    {
+      "player": "Byron Buxton",
+      "team": "MIN",
+      "opponent": "MIA",
+      "opposingPitcher": "Eury Pérez",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Pitcher HR VS=63.6",
+        "Hard Hit%=46.2"
+      ],
+      "bullets": [
+        "HR score 63.1 (#10)",
+        "Pitcher HR VS 63.6 at park 1.00"
       ]
     }
   ]
