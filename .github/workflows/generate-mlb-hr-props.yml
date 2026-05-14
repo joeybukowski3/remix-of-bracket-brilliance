@@ -71,17 +71,6 @@ jobs:
         if: steps.schedule_gate.outputs.should_run != 'true'
         run: echo "${{ steps.schedule_gate.outputs.message }}"
 
-      - name: Check Vercel deployment configuration
-        if: steps.schedule_gate.outputs.should_run == 'true'
-        id: vercel_config
-        shell: bash
-        run: |
-          if [ -n "${VERCEL_TOKEN}" ] && [ -n "${VERCEL_ORG_ID}" ] && [ -n "${VERCEL_PROJECT_ID}" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Generate HR props
         if: steps.schedule_gate.outputs.should_run == 'true'
         run: |
@@ -107,7 +96,7 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "chore: update MLB HR prop data"
-            git push
+            git push origin HEAD:main
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -126,22 +115,41 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Install Vercel CLI
-        if: steps.schedule_gate.outputs.should_run == 'true' && steps.vercel_config.outputs.enabled == 'true'
-        run: npm install --global vercel@latest
+      - name: Vercel Deployment
+        if: steps.schedule_gate.outputs.should_run == 'true'
+        shell: bash
+        continue-on-error: true
+        run: |
+          if [ -z "${VERCEL_TOKEN}" ] || [ -z "${VERCEL_ORG_ID}" ] || [ -z "${VERCEL_PROJECT_ID}" ]; then
+            echo "::warning title=Vercel Skip::Skipping Vercel deploy because required secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID) are missing."
+            exit 0
+          fi
 
-      - name: Pull Vercel production settings
-        if: steps.schedule_gate.outputs.should_run == 'true' && steps.vercel_config.outputs.enabled == 'true'
-        run: vercel pull --yes --environment=production --token="${VERCEL_TOKEN}"
+          echo "Installing Vercel CLI..."
+          npm install --global vercel@latest
 
-      - name: Build Vercel production output
-        if: steps.schedule_gate.outputs.should_run == 'true' && steps.vercel_config.outputs.enabled == 'true'
-        run: vercel build --prod --token="${VERCEL_TOKEN}"
+          echo "Validating Vercel token..."
+          if ! vercel whoami --token="${VERCEL_TOKEN}" > /dev/null 2>&1; then
+            echo "::warning title=Vercel Skip::Skipping Vercel deploy because the provided VERCEL_TOKEN is invalid or expired."
+            exit 0
+          fi
 
-      - name: Deploy refreshed site to Vercel production
-        if: steps.schedule_gate.outputs.should_run == 'true' && steps.vercel_config.outputs.enabled == 'true'
-        run: vercel deploy --prebuilt --prod --token="${VERCEL_TOKEN}"
+          echo "Pulling Vercel production settings..."
+          if ! vercel pull --yes --environment=production --token="${VERCEL_TOKEN}"; then
+            echo "::warning title=Vercel Failure::Failed to pull Vercel settings. Skipping Vercel deploy."
+            exit 0
+          fi
 
-      - name: Report missing Vercel secrets
-        if: steps.schedule_gate.outputs.should_run == 'true' && steps.vercel_config.outputs.enabled != 'true'
-        run: echo "Skipping Vercel deploy because VERCEL_TOKEN, VERCEL_ORG_ID, or VERCEL_PROJECT_ID is not configured."
+          echo "Building Vercel production output..."
+          if ! vercel build --prod --token="${VERCEL_TOKEN}"; then
+            echo "::warning title=Vercel Failure::Failed to build for Vercel. Skipping Vercel deploy."
+            exit 0
+          fi
+
+          echo "Deploying refreshed site to Vercel production..."
+          if ! vercel deploy --prebuilt --prod --token="${VERCEL_TOKEN}"; then
+            echo "::warning title=Vercel Failure::Failed to deploy to Vercel. Skipping Vercel deploy."
+            exit 0
+          fi
+          
+          echo "Successfully deployed to Vercel production."
