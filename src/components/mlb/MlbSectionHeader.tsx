@@ -12,11 +12,11 @@ export default function MlbSectionHeader({
   rightSlot?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{eyebrow}</div>
-        <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-foreground sm:text-2xl">{title}</h2>
-        {subtitle ? <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">{subtitle}</p> : null}
+        <h2 className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-foreground sm:text-2xl">{title}</h2>
+        {subtitle ? <p className="mt-1.5 max-w-3xl text-sm leading-6 text-muted-foreground">{subtitle}</p> : null}
       </div>
       {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
     </div>

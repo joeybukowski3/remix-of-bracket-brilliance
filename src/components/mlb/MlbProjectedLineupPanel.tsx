@@ -19,7 +19,7 @@ export default function MlbProjectedLineupPanel({
   }));
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <div className="hidden grid-cols-[1.2fr_56px_1.2fr] items-center gap-4 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground lg:grid">
         <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,64px)] items-center gap-2">
           <span>Player</span>

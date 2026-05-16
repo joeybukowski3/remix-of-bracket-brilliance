@@ -5,7 +5,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 
-type HrDashboardGame = {
+export type HrDashboardGame = {
   gameKey: string;
   matchup: string;
   awayTeam: string;
@@ -20,7 +20,7 @@ type HrDashboardGame = {
   parkFactor: number;
 };
 
-type HrDashboardPitcher = {
+export type HrDashboardPitcher = {
   gameKey: string;
   pitcher: string;
   pitcherId: number | null;
@@ -41,9 +41,10 @@ type HrDashboardPitcher = {
   kVs: number;
 };
 
-type HrDashboardBatter = {
+export type HrDashboardBatter = {
   gameKey: string;
   player: string;
+  position: string;
   team: string;
   opponent: string;
   opposingPitcher: string;
@@ -72,7 +73,7 @@ type HrDashboardBatter = {
   angleTags: string[];
 };
 
-type HrDashboardPayload = {
+export type HrDashboardPayload = {
   date: string;
   generatedAt: string;
   games: HrDashboardGame[];
@@ -90,7 +91,7 @@ type HrPropPick = {
   bullets: string[];
 };
 
-type HrBestBetsPayload = {
+export type HrBestBetsPayload = {
   date: string;
   generatedAt: string;
   slatePreview?: { slateOverview: string; modelNote: string } | null;
@@ -103,8 +104,8 @@ type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
 type MatchupLens = "best" | "hr" | "strikeout";
 type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "hrVs" | "hitsVs" | "kVs";
-type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore";
-type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
+type BatterSortKey = "hrScoreRank" | "player" | "position" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore";
+type MatchupSortKey = "rank" | "player" | "position" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
 type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "opponentTeamKRate" | "pitcherKAbilityScore" | "kMatchupScore" | "kRate" | "whiffRate" | "parkFactor";
 
 type HeatRange = { low: number; high: number };
@@ -146,10 +147,11 @@ type ParkSidebarRow = {
   conditions: string;
 };
 
-type PitcherVsBatterRow = {
+export type PitcherVsBatterRow = {
   rank: number;
   gameKey: string;
   player: string;
+  position: string;
   team: string;
   opposingPitcher: string;
   park: string;
@@ -175,7 +177,7 @@ type PitcherVsBatterRow = {
   angleTags: string[];
 };
 
-type PitcherStrikeoutMatchupRow = {
+export type PitcherStrikeoutMatchupRow = {
   rank: number;
   gameKey: string;
   pitcher: string;
@@ -281,6 +283,7 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
   const b = {
     gameKey: normalizeText(entry.gameKey),
     player: normalizeText(entry.player),
+    position: normalizeText(entry.position) || normalizeText(entry.primaryPosition) || DASH,
     team: normalizeTeamValue(entry.team),
     opponent: normalizeTeamValue(entry.opponent),
     opposingPitcher: normalizeText(entry.opposingPitcher) || "TBD",
@@ -662,7 +665,7 @@ export function buildPitcherVsBatterRows(
     ).toFixed(1));
 
     return {
-      rank: 0, gameKey: b.gameKey, player: b.player, team: b.team,
+      rank: 0, gameKey: b.gameKey, player: b.player, position: b.position, team: b.team,
       opposingPitcher: b.opposingPitcher, park: game?.stadium ?? b.ballpark,
       parkFactor: game?.parkFactor ?? b.parkFactor, hrScore: b.hrScore,
       opposingPitcherHrVs: hrVs,
@@ -849,7 +852,7 @@ function scorePillStyle(v: number | null | undefined): React.CSSProperties {
 
 // ââ sub-components âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
-function TeamLogoBadge({ team, size = 24, showLabel = true }: { team?: string; size?: number; showLabel?: boolean }) {
+export function TeamLogoBadge({ team, size = 24, showLabel = true }: { team?: string; size?: number; showLabel?: boolean }) {
   const [failed, setFailed] = useState(false);
   const t = normalizeTeamValue(team) || "TBD";
   const colors = getMlbTeamColors(t);
@@ -868,7 +871,7 @@ function TeamLogoBadge({ team, size = 24, showLabel = true }: { team?: string; s
   );
 }
 
-function ScorePill({ value, label }: { value: number | null | undefined; label?: string }) {
+export function ScorePill({ value, label }: { value: number | null | undefined; label?: string }) {
   if (!Number.isFinite(value)) return <span style={{ color: "#94a3b8" }}>{DASH}</span>;
   return <span style={scorePillStyle(value)}>{label ?? Number(value).toFixed(1)}</span>;
 }
@@ -920,7 +923,7 @@ function PickCard({ pick, row }: { pick: HrPropPick; row?: HrDashboardBatter }) 
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-base font-bold text-slate-900">{pick.player}</div>
+          <div className="text-base font-bold text-slate-900">{pick.player} {row?.position ? <span className="text-xs font-semibold text-slate-500">{row.position}</span> : null}</div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
             <TeamLogoBadge team={pick.team} />
             <span>vs</span>
@@ -979,7 +982,7 @@ function ParkFactorTile({ park, compact = false }: { park: ParkSidebarRow; compa
   );
 }
 
-function ParkFactorsPanel({ parks, variant }: { parks: ParkSidebarRow[]; variant: "sidebar" | "tiles" }) {
+export function ParkFactorsPanel({ parks, variant }: { parks: ParkSidebarRow[]; variant: "sidebar" | "tiles" }) {
   const isSidebar = variant === "sidebar";
   return (
     <div className={cn(
@@ -1019,7 +1022,7 @@ export default function MlbHrProps() {
   const [dashboard, setDashboard] = useState<HrDashboardPayload | null>(null);
   const [bestBets, setBestBets] = useState<HrBestBetsPayload | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
+  const [activeTab, setActiveTab] = useState<TabKey>("batters");
   const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
   const [pitcherSortDirection, setPitcherSortDirection] = useState<SortDirection>(DEFAULT_PITCHER_SORT.direction);
@@ -1037,8 +1040,8 @@ export default function MlbHrProps() {
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
 
   usePageSeo({
-    title: "MLB HR Prop Dashboard Today - Joe Knows Ball",
-    description: "Daily MLB HR prop dashboard with park factors, pitcher vulnerability, batter power signals, and combined matchup edges.",
+    title: "MLB Home Run Props Today - Joe Knows Ball",
+    description: "MLB home run props today with batter positions, team logos, park factors, pitcher HR vulnerability, batter power signals, and composite HR prop scores.",
     path: "/mlb/hr-props",
     structuredData: [
       {
@@ -1234,7 +1237,7 @@ export default function MlbHrProps() {
                 <div className="rounded-[30px] bg-[#0f2748] px-5 py-5 text-white shadow-sm">
                   <div className={cn("flex flex-col gap-4", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
                     <div>
-                      <div className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB HR Prop Dashboard</div>
+                      <div className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB Home Run Props</div>
                       <p className={cn("mt-2 max-w-3xl leading-6 text-sky-100", isMobile ? "text-[13px]" : "text-sm")}>
                         Starting pitcher vulnerability, park environment, and batter power/contact angles for today&apos;s slate.
                       </p>
@@ -1299,9 +1302,9 @@ export default function MlbHrProps() {
                   <div className="border-b border-slate-200 px-4">
                     <div className="flex flex-nowrap gap-6 overflow-x-auto whitespace-nowrap" style={{ WebkitOverflowScrolling: "touch" }}>
                       {[
-                        { key: "pitchers", label: "🔥 Pitchers" },
-                        { key: "batters", label: "💥 Batters" },
-                        { key: "matchups", label: "⚔️ Pitchers vs Batters" },
+                        { key: "batters", label: "💥 HR Props" },
+                        { key: "matchups", label: "⚔️ HR Matchups" },
+                        { key: "pitchers", label: "🔥 Pitcher HR Risk" },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -1434,6 +1437,7 @@ export default function MlbHrProps() {
                                 {[
                                   ["hrScoreRank", "Rank"],
                                   ["player", "Batter"],
+                                  ["position", "Pos"],
                                   ["team", "Team"],
                                   ["opposingPitcher", "Opp Pitcher"],
                                   ["parkFactor", "Park"],
@@ -1465,6 +1469,7 @@ export default function MlbHrProps() {
                                     <div className="font-medium text-slate-900">{row.player}</div>
                                     <div className="mt-1 text-xs text-slate-500">{row.ballpark}</div>
                                   </td>
+                                  <td className="border-b border-slate-100 px-4 py-3">{row.position}</td>
                                   <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
                                   <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]">
                                     <div>{row.opposingPitcher}</div>
@@ -1495,7 +1500,7 @@ export default function MlbHrProps() {
                                 </tr>
                               )) : (
                                 <tr>
-                                  <td colSpan={16} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={17} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No batters match the current search or game filter.
                                   </td>
                                 </tr>
@@ -1528,7 +1533,6 @@ export default function MlbHrProps() {
                           {[
                             { key: "best", label: "Best Matchups" },
                             { key: "hr", label: "HR Matchups" },
-                            { key: "strikeout", label: "Strikeout Matchup" },
                           ].map((lens) => (
                             <button
                               key={lens.key}
@@ -1674,7 +1678,7 @@ export default function MlbHrProps() {
                             <article key={`${row.rank}-${row.player}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                  <div className="truncate text-sm font-bold text-slate-900">{row.player}</div>
+                                  <div className="truncate text-sm font-bold text-slate-900">{row.player} <span className="text-xs text-slate-500">{row.position}</span></div>
                                   <div className="mt-0.5 truncate text-xs text-slate-500">{row.team} vs {row.opposingPitcher}</div>
                                 </div>
                                 <ScorePill value={activeMatchupLens === "best" ? row.bestMatchupScore : activeMatchupLens === "hr" ? row.hrTargetScore : row.strikeoutMatchupScore} />
@@ -1732,6 +1736,7 @@ export default function MlbHrProps() {
                                     ? [
                                         ["rank", "Rank"],
                                         ["player", "Batter"],
+                                        ["position", "Pos"],
                                         ["team", "Team"],
                                         ["opposingPitcher", "Vs Pitcher"],
                                         ["parkFactor", "Park"],
@@ -1745,6 +1750,7 @@ export default function MlbHrProps() {
                                       ? [
                                           ["rank", "Rank"],
                                           ["player", "Batter"],
+                                          ["position", "Pos"],
                                           ["team", "Team"],
                                           ["opposingPitcher", "Vs Pitcher"],
                                           ["parkFactor", "Park"],
@@ -1784,6 +1790,7 @@ export default function MlbHrProps() {
                                   <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
                                     <div className="font-medium text-slate-900">{row.player}</div>
                                   </td>
+                                  <td className="border-b border-slate-100 px-4 py-3">{row.position}</td>
                                   <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
                                   <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]">{row.opposingPitcher}</td>
                                   <td className="border-b border-slate-100 px-4 py-3">

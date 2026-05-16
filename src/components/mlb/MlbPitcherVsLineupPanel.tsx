@@ -1,4 +1,5 @@
 import { getBarScalePosition, type MlbScaleKey } from "@/lib/mlb/mlbBarScale";
+import { getStatToneFromPercentile, getStatToneStyle } from "@/lib/mlb/mlbDisplayHelpers";
 import { computeHr9, computeK9, computePercent, formatAvgLike, formatDecimal } from "@/lib/mlb/mlbFormatters";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import type { MlbLineupSummary, MlbOpponentSplit, MlbStarterProfile } from "@/lib/mlb/mlbTypes";
@@ -47,7 +48,7 @@ function getNormalizedPercentile(
   return Math.max(1, Math.min(99, Math.round(score)));
 }
 
-function getPercentileTone(percentile: number | null, accent: string) {
+function getPercentileTone(percentile: number | null) {
   if (percentile == null) {
     return {
       badgeStyle: { backgroundColor: "#e2e8f0", color: "#475569", border: "1px solid #cbd5e1" },
@@ -56,24 +57,21 @@ function getPercentileTone(percentile: number | null, accent: string) {
     };
   }
 
-  const alpha =
-    percentile >= 85 ? "24"
-    : percentile >= 70 ? "18"
-    : percentile >= 55 ? "10"
-    : "00";
+  const tone = getStatToneFromPercentile(percentile);
+  const toneStyle = getStatToneStyle(tone);
 
   return {
     badgeStyle: {
-      backgroundColor: percentile >= 55 ? `${accent}${alpha}` : "#f8fafc",
-      color: percentile >= 55 ? accent : "#475569",
-      border: percentile >= 55 ? `1px solid ${accent}22` : "1px solid #cbd5e1",
+      backgroundColor: toneStyle.backgroundColor,
+      color: toneStyle.color,
+      border: `1px solid ${toneStyle.borderColor}`,
     },
     railStyle: {
-      backgroundColor: percentile >= 55 ? accent : "#94a3b8",
+      backgroundColor: tone === "positive" ? "#dc2626" : tone === "negative" ? "#0284c7" : "#94a3b8",
     },
     textClass:
-      percentile >= 80 ? "text-slate-900"
-      : percentile >= 60 ? "text-slate-700"
+      tone === "positive" ? "text-red-800"
+      : tone === "negative" ? "text-sky-800"
       : "text-slate-500",
   };
 }
@@ -202,9 +200,9 @@ export default function MlbPitcherVsLineupPanel({
         <span className="text-sm" style={{ color: lineupColors.primary }}>{lineupLabel}</span>
       </div>
 
-      <div className="rounded-2xl border border-border/60 bg-card/90 p-4 shadow-[0_14px_30px_hsl(var(--foreground)/0.04)]">
+      <div className="rounded-2xl border border-border/60 bg-card/90 p-3.5 shadow-[0_14px_30px_hsl(var(--foreground)/0.04)]">
         <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-border/60 bg-secondary/35 px-4 py-3">
+          <div className="rounded-2xl border border-border/60 bg-secondary/35 px-3.5 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Pitcher edge count</div>
             <div className="mt-2 text-2xl font-semibold" style={{ color: pitcherColors.primary }}>{pitcherEdgeCount}</div>
             <div className="mt-1 text-xs text-muted-foreground">
@@ -212,7 +210,7 @@ export default function MlbPitcherVsLineupPanel({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-slate-950 px-4 py-3 text-white">
+          <div className="rounded-2xl border border-border/60 bg-slate-950 px-3.5 py-3 text-white">
             <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">How to read it</div>
             <div className="mt-2 text-sm font-semibold">Matchup edge percentiles</div>
             <div className="mt-1 text-xs leading-5 text-slate-300">
@@ -221,7 +219,7 @@ export default function MlbPitcherVsLineupPanel({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-secondary/35 px-4 py-3">
+          <div className="rounded-2xl border border-border/60 bg-secondary/35 px-3.5 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Lineup edge count</div>
             <div className="mt-2 text-2xl font-semibold" style={{ color: lineupColors.primary }}>{lineupEdgeCount}</div>
             <div className="mt-1 text-xs text-muted-foreground">
@@ -230,16 +228,16 @@ export default function MlbPitcherVsLineupPanel({
           </div>
         </div>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-3">
           {rows.map((row) => {
             const edge = getEdge(row.pitcherVal, row.lineupVal, row.edgeKey);
-            const pitcherTone = getPercentileTone(row.pitcherPercentile, pitcherColors.primary);
-            const lineupTone = getPercentileTone(row.lineupPercentile, lineupColors.primary);
+            const pitcherTone = getPercentileTone(row.pitcherPercentile);
+            const lineupTone = getPercentileTone(row.lineupPercentile);
             const pitcherLabel = row.category.split("/")[0].trim();
             const lineupLabelText = row.category.split("/")[1].trim();
 
             return (
-              <article key={row.category} className="rounded-2xl border border-border/60 bg-white p-4">
+              <article key={row.category} className="rounded-2xl border border-border/60 bg-white p-3.5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <div className="text-sm font-semibold text-foreground">{row.category}</div>
@@ -248,7 +246,7 @@ export default function MlbPitcherVsLineupPanel({
                   <EdgeBadge edge={edge} pitcherTeam={pitcherTeamAbbreviation} lineupTeam={lineupTeamAbbreviation} />
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div className="rounded-2xl border border-border/60 bg-secondary/20 p-3">
                     <div className="flex items-center justify-between gap-3">
                       <div>

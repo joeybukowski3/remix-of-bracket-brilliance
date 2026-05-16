@@ -17,6 +17,7 @@ import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
+import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
 import { formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
@@ -26,6 +27,7 @@ import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { ScorePill, TeamLogoBadge } from "@/pages/MlbHrProps";
 
 const SEASON = new Date().getFullYear();
 
@@ -587,6 +589,9 @@ function HomeSchedule({
   onOpenGame: (gamePk: number) => void;
 }) {
   const [filter, setFilter] = useState<SlateFilter>("all");
+  const { batters: propBatters, strikeoutRows } = useMlbPropsData();
+  const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
+  const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
   const counts = useMemo(() => {
     const summary = { "in-progress": 0, "pre-game": 0, scheduled: 0, final: 0 };
     games.forEach((game) => {
@@ -610,7 +615,8 @@ function HomeSchedule({
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-2">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <h1 className="text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">Today&apos;s MLB Slate</h1>
           <div className="text-sm font-medium text-slate-600">{formatSlateDate(new Date())}</div>
@@ -630,28 +636,79 @@ function HomeSchedule({
           <Link to="/mlb/hr-props" className="font-semibold text-primary hover:underline">
             Open today&apos;s MLB home run prop model
           </Link>
+          <Link to="/mlb/strikeout-props" className="font-semibold text-primary hover:underline">
+            Open strikeout prop model
+          </Link>
+          <Link to="/mlb/props" className="font-semibold text-primary hover:underline">
+            Open MLB props hub
+          </Link>
         </div>
+        </div>
+
+        <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-800">Daily prop preview</div>
+              <div className="mt-1 text-sm font-semibold text-slate-900">Top model edges</div>
+            </div>
+            <Link to="/mlb/props" className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">Hub</Link>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <div>
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Top 5 HR Props</div>
+              <div className="space-y-1.5">
+                {topHrProps.map((row) => (
+                  <Link key={`${row.player}-${row.team}`} to="/mlb/hr-props" className="grid grid-cols-[minmax(0,1fr)_50px] items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-2 hover:bg-sky-50">
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-semibold text-slate-900">{row.player} <span className="text-slate-500">{row.position}</span></div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500"><TeamLogoBadge team={row.team} size={16} /> vs {row.opponent}</div>
+                    </div>
+                    <ScorePill value={row.hrScore} />
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Top 5 Strikeout Props</div>
+              <div className="space-y-1.5">
+                {topStrikeoutProps.map((row) => (
+                  <Link key={`${row.pitcher}-${row.team}`} to="/mlb/strikeout-props" className="grid grid-cols-[minmax(0,1fr)_50px] items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-2 hover:bg-sky-50">
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-semibold text-slate-900">{row.pitcher}</div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500"><TeamLogoBadge team={row.team} size={16} /> vs {row.opponent}</div>
+                    </div>
+                    <ScorePill value={row.kMatchupScore} />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <Link to="/mlb/hr-props" className="rounded-xl bg-sky-800 px-3 py-2 text-center text-xs font-semibold text-white">Open HR Prop Model</Link>
+            <Link to="/mlb/strikeout-props" className="rounded-xl bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white">Open Strikeout Prop Model</Link>
+            <Link to="/mlb/props" className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700">Open MLB Props Hub</Link>
+          </div>
+        </aside>
       </section>
 
       <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
         <SportsbookBar />
       </div>
 
-      <section className="rounded-[28px] border border-sky-900 bg-slate-950 px-5 py-5 text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)]">
+      <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-300/85">MLB HR Prop Model</div>
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white">Today&apos;s Best Bets →</h2>
-            <p className="max-w-3xl text-sm text-slate-300">
-              Daily home run prop rankings built from barrel rate, exit velocity, park factors, and pitcher home-run risk.
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-800">MLB prop tools</div>
+            <h2 className="text-xl font-semibold tracking-[-0.03em] text-slate-900">Open the dedicated prop boards</h2>
+            <p className="max-w-3xl text-sm text-slate-600">
+              Jump from the slate view into home run props, pitcher strikeout props, or the full MLB props hub.
             </p>
           </div>
-          <Link
-            to="/mlb/hr-props"
-            className="inline-flex w-full items-center justify-center rounded-full border border-sky-700 bg-sky-800 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-sky-700 lg:w-auto"
-          >
-            Open HR Prop Board
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/mlb/props" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Props Hub</Link>
+            <Link to="/mlb/hr-props" className="rounded-full bg-sky-800 px-4 py-2 text-sm font-semibold text-white">HR Props</Link>
+            <Link to="/mlb/strikeout-props" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Strikeout Props</Link>
+          </div>
         </div>
       </section>
 
@@ -997,7 +1054,7 @@ export default function MlbGameDetail() {
               </div>
             </MlbSectionCard>
 
-            <div className="grid gap-6 xl:grid-cols-2">
+            <div className="grid gap-4 xl:grid-cols-2">
               <MlbSectionCard accentColor={getMlbTeamColors(detail.game.home.abbreviation).primary}>
                 <MlbSectionHeader
                   eyebrow="Pitcher vs lineup"
@@ -1037,7 +1094,7 @@ export default function MlbGameDetail() {
               </MlbSectionCard>
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-2">
+            <div className="grid gap-4 xl:grid-cols-2">
               <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary}>
                 <MlbSectionHeader
                   eyebrow="Split performance"
@@ -1162,3 +1219,4 @@ export default function MlbGameDetail() {
     </SiteShell>
   );
 }
+

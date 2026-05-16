@@ -652,6 +652,7 @@ function validateBatterRows(rows) {
 
     const normalized = {
       player: normalizeText(row.player),
+      position: normalizeText(row.position) || "UTIL",
       team: normalizeTeamCode(row.team),
       opponent: normalizeTeamCode(row.opponent),
       opposingPitcher: normalizeText(row.opposingPitcher) || "TBD",
@@ -1195,6 +1196,7 @@ async function main() {
         batterPool.push({
           gameKey: context.gameKey,
           player: hitter.fullName || hitter.name || "Unknown Player",
+          position: person?.primaryPosition?.abbreviation ?? person?.primaryPosition?.code ?? "UTIL",
           team: context.battingTeam.abbreviation,
           opponent: context.opponent.abbreviation,
           opposingPitcher: context.opposingPitcher,
@@ -1268,6 +1270,7 @@ async function main() {
     .map((player, index) => ({
       gameKey: player.gameKey,
       player: player.player,
+      position: player.position,
       team: player.team,
       opponent: player.opponent,
       opposingPitcher: player.opposingPitcher,
