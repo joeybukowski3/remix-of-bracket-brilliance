@@ -1,163 +1,193 @@
 {
-  "date": "2026-05-15",
-  "generatedAt": "2026-05-15T09:49:30.542Z",
+  "date": "2026-05-16",
+  "generatedAt": "2026-05-16T08:48:16.026Z",
   "slatePreview": {
-    "slateOverview": "Today's MLB slate features neutral park factors across the board, keeping the emphasis on individual matchups rather than venue boosts. Several soft-tossing right-handers like Jack Leiter, Jack Kochanowicz, and Braxton Ashcraft face elite power bats, creating prime HR windows against pitchers with elevated HrVs above 50. Favorable weather in open-air parks like Truist and Angel Stadium adds minimal wind suppression, enhancing barrel-friendly conditions for pull-heavy hitters.",
-    "modelNote": "The HR model heavily weights barrel rate, hard-hit rate, ISO, and recent form (last30HR) against opposing pitcher HrVs, with pull rate amplified in these neutral parks. Top scores prioritize explosive exit velos and low whiff profiles versus vulnerable arms, surfacing Yordan Alvarez and Ben Rice as elite edges."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with neutral factors, but the real edge comes from favorable pitcher matchups—Kyle Schwarber and Yordan Alvarez face righties with elevated HR rates, while Jordan Walker and Bobby Witt Jr. exploit lefties and righties with weak fly-ball suppression. Weather angles are minimal, so the focus stays on barrel rates, exit velocities, and recent power trends.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over park factors, elevating Schwarber to the top spot despite a neutral park due to his elite 24.8% barrel rate and 69.4 HR score."
   },
   "bestBets": [
+    {
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "PIT",
+      "opposingPitcher": "Bubba Chandler",
+      "hrScoreRank": 1,
+      "topStats": [
+        "barrelRate: 24.8",
+        "hrFBRatio: 11.8"
+      ],
+      "bullets": [
+        "barrelRate 24.8 and exitVelo 92.8",
+        "parkFactor 1 with opposingPitcherHrVs 44.6"
+      ]
+    },
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "TEX",
-      "opposingPitcher": "Jack Leiter",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrelRate=17.6",
-        "hardHitRate=50.8"
-      ],
-      "bullets": [
-        "hrScore=69.5 (Rank 1)",
-        "iso=0.321"
-      ]
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "NYM",
-      "opposingPitcher": "Clay Holmes",
+      "opposingPitcher": "Jacob deGrom",
       "hrScoreRank": 2,
       "topStats": [
-        "barrelRate=20.4",
-        "hardHitRate=58.1"
+        "hardHitRate: 51.9",
+        "exitVelo: 94.2"
       ],
       "bullets": [
-        "last30HR=9",
-        "opposingPitcherHrVs=36.6"
+        "hardHitRate 51.9 and exitVelo 94.2",
+        "parkFactor 1 with opposingPitcherHrVs 47.5"
       ]
     },
     {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "LAA",
-      "opposingPitcher": "Jack Kochanowicz",
+      "player": "Jordan Walker",
+      "team": "STL",
+      "opponent": "KC",
+      "opposingPitcher": "Noah Cameron",
       "hrScoreRank": 3,
       "topStats": [
-        "barrelRate=19.6",
-        "hardHitRate=55.7"
+        "hardHitRate: 54.1",
+        "exitVelo: 94.9"
       ],
       "bullets": [
-        "last7HR=2",
-        "hrFBRatio=7.9"
-      ]
-    },
-    {
-      "player": "Mickey Gasper",
-      "team": "BOS",
-      "opponent": "ATL",
-      "opposingPitcher": "Spencer Strider",
-      "hrScoreRank": 4,
-      "topStats": [
-        "hardHitRate=70",
-        "xba=0.377"
-      ],
-      "bullets": [
-        "whiffRate=5.3",
-        "exitVelo=94.1"
+        "hardHitRate 54.1 and exitVelo 94.9",
+        "parkFactor 1 with opposingPitcherHrVs 80"
       ]
     },
     {
       "player": "Bobby Witt Jr.",
       "team": "KC",
       "opponent": "STL",
-      "opposingPitcher": "Dustin May",
-      "hrScoreRank": 5,
+      "opposingPitcher": "Kyle Leahy",
+      "hrScoreRank": 4,
       "topStats": [
-        "xba=0.311",
-        "hardHitRate=52.5"
+        "hardHitRate: 52.1",
+        "xba: 0.311"
       ],
       "bullets": [
-        "last7HR=3",
-        "opposingPitcherHrVs=54"
+        "hardHitRate 52.1 and exitVelo 93.2",
+        "parkFactor 1 with opposingPitcherHrVs 76.1"
+      ]
+    },
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "LAA",
+      "opposingPitcher": "José Soriano",
+      "hrScoreRank": 5,
+      "topStats": [
+        "hardHitRate: 54",
+        "pullRate: 51"
+      ],
+      "bullets": [
+        "hardHitRate 54 and exitVelo 92.6",
+        "parkFactor 1 with opposingPitcherHrVs 37.7"
       ]
     }
   ],
   "valueBets": [
     {
+      "player": "A.J. Ewing",
+      "team": "NYM",
+      "opponent": "NYY",
+      "opposingPitcher": "Carlos Rodón",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrelRate: 33.3",
+        "hardHitRate: 83.3"
+      ],
+      "bullets": [
+        "barrelRate 33.3 and exitVelo 96.1",
+        "parkFactor 1 with opposingPitcherHrVs 23.1"
+      ]
+    },
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "NYM",
+      "opposingPitcher": "Huascar Brazobán",
+      "hrScoreRank": 7,
+      "topStats": [
+        "hardHitRate: 58.1",
+        "hrFBRatio: 10.2"
+      ],
+      "bullets": [
+        "hardHitRate 58.1 and exitVelo 94",
+        "parkFactor 1 with opposingPitcherHrVs 10.4"
+      ]
+    },
+    {
       "player": "JJ Bleday",
       "team": "CIN",
       "opponent": "CLE",
-      "opposingPitcher": "Tanner Bibee",
-      "hrScoreRank": 6,
-      "topStats": [
-        "iso=0.434",
-        "xbb=0.348"
-      ],
-      "bullets": [
-        "bbRate=21.3",
-        "last7HR=2"
-      ]
-    },
-    {
-      "player": "Matt Olson",
-      "team": "ATL",
-      "opponent": "BOS",
-      "opposingPitcher": "Connelly Early",
-      "hrScoreRank": 7,
-      "topStats": [
-        "iso=0.335",
-        "barrelRate=18.5"
-      ],
-      "bullets": [
-        "last30HR=9",
-        "opposingPitcherHrVs=60.4"
-      ]
-    },
-    {
-      "player": "Drake Baldwin",
-      "team": "ATL",
-      "opponent": "BOS",
-      "opposingPitcher": "Connelly Early",
+      "opposingPitcher": "Joey Cantillo",
       "hrScoreRank": 8,
       "topStats": [
-        "hardHitRate=51.5",
-        "barrelRate=15.9"
+        "iso: 0.431",
+        "hrFBRatio: 10.3"
       ],
       "bullets": [
-        "last7HR=2",
-        "opposingPitcherHrVs=60.4"
+        "barrelRate 16.3 and exitVelo 93.9",
+        "parkFactor 1 with opposingPitcherHrVs 44.3"
       ]
     }
   ],
   "longshots": [
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "BAL",
-      "opposingPitcher": "Shane Baz",
-      "hrScoreRank": 9,
+      "player": "Shea Langeliers",
+      "team": "ATH",
+      "opponent": "SF",
+      "opposingPitcher": "Trevor McDonald",
+      "hrScoreRank": 14,
       "topStats": [
-        "barrelRate=27",
-        "exitVelo=96.3"
+        "xba: 0.326",
+        "exitVelo: 92.9"
       ],
       "bullets": [
-        "hardHitRate=62",
-        "last7HR=2"
+        "barrelRate 16.9 and exitVelo 92.9",
+        "parkFactor 1 with opposingPitcherHrVs 37.6"
       ]
     },
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "PIT",
-      "opposingPitcher": "Braxton Ashcraft",
-      "hrScoreRank": 10,
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "BAL",
+      "opposingPitcher": "Chris Bassitt",
+      "hrScoreRank": 17,
       "topStats": [
-        "barrelRate=24.2",
-        "pullRate=55.6"
+        "barrelRate: 26.7",
+        "hardHitRate: 61.4"
       ],
       "bullets": [
-        "last7HR=5",
-        "opposingPitcherHrVs=18.7"
+        "barrelRate 26.7 and exitVelo 96.1",
+        "parkFactor 1 with opposingPitcherHrVs 32.4"
+      ]
+    },
+    {
+      "player": "Mickey Gasper",
+      "team": "BOS",
+      "opponent": "ATL",
+      "opposingPitcher": "Bryce Elder",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Hard Hit%=70.0",
+        "Pitcher HR VS=22.5"
+      ],
+      "bullets": [
+        "HR score 64.7 (#9)",
+        "Pitcher HR VS 22.5 at park 1.00"
+      ]
+    },
+    {
+      "player": "Randal Grichuk",
+      "team": "CWS",
+      "opponent": "CHC",
+      "opposingPitcher": "Jameson Taillon",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Pitcher HR VS=51.7",
+        "Hard Hit%=50.0"
+      ],
+      "bullets": [
+        "HR score 64.6 (#10)",
+        "Pitcher HR VS 51.7 at park 1.00"
       ]
     }
   ]
