@@ -8,6 +8,7 @@ import {
   DEFAULT_TAB,
   buildHeatStatRanges,
   buildParkSidebarRows,
+  buildPitcherStrikeoutMatchupRows,
   buildPitcherVsBatterRows,
   buildSlateSummary,
   getHeatCellStyle,
@@ -346,11 +347,12 @@ describe("MLB HR props dashboard guards", () => {
       ],
     );
 
-    expect(rows[0].hrTargetScore).toBeGreaterThan(rows[0].hrScore);
+    expect(rows[0].hrTargetScore).toBeGreaterThan(60);
     expect(rows[0].bestMatchupScore).toBeGreaterThan(0);
     expect(rows[0].strikeoutMatchupScore).toBeGreaterThan(0);
     expect(rows[0].batterPowerScore).toBeGreaterThan(60);
     expect(rows[0].pitcherVulnerabilityScore).toBeGreaterThan(60);
+    expect(rows[0].contactScore).toBeGreaterThan(50);
     expect(rows[0].opposingPitcherHitsVs).toBe(63);
     expect(rows[0].opposingPitcherKVs).toBe(34);
     expect(rows[0].park).toBe("Chase Field");
@@ -432,6 +434,149 @@ describe("MLB HR props dashboard guards", () => {
 
     expect(rows[0].player).toBe("Aaron Judge");
     expect(rows[0].hrTargetScore).toBeGreaterThan(rows[1].hrTargetScore);
+  });
+
+  it("moves a similar strong hitter up when the opposing pitcher is much more attackable", () => {
+    const rows = buildPitcherVsBatterRows(
+      [
+        {
+          gameKey: "PHI@PIT",
+          player: "Kyle Schwarber",
+          team: "PHI",
+          opponent: "PIT",
+          opposingPitcher: "Bubba Chandler",
+          opposingPitcherId: 1,
+          pitcherHand: "R",
+          ballpark: "PNC Park",
+          parkFactor: 1,
+          barrelRate: 24.8,
+          hardHitRate: 49.5,
+          exitVelo: 92.8,
+          iso: 0.408,
+          hrFBRatio: 11.8,
+          pullRate: 56.4,
+          xba: 0.234,
+          kRate: 32,
+          bbRate: 14.7,
+          whiffRate: 32.6,
+          last7HR: 6,
+          last30HR: 14,
+          opposingPitcherHrVs: 44.6,
+          opposingPitcherHitsVs: 59.8,
+          opposingPitcherKVs: 26.3,
+          weatherBoost: 4.7,
+          hrScore: 69.4,
+          hrScoreRank: 1,
+          angleTags: ["Park boost"],
+        },
+        {
+          gameKey: "KC@STL",
+          player: "Bobby Witt Jr.",
+          team: "KC",
+          opponent: "STL",
+          opposingPitcher: "Kyle Leahy",
+          opposingPitcherId: 2,
+          pitcherHand: "R",
+          ballpark: "Busch Stadium",
+          parkFactor: 1,
+          barrelRate: 13.6,
+          hardHitRate: 52.1,
+          exitVelo: 93.2,
+          iso: 0.197,
+          hrFBRatio: 3.9,
+          pullRate: 26.1,
+          xba: 0.311,
+          kRate: 16.8,
+          bbRate: 11.2,
+          whiffRate: 23.9,
+          last7HR: 2,
+          last30HR: 7,
+          opposingPitcherHrVs: 76.1,
+          opposingPitcherHitsVs: 77.8,
+          opposingPitcherKVs: 23.5,
+          weatherBoost: -0.1,
+          hrScore: 66.1,
+          hrScoreRank: 4,
+          angleTags: ["Contact edge", "Low-K matchup"],
+        },
+      ],
+      [
+        { gameKey: "PHI@PIT", matchup: "PHI @ PIT", awayTeam: "PHI", homeTeam: "PIT", stadium: "PNC Park", roofType: "Open", temperature: 72, precipitation: 0, windSpeed: 7, windDirection: "SW", conditions: "Clear", parkFactor: 1 },
+        { gameKey: "KC@STL", matchup: "KC @ STL", awayTeam: "KC", homeTeam: "STL", stadium: "Busch Stadium", roofType: "Open", temperature: 72, precipitation: 0, windSpeed: 7, windDirection: "SW", conditions: "Clear", parkFactor: 1 },
+      ],
+      [
+        { gameKey: "PHI@PIT", pitcher: "Bubba Chandler", pitcherId: 1, team: "PIT", opponent: "PHI", hand: "R", ballpark: "PNC Park", parkFactor: 1, xera: null, hardHitRate: null, flyBallRate: null, barrelRate: null, kRate: null, bbRate: null, whiffRate: null, hrVs: 44.6, hitsVs: 59.8, kVs: 26.3 },
+        { gameKey: "KC@STL", pitcher: "Kyle Leahy", pitcherId: 2, team: "STL", opponent: "KC", hand: "R", ballpark: "Busch Stadium", parkFactor: 1, xera: null, hardHitRate: null, flyBallRate: null, barrelRate: null, kRate: null, bbRate: null, whiffRate: null, hrVs: 76.1, hitsVs: 77.8, kVs: 23.5 },
+      ],
+    );
+
+    expect(rows[0].player).toBe("Bobby Witt Jr.");
+    expect(rows[0].bestMatchupScore).toBeGreaterThan(rows[1].bestMatchupScore);
+    expect(rows[0].pitcherVulnerabilityScore).toBeGreaterThan(rows[1].pitcherVulnerabilityScore);
+  });
+
+  it("builds pitcher-level strikeout prop matchups from opponent lineup K rates", () => {
+    const rows = buildPitcherStrikeoutMatchupRows(
+      [
+        {
+          gameKey: "SEA@DET",
+          pitcher: "High K Starter",
+          pitcherId: 1,
+          team: "DET",
+          opponent: "SEA",
+          hand: "R",
+          ballpark: "Comerica Park",
+          parkFactor: 0.96,
+          xera: 3.6,
+          hardHitRate: 35,
+          flyBallRate: 32,
+          barrelRate: 7,
+          kRate: 31,
+          bbRate: 7,
+          whiffRate: 35,
+          hrVs: 35,
+          hitsVs: 38,
+          kVs: 85,
+        },
+        {
+          gameKey: "CLE@MIN",
+          pitcher: "Contact Matchup Arm",
+          pitcherId: 2,
+          team: "MIN",
+          opponent: "CLE",
+          hand: "R",
+          ballpark: "Target Field",
+          parkFactor: 1,
+          xera: 3.9,
+          hardHitRate: 37,
+          flyBallRate: 34,
+          barrelRate: 8,
+          kRate: 24,
+          bbRate: 8,
+          whiffRate: 27,
+          hrVs: 40,
+          hitsVs: 42,
+          kVs: 55,
+        },
+      ],
+      [
+        { gameKey: "SEA@DET", player: "High K 1", team: "SEA", opponent: "DET", opposingPitcher: "High K Starter", kRate: 30, whiffRate: 34, hrScore: 50, hrScoreRank: 1 },
+        { gameKey: "SEA@DET", player: "High K 2", team: "SEA", opponent: "DET", opposingPitcher: "High K Starter", kRate: 28, whiffRate: 32, hrScore: 50, hrScoreRank: 2 },
+        { gameKey: "CLE@MIN", player: "Contact 1", team: "CLE", opponent: "MIN", opposingPitcher: "Contact Matchup Arm", kRate: 15, whiffRate: 18, hrScore: 50, hrScoreRank: 3 },
+        { gameKey: "CLE@MIN", player: "Contact 2", team: "CLE", opponent: "MIN", opposingPitcher: "Contact Matchup Arm", kRate: 17, whiffRate: 20, hrScore: 50, hrScoreRank: 4 },
+      ],
+      [
+        { gameKey: "SEA@DET", matchup: "SEA @ DET", awayTeam: "SEA", homeTeam: "DET", stadium: "Comerica Park", roofType: "Open", temperature: 70, precipitation: 0, windSpeed: 8, windDirection: "W", conditions: "Clear", parkFactor: 0.96 },
+        { gameKey: "CLE@MIN", matchup: "CLE @ MIN", awayTeam: "CLE", homeTeam: "MIN", stadium: "Target Field", roofType: "Open", temperature: 70, precipitation: 0, windSpeed: 8, windDirection: "W", conditions: "Clear", parkFactor: 1 },
+      ],
+    );
+
+    expect(rows[0].pitcher).toBe("High K Starter");
+    expect(rows[0].opponentTeamKRate).toBe(29);
+    expect(rows[0].opponentKSampleSize).toBe(2);
+    expect(rows[0].kMatchupScore).toBeGreaterThan(rows[1].kMatchupScore);
+    expect(rows[0].reasonTags).toContain("High-K opponent");
+    expect(rows[0].reasonTags).toContain("Strong K pitcher");
   });
 
   it("keeps batter rows aligned with the correct opposing pitcher matchup score", () => {
