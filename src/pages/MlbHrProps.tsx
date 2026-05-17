@@ -108,7 +108,7 @@ type BatterSortKey = "hrScoreRank" | "player" | "position" | "team" | "opposingP
 type MatchupSortKey = "rank" | "player" | "position" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
 type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "opponentTeamKRate" | "pitcherKAbilityScore" | "kMatchupScore" | "kRate" | "whiffRate" | "parkFactor";
 
-type HeatRange = { low: number; high: number };
+type HeatRange = { low: number; mid?: number; high: number };
 type HeatIntent = "warm" | "cool" | "balance";
 type HeatWeight = "primary" | "secondary";
 type HeatStyleOptions = { intent?: HeatIntent; weight?: HeatWeight; invert?: boolean };
@@ -371,7 +371,8 @@ function quantile(values: number[], pct: number) {
 function buildHeatRanges<T extends Record<string, unknown>>(rows: T[], keys: string[]) {
   return Object.fromEntries(keys.map((k) => {
     const vals = rows.map((r) => Number(r[k])).filter((v) => Number.isFinite(v));
-    return [k, { low: quantile(vals, 0.1) ?? 0, high: quantile(vals, 0.9) ?? 0 } as HeatRange];
+    const mid = vals.length ? vals.reduce((sum, value) => sum + value, 0) / vals.length : 0;
+    return [k, { low: quantile(vals, 0.1) ?? 0, mid, high: quantile(vals, 0.9) ?? 0 } as HeatRange];
   })) as Record<string, HeatRange>;
 }
 
@@ -404,8 +405,8 @@ export function buildHeatStatRanges(rows: HrDashboardBatter[]) {
   const ranges = buildHeatRanges(rows, ["barrelRate","hardHitRate","xba","kRate","bbRate","whiffRate","opposingPitcherHrVs","hrScore"]);
   return {
     ...ranges,
-    last7HR: { low: 0, high: 5 },
-    last30HR: { low: 0, high: 10 },
+    last7HR: { low: 0, mid: 1, high: 5 },
+    last30HR: { low: 0, mid: 3, high: 10 },
   };
 }
 function buildPitcherHeatRanges(rows: HrDashboardPitcher[]) {
@@ -417,6 +418,10 @@ function buildMatchupHeatRanges(rows: PitcherVsBatterRow[]) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function rgba(red: number, green: number, blue: number, alpha: number) {
+  return `rgba(${red}, ${green}, ${blue}, ${Number(alpha.toFixed(3))})`;
 }
 
 function normalizeRange(value: number | null | undefined, min: number, max: number, options?: { invert?: boolean }) {
@@ -465,36 +470,39 @@ export function getHeatCellStyle(
   range: HeatRange | undefined,
   options?: HeatStyleOptions,
 ): React.CSSProperties | undefined {
-  if (!Number.isFinite(value) || !range || !Number.isFinite(range.low) || !Number.isFinite(range.high) || range.high <= range.low) return undefined;
+  if (
+    !Number.isFinite(value)
+    || !range
+    || !Number.isFinite(range.low)
+    || !Number.isFinite(range.high)
+    || range.high <= range.low
+  ) return undefined;
 
   const intent = options?.intent ?? "balance";
   const weight = options?.weight ?? "secondary";
-  const mid = (range.low + range.high) / 2;
-  const den = Math.max((range.high - range.low) / 2, 0.0001);
-  const norm = Math.max(-1, Math.min(1, (value! - mid) / den));
-  const magnitude = Math.abs(norm);
+  const midValue = Number.isFinite(range.mid) ? Number(range.mid) : (range.low + range.high) / 2;
+  const mid = clamp(midValue, range.low, range.high);
+  const valueNumber = Number(value);
+  const den = valueNumber >= mid ? Math.max(range.high - mid, 0.0001) : Math.max(mid - range.low, 0.0001);
+  const norm = clamp((valueNumber - mid) / den, -1, 1);
+  const directionalNorm = options?.invert ? norm * -1 : norm;
+  const magnitude = Math.abs(directionalNorm);
 
-  const neutralCutoff = weight === "primary" ? 0.16 : 0.48;
-  const tintCutoff = weight === "primary" ? 0.42 : 0.70;
-  const fillCutoff = weight === "primary" ? 0.76 : 0.90;
+  const neutralCutoff = weight === "primary" ? 0.1 : 0.16;
   if (magnitude < neutralCutoff) return undefined;
 
-  const warm = weight === "primary"
-    ? { text: "#7f1d1d", softFill: "rgba(220, 38, 38, 0.07)", strongFill: "rgba(220, 38, 38, 0.15)" }
-    : { text: "#7f1d1d", softFill: "rgba(220, 38, 38, 0.05)", strongFill: "rgba(220, 38, 38, 0.09)" };
-  const cool = weight === "primary"
-    ? { text: "#1d4ed8", softFill: "rgba(37, 99, 235, 0.08)", strongFill: "rgba(37, 99, 235, 0.16)" }
-    : { text: "#1d4ed8", softFill: "rgba(37, 99, 235, 0.05)", strongFill: "rgba(37, 99, 235, 0.10)" };
-  const directionalNorm = options?.invert ? norm * -1 : norm;
+  const heat = clamp((magnitude - neutralCutoff) / (1 - neutralCutoff), 0, 1);
+  const opacity = weight === "primary" ? 0.08 + heat * 0.3 : 0.07 + heat * 0.23;
+  const fontWeight = heat >= 0.72 ? 700 : 600;
+  const warm = { rgb: [220, 38, 38] as const, text: heat >= 0.72 ? "#7f1d1d" : "#991b1b" };
+  const cool = { rgb: [37, 99, 235] as const, text: heat >= 0.72 ? "#1e3a8a" : "#1d4ed8" };
   const palette = intent === "balance" ? (directionalNorm >= 0 ? warm : cool) : intent === "cool" ? cool : warm;
 
-  if (magnitude >= fillCutoff) {
-    return { backgroundColor: palette.strongFill, color: palette.text, fontWeight: 700 };
-  }
-  if (magnitude >= tintCutoff) {
-    return { backgroundColor: palette.softFill, color: palette.text, fontWeight: 600 };
-  }
-  return { color: palette.text, fontWeight: 600 };
+  return {
+    backgroundColor: rgba(palette.rgb[0], palette.rgb[1], palette.rgb[2], opacity),
+    color: palette.text,
+    fontWeight,
+  };
 }
 
 function getBatterTableHeatStyle(
@@ -920,11 +928,11 @@ function DataLegend() {
 
 function PickCard({ pick, row }: { pick: HrPropPick; row?: HrDashboardBatter }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-base font-bold text-slate-900">{pick.player} {row?.position ? <span className="text-xs font-semibold text-slate-500">{row.position}</span> : null}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+    <article className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-bold text-slate-900">{pick.player} {row?.position ? <span className="text-xs font-semibold text-slate-500">{row.position}</span> : null}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
             <TeamLogoBadge team={pick.team} />
             <span>vs</span>
             <TeamLogoBadge team={pick.opponent} />
@@ -933,18 +941,18 @@ function PickCard({ pick, row }: { pick: HrPropPick; row?: HrDashboardBatter }) 
         <ScorePill value={row?.hrScore ?? null} label={`#${pick.hrScoreRank}`} />
       </div>
 
-      <div className="mt-3 text-sm text-slate-600">
+      <div className="mt-2 text-xs text-slate-600">
         Pitcher: {pick.opposingPitcher}{row?.pitcherHand ? ` (${row.pitcherHand})` : ""}
       </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {pick.topStats.map((stat) => (
           <span key={`${pick.player}-${stat}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{stat}</span>
         ))}
       </div>
-      <ul className="mt-3 space-y-1 text-sm text-slate-700">
+      <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-700">
         {pick.bullets.map((bullet) => <li key={`${pick.player}-${bullet}`}>• {bullet}</li>)}
       </ul>
-      <div className="mt-3 text-xs text-slate-400">{row?.ballpark ?? "Ballpark TBD"}</div>
+      <div className="mt-2 truncate text-xs text-slate-400">{row?.ballpark ?? "Ballpark TBD"}</div>
     </article>
   );
 }
@@ -1225,17 +1233,17 @@ export default function MlbHrProps() {
 
   return (
     <SiteShell>
-      <main className={cn("site-page bg-[#edf2f7] pb-16 pt-4 text-slate-900", isMobile ? "text-[14px]" : "")}>
+      <main className={cn("site-page bg-[#edf2f7] pb-10 pt-4 text-slate-900", isMobile ? "text-[14px]" : "")}>
         <div className="site-container" style={{ maxWidth: "none", width: "100%" }}>
           {!hasData ? (
             <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
               {EMPTY_MESSAGE}
             </div>
           ) : (
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_300px]">
-              <section className="min-w-0 flex-1 space-y-5">
-                <div className="rounded-[30px] bg-[#0f2748] px-5 py-5 text-white shadow-sm">
-                  <div className={cn("flex flex-col gap-4", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_300px]">
+              <section className="min-w-0 flex-1 space-y-4">
+                <div className="rounded-[24px] bg-[#0f2748] px-4 py-4 text-white shadow-sm">
+                  <div className={cn("flex flex-col gap-3", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
                     <div>
                       <div className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB Home Run Props</div>
                       <p className={cn("mt-2 max-w-3xl leading-6 text-sky-100", isMobile ? "text-[13px]" : "text-sm")}>
@@ -1247,7 +1255,7 @@ export default function MlbHrProps() {
                       <span className={cn("rounded-full bg-emerald-400/20 px-3 py-1 font-semibold text-emerald-100", isMobile ? "text-[13px]" : "text-sm")}>🟢 Live Slate</span>
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-sky-200">
+                  <div className="mt-3 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-sky-200">
                     <span>{formatDateLabel(dashboard?.date || bestBets?.date)}</span>
                     <span>•</span>
                     <span>{games.length} games</span>
@@ -1282,8 +1290,8 @@ export default function MlbHrProps() {
                   ) : null}
                 </div>
 
-                <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                  <p className="max-w-4xl text-sm leading-7 text-slate-600">
+                <section className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                  <p className="max-w-4xl text-sm leading-6 text-slate-600">
                     Use this MLB HR props board to compare park factors, pitcher vulnerability, and batter power signals
                     across the current slate, then cross-check full-game context on the{" "}
                     <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
@@ -1291,14 +1299,14 @@ export default function MlbHrProps() {
                     </a>
                     .
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                  <div className="mt-2 flex flex-wrap gap-4 text-sm">
                     <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
                       View today&apos;s MLB matchup analytics
                     </a>
                   </div>
                 </section>
 
-                <div className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
+                <div className="rounded-[20px] border border-slate-200 bg-white shadow-sm">
                   <div className="border-b border-slate-200 px-4">
                     <div className="flex flex-nowrap gap-6 overflow-x-auto whitespace-nowrap" style={{ WebkitOverflowScrolling: "touch" }}>
                       {[
@@ -1323,7 +1331,7 @@ export default function MlbHrProps() {
                     </div>
                   </div>
 
-                  <div className="p-4">
+                  <div className="p-3">
                     {activeTab === "pitchers" ? (
                       <section className="space-y-4">
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -1413,7 +1421,8 @@ export default function MlbHrProps() {
                     ) : null}
 
                     {activeTab === "batters" ? (
-                      <section className="space-y-4">
+                      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.42fr)_minmax(320px,0.78fr)] 2xl:grid-cols-[minmax(0,1.5fr)_minmax(380px,0.7fr)]">
+                        <div className="min-w-0 space-y-3">
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
                             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">💥 Batter View</h2>
@@ -1508,6 +1517,71 @@ export default function MlbHrProps() {
                             </tbody>
                           </table>
                         </div>
+                        </div>
+
+                        <aside className="min-w-0 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">🔥 Pitcher HR Risk</h2>
+                              <p className="mt-0.5 text-xs leading-5 text-slate-500">Compact starter view for the same slate.</p>
+                            </div>
+                            <GameSelect value={pitcherGameFilter} onChange={setPitcherGameFilter} options={gameOptions} label="Game" />
+                          </div>
+                          <input
+                            value={pitcherSearch}
+                            onChange={(event) => setPitcherSearch(event.target.value)}
+                            placeholder="Search pitcher or park"
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300"
+                          />
+                          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                            <table className="min-w-[620px] border-separate border-spacing-0 text-xs">
+                              <thead className="sticky top-0 z-10 bg-slate-50">
+                                <tr className="text-[11px] uppercase tracking-[0.1em] text-slate-500">
+                                  {[
+                                    ["pitcher", "Pitcher"],
+                                    ["gameKey", "Game"],
+                                    ["hardHitRate", "HH%"],
+                                    ["barrelRate", "Barrel"],
+                                    ["kRate", "K%"],
+                                    ["hrVs", "HR VS"],
+                                  ].map(([key, label]) => (
+                                    <th key={`compact-${key}`} className="border-b border-slate-200 bg-slate-50 px-2.5 py-2 text-left font-semibold whitespace-nowrap">
+                                      <button type="button" onClick={() => handlePitcherSort(key as PitcherSortKey)} className="transition hover:text-slate-900">
+                                        {label}{makeSortIndicator(pitcherSortKey === key, pitcherSortDirection)}
+                                      </button>
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredPitchers.length ? filteredPitchers.slice(0, 18).map((pitcher) => (
+                                  <tr key={`compact-${pitcher.gameKey}-${pitcher.team}-${pitcher.pitcher}`} className="odd:bg-white even:bg-slate-50">
+                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle">
+                                      <div className="max-w-[150px] truncate font-medium text-slate-900">{pitcher.pitcher}</div>
+                                      <div className="mt-0.5 truncate text-[11px] text-slate-500">{pitcher.ballpark}</div>
+                                    </td>
+                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle whitespace-nowrap">
+                                      {pitcher.team} vs {pitcher.opponent}
+                                    </td>
+                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle" style={getPitcherTableHeatStyle("hardHitRate", pitcher.hardHitRate, pitcherHeat)}>{formatPercent(pitcher.hardHitRate)}</td>
+                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle" style={getPitcherTableHeatStyle("barrelRate", pitcher.barrelRate, pitcherHeat)}>{formatPercent(pitcher.barrelRate)}</td>
+                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle" style={getPitcherTableHeatStyle("kRate", pitcher.kRate, pitcherHeat)}>{formatPercent(pitcher.kRate)}</td>
+                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle" style={getPitcherTableHeatStyle("hrVs", pitcher.hrVs, pitcherHeat)}><ScorePill value={pitcher.hrVs} /></td>
+                                  </tr>
+                                )) : (
+                                  <tr>
+                                    <td colSpan={6} className="border-b border-slate-100 px-3 py-5 text-center text-sm text-slate-500">
+                                      No pitchers match the current search or game filter.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                          {filteredPitchers.length > 18 ? (
+                            <div className="text-xs text-slate-500">Showing top 18 by current pitcher sort. Open Pitcher HR Risk for the full table.</div>
+                          ) : null}
+                        </aside>
                       </section>
                     ) : null}
 

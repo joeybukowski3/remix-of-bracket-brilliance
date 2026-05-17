@@ -19,15 +19,55 @@ const PICK_LIMITS = {
 };
 
 const DEFAULT_PARK_FACTORS = {
+  "American Family Field": 1.1,
+  "Angel Stadium": 1.02,
+  "Busch Stadium": 0.92,
+  "Chase Field": 1.01,
+  "Citi Field": 1.06,
+  "Citizens Bank Park": 1.17,
+  "Comerica Park": 0.95,
   "Coors Field": 1.4,
+  "Daikin Park": 1.04,
+  "Dodger Stadium": 1.1,
+  "Fenway Park": 0.95,
+  "George M. Steinbrenner Field": 0.98,
+  "Globe Life Field": 0.99,
   "Great American Ball Park": 1.25,
-  "Citizens Bank Park": 1.2,
-  "Yankee Stadium": 1.18,
-  "Fenway Park": 1.12,
-  "Oracle Park": 0.82,
-  "Petco Park": 0.85,
-  "Marlins Park": 0.88,
+  "Guaranteed Rate Field": 1.07,
+  "Kauffman Stadium": 0.96,
   "loanDepot park": 0.88,
+  "Nationals Park": 0.98,
+  "Oracle Park": 0.85,
+  "Oriole Park at Camden Yards": 1.1,
+  "Petco Park": 0.89,
+  "PNC Park": 0.9,
+  "Progressive Field": 0.91,
+  "Rate Field": 1.07,
+  "Rogers Centre": 1.08,
+  "Sutter Health Park": 0.96,
+  "T-Mobile Park": 0.93,
+  "Target Field": 0.97,
+  "Truist Park": 1.03,
+  "Wrigley Field": 1,
+  "Yankee Stadium": 1.18,
+};
+
+const PARK_FACTOR_ALIASES = {
+  "American Family Field": "American Family Field",
+  "Angel Stadium of Anaheim": "Angel Stadium",
+  "Camden Yards": "Oriole Park at Camden Yards",
+  "Guaranteed Rate Field": "Rate Field",
+  "Marlins Park": "loanDepot park",
+  "Minute Maid Park": "Daikin Park",
+  "Oakland Coliseum": "Sutter Health Park",
+  "Oriole Park": "Oriole Park at Camden Yards",
+  "Oriole Park at Camden Yards": "Oriole Park at Camden Yards",
+  "Rate Field": "Rate Field",
+  "Rogers Center": "Rogers Centre",
+  "The Ballpark of the Palm Beaches": "George M. Steinbrenner Field",
+  "Tropicana Field": "George M. Steinbrenner Field",
+  "U.S. Cellular Field": "Rate Field",
+  "US Cellular Field": "Rate Field",
 };
 
 function ensureDataDir() {
@@ -177,8 +217,19 @@ function sanitizeMetric(value, label, context) {
   return parsed;
 }
 
-function parkFactorForVenue(venue) {
-  return DEFAULT_PARK_FACTORS[venue] ?? 1;
+function normalizeVenueKey(venue) {
+  return normalizeText(venue).replace(/\s+/g, " ");
+}
+
+export function parkFactorForVenue(...venues) {
+  for (const venue of venues) {
+    const key = normalizeVenueKey(venue);
+    if (!key) continue;
+    const canonical = PARK_FACTOR_ALIASES[key] ?? key;
+    const factor = DEFAULT_PARK_FACTORS[canonical];
+    if (Number.isFinite(factor)) return factor;
+  }
+  return 1;
 }
 
 function percentileRank(values, value, { invert = false } = {}) {
@@ -1088,7 +1139,7 @@ async function main() {
       windDirection: "—",
       conditions: "—",
     };
-    const parkFactor = parkFactorForVenue(game.venue);
+    const parkFactor = parkFactorForVenue(game.venue, weatherContext.stadium);
     const gameContext = {
       gameKey,
       matchup: `${game.away.abbreviation} @ ${game.home.abbreviation}`,

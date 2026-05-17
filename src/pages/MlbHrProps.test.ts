@@ -22,6 +22,7 @@ import {
   computePitcherMatchupRatings,
   deriveAngleTags,
   extractPropFinderWeatherGames,
+  parkFactorForVenue,
   parseCsv,
   sanitizePercentStat,
 } from "../../scripts/generate-mlb-hr-props.mjs";
@@ -245,6 +246,14 @@ describe("MLB HR props dashboard guards", () => {
 
     expect(hrScore).toBeGreaterThan(65);
     expect(hrScore).toBeLessThanOrEqual(100);
+  });
+
+  it("maps common and renamed MLB venues to non-neutral HR park factors", () => {
+    expect(parkFactorForVenue("Comerica Park")).toBe(0.95);
+    expect(parkFactorForVenue("Daikin Park")).toBe(1.04);
+    expect(parkFactorForVenue("Minute Maid Park")).toBe(1.04);
+    expect(parkFactorForVenue("Tropicana Field")).toBe(0.98);
+    expect(parkFactorForVenue("Unknown Venue", "Yankee Stadium")).toBe(1.18);
   });
 
   it("uses the production default tab and sort states", () => {
@@ -719,8 +728,11 @@ describe("MLB HR props dashboard guards", () => {
     expect(hotLast7?.backgroundColor).toContain("220, 38, 38");
     expect(coldLast30?.backgroundColor).toContain("37, 99, 235");
     expect(hotLast30?.backgroundColor).toContain("220, 38, 38");
-    expect(ranges.last7HR).toEqual({ low: 0, high: 5 });
-    expect(ranges.last30HR).toEqual({ low: 0, high: 10 });
+    expect(ranges.last7HR).toEqual({ low: 0, mid: 1, high: 5 });
+    expect(ranges.last30HR).toEqual({ low: 0, mid: 3, high: 10 });
+    expect(getHeatCellStyle(45, ranges.hardHitRate)).toBeUndefined();
+    expect(hot?.backgroundColor).toContain("0.3");
+    expect(cold?.backgroundColor).toContain("0.3");
   });
 
   it("supports pitcher-table semantics where high K/Whiff are red and high HR VS is blue", () => {
