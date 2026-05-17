@@ -1240,7 +1240,7 @@ export default function MlbHrProps() {
               {EMPTY_MESSAGE}
             </div>
           ) : (
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px] 2xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_300px]">
               <section className="min-w-0 flex-1 space-y-4">
                 <div className="rounded-[24px] bg-[#0f2748] px-4 py-4 text-white shadow-sm">
                   <div className={cn("flex flex-col gap-3", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
@@ -1264,7 +1264,7 @@ export default function MlbHrProps() {
                   </div>
                 </div>
 
-                <div className="xl:hidden">
+                <div className="2xl:hidden">
                   <ParkFactorsPanel parks={parkRows} variant="tiles" />
                 </div>
 
@@ -1421,87 +1421,94 @@ export default function MlbHrProps() {
                     ) : null}
 
                     {activeTab === "batters" ? (
-                      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.42fr)_minmax(320px,0.78fr)] 2xl:grid-cols-[minmax(0,1.5fr)_minmax(380px,0.7fr)]">
-                        <div className="min-w-0 space-y-3">
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <section className="space-y-3">
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                           <div>
-                            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">💥 Batter View</h2>
-                            <p className="mt-1 text-sm text-slate-500">HR Score drives the strongest cue. Supporting power and recent-HR stats only tint when the edge is clearly real.</p>
+                            <h2 className="text-xl font-semibold tracking-[-0.02em] text-slate-900">💥 Batter View</h2>
+                            <p className="mt-0.5 text-xs leading-5 text-slate-500">HR Score drives the strongest cue. Supporting power and recent-HR stats tint when the edge is clearly real.</p>
                           </div>
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <input
                               value={batterSearch}
                               onChange={(event) => setBatterSearch(event.target.value)}
                               placeholder="Search batter, pitcher, or team"
-                              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
+                              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
                             />
                             <GameSelect value={batterGameFilter} onChange={setBatterGameFilter} options={gameOptions} label="Game" />
                           </div>
                         </div>
                         <DataLegend />
-                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-                          <table className="min-w-full border-separate border-spacing-0 text-sm">
+                        <div className="overflow-x-auto xl:overflow-x-visible" style={{ WebkitOverflowScrolling: "touch" }}>
+                          <table className="min-w-[980px] w-full table-fixed border-separate border-spacing-0 text-xs xl:min-w-0">
                             <thead className="sticky top-0 z-10 bg-white">
-                              <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                              <tr className="text-[10px] uppercase tracking-[0.1em] text-slate-500">
                                 {[
-                                  ["hrScoreRank", "Rank"],
+                                  ["hrScoreRank", "#"],
                                   ["player", "Batter"],
-                                  ["position", "Pos"],
-                                  ["team", "Team"],
                                   ["opposingPitcher", "Opp Pitcher"],
-                                  ["parkFactor", "Park"],
                                   ["kRate", "K%"],
                                   ["bbRate", "BB%"],
-                                  ["barrelRate", "Barrel%"],
-                                  ["hardHitRate", "Hard Hit%"],
+                                  ["barrelRate", "Barrel"],
+                                  ["hardHitRate", "HH%"],
                                   ["xba", "xBA"],
-                                  ["whiffRate", "Whiff%"],
-                                  ["last7HR", "Last 7 HR"],
-                                  ["last30HR", "Last 30 HR"],
-                                  ["opposingPitcherHrVs", "Pitcher HR VS"],
+                                  ["whiffRate", "Whiff"],
+                                  ["last30HR", "Recent HR"],
+                                  ["opposingPitcherHrVs", "P HR VS"],
                                   ["hrScore", "HR Score"],
-                                ].map(([key, label]) => (
-                                  <th key={key} className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">
+                                ].map(([key, label], index) => (
+                                  <th
+                                    key={key}
+                                    className={cn(
+                                      "border-b border-slate-200 bg-white px-2 py-2 text-left font-semibold whitespace-nowrap",
+                                      index >= 3 ? "text-center" : "",
+                                      key === "hrScoreRank" ? "w-[44px]" : "",
+                                      key === "player" ? "w-[190px]" : "",
+                                      key === "opposingPitcher" ? "w-[150px]" : "",
+                                      key === "last30HR" ? "w-[76px]" : "",
+                                      key === "opposingPitcherHrVs" || key === "hrScore" ? "w-[82px]" : "",
+                                    )}
+                                  >
                                     <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="transition hover:text-slate-900">
                                       {label}{makeSortIndicator(batterSortKey === key, batterSortDirection)}
                                     </button>
                                   </th>
                                 ))}
-                                <th className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">Angle</th>
+                                <th className="w-[132px] border-b border-slate-200 bg-white px-2 py-2 text-left font-semibold whitespace-nowrap">Angle</th>
                               </tr>
                             </thead>
                             <tbody>
                               {filteredBatters.length ? filteredBatters.map((row) => (
                                 <tr key={`${row.player}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/60">
-                                  <td className="border-b border-slate-100 px-4 py-3">{row.hrScoreRank}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
-                                    <div className="font-medium text-slate-900">{row.player}</div>
-                                    <div className="mt-1 text-xs text-slate-500">{row.ballpark}</div>
+                                  <td className="border-b border-slate-100 px-2 py-2 align-middle text-slate-600">{row.hrScoreRank}</td>
+                                  <td className="border-b border-slate-100 px-2 py-2 align-middle">
+                                    <div className="truncate font-medium text-slate-900">{row.player} <span className="text-[11px] font-semibold text-slate-500">{row.position}</span></div>
+                                    <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-slate-500">
+                                      <TeamLogoBadge team={row.team} size={16} />
+                                      <span className="truncate">{row.ballpark}</span>
+                                    </div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{row.position}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]">
-                                    <div>{row.opposingPitcher}</div>
-                                    <div className="mt-1 text-xs text-slate-500">{row.opponent} • {row.pitcherHand}</div>
+                                  <td className="border-b border-slate-100 px-2 py-2 align-middle">
+                                    <div className="truncate text-slate-900">{row.opposingPitcher}</div>
+                                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+                                      <span>{row.opponent} • {row.pitcherHand}</span>
+                                      <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
+                                    </div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3">
-                                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>
-                                      {row.parkFactor.toFixed(2)}
-                                    </span>
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("kRate", row.kRate, batterHeat)}>{formatPercent(row.kRate)}</td>
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("bbRate", row.bbRate, batterHeat)}>{formatPercent(row.bbRate)}</td>
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("barrelRate", row.barrelRate, batterHeat)}>{formatPercent(row.barrelRate)}</td>
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("hardHitRate", row.hardHitRate, batterHeat)}>{formatPercent(row.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("xba", row.xba, batterHeat)}>{formatDecimal(row.xba, 3)}</td>
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("whiffRate", row.whiffRate, batterHeat)}>{formatPercent(row.whiffRate)}</td>
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("last30HR", row.last30HR, batterHeat)}>
+                                    <div className="font-semibold text-slate-900">{formatNumber(row.last30HR, 0)}</div>
+                                    <div className="text-[10px] text-slate-500">7d {formatNumber(row.last7HR, 0)}</div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("kRate", row.kRate, batterHeat)}>{formatPercent(row.kRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("bbRate", row.bbRate, batterHeat)}>{formatPercent(row.bbRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("barrelRate", row.barrelRate, batterHeat)}>{formatPercent(row.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("hardHitRate", row.hardHitRate, batterHeat)}>{formatPercent(row.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("xba", row.xba, batterHeat)}>{formatDecimal(row.xba, 3)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("whiffRate", row.whiffRate, batterHeat)}>{formatPercent(row.whiffRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("last7HR", row.last7HR, batterHeat)}>{formatNumber(row.last7HR, 0)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("last30HR", row.last30HR, batterHeat)}>{formatNumber(row.last30HR, 0)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("opposingPitcherHrVs", row.opposingPitcherHrVs, batterHeat)}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("hrScore", row.hrScore, batterHeat)}><ScorePill value={row.hrScore} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3">
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {row.angleTags.length ? row.angleTags.map((tag) => (
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("opposingPitcherHrVs", row.opposingPitcherHrVs, batterHeat)}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("hrScore", row.hrScore, batterHeat)}><ScorePill value={row.hrScore} /></td>
+                                  <td className="border-b border-slate-100 px-2 py-2 align-middle">
+                                    <div className="flex max-w-[124px] flex-wrap gap-1">
+                                      {row.angleTags.length ? row.angleTags.slice(0, 2).map((tag) => (
                                         <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
                                       )) : <span className="text-slate-400">{DASH}</span>}
                                     </div>
@@ -1509,7 +1516,7 @@ export default function MlbHrProps() {
                                 </tr>
                               )) : (
                                 <tr>
-                                  <td colSpan={17} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={13} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No batters match the current search or game filter.
                                   </td>
                                 </tr>
@@ -1517,71 +1524,6 @@ export default function MlbHrProps() {
                             </tbody>
                           </table>
                         </div>
-                        </div>
-
-                        <aside className="min-w-0 space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0">
-                              <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">🔥 Pitcher HR Risk</h2>
-                              <p className="mt-0.5 text-xs leading-5 text-slate-500">Compact starter view for the same slate.</p>
-                            </div>
-                            <GameSelect value={pitcherGameFilter} onChange={setPitcherGameFilter} options={gameOptions} label="Game" />
-                          </div>
-                          <input
-                            value={pitcherSearch}
-                            onChange={(event) => setPitcherSearch(event.target.value)}
-                            placeholder="Search pitcher or park"
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300"
-                          />
-                          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-                            <table className="min-w-[620px] border-separate border-spacing-0 text-xs">
-                              <thead className="sticky top-0 z-10 bg-slate-50">
-                                <tr className="text-[11px] uppercase tracking-[0.1em] text-slate-500">
-                                  {[
-                                    ["pitcher", "Pitcher"],
-                                    ["gameKey", "Game"],
-                                    ["hardHitRate", "HH%"],
-                                    ["barrelRate", "Barrel"],
-                                    ["kRate", "K%"],
-                                    ["hrVs", "HR VS"],
-                                  ].map(([key, label]) => (
-                                    <th key={`compact-${key}`} className="border-b border-slate-200 bg-slate-50 px-2.5 py-2 text-left font-semibold whitespace-nowrap">
-                                      <button type="button" onClick={() => handlePitcherSort(key as PitcherSortKey)} className="transition hover:text-slate-900">
-                                        {label}{makeSortIndicator(pitcherSortKey === key, pitcherSortDirection)}
-                                      </button>
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {filteredPitchers.length ? filteredPitchers.slice(0, 18).map((pitcher) => (
-                                  <tr key={`compact-${pitcher.gameKey}-${pitcher.team}-${pitcher.pitcher}`} className="odd:bg-white even:bg-slate-50">
-                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle">
-                                      <div className="max-w-[150px] truncate font-medium text-slate-900">{pitcher.pitcher}</div>
-                                      <div className="mt-0.5 truncate text-[11px] text-slate-500">{pitcher.ballpark}</div>
-                                    </td>
-                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle whitespace-nowrap">
-                                      {pitcher.team} vs {pitcher.opponent}
-                                    </td>
-                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle" style={getPitcherTableHeatStyle("hardHitRate", pitcher.hardHitRate, pitcherHeat)}>{formatPercent(pitcher.hardHitRate)}</td>
-                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle" style={getPitcherTableHeatStyle("barrelRate", pitcher.barrelRate, pitcherHeat)}>{formatPercent(pitcher.barrelRate)}</td>
-                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle" style={getPitcherTableHeatStyle("kRate", pitcher.kRate, pitcherHeat)}>{formatPercent(pitcher.kRate)}</td>
-                                    <td className="border-b border-slate-100 px-2.5 py-2 align-middle" style={getPitcherTableHeatStyle("hrVs", pitcher.hrVs, pitcherHeat)}><ScorePill value={pitcher.hrVs} /></td>
-                                  </tr>
-                                )) : (
-                                  <tr>
-                                    <td colSpan={6} className="border-b border-slate-100 px-3 py-5 text-center text-sm text-slate-500">
-                                      No pitchers match the current search or game filter.
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
-                          {filteredPitchers.length > 18 ? (
-                            <div className="text-xs text-slate-500">Showing top 18 by current pitcher sort. Open Pitcher HR Risk for the full table.</div>
-                          ) : null}
-                        </aside>
                       </section>
                     ) : null}
 
@@ -1966,7 +1908,7 @@ export default function MlbHrProps() {
                   </section>
                 ) : null}
               </section>
-              <aside className="hidden xl:block xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:self-start xl:overflow-y-auto xl:pr-1">
+              <aside className="hidden 2xl:block 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)] 2xl:self-start 2xl:overflow-y-auto 2xl:pr-1">
                 <ParkFactorsPanel parks={parkRows} variant="sidebar" />
               </aside>
             </div>
