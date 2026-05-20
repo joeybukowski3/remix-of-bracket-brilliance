@@ -1,193 +1,178 @@
 {
-  "date": "2026-05-19",
-  "generatedAt": "2026-05-19T10:39:14.957Z",
+  "date": "2026-05-20",
+  "generatedAt": "2026-05-20T10:26:38.374Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features multiple favorable HR environments, including Yankee Stadium's 1.18 park factor boosting Ben Rice and Paul Goldschmidt against Dylan Cease, while loanDepot park's pitcher-friendly 0.88 factor still yields top model scores for Drake Baldwin and ATL bats facing Braxton Garrett. LHP matchups for Baldwin, Raley, and Soto create platoon edges, with high barrel and pull rates signaling power upside despite neutral or suppressed park factors.",
-    "modelNote": "The model prioritizes recent HR volume and opposing pitcher HR vulnerability over raw park factors, elevating Drake Baldwin to the top spot with 79.8 hrScore driven by 76.9 opposingPitcherHrVs and strong last30HR totals."
+    "slateOverview": "Today's slate features a pair of hitter-friendly parks in Coors and Yankee Stadium, where park factors of 1.4 and 1.18 boost power output. Favorable righty matchups for Soto against Littell and Rice versus Yesavage stand out, while weather angles in Washington and New York add tailwinds that further lift fly balls.",
+    "modelNote": "The model is weighting recent power trends and barrel rates most heavily today, with Soto's 75.3 hrScore leading the board due to his elevated exit velo and 17.5 barrel rate against a vulnerable righty."
   },
   "bestBets": [
     {
-      "player": "Drake Baldwin",
-      "team": "ATL",
-      "opponent": "MIA",
-      "opposingPitcher": "Braxton Garrett",
+      "player": "Juan Soto",
+      "team": "NYM",
+      "opponent": "WSH",
+      "opposingPitcher": "Zack Littell",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate=18.9",
-        "hrScore=79.8"
+        "barrelRate=17.5",
+        "hrFBRatio=5.7"
       ],
       "bullets": [
-        "barrelRate 18.9 with exitVelo 92.7",
-        "parkFactor 0.88 vs pitcher HR/9 76.9"
+        "Barrel rate 17.5 with 92.5 exit velo",
+        "Park factor 0.98 at Nationals Park"
       ]
     },
     {
       "player": "Ben Rice",
       "team": "NYY",
       "opponent": "TOR",
-      "opposingPitcher": "Dylan Cease",
+      "opposingPitcher": "Trey Yesavage",
       "hrScoreRank": 2,
       "topStats": [
-        "iso=0.364",
-        "pullRate=52.4"
+        "barrelRate=20.2",
+        "iso=0.374"
       ],
       "bullets": [
-        "iso 0.364 with pullRate 52.4",
-        "parkFactor 1.18 vs last30HR 7"
-      ]
-    },
-    {
-      "player": "Luke Raley",
-      "team": "SEA",
-      "opponent": "CWS",
-      "opposingPitcher": "Anthony Kay",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrelRate=22.7",
-        "hardHitRate=56"
-      ],
-      "bullets": [
-        "barrelRate 22.7 with hardHitRate 56",
-        "whiffRate 44.3 vs pitcher HR/9 71.1"
-      ]
-    },
-    {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "WSH",
-      "opposingPitcher": "Foster Griffin",
-      "hrScoreRank": 4,
-      "topStats": [
-        "bbRate=13.5",
-        "hrScore=68.7"
-      ],
-      "bullets": [
-        "bbRate 13.5 with exitVelo 92.7",
-        "last30HR 5 vs pitcher HR/9 55"
-      ]
-    },
-    {
-      "player": "Michael Harris II",
-      "team": "ATL",
-      "opponent": "MIA",
-      "opposingPitcher": "Braxton Garrett",
-      "hrScoreRank": 5,
-      "topStats": [
-        "xba=0.31",
-        "exitVelo=94.4"
-      ],
-      "bullets": [
-        "xba 0.31 with exitVelo 94.4",
-        "parkFactor 0.88 vs pitcher HR/9 76.9"
-      ]
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Matt Olson",
-      "team": "ATL",
-      "opponent": "MIA",
-      "opposingPitcher": "Braxton Garrett",
-      "hrScoreRank": 6,
-      "topStats": [
-        "iso=0.31",
-        "last30HR=9"
-      ],
-      "bullets": [
-        "iso 0.31 with last30HR 9",
-        "parkFactor 0.88 vs pitcher HR/9 76.9"
-      ]
-    },
-    {
-      "player": "Paul Goldschmidt",
-      "team": "NYY",
-      "opponent": "TOR",
-      "opposingPitcher": "Dylan Cease",
-      "hrScoreRank": 7,
-      "topStats": [
-        "xba=0.306",
-        "hardHitRate=55.1"
-      ],
-      "bullets": [
-        "xba 0.306 with hardHitRate 55.1",
-        "parkFactor 1.18 vs opposingPitcherHrVs 24.1"
+        "Barrel rate 20.2 with 93.4 exit velo",
+        "Park factor 1.18 at Yankee Stadium"
       ]
     },
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "MIN",
-      "opposingPitcher": "Zebby Matthews",
-      "hrScoreRank": 8,
+      "opposingPitcher": "Joe Ryan",
+      "hrScoreRank": 3,
       "topStats": [
-        "xba=0.354",
-        "exitVelo=94.4"
+        "xba=0.351",
+        "exitVelo=94.3"
       ],
       "bullets": [
-        "xba 0.354 with exitVelo 94.4",
-        "last7HR 2 vs opposingPitcherHrVs 9.4"
-      ]
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Aaron Judge",
-      "team": "NYY",
-      "opponent": "TOR",
-      "opposingPitcher": "Dylan Cease",
-      "hrScoreRank": 14,
-      "topStats": [
-        "barrelRate=22.5",
-        "exitVelo=93.7"
-      ],
-      "bullets": [
-        "barrelRate 22.5 with exitVelo 93.7",
-        "parkFactor 1.18 vs last30HR 7"
+        "Exit velo 94.3 with 52.8 hard hit rate",
+        "Park factor 0.97 at Target Field"
       ]
     },
     {
-      "player": "Gavin Sheets",
-      "team": "SD",
-      "opponent": "LAD",
-      "opposingPitcher": "Emmet Sheehan",
-      "hrScoreRank": 13,
+      "player": "Justin Foscue",
+      "team": "TEX",
+      "opponent": "COL",
+      "opposingPitcher": "Kyle Freeland",
+      "hrScoreRank": 4,
       "topStats": [
-        "last7HR=4",
-        "last30HR=7"
+        "parkFactor=1.4",
+        "hardHitRate=61.1"
       ],
       "bullets": [
-        "last7HR 4 with last30HR 7",
-        "parkFactor 0.89 vs opposingPitcherHrVs 44.2"
-      ]
-    },
-    {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "SD",
-      "opposingPitcher": "Griffin Canning",
-      "hrScoreRank": 9,
-      "topStats": [
-        "Hard Hit%=53.3",
-        "Pitcher HR VS=47.6"
-      ],
-      "bullets": [
-        "HR score 65.2 (#9)",
-        "Pitcher HR VS 47.6 at park 0.89"
+        "Park factor 1.4 at Coors Field",
+        "Hard hit rate 61.1 with 93.1 exit velo"
       ]
     },
     {
       "player": "Casey Schmitt",
       "team": "SF",
       "opponent": "AZ",
-      "opposingPitcher": "Ryne Nelson",
-      "hrScoreRank": 10,
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=63.5",
-        "Hard Hit%=46.9"
+        "last30HR=6",
+        "opposingPitcherHrVs=81.7"
       ],
       "bullets": [
-        "HR score 64.8 (#10)",
-        "Pitcher HR VS 63.5 at park 1.01"
+        "Opposing pitcher HR/9 81.7",
+        "Recent form 6 HR in last 30 days"
+      ]
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "JJ Bleday",
+      "team": "CIN",
+      "opponent": "PHI",
+      "opposingPitcher": "Aaron Nola",
+      "hrScoreRank": 6,
+      "topStats": [
+        "iso=0.361",
+        "pullRate=50.9"
+      ],
+      "bullets": [
+        "ISO 0.361 with 92.1 exit velo",
+        "Park factor 1.17 at Citizens Bank Park"
+      ]
+    },
+    {
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrelRate=22",
+        "exitVelo=95"
+      ],
+      "bullets": [
+        "Barrel rate 22 with 95 exit velo",
+        "Hard hit rate 59 with 59.0 hard hit rate"
+      ]
+    },
+    {
+      "player": "Paul Goldschmidt",
+      "team": "NYY",
+      "opponent": "TOR",
+      "opposingPitcher": "Trey Yesavage",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrelRate=20.8",
+        "exitVelo=92.3"
+      ],
+      "bullets": [
+        "Barrel rate 20.8 with 92.3 exit velo",
+        "Park factor 1.18 at Yankee Stadium"
+      ]
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Jordan Walker",
+      "team": "STL",
+      "opponent": "PIT",
+      "opposingPitcher": "Carmen Mlodzinski",
+      "hrScoreRank": 9,
+      "topStats": [
+        "exitVelo=94.7",
+        "opposingPitcherHrVs=61.5"
+      ],
+      "bullets": [
+        "Exit velo 94.7 with 54.1 hard hit rate",
+        "Opposing pitcher HR/9 61.5"
+      ]
+    },
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "SD",
+      "opposingPitcher": "Randy Vásquez",
+      "hrScoreRank": 11,
+      "topStats": [
+        "barrelRate=19.4",
+        "pullRate=50"
+      ],
+      "bullets": [
+        "Barrel rate 19.4 with 92.1 exit velo",
+        "Opposing pitcher HR/9 61.4"
+      ]
+    },
+    {
+      "player": "Michael Harris II",
+      "team": "ATL",
+      "opponent": "MIA",
+      "opposingPitcher": "Janson Junk",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Hard Hit%=56.6",
+        "Pitcher HR VS=39.3"
+      ],
+      "bullets": [
+        "HR score 66.0 (#10)",
+        "Pitcher HR VS 39.3 at park 0.88"
       ]
     }
   ]
