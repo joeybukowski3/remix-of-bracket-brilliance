@@ -5,8 +5,9 @@ import SportsbookBar from "@/components/SportsbookBar";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
+import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
+import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
-import { getSeoMeta } from "@/lib/seo";
 import {
   EMPTY_MESSAGE,
   CUSTOM_WEIGHT_CONTROLS,
@@ -136,6 +137,10 @@ function formatGeneratedDate(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
+function normalizeTournamentLabel(value: string | null | undefined) {
+  return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 type BestBetPickPreview = { player: string };
 type BestBetsPreviewData = {
   tournament: string;
@@ -152,7 +157,7 @@ type BestBetsPreviewData = {
 };
 
 export default function PgaHub() {
-  const seo = getSeoMeta("pga");
+  const scheduleTournament = getPgaScheduleSelection().currentUpcoming;
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
   const [modelMode, setModelMode] = useState<ModelMode>("tournament");
@@ -165,25 +170,6 @@ export default function PgaHub() {
   const [bestBets, setBestBets] = useState<BestBetsPreviewData | null>(null);
   const movementTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasAnimatedRef = useRef(false);
-
-  usePageSeo({
-    title: seo.title,
-    description: seo.description,
-    path: seo.path,
-    structuredData: [
-      buildBreadcrumbSchema([
-        { name: "Home", path: "/" },
-        { name: "PGA", path: "/pga" },
-      ]),
-      {
-        "@context": "https://schema.org",
-        "@type": "SportsOrganization",
-        name: "Joe Knows Ball PGA Tour Models",
-        sport: "Golf",
-        url: `${CANONICAL_BASE}/pga`,
-      },
-    ],
-  });
 
   useEffect(() => {
     setCurrentOverride(getThisWeekOverride());
@@ -227,6 +213,38 @@ export default function PgaHub() {
   }, []);
 
   const { active: activeEvent, current: currentEvent, next: nextEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
+  const activeTournamentName =
+    currentEvent?.shortName
+    || currentEvent?.name
+    || scheduleTournament?.shortName
+    || scheduleTournament?.name
+    || FEATURED_PGA_TOURNAMENT.shortName
+    || FEATURED_PGA_TOURNAMENT.name;
+  const activeTournamentCourse =
+    currentEvent?.courseName
+    || scheduleTournament?.courseName
+    || FEATURED_PGA_TOURNAMENT.courseName;
+  const seoTitle = `${activeTournamentName} PGA Tour Power Rankings, Golf Model & Best Bets`;
+  const seoDescription = `Current-week ${activeTournamentName} rankings, course-weighted golf model outputs, and best-bet paths${activeTournamentCourse ? ` for ${activeTournamentCourse}` : ""}.`;
+
+  usePageSeo({
+    title: seoTitle,
+    description: seoDescription,
+    path: "/pga",
+    structuredData: [
+      buildBreadcrumbSchema([
+        { name: "Home", path: "/" },
+        { name: "PGA", path: "/pga" },
+      ]),
+      {
+        "@context": "https://schema.org",
+        "@type": "SportsOrganization",
+        name: "Joe Knows Ball PGA Tour Models",
+        sport: "Golf",
+        url: `${CANONICAL_BASE}/pga`,
+      },
+    ],
+  });
   const selectedFutureEvent = useMemo(
     () => schedule.find((entry) => entry.id === selectedScheduleId) ?? null,
     [schedule, selectedScheduleId],
@@ -379,8 +397,13 @@ export default function PgaHub() {
       (section) => Array.isArray(section) && section.length > 0,
     );
   }, [bestBets]);
-  const bestBetsBannerTitle = [bestBets?.tournament, bestBets?.course].filter(Boolean).join(" — ");
-  const bestBetsTeaser = truncateTeaser(bestBets?.preview?.tournamentOverview, 120);
+  const bestBetsMatchesActiveTournament = bestBets?.tournament
+    ? normalizeTournamentLabel(bestBets.tournament) === normalizeTournamentLabel(activeTournamentName)
+    : false;
+  const bestBetsBannerTitle = [activeTournamentName, activeTournamentCourse].filter(Boolean).join(" — ");
+  const bestBetsTeaser = bestBetsMatchesActiveTournament
+    ? truncateTeaser(bestBets?.preview?.tournamentOverview, 120)
+    : `Model-driven tournament betting analysis, picks, and odds for ${activeTournamentName} this week.`;
   const bestBetsGeneratedLabel = formatGeneratedDate(bestBets?.generatedAt);
 
   useEffect(() => {
@@ -454,7 +477,7 @@ export default function PgaHub() {
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-green-200/80">Best Bets</div>
                   <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
-                    {bestBets?.tournament ?? "PGA Best Bets"}
+                    {activeTournamentName}
                   </h2>
                 </div>
                 <Link

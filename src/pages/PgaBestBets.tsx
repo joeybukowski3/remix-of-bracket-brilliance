@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
 import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
+import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 
 type BestBetPick = {
   player: string;
@@ -76,17 +78,6 @@ const SECTIONS: Array<{
   },
 ];
 
-// Derive dynamic SEO strings from the schedule-driven featured tournament.
-// Falls back to generic copy if seo fields are absent.
-const _t = FEATURED_PGA_TOURNAMENT;
-const _tournamentName = _t.shortName ?? _t.name;
-const _seoTitle =
-  _t.seo?.title ??
-  `${_tournamentName} Best Bets & Model Picks — Joe Knows Ball`;
-const _seoDescription =
-  _t.seo?.description ??
-  `Data-driven ${_tournamentName} picks for outright winners, top 5, top 10, and top 20 finishes. Built from course-weighted strokes gained models and live odds.`;
-
 function formatGeneratedAt(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -104,6 +95,10 @@ function isEmpty(payload: BestBetsPayload | null) {
 
 function stripMarkdown(text: string) {
   return text.replace(/\*\*(.*?)\*\*/g, "$1");
+}
+
+function normalizeTournamentLabel(value: string | null | undefined) {
+  return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 function OddsBadge({ value }: { value?: string | null }) {
@@ -236,13 +231,33 @@ function PickCard({
 }
 
 export default function PgaBestBets() {
+  const scheduleTournament = getPgaScheduleSelection().currentUpcoming;
+  const fallbackTournamentName =
+    scheduleTournament?.shortName
+    || scheduleTournament?.name
+    || FEATURED_PGA_TOURNAMENT.shortName
+    || FEATURED_PGA_TOURNAMENT.name;
+  const fallbackCourseName = scheduleTournament?.courseName || FEATURED_PGA_TOURNAMENT.courseName;
   const [data, setData] = useState<BestBetsPayload | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const payloadMatchesTournament = data?.tournament
+    ? normalizeTournamentLabel(data.tournament) === normalizeTournamentLabel(fallbackTournamentName)
+    : false;
+  const visibleTournamentName = payloadMatchesTournament ? data?.tournament ?? fallbackTournamentName : fallbackTournamentName;
+  const visibleCourseName = payloadMatchesTournament ? data?.course ?? fallbackCourseName : fallbackCourseName;
+  const seoTitle = `${visibleTournamentName} Best Bets & Model Picks`;
+  const seoDescription = `Data-driven ${visibleTournamentName} picks for outrights, top 5, top 10, and top 20 markets${visibleCourseName ? ` at ${visibleCourseName}` : ""}. Built from Joe Knows Ball course-weighted golf models and updated tournament analysis.`;
   usePageSeo({
-    title: _seoTitle,
-    description: _seoDescription,
+    title: seoTitle,
+    description: seoDescription,
     path: "/pga/best-bets",
+    structuredData: [
+      buildBreadcrumbSchema([
+        { name: "Home", path: "/" },
+        { name: "PGA", path: "/pga" },
+        { name: "PGA Best Bets", path: "/pga/best-bets" },
+      ]),
+    ],
   });
 
   useEffect(() => {
@@ -281,8 +296,8 @@ export default function PgaBestBets() {
 
           <div className="sticky top-0 z-10 hidden rounded-xl border border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur md:flex md:items-center md:justify-between">
             <div className="min-w-0">
-              <div className="truncate text-lg font-semibold text-gray-900">{data?.tournament ?? _tournamentName}</div>
-              <div className="truncate text-sm text-gray-500">{data?.course ?? "Course-weighted betting board"}</div>
+              <div className="truncate text-lg font-semibold text-gray-900">{visibleTournamentName}</div>
+              <div className="truncate text-sm text-gray-500">{visibleCourseName || "Course-weighted betting board"}</div>
             </div>
             <div className="text-xs text-gray-500">
               {data?.generatedAt ? `Generated ${formatGeneratedAt(data.generatedAt)}` : "Awaiting this week's board"}
@@ -293,10 +308,24 @@ export default function PgaBestBets() {
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-green-700/80">PGA Best Bets</div>
               <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-gray-900 sm:text-4xl">
-                {data?.tournament ?? _tournamentName}
+                {visibleTournamentName}
               </h1>
               <div className="mt-2 text-sm text-gray-500">
-                {data ? `${data.course} | Generated ${formatGeneratedAt(data.generatedAt)}` : "Course-weighted picks generated from the tournament model."}
+                {data?.generatedAt
+                  ? `${visibleCourseName} | Generated ${formatGeneratedAt(data.generatedAt)}`
+                  : `${visibleCourseName} | Course-weighted picks generated from the tournament model.`}
+              </div>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
+                These {visibleTournamentName} best bets use the active tournament model to organize outrights,
+                placement markets, and value angles into a cleaner betting card for the week.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                <Link to="/pga/model" className="font-semibold text-[#166534] hover:underline">
+                  View {visibleTournamentName} model rankings
+                </Link>
+                <Link to="/pga/top-40-golf-picks" className="font-semibold text-[#166534] hover:underline">
+                  Explore Top 40 golf picks
+                </Link>
               </div>
             </div>
 
@@ -318,11 +347,11 @@ export default function PgaBestBets() {
             </div>
           ) : (
             <>
-              {data?.preview ? (
+              {data?.preview && payloadMatchesTournament ? (
                 <section className="space-y-4">
                   <div>
                     <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">Tournament Preview</h2>
-                    <p className="mt-1 text-sm text-gray-500">Course context, active model logic, and how the betting tiers are being handled this week.</p>
+                    <p className="mt-1 text-sm text-gray-500">{visibleTournamentName} course context, active model logic, and how the betting tiers are being handled this week.</p>
                   </div>
                   <div className="grid gap-4 md:grid-cols-3">
                     <PreviewCard label="The Tournament" text={data.preview.tournamentOverview} />
@@ -373,3 +402,4 @@ export default function PgaBestBets() {
     </SiteShell>
   );
 }
+
