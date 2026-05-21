@@ -615,37 +615,61 @@ function HomeSchedule({
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-2">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-          <h1 className="text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">Today&apos;s MLB Slate</h1>
-          <div className="text-sm font-medium text-slate-600">{formatSlateDate(new Date())}</div>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {games.length} games · {counts["in-progress"]} in progress · {counts["scheduled"] + counts["pre-game"]} scheduled
-        </div>
-        <p className="max-w-4xl text-sm leading-7 text-muted-foreground">
-          Review the full MLB slate with starting pitcher matchups, park context, projected lineups, and game-level prop
-          angles before you move into the dedicated{" "}
-          <Link to="/mlb/hr-props" className="font-semibold text-primary hover:underline">
-            MLB HR props dashboard
-          </Link>
-          .
-        </p>
-        <div className="flex flex-wrap gap-4 text-sm">
-          <Link to="/mlb/hr-props" className="font-semibold text-primary hover:underline">
-            Open today&apos;s MLB home run prop model
-          </Link>
-          <Link to="/mlb/strikeout-props" className="font-semibold text-primary hover:underline">
-            Open strikeout prop model
-          </Link>
-          <Link to="/mlb/props" className="font-semibold text-primary hover:underline">
-            Open MLB props hub
-          </Link>
-        </div>
+      {/* Keep the hero copy, sponsor row, and MLB tool entry points in the primary column so the desktop grid stays balanced against the taller preview rail. */}
+      <section className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1.2fr)_360px] xl:gap-5">
+        <div className="space-y-4">
+          <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">Today&apos;s MLB Slate</h1>
+              <div className="text-sm font-medium text-slate-600">{formatSlateDate(new Date())}</div>
+            </div>
+            <div className="mt-2 text-sm text-muted-foreground">
+              {games.length} games · {counts["in-progress"]} in progress · {counts["scheduled"] + counts["pre-game"]} scheduled
+            </div>
+            <p className="mt-3 max-w-4xl text-sm leading-7 text-muted-foreground">
+              Review the full MLB slate with starting pitcher matchups, park context, projected lineups, and game-level prop
+              angles before you move into the dedicated{" "}
+              <Link to="/mlb/hr-props" className="font-semibold text-primary hover:underline">
+                MLB HR props dashboard
+              </Link>
+              .
+            </p>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
+              <Link to="/mlb/hr-props" className="font-semibold text-primary hover:underline">
+                Open today&apos;s MLB home run prop model
+              </Link>
+              <Link to="/mlb/strikeout-props" className="font-semibold text-primary hover:underline">
+                Open strikeout prop model
+              </Link>
+              <Link to="/mlb/props" className="font-semibold text-primary hover:underline">
+                Open MLB props hub
+              </Link>
+            </div>
+          </section>
+
+          <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+            <SportsbookBar />
+          </div>
+
+          <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-800">MLB prop tools</div>
+                <h2 className="text-xl font-semibold tracking-[-0.03em] text-slate-900">Open the dedicated prop boards</h2>
+                <p className="max-w-3xl text-sm text-slate-600">
+                  Jump from the slate view into home run props, pitcher strikeout props, or the full MLB props hub.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link to="/mlb/props" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Props Hub</Link>
+                <Link to="/mlb/hr-props" className="rounded-full bg-sky-800 px-4 py-2 text-sm font-semibold text-white">HR Props</Link>
+                <Link to="/mlb/strikeout-props" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Strikeout Props</Link>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <aside className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-20">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-800">Daily prop preview</div>
@@ -653,7 +677,7 @@ function HomeSchedule({
             </div>
             <Link to="/mlb/props" className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">Hub</Link>
           </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <div>
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Top 5 HR Props</div>
               <div className="space-y-1.5">
@@ -683,33 +707,12 @@ function HomeSchedule({
               </div>
             </div>
           </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
             <Link to="/mlb/hr-props" className="rounded-xl bg-sky-800 px-3 py-2 text-center text-xs font-semibold text-white">Open HR Prop Model</Link>
             <Link to="/mlb/strikeout-props" className="rounded-xl bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white">Open Strikeout Prop Model</Link>
             <Link to="/mlb/props" className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700">Open MLB Props Hub</Link>
           </div>
         </aside>
-      </section>
-
-      <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
-        <SportsbookBar />
-      </div>
-
-      <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-800">MLB prop tools</div>
-            <h2 className="text-xl font-semibold tracking-[-0.03em] text-slate-900">Open the dedicated prop boards</h2>
-            <p className="max-w-3xl text-sm text-slate-600">
-              Jump from the slate view into home run props, pitcher strikeout props, or the full MLB props hub.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link to="/mlb/props" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Props Hub</Link>
-            <Link to="/mlb/hr-props" className="rounded-full bg-sky-800 px-4 py-2 text-sm font-semibold text-white">HR Props</Link>
-            <Link to="/mlb/strikeout-props" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Strikeout Props</Link>
-          </div>
-        </div>
       </section>
 
       <section className="space-y-4">

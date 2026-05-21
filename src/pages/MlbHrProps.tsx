@@ -5,7 +5,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 
-export type HrDashboardGame = {
+type HrDashboardGame = {
   gameKey: string;
   matchup: string;
   awayTeam: string;
@@ -20,7 +20,7 @@ export type HrDashboardGame = {
   parkFactor: number;
 };
 
-export type HrDashboardPitcher = {
+type HrDashboardPitcher = {
   gameKey: string;
   pitcher: string;
   pitcherId: number | null;
@@ -41,10 +41,9 @@ export type HrDashboardPitcher = {
   kVs: number;
 };
 
-export type HrDashboardBatter = {
+type HrDashboardBatter = {
   gameKey: string;
   player: string;
-  position: string;
   team: string;
   opponent: string;
   opposingPitcher: string;
@@ -73,7 +72,7 @@ export type HrDashboardBatter = {
   angleTags: string[];
 };
 
-export type HrDashboardPayload = {
+type HrDashboardPayload = {
   date: string;
   generatedAt: string;
   games: HrDashboardGame[];
@@ -91,7 +90,7 @@ type HrPropPick = {
   bullets: string[];
 };
 
-export type HrBestBetsPayload = {
+type HrBestBetsPayload = {
   date: string;
   generatedAt: string;
   slatePreview?: { slateOverview: string; modelNote: string } | null;
@@ -104,11 +103,11 @@ type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
 type MatchupLens = "best" | "hr" | "strikeout";
 type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "hrVs" | "hitsVs" | "kVs";
-type BatterSortKey = "hrScoreRank" | "player" | "position" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore";
-type MatchupSortKey = "rank" | "player" | "position" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
-type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "opponentTeamKRate" | "pitcherKAbilityScore" | "kMatchupScore" | "kRate" | "whiffRate" | "parkFactor";
+type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore";
+type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
+type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "parkFactor" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "opponentTeamXba" | "strikeoutMatchupScore";
 
-type HeatRange = { low: number; mid?: number; high: number };
+type HeatRange = { low: number; high: number };
 type HeatIntent = "warm" | "cool" | "balance";
 type HeatWeight = "primary" | "secondary";
 type HeatStyleOptions = { intent?: HeatIntent; weight?: HeatWeight; invert?: boolean };
@@ -133,6 +132,14 @@ type BatterHeatKey =
   | "last30HR"
   | "opposingPitcherHrVs"
   | "hrScore";
+type StrikeoutHeatKey =
+  | "pitcherKRate"
+  | "pitcherWhiffRate"
+  | "pitcherKVs"
+  | "opponentTeamKRate"
+  | "opponentTeamWhiffRate"
+  | "opponentTeamXba"
+  | "strikeoutMatchupScore";
 
 type ParkSidebarRow = {
   key: string;
@@ -147,11 +154,10 @@ type ParkSidebarRow = {
   conditions: string;
 };
 
-export type PitcherVsBatterRow = {
+type PitcherVsBatterRow = {
   rank: number;
   gameKey: string;
   player: string;
-  position: string;
   team: string;
   opposingPitcher: string;
   park: string;
@@ -165,9 +171,6 @@ export type PitcherVsBatterRow = {
   strikeoutMatchupScore: number;
   batterPowerScore: number;
   pitcherVulnerabilityScore: number;
-  parkScore: number;
-  contactScore: number;
-  recentContextScore: number;
   contextScore: number;
   barrelRate: number | null;
   hardHitRate: number | null;
@@ -177,7 +180,7 @@ export type PitcherVsBatterRow = {
   angleTags: string[];
 };
 
-export type PitcherStrikeoutMatchupRow = {
+type PitcherStrikeoutTeamRow = {
   rank: number;
   gameKey: string;
   pitcher: string;
@@ -185,18 +188,16 @@ export type PitcherStrikeoutMatchupRow = {
   opponent: string;
   park: string;
   parkFactor: number;
+  pitcherKRate: number | null;
+  pitcherWhiffRate: number | null;
+  pitcherKVs: number;
   opponentTeamKRate: number | null;
   opponentTeamWhiffRate: number | null;
-  opponentKSampleSize: number;
-  pitcherKAbilityScore: number;
-  opponentKScore: number;
-  workloadScore: number;
-  parkContextScore: number;
-  kMatchupScore: number;
-  kRate: number | null;
-  whiffRate: number | null;
-  kVs: number;
-  reasonTags: string[];
+  opponentTeamXba: number | null;
+  pitcherKSkillScore: number;
+  opponentTeamStrikeoutScore: number;
+  strikeoutMatchupScore: number;
+  whyItRanksWell: string;
 };
 
 export const DEFAULT_TAB: TabKey = "pitchers";
@@ -283,7 +284,6 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
   const b = {
     gameKey: normalizeText(entry.gameKey),
     player: normalizeText(entry.player),
-    position: normalizeText(entry.position) || normalizeText(entry.primaryPosition) || DASH,
     team: normalizeTeamValue(entry.team),
     opponent: normalizeTeamValue(entry.opponent),
     opposingPitcher: normalizeText(entry.opposingPitcher) || "TBD",
@@ -371,8 +371,7 @@ function quantile(values: number[], pct: number) {
 function buildHeatRanges<T extends Record<string, unknown>>(rows: T[], keys: string[]) {
   return Object.fromEntries(keys.map((k) => {
     const vals = rows.map((r) => Number(r[k])).filter((v) => Number.isFinite(v));
-    const mid = vals.length ? vals.reduce((sum, value) => sum + value, 0) / vals.length : 0;
-    return [k, { low: quantile(vals, 0.1) ?? 0, mid, high: quantile(vals, 0.9) ?? 0 } as HeatRange];
+    return [k, { low: quantile(vals, 0.1) ?? 0, high: quantile(vals, 0.9) ?? 0 } as HeatRange];
   })) as Record<string, HeatRange>;
 }
 
@@ -401,12 +400,22 @@ const PITCHER_TABLE_HEAT_CONFIG: Record<PitcherHeatKey, HeatStyleOptions> = {
   kVs: { intent: "balance", weight: "primary" },
 };
 
+const STRIKEOUT_TABLE_HEAT_CONFIG: Record<StrikeoutHeatKey, HeatStyleOptions> = {
+  pitcherKRate: { intent: "balance", weight: "secondary" },
+  pitcherWhiffRate: { intent: "balance", weight: "secondary" },
+  pitcherKVs: { intent: "balance", weight: "primary" },
+  opponentTeamKRate: { intent: "balance", weight: "secondary" },
+  opponentTeamWhiffRate: { intent: "balance", weight: "secondary" },
+  opponentTeamXba: { intent: "balance", weight: "secondary", invert: true },
+  strikeoutMatchupScore: { intent: "balance", weight: "primary" },
+};
+
 export function buildHeatStatRanges(rows: HrDashboardBatter[]) {
   const ranges = buildHeatRanges(rows, ["barrelRate","hardHitRate","xba","kRate","bbRate","whiffRate","opposingPitcherHrVs","hrScore"]);
   return {
     ...ranges,
-    last7HR: { low: 0, mid: 1, high: 5 },
-    last30HR: { low: 0, mid: 3, high: 10 },
+    last7HR: { low: 0, high: 5 },
+    last30HR: { low: 0, high: 10 },
   };
 }
 function buildPitcherHeatRanges(rows: HrDashboardPitcher[]) {
@@ -415,20 +424,18 @@ function buildPitcherHeatRanges(rows: HrDashboardPitcher[]) {
 function buildMatchupHeatRanges(rows: PitcherVsBatterRow[]) {
   return buildHeatRanges(rows, ["hrScore","opposingPitcherHrVs","opposingPitcherHitsVs","opposingPitcherKVs","hrTargetScore","bestMatchupScore","strikeoutMatchupScore","barrelRate","hardHitRate","xba","kRate","whiffRate"]);
 }
+function buildStrikeoutHeatRanges(rows: PitcherStrikeoutTeamRow[]) {
+  return buildHeatRanges(rows, ["pitcherKRate","pitcherWhiffRate","pitcherKVs","opponentTeamKRate","opponentTeamWhiffRate","opponentTeamXba","strikeoutMatchupScore"]);
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function rgba(red: number, green: number, blue: number, alpha: number) {
-  return `rgba(${red}, ${green}, ${blue}, ${Number(alpha.toFixed(3))})`;
-}
-
-function normalizeRange(value: number | null | undefined, min: number, max: number, options?: { invert?: boolean }) {
+function normalizeRange(value: number | null | undefined, min: number, max: number) {
   if (!Number.isFinite(value)) return null;
   if (max <= min) return null;
-  const scaled = clamp(((Number(value) - min) / (max - min)) * 100, 0, 100);
-  return options?.invert ? 100 - scaled : scaled;
+  return clamp(((Number(value) - min) / (max - min)) * 100, 0, 100);
 }
 
 function weightedAverageAvailable(entries: Array<{ value: number | null; weight: number }>) {
@@ -443,26 +450,10 @@ function weightedAverageAvailable(entries: Array<{ value: number | null; weight:
   return weightedTotal / totalWeight;
 }
 
-function averageAvailable(values: Array<number | null | undefined>) {
-  const filtered = values.filter((value): value is number => Number.isFinite(value));
-  if (!filtered.length) return null;
-  return filtered.reduce((sum, value) => sum + value, 0) / filtered.length;
-}
-
 function getDefaultMatchupSortForLens(lens: MatchupLens) {
   if (lens === "hr") return { key: "hrTargetScore" as MatchupSortKey, direction: "desc" as SortDirection };
   if (lens === "strikeout") return { key: "strikeoutMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
   return DEFAULT_MATCHUP_SORT;
-}
-
-function getStrikeoutReasonTags(row: Omit<PitcherStrikeoutMatchupRow, "rank" | "reasonTags">) {
-  const tags: string[] = [];
-  if (row.opponentTeamKRate != null && row.opponentTeamKRate >= 25) tags.push("High-K opponent");
-  if (row.opponentTeamKRate != null && row.opponentTeamKRate <= 18) tags.push("Low-K opponent risk");
-  if (row.pitcherKAbilityScore >= 70) tags.push("Strong K pitcher");
-  if (row.pitcherKAbilityScore <= 38) tags.push("Volume concern");
-  if (!tags.length) tags.push("Neutral matchup");
-  return tags.slice(0, 2);
 }
 
 export function getHeatCellStyle(
@@ -470,39 +461,36 @@ export function getHeatCellStyle(
   range: HeatRange | undefined,
   options?: HeatStyleOptions,
 ): React.CSSProperties | undefined {
-  if (
-    !Number.isFinite(value)
-    || !range
-    || !Number.isFinite(range.low)
-    || !Number.isFinite(range.high)
-    || range.high <= range.low
-  ) return undefined;
+  if (!Number.isFinite(value) || !range || !Number.isFinite(range.low) || !Number.isFinite(range.high) || range.high <= range.low) return undefined;
 
   const intent = options?.intent ?? "balance";
   const weight = options?.weight ?? "secondary";
-  const midValue = Number.isFinite(range.mid) ? Number(range.mid) : (range.low + range.high) / 2;
-  const mid = clamp(midValue, range.low, range.high);
-  const valueNumber = Number(value);
-  const den = valueNumber >= mid ? Math.max(range.high - mid, 0.0001) : Math.max(mid - range.low, 0.0001);
-  const norm = clamp((valueNumber - mid) / den, -1, 1);
-  const directionalNorm = options?.invert ? norm * -1 : norm;
-  const magnitude = Math.abs(directionalNorm);
+  const mid = (range.low + range.high) / 2;
+  const den = Math.max((range.high - range.low) / 2, 0.0001);
+  const norm = Math.max(-1, Math.min(1, (value! - mid) / den));
+  const magnitude = Math.abs(norm);
 
-  const neutralCutoff = weight === "primary" ? 0.1 : 0.16;
+  const neutralCutoff = weight === "primary" ? 0.16 : 0.48;
+  const tintCutoff = weight === "primary" ? 0.42 : 0.70;
+  const fillCutoff = weight === "primary" ? 0.76 : 0.90;
   if (magnitude < neutralCutoff) return undefined;
 
-  const heat = clamp((magnitude - neutralCutoff) / (1 - neutralCutoff), 0, 1);
-  const opacity = weight === "primary" ? 0.08 + heat * 0.3 : 0.07 + heat * 0.23;
-  const fontWeight = heat >= 0.72 ? 700 : 600;
-  const warm = { rgb: [220, 38, 38] as const, text: heat >= 0.72 ? "#7f1d1d" : "#991b1b" };
-  const cool = { rgb: [37, 99, 235] as const, text: heat >= 0.72 ? "#1e3a8a" : "#1d4ed8" };
+  const warm = weight === "primary"
+    ? { text: "#7f1d1d", softFill: "rgba(220, 38, 38, 0.07)", strongFill: "rgba(220, 38, 38, 0.15)" }
+    : { text: "#7f1d1d", softFill: "rgba(220, 38, 38, 0.05)", strongFill: "rgba(220, 38, 38, 0.09)" };
+  const cool = weight === "primary"
+    ? { text: "#1d4ed8", softFill: "rgba(37, 99, 235, 0.08)", strongFill: "rgba(37, 99, 235, 0.16)" }
+    : { text: "#1d4ed8", softFill: "rgba(37, 99, 235, 0.05)", strongFill: "rgba(37, 99, 235, 0.10)" };
+  const directionalNorm = options?.invert ? norm * -1 : norm;
   const palette = intent === "balance" ? (directionalNorm >= 0 ? warm : cool) : intent === "cool" ? cool : warm;
 
-  return {
-    backgroundColor: rgba(palette.rgb[0], palette.rgb[1], palette.rgb[2], opacity),
-    color: palette.text,
-    fontWeight,
-  };
+  if (magnitude >= fillCutoff) {
+    return { backgroundColor: palette.strongFill, color: palette.text, fontWeight: 700 };
+  }
+  if (magnitude >= tintCutoff) {
+    return { backgroundColor: palette.softFill, color: palette.text, fontWeight: 600 };
+  }
+  return { color: palette.text, fontWeight: 600 };
 }
 
 function getBatterTableHeatStyle(
@@ -519,6 +507,14 @@ function getPitcherTableHeatStyle(
   ranges: Record<string, HeatRange>,
 ) {
   return getHeatCellStyle(value, ranges[stat], PITCHER_TABLE_HEAT_CONFIG[stat]);
+}
+
+function getStrikeoutTableHeatStyle(
+  stat: StrikeoutHeatKey,
+  value: number | null | undefined,
+  ranges: Record<string, HeatRange>,
+) {
+  return getHeatCellStyle(value, ranges[stat], STRIKEOUT_TABLE_HEAT_CONFIG[stat]);
 }
 
 function formatDateLabel(v?: string) {
@@ -539,18 +535,6 @@ function getRoofLabel(r: string) {
   if (/retractable/i.test(r)) return "Retractable";
   if (/dome|closed/i.test(r)) return "Roof";
   return r || "Unknown";
-}
-
-function getWeatherIndicators(park: ParkSidebarRow) {
-  const condition = park.conditions.toLowerCase();
-  const indicators: string[] = [];
-  if (/rain|shower|storm|thunder|drizzle/.test(condition) || (park.precipitation != null && park.precipitation >= 45)) indicators.push("🌧️");
-  else if (/clear|sunny/.test(condition)) indicators.push("☀️");
-  else if (/cloud|overcast|partly/.test(condition)) indicators.push("☁️");
-  if (park.temperature != null && park.temperature >= 85) indicators.push("🔥");
-  if (park.temperature != null && park.temperature <= 55) indicators.push("🥶");
-  if (park.windSpeed != null && park.windSpeed >= 12) indicators.push("💨");
-  return indicators;
 }
 
 function getParkFactorTone(value: number) {
@@ -607,63 +591,32 @@ export function buildPitcherVsBatterRows(
     const hitsVs = b.opposingPitcherHitsVs ?? pitcher?.hitsVs ?? 0;
     const kVs = b.opposingPitcherKVs ?? pitcher?.kVs ?? 0;
     const batterPowerScore = weightedAverageAvailable([
-      { value: normalizeRange(b.hrScore, 35, 85), weight: 0.4 },
-      { value: normalizeRange(b.barrelRate, 4, 22), weight: 0.25 },
+      { value: normalizeRange(b.hrScore, 35, 85), weight: 0.5 },
+      { value: normalizeRange(b.barrelRate, 4, 22), weight: 0.2 },
       { value: normalizeRange(b.hardHitRate, 28, 60), weight: 0.2 },
       { value: normalizeRange(b.hrFBRatio, 4, 28), weight: 0.1 },
-      { value: normalizeRange(b.iso, 0.1, 0.35), weight: 0.05 },
     ]) ?? normalizeRange(b.hrScore, 35, 85) ?? 0;
 
     const pitcherVulnerabilityScore = weightedAverageAvailable([
-      { value: normalizeRange(hrVs, 20, 85), weight: 0.42 },
-      { value: normalizeRange(hitsVs, 20, 85), weight: 0.14 },
-      { value: normalizeRange(pitcher?.xera, 2.5, 6.5), weight: 0.16 },
-      { value: normalizeRange(pitcher?.flyBallRate, 22, 48), weight: 0.1 },
-      { value: normalizeRange(pitcher?.barrelRate, 3, 14), weight: 0.1 },
-      { value: normalizeRange(pitcher?.hardHitRate, 28, 50), weight: 0.08 },
+      { value: normalizeRange(hrVs, 20, 85), weight: 0.3 },
+      { value: normalizeRange(pitcher?.xera, 2.5, 6.5), weight: 0.25 },
+      { value: normalizeRange(pitcher?.flyBallRate, 22, 48), weight: 0.2 },
+      { value: normalizeRange(pitcher?.barrelRate, 3, 14), weight: 0.15 },
+      { value: normalizeRange(pitcher?.hardHitRate, 28, 50), weight: 0.1 },
     ]) ?? normalizeRange(hrVs, 20, 85) ?? 0;
 
-    const parkScore = weightedAverageAvailable([
-      { value: normalizeRange(game?.parkFactor ?? b.parkFactor, 0.8, 1.3), weight: 0.85 },
-      { value: normalizeRange(b.weatherBoost, -8, 8), weight: 0.15 },
+    const contextScore = weightedAverageAvailable([
+      { value: normalizeRange(game?.parkFactor ?? b.parkFactor, 0.8, 1.3), weight: 0.7 },
+      { value: normalizeRange(b.weatherBoost, -8, 8), weight: 0.2 },
     ]) ?? normalizeRange(game?.parkFactor ?? b.parkFactor, 0.8, 1.3) ?? 0;
 
-    const contactScore = weightedAverageAvailable([
-      { value: normalizeRange(b.xba, 0.18, 0.34), weight: 0.28 },
-      { value: normalizeRange(b.kRate, 10, 38, { invert: true }), weight: 0.28 },
-      { value: normalizeRange(b.whiffRate, 12, 42, { invert: true }), weight: 0.22 },
-      { value: normalizeRange(kVs, 15, 85, { invert: true }), weight: 0.14 },
-      { value: normalizeRange(hitsVs, 20, 85), weight: 0.08 },
-    ]) ?? 50;
-
-    const recentContextScore = weightedAverageAvailable([
-      { value: normalizeRange(b.last7HR, 0, 5), weight: 0.55 },
-      { value: normalizeRange(b.last30HR, 0, 12), weight: 0.35 },
-      { value: normalizeRange(b.weatherBoost, -8, 8), weight: 0.1 },
-    ]) ?? 50;
-    const powerFloorPenalty = batterPowerScore < 45 ? (45 - batterPowerScore) * 0.35 : 0;
-
-    // HR target keeps batter quality first, but gives pitcher HR vulnerability a real 35% voice.
-    // This prevents a strong hitter against a clearly attackable arm from being flattened by a generic balanced score.
-    const hrTargetScore = Number(Math.max(0, (
-      0.4 * batterPowerScore
-      + 0.35 * pitcherVulnerabilityScore
-      + 0.12 * parkScore
-      + 0.1 * contactScore
-      + 0.03 * recentContextScore
-      - powerFloorPenalty
-    )).toFixed(1));
-
-    // Overall matchup composite: 38% batter, 34% pitcher, 12% park, 12% contact/K context, 4% recent/weather.
-    // A modest floor penalty keeps weak HR profiles from ranking too high on pitcher vulnerability alone.
-    const bestMatchupScore = Number(Math.max(0, (
-      0.38 * batterPowerScore
-      + 0.34 * pitcherVulnerabilityScore
-      + 0.12 * parkScore
-      + 0.12 * contactScore
-      + 0.04 * recentContextScore
-      - powerFloorPenalty
-    )).toFixed(1));
+    const pitcherBoostMultiplier = clamp(0.85 + 0.25 * (pitcherVulnerabilityScore / 100), 0.9, 1.08);
+    const hrTargetScore = Number((batterPowerScore * pitcherBoostMultiplier + 0.15 * contextScore).toFixed(1));
+    const bestMatchupScore = Number((
+      0.65 * hrTargetScore
+      + 0.2 * (normalizeRange(hitsVs, 20, 85) ?? 0)
+      + 0.15 * contextScore
+    ).toFixed(1));
     const strikeoutMatchupScore = Number((
       weightedAverageAvailable([
         { value: normalizeRange(kVs, 15, 85), weight: 0.55 },
@@ -673,7 +626,7 @@ export function buildPitcherVsBatterRows(
     ).toFixed(1));
 
     return {
-      rank: 0, gameKey: b.gameKey, player: b.player, position: b.position, team: b.team,
+      rank: 0, gameKey: b.gameKey, player: b.player, team: b.team,
       opposingPitcher: b.opposingPitcher, park: game?.stadium ?? b.ballpark,
       parkFactor: game?.parkFactor ?? b.parkFactor, hrScore: b.hrScore,
       opposingPitcherHrVs: hrVs,
@@ -684,10 +637,7 @@ export function buildPitcherVsBatterRows(
       strikeoutMatchupScore,
       batterPowerScore: Number(batterPowerScore.toFixed(1)),
       pitcherVulnerabilityScore: Number(pitcherVulnerabilityScore.toFixed(1)),
-      parkScore: Number(parkScore.toFixed(1)),
-      contactScore: Number(contactScore.toFixed(1)),
-      recentContextScore: Number(recentContextScore.toFixed(1)),
-      contextScore: Number(parkScore.toFixed(1)),
+      contextScore: Number(contextScore.toFixed(1)),
       barrelRate: b.barrelRate, hardHitRate: b.hardHitRate, xba: b.xba, kRate: b.kRate, whiffRate: b.whiffRate, angleTags: b.angleTags,
     };
   }).sort((a, b) =>
@@ -698,49 +648,184 @@ export function buildPitcherVsBatterRows(
     .map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
-export function buildPitcherStrikeoutMatchupRows(
-  pitchers: HrDashboardPitcher[],
+function averageNullable(values: Array<number | null | undefined>) {
+  const valid = values.filter((value) => Number.isFinite(value)).map((value) => Number(value));
+  if (!valid.length) return null;
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+}
+
+function pickDeterministicVariant(options: string[], seed: number) {
+  if (!options.length) return "";
+  return options[Math.abs(seed) % options.length];
+}
+
+function buildStrikeoutWhyText(row: {
+  rank: number;
+  strikeoutMatchupScore: number;
+  pitcherKSkillScore: number;
+  pitcherKRate: number | null;
+  pitcherWhiffRate: number | null;
+  pitcherKVs: number;
+  opponentTeamKRate: number | null;
+  opponentTeamWhiffRate: number | null;
+  opponentTeamXba: number | null;
+}) {
+  const drivers: Array<{ strength: number; text: string; family: "pitcher" | "team" | "contact" }> = [];
+
+  if (row.pitcherKVs >= 72) drivers.push({ strength: 98, text: "elite pitcher K VS", family: "pitcher" });
+  else if (row.pitcherKVs >= 62) drivers.push({ strength: 88, text: "strong pitcher K VS", family: "pitcher" });
+  else if (row.pitcherKVs >= 52) drivers.push({ strength: 75, text: "solid pitcher K VS", family: "pitcher" });
+
+  if (row.pitcherKRate != null) {
+    if (row.pitcherKRate >= 30) drivers.push({ strength: 94, text: "a true bat-missing K%", family: "pitcher" });
+    else if (row.pitcherKRate >= 26) drivers.push({ strength: 80, text: "above-average strikeout rate", family: "pitcher" });
+  }
+
+  if (row.pitcherWhiffRate != null) {
+    if (row.pitcherWhiffRate >= 30) drivers.push({ strength: 90, text: "elite whiff ability", family: "pitcher" });
+    else if (row.pitcherWhiffRate >= 27) drivers.push({ strength: 76, text: "strong whiff profile", family: "pitcher" });
+  }
+
+  if (row.opponentTeamKRate != null) {
+    if (row.opponentTeamKRate >= 27) drivers.push({ strength: 92, text: "a high-strikeout lineup", family: "team" });
+    else if (row.opponentTeamKRate >= 24) drivers.push({ strength: 78, text: "meaningful team K tendency", family: "team" });
+    else if (row.opponentTeamKRate <= 20.5) drivers.push({ strength: 58, text: "limited team K tendency", family: "team" });
+  }
+
+  if (row.opponentTeamWhiffRate != null) {
+    if (row.opponentTeamWhiffRate >= 29) drivers.push({ strength: 86, text: "a swing-and-miss lineup", family: "team" });
+    else if (row.opponentTeamWhiffRate >= 26) drivers.push({ strength: 72, text: "above-average team whiff", family: "team" });
+  }
+
+  if (row.opponentTeamXba != null) {
+    if (row.opponentTeamXba <= 0.232) drivers.push({ strength: 84, text: "below-average team xBA", family: "contact" });
+    else if (row.opponentTeamXba <= 0.242) drivers.push({ strength: 70, text: "suppressed contact quality", family: "contact" });
+    else if (row.opponentTeamXba >= 0.265) drivers.push({ strength: 60, text: "firmer contact quality", family: "contact" });
+  }
+
+  const top = [...drivers].sort((left, right) => right.strength - left.strength);
+  const uniqueTop = top.filter((driver, index) => top.findIndex((candidate) => candidate.text === driver.text) === index);
+  const primary = uniqueTop[0];
+  const secondary = uniqueTop.find((driver) => driver.family !== primary?.family) ?? uniqueTop[1];
+  const tertiary = uniqueTop.find((driver) => driver !== primary && driver !== secondary && driver.family === "contact");
+  const seed = Math.max(0, row.rank - 1);
+
+  if (!primary) {
+    return "Balanced strikeout setup from current pitcher and opponent-team inputs.";
+  }
+
+  if (row.strikeoutMatchupScore >= 60) {
+    if (primary.family === "pitcher" && secondary) {
+      return pickDeterministicVariant([
+        `Strong K indicators meet ${secondary.text}.`,
+        `Pitcher K skill carries the grade here, with ${secondary.text} helping.`,
+        `Bat-missing ability leads this spot, and ${secondary.text} keeps it elevated.`,
+        `This matchup is driven by pitcher K skill, with ${secondary.text} adding support.`,
+      ], seed);
+    }
+    if (primary.family === "team" && secondary) {
+      return pickDeterministicVariant([
+        `Opponent strikeout tendency boosts the matchup, and ${secondary.text} helps.`,
+        `Lineup swing-and-miss risk sets the tone here, with ${secondary.text} in support.`,
+        `This spot leans on ${primary.text}, while ${secondary.text} keeps it favorable.`,
+        `Team-level K risk leads the case, and ${secondary.text} adds lift.`,
+      ], seed);
+    }
+  }
+
+  if (row.strikeoutMatchupScore >= 52) {
+    if (primary.family === "pitcher" && secondary && tertiary) {
+      return pickDeterministicVariant([
+        `Above-average K indicators pair with ${secondary.text} and ${tertiary.text}.`,
+        `This spot is driven by pitcher skill, with ${secondary.text} and ${tertiary.text} supporting it.`,
+        `Pitcher-side strikeout ability stands out here, while ${secondary.text} and ${tertiary.text} help.`,
+        `K skill is the main reason this lands well, with ${secondary.text} and ${tertiary.text} adding support.`,
+      ], seed);
+    }
+    if (primary.family === "team" && secondary) {
+      return pickDeterministicVariant([
+        `${primary.text.charAt(0).toUpperCase()}${primary.text.slice(1)} boosts this matchup, with ${secondary.text} supporting it.`,
+        `This matchup gets a lift from ${primary.text}, and ${secondary.text} helps.`,
+        `${primary.text.charAt(0).toUpperCase()}${primary.text.slice(1)} is the clearest edge, while ${secondary.text} adds support.`,
+        `Team-level swing-and-miss risk drives this spot, with ${secondary.text} helping.`,
+      ], seed);
+    }
+  }
+
+  if (secondary && secondary.text === "firmer contact quality") {
+    return pickDeterministicVariant([
+      `${primary.text.charAt(0).toUpperCase()}${primary.text.slice(1)} helps here, but firmer contact quality keeps it out of the top tier.`,
+      `There is some strikeout appeal here, but firmer contact quality limits the ceiling.`,
+      `${primary.text.charAt(0).toUpperCase()}${primary.text.slice(1)} is useful, though firmer contact quality tempers the spot.`,
+    ], seed);
+  }
+
+  if (secondary) {
+    return pickDeterministicVariant([
+      `${primary.text.charAt(0).toUpperCase()}${primary.text.slice(1)} is the main driver, with ${secondary.text} adding support.`,
+      `${primary.text.charAt(0).toUpperCase()}${primary.text.slice(1)} carries the matchup, and ${secondary.text} helps.`,
+      `The clearest edge is ${primary.text}, with ${secondary.text} keeping the spot viable.`,
+    ], seed);
+  }
+
+  return pickDeterministicVariant([
+    `${primary.text.charAt(0).toUpperCase()}${primary.text.slice(1)} is doing most of the work in this strikeout spot.`,
+    `${primary.text.charAt(0).toUpperCase()}${primary.text.slice(1)} is the clearest reason this matchup holds up.`,
+    `Most of the strikeout case here comes from ${primary.text}.`,
+  ], seed);
+}
+
+export function buildPitcherStrikeoutRows(
   batters: HrDashboardBatter[],
-  games: HrDashboardGame[] = [],
+  games: HrDashboardGame[],
+  pitchers: HrDashboardPitcher[] = [],
 ) {
   const gameByKey = new Map(games.map((game) => [game.gameKey, game]));
   const battersByGameAndTeam = new Map<string, HrDashboardBatter[]>();
 
   batters.forEach((batter) => {
     const key = `${batter.gameKey}|${batter.team}`;
-    const existing = battersByGameAndTeam.get(key) ?? [];
-    existing.push(batter);
-    battersByGameAndTeam.set(key, existing);
+    const existing = battersByGameAndTeam.get(key);
+    if (existing) existing.push(batter);
+    else battersByGameAndTeam.set(key, [batter]);
   });
 
-  return pitchers
-    .filter((pitcher) => !isStarterPlaceholder(pitcher.pitcher))
+  const rows = [...pitchers]
     .map((pitcher) => {
+      const opponentBatters = battersByGameAndTeam.get(`${pitcher.gameKey}|${pitcher.opponent}`) ?? [];
       const game = gameByKey.get(pitcher.gameKey);
-      const opponentHitters = battersByGameAndTeam.get(`${pitcher.gameKey}|${pitcher.opponent}`) ?? [];
-      const opponentTeamKRate = averageAvailable(opponentHitters.map((batter) => batter.kRate));
-      const opponentTeamWhiffRate = averageAvailable(opponentHitters.map((batter) => batter.whiffRate));
-      const pitcherKAbilityScore = weightedAverageAvailable([
-        { value: normalizeRange(pitcher.kVs, 10, 95), weight: 0.45 },
-        { value: normalizeRange(pitcher.kRate, 14, 34), weight: 0.35 },
-        { value: normalizeRange(pitcher.whiffRate, 18, 38), weight: 0.2 },
-      ]) ?? normalizeRange(pitcher.kVs, 10, 95) ?? 50;
-      const opponentKScore = weightedAverageAvailable([
-        { value: normalizeRange(opponentTeamKRate, 16, 32), weight: 0.75 },
-        { value: normalizeRange(opponentTeamWhiffRate, 18, 38), weight: 0.25 },
-      ]) ?? 50;
-      const workloadScore = pitcher.pitcherId != null ? 65 : 45;
-      const parkContextScore = normalizeRange(game?.parkFactor ?? pitcher.parkFactor, 0.85, 1.25, { invert: true }) ?? 50;
+      // The current HR props page payload does not include lineup slot or projected-PA weights,
+      // so the opponent-team strikeout lens uses stable slate-level averages from the hitters
+      // already attached to this game/team instead of inventing a weighting model here.
+      // If the route payload later exposes batting-order slot or projected PA, this is the
+      // place to swap these flat averages for lineup-weighted team aggregates.
+      const opponentTeamKRate = averageNullable(opponentBatters.map((batter) => batter.kRate));
+      const opponentTeamWhiffRate = averageNullable(opponentBatters.map((batter) => batter.whiffRate));
+      const opponentTeamXba = averageNullable(opponentBatters.map((batter) => batter.xba));
 
-      // Pitcher K props are pitcher/opponent-team driven: 43% pitcher K skill, 38% opponent K tendency,
-      // 10% starter-confidence fallback, and 9% park/game context from the current slate data.
-      const kMatchupScore = Number((
-        0.43 * pitcherKAbilityScore
-        + 0.38 * opponentKScore
-        + 0.1 * workloadScore
-        + 0.09 * parkContextScore
-      ).toFixed(1));
-      const row = {
+      const pitcherKSkillScore = weightedAverageAvailable([
+        { value: normalizeRange(pitcher.kVs, 15, 85), weight: 0.5 },
+        { value: normalizeRange(pitcher.kRate, 15, 35), weight: 0.3 },
+        { value: normalizeRange(pitcher.whiffRate, 15, 35), weight: 0.2 },
+      ]) ?? normalizeRange(pitcher.kVs, 15, 85) ?? 0;
+
+      const opponentTeamStrikeoutScore = weightedAverageAvailable([
+        { value: normalizeRange(opponentTeamKRate, 14, 28), weight: 0.5 },
+        { value: normalizeRange(opponentTeamWhiffRate, 18, 36), weight: 0.3 },
+        { value: 100 - (normalizeRange(opponentTeamXba, 0.21, 0.29) ?? 50), weight: 0.2 },
+      ]) ?? weightedAverageAvailable([
+        { value: normalizeRange(opponentTeamKRate, 14, 28), weight: 0.6 },
+        { value: normalizeRange(opponentTeamWhiffRate, 18, 36), weight: 0.4 },
+      ]) ?? 0;
+
+      const strikeoutMatchupScore = Number((weightedAverageAvailable([
+        { value: pitcherKSkillScore, weight: 0.4 },
+        { value: normalizeRange(opponentTeamKRate, 14, 28), weight: 0.3 },
+        { value: normalizeRange(opponentTeamWhiffRate, 18, 36), weight: 0.2 },
+        { value: 100 - (normalizeRange(opponentTeamXba, 0.21, 0.29) ?? 50), weight: 0.1 },
+      ]) ?? 0).toFixed(1));
+
+      return {
         rank: 0,
         gameKey: pitcher.gameKey,
         pitcher: pitcher.pitcher,
@@ -748,26 +833,105 @@ export function buildPitcherStrikeoutMatchupRows(
         opponent: pitcher.opponent,
         park: game?.stadium ?? pitcher.ballpark,
         parkFactor: game?.parkFactor ?? pitcher.parkFactor,
-        opponentTeamKRate: opponentTeamKRate == null ? null : Number(opponentTeamKRate.toFixed(1)),
-        opponentTeamWhiffRate: opponentTeamWhiffRate == null ? null : Number(opponentTeamWhiffRate.toFixed(1)),
-        opponentKSampleSize: opponentHitters.filter((batter) => Number.isFinite(batter.kRate)).length,
-        pitcherKAbilityScore: Number(pitcherKAbilityScore.toFixed(1)),
-        opponentKScore: Number(opponentKScore.toFixed(1)),
-        workloadScore,
-        parkContextScore: Number(parkContextScore.toFixed(1)),
-        kMatchupScore,
-        kRate: pitcher.kRate,
-        whiffRate: pitcher.whiffRate,
-        kVs: pitcher.kVs,
+        pitcherKRate: pitcher.kRate,
+        pitcherWhiffRate: pitcher.whiffRate,
+        pitcherKVs: pitcher.kVs,
+        opponentTeamKRate,
+        opponentTeamWhiffRate,
+        opponentTeamXba,
+        pitcherKSkillScore: Number(pitcherKSkillScore.toFixed(1)),
+        opponentTeamStrikeoutScore: Number(opponentTeamStrikeoutScore.toFixed(1)),
+        strikeoutMatchupScore,
+        whyItRanksWell: "",
       };
-
-      return { ...row, reasonTags: getStrikeoutReasonTags(row) };
     })
     .sort((left, right) =>
-      right.kMatchupScore - left.kMatchupScore
-      || right.pitcherKAbilityScore - left.pitcherKAbilityScore
-      || left.pitcher.localeCompare(right.pitcher))
-    .map((row, index) => ({ ...row, rank: index + 1 }));
+      right.strikeoutMatchupScore - left.strikeoutMatchupScore
+      || right.pitcherKSkillScore - left.pitcherKSkillScore
+      || right.opponentTeamStrikeoutScore - left.opponentTeamStrikeoutScore
+      || left.pitcher.localeCompare(right.pitcher));
+
+  return rows.map((row, index) => {
+    const rank = index + 1;
+    return {
+      ...row,
+      rank,
+      whyItRanksWell: buildStrikeoutWhyText({
+        rank,
+        strikeoutMatchupScore: row.strikeoutMatchupScore,
+        pitcherKSkillScore: row.pitcherKSkillScore,
+        pitcherKRate: row.pitcherKRate,
+        pitcherWhiffRate: row.pitcherWhiffRate,
+        pitcherKVs: row.pitcherKVs,
+        opponentTeamKRate: row.opponentTeamKRate,
+        opponentTeamWhiffRate: row.opponentTeamWhiffRate,
+        opponentTeamXba: row.opponentTeamXba,
+      }),
+    };
+  });
+}
+
+function buildStrikeoutReasonTags(row: {
+  parkFactor: number;
+  pitcherKRate: number | null;
+  pitcherKSkillScore: number;
+  pitcherWhiffRate: number | null;
+  opponentTeamKRate: number | null;
+  opponentTeamWhiffRate: number | null;
+  opponentTeamXba: number | null;
+}, opponentKSampleSize: number) {
+  const tags: string[] = [];
+
+  if ((row.opponentTeamKRate ?? 0) >= 26) tags.push("High-K opponent");
+  else if ((row.opponentTeamKRate ?? 0) >= 23) tags.push("Above-average opponent K%");
+
+  if (row.pitcherKSkillScore >= 72 || (row.pitcherKRate ?? 0) >= 28 || (row.pitcherWhiffRate ?? 0) >= 31) {
+    tags.push("Strong K pitcher");
+  } else if (row.pitcherKSkillScore >= 58) {
+    tags.push("Solid K pitcher");
+  }
+
+  if ((row.opponentTeamWhiffRate ?? 0) >= 29) tags.push("Swing-and-miss lineup");
+  if ((row.opponentTeamXba ?? 1) <= 0.235) tags.push("Weak contact lineup");
+  if (row.parkFactor <= 0.97) tags.push("Pitcher-friendly park");
+  if (opponentKSampleSize <= 4) tags.push("Small-sample lineup");
+
+  return tags.slice(0, 3);
+}
+
+export function buildPitcherStrikeoutMatchupRows(
+  pitchers: HrDashboardPitcher[],
+  batters: HrDashboardBatter[],
+  games: HrDashboardGame[],
+) {
+  const detailedRows = buildPitcherStrikeoutRows(batters, games, pitchers);
+  const opponentSampleByGameAndTeam = new Map<string, number>();
+
+  batters.forEach((batter) => {
+    const key = `${batter.gameKey}|${batter.team}`;
+    opponentSampleByGameAndTeam.set(key, (opponentSampleByGameAndTeam.get(key) ?? 0) + 1);
+  });
+
+  return detailedRows.map((row) => {
+    const opponentKSampleSize = opponentSampleByGameAndTeam.get(`${row.gameKey}|${row.opponent}`) ?? 0;
+
+    return {
+      rank: row.rank,
+      gameKey: row.gameKey,
+      pitcher: row.pitcher,
+      team: row.team,
+      opponent: row.opponent,
+      park: row.park,
+      parkFactor: row.parkFactor,
+      opponentTeamKRate: row.opponentTeamKRate,
+      opponentKSampleSize,
+      pitcherKAbilityScore: row.pitcherKSkillScore,
+      kRate: row.pitcherKRate,
+      whiffRate: row.pitcherWhiffRate,
+      kMatchupScore: row.strikeoutMatchupScore,
+      reasonTags: buildStrikeoutReasonTags(row, opponentKSampleSize),
+    };
+  });
 }
 
 export function buildTbdGameKeySet(pitchers: HrDashboardPitcher[], batters: HrDashboardBatter[]) {
@@ -829,7 +993,8 @@ function sortMatchups(rows: PitcherVsBatterRow[], key: MatchupSortKey, dir: Sort
     return dir === "asc" ? base : -base;
   });
 }
-function sortStrikeoutPitchers(rows: PitcherStrikeoutMatchupRow[], key: StrikeoutSortKey, dir: SortDirection) {
+
+function sortStrikeoutRows(rows: PitcherStrikeoutTeamRow[], key: StrikeoutSortKey, dir: SortDirection) {
   return [...rows].sort((a, b) => {
     const av = a[key], bv = b[key];
     const base = typeof av === "string" && typeof bv === "string" ? av.localeCompare(bv) : Number(av) - Number(bv);
@@ -928,11 +1093,11 @@ function DataLegend() {
 
 function PickCard({ pick, row }: { pick: HrPropPick; row?: HrDashboardBatter }) {
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-        <div className="min-w-0">
-          <div className="truncate text-sm font-bold text-slate-900">{pick.player} {row?.position ? <span className="text-xs font-semibold text-slate-500">{row.position}</span> : null}</div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-base font-bold text-slate-900">{pick.player}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
             <TeamLogoBadge team={pick.team} />
             <span>vs</span>
             <TeamLogoBadge team={pick.opponent} />
@@ -941,78 +1106,19 @@ function PickCard({ pick, row }: { pick: HrPropPick; row?: HrDashboardBatter }) 
         <ScorePill value={row?.hrScore ?? null} label={`#${pick.hrScoreRank}`} />
       </div>
 
-      <div className="mt-2 text-xs text-slate-600">
+      <div className="mt-3 text-sm text-slate-600">
         Pitcher: {pick.opposingPitcher}{row?.pitcherHand ? ` (${row.pitcherHand})` : ""}
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-1.5">
         {pick.topStats.map((stat) => (
           <span key={`${pick.player}-${stat}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{stat}</span>
         ))}
       </div>
-      <ul className="mt-2 space-y-1 text-xs leading-5 text-slate-700">
+      <ul className="mt-3 space-y-1 text-sm text-slate-700">
         {pick.bullets.map((bullet) => <li key={`${pick.player}-${bullet}`}>• {bullet}</li>)}
       </ul>
-      <div className="mt-2 truncate text-xs text-slate-400">{row?.ballpark ?? "Ballpark TBD"}</div>
+      <div className="mt-3 text-xs text-slate-400">{row?.ballpark ?? "Ballpark TBD"}</div>
     </article>
-  );
-}
-
-function ParkFactorTile({ park, compact = false }: { park: ParkSidebarRow; compact?: boolean }) {
-  const weatherIndicators = getWeatherIndicators(park);
-  return (
-    <article className={cn("rounded-xl border border-slate-200 bg-slate-50 shadow-sm", compact ? "p-2.5" : "p-3")}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="truncate text-xs font-bold text-slate-900">{park.matchup}</div>
-          <div className="mt-0.5 truncate text-[11px] text-slate-500">{park.stadium}</div>
-        </div>
-        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", getParkFactorTone(park.parkFactor))}>
-          {park.parkFactor.toFixed(2)}
-        </span>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-1">
-        {weatherIndicators.length ? (
-          <span className="rounded-full bg-white px-1.5 py-0.5 text-[11px] leading-none text-slate-700">{weatherIndicators.join(" ")}</span>
-        ) : null}
-        <span className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-700">{getRoofLabel(park.roofType)}</span>
-        <span className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-700">
-          {park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}
-        </span>
-        <span className="rounded-full bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-700">
-          P {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}
-        </span>
-      </div>
-      <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-slate-500">
-        <span className="shrink-0">{park.windSpeed != null ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection}` : `Wind ${DASH}`}</span>
-        <span className="truncate text-right">{park.conditions}</span>
-      </div>
-    </article>
-  );
-}
-
-export function ParkFactorsPanel({ parks, variant }: { parks: ParkSidebarRow[]; variant: "sidebar" | "tiles" }) {
-  const isSidebar = variant === "sidebar";
-  return (
-    <div className={cn(
-      "rounded-2xl border border-slate-200 bg-white shadow-sm",
-      isSidebar ? "p-3" : "p-3",
-    )}>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.12em] text-sky-900">🏟️ Park Factors</div>
-          <div className="mt-0.5 text-[11px] text-slate-500">Park and weather context</div>
-        </div>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{parks.length} parks</span>
-      </div>
-      <div className={cn(
-        "mt-3",
-        isSidebar ? "space-y-2" : "grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4",
-      )}>
-        {parks.map((park) => (
-          <ParkFactorTile key={`${variant}-${park.key}`} park={park} compact={isSidebar} />
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -1030,7 +1136,8 @@ export default function MlbHrProps() {
   const [dashboard, setDashboard] = useState<HrDashboardPayload | null>(null);
   const [bestBets, setBestBets] = useState<HrBestBetsPayload | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabKey>("batters");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
   const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
   const [pitcherSortDirection, setPitcherSortDirection] = useState<SortDirection>(DEFAULT_PITCHER_SORT.direction);
@@ -1038,7 +1145,7 @@ export default function MlbHrProps() {
   const [batterSortDirection, setBatterSortDirection] = useState<SortDirection>(DEFAULT_BATTER_SORT.direction);
   const [matchupSortKey, setMatchupSortKey] = useState<MatchupSortKey>(DEFAULT_MATCHUP_SORT.key);
   const [matchupSortDirection, setMatchupSortDirection] = useState<SortDirection>(DEFAULT_MATCHUP_SORT.direction);
-  const [strikeoutSortKey, setStrikeoutSortKey] = useState<StrikeoutSortKey>("kMatchupScore");
+  const [strikeoutSortKey, setStrikeoutSortKey] = useState<StrikeoutSortKey>("strikeoutMatchupScore");
   const [strikeoutSortDirection, setStrikeoutSortDirection] = useState<SortDirection>("desc");
   const [pitcherSearch, setPitcherSearch] = useState("");
   const [batterSearch, setBatterSearch] = useState("");
@@ -1048,8 +1155,8 @@ export default function MlbHrProps() {
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
 
   usePageSeo({
-    title: "MLB Home Run Props Today - Joe Knows Ball",
-    description: "MLB home run props today with batter positions, team logos, park factors, pitcher HR vulnerability, batter power signals, and composite HR prop scores.",
+    title: "MLB HR Prop Dashboard Today - Joe Knows Ball",
+    description: "Daily MLB HR prop dashboard with park factors, pitcher vulnerability, batter power signals, and combined matchup edges.",
     path: "/mlb/hr-props",
     structuredData: [
       {
@@ -1097,6 +1204,9 @@ export default function MlbHrProps() {
     const syncMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
+      if (!mobile) {
+        setIsSidebarOpen(false);
+      }
     };
 
     syncMobile();
@@ -1123,8 +1233,9 @@ export default function MlbHrProps() {
   const pitcherHeat = useMemo(() => buildPitcherHeatRanges(pitchers), [pitchers]);
   const batterHeat = useMemo(() => buildHeatStatRanges(batters), [batters]);
   const matchupRows = useMemo(() => buildPitcherVsBatterRows(batters, games, pitchers), [batters, games, pitchers]);
-  const strikeoutPitcherRows = useMemo(() => buildPitcherStrikeoutMatchupRows(pitchers, batters, games), [batters, games, pitchers]);
   const matchupHeat = useMemo(() => buildMatchupHeatRanges(matchupRows), [matchupRows]);
+  const strikeoutRows = useMemo(() => buildPitcherStrikeoutRows(batters, games, pitchers), [batters, games, pitchers]);
+  const strikeoutHeat = useMemo(() => buildStrikeoutHeatRanges(strikeoutRows), [strikeoutRows]);
   const batterLookup = useMemo(() => new Map(batters.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])), [batters]);
   const visibleBestBets = useMemo(
     () => bestBets?.bestBets.filter((pick) => !isStarterPlaceholder(pick.opposingPitcher) && batterLookup.has(`${pick.player}|${pick.team}|${pick.opponent}`)) ?? [],
@@ -1181,9 +1292,9 @@ export default function MlbHrProps() {
     return sortMatchups(rows, matchupSortKey, matchupSortDirection);
   }, [matchupGameFilter, matchupRows, matchupSearch, matchupSortDirection, matchupSortKey]);
 
-  const filteredStrikeoutPitchers = useMemo(() => {
+  const filteredStrikeoutRows = useMemo(() => {
     const query = matchupSearch.trim().toLowerCase();
-    const rows = strikeoutPitcherRows.filter((row) => {
+    const rows = strikeoutRows.filter((row) => {
       if (matchupGameFilter !== "all" && row.gameKey !== matchupGameFilter) return false;
       if (!query) return true;
       return [
@@ -1193,23 +1304,27 @@ export default function MlbHrProps() {
         row.park,
       ].some((value) => value.toLowerCase().includes(query));
     });
-    return sortStrikeoutPitchers(rows, strikeoutSortKey, strikeoutSortDirection);
-  }, [matchupGameFilter, matchupSearch, strikeoutPitcherRows, strikeoutSortDirection, strikeoutSortKey]);
+    return sortStrikeoutRows(rows, strikeoutSortKey, strikeoutSortDirection);
+  }, [matchupGameFilter, matchupSearch, strikeoutRows, strikeoutSortDirection, strikeoutSortKey]);
 
   useEffect(() => {
     const next = getDefaultMatchupSortForLens(activeMatchupLens);
+    if (activeMatchupLens === "strikeout") {
+      setStrikeoutSortKey("strikeoutMatchupScore");
+      setStrikeoutSortDirection("desc");
+      return;
+    }
     setMatchupSortKey(next.key);
     setMatchupSortDirection(next.direction);
   }, [activeMatchupLens]);
 
-  const topMatchupCards = filteredMatchups.slice(0, 4);
-  const topStrikeoutPitcherCards = filteredStrikeoutPitchers.slice(0, 4);
+  const topMatchupCards = activeMatchupLens === "strikeout" ? filteredStrikeoutRows.slice(0, 4) : filteredMatchups.slice(0, 4);
   const hasData = allGames.length > 0 || allPitchers.length > 0 || allBatters.length > 0 || tbdFootnotes.length > 0;
   const matchupSectionCopy = activeMatchupLens === "best"
-    ? "Composite hitter-vs-pitcher attackability, with pitcher weakness weighted heavily enough to surface obvious HR mismatches."
+    ? "Balanced overall hitter-vs-pitcher attackability, blending HR upside with broader pitcher weakness and game context."
     : activeMatchupLens === "hr"
       ? "HR-specific damage lens that keeps batter power first, then layers in pitcher home-run vulnerability and park context."
-      : "Pitcher K Matchup ranks today's probable pitchers by strikeout ability and opponent team strikeout tendency using the current page data.";
+      : "Pitcher-vs-opponent-team strikeout model blending pitcher K skill with opposing team K%, whiff%, and xBA for today’s slate.";
 
   const handlePitcherSort = (key: PitcherSortKey) => {
     setPitcherSortDirection((current) => (pitcherSortKey === key ? (current === "asc" ? "desc" : "asc") : key === "pitcher" || key === "gameKey" ? "asc" : "desc"));
@@ -1233,39 +1348,125 @@ export default function MlbHrProps() {
 
   return (
     <SiteShell>
-      <main className={cn("site-page bg-[#edf2f7] pb-10 pt-4 text-slate-900", isMobile ? "text-[14px]" : "")}>
+      <main className={cn("site-page bg-[#edf2f7] pb-16 pt-4 text-slate-900", isMobile ? "text-[14px]" : "")}>
         <div className="site-container" style={{ maxWidth: "none", width: "100%" }}>
           {!hasData ? (
             <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
               {EMPTY_MESSAGE}
             </div>
           ) : (
-            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_300px]">
-              <section className="min-w-0 flex-1 space-y-4">
-                <div className="rounded-[24px] bg-[#0f2748] px-4 py-4 text-white shadow-sm">
-                  <div className={cn("flex flex-col gap-3", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
+            <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
+              <aside className={cn("space-y-4 xl:sticky xl:top-4 xl:self-start", isMobile ? "hidden" : "")}>
+                <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
                     <div>
-                      <div className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB Home Run Props</div>
+                      <div className="text-sm font-semibold uppercase tracking-[0.14em] text-sky-900">🏟️ Park Factors</div>
+                      <div className="mt-1 text-xs text-slate-500">Today&apos;s park and weather context</div>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{parkRows.length} parks</span>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    {parkRows.map((park) => (
+                      <article key={park.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">{park.matchup}</div>
+                            <div className="mt-1 text-xs text-slate-500">{park.stadium}</div>
+                          </div>
+                          <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", getParkFactorTone(park.parkFactor))}>
+                            {park.parkFactor.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">{getRoofLabel(park.roofType)}</span>
+                          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                            {park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}
+                          </span>
+                          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                            Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
+                          <span>{park.windSpeed != null ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection}` : `Wind ${DASH}`}</span>
+                          <span className="truncate text-right">{park.conditions}</span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </aside>
+
+              {isMobile && isSidebarOpen ? (
+                <div className="fixed inset-0 z-40 bg-slate-950/35" onClick={() => setIsSidebarOpen(false)}>
+                  <aside
+                    className="absolute left-0 top-0 h-full w-[88vw] max-w-[320px] overflow-y-auto border-r border-slate-200 bg-white p-4 shadow-xl"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="text-sm font-semibold uppercase tracking-[0.14em] text-sky-900">🏟️ Park Factors</div>
+                      <button
+                        type="button"
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {parkRows.map((park) => (
+                        <article key={`mobile-${park.key}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="text-sm font-semibold text-slate-900">{park.matchup}</div>
+                              <div className="mt-1 text-xs text-slate-500">{park.stadium}</div>
+                            </div>
+                            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", getParkFactorTone(park.parkFactor))}>
+                              {park.parkFactor.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">{getRoofLabel(park.roofType)}</span>
+                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                              {park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}
+                            </span>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </aside>
+                </div>
+              ) : null}
+
+              <section className="min-w-0 flex-1 space-y-5">
+                <div className="rounded-[30px] bg-[#0f2748] px-5 py-5 text-white shadow-sm">
+                  <div className={cn("flex flex-col gap-4", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
+                    <div>
+                      <div className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB HR Prop Dashboard</div>
                       <p className={cn("mt-2 max-w-3xl leading-6 text-sky-100", isMobile ? "text-[13px]" : "text-sm")}>
                         Starting pitcher vulnerability, park environment, and batter power/contact angles for today&apos;s slate.
                       </p>
                     </div>
                     <div className={cn("flex flex-wrap gap-2", isMobile ? "items-center justify-between" : "")}>
+                      {isMobile ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsSidebarOpen(true)}
+                          className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-semibold text-white"
+                        >
+                          ☰ Parks
+                        </button>
+                      ) : null}
                       <span className={cn("rounded-full bg-white/10 px-3 py-1 font-semibold text-white", isMobile ? "text-[13px]" : "text-sm")}>👥 {slateSummary.hitterCount} hitters</span>
                       <span className={cn("rounded-full bg-emerald-400/20 px-3 py-1 font-semibold text-emerald-100", isMobile ? "text-[13px]" : "text-sm")}>🟢 Live Slate</span>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-sky-200">
+                  <div className="mt-4 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-sky-200">
                     <span>{formatDateLabel(dashboard?.date || bestBets?.date)}</span>
                     <span>•</span>
                     <span>{games.length} games</span>
                     <span>•</span>
                     <span>{pitchers.length} starters</span>
                   </div>
-                </div>
-
-                <div className="2xl:hidden">
-                  <ParkFactorsPanel parks={parkRows} variant="tiles" />
                 </div>
 
                 <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
@@ -1290,8 +1491,8 @@ export default function MlbHrProps() {
                   ) : null}
                 </div>
 
-                <section className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  <p className="max-w-4xl text-sm leading-6 text-slate-600">
+                <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                  <p className="max-w-4xl text-sm leading-7 text-slate-600">
                     Use this MLB HR props board to compare park factors, pitcher vulnerability, and batter power signals
                     across the current slate, then cross-check full-game context on the{" "}
                     <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
@@ -1299,20 +1500,20 @@ export default function MlbHrProps() {
                     </a>
                     .
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                  <div className="mt-3 flex flex-wrap gap-4 text-sm">
                     <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
                       View today&apos;s MLB matchup analytics
                     </a>
                   </div>
                 </section>
 
-                <div className="rounded-[20px] border border-slate-200 bg-white shadow-sm">
+                <div className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
                   <div className="border-b border-slate-200 px-4">
                     <div className="flex flex-nowrap gap-6 overflow-x-auto whitespace-nowrap" style={{ WebkitOverflowScrolling: "touch" }}>
                       {[
-                        { key: "batters", label: "💥 HR Props" },
-                        { key: "matchups", label: "⚔️ HR Matchups" },
-                        { key: "pitchers", label: "🔥 Pitcher HR Risk" },
+                        { key: "pitchers", label: "🔥 Pitchers" },
+                        { key: "batters", label: "💥 Batters" },
+                        { key: "matchups", label: "⚔️ Matchup Lenses" },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -1331,7 +1532,7 @@ export default function MlbHrProps() {
                     </div>
                   </div>
 
-                  <div className="p-3">
+                  <div className="p-4">
                     {activeTab === "pitchers" ? (
                       <section className="space-y-4">
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -1421,94 +1622,84 @@ export default function MlbHrProps() {
                     ) : null}
 
                     {activeTab === "batters" ? (
-                      <section className="space-y-3">
-                        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                      <section className="space-y-4">
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
-                            <h2 className="text-xl font-semibold tracking-[-0.02em] text-slate-900">💥 Batter View</h2>
-                            <p className="mt-0.5 text-xs leading-5 text-slate-500">HR Score drives the strongest cue. Supporting power and recent-HR stats tint when the edge is clearly real.</p>
+                            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">💥 Batter View</h2>
+                            <p className="mt-1 text-sm text-slate-500">HR Score drives the strongest cue. Supporting power and recent-HR stats only tint when the edge is clearly real.</p>
                           </div>
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                             <input
                               value={batterSearch}
                               onChange={(event) => setBatterSearch(event.target.value)}
                               placeholder="Search batter, pitcher, or team"
-                              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
+                              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
                             />
                             <GameSelect value={batterGameFilter} onChange={setBatterGameFilter} options={gameOptions} label="Game" />
                           </div>
                         </div>
                         <DataLegend />
-                        <div className="overflow-x-auto xl:overflow-x-visible" style={{ WebkitOverflowScrolling: "touch" }}>
-                          <table className="min-w-[980px] w-full table-fixed border-separate border-spacing-0 text-xs xl:min-w-0">
+                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                          <table className="min-w-full border-separate border-spacing-0 text-sm">
                             <thead className="sticky top-0 z-10 bg-white">
-                              <tr className="text-[10px] uppercase tracking-[0.1em] text-slate-500">
+                              <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
                                 {[
-                                  ["hrScoreRank", "#"],
+                                  ["hrScoreRank", "Rank"],
                                   ["player", "Batter"],
+                                  ["team", "Team"],
                                   ["opposingPitcher", "Opp Pitcher"],
+                                  ["parkFactor", "Park"],
                                   ["kRate", "K%"],
                                   ["bbRate", "BB%"],
-                                  ["barrelRate", "Barrel"],
-                                  ["hardHitRate", "HH%"],
+                                  ["barrelRate", "Barrel%"],
+                                  ["hardHitRate", "Hard Hit%"],
                                   ["xba", "xBA"],
-                                  ["whiffRate", "Whiff"],
-                                  ["last30HR", "Recent HR"],
-                                  ["opposingPitcherHrVs", "P HR VS"],
+                                  ["whiffRate", "Whiff%"],
+                                  ["last7HR", "Last 7 HR"],
+                                  ["last30HR", "Last 30 HR"],
+                                  ["opposingPitcherHrVs", "Pitcher HR VS"],
                                   ["hrScore", "HR Score"],
-                                ].map(([key, label], index) => (
-                                  <th
-                                    key={key}
-                                    className={cn(
-                                      "border-b border-slate-200 bg-white px-2 py-2 text-left font-semibold whitespace-nowrap",
-                                      index >= 3 ? "text-center" : "",
-                                      key === "hrScoreRank" ? "w-[44px]" : "",
-                                      key === "player" ? "w-[190px]" : "",
-                                      key === "opposingPitcher" ? "w-[150px]" : "",
-                                      key === "last30HR" ? "w-[76px]" : "",
-                                      key === "opposingPitcherHrVs" || key === "hrScore" ? "w-[82px]" : "",
-                                    )}
-                                  >
+                                ].map(([key, label]) => (
+                                  <th key={key} className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">
                                     <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="transition hover:text-slate-900">
                                       {label}{makeSortIndicator(batterSortKey === key, batterSortDirection)}
                                     </button>
                                   </th>
                                 ))}
-                                <th className="w-[132px] border-b border-slate-200 bg-white px-2 py-2 text-left font-semibold whitespace-nowrap">Angle</th>
+                                <th className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">Angle</th>
                               </tr>
                             </thead>
                             <tbody>
                               {filteredBatters.length ? filteredBatters.map((row) => (
                                 <tr key={`${row.player}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/60">
-                                  <td className="border-b border-slate-100 px-2 py-2 align-middle text-slate-600">{row.hrScoreRank}</td>
-                                  <td className="border-b border-slate-100 px-2 py-2 align-middle">
-                                    <div className="truncate font-medium text-slate-900">{row.player} <span className="text-[11px] font-semibold text-slate-500">{row.position}</span></div>
-                                    <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-slate-500">
-                                      <TeamLogoBadge team={row.team} size={16} />
-                                      <span className="truncate">{row.ballpark}</span>
-                                    </div>
+                                  <td className="border-b border-slate-100 px-4 py-3">{row.hrScoreRank}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
+                                    <div className="font-medium text-slate-900">{row.player}</div>
+                                    <div className="mt-1 text-xs text-slate-500">{row.ballpark}</div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-2 py-2 align-middle">
-                                    <div className="truncate text-slate-900">{row.opposingPitcher}</div>
-                                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
-                                      <span>{row.opponent} • {row.pitcherHand}</span>
-                                      <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
-                                    </div>
+                                  <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]">
+                                    <div>{row.opposingPitcher}</div>
+                                    <div className="mt-1 text-xs text-slate-500">{row.opponent} • {row.pitcherHand}</div>
                                   </td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("kRate", row.kRate, batterHeat)}>{formatPercent(row.kRate)}</td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("bbRate", row.bbRate, batterHeat)}>{formatPercent(row.bbRate)}</td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("barrelRate", row.barrelRate, batterHeat)}>{formatPercent(row.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("hardHitRate", row.hardHitRate, batterHeat)}>{formatPercent(row.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("xba", row.xba, batterHeat)}>{formatDecimal(row.xba, 3)}</td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("whiffRate", row.whiffRate, batterHeat)}>{formatPercent(row.whiffRate)}</td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("last30HR", row.last30HR, batterHeat)}>
-                                    <div className="font-semibold text-slate-900">{formatNumber(row.last30HR, 0)}</div>
-                                    <div className="text-[10px] text-slate-500">7d {formatNumber(row.last7HR, 0)}</div>
+                                  <td className="border-b border-slate-100 px-4 py-3">
+                                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>
+                                      {row.parkFactor.toFixed(2)}
+                                    </span>
                                   </td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("opposingPitcherHrVs", row.opposingPitcherHrVs, batterHeat)}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                  <td className="border-b border-slate-100 px-2 py-2 text-center align-middle" style={getBatterTableHeatStyle("hrScore", row.hrScore, batterHeat)}><ScorePill value={row.hrScore} /></td>
-                                  <td className="border-b border-slate-100 px-2 py-2 align-middle">
-                                    <div className="flex max-w-[124px] flex-wrap gap-1">
-                                      {row.angleTags.length ? row.angleTags.slice(0, 2).map((tag) => (
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("kRate", row.kRate, batterHeat)}>{formatPercent(row.kRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("bbRate", row.bbRate, batterHeat)}>{formatPercent(row.bbRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("barrelRate", row.barrelRate, batterHeat)}>{formatPercent(row.barrelRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("hardHitRate", row.hardHitRate, batterHeat)}>{formatPercent(row.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("xba", row.xba, batterHeat)}>{formatDecimal(row.xba, 3)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("whiffRate", row.whiffRate, batterHeat)}>{formatPercent(row.whiffRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("last7HR", row.last7HR, batterHeat)}>{formatNumber(row.last7HR, 0)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("last30HR", row.last30HR, batterHeat)}>{formatNumber(row.last30HR, 0)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("opposingPitcherHrVs", row.opposingPitcherHrVs, batterHeat)}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-3" style={getBatterTableHeatStyle("hrScore", row.hrScore, batterHeat)}><ScorePill value={row.hrScore} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-3">
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {row.angleTags.length ? row.angleTags.map((tag) => (
                                         <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
                                       )) : <span className="text-slate-400">{DASH}</span>}
                                     </div>
@@ -1516,7 +1707,7 @@ export default function MlbHrProps() {
                                 </tr>
                               )) : (
                                 <tr>
-                                  <td colSpan={13} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={16} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No batters match the current search or game filter.
                                   </td>
                                 </tr>
@@ -1531,14 +1722,14 @@ export default function MlbHrProps() {
                       <section className="space-y-4">
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
-                            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">⚔️ Pitchers vs Batters</h2>
+                            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">⚔️ Matchup Lenses</h2>
                             <p className="mt-1 text-sm text-slate-500">{matchupSectionCopy}</p>
                           </div>
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                             <input
                               value={matchupSearch}
                               onChange={(event) => setMatchupSearch(event.target.value)}
-                              placeholder="Search batter, pitcher, or park"
+                              placeholder={activeMatchupLens === "strikeout" ? "Search pitcher, opponent, or park" : "Search batter, pitcher, or park"}
                               className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
                             />
                             <GameSelect value={matchupGameFilter} onChange={setMatchupGameFilter} options={gameOptions} label="Game" />
@@ -1549,6 +1740,7 @@ export default function MlbHrProps() {
                           {[
                             { key: "best", label: "Best Matchups" },
                             { key: "hr", label: "HR Matchups" },
+                            { key: "strikeout", label: "Strikeout Matchup" },
                           ].map((lens) => (
                             <button
                               key={lens.key}
@@ -1568,173 +1760,77 @@ export default function MlbHrProps() {
 
                         {activeMatchupLens === "strikeout" ? (
                           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">
-                            Pitcher K Matchup ranks today&apos;s probable pitchers by strikeout ability and opponent team strikeout tendency using the current page data. Opponent K% is derived from the listed projected hitters when a team-level K field is unavailable.
+                            Strikeout Matchup ranks one pitcher vs one opposing team for today’s slate. It blends pitcher K skill with opposing team K%, whiff%, and xBA from the current page data. Team aggregates are slate-level and not handedness-split unless the source data already provides that upstream.
                           </div>
                         ) : null}
 
-                        {activeMatchupLens === "strikeout" ? (
-                          <>
-                            <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4", isMobile ? "grid-cols-1" : "")}>
-                              {topStrikeoutPitcherCards.length ? topStrikeoutPitcherCards.map((row) => (
-                                <article key={`${row.rank}-${row.pitcher}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="min-w-0">
-                                      <div className="truncate text-sm font-bold text-slate-900">{row.pitcher}</div>
-                                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
-                                        <TeamLogoBadge team={row.team} size={18} />
-                                        <span>vs</span>
-                                        <TeamLogoBadge team={row.opponent} size={18} />
-                                      </div>
-                                    </div>
-                                    <ScorePill value={row.kMatchupScore} />
-                                  </div>
-                                  <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-600">
-                                    <span className="truncate">{row.park}</span>
-                                    <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", getParkFactorTone(row.parkFactor))}>
-                                      {row.parkFactor.toFixed(2)}
-                                    </span>
-                                  </div>
-                                  <div className="mt-2 grid grid-cols-2 gap-1.5 text-xs sm:grid-cols-4">
-                                    <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                                      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">Opp K%</div>
-                                      <div className="mt-0.5 font-semibold text-slate-900">{formatPercent(row.opponentTeamKRate)}</div>
-                                    </div>
-                                    <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                                      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">K Ability</div>
-                                      <div className="mt-0.5 font-semibold text-slate-900">{row.pitcherKAbilityScore.toFixed(1)}</div>
-                                    </div>
-                                    <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                                      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">Pitcher K%</div>
-                                      <div className="mt-0.5 font-semibold text-slate-900">{formatPercent(row.kRate)}</div>
-                                    </div>
-                                    <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                                      <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">Sample</div>
-                                      <div className="mt-0.5 font-semibold text-slate-900">{row.opponentKSampleSize}</div>
-                                    </div>
-                                  </div>
-                                  <div className="mt-2 flex min-h-5 flex-wrap gap-1">
-                                    {row.reasonTags.map((tag) => (
-                                      <span key={`${row.pitcher}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
-                                    ))}
-                                  </div>
-                                </article>
-                              )) : (
-                                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500 xl:col-span-2 2xl:col-span-4">
-                                  No pitcher K matchups match the current search or game filter.
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-                              <table className="min-w-full border-separate border-spacing-0 text-sm">
-                                <thead className="sticky top-0 z-10 bg-white">
-                                  <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
-                                    {[
-                                      ["rank", "Rank"],
-                                      ["pitcher", "Pitcher"],
-                                      ["team", "Team"],
-                                      ["opponent", "Opponent"],
-                                      ["opponentTeamKRate", "Opponent Team K%"],
-                                      ["pitcherKAbilityScore", "K Ability"],
-                                      ["kRate", "Pitcher K%"],
-                                      ["whiffRate", "Whiff%"],
-                                      ["kMatchupScore", "K Matchup"],
-                                      ["parkFactor", "Park"],
-                                    ].map(([key, label]) => (
-                                      <th key={key} className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">
-                                        <button type="button" onClick={() => handleStrikeoutSort(key as StrikeoutSortKey)} className="transition hover:text-slate-900">
-                                          {label}{makeSortIndicator(strikeoutSortKey === key, strikeoutSortDirection)}
-                                        </button>
-                                      </th>
-                                    ))}
-                                    <th className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">Lean</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {filteredStrikeoutPitchers.length ? filteredStrikeoutPitchers.map((row) => (
-                                    <tr key={`${row.rank}-${row.pitcher}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/60">
-                                      <td className="border-b border-slate-100 px-4 py-3">{row.rank}</td>
-                                      <td className="border-b border-slate-100 px-4 py-3 min-w-[170px]">
-                                        <div className="font-medium text-slate-900">{row.pitcher}</div>
-                                        <div className="mt-1 text-xs text-slate-500">{row.park}</div>
-                                      </td>
-                                      <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.opponent} size={20} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.opponentTeamKRate)}</td>
-                                      <td className="border-b border-slate-100 px-4 py-3"><ScorePill value={row.pitcherKAbilityScore} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.kRate)}</td>
-                                      <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.whiffRate)}</td>
-                                      <td className="border-b border-slate-100 px-4 py-3"><ScorePill value={row.kMatchupScore} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3">
-                                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
-                                      </td>
-                                      <td className="border-b border-slate-100 px-4 py-3">
-                                        <div className="flex flex-wrap gap-1.5">
-                                          {row.reasonTags.map((tag) => (
-                                            <span key={`${row.pitcher}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
-                                          ))}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )) : (
-                                    <tr>
-                                      <td colSpan={11} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
-                                        No pitcher K matchups match the current search or game filter.
-                                      </td>
-                                    </tr>
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                        <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4", isMobile ? "grid-cols-1" : "")}>
+                        <div className={cn("grid gap-4 xl:grid-cols-2 2xl:grid-cols-4", isMobile ? "grid-cols-1" : "")}>
                           {topMatchupCards.length ? topMatchupCards.map((row) => (
-                            <article key={`${row.rank}-${row.player}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <div className="truncate text-sm font-bold text-slate-900">{row.player} <span className="text-xs text-slate-500">{row.position}</span></div>
-                                  <div className="mt-0.5 truncate text-xs text-slate-500">{row.team} vs {row.opposingPitcher}</div>
-                                </div>
-                                <ScorePill value={activeMatchupLens === "best" ? row.bestMatchupScore : activeMatchupLens === "hr" ? row.hrTargetScore : row.strikeoutMatchupScore} />
-                              </div>
-                              <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-600">
-                                <span className="truncate">{row.park}</span>
-                                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", getParkFactorTone(row.parkFactor))}>
-                                  {row.parkFactor.toFixed(2)}
-                                </span>
-                              </div>
-                              <div className="mt-2 grid grid-cols-2 gap-1.5 text-xs sm:grid-cols-4">
-                                <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                                  <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
-                                    {activeMatchupLens === "best" ? "Composite" : activeMatchupLens === "hr" ? "HR Target" : "K Pressure"}
+                            activeMatchupLens === "strikeout" ? (
+                              <article key={`${(row as PitcherStrikeoutTeamRow).rank}-${(row as PitcherStrikeoutTeamRow).pitcher}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <div className="text-base font-bold text-slate-900">{(row as PitcherStrikeoutTeamRow).pitcher}</div>
+                                    <div className="mt-1 text-sm text-slate-500">{(row as PitcherStrikeoutTeamRow).team} vs {(row as PitcherStrikeoutTeamRow).opponent}</div>
                                   </div>
-                                  <div className="mt-0.5 font-semibold text-slate-900">
-                                    {activeMatchupLens === "best" ? row.bestMatchupScore.toFixed(1) : activeMatchupLens === "hr" ? row.hrTargetScore.toFixed(1) : formatPercent(row.kRate)}
+                                  <ScorePill value={(row as PitcherStrikeoutTeamRow).strikeoutMatchupScore} />
+                                </div>
+                                <div className="mt-3 text-sm text-slate-600">{(row as PitcherStrikeoutTeamRow).park}</div>
+                                <p className="mt-3 text-sm leading-6 text-slate-600">{(row as PitcherStrikeoutTeamRow).whyItRanksWell}</p>
+                                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <div className="text-xs uppercase tracking-[0.14em] text-slate-400">🎯 Strikeout Matchup</div>
+                                    <div className="mt-1 font-semibold text-slate-900">{(row as PitcherStrikeoutTeamRow).strikeoutMatchupScore.toFixed(1)}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs uppercase tracking-[0.14em] text-slate-400">🔥 Pitcher K Skill</div>
+                                    <div className="mt-1 font-semibold text-slate-900">{(row as PitcherStrikeoutTeamRow).pitcherKSkillScore.toFixed(1)}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs uppercase tracking-[0.14em] text-slate-400">🌀 Opp Team K / Whiff</div>
+                                    <div className="mt-1 font-semibold text-slate-900">{formatPercent((row as PitcherStrikeoutTeamRow).opponentTeamKRate)} / {formatPercent((row as PitcherStrikeoutTeamRow).opponentTeamWhiffRate)}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs uppercase tracking-[0.14em] text-slate-400">🛡️ Opp Team xBA</div>
+                                    <div className="mt-1 font-semibold text-slate-900">{formatDecimal((row as PitcherStrikeoutTeamRow).opponentTeamXba, 3)}</div>
                                   </div>
                                 </div>
-                                <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                                  <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">Batter HR</div>
-                                  <div className="mt-0.5 font-semibold text-slate-900">{row.hrScore.toFixed(1)}</div>
-                                </div>
-                                <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                                  <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
-                                    {activeMatchupLens === "strikeout" ? "Pitcher K" : "Pitcher HR"}
+                              </article>
+                            ) : (
+                              <article key={`${(row as PitcherVsBatterRow).rank}-${(row as PitcherVsBatterRow).player}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <div className="text-base font-bold text-slate-900">{(row as PitcherVsBatterRow).player}</div>
+                                    <div className="mt-1 text-sm text-slate-500">{(row as PitcherVsBatterRow).team} vs {(row as PitcherVsBatterRow).opposingPitcher}</div>
                                   </div>
-                                  <div className="mt-0.5 font-semibold text-slate-900">{activeMatchupLens === "strikeout" ? row.opposingPitcherKVs.toFixed(1) : row.opposingPitcherHrVs.toFixed(1)}</div>
+                                  <ScorePill value={activeMatchupLens === "best" ? (row as PitcherVsBatterRow).bestMatchupScore : (row as PitcherVsBatterRow).hrTargetScore} />
                                 </div>
-                                <div className="rounded-lg bg-slate-50 px-2 py-1.5">
-                                  <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">Contact</div>
-                                  <div className="mt-0.5 font-semibold text-slate-900">{row.contactScore.toFixed(1)}</div>
+                                <div className="mt-3 text-sm text-slate-600">{(row as PitcherVsBatterRow).park}</div>
+                                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                                  <div>
+                                    <div className="text-xs uppercase tracking-[0.14em] text-slate-400">
+                                      {activeMatchupLens === "best" ? "🎯 Balanced Score" : "💥 HR Target Score"}
+                                    </div>
+                                    <div className="mt-1 font-semibold text-slate-900">
+                                      {activeMatchupLens === "best" ? (row as PitcherVsBatterRow).bestMatchupScore.toFixed(1) : (row as PitcherVsBatterRow).hrTargetScore.toFixed(1)}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs uppercase tracking-[0.14em] text-slate-400">
+                                      {activeMatchupLens === "best" ? "🧨 Pitcher Attackability" : "🔥 Pitcher HR VS"}
+                                    </div>
+                                    <div className="mt-1 font-semibold text-slate-900">
+                                      {activeMatchupLens === "best" ? (row as PitcherVsBatterRow).opposingPitcherHitsVs.toFixed(1) : (row as PitcherVsBatterRow).opposingPitcherHrVs.toFixed(1)}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="mt-2 flex min-h-5 flex-wrap gap-1">
-                                {row.angleTags.length ? row.angleTags.slice(0, 2).map((tag) => (
-                                  <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
-                                )) : <span className="text-slate-400">{DASH}</span>}
-                              </div>
-                            </article>
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                  {(row as PitcherVsBatterRow).angleTags.length ? (row as PitcherVsBatterRow).angleTags.map((tag) => (
+                                    <span key={`${(row as PitcherVsBatterRow).player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
+                                  )) : <span className="text-slate-400">{DASH}</span>}
+                                </div>
+                              </article>
+                            )
                           )) : (
                             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500 xl:col-span-2 2xl:col-span-4">
                               No matchup rows match the current search or game filter.
@@ -1752,21 +1848,19 @@ export default function MlbHrProps() {
                                     ? [
                                         ["rank", "Rank"],
                                         ["player", "Batter"],
-                                        ["position", "Pos"],
                                         ["team", "Team"],
                                         ["opposingPitcher", "Vs Pitcher"],
                                         ["parkFactor", "Park"],
                                         ["hrScore", "Batter HR"],
                                         ["opposingPitcherHitsVs", "Pitcher Hits VS"],
                                         ["opposingPitcherHrVs", "Pitcher HR VS"],
-                                        ["bestMatchupScore", "Composite"],
+                                        ["bestMatchupScore", "Balanced Matchup"],
                                         ["xba", "xBA"],
                                       ]
                                     : activeMatchupLens === "hr"
                                       ? [
                                           ["rank", "Rank"],
                                           ["player", "Batter"],
-                                          ["position", "Pos"],
                                           ["team", "Team"],
                                           ["opposingPitcher", "Vs Pitcher"],
                                           ["parkFactor", "Park"],
@@ -1779,77 +1873,107 @@ export default function MlbHrProps() {
                                         ]
                                       : [
                                           ["rank", "Rank"],
-                                          ["player", "Batter"],
+                                          ["pitcher", "Pitcher"],
                                           ["team", "Team"],
-                                          ["opposingPitcher", "Vs Pitcher"],
+                                          ["opponent", "Opponent"],
                                           ["parkFactor", "Park"],
-                                          ["kRate", "Batter K%"],
-                                          ["whiffRate", "Whiff%"],
-                                          ["opposingPitcherKVs", "Pitcher K VS"],
-                                          ["strikeoutMatchupScore", "Strikeout Pressure"],
-                                          ["xba", "xBA"],
+                                          ["pitcherKRate", "Pitcher K%"],
+                                          ["pitcherWhiffRate", "Pitcher Whiff%"],
+                                          ["pitcherKVs", "Pitcher K VS"],
+                                          ["opponentTeamKRate", "Opp Team K%"],
+                                          ["opponentTeamWhiffRate", "Opp Team Whiff%"],
+                                          ["opponentTeamXba", "Opp Team xBA"],
+                                          ["strikeoutMatchupScore", "Strikeout Matchup"],
                                         ]
                                 ).map(([key, label]) => (
                                   <th key={key} className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">
-                                    <button type="button" onClick={() => handleMatchupSort(key as MatchupSortKey)} className="transition hover:text-slate-900">
-                                      {label}{makeSortIndicator(matchupSortKey === key, matchupSortDirection)}
+                                    <button
+                                      type="button"
+                                      onClick={() => activeMatchupLens === "strikeout" ? handleStrikeoutSort(key as StrikeoutSortKey) : handleMatchupSort(key as MatchupSortKey)}
+                                      className="transition hover:text-slate-900"
+                                    >
+                                      {label}{makeSortIndicator(activeMatchupLens === "strikeout" ? strikeoutSortKey === key : matchupSortKey === key, activeMatchupLens === "strikeout" ? strikeoutSortDirection : matchupSortDirection)}
                                     </button>
                                   </th>
                                 ))}
-                                <th className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">Angle</th>
+                                {activeMatchupLens !== "strikeout" ? (
+                                  <th className="border-b border-slate-200 bg-white px-4 py-3 text-left font-semibold whitespace-nowrap">Angle</th>
+                                ) : null}
                               </tr>
                             </thead>
                             <tbody>
-                              {filteredMatchups.length ? filteredMatchups.map((row) => (
-                                <tr key={`${row.rank}-${row.player}-${row.opposingPitcher}`} className="odd:bg-white even:bg-slate-50/60">
-                                  <td className="border-b border-slate-100 px-4 py-3">{row.rank}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
-                                    <div className="font-medium text-slate-900">{row.player}</div>
-                                  </td>
-                                  <td className="border-b border-slate-100 px-4 py-3">{row.position}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]">{row.opposingPitcher}</td>
-                                  <td className="border-b border-slate-100 px-4 py-3">
-                                    <div className="font-medium text-slate-900">{row.park}</div>
-                                    <div className="mt-1">
-                                      <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
-                                    </div>
-                                  </td>
-                                  {activeMatchupLens === "best" ? (
-                                    <>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHitsVs, matchupHeat.opposingPitcherHitsVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHitsVs} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.bestMatchupScore, matchupHeat.bestMatchupScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.bestMatchupScore} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
-                                    </>
-                                  ) : activeMatchupLens === "hr" ? (
-                                    <>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrTargetScore, matchupHeat.hrTargetScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrTargetScore} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, matchupHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, matchupHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
-                                      <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.kRate)}</td>
-                                      <td className="border-b border-slate-100 px-4 py-3">{formatPercent(row.whiffRate)}</td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherKVs, matchupHeat.opposingPitcherKVs, { intent: "cool", weight: "primary" })}><ScorePill value={row.opposingPitcherKVs} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.strikeoutMatchupScore, matchupHeat.strikeoutMatchupScore, { intent: "cool", weight: "primary" })}><ScorePill value={row.strikeoutMatchupScore} /></td>
-                                      <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
-                                    </>
-                                  )}
-                                  <td className="border-b border-slate-100 px-4 py-3">
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {row.angleTags.length ? row.angleTags.map((tag) => (
-                                        <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
-                                      )) : <span className="text-slate-400">{DASH}</span>}
-                                    </div>
-                                  </td>
-                                </tr>
-                              )) : (
+                              {activeMatchupLens === "strikeout"
+                                ? filteredStrikeoutRows.length ? filteredStrikeoutRows.map((row) => (
+                                  <tr key={`${row.rank}-${row.pitcher}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/60">
+                                    <td className="border-b border-slate-100 px-4 py-3">{row.rank}</td>
+                                    <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
+                                      <div className="font-medium text-slate-900">{row.pitcher}</div>
+                                      <div className="mt-1 max-w-[320px] text-xs leading-5 text-slate-500">{row.whyItRanksWell}</div>
+                                    </td>
+                                    <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
+                                    <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]"><TeamLogoBadge team={row.opponent} size={20} /></td>
+                                    <td className="border-b border-slate-100 px-4 py-3">
+                                      <div className="font-medium text-slate-900">{row.park}</div>
+                                      <div className="mt-1">
+                                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
+                                      </div>
+                                    </td>
+                                    <td className="border-b border-slate-100 px-4 py-3" style={getStrikeoutTableHeatStyle("pitcherKRate", row.pitcherKRate, strikeoutHeat)}>{formatPercent(row.pitcherKRate)}</td>
+                                    <td className="border-b border-slate-100 px-4 py-3" style={getStrikeoutTableHeatStyle("pitcherWhiffRate", row.pitcherWhiffRate, strikeoutHeat)}>{formatPercent(row.pitcherWhiffRate)}</td>
+                                    <td className="border-b border-slate-100 px-4 py-3" style={getStrikeoutTableHeatStyle("pitcherKVs", row.pitcherKVs, strikeoutHeat)}><ScorePill value={row.pitcherKVs} /></td>
+                                    <td className="border-b border-slate-100 px-4 py-3" style={getStrikeoutTableHeatStyle("opponentTeamKRate", row.opponentTeamKRate, strikeoutHeat)}>{formatPercent(row.opponentTeamKRate)}</td>
+                                    <td className="border-b border-slate-100 px-4 py-3" style={getStrikeoutTableHeatStyle("opponentTeamWhiffRate", row.opponentTeamWhiffRate, strikeoutHeat)}>{formatPercent(row.opponentTeamWhiffRate)}</td>
+                                    <td className="border-b border-slate-100 px-4 py-3" style={getStrikeoutTableHeatStyle("opponentTeamXba", row.opponentTeamXba, strikeoutHeat)}>{formatDecimal(row.opponentTeamXba, 3)}</td>
+                                    <td className="border-b border-slate-100 px-4 py-3" style={getStrikeoutTableHeatStyle("strikeoutMatchupScore", row.strikeoutMatchupScore, strikeoutHeat)}><ScorePill value={row.strikeoutMatchupScore} /></td>
+                                  </tr>
+                                )) : (
+                                  <tr>
+                                    <td colSpan={12} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                      No matchup rows match the current search or game filter.
+                                    </td>
+                                  </tr>
+                                )
+                                : filteredMatchups.length ? filteredMatchups.map((row) => (
+                                  <tr key={`${row.rank}-${row.player}-${row.opposingPitcher}`} className="odd:bg-white even:bg-slate-50/60">
+                                    <td className="border-b border-slate-100 px-4 py-3">{row.rank}</td>
+                                    <td className="border-b border-slate-100 px-4 py-3 min-w-[180px]">
+                                      <div className="font-medium text-slate-900">{row.player}</div>
+                                    </td>
+                                    <td className="border-b border-slate-100 px-4 py-3"><TeamLogoBadge team={row.team} size={20} /></td>
+                                    <td className="border-b border-slate-100 px-4 py-3 min-w-[150px]">{row.opposingPitcher}</td>
+                                    <td className="border-b border-slate-100 px-4 py-3">
+                                      <div className="font-medium text-slate-900">{row.park}</div>
+                                      <div className="mt-1">
+                                        <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
+                                      </div>
+                                    </td>
+                                    {activeMatchupLens === "best" ? (
+                                      <>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHitsVs, matchupHeat.opposingPitcherHitsVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHitsVs} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.bestMatchupScore, matchupHeat.bestMatchupScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.bestMatchupScore} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hrTargetScore, matchupHeat.hrTargetScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrTargetScore} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.barrelRate, matchupHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
+                                        <td className="border-b border-slate-100 px-4 py-3" style={getHeatCellStyle(row.hardHitRate, matchupHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>
+                                        <td className="border-b border-slate-100 px-4 py-3">{formatDecimal(row.xba, 3)}</td>
+                                      </>
+                                    )}
+                                    <td className="border-b border-slate-100 px-4 py-3">
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {row.angleTags.length ? row.angleTags.map((tag) => (
+                                          <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
+                                        )) : <span className="text-slate-400">{DASH}</span>}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )) : (
                                 <tr>
                                   <td colSpan={activeMatchupLens === "hr" ? 12 : 11} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No matchup rows match the current search or game filter.
@@ -1859,8 +1983,6 @@ export default function MlbHrProps() {
                             </tbody>
                           </table>
                         </div>
-                          </>
-                        )}
                       </section>
                     ) : null}
                   </div>
@@ -1908,9 +2030,6 @@ export default function MlbHrProps() {
                   </section>
                 ) : null}
               </section>
-              <aside className="hidden 2xl:block 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)] 2xl:self-start 2xl:overflow-y-auto 2xl:pr-1">
-                <ParkFactorsPanel parks={parkRows} variant="sidebar" />
-              </aside>
             </div>
           )}
         </div>
