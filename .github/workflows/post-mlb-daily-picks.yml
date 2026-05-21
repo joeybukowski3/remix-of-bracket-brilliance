@@ -1,0 +1,36 @@
+name: Post MLB Daily Picks
+
+on:
+  schedule:
+    - cron: '0 13 * * *'     # 8:00 AM EST (13:00 UTC)
+  workflow_dispatch:         # Allow manual trigger
+
+jobs:
+  post-picks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate Daily Picks
+        run: node scripts/generate-mlb-daily-picks.mjs
+
+      - name: Read Tweet
+        id: read_tweet
+        run: |
+          echo "TWEET<<EOF" >> $GITHUB_ENV
+          cat /tmp/mlb-daily-picks.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Post to X
+        uses: snow-actions/post-tweet@v1.0.0
+        with:
+          status: ${{ env.TWEET }}
+          consumer-key: ${{ secrets.X_API_KEY }}
+          consumer-secret: ${{ secrets.X_API_SECRET }}
+          access-token: ${{ secrets.X_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.X_ACCESS_SECRET }}
