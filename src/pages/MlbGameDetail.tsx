@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Activity, CloudSun, Crosshair, Flame, Radar, Shield, Sparkles, Swords, Target, Wind } from "lucide-react";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -20,7 +21,7 @@ import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
-import { formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
+import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
@@ -579,6 +580,54 @@ function getPreviewPills(detail: MlbGameDetail | undefined) {
   ];
 }
 
+function getFeaturedMatchupEdge(detail: MlbGameDetail) {
+  const awayK9 = computeK9(detail.starters.away.strikeOuts, detail.starters.away.inningsPitched);
+  const homeK9 = computeK9(detail.starters.home.strikeOuts, detail.starters.home.inningsPitched);
+  const awayOpponentK = computePercent(
+    detail.opponentSplits.homeBattingVsAwayStarter?.strikeOuts ?? null,
+    detail.opponentSplits.homeBattingVsAwayStarter?.plateAppearances ?? null,
+  );
+  const homeOpponentK = computePercent(
+    detail.opponentSplits.awayBattingVsHomeStarter?.strikeOuts ?? null,
+    detail.opponentSplits.awayBattingVsHomeStarter?.plateAppearances ?? null,
+  );
+  const awayLineupOps = detail.lineupSummaries.away.ops;
+  const homeLineupOps = detail.lineupSummaries.home.ops;
+
+  const kCandidates = [
+    {
+      title: `${detail.starters.away.name} strikeout look`,
+      score: (awayK9 ?? 0) * 0.65 + (awayOpponentK ?? 0) * 0.35,
+      note: `${detail.game.home.abbreviation} split K% ${awayOpponentK?.toFixed(1) ?? "—"} with ${detail.starters.away.name} carrying a ${awayK9?.toFixed(1) ?? "—"} K/9.`,
+      icon: <Target className="h-5 w-5" />,
+    },
+    {
+      title: `${detail.starters.home.name} strikeout look`,
+      score: (homeK9 ?? 0) * 0.65 + (homeOpponentK ?? 0) * 0.35,
+      note: `${detail.game.away.abbreviation} split K% ${homeOpponentK?.toFixed(1) ?? "—"} with ${detail.starters.home.name} carrying a ${homeK9?.toFixed(1) ?? "—"} K/9.`,
+      icon: <Target className="h-5 w-5" />,
+    },
+  ].sort((left, right) => right.score - left.score);
+
+  const lineupDelta = Math.abs((awayLineupOps ?? 0) - (homeLineupOps ?? 0));
+  if (kCandidates[0].score >= 14 || lineupDelta < 0.035) {
+    return {
+      eyebrow: "Top edge to price first",
+      title: kCandidates[0].title,
+      note: kCandidates[0].note,
+      icon: kCandidates[0].icon,
+    };
+  }
+
+  const homeLineupAhead = (homeLineupOps ?? 0) > (awayLineupOps ?? 0);
+  return {
+    eyebrow: "Top edge to price first",
+    title: `${homeLineupAhead ? detail.game.home.abbreviation : detail.game.away.abbreviation} lineup pressure`,
+    note: `${detail.game.away.abbreviation} projected OPS ${awayLineupOps?.toFixed(3) ?? "—"} against ${detail.game.home.abbreviation} at ${homeLineupOps?.toFixed(3) ?? "—"}.`,
+    icon: <Swords className="h-5 w-5" />,
+  };
+}
+
 function HomeSchedule({
   games,
   detailPreviews,
@@ -963,8 +1012,31 @@ export default function MlbGameDetail() {
   const pitcherMetrics = detail ? getPitcherComparisonMetrics(detail) : [];
   const parkContext = detail ? getParkContextValues(detail) : null;
   const propAngles = detail ? getPropAngles(detail) : [];
+  const featuredMatchupEdge = detail ? getFeaturedMatchupEdge(detail) : null;
   const awaySplitMetrics = detail ? buildSplitMetrics(detail.opponentSplits.awayBattingVsHomeStarter, "away-split") : [];
   const homeSplitMetrics = detail ? buildSplitMetrics(detail.opponentSplits.homeBattingVsAwayStarter, "home-split") : [];
+  const heroIndicators = detail ? [
+    {
+      label: "Best angle",
+      value: featuredMatchupEdge?.title ?? "Balanced matchup",
+      icon: <Crosshair className="h-4 w-4" />,
+    },
+    {
+      label: "Strikeout lean",
+      value: summaryCards[5]?.value ?? "Neutral",
+      icon: <Radar className="h-4 w-4" />,
+    },
+    {
+      label: "Run environment",
+      value: summaryCards[4]?.value ?? parkContext?.totalLean ?? "Neutral",
+      icon: <Flame className="h-4 w-4" />,
+    },
+    {
+      label: "Weather / wind",
+      value: detail.weather || "Context unavailable",
+      icon: <Wind className="h-4 w-4" />,
+    },
+  ] : [];
 
   return (
     <SiteShell>
@@ -1021,6 +1093,13 @@ export default function MlbGameDetail() {
                 { label: summaryCards[2]?.value || "Lineup edge", tone: "positive" },
                 { label: summaryCards[5]?.value || "Strikeout environment" },
               ]}
+              summaryIndicators={heroIndicators}
+              spotlight={featuredMatchupEdge ?? {
+                eyebrow: "Top edge to price first",
+                title: "Balanced matchup board",
+                note: "The core matchup signals are available below across team context, pitcher form, and lineup pressure.",
+                icon: <Sparkles className="h-5 w-5" />,
+              }}
             />
 
             <MlbMatchupSummaryRow
@@ -1034,6 +1113,7 @@ export default function MlbGameDetail() {
                 eyebrow="Team context"
                 title="Overall team snapshot"
                 subtitle="Side-by-side record, short-form, venue split, and game-setting context before the deeper matchup layers."
+                icon={<Shield className="h-4 w-4" />}
               />
               <div className="mt-6">
                 <MlbTeamOverviewPanel detail={detail} />
@@ -1045,6 +1125,7 @@ export default function MlbGameDetail() {
                 eyebrow="Starting pitchers"
                 title="Pitcher edge at a glance"
                 subtitle="Quick comparison across run prevention, traffic control, strikeout ceiling, walks, and home-run exposure."
+                icon={<Target className="h-4 w-4" />}
               />
               <div className="mt-6">
                 <MlbPitcherComparisonPanel
@@ -1063,6 +1144,7 @@ export default function MlbGameDetail() {
                   eyebrow="Pitcher vs lineup"
                   title={`${detail.starters.home.name} vs ${detail.game.away.abbreviation}`}
                   subtitle="How the home starter's profile collides with the opposing offense, with matchup percentile ranks for the key edge stats."
+                  icon={<Crosshair className="h-4 w-4" />}
                 />
                 <div className="mt-6">
                   <MlbPitcherVsLineupPanel
@@ -1082,6 +1164,7 @@ export default function MlbGameDetail() {
                   eyebrow="Pitcher vs lineup"
                   title={`${detail.starters.away.name} vs ${detail.game.home.abbreviation}`}
                   subtitle="Same comparison from the away starter's side of the game tree, with matchup percentile ranks for the key edge stats."
+                  icon={<Crosshair className="h-4 w-4" />}
                 />
                 <div className="mt-6">
                   <MlbPitcherVsLineupPanel
@@ -1103,6 +1186,7 @@ export default function MlbGameDetail() {
                   eyebrow="Split performance"
                   title={`${detail.game.away.abbreviation} relevant split vs league`}
                   subtitle="Opposing lineup performance in the handedness matchup that matters for this start."
+                  icon={<Activity className="h-4 w-4" />}
                   rightSlot={<MlbValuePill>PA {detail.opponentSplits.awayBattingVsHomeStarter?.plateAppearances ?? MLB_DASH}</MlbValuePill>}
                 />
                 <div className="mt-6">
@@ -1119,6 +1203,7 @@ export default function MlbGameDetail() {
                   eyebrow="Split performance"
                   title={`${detail.game.home.abbreviation} relevant split vs league`}
                   subtitle="League-average anchors make it easier to spot where this lineup departs from baseline."
+                  icon={<Activity className="h-4 w-4" />}
                   rightSlot={<MlbValuePill>PA {detail.opponentSplits.homeBattingVsAwayStarter?.plateAppearances ?? MLB_DASH}</MlbValuePill>}
                 />
                 <div className="mt-6">
@@ -1136,6 +1221,7 @@ export default function MlbGameDetail() {
                 eyebrow="Projected lineups"
                 title="Order-by-order lineup comparison"
                 subtitle="Cleaner scan of likely batting order, supporting contact rates, and side-by-side production markers."
+                icon={<Swords className="h-4 w-4" />}
               />
               <div className="mt-6">
                 <div className="mb-4 grid gap-3 sm:grid-cols-2">
@@ -1170,6 +1256,7 @@ export default function MlbGameDetail() {
                 eyebrow="Park context"
                 title="Environment and total-setting context"
                 subtitle="Venue, weather, park factor baseline, and starter run-prevention context in one module."
+                icon={<CloudSun className="h-4 w-4" />}
               />
               <div className="mt-6">
                 <MlbParkContextPanel
@@ -1211,6 +1298,7 @@ export default function MlbGameDetail() {
                 eyebrow="Betting angles"
                 title="Data-backed prop and total setups"
                 subtitle="Short cards tied directly to the comparison signals above instead of generic filler."
+                icon={<Sparkles className="h-4 w-4" />}
               />
               <div className="mt-6">
                 <MlbPropAnglesPanel angles={propAngles} />
