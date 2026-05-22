@@ -17,9 +17,9 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
         venueMode="away"
         comparisonContext={detail.homeContext}
       />
-      <div className="rounded-2xl bg-secondary/30 p-3.5">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Game context</div>
-        <dl className="mt-3 space-y-2.5 text-sm">
+      <div className="rounded-2xl bg-secondary/30 p-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Game context</div>
+        <dl className="mt-2 space-y-2 text-sm">
           <div className="flex items-start justify-between gap-4">
             <dt className="text-muted-foreground">Date / time</dt>
             <dd className="text-right font-medium text-foreground">
@@ -43,12 +43,12 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
             <dt className="text-muted-foreground">Status</dt>
             <dd className="rounded-full px-2.5 py-1 text-right font-medium" style={statusTheme}>{detail.game.status}</dd>
           </div>
-          <div className="grid grid-cols-2 gap-2.5 pt-1">
-            <div className="rounded-2xl p-2.5" style={{ backgroundColor: awayColors.tint }}>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="rounded-2xl p-2" style={{ backgroundColor: awayColors.tint }}>
               <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{detail.game.away.abbreviation}</div>
               <div className="mt-1 text-sm font-semibold" style={{ color: awayColors.primary }}>{detail.awayContext.seasonRecord}</div>
             </div>
-            <div className="rounded-2xl p-2.5" style={{ backgroundColor: homeColors.tint }}>
+            <div className="rounded-2xl p-2" style={{ backgroundColor: homeColors.tint }}>
               <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{detail.game.home.abbreviation}</div>
               <div className="mt-1 text-sm font-semibold" style={{ color: homeColors.primary }}>{detail.homeContext.seasonRecord}</div>
             </div>

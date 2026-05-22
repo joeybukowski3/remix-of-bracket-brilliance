@@ -23,7 +23,7 @@ function mlbHeadshotUrl(mlbId: number | null | undefined) {
   return `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${mlbId}/headshot/67/current`;
 }
 
-function TeamLogo({ abbreviation, size = 64 }: { abbreviation: string; size?: number }) {
+function TeamLogo({ abbreviation, size = 56 }: { abbreviation: string; size?: number }) {
   const [failed, setFailed] = useState(false);
   const colors = getMlbTeamColors(abbreviation);
   if (failed) {
@@ -52,7 +52,7 @@ function PitcherHeadshot({
   mlbId,
   name,
   teamAbbreviation,
-  size = 80,
+  size = 52,
 }: {
   mlbId: number | null | undefined;
   name: string;
@@ -95,9 +95,9 @@ function PitcherHeadshot({
 
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60">{label}</span>
-      <span className="mt-0.5 text-sm font-bold text-white">{value}</span>
+    <div className="flex flex-col items-center rounded-xl bg-white/10 px-2 py-1 backdrop-blur-sm">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">{label}</span>
+      <span className="mt-0.5 text-xs font-bold text-white">{value}</span>
     </div>
   );
 }
@@ -125,10 +125,10 @@ function OverallEdgeTile({
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-700">
             Overall Edge
           </div>
           <div className="mt-1 text-base font-bold text-slate-900">{spotlight.title}</div>
@@ -136,7 +136,7 @@ function OverallEdgeTile({
         </div>
         <div className="shrink-0 rounded-xl bg-sky-50 p-2 text-sky-700">{spotlight.icon}</div>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         {edges.map((edge) => {
           const isAway = edge.value.toLowerCase().includes(detail.game.away.abbreviation.toLowerCase());
           const isHome = edge.value.toLowerCase().includes(detail.game.home.abbreviation.toLowerCase());
@@ -180,9 +180,9 @@ export default function MlbMatchupHero({
   const homeK9 = computeK9(starters.home.strikeOuts, starters.home.inningsPitched);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div
-        className="relative overflow-hidden rounded-[28px] shadow-xl"
+        className="relative overflow-hidden rounded-2xl shadow-xl"
         style={{
           background: `linear-gradient(135deg, ${awayColors.primary}cc 0%, #0f172a 40%, #0f172a 60%, ${homeColors.primary}cc 100%)`,
         }}
@@ -195,17 +195,17 @@ export default function MlbMatchupHero({
           }}
         />
 
-        <div className="relative px-6 py-8 sm:px-8 sm:py-10">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-white/60">
+        <div className="relative px-4 py-5 sm:px-4 sm:py-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-white/60">
             <span>{game.venue}</span>
             {weather && weather !== MLB_DASH && <span>{weather}</span>}
           </div>
 
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <TeamLogo abbreviation={game.away.abbreviation} size={72} />
+            <div className="flex flex-col items-center gap-2 text-center">
+              <TeamLogo abbreviation={game.away.abbreviation} size={56} />
               <div>
-                <div className="text-2xl font-extrabold uppercase tracking-wide text-white sm:text-3xl">
+                <div className="text-xl font-extrabold uppercase tracking-wide text-white sm:text-2xl">
                   {game.away.name}
                 </div>
                 <div className="mt-0.5 text-xs font-medium text-white/50">
@@ -213,12 +213,12 @@ export default function MlbMatchupHero({
                 </div>
               </div>
 
-              <div className="mt-1 flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-1.5">
                 <PitcherHeadshot
                   mlbId={starters.away.id}
                   name={starters.away.name}
                   teamAbbreviation={game.away.abbreviation}
-                  size={64}
+                  size={52}
                 />
                 <div className="text-center">
                   <div className="text-sm font-bold text-white">{starters.away.name}</div>
@@ -234,12 +234,12 @@ export default function MlbMatchupHero({
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white/70 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <div className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-white/70 backdrop-blur-sm">
                 vs
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 backdrop-blur-sm">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+              <div className="rounded-2xl border border-white/10 bg-white/10 px-2 py-1.5 backdrop-blur-sm">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
                   Game Total
                 </div>
                 <div className="mt-0.5 text-lg font-extrabold text-white">
@@ -248,10 +248,10 @@ export default function MlbMatchupHero({
               </div>
             </div>
 
-            <div className="flex flex-col items-center gap-3 text-center">
-              <TeamLogo abbreviation={game.home.abbreviation} size={72} />
+            <div className="flex flex-col items-center gap-2 text-center">
+              <TeamLogo abbreviation={game.home.abbreviation} size={56} />
               <div>
-                <div className="text-2xl font-extrabold uppercase tracking-wide text-white sm:text-3xl">
+                <div className="text-xl font-extrabold uppercase tracking-wide text-white sm:text-2xl">
                   {game.home.name}
                 </div>
                 <div className="mt-0.5 text-xs font-medium text-white/50">
@@ -259,12 +259,12 @@ export default function MlbMatchupHero({
                 </div>
               </div>
 
-              <div className="mt-1 flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-1.5">
                 <PitcherHeadshot
                   mlbId={starters.home.id}
                   name={starters.home.name}
                   teamAbbreviation={game.home.abbreviation}
-                  size={64}
+                  size={52}
                 />
                 <div className="text-center">
                   <div className="text-sm font-bold text-white">{starters.home.name}</div>
@@ -282,7 +282,7 @@ export default function MlbMatchupHero({
           </div>
 
           {quickChips.length > 0 && (
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
+            <div className="mt-4 flex flex-wrap justify-center gap-1.5">
               {quickChips.map((chip, i) => (
                 <span
                   key={i}
@@ -295,11 +295,11 @@ export default function MlbMatchupHero({
           )}
 
           {summaryIndicators.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {summaryIndicators.map((ind, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-2.5 rounded-xl border border-white/10 bg-white/8 p-3 backdrop-blur-sm"
+                  className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/8 p-2.5 backdrop-blur-sm"
                 >
                   <div className="mt-0.5 shrink-0 text-white/60">{ind.icon}</div>
                   <div className="min-w-0">

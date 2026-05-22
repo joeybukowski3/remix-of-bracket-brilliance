@@ -718,7 +718,81 @@ function HomeSchedule({
 
   return (
     <div className="space-y-6">
-      <section className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1.2fr)_360px] xl:gap-5">
+      <section className="grid items-start gap-4 xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)] xl:gap-5">
+        <aside className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm xl:sticky xl:top-20">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">Daily prop preview</div>
+              <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
+            </div>
+            <Link to="/mlb/props" className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+              Hub
+            </Link>
+          </div>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-3">
+              <div className="mb-2 inline-flex rounded-full bg-sky-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                Top HR Props
+              </div>
+              <div className="space-y-1.5">
+                {topHrProps.map((row) => (
+                  <Link
+                    key={`${row.player}-${row.team}`}
+                    to="/mlb/hr-props"
+                    className="grid grid-cols-[minmax(0,1fr)_50px] items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-2 hover:bg-sky-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-semibold text-slate-900">
+                        {row.player} <span className="text-slate-400">{row.position}</span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+                        <TeamLogoBadge team={row.team} size={16} /> vs {row.opponent}
+                      </div>
+                    </div>
+                    <ScorePill value={row.hrScore} />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
+              <div className="mb-2 inline-flex rounded-full bg-emerald-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                Top K Props
+              </div>
+              <div className="space-y-1.5">
+                {topStrikeoutProps.map((row) => (
+                  <Link
+                    key={`${row.pitcher}-${row.team}`}
+                    to="/mlb/strikeout-props"
+                    className="grid grid-cols-[minmax(0,1fr)_50px] items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-2 hover:bg-sky-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-semibold text-slate-900">{row.pitcher}</div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
+                        <TeamLogoBadge team={row.team} size={16} /> vs {row.opponent}
+                      </div>
+                    </div>
+                    <ScorePill value={row.kMatchupScore} />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
+            <Link to="/mlb/hr-props" className="rounded-xl bg-sky-700 px-3 py-2 text-center text-xs font-semibold text-white">
+              HR Prop Model
+            </Link>
+            <Link to="/mlb/strikeout-props" className="rounded-xl bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white">
+              K Prop Model
+            </Link>
+            <Link to="/mlb/props" className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700">
+              Props Hub
+            </Link>
+          </div>
+        </aside>
+
         <div className="space-y-4">
           <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -753,201 +827,131 @@ function HomeSchedule({
           <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
             <SportsbookBar />
           </div>
-        </div>
 
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-20">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">Daily prop preview</div>
-              <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
-            </div>
-            <Link to="/mlb/props" className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-              Hub
-            </Link>
-          </div>
-
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <div>
-              <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Top HR Props</div>
-              <div className="space-y-1.5">
-                {topHrProps.map((row) => (
-                  <Link
-                    key={`${row.player}-${row.team}`}
-                    to="/mlb/hr-props"
-                    className="grid grid-cols-[minmax(0,1fr)_50px] items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-2 hover:bg-sky-50"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-semibold text-slate-900">
-                        {row.player} <span className="text-slate-400">{row.position}</span>
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <TeamLogoBadge team={row.team} size={16} /> vs {row.opponent}
-                      </div>
-                    </div>
-                    <ScorePill value={row.hrScore} />
-                  </Link>
-                ))}
-              </div>
+          <section className="space-y-4">
+            <div className="sticky top-20 z-20 flex flex-wrap items-center gap-2 rounded-[20px] border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
+              {filterOptions.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => setFilter(option.key)}
+                  className={cn(
+                    "rounded-full px-3.5 py-1.5 text-xs font-semibold transition",
+                    filter === option.key
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                  )}
+                >
+                  {option.label}
+                  {option.key !== "all" && counts[option.key as keyof typeof counts] > 0 && (
+                    <span className={cn("ml-1.5 rounded-full px-1.5 py-0.5 text-[10px]",
+                      filter === option.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"
+                    )}>
+                      {counts[option.key as keyof typeof counts]}
+                    </span>
+                  )}
+                </button>
+              ))}
+              <span className="ml-auto text-xs text-slate-400">
+                {filteredGames.length} of {games.length} games
+              </span>
             </div>
 
-            <div>
-              <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">Top K Props</div>
-              <div className="space-y-1.5">
-                {topStrikeoutProps.map((row) => (
-                  <Link
-                    key={`${row.pitcher}-${row.team}`}
-                    to="/mlb/strikeout-props"
-                    className="grid grid-cols-[minmax(0,1fr)_50px] items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-2 hover:bg-sky-50"
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
+              {filteredGames.map((game) => {
+                const detail = detailPreviews[game.gamePk];
+                const homeColors = getMlbTeamColors(game.home.abbreviation);
+                const awayColors = getMlbTeamColors(game.away.abbreviation);
+                const statusTheme = getStatusBadgeTheme(game.status);
+                const statusCategory = getSlateStatusCategory(game.status);
+                const awayScore = Number(game.away.score);
+                const homeScore = Number(game.home.score);
+                const showScore = (statusCategory === "in-progress" || statusCategory === "final")
+                  && Number.isFinite(awayScore)
+                  && Number.isFinite(homeScore);
+                const awayWinning = showScore ? awayScore > homeScore : false;
+                const homeWinning = showScore ? homeScore > awayScore : false;
+
+                return (
+                  <button
+                    key={game.gamePk}
+                    type="button"
+                    onClick={() => onOpenGame(game.gamePk)}
+                    className="group cursor-pointer overflow-hidden rounded-[20px] border border-slate-200 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-semibold text-slate-900">{row.pitcher}</div>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <TeamLogoBadge team={row.team} size={16} /> vs {row.opponent}
+                    <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${awayColors.primary}, ${homeColors.primary})` }} />
+
+                    <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
+                      <span
+                        className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                        style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
+                      >
+                        {game.status}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-400">{formatGameTime(game.gameDate)}</span>
+                    </div>
+
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <SlateTeamLogo abbreviation={game.away.abbreviation} size={36} />
+                        <div className="min-w-0">
+                          <div className={cn("truncate text-sm font-bold text-slate-900", awayWinning && "text-slate-900")}>
+                            {game.away.name}
+                          </div>
+                          <div className={cn("text-[11px] text-slate-400", awayWinning && "font-semibold text-slate-700")}>
+                            {game.away.record}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="min-w-[52px] text-center">
+                        {showScore ? (
+                          <div className="text-lg font-extrabold tracking-tight text-slate-900">
+                            {awayScore}–{homeScore}
+                          </div>
+                        ) : (
+                          <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-300">@</div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2.5">
+                        <div className="min-w-0 text-right">
+                          <div className={cn("truncate text-sm font-bold text-slate-900", homeWinning && "text-slate-900")}>
+                            {game.home.name}
+                          </div>
+                          <div className={cn("text-[11px] text-slate-400", homeWinning && "font-semibold text-slate-700")}>
+                            {game.home.record}
+                          </div>
+                        </div>
+                        <SlateTeamLogo abbreviation={game.home.abbreviation} size={36} />
                       </div>
                     </div>
-                    <ScorePill value={row.kMatchupScore} />
-                  </Link>
-                ))}
-              </div>
+
+                    <div className="border-t border-slate-100 px-4 py-2.5">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <div className="truncate text-xs font-semibold text-slate-800">
+                            {game.away.probablePitcher?.fullName || MLB_DASH}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-slate-400">{getPitcherSubline(detail, "away")}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="truncate text-xs font-semibold text-slate-800">
+                            {game.home.probablePitcher?.fullName || MLB_DASH}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-slate-400">{getPitcherSubline(detail, "home")}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <SlateEdgeRow detail={detail} game={game} />
+
+                    <div className="px-4 pb-3 pt-1 text-[11px] text-slate-400">{game.venue}</div>
+                  </button>
+                );
+              })}
             </div>
-          </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
-            <Link to="/mlb/hr-props" className="rounded-xl bg-sky-700 px-3 py-2 text-center text-xs font-semibold text-white">
-              HR Prop Model
-            </Link>
-            <Link to="/mlb/strikeout-props" className="rounded-xl bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white">
-              K Prop Model
-            </Link>
-            <Link to="/mlb/props" className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700">
-              Props Hub
-            </Link>
-          </div>
-        </aside>
-      </section>
-
-      <section className="space-y-4">
-        <div className="sticky top-20 z-20 flex flex-wrap items-center gap-2 rounded-[20px] border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
-          {filterOptions.map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => setFilter(option.key)}
-              className={cn(
-                "rounded-full px-3.5 py-1.5 text-xs font-semibold transition",
-                filter === option.key
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200",
-              )}
-            >
-              {option.label}
-              {option.key !== "all" && counts[option.key as keyof typeof counts] > 0 && (
-                <span className={cn("ml-1.5 rounded-full px-1.5 py-0.5 text-[10px]",
-                  filter === option.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"
-                )}>
-                  {counts[option.key as keyof typeof counts]}
-                </span>
-              )}
-            </button>
-          ))}
-          <span className="ml-auto text-xs text-slate-400">
-            {filteredGames.length} of {games.length} games
-          </span>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredGames.map((game) => {
-            const detail = detailPreviews[game.gamePk];
-            const homeColors = getMlbTeamColors(game.home.abbreviation);
-            const awayColors = getMlbTeamColors(game.away.abbreviation);
-            const statusTheme = getStatusBadgeTheme(game.status);
-            const statusCategory = getSlateStatusCategory(game.status);
-            const awayScore = Number(game.away.score);
-            const homeScore = Number(game.home.score);
-            const showScore = (statusCategory === "in-progress" || statusCategory === "final")
-              && Number.isFinite(awayScore)
-              && Number.isFinite(homeScore);
-            const awayWinning = showScore ? awayScore > homeScore : false;
-            const homeWinning = showScore ? homeScore > awayScore : false;
-
-            return (
-              <button
-                key={game.gamePk}
-                type="button"
-                onClick={() => onOpenGame(game.gamePk)}
-                className="group cursor-pointer overflow-hidden rounded-[20px] border border-slate-200 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${awayColors.primary}, ${homeColors.primary})` }} />
-
-                <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
-                  <span
-                    className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                    style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
-                  >
-                    {game.status}
-                  </span>
-                  <span className="text-[11px] font-medium text-slate-400">{formatGameTime(game.gameDate)}</span>
-                </div>
-
-                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <SlateTeamLogo abbreviation={game.away.abbreviation} size={36} />
-                    <div className="min-w-0">
-                      <div className={cn("truncate text-sm font-bold text-slate-900", awayWinning && "text-slate-900")}>
-                        {game.away.name}
-                      </div>
-                      <div className={cn("text-[11px] text-slate-400", awayWinning && "font-semibold text-slate-700")}>
-                        {game.away.record}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="min-w-[52px] text-center">
-                    {showScore ? (
-                      <div className="text-lg font-extrabold tracking-tight text-slate-900">
-                        {awayScore}–{homeScore}
-                      </div>
-                    ) : (
-                      <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-300">@</div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2.5">
-                    <div className="min-w-0 text-right">
-                      <div className={cn("truncate text-sm font-bold text-slate-900", homeWinning && "text-slate-900")}>
-                        {game.home.name}
-                      </div>
-                      <div className={cn("text-[11px] text-slate-400", homeWinning && "font-semibold text-slate-700")}>
-                        {game.home.record}
-                      </div>
-                    </div>
-                    <SlateTeamLogo abbreviation={game.home.abbreviation} size={36} />
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 px-4 py-2.5">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="truncate text-xs font-semibold text-slate-800">
-                        {game.away.probablePitcher?.fullName || MLB_DASH}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-slate-400">{getPitcherSubline(detail, "away")}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="truncate text-xs font-semibold text-slate-800">
-                        {game.home.probablePitcher?.fullName || MLB_DASH}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-slate-400">{getPitcherSubline(detail, "home")}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <SlateEdgeRow detail={detail} game={game} />
-
-                <div className="px-4 pb-3 pt-1 text-[11px] text-slate-400">{game.venue}</div>
-              </button>
-            );
-          })}
+          </section>
         </div>
       </section>
     </div>

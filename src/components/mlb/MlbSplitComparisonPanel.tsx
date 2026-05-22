@@ -17,7 +17,7 @@ function DiffCell({ value, metricKey }: { value: number | null; avg: number | nu
 
 function SplitTable({ label, note, metrics }: { label: string; note: string; metrics: MlbComparisonMetric[] }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div>
         <div className="text-sm font-semibold text-foreground">{label}</div>
         <div className="text-xs text-muted-foreground">{note}</div>
@@ -26,10 +26,10 @@ function SplitTable({ label, note, metrics }: { label: string; note: string; met
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/60 bg-secondary/50">
-              <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Stat</th>
-              <th className="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Team</th>
-              <th className="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Avg</th>
-              <th className="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">vs Avg</th>
+              <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Stat</th>
+              <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Team</th>
+              <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Avg</th>
+              <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">vs Avg</th>
             </tr>
           </thead>
           <tbody>
@@ -59,10 +59,10 @@ function SplitTable({ label, note, metrics }: { label: string; note: string; met
 
               return (
                 <tr key={m.key} className={i % 2 === 1 ? "bg-secondary/30" : ""}>
-                  <td className="px-4 py-3 font-medium text-foreground">{m.label}</td>
-                  <td className="px-4 py-3 text-center text-foreground">{formatMetric(m.leftValue, m.format)}</td>
-                  <td className="px-4 py-3 text-center text-muted-foreground">{formatMetric(m.leagueAverage, m.format)}</td>
-                  <td className="px-4 py-3 text-center">{diffEl}</td>
+                  <td className="px-3 py-2 text-sm font-medium text-foreground">{m.label}</td>
+                  <td className="px-3 py-2 text-center text-sm text-foreground">{formatMetric(m.leftValue, m.format)}</td>
+                  <td className="px-3 py-2 text-center text-sm text-muted-foreground">{formatMetric(m.leagueAverage, m.format)}</td>
+                  <td className="px-3 py-2 text-center text-sm">{diffEl}</td>
                 </tr>
               );
             })}
@@ -83,7 +83,7 @@ export default function MlbSplitComparisonPanel({
   metrics: MlbComparisonMetric[];
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <MlbValuePill>{context}</MlbValuePill>
         <span className="text-sm text-muted-foreground">{note}</span>

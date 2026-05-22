@@ -1,9 +1,7 @@
 name: Post MLB Daily Picks
 
 on:
-  schedule:
-    - cron: '0 13 * * *'     # 8:00 AM EST (13:00 UTC)
-  workflow_dispatch:         # Allow manual trigger
+  workflow_dispatch:         # Manual only while X posting is paused
 
 jobs:
   post-picks:

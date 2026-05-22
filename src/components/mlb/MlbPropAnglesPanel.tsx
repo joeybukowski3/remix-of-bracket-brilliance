@@ -3,7 +3,7 @@ import type { MlbPropAngleData } from "@/lib/mlb/mlbTypes";
 
 export default function MlbPropAnglesPanel({ angles }: { angles: MlbPropAngleData[] }) {
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid gap-3 xl:grid-cols-2">
       {angles.map((angle) => (
         <MlbPropAngleCard key={angle.title} angle={angle} />
       ))}

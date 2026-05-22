@@ -194,41 +194,41 @@ export default function MlbPitcherVsLineupPanel({
     .sort((a, b) => (b.lineupPercentile ?? 0) - (a.lineupPercentile ?? 0))[0];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-foreground">{title}</span>
         <span className="text-sm" style={{ color: lineupColors.primary }}>{lineupLabel}</span>
       </div>
 
-      <div className="rounded-2xl border border-border/60 bg-card/90 p-3.5 shadow-[0_14px_30px_hsl(var(--foreground)/0.04)]">
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-border/60 bg-secondary/35 px-3.5 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Pitcher edge count</div>
-            <div className="mt-2 text-2xl font-semibold" style={{ color: pitcherColors.primary }}>{pitcherEdgeCount}</div>
+      <div className="rounded-2xl border border-border/60 bg-card/90 p-3 shadow-[0_14px_30px_hsl(var(--foreground)/0.04)]">
+        <div className="grid gap-2.5 md:grid-cols-3">
+          <div className="rounded-2xl border border-border/60 bg-secondary/35 px-3 py-2.5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Pitcher edge count</div>
+            <div className="mt-1.5 text-xl font-semibold" style={{ color: pitcherColors.primary }}>{pitcherEdgeCount}</div>
             <div className="mt-1 text-xs text-muted-foreground">
               Strongest pitcher trait: {strongestPitcherRow?.category.split("/")[0].trim() ?? "-"}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-slate-950 px-3.5 py-3 text-white">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">How to read it</div>
-            <div className="mt-2 text-sm font-semibold">Matchup edge percentiles</div>
+          <div className="rounded-2xl border border-border/60 bg-slate-950 px-3 py-2.5 text-white">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-300">How to read it</div>
+            <div className="mt-1.5 text-sm font-semibold">Matchup edge percentiles</div>
             <div className="mt-1 text-xs leading-5 text-slate-300">
               These matchup percentiles are normalized from this page&apos;s MLB comparison scales for side-by-side
               reads. They are not official Statcast or leaguewide percentiles.
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-secondary/35 px-3.5 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Lineup edge count</div>
-            <div className="mt-2 text-2xl font-semibold" style={{ color: lineupColors.primary }}>{lineupEdgeCount}</div>
+          <div className="rounded-2xl border border-border/60 bg-secondary/35 px-3 py-2.5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Lineup edge count</div>
+            <div className="mt-1.5 text-xl font-semibold" style={{ color: lineupColors.primary }}>{lineupEdgeCount}</div>
             <div className="mt-1 text-xs text-muted-foreground">
               Strongest lineup trait: {strongestLineupRow?.category.split("/")[1].trim() ?? "-"}
             </div>
           </div>
         </div>
 
-        <div className="mt-3 space-y-3">
+        <div className="mt-2.5 space-y-2.5">
           {rows.map((row) => {
             const edge = getEdge(row.pitcherVal, row.lineupVal, row.edgeKey);
             const pitcherTone = getPercentileTone(row.pitcherPercentile);
@@ -237,27 +237,27 @@ export default function MlbPitcherVsLineupPanel({
             const lineupLabelText = row.category.split("/")[1].trim();
 
             return (
-              <article key={row.category} className="rounded-2xl border border-border/60 bg-white p-3.5">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <article key={row.category} className="rounded-2xl border border-border/60 bg-white p-3">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <div className="text-sm font-semibold text-foreground">{row.category}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{row.description}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">{row.description}</div>
                   </div>
                   <EdgeBadge edge={edge} pitcherTeam={pitcherTeamAbbreviation} lineupTeam={lineupTeamAbbreviation} />
                 </div>
 
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <div className="rounded-2xl border border-border/60 bg-secondary/20 p-3">
+                <div className="mt-2.5 grid gap-2.5 md:grid-cols-2">
+                  <div className="rounded-2xl border border-border/60 bg-secondary/20 p-2.5">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{pitcherLabel}</div>
-                        <div className="mt-1 text-base font-semibold text-foreground">{row.pitcherStat}</div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{pitcherLabel}</div>
+                        <div className="mt-0.5 text-sm font-semibold text-foreground">{row.pitcherStat}</div>
                       </div>
                       <div className={`rounded-full px-2.5 py-1 text-xs font-semibold ${pitcherTone.textClass}`} style={pitcherTone.badgeStyle}>
                         Matchup Pctl {row.pitcherPercentile ?? "-"}
                       </div>
                     </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{ width: `${row.pitcherPercentile ?? 0}%`, ...pitcherTone.railStyle }}
@@ -265,17 +265,17 @@ export default function MlbPitcherVsLineupPanel({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-border/60 bg-secondary/20 p-3">
+                  <div className="rounded-2xl border border-border/60 bg-secondary/20 p-2.5">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{lineupLabelText}</div>
-                        <div className="mt-1 text-base font-semibold text-foreground">{row.lineupStat}</div>
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{lineupLabelText}</div>
+                        <div className="mt-0.5 text-sm font-semibold text-foreground">{row.lineupStat}</div>
                       </div>
                       <div className={`rounded-full px-2.5 py-1 text-xs font-semibold ${lineupTone.textClass}`} style={lineupTone.badgeStyle}>
                         Matchup Pctl {row.lineupPercentile ?? "-"}
                       </div>
                     </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{ width: `${row.lineupPercentile ?? 0}%`, ...lineupTone.railStyle }}

@@ -40,14 +40,14 @@ export default function MlbTeamMiniCard({
   ];
 
   return (
-    <div className="rounded-2xl p-3.5" style={{ backgroundColor: colors.tint }}>
+    <div className="rounded-2xl p-3" style={{ backgroundColor: colors.tint }}>
       <MlbTeamBadge abbreviation={team.abbreviation} name={team.name} record={team.record} size={30} compact />
-      <dl className="mt-3 grid gap-2.5 text-sm">
+      <dl className="mt-2 grid gap-2 text-sm">
         {rows.map((row) => (
           <div key={row.label} className="flex items-center justify-between gap-3">
             <dt className="text-muted-foreground">{row.label}</dt>
             <dd
-              className={`rounded-full border px-2.5 py-1 font-medium ${row.better ? getStatToneClasses("positive") : "border-transparent text-foreground"}`}
+              className={`rounded-full border px-2 py-0.5 font-medium ${row.better ? getStatToneClasses("positive") : "border-transparent text-foreground"}`}
             >
               {row.label === "Last 5" && trend === "up" ? <TrendingUp className="mr-1 inline h-3 w-3" /> : null}
               {row.label === "Last 5" && trend === "down" ? <TrendingDown className="mr-1 inline h-3 w-3" /> : null}

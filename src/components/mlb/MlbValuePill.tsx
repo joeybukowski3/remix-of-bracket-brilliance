@@ -20,7 +20,7 @@ export default function MlbValuePill({
         : "bg-secondary text-muted-foreground";
 
   return (
-    <span className={cn("inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium", toneClass, className)} style={style}>
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium", toneClass, className)} style={style}>
       {children}
     </span>
   );

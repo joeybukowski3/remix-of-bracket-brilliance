@@ -16,11 +16,11 @@ function PitcherPhoto({
   const colors = getMlbTeamColors(teamAbbreviation);
 
   return (
-    <div className={`flex items-center gap-3 ${align === "right" ? "flex-row-reverse" : ""}`}>
+    <div className={`flex items-center gap-2.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
       <div className="relative shrink-0">
-        <MlbPlayerHeadshot playerId={pitcher.id} name={pitcher.name} size={62} teamAbbreviation={teamAbbreviation} />
-        <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
-          <MlbTeamLogo team={teamAbbreviation} size={18} />
+        <MlbPlayerHeadshot playerId={pitcher.id} name={pitcher.name} size={54} teamAbbreviation={teamAbbreviation} />
+        <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
+          <MlbTeamLogo team={teamAbbreviation} size={15} />
         </div>
       </div>
       <div className={align === "right" ? "text-right" : ""}>
@@ -53,23 +53,23 @@ export default function MlbPitcherComparisonPanel({
   const homeColors = getMlbTeamColors(homeAbbreviation);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 items-center gap-3 rounded-2xl border border-border/60 p-3 sm:grid-cols-[1fr_auto_1fr]">
-        <div className="rounded-2xl p-3" style={{ backgroundColor: awayColors.tint }}>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 items-center gap-2 rounded-2xl border border-border/60 p-2.5 sm:grid-cols-[1fr_auto_1fr]">
+        <div className="rounded-2xl p-2.5" style={{ backgroundColor: awayColors.tint }}>
           <PitcherPhoto pitcher={awayPitcher} align="left" teamAbbreviation={awayAbbreviation} />
         </div>
         <div className="text-center">
-          <div className="text-lg font-semibold text-muted-foreground">vs</div>
-          <div className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground/60">
+          <div className="text-base font-semibold text-muted-foreground">vs</div>
+          <div className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground/60">
             {awayPitcher.hand === homePitcher.hand ? `Both ${awayPitcher.hand}HP` : ""}
           </div>
         </div>
-        <div className="rounded-2xl p-3" style={{ backgroundColor: homeColors.tint }}>
+        <div className="rounded-2xl p-2.5" style={{ backgroundColor: homeColors.tint }}>
           <PitcherPhoto pitcher={homePitcher} align="right" teamAbbreviation={homeAbbreviation} />
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {metrics.map((metric) => (
           <MlbStatComparisonRow
             key={metric.key}

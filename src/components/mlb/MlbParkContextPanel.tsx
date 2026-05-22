@@ -41,16 +41,16 @@ export default function MlbParkContextPanel({
   const hrTone = getStatToneClasses(getStatToneFromFactor(hrFactor));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         <MlbContextChip label={parkType} style={{ backgroundColor: awayColors.tint, color: awayColors.primary }} />
         <MlbContextChip label={totalLean} style={{ backgroundColor: homeColors.tint, color: homeColors.primary }} />
         <MlbContextChip label={factorLabel} />
       </div>
       <div className="grid gap-3 xl:grid-cols-[0.95fr_1.25fr]">
-        <div className="rounded-2xl bg-secondary/30 p-3.5">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Environment</div>
-          <div className="mt-3 space-y-2.5 text-sm">
+        <div className="rounded-2xl bg-secondary/30 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Environment</div>
+          <div className="mt-2 space-y-2 text-sm">
             <div>
               <div className="text-muted-foreground">Venue</div>
               <div className="font-semibold text-foreground">{venue}</div>
@@ -59,19 +59,19 @@ export default function MlbParkContextPanel({
               <div className="text-muted-foreground">Weather</div>
               <div className="font-semibold text-foreground">{weatherIndicators ? `${weatherIndicators} ` : ""}{weather}</div>
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className={`rounded-2xl border p-2.5 ${runTone}`}>
+            <div className="grid grid-cols-2 gap-2">
+              <div className={`rounded-2xl border p-2 ${runTone}`}>
                 <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Run factor</div>
                 <div className="mt-1 text-sm font-semibold">{runFactor ?? "—"}</div>
               </div>
-              <div className={`rounded-2xl border p-2.5 ${hrTone}`}>
+              <div className={`rounded-2xl border p-2 ${hrTone}`}>
                 <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">HR factor</div>
                 <div className="mt-1 text-sm font-semibold">{hrFactor ?? "—"}</div>
               </div>
             </div>
           </div>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {starterEraMetrics.map((metric) => (
             <MlbStatComparisonRow
               key={metric.key}
