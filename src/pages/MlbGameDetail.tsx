@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, CloudSun, Crosshair, Flame, Radar, Shield, Sparkles, Swords, Target, Wind } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Rocket, Shield, Sparkles, Swords, Target, Wind } from "lucide-react";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -27,7 +27,7 @@ import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import { ScorePill, TeamLogoBadge } from "@/pages/MlbHrProps";
+import { ScorePill } from "@/pages/MlbHrProps";
 
 const SEASON = new Date().getFullYear();
 
@@ -537,149 +537,392 @@ function getSlateStatusCategory(status: string): Exclude<SlateFilter, "all"> {
   return "scheduled";
 }
 
-function formatSlateDate(value: Date) {
-  return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(value);
-}
-
 function formatGameTime(value: string) {
-  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/New_York",
+  }).format(new Date(value));
 }
 
-function getPitcherSubline(detail: MlbGameDetail | undefined, side: "away" | "home") {
-  const starter = detail?.starters?.[side];
-  if (!starter) return `${MLB_DASH} • ${MLB_DASH}`;
-  return `${starter.hand || MLB_DASH} • ${starter.record || MLB_DASH}`;
+type PropPreviewTheme = "hr" | "k";
+
+type PropPreviewRow = {
+  key: string;
+  player: string;
+  position?: string;
+  team: string;
+  opponent: string;
+  score: number | null | undefined;
+};
+
+function TeamAbbrBadge({ team }: { team: string }) {
+  return (
+    <span className="flex h-5 w-7 shrink-0 items-center justify-center rounded-[4px] bg-slate-100 text-[9px] font-extrabold text-slate-500">
+      {team}
+    </span>
+  );
 }
 
-function getFeaturedMatchupEdge(detail: MlbGameDetail) {
-  const awayK9 = computeK9(detail.starters.away.strikeOuts, detail.starters.away.inningsPitched);
-  const homeK9 = computeK9(detail.starters.home.strikeOuts, detail.starters.home.inningsPitched);
-  const awayOpponentK = computePercent(
-    detail.opponentSplits.homeBattingVsAwayStarter?.strikeOuts ?? null,
-    detail.opponentSplits.homeBattingVsAwayStarter?.plateAppearances ?? null,
-  );
-  const homeOpponentK = computePercent(
-    detail.opponentSplits.awayBattingVsHomeStarter?.strikeOuts ?? null,
-    detail.opponentSplits.awayBattingVsHomeStarter?.plateAppearances ?? null,
-  );
-  const awayLineupOps = detail.lineupSummaries.away.ops;
-  const homeLineupOps = detail.lineupSummaries.home.ops;
+function PropPreviewCard({
+  title,
+  rows,
+  to,
+  theme,
+}: {
+  title: string;
+  rows: PropPreviewRow[];
+  to: string;
+  theme: PropPreviewTheme;
+}) {
+  const themeClasses = theme === "hr"
+    ? {
+      header: "bg-sky-50 text-sky-900",
+      icon: "bg-sky-100 text-sky-700",
+      label: "text-sky-700",
+      hover: "hover:bg-sky-50",
+      note: "Model High Edges",
+    }
+    : {
+      header: "bg-emerald-50 text-emerald-950",
+      icon: "bg-emerald-100 text-emerald-700",
+      label: "text-emerald-700",
+      hover: "hover:bg-emerald-50",
+      note: "Model Precision",
+    };
 
-  const kCandidates = [
-    {
-      title: `${detail.starters.away.name} strikeout look`,
-      score: (awayK9 ?? 0) * 0.65 + (awayOpponentK ?? 0) * 0.35,
-      note: `${detail.game.home.abbreviation} split K% ${awayOpponentK?.toFixed(1) ?? "—"} with ${detail.starters.away.name} carrying a ${awayK9?.toFixed(1) ?? "—"} K/9.`,
-      icon: <Target className="h-5 w-5" />,
-    },
-    {
-      title: `${detail.starters.home.name} strikeout look`,
-      score: (homeK9 ?? 0) * 0.65 + (homeOpponentK ?? 0) * 0.35,
-      note: `${detail.game.away.abbreviation} split K% ${homeOpponentK?.toFixed(1) ?? "—"} with ${detail.starters.home.name} carrying a ${homeK9?.toFixed(1) ?? "—"} K/9.`,
-      icon: <Target className="h-5 w-5" />,
-    },
-  ].sort((left, right) => right.score - left.score);
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className={cn("flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3", themeClasses.header)}>
+        <div className="flex items-center gap-2">
+          <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
+            {theme === "hr" ? <Flame className="h-4 w-4" /> : <Radar className="h-4 w-4" />}
+          </span>
+          <h3 className="text-base font-bold text-[#031635]">{title}</h3>
+        </div>
+        <Link to={to} className={cn("text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
+          {themeClasses.note}
+        </Link>
+      </div>
 
-  const lineupDelta = Math.abs((awayLineupOps ?? 0) - (homeLineupOps ?? 0));
-  if (kCandidates[0].score >= 14 || lineupDelta < 0.035) {
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px] items-center gap-2 border-b border-slate-200 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+        <div>Player</div>
+        <div>Matchup</div>
+        <div className="text-right">Score</div>
+      </div>
+
+      <div>
+        {rows.map((row, index) => (
+          <Link
+            key={row.key}
+            to={to}
+            className={cn(
+              "group grid grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px] items-center gap-2 border-b border-slate-100 px-4 py-2 transition last:border-b-0",
+              index % 2 === 1 && "bg-slate-50/50",
+              themeClasses.hover,
+            )}
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              <TeamAbbrBadge team={row.team} />
+              <div className="min-w-0">
+                <div className="truncate text-xs font-bold leading-5 text-slate-950">{row.player}</div>
+                {row.position && <div className="text-[10px] font-semibold uppercase text-slate-400">{row.position}</div>}
+              </div>
+            </div>
+            <div className="min-w-0 text-[11px] font-medium text-slate-500">
+              <div className="truncate">{row.team} vs {row.opponent}</div>
+            </div>
+            <div className="flex justify-end">
+              <ScorePill value={row.score} />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const MLB_HUB_LINKS = [
+  { label: "MLB Props", to: "/mlb/props", icon: <BarChart3 className="h-4 w-4" /> },
+  { label: "HR Props", to: "/mlb/hr-props", icon: <Flame className="h-4 w-4" /> },
+  { label: "K Props", to: "/mlb/strikeout-props", icon: <Radar className="h-4 w-4" /> },
+  { label: "Matchups", to: "/mlb/batter-vs-pitcher", icon: <Swords className="h-4 w-4" /> },
+  { label: "Schedule", to: "/mlb#schedule", icon: <CalendarDays className="h-4 w-4" /> },
+];
+
+const MLB_TOOL_CARDS = [
+  {
+    title: "MLB Props Hub",
+    body: "Comprehensive prop analytics for every game on the slate with matchup context.",
+    to: "/mlb/props",
+    icon: <BarChart3 className="h-5 w-5" />,
+    accent: "border-t-[#031635]",
+  },
+  {
+    title: "HR Props",
+    body: "Daily home run model projections and edges with park, weather, and pitcher risk.",
+    to: "/mlb/hr-props",
+    icon: <Flame className="h-5 w-5" />,
+    accent: "border-t-sky-700",
+  },
+  {
+    title: "Strikeout Props",
+    body: "Pitcher K-prop rankings by skill profile, whiff rate, and opponent strikeout tendency.",
+    to: "/mlb/strikeout-props",
+    icon: <Radar className="h-5 w-5" />,
+    accent: "border-t-emerald-700",
+  },
+  {
+    title: "Batter vs Pitcher",
+    body: "Table-first matchup board for batter power, pitcher attackability, and park context.",
+    to: "/mlb/batter-vs-pitcher",
+    icon: <Swords className="h-5 w-5" />,
+    accent: "border-t-slate-300",
+  },
+  {
+    title: "Today's Slate",
+    body: "Live schedule, probable pitchers, team records, status, and matchup edge previews.",
+    to: "/mlb#schedule",
+    icon: <CalendarDays className="h-5 w-5" />,
+    accent: "border-t-amber-500",
+  },
+  {
+    title: "Model Edges",
+    body: "Quick access to the highest-scoring HR and strikeout prop boards for today's slate.",
+    to: "/mlb#props",
+    icon: <Gauge className="h-5 w-5" />,
+    accent: "border-t-[#006399]",
+  },
+];
+
+function MlbHubSidebar() {
+  return (
+    <aside className="hidden w-64 shrink-0 self-start border-r border-slate-200 bg-[#eff4ff] py-4 lg:sticky lg:top-24 lg:block">
+      <div className="mb-6 px-6">
+        <h2 className="text-lg font-extrabold tracking-tight text-[#031635]">MLB HUB</h2>
+        <p className="text-xs text-slate-500">Analytics &amp; Projections</p>
+      </div>
+      <nav className="flex flex-col gap-1">
+        {MLB_HUB_LINKS.map((item, index) => (
+          <Link
+            key={item.label}
+            to={item.to}
+            className={cn(
+              "mx-2 flex items-center gap-3 rounded-lg px-4 py-3 text-xs font-bold text-slate-600 transition hover:translate-x-1 hover:bg-[#dce9ff] hover:text-[#031635]",
+              index === 0 && "bg-[#7bc2ff] text-[#004f7b] shadow-sm",
+            )}
+          >
+            {item.icon}
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="mt-8 px-4">
+        <Link
+          to="/mlb/props"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-4 py-3 text-xs font-extrabold text-white transition hover:bg-[#1a2b4b]"
+        >
+          <Rocket className="h-4 w-4" />
+          Prop Optimizer
+        </Link>
+      </div>
+    </aside>
+  );
+}
+
+function MlbHubHero() {
+  return (
+    <section className="relative overflow-hidden rounded-2xl bg-[#1a2b4b] p-5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)] sm:p-7">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_86%_35%,rgba(123,194,255,0.24),transparent_22rem)]" />
+      <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-[-0.02em] text-white sm:text-5xl">MLB Hub</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#b6c6ef] sm:text-base">
+            Model edges, prop projections, daily matchups, and slate context built for serious data-driven bettors.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {MLB_HUB_LINKS.slice(0, 4).map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur transition hover:bg-white/20"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div className="hidden h-40 w-40 shrink-0 items-center justify-center rounded-full border-4 border-white/10 bg-[#7bc2ff]/10 md:flex">
+          <BarChart3 className="h-20 w-20 text-white/35" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HubSportsbookStrip() {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-[#eff4ff] px-4 py-3">
+      <SportsbookBar />
+    </div>
+  );
+}
+
+function getSlateEdgeSummary(detail: MlbGameDetail | undefined) {
+  if (!detail) {
     return {
-      eyebrow: "Top edge to price first",
-      title: kCandidates[0].title,
-      note: kCandidates[0].note,
-      icon: kCandidates[0].icon,
+      pitching: "Loading",
+      lineup: "Loading",
+      total: "Loading",
     };
   }
-
-  const homeLineupAhead = (homeLineupOps ?? 0) > (awayLineupOps ?? 0);
+  const cards = getSummaryCards(detail);
   return {
-    eyebrow: "Top edge to price first",
-    title: `${homeLineupAhead ? detail.game.home.abbreviation : detail.game.away.abbreviation} lineup pressure`,
-    note: `${detail.game.away.abbreviation} projected OPS ${awayLineupOps?.toFixed(3) ?? "—"} against ${detail.game.home.abbreviation} at ${homeLineupOps?.toFixed(3) ?? "—"}.`,
-    icon: <Swords className="h-5 w-5" />,
+    pitching: cards.find((card) => card.label === "Pitching Edge")?.value ?? "Neutral",
+    lineup: cards.find((card) => card.label === "Lineup Edge")?.value ?? "Neutral",
+    total: cards.find((card) => card.label === "Run Total Lean")?.value ?? "Neutral",
   };
 }
 
-const ESPN_TEAM_ABBR_SLATE: Record<string, string> = {
-  AZ: "ari", ATH: "oak", WSH: "wsh", CWS: "chw", KCR: "kc",
-  SDP: "sd", SFG: "sf", TBR: "tb", NYY: "nyy", NYM: "nym",
-  LAD: "lad", LAA: "laa", BOS: "bos", CHC: "chc", CIN: "cin",
-  CLE: "cle", COL: "col", DET: "det", HOU: "hou", MIA: "mia",
-  MIL: "mil", MIN: "min", PHI: "phi", PIT: "pit", SEA: "sea",
-  STL: "stl", TEX: "tex", TOR: "tor", ATL: "atl", BAL: "bal",
-};
-
-function espnSlateLogoUrl(abbreviation: string) {
-  const key = ESPN_TEAM_ABBR_SLATE[abbreviation] ?? abbreviation.toLowerCase();
-  return `https://a.espncdn.com/i/teamlogos/mlb/500/${key}.png`;
-}
-
-function SlateTeamLogo({ abbreviation, size = 40 }: { abbreviation: string; size?: number }) {
-  const [failed, setFailed] = useState(false);
-  const colors = getMlbTeamColors(abbreviation);
-  if (failed) {
-    return (
-      <div
-        className="flex shrink-0 items-center justify-center rounded-full font-bold text-white"
-        style={{ width: size, height: size, backgroundColor: colors.primary, fontSize: size * 0.32 }}
-      >
-        {abbreviation.slice(0, 3)}
-      </div>
-    );
-  }
+function MlbSlateAnalyzer({
+  games,
+  detailPreviews,
+  onOpenGame,
+}: {
+  games: MlbScheduleGame[];
+  detailPreviews: Record<number, MlbGameDetail>;
+  onOpenGame: (gamePk: number) => void;
+}) {
   return (
-    <img
-      src={espnSlateLogoUrl(abbreviation)}
-      alt={abbreviation}
-      width={size}
-      height={size}
-      className="shrink-0 object-contain"
-      onError={() => setFailed(true)}
-    />
+    <section id="schedule" className="space-y-3">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-[#031635]">Game Matchup Analyzer</h2>
+          <p className="text-xs text-slate-500">Daily predictive analysis and situational edges from the live slate.</p>
+        </div>
+        <span className="text-xs font-semibold text-slate-400">{games.length} games</span>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="hidden grid-cols-[86px_minmax(0,1.7fr)_minmax(120px,0.75fr)_minmax(120px,0.75fr)_minmax(110px,0.55fr)] border-b border-slate-200 bg-[#eff4ff] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 lg:grid">
+          <div>Status</div>
+          <div>Matchup / Pitchers</div>
+          <div className="text-center">Lineup</div>
+          <div className="text-center">Pitching</div>
+          <div className="text-center">Total</div>
+        </div>
+        <div>
+          {games.map((game, index) => {
+            const detail = detailPreviews[game.gamePk];
+            const edges = getSlateEdgeSummary(detail);
+            const statusTheme = getStatusBadgeTheme(game.status);
+            const statusCategory = getSlateStatusCategory(game.status);
+            const awayScore = Number(game.away.score);
+            const homeScore = Number(game.home.score);
+            const showScore = (statusCategory === "in-progress" || statusCategory === "final")
+              && Number.isFinite(awayScore)
+              && Number.isFinite(homeScore);
+
+            return (
+              <button
+                key={game.gamePk}
+                type="button"
+                onClick={() => onOpenGame(game.gamePk)}
+                className={cn(
+                  "grid w-full gap-3 border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-[#eff4ff]",
+                  "lg:grid-cols-[86px_minmax(0,1.7fr)_minmax(120px,0.75fr)_minmax(120px,0.75fr)_minmax(110px,0.55fr)] lg:items-center",
+                  index % 2 === 1 && "bg-slate-50/55",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2 lg:block">
+                  <span
+                    className="inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold"
+                    style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
+                  >
+                    {game.status}
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-400 lg:mt-2 lg:block">{formatGameTime(game.gameDate)}</span>
+                </div>
+
+                <div className="min-w-0 space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="w-10 shrink-0 font-extrabold text-slate-950">{game.away.abbreviation}</span>
+                      <span className="text-[11px] font-semibold text-slate-400">{game.away.record}</span>
+                    </div>
+                    <span className="truncate text-xs font-medium text-[#031635]">
+                      {game.away.probablePitcher?.fullName || MLB_DASH}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="w-10 shrink-0 font-extrabold text-slate-950">@ {game.home.abbreviation}</span>
+                      <span className="text-[11px] font-semibold text-slate-400">{game.home.record}</span>
+                    </div>
+                    <span className="truncate text-xs font-medium text-[#031635]">
+                      {game.home.probablePitcher?.fullName || MLB_DASH}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-1 text-[10px] font-semibold uppercase text-slate-400">
+                    <span>{game.venue}</span>
+                    {showScore ? <span>{awayScore}-{homeScore}</span> : null}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 lg:contents">
+                  <div className="flex justify-center">
+                    <span className="rounded-md bg-sky-50 px-2 py-1 text-[10px] font-extrabold text-sky-700">{edges.lineup}</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <span className="rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-extrabold text-emerald-700">{edges.pitching}</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
-function SlateEdgeRow({ detail, game }: { detail: MlbGameDetail | undefined; game: MlbScheduleGame }) {
-  if (!detail) {
-    return (
-      <div className="border-t border-slate-100 px-4 py-2.5">
-        <div className="text-[11px] text-slate-400">Loading edge data…</div>
-      </div>
-    );
-  }
-  const cards = getSummaryCards(detail);
-  const pitchEdge = cards.find((c) => c.label === "Pitching Edge");
-  const lineupEdge = cards.find((c) => c.label === "Lineup Edge");
-  const totalLean = cards.find((c) => c.label === "Run Total Lean");
-
-  const edges = [
-    { label: "Pitch", value: pitchEdge?.value ?? "Neutral" },
-    { label: "Lineup", value: lineupEdge?.value ?? "Neutral" },
-    { label: "Total", value: totalLean?.value ?? "Neutral" },
-  ];
-
+function MlbToolsGrid() {
   return (
-    <div className="border-t border-slate-100 px-4 py-3">
-      <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">Overall Edge</div>
-      <div className="flex gap-2">
-        {edges.map((edge) => {
-          const isAway = edge.value.toLowerCase().includes(game.away.abbreviation.toLowerCase());
-          const isHome = edge.value.toLowerCase().includes(game.home.abbreviation.toLowerCase());
-          const awayColors = getMlbTeamColors(game.away.abbreviation);
-          const homeColors = getMlbTeamColors(game.home.abbreviation);
-          const bg = isAway ? awayColors.primary : isHome ? homeColors.primary : "#94a3b8";
-          return (
-            <div
-              key={edge.label}
-              className="flex flex-1 flex-col items-center rounded-lg py-1.5 text-white"
-              style={{ backgroundColor: bg }}
-            >
-              <span className="text-[9px] font-semibold uppercase tracking-[0.1em] opacity-80">{edge.label}</span>
-              <span className="text-[11px] font-bold leading-tight">{edge.value}</span>
-            </div>
-          );
-        })}
+    <section id="tools" className="space-y-4">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#031635]">MLB Analytics Tools</h2>
+          <p className="text-sm text-slate-500">Real Joe Knows Ball MLB boards and slate workflows.</p>
+        </div>
+        <Link to="/mlb/props" className="hidden items-center gap-1 text-sm font-bold text-sky-700 hover:underline sm:flex">
+          View All Tools <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
       </div>
-    </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {MLB_TOOL_CARDS.map((tool) => (
+          <Link
+            key={tool.title}
+            to={tool.to}
+            className={cn("group relative overflow-hidden rounded-xl border border-slate-200 border-t-4 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md", tool.accent)}
+          >
+            <div className="absolute -right-4 -top-4 text-slate-900/5 transition group-hover:text-slate-900/10">
+              {tool.icon}
+            </div>
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-[#eff4ff] text-[#031635]">
+              {tool.icon}
+            </div>
+            <h3 className="text-base font-bold text-slate-950">{tool.title}</h3>
+            <p className="mt-2 min-h-[54px] text-xs leading-5 text-slate-500">{tool.body}</p>
+            <div className="mt-5 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#031635] group-hover:text-sky-700">
+              Open Tool <ExternalLink className="h-3 w-3" />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -692,268 +935,68 @@ function HomeSchedule({
   detailPreviews: Record<number, MlbGameDetail>;
   onOpenGame: (gamePk: number) => void;
 }) {
-  const [filter, setFilter] = useState<SlateFilter>("all");
   const { batters: propBatters, strikeoutRows } = useMlbPropsData();
   const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
-
-  const counts = useMemo(() => {
-    const summary = { "in-progress": 0, "pre-game": 0, scheduled: 0, final: 0 };
-    games.forEach((game) => { summary[getSlateStatusCategory(game.status)] += 1; });
-    return summary;
-  }, [games]);
-
-  const filteredGames = useMemo(() => {
-    if (filter === "all") return games;
-    return games.filter((game) => getSlateStatusCategory(game.status) === filter);
-  }, [filter, games]);
-
-  const filterOptions: Array<{ key: SlateFilter; label: string }> = [
-    { key: "all", label: "All" },
-    { key: "in-progress", label: "Live" },
-    { key: "pre-game", label: "Pre-Game" },
-    { key: "scheduled", label: "Scheduled" },
-    { key: "final", label: "Final" },
-  ];
+  const hrPreviewRows = useMemo<PropPreviewRow[]>(
+    () => topHrProps.map((row) => ({
+      key: `${row.player}-${row.team}`,
+      player: row.player,
+      position: row.position,
+      team: row.team,
+      opponent: row.opponent,
+      score: row.hrScore,
+    })),
+    [topHrProps],
+  );
+  const strikeoutPreviewRows = useMemo<PropPreviewRow[]>(
+    () => topStrikeoutProps.map((row) => ({
+      key: `${row.pitcher}-${row.team}`,
+      player: row.pitcher,
+      team: row.team,
+      opponent: row.opponent,
+      score: row.kMatchupScore,
+    })),
+    [topStrikeoutProps],
+  );
 
   return (
-    <div className="space-y-6">
-      <section className="grid items-start gap-4 xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)] xl:gap-5">
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto">
-          <div className="flex items-center justify-between gap-3">
+    <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
+      <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8">
+        <MlbHubSidebar />
+
+        <div className="min-w-0 flex-1 space-y-5">
+          <nav className="flex flex-wrap gap-2 lg:hidden">
+            {MLB_HUB_LINKS.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <MlbHubHero />
+          <HubSportsbookStrip />
+
+          <section id="props" className="space-y-3">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">Daily prop preview</div>
               <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
             </div>
-            <Link to="/mlb/props" className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-              Hub
-            </Link>
-          </div>
-
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-3">
-              <div className="mb-2 inline-flex rounded-full bg-sky-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
-                Top HR Props
-              </div>
-              <div className="space-y-1.5">
-                {topHrProps.map((row) => (
-                  <Link
-                    key={`${row.player}-${row.team}`}
-                    to="/mlb/hr-props"
-                    className="grid grid-cols-[minmax(0,1fr)_50px] items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-2 hover:bg-sky-50"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-semibold text-slate-900">
-                        {row.player} <span className="text-slate-400">{row.position}</span>
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <TeamLogoBadge team={row.team} size={16} /> vs {row.opponent}
-                      </div>
-                    </div>
-                    <ScorePill value={row.hrScore} />
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3">
-              <div className="mb-2 inline-flex rounded-full bg-emerald-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
-                Top K Props
-              </div>
-              <div className="space-y-1.5">
-                {topStrikeoutProps.map((row) => (
-                  <Link
-                    key={`${row.pitcher}-${row.team}`}
-                    to="/mlb/strikeout-props"
-                    className="grid grid-cols-[minmax(0,1fr)_50px] items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-2 hover:bg-sky-50"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-xs font-semibold text-slate-900">{row.pitcher}</div>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <TeamLogoBadge team={row.team} size={16} /> vs {row.opponent}
-                      </div>
-                    </div>
-                    <ScorePill value={row.kMatchupScore} />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
-            <Link to="/mlb/hr-props" className="rounded-xl bg-sky-700 px-3 py-2 text-center text-xs font-semibold text-white">
-              HR Prop Model
-            </Link>
-            <Link to="/mlb/strikeout-props" className="rounded-xl bg-slate-900 px-3 py-2 text-center text-xs font-semibold text-white">
-              K Prop Model
-            </Link>
-            <Link to="/mlb/props" className="rounded-xl border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-700">
-              Props Hub
-            </Link>
-          </div>
-        </aside>
-
-        <div className="space-y-4">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-900 sm:text-4xl">
-                Today&apos;s MLB Slate
-              </h1>
-              <div className="text-sm font-medium text-slate-500">{formatSlateDate(new Date())}</div>
-            </div>
-            <div className="mt-1.5 text-sm text-slate-500">
-              {games.length} games · {counts["in-progress"]} live · {counts.scheduled + counts["pre-game"]} upcoming
-            </div>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-              Starting pitcher matchups, park context, projected lineups, and game-level prop angles —{" "}
-              <Link to="/mlb/hr-props" className="font-semibold text-sky-700 hover:underline">
-                open the HR props board
-              </Link>{" "}
-              for individual player analysis.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link to="/mlb/props" className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-                Props Hub
-              </Link>
-              <Link to="/mlb/hr-props" className="rounded-full bg-sky-700 px-4 py-2 text-sm font-semibold text-white">
-                HR Props
-              </Link>
-              <Link to="/mlb/strikeout-props" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                K Props
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
-            <SportsbookBar />
-          </div>
-
-          <section className="space-y-4">
-            <div className="sticky top-20 z-20 flex flex-wrap items-center gap-2 rounded-[20px] border border-slate-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
-              {filterOptions.map((option) => (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => setFilter(option.key)}
-                  className={cn(
-                    "rounded-full px-3.5 py-1.5 text-xs font-semibold transition",
-                    filter === option.key
-                      ? "bg-slate-900 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200",
-                  )}
-                >
-                  {option.label}
-                  {option.key !== "all" && counts[option.key as keyof typeof counts] > 0 && (
-                    <span className={cn("ml-1.5 rounded-full px-1.5 py-0.5 text-[10px]",
-                      filter === option.key ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"
-                    )}>
-                      {counts[option.key as keyof typeof counts]}
-                    </span>
-                  )}
-                </button>
-              ))}
-              <span className="ml-auto text-xs text-slate-400">
-                {filteredGames.length} of {games.length} games
-              </span>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
-              {filteredGames.map((game) => {
-                const detail = detailPreviews[game.gamePk];
-                const homeColors = getMlbTeamColors(game.home.abbreviation);
-                const awayColors = getMlbTeamColors(game.away.abbreviation);
-                const statusTheme = getStatusBadgeTheme(game.status);
-                const statusCategory = getSlateStatusCategory(game.status);
-                const awayScore = Number(game.away.score);
-                const homeScore = Number(game.home.score);
-                const showScore = (statusCategory === "in-progress" || statusCategory === "final")
-                  && Number.isFinite(awayScore)
-                  && Number.isFinite(homeScore);
-                const awayWinning = showScore ? awayScore > homeScore : false;
-                const homeWinning = showScore ? homeScore > awayScore : false;
-
-                return (
-                  <button
-                    key={game.gamePk}
-                    type="button"
-                    onClick={() => onOpenGame(game.gamePk)}
-                    className="group cursor-pointer overflow-hidden rounded-[20px] border border-slate-200 bg-white text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${awayColors.primary}, ${homeColors.primary})` }} />
-
-                    <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
-                      <span
-                        className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                        style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
-                      >
-                        {game.status}
-                      </span>
-                      <span className="text-[11px] font-medium text-slate-400">{formatGameTime(game.gameDate)}</span>
-                    </div>
-
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-4 pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <SlateTeamLogo abbreviation={game.away.abbreviation} size={36} />
-                        <div className="min-w-0">
-                          <div className={cn("truncate text-sm font-bold text-slate-900", awayWinning && "text-slate-900")}>
-                            {game.away.name}
-                          </div>
-                          <div className={cn("text-[11px] text-slate-400", awayWinning && "font-semibold text-slate-700")}>
-                            {game.away.record}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="min-w-[52px] text-center">
-                        {showScore ? (
-                          <div className="text-lg font-extrabold tracking-tight text-slate-900">
-                            {awayScore}–{homeScore}
-                          </div>
-                        ) : (
-                          <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-300">@</div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-end gap-2.5">
-                        <div className="min-w-0 text-right">
-                          <div className={cn("truncate text-sm font-bold text-slate-900", homeWinning && "text-slate-900")}>
-                            {game.home.name}
-                          </div>
-                          <div className={cn("text-[11px] text-slate-400", homeWinning && "font-semibold text-slate-700")}>
-                            {game.home.record}
-                          </div>
-                        </div>
-                        <SlateTeamLogo abbreviation={game.home.abbreviation} size={36} />
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-100 px-4 py-2.5">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <div className="truncate text-xs font-semibold text-slate-800">
-                            {game.away.probablePitcher?.fullName || MLB_DASH}
-                          </div>
-                          <div className="mt-0.5 text-[11px] text-slate-400">{getPitcherSubline(detail, "away")}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="truncate text-xs font-semibold text-slate-800">
-                            {game.home.probablePitcher?.fullName || MLB_DASH}
-                          </div>
-                          <div className="mt-0.5 text-[11px] text-slate-400">{getPitcherSubline(detail, "home")}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <SlateEdgeRow detail={detail} game={game} />
-
-                    <div className="px-4 pb-3 pt-1 text-[11px] text-slate-400">{game.venue}</div>
-                  </button>
-                );
-              })}
+            <div className="grid gap-3 md:grid-cols-2">
+              <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" />
+              <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" />
             </div>
           </section>
+
+          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} onOpenGame={onOpenGame} />
+          <MlbToolsGrid />
         </div>
-      </section>
+      </div>
     </div>
   );
 }
@@ -1372,4 +1415,6 @@ export default function MlbGameDetail() {
     </SiteShell>
   );
 }
+
+
 
