@@ -5,7 +5,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 
-type HrDashboardGame = {
+export type HrDashboardGame = {
   gameKey: string;
   matchup: string;
   awayTeam: string;
@@ -20,7 +20,7 @@ type HrDashboardGame = {
   parkFactor: number;
 };
 
-type HrDashboardPitcher = {
+export type HrDashboardPitcher = {
   gameKey: string;
   pitcher: string;
   pitcherId: number | null;
@@ -41,7 +41,7 @@ type HrDashboardPitcher = {
   kVs: number;
 };
 
-type HrDashboardBatter = {
+export type HrDashboardBatter = {
   gameKey: string;
   player: string;
   team: string;
@@ -72,7 +72,7 @@ type HrDashboardBatter = {
   angleTags: string[];
 };
 
-type HrDashboardPayload = {
+export type HrDashboardPayload = {
   date: string;
   generatedAt: string;
   games: HrDashboardGame[];
@@ -80,7 +80,7 @@ type HrDashboardPayload = {
   batters: HrDashboardBatter[];
 };
 
-type HrPropPick = {
+export type HrPropPick = {
   player: string;
   team: string;
   opponent: string;
@@ -92,7 +92,7 @@ type HrPropPick = {
 
 type PickTier = "Best Bet" | "Value Play" | "Longshot" | "Unknown";
 
-type HrBestBetsPayload = {
+export type HrBestBetsPayload = {
   date: string;
   generatedAt: string;
   slatePreview?: { slateOverview: string; modelNote: string } | null;
@@ -156,7 +156,7 @@ type ParkSidebarRow = {
   conditions: string;
 };
 
-type PitcherVsBatterRow = {
+export type PitcherVsBatterRow = {
   rank: number;
   gameKey: string;
   player: string;
@@ -182,7 +182,7 @@ type PitcherVsBatterRow = {
   angleTags: string[];
 };
 
-type PitcherStrikeoutTeamRow = {
+export type PitcherStrikeoutTeamRow = {
   rank: number;
   gameKey: string;
   pitcher: string;
@@ -1222,8 +1222,8 @@ export default function MlbHrProps() {
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
 
   usePageSeo({
-    title: "MLB HR Prop Dashboard Today - Joe Knows Ball",
-    description: "Daily MLB HR prop dashboard with park factors, pitcher vulnerability, batter power signals, and combined matchup edges.",
+    title: "MLB HR Prop Model Today - Joe Knows Ball",
+    description: "Daily MLB HR prop model with park factors, pitcher HR vulnerability, batter power signals, barrel contact, recent form, and combined matchup edges.",
     path: "/mlb/hr-props",
     structuredData: [
       {
@@ -1511,7 +1511,7 @@ export default function MlbHrProps() {
                 <div className="rounded-[30px] bg-[#0f2748] px-5 py-5 text-white shadow-sm">
                   <div className={cn("flex flex-col gap-3", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
                     <div>
-                      <div className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB HR Prop Dashboard</div>
+                      <h1 className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB HR Prop Dashboard</h1>
                       <p className={cn("mt-2 max-w-3xl leading-6 text-sky-100", isMobile ? "text-[13px]" : "text-sm")}>
                         Starting pitcher vulnerability, park environment, and batter power/contact angles for today&apos;s slate.
                       </p>
@@ -1573,6 +1573,12 @@ export default function MlbHrProps() {
                   <div className="mt-3 flex flex-wrap gap-3 text-sm">
                     <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
                       View today&apos;s MLB matchup analytics
+                    </a>
+                    <a href="/mlb/strikeout-props" className="font-semibold text-sky-800 hover:underline">
+                      View strikeout prop model
+                    </a>
+                    <a href="/mlb/batter-vs-pitcher" className="font-semibold text-sky-800 hover:underline">
+                      View batter vs pitcher model
                     </a>
                   </div>
                 </section>

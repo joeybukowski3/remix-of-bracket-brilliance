@@ -9,10 +9,12 @@ import MlbMatchupSummaryRow from "@/components/mlb/MlbMatchupSummaryRow";
 import MlbParkContextPanel from "@/components/mlb/MlbParkContextPanel";
 import MlbPitcherComparisonPanel from "@/components/mlb/MlbPitcherComparisonPanel";
 import MlbPitcherVsLineupPanel from "@/components/mlb/MlbPitcherVsLineupPanel";
+import { MlbPropModelDashboard } from "@/components/mlb/MlbPropModelComponents";
 import MlbProjectedLineupPanel from "@/components/mlb/MlbProjectedLineupPanel";
 import MlbPropAnglesPanel from "@/components/mlb/MlbPropAnglesPanel";
 import MlbSectionCard from "@/components/mlb/MlbSectionCard";
 import MlbSectionHeader from "@/components/mlb/MlbSectionHeader";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
@@ -935,7 +937,15 @@ function HomeSchedule({
   detailPreviews: Record<number, MlbGameDetail>;
   onOpenGame: (gamePk: number) => void;
 }) {
-  const { batters: propBatters, strikeoutRows } = useMlbPropsData();
+  const {
+    batters: propBatters,
+    batterVsPitcherRows,
+    dashboard: propDashboard,
+    games: propGames,
+    loading: propsLoading,
+    pitchers: propPitchers,
+    strikeoutRows,
+  } = useMlbPropsData();
   const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
   const hrPreviewRows = useMemo<PropPreviewRow[]>(
@@ -981,6 +991,15 @@ function HomeSchedule({
 
           <MlbHubHero />
           <HubSportsbookStrip />
+          <MlbPropModelDashboard
+            hrRows={propBatters}
+            strikeoutRows={strikeoutRows}
+            batterVsPitcherRows={batterVsPitcherRows}
+            pitchers={propPitchers}
+            games={propGames}
+            generatedAt={propDashboard?.generatedAt}
+            loading={propsLoading}
+          />
 
           <section id="props" className="space-y-3">
             <div>

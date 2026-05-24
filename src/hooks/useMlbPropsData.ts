@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   buildPitcherStrikeoutMatchupRows,
+  buildPitcherStrikeoutRows,
   buildPitcherVsBatterRows,
   buildTbdGameKeySet,
   buildTbdFootnotes,
@@ -58,6 +59,7 @@ export function useMlbPropsData() {
     const pitchers = allPitchers.filter((pitcher) => !tbdGameKeys.has(pitcher.gameKey) && !isStarterPlaceholder(pitcher.pitcher));
     const batters = allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher));
     const batterVsPitcherRows = buildPitcherVsBatterRows(batters, games, pitchers);
+    const strikeoutDetailRows = buildPitcherStrikeoutRows(batters, games, pitchers);
     const strikeoutRows = buildPitcherStrikeoutMatchupRows(pitchers, batters, games);
 
     return {
@@ -68,6 +70,7 @@ export function useMlbPropsData() {
       pitchers,
       batters,
       batterVsPitcherRows,
+      strikeoutDetailRows,
       strikeoutRows,
       tbdFootnotes: buildTbdFootnotes(tbdGameKeys, allGames, allPitchers, allBatters),
     };
