@@ -15,7 +15,7 @@ export default function MlbPlayerHeadshot({
   const [imageFailed, setImageFailed] = useState(false);
   const colors = getMlbTeamColors(teamAbbreviation);
   const espnUrl = playerId
-    ? `https://a.espncdn.com/combiner/i?img=/i/headshots/mlb/players/full/${playerId}.png&w=120&h=90`
+    ? `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${playerId}/headshot/67/current`
     : null;
 
   const initials = name
