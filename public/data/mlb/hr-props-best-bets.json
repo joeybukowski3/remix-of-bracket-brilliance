@@ -1,163 +1,193 @@
 {
-  "date": "2026-05-24",
-  "generatedAt": "2026-05-24T09:22:06.726Z",
+  "date": "2026-05-25",
+  "generatedAt": "2026-05-25T09:00:33.046Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features strong HR environments at Great American Ball Park (1.25) and Yankee Stadium (1.18), with lefty matchups for Walker and Rice creating platoon advantages. Angel Stadium and Truist Park also play favorably, while loanDepot park's 0.88 factor caps Miami's home slate. Pitcher vulnerabilities stand out with Gore, Griffin, and Singer allowing elevated HR rates against quality barrels.",
-    "modelNote": "The model heavily weights barrel/hard-hit rates and recent HR form, elevating Meckler and Soto despite small samples, while discounting park suppression for Alvarez and Grichuk."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Globe Life Field and Dodger Stadium both at or above neutral, while Oracle Park's 0.85 factor suppresses power. Merrill Kelly and Michael Wacha represent the most favorable right-handed pitching matchups, and the model is zeroing in on elevated barrel and hard-hit rates against those arms.",
+    "modelNote": "The model is heavily weighting recent barrel and hard-hit trends plus park factors, elevating Casey Schmitt and Ben Rice to the top despite modest sample last-7 HR counts."
   },
   "bestBets": [
     {
-      "player": "Wade Meckler",
-      "team": "LAA",
-      "opponent": "TEX",
-      "opposingPitcher": "MacKenzie Gore",
+      "player": "Casey Schmitt",
+      "team": "SF",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate=100",
-        "exitVelo=105.8"
+        "hrScore=72.5",
+        "barrelRate=14.6"
       ],
       "bullets": [
-        "barrelRate 100 and exitVelo 105.8",
-        "parkFactor 1.02 with opposingPitcherHrVs 53.6"
+        "last7HR=3",
+        "parkFactor=0.85"
       ]
     },
     {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "MIA",
-      "opposingPitcher": "Tyler Phillips",
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "KC",
+      "opposingPitcher": "Michael Wacha",
       "hrScoreRank": 2,
       "topStats": [
-        "last7HR=4",
-        "last30HR=9"
+        "iso=0.342",
+        "hardHitRate=53.7"
       ],
       "bullets": [
-        "last7HR 4 and last30HR 9",
-        "xba 0.281 with opposingPitcherHrVs 27.5"
+        "exitVelo=92.7",
+        "hrFBRatio=9.4"
       ]
     },
     {
-      "player": "Michael Harris II",
-      "team": "ATL",
-      "opponent": "WSH",
-      "opposingPitcher": "Foster Griffin",
+      "player": "Brandon Nimmo",
+      "team": "TEX",
+      "opponent": "HOU",
+      "opposingPitcher": "Tatsuya Imai",
       "hrScoreRank": 3,
       "topStats": [
-        "hardHitRate=55.8",
-        "last7HR=3"
+        "xba=0.299",
+        "hardHitRate=52"
       ],
       "bullets": [
-        "hardHitRate 55.8 and last7HR 3",
-        "parkFactor 1.03 with opposingPitcherHrVs 53.8"
+        "opposingPitcherHrVs=75.2",
+        "parkFactor=0.99"
       ]
     },
     {
-      "player": "Jordan Walker",
-      "team": "STL",
-      "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
+      "player": "Aaron Judge",
+      "team": "NYY",
+      "opponent": "KC",
+      "opposingPitcher": "Michael Wacha",
       "hrScoreRank": 4,
       "topStats": [
-        "parkFactor=1.25",
-        "last30HR=7"
+        "barrelRate=23.1",
+        "exitVelo=93.6"
       ],
       "bullets": [
-        "parkFactor 1.25 and last30HR 7",
-        "opposingPitcherHrVs 77 with exitVelo 94.4"
+        "last30HR=8",
+        "hardHitRate=54.5"
       ]
     },
     {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "TEX",
-      "opposingPitcher": "MacKenzie Gore",
+      "player": "Justin Foscue",
+      "team": "TEX",
+      "opponent": "HOU",
+      "opposingPitcher": "Tatsuya Imai",
       "hrScoreRank": 5,
       "topStats": [
-        "bbRate=20.4",
-        "last7HR=2"
+        "xba=0.324",
+        "hardHitRate=53.6"
       ],
       "bullets": [
-        "bbRate 20.4 and last7HR 2",
-        "parkFactor 1.02 with opposingPitcherHrVs 53.6"
+        "exitVelo=92.5",
+        "parkFactor=0.99"
       ]
     }
   ],
   "valueBets": [
     {
-      "player": "Nathaniel Lowe",
-      "team": "CIN",
-      "opponent": "STL",
-      "opposingPitcher": "Matthew Liberatore",
+      "player": "Freddie Freeman",
+      "team": "LAD",
+      "opponent": "COL",
+      "opposingPitcher": "Tanner Gordon",
       "hrScoreRank": 6,
       "topStats": [
-        "parkFactor=1.25",
-        "last30HR=6"
+        "parkFactor=1.1",
+        "exitVelo=91.9"
       ],
       "bullets": [
-        "parkFactor 1.25 and last30HR 6",
-        "opposingPitcherHrVs 66 with iso 0.286"
+        "opposingPitcherHrVs=67.7",
+        "last7HR=2"
       ]
     },
     {
-      "player": "Randal Grichuk",
-      "team": "CWS",
-      "opponent": "SF",
-      "opposingPitcher": "Robbie Ray",
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "COL",
+      "opposingPitcher": "Tanner Gordon",
       "hrScoreRank": 7,
       "topStats": [
-        "xba=0.302",
-        "last30HR=4"
+        "exitVelo=93.1",
+        "barrelRate=16.8"
       ],
       "bullets": [
-        "xba 0.302 and last30HR 4",
-        "opposingPitcherHrVs 60.2 with parkFactor 0.85"
+        "pullRate=52.3",
+        "parkFactor=1.1"
       ]
     },
     {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "CHC",
-      "opposingPitcher": "Shota Imanaga",
+      "player": "Nathaniel Lowe",
+      "team": "CIN",
+      "opponent": "NYM",
+      "opposingPitcher": "Nolan McLean",
       "hrScoreRank": 8,
       "topStats": [
-        "hardHitRate=52",
-        "iso=0.295"
+        "iso=0.286",
+        "xba=0.292"
       ],
       "bullets": [
-        "hardHitRate 52 and iso 0.295",
-        "exitVelo 94 with opposingPitcherHrVs 43.4"
+        "hrFBRatio=7.1",
+        "last30HR=5"
       ]
     }
   ],
   "longshots": [
     {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 9,
+      "player": "Jordan Walker",
+      "team": "STL",
+      "opponent": "MIL",
+      "opposingPitcher": "Jacob Misiorowski",
+      "hrScoreRank": 13,
       "topStats": [
-        "iso=0.348",
-        "parkFactor=1.18"
+        "exitVelo=94.5",
+        "hardHitRate=52.2"
       ],
       "bullets": [
-        "iso 0.348 and parkFactor 1.18",
-        "last30HR 7 with opposingPitcherHrVs 28.6"
+        "iso=0.292",
+        "hrFBRatio=7.8"
       ]
     },
     {
-      "player": "JJ Bleday",
-      "team": "CIN",
-      "opponent": "STL",
-      "opposingPitcher": "Matthew Liberatore",
-      "hrScoreRank": 10,
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "SD",
+      "opposingPitcher": "Randy Vásquez",
+      "hrScoreRank": 12,
       "topStats": [
-        "parkFactor=1.25",
-        "last30HR=6"
+        "iso=0.374",
+        "barrelRate=25.7"
       ],
       "bullets": [
-        "parkFactor 1.25 and last30HR 6",
-        "opposingPitcherHrVs 66 with xba 0.303"
+        "hrFBRatio=10.5",
+        "last30HR=12"
+      ]
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "CLE",
+      "opposingPitcher": "Tanner Bibee",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Hard Hit%=59.4",
+        "Pitcher HR VS=43.7"
+      ],
+      "bullets": [
+        "HR score 63.2 (#9)",
+        "Pitcher HR VS 43.7 at park 0.91"
+      ]
+    },
+    {
+      "player": "Christian Walker",
+      "team": "HOU",
+      "opponent": "TEX",
+      "opposingPitcher": "Kumar Rocker",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Pitcher HR VS=49.6",
+        "Hard Hit%=48.0"
+      ],
+      "bullets": [
+        "HR score 63.1 (#10)",
+        "Pitcher HR VS 49.6 at park 0.99"
       ]
     }
   ]
