@@ -11,7 +11,7 @@ export default function MlbSectionCard({
 }) {
   return (
     <section
-      className="rounded-2xl border border-border/70 bg-card p-4 shadow-[0_10px_24px_hsl(var(--foreground)/0.05)]"
+      className="rounded-xl border border-border/70 bg-card p-3 shadow-[0_4px_12px_hsl(var(--foreground)/0.04)]"
       style={{
         borderLeftWidth: accentColor ? 6 : undefined,
         borderLeftColor: accentColor,
