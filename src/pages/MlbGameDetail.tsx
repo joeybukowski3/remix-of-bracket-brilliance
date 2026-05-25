@@ -358,7 +358,15 @@ async function buildGameDetail(gamePk: string | number) {
   if (existing) return existing;
 
   const game = findGame(gamePk);
-  if (!game) throw new Error("Game not found for the current MLB slate.");
+  if (!game) {
+    // If game not in schedule, try fetching directly from API as fallback
+    try {
+      const detailJson = await fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}?hydrate=gameState,seriesStatus,ballpark`);
+      throw new Error(`Game ${gamePk} not found in today's schedule. Try refreshing the page for the latest games.`);
+    } catch {
+      throw new Error(`Game ${gamePk} not found in today's schedule. Try refreshing the page for the latest games.`);
+    }
+  }
 
   const boxscore = await fetchBoxscore(gamePk);
   const currentHomeLineup = extractLineupFromTeamBox(boxscore?.teams?.home);
@@ -1112,6 +1120,12 @@ export default function MlbGameDetail() {
       return;
     }
 
+    if (!routeState.gamePk) {
+      setDetailError("Game ID not found in URL.");
+      setDetailLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setDetailLoading(true);
     setDetailError(null);
@@ -1130,7 +1144,9 @@ export default function MlbGameDetail() {
           setUsingDevFixture(true);
           return;
         }
-        setDetailError(error instanceof Error ? error.message : "Unable to load MLB matchup detail.");
+        const errorMsg = error instanceof Error ? error.message : "Unable to load MLB matchup detail.";
+        console.error("Detail load error:", errorMsg, routeState.gamePk);
+        setDetailError(errorMsg);
         setDetailLoading(false);
       });
 
@@ -1195,14 +1211,14 @@ export default function MlbGameDetail() {
             Building matchup dashboard.
           </div>
         ) : detailError || !detail ? (
-          <div className="space-y-4 rounded-[32px] bg-card p-8 shadow-[0_16px_36px_hsl(var(--foreground)/0.06)] ring-1 ring-border/60">
-            <div className="text-sm text-destructive">{detailError || "Matchup detail is unavailable."}</div>
+          <div className="space-y-4 rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
+            <div className="text-sm font-semibold text-red-900">{detailError || "Matchup detail is unavailable."}</div>
             <button
               type="button"
               onClick={goHome}
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+              className="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
             >
-              Back to MLB slate
+              ← Back to games
             </button>
           </div>
         ) : (
