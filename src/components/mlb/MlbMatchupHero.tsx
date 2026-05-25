@@ -168,154 +168,107 @@ export default function MlbMatchupHero({
   summaryIndicators,
   spotlight,
 }: MlbMatchupHeroProps) {
-  const { game, starters, weather } = detail;
+  const { game, starters } = detail;
   const awayColors = getMlbTeamColors(game.away.abbreviation);
   const homeColors = getMlbTeamColors(game.home.abbreviation);
 
   const awayEra = starters.away.era ? Number(starters.away.era).toFixed(2) : MLB_DASH;
   const homeEra = starters.home.era ? Number(starters.home.era).toFixed(2) : MLB_DASH;
-  const awayWhip = starters.away.whip ? Number(starters.away.whip).toFixed(2) : MLB_DASH;
-  const homeWhip = starters.home.whip ? Number(starters.home.whip).toFixed(2) : MLB_DASH;
   const awayK9 = computeK9(starters.away.strikeOuts, starters.away.inningsPitched);
   const homeK9 = computeK9(starters.home.strikeOuts, starters.home.inningsPitched);
 
+  const cards = getSummaryCards(detail);
+  const pitchEdge = cards.find((c) => c.label === "Pitching Edge")?.value ?? "Neutral";
+  const lineupEdge = cards.find((c) => c.label === "Lineup Edge")?.value ?? "Neutral";
+  const totalLean = cards.find((c) => c.label === "Run Total Lean")?.value ?? "Neutral";
+
   return (
-    <div className="space-y-3">
-      <div
-        className="relative overflow-hidden rounded-2xl shadow-xl"
-        style={{
-          background: `linear-gradient(135deg, ${awayColors.primary}cc 0%, #0f172a 40%, #0f172a 60%, ${homeColors.primary}cc 100%)`,
-        }}
-      >
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-            backgroundSize: "200px 200px",
-          }}
-        />
-
-        <div className="relative px-4 py-5 sm:px-4 sm:py-5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-white/60">
-            <span>{game.venue}</span>
-            {weather && weather !== MLB_DASH && <span>{weather}</span>}
-          </div>
-
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <TeamLogo abbreviation={game.away.abbreviation} size={56} />
-              <div>
-                <div className="text-xl font-extrabold uppercase tracking-wide text-white sm:text-2xl">
-                  {game.away.name}
-                </div>
-                <div className="mt-0.5 text-xs font-medium text-white/50">
-                  {game.away.abbreviation} · {game.away.record}
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center gap-1.5">
-                <PitcherHeadshot
-                  mlbId={starters.away.id}
-                  name={starters.away.name}
-                  teamAbbreviation={game.away.abbreviation}
-                  size={52}
-                />
-                <div className="text-center">
-                  <div className="text-sm font-bold text-white">{starters.away.name}</div>
-                  <div className="text-[11px] text-white/50">
-                    {starters.away.hand} · {starters.away.record}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <StatPill label="ERA" value={awayEra} />
-                  <StatPill label="WHIP" value={awayWhip} />
-                  <StatPill label="K/9" value={awayK9 ? awayK9.toFixed(1) : MLB_DASH} />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-2 text-center">
-              <div className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-white/70 backdrop-blur-sm">
-                vs
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-2 py-1.5 backdrop-blur-sm">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
-                  Game Total
-                </div>
-                <div className="mt-0.5 text-lg font-extrabold text-white">
-                  {quickChips.find((c) => c.label?.toLowerCase().includes("neutral total") || c.label?.toLowerCase().includes("over") || c.label?.toLowerCase().includes("under"))?.label ?? "—"}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-2 text-center">
-              <TeamLogo abbreviation={game.home.abbreviation} size={56} />
-              <div>
-                <div className="text-xl font-extrabold uppercase tracking-wide text-white sm:text-2xl">
-                  {game.home.name}
-                </div>
-                <div className="mt-0.5 text-xs font-medium text-white/50">
-                  {game.home.abbreviation} · {game.home.record}
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center gap-1.5">
-                <PitcherHeadshot
-                  mlbId={starters.home.id}
-                  name={starters.home.name}
-                  teamAbbreviation={game.home.abbreviation}
-                  size={52}
-                />
-                <div className="text-center">
-                  <div className="text-sm font-bold text-white">{starters.home.name}</div>
-                  <div className="text-[11px] text-white/50">
-                    {starters.home.hand} · {starters.home.record}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <StatPill label="ERA" value={homeEra} />
-                  <StatPill label="WHIP" value={homeWhip} />
-                  <StatPill label="K/9" value={homeK9 ? homeK9.toFixed(1) : MLB_DASH} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {quickChips.length > 0 && (
-            <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-              {quickChips.map((chip, i) => (
-                <span
-                  key={i}
-                  className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur-sm"
-                >
-                  {chip.label}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {summaryIndicators.length > 0 && (
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {summaryIndicators.map((ind, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/8 p-2.5 backdrop-blur-sm"
-                >
-                  <div className="mt-0.5 shrink-0 text-white/60">{ind.icon}</div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">
-                      {ind.label}
-                    </div>
-                    <div className="mt-0.5 truncate text-xs font-bold text-white">{ind.value}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+    <div
+      className="relative overflow-hidden rounded-xl shadow-md"
+      style={{ background: `linear-gradient(135deg, ${awayColors.primary}cc 0%, #0f172a 40%, #0f172a 60%, ${homeColors.primary}cc 100%)` }}
+    >
+      <div className="relative px-4 py-3 space-y-3">
+        {/* Venue + weather */}
+        <div className="flex items-center justify-between text-[10px] font-medium text-white/50">
+          <span>{game.venue}</span>
+          {detail.weather && detail.weather !== MLB_DASH && <span>{detail.weather}</span>}
         </div>
-      </div>
 
-      <OverallEdgeTile detail={detail} quickChips={quickChips} spotlight={spotlight} />
+        {/* Teams + pitchers row */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          {/* Away */}
+          <div className="flex items-center gap-2">
+            <TeamLogo abbreviation={game.away.abbreviation} size={36} />
+            <div className="min-w-0">
+              <div className="text-sm font-extrabold text-white">{game.away.abbreviation}</div>
+              <div className="text-[10px] text-white/50">{game.away.record}</div>
+            </div>
+            <div className="flex items-center gap-1.5 ml-2">
+              <PitcherHeadshot mlbId={starters.away.id} name={starters.away.name} teamAbbreviation={game.away.abbreviation} size={36} />
+              <div className="min-w-0">
+                <div className="truncate text-xs font-bold text-white">{starters.away.name}</div>
+                <div className="text-[10px] text-white/50">{starters.away.record} · {awayEra} ERA · {awayK9?.toFixed(1) ?? MLB_DASH} K/9</div>
+              </div>
+            </div>
+          </div>
+
+          {/* VS */}
+          <div className="flex flex-col items-center gap-1">
+            <div className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase text-white/70">vs</div>
+          </div>
+
+          {/* Home */}
+          <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center gap-1.5 mr-2">
+              <div className="min-w-0 text-right">
+                <div className="truncate text-xs font-bold text-white">{starters.home.name}</div>
+                <div className="text-[10px] text-white/50">{starters.home.record} · {homeEra} ERA · {homeK9?.toFixed(1) ?? MLB_DASH} K/9</div>
+              </div>
+              <PitcherHeadshot mlbId={starters.home.id} name={starters.home.name} teamAbbreviation={game.home.abbreviation} size={36} />
+            </div>
+            <div className="min-w-0 text-right">
+              <div className="text-sm font-extrabold text-white">{game.home.abbreviation}</div>
+              <div className="text-[10px] text-white/50">{game.home.record}</div>
+            </div>
+            <TeamLogo abbreviation={game.home.abbreviation} size={36} />
+          </div>
+        </div>
+
+        {/* Edge chips */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: "Lineup", value: lineupEdge },
+            { label: "Pitching", value: pitchEdge },
+            { label: "Total", value: totalLean },
+          ].map((edge) => {
+            const isAway = edge.value.toLowerCase().includes(game.away.abbreviation.toLowerCase());
+            const isHome = edge.value.toLowerCase().includes(game.home.abbreviation.toLowerCase());
+            const bg = isAway ? awayColors.primary : isHome ? homeColors.primary : "#475569";
+            return (
+              <div key={edge.label} className="flex flex-col items-center rounded-lg px-2 py-1.5 text-white" style={{ backgroundColor: bg }}>
+                <span className="text-[9px] font-bold uppercase tracking-[0.1em] opacity-75">{edge.label}</span>
+                <span className="text-[11px] font-extrabold">{edge.value}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Top angle */}
+        {spotlight && (
+          <div className="rounded-lg border border-white/10 bg-white/8 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <div className="shrink-0 text-white/60">{spotlight.icon}</div>
+              <div className="min-w-0">
+                <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-white/50">{spotlight.eyebrow}</div>
+                <div className="text-xs font-bold text-white">{spotlight.title}</div>
+                <div className="text-[10px] text-white/60 leading-4">{spotlight.note}</div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+
