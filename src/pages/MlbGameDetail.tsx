@@ -357,15 +357,14 @@ async function buildGameDetail(gamePk: string | number) {
   const existing = cache.games[String(gamePk)];
   if (existing) return existing;
 
+  // Always ensure schedule is loaded before trying to find the game.
+  // This handles the case where the user refreshes directly on a game URL
+  // and the detail fetch races ahead of the schedule fetch.
+  await loadSchedule();
+
   const game = findGame(gamePk);
   if (!game) {
-    // If game not in schedule, try fetching directly from API as fallback
-    try {
-      const detailJson = await fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}?hydrate=gameState,seriesStatus,ballpark`);
-      throw new Error(`Game ${gamePk} not found in today's schedule. Try refreshing the page for the latest games.`);
-    } catch {
-      throw new Error(`Game ${gamePk} not found in today's schedule. Try refreshing the page for the latest games.`);
-    }
+    throw new Error(`Game ${gamePk} not found in today's schedule. Try refreshing the page for the latest games.`);
   }
 
   const boxscore = await fetchBoxscore(gamePk);
