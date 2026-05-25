@@ -20,15 +20,15 @@ export default function MlbProjectedLineupPanel({
 
   return (
     <div className="space-y-2.5">
-      <div className="hidden grid-cols-[1.2fr_48px_1.2fr] items-center gap-3 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid">
-        <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,56px)] items-center gap-1.5">
+      <div className="hidden grid-cols-[1.2fr_36px_1.2fr] items-center gap-3 px-2 text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground lg:grid">
+        <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,44px)] items-center gap-1">
           <span>Player</span>
           <span className="text-center">AVG</span>
           <span className="text-center">OBP</span>
           <span className="text-center">SLG</span>
         </div>
-        <div className="text-center">Order</div>
-        <div className="grid grid-cols-[56px_56px_56px_minmax(0,1fr)] items-center gap-1.5 text-right">
+        <div className="text-center">#</div>
+        <div className="grid grid-cols-[44px_44px_44px_minmax(0,1fr)] items-center gap-1 text-right">
           <span className="text-center">AVG</span>
           <span className="text-center">K%</span>
           <span className="text-center">SLG</span>
