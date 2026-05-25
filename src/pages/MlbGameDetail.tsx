@@ -655,10 +655,10 @@ function PropPreviewCard({
 }
 
 const MLB_HUB_LINKS = [
-  { label: "MLB Props", to: "/mlb/props", icon: <BarChart3 className="h-4 w-4" /> },
+  { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: <Swords className="h-4 w-4" /> },
   { label: "HR Props", to: "/mlb/hr-props", icon: <Flame className="h-4 w-4" /> },
   { label: "K Props", to: "/mlb/strikeout-props", icon: <Radar className="h-4 w-4" /> },
-  { label: "Matchups", to: "/mlb/batter-vs-pitcher", icon: <Swords className="h-4 w-4" /> },
+  { label: "Game Matchups", to: "/mlb#schedule", icon: <CalendarDays className="h-4 w-4" /> },
   { label: "Schedule", to: "/mlb#schedule", icon: <CalendarDays className="h-4 w-4" /> },
 ];
 
@@ -709,18 +709,17 @@ const MLB_TOOL_CARDS = [
 
 function MlbHubSidebar() {
   return (
-    <aside className="hidden w-64 shrink-0 self-start border-r border-slate-200 bg-[#eff4ff] py-4 lg:sticky lg:top-24 lg:block">
-      <div className="mb-6 px-6">
-        <h2 className="text-lg font-extrabold tracking-tight text-[#031635]">MLB HUB</h2>
-        <p className="text-xs text-slate-500">Analytics &amp; Projections</p>
+    <aside className="hidden w-56 shrink-0 self-start border-r border-slate-200 bg-[#eff4ff] py-4 lg:sticky lg:top-24 lg:block">
+      <div className="mb-5 px-5">
+        <img src="/logos/mlb.svg" alt="MLB" className="h-9 w-auto" />
       </div>
       <nav className="flex flex-col gap-1">
-        {MLB_HUB_LINKS.map((item, index) => (
+        {MLB_HUB_LINKS.slice(0, 4).map((item, index) => (
           <Link
             key={item.label}
             to={item.to}
             className={cn(
-              "mx-2 flex items-center gap-3 rounded-lg px-4 py-3 text-xs font-bold text-slate-600 transition hover:translate-x-1 hover:bg-[#dce9ff] hover:text-[#031635]",
+              "mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:translate-x-1 hover:bg-[#dce9ff] hover:text-[#031635]",
               index === 0 && "bg-[#7bc2ff] text-[#004f7b] shadow-sm",
             )}
           >
@@ -729,7 +728,7 @@ function MlbHubSidebar() {
           </Link>
         ))}
       </nav>
-      <div className="mt-8 px-4">
+      <div className="mt-6 px-4">
         <Link
           to="/mlb/props"
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-4 py-3 text-xs font-extrabold text-white transition hover:bg-[#1a2b4b]"
@@ -743,29 +742,28 @@ function MlbHubSidebar() {
 }
 
 function MlbHubHero() {
+  const heroTiles = [
+    { label: "HR Props", to: "/mlb/hr-props", bg: "bg-sky-500 hover:bg-sky-600", icon: <Flame className="h-3.5 w-3.5" /> },
+    { label: "K Props", to: "/mlb/strikeout-props", bg: "bg-emerald-500 hover:bg-emerald-600", icon: <Radar className="h-3.5 w-3.5" /> },
+    { label: "Game Matchups", to: "/mlb#schedule", bg: "bg-amber-500 hover:bg-amber-600", icon: <CalendarDays className="h-3.5 w-3.5" /> },
+  ];
+
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-[#1a2b4b] p-5 text-white shadow-[0_10px_24px_rgba(15,23,42,0.16)] sm:p-7">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_86%_35%,rgba(123,194,255,0.24),transparent_22rem)]" />
-      <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-[-0.02em] text-white sm:text-5xl">MLB Hub</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#b6c6ef] sm:text-base">
-            Model edges, prop projections, daily matchups, and slate context built for serious data-driven bettors.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {MLB_HUB_LINKS.slice(0, 4).map((item) => (
-              <Link
-                key={item.label}
-                to={item.to}
-                className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur transition hover:bg-white/20"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <div className="hidden h-40 w-40 shrink-0 items-center justify-center rounded-full border-4 border-white/10 bg-[#7bc2ff]/10 md:flex">
-          <BarChart3 className="h-20 w-20 text-white/35" />
+    <section className="flex items-center gap-4 rounded-xl bg-[#1a2b4b] px-5 py-4 shadow-sm">
+      <img src="/logos/mlb.svg" alt="MLB" className="h-10 w-auto shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="text-xs font-bold uppercase tracking-[0.12em] text-sky-300/80">MLB Hub</div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {heroTiles.map((tile) => (
+            <Link
+              key={tile.label}
+              to={tile.to}
+              className={cn("flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition", tile.bg)}
+            >
+              {tile.icon}
+              {tile.label}
+            </Link>
+          ))}
         </div>
       </div>
     </section>
@@ -1003,7 +1001,7 @@ function HomeSchedule({
 
         <div className="min-w-0 flex-1 space-y-5">
           <nav className="flex flex-wrap gap-2 lg:hidden">
-            {MLB_HUB_LINKS.map((item) => (
+            {MLB_HUB_LINKS.slice(0, 4).map((item) => (
               <Link
                 key={item.label}
                 to={item.to}
