@@ -880,7 +880,7 @@ function MlbSlateAnalyzer({
                   </div>
                 </div>
 
-                <div className="hidden grid-cols-3 gap-2 border-t border-slate-100 pt-1.5 lg:grid">
+                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-1.5">
                   <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Lineup</div>
                   <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Pitching</div>
                   <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Total</div>
