@@ -31,7 +31,7 @@ export default function MlbPlayerHeadshot({
         <img
           src={espnUrl}
           alt={name}
-          className="rounded-full object-cover object-top"
+          className="rounded-full object-cover object-center"
           style={{ width: size, height: size, border: `3px solid ${colors.primary}` }}
           loading="lazy"
           onError={() => setImageFailed(true)}
