@@ -1043,6 +1043,54 @@ function HomeSchedule({
   );
 }
 
+function getFeaturedMatchupEdge(detail: MlbGameDetail) {
+  const awayK9 = computeK9(detail.starters.away.strikeOuts, detail.starters.away.inningsPitched);
+  const homeK9 = computeK9(detail.starters.home.strikeOuts, detail.starters.home.inningsPitched);
+  const awayOpponentK = computePercent(
+    detail.opponentSplits.homeBattingVsAwayStarter?.strikeOuts ?? null,
+    detail.opponentSplits.homeBattingVsAwayStarter?.plateAppearances ?? null,
+  );
+  const homeOpponentK = computePercent(
+    detail.opponentSplits.awayBattingVsHomeStarter?.strikeOuts ?? null,
+    detail.opponentSplits.awayBattingVsHomeStarter?.plateAppearances ?? null,
+  );
+  const awayLineupOps = detail.lineupSummaries.away.ops;
+  const homeLineupOps = detail.lineupSummaries.home.ops;
+
+  const kCandidates = [
+    {
+      title: `${detail.starters.away.name} strikeout look`,
+      score: (awayK9 ?? 0) * 0.65 + (awayOpponentK ?? 0) * 0.35,
+      note: `${detail.game.home.abbreviation} split K% ${awayOpponentK?.toFixed(1) ?? "—"} with ${detail.starters.away.name} carrying a ${awayK9?.toFixed(1) ?? "—"} K/9.`,
+      icon: <Target className="h-5 w-5" />,
+    },
+    {
+      title: `${detail.starters.home.name} strikeout look`,
+      score: (homeK9 ?? 0) * 0.65 + (homeOpponentK ?? 0) * 0.35,
+      note: `${detail.game.away.abbreviation} split K% ${homeOpponentK?.toFixed(1) ?? "—"} with ${detail.starters.home.name} carrying a ${homeK9?.toFixed(1) ?? "—"} K/9.`,
+      icon: <Target className="h-5 w-5" />,
+    },
+  ].sort((left, right) => right.score - left.score);
+
+  const lineupDelta = Math.abs((awayLineupOps ?? 0) - (homeLineupOps ?? 0));
+  if (kCandidates[0].score >= 14 || lineupDelta < 0.035) {
+    return {
+      eyebrow: "Top edge to price first",
+      title: kCandidates[0].title,
+      note: kCandidates[0].note,
+      icon: kCandidates[0].icon,
+    };
+  }
+
+  const homeLineupAhead = (homeLineupOps ?? 0) > (awayLineupOps ?? 0);
+  return {
+    eyebrow: "Top edge to price first",
+    title: `${homeLineupAhead ? detail.game.home.abbreviation : detail.game.away.abbreviation} lineup pressure`,
+    note: `${detail.game.away.abbreviation} projected OPS ${awayLineupOps?.toFixed(3) ?? "—"} against ${detail.game.home.abbreviation} at ${homeLineupOps?.toFixed(3) ?? "—"}.`,
+    icon: <Swords className="h-5 w-5" />,
+  };
+}
+
 export default function MlbGameDetail() {
   const seo = getSeoMeta("mlb");
   const [routeState, setRouteState] = useState<MlbRouteState>(() => parseHash(window.location.hash));
