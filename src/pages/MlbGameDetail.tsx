@@ -9,7 +9,6 @@ import MlbMatchupSummaryRow from "@/components/mlb/MlbMatchupSummaryRow";
 import MlbParkContextPanel from "@/components/mlb/MlbParkContextPanel";
 import MlbPitcherComparisonPanel from "@/components/mlb/MlbPitcherComparisonPanel";
 import MlbPitcherVsLineupPanel from "@/components/mlb/MlbPitcherVsLineupPanel";
-import { MlbPropModelDashboard } from "@/components/mlb/MlbPropModelComponents";
 import MlbProjectedLineupPanel from "@/components/mlb/MlbProjectedLineupPanel";
 import MlbPropAnglesPanel from "@/components/mlb/MlbPropAnglesPanel";
 import MlbSectionCard from "@/components/mlb/MlbSectionCard";
@@ -547,7 +546,7 @@ function formatGameTime(value: string) {
   }).format(new Date(value));
 }
 
-type PropPreviewTheme = "hr" | "k";
+type PropPreviewTheme = "hr" | "k" | "bvp";
 
 type PropPreviewRow = {
   key: string;
@@ -585,12 +584,20 @@ function PropPreviewCard({
       hover: "hover:bg-sky-50",
       note: "Model High Edges",
     }
-    : {
+    : theme === "k"
+    ? {
       header: "bg-emerald-50 text-emerald-950",
       icon: "bg-emerald-100 text-emerald-700",
       label: "text-emerald-700",
       hover: "hover:bg-emerald-50",
       note: "Model Precision",
+    }
+    : {
+      header: "bg-purple-50 text-purple-950",
+      icon: "bg-purple-100 text-purple-700",
+      label: "text-purple-700",
+      hover: "hover:bg-purple-50",
+      note: "Model Matchup",
     };
 
   return (
@@ -598,7 +605,7 @@ function PropPreviewCard({
       <div className={cn("flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3", themeClasses.header)}>
         <div className="flex items-center gap-2">
           <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
-            {theme === "hr" ? <Flame className="h-4 w-4" /> : <Radar className="h-4 w-4" />}
+          {theme === "hr" ? <Flame className="h-4 w-4" /> : theme === "k" ? <Radar className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
           </span>
           <h3 className="text-base font-bold text-[#031635]">{title}</h3>
         </div>
@@ -831,7 +838,7 @@ function MlbSlateAnalyzer({
                 type="button"
                 onClick={() => onOpenGame(game.gamePk)}
                 className={cn(
-                  "grid w-full gap-3 border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-[#eff4ff]",
+                  "grid w-full gap-2 border-b border-slate-100 px-3 py-2 text-left transition last:border-b-0 hover:bg-[#eff4ff]",
                   "lg:grid-cols-[86px_minmax(0,1.7fr)_minmax(120px,0.75fr)_minmax(120px,0.75fr)_minmax(110px,0.55fr)] lg:items-center",
                   index % 2 === 1 && "bg-slate-50/55",
                 )}
@@ -843,29 +850,31 @@ function MlbSlateAnalyzer({
                   >
                     {game.status}
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-400 lg:mt-2 lg:block">{formatGameTime(game.gameDate)}</span>
+                  <span className="text-[11px] font-semibold text-slate-400 lg:mt-1.5 lg:block">{formatGameTime(game.gameDate)}</span>
                 </div>
 
-                <div className="min-w-0 space-y-1.5">
+                <div className="min-w-0 space-y-1">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="w-10 shrink-0 font-extrabold text-slate-950">{game.away.abbreviation}</span>
-                      <span className="text-[11px] font-semibold text-slate-400">{game.away.record}</span>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <MlbTeamLogo team={game.away.abbreviation} size={18} />
+                      <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
+                      <span className="text-[10px] font-semibold text-slate-400">{game.away.record}</span>
                     </div>
                     <span className="truncate text-xs font-medium text-[#031635]">
                       {game.away.probablePitcher?.fullName || MLB_DASH}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="w-10 shrink-0 font-extrabold text-slate-950">@ {game.home.abbreviation}</span>
-                      <span className="text-[11px] font-semibold text-slate-400">{game.home.record}</span>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <MlbTeamLogo team={game.home.abbreviation} size={18} />
+                      <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
+                      <span className="text-[10px] font-semibold text-slate-400">{game.home.record}</span>
                     </div>
                     <span className="truncate text-xs font-medium text-[#031635]">
                       {game.home.probablePitcher?.fullName || MLB_DASH}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-1 text-[10px] font-semibold uppercase text-slate-400">
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">
                     <span>{game.venue}</span>
                     {showScore ? <span>{awayScore}-{homeScore}</span> : null}
                   </div>
@@ -940,14 +949,11 @@ function HomeSchedule({
   const {
     batters: propBatters,
     batterVsPitcherRows,
-    dashboard: propDashboard,
-    games: propGames,
-    loading: propsLoading,
-    pitchers: propPitchers,
     strikeoutRows,
   } = useMlbPropsData();
   const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
+  const topBvpProps = useMemo(() => batterVsPitcherRows.slice(0, 5), [batterVsPitcherRows]);
   const hrPreviewRows = useMemo<PropPreviewRow[]>(
     () => topHrProps.map((row) => ({
       key: `${row.player}-${row.team}`,
@@ -968,6 +974,17 @@ function HomeSchedule({
       score: row.kMatchupScore,
     })),
     [topStrikeoutProps],
+  );
+  const bvpPreviewRows = useMemo<PropPreviewRow[]>(
+    () => topBvpProps.map((row) => ({
+      key: `${row.player}-${row.opposingPitcher}`,
+      player: row.player,
+      position: row.position,
+      team: row.team,
+      opponent: row.opposingPitcher,
+      score: row.hrTargetScore,
+    })),
+    [topBvpProps],
   );
 
   return (
@@ -991,24 +1008,16 @@ function HomeSchedule({
 
           <MlbHubHero />
           <HubSportsbookStrip />
-          <MlbPropModelDashboard
-            hrRows={propBatters}
-            strikeoutRows={strikeoutRows}
-            batterVsPitcherRows={batterVsPitcherRows}
-            pitchers={propPitchers}
-            games={propGames}
-            generatedAt={propDashboard?.generatedAt}
-            loading={propsLoading}
-          />
 
           <section id="props" className="space-y-3">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">Daily prop preview</div>
               <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-3">
               <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" />
               <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" />
+              <PropPreviewCard title="Top Batter vs Pitcher" rows={bvpPreviewRows} to="/mlb/batter-vs-pitcher" theme="bvp" />
             </div>
           </section>
 
