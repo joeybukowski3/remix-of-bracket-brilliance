@@ -565,11 +565,7 @@ type PropPreviewRow = {
 };
 
 function TeamAbbrBadge({ team }: { team: string }) {
-  return (
-    <span className="flex h-5 w-7 shrink-0 items-center justify-center rounded-[4px] bg-slate-100 text-[9px] font-extrabold text-slate-500">
-      {team}
-    </span>
-  );
+  return <MlbTeamLogo team={team} size={20} />;
 }
 
 function PropPreviewCard({
