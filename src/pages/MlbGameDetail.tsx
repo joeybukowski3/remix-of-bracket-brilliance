@@ -28,7 +28,7 @@ import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import { ScorePill } from "@/pages/MlbHrProps";
+import { ScorePill, HrDashboardPitcher } from "@/pages/MlbHrProps";
 
 const SEASON = new Date().getFullYear();
 
@@ -797,12 +797,18 @@ function getSlateEdgeSummary(detail: MlbGameDetail | undefined) {
 function MlbSlateAnalyzer({
   games,
   detailPreviews,
+  pitchers,
   onOpenGame,
 }: {
   games: MlbScheduleGame[];
   detailPreviews: Record<number, MlbGameDetail>;
+  pitchers: HrDashboardPitcher[];
   onOpenGame: (gamePk: number) => void;
 }) {
+  function getPitcherXera(pitcherId: number | null | undefined): number | null {
+    if (!pitcherId) return null;
+    return pitchers.find((p) => p.pitcherId === pitcherId)?.xera ?? null;
+  }
   return (
     <section id="schedule" className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -861,9 +867,17 @@ function MlbSlateAnalyzer({
                       <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
                       <span className="text-[10px] font-semibold text-slate-400">{game.away.record}</span>
                     </div>
-                    <span className="truncate text-xs font-medium text-[#031635]">
-                      {game.away.probablePitcher?.fullName || MLB_DASH}
-                    </span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-xs font-medium text-[#031635]">
+                        {game.away.probablePitcher?.fullName || MLB_DASH}
+                      </span>
+                      {detail?.starters.away.record && (
+                        <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.away.record}</span>
+                      )}
+                      {getPitcherXera(detail?.starters.away.id) !== null && (
+                        <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{getPitcherXera(detail?.starters.away.id)!.toFixed(2)} xERA</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-1.5">
@@ -871,9 +885,17 @@ function MlbSlateAnalyzer({
                       <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
                       <span className="text-[10px] font-semibold text-slate-400">{game.home.record}</span>
                     </div>
-                    <span className="truncate text-xs font-medium text-[#031635]">
-                      {game.home.probablePitcher?.fullName || MLB_DASH}
-                    </span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-xs font-medium text-[#031635]">
+                        {game.home.probablePitcher?.fullName || MLB_DASH}
+                      </span>
+                      {detail?.starters.home.record && (
+                        <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.home.record}</span>
+                      )}
+                      {getPitcherXera(detail?.starters.home.id) !== null && (
+                        <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{getPitcherXera(detail?.starters.home.id)!.toFixed(2)} xERA</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">
                     <span>{game.venue}</span>
@@ -956,6 +978,7 @@ function HomeSchedule({
   const {
     batters: propBatters,
     batterVsPitcherRows,
+    pitchers: propPitchers,
     strikeoutRows,
   } = useMlbPropsData();
   const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
@@ -1028,7 +1051,7 @@ function HomeSchedule({
             </div>
           </section>
 
-          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} onOpenGame={onOpenGame} />
+          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} />
           <MlbToolsGrid />
         </div>
       </div>
