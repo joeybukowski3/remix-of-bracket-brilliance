@@ -11,14 +11,15 @@ export default function MlbMatchupSummaryRow({
   homeAbbreviation: string;
 }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+    <div className="flex gap-2 overflow-x-auto pb-1 xl:grid xl:grid-cols-6 xl:overflow-visible xl:pb-0">
       {cards.map((card) => (
-        <MlbSummaryCard
-          key={card.label}
-          card={card}
-          awayAbbreviation={awayAbbreviation}
-          homeAbbreviation={homeAbbreviation}
-        />
+        <div key={card.label} className="shrink-0 xl:shrink">
+          <MlbSummaryCard
+            card={card}
+            awayAbbreviation={awayAbbreviation}
+            homeAbbreviation={homeAbbreviation}
+          />
+        </div>
       ))}
     </div>
   );
