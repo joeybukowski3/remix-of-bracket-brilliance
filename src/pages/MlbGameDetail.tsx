@@ -1022,7 +1022,7 @@ function HomeSchedule({
       <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8">
         <MlbHubSidebar />
 
-        <div className="min-w-0 flex-1 space-y-5">
+        <div className="min-w-0 flex-1 space-y-3">
           <nav className="flex flex-wrap gap-2 lg:hidden">
             {MLB_HUB_LINKS.slice(0, 4).map((item) => (
               <Link
@@ -1334,7 +1334,7 @@ export default function MlbGameDetail() {
                 subtitle="Side-by-side record, short-form, venue split, and game-setting context before the deeper matchup layers."
                 icon={<Shield className="h-4 w-4" />}
               />
-              <div className="mt-6">
+              <div className="mt-3">
                 <MlbTeamOverviewPanel detail={detail} />
               </div>
             </MlbSectionCard>
@@ -1346,7 +1346,7 @@ export default function MlbGameDetail() {
                 subtitle="Quick comparison across run prevention, traffic control, strikeout ceiling, walks, and home-run exposure."
                 icon={<Target className="h-4 w-4" />}
               />
-              <div className="mt-6">
+              <div className="mt-3">
                 <MlbPitcherComparisonPanel
                   awayPitcher={detail.starters.away}
                   homePitcher={detail.starters.home}
@@ -1365,7 +1365,7 @@ export default function MlbGameDetail() {
                   subtitle="How the home starter's profile collides with the opposing offense, with matchup percentile ranks for the key edge stats."
                   icon={<Crosshair className="h-4 w-4" />}
                 />
-                <div className="mt-6">
+                <div className="mt-3">
                   <MlbPitcherVsLineupPanel
                     title="Home starter vs away lineup"
                     pitcher={detail.starters.home}
@@ -1385,7 +1385,7 @@ export default function MlbGameDetail() {
                   subtitle="Same comparison from the away starter's side of the game tree, with matchup percentile ranks for the key edge stats."
                   icon={<Crosshair className="h-4 w-4" />}
                 />
-                <div className="mt-6">
+                <div className="mt-3">
                   <MlbPitcherVsLineupPanel
                     title="Away starter vs home lineup"
                     pitcher={detail.starters.away}
@@ -1408,7 +1408,7 @@ export default function MlbGameDetail() {
                   icon={<Activity className="h-4 w-4" />}
                   rightSlot={<MlbValuePill>PA {detail.opponentSplits.awayBattingVsHomeStarter?.plateAppearances ?? MLB_DASH}</MlbValuePill>}
                 />
-                <div className="mt-6">
+                <div className="mt-3">
                   <MlbSplitComparisonPanel
                     context={`${detail.game.away.abbreviation} vs ${detail.starters.home.hand}`}
                     note={`${formatAvgLike(detail.opponentSplits.awayBattingVsHomeStarter?.ops)} OPS split`}
@@ -1425,7 +1425,7 @@ export default function MlbGameDetail() {
                   icon={<Activity className="h-4 w-4" />}
                   rightSlot={<MlbValuePill>PA {detail.opponentSplits.homeBattingVsAwayStarter?.plateAppearances ?? MLB_DASH}</MlbValuePill>}
                 />
-                <div className="mt-6">
+                <div className="mt-3">
                   <MlbSplitComparisonPanel
                     context={`${detail.game.home.abbreviation} vs ${detail.starters.away.hand}`}
                     note={`${formatAvgLike(detail.opponentSplits.homeBattingVsAwayStarter?.ops)} OPS split`}
@@ -1442,7 +1442,7 @@ export default function MlbGameDetail() {
                 subtitle="Cleaner scan of likely batting order, supporting contact rates, and side-by-side production markers."
                 icon={<Swords className="h-4 w-4" />}
               />
-              <div className="mt-6">
+              <div className="mt-3">
                 <div className="mb-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl bg-secondary/35 p-4">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -1477,7 +1477,7 @@ export default function MlbGameDetail() {
                 subtitle="Venue, weather, park factor baseline, and starter run-prevention context in one module."
                 icon={<CloudSun className="h-4 w-4" />}
               />
-              <div className="mt-6">
+              <div className="mt-3">
                 <MlbParkContextPanel
                   venue={parkContext?.venue || detail.game.venue}
                   weather={parkContext?.weather || detail.weather}
@@ -1519,7 +1519,7 @@ export default function MlbGameDetail() {
                 subtitle="Short cards tied directly to the comparison signals above instead of generic filler."
                 icon={<Sparkles className="h-4 w-4" />}
               />
-              <div className="mt-6">
+              <div className="mt-3">
                 <MlbPropAnglesPanel angles={propAngles} />
               </div>
             </MlbSectionCard>
