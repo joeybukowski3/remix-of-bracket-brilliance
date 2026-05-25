@@ -1,66 +1,97 @@
-import MlbTeamMiniCard from "@/components/mlb/MlbTeamMiniCard";
 import { getWeatherIndicators } from "@/lib/mlb/mlbDisplayHelpers";
-import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
+import { getMlbTeamColors, getStatusBadgeTheme, getTrendArrow } from "@/lib/mlbTeamColors";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import type { MlbGameDetail } from "@/lib/mlb/mlbTypes";
 
+function winsFromRecord(record: string) {
+  const [wins] = record.split("-").map(Number);
+  return Number.isFinite(wins) ? wins : null;
+}
+
+function better(a: string, b: string) {
+  const aw = winsFromRecord(a);
+  const bw = winsFromRecord(b);
+  return aw != null && bw != null && aw > bw;
+}
+
 export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail }) {
-  const awayColors = getMlbTeamColors(detail.game.away.abbreviation);
-  const homeColors = getMlbTeamColors(detail.game.home.abbreviation);
-  const statusTheme = getStatusBadgeTheme(detail.game.status);
-  const weatherIndicators = getWeatherIndicators(detail.weather).join(" ");
+  const { game, awayContext, homeContext } = detail;
+  const awayColors = getMlbTeamColors(game.away.abbreviation);
+  const homeColors = getMlbTeamColors(game.home.abbreviation);
+  const statusTheme = getStatusBadgeTheme(game.status);
+  const weather = getWeatherIndicators(detail.weather).join(" ");
+  const awayTrend = getTrendArrow(awayContext.lastFiveRecord);
+  const homeTrend = getTrendArrow(homeContext.lastFiveRecord);
+
+  const rows = [
+    {
+      label: "Season",
+      away: awayContext.seasonRecord,
+      home: homeContext.seasonRecord,
+      awayBetter: better(awayContext.seasonRecord, homeContext.seasonRecord),
+      homeBetter: better(homeContext.seasonRecord, awayContext.seasonRecord),
+    },
+    {
+      label: "Last 5",
+      away: awayContext.lastFiveRecord,
+      home: homeContext.lastFiveRecord,
+      awayBetter: better(awayContext.lastFiveRecord, homeContext.lastFiveRecord),
+      homeBetter: better(homeContext.lastFiveRecord, awayContext.lastFiveRecord),
+      awayIcon: awayTrend === "up" ? <TrendingUp className="inline mr-0.5 h-3 w-3" /> : awayTrend === "down" ? <TrendingDown className="inline mr-0.5 h-3 w-3" /> : null,
+      homeIcon: homeTrend === "up" ? <TrendingUp className="inline mr-0.5 h-3 w-3" /> : homeTrend === "down" ? <TrendingDown className="inline mr-0.5 h-3 w-3" /> : null,
+    },
+    {
+      label: "Away / Home",
+      away: awayContext.awayRecord,
+      home: homeContext.homeRecord,
+      awayBetter: better(awayContext.awayRecord, homeContext.homeRecord),
+      homeBetter: better(homeContext.homeRecord, awayContext.awayRecord),
+    },
+    {
+      label: "Series",
+      away: awayContext.seriesRecord,
+      home: homeContext.seriesRecord,
+      awayBetter: false,
+      homeBetter: false,
+    },
+  ];
 
   return (
-    <div className="grid gap-3 xl:grid-cols-[1.15fr_0.8fr_1.15fr]">
-      <MlbTeamMiniCard
-        team={detail.game.away}
-        context={detail.awayContext}
-        venueMode="away"
-        comparisonContext={detail.homeContext}
-      />
-      <div className="rounded-2xl bg-secondary/30 p-3">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Game context</div>
-        <dl className="mt-2 space-y-2 text-sm">
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted-foreground">Date / time</dt>
-            <dd className="text-right font-medium text-foreground">
-              {new Intl.DateTimeFormat("en-US", {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              }).format(new Date(detail.game.gameDate))}
-            </dd>
-          </div>
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted-foreground">Venue</dt>
-            <dd className="text-right font-medium text-foreground">{detail.game.venue}</dd>
-          </div>
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted-foreground">Weather</dt>
-            <dd className="text-right font-medium text-foreground">{weatherIndicators ? `${weatherIndicators} ` : ""}{detail.weather}</dd>
-          </div>
-          <div className="flex items-start justify-between gap-4">
-            <dt className="text-muted-foreground">Status</dt>
-            <dd className="rounded-full px-2.5 py-1 text-right font-medium" style={statusTheme}>{detail.game.status}</dd>
-          </div>
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <div className="rounded-2xl p-2" style={{ backgroundColor: awayColors.tint }}>
-              <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{detail.game.away.abbreviation}</div>
-              <div className="mt-1 text-sm font-semibold" style={{ color: awayColors.primary }}>{detail.awayContext.seasonRecord}</div>
-            </div>
-            <div className="rounded-2xl p-2" style={{ backgroundColor: homeColors.tint }}>
-              <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{detail.game.home.abbreviation}</div>
-              <div className="mt-1 text-sm font-semibold" style={{ color: homeColors.primary }}>{detail.homeContext.seasonRecord}</div>
-            </div>
-          </div>
-        </dl>
+    <div className="space-y-2">
+      {/* Game info bar */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-secondary/30 px-3 py-1.5 text-[10px] text-muted-foreground">
+        <span className="font-semibold text-foreground">{game.venue}</span>
+        {weather && <span>{weather} {detail.weather}</span>}
+        <span style={statusTheme} className="rounded-full px-2 py-0.5 font-bold">{game.status}</span>
       </div>
-      <MlbTeamMiniCard
-        team={detail.game.home}
-        context={detail.homeContext}
-        venueMode="home"
-        comparisonContext={detail.awayContext}
-      />
+
+      {/* Side-by-side comparison table */}
+      <table className="w-full text-xs">
+        <thead>
+          <tr>
+            <th className="pb-1.5 text-left text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground w-1/3">Stat</th>
+            <th className="pb-1.5 text-center text-[10px] font-bold uppercase tracking-[0.1em] w-1/3" style={{ color: awayColors.primary }}>{game.away.abbreviation}</th>
+            <th className="pb-1.5 text-center text-[10px] font-bold uppercase tracking-[0.1em] w-1/3" style={{ color: homeColors.primary }}>{game.home.abbreviation}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/40">
+          {rows.map((row) => (
+            <tr key={row.label}>
+              <td className="py-1.5 text-muted-foreground">{row.label}</td>
+              <td className="py-1.5 text-center">
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${row.awayBetter ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "text-foreground"}`}>
+                  {"awayIcon" in row ? row.awayIcon : null}{row.away}
+                </span>
+              </td>
+              <td className="py-1.5 text-center">
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${row.homeBetter ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "text-foreground"}`}>
+                  {"homeIcon" in row ? row.homeIcon : null}{row.home}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
