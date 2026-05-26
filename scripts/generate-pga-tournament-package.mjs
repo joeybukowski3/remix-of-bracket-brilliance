@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { fetchField } from "./fetch-pga-field.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -148,7 +149,7 @@ const DEFAULT_PRESETS = [
 
 main();
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
   const schedule = readJson(schedulePath);
   const today = args.today ?? new Date().toISOString().slice(0, 10);
@@ -163,14 +164,26 @@ function main() {
   fs.mkdirSync(generatedDir, { recursive: true });
   fs.mkdirSync(overridesDir, { recursive: true });
 
-  targets.forEach((target) => {
+  for (const target of targets) {
+    // Auto-fetch the registered field and attach to the entry before data export.
+    // This ensures the model only scores players actually entered in the tournament.
+    const fieldFilePath = await fetchField(target.slug, { force: args.forceField });
+    if (fieldFilePath) {
+      const relPath = path.relative(repoRoot, fieldFilePath).replace(/\\/g, "/");
+      target.workbook = target.workbook ?? {};
+      target.workbook.fieldFile = relPath;
+      console.log(`[field] ${target.slug} → ${relPath} (${JSON.parse(fs.readFileSync(fieldFilePath, "utf8")).playerCount} players)`);
+    } else {
+      console.warn(`[field] No field file for ${target.slug} — model will include all workbook players.`);
+    }
+
     if (target.registration === "generated") {
       writeGeneratedTournamentModule(target);
       ensureOverrideStub(target);
     }
 
     ensureTournamentData(target, args.workbook);
-  });
+  }
 
   updateGeneratedRegistry();
 
@@ -183,13 +196,14 @@ function main() {
 }
 
 function parseArgs(argv) {
-  const args = { slug: "", workbook: "", feature: false, today: "" };
+  const args = { slug: "", workbook: "", feature: false, today: "", forceField: false };
   for (let i = 0; i < argv.length; i += 1) {
     const value = argv[i];
     if (value === "--slug") args.slug = argv[++i] ?? "";
     if (value === "--workbook") args.workbook = argv[++i] ?? "";
     if (value === "--feature") args.feature = true;
     if (value === "--today") args.today = argv[++i] ?? "";
+    if (value === "--force-field") args.forceField = true;
   }
   return args;
 }
