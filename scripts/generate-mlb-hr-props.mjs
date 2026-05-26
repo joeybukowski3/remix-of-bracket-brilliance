@@ -17,6 +17,7 @@ const PICK_LIMITS = {
   valueBets: 3,
   longshots: 2,
 };
+const MIN_AB_THRESHOLD = 40;
 
 const DEFAULT_PARK_FACTORS = {
   "American Family Field": 1.1,
@@ -742,6 +743,8 @@ function validateBatterRows(rows) {
       weatherBoost: toFiniteNumber(row.weatherBoost, 0),
       hrScore: toFiniteNumber(row.hrScore),
       hrScoreRank: toFiniteNumber(row.hrScoreRank),
+      atBats: toFiniteNumber(row.atBats),
+      adjustedHrScore: toFiniteNumber(row.adjustedHrScore),
       angleTags: Array.isArray(row.angleTags) ? row.angleTags.map((entry) => normalizeText(entry)).filter(Boolean).slice(0, 3) : [],
     };
 
@@ -758,6 +761,7 @@ function validateBatterRows(rows) {
       normalized.opposingPitcherKVs,
       normalized.hrScore,
       normalized.hrScoreRank,
+      normalized.atBats,
     ];
 
     if (requiredNumbers.some((value) => value == null)) {
@@ -1298,6 +1302,7 @@ async function main() {
           exitVelo,
           iso,
           hrFBRatio: safeNumber(season?.homeRuns && season?.atBats ? (season.homeRuns / Math.max(1, season.atBats)) * 100 : iso * 100, 10),
+          atBats: safeNumber(season?.atBats, 0),
           pullRate,
           xba,
           kRate,
@@ -1341,7 +1346,8 @@ async function main() {
     parkValues: dedupedPool.map((player) => player.parkFactor),
   };
 
-  const scored = dedupedPool.map((player) => {
+  const qualifiedPool = dedupedPool.filter((player) => safeNumber(player.atBats, 0) >= MIN_AB_THRESHOLD);
+  const scored = qualifiedPool.map((player) => {
     const opposingPitcher = pitcherLookup.get(String(player.opposingPitcherId ?? ""));
     const enriched = {
       ...player,
@@ -1350,12 +1356,16 @@ async function main() {
       opposingPitcherKVs: opposingPitcher?.kVs ?? 50,
     };
     const hrScore = computeBatterHrScore(enriched, batterContexts);
+    const ab = safeNumber(enriched.atBats, 0);
+    const adjustedHrScore = roundNumber(hrScore * (ab / (ab + 100)), 1);
     return {
       ...enriched,
       hrScore,
+      adjustedHrScore,
+      atBats: ab,
       angleTags: deriveAngleTags({ ...enriched, hrScore }, gamePool.find((game) => game.gameKey === enriched.gameKey)),
     };
-  }).sort((left, right) => right.hrScore - left.hrScore || left.player.localeCompare(right.player))
+  }).sort((left, right) => right.adjustedHrScore - left.adjustedHrScore || left.player.localeCompare(right.player))
     .map((player, index) => ({
       gameKey: player.gameKey,
       player: player.player,
@@ -1385,6 +1395,8 @@ async function main() {
       weatherBoost: Number(safeNumber(player.weatherBoost, 0).toFixed(1)),
       angleTags: player.angleTags,
       hrScore: player.hrScore,
+      adjustedHrScore: player.adjustedHrScore,
+      atBats: player.atBats,
       hrScoreRank: index + 1,
     }));
 

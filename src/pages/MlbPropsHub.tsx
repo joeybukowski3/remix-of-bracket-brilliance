@@ -18,7 +18,7 @@ function ToolCard({ title, body, to }: { title: string; body: string; to: string
 
 export default function MlbPropsHub() {
   const { batters, strikeoutRows, batterVsPitcherRows } = useMlbPropsData();
-  const topBatters = batters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 8);
+  const topBatters = batters.slice().sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore)).slice(0, 8);
   const topStrikeouts = strikeoutRows.slice(0, 8);
   const topMatchups = batterVsPitcherRows.slice(0, 8);
 

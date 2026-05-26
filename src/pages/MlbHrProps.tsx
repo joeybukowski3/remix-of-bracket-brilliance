@@ -69,6 +69,8 @@ export type HrDashboardBatter = {
   weatherBoost: number | null;
   hrScore: number;
   hrScoreRank: number;
+  atBats?: number | null;
+  adjustedHrScore?: number | null;
   angleTags: string[];
 };
 
@@ -311,6 +313,8 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     weatherBoost: normalizeNumber(entry.weatherBoost),
     hrScore: normalizeNumber(entry.hrScore),
     hrScoreRank: normalizeNumber(entry.hrScoreRank),
+    atBats: normalizeNumber(entry.atBats),
+    adjustedHrScore: normalizeNumber(entry.adjustedHrScore),
     angleTags: normalizeStringList(entry.angleTags).slice(0, 3),
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
@@ -583,7 +587,7 @@ export function buildSlateSummary(pitchers: HrDashboardPitcher[], batters: HrDas
     .map((game) => `${game.stadium} (${game.parkFactor.toFixed(2)})`)
     .join(" • ");
   const topArm = [...pitchers].sort((left, right) => right.hrVs - left.hrVs)[0];
-  const topBat = [...batters].sort((left, right) => right.hrScore - left.hrScore)[0];
+  const topBat = [...batters].sort((left, right) => (right.adjustedHrScore ?? right.hrScore) - (left.adjustedHrScore ?? left.hrScore))[0];
 
   return {
     strongestParks: strongestParks || "No park context available",

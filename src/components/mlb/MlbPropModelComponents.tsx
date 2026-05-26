@@ -238,7 +238,7 @@ function DashboardCard({ title, description, cta, to, children }: { title: strin
 }
 
 export function MlbPropModelDashboard({ hrRows, strikeoutRows, batterVsPitcherRows, pitchers, games, generatedAt, loading }: PropModelDashboardProps) {
-  const topHr = [...hrRows].sort((left, right) => right.hrScore - left.hrScore).slice(0, 5);
+  const topHr = [...hrRows].sort((left, right) => (right.adjustedHrScore ?? right.hrScore) - (left.adjustedHrScore ?? left.hrScore)).slice(0, 5);
   const topStrikeouts = strikeoutRows.slice(0, 5);
   const topBatterVsPitcher = batterVsPitcherRows.slice(0, 5);
   const bestScore = Math.max(
