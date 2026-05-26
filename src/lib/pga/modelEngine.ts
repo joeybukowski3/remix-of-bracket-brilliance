@@ -37,27 +37,44 @@ export function normalizeWeights(weights: PgaWeights) {
   return Object.fromEntries(Object.entries(weights).map(([key, value]) => [key, value / total])) as PgaWeights;
 }
 
+function parseFinish(v: string | null | undefined): number | null {
+  if (!v) return null;
+  const cleaned = String(v).trim().toUpperCase().replace(/^T/, "");
+  const n = Number(cleaned);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function computeAvgFinish(finishes: Array<string | null | undefined>): number | null {
+  const valid = finishes.map(parseFinish).filter((n): n is number => n != null);
+  if (!valid.length) return null;
+  return Math.round((valid.reduce((a, b) => a + b, 0) / valid.length) * 10) / 10;
+}
+
 export function normalizeTournamentPlayerData(players: RawPgaPlayer[]): PgaPlayerInput[] {
-  return players.map((player) => ({
-    id: player["Player Name"],
-    player: player["Player Name"],
-    salary: sanitizeNullableNumber(player.Salary),
-    courseHistoryRounds: sanitizeNullableNumber(player["HT # Rounds"]),
-    courseHistoryScore: sanitizeNullableNumber(player["Course True SG"]),
-    cutsLastFive: buildCutsLastFive(player),
-    recentFinishes: [player["2025"], player["2024"], player["2023"], player["2022"], player["2021"]],
-    statRanks: {
-      trendRank: sanitizeNullableRank(player.TrendRank),
-      sgApproachRank: sanitizeRankWithRawStat(player["SG: Approach the Green_rank"], player["SG: Approach the Green"]),
-      par4Rank: sanitizeRankWithRawStat(player["Par 4 Scoring Average_rank"], player["Par 4 Scoring Average"]),
-      drivingAccuracyRank: sanitizeRankWithRawStat(player["Driving Accuracy %_rank"], player["Driving Accuracy %"]),
-      bogeyAvoidanceRank: sanitizeRankWithRawStat(player["Bogey Avoidance_rank"], player["Bogey Avoidance"]),
-      sgAroundGreenRank: sanitizeRankWithRawStat(player["SG: Around the Green_rank"], player["SG: Around the Green"]),
-      birdie125150Rank: sanitizeRankWithRawStat(player["Birdie or Better 125-150 yds_rank"], player["Birdie or Better 125-150 yds"]),
-      sgPuttingRank: sanitizeRankWithRawStat(player["SG: Putting_rank"], player["SG: Putting"]),
-      birdieUnder125Rank: sanitizeRankWithRawStat(player["Birdie or Better <125 yds_rank"], player["Birdie or Better <125 yds"]),
-    },
-  }));
+  return players.map((player) => {
+    const recentFinishes: Array<string | null> = [player["2025"], player["2024"], player["2023"], player["2022"], player["2021"]];
+    return {
+      id: player["Player Name"],
+      player: player["Player Name"],
+      salary: sanitizeNullableNumber(player.Salary),
+      courseHistoryRounds: sanitizeNullableNumber(player["HT # Rounds"]),
+      courseHistoryScore: sanitizeNullableNumber(player["Course True SG"]),
+      avgFinish: computeAvgFinish(recentFinishes),
+      cutsLastFive: buildCutsLastFive(player),
+      recentFinishes,
+      statRanks: {
+        trendRank: sanitizeNullableRank(player.TrendRank),
+        sgApproachRank: sanitizeRankWithRawStat(player["SG: Approach the Green_rank"], player["SG: Approach the Green"]),
+        par4Rank: sanitizeRankWithRawStat(player["Par 4 Scoring Average_rank"], player["Par 4 Scoring Average"]),
+        drivingAccuracyRank: sanitizeRankWithRawStat(player["Driving Accuracy %_rank"], player["Driving Accuracy %"]),
+        bogeyAvoidanceRank: sanitizeRankWithRawStat(player["Bogey Avoidance_rank"], player["Bogey Avoidance"]),
+        sgAroundGreenRank: sanitizeRankWithRawStat(player["SG: Around the Green_rank"], player["SG: Around the Green"]),
+        birdie125150Rank: sanitizeRankWithRawStat(player["Birdie or Better 125-150 yds_rank"], player["Birdie or Better 125-150 yds"]),
+        sgPuttingRank: sanitizeRankWithRawStat(player["SG: Putting_rank"], player["SG: Putting"]),
+        birdieUnder125Rank: sanitizeRankWithRawStat(player["Birdie or Better <125 yds_rank"], player["Birdie or Better <125 yds"]),
+      },
+    };
+  });
 }
 
 export function calculateCompositeScore(player: PgaPlayerInput, weights: PgaWeights, fieldSize: number) {
@@ -137,6 +154,7 @@ export function rankPlayersByScore(players: PgaPlayerInput[], weights: PgaWeight
       courseHistoryRounds: raw.courseHistoryRounds,
       cutsLastFive: raw.cutsLastFive,
       recentFinishes: raw.recentFinishes,
+      avgFinish: raw.avgFinish,
       sgApproachRank: raw.statRanks.sgApproachRank,
       par4Rank: raw.statRanks.par4Rank,
       drivingAccuracyRank: raw.statRanks.drivingAccuracyRank,
