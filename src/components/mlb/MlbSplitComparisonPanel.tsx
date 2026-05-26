@@ -1,94 +1,68 @@
-import MlbValuePill from "@/components/mlb/MlbValuePill";
+import { getBarScalePosition, getLeagueTickPosition } from "@/lib/mlb/mlbBarScale";
 import { formatMetric } from "@/lib/mlb/mlbFormatters";
+import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric } from "@/lib/mlb/mlbTypes";
 
-// Stats where lower team value = better (e.g. K% is bad for batters)
-const LOWER_IS_WORSE_FOR_BATTER = new Set(["kPct"]);
-
-function pctDiff(team: number, avg: number): number {
-  if (avg === 0) return 0;
-  return ((team - avg) / avg) * 100;
-}
-
-function DiffCell({ value, metricKey }: { value: number | null; avg: number | null; metricKey: string }) {
-  // not used directly but kept for clarity
-  return null;
-}
-
-function SplitTable({ label, note, metrics }: { label: string; note: string; metrics: MlbComparisonMetric[] }) {
+function CompactBar({ label, value, barPct, avgPct, color }: { label: string; value: string; barPct: number; avgPct: number; color: string }) {
   return (
-    <div className="space-y-1.5">
-      <div>
-        <div className="text-sm font-semibold text-foreground">{label}</div>
-        <div className="text-xs text-muted-foreground">{note}</div>
+    <div className="flex items-center gap-2 min-w-0">
+      <span className="w-10 shrink-0 truncate text-right text-[10px] font-bold text-muted-foreground">{label}</span>
+      <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-slate-100">
+        <span className="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-amber-400" style={{ left: `${avgPct}%` }} />
+        <span className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${barPct}%`, backgroundColor: color }} />
       </div>
-      <div className="overflow-hidden rounded-2xl border border-border/60">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border/60 bg-secondary/50">
-              <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Stat</th>
-              <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Team</th>
-              <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Avg</th>
-              <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">vs Avg</th>
-            </tr>
-          </thead>
-          <tbody>
-            {metrics.map((m, i) => {
-              const teamVal = m.leftValue;
-              const avg = m.leagueAverage;
-              let diffEl: React.ReactNode = <span className="text-muted-foreground">—</span>;
-
-              if (teamVal != null && avg != null) {
-                const diff = pctDiff(teamVal, avg);
-                const isPositive = diff >= 0;
-                // For K%, positive diff (more Ks) is bad for batter
-                const isGood = LOWER_IS_WORSE_FOR_BATTER.has(m.key) ? !isPositive : isPositive;
-                const negligible = Math.abs(diff) < 0.5;
-                const cls = negligible
-                  ? "text-muted-foreground"
-                  : isGood
-                  ? "font-semibold text-emerald-700 dark:text-emerald-400"
-                  : "font-semibold text-red-600 dark:text-red-400";
-                const arrow = isPositive ? "▲" : "▼";
-                diffEl = (
-                  <span className={cls}>
-                    {arrow} {isPositive ? "+" : ""}{diff.toFixed(1)}%
-                  </span>
-                );
-              }
-
-              return (
-                <tr key={m.key} className={i % 2 === 1 ? "bg-secondary/30" : ""}>
-                  <td className="px-3 py-2 text-sm font-medium text-foreground">{m.label}</td>
-                  <td className="px-3 py-2 text-center text-sm text-foreground">{formatMetric(m.leftValue, m.format)}</td>
-                  <td className="px-3 py-2 text-center text-sm text-muted-foreground">{formatMetric(m.leagueAverage, m.format)}</td>
-                  <td className="px-3 py-2 text-center text-sm">{diffEl}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <span className="w-12 shrink-0 text-[10px] font-semibold tabular-nums text-foreground">{value}</span>
     </div>
   );
 }
 
 export default function MlbSplitComparisonPanel({
-  context,
-  note,
-  metrics,
+  awayMetrics,
+  homeMetrics,
+  awayAbbreviation,
+  homeAbbreviation,
 }: {
-  context: string;
-  note: string;
-  metrics: MlbComparisonMetric[];
+  context?: string;
+  note?: string;
+  metrics?: MlbComparisonMetric[];
+  awayMetrics: MlbComparisonMetric[];
+  homeMetrics: MlbComparisonMetric[];
+  awayAbbreviation: string;
+  homeAbbreviation: string;
 }) {
+  const awayColors = getMlbTeamColors(awayAbbreviation);
+  const homeColors = getMlbTeamColors(homeAbbreviation);
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <MlbValuePill>{context}</MlbValuePill>
-        <span className="text-sm text-muted-foreground">{note}</span>
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-end gap-1 pr-1 text-[9px] text-muted-foreground">
+        <span className="inline-block h-2.5 w-0.5 rounded-full bg-amber-400" />
+        Avg marker
       </div>
-      <SplitTable label={context} note={note} metrics={metrics} />
+      {awayMetrics.map((awayM, i) => {
+        const homeM = homeMetrics[i];
+        const avgPct = getLeagueTickPosition(awayM.leagueAverage, awayM.scaleKey);
+        const awayPct = getBarScalePosition(awayM.leftValue, awayM.scaleKey);
+        const homePct = getBarScalePosition(homeM?.leftValue ?? null, homeM?.scaleKey ?? awayM.scaleKey);
+
+        return (
+          <div key={awayM.key} className="space-y-1 rounded-lg bg-secondary/30 px-2.5 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{awayM.label}</span>
+              {awayM.leagueAverage != null && (
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <span className="inline-block h-2.5 w-0.5 rounded-full bg-amber-400" />
+                  {formatMetric(awayM.leagueAverage, awayM.format)}
+                </span>
+              )}
+            </div>
+            <CompactBar label={awayAbbreviation} value={formatMetric(awayM.leftValue, awayM.format)} barPct={awayPct} avgPct={avgPct} color={awayColors.primary} />
+            {homeM && (
+              <CompactBar label={homeAbbreviation} value={formatMetric(homeM.leftValue, homeM.format)} barPct={homePct} avgPct={avgPct} color={homeColors.primary} />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
