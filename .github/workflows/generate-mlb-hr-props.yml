@@ -2,12 +2,19 @@ name: Generate MLB HR Props
 
 on:
   schedule:
-    - cron: "0 7 * * *"
-    - cron: "0 8 * * *"
+    # 3 AM ET — initial overnight run (early lineups / overnight markets)
+    - cron: "0 7 * * *"   # 3 AM EDT
+    - cron: "0 8 * * *"   # 3 AM EST
+    # 10 AM ET — second run once most probable pitchers are posted
+    - cron: "0 14 * * *"  # 10 AM EDT
+    - cron: "0 15 * * *"  # 10 AM EST
+    # 1 PM ET — third run when lineups are confirmed for day games
+    - cron: "0 17 * * *"  # 1 PM EDT
+    - cron: "0 18 * * *"  # 1 PM EST
   workflow_dispatch:
     inputs:
       force:
-        description: "Force regeneration outside the scheduled 3 AM ET run or rerun after today's file already exists"
+        description: "Force regeneration outside the scheduled run windows"
         required: false
         default: false
         type: boolean
@@ -44,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Gate scheduled run to the correct 3 AM ET cron slot
+      - name: Gate scheduled run to the correct timezone slot
         id: schedule_gate
         shell: bash
         run: |
@@ -53,14 +60,23 @@ jobs:
 
           if [ "${{ github.event_name }}" = "schedule" ]; then
             ET_ZONE="$(TZ=America/New_York date +%Z)"
-            EXPECTED_CRON="0 8 * * *"
+
+            # Map each time slot to the correct UTC cron for EDT vs EST
+            # Slot 1: 3 AM ET  → 0 7 (EDT) or 0 8 (EST)
+            # Slot 2: 10 AM ET → 0 14 (EDT) or 0 15 (EST)
+            # Slot 3: 1 PM ET  → 0 17 (EDT) or 0 18 (EST)
             if [ "$ET_ZONE" = "EDT" ]; then
-              EXPECTED_CRON="0 7 * * *"
+              VALID_CRONS="0 7 * * *|0 14 * * *|0 17 * * *"
+            else
+              VALID_CRONS="0 8 * * *|0 15 * * *|0 18 * * *"
             fi
 
-            if [ "${{ github.event.schedule }}" != "$EXPECTED_CRON" ]; then
+            CURRENT="${{ github.event.schedule }}"
+            if echo "$VALID_CRONS" | grep -qF "$CURRENT"; then
+              SHOULD_RUN="true"
+            else
               SHOULD_RUN="false"
-              MESSAGE="Skipping duplicate cron for $ET_ZONE. Expected ${EXPECTED_CRON}, received ${{ github.event.schedule }}."
+              MESSAGE="Skipping duplicate cron for $ET_ZONE: $CURRENT is not a valid slot."
             fi
           fi
 
