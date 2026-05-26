@@ -5,6 +5,23 @@ import { getRankColor, RANK_COLOR_LEGEND } from "@/lib/pga/rankColors";
 import { PGA_WEIGHT_DEFINITIONS } from "@/lib/pga/pgaWeights";
 import type { PgaModelTableConfig, PlayerModelRow, PgaWeights } from "@/lib/pga/pgaTypes";
 
+// ─── Course history finish cell helpers ──────────────────────────────────────
+
+function parseFinishNum(v: string | null | undefined): number | null {
+  if (!v) return null;
+  const n = Number(String(v).trim().toUpperCase().replace(/^T/, ""));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function finishCellStyle(v: string | null | undefined): string {
+  const n = parseFinishNum(v);
+  if (n == null) return "text-muted-foreground/40";
+  if (n <= 5)  return "bg-emerald-100 text-emerald-800 font-bold rounded";
+  if (n <= 15) return "bg-emerald-50 text-emerald-700 font-semibold rounded";
+  if (n <= 30) return "bg-amber-50 text-amber-700 rounded";
+  return "bg-red-50 text-red-700 rounded";
+}
+
 type Props = {
   rows: PlayerModelRow[];
   tableConfig: PgaModelTableConfig;
@@ -193,6 +210,16 @@ export default function PgaModelTable({
 }: Props) {
   const [visibleStats, setVisibleStats] = useState<Set<StatColKey>>(new Set(tableConfig.statColumns.map((column) => column.key)));
   const [showColPicker, setShowColPicker] = useState(false);
+  const [courseView, setCourseView] = useState(false);
+
+  // Course history rows sorted by avg finish (ascending = better)
+  const courseHistoryRows = [...rows].sort((a, b) => {
+    if (a.avgFinish == null && b.avgFinish == null) return 0;
+    if (a.avgFinish == null) return 1;
+    if (b.avgFinish == null) return -1;
+    return a.avgFinish - b.avgFinish;
+  });
+  const historyYears = ["2025", "2024", "2023", "2022", "2021"] as const;
 
   const rankValues = rows
     .flatMap((row) => [
@@ -241,6 +268,23 @@ export default function PgaModelTable({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground">{rows.length} golfers</span>
+
+          <div className="flex rounded-full border border-border bg-secondary p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setCourseView(false)}
+              className={`rounded-full px-3 py-1 font-medium transition ${!courseView ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Model
+            </button>
+            <button
+              type="button"
+              onClick={() => setCourseView(true)}
+              className={`rounded-full px-3 py-1 font-medium transition ${courseView ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Course History
+            </button>
+          </div>
 
           <div className="relative">
             <button
@@ -342,6 +386,55 @@ export default function PgaModelTable({
             ))}
           </div>
           <div className="overflow-x-auto">
+            {courseView ? (
+              // ── Course History View ──────────────────────────────────────
+              <table className="w-full border-collapse text-xs" style={{ minWidth: "680px" }}>
+                <thead>
+                  <tr className="border-b border-border/50 bg-secondary/40">
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground w-8">#</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Player</th>
+                    {historyYears.map((y) => (
+                      <th key={y} className="px-2 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{y}</th>
+                    ))}
+                    <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700 bg-amber-50/60">Avg Finish</th>
+                    <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Rnds</th>
+                    <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">Course SG</th>
+                    <th className="px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Model Rank</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {courseHistoryRows.map((row, i) => (
+                    <tr key={row.player} className={i % 2 === 0 ? "bg-card" : "bg-secondary/20"}>
+                      <td className="px-3 py-2 text-center text-[11px] font-bold text-muted-foreground">{i + 1}</td>
+                      <td className="px-3 py-2 font-semibold text-foreground">{row.player}</td>
+                      {historyYears.map((_, yi) => {
+                        const v = row.recentFinishes[yi];
+                        return (
+                          <td key={yi} className="px-2 py-2 text-center">
+                            {v ? (
+                              <span className={`inline-block px-1.5 py-0.5 text-[11px] ${finishCellStyle(v)}`}>{v}</span>
+                            ) : (
+                              <span className="text-muted-foreground/30">—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-2 text-center bg-amber-50/40">
+                        <span className={`font-bold text-[11px] ${row.avgFinish != null && row.avgFinish <= 15 ? "text-amber-700" : "text-muted-foreground"}`}>
+                          {row.avgFinish != null ? row.avgFinish.toFixed(1) : "—"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-center text-[11px] text-muted-foreground">{row.courseHistoryRounds ?? "—"}</td>
+                      <td className={`px-3 py-2 text-center font-mono text-[11px] ${row.courseHistoryScore != null ? (row.courseHistoryScore >= 1 ? "text-emerald-700 font-bold" : row.courseHistoryScore >= 0 ? "text-emerald-600" : "text-red-600") : "text-muted-foreground"}`}>
+                        {row.courseHistoryScore != null ? row.courseHistoryScore.toFixed(2) : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-center text-[11px] font-bold text-muted-foreground">{row.rank}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+            // ── Model View (existing table) ──────────────────────────────
             <table className="w-full border-collapse text-xs" style={{ minWidth: "1100px" }}>
               <thead>
                 <tr className="border-b border-border/50 bg-secondary/40">
@@ -476,6 +569,7 @@ export default function PgaModelTable({
                 })}
               </tbody>
             </table>
+            )}
           </div>
         </div>
       ) : null}
