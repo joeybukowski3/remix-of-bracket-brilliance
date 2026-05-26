@@ -69,13 +69,15 @@ export default function MlbPitcherComparisonPanel({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {metrics.map((metric) => (
           <MlbStatComparisonRow
             key={metric.key}
             {...metric}
             leftTeam={awayAbbreviation}
             rightTeam={homeAbbreviation}
+            leftName={awayPitcher.name.split(" ").pop()}
+            rightName={homePitcher.name.split(" ").pop()}
           />
         ))}
       </div>
