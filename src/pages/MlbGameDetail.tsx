@@ -980,6 +980,8 @@ function HomeSchedule({
     batterVsPitcherRows,
     pitchers: propPitchers,
     strikeoutRows,
+    pendingGames,
+    nextRunAt,
   } = useMlbPropsData();
   const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
@@ -1049,6 +1051,19 @@ function HomeSchedule({
               <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" />
               <PropPreviewCard title="Top Batter vs Pitcher" rows={bvpPreviewRows} to="/mlb/batter-vs-pitcher" theme="bvp" />
             </div>
+
+            {pendingGames.length > 0 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                <span className="font-semibold">⏳ {pendingGames.length} game{pendingGames.length !== 1 ? "s" : ""} excluded</span>
+                {" — starting pitchers not yet announced for: "}
+                <span className="font-medium">{pendingGames.map((g: any) => g.matchup).join(", ")}</span>
+                {nextRunAt ? (
+                  <span className="ml-1 text-amber-600">· Check back after {nextRunAt.label} when the model refreshes.</span>
+                ) : (
+                  <span className="ml-1 text-amber-600">· These matchups may be added in a future model update.</span>
+                )}
+              </div>
+            )}
           </section>
 
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} />
