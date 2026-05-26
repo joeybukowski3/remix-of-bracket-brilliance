@@ -25,8 +25,9 @@ export function useMlbPropsData() {
     let active = true;
     setLoading(true);
     Promise.all([
-      fetch("/data/mlb/hr-props-raw.json", { cache: "no-store" }),
-      fetch("/data/mlb/hr-props-best-bets.json", { cache: "no-store" }),
+      const REPO_RAW = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public";
+      fetch(`${REPO_RAW}/data/mlb/hr-props-raw.json`, { cache: "no-store" }),
+      fetch(`${REPO_RAW}/data/mlb/hr-props-best-bets.json`, { cache: "no-store" }),
     ])
       .then(async ([rawResponse, bestResponse]) => {
         if (!active) return;
