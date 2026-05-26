@@ -838,6 +838,8 @@ function validateRawPayload(payload) {
   return {
     date: normalizeText(payload.date) || getTodayEt(),
     generatedAt: normalizeText(payload.generatedAt) || new Date().toISOString(),
+    nextRunAt: payload.nextRunAt ?? null,
+    pendingGames: Array.isArray(payload.pendingGames) ? payload.pendingGames : [],
     games: validateGameRows(payload.games),
     pitchers: validatePitcherRows(payload.pitchers),
     batters: validateBatterRows(payload.batters),
