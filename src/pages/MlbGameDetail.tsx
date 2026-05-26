@@ -1371,73 +1371,39 @@ export default function MlbGameDetail() {
               </MlbSectionCard>
             </div>
 
-            {/* Row 2: Pitcher vs Lineup (both sides) */}
-            <div className="grid gap-3 lg:grid-cols-2">
-              <MlbSectionCard accentColor={getMlbTeamColors(detail.game.home.abbreviation).primary} collapsible title={`${detail.starters.home.name} vs ${detail.game.away.abbreviation}`}>
-                <MlbSectionHeader eyebrow="Pitcher vs Lineup" title={`${detail.starters.home.name} vs ${detail.game.away.abbreviation}`} icon={<Crosshair className="h-3.5 w-3.5" />} />
-                <div className="mt-2">
-                  <MlbPitcherVsLineupPanel
-                    title="Home starter vs away lineup"
-                    pitcher={detail.starters.home}
-                    lineupLabel={`${detail.game.away.name} split profile`}
-                    split={detail.opponentSplits.awayBattingVsHomeStarter}
-                    lineupSummary={detail.lineupSummaries.away}
-                    pitcherTeamAbbreviation={detail.game.home.abbreviation}
-                    lineupTeamAbbreviation={detail.game.away.abbreviation}
-                  />
-                </div>
-              </MlbSectionCard>
-
-              <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary} collapsible title={`${detail.starters.away.name} vs ${detail.game.home.abbreviation}`}>
-                <MlbSectionHeader eyebrow="Pitcher vs Lineup" title={`${detail.starters.away.name} vs ${detail.game.home.abbreviation}`} icon={<Crosshair className="h-3.5 w-3.5" />} />
-                <div className="mt-2">
-                  <MlbPitcherVsLineupPanel
-                    title="Away starter vs home lineup"
-                    pitcher={detail.starters.away}
-                    lineupLabel={`${detail.game.home.name} split profile`}
-                    split={detail.opponentSplits.homeBattingVsAwayStarter}
-                    lineupSummary={detail.lineupSummaries.home}
-                    pitcherTeamAbbreviation={detail.game.away.abbreviation}
-                    lineupTeamAbbreviation={detail.game.home.abbreviation}
-                  />
-                </div>
-              </MlbSectionCard>
-            </div>
-
-            {/* Row 3: Splits side by side */}
-            <div className="grid gap-3 lg:grid-cols-2">
-              <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary} collapsible title={`${detail.game.away.abbreviation} vs ${detail.starters.home.hand} hand`}>
-                <MlbSectionHeader
-                  eyebrow="Split Performance"
-                  title={`${detail.game.away.abbreviation} vs ${detail.starters.home.hand} hand`}
-                  icon={<Activity className="h-3.5 w-3.5" />}
-                  rightSlot={<MlbValuePill>PA {detail.opponentSplits.awayBattingVsHomeStarter?.plateAppearances ?? MLB_DASH}</MlbValuePill>}
+            {/* Row 2: Combined Pitcher vs Lineup */}
+            <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary} collapsible title="Pitcher vs Lineup">
+              <MlbSectionHeader eyebrow="Pitcher vs Lineup" title={`${detail.starters.home.name} vs ${detail.game.away.abbreviation} · ${detail.starters.away.name} vs ${detail.game.home.abbreviation}`} icon={<Crosshair className="h-3.5 w-3.5" />} />
+              <div className="mt-2">
+                <MlbPitcherVsLineupPanel
+                  awayPitcher={detail.starters.away}
+                  homePitcher={detail.starters.home}
+                  awaySplit={detail.opponentSplits.awayBattingVsHomeStarter}
+                  homeSplit={detail.opponentSplits.homeBattingVsAwayStarter}
+                  awayLineupSummary={detail.lineupSummaries.away}
+                  homeLineupSummary={detail.lineupSummaries.home}
+                  awayAbbreviation={detail.game.away.abbreviation}
+                  homeAbbreviation={detail.game.home.abbreviation}
                 />
-                <div className="mt-2">
-                  <MlbSplitComparisonPanel
-                    context={`${detail.game.away.abbreviation} vs ${detail.starters.home.hand}`}
-                    note={`${formatAvgLike(detail.opponentSplits.awayBattingVsHomeStarter?.ops)} OPS split`}
-                    metrics={awaySplitMetrics}
-                  />
-                </div>
-              </MlbSectionCard>
+              </div>
+            </MlbSectionCard>
 
-              <MlbSectionCard accentColor={getMlbTeamColors(detail.game.home.abbreviation).primary} collapsible title={`${detail.game.home.abbreviation} vs ${detail.starters.away.hand} hand`}>
-                <MlbSectionHeader
-                  eyebrow="Split Performance"
-                  title={`${detail.game.home.abbreviation} vs ${detail.starters.away.hand} hand`}
-                  icon={<Activity className="h-3.5 w-3.5" />}
-                  rightSlot={<MlbValuePill>PA {detail.opponentSplits.homeBattingVsAwayStarter?.plateAppearances ?? MLB_DASH}</MlbValuePill>}
+            {/* Row 3: Combined Split Performance */}
+            <MlbSectionCard accentColor={getMlbTeamColors(detail.game.away.abbreviation).primary} collapsible title="Split Performance">
+              <MlbSectionHeader
+                eyebrow="Split Performance"
+                title={`${detail.game.away.abbreviation} vs ${detail.starters.home.hand}HP · ${detail.game.home.abbreviation} vs ${detail.starters.away.hand}HP`}
+                icon={<Activity className="h-3.5 w-3.5" />}
+              />
+              <div className="mt-2">
+                <MlbSplitComparisonPanel
+                  awayMetrics={awaySplitMetrics}
+                  homeMetrics={homeSplitMetrics}
+                  awayAbbreviation={detail.game.away.abbreviation}
+                  homeAbbreviation={detail.game.home.abbreviation}
                 />
-                <div className="mt-2">
-                  <MlbSplitComparisonPanel
-                    context={`${detail.game.home.abbreviation} vs ${detail.starters.away.hand}`}
-                    note={`${formatAvgLike(detail.opponentSplits.homeBattingVsAwayStarter?.ops)} OPS split`}
-                    metrics={homeSplitMetrics}
-                  />
-                </div>
-              </MlbSectionCard>
-            </div>
+              </div>
+            </MlbSectionCard>
 
             {/* Row 4: Lineup (wide) + Betting Angles (narrow) */}
             <div className="grid gap-3 lg:grid-cols-[3fr_2fr]">
