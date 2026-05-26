@@ -387,6 +387,22 @@ def main() -> int:
     else:
         base_rows = load_base_rows(workbook, args.base_sheet)
         history_rows = load_history_rows(workbook, args.history_sheet)
+        # Filter sheet-mode rows to registered field players when a field file is provided.
+        # Without this, the workbook DK sheet may include withdrawn or non-entered players.
+        if args.field_file:
+            field_players = load_field_players(args.field_file)
+            field_keys: set[str] = set()
+            for fp in field_players:
+                for key in build_candidate_keys(fp):
+                    field_keys.add(key)
+            before = len(base_rows)
+            base_rows = [
+                row for row in base_rows
+                if any(k in field_keys for k in build_candidate_keys(str(row.get("Player Name", ""))))
+            ]
+            removed = before - len(base_rows)
+            if removed:
+                print(f"Field filter: removed {removed} players not in the registered field.", file=sys.stderr)
 
     history_index, history_duplicates = build_index(history_rows)
 
