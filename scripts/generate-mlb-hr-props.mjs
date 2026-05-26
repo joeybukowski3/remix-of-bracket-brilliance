@@ -94,6 +94,18 @@ function getCurrentEtHour() {
   return Number(hourText);
 }
 
+function getNextRunAt() {
+  const etHour = getCurrentEtHour();
+  const tz = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "short" })
+    .formatToParts(new Date())
+    .find((p) => p.type === "timeZoneName")?.value ?? "ET";
+  const offset = tz === "EDT" ? "-04:00" : "-05:00";
+  const today = getTodayEt();
+  if (etHour < 10) return { time: `${today}T10:00:00${offset}`, label: "10:00 AM ET" };
+  if (etHour < 13) return { time: `${today}T13:00:00${offset}`, label: "1:00 PM ET" };
+  return null; // No more scheduled runs today
+}
+
 function normalizeName(value) {
   return String(value ?? "")
     .normalize("NFKD")
@@ -1115,9 +1127,33 @@ async function main() {
   const batterPool = [];
   const pitcherPool = [];
   const gamePool = [];
+  const pendingGames = []; // games excluded because a pitcher hasn't been announced yet
 
   for (const game of schedule) {
     const gameKey = `${game.away.abbreviation}@${game.home.abbreviation}`;
+
+    // Skip the entire game if BOTH pitchers are unannounced — nothing to score.
+    // If only one side is TBD we still skip the whole game since cross-scoring
+    // (scoring team A's batters vs team B's pitcher when team A's pitcher is TBD)
+    // produces misleading half-matchups.
+    const awayPitcherKnown = Boolean(game.away.probablePitcher?.id);
+    const homePitcherKnown = Boolean(game.home.probablePitcher?.id);
+
+    if (!awayPitcherKnown || !homePitcherKnown) {
+      const missing = [
+        !awayPitcherKnown ? game.away.abbreviation : null,
+        !homePitcherKnown ? game.home.abbreviation : null,
+      ].filter(Boolean);
+
+      pendingGames.push({
+        gameKey,
+        matchup: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
+        venue: game.venue,
+        missingPitcherSide: missing,
+      });
+      console.log(`[skip] ${gameKey} — pitcher TBD for: ${missing.join(", ")}`);
+      continue;
+    }
     const boxscore = await fetchBoxscore(game.gamePk).catch(() => null);
     const currentAwayLineup = extractLineupFromTeamBox(boxscore?.teams?.away);
     const currentHomeLineup = extractLineupFromTeamBox(boxscore?.teams?.home);
@@ -1364,6 +1400,8 @@ async function main() {
   const validatedPayload = validateRawPayload({
     date: getTodayEt(),
     generatedAt: new Date().toISOString(),
+    nextRunAt: getNextRunAt(),
+    pendingGames,
     games: gamePool,
     pitchers: validatedPitchers,
     batters: validatedRows,
