@@ -15,12 +15,16 @@ export type PgaScheduleEntry = {
   fieldAverage?: string;
   cutLine?: string;
   noCutLabel?: string;
+  par?: number | string;
+  yardage?: number | string;
   dataFile: string;
   registration: "legacy" | "generated";
   summaryBlurb?: string;
   courseTraits?: string[];
   homepageEyebrow?: string;
   previousWinner?: string;
+  previousWinningScore?: string;
+  projectedWeatherSummary?: string;
   purse?: string;
   winningScore?: string;
   averageCutLineLast5Years?: string;
@@ -76,6 +80,11 @@ export function getPgaScheduleSelection(referenceDate?: string | Date): PgaSched
     nextWeekEvents,
     referenceDate: today,
   };
+}
+
+export function getPgaScheduleEntryBySlug(slug: string | undefined) {
+  if (!slug) return null;
+  return PGA_SCHEDULE.find((entry) => entry.slug === slug) ?? null;
 }
 
 export function getPgaDateOverride() {

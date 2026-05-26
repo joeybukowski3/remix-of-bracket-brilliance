@@ -141,7 +141,14 @@ function normalizeTournamentLabel(value: string | null | undefined) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-type BestBetPickPreview = { player: string };
+type BestBetPickPreview = {
+  player: string;
+  tournamentRank?: number;
+  powerRank?: number;
+  topStats?: string[];
+  bullets?: string[];
+  odds?: Record<string, string> | null;
+};
 type BestBetsPreviewData = {
   tournament: string;
   course?: string;
@@ -155,6 +162,131 @@ type BestBetsPreviewData = {
   top10?: BestBetPickPreview[];
   top20?: BestBetPickPreview[];
 };
+
+type BestBetMarketKey = "outrights" | "top5" | "top10" | "top20";
+
+type BestBetTableConfig = {
+  key: BestBetMarketKey;
+  title: string;
+  description: string;
+  href: string;
+  accentClass: string;
+  headerClass: string;
+  rankClass: string;
+};
+
+const BEST_BET_TABLES: BestBetTableConfig[] = [
+  {
+    key: "outrights",
+    title: "Outright Winners",
+    description: "Win equity",
+    href: "/pga/best-bets#outrights",
+    accentClass: "border-amber-300/70 shadow-[inset_0_3px_0_rgba(251,191,36,0.95)]",
+    headerClass: "text-amber-200",
+    rankClass: "bg-amber-100 text-amber-800",
+  },
+  {
+    key: "top5",
+    title: "Top 5 Finish",
+    description: "Ceiling with placement value",
+    href: "/pga/best-bets#top5",
+    accentClass: "border-emerald-300/70 shadow-[inset_0_3px_0_rgba(52,211,153,0.95)]",
+    headerClass: "text-emerald-200",
+    rankClass: "bg-emerald-100 text-emerald-800",
+  },
+  {
+    key: "top10",
+    title: "Top 10 Finish",
+    description: "High-floor model fits",
+    href: "/pga/best-bets#top10",
+    accentClass: "border-indigo-300/70 shadow-[inset_0_3px_0_rgba(129,140,248,0.95)]",
+    headerClass: "text-indigo-200",
+    rankClass: "bg-indigo-100 text-indigo-800",
+  },
+  {
+    key: "top20",
+    title: "Top 20 Finish",
+    description: "Safer finishing profiles",
+    href: "/pga/best-bets#top20",
+    accentClass: "border-cyan-300/70 shadow-[inset_0_3px_0_rgba(103,232,249,0.95)]",
+    headerClass: "text-cyan-200",
+    rankClass: "bg-cyan-100 text-cyan-800",
+  },
+];
+
+type CourseInformationSource = {
+  courseName?: string;
+  location?: string;
+  par?: number | string;
+  yardage?: number | string;
+  previousWinner?: string;
+  previousWinningScore?: string;
+  winningScore?: string;
+  projectedWeatherSummary?: string;
+};
+
+function formatYardage(value: CourseInformationSource["yardage"]) {
+  if (typeof value === "number") return value.toLocaleString();
+  return value;
+}
+
+function formatCourseSetup(source: CourseInformationSource | null | undefined) {
+  const par = source?.par ? `Par ${source.par}` : null;
+  const yardage = source?.yardage ? `${formatYardage(source.yardage)} yards` : null;
+  return [par, yardage].filter(Boolean).join(" · ");
+}
+
+function getPreviousWinnerLine(source: CourseInformationSource | null | undefined) {
+  if (!source?.previousWinner) return EMPTY_MESSAGE;
+  const score = source.previousWinningScore || source.winningScore;
+  return score ? `${source.previousWinner}, ${score}` : source.previousWinner;
+}
+
+function getPickMeta(pick: BestBetPickPreview) {
+  if (pick.odds?.outright) return pick.odds.outright;
+  if (typeof pick.tournamentRank === "number") return `Model #${pick.tournamentRank}`;
+  if (typeof pick.powerRank === "number") return `Power #${pick.powerRank}`;
+  return "";
+}
+
+function getPickReason(pick: BestBetPickPreview) {
+  return pick.topStats?.[0] || pick.bullets?.[0] || "";
+}
+
+function BestBetPreviewTable({ config, picks }: { config: BestBetTableConfig; picks: BestBetPickPreview[] }) {
+  return (
+    <div className={cn("overflow-hidden rounded-[18px] border bg-green-950/62", config.accentClass)}>
+      <div className="border-b border-white/10 px-3 py-2.5">
+        <div className={cn("text-sm font-semibold tracking-[-0.01em]", config.headerClass)}>{config.title}</div>
+        <div className="mt-0.5 text-[11px] font-medium text-green-100/68">{config.description}</div>
+      </div>
+      <div className="divide-y divide-white/10">
+        {picks.slice(0, 3).map((pick, index) => (
+          <Link
+            key={`${config.key}-${pick.player}-${index}`}
+            to={config.href}
+            className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 transition hover:bg-white/10"
+          >
+            <span className={cn("flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold", config.rankClass)}>
+              {index + 1}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-white">{pick.player}</span>
+              {getPickReason(pick) ? (
+                <span className="block truncate text-[11px] text-green-100/62">{getPickReason(pick)}</span>
+              ) : null}
+            </span>
+            {getPickMeta(pick) ? (
+              <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 text-[11px] font-semibold text-green-50">
+                {getPickMeta(pick)}
+              </span>
+            ) : null}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function PgaHub() {
   const scheduleTournament = getPgaScheduleSelection().currentUpcoming;
@@ -405,6 +537,8 @@ export default function PgaHub() {
     ? truncateTeaser(bestBets?.preview?.tournamentOverview, 120)
     : `Model-driven tournament betting analysis, picks, and odds for ${activeTournamentName} this week.`;
   const bestBetsGeneratedLabel = formatGeneratedDate(bestBets?.generatedAt);
+  const courseInformation = (currentEvent || scheduleTournament || FEATURED_PGA_TOURNAMENT) as CourseInformationSource;
+  const courseSetup = formatCourseSetup(courseInformation);
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
@@ -444,11 +578,11 @@ export default function PgaHub() {
 
   return (
     <SiteShell>
-      <main className="site-page bg-[#eef3f8] pb-16 pt-4 text-slate-900">
+      <main className="site-page overflow-x-hidden bg-[#eef3f8] pb-16 pt-4 text-slate-900">
         <div className="site-container">
           {hasBestBetsPanel ? (
             <section className="mb-4 rounded-[30px] border border-green-800 bg-green-950 px-5 py-5 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
                 <div className="min-w-0 space-y-2">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-300/80">
                     THIS WEEK'S BETTING PREVIEW
@@ -459,14 +593,45 @@ export default function PgaHub() {
                   <p className="max-w-4xl text-sm text-green-100/88">
                     {bestBetsTeaser || "Model-driven tournament betting analysis, picks, and odds for this week's PGA event."}
                   </p>
+                  <div className="pt-2">
+                    <Link
+                      to="/pga/best-bets"
+                      className="inline-flex w-full items-center justify-center rounded-full border border-green-700 bg-green-800 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-green-700 sm:w-auto"
+                    >
+                      View Full Picks &amp; Odds →
+                    </Link>
+                  </div>
                 </div>
 
-                <Link
-                  to="/pga/best-bets"
-                  className="inline-flex w-full items-center justify-center rounded-full border border-green-700 bg-green-800 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-green-700 lg:w-auto"
+                <aside
+                  aria-label="Course information"
+                  className="rounded-[22px] border border-green-700/80 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 >
-                  View Full Picks &amp; Odds →
-                </Link>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-300/82">
+                    Course Information
+                  </div>
+                  <div className="mt-2 text-lg font-semibold tracking-[-0.02em] text-white">
+                    {courseInformation.courseName || activeTournamentCourse || EMPTY_MESSAGE}
+                  </div>
+                  <dl className="mt-3 space-y-2 text-sm text-green-50/88">
+                    <div>
+                      <dt className="sr-only">Location</dt>
+                      <dd>{courseInformation.location || EMPTY_MESSAGE}</dd>
+                    </div>
+                    <div>
+                      <dt className="sr-only">Course setup</dt>
+                      <dd>{courseSetup || "Course setup unavailable in current feed"}</dd>
+                    </div>
+                    <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-2">
+                      <dt className="text-green-200/72">Previous</dt>
+                      <dd className="min-w-0 truncate">{getPreviousWinnerLine(courseInformation)}</dd>
+                    </div>
+                    <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-2">
+                      <dt className="text-green-200/72">Weather</dt>
+                      <dd className="min-w-0">{courseInformation.projectedWeatherSummary || "Forecast unavailable in current feed"}</dd>
+                    </div>
+                  </dl>
+                </aside>
               </div>
             </section>
           ) : null}
@@ -497,30 +662,16 @@ export default function PgaHub() {
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {[
-                  { key: "outrights", title: "Outright Winners", description: "High upside plays" },
-                  { key: "top5", title: "Top 5 Finishes", description: "Value with win equity" },
-                  { key: "top10", title: "Top 10 Finishes", description: "High floor targets" },
-                  { key: "top20", title: "Top 20 Finishes", description: "Consistency plays" },
-                ].map((card) => {
-                  const picks = bestBets?.[card.key as keyof BestBetsPreviewData] as BestBetPickPreview[] | undefined;
-                  return (
-                    <Link
-                      key={card.key}
-                      to={`/pga/best-bets#${card.key}`}
-                      className="rounded-[20px] border border-green-700 bg-green-800/70 p-4 transition hover:-translate-y-0.5 hover:bg-green-800"
-                    >
-                      <div className="text-sm font-semibold text-white">{card.title}</div>
-                      <div className="mt-1 text-xs text-green-200/88">{card.description}</div>
-                      <div className="mt-4 text-lg font-semibold tracking-[-0.02em] text-white">
-                        {picks?.[0]?.player ?? EMPTY_MESSAGE}
-                      </div>
-                    </Link>
-                  );
-                })}
+                {BEST_BET_TABLES.map((config) => (
+                  <BestBetPreviewTable
+                    key={config.key}
+                    config={config}
+                    picks={(bestBets?.[config.key] ?? []) as BestBetPickPreview[]}
+                  />
+                ))}
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm italic text-green-100/75">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm italic text-green-100/75">
                 <span>
                   Our model analyzes strokes gained, course weights, and current odds to surface the best values. Click any
                   category for the full breakdown.
@@ -538,7 +689,7 @@ export default function PgaHub() {
             <SportsbookBar />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-[292px_minmax(0,1fr)]">
+          <div className="grid min-w-0 gap-4 md:grid-cols-[292px_minmax(0,1fr)]">
             <PgaScheduleRail
               schedule={schedule}
               activeEvent={activeEvent}
@@ -552,7 +703,7 @@ export default function PgaHub() {
               }}
             />
 
-            <section className="space-y-4">
+            <section className="min-w-0 space-y-4">
               <div className="space-y-1 px-1">
                 <p className="text-sm text-muted-foreground">
                   PGA Tour player rankings updated every Monday using strokes gained data from the PGA Tour, DataGolf course stats, and player trend tables.

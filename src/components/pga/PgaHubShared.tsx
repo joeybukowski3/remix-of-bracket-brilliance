@@ -24,6 +24,11 @@ export type PgaScheduleFeedEntry = {
   endDate: string;
   dateLabel: string;
   eventType: string;
+  par?: number | string;
+  yardage?: number | string;
+  previousWinner?: string;
+  previousWinningScore?: string;
+  projectedWeatherSummary?: string;
   category: "major" | "wgc" | "signature" | "standard";
   status: string;
   winner: string;
