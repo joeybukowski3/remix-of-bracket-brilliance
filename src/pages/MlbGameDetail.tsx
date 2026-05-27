@@ -869,14 +869,12 @@ function MlbSlateAnalyzer({
                     </div>
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="truncate text-xs font-medium text-[#031635]">
-                        {game.away.probablePitcher?.fullName || MLB_DASH}
+                        {game.away.probablePitcher?.fullName || "TBD"}
                       </span>
                       {detail?.starters.away.record && (
                         <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.away.record}</span>
                       )}
-                      {getPitcherXera(detail?.starters.away.id) !== null && (
-                        <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{getPitcherXera(detail?.starters.away.id)!.toFixed(2)} xERA</span>
-                      )}
+                      {(() => { const xera = getPitcherXera(game.away.probablePitcher?.id ?? detail?.starters.away.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-3">
@@ -887,14 +885,12 @@ function MlbSlateAnalyzer({
                     </div>
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="truncate text-xs font-medium text-[#031635]">
-                        {game.home.probablePitcher?.fullName || MLB_DASH}
+                        {game.home.probablePitcher?.fullName || "TBD"}
                       </span>
                       {detail?.starters.home.record && (
                         <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.home.record}</span>
                       )}
-                      {getPitcherXera(detail?.starters.home.id) !== null && (
-                        <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{getPitcherXera(detail?.starters.home.id)!.toFixed(2)} xERA</span>
-                      )}
+                      {(() => { const xera = getPitcherXera(game.home.probablePitcher?.id ?? detail?.starters.home.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
                     </div>
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">
@@ -983,9 +979,9 @@ function HomeSchedule({
     pendingGames,
     nextRunAt,
   } = useMlbPropsData();
-  const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore)).slice(0, 5), [propBatters]);
+  const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
-  const topBvpProps = useMemo(() => batterVsPitcherRows.slice(0, 5), [batterVsPitcherRows]);
+  const topBvpProps = useMemo(() => batterVsPitcherRows.slice().sort((a, b) => b.bestMatchupScore - a.bestMatchupScore).slice(0, 5), [batterVsPitcherRows]);
   const hrPreviewRows = useMemo<PropPreviewRow[]>(
     () => topHrProps.map((row) => ({
       key: `${row.player}-${row.team}`,
@@ -1014,7 +1010,7 @@ function HomeSchedule({
       position: row.position,
       team: row.team,
       opponent: row.opposingPitcher,
-      score: row.hrTargetScore,
+      score: row.bestMatchupScore,
     })),
     [topBvpProps],
   );
@@ -1025,18 +1021,6 @@ function HomeSchedule({
         <MlbHubSidebar />
 
         <div className="min-w-0 flex-1 space-y-3">
-          <nav className="flex flex-wrap gap-2 lg:hidden">
-            {MLB_HUB_LINKS.slice(0, 4).map((item) => (
-              <Link
-                key={item.label}
-                to={item.to}
-                className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-            ))}
-          </nav>
 
           <MlbHubHero />
           <HubSportsbookStrip />
