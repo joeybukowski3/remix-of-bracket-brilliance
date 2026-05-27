@@ -1491,28 +1491,29 @@ export default function MlbHrProps() {
                   </div>
                   <div className="mt-3 space-y-3">
                     {parkRows.map((park) => (
-                      <article key={park.key} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <article key={park.key} className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <TeamLogoBadge team={park.awayTeam} size={20} showLabel={false} />
-                            <span className="text-[10px] font-bold text-slate-400">@</span>
-                            <TeamLogoBadge team={park.homeTeam} size={20} showLabel={false} />
-                            <span className="ml-1 text-[11px] font-bold text-slate-900">{park.matchup}</span>
+                          <div className="flex items-center gap-1">
+                            <TeamLogoBadge team={park.awayTeam} size={18} showLabel={false} />
+                            <span className="text-[9px] font-bold text-slate-300">@</span>
+                            <TeamLogoBadge team={park.homeTeam} size={18} showLabel={false} />
+                            <span className="ml-1 text-[10px] text-slate-400 truncate">{park.stadium}</span>
                           </div>
-                          <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold", getParkFactorTone(park.parkFactor))}>
+                          <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", getParkFactorTone(park.parkFactor))}>
                             {park.parkFactor.toFixed(2)}
                           </span>
                         </div>
-                        <div className="mt-1 text-[10px] text-slate-400">{park.stadium}</div>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}</span>
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
+                          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}</span>
                           {park.windSpeed != null && park.windSpeed >= 10 && (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">💨 {park.windSpeed.toFixed(0)} MPH {getWindArrow(park.windDirection)} {park.windDirection}</span>
+                            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">💨 {park.windSpeed.toFixed(0)} MPH {getWindArrow(park.windDirection)} {park.windDirection}</span>
                           )}
                         </div>
-                        <div className="mt-1.5 text-[10px] text-slate-400">{park.windSpeed != null && park.windSpeed < 10 ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection} · ` : ""}{park.conditions}</div>
+                        {(park.windSpeed == null || park.windSpeed < 10) && (
+                          <div className="mt-1 text-[9px] text-slate-400">{park.windSpeed != null ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection} · ` : ""}{park.conditions}</div>
+                        )}
                       </article>
                     ))}
                   </div>
