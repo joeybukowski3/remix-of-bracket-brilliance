@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -69,8 +70,6 @@ export type HrDashboardBatter = {
   weatherBoost: number | null;
   hrScore: number;
   hrScoreRank: number;
-  atBats?: number | null;
-  adjustedHrScore?: number | null;
   angleTags: string[];
 };
 
@@ -204,7 +203,7 @@ export type PitcherStrikeoutTeamRow = {
   whyItRanksWell: string;
 };
 
-export const DEFAULT_TAB: TabKey = "pitchers";
+export const DEFAULT_TAB: TabKey = "batters";
 export const DEFAULT_PITCHER_SORT = { key: "hrVs" as PitcherSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_MATCHUP_SORT = { key: "bestMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
@@ -313,8 +312,6 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     weatherBoost: normalizeNumber(entry.weatherBoost),
     hrScore: normalizeNumber(entry.hrScore),
     hrScoreRank: normalizeNumber(entry.hrScoreRank),
-    atBats: normalizeNumber(entry.atBats),
-    adjustedHrScore: normalizeNumber(entry.adjustedHrScore),
     angleTags: normalizeStringList(entry.angleTags).slice(0, 3),
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
@@ -587,7 +584,7 @@ export function buildSlateSummary(pitchers: HrDashboardPitcher[], batters: HrDas
     .map((game) => `${game.stadium} (${game.parkFactor.toFixed(2)})`)
     .join(" • ");
   const topArm = [...pitchers].sort((left, right) => right.hrVs - left.hrVs)[0];
-  const topBat = [...batters].sort((left, right) => (right.adjustedHrScore ?? right.hrScore) - (left.adjustedHrScore ?? left.hrScore))[0];
+  const topBat = [...batters].sort((left, right) => right.hrScore - left.hrScore)[0];
 
   return {
     strongestParks: strongestParks || "No park context available",
@@ -1541,6 +1538,17 @@ export default function MlbHrProps() {
                     <span>•</span>
                     <span>{pitchers.length} starters</span>
                   </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link to="/mlb/strikeout-props" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition opacity-90 hover:opacity-100" style={{ backgroundColor: "#22c55e" }}>
+                      🎯 K Props
+                    </Link>
+                    <Link to="/mlb/batter-vs-pitcher" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition opacity-90 hover:opacity-100" style={{ backgroundColor: "#8b5cf6" }}>
+                      ⚔️ Hit Props
+                    </Link>
+                    <Link to="/mlb" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition opacity-90 hover:opacity-100" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+                      🏠 MLB Hub
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
@@ -1591,9 +1599,7 @@ export default function MlbHrProps() {
                   <div className="border-b border-slate-200 px-4">
                     <div className="flex flex-nowrap gap-3 overflow-x-auto whitespace-nowrap" style={{ WebkitOverflowScrolling: "touch" }}>
                       {[
-                        { key: "pitchers", label: "🔥 Pitchers" },
                         { key: "batters", label: "💥 Batters" },
-                        { key: "matchups", label: "⚔️ Matchup Lenses" },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -1719,75 +1725,73 @@ export default function MlbHrProps() {
                           </div>
                         </div>
                         <DataLegend />
-                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-                          <table className="min-w-full border-separate border-spacing-0 text-sm">
-                            <thead className="sticky top-0 z-10 bg-white">
-                              <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                        <div className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
+                          <table className="min-w-full border-separate border-spacing-0 text-xs">
+                            <thead className="sticky top-0 z-20">
+                              <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                                {/* Sticky: Rank */}
+                                <th className="sticky left-0 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap w-8">
+                                  <button type="button" onClick={() => handleBatterSort("hrScoreRank")} className="hover:text-slate-900">
+                                    #{makeSortIndicator(batterSortKey === "hrScoreRank", batterSortDirection)}
+                                  </button>
+                                </th>
+                                {/* Sticky: Name */}
+                                <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap min-w-[130px]">
+                                  <button type="button" onClick={() => handleBatterSort("player")} className="hover:text-slate-900">
+                                    Batter{makeSortIndicator(batterSortKey === "player", batterSortDirection)}
+                                  </button>
+                                </th>
+                                {/* Scrollable columns */}
                                 {[
-                                  ["hrScoreRank", "Rank"],
-                                  ["player", "Batter"],
-                                  ["team", "Team"],
-                                  ["opposingPitcher", "Opp Pitcher"],
-                                  ["parkFactor", "Park"],
-                                  ["kRate", "K%"],
-                                  ["bbRate", "BB%"],
-                                  ["barrelRate", "Barrel%"],
-                                  ["hardHitRate", "Hard Hit%"],
-                                  ["xba", "xBA"],
-                                  ["whiffRate", "Whiff%"],
-                                  ["last7HR", "Last 7 HR"],
-                                  ["last30HR", "Last 30 HR"],
-                                  ["opposingPitcherHrVs", "Pitcher HR VS"],
                                   ["hrScore", "HR Score"],
+                                  ["barrelRate", "Barrel%"],
+                                  ["hardHitRate", "HH%"],
+                                  ["last7HR", "L7 HR"],
+                                  ["last30HR", "L30 HR"],
+                                  ["opposingPitcherHrVs", "Ptch HR VS"],
                                 ].map(([key, label]) => (
-                                  <th key={key} className="border-b border-slate-200 bg-white px-4 py-1 text-left font-semibold whitespace-nowrap">
-                                    <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="transition hover:text-slate-900">
+                                  <th key={key} className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap">
+                                    <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900">
                                       {label}{makeSortIndicator(batterSortKey === key, batterSortDirection)}
                                     </button>
                                   </th>
                                 ))}
-                                <th className="border-b border-slate-200 bg-white px-4 py-1 text-left font-semibold whitespace-nowrap">Angle</th>
+                                <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap">Angle</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {filteredBatters.length ? filteredBatters.map((row) => (
-                                <tr key={`${row.player}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/60">
-                                  <td className="border-b border-slate-100 px-4 py-1.5">{row.hrScoreRank}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5 min-w-[180px]">
-                                    <div className="font-medium text-slate-900">{row.player}</div>
-                                    <div className="mt-1 text-xs text-slate-500">{row.ballpark}</div>
-                                  </td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5"><TeamLogoBadge team={row.team} size={20} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5 min-w-[150px]">
-                                    <div>{row.opposingPitcher}</div>
-                                    <div className="mt-1 text-xs text-slate-500">{row.opponent} • {row.pitcherHand}</div>
-                                  </td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5">
-                                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>
-                                      {row.parkFactor.toFixed(2)}
-                                    </span>
-                                  </td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("kRate", row.kRate, batterHeat)}>{formatPercent(row.kRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("bbRate", row.bbRate, batterHeat)}>{formatPercent(row.bbRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("barrelRate", row.barrelRate, batterHeat)}>{formatPercent(row.barrelRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("hardHitRate", row.hardHitRate, batterHeat)}>{formatPercent(row.hardHitRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("xba", row.xba, batterHeat)}>{formatDecimal(row.xba, 3)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("whiffRate", row.whiffRate, batterHeat)}>{formatPercent(row.whiffRate)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("last7HR", row.last7HR, batterHeat)}>{formatNumber(row.last7HR, 0)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("last30HR", row.last30HR, batterHeat)}>{formatNumber(row.last30HR, 0)}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("opposingPitcherHrVs", row.opposingPitcherHrVs, batterHeat)}><ScorePill value={row.opposingPitcherHrVs} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getBatterTableHeatStyle("hrScore", row.hrScore, batterHeat)}><ScorePill value={row.hrScore} /></td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5">
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {row.angleTags.length ? row.angleTags.map((tag) => (
-                                        <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">{tag}</span>
-                                      )) : <span className="text-slate-400">{DASH}</span>}
-                                    </div>
-                                  </td>
-                                </tr>
-                              )) : (
+                              {filteredBatters.length ? filteredBatters.map((row, i) => {
+                                const rowBg = i % 2 === 0 ? "bg-white" : "bg-slate-50/70";
+                                const stickyBg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
+                                return (
+                                  <tr key={`${row.player}-${row.team}-${row.opponent}`} className={rowBg}>
+                                    {/* Sticky rank */}
+                                    <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400 ${stickyBg}`}>
+                                      {row.hrScoreRank}
+                                    </td>
+                                    {/* Sticky name */}
+                                    <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1 ${stickyBg}`}>
+                                      <div className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.player}</div>
+                                      <div className="text-[10px] text-slate-400 truncate max-w-[120px]">{row.ballpark}</div>
+                                    </td>
+                                    <td className="border-b border-slate-100 px-2 py-1" style={getBatterTableHeatStyle("hrScore", row.hrScore, batterHeat)}><ScorePill value={row.hrScore} /></td>
+                                    <td className="border-b border-slate-100 px-2 py-1 tabular-nums" style={getBatterTableHeatStyle("barrelRate", row.barrelRate, batterHeat)}>{formatPercent(row.barrelRate)}</td>
+                                    <td className="border-b border-slate-100 px-2 py-1 tabular-nums" style={getBatterTableHeatStyle("hardHitRate", row.hardHitRate, batterHeat)}>{formatPercent(row.hardHitRate)}</td>
+                                    <td className="border-b border-slate-100 px-2 py-1 tabular-nums text-center" style={getBatterTableHeatStyle("last7HR", row.last7HR, batterHeat)}>{formatNumber(row.last7HR, 0)}</td>
+                                    <td className="border-b border-slate-100 px-2 py-1 tabular-nums text-center" style={getBatterTableHeatStyle("last30HR", row.last30HR, batterHeat)}>{formatNumber(row.last30HR, 0)}</td>
+                                    <td className="border-b border-slate-100 px-2 py-1" style={getBatterTableHeatStyle("opposingPitcherHrVs", row.opposingPitcherHrVs, batterHeat)}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                    <td className="border-b border-slate-100 px-2 py-1">
+                                      <div className="flex flex-wrap gap-1">
+                                        {row.angleTags.length ? row.angleTags.map((tag) => (
+                                          <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tag}</span>
+                                        )) : <span className="text-slate-400">{DASH}</span>}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              }) : (
                                 <tr>
-                                  <td colSpan={16} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={9} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No batters match the current search or game filter.
                                   </td>
                                 </tr>
