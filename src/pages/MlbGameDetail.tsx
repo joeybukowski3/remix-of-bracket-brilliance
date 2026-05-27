@@ -979,7 +979,11 @@ function HomeSchedule({
     pendingGames,
     nextRunAt,
   } = useMlbPropsData();
-  const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
+  const topHrProps = useMemo(() => propBatters
+    .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
+    .slice()
+    .sort((a, b) => b.hrScore - a.hrScore)
+    .slice(0, 5), [propBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
   const topBvpProps = useMemo(() => batterVsPitcherRows.slice().sort((a, b) => b.bestMatchupScore - a.bestMatchupScore).slice(0, 5), [batterVsPitcherRows]);
   const hrPreviewRows = useMemo<PropPreviewRow[]>(
