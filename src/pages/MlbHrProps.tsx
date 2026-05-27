@@ -1771,8 +1771,11 @@ export default function MlbHrProps() {
                                     </td>
                                     {/* Sticky name */}
                                     <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1 ${stickyBg}`}>
-                                      <div className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.player}</div>
-                                      <div className="text-[10px] text-slate-400 truncate max-w-[120px]">{row.ballpark}</div>
+                                      <div className="flex items-center gap-1.5">
+                                        <TeamLogoBadge team={row.team} size={16} showLabel={false} />
+                                        <span className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.player}</span>
+                                      </div>
+                                      <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">vs {row.opposingPitcher}</div>
                                     </td>
                                     <td className="border-b border-slate-100 px-2 py-1" style={getBatterTableHeatStyle("hrScore", row.hrScore, batterHeat)}><ScorePill value={row.hrScore} /></td>
                                     <td className="border-b border-slate-100 px-2 py-1 tabular-nums" style={getBatterTableHeatStyle("barrelRate", row.barrelRate, batterHeat)}>{formatPercent(row.barrelRate)}</td>
