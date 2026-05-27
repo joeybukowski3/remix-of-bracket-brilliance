@@ -1725,9 +1725,9 @@ export default function MlbHrProps() {
                               <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
                                 {[
                                   ["hrScoreRank", "Rank"],
+                                  ["opposingPitcher", "Opp Pitcher"],
                                   ["player", "Batter"],
                                   ["team", "Team"],
-                                  ["opposingPitcher", "Opp Pitcher"],
                                   ["parkFactor", "Park"],
                                   ["kRate", "K%"],
                                   ["bbRate", "BB%"],
@@ -1753,15 +1753,20 @@ export default function MlbHrProps() {
                               {filteredBatters.length ? filteredBatters.map((row) => (
                                 <tr key={`${row.player}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/60">
                                   <td className="border-b border-slate-100 px-4 py-1.5">{row.hrScoreRank}</td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5 min-w-[180px]">
-                                    <div className="font-medium text-slate-900">{row.player}</div>
-                                    <div className="mt-1 text-xs text-slate-500">{row.ballpark}</div>
-                                  </td>
-                                  <td className="border-b border-slate-100 px-4 py-1.5"><TeamLogoBadge team={row.team} size={20} /></td>
                                   <td className="border-b border-slate-100 px-4 py-1.5 min-w-[150px]">
                                     <div>{row.opposingPitcher}</div>
                                     <div className="mt-1 text-xs text-slate-500">{row.opponent} • {row.pitcherHand}</div>
                                   </td>
+                                  <td className="border-b border-slate-100 px-4 py-1.5 min-w-[180px]">
+                                    <div className="flex items-center gap-2">
+                                      <TeamLogoBadge team={row.team} size={20} showLabel={false} />
+                                      <div>
+                                        <div className="font-medium text-slate-900">{row.player}</div>
+                                        <div className="mt-1 text-xs text-slate-500">{row.ballpark}</div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="border-b border-slate-100 px-4 py-1.5"><TeamLogoBadge team={row.team} size={20} /></td>
                                   <td className="border-b border-slate-100 px-4 py-1.5">
                                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", getParkFactorTone(row.parkFactor))}>
                                       {row.parkFactor.toFixed(2)}
@@ -1927,9 +1932,9 @@ export default function MlbHrProps() {
                                   activeMatchupLens === "best"
                                     ? [
                                         ["rank", "Rank"],
+                                        ["opposingPitcher", "Vs Pitcher"],
                                         ["player", "Batter"],
                                         ["team", "Team"],
-                                        ["opposingPitcher", "Vs Pitcher"],
                                         ["parkFactor", "Park"],
                                         ["hrScore", "Batter HR"],
                                         ["opposingPitcherHitsVs", "Pitcher Hits VS"],
@@ -1940,9 +1945,9 @@ export default function MlbHrProps() {
                                     : activeMatchupLens === "hr"
                                       ? [
                                           ["rank", "Rank"],
+                                          ["opposingPitcher", "Vs Pitcher"],
                                           ["player", "Batter"],
                                           ["team", "Team"],
-                                          ["opposingPitcher", "Vs Pitcher"],
                                           ["parkFactor", "Park"],
                                           ["hrScore", "Batter HR"],
                                           ["opposingPitcherHrVs", "Pitcher HR VS"],
@@ -1987,8 +1992,13 @@ export default function MlbHrProps() {
                                   <tr key={`${row.rank}-${row.pitcher}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/60">
                                     <td className="border-b border-slate-100 px-4 py-1.5">{row.rank}</td>
                                     <td className="border-b border-slate-100 px-4 py-1.5 min-w-[180px]">
-                                      <div className="font-medium text-slate-900">{row.pitcher}</div>
-                                      <div className="mt-1 max-w-[320px] text-xs leading-5 text-slate-500">{row.whyItRanksWell}</div>
+                                      <div className="flex items-center gap-2">
+                                        <TeamLogoBadge team={row.team} size={20} showLabel={false} />
+                                        <div>
+                                          <div className="font-medium text-slate-900">{row.pitcher}</div>
+                                          <div className="mt-1 max-w-[320px] text-xs leading-5 text-slate-500">{row.whyItRanksWell}</div>
+                                        </div>
+                                      </div>
                                     </td>
                                     <td className="border-b border-slate-100 px-4 py-1.5"><TeamLogoBadge team={row.team} size={20} /></td>
                                     <td className="border-b border-slate-100 px-4 py-1.5 min-w-[150px]"><TeamLogoBadge team={row.opponent} size={20} /></td>
@@ -2016,11 +2026,16 @@ export default function MlbHrProps() {
                                 : filteredMatchups.length ? filteredMatchups.map((row) => (
                                   <tr key={`${row.rank}-${row.player}-${row.opposingPitcher}`} className="odd:bg-white even:bg-slate-50/60">
                                     <td className="border-b border-slate-100 px-4 py-1.5">{row.rank}</td>
+                                    <td className="border-b border-slate-100 px-4 py-1.5 min-w-[150px]">{row.opposingPitcher}</td>
                                     <td className="border-b border-slate-100 px-4 py-1.5 min-w-[180px]">
-                                      <div className="font-medium text-slate-900">{row.player}</div>
+                                      <div className="flex items-center gap-2">
+                                        <TeamLogoBadge team={row.team} size={20} showLabel={false} />
+                                        <div>
+                                          <div className="font-medium text-slate-900">{row.player}</div>
+                                        </div>
+                                      </div>
                                     </td>
                                     <td className="border-b border-slate-100 px-4 py-1.5"><TeamLogoBadge team={row.team} size={20} /></td>
-                                    <td className="border-b border-slate-100 px-4 py-1.5 min-w-[150px]">{row.opposingPitcher}</td>
                                     <td className="border-b border-slate-100 px-4 py-1.5">
                                       <div className="font-medium text-slate-900">{row.park}</div>
                                       <div className="mt-1">
