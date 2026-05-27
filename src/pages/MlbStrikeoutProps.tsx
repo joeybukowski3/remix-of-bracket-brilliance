@@ -104,9 +104,31 @@ export default function MlbStrikeoutProps() {
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
 
   usePageSeo({
-    title: "Today's MLB Strikeout Props & Pitcher Predictions | Joe Knows Ball",
-    description: "Daily MLB strikeout props, pitcher analysis, and betting edges. Advanced pitching models and player prop recommendations.",
+    title: "MLB Strikeout Props Today 2026 — Pitcher K Model & Rankings | Joe Knows Ball",
+    description: "Daily MLB strikeout prop rankings built from pitcher K rate, whiff rate, and opponent lineup strikeout tendency. Free advanced pitching model updated every day.",
     path: "/mlb/strikeout-props",
+    structuredData: [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://www.joeknowsball.com/" },
+          { "@type": "ListItem", position: 2, name: "MLB", item: "https://www.joeknowsball.com/mlb" },
+          { "@type": "ListItem", position: 3, name: "Strikeout Props", item: "https://www.joeknowsball.com/mlb/strikeout-props" },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "How does the MLB strikeout prop model work?",
+            acceptedAnswer: { "@type": "Answer", text: "The strikeout model scores pitchers by blending pitcher K rate, whiff rate, and historical K vs opponent stats with the opposing team's strikeout tendency and whiff rate." },
+          },
+        ],
+      },
+    ],
   });
 
   // Park sidebar — sorted low-to-high park factor (best for pitchers first)
