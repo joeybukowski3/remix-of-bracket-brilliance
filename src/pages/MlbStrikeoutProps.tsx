@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import {
-  formatPropNumber,
   formatPropPercent,
   getGameCount,
   getPropEdgeTier,
@@ -14,24 +13,92 @@ import {
 } from "@/components/mlb/MlbPropModelComponents";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { cn } from "@/lib/utils";
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 
-type SortKey = "rank" | "pitcher" | "team" | "opponent" | "strikeoutMatchupScore" | "pitcherKSkillScore" | "opponentTeamStrikeoutScore";
+type SortKey = "rank" | "pitcher" | "team" | "opponent" | "strikeoutMatchupScore" | "pitcherKSkillScore" | "opponentTeamStrikeoutScore" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate";
 type SortDirection = "asc" | "desc";
 
 const confidenceOptions = ["All tiers", "Strong", "Positive", "Watch", "Neutral"];
 
-function sortRows(rows: PitcherStrikeoutTeamRow[], key: SortKey, direction: SortDirection) {
-  const multiplier = direction === "asc" ? 1 : -1;
-  return [...rows].sort((left, right) => {
-    const leftValue = left[key];
-    const rightValue = right[key];
-    if (typeof leftValue === "string" || typeof rightValue === "string") {
-      return String(leftValue).localeCompare(String(rightValue)) * multiplier;
-    }
-    return (Number(leftValue) - Number(rightValue)) * multiplier;
+function sortRows(rows: PitcherStrikeoutTeamRow[], key: SortKey, dir: SortDirection) {
+  const m = dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const av = a[key], bv = b[key];
+    if (typeof av === "string" || typeof bv === "string") return String(av).localeCompare(String(bv)) * m;
+    return (Number(av) - Number(bv)) * m;
   });
+}
+
+function fmt(v: number | null | undefined, digits = 1) {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return v.toFixed(digits);
+}
+
+function ScoreCell({ value, invert = false }: { value: number; invert?: boolean }) {
+  const hi = invert ? value <= 40 : value >= 65;
+  const mid = invert ? value <= 55 : value >= 52;
+  return (
+    <span className={`inline-block rounded-md px-2 py-0.5 text-[11px] font-black tabular-nums ${hi ? "bg-emerald-500 text-white" : mid ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+      {fmt(value)}
+    </span>
+  );
+}
+
+function PctCell({ value, good, great }: { value: number | null; good: number; great: number }) {
+  const n = value ?? 0;
+  return (
+    <span className={`text-[11px] font-bold tabular-nums ${n >= great ? "text-emerald-700" : n >= good ? "text-slate-700" : "text-slate-400"}`}>
+      {value != null ? `${value.toFixed(1)}%` : "—"}
+    </span>
+  );
+}
+
+/**
+ * Cell with a gradient background tint:
+ *   above avg  → green  (higher opacity = further above)
+ *   near avg   → slate gray
+ *   below avg  → blue   (higher opacity = further below)
+ *
+ * avg / spread are the league-average and ±1 spread for normalization.
+ */
+function GradientBgCell({ value, avg, spread }: { value: number | null; avg: number; spread: number }) {
+  if (value == null) return <span className="text-[11px] text-slate-400">—</span>;
+
+  const delta = (value - avg) / spread;          // –1 to +1 (clamped)
+  const clamped = Math.max(-1, Math.min(1, delta));
+  const abs = Math.abs(clamped);
+
+  let bg = "transparent";
+  let textColor = "#64748b"; // slate-500
+
+  if (clamped > 0.1) {
+    // Above avg: green
+    const opacity = Math.min(0.08 + abs * 0.35, 0.45);
+    bg = `rgba(22, 163, 74, ${opacity})`;   // green-600
+    textColor = abs > 0.5 ? "#15803d" : "#166534"; // green-700 / green-800
+  } else if (clamped < -0.1) {
+    // Below avg: blue
+    const opacity = Math.min(0.06 + abs * 0.28, 0.38);
+    bg = `rgba(59, 130, 246, ${opacity})`;  // blue-500
+    textColor = abs > 0.5 ? "#1d4ed8" : "#1e40af"; // blue-700 / blue-800
+  } else {
+    // Near avg: neutral tint
+    bg = "rgba(148, 163, 184, 0.12)";
+    textColor = "#475569";
+  }
+
+  return (
+    <span
+      className="inline-block rounded-md px-2 py-0.5 text-[11px] font-bold tabular-nums"
+      style={{ backgroundColor: bg, color: textColor }}
+    >
+      {value.toFixed(1)}%
+    </span>
+  );
+}
+
+function makeSortIndicator(active: boolean, dir: SortDirection) {
+  return active ? (dir === "asc" ? " ↑" : " ↓") : "";
 }
 
 export default function MlbStrikeoutProps() {
@@ -41,7 +108,7 @@ export default function MlbStrikeoutProps() {
   const [gameFilter, setGameFilter] = useState("all");
   const [confidenceFilter, setConfidenceFilter] = useState("All tiers");
   const [sortKey, setSortKey] = useState<SortKey>("strikeoutMatchupScore");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
 
   usePageSeo({
     title: "MLB Strikeout Prop Model Today - Joe Knows Ball",
@@ -49,28 +116,34 @@ export default function MlbStrikeoutProps() {
     path: "/mlb/strikeout-props",
   });
 
-  const teams = useMemo(() => Array.from(new Set(strikeoutDetailRows.flatMap((row) => [row.team, row.opponent]))).sort(), [strikeoutDetailRows]);
-  const gameOptions = useMemo(() => games.map((game) => ({ value: game.gameKey, label: game.matchup })), [games]);
+  const teams = useMemo(() => Array.from(new Set(strikeoutDetailRows.flatMap((r) => [r.team, r.opponent]))).sort(), [strikeoutDetailRows]);
+  const gameOptions = useMemo(() => games.map((g) => ({ value: g.gameKey, label: g.matchup })), [games]);
   const bestScore = strikeoutDetailRows[0]?.strikeoutMatchupScore ?? null;
 
   const filteredRows = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    const rows = strikeoutDetailRows.filter((row) => {
-      if (teamFilter !== "all" && row.team !== teamFilter && row.opponent !== teamFilter) return false;
-      if (gameFilter !== "all" && row.gameKey !== gameFilter) return false;
-      if (confidenceFilter !== "All tiers" && getPropEdgeTier(row.strikeoutMatchupScore).label !== confidenceFilter) return false;
-      if (!query) return true;
-      return [row.pitcher, row.team, row.opponent, row.park, row.whyItRanksWell].some((value) => value.toLowerCase().includes(query));
+    const q = search.trim().toLowerCase();
+    const rows = strikeoutDetailRows.filter((r) => {
+      if (teamFilter !== "all" && r.team !== teamFilter && r.opponent !== teamFilter) return false;
+      if (gameFilter !== "all" && r.gameKey !== gameFilter) return false;
+      if (confidenceFilter !== "All tiers" && getPropEdgeTier(r.strikeoutMatchupScore).label !== confidenceFilter) return false;
+      if (!q) return true;
+      return [r.pitcher, r.team, r.opponent, r.park, r.whyItRanksWell].some((v) => v.toLowerCase().includes(q));
     });
-    return sortRows(rows, sortKey, sortDirection);
-  }, [confidenceFilter, gameFilter, search, sortDirection, sortKey, strikeoutDetailRows, teamFilter]);
-
-  const topRows = filteredRows.slice(0, 5);
+    return sortRows(rows, sortKey, sortDir);
+  }, [strikeoutDetailRows, confidenceFilter, gameFilter, search, sortDir, sortKey, teamFilter]);
 
   const handleSort = (key: SortKey) => {
-    setSortDirection((current) => (sortKey === key ? (current === "asc" ? "desc" : "asc") : key === "pitcher" || key === "team" || key === "opponent" ? "asc" : "desc"));
+    setSortDir((cur) => (sortKey === key ? (cur === "asc" ? "desc" : "asc") : ["pitcher", "team", "opponent"].includes(key) ? "asc" : "desc"));
     setSortKey(key);
   };
+
+  const SortTh = ({ k, label, extra = "" }: { k: SortKey; label: string; extra?: string }) => (
+    <th className={`border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap ${extra}`}>
+      <button type="button" onClick={() => handleSort(k)} className="hover:text-slate-900">
+        {label}{makeSortIndicator(sortKey === k, sortDir)}
+      </button>
+    </th>
+  );
 
   return (
     <SiteShell>
@@ -84,123 +157,122 @@ export default function MlbStrikeoutProps() {
             gamesCount={getGameCount(games)}
             rowsCount={strikeoutDetailRows.length}
             bestScore={bestScore}
+            siblingLinks={[
+              { label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" },
+              { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" },
+              { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" },
+            ]}
           />
 
-          <section className="grid gap-3 lg:grid-cols-5">
-            {topRows.map((row) => (
-              <article key={`${row.rank}-${row.pitcher}-${row.opponent}`} className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">#{row.rank}</div>
-                    <div className="mt-1 truncate text-sm font-black text-slate-950">{row.pitcher}</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <TeamLogoText team={row.team} size={18} />
-                      <span className="text-xs text-slate-300">vs</span>
-                      <TeamLogoText team={row.opponent} size={18} />
-                    </div>
-                  </div>
-                  <PropScoreBadge score={row.strikeoutMatchupScore} />
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <PropEdgeBadge score={row.strikeoutMatchupScore} />
-                  <span className="text-[11px] font-semibold text-slate-500">{getStrikeoutReason(row)}</span>
-                </div>
-              </article>
-            ))}
-          </section>
-
+          {/* Filters */}
           <section className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="grid gap-2 md:grid-cols-4">
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search pitcher, team, park"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-300 focus:bg-white"
-              />
-              <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none">
+            <div className="grid gap-2 sm:grid-cols-4">
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search pitcher, team, park" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-300 focus:bg-white" />
+              <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none">
                 <option value="all">All teams</option>
-                {teams.map((team) => <option key={team} value={team}>{team}</option>)}
+                {teams.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-              <select value={gameFilter} onChange={(event) => setGameFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none">
+              <select value={gameFilter} onChange={(e) => setGameFilter(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none">
                 <option value="all">All games</option>
-                {gameOptions.map((game) => <option key={game.value} value={game.value}>{game.label}</option>)}
+                {gameOptions.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
               </select>
-              <select value={confidenceFilter} onChange={(event) => setConfidenceFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none">
-                {confidenceOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              <select value={confidenceFilter} onChange={(e) => setConfidenceFilter(e.target.value)} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none">
+                {confidenceOptions.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-              <span>{loading ? "Loading model data" : `${filteredRows.length} pitchers shown`}</span>
-              <Link to="/mlb" className="font-bold text-sky-700 hover:underline">Back to MLB dashboard</Link>
+            <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+              <span>{loading ? "Loading…" : `${filteredRows.length} pitchers shown`}</span>
+              <Link to="/mlb" className="font-bold text-sky-700 hover:underline">Back to MLB</Link>
             </div>
           </section>
 
-          <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm">
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-[1080px] border-separate border-spacing-0 text-sm">
-                <thead className="sticky top-0 z-10 bg-white">
-                  <tr className="text-left text-[11px] uppercase tracking-[0.14em] text-slate-500">
-                    {[
-                      ["rank", "Rank"],
-                      ["pitcher", "Pitcher"],
-                      ["team", "Team"],
-                      ["opponent", "Opponent"],
-                      ["strikeoutMatchupScore", "K Edge"],
-                      ["pitcherKSkillScore", "Pitcher K"],
-                      ["opponentTeamStrikeoutScore", "Opp K/Whiff"],
-                    ].map(([key, label]) => (
-                      <th key={key} className="border-b border-slate-200 bg-white px-3 py-2 font-bold">
-                        <button type="button" onClick={() => handleSort(key as SortKey)} className="hover:text-slate-950">
-                          {label}{sortKey === key ? (sortDirection === "asc" ? " ↑" : " ↓") : ""}
-                        </button>
-                      </th>
-                    ))}
-                    <th className="border-b border-slate-200 bg-white px-3 py-2 font-bold">Recent K Form</th>
-                    <th className="border-b border-slate-200 bg-white px-3 py-2 font-bold">Workload</th>
-                    <th className="border-b border-slate-200 bg-white px-3 py-2 font-bold">Confidence</th>
-                    <th className="border-b border-slate-200 bg-white px-3 py-2 font-bold">Key Reason</th>
+          {/* Table */}
+          <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
+              <table className="min-w-full border-separate border-spacing-0 text-xs">
+                <thead className="sticky top-0 z-20">
+                  <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                    {/* Sticky: Rank */}
+                    <th className="sticky left-0 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 font-black w-8 text-left">
+                      <button type="button" onClick={() => handleSort("rank")} className="hover:text-slate-900">#{makeSortIndicator(sortKey === "rank", sortDir)}</button>
+                    </th>
+                    {/* Sticky: Name */}
+                    <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 font-black whitespace-nowrap min-w-[130px] text-left">
+                      <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
+                    </th>
+                    <SortTh k="strikeoutMatchupScore" label="K Score" />
+                    <SortTh k="pitcherKRate" label="K%" />
+                    <SortTh k="pitcherWhiffRate" label="Whiff%" />
+                    <SortTh k="pitcherKVs" label="K VS Score" />
+                    <SortTh k="pitcherKSkillScore" label="Pitcher K Score" />
+                    <SortTh k="opponentTeamKRate" label="Opp K%" />
+                    <SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" />
+                    <SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" />
+                    <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-black uppercase tracking-widest text-left whitespace-nowrap">Edge</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRows.map((row) => (
-                    <tr key={`${row.rank}-${row.pitcher}-${row.team}-${row.opponent}`} className="odd:bg-white even:bg-slate-50/70">
-                      <td className="border-b border-slate-100 px-3 py-2 font-black text-slate-400">#{row.rank}</td>
-                      <td className="border-b border-slate-100 px-3 py-2">
-                        <div className="font-black text-slate-950">{row.pitcher}</div>
-                        <div className="text-xs text-slate-500">{row.park}</div>
-                      </td>
-                      <td className="border-b border-slate-100 px-3 py-2"><TeamLogoText team={row.team} /></td>
-                      <td className="border-b border-slate-100 px-3 py-2"><TeamLogoText team={row.opponent} /></td>
-                      <td className="border-b border-slate-100 px-3 py-2"><PropScoreBadge score={row.strikeoutMatchupScore} /></td>
-                      <td className="border-b border-slate-100 px-3 py-2">{formatPropNumber(row.pitcherKSkillScore)}</td>
-                      <td className="border-b border-slate-100 px-3 py-2">
-                        <div className="font-bold text-slate-900">{formatPropNumber(row.opponentTeamStrikeoutScore)}</div>
-                        <div className="text-xs text-slate-500">K {formatPropPercent(row.opponentTeamKRate)} / Whiff {formatPropPercent(row.opponentTeamWhiffRate)}</div>
-                      </td>
-                      <td className="border-b border-slate-100 px-3 py-2">K {formatPropPercent(row.pitcherKRate)} / Whiff {formatPropPercent(row.pitcherWhiffRate)}</td>
-                      <td className="border-b border-slate-100 px-3 py-2">Probable SP</td>
-                      <td className="border-b border-slate-100 px-3 py-2"><PropEdgeBadge score={row.strikeoutMatchupScore} /></td>
-                      <td className="border-b border-slate-100 px-3 py-2 font-semibold text-slate-700">{getStrikeoutReason(row)}</td>
-                    </tr>
-                  ))}
+                  {filteredRows.length ? filteredRows.map((row, i) => {
+                    const bg = i % 2 === 0 ? "bg-white" : "bg-slate-50/70";
+                    const sbg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
+                    return (
+                      <tr key={`${row.rank}-${row.pitcher}-${row.team}`} className={bg}>
+                        <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400 ${sbg}`}>{row.rank}</td>
+                        <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1 ${sbg}`}>
+                          <div className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.pitcher}</div>
+                          <div className="text-[10px] text-slate-400">{row.team} vs {row.opponent}</div>
+                        </td>
+                        <td className="border-b border-slate-100 px-2 py-1"><PropScoreBadge score={row.strikeoutMatchupScore} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><PctCell value={row.pitcherKRate} good={22} great={27} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><PctCell value={row.pitcherWhiffRate} good={25} great={30} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><ScoreCell value={row.pitcherKVs} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><ScoreCell value={row.pitcherKSkillScore} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><GradientBgCell value={row.opponentTeamKRate} avg={22} spread={5} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><GradientBgCell value={row.opponentTeamWhiffRate} avg={25} spread={5} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><ScoreCell value={row.opponentTeamStrikeoutScore} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><PropEdgeBadge score={row.strikeoutMatchupScore} /></td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr><td colSpan={11} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
 
+            {/* Mobile cards */}
             <div className="grid gap-2 p-3 md:hidden">
-              {filteredRows.slice(0, 20).map((row) => (
-                <article key={`mobile-${row.rank}-${row.pitcher}`} className="rounded-2xl border border-slate-200 bg-white p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="text-xs font-black text-slate-400">#{row.rank}</div>
-                      <div className="truncate text-sm font-black text-slate-950">{row.pitcher}</div>
-                      <div className="mt-1 flex flex-wrap gap-1.5"><TeamLogoText team={row.team} /><span className="text-xs text-slate-300">vs</span><TeamLogoText team={row.opponent} /></div>
+              {filteredRows.slice(0, 50).map((row) => (
+                <article key={`m-${row.rank}-${row.pitcher}`} className="rounded-xl border border-slate-100 overflow-hidden shadow-sm bg-white">
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 border-b border-slate-100">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-[10px] font-black text-slate-300">#{row.rank}</span>
+                      <span className="font-black text-slate-900 text-sm truncate">{row.pitcher}</span>
                     </div>
                     <PropScoreBadge score={row.strikeoutMatchupScore} />
                   </div>
-                  <div className="mt-2 flex items-center justify-between gap-2 text-xs">
-                    <PropEdgeBadge score={row.strikeoutMatchupScore} />
-                    <span className="font-semibold text-slate-600">{getStrikeoutReason(row)}</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] border-b border-slate-100">
+                    <TeamLogoText team={row.team} size={13} />
+                    <span className="text-slate-300">vs</span>
+                    <TeamLogoText team={row.opponent} size={13} />
+                  </div>
+                  <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]">
+                    <div className="bg-sky-50/60 px-1 py-2">
+                      <div className="text-[9px] font-black uppercase tracking-wide text-sky-500 mb-1">K%</div>
+                      <div className="font-black text-slate-800">{fmt(row.pitcherKRate)}%</div>
+                    </div>
+                    <div className="bg-sky-50/60 px-1 py-2">
+                      <div className="text-[9px] font-black uppercase tracking-wide text-sky-500 mb-1">Whiff%</div>
+                      <div className="font-black text-slate-800">{fmt(row.pitcherWhiffRate)}%</div>
+                    </div>
+                    <div className="bg-rose-50/60 px-1 py-2">
+                      <div className="text-[9px] font-black uppercase tracking-wide text-rose-500 mb-1">Opp K%</div>
+                      <div className="font-black text-slate-800">{fmt(row.opponentTeamKRate)}%</div>
+                    </div>
+                    <div className="bg-violet-50/60 px-1 py-2">
+                      <div className="text-[9px] font-black uppercase tracking-wide text-violet-500 mb-1">K Score</div>
+                      <div className="font-black text-slate-800">{fmt(row.strikeoutMatchupScore)}</div>
+                    </div>
                   </div>
                 </article>
               ))}
