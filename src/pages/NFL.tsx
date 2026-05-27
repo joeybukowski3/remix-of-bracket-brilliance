@@ -237,6 +237,7 @@ export default function NFL() {
     title: seo.title,
     description: seo.description,
     path: seo.path,
+    noindex: seo.noindex ?? false,
   });
 
   return (
