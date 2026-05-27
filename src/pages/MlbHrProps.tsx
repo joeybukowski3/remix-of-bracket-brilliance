@@ -520,6 +520,9 @@ function StatScorePill({ value }: { value: number | null | undefined }) {
   else if (v < 50) { const op = Math.min(0.10 + (50 - v) / 50 * 0.30, 0.40); bg = `rgba(59,130,246,${op})`; col = "#1e40af"; }
   return <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums" style={{ backgroundColor: bg, color: col }}>{v.toFixed(1)}</span>;
 }
+
+function getBatterTableHeatStyle(
+  stat: BatterHeatKey,
   value: number | null | undefined,
   ranges: Record<string, HeatRange>,
 ) {
