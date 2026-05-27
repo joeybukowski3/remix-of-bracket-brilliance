@@ -30,6 +30,29 @@ function sortRows(rows: PitcherVsBatterRow[], key: SortKey, dir: SortDirection) 
   });
 }
 
+function GradCell({ value, display, avg, spread, higherBetter = true }: {
+  value: number | null | undefined; display: string; avg: number; spread: number; higherBetter?: boolean;
+}) {
+  if (value == null || !Number.isFinite(value)) return <span className="text-[11px] text-slate-300">—</span>;
+  const d = ((value - avg) / spread) * (higherBetter ? 1 : -1);
+  const c = Math.max(-1, Math.min(1, d));
+  const abs = Math.abs(c);
+  let bg = "rgba(148,163,184,0.13)"; let col = "#475569";
+  if (c > 0.15) { const op = Math.min(0.08 + abs * 0.36, 0.46); bg = `rgba(22,163,74,${op})`; col = abs > 0.5 ? "#15803d" : "#166534"; }
+  else if (c < -0.15) { const op = Math.min(0.06 + abs * 0.28, 0.38); bg = `rgba(59,130,246,${op})`; col = abs > 0.5 ? "#1d4ed8" : "#1e40af"; }
+  return <span className="inline-block rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums" style={{ backgroundColor: bg, color: col }}>{display}</span>;
+}
+
+function StatScorePill({ value }: { value: number | null | undefined }) {
+  if (value == null || !Number.isFinite(value)) return <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-400">—</span>;
+  const v = Number(value);
+  let bg = "rgba(148,163,184,0.20)"; let col = "#475569";
+  if (v >= 65) { bg = "#16a34a"; col = "#fff"; }
+  else if (v >= 58) { bg = "rgba(22,163,74,0.18)"; col = "#15803d"; }
+  else if (v < 50) { const op = Math.min(0.10 + (50 - v) / 50 * 0.30, 0.40); bg = `rgba(59,130,246,${op})`; col = "#1e40af"; }
+  return <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums" style={{ backgroundColor: bg, color: col }}>{v.toFixed(1)}</span>;
+}
+
 function fmt(v: number | null | undefined, digits = 1) {
   return v != null && Number.isFinite(v) ? v.toFixed(digits) : "—";
 }
@@ -172,33 +195,13 @@ export default function MlbBatterVsPitcher() {
                             vs {row.opposingPitcher}
                           </div>
                         </td>
-                        <td className="border-b border-slate-100 px-2 py-1"><PropScoreBadge score={row.bestMatchupScore} /></td>
-                        <td className="border-b border-slate-100 px-2 py-1">
-                          <span className={`text-[11px] font-black tabular-nums ${row.xba != null && row.xba >= 0.290 ? "text-sky-700" : row.xba != null && row.xba >= 0.260 ? "text-slate-700" : "text-slate-400"}`}>
-                            {row.xba != null ? row.xba.toFixed(3) : "—"}
-                          </span>
-                        </td>
-                        <td className="border-b border-slate-100 px-2 py-1">
-                          <span className={`text-[11px] font-bold tabular-nums ${row.hardHitRate != null && row.hardHitRate >= 52 ? "text-emerald-700" : row.hardHitRate != null && row.hardHitRate >= 47 ? "text-slate-700" : "text-slate-400"}`}>
-                            {row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : "—"}
-                          </span>
-                        </td>
-                        <td className="border-b border-slate-100 px-2 py-1">
-                          <span className={`text-[11px] font-bold tabular-nums ${row.barrelRate != null && row.barrelRate >= 10 ? "text-emerald-700" : row.barrelRate != null && row.barrelRate >= 7 ? "text-slate-700" : "text-slate-400"}`}>
-                            {row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}
-                          </span>
-                        </td>
-                        <td className="border-b border-slate-100 px-2 py-1"><ScoreCell value={row.batterPowerScore} /></td>
-                        <td className="border-b border-slate-100 px-2 py-1">
-                          <span className={`inline-block rounded-md px-2 py-0.5 text-[11px] font-black tabular-nums ${row.opposingPitcherHitsVs >= 65 ? "bg-rose-500 text-white" : row.opposingPitcherHitsVs >= 52 ? "bg-rose-100 text-rose-800" : "bg-slate-100 text-slate-600"}`}>
-                            {fmt(row.opposingPitcherHitsVs)}
-                          </span>
-                        </td>
-                        <td className="border-b border-slate-100 px-2 py-1">
-                          <span className={`text-[11px] font-bold tabular-nums ${row.pitcherVulnerabilityScore >= 65 ? "text-rose-700" : row.pitcherVulnerabilityScore >= 52 ? "text-slate-700" : "text-slate-400"}`}>
-                            {fmt(row.pitcherVulnerabilityScore)}
-                          </span>
-                        </td>
+                        <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.bestMatchupScore} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.xba} display={row.xba != null ? row.xba.toFixed(3) : "—"} avg={0.258} spread={0.030} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.hardHitRate} display={row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : "—"} avg={46.5} spread={7} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.barrelRate} display={row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"} avg={8.0} spread={5} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.batterPowerScore} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.opposingPitcherHitsVs} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.pitcherVulnerabilityScore} display={fmt(row.pitcherVulnerabilityScore)} avg={50} spread={20} /></td>
                         <td className="border-b border-slate-100 px-2 py-1"><PropEdgeBadge score={row.bestMatchupScore} /></td>
                       </tr>
                     );
