@@ -145,9 +145,9 @@ export default function MlbBatterVsPitcher() {
                   <tr className="text-left text-[11px] uppercase tracking-[0.14em] text-slate-500">
                     {[
                       ["rank", "Rank"],
-                      ["opposingPitcher", "Opposing Pitcher"],
                       ["player", "Batter"],
                       ["team", "Team"],
+                      ["opposingPitcher", "Opposing Pitcher"],
                       ["bestMatchupScore", "Hit/Attack"],
                       ["batterPowerScore", "Contact/xBA"],
                       ["opposingPitcherHitsVs", "Pitcher Attack"],
@@ -172,19 +172,14 @@ export default function MlbBatterVsPitcher() {
                       <tr key={`${row.rank}-${row.player}-${row.team}-${row.opposingPitcher}`} className="odd:bg-white even:bg-slate-50/70">
                         <td className="border-b border-slate-100 px-3 py-2 font-black text-slate-400">#{row.rank}</td>
                         <td className="border-b border-slate-100 px-3 py-2">
+                          <div className="font-black text-slate-950">{row.player}</div>
+                          <div className="text-xs text-slate-500">{row.park}</div>
+                        </td>
+                        <td className="border-b border-slate-100 px-3 py-2"><TeamLogoText team={row.team} /></td>
+                        <td className="border-b border-slate-100 px-3 py-2">
                           <div className="font-semibold text-slate-800">{row.opposingPitcher}</div>
                           <TeamLogoText team={pitcherTeam} size={18} />
                         </td>
-                        <td className="border-b border-slate-100 px-3 py-2">
-                          <div className="flex items-center gap-2">
-                            <TeamLogoText team={row.team} size={18} />
-                            <div>
-                              <div className="font-black text-slate-950">{row.player}</div>
-                              <div className="text-xs text-slate-500">{row.park}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="border-b border-slate-100 px-3 py-2"><TeamLogoText team={row.team} /></td>
                         <td className="border-b border-slate-100 px-3 py-2"><PropScoreBadge score={row.bestMatchupScore} /></td>
                         <td className="border-b border-slate-100 px-3 py-2">
                           <div className="font-bold text-slate-900">{formatPropNumber(row.batterPowerScore)}</div>
