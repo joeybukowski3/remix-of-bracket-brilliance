@@ -100,6 +100,8 @@ function normalizeGame(game: any): MlbScheduleGame {
     gameDate: game.gameDate,
     status: game.status?.detailedState || game.status?.abstractGameState || MLB_DASH,
     venue: game.venue?.name || MLB_DASH,
+    currentInning: game.linescore?.currentInning ?? null,
+    inningHalf: game.linescore?.inningHalf === "Top" ? "top" : game.linescore?.inningHalf === "Bottom" ? "bottom" : null,
     away: {
       id: away.id ?? null,
       name: away.name || MLB_DASH,
@@ -866,6 +868,7 @@ function MlbSlateAnalyzer({
                       <MlbTeamLogo team={game.away.abbreviation} size={18} />
                       <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
                       <span className="text-[10px] font-semibold text-slate-400">{game.away.record}</span>
+                      {showScore && <span className="ml-1 text-[13px] font-extrabold text-slate-900">{awayScore}</span>}
                     </div>
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="truncate text-xs font-medium text-[#031635]">
@@ -882,6 +885,7 @@ function MlbSlateAnalyzer({
                       <MlbTeamLogo team={game.home.abbreviation} size={18} />
                       <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
                       <span className="text-[10px] font-semibold text-slate-400">{game.home.record}</span>
+                      {showScore && <span className="ml-1 text-[13px] font-extrabold text-slate-900">{homeScore}</span>}
                     </div>
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="truncate text-xs font-medium text-[#031635]">
@@ -895,7 +899,14 @@ function MlbSlateAnalyzer({
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">
                     <span>{game.venue}</span>
-                    {showScore ? <span>{awayScore}-{homeScore}</span> : null}
+                    {statusCategory === "in-progress" && game.currentInning != null && (
+                      <span className="rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
+                        {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
+                      </span>
+                    )}
+                    {statusCategory === "final" && showScore && (
+                      <span className="text-[9px] font-bold text-slate-400">FINAL</span>
+                    )}
                   </div>
                 </div>
 
@@ -979,11 +990,7 @@ function HomeSchedule({
     pendingGames,
     nextRunAt,
   } = useMlbPropsData();
-  const topHrProps = useMemo(() => propBatters
-    .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
-    .slice()
-    .sort((a, b) => b.hrScore - a.hrScore)
-    .slice(0, 5), [propBatters]);
+  const topHrProps = useMemo(() => propBatters.slice().sort((a, b) => b.hrScore - a.hrScore).slice(0, 5), [propBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
   const topBvpProps = useMemo(() => batterVsPitcherRows.slice().sort((a, b) => b.bestMatchupScore - a.bestMatchupScore).slice(0, 5), [batterVsPitcherRows]);
   const hrPreviewRows = useMemo<PropPreviewRow[]>(
