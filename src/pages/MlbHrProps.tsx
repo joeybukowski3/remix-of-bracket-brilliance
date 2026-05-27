@@ -1250,8 +1250,8 @@ export default function MlbHrProps() {
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
 
   usePageSeo({
-    title: "MLB HR Prop Model Today - Joe Knows Ball",
-    description: "Daily MLB HR prop model with park factors, pitcher HR vulnerability, batter power signals, barrel contact, recent form, and combined matchup edges.",
+    title: "Today's MLB Home Run Props & Best Bets | Joe Knows Ball",
+    description: "Daily MLB home run prop predictions and best bets using advanced models. Real-time HR prop dashboard and player projections.",
     path: "/mlb/hr-props",
     structuredData: [
       {

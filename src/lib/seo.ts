@@ -16,15 +16,15 @@ type SeoMeta = {
 
 const SEO_META: Record<SeoPage, SeoMeta> = {
   home: {
-    title: "Joe Knows Ball — Advanced Sports Analytics & Betting Models",
+    title: "MLB Player Props, PGA Power Rankings & Sports Betting Tools | Joe Knows Ball",
     description:
-      "Free advanced analytics, matchup intelligence, and betting models for MLB, NFL, NBA, NCAA, and PGA. Built for bettors who want an edge.",
+      "Advanced sports analytics for MLB daily props, PGA Tour rankings, and betting models. Free matchup analyzer, power rankings, and player projections. NFL & NBA coming soon.",
     path: "/",
   },
   mlb: {
-    title: "MLB Matchup Intelligence — Joe Knows Ball",
+    title: "MLB Matchup Analyzer & Daily Player Props | Joe Knows Ball",
     description:
-      "Deep MLB matchup breakdowns with pitcher vs lineup data, park factors, team form, and run total context updated daily.",
+      "Deep MLB matchup analysis, daily player props, pitching vs batting trends, and betting recommendations. Best free MLB analytics tool.",
     path: "/mlb",
   },
   pga: {

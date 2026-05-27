@@ -6,9 +6,9 @@ const STRIPE_DONATION_LINK = "https://buy.stripe.com/6oU7sM2libxbeZ8dSG2cg00";
 
 export default function Donate() {
   usePageSeo({
-    title: "Support Joe Knows Ball | Donate",
+    title: "Support Joe Knows Ball - Free MLB & PGA Analytics Tools",
     description:
-      "Support Joe Knows Ball, a free analytics site for sports fans, and get early access to upcoming MLB, NCAAF, NFL, and PGA models.",
+      "Help keep Joe Knows Ball free. Support our MLB player props, PGA rankings, and future NFL/NBA tools with a donation.",
     canonical: "https://www.joeknowsball.com/donate",
   });
 

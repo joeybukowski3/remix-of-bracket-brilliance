@@ -71,8 +71,8 @@ export default function MlbStrikeoutProps() {
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
 
   usePageSeo({
-    title: "MLB Strikeout Prop Model Today - Joe Knows Ball",
-    description: "MLB strikeout prop model rankings using pitcher K skill, whiff rate, opponent team strikeout tendency, contact quality, and matchup edge scores.",
+    title: "Today's MLB Strikeout Props & Pitcher Predictions | Joe Knows Ball",
+    description: "Daily MLB strikeout props, pitcher analysis, and betting edges. Advanced pitching models and player prop recommendations.",
     path: "/mlb/strikeout-props",
   });
 

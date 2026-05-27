@@ -356,8 +356,8 @@ export default function PgaHub() {
     currentEvent?.courseName
     || scheduleTournament?.courseName
     || FEATURED_PGA_TOURNAMENT.courseName;
-  const seoTitle = `${activeTournamentName} PGA Tour Power Rankings, Golf Model & Best Bets`;
-  const seoDescription = `Current-week ${activeTournamentName} rankings, course-weighted golf model outputs, and best-bet paths${activeTournamentCourse ? ` for ${activeTournamentCourse}` : ""}.`;
+  const seoTitle = "PGA Tour Power Rankings & Tournament Models 2026 | Joe Knows Ball";
+  const seoDescription = "Latest PGA Tour power rankings, player models, DFS tools, and best bets for upcoming tournaments. Advanced golf analytics.";
 
   usePageSeo({
     title: seoTitle,
