@@ -52,6 +52,7 @@ export type HrDashboardBatter = {
   pitcherHand: string;
   ballpark: string;
   parkFactor: number;
+  atBats: number | null;
   barrelRate: number | null;
   hardHitRate: number | null;
   exitVelo: number | null;
@@ -294,6 +295,7 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     pitcherHand: normalizeText(entry.pitcherHand) || "R",
     ballpark: normalizeText(entry.ballpark) || "Unknown Venue",
     parkFactor: normalizeNumber(entry.parkFactor),
+    atBats: normalizeNumber(entry.atBats),
     barrelRate: normalizeNumber(entry.barrelRate),
     hardHitRate: normalizeNumber(entry.hardHitRate),
     exitVelo: normalizeNumber(entry.exitVelo),
@@ -1362,8 +1364,10 @@ export default function MlbHrProps() {
     const query = batterSearch.trim().toLowerCase();
     const rows = batters.filter((row) => {
       if (batterGameFilter !== "all" && row.gameKey !== batterGameFilter) return false;
-      // Minimum 50 AB — exclude small sample players unless AB data unavailable
+      // Minimum 50 AB when data is available
       if (row.atBats != null && row.atBats < 50) return false;
+      // Barrel rate sanity cap — >25% is a small-sample artifact (no MLB player sustains this)
+      if (row.barrelRate != null && row.barrelRate > 25) return false;
       if (!query) return true;
       return [
         row.player,
