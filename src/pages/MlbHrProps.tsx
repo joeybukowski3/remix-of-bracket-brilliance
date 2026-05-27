@@ -1272,8 +1272,8 @@ export default function MlbHrProps() {
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
 
   usePageSeo({
-    title: "Today's MLB Home Run Props & Best Bets | Joe Knows Ball",
-    description: "Daily MLB home run prop predictions and best bets using advanced models. Real-time HR prop dashboard and player projections.",
+    title: "MLB HR Props Today 2026 — Home Run Model & Rankings | Joe Knows Ball",
+    description: "Daily MLB home run prop rankings built from barrel rate, exit velocity, park factors, and pitcher HR vulnerability. Free HR prop model with Statcast power metrics updated every day.",
     path: "/mlb/hr-props",
     structuredData: [
       {
@@ -1283,6 +1283,22 @@ export default function MlbHrProps() {
           { "@type": "ListItem", position: 1, name: "Home", item: "https://www.joeknowsball.com/" },
           { "@type": "ListItem", position: 2, name: "MLB", item: "https://www.joeknowsball.com/mlb" },
           { "@type": "ListItem", position: 3, name: "MLB HR Props", item: "https://www.joeknowsball.com/mlb/hr-props" },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "How does the MLB HR prop model work?",
+            acceptedAnswer: { "@type": "Answer", text: "The HR prop model scores batters using barrel rate, hard hit rate, exit velocity, park factor, and opposing pitcher HR vulnerability. Higher scores indicate stronger edges for home run props." },
+          },
+          {
+            "@type": "Question",
+            name: "What is a good HR Score?",
+            acceptedAnswer: { "@type": "Answer", text: "Scores of 65 or higher represent strong model edges. Scores between 58 and 65 are positive edges. Scores below 50 indicate below-average matchup conditions for HR props." },
+          },
         ],
       },
     ],
