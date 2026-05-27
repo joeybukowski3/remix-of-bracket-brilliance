@@ -28,7 +28,7 @@ import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import { ScorePill, HrDashboardPitcher } from "@/pages/MlbHrProps";
+import { ScorePill, HrDashboardPitcher, TeamLogoBadge, type HrDashboardBatter, type PitcherStrikeoutTeamRow, type PitcherVsBatterRow } from "@/pages/MlbHrProps";
 
 const SEASON = new Date().getFullYear();
 
@@ -973,6 +973,281 @@ function MlbToolsGrid() {
   );
 }
 
+// ─── Social Media Tables ──────────────────────────────────────────────────────
+function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
+  const rows = batters
+    .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
+    .slice().sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
+    .slice(0, 8);
+
+  function sc(s: number) {
+    if (s >= 70) return { bg: "#22c55e", color: "#fff" };
+    if (s >= 65) return { bg: "#4ade80", color: "#000" };
+    if (s >= 62) return { bg: "#facc15", color: "#000" };
+    return { bg: "#fb923c", color: "#fff" };
+  }
+  function statCol(v: number | null, hi: number, mid: number) {
+    if (v == null) return "#94a3b8";
+    return v >= hi ? "#22c55e" : v >= mid ? "#86efac" : "#94a3b8";
+  }
+  const ACCENTS = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308","#94a3b8","#64748b","#475569"];
+
+  return (
+    <div style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+      <div style={{ background: "#0a1628", borderBottom: "3px solid #e05c2e", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🔥 MLB HR PROPS</div>
+          <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>Top 8 Home Run Edges · Today's Slate</div>
+        </div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 62px 58px 36px 40px", padding: "4px 10px", background: "#0d1f3c", gap: 4 }}>
+        {["","PLAYER","SCORE","BARREL%","HH%","L7","L30"].map((h, i) => (
+          <span key={i} style={{ fontSize: 9, fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: ".07em" }}>{h}</span>
+        ))}
+      </div>
+      {rows.map((r, i) => {
+        const score = r.adjustedHrScore ?? r.hrScore;
+        const pillStyle = sc(score);
+        return (
+          <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 62px 58px 36px 40px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
+            <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
+              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 12 }}>{r.player}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                <TeamLogoBadge team={r.team} size={14} showLabel={false} />
+                <span style={{ color: "#475569", fontSize: 10 }}>vs {r.opposingPitcher}</span>
+              </div>
+            </div>
+            <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+              {score >= 70 && "🔥"}{score.toFixed(1)}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 2, color: statCol(r.barrelRate, 20, 16) }}>
+              {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 11 }}>💣</span>}
+              {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 2, color: statCol(r.hardHitRate, 54, 50) }}>
+              {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 11 }}>💥</span>}
+              {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 1, color: r.last7HR >= 3 ? "#22c55e" : r.last7HR >= 2 ? "#facc15" : "#94a3b8" }}>
+              {r.last7HR >= 3 && <span style={{ fontSize: 10 }}>📈</span>}{r.last7HR}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 1, color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8" }}>
+              {r.last30HR >= 8 && <span style={{ fontSize: 10 }}>👑</span>}{r.last30HR}
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ padding: "5px 10px", background: "#060d1a", borderTop: "1px solid #1e3a5f", display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {[["💣","Barrel ≥18%"],["💥","HH ≥55%"],["📈","L7 ≥3"],["👑","L30 ≥8"],["🔥","Score ≥70"]].map(([emoji, label]) => (
+          <span key={label} style={{ fontSize: 9, color: "#475569" }}>{emoji} {label}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
+  const top = rows.slice(0, 5);
+  function sc(s: number) {
+    if (s >= 70) return { bg: "#22c55e", color: "#fff" };
+    if (s >= 65) return { bg: "#4ade80", color: "#000" };
+    if (s >= 62) return { bg: "#facc15", color: "#000" };
+    return { bg: "#fb923c", color: "#fff" };
+  }
+  const ACCENTS = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308"];
+
+  return (
+    <div style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+      <div style={{ background: "#0a1628", borderBottom: "3px solid #22c55e", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🎯 MLB K PROPS</div>
+          <div style={{ color: "#86efac", fontSize: 11, marginTop: 2 }}>Top 5 Strikeout Edges · Today's Slate</div>
+        </div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 62px 62px 58px", padding: "4px 10px", background: "#0d1f3c", gap: 4 }}>
+        {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
+          <span key={i} style={{ fontSize: 9, fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: ".07em" }}>{h}</span>
+        ))}
+      </div>
+      {top.map((r, i) => {
+        const pillStyle = sc(r.strikeoutMatchupScore);
+        return (
+          <div key={`${r.pitcher}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 62px 62px 58px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
+            <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
+              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 12 }}>{r.pitcher}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                <TeamLogoBadge team={r.team} size={14} showLabel={false} />
+                <span style={{ color: "#475569", fontSize: 10 }}>vs {r.opponent}</span>
+              </div>
+            </div>
+            <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
+              {r.strikeoutMatchupScore.toFixed(1)}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8" }}>
+              {r.pitcherKRate != null && r.pitcherKRate >= 28 && <span style={{ fontSize: 11 }}>🎯</span>}
+              {r.pitcherKRate != null ? `${r.pitcherKRate.toFixed(1)}%` : "—"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 ? "#22c55e" : r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 28 ? "#86efac" : "#94a3b8" }}>
+              {r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 && <span style={{ fontSize: 11 }}>🌫️</span>}
+              {r.pitcherWhiffRate != null ? `${r.pitcherWhiffRate.toFixed(1)}%` : "—"}
+            </div>
+            <div style={{ color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : r.opponentTeamKRate != null && r.opponentTeamKRate >= 24 ? "#86efac" : "#94a3b8" }}>
+              {r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 && <span style={{ fontSize: 10 }}>💀</span>}
+              {r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ padding: "5px 10px", background: "#060d1a", borderTop: "1px solid #1e3a5f", display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {[["🎯","K% ≥28%"],["🌫️","Whiff ≥32%"],["💀","Opp K ≥27%"]].map(([emoji, label]) => (
+          <span key={label} style={{ fontSize: 9, color: "#475569" }}>{emoji} {label}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
+  const top = rows.slice().sort((a, b) => b.bestMatchupScore - a.bestMatchupScore).slice(0, 10);
+  function sc(s: number) {
+    if (s >= 70) return { bg: "#22c55e", color: "#fff" };
+    if (s >= 65) return { bg: "#4ade80", color: "#000" };
+    if (s >= 62) return { bg: "#facc15", color: "#000" };
+    return { bg: "#fb923c", color: "#fff" };
+  }
+  const ACCENTS = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308","#94a3b8","#64748b","#475569","#374151","#1f2937"];
+
+  return (
+    <div style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+      <div style={{ background: "#0a1628", borderBottom: "3px solid #8b5cf6", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>⚔️ MLB HIT PROPS</div>
+          <div style={{ color: "#c4b5fd", fontSize: 11, marginTop: 2 }}>Top 10 Batter vs Pitcher Edges · Today's Slate</div>
+        </div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 80px 56px 58px 58px", padding: "4px 10px", background: "#0d1f3c", gap: 4 }}>
+        {["","PLAYER","HIT SCORE","xBA","HH%","BARREL%"].map((h, i) => (
+          <span key={i} style={{ fontSize: 9, fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: ".07em" }}>{h}</span>
+        ))}
+      </div>
+      {top.map((r, i) => {
+        const pillStyle = sc(r.bestMatchupScore);
+        return (
+          <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 80px 56px 58px 58px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
+            <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
+              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 12 }}>{r.player}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+                <TeamLogoBadge team={r.team} size={14} showLabel={false} />
+                <span style={{ color: "#475569", fontSize: 10 }}>vs {r.opposingPitcher}</span>
+              </div>
+            </div>
+            <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
+              {r.bestMatchupScore.toFixed(1)}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.xba != null && r.xba >= 0.31 ? "#22c55e" : r.xba != null && r.xba >= 0.28 ? "#86efac" : "#94a3b8" }}>
+              {r.xba != null && r.xba >= 0.31 && <span style={{ fontSize: 10 }}>🎯</span>}
+              {r.xba != null ? r.xba.toFixed(3) : "—"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.hardHitRate != null && r.hardHitRate >= 55 ? "#22c55e" : r.hardHitRate != null && r.hardHitRate >= 50 ? "#86efac" : "#94a3b8" }}>
+              {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 10 }}>💥</span>}
+              {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.barrelRate != null && r.barrelRate >= 18 ? "#22c55e" : r.barrelRate != null && r.barrelRate >= 14 ? "#86efac" : "#94a3b8" }}>
+              {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 10 }}>💣</span>}
+              {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ padding: "5px 10px", background: "#060d1a", borderTop: "1px solid #1e3a5f", display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {[["🎯","xBA ≥.310"],["💥","HH ≥55%"],["💣","Barrel ≥18%"]].map(([emoji, label]) => (
+          <span key={label} style={{ fontSize: 9, color: "#475569" }}>{emoji} {label}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SocialMediaTablesSection() {
+  const { batters, strikeoutRows, batterVsPitcherRows, loading } = useMlbPropsData();
+  const [activeTab, setActiveTab] = useState<"hr" | "k" | "hits">("hr");
+
+  if (loading) return null;
+
+  const tabs: { key: "hr" | "k" | "hits"; label: string; emoji: string }[] = [
+    { key: "hr",   label: "HR Props",  emoji: "🔥" },
+    { key: "k",    label: "K Props",   emoji: "🎯" },
+    { key: "hits", label: "Hit Props", emoji: "⚔️" },
+  ];
+
+  return (
+    <section style={{ marginTop: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0ea5e9" }}>Daily export</div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#031635", marginTop: 2, letterSpacing: "-.03em" }}>Social Media Tables</h2>
+          <p style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Live data — updates with each model refresh. Review below then export to post.</p>
+        </div>
+      </div>
+
+      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,.06)", overflow: "hidden" }}>
+        {/* Tab bar */}
+        <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setActiveTab(t.key)}
+              style={{
+                flex: 1, padding: "10px 4px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
+                background: activeTab === t.key ? "#fff" : "transparent",
+                color: activeTab === t.key ? "#031635" : "#94a3b8",
+                borderBottom: activeTab === t.key ? "2px solid #e05c2e" : "2px solid transparent",
+                transition: "all .15s",
+              }}
+            >
+              {t.emoji} {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Table content */}
+        <div style={{ padding: 14 }}>
+          {activeTab === "hr"   && <SocialTableHR batters={batters} />}
+          {activeTab === "k"    && <SocialTableK rows={strikeoutRows} />}
+          {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
+        </div>
+
+        {/* Footer hint */}
+        <div style={{ padding: "8px 14px 12px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: "#94a3b8" }}>Data refreshes at 3 AM · 10 AM · 1 PM ET</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Link to="/mlb/hr-props"          style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9", textDecoration: "none" }}>Open HR Props →</Link>
+            <Link to="/mlb/strikeout-props"   style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textDecoration: "none" }}>K Props →</Link>
+            <Link to="/mlb/batter-vs-pitcher" style={{ fontSize: 11, fontWeight: 700, color: "#8b5cf6", textDecoration: "none" }}>Hit Props →</Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 function HomeSchedule({
   games,
   detailPreviews,
@@ -1067,6 +1342,7 @@ function HomeSchedule({
 
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} />
           <MlbToolsGrid />
+          <SocialMediaTablesSection />
         </div>
       </div>
     </div>
