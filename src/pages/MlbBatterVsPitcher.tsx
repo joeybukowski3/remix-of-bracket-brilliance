@@ -164,9 +164,12 @@ export default function MlbBatterVsPitcher() {
                       <tr key={`${row.rank}-${row.player}-${row.team}-${row.opposingPitcher}`} className={bg}>
                         <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400 ${sbg}`}>{row.rank}</td>
                         <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1 ${sbg}`}>
-                          <div className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.player}</div>
-                          <div className="text-[10px] text-slate-400 whitespace-nowrap">
-                            {row.team} vs {pitcherTeam} · {row.opposingPitcher.split(" ").pop()}
+                          <div className="flex items-center gap-1.5">
+                            <TeamLogoText team={row.team} size={16} />
+                            <span className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.player}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">
+                            vs {row.opposingPitcher}
                           </div>
                         </td>
                         <td className="border-b border-slate-100 px-2 py-1"><PropScoreBadge score={row.bestMatchupScore} /></td>
