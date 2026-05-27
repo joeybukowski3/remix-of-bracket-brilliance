@@ -135,6 +135,7 @@ export function ModelSummaryHeader({
   rowsCount,
   bestScore,
   backTo = "/mlb",
+  siblingLinks,
 }: {
   title: string;
   eyebrow: string;
@@ -144,6 +145,7 @@ export function ModelSummaryHeader({
   rowsCount: number;
   bestScore: number | null | undefined;
   backTo?: string;
+  siblingLinks?: Array<{ label: string; to: string; icon: ReactNode; color: string }>;
 }) {
   return (
     <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
@@ -153,6 +155,21 @@ export function ModelSummaryHeader({
             <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-200">{eyebrow}</div>
             <h1 className="mt-1 text-2xl font-black tracking-normal sm:text-3xl">{title}</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-sky-100">{description}</p>
+            {siblingLinks && siblingLinks.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {siblingLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition opacity-90 hover:opacity-100"
+                    style={{ backgroundColor: link.color }}
+                  >
+                    {link.icon}
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
           <Link to={backTo} className="w-fit rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/15">
             Back to MLB
@@ -238,7 +255,7 @@ function DashboardCard({ title, description, cta, to, children }: { title: strin
 }
 
 export function MlbPropModelDashboard({ hrRows, strikeoutRows, batterVsPitcherRows, pitchers, games, generatedAt, loading }: PropModelDashboardProps) {
-  const topHr = [...hrRows].sort((left, right) => (right.adjustedHrScore ?? right.hrScore) - (left.adjustedHrScore ?? left.hrScore)).slice(0, 5);
+  const topHr = [...hrRows].sort((left, right) => right.hrScore - left.hrScore).slice(0, 5);
   const topStrikeouts = strikeoutRows.slice(0, 5);
   const topBatterVsPitcher = batterVsPitcherRows.slice(0, 5);
   const bestScore = Math.max(
