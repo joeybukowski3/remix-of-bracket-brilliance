@@ -1,4 +1,5 @@
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
+import { getParkFactors, getParkType } from "@/lib/mlb/mlbParkFactors";
 import type {
   MlbComparisonMetric,
   MlbGameDetail,
@@ -205,17 +206,21 @@ export function getParkContextValues(detail: MlbGameDetail) {
       ? (Number(detail.starters.home.era) + Number(detail.starters.away.era)) / 2
       : null;
 
+  const factors = getParkFactors(detail.game.venue);
+  const runFactor = factors?.runs ?? MLB_LEAGUE_AVERAGES.runsFactor;
+  const hrFactor  = factors?.hr   ?? MLB_LEAGUE_AVERAGES.hrFactor;
+
   return {
     venue: detail.game.venue,
     weather: detail.weather,
     combinedEra: avgEra,
     homeStarterEra: detail.starters.home.era != null ? Number(detail.starters.home.era) : null,
     awayStarterEra: detail.starters.away.era != null ? Number(detail.starters.away.era) : null,
-    runFactor: MLB_LEAGUE_AVERAGES.runsFactor,
-    hrFactor: MLB_LEAGUE_AVERAGES.hrFactor,
+    runFactor,
+    hrFactor,
     totalLean:
       avgEra == null ? "Neutral" : avgEra <= 3.6 ? "Under lean" : avgEra >= 4.8 ? "Over lean" : "Neutral",
-    parkType: "Neutral park",
-    factorLabel: `${formatFactor(MLB_LEAGUE_AVERAGES.runsFactor)} avg run factor`,
+    parkType: getParkType(runFactor),
+    factorLabel: `${formatFactor(runFactor)} run factor`,
   };
 }
