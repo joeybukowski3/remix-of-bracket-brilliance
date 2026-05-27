@@ -17,9 +17,9 @@ type SeoMeta = {
 
 const SEO_META: Record<SeoPage, SeoMeta> = {
   home: {
-    title: "MLB Player Props, PGA Golf Models & Advanced Sports Analytics | Joe Knows Ball",
+    title: "MLB Props, PGA Golf Models & Analytics | Joe Knows Ball",
     description:
-      "Free advanced sports analytics for MLB daily props, PGA Tour power rankings, and betting models. HR props, strikeout props, hit props, game matchup analysis, and golf tournament models.",
+      "Free MLB HR props, strikeout props, hit props, PGA Tour models, and game matchup analysis. Advanced sports betting analytics.",
     path: "/",
   },
   mlb: {
