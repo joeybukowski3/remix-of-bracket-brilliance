@@ -94,9 +94,31 @@ export default function MlbBatterVsPitcher() {
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
 
   usePageSeo({
-    title: "MLB Batter vs Pitcher Model Today - Joe Knows Ball",
-    description: "MLB batter vs pitcher model for hit and total-base attackability using batter quality, xBA/contact indicators, pitcher vulnerability, and matchup scores.",
+    title: "MLB Hit Props Today 2026 — Batter vs Pitcher Model & Rankings | Joe Knows Ball",
+    description: "Daily MLB hit prop rankings using batter xBA, hard hit rate, barrel rate, and pitcher vulnerability scores. Free batter vs pitcher matchup model updated every day.",
     path: "/mlb/batter-vs-pitcher",
+    structuredData: [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://www.joeknowsball.com/" },
+          { "@type": "ListItem", position: 2, name: "MLB", item: "https://www.joeknowsball.com/mlb" },
+          { "@type": "ListItem", position: 3, name: "Hit Props", item: "https://www.joeknowsball.com/mlb/batter-vs-pitcher" },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "How does the MLB hit prop model work?",
+            acceptedAnswer: { "@type": "Answer", text: "The hit prop model ranks batters by combining xBA, hard hit rate, barrel rate, and pitcher vulnerability scores to identify the best daily matchups for hit and total base props." },
+          },
+        ],
+      },
+    ],
   });
 
   const parkRows = useMemo(() => buildParkSidebarRows(games), [games]);
