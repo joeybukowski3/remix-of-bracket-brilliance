@@ -219,7 +219,10 @@ export default function MlbStrikeoutProps() {
                       <tr key={`${row.rank}-${row.pitcher}-${row.team}`} className={bg}>
                         <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400 ${sbg}`}>{row.rank}</td>
                         <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1 ${sbg}`}>
-                          <div className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.pitcher}</div>
+                          <div className="flex items-center gap-1.5">
+                            <TeamLogoText team={row.team} size={16} />
+                            <span className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.pitcher}</span>
+                          </div>
                           <div className="text-[10px] text-slate-400">{row.team} vs {row.opponent}</div>
                         </td>
                         <td className="border-b border-slate-100 px-2 py-1"><PropScoreBadge score={row.strikeoutMatchupScore} /></td>
