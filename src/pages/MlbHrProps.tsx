@@ -591,7 +591,7 @@ function getWindArrow(dir: string): string {
     SE: "↖", SSE: "↑", S: "↑", SSW: "↑", SW: "↗", WSW: "→",
     W: "→", WNW: "→", NW: "↘", NNW: "↓",
   };
-  return map[d] ?? "💨";
+  return map[d] ?? "";
 }
 
 function getScorePillTone(value: number | null | undefined) {
@@ -1495,7 +1495,7 @@ export default function MlbHrProps() {
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
                             <TeamLogoBadge team={park.awayTeam} size={20} showLabel={false} />
-                            <span className="text-[10px] font-bold text-slate-500">@</span>
+                            <span className="text-[10px] font-bold text-slate-400">@</span>
                             <TeamLogoBadge team={park.homeTeam} size={20} showLabel={false} />
                             <span className="ml-1 text-[11px] font-bold text-slate-900">{park.matchup}</span>
                           </div>
@@ -1503,29 +1503,16 @@ export default function MlbHrProps() {
                             {park.parkFactor.toFixed(2)}
                           </span>
                         </div>
-                        <div className="mt-1.5 text-[10px] text-slate-400">{park.stadium}</div>
+                        <div className="mt-1 text-[10px] text-slate-400">{park.stadium}</div>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                            {park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}
-                          </span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                            Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}
-                          </span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}</span>
                           {park.windSpeed != null && park.windSpeed >= 10 && (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                              💨 {park.windSpeed.toFixed(0)} MPH {getWindArrow(park.windDirection)} {park.windDirection}
-                            </span>
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">💨 {park.windSpeed.toFixed(0)} MPH {getWindArrow(park.windDirection)} {park.windDirection}</span>
                           )}
                         </div>
-                        {(park.windSpeed == null || park.windSpeed < 10) && (
-                          <div className="mt-1.5 text-[10px] text-slate-400">
-                            {park.windSpeed != null ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection}` : "Wind —"} · {park.conditions}
-                          </div>
-                        )}
-                        {park.windSpeed != null && park.windSpeed >= 10 && (
-                          <div className="mt-1.5 text-[10px] text-slate-400">{park.conditions}</div>
-                        )}
+                        <div className="mt-1.5 text-[10px] text-slate-400">{park.windSpeed != null && park.windSpeed < 10 ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection} · ` : ""}{park.conditions}</div>
                       </article>
                     ))}
                   </div>
@@ -1843,16 +1830,11 @@ export default function MlbHrProps() {
                                       <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">vs {row.opposingPitcher}</div>
                                     </td>
                                     <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.hrScore} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.barrelRate} display={`${row.barrelRate != null && row.barrelRate >= 18 ? "💣 " : ""}${formatPercent(row.barrelRate)}`} avg={8.0} spread={5} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.hardHitRate} display={`${row.hardHitRate != null && row.hardHitRate >= 55 ? "💥 " : ""}${formatPercent(row.hardHitRate)}`} avg={46.5} spread={7} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><GradCell value={row.last7HR} display={`${row.last7HR != null && row.last7HR >= 3 ? "📈 " : ""}${formatNumber(row.last7HR, 0)}`} avg={0.3} spread={1.0} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><GradCell value={row.last30HR} display={`${row.last30HR != null && row.last30HR >= 7 ? "👑 " : ""}${formatNumber(row.last30HR, 0)}`} avg={2.0} spread={2.5} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1">
-                                      <div className="flex items-center gap-0.5">
-                                        {row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 && <span className="text-[11px]">⚔️</span>}
-                                        <StatScorePill value={row.opposingPitcherHrVs} />
-                                      </div>
-                                    </td>
+                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.barrelRate != null && row.barrelRate >= 18 && <span className="text-[11px]">💣</span>}<GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={5} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.hardHitRate != null && row.hardHitRate >= 55 && <span className="text-[11px]">💥</span>}<GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={7} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last7HR != null && row.last7HR >= 3 && <span className="text-[11px]">📈</span>}<GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={1.0} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last30HR != null && row.last30HR >= 7 && <span className="text-[11px]">👑</span>}<GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={2.5} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 && <span className="text-[11px]">⚔️</span>}<StatScorePill value={row.opposingPitcherHrVs} /></div></td>
                                     <td className="border-b border-slate-100 px-2 py-1">
                                       <div className="flex flex-wrap gap-1">
                                         {(() => {
