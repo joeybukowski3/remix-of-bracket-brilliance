@@ -19,6 +19,8 @@ export type MlbScheduleGame = {
   gameDate: string;
   status: string;
   venue: string;
+  currentInning: number | null;
+  inningHalf: "top" | "bottom" | null;
   away: MlbTeamSide;
   home: MlbTeamSide;
 };
