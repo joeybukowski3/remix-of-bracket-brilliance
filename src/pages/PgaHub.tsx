@@ -1,919 +1,274 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import SportsbookBar from "@/components/SportsbookBar";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
-import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
-import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
-import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import {
-  EMPTY_MESSAGE,
-  CUSTOM_WEIGHT_CONTROLS,
-  type CourseWeightFeedEntry,
-  type CourseWeightSet,
-  type MovementDirection,
-  type RankedPlayerRow,
-  type SidebarFilter,
-  type StatDisplayMode,
-  THIS_WEEK_OVERRIDE_KEY,
-  WeightBadgeRow,
-  findCourseWeightEntry,
-  findDefaultWeightEntry,
+  type PgaScheduleFeedEntry,
+  type RawPlayerStat,
   getCurrentAndNextEvents,
-  getThisWeekOverride,
-  getSavedCustomWeights,
-  rankPlayers,
-  normalizeCustomWeights,
-  setSavedCustomWeights,
-  setThisWeekOverride,
-  PgaCompactTable,
-  PgaScheduleRail,
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
-import { cn } from "@/lib/utils";
 
-type ModelMode = "tournament" | "custom" | "standard";
-type TournamentMode = "current" | "next";
-
-const MODEL_OPTIONS: Array<{ key: ModelMode; label: string }> = [
-  { key: "tournament", label: "Tournament" },
-  { key: "custom", label: "Custom" },
-  { key: "standard", label: "Standard" },
-];
-
-const TOURNAMENT_OPTIONS: Array<{ key: TournamentMode; label: string }> = [
-  { key: "current", label: "This Week" },
-  { key: "next", label: "Next Week" },
-];
-
-function buildMovementMap(activeRows: RankedPlayerRow[], baselineRows: RankedPlayerRow[]) {
-  const baselineRankMap = Object.fromEntries(baselineRows.map((row) => [row.player, row.rank]));
-
-  return Object.fromEntries(
-    activeRows.flatMap((row) => {
-      const baselineRank = baselineRankMap[row.player];
-      if (!baselineRank || baselineRank === row.rank) return [];
-      return [[row.player, row.rank < baselineRank ? "up" : "down"] as const];
-    }),
-  ) as Record<string, MovementDirection>;
-}
-
-function toPercentWeights(weights: CourseWeightSet) {
-  return Object.fromEntries(
-    Object.entries(weights).map(([key, value]) => [key, Number((value * 100).toFixed(2))]),
-  ) as Record<keyof CourseWeightSet, number>;
-}
-
-function toFractionWeights(weights: Record<keyof CourseWeightSet, number>) {
-  return Object.fromEntries(
-    Object.entries(weights).map(([key, value]) => [key, Number((value / 100).toFixed(6))]),
-  ) as CourseWeightSet;
-}
-
-function normalizePercentageWeights(weights: Record<keyof CourseWeightSet, number>) {
-  const entries = Object.entries(weights) as [keyof CourseWeightSet, number][];
-  const total = entries.reduce((sum, [, value]) => sum + value, 0);
-  if (total <= 0) {
-    const even = Number((100 / entries.length).toFixed(2));
-    return Object.fromEntries(entries.map(([key]) => [key, even])) as Record<keyof CourseWeightSet, number>;
-  }
-
-  const normalized = Object.fromEntries(
-    entries.map(([key, value]) => [key, Number(((value / total) * 100).toFixed(2))]),
-  ) as Record<keyof CourseWeightSet, number>;
-
-  const diff = Number((100 - Object.values(normalized).reduce((sum, value) => sum + value, 0)).toFixed(2));
-  const lastKey = entries.at(-1)?.[0];
-  if (lastKey) {
-    normalized[lastKey] = Number((normalized[lastKey] + diff).toFixed(2));
-  }
-
-  return normalized;
-}
-
-function rebalanceWeights(current: Record<keyof CourseWeightSet, number>, key: keyof CourseWeightSet, nextValue: number) {
-  const clamped = Math.max(0, Math.min(100, nextValue));
-  const otherKeys = CUSTOM_WEIGHT_CONTROLS.map((entry) => entry.key).filter((entryKey) => entryKey !== key);
-  const otherTotal = otherKeys.reduce((sum, entryKey) => sum + current[entryKey], 0);
-  const remaining = Math.max(0, 100 - clamped);
-  const nextWeights = { ...current, [key]: clamped };
-
-  if (otherTotal <= 0) {
-    const even = Number((remaining / otherKeys.length).toFixed(2));
-    otherKeys.forEach((entryKey) => {
-      nextWeights[entryKey] = even;
-    });
-  } else {
-    otherKeys.forEach((entryKey) => {
-      nextWeights[entryKey] = Number(((current[entryKey] / otherTotal) * remaining).toFixed(2));
-    });
-  }
-
-  return normalizePercentageWeights(nextWeights);
-}
-
-function buildMetaLine(parts: Array<string | null | undefined>) {
-  return parts.filter(Boolean).join(" | ");
-}
-
-function stripMarkdown(value: string | null | undefined) {
-  return (value ?? "").replace(/\*\*(.*?)\*\*/g, "$1").trim();
-}
-
-function truncateTeaser(value: string | null | undefined, maxLength: number) {
-  const clean = stripMarkdown(value);
-  if (clean.length <= maxLength) return clean;
-  return `${clean.slice(0, maxLength).trimEnd()}...`;
-}
-
-function formatGeneratedDate(value: string | null | undefined) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function normalizeTournamentLabel(value: string | null | undefined) {
-  return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-type BestBetPickPreview = {
-  player: string;
-  tournamentRank?: number;
-  powerRank?: number;
-  topStats?: string[];
-  bullets?: string[];
-  odds?: Record<string, string> | null;
-};
-type BestBetsPreviewData = {
-  tournament: string;
-  course?: string;
-  generatedAt?: string;
-  preview?: {
-    tournamentOverview?: string;
-  } | null;
-  valueBets?: Array<unknown>;
-  outrights?: BestBetPickPreview[];
-  top5?: BestBetPickPreview[];
-  top10?: BestBetPickPreview[];
-  top20?: BestBetPickPreview[];
+// ─── Power Ranking Formula ────────────────────────────────────────────────────
+// Weights: sgTotal highest, then approach, putting, form (trendRank inverted),
+// around green, bogey avoidance, birdie ratio
+const PR_WEIGHTS = {
+  sgTotal:         0.28,
+  sgApp:           0.20,
+  sgPutt:          0.15,
+  trendRank:       0.13, // inverted — lower rank = better
+  sgAtG:           0.10,
+  bogeyAvoidance:  0.09,
+  birdieBogeyRatio: 0.05,
 };
 
-type BestBetMarketKey = "outrights" | "top5" | "top10" | "top20";
+type PowerRankRow = RawPlayerStat & { powerScore: number; powerRank: number };
 
-type BestBetTableConfig = {
-  key: BestBetMarketKey;
-  title: string;
-  description: string;
-  href: string;
-  accentClass: string;
-  headerClass: string;
-  rankClass: string;
-};
-
-const BEST_BET_TABLES: BestBetTableConfig[] = [
-  {
-    key: "outrights",
-    title: "Outright Winners",
-    description: "Win equity",
-    href: "/pga/best-bets#outrights",
-    accentClass: "border-amber-300/70 shadow-[inset_0_3px_0_rgba(251,191,36,0.95)]",
-    headerClass: "text-amber-200",
-    rankClass: "bg-amber-100 text-amber-800",
-  },
-  {
-    key: "top5",
-    title: "Top 5 Finish",
-    description: "Ceiling with placement value",
-    href: "/pga/best-bets#top5",
-    accentClass: "border-emerald-300/70 shadow-[inset_0_3px_0_rgba(52,211,153,0.95)]",
-    headerClass: "text-emerald-200",
-    rankClass: "bg-emerald-100 text-emerald-800",
-  },
-  {
-    key: "top10",
-    title: "Top 10 Finish",
-    description: "High-floor model fits",
-    href: "/pga/best-bets#top10",
-    accentClass: "border-indigo-300/70 shadow-[inset_0_3px_0_rgba(129,140,248,0.95)]",
-    headerClass: "text-indigo-200",
-    rankClass: "bg-indigo-100 text-indigo-800",
-  },
-  {
-    key: "top20",
-    title: "Top 20 Finish",
-    description: "Safer finishing profiles",
-    href: "/pga/best-bets#top20",
-    accentClass: "border-cyan-300/70 shadow-[inset_0_3px_0_rgba(103,232,249,0.95)]",
-    headerClass: "text-cyan-200",
-    rankClass: "bg-cyan-100 text-cyan-800",
-  },
-];
-
-type CourseInformationSource = {
-  courseName?: string;
-  location?: string;
-  par?: number | string;
-  yardage?: number | string;
-  previousWinner?: string;
-  previousWinningScore?: string;
-  winningScore?: string;
-  projectedWeatherSummary?: string;
-};
-
-function formatYardage(value: CourseInformationSource["yardage"]) {
-  if (typeof value === "number") return value.toLocaleString();
-  return value;
+function percentile(value: number, sorted: number[]): number {
+  if (sorted.length === 0) return 50;
+  const below = sorted.filter((v) => v < value).length;
+  return (below / sorted.length) * 100;
 }
 
-function formatCourseSetup(source: CourseInformationSource | null | undefined) {
-  const par = source?.par ? `Par ${source.par}` : null;
-  const yardage = source?.yardage ? `${formatYardage(source.yardage)} yards` : null;
-  return [par, yardage].filter(Boolean).join(" · ");
+function buildPowerRankings(players: RawPlayerStat[]): PowerRankRow[] {
+  if (!players.length) return [];
+
+  const sortedSgTotal    = [...players.map((p) => p.sgTotal)].sort((a, b) => a - b);
+  const sortedSgApp      = [...players.map((p) => p.sgApp)].sort((a, b) => a - b);
+  const sortedSgPutt     = [...players.map((p) => p.sgPutt)].sort((a, b) => a - b);
+  const sortedSgAtG      = [...players.map((p) => p.sgAtG)].sort((a, b) => a - b);
+  const sortedBogey      = [...players.map((p) => p.bogeyAvoidance)].sort((a, b) => a - b);
+  const sortedBirdie     = [...players.map((p) => p.birdieBogeyRatio)].sort((a, b) => a - b);
+  const trendPlayers     = players.filter((p) => p.trendRank != null);
+  const sortedTrendAsc   = [...trendPlayers.map((p) => p.trendRank!)].sort((a, b) => a - b);
+
+  const scored = players.map((p) => {
+    const trendPct = p.trendRank != null
+      ? 100 - percentile(p.trendRank, sortedTrendAsc) // invert: lower rank = better
+      : 50;
+
+    const powerScore =
+      percentile(p.sgTotal, sortedSgTotal)      * PR_WEIGHTS.sgTotal +
+      percentile(p.sgApp, sortedSgApp)           * PR_WEIGHTS.sgApp +
+      percentile(p.sgPutt, sortedSgPutt)         * PR_WEIGHTS.sgPutt +
+      trendPct                                   * PR_WEIGHTS.trendRank +
+      percentile(p.sgAtG, sortedSgAtG)           * PR_WEIGHTS.sgAtG +
+      percentile(p.bogeyAvoidance, sortedBogey)  * PR_WEIGHTS.bogeyAvoidance +
+      percentile(p.birdieBogeyRatio, sortedBirdie) * PR_WEIGHTS.birdieBogeyRatio;
+
+    return { ...p, powerScore };
+  });
+
+  return scored
+    .sort((a, b) => b.powerScore - a.powerScore)
+    .map((row, i) => ({ ...row, powerRank: i + 1 }));
 }
 
-function getPreviousWinnerLine(source: CourseInformationSource | null | undefined) {
-  if (!source?.previousWinner) return EMPTY_MESSAGE;
-  const score = source.previousWinningScore || source.winningScore;
-  return score ? `${source.previousWinner}, ${score}` : source.previousWinner;
+// ─── Stat Cell ────────────────────────────────────────────────────────────────
+function StatBadge({ value, avg, spread, fmt }: {
+  value: number; avg: number; spread: number; fmt: (v: number) => string;
+}) {
+  const d = (value - avg) / spread;
+  const c = Math.max(-1, Math.min(1, d));
+  const abs = Math.abs(c);
+  let bg = "rgba(148,163,184,0.13)"; let col = "#475569";
+  if (c > 0.2)  { bg = `rgba(22,163,74,${Math.min(0.08+abs*0.38,0.46)})`; col = abs>0.5?"#15803d":"#166534"; }
+  if (c < -0.2) { bg = `rgba(59,130,246,${Math.min(0.06+abs*0.28,0.38)})`; col = abs>0.5?"#1d4ed8":"#1e40af"; }
+  return <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums" style={{ backgroundColor: bg, color: col }}>{fmt(value)}</span>;
 }
 
-function getPickMeta(pick: BestBetPickPreview) {
-  if (pick.odds?.outright) return pick.odds.outright;
-  if (typeof pick.tournamentRank === "number") return `Model #${pick.tournamentRank}`;
-  if (typeof pick.powerRank === "number") return `Power #${pick.powerRank}`;
-  return "";
-}
+// ─── Schedule Hero Cards ───────────────────────────────────────────────────────
+function TournamentHeroCard({ entry, isActive }: { entry: PgaScheduleFeedEntry; isActive: boolean }) {
+  const slug = entry.slug;
+  const hasData = Boolean(entry.dataFile);
 
-function getPickReason(pick: BestBetPickPreview) {
-  return pick.topStats?.[0] || pick.bullets?.[0] || "";
-}
-
-function BestBetPreviewTable({ config, picks }: { config: BestBetTableConfig; picks: BestBetPickPreview[] }) {
   return (
-    <div className={cn("overflow-hidden rounded-[18px] border bg-green-950/62", config.accentClass)}>
-      <div className="border-b border-white/10 px-3 py-2.5">
-        <div className={cn("text-sm font-semibold tracking-[-0.01em]", config.headerClass)}>{config.title}</div>
-        <div className="mt-0.5 text-[11px] font-medium text-green-100/68">{config.description}</div>
+    <div className={`rounded-xl border p-4 flex flex-col gap-2 ${isActive ? "border-emerald-400 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+      {isActive && (
+        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-widest">
+          ● Live Now
+        </span>
+      )}
+      <div>
+        <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">{entry.dateLabel}</div>
+        <div className="text-base font-black text-slate-900 leading-tight">{entry.shortName || entry.name}</div>
+        <div className="text-xs text-slate-500 mt-0.5">{entry.courseName} · {entry.location}</div>
       </div>
-      <div className="divide-y divide-white/10">
-        {picks.slice(0, 3).map((pick, index) => (
+      <div className="flex flex-wrap gap-2 mt-1">
+        {hasData ? (
           <Link
-            key={`${config.key}-${pick.player}-${index}`}
-            to={config.href}
-            className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 transition hover:bg-white/10"
+            to={`/pga/${slug}/model`}
+            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
           >
-            <span className={cn("flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold", config.rankClass)}>
-              {index + 1}
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-white">{pick.player}</span>
-              {getPickReason(pick) ? (
-                <span className="block truncate text-[11px] text-green-100/62">{getPickReason(pick)}</span>
-              ) : null}
-            </span>
-            {getPickMeta(pick) ? (
-              <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 text-[11px] font-semibold text-green-50">
-                {getPickMeta(pick)}
-              </span>
-            ) : null}
+            View Model →
           </Link>
-        ))}
+        ) : (
+          <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400">Model coming soon</span>
+        )}
+        {hasData && (
+          <Link
+            to={`/pga/${slug}`}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Picks & Best Bets
+          </Link>
+        )}
       </div>
     </div>
   );
 }
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PgaHub() {
-  const scheduleTournament = getPgaScheduleSelection().currentUpcoming;
-  const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
-  const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
-  const [modelMode, setModelMode] = useState<ModelMode>("tournament");
-  const [tournamentMode, setTournamentMode] = useState<TournamentMode>("current");
-  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
-  const [displayMode, setDisplayMode] = useState<StatDisplayMode>("percentile");
-  const [currentOverride, setCurrentOverride] = useState<CourseWeightSet | null>(null);
-  const [customPercentWeights, setCustomPercentWeights] = useState<Record<keyof CourseWeightSet, number> | null>(null);
-  const [movementMap, setMovementMap] = useState<Record<string, MovementDirection>>({});
-  const [bestBets, setBestBets] = useState<BestBetsPreviewData | null>(null);
-  const movementTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasAnimatedRef = useRef(false);
-
-  useEffect(() => {
-    setCurrentOverride(getThisWeekOverride());
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === THIS_WEEK_OVERRIDE_KEY) {
-        setCurrentOverride(getThisWeekOverride());
-      }
-    };
-    const handleFocus = () => setCurrentOverride(getThisWeekOverride());
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    fetch("/data/pga/best-bets.json", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Missing best bets feed.");
-        return response.json();
-      })
-      .then((payload) => {
-        if (!active) return;
-        setBestBets(payload as BestBetsPreviewData);
-      })
-      .catch(() => {
-        if (!active) return;
-        setBestBets(null);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const { active: activeEvent, current: currentEvent, next: nextEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
-  const activeTournamentName =
-    currentEvent?.shortName
-    || currentEvent?.name
-    || scheduleTournament?.shortName
-    || scheduleTournament?.name
-    || FEATURED_PGA_TOURNAMENT.shortName
-    || FEATURED_PGA_TOURNAMENT.name;
-  const activeTournamentCourse =
-    currentEvent?.courseName
-    || scheduleTournament?.courseName
-    || FEATURED_PGA_TOURNAMENT.courseName;
-  const seoTitle = "PGA Tour Power Rankings & Tournament Models 2026 | Joe Knows Ball";
-  const seoDescription = "Latest PGA Tour power rankings, player models, DFS tools, and best bets for upcoming tournaments. Advanced golf analytics.";
-
   usePageSeo({
-    title: seoTitle,
-    description: seoDescription,
+    title: "PGA Golf Power Rankings & Tournament Model",
+    description: "Overall PGA Tour power rankings plus weekly tournament model picks, best bets, and course fits.",
     path: "/pga",
-    structuredData: [
-      buildBreadcrumbSchema([
-        { name: "Home", path: "/" },
-        { name: "PGA", path: "/pga" },
-      ]),
-      {
-        "@context": "https://schema.org",
-        "@type": "SportsOrganization",
-        name: "Joe Knows Ball PGA Tour Models",
-        sport: "Golf",
-        url: `${CANONICAL_BASE}/pga`,
-      },
-    ],
   });
-  const selectedFutureEvent = useMemo(
-    () => schedule.find((entry) => entry.id === selectedScheduleId) ?? null,
-    [schedule, selectedScheduleId],
-  );
 
-  const defaultWeightEntry = useMemo(() => findDefaultWeightEntry(courseWeights), [courseWeights]);
-  const normalizedDefaultWeights = useMemo(
-    () => (defaultWeightEntry ? normalizeCustomWeights(defaultWeightEntry.weights) : null),
-    [defaultWeightEntry],
-  );
-  const currentWeightEntry = useMemo(() => {
-    if (!currentEvent) return null;
-    const matched = findCourseWeightEntry(courseWeights, currentEvent.name, currentEvent.courseName);
-    if (!matched) return null;
+  const { schedule, playerStats, loading } = usePgaHubData();
+  const [search, setSearch] = useState("");
 
-    return currentOverride
-      ? { ...matched, weights: normalizeCustomWeights(currentOverride, matched.weights) }
-      : { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) };
-  }, [courseWeights, currentEvent, currentOverride, normalizedDefaultWeights]);
-  const nextWeightEntry = useMemo(
-    () => {
-      if (!nextEvent) return null;
-      const matched = findCourseWeightEntry(courseWeights, nextEvent.name, nextEvent.courseName);
-      return matched ? { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) } : null;
-    },
-    [courseWeights, nextEvent, normalizedDefaultWeights],
-  );
-  const selectedFutureWeightEntry = useMemo(
-    () => {
-      if (!selectedFutureEvent) return null;
-      const matched = findCourseWeightEntry(courseWeights, selectedFutureEvent.name, selectedFutureEvent.courseName);
-      return matched ? { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) } : null;
-    },
-    [courseWeights, normalizedDefaultWeights, selectedFutureEvent],
-  );
+  const { active, current, next } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
 
-  useEffect(() => {
-    if (customPercentWeights) return;
-    const savedCustomWeights = getSavedCustomWeights(normalizedDefaultWeights);
-    if (savedCustomWeights) {
-      setCustomPercentWeights(toPercentWeights(savedCustomWeights));
-      return;
-    }
-    if (!normalizedDefaultWeights) return;
-    setCustomPercentWeights(toPercentWeights(normalizedDefaultWeights));
-  }, [normalizedDefaultWeights, customPercentWeights]);
+  // Upcoming hero cards: active/current + next 2
+  const heroTournaments = useMemo(() => {
+    const sorted = [...schedule]
+      .filter((e) => e.status === "upcoming")
+      .sort((a, b) => a.startDate.localeCompare(b.startDate));
+    if (!sorted.length) return [];
+    const first = sorted[0];
+    return sorted.filter((e) => e.startDate <= sorted[Math.min(2, sorted.length - 1)].startDate).slice(0, 3);
+  }, [schedule]);
 
-  useEffect(() => {
-    if (!customPercentWeights) return;
-    setSavedCustomWeights(toFractionWeights(customPercentWeights));
-  }, [customPercentWeights]);
+  const powerRankings = useMemo(() => buildPowerRankings(playerStats), [playerStats]);
 
-  const tournamentWeightEntry = useMemo(() => {
-    if (selectedFutureEvent) return selectedFutureWeightEntry;
-    return tournamentMode === "next" ? nextWeightEntry : currentWeightEntry;
-  }, [currentWeightEntry, nextWeightEntry, selectedFutureEvent, selectedFutureWeightEntry, tournamentMode]);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return powerRankings;
+    return powerRankings.filter((r) => r.player.toLowerCase().includes(q));
+  }, [powerRankings, search]);
 
-  const tournamentMeta = useMemo(() => {
-    if (selectedFutureEvent) {
-      return {
-        title: selectedFutureEvent.name,
-        meta: buildMetaLine([selectedFutureEvent.courseName, selectedFutureEvent.dateLabel]),
-      };
-    }
-
-    if (tournamentMode === "next") {
-      return {
-        title: nextEvent?.name ?? "Next Week",
-        meta: buildMetaLine([nextEvent?.courseName ?? EMPTY_MESSAGE, nextEvent?.dateLabel]),
-      };
-    }
-
+  // Compute averages for stat badges
+  const avgs = useMemo(() => {
+    if (!playerStats.length) return null;
+    const mean = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length;
+    const std = (arr: number[], m: number) => Math.sqrt(arr.reduce((s, v) => s + (v-m)**2, 0) / arr.length);
+    const sgTotal = playerStats.map((p) => p.sgTotal);
+    const sgApp = playerStats.map((p) => p.sgApp);
+    const sgPutt = playerStats.map((p) => p.sgPutt);
+    const sgAtG = playerStats.map((p) => p.sgAtG);
     return {
-      title: currentEvent?.name ?? "This Week",
-      meta: buildMetaLine([currentEvent?.courseName ?? EMPTY_MESSAGE, currentEvent?.dateLabel]),
+      sgTotalAvg: mean(sgTotal), sgTotalStd: std(sgTotal, mean(sgTotal)),
+      sgAppAvg: mean(sgApp), sgAppStd: std(sgApp, mean(sgApp)),
+      sgPuttAvg: mean(sgPutt), sgPuttStd: std(sgPutt, mean(sgPutt)),
+      sgAtGAvg: mean(sgAtG), sgAtGStd: std(sgAtG, mean(sgAtG)),
     };
-  }, [currentEvent, nextEvent, selectedFutureEvent, tournamentMode]);
+  }, [playerStats]);
 
-  const customWeights = useMemo(
-    () => (customPercentWeights ? toFractionWeights(customPercentWeights) : null),
-    [customPercentWeights],
-  );
-
-  const baselineRows = useMemo(
-    () => (normalizedDefaultWeights ? rankPlayers(playerStats, normalizedDefaultWeights) : []),
-    [normalizedDefaultWeights, playerStats],
-  );
-  const tournamentRows = useMemo(
-    () => (tournamentWeightEntry ? rankPlayers(playerStats, tournamentWeightEntry.weights) : []),
-    [playerStats, tournamentWeightEntry],
-  );
-  const customRows = useMemo(
-    () => (customWeights ? rankPlayers(playerStats, customWeights) : []),
-    [customWeights, playerStats],
-  );
-
-  const activeContent = useMemo(() => {
-    if (modelMode === "standard") {
-      return {
-        title: "Standard Model",
-        meta: "Default baseline weights across the full active PGA field",
-        scoreLabel: "Power Score",
-        weightEntry: normalizedDefaultWeights
-          ? {
-              tournament: defaultWeightEntry?.tournament ?? "DEFAULT",
-              course: defaultWeightEntry?.course ?? "",
-              weights: normalizedDefaultWeights,
-            }
-          : null,
-        rows: baselineRows,
-      };
-    }
-
-    if (modelMode === "custom") {
-      return {
-        title: "Custom Model",
-        meta: selectedFutureEvent
-          ? buildMetaLine([selectedFutureEvent.name, selectedFutureEvent.courseName, selectedFutureEvent.dateLabel])
-          : buildMetaLine([currentEvent?.name ?? "Current Event", currentEvent?.courseName, currentEvent?.dateLabel]),
-        scoreLabel: "Custom Score",
-        weightEntry: customWeights ? { tournament: "Custom", course: selectedFutureEvent?.courseName ?? currentEvent?.courseName ?? "", weights: customWeights } : null,
-        rows: customRows,
-      };
-    }
-
-    return {
-      title: tournamentMeta.title,
-      meta: tournamentMeta.meta,
-      scoreLabel: "Tournament Score",
-      weightEntry: tournamentWeightEntry,
-      rows: tournamentRows,
-    };
-  }, [
-    baselineRows,
-    currentEvent,
-    customRows,
-    customWeights,
-    defaultWeightEntry,
-    modelMode,
-    selectedFutureEvent,
-    normalizedDefaultWeights,
-    tournamentMeta,
-    tournamentRows,
-    tournamentWeightEntry,
-  ]);
-
-  const hasBestBetsPanel = useMemo(() => {
-    if (!bestBets) return false;
-    return [bestBets.outrights, bestBets.top5, bestBets.top10, bestBets.top20].every(
-      (section) => Array.isArray(section) && section.length > 0,
-    );
-  }, [bestBets]);
-  const bestBetsMatchesActiveTournament = bestBets?.tournament
-    ? normalizeTournamentLabel(bestBets.tournament) === normalizeTournamentLabel(activeTournamentName)
-    : false;
-  const bestBetsBannerTitle = [activeTournamentName, activeTournamentCourse].filter(Boolean).join(" — ");
-  const bestBetsTeaser = bestBetsMatchesActiveTournament
-    ? truncateTeaser(bestBets?.preview?.tournamentOverview, 120)
-    : `Model-driven tournament betting analysis, picks, and odds for ${activeTournamentName} this week.`;
-  const bestBetsGeneratedLabel = formatGeneratedDate(bestBets?.generatedAt);
-  const courseInformation = (currentEvent || scheduleTournament || FEATURED_PGA_TOURNAMENT) as CourseInformationSource;
-  const courseSetup = formatCourseSetup(courseInformation);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-
-    const totalPlayers = playerStats.length;
-    const playersWithTrend = playerStats.filter((row) => row.trendRank != null).length;
-    const activeTrendWeight =
-      (modelMode === "custom" ? customWeights?.trendRank : null) ??
-      (modelMode === "tournament" ? tournamentWeightEntry?.weights.trendRank : null) ??
-      normalizedDefaultWeights?.trendRank ??
-      0;
-
-    console.info("[PGA] Trend diagnostics", {
-      totalPlayers,
-      playersWithTrend,
-      missingTrend: totalPlayers - playersWithTrend,
-      activeTrendWeight,
-      modelMode,
-    });
-  }, [customWeights, modelMode, normalizedDefaultWeights, playerStats, tournamentWeightEntry?.weights.trendRank]);
-
-  useEffect(() => {
-    if (!activeContent.rows.length || !baselineRows.length || modelMode === "standard") {
-      setMovementMap({});
-      return;
-    }
-
-    if (!hasAnimatedRef.current) {
-      hasAnimatedRef.current = true;
-      return;
-    }
-
-    setMovementMap(buildMovementMap(activeContent.rows, baselineRows));
-    if (movementTimeoutRef.current) clearTimeout(movementTimeoutRef.current);
-    movementTimeoutRef.current = setTimeout(() => setMovementMap({}), 1100);
-  }, [activeContent.rows, baselineRows, modelMode]);
+  const fmt1 = (v: number) => (v >= 0 ? "+" : "") + v.toFixed(2);
+  const fmtScore = (v: number) => v.toFixed(1);
 
   return (
     <SiteShell>
-      <main className="site-page overflow-x-hidden bg-[#eef3f8] pb-16 pt-4 text-slate-900">
-        <div className="site-container">
-          {hasBestBetsPanel ? (
-            <section className="mb-4 rounded-[30px] border border-green-800 bg-green-950 px-5 py-5 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
-                <div className="min-w-0 space-y-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-300/80">
-                    THIS WEEK'S BETTING PREVIEW
-                  </div>
-                  <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-[2rem]">
-                    {bestBetsBannerTitle || "PGA Best Bets"}
-                  </h2>
-                  <p className="max-w-4xl text-sm text-green-100/88">
-                    {bestBetsTeaser || "Model-driven tournament betting analysis, picks, and odds for this week's PGA event."}
-                  </p>
-                  <div className="pt-2">
-                    <Link
-                      to="/pga/best-bets"
-                      className="inline-flex w-full items-center justify-center rounded-full border border-green-700 bg-green-800 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-green-700 sm:w-auto"
-                    >
-                      View Full Picks &amp; Odds →
-                    </Link>
-                  </div>
-                </div>
+      <SportsbookBar />
 
-                <aside
-                  aria-label="Course information"
-                  className="rounded-[22px] border border-green-700/80 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                >
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-300/82">
-                    Course Information
-                  </div>
-                  <div className="mt-2 text-lg font-semibold tracking-[-0.02em] text-white">
-                    {courseInformation.courseName || activeTournamentCourse || EMPTY_MESSAGE}
-                  </div>
-                  <dl className="mt-3 space-y-2 text-sm text-green-50/88">
-                    <div>
-                      <dt className="sr-only">Location</dt>
-                      <dd>{courseInformation.location || EMPTY_MESSAGE}</dd>
-                    </div>
-                    <div>
-                      <dt className="sr-only">Course setup</dt>
-                      <dd>{courseSetup || "Course setup unavailable in current feed"}</dd>
-                    </div>
-                    <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-2">
-                      <dt className="text-green-200/72">Previous</dt>
-                      <dd className="min-w-0 truncate">{getPreviousWinnerLine(courseInformation)}</dd>
-                    </div>
-                    <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-2">
-                      <dt className="text-green-200/72">Weather</dt>
-                      <dd className="min-w-0">{courseInformation.projectedWeatherSummary || "Forecast unavailable in current feed"}</dd>
-                    </div>
-                  </dl>
-                </aside>
-              </div>
-            </section>
-          ) : null}
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-1 text-xs font-bold uppercase tracking-widest text-emerald-400">Joe Knows Ball</div>
+          <h1 className="text-2xl font-black text-white sm:text-3xl">⛳ PGA Power Rankings</h1>
+          <p className="mt-1 text-sm text-slate-300">Overall model across all players · Click a tournament below to view the field-filtered model</p>
 
-          {hasBestBetsPanel ? (
-            <section className="mb-4 rounded-[28px] border border-green-800 bg-green-900 p-4 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-green-200/80">Best Bets</div>
-                  <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
-                    {activeTournamentName}
-                  </h2>
-                </div>
-                <Link
-                  to="/pga/best-bets"
-                  className="text-sm font-semibold text-green-100 transition hover:text-white"
-                >
-                  View Full Analysis -&gt;
-                </Link>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-green-200/82">
-                <span>Outrights: {bestBets?.outrights?.length ?? 0} picks</span>
-                <span aria-hidden="true">·</span>
-                <span>Value Bets: {bestBets?.valueBets?.length ?? 0} identified</span>
-                <span aria-hidden="true">·</span>
-                <span>Generated: {bestBetsGeneratedLabel || EMPTY_MESSAGE}</span>
-              </div>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {BEST_BET_TABLES.map((config) => (
-                  <BestBetPreviewTable
-                    key={config.key}
-                    config={config}
-                    picks={(bestBets?.[config.key] ?? []) as BestBetPickPreview[]}
-                  />
-                ))}
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm italic text-green-100/75">
-                <span>
-                  Our model analyzes strokes gained, course weights, and current odds to surface the best values. Click any
-                  category for the full breakdown.
-                </span>
-                <Link to="/pga/best-bets" className="font-semibold not-italic text-green-100 transition hover:text-white">
-                  View Full Analysis →
-                </Link>
-              </div>
-            </section>
-          ) : (
-            <div className="mb-4 px-1 text-sm text-slate-500">Best bets analysis drops every Monday</div>
+          {/* Tournament hero cards */}
+          {heroTournaments.length > 0 && (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {heroTournaments.map((t) => (
+                <TournamentHeroCard key={t.id} entry={t} isActive={active?.id === t.id} />
+              ))}
+            </div>
           )}
-
-          <div className="mb-4 rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-            <SportsbookBar />
-          </div>
-
-          <div className="grid min-w-0 gap-4 md:grid-cols-[292px_minmax(0,1fr)]">
-            <PgaScheduleRail
-              schedule={schedule}
-              activeEvent={activeEvent}
-              resolvedEvent={currentEvent}
-              sidebarFilter={sidebarFilter}
-              setSidebarFilter={setSidebarFilter}
-              selectedScheduleId={selectedScheduleId}
-              onSelect={(id) => {
-                setSelectedScheduleId(id);
-                setModelMode("tournament");
-              }}
-            />
-
-            <section className="min-w-0 space-y-4">
-              <div className="space-y-1 px-1">
-                <p className="text-sm text-muted-foreground">
-                  PGA Tour player rankings updated every Monday using strokes gained data from the PGA Tour, DataGolf course stats, and player trend tables.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Switch between the power rankings, this week&apos;s course-weighted tournament model, or build your own.
-                </p>
-                <div className="flex flex-wrap gap-4 pt-1 text-sm">
-                  <Link to="/pga/model" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
-                    Tournament model rankings
-                  </Link>
-                  <Link to="/pga/best-bets" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
-                    PGA best bets board
-                  </Link>
-                  <Link to="/pga/top-40-golf-picks" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
-                    Top 40 golf picks
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-                    <div className="min-w-0 space-y-1">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">PGA Ranking Engine</div>
-                      <div className="truncate text-2xl font-semibold tracking-[-0.03em] text-slate-900">{activeContent.title}</div>
-                      <div className="truncate text-sm text-slate-500">{activeContent.meta}</div>
-                      <div className="text-xs text-slate-400">{activeContent.rows.length} active players ranked</div>
-                      <div className="pt-1">
-                        <Link to="/pga/best-bets" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
-                          Best Bets -&gt;
-                        </Link>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 xl:items-end">
-                      <div className="inline-flex w-full rounded-full border border-slate-200 bg-slate-100 p-1 xl:w-auto">
-                        {MODEL_OPTIONS.map((option) => (
-                          <button
-                            key={option.key}
-                            type="button"
-                            onClick={() => {
-                              setModelMode(option.key);
-                              if (option.key !== "tournament") {
-                                setSelectedScheduleId(null);
-                              }
-                            }}
-                            className={cn(
-                              "flex-1 rounded-full px-4 py-2 text-sm font-semibold transition xl:flex-none",
-                              modelMode === option.key
-                                ? "bg-white text-slate-900 shadow-sm"
-                                : "text-slate-500 hover:text-slate-900",
-                            )}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                        <Link
-                          to="/pga/dfs"
-                          className="flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold text-slate-500 transition hover:text-slate-900 xl:flex-none"
-                        >
-                          DFS Upload
-                        </Link>
-                      </div>
-
-                      <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
-                        <button
-                          type="button"
-                          onClick={() => setDisplayMode("raw")}
-                          className={cn(
-                            "rounded-full px-3 py-1.5 text-xs font-semibold transition",
-                            displayMode === "raw" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900",
-                          )}
-                        >
-                          Raw Stats
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDisplayMode("percentile")}
-                          className={cn(
-                            "rounded-full px-3 py-1.5 text-xs font-semibold transition",
-                            displayMode === "percentile" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900",
-                          )}
-                        >
-                          Percentile Rank
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {modelMode === "tournament" ? (
-                    <div className="flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-slate-50 p-3">
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1">
-                          {TOURNAMENT_OPTIONS.map((option) => (
-                            <button
-                              key={option.key}
-                              type="button"
-                              onClick={() => {
-                                setTournamentMode(option.key);
-                                setSelectedScheduleId(null);
-                              }}
-                              className={cn(
-                                "rounded-full px-3 py-1.5 text-xs font-semibold transition",
-                                tournamentMode === option.key && !selectedScheduleId
-                                  ? "bg-slate-900 text-white"
-                                  : "text-slate-500 hover:text-slate-900",
-                              )}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="text-xs text-slate-500">
-                          {selectedScheduleId ? "Schedule selection overrides the weekly toggle." : "Tournament mode uses course-specific weights for the selected event."}
-                        </div>
-                      </div>
-
-                      <WeightBadgeRow entry={activeContent.weightEntry as CourseWeightFeedEntry | null} />
-                    </div>
-                  ) : null}
-
-                  {modelMode === "custom" ? (
-                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {CUSTOM_WEIGHT_CONTROLS.map((entry) => (
-                          <div key={entry.key} className="rounded-[22px] border border-slate-200 bg-slate-50 px-3 py-3">
-                            <div className="mb-2 flex items-center justify-between gap-3">
-                              <div>
-                                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{entry.short}</div>
-                                <div className="text-sm font-medium text-slate-900">{entry.label}</div>
-                              </div>
-                              <div className="text-sm font-semibold text-slate-900">
-                                {customPercentWeights ? customPercentWeights[entry.key].toFixed(1) : "--"}%
-                              </div>
-                            </div>
-                            <Slider
-                              value={[customPercentWeights?.[entry.key] ?? 0]}
-                              min={0}
-                              max={100}
-                              step={0.5}
-                              onValueChange={(value) => {
-                                if (!customPercentWeights) return;
-                                setCustomPercentWeights(rebalanceWeights(customPercentWeights, entry.key, value[0] ?? 0));
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="space-y-3 rounded-[24px] border border-slate-200 bg-slate-50 p-3">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Active Weights</div>
-                        <WeightBadgeRow entry={activeContent.weightEntry as CourseWeightFeedEntry | null} />
-                        <div className="space-y-2">
-                          <Button
-                            variant="outline"
-                            className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                            onClick={() => normalizedDefaultWeights && setCustomPercentWeights(toPercentWeights(normalizedDefaultWeights))}
-                          >
-                            Reset to Default
-                          </Button>
-                          <Button
-                            className="w-full bg-slate-900 text-white hover:bg-slate-800"
-                            onClick={() => {
-                              if (!customWeights) return;
-                              setThisWeekOverride(customWeights);
-                              setCurrentOverride(customWeights);
-                              setModelMode("tournament");
-                              setSelectedScheduleId(null);
-                              setTournamentMode("current");
-                            }}
-                          >
-                            Apply to This Week
-                          </Button>
-                          <Button asChild variant="outline" className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-100">
-                            <Link to="/pga/custom">Open Full Builder</Link>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {modelMode === "standard" ? (
-                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3">
-                      <WeightBadgeRow entry={activeContent.weightEntry as CourseWeightFeedEntry | null} />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-                {loading || !activeContent.rows.length ? (
-                  <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-8 text-sm text-slate-500">
-                    {loading ? "Loading PGA data..." : EMPTY_MESSAGE}
-                  </div>
-                ) : (
-                  <PgaCompactTable
-                    rows={activeContent.rows}
-                    scoreLabel={activeContent.scoreLabel}
-                    movementMap={movementMap}
-                    displayMode={displayMode}
-                  />
-                )}
-              </div>
-            </section>
-          </div>
         </div>
-      </main>
+      </div>
+
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+
+        {/* Nav pills */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Link to="/pga/best-bets" className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-200">Best Bets</Link>
+          <Link to="/pga/model" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">Featured Model</Link>
+          <Link to="/pga/dfs" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">DFS Upload</Link>
+        </div>
+
+        {/* Search */}
+        <div className="mb-3">
+          <input
+            type="text"
+            placeholder="Search player..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-emerald-400"
+          />
+        </div>
+
+        {/* Rankings Table */}
+        {loading ? (
+          <div className="py-16 text-center text-sm text-slate-400">Loading rankings…</div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full text-left text-[12px]">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <th className="sticky left-0 z-20 bg-slate-50 px-2 py-2 w-8">#</th>
+                  <th className="sticky left-8 z-20 bg-slate-50 px-2 py-2 min-w-[140px]">Player</th>
+                  <th className="px-2 py-2 whitespace-nowrap">Score</th>
+                  <th className="px-2 py-2 whitespace-nowrap">SG Total</th>
+                  <th className="px-2 py-2 whitespace-nowrap">SG App</th>
+                  <th className="px-2 py-2 whitespace-nowrap">SG Putt</th>
+                  <th className="px-2 py-2 whitespace-nowrap">SG AtG</th>
+                  <th className="px-2 py-2 whitespace-nowrap">Form</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((row, i) => {
+                  const stickyBg = i % 2 === 0 ? "bg-white" : "bg-slate-50/60";
+                  return (
+                    <tr key={row.player} className={`${i % 2 === 0 ? "bg-white" : "bg-slate-50/60"} hover:bg-emerald-50/30`}>
+                      <td className={`sticky left-0 z-10 border-b border-slate-100 px-2 py-1.5 text-[11px] font-bold text-slate-400 ${stickyBg}`}>{row.powerRank}</td>
+                      <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900 whitespace-nowrap ${stickyBg}`}>{row.player}</td>
+                      <td className="border-b border-slate-100 px-2 py-1.5">
+                        <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums"
+                          style={{ backgroundColor: row.powerScore >= 65 ? "#16a34a" : row.powerScore >= 50 ? "rgba(22,163,74,0.15)" : "rgba(148,163,184,0.2)", color: row.powerScore >= 65 ? "#fff" : row.powerScore >= 50 ? "#15803d" : "#475569" }}>
+                          {fmtScore(row.powerScore)}
+                        </span>
+                      </td>
+                      {avgs ? (
+                        <>
+                          <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={row.sgTotal} avg={avgs.sgTotalAvg} spread={avgs.sgTotalStd} fmt={fmt1} /></td>
+                          <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={row.sgApp} avg={avgs.sgAppAvg} spread={avgs.sgAppStd} fmt={fmt1} /></td>
+                          <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={row.sgPutt} avg={avgs.sgPuttAvg} spread={avgs.sgPuttStd} fmt={fmt1} /></td>
+                          <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={row.sgAtG} avg={avgs.sgAtGAvg} spread={avgs.sgAtGStd} fmt={fmt1} /></td>
+                        </>
+                      ) : (
+                        <><td /><td /><td /><td /></>
+                      )}
+                      <td className="border-b border-slate-100 px-2 py-1.5 text-[11px] text-slate-500 tabular-nums">{row.trendRank != null ? `#${row.trendRank}` : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {filtered.length === 0 && !loading && (
+              <div className="py-10 text-center text-sm text-slate-400">No players match "{search}"</div>
+            )}
+          </div>
+        )}
+
+        <p className="mt-3 text-[11px] text-slate-400">
+          Power score = weighted percentile rank across SG Total (28%), SG Approach (20%), SG Putting (15%), Recent Form (13%), SG Around Green (10%), Bogey Avoidance (9%), Birdie Ratio (5%).
+        </p>
+      </div>
     </SiteShell>
   );
 }
-
