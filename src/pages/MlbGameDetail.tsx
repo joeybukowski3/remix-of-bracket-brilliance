@@ -1214,24 +1214,57 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
   );
 }
 
-function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = []) {
+function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], batters = [], games = []) {
   if (strikeoutRows?.length) return strikeoutRows;
   if (strikeoutDetailRows?.length) return strikeoutDetailRows;
-  // Final fallback: build minimal social rows from raw pitchers in payload (so K tab is never blank when HR/Hit have data)
+
   if (!pitchers?.length) return [];
+
+  // Build opponent batters map (same logic as the main builder) so we can compute real opponent stats even in fallback
+  const battersByGameAndTeam = new Map();
+  batters.forEach((batter) => {
+    const key = `${batter.gameKey}|${batter.team}`;
+    if (!battersByGameAndTeam.has(key)) battersByGameAndTeam.set(key, []);
+    battersByGameAndTeam.get(key).push(batter);
+  });
+
+  const gameByKey = new Map(games.map((g) => [g.gameKey, g]));
+
   return pitchers
     .map((p, i) => {
-      const rawScore = p.kVs ?? ((p.kRate || 0) + (p.whiffRate || 0)) / 2;
-      const score = typeof rawScore === 'number' && isFinite(rawScore) ? rawScore : 0;
+      const opponentBatters = battersByGameAndTeam.get(`${p.gameKey}|${p.opponent}`) || [];
+      const game = gameByKey.get(p.gameKey);
+
+      const opponentTeamKRate = opponentBatters.length
+        ? opponentBatters.reduce((sum, b) => sum + (b.kRate || 0), 0) / opponentBatters.length
+        : null;
+      const opponentTeamWhiffRate = opponentBatters.length
+        ? opponentBatters.reduce((sum, b) => sum + (b.whiffRate || 0), 0) / opponentBatters.length
+        : null;
+      const opponentTeamXba = opponentBatters.length
+        ? opponentBatters.reduce((sum, b) => sum + (b.xba || 0), 0) / opponentBatters.length
+        : null;
+
+      const pitcherKSkillScore = ((p.kVs || 0) * 0.5 + (p.kRate || 0) * 0.3 + (p.whiffRate || 0) * 0.2) || (p.kVs || 0);
+
+      const opponentTeamStrikeoutScore = opponentTeamKRate != null
+        ? ((opponentTeamKRate * 0.5 + (opponentTeamWhiffRate || 0) * 0.3 + (100 - (opponentTeamXba || 0) * 100) * 0.2) || opponentTeamKRate * 0.6 + (opponentTeamWhiffRate || 0) * 0.4)
+        : 0;
+
+      const strikeoutMatchupScore = ((pitcherKSkillScore * 0.4 + (opponentTeamKRate || 0) * 0.3 + (opponentTeamWhiffRate || 0) * 0.2 + (100 - (opponentTeamXba || 0) * 100) * 0.1) || pitcherKSkillScore) ;
+
+      const safeScore = typeof strikeoutMatchupScore === 'number' && isFinite(strikeoutMatchupScore) ? strikeoutMatchupScore : 0;
+
       return {
         rank: i + 1,
         pitcher: p.pitcher,
         team: p.team,
         opponent: p.opponent,
-        strikeoutMatchupScore: score,
+        strikeoutMatchupScore: safeScore,
         pitcherKRate: typeof p.kRate === 'number' ? p.kRate : null,
         pitcherWhiffRate: typeof p.whiffRate === 'number' ? p.whiffRate : null,
-        opponentTeamKRate: null,
+        opponentTeamKRate: typeof opponentTeamKRate === 'number' ? opponentTeamKRate : null,
+        opponentTeamWhiffRate: typeof opponentTeamWhiffRate === 'number' ? opponentTeamWhiffRate : null,
       };
     })
     .sort((a, b) => (b.strikeoutMatchupScore || 0) - (a.strikeoutMatchupScore || 0))
@@ -1239,7 +1272,7 @@ function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = []) {
 }
 
 function SocialMediaTablesSection() {
-  const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, loading } = useMlbPropsData();
+  const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games, loading } = useMlbPropsData();
   const [activeTab, setActiveTab] = useState<"hr" | "k" | "hits">("hr");
 
   if (loading) return null;
@@ -1250,7 +1283,7 @@ function SocialMediaTablesSection() {
     { key: "hits", label: "Hit Props", emoji: "⚔️" },
   ];
 
-  const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers);
+  const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, games);
 
   return (
     <section style={{ marginTop: 16 }}>
