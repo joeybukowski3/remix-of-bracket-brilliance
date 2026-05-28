@@ -158,6 +158,44 @@ export default function MlbStrikeoutProps() {
     setSortKey(key);
   };
 
+  if (loading) {
+    return (
+      <SiteShell>
+        <main className="site-page bg-[#edf2f7] py-8">
+          <div className="site-container text-center text-sm text-slate-500">Loading strikeout prop model…</div>
+        </main>
+      </SiteShell>
+    );
+  }
+
+  if (!strikeoutDetailRows.length) {
+    return (
+      <SiteShell>
+        <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
+          <div className="site-container space-y-4">
+            <ModelSummaryHeader
+              eyebrow="Pitcher prop model"
+              title="MLB Strikeout Prop Model"
+              description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data."
+              generatedAt={dashboard?.generatedAt}
+              gamesCount={getGameCount(games)}
+              rowsCount={0}
+              bestScore={null}
+              siblingLinks={[
+                { label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" },
+                { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" },
+                { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" },
+              ]}
+            />
+            <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+              No strikeout prop data available for today’s slate yet. Check back after the next model refresh.
+            </div>
+          </div>
+        </main>
+      </SiteShell>
+    );
+  }
+
   const SortTh = ({ k, label, extra = "" }: { k: SortKey; label: string; extra?: string }) => (
     <th className={`border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap ${extra}`}>
       <button type="button" onClick={() => handleSort(k)} className="hover:text-slate-900">
