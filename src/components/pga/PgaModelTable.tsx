@@ -249,6 +249,12 @@ export default function PgaModelTable({
   }
 
   const visibleCols = tableConfig.statColumns.filter((column) => visibleStats.has(column.key));
+
+  // Detect which optional history columns actually have data — hide when empty
+  const hasTrendData = rows.some((r) => r.trendRank != null);
+  const hasCutsData = rows.some((r) => r.cutsLastFive != null && r.cutsLastFive !== "");
+  const historyColCount = 2 + (hasTrendData ? 1 : 0) + (hasCutsData ? 1 : 0);
+
   const hasWeights =
     draftWeights &&
     appliedWeights &&
@@ -447,7 +453,7 @@ export default function PgaModelTable({
                   <th colSpan={2} className="border-r border-border/30 px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                     Rank
                   </th>
-                  <th colSpan={4} className="border-r border-border/30 bg-emerald-50/60 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
+                  <th colSpan={historyColCount} className="border-r border-border/30 bg-emerald-50/60 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400">
                     {tableConfig.historySectionTitle}
                   </th>
                   <th colSpan={visibleCols.length} className="border-r border-border/30 bg-sky-50/60 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-700 dark:bg-sky-950/20 dark:text-sky-400">
@@ -464,22 +470,22 @@ export default function PgaModelTable({
                   <th title="Player name" className="min-w-[180px] px-3 py-2.5 text-left text-[11px] font-semibold text-foreground">
                     Player
                   </th>
-                  {[
-                    [tableConfig.historyLabels.trendLabel, tableConfig.historyLabels.trendTooltip],
-                    [tableConfig.historyLabels.courseRoundsLabel, tableConfig.historyLabels.courseRoundsTooltip],
-                    [tableConfig.historyLabels.cutsLabel, tableConfig.historyLabels.cutsTooltip],
-                    [tableConfig.historyLabels.courseHistoryScoreLabel, tableConfig.historyLabels.courseHistoryScoreTooltip],
-                  ].map(([label, tooltip], index) => (
-                    <th
-                      key={label}
-                      title={tooltip}
-                      className={`cursor-help px-2.5 py-2.5 text-center text-[11px] font-semibold text-emerald-700 underline decoration-dotted underline-offset-2 dark:text-emerald-400 ${
-                        index === 0 ? "border-l border-emerald-200/50 dark:border-emerald-900/50" : ""
-                      } ${index === 3 ? "border-r border-emerald-200/50 dark:border-emerald-900/50" : ""}`}
-                    >
-                      {label}
+                  {hasTrendData && (
+                    <th title={tableConfig.historyLabels.trendTooltip} className="cursor-help px-2.5 py-2.5 text-center text-[11px] font-semibold text-emerald-700 underline decoration-dotted underline-offset-2 dark:text-emerald-400 border-l border-emerald-200/50 dark:border-emerald-900/50">
+                      {tableConfig.historyLabels.trendLabel}
                     </th>
-                  ))}
+                  )}
+                  <th title={tableConfig.historyLabels.courseRoundsTooltip} className={`cursor-help px-2.5 py-2.5 text-center text-[11px] font-semibold text-emerald-700 underline decoration-dotted underline-offset-2 dark:text-emerald-400 ${!hasTrendData ? "border-l border-emerald-200/50 dark:border-emerald-900/50" : ""}`}>
+                    {tableConfig.historyLabels.courseRoundsLabel}
+                  </th>
+                  {hasCutsData && (
+                    <th title={tableConfig.historyLabels.cutsTooltip} className="cursor-help px-2.5 py-2.5 text-center text-[11px] font-semibold text-emerald-700 underline decoration-dotted underline-offset-2 dark:text-emerald-400">
+                      {tableConfig.historyLabels.cutsLabel}
+                    </th>
+                  )}
+                  <th title={tableConfig.historyLabels.courseHistoryScoreTooltip} className="cursor-help px-2.5 py-2.5 text-center text-[11px] font-semibold text-emerald-700 underline decoration-dotted underline-offset-2 dark:text-emerald-400 border-r border-emerald-200/50 dark:border-emerald-900/50">
+                    {tableConfig.historyLabels.courseHistoryScoreLabel}
+                  </th>
                   {visibleCols.map((column, index) => (
                     <th
                       key={column.key}
@@ -523,11 +529,15 @@ export default function PgaModelTable({
                         <span className="font-medium text-foreground">{row.player}</span>
                       </td>
 
-                      <td className="border-l border-emerald-100/60 px-2.5 py-2 text-center text-[11px] text-muted-foreground dark:border-emerald-900/30">
-                        {row.trendRank ?? "—"}
-                      </td>
-                      <td className="px-2.5 py-2 text-center text-[11px] text-foreground">{row.courseHistoryRounds ?? "—"}</td>
-                      <td className="px-2.5 py-2 text-center text-[11px] font-medium text-foreground">{row.cutsLastFive ?? "—"}</td>
+                      {hasTrendData && (
+                        <td className="border-l border-emerald-100/60 px-2.5 py-2 text-center text-[11px] text-muted-foreground dark:border-emerald-900/30">
+                          {row.trendRank ?? "—"}
+                        </td>
+                      )}
+                      <td className={`px-2.5 py-2 text-center text-[11px] text-foreground ${!hasTrendData ? "border-l border-emerald-100/60 dark:border-emerald-900/30" : ""}`}>{row.courseHistoryRounds ?? "—"}</td>
+                      {hasCutsData && (
+                        <td className="px-2.5 py-2 text-center text-[11px] font-medium text-foreground">{row.cutsLastFive ?? "—"}</td>
+                      )}
                       <td className={`border-r border-emerald-100/60 px-2.5 py-2 text-center font-mono text-[11px] dark:border-emerald-900/30 ${courseHistoryColor(row.courseHistoryScore)}`}>
                         {row.courseHistoryScore != null ? row.courseHistoryScore.toFixed(2) : "—"}
                       </td>
