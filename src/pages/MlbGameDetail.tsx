@@ -739,6 +739,11 @@ function MlbHubSidebar() {
           Prop Optimizer
         </Link>
       </div>
+
+      {/* Partners section moved here per request: underneath the left menu / CTA in the sidebar panel */}
+      <div className="mt-4 border-t border-slate-200 pt-3 px-4">
+        <HubSportsbookStrip />
+      </div>
     </aside>
   );
 }
@@ -1313,7 +1318,6 @@ function HomeSchedule({
         <div className="min-w-0 flex-1 space-y-3">
 
           <MlbHubHero />
-          <HubSportsbookStrip />
 
           <section id="props" className="space-y-3">
             <div>
