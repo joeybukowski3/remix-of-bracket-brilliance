@@ -37,16 +37,19 @@ function useCurrentField() {
 }
 
 // ─── Power Ranking Formula ────────────────────────────────────────────────────
-// Rebalanced (2026-05) to keep elite season-long players (Scheffler, Rory, etc.)
-// anchored in Top 5-7 while still surfacing hot form. See inline comments for rationale.
-// All weights sum to 1.0. No behavior change for callers or other PGA models.
+// Further refined: sgTotal now dominant (55%) as the core season-long / rolling
+// performance signal. Stability floor strengthened dramatically for 90%+ sgTotal
+// players so Scheffler/Rory are very difficult to push out of Top 5. Recency kept
+// light (3%) for genuine hot emerging players (Yellamaraju etc.) to reach Top 15-20.
+// No volume/cut-made data exists in RawPlayerStat, so no consistency multiplier added.
+// All weights sum to 1.0. Only this function + PR_WEIGHTS were touched.
 const PR_WEIGHTS = {
-  sgTotal:          0.43, // MUCH STRONGER season-long anchor (full 2026 / rolling 10-20+ events). Primary driver for elite floor.
-  sgApp:            0.15, // reduced (Scheffler's current sample is anomalously low; approach still valued but not over-weighted vs total)
-  sgPutt:           0.08, // REDUCED — volatile / recency-heavy
-  trendRank:        0.04, // MINIMAL recency bias (was 0.13). Enough for true hot streaks without letting 1-2 events tank elites.
-  sgAtG:            0.11,
-  bogeyAvoidance:   0.14, // increased — strong consistency / "floor" signal for proven players
+  sgTotal:          0.55, // DOMINANT season-long anchor (50-55% target). Best proxy for full 2026 + recent 10-20 events.
+  sgApp:            0.09, // further reduced (protects vs noisy/low-sample approach numbers)
+  sgPutt:           0.04, // sharply reduced — most volatile/recency-prone component
+  trendRank:        0.03, // very light recency (kept for hot streaks only; not top-5 driver)
+  sgAtG:            0.10,
+  bogeyAvoidance:   0.14, // consistency signal (elites avoid blow-ups)
   birdieBogeyRatio: 0.05,
 };
 
@@ -82,23 +85,20 @@ function buildPowerRankings(players: RawPlayerStat[]): PowerRankRow[] {
       percentile(p.bogeyAvoidance, sB)  * PR_WEIGHTS.bogeyAvoidance +
       percentile(p.birdieBogeyRatio, sBr) * PR_WEIGHTS.birdieBogeyRatio;
 
-    // ── Stability floor / elite anchor ────────────────────────────────────────
-    // Stronger season-long emphasis + explicit bonus for top sgTotal performers.
-    // This is the "Floor": consistent elites (Scheffler/Rory-level season SG:Total)
-    // cannot drop below ~Top 7 even after a couple mediocre events or noisy
-    // sub-stats (e.g. current low sgApp sample for Scheffler). 
-    // sgTotal is the best available proxy for "last 10-20 events or full season".
-    // Hot rookies/emerging players with legitimately high season sgTotal still
-    // receive the bonus and can break Top 20 on pure numbers (recency via trend
-    // or recent sgPutt/sgApp spikes remains possible at lower weight).
-    // Signature Events + Majors are already embedded in the source season SG
-    // aggregates (higher-field events influence the rolling/season figures).
+    // ── Stability floor / elite anchor (significantly strengthened) ───────────
+    // Much larger bonuses for 90th+ percentile sgTotal (the true season-long elites).
+    // Combined with 55% sgTotal weight, this makes Scheffler and Rory extremely
+    // hard to displace from the Top 5 even when other components are noisy in a
+    // given window. Hot players with elite sgTotal still rise; merely "hot but
+    // not elite season-long" players cannot take the very top spots.
+    // (No events-played or cuts-made data is present in the source, so no extra
+    // consistency multiplier was added.)
     const sgTPct = percentile(p.sgTotal, sT);
     let stabilityBonus = 0;
-    if (sgTPct >= 95) stabilityBonus = 7.0;
-    else if (sgTPct >= 90) stabilityBonus = 5.0;
-    else if (sgTPct >= 82) stabilityBonus = 3.0;
-    else if (sgTPct >= 70) stabilityBonus = 1.2;
+    if (sgTPct >= 95) stabilityBonus = 15.0;
+    else if (sgTPct >= 90) stabilityBonus = 10.0;
+    else if (sgTPct >= 82) stabilityBonus = 5.0;
+    else if (sgTPct >= 70) stabilityBonus = 2.0;
 
     const powerScore = baseWeighted + stabilityBonus;
     return { ...p, powerScore };
@@ -625,7 +625,7 @@ export default function PgaHub() {
           )}
 
           <p className="mt-3 text-[11px] text-slate-400">
-            Power score = weighted percentile across SG Total (43% season-long anchor), SG Approach (15%), SG Putting (8%), Recent Form (4%), SG Around Green (11%), Bogey Avoidance (14%), Birdie Ratio (5%) + stability floor bonus for top-tier season SG:Total (anchors elites like Scheffler/Rory in Top 7).
+            Power score = weighted percentile across SG Total (55% dominant season-long), SG Approach (9%), SG Putting (4%), Recent Form (3%), SG Around Green (10%), Bogey Avoidance (14%), Birdie Ratio (5%) + much stronger stability floor for 90%+ sgTotal (locks elite season performers in Top 5).
           </p>
         </div>
 
