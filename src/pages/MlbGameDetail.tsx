@@ -1206,8 +1206,28 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
   );
 }
 
+function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = []) {
+  if (strikeoutRows?.length) return strikeoutRows;
+  if (strikeoutDetailRows?.length) return strikeoutDetailRows;
+  // Final fallback: build minimal social rows from raw pitchers in payload (so K tab is never blank when HR/Hit have data)
+  if (!pitchers?.length) return [];
+  return pitchers
+    .map((p, i) => ({
+      rank: i + 1,
+      pitcher: p.pitcher,
+      team: p.team,
+      opponent: p.opponent,
+      strikeoutMatchupScore: p.kVs ?? ((p.kRate || 0) + (p.whiffRate || 0)) / 2,
+      pitcherKRate: p.kRate,
+      pitcherWhiffRate: p.whiffRate,
+      opponentTeamKRate: null,
+    }))
+    .sort((a, b) => (b.strikeoutMatchupScore || 0) - (a.strikeoutMatchupScore || 0))
+    .slice(0, 5);
+}
+
 function SocialMediaTablesSection() {
-  const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, loading } = useMlbPropsData();
+  const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, loading } = useMlbPropsData();
   const [activeTab, setActiveTab] = useState<"hr" | "k" | "hits">("hr");
 
   if (loading) return null;
@@ -1252,7 +1272,7 @@ function SocialMediaTablesSection() {
         {/* Table content */}
         <div style={{ padding: 14 }}>
           {activeTab === "hr"   && <SocialTableHR batters={batters} />}
-          {activeTab === "k"    && <SocialTableK rows={strikeoutRows.length ? strikeoutRows : strikeoutDetailRows} />}
+          {activeTab === "k"    && <SocialTableK rows={getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers)} />}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
         </div>
 
