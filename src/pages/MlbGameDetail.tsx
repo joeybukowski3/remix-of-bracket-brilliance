@@ -28,6 +28,7 @@ import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { SPORTSBOOKS } from "@/lib/sportsbooks";
 import { ScorePill, HrDashboardPitcher, TeamLogoBadge, type HrDashboardBatter, type PitcherStrikeoutTeamRow, type PitcherVsBatterRow } from "@/pages/MlbHrProps";
 
 const SEASON = new Date().getFullYear();
@@ -740,9 +741,26 @@ function MlbHubSidebar() {
         </Link>
       </div>
 
-      {/* Partners section moved here per request: underneath the left menu / CTA in the sidebar panel */}
-      <div className="mt-4 border-t border-slate-200 pt-3 px-4">
-        <HubSportsbookStrip />
+      {/* Vertical "Bet with our partners" section card (stacked, no horizontal scroll) */}
+      <div className="mt-4 border-t border-slate-200 pt-3 px-3">
+        <div className="px-1 mb-1.5 text-[10px] font-semibold tracking-wide text-slate-500">
+          Bet with our partners
+        </div>
+        <div className="flex flex-col gap-1">
+          {SPORTSBOOKS.map((sb) => (
+            <a
+              key={sb.name}
+              href={sb.referralUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md px-3 py-[5px] text-[11px] font-bold text-center transition hover:opacity-95 active:opacity-90"
+              style={{ backgroundColor: sb.bgColor, color: sb.textColor }}
+            >
+              {sb.name}
+            </a>
+          ))}
+        </div>
+        <div className="mt-2 px-1 text-[9px] text-slate-400">21+ • Call 1-800-GAMBLER</div>
       </div>
     </aside>
   );
