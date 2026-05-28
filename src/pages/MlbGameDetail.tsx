@@ -1207,7 +1207,7 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
 }
 
 function SocialMediaTablesSection() {
-  const { batters, strikeoutRows, batterVsPitcherRows, loading } = useMlbPropsData();
+  const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, loading } = useMlbPropsData();
   const [activeTab, setActiveTab] = useState<"hr" | "k" | "hits">("hr");
 
   if (loading) return null;
@@ -1252,7 +1252,7 @@ function SocialMediaTablesSection() {
         {/* Table content */}
         <div style={{ padding: 14 }}>
           {activeTab === "hr"   && <SocialTableHR batters={batters} />}
-          {activeTab === "k"    && <SocialTableK rows={strikeoutRows} />}
+          {activeTab === "k"    && <SocialTableK rows={strikeoutRows.length ? strikeoutRows : strikeoutDetailRows} />}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
         </div>
 
