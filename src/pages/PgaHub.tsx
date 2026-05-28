@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import SportsbookBar from "@/components/SportsbookBar";
@@ -9,6 +9,20 @@ import {
   getCurrentAndNextEvents,
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
+
+type BestBetPick = { player: string; tournamentRank: number; powerRank: number; topStats: string[]; bullets: string[]; odds?: { outright?: string | null; top5?: string | null; top10?: string | null; top20?: string | null } | null };
+type BestBetsPayload = { tournament: string; course: string; outrights: BestBetPick[]; top5: BestBetPick[]; top10: BestBetPick[]; top20: BestBetPick[] };
+
+function useBestBets() {
+  const [data, setData] = useState<BestBetsPayload | null>(null);
+  useEffect(() => {
+    fetch("/data/pga/best-bets.json", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setData(d))
+      .catch(() => {});
+  }, []);
+  return data;
+}
 
 // ─── Power Ranking Formula ────────────────────────────────────────────────────
 const PR_WEIGHTS = {
@@ -158,6 +172,50 @@ function ScheduleSidebar({ schedule, current }: { schedule: PgaScheduleFeedEntry
   );
 }
 
+// ─── Best Bets Tiles ──────────────────────────────────────────────────────────
+const BET_SECTIONS = [
+  { key: "outrights" as const, label: "🏆 Outrights", color: "#15803d", bg: "rgba(22,163,74,0.08)", border: "rgba(22,163,74,0.25)" },
+  { key: "top5"      as const, label: "🔥 Top 5",     color: "#0369a1", bg: "rgba(14,165,233,0.07)", border: "rgba(14,165,233,0.2)" },
+  { key: "top10"     as const, label: "⭐ Top 10",    color: "#7c3aed", bg: "rgba(124,58,237,0.07)", border: "rgba(124,58,237,0.2)" },
+  { key: "top20"     as const, label: "📋 Top 20",    color: "#b45309", bg: "rgba(245,158,11,0.07)", border: "rgba(245,158,11,0.2)" },
+];
+
+function BestBetsTiles({ data }: { data: BestBetsPayload }) {
+  const hasAny = BET_SECTIONS.some(({ key }) => data[key]?.length > 0);
+  if (!hasAny) return null;
+  return (
+    <div className="mb-6">
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Best Bets</div>
+          <div className="text-sm font-black text-slate-900">{data.tournament} · {data.course}</div>
+        </div>
+        <Link to="/pga/best-bets" className="text-xs font-bold text-emerald-700 hover:underline">View all →</Link>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {BET_SECTIONS.map(({ key, label, color, bg, border }) => {
+          const picks = data[key];
+          if (!picks?.length) return null;
+          return (
+            <div key={key} className="rounded-xl p-3 flex flex-col gap-1.5" style={{ backgroundColor: bg, border: `1px solid ${border}` }}>
+              <div className="text-[11px] font-black" style={{ color }}>{label}</div>
+              {picks.slice(0, 3).map((p) => (
+                <div key={p.player} className="flex items-center justify-between gap-1">
+                  <span className="text-[11px] font-semibold text-slate-800 truncate">{p.player}</span>
+                  <span className="shrink-0 text-[10px] font-bold text-slate-400">#{p.tournamentRank}</span>
+                </div>
+              ))}
+              {picks.length > 3 && (
+                <Link to="/pga/best-bets" className="text-[10px] font-semibold" style={{ color }}>+{picks.length - 3} more</Link>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PgaHub() {
   usePageSeo({
@@ -167,6 +225,7 @@ export default function PgaHub() {
   });
 
   const { schedule, playerStats, loading } = usePgaHubData();
+  const bestBets = useBestBets();
   const [search, setSearch] = useState("");
   const [showPreviousMobile, setShowPreviousMobile] = useState(false);
 
@@ -270,6 +329,9 @@ export default function PgaHub() {
             <Link to="/pga/model" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">Featured Model</Link>
             <Link to="/pga/dfs" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">DFS Upload</Link>
           </div>
+
+          {/* Best Bets tiles */}
+          {bestBets && <BestBetsTiles data={bestBets} />}
 
           {/* Search */}
           <div className="mb-3">
