@@ -193,24 +193,24 @@ export default function PgaHub() {
     return powerRankings.filter((r) => r.player.toLowerCase().includes(q));
   }, [powerRankings, search]);
 
-  const avgs = useMemo(() => {
-    if (!playerStats.length) return null;
-    const mean = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length;
-    const std = (arr: number[], m: number) => Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
-    const sgTotal = playerStats.map((p) => p.sgTotal);
-    const sgApp   = playerStats.map((p) => p.sgApp);
-    const sgPutt  = playerStats.map((p) => p.sgPutt);
-    const sgAtG   = playerStats.map((p) => p.sgAtG);
-    return {
-      sgTotalAvg: mean(sgTotal), sgTotalStd: std(sgTotal, mean(sgTotal)),
-      sgAppAvg:   mean(sgApp),   sgAppStd:   std(sgApp,   mean(sgApp)),
-      sgPuttAvg:  mean(sgPutt),  sgPuttStd:  std(sgPutt,  mean(sgPutt)),
-      sgAtGAvg:   mean(sgAtG),   sgAtGStd:   std(sgAtG,   mean(sgAtG)),
-    };
-  }, [playerStats]);
-
-  const fmt1 = (v: number) => (v >= 0 ? "+" : "") + v.toFixed(2);
   const fmtScore = (v: number) => v.toFixed(1);
+  const fmtPct = (v: number) => `${Math.round(v)}th`;
+
+  // Precompute percentile ranks for display
+  const pctRanks = useMemo(() => {
+    if (!powerRankings.length) return new Map<string, { sgTotal: number; sgApp: number; sgPutt: number; sgAtG: number }>();
+    const asc = (arr: number[]) => [...arr].sort((a, b) => a - b);
+    const sT = asc(powerRankings.map((p) => p.sgTotal));
+    const sA = asc(powerRankings.map((p) => p.sgApp));
+    const sP = asc(powerRankings.map((p) => p.sgPutt));
+    const sG = asc(powerRankings.map((p) => p.sgAtG));
+    return new Map(powerRankings.map((p) => [p.player, {
+      sgTotal: percentile(p.sgTotal, sT),
+      sgApp:   percentile(p.sgApp,   sA),
+      sgPutt:  percentile(p.sgPutt,  sP),
+      sgAtG:   percentile(p.sgAtG,   sG),
+    }]));
+  }, [powerRankings]);
 
   return (
     <SiteShell>
@@ -290,8 +290,8 @@ export default function PgaHub() {
               <table className="w-full text-left text-[12px]">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    <th className="sticky left-0 z-20 bg-slate-50 px-2 py-2 w-8">#</th>
-                    <th className="sticky left-8 z-20 bg-slate-50 px-2 py-2 min-w-[140px]">Player</th>
+                    <th className="sticky left-0 z-30 bg-slate-50 px-2 py-2 w-8">#</th>
+                    <th className="sticky left-8 z-30 bg-slate-50 px-2 py-2 min-w-[140px]">Player</th>
                     <th className="px-2 py-2 whitespace-nowrap">Score</th>
                     <th className="px-2 py-2 whitespace-nowrap">SG Total</th>
                     <th className="px-2 py-2 whitespace-nowrap">SG App</th>
@@ -302,23 +302,24 @@ export default function PgaHub() {
                 </thead>
                 <tbody>
                   {filtered.map((row, i) => {
-                    const sbg = i % 2 === 0 ? "bg-white" : "bg-slate-50/60";
+                    const sbg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
+                    const pct = pctRanks.get(row.player);
                     return (
                       <tr key={row.player} className={`${sbg} hover:bg-emerald-50/30`}>
-                        <td className={`sticky left-0 z-10 border-b border-slate-100 px-2 py-1.5 text-[11px] font-bold text-slate-400 ${sbg}`}>{row.powerRank}</td>
-                        <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900 whitespace-nowrap ${sbg}`}>{row.player}</td>
+                        <td className={`sticky left-0 z-20 border-b border-slate-100 px-2 py-1.5 text-[11px] font-bold text-slate-400 ${sbg}`}>{row.powerRank}</td>
+                        <td className={`sticky left-8 z-20 border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900 whitespace-nowrap ${sbg}`}>{row.player}</td>
                         <td className="border-b border-slate-100 px-2 py-1.5">
                           <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums"
                             style={{ backgroundColor: row.powerScore >= 65 ? "#16a34a" : row.powerScore >= 50 ? "rgba(22,163,74,0.15)" : "rgba(148,163,184,0.2)", color: row.powerScore >= 65 ? "#fff" : row.powerScore >= 50 ? "#15803d" : "#475569" }}>
                             {fmtScore(row.powerScore)}
                           </span>
                         </td>
-                        {avgs ? (
+                        {pct ? (
                           <>
-                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={row.sgTotal} avg={avgs.sgTotalAvg} spread={avgs.sgTotalStd} fmt={fmt1} /></td>
-                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={row.sgApp} avg={avgs.sgAppAvg} spread={avgs.sgAppStd} fmt={fmt1} /></td>
-                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={row.sgPutt} avg={avgs.sgPuttAvg} spread={avgs.sgPuttStd} fmt={fmt1} /></td>
-                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={row.sgAtG} avg={avgs.sgAtGAvg} spread={avgs.sgAtGStd} fmt={fmt1} /></td>
+                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={pct.sgTotal} avg={50} spread={25} fmt={fmtPct} /></td>
+                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={pct.sgApp}   avg={50} spread={25} fmt={fmtPct} /></td>
+                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={pct.sgPutt}  avg={50} spread={25} fmt={fmtPct} /></td>
+                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={pct.sgAtG}   avg={50} spread={25} fmt={fmtPct} /></td>
                           </>
                         ) : (<><td /><td /><td /><td /></>)}
                         <td className="border-b border-slate-100 px-2 py-1.5 text-[11px] text-slate-500 tabular-nums">{row.trendRank != null ? `#${row.trendRank}` : "—"}</td>
