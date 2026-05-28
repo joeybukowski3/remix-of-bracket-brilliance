@@ -1,13 +1,6 @@
 /**
  * fetch-pga-current-field.mjs
- *
- * Fetches the current PGA Tour tournament field from ESPN's API.
- * Saves to public/data/pga/current-field.json
- *
- * Sources (tried in order):
- *   1. ESPN scoreboard → competitors (works Thu–Sun during event)
- *   2. ESPN event entry list endpoint
- *   3. PGA Tour website __NEXT_DATA__ scrape (fallback)
+ * Fetches the PGA Tour current field. Always exits 0 — never fails the workflow.
  */
 
 import { writeFile, mkdir } from "node:fs/promises";
@@ -16,200 +9,187 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT = path.resolve(__dirname, "../public/data/pga/current-field.json");
+const TIMEOUT_MS = 12000;
 
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
   "Accept": "application/json",
-  "Accept-Language": "en-US,en;q=0.9",
 };
 
-async function fetchJson(url, extra = {}) {
-  const res = await fetch(url, { headers: { ...HEADERS, ...extra }, signal: AbortSignal.timeout(15000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
-  return res.json();
+async function get(url, extraHeaders = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { headers: { ...HEADERS, ...extraHeaders }, signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-// ── Strategy 1: ESPN Golf Scoreboard ─────────────────────────────────────────
-// Returns the current/active PGA Tour event with all competitors
-async function fetchFromEspnScoreboard() {
-  const data = await fetchJson("https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard");
-  const events = data?.events ?? [];
-  if (!events.length) throw new Error("No events in ESPN scoreboard");
+// ── Strategy 1: ESPN scoreboard (during tournament, Thu–Mon) ──────────────────
+async function tryEspnScoreboard() {
+  const data = await get("https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard");
+  const events = Array.isArray(data?.events) ? data.events : [];
+  if (!events.length) throw new Error("No events");
 
-  // Find the PGA Tour event (not Champions/LPGA)
-  const pgaEvent = events.find((e) =>
-    e.leagues?.some((l) => l.abbreviation === "PGA" || l.slug === "pga")
-    ?? true // if no league filter available just use first
-  ) ?? events[0];
+  const event = events[0];
+  const name = event.shortName ?? event.name ?? "Unknown";
+  const comp = event.competitions?.[0];
+  if (!comp) throw new Error("No competition");
 
-  const name = pgaEvent.name ?? pgaEvent.shortName ?? "Unknown";
-  const competitions = pgaEvent.competitions ?? [];
-  if (!competitions.length) throw new Error("No competitions in ESPN event");
-
-  const comp = competitions[0];
-  const competitors = comp.competitors ?? [];
-
-  const players = competitors
+  const players = (comp.competitors ?? [])
     .map((c) => c.athlete?.displayName ?? c.athlete?.fullName)
     .filter(Boolean);
 
-  if (players.length < 10) throw new Error(`Too few competitors: ${players.length}`);
-
-  return { tournament: name, players, source: "espn-scoreboard", fetchedAt: new Date().toISOString() };
+  if (players.length < 10) throw new Error(`Only ${players.length} competitors`);
+  return { tournament: name, players, source: "espn-scoreboard" };
 }
 
-// ── Strategy 2: ESPN event competitors via Core API ──────────────────────────
-async function fetchFromEspnCoreApi() {
-  // First get the current event ID
-  const scoreboard = await fetchJson("https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard");
+// ── Strategy 2: ESPN scoreboard full event detail ─────────────────────────────
+async function tryEspnEventDetail() {
+  const scoreboard = await get("https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard");
   const eventId = scoreboard?.events?.[0]?.id;
-  if (!eventId) throw new Error("No event ID found");
+  if (!eventId) throw new Error("No event ID");
 
-  const eventName = scoreboard.events[0]?.name ?? "Unknown";
+  const name = scoreboard.events[0]?.shortName ?? scoreboard.events[0]?.name ?? "Unknown";
 
-  // Fetch all competitors paginated
-  let players = [];
-  let page = 1;
-  let totalPages = 1;
+  const detail = await get(
+    `https://site.api.espn.com/apis/site/v2/sports/golf/pga/summary?event=${eventId}`
+  );
 
-  do {
-    const url = `https://sports.core.api.espn.com/v2/sports/golf/leagues/pga/events/${eventId}/competitions/${eventId}/competitors?limit=200&page=${page}`;
-    const data = await fetchJson(url);
-    totalPages = data.pageCount ?? 1;
-
-    for (const item of data.items ?? []) {
-      // Each item has a $ref to the athlete — resolve it
-      if (item.athlete?.$ref) {
-        try {
-          const athlete = await fetchJson(item.athlete.$ref);
-          const name = athlete.displayName ?? athlete.fullName;
-          if (name) players.push(name);
-        } catch {
-          // skip individual failures
-        }
-      } else if (item.athlete?.displayName) {
-        players.push(item.athlete.displayName);
-      }
-    }
-    page++;
-  } while (page <= Math.min(totalPages, 5)); // cap at 5 pages
-
-  if (players.length < 10) throw new Error(`Too few players from core API: ${players.length}`);
-
-  return { tournament: eventName, players, source: "espn-core", fetchedAt: new Date().toISOString() };
-}
-
-// ── Strategy 3: PGA Tour website __NEXT_DATA__ scrape ────────────────────────
-async function fetchFromPgaTourWebsite(tournamentSlug, pgaTourYear = 2026) {
-  // Common PGA Tour tournament IDs (2026 season)
-  const TOURNAMENT_IDS = {
-    "charles-schwab-challenge": "R2026020",
-    "the-memorial-tournament": "R2026032",
-    "travelers-championship": "R2026033",
-    "rbc-canadian-open": "R2026037",
-    "rocket-mortgage-classic": "R2026030",
-    "3m-open": "R2026034",
-    "john-deere-classic": "R2026021",
-  };
-
-  const tourId = TOURNAMENT_IDS[tournamentSlug];
-  if (!tourId) throw new Error(`No PGA Tour ID mapped for: ${tournamentSlug}`);
-
-  const url = `https://www.pgatour.com/tournaments/${pgaTourYear}/${tournamentSlug}/${tourId}/field`;
-  const res = await fetch(url, {
-    headers: { ...HEADERS, Accept: "text/html,application/xhtml+xml" },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) throw new Error(`PGA Tour page HTTP ${res.status}`);
-
-  const html = await res.text();
-
-  // Extract __NEXT_DATA__ JSON blob
-  const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-  if (!match) throw new Error("No __NEXT_DATA__ found on PGA Tour page");
-
-  const nextData = JSON.parse(match[1]);
-
-  // Walk the props tree to find field entries
-  const fieldData =
-    nextData?.props?.pageProps?.tournamentFieldPlayers
-    ?? nextData?.props?.pageProps?.fieldPlayers
-    ?? nextData?.props?.pageProps?.players;
-
-  if (!Array.isArray(fieldData) || !fieldData.length) throw new Error("No field array in __NEXT_DATA__");
-
-  const players = fieldData
-    .map((p) => p.displayName ?? p.playerName ?? p.firstName + " " + p.lastName)
+  const players = (detail?.competitors ?? detail?.roster ?? [])
+    .map((c) => c.athlete?.displayName ?? c.displayName)
     .filter(Boolean);
 
-  const name = nextData?.props?.pageProps?.tournament?.name
-    ?? nextData?.props?.pageProps?.tournamentName
-    ?? tournamentSlug;
-
-  return { tournament: name, players, source: "pgatour-website", fetchedAt: new Date().toISOString() };
+  if (players.length < 10) throw new Error(`Only ${players.length} players in detail`);
+  return { tournament: name, players, source: "espn-event-detail" };
 }
 
-// ── Read schedule to find current tournament slug ─────────────────────────────
-async function getCurrentTournamentSlug() {
+// ── Strategy 3: PGA Tour __NEXT_DATA__ scrape ─────────────────────────────────
+const PGA_TOUR_IDS = {
+  "charles-schwab-challenge":         "R2026020",
+  "the-memorial-tournament":          "R2026032",
+  "travelers-championship":           "R2026033",
+  "rbc-canadian-open":                "R2026037",
+  "john-deere-classic":               "R2026021",
+  "genesis-scottish-open":            "R2026040",
+  "the-open-championship":            "R2026100",
+  "wyndham-championship":             "R2026041",
+  "fedex-st-jude-championship":       "R2026042",
+  "bmw-championship":                 "R2026043",
+  "tour-championship":                "R2026060",
+  "rocket-mortgage-classic":          "R2026030",
+};
+
+async function tryPgaTourScrape(slug) {
+  if (!slug) throw new Error("No slug");
+  const tourId = PGA_TOUR_IDS[slug];
+  if (!tourId) throw new Error(`No PGA Tour ID for: ${slug}`);
+
+  const url = `https://www.pgatour.com/tournaments/2026/${slug}/${tourId}/field`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  let html;
   try {
-    const scheduleRes = await fetch("https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/pga/schedule.json");
-    if (!scheduleRes.ok) return null;
-    const schedule = await scheduleRes.json();
+    const res = await fetch(url, {
+      headers: { ...HEADERS, Accept: "text/html,application/xhtml+xml" },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    html = await res.text();
+  } finally {
+    clearTimeout(timer);
+  }
 
+  const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+  if (!match) throw new Error("No __NEXT_DATA__");
+
+  const nextData = JSON.parse(match[1]);
+  const pp = nextData?.props?.pageProps ?? {};
+  const fieldData = pp.tournamentFieldPlayers ?? pp.fieldPlayers ?? pp.players ?? pp.entries ?? [];
+
+  if (!Array.isArray(fieldData) || !fieldData.length) throw new Error("No field array");
+
+  const players = fieldData
+    .map((p) => p.displayName ?? p.playerName ?? ((p.firstName ?? "") + " " + (p.lastName ?? "")).trim())
+    .filter((n) => n && n.trim().length > 2);
+
+  if (players.length < 10) throw new Error(`Only ${players.length} players from scrape`);
+
+  const name = pp.tournament?.name ?? pp.tournamentName ?? slug;
+  return { tournament: name, players, source: "pgatour-scrape" };
+}
+
+// ── Get current tournament slug from schedule ─────────────────────────────────
+async function getCurrentSlug() {
+  try {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(
+      "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/pga/schedule.json",
+      { signal: controller.signal }
+    );
+    if (!res.ok) return null;
+    const schedule = await res.json();
     const today = new Date().toISOString().slice(0, 10);
+    // Active tournament first
     const active = schedule.find((e) => e.startDate <= today && e.endDate >= today && e.status === "upcoming");
-    if (active) return active.slug;
-
-    const upcoming = schedule
-      .filter((e) => e.status === "upcoming" && e.startDate > today)
-      .sort((a, b) => a.startDate.localeCompare(b.startDate));
-    return upcoming[0]?.slug ?? null;
+    if (active?.slug) return active.slug;
+    // Otherwise next upcoming
+    const next = schedule
+      .filter((e) => e.status === "upcoming" && e.startDate >= today)
+      .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
+    return next?.slug ?? null;
   } catch {
     return null;
   }
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-async function main() {
-  console.log("Fetching PGA Tour current field...");
-
-  const tournamentSlug = await getCurrentTournamentSlug();
-  console.log("Current tournament slug:", tournamentSlug ?? "(unknown)");
+try {
+  console.log("Fetching PGA current field...");
+  const slug = await getCurrentSlug();
+  console.log("Tournament slug:", slug ?? "(unknown)");
 
   let result = null;
 
-  // Try strategies in order
   const strategies = [
-    { name: "ESPN Scoreboard", fn: fetchFromEspnScoreboard },
-    { name: "ESPN Core API", fn: fetchFromEspnCoreApi },
-    ...(tournamentSlug ? [{ name: "PGA Tour Website", fn: () => fetchFromPgaTourWebsite(tournamentSlug) }] : []),
+    ["ESPN Scoreboard",    tryEspnScoreboard],
+    ["ESPN Event Detail",  tryEspnEventDetail],
+    ...(slug ? [["PGA Tour Scrape", () => tryPgaTourScrape(slug)]] : []),
   ];
 
-  for (const { name, fn } of strategies) {
+  for (const [name, fn] of strategies) {
     try {
-      console.log(`Trying: ${name}...`);
+      console.log(`Trying ${name}...`);
       result = await fn();
-      console.log(`✅ ${name} → ${result.players.length} players for "${result.tournament}"`);
+      console.log(`✅ ${name}: ${result.players.length} players for "${result.tournament}"`);
       break;
     } catch (err) {
-      console.warn(`  ❌ ${name}: ${err.message}`);
+      console.log(`  ❌ ${name}: ${err.message}`);
     }
   }
 
-  if (!result || result.players.length < 10) {
-    console.error("All strategies failed or returned too few players. Not updating current-field.json.");
-    process.exit(0); // exit 0 so the workflow doesn't fail
+  if (!result || !result.players?.length || result.players.length < 10) {
+    console.log("No usable field data found — skipping update.");
+    process.exit(0);
   }
 
-  // Deduplicate and sort
   result.players = [...new Set(result.players)].sort();
+  result.fetchedAt = new Date().toISOString();
 
   await mkdir(path.dirname(OUTPUT), { recursive: true });
   await writeFile(OUTPUT, JSON.stringify(result, null, 2), "utf-8");
-  console.log(`✅ Saved ${result.players.length} players to current-field.json`);
-}
+  console.log(`✅ Saved ${result.players.length} players → current-field.json`);
+  process.exit(0);
 
-main().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
-});
+} catch (err) {
+  // Top-level safety net — log but NEVER fail the workflow
+  console.error("Unexpected error (non-fatal):", err?.message ?? err);
+  process.exit(0);
+}
