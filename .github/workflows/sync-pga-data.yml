@@ -57,27 +57,6 @@ jobs:
         continue-on-error: true
         run: node scripts/fetch-pga-current-field.mjs || true
 
-      - name: Debug - validate secrets and script
-        if: steps.gate.outputs.should_run == 'true'
-        env:
-          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
-          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-        run: |
-          echo "GOOGLE_SHEET_ID set: $([[ -n "$GOOGLE_SHEET_ID" ]] && echo yes || echo NO)"
-          echo "GOOGLE_SERVICE_ACCOUNT_KEY set: $([[ -n "$GOOGLE_SERVICE_ACCOUNT_KEY" ]] && echo yes || echo NO)"
-          echo "Key length: ${#GOOGLE_SERVICE_ACCOUNT_KEY}"
-          node -e "
-            try {
-              const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-              if (!raw) { console.error('KEY IS EMPTY'); process.exit(1); }
-              const parsed = JSON.parse(raw);
-              console.log('JSON parse OK, type:', parsed.type, 'client_email:', parsed.client_email);
-            } catch(e) {
-              console.error('JSON PARSE FAILED:', e.message);
-              process.exit(1);
-            }
-          "
-
       - name: Sync PGA JSON from Google Sheet
         if: steps.gate.outputs.should_run == 'true'
         env:
