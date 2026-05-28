@@ -1235,25 +1235,16 @@ function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], ba
       const opponentBatters = battersByGameAndTeam.get(`${p.gameKey}|${p.opponent}`) || [];
       const game = gameByKey.get(p.gameKey);
 
-      const opponentTeamKRate = opponentBatters.length
-        ? opponentBatters.reduce((sum, b) => sum + (b.kRate || 0), 0) / opponentBatters.length
-        : null;
-      const opponentTeamWhiffRate = opponentBatters.length
-        ? opponentBatters.reduce((sum, b) => sum + (b.whiffRate || 0), 0) / opponentBatters.length
-        : null;
-      const opponentTeamXba = opponentBatters.length
-        ? opponentBatters.reduce((sum, b) => sum + (b.xba || 0), 0) / opponentBatters.length
-        : null;
+      // For social fallback, prioritize the pitcher's own K stats for the score (opponent data may be sparse after filters)
+      const kRate = Number(p.kRate) || 0;
+      const whiffRate = Number(p.whiffRate) || 0;
+      const kVs = Number(p.kVs) || 0;
 
-      const pitcherKSkillScore = ((p.kVs || 0) * 0.5 + (p.kRate || 0) * 0.3 + (p.whiffRate || 0) * 0.2) || (p.kVs || 0);
-
-      const opponentTeamStrikeoutScore = opponentTeamKRate != null
-        ? ((opponentTeamKRate * 0.5 + (opponentTeamWhiffRate || 0) * 0.3 + (100 - (opponentTeamXba || 0) * 100) * 0.2) || opponentTeamKRate * 0.6 + (opponentTeamWhiffRate || 0) * 0.4)
-        : 0;
-
-      const strikeoutMatchupScore = ((pitcherKSkillScore * 0.4 + (opponentTeamKRate || 0) * 0.3 + (opponentTeamWhiffRate || 0) * 0.2 + (100 - (opponentTeamXba || 0) * 100) * 0.1) || pitcherKSkillScore) ;
-
-      const safeScore = typeof strikeoutMatchupScore === 'number' && isFinite(strikeoutMatchupScore) ? strikeoutMatchupScore : 0;
+      let score = kVs;
+      if (score === 0) {
+        score = (kRate * 0.5 + whiffRate * 0.5);
+      }
+      const safeScore = Math.max(0, Math.min(100, score));
 
       return {
         rank: i + 1,
@@ -1261,8 +1252,8 @@ function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], ba
         team: p.team,
         opponent: p.opponent,
         strikeoutMatchupScore: safeScore,
-        pitcherKRate: typeof p.kRate === 'number' ? p.kRate : null,
-        pitcherWhiffRate: typeof p.whiffRate === 'number' ? p.whiffRate : null,
+        pitcherKRate: typeof p.kRate === 'number' ? p.kRate : (Number(p.kRate) || 0),
+        pitcherWhiffRate: typeof p.whiffRate === 'number' ? p.whiffRate : (Number(p.whiffRate) || 0),
         opponentTeamKRate: typeof opponentTeamKRate === 'number' ? opponentTeamKRate : null,
         opponentTeamWhiffRate: typeof opponentTeamWhiffRate === 'number' ? opponentTeamWhiffRate : null,
       };
