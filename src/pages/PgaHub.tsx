@@ -24,6 +24,19 @@ function useBestBets() {
   return data;
 }
 
+type CurrentField = { tournament: string; players: string[]; source: string };
+
+function useCurrentField() {
+  const [field, setField] = useState<CurrentField | null>(null);
+  useEffect(() => {
+    fetch("/data/pga/current-field.json", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setField(d))
+      .catch(() => {});
+  }, []);
+  return field;
+}
+
 // ─── Power Ranking Formula ────────────────────────────────────────────────────
 const PR_WEIGHTS = {
   sgTotal:          0.28,
@@ -226,7 +239,9 @@ export default function PgaHub() {
 
   const { schedule, playerStats, loading } = usePgaHubData();
   const bestBets = useBestBets();
+  const currentField = useCurrentField();
   const [search, setSearch] = useState("");
+  const [fieldOnly, setFieldOnly] = useState(true); // default to field-only when data available
   const [showPreviousMobile, setShowPreviousMobile] = useState(false);
 
   const { active, current } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
@@ -246,11 +261,29 @@ export default function PgaHub() {
   );
 
   const powerRankings = useMemo(() => buildPowerRankings(playerStats), [playerStats]);
+  const fieldSet = useMemo(() => {
+    if (!currentField?.players?.length) return null;
+    // Normalize for fuzzy matching — last name + first initial
+    const normalize = (name: string) => name.toLowerCase().replace(/[^a-z]/g, "");
+    return new Set(currentField.players.map(normalize));
+  }, [currentField]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return powerRankings;
-    return powerRankings.filter((r) => r.player.toLowerCase().includes(q));
-  }, [powerRankings, search]);
+    const normalize = (name: string) => name.toLowerCase().replace(/[^a-z]/g, "");
+    return powerRankings.filter((r) => {
+      // Field filter
+      if (fieldOnly && fieldSet) {
+        const norm = normalize(r.player);
+        // Exact match or substring match (handles name format differences)
+        const inField = fieldSet.has(norm)
+          || [...fieldSet].some((fn) => fn.includes(norm.slice(0, 8)) || norm.includes(fn.slice(0, 8)));
+        if (!inField) return false;
+      }
+      if (!q) return true;
+      return r.player.toLowerCase().includes(q);
+    });
+  }, [powerRankings, search, fieldOnly, fieldSet]);
 
   const fmtScore = (v: number) => v.toFixed(1);
   const fmtPct = (v: number) => `${Math.round(v)}th`;
@@ -332,6 +365,23 @@ export default function PgaHub() {
 
           {/* Best Bets tiles */}
           {bestBets && <BestBetsTiles data={bestBets} />}
+
+          {/* Field filter toggle */}
+          {currentField && (
+            <div className="mb-3 flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+              <div className="text-[11px] font-semibold text-emerald-800">
+                {fieldOnly
+                  ? `${filtered.length} players in ${currentField.tournament} field`
+                  : `Showing all ${powerRankings.length} players`}
+              </div>
+              <button
+                onClick={() => setFieldOnly((v) => !v)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-black transition ${fieldOnly ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 text-slate-600"}`}
+              >
+                {fieldOnly ? "This Week Only" : "Show All"}
+              </button>
+            </div>
+          )}
 
           {/* Search */}
           <div className="mb-3">
