@@ -478,7 +478,7 @@ export default function PgaHub() {
           {/* Nav pills */}
           <div className="mb-4 flex flex-wrap gap-2">
             <Link to="/pga/best-bets" className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-200">Best Bets</Link>
-            <Link to="/pga/model" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">Featured Model</Link>
+            <Link to={`/pga/${mobileHeroTournament?.slug ?? "model"}/model`} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">Featured Model</Link>
             <Link to="/pga/dfs" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">DFS Upload</Link>
           </div>
 
