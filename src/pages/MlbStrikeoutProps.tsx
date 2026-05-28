@@ -188,7 +188,7 @@ export default function MlbStrikeoutProps() {
               ]}
             />
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-              No strikeout prop data available for today’s slate yet. Check back after the next model refresh.
+              Data Not Available
             </div>
           </div>
         </main>

@@ -1106,7 +1106,8 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
         ))}
       </div>
       {top.map((r, i) => {
-        const pillStyle = sc(r.strikeoutMatchupScore);
+        const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
+        const pillStyle = sc(safeScore);
         return (
           <div key={`${r.pitcher}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 62px 62px 58px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
@@ -1121,7 +1122,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               </div>
             </div>
             <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
-              {r.strikeoutMatchupScore.toFixed(1)}
+              {safeScore.toFixed(1)}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8" }}>
               {r.pitcherKRate != null && r.pitcherKRate >= 28 && <span style={{ fontSize: 11 }}>🎯</span>}
@@ -1219,16 +1220,20 @@ function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = []) {
   // Final fallback: build minimal social rows from raw pitchers in payload (so K tab is never blank when HR/Hit have data)
   if (!pitchers?.length) return [];
   return pitchers
-    .map((p, i) => ({
-      rank: i + 1,
-      pitcher: p.pitcher,
-      team: p.team,
-      opponent: p.opponent,
-      strikeoutMatchupScore: p.kVs ?? ((p.kRate || 0) + (p.whiffRate || 0)) / 2,
-      pitcherKRate: p.kRate,
-      pitcherWhiffRate: p.whiffRate,
-      opponentTeamKRate: null,
-    }))
+    .map((p, i) => {
+      const rawScore = p.kVs ?? ((p.kRate || 0) + (p.whiffRate || 0)) / 2;
+      const score = typeof rawScore === 'number' && isFinite(rawScore) ? rawScore : 0;
+      return {
+        rank: i + 1,
+        pitcher: p.pitcher,
+        team: p.team,
+        opponent: p.opponent,
+        strikeoutMatchupScore: score,
+        pitcherKRate: typeof p.kRate === 'number' ? p.kRate : null,
+        pitcherWhiffRate: typeof p.whiffRate === 'number' ? p.whiffRate : null,
+        opponentTeamKRate: null,
+      };
+    })
     .sort((a, b) => (b.strikeoutMatchupScore || 0) - (a.strikeoutMatchupScore || 0))
     .slice(0, 5);
 }
