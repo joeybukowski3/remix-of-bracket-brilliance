@@ -37,13 +37,16 @@ function useCurrentField() {
 }
 
 // ─── Power Ranking Formula ────────────────────────────────────────────────────
+// Rebalanced (2026-05) to keep elite season-long players (Scheffler, Rory, etc.)
+// anchored in Top 5-7 while still surfacing hot form. See inline comments for rationale.
+// All weights sum to 1.0. No behavior change for callers or other PGA models.
 const PR_WEIGHTS = {
-  sgTotal:          0.28,
-  sgApp:            0.20,
-  sgPutt:           0.15,
-  trendRank:        0.13, // inverted — lower rank = better
-  sgAtG:            0.10,
-  bogeyAvoidance:   0.09,
+  sgTotal:          0.43, // MUCH STRONGER season-long anchor (full 2026 / rolling 10-20+ events). Primary driver for elite floor.
+  sgApp:            0.15, // reduced (Scheffler's current sample is anomalously low; approach still valued but not over-weighted vs total)
+  sgPutt:           0.08, // REDUCED — volatile / recency-heavy
+  trendRank:        0.04, // MINIMAL recency bias (was 0.13). Enough for true hot streaks without letting 1-2 events tank elites.
+  sgAtG:            0.11,
+  bogeyAvoidance:   0.14, // increased — strong consistency / "floor" signal for proven players
   birdieBogeyRatio: 0.05,
 };
 
@@ -68,7 +71,9 @@ function buildPowerRankings(players: RawPlayerStat[]): PowerRankRow[] {
 
   const scored = players.map((p) => {
     const tPct = p.trendRank != null ? 100 - percentile(p.trendRank, sR) : 50;
-    const powerScore =
+
+    // Base weighted percentile (existing approach, just re-weighted)
+    const baseWeighted =
       percentile(p.sgTotal, sT)         * PR_WEIGHTS.sgTotal +
       percentile(p.sgApp, sA)           * PR_WEIGHTS.sgApp +
       percentile(p.sgPutt, sP)          * PR_WEIGHTS.sgPutt +
@@ -76,6 +81,26 @@ function buildPowerRankings(players: RawPlayerStat[]): PowerRankRow[] {
       percentile(p.sgAtG, sG)           * PR_WEIGHTS.sgAtG +
       percentile(p.bogeyAvoidance, sB)  * PR_WEIGHTS.bogeyAvoidance +
       percentile(p.birdieBogeyRatio, sBr) * PR_WEIGHTS.birdieBogeyRatio;
+
+    // ── Stability floor / elite anchor ────────────────────────────────────────
+    // Stronger season-long emphasis + explicit bonus for top sgTotal performers.
+    // This is the "Floor": consistent elites (Scheffler/Rory-level season SG:Total)
+    // cannot drop below ~Top 7 even after a couple mediocre events or noisy
+    // sub-stats (e.g. current low sgApp sample for Scheffler). 
+    // sgTotal is the best available proxy for "last 10-20 events or full season".
+    // Hot rookies/emerging players with legitimately high season sgTotal still
+    // receive the bonus and can break Top 20 on pure numbers (recency via trend
+    // or recent sgPutt/sgApp spikes remains possible at lower weight).
+    // Signature Events + Majors are already embedded in the source season SG
+    // aggregates (higher-field events influence the rolling/season figures).
+    const sgTPct = percentile(p.sgTotal, sT);
+    let stabilityBonus = 0;
+    if (sgTPct >= 95) stabilityBonus = 7.0;
+    else if (sgTPct >= 90) stabilityBonus = 5.0;
+    else if (sgTPct >= 82) stabilityBonus = 3.0;
+    else if (sgTPct >= 70) stabilityBonus = 1.2;
+
+    const powerScore = baseWeighted + stabilityBonus;
     return { ...p, powerScore };
   });
   return scored.sort((a, b) => b.powerScore - a.powerScore).map((r, i) => ({ ...r, powerRank: i + 1 }));
@@ -600,7 +625,7 @@ export default function PgaHub() {
           )}
 
           <p className="mt-3 text-[11px] text-slate-400">
-            Power score = weighted percentile across SG Total (28%), SG Approach (20%), SG Putting (15%), Recent Form (13%), SG Around Green (10%), Bogey Avoidance (9%), Birdie Ratio (5%).
+            Power score = weighted percentile across SG Total (43% season-long anchor), SG Approach (15%), SG Putting (8%), Recent Form (4%), SG Around Green (11%), Bogey Avoidance (14%), Birdie Ratio (5%) + stability floor bonus for top-tier season SG:Total (anchors elites like Scheffler/Rory in Top 7).
           </p>
         </div>
 
