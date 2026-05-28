@@ -252,28 +252,34 @@ export default function PGAModel() {
     <SiteShell>
       <div className="min-h-screen bg-background text-foreground">
         <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[200px_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+
+            {/* ── Sidebar: nav + top picks + course insights ── */}
+            <aside className="order-2 xl:order-1 xl:sticky xl:top-6 xl:self-start space-y-4">
+              <PgaSidebar hubPath={featuredHub.hubPath} picksPath={picksPath} modelPath={modelPath} />
+              <PgaTopProjectionsCard rows={topProjections} />
+              <PgaCourseInsightsCard insights={tournament.model.courseInsights} />
+            </aside>
+
+            {/* ── Main: breadcrumb → header → model table ── */}
             <section className="order-1 min-w-0 xl:order-2">
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <a href="/pga" className="font-semibold text-emerald-700 hover:underline">⛳ Power Rankings</a>
                   <span>›</span>
                   <span>{tournament.shortName || tournament.name}</span>
                 </div>
                 <PgaMainHeader meta={meta} />
-                <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-                  <PgaTopProjectionsCard rows={topProjections} />
-                  <PgaCourseInsightsCard insights={tournament.model.courseInsights} />
-                </div>
-                {withheldPlayerCount > 0 ? (
-                  <div className="rounded-[24px] border border-border/60 bg-card px-5 py-4 text-sm leading-7 text-muted-foreground shadow-[0_10px_24px_hsl(var(--foreground)/0.04)]">
-                    {withheldPlayerCount} field entrants are currently excluded from the scored model because the active source feed does not yet provide a usable stat profile for them. They remain part of the tracked field, but they are not allowed to distort rankings with fake fallback values.
+
+                {withheldPlayerCount > 0 && (
+                  <div className="rounded-xl border border-border/60 bg-card px-4 py-3 text-xs text-muted-foreground">
+                    {withheldPlayerCount} field entrants excluded — stat profiles not yet available.
                   </div>
-                ) : null}
+                )}
 
                 {players.length === 0 && status === "ready" && (
-                  <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-                    Player data for this tournament has not been loaded yet. The model controls below (presets and weight sliders) are fully functional and driven by the official tournament configuration file.
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                    Player data not loaded yet. Sliders and presets are functional — rankings appear once field data is available.
                   </div>
                 )}
 
@@ -295,9 +301,6 @@ export default function PGAModel() {
                 <PgaFooterMeta hubPath={featuredHub.hubPath} tournamentPath={picksPath} tournamentLabel={tournament.shortName} />
               </div>
             </section>
-            <aside className="order-2 xl:order-1 xl:sticky xl:top-24 xl:self-start">
-              <PgaSidebar hubPath={featuredHub.hubPath} picksPath={picksPath} modelPath={modelPath} />
-            </aside>
           </div>
         </div>
       </div>
