@@ -1075,6 +1075,13 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
 }
 
 function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
+  if (!rows || rows.length === 0) {
+    return (
+      <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>
+        Data Not Available
+      </div>
+    );
+  }
   const top = rows.slice(0, 5);
   function sc(s: number) {
     if (s >= 70) return { bg: "#22c55e", color: "#fff" };
@@ -1238,6 +1245,8 @@ function SocialMediaTablesSection() {
     { key: "hits", label: "Hit Props", emoji: "⚔️" },
   ];
 
+  const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers);
+
   return (
     <section style={{ marginTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
@@ -1272,7 +1281,7 @@ function SocialMediaTablesSection() {
         {/* Table content */}
         <div style={{ padding: 14 }}>
           {activeTab === "hr"   && <SocialTableHR batters={batters} />}
-          {activeTab === "k"    && <SocialTableK rows={getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers)} />}
+          {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
         </div>
 
