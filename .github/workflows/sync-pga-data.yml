@@ -54,7 +54,8 @@ jobs:
 
       - name: Fetch current tournament field
         if: steps.gate.outputs.should_run == 'true'
-        run: node scripts/fetch-pga-current-field.mjs
+        continue-on-error: true
+        run: node scripts/fetch-pga-current-field.mjs || true
 
       - name: Sync PGA JSON from Google Sheet
         if: steps.gate.outputs.should_run == 'true'
