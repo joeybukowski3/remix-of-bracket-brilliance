@@ -136,10 +136,23 @@ export default function PGAModel() {
   if (status === "ready" && players.length === 0) {
     return (
       <SiteShell>
-        <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="rounded-[32px] bg-card p-8 shadow-[0_18px_40px_hsl(var(--foreground)/0.05)]">
-            <h1 className="text-2xl font-semibold tracking-[-0.03em] text-foreground">PGA Model Dashboard</h1>
-            <p className="mt-2 text-sm text-muted-foreground">The model loaded, but there are no golfers in the current dataset.</p>
+        <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <div className="text-4xl mb-3">⛳</div>
+            <h1 className="text-xl font-black text-slate-900">{tournament.shortName || tournament.name}</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Field data for this tournament hasn't been loaded yet. Check back closer to the event — or view the overall power rankings in the meantime.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <a href="/pga" className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
+                ⛳ Power Rankings
+              </a>
+              {picksPath && (
+                <a href={picksPath} className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  Picks & Best Bets
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </SiteShell>
