@@ -199,6 +199,11 @@ export default function PGAModel() {
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[200px_minmax(0,1fr)]">
             <section className="order-1 min-w-0 xl:order-2">
               <div className="space-y-6">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <a href="/pga" className="font-semibold text-emerald-700 hover:underline">⛳ Power Rankings</a>
+                  <span>›</span>
+                  <span>{tournament.shortName || tournament.name}</span>
+                </div>
                 <PgaMainHeader meta={meta} />
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
                   <PgaTopProjectionsCard rows={topProjections} />
