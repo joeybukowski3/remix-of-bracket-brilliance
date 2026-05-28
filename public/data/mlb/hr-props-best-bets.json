@@ -1,9 +1,9 @@
 {
   "date": "2026-05-28",
-  "generatedAt": "2026-05-28T10:57:05.925Z",
+  "generatedAt": "2026-05-28T17:36:09.765Z",
   "slatePreview": {
-    "slateOverview": "Globe Life Field and Rate Field stand out as the most HR-friendly venues today, while Comerica and Fenway suppress power. Eovaldi vs. Alvarez/Walker and Rojas vs. Murakami/Buxton create the clearest platoon and park edges, with lefty matchups for Alonso and Harris adding secondary value.",
-    "modelNote": "The model is overweighting barrel/hard-hit rates and recent HR volume while discounting inflated opposing-pitcher HR rates, pushing Alvarez to the top despite a neutral park factor."
+    "slateOverview": "Globe Life Field and Rate Field both sit at or above neutral with right-handed power bats facing Eovaldi and Woods Richardson, while Camden Yards boosts lefty power against Corbin. Comerica and Fenway play slightly pitcher-friendly, muting some of the lower-ranked names despite solid model scores.",
+    "modelNote": "The model is leaning heavily on barrel/hard-hit rates and recent home-run volume, elevating Alvarez and Murakami despite matchup difficulty, while dinged Buxton and Trout for lower exit velo and limited recent power."
   },
   "bestBets": [
     {
@@ -13,11 +13,11 @@
       "opposingPitcher": "Nathan Eovaldi",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate=18.2",
-        "hrScore=81.7"
+        "barrelRate=19.1",
+        "hrScore=82.7"
       ],
       "bullets": [
-        "barrelRate 18.2 and exitVelo 94.3",
+        "barrelRate 19.1 and exitVelo 94.5",
         "last7HR 5 in strong parkFactor 0.99"
       ]
     },
@@ -25,45 +25,15 @@
       "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "MIN",
-      "opposingPitcher": "Kendry Rojas",
+      "opposingPitcher": "Simeon Woods Richardson",
       "hrScoreRank": 2,
       "topStats": [
-        "barrelRate=20.7",
-        "hardHitRate=57.8"
+        "barrelRate=21",
+        "hardHitRate=58.8"
       ],
       "bullets": [
-        "barrelRate 20.7 and parkFactor 1.07",
-        "last30HR 8 vs opposingPitcherHrVs 36.8"
-      ]
-    },
-    {
-      "player": "Dillon Dingler",
-      "team": "DET",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 3,
-      "topStats": [
-        "opposingPitcherHrVs=78.2",
-        "hrScore=64.8"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs 78.2 and parkFactor 0.95",
-        "hardHitRate 49.6 with exitVelo 90.1"
-      ]
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "DET",
-      "opposingPitcher": "Jack Flaherty",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrelRate=20.3",
-        "bbRate=19.8"
-      ],
-      "bullets": [
-        "barrelRate 20.3 and exitVelo 91",
-        "opposingPitcherHrVs 64.4 with parkFactor 0.95"
+        "opposingPitcherHrVs 64.6 and parkFactor 1.07",
+        "last30HR 8 with hrFBRatio 10.2"
       ]
     },
     {
@@ -71,14 +41,44 @@
       "team": "MIN",
       "opponent": "CWS",
       "opposingPitcher": "Davis Martin",
-      "hrScoreRank": 5,
+      "hrScoreRank": 3,
       "topStats": [
         "last30HR=10",
-        "hrFBRatio=8.6"
+        "pullRate=45.5"
       ],
       "bullets": [
-        "last30HR 10 and parkFactor 1.07",
-        "barrelRate 19.3 with exitVelo 90"
+        "last30HR 10 and iso 0.32",
+        "parkFactor 1.07 with barrelRate 19.6"
+      ]
+    },
+    {
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "LAA",
+      "opposingPitcher": "Grayson Rodriguez",
+      "hrScoreRank": 4,
+      "topStats": [
+        "opposingPitcherHrVs=78.2",
+        "hardHitRate=48.5"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 78.2 and barrelRate 13.3",
+        "parkFactor 0.95 with exitVelo 90"
+      ]
+    },
+    {
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "DET",
+      "opposingPitcher": "Jack Flaherty",
+      "hrScoreRank": 5,
+      "topStats": [
+        "bbRate=20.2",
+        "barrelRate=20.1"
+      ],
+      "bullets": [
+        "barrelRate 20.1 and exitVelo 90.9",
+        "opposingPitcherHrVs 64.2 with bbRate 20.2"
       ]
     }
   ],
@@ -88,14 +88,29 @@
       "team": "BAL",
       "opponent": "TOR",
       "opposingPitcher": "Patrick Corbin",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
-        "hardHitRate=55.2",
-        "exitVelo=95"
+        "hardHitRate=56",
+        "exitVelo=95.1"
       ],
       "bullets": [
-        "hardHitRate 55.2 and exitVelo 95",
-        "parkFactor 1.1 vs opposingPitcherHrVs 58.6"
+        "exitVelo 95.1 and parkFactor 1.1",
+        "opposingPitcherHrVs 56.7 with last30HR 6"
+      ]
+    },
+    {
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "MIN",
+      "opposingPitcher": "Simeon Woods Richardson",
+      "hrScoreRank": 8,
+      "topStats": [
+        "bbRate=15.3",
+        "whiffRate=19.5"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 64.6 and parkFactor 1.07",
+        "bbRate 15.3 with last30HR 6"
       ]
     },
     {
@@ -103,14 +118,76 @@
       "team": "ATL",
       "opponent": "BOS",
       "opposingPitcher": "Payton Tolle",
-      "hrScoreRank": 7,
+      "hrScoreRank": 9,
       "topStats": [
-        "hardHitRate=56.1",
-        "xba=0.305"
+        "hardHitRate=56",
+        "exitVelo=93.3"
       ],
       "bullets": [
-        "hardHitRate 56.1 and xba 0.305",
-        "parkFactor 0.95 with exitVelo 93.4"
+        "exitVelo 93.3 and hardHitRate 56",
+        "parkFactor 0.95 with last30HR 6"
+      ]
+    },
+    {
+      "player": "Randal Grichuk",
+      "team": "CWS",
+      "opponent": "MIN",
+      "opposingPitcher": "Simeon Woods Richardson",
+      "hrScoreRank": 6,
+      "topStats": [
+        "Pitcher HR VS=64.6",
+        "Hard Hit%=45.8"
+      ],
+      "bullets": [
+        "HR score 63.2 (#6)",
+        "Pitcher HR VS 64.6 at park 1.07"
+      ]
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Oneil Cruz",
+      "team": "PIT",
+      "opponent": "CHC",
+      "opposingPitcher": "Colin Rea",
+      "hrScoreRank": 13,
+      "topStats": [
+        "exitVelo=96.4",
+        "hardHitRate=61.8"
+      ],
+      "bullets": [
+        "exitVelo 96.4 and hardHitRate 61.8",
+        "opposingPitcherHrVs 67.5 with barrelRate 16.4"
+      ]
+    },
+    {
+      "player": "Esmerlyn Valdez",
+      "team": "PIT",
+      "opponent": "CHC",
+      "opposingPitcher": "Colin Rea",
+      "hrScoreRank": 14,
+      "topStats": [
+        "barrelRate=28.6",
+        "hardHitRate=71.4"
+      ],
+      "bullets": [
+        "barrelRate 28.6 and hardHitRate 71.4",
+        "iso 0.375 with opposingPitcherHrVs 67.5"
+      ]
+    },
+    {
+      "player": "Michael Harris II",
+      "team": "ATL",
+      "opponent": "BOS",
+      "opposingPitcher": "Payton Tolle",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Hard Hit%=56.0",
+        "Pitcher HR VS=22.0"
+      ],
+      "bullets": [
+        "HR score 61.1 (#9)",
+        "Pitcher HR VS 22.0 at park 0.95"
       ]
     },
     {
@@ -118,61 +195,14 @@
       "team": "HOU",
       "opponent": "TEX",
       "opposingPitcher": "Nathan Eovaldi",
-      "hrScoreRank": 8,
-      "topStats": [
-        "last30HR=8",
-        "last7HR=4"
-      ],
-      "bullets": [
-        "last30HR 8 and last7HR 4",
-        "hrFBRatio 7.2 with exitVelo 90.6"
-      ]
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Gage Workman",
-      "team": "DET",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 9,
-      "topStats": [
-        "barrelRate=27.8",
-        "exitVelo=95"
-      ],
-      "bullets": [
-        "barrelRate 27.8 and exitVelo 95",
-        "opposingPitcherHrVs 78.2 with parkFactor 0.95"
-      ]
-    },
-    {
-      "player": "Oneil Cruz",
-      "team": "PIT",
-      "opponent": "CHC",
-      "opposingPitcher": "Colin Rea",
-      "hrScoreRank": 11,
-      "topStats": [
-        "hardHitRate=62.2",
-        "exitVelo=96.4"
-      ],
-      "bullets": [
-        "hardHitRate 62.2 and exitVelo 96.4",
-        "opposingPitcherHrVs 67.7 with parkFactor 0.9"
-      ]
-    },
-    {
-      "player": "Randal Grichuk",
-      "team": "CWS",
-      "opponent": "MIN",
-      "opposingPitcher": "Kendry Rojas",
       "hrScoreRank": 10,
       "topStats": [
-        "Hard Hit%=47.7",
-        "Pitcher HR VS=36.8"
+        "Hard Hit%=45.7",
+        "Pitcher HR VS=43.4"
       ],
       "bullets": [
-        "HR score 59.8 (#10)",
-        "Pitcher HR VS 36.8 at park 1.07"
+        "HR score 59.5 (#10)",
+        "Pitcher HR VS 43.4 at park 0.99"
       ]
     }
   ]
