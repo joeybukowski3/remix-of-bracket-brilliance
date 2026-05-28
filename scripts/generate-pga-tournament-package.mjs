@@ -180,6 +180,7 @@ async function main() {
     if (target.registration === "generated") {
       writeGeneratedTournamentModule(target);
       ensureOverrideStub(target);
+      generateModelConfigFile(target);
     }
 
     ensureTournamentData(target, args.workbook);
@@ -382,6 +383,25 @@ function updateFeaturedTournament(slug) {
 `,
     "utf8",
   );
+}
+
+function generateModelConfigFile(entry) {
+  const publicDataDir = path.join(repoRoot, "public", "data", "pga");
+  fs.mkdirSync(publicDataDir, { recursive: true });
+
+  const configPath = path.join(publicDataDir, `${entry.slug}-model-config.json`);
+
+  const modelConfig = {
+    slug: entry.slug,
+    name: entry.name,
+    season: entry.season,
+    courseName: entry.courseName,
+    presets: DEFAULT_PRESETS,
+    previewThemes: DEFAULT_PREVIEW_THEMES,
+  };
+
+  fs.writeFileSync(configPath, JSON.stringify(modelConfig, null, 2) + "\n", "utf8");
+  console.log(`[model-config] Generated ${entry.slug}-model-config.json`);
 }
 
 function toIdentifier(value) {

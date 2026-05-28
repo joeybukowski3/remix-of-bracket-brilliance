@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import PgaCourseInsightsCard from "@/components/pga/PgaCourseInsightsCard";
@@ -24,18 +24,69 @@ export default function PGAModel() {
   const tournament = requestedTournament ?? FEATURED_PGA_TOURNAMENT;
   const isMissingTournament = Boolean(tournamentSlug) && !requestedTournament;
 
-  const defaultWeights = tournament.model.presets[0].weights;
+  const { players, status, errorMessage } = usePgaTournamentPlayers(tournament);
+
+  // Load the permanent, reliable model config (presets + weights) from a static JSON file.
+  // This allows the sliders + preset dropdown to be driven by the official tournament formulas
+  // even when the full player dataset is not yet available.
+  const [modelConfig, setModelConfig] = useState<any>(null);
+  const [modelConfigLoaded, setModelConfigLoaded] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    async function loadModelConfig() {
+      try {
+        const configPath = `/data/pga/${tournament.slug}-model-config.json`;
+        const res = await fetch(configPath, { cache: "no-store" });
+        if (!res.ok) throw new Error("Model config not found");
+        const data = await res.json();
+        if (active) setModelConfig(data);
+      } catch {
+        if (active) setModelConfig(null);
+      } finally {
+        if (active) setModelConfigLoaded(true);
+      }
+    }
+    void loadModelConfig();
+    return () => { active = false; };
+  }, [tournament.slug]);
+
+  // Always have a safe set of presets so the sliders and dropdown can render.
+  // Prefer the permanent JSON config; fall back to the embedded tournament data as placeholder.
+  const activePresets = (modelConfig?.presets?.length ? modelConfig.presets : (tournament.model?.presets || [])) as any[];
+
+  const defaultWeights = (activePresets[0]?.weights ?? tournament.model.presets[0].weights) as PgaWeights;
+
   const initialWeights = useMemo(() => getStoredPgaAppliedWeights(tournament.slug, defaultWeights), [tournament.slug, defaultWeights]);
   const initialPreset = useMemo(
-    () => detectActivePreset(initialWeights, tournament.model.presets) ?? getStoredPgaActivePreset(tournament.slug, tournament.model.presets) ?? tournament.model.presets[0].key,
-    [initialWeights, tournament.slug, tournament.model.presets],
+    () => detectActivePreset(initialWeights, activePresets) ?? getStoredPgaActivePreset(tournament.slug, activePresets) ?? activePresets[0]?.key,
+    [initialWeights, tournament.slug, activePresets],
   );
 
-  const { players, status, errorMessage } = usePgaTournamentPlayers(tournament);
   const [draftWeights, setDraftWeights] = useState<PgaWeights>(initialWeights);
   const [appliedWeights, setAppliedWeights] = useState<PgaWeights>(initialWeights);
   const [selectedPreset, setSelectedPreset] = useState(initialPreset);
   const [isFullPage, setIsFullPage] = useState(false);
+
+  // Track whether we've applied the real config from the JSON so we can
+  // keep the loading screen up until the state is fully consistent.
+  const hasAppliedRealConfig = useRef(false);
+  const [realConfigApplied, setRealConfigApplied] = useState(false);
+
+  useEffect(() => {
+    if (modelConfigLoaded && modelConfig && !hasAppliedRealConfig.current) {
+      const realPresets = modelConfig.presets || [];
+      if (realPresets.length > 0) {
+        const defaultKey = realPresets[0].key;
+        const newWeights = getWeightsForPreset(realPresets, defaultKey);
+        setDraftWeights(newWeights);
+        setAppliedWeights(newWeights);
+        setSelectedPreset(defaultKey);
+        hasAppliedRealConfig.current = true;
+        setRealConfigApplied(true);
+      }
+    }
+  }, [modelConfigLoaded, modelConfig]);
 
   const picksPath = tournamentSlug ? getTournamentPicksPath(tournament) : featuredHub.picksPath;
   const modelPath = tournamentSlug ? getTournamentModelPath(tournament) : featuredHub.modelPath;
@@ -52,9 +103,9 @@ export default function PGAModel() {
   }, [appliedWeights, tournament.slug]);
 
   useEffect(() => {
-    const detectedPreset = detectActivePreset(appliedWeights, tournament.model.presets);
+    const detectedPreset = detectActivePreset(appliedWeights, activePresets);
     storePgaActivePreset(tournament.slug, detectedPreset ?? selectedPreset);
-  }, [appliedWeights, selectedPreset, tournament.slug, tournament.model.presets]);
+  }, [appliedWeights, selectedPreset, tournament.slug, activePresets]);
 
   useEffect(() => {
     document.body.style.overflow = isFullPage ? "hidden" : "";
@@ -71,8 +122,8 @@ export default function PGAModel() {
   const topProjections = useMemo(() => getTopProjections(rows, tournament), [rows, tournament]);
   const meta = useMemo(() => buildTournamentMeta(tournament, players.length), [tournament, players.length]);
   const hasDraftChanges = useMemo(() => !areWeightsEqual(draftWeights, appliedWeights), [draftWeights, appliedWeights]);
-  const activePreset = useMemo(() => detectActivePreset(appliedWeights, tournament.model.presets), [appliedWeights, tournament.model.presets]);
-  const draftPreset = useMemo(() => detectActivePreset(draftWeights, tournament.model.presets), [draftWeights, tournament.model.presets]);
+  const activePreset = useMemo(() => detectActivePreset(appliedWeights, activePresets), [appliedWeights, activePresets]);
+  const draftPreset = useMemo(() => detectActivePreset(draftWeights, activePresets), [draftWeights, activePresets]);
   const tableConfig = useMemo(() => buildPgaModelTableConfig(tournament), [tournament]);
   if (isMissingTournament) {
     return <NotFound />;
@@ -80,7 +131,7 @@ export default function PGAModel() {
 
   function applyDraftWeights() {
     setAppliedWeights({ ...draftWeights });
-    const detectedPreset = detectActivePreset(draftWeights, tournament.model.presets);
+    const detectedPreset = detectActivePreset(draftWeights, activePresets);
     if (detectedPreset) {
       setSelectedPreset(detectedPreset);
     }
@@ -90,7 +141,7 @@ export default function PGAModel() {
     const nextWeights = { ...defaultWeights };
     setDraftWeights(nextWeights);
     setAppliedWeights(nextWeights);
-    setSelectedPreset(tournament.model.presets[0].key);
+    setSelectedPreset(activePresets[0]?.key);
   }
 
   function updateWeight(key: keyof PgaWeights, value: number) {
@@ -98,7 +149,7 @@ export default function PGAModel() {
   }
 
   function selectPreset(presetKey: string) {
-    const nextWeights = getWeightsForPreset(tournament.model.presets, presetKey);
+    const nextWeights = getWeightsForPreset(activePresets, presetKey);
     setSelectedPreset(presetKey);
     setDraftWeights(nextWeights);
     setAppliedWeights(nextWeights);
@@ -123,21 +174,33 @@ export default function PGAModel() {
       <SiteShell>
         <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-8">
           <div className="rounded-[32px] bg-card p-8 shadow-[0_18px_40px_hsl(var(--foreground)/0.05)]">
-            <a href={picksPath} className="text-sm text-primary transition hover:text-primary/80">PGA best bets</a>
+            <a href="/pga" className="text-sm text-primary transition hover:text-primary/80">← Back to Power Rankings</a>
             <h1 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-foreground">PGA Model Dashboard</h1>
-            <p className="mt-2 text-sm text-destructive">Unable to load tournament player data.</p>
-            <p className="mt-1 text-sm text-muted-foreground">{errorMessage}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              The detailed tournament model data for {tournament.shortName || tournament.name} isn't available right now.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {errorMessage || "The weekly field export for this event hasn't been processed yet."}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a href="/pga" className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                Back to Power Rankings
+              </a>
+              <a href="/pga/best-bets" className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">
+                View Best Bets
+              </a>
+            </div>
           </div>
         </div>
       </SiteShell>
     );
   }
 
-  if (status === "ready" && players.length === 0) {
-    // No field data yet — send to the power rankings hub which has the full model + best bets
-    window.location.replace("/pga");
-    return null;
-  }
+  // Simplified for reliability: always render the full model page.
+  // We use the embedded tournament presets (or the loaded JSON if available) as "placeholder"
+  // configuration so the sliders and preset dropdown work immediately.
+  // The table will show whatever player data exists (real or starter/placeholder).
+
 
   if (isFullPage) {
     return (
@@ -174,7 +237,7 @@ export default function PGAModel() {
             selectedPreset={selectedPreset}
             activePreset={activePreset}
             draftPreset={draftPreset}
-            presetOptions={tournament.model.presets}
+            presetOptions={activePresets}
             onPresetSelect={selectPreset}
             onWeightChange={updateWeight}
             onApply={applyDraftWeights}
@@ -207,6 +270,13 @@ export default function PGAModel() {
                     {withheldPlayerCount} field entrants are currently excluded from the scored model because the active source feed does not yet provide a usable stat profile for them. They remain part of the tracked field, but they are not allowed to distort rankings with fake fallback values.
                   </div>
                 ) : null}
+
+                {players.length === 0 && status === "ready" && (
+                  <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+                    Player data for this tournament has not been loaded yet. The model controls below (presets and weight sliders) are fully functional and driven by the official tournament configuration file.
+                  </div>
+                )}
+
                 <PgaModelTable
                   rows={rows}
                   tableConfig={tableConfig}
@@ -216,7 +286,7 @@ export default function PGAModel() {
                   selectedPreset={selectedPreset}
                   activePreset={activePreset}
                   draftPreset={draftPreset}
-                  presetOptions={tournament.model.presets}
+                  presetOptions={activePresets}
                   onPresetSelect={selectPreset}
                   onWeightChange={updateWeight}
                   onApply={applyDraftWeights}

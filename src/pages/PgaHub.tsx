@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
-import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
   type PgaScheduleFeedEntry,
@@ -82,15 +81,53 @@ function buildPowerRankings(players: RawPlayerStat[]): PowerRankRow[] {
   return scored.sort((a, b) => b.powerScore - a.powerScore).map((r, i) => ({ ...r, powerRank: i + 1 }));
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function StatBadge({ value, avg, spread, fmt }: { value: number; avg: number; spread: number; fmt: (v: number) => string }) {
-  const d = (value - avg) / spread;
-  const c = Math.max(-1, Math.min(1, d));
-  const abs = Math.abs(c);
-  let bg = "rgba(148,163,184,0.13)"; let col = "#475569";
-  if (c > 0.2)  { bg = `rgba(22,163,74,${Math.min(0.08+abs*0.38,0.46)})`; col = abs>0.5?"#15803d":"#166534"; }
-  if (c < -0.2) { bg = `rgba(59,130,246,${Math.min(0.06+abs*0.28,0.38)})`; col = abs>0.5?"#1d4ed8":"#1e40af"; }
-  return <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums" style={{ backgroundColor: bg, color: col }}>{fmt(value)}</span>;
+// ─── Percentile Color System (MAJOR VISUAL UPGRADE) ───────────────────────────
+// Strong contrast 10-band percentile background colors (no bubble/pill).
+// All text is now forced to white for maximum readability across all bands.
+// Backgrounds are rich/saturated enough to support white text.
+function getPercentileStyles(pct: number): { bg: string; color: string } {
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  if (p >= 90) return { bg: "#00c853", color: "#ffffff" };   // Brightest Green
+  if (p >= 80) return { bg: "#00ab44", color: "#ffffff" };   // Strong Green
+  if (p >= 70) return { bg: "#008f36", color: "#ffffff" };   // Medium Green
+  if (p >= 60) return { bg: "#2e7d32", color: "#ffffff" };   // Solid Green
+  if (p >= 50) return { bg: "#455a64", color: "#ffffff" };   // Neutral Slate
+  if (p >= 40) return { bg: "#00838f", color: "#ffffff" };   // Light Cyan-Teal
+  if (p >= 30) return { bg: "#006064", color: "#ffffff" };   // Medium Teal
+  if (p >= 20) return { bg: "#004d56", color: "#ffffff" };   // Strong Deep Teal
+  if (p >= 10) return { bg: "#003d47", color: "#ffffff" };   // Dark Blue-Teal
+  return { bg: "#002b36", color: "#ffffff" };                // Deepest (0-9%)
+}
+
+// Larger, high-contrast percentile tile with white text on rich background
+function PercentileCell({ value }: { value: number }) {
+  const s = getPercentileStyles(value);
+  return (
+    <span
+      className="block text-center text-[12px] sm:text-sm font-black tabular-nums py-2"
+      style={{ backgroundColor: s.bg, color: '#ffffff' }}
+      title={`${Math.round(value)}th percentile`}
+    >
+      {Math.round(value)}
+    </span>
+  );
+}
+
+// Simple raw strokes-gained value cell (used when user switches to Raw view)
+function RawStatCell({ value }: { value: number }) {
+  const formatted = value.toFixed(2);
+  const isGood = value >= 0.5;
+  const isBad = value <= -0.5;
+  return (
+    <span
+      className={`block text-center text-[11px] sm:text-[12px] font-semibold tabular-nums py-2 ${
+        isGood ? 'text-emerald-700' : isBad ? 'text-red-600' : 'text-slate-700'
+      }`}
+      title={`Raw SG: ${formatted}`}
+    >
+      {formatted}
+    </span>
+  );
 }
 
 // ─── Tournament Hero Card ─────────────────────────────────────────────────────
@@ -120,7 +157,11 @@ function TournamentHeroCard({ entry, isActive }: { entry: PgaScheduleFeedEntry; 
   );
 }
 
-// ─── Desktop Sidebar Schedule ─────────────────────────────────────────────────
+// ─── Desktop Sidebar Schedule (REDESIGNED) ────────────────────────────────────
+// - "NOW" tournament (Charles Schwab Challenge when active) is ALWAYS pinned at the very top with strong highlight.
+// - Other upcoming events listed below it in a compact list.
+// - New clean collapsible "Previous Tournaments" section BELOW the entire current/upcoming schedule.
+// - Previous entries show Model buttons when data is available (matching main schedule style).
 function ScheduleSidebar({ schedule, current }: { schedule: PgaScheduleFeedEntry[]; current: PgaScheduleFeedEntry | null }) {
   const [showPrevious, setShowPrevious] = useState(false);
 
@@ -133,52 +174,115 @@ function ScheduleSidebar({ schedule, current }: { schedule: PgaScheduleFeedEntry
     [schedule],
   );
 
+  // Separate the pinned NOW event (if present in upcoming) from the rest
+  const nowEvent = current && upcoming.some((e) => e.id === current.id) ? current : null;
+  const otherUpcoming = nowEvent
+    ? upcoming.filter((e) => e.id !== nowEvent.id)
+    : upcoming;
+
   return (
-    <aside className="hidden lg:block w-64 shrink-0">
+    <aside className="hidden lg:block w-56 lg:w-60 xl:w-64 shrink-0">
       <div className="sticky top-4 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+        {/* Header */}
         <div className="bg-slate-900 px-4 py-3">
           <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Schedule</div>
           <div className="text-sm font-bold text-white mt-0.5">2026 PGA Tour</div>
         </div>
-        <div className="divide-y divide-slate-100 max-h-[70vh] overflow-y-auto">
-          {upcoming.map((e) => {
-            const isCurrent = e.id === current?.id;
-            const hasData = Boolean(e.dataFile);
-            return (
-              <div key={e.id} className={`px-3 py-2.5 ${isCurrent ? "bg-emerald-50" : ""}`}>
-                <div className="flex items-start justify-between gap-1">
-                  <div className="min-w-0">
-                    {isCurrent && <span className="inline-block rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-black text-white uppercase mb-0.5">Now</span>}
-                    <div className={`text-[12px] font-semibold leading-tight ${isCurrent ? "text-emerald-800" : "text-slate-800"}`}>{e.shortName || e.name}</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">{e.dateLabel}</div>
-                  </div>
-                  {hasData && (
-                    <Link to={`/pga/${e.slug}/model`} className="shrink-0 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700">Model</Link>
-                  )}
-                </div>
-              </div>
-            );
-          })}
 
-          {/* Previous tournaments toggle */}
-          <div className="px-3 py-2">
-            <button
-              onClick={() => setShowPrevious((v) => !v)}
-              className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 flex items-center gap-1"
-            >
-              {showPrevious ? "▲" : "▼"} Previous tournaments ({previous.length})
-            </button>
-            {showPrevious && (
-              <div className="mt-2 space-y-1">
-                {previous.map((e) => (
-                  <div key={e.id} className="text-[11px] text-slate-500 flex items-center justify-between">
-                    <span>{e.shortName || e.name}</span>
-                    {e.winner && <span className="text-[10px] text-slate-400 truncate ml-1">{e.winner}</span>}
-                  </div>
-                ))}
+        <div className="max-h-[72vh] overflow-y-auto text-sm">
+          {/* === PINNED "NOW" TOURNAMENT (always at absolute top, strongly highlighted) === */}
+          {nowEvent && (
+            <div className="border-b border-emerald-200 bg-emerald-50/80 px-3 py-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-black text-white tracking-widest">● NOW</span>
+                <span className="text-[10px] font-semibold text-emerald-700">{nowEvent.dateLabel}</span>
               </div>
-            )}
-          </div>
+              <div className="font-bold text-emerald-900 leading-tight text-[13px]">{nowEvent.shortName || nowEvent.name}</div>
+              <div className="text-[10px] text-emerald-700/80 mt-0.5">{nowEvent.courseName} · {nowEvent.location}</div>
+
+              {nowEvent.dataFile && (
+                <div className="mt-2 flex gap-2">
+                  <Link
+                    to={`/pga/${nowEvent.slug}/model`}
+                    className="inline-flex items-center rounded-lg bg-emerald-700 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-emerald-800 active:bg-emerald-900"
+                  >
+                    Model
+                  </Link>
+                  <Link
+                    to={`/pga/${nowEvent.slug}`}
+                    className="inline-flex items-center rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-[10px] font-semibold text-emerald-800 hover:bg-emerald-100"
+                  >
+                    Picks &amp; Bets
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Other upcoming (non-NOW) tournaments */}
+          {otherUpcoming.length > 0 && (
+            <div className="divide-y divide-slate-100">
+              {otherUpcoming.map((e) => {
+                const hasData = Boolean(e.dataFile);
+                return (
+                  <div key={e.id} className="px-3 py-2">
+                    <div className="flex items-start justify-between gap-1.5">
+                      <div className="min-w-0">
+                        <div className="text-[12px] font-semibold leading-tight text-slate-800">{e.shortName || e.name}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">{e.dateLabel}</div>
+                      </div>
+                      {hasData && (
+                        <Link
+                          to={`/pga/${e.slug}/model`}
+                          className="shrink-0 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700"
+                        >
+                          Model
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* === NEW: Collapsible "Previous Tournaments" section (below the current schedule) === */}
+          {previous.length > 0 && (
+            <div className="border-t border-slate-200 bg-slate-50">
+              <button
+                onClick={() => setShowPrevious((v) => !v)}
+                className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition"
+                aria-expanded={showPrevious}
+              >
+                <span>Previous Tournaments ({previous.length})</span>
+                <span className="text-base leading-none">{showPrevious ? "−" : "+"}</span>
+              </button>
+
+              {showPrevious && (
+                <div className="border-t border-slate-200 bg-white px-3 py-2 space-y-2">
+                  {previous.map((e) => {
+                    const hasData = Boolean(e.dataFile);
+                    return (
+                      <div key={e.id} className="flex items-center justify-between gap-2 text-[11px]">
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-700 truncate">{e.shortName || e.name}</div>
+                          <div className="text-[10px] text-slate-500">{e.dateLabel}{e.winner ? ` · ${e.winner}` : ""}</div>
+                        </div>
+                        {hasData && (
+                          <Link
+                            to={`/pga/${e.slug}/model`}
+                            className="shrink-0 rounded bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700"
+                          >
+                            Model
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </aside>
@@ -244,6 +348,9 @@ export default function PgaHub() {
   const [fieldOnly, setFieldOnly] = useState(true); // default to field-only when data available
   const [showPreviousMobile, setShowPreviousMobile] = useState(false);
 
+  // View mode for the SG columns: percentile ranks (current colored view) or raw SG values
+  const [statView, setStatView] = useState<'percentile' | 'raw'>('percentile');
+
   const { active, current } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
 
   // Mobile: just the current/next single tournament
@@ -285,6 +392,13 @@ export default function PgaHub() {
     });
   }, [powerRankings, search, fieldOnly, fieldSet]);
 
+  // Only show the "Form" (trendRank) column if the data source actually provided trendRank values.
+  // If the form data could not be pulled (all null), hide the entire column.
+  const hasFormData = useMemo(
+    () => powerRankings.some((r) => r.trendRank != null),
+    [powerRankings]
+  );
+
   const fmtScore = (v: number) => v.toFixed(1);
   const fmtPct = (v: number) => `${Math.round(v)}th`;
 
@@ -306,11 +420,10 @@ export default function PgaHub() {
 
   return (
     <SiteShell>
-      <SportsbookBar />
-
-      {/* Hero */}
+      {/* Hero (now centered) */}
       <div className="bg-gradient-to-br from-slate-900 to-slate-800 px-4 py-8 sm:px-6">
-        <div className="mx-auto max-w-6xl">
+        {/* Wider, responsive container for the hero — scales up on large screens */}
+        <div className="mx-auto w-full max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-8 xl:px-10 text-center">
           <div className="mb-1 text-xs font-bold uppercase tracking-widest text-emerald-400">Joe Knows Ball</div>
           <h1 className="text-2xl font-black text-white sm:text-3xl">⛳ PGA Power Rankings</h1>
           <p className="mt-1 text-sm text-slate-300">Overall model across all players · Click a tournament to view the field-filtered model</p>
@@ -319,7 +432,7 @@ export default function PgaHub() {
           {mobileHeroTournament && (
             <div className="mt-5 lg:hidden">
               <TournamentHeroCard entry={mobileHeroTournament} isActive={active?.id === mobileHeroTournament.id} />
-              {/* Previous tournaments link */}
+              {/* Previous tournaments (mobile) — now shows Model buttons for consistency with new desktop "Previous Tournaments" section */}
               <div className="mt-3">
                 <button
                   onClick={() => setShowPreviousMobile((v) => !v)}
@@ -330,13 +443,18 @@ export default function PgaHub() {
                 {showPreviousMobile && (
                   <div className="mt-2 space-y-1.5">
                     {previousTournaments.map((e) => (
-                      <div key={e.id} className="flex items-center justify-between rounded-lg bg-white/10 px-3 py-2">
-                        <div>
-                          <div className="text-xs font-semibold text-white">{e.shortName || e.name}</div>
+                      <div key={e.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/10 px-3 py-2">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-white truncate">{e.shortName || e.name}</div>
                           {e.winner && <div className="text-[10px] text-slate-400">W: {e.winner}</div>}
                         </div>
                         {e.dataFile && (
-                          <Link to={`/pga/${e.slug}`} className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300">View →</Link>
+                          <Link
+                            to={`/pga/${e.slug}/model`}
+                            className="shrink-0 rounded bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-600"
+                          >
+                            Model
+                          </Link>
                         )}
                       </div>
                     ))}
@@ -348,13 +466,14 @@ export default function PgaHub() {
         </div>
       </div>
 
-      {/* Body: sidebar (desktop) + main content */}
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:flex lg:gap-6">
+      {/* Body: left schedule + main content + right partners panel.
+          Much wider container so the central table isn't squished. Responsive padding + higher max-width on large screens. */}
+      <div className="mx-auto w-full max-w-[1600px] 2xl:max-w-[1800px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10 lg:flex lg:gap-6">
 
-        {/* Desktop sidebar */}
+        {/* Desktop sidebar (left) */}
         <ScheduleSidebar schedule={schedule} current={current} />
 
-        {/* Main content */}
+        {/* Main content (center) */}
         <div className="min-w-0 flex-1">
           {/* Nav pills */}
           <div className="mb-4 flex flex-wrap gap-2">
@@ -394,6 +513,28 @@ export default function PgaHub() {
             />
           </div>
 
+          {/* Stat View Toggle — switch between percentile tiles and raw SG numbers */}
+          <div className="mb-3 flex items-center gap-2">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">SG Columns:</div>
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-0.5 text-[11px] font-semibold shadow-sm">
+              <button
+                onClick={() => setStatView('percentile')}
+                className={`rounded-full px-3 py-1 transition ${statView === 'percentile' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              >
+                Percentile
+              </button>
+              <button
+                onClick={() => setStatView('raw')}
+                className={`rounded-full px-3 py-1 transition ${statView === 'raw' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              >
+                Raw
+              </button>
+            </div>
+            <div className="text-[10px] text-slate-400">
+              {statView === 'percentile' ? 'Rank vs field' : 'Actual strokes gained'}
+            </div>
+          </div>
+
           {/* Rankings Table */}
           {loading ? (
             <div className="py-16 text-center text-sm text-slate-400">Loading rankings…</div>
@@ -409,7 +550,7 @@ export default function PgaHub() {
                     <th className="px-2 py-2 whitespace-nowrap">SG App</th>
                     <th className="px-2 py-2 whitespace-nowrap">SG Putt</th>
                     <th className="px-2 py-2 whitespace-nowrap">SG AtG</th>
-                    <th className="px-2 py-2 whitespace-nowrap">Form</th>
+                    {hasFormData && <th className="px-2 py-2 whitespace-nowrap">Form</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -426,15 +567,27 @@ export default function PgaHub() {
                             {fmtScore(row.powerScore)}
                           </span>
                         </td>
-                        {pct ? (
+                        {/* SG columns: either percentile (colored white-text tiles) or raw values */}
+                        {statView === 'percentile' && pct ? (
                           <>
-                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={pct.sgTotal} avg={50} spread={25} fmt={fmtPct} /></td>
-                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={pct.sgApp}   avg={50} spread={25} fmt={fmtPct} /></td>
-                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={pct.sgPutt}  avg={50} spread={25} fmt={fmtPct} /></td>
-                            <td className="border-b border-slate-100 px-2 py-1.5"><StatBadge value={pct.sgAtG}   avg={50} spread={25} fmt={fmtPct} /></td>
+                            <td className="border-b border-slate-100 p-0"><PercentileCell value={pct.sgTotal} /></td>
+                            <td className="border-b border-slate-100 p-0"><PercentileCell value={pct.sgApp} /></td>
+                            <td className="border-b border-slate-100 p-0"><PercentileCell value={pct.sgPutt} /></td>
+                            <td className="border-b border-slate-100 p-0"><PercentileCell value={pct.sgAtG} /></td>
                           </>
-                        ) : (<><td /><td /><td /><td /></>)}
-                        <td className="border-b border-slate-100 px-2 py-1.5 text-[11px] text-slate-500 tabular-nums">{row.trendRank != null ? `#${row.trendRank}` : "—"}</td>
+                        ) : (
+                          <>
+                            <td className="border-b border-slate-100 p-0"><RawStatCell value={row.sgTotal} /></td>
+                            <td className="border-b border-slate-100 p-0"><RawStatCell value={row.sgApp} /></td>
+                            <td className="border-b border-slate-100 p-0"><RawStatCell value={row.sgPutt} /></td>
+                            <td className="border-b border-slate-100 p-0"><RawStatCell value={row.sgAtG} /></td>
+                          </>
+                        )}
+                        {hasFormData && (
+                          <td className="border-b border-slate-100 px-2 py-1.5 text-[11px] text-slate-500 tabular-nums">
+                            {row.trendRank != null ? `#${row.trendRank}` : "—"}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -450,6 +603,27 @@ export default function PgaHub() {
             Power score = weighted percentile across SG Total (28%), SG Approach (20%), SG Putting (15%), Recent Form (13%), SG Around Green (10%), Bogey Avoidance (9%), Birdie Ratio (5%).
           </p>
         </div>
+
+        {/* Right-hand partners panel — compact names-only table style */}
+        <aside className="hidden lg:block w-44 lg:w-48 xl:w-52 shrink-0">
+          <div className="sticky top-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm text-sm">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+              Bet with our partners
+            </div>
+
+            <div className="space-y-0.5 text-[12px]">
+              <a href="https://sportsbook.draftkings.com/r/sb/Joeywins100/US-SB/US-SC" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">DraftKings</a>
+              <a href="https://fndl.co/20gmq7y" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">FanDuel</a>
+              <a href="https://fanatics.onelink.me/5kut/jhd5jbks" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">Fanatics</a>
+              <a href="https://playmgmsports.onelink.me/TkMx?af_xp=custom&pid=RAF&c=BMGM_RAF&af_ios_url=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_android_url=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_web_dp=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_dp=playmgmsportswrp%3A%2F%2Fnavigation%3Fscheme%3Dhttps%26url%3Dwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">BetMGM</a>
+              <a href="https://caesars.com/sportsbook-and-casino/referral?AR=RAF-TDS-8JA" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">Caesars</a>
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 leading-tight">
+              21+ • Call 1-800-GAMBLER
+            </div>
+          </div>
+        </aside>
       </div>
     </SiteShell>
   );

@@ -345,7 +345,10 @@ export default function PgaModelTable({
         </div>
       </div>
 
-      {hasWeights ? (
+      {/* Always show the weight sliders + preset dropdown in the model page,
+          even when there is no player data yet. This uses the permanent
+          model-config presets as placeholder data so the UI is usable. */}
+      {presetOptions && presetOptions.length > 0 && onPresetSelect && onWeightChange && onApply && onReset ? (
         <WeightSliderRow
           draftWeights={draftWeights}
           appliedWeights={appliedWeights}
@@ -361,9 +364,12 @@ export default function PgaModelTable({
       ) : null}
 
       {rows.length === 0 ? (
-        <div className="px-5 py-12 text-center">
-          <p className="text-sm font-medium text-foreground">No player rows available.</p>
-          <p className="mt-1.5 text-xs text-muted-foreground">Check that the tournament player data file is available and reload.</p>
+        <div className="px-5 py-12 text-center border-t border-border/40">
+          <p className="text-sm font-medium text-foreground">Model ready with placeholder presets</p>
+          <p className="mt-1.5 text-xs text-muted-foreground max-w-md mx-auto">
+            The weight sliders and preset dropdown above are fully functional using the official tournament configuration. 
+            Real player rankings will appear once the weekly data file is populated.
+          </p>
         </div>
       ) : null}
 
