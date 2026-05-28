@@ -81,12 +81,12 @@ function TournamentHeroCard({ entry, isActive }: { entry: PgaScheduleFeedEntry; 
       </div>
       <div className="flex flex-wrap gap-2 mt-1">
         {hasData ? (
-          <Link to={`/pga/${entry.slug}/model`} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">View Model →</Link>
+          <>
+            <Link to={`/pga/${entry.slug}/model`} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">View Model →</Link>
+            <Link to={`/pga/${entry.slug}`} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Picks & Best Bets</Link>
+          </>
         ) : (
-          <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-400">Model coming soon</span>
-        )}
-        {hasData && (
-          <Link to={`/pga/${entry.slug}`} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Picks & Best Bets</Link>
+          <span className="text-[11px] font-semibold text-slate-400 italic">Field data coming soon</span>
         )}
       </div>
     </div>
