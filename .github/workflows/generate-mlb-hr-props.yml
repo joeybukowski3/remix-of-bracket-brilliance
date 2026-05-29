@@ -117,17 +117,17 @@ jobs:
           fi
 
       - name: Build site for GitHub Pages
-        if: steps.schedule_gate.outputs.should_run == 'true'
+        if: steps.schedule_gate.outputs.should_run == 'true' && false
         run: npm run build
 
       - name: Upload GitHub Pages artifact
-        if: steps.schedule_gate.outputs.should_run == 'true'
+        if: steps.schedule_gate.outputs.should_run == 'true' && false
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
       - name: Deploy refreshed site to GitHub Pages
-        if: steps.schedule_gate.outputs.should_run == 'true'
+        if: steps.schedule_gate.outputs.should_run == 'true' && false
         id: deployment
         uses: actions/deploy-pages@v4
 
