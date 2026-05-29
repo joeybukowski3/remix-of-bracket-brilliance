@@ -1173,38 +1173,38 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
         </div>
         <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 80px 56px 58px 58px", padding: "4px 10px", background: "#0d1f3c", gap: 4 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 64px 70px 70px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
         {["","PLAYER","HIT SCORE","xBA","HH%","BARREL%"].map((h, i) => (
-          <span key={i} style={{ fontSize: 9, fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: ".07em" }}>{h}</span>
+          <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
         ))}
       </div>
       {top.map((r, i) => {
         const pillStyle = sc(r.bestMatchupScore);
         return (
-          <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 80px 56px 58px 58px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+          <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 64px 70px 70px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
             <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
               {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
             </span>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 12 }}>{r.player}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                <TeamLogoBadge team={r.team} size={14} showLabel={false} />
-                <span style={{ color: "#475569", fontSize: 10 }}>vs {r.opposingPitcher}</span>
+            <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
+              <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 12 }}>{r.player}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                <span style={{ color: "#94a3b8", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
               </div>
             </div>
             <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
               {r.bestMatchupScore.toFixed(1)}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.xba != null && r.xba >= 0.31 ? "#22c55e" : r.xba != null && r.xba >= 0.28 ? "#86efac" : "#94a3b8" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.xba != null && r.xba >= 0.31 ? "#22c55e" : r.xba != null && r.xba >= 0.28 ? "#86efac" : "#94a3b8" }}>
               {r.xba != null && r.xba >= 0.31 && <span style={{ fontSize: 10 }}>🎯</span>}
               {r.xba != null ? r.xba.toFixed(3) : "—"}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.hardHitRate != null && r.hardHitRate >= 55 ? "#22c55e" : r.hardHitRate != null && r.hardHitRate >= 50 ? "#86efac" : "#94a3b8" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.hardHitRate != null && r.hardHitRate >= 55 ? "#22c55e" : r.hardHitRate != null && r.hardHitRate >= 50 ? "#86efac" : "#94a3b8" }}>
               {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 10 }}>💥</span>}
               {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.barrelRate != null && r.barrelRate >= 18 ? "#22c55e" : r.barrelRate != null && r.barrelRate >= 14 ? "#86efac" : "#94a3b8" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.barrelRate != null && r.barrelRate >= 18 ? "#22c55e" : r.barrelRate != null && r.barrelRate >= 14 ? "#86efac" : "#94a3b8" }}>
               {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 10 }}>💣</span>}
               {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
             </div>
