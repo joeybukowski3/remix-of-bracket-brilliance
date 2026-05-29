@@ -501,7 +501,7 @@ export function getHeatCellStyle(
   return { color: palette.text, fontWeight: 600 };
 }
 
-/** Gradient-background stat cell: green=above avg, gray=avg, blue=below avg */
+/** Gradient-background stat cell: green=elite, white=average, blue=below avg */
 function GradCell({ value, display, avg, spread, higherBetter = true }: {
   value: number | null | undefined; display: string; avg: number; spread: number; higherBetter?: boolean;
 }) {
@@ -509,27 +509,32 @@ function GradCell({ value, display, avg, spread, higherBetter = true }: {
   const d = ((value - avg) / spread) * (higherBetter ? 1 : -1);
   const c = Math.max(-1, Math.min(1, d));
   const abs = Math.abs(c);
-  let bg = "rgba(148,163,184,0.13)"; let col = "#475569";
-  if (c > 0.15) {
-    if (abs > 0.75) { bg = "#16a34a"; col = "#fff"; }
-    else if (abs > 0.45) { bg = "rgba(22,163,74,0.55)"; col = "#14532d"; }
-    else { bg = "rgba(22,163,74,0.22)"; col = "#166534"; }
-  } else if (c < -0.15) {
-    if (abs > 0.75) { bg = "#3b82f6"; col = "#fff"; }
-    else if (abs > 0.45) { bg = "rgba(59,130,246,0.50)"; col = "#1e3a8a"; }
-    else { bg = "rgba(59,130,246,0.18)"; col = "#1e40af"; }
+  // White/neutral baseline — only color truly notable outliers
+  let bg = "transparent"; let col = "#374151";
+  if (c > 0) {
+    // Green only kicks in above 50th percentile equivalents
+    if (abs > 0.80) { bg = "#15803d"; col = "#fff"; }           // top ~10%: dark green
+    else if (abs > 0.55) { bg = "#22c55e"; col = "#fff"; }      // top ~20%: green
+    else if (abs > 0.35) { bg = "rgba(22,163,74,0.18)"; col = "#15803d"; } // top ~35%: soft green tint
+    // 0–0.35: white/transparent — average range, no color
+  } else if (c < 0) {
+    if (abs > 0.80) { bg = "#2563eb"; col = "#fff"; }           // bottom ~10%: blue
+    else if (abs > 0.55) { bg = "rgba(59,130,246,0.45)"; col = "#1e3a8a"; } // bottom ~20%
+    else if (abs > 0.35) { bg = "rgba(59,130,246,0.14)"; col = "#1e40af"; } // bottom ~35%: soft blue
   }
   return <span className="inline-block rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums" style={{ backgroundColor: bg, color: col }}>{display}</span>;
 }
 
-/** Score pill: green=high, gray=avg, blue=low */
+/** Score pill: green=elite only, white=average, blue=below avg */
 function StatScorePill({ value }: { value: number | null | undefined }) {
   if (value == null || !Number.isFinite(value)) return <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-400">—</span>;
   const v = Number(value);
-  let bg = "rgba(148,163,184,0.20)"; let col = "#475569";
-  if (v >= 65) { bg = "#16a34a"; col = "#fff"; }
-  else if (v >= 58) { bg = "rgba(22,163,74,0.18)"; col = "#15803d"; }
-  else if (v < 50) { const op = Math.min(0.10 + (50 - v) / 50 * 0.30, 0.40); bg = `rgba(59,130,246,${op})`; col = "#1e40af"; }
+  let bg = "rgba(148,163,184,0.15)"; let col = "#475569";
+  if (v >= 72)      { bg = "#15803d"; col = "#fff"; }            // elite
+  else if (v >= 65) { bg = "#22c55e"; col = "#fff"; }            // strong
+  else if (v >= 58) { bg = "rgba(22,163,74,0.18)"; col = "#15803d"; } // above avg tint only
+  // 50–57: neutral gray — no color
+  else if (v < 50)  { const op = Math.min(0.10 + (50 - v) / 50 * 0.30, 0.40); bg = `rgba(59,130,246,${op})`; col = "#1e40af"; }
   return <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums" style={{ backgroundColor: bg, color: col }}>{v.toFixed(1)}</span>;
 }
 
@@ -1848,10 +1853,10 @@ export default function MlbHrProps() {
                                       <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">vs {row.opposingPitcher}</div>
                                     </td>
                                     <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.hrScore} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.barrelRate != null && row.barrelRate >= 18 && <span className="text-[11px]">💣</span>}<GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={5} /></div></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.hardHitRate != null && row.hardHitRate >= 55 && <span className="text-[11px]">💥</span>}<GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={7} /></div></td>
-                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last7HR != null && row.last7HR >= 3 && <span className="text-[11px]">📈</span>}<GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={1.0} /></div></td>
-                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last30HR != null && row.last30HR >= 7 && <span className="text-[11px]">👑</span>}<GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={2.5} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.barrelRate != null && row.barrelRate >= 18 && <span className="text-[11px]">💣</span>}<GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={10} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.hardHitRate != null && row.hardHitRate >= 55 && <span className="text-[11px]">💥</span>}<GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={10} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last7HR != null && row.last7HR >= 3 && <span className="text-[11px]">📈</span>}<GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last30HR != null && row.last30HR >= 7 && <span className="text-[11px]">👑</span>}<GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={4.5} /></div></td>
                                     <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 && <span className="text-[11px]">⚔️</span>}<StatScorePill value={row.opposingPitcherHrVs} /></div></td>
                                     <td className="border-b border-slate-100 px-2 py-1">
                                       <div className="flex flex-wrap gap-1">
