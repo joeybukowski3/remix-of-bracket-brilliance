@@ -15,12 +15,15 @@ export default function SportsbookBar() {
               href={sportsbook.referralUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg px-4 py-2 text-sm font-semibold transition hover:opacity-90"
-              style={{
-                backgroundColor: sportsbook.bgColor,
-                color: sportsbook.textColor,
-              }}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition hover:opacity-90"
+              style={{ backgroundColor: sportsbook.bgColor, color: sportsbook.textColor }}
             >
+              <img
+                src={sportsbook.logoUrl}
+                alt={sportsbook.name}
+                className="h-5 w-5 rounded object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
               {sportsbook.name}
             </a>
           ))}

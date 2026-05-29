@@ -753,9 +753,15 @@ function MlbHubSidebar() {
               href={sb.referralUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-md px-3 py-[5px] text-[11px] font-bold text-center transition hover:opacity-95 active:opacity-90"
+              className="flex items-center gap-2 rounded-md px-3 py-[5px] text-[11px] font-bold transition hover:opacity-95 active:opacity-90"
               style={{ backgroundColor: sb.bgColor, color: sb.textColor }}
             >
+              <img
+                src={sb.logoUrl}
+                alt={sb.name}
+                className="h-4 w-4 rounded object-contain shrink-0"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
               {sb.name}
             </a>
           ))}

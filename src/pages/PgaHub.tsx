@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { SPORTSBOOKS } from "@/lib/sportsbooks";
 import {
   type PgaScheduleFeedEntry,
   type RawPlayerStat,
@@ -636,12 +637,25 @@ export default function PgaHub() {
               Bet with our partners
             </div>
 
-            <div className="space-y-0.5 text-[12px]">
-              <a href="https://sportsbook.draftkings.com/r/sb/Joeywins100/US-SB/US-SC" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">DraftKings</a>
-              <a href="https://fndl.co/20gmq7y" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">FanDuel</a>
-              <a href="https://fanatics.onelink.me/5kut/jhd5jbks" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">Fanatics</a>
-              <a href="https://playmgmsports.onelink.me/TkMx?af_xp=custom&pid=RAF&c=BMGM_RAF&af_ios_url=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_android_url=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_web_dp=https%3A%2F%2Fwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123&af_dp=playmgmsportswrp%3A%2F%2Fnavigation%3Fscheme%3Dhttps%26url%3Dwww.betmgm.com%2Fen%2Fmobileportal%2Finvitefriendssignup%3FinvID%3D15628123" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">BetMGM</a>
-              <a href="https://caesars.com/sportsbook-and-casino/referral?AR=RAF-TDS-8JA" target="_blank" rel="noopener noreferrer" className="block text-slate-700 hover:text-emerald-700 hover:underline">Caesars</a>
+            <div className="space-y-1">
+              {SPORTSBOOKS.map((sb) => (
+                <a
+                  key={sb.name}
+                  href={sb.referralUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] font-bold transition hover:opacity-90"
+                  style={{ backgroundColor: sb.bgColor, color: sb.textColor }}
+                >
+                  <img
+                    src={sb.logoUrl}
+                    alt={sb.name}
+                    className="h-4 w-4 rounded object-contain shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                  {sb.name}
+                </a>
+              ))}
             </div>
 
             <div className="mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 leading-tight">
