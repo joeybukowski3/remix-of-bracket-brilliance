@@ -4,38 +4,6 @@ import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbStarterProfile } from "@/lib/mlb/mlbTypes";
 
-function PitcherPhoto({
-  pitcher,
-  align,
-  teamAbbreviation,
-}: {
-  pitcher: MlbStarterProfile;
-  align: "left" | "right";
-  teamAbbreviation: string;
-}) {
-  const colors = getMlbTeamColors(teamAbbreviation);
-
-  return (
-    <div className={`flex items-center gap-2.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
-      <div className="relative shrink-0">
-        <MlbPlayerHeadshot playerId={pitcher.id} name={pitcher.name} size={54} teamAbbreviation={teamAbbreviation} />
-        <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
-          <MlbTeamLogo team={teamAbbreviation} size={15} />
-        </div>
-      </div>
-      <div className={align === "right" ? "text-right" : ""}>
-        <div className="text-sm font-semibold" style={{ color: colors.primary }}>{pitcher.name}</div>
-        <div className="text-xs text-muted-foreground">
-          {pitcher.hand}HP • {pitcher.record}
-        </div>
-        {pitcher.era != null && (
-          <div className="mt-1 text-xs font-medium text-foreground">{Number(pitcher.era).toFixed(2)} ERA</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function MlbPitcherComparisonPanel({
   awayPitcher,
   homePitcher,
@@ -53,23 +21,50 @@ export default function MlbPitcherComparisonPanel({
   const homeColors = getMlbTeamColors(homeAbbreviation);
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 items-center gap-2 rounded-2xl border border-border/60 p-2.5 sm:grid-cols-[1fr_auto_1fr]">
-        <div className="rounded-2xl p-2.5" style={{ backgroundColor: awayColors.tint }}>
-          <PitcherPhoto pitcher={awayPitcher} align="left" teamAbbreviation={awayAbbreviation} />
-        </div>
-        <div className="text-center">
-          <div className="text-base font-semibold text-muted-foreground">vs</div>
-          <div className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground/60">
-            {awayPitcher.hand === homePitcher.hand ? `Both ${awayPitcher.hand}HP` : ""}
+    <div className="space-y-2.5">
+      {/* Both pitchers always on same row */}
+      <div className="grid grid-cols-[1fr_28px_1fr] items-center gap-1.5">
+
+        {/* Away pitcher */}
+        <div className="flex items-center gap-2 rounded-xl p-2 min-w-0" style={{ backgroundColor: awayColors.tint }}>
+          <div className="relative shrink-0">
+            <MlbPlayerHeadshot playerId={awayPitcher.id} name={awayPitcher.name} size={40} teamAbbreviation={awayAbbreviation} />
+            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
+              <MlbTeamLogo team={awayAbbreviation} size={12} />
+            </div>
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-[11px] font-bold leading-tight" style={{ color: awayColors.primary }}>{awayPitcher.name}</div>
+            <div className="text-[10px] text-muted-foreground">{awayPitcher.hand}HP · {awayPitcher.record}</div>
+            {awayPitcher.era != null && <div className="text-[10px] font-semibold text-foreground">{Number(awayPitcher.era).toFixed(2)} ERA</div>}
           </div>
         </div>
-        <div className="rounded-2xl p-2.5" style={{ backgroundColor: homeColors.tint }}>
-          <PitcherPhoto pitcher={homePitcher} align="right" teamAbbreviation={homeAbbreviation} />
+
+        {/* VS */}
+        <div className="flex flex-col items-center">
+          <span className="text-[11px] font-bold text-muted-foreground">vs</span>
+          {awayPitcher.hand === homePitcher.hand && (
+            <span className="text-[8px] uppercase tracking-wide text-muted-foreground/50">both {awayPitcher.hand}HP</span>
+          )}
+        </div>
+
+        {/* Home pitcher */}
+        <div className="flex items-center justify-end gap-2 rounded-xl p-2 min-w-0" style={{ backgroundColor: homeColors.tint }}>
+          <div className="min-w-0 text-right">
+            <div className="truncate text-[11px] font-bold leading-tight" style={{ color: homeColors.primary }}>{homePitcher.name}</div>
+            <div className="text-[10px] text-muted-foreground">{homePitcher.hand}HP · {homePitcher.record}</div>
+            {homePitcher.era != null && <div className="text-[10px] font-semibold text-foreground">{Number(homePitcher.era).toFixed(2)} ERA</div>}
+          </div>
+          <div className="relative shrink-0">
+            <MlbPlayerHeadshot playerId={homePitcher.id} name={homePitcher.name} size={40} teamAbbreviation={homeAbbreviation} />
+            <div className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
+              <MlbTeamLogo team={homeAbbreviation} size={12} />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {metrics.map((metric) => (
           <MlbStatComparisonRow
             key={metric.key}
