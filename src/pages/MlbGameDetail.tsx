@@ -4,6 +4,7 @@ import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, F
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
+import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -21,7 +22,6 @@ import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
-import { PITCHER_REGRESSION_DATA, REGRESSION_DATA_WITH_STATS } from "@/data/mlb/pitcherRegressionData";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
@@ -1592,9 +1592,13 @@ function HomeSchedule({
           <section className="space-y-3">
             <div className="flex flex-col gap-1">
               <h2 className="text-xl font-bold tracking-tight text-[#031635]">Pitcher Regression Analysis</h2>
-              <p className="text-xs text-slate-500">Today's starters — ERA vs expected metrics (xFIP/SIERA). Negative score = overperforming (regression risk), Positive = underperforming (improvement likely).</p>
+              <p className="text-xs text-slate-500">Today's starters — ERA vs expected metrics (xFIP/xERA). Negative score = overperforming (regression risk), Positive = underperforming (improvement likely). Auto-generated from MLB Stats API + Baseball Savant.</p>
             </div>
-            <MlbPitcherRegressionTable pitchers={REGRESSION_DATA_WITH_STATS} />
+            {regressionLoading ? (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-400">Loading pitcher regression data…</div>
+            ) : (
+              <MlbPitcherRegressionTable pitchers={PITCHER_REGRESSION_DATA} />
+            )}
           </section>
         </div>
       </div>
@@ -1661,6 +1665,7 @@ export default function MlbGameDetail() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [usingDevFixture, setUsingDevFixture] = useState(false);
+  const { data: PITCHER_REGRESSION_DATA, loading: regressionLoading } = usePitcherRegression();
 
   usePageSeo({
     title: seo.title,

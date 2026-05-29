@@ -35,7 +35,7 @@ export default function MlbPitcherRegressionTable({ pitchers }: { pitchers: Pitc
             <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Pitcher</th>
             <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">ERA</th>
             <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">xFIP</th>
-            <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">SIERA</th>
+            <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">xERA</th>
             <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">K-BB%</th>
             <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">LOB%</th>
             <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">HR/FB%</th>
@@ -65,7 +65,7 @@ export default function MlbPitcherRegressionTable({ pitchers }: { pitchers: Pitc
                   {pitcher.xfip != null ? pitcher.xfip.toFixed(2) : "—"}
                 </td>
                 <td className="px-3 py-2.5 text-center text-[13px] text-slate-500">
-                  {pitcher.siera != null ? pitcher.siera.toFixed(2) : "—"}
+                  {(pitcher as any).xera != null ? (pitcher as any).xera.toFixed(2) : "—"}
                 </td>
                 <td className="px-3 py-2.5 text-center text-[13px] text-slate-500">
                   {pitcher.kbb != null ? `${pitcher.kbb.toFixed(1)}%` : "—"}
