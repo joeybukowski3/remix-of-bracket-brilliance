@@ -1,9 +1,9 @@
 {
   "date": "2026-05-29",
-  "generatedAt": "2026-05-29T10:46:52.792Z",
+  "generatedAt": "2026-05-29T17:36:20.330Z",
   "slatePreview": {
-    "slateOverview": "Coors Field leads the slate with a 1.40 park factor, boosting Schmitt despite Lorenzen on the mound, while Great American Ball Park (1.25) and Daikin Park (1.04) also tilt toward power. Crow vs. Alvarez and Paddack vs. Harris II stand out as favorable righty matchups, with limited weather concerns across the board.",
-    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and park-adjusted hrFBRatio, elevating Alvarez to the top spot on the strength of his 19.1 barrel rate and 53.4 hard-hit rate in a plus home park."
+    "slateOverview": "Coors (1.40) and GABP (1.25) headline a boosted environment, while Daikin and Citi offer slight edges. Coleman Crow and Max Meyer face top-tier barrels from Alvarez and Soto, and Lorenzen draws the Coors boost versus Schmitt.",
+    "modelNote": "The model elevates park-adjusted barrel and hard-hit rates, then layers recent HR volume and opposing pitcher HR vulnerability to rank Alvarez first and Soto second."
   },
   "bestBets": [
     {
@@ -13,12 +13,12 @@
       "opposingPitcher": "Coleman Crow",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate=19.1",
+        "barrelRate=18.9",
         "hrFBRatio=9.8"
       ],
       "bullets": [
-        "barrelRate 19.1 and exitVelo 94.5",
-        "last7HR 5 in recent form"
+        "barrelRate 18.9 with exitVelo 94.5",
+        "last7HR 5 in strong parkFactor 1.04"
       ]
     },
     {
@@ -29,26 +29,11 @@
       "hrScoreRank": 2,
       "topStats": [
         "barrelRate=19.5",
-        "parkFactor=1.06"
+        "hardHitRate=50.4"
       ],
       "bullets": [
-        "parkFactor 1.06 at Citi Field",
-        "opposingPitcherHrVs 47.2"
-      ]
-    },
-    {
-      "player": "Casey Schmitt",
-      "team": "SF",
-      "opponent": "COL",
-      "opposingPitcher": "Michael Lorenzen",
-      "hrScoreRank": 3,
-      "topStats": [
-        "parkFactor=1.4",
-        "opposingPitcherHrVs=70.3"
-      ],
-      "bullets": [
-        "parkFactor 1.4 at Coors Field",
-        "opposingPitcherHrVs 70.3"
+        "opposingPitcherHrVs 47.2 with parkFactor 1.06",
+        "last30HR 9 with xba 0.282"
       ]
     },
     {
@@ -56,14 +41,29 @@
       "team": "ATL",
       "opponent": "CIN",
       "opposingPitcher": "Chris Paddack",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
-        "hardHitRate=56",
-        "exitVelo=93.3"
+        "hardHitRate=56.1",
+        "parkFactor=1.25"
       ],
       "bullets": [
-        "hardHitRate 56 and exitVelo 93.3",
-        "parkFactor 1.25"
+        "parkFactor 1.25 with hardHitRate 56.1",
+        "last30HR 7 with exitVelo 93.4"
+      ]
+    },
+    {
+      "player": "Casey Schmitt",
+      "team": "SF",
+      "opponent": "COL",
+      "opposingPitcher": "Michael Lorenzen",
+      "hrScoreRank": 4,
+      "topStats": [
+        "parkFactor=1.4",
+        "last30HR=8"
+      ],
+      "bullets": [
+        "parkFactor 1.4 with opposingPitcherHrVs 70.2",
+        "last7HR 3 with barrelRate 15.2"
       ]
     },
     {
@@ -73,29 +73,44 @@
       "opposingPitcher": "Troy Melton",
       "hrScoreRank": 5,
       "topStats": [
-        "barrelRate=21",
-        "hrFBRatio=10.1"
+        "barrelRate=20.8",
+        "hardHitRate=58.3"
       ],
       "bullets": [
-        "barrelRate 21 and exitVelo 94.3",
-        "opposingPitcherHrVs 63.6"
+        "barrelRate 20.8 with hrFBRatio 10.1",
+        "opposingPitcherHrVs 63.6 with exitVelo 94.1"
       ]
     }
   ],
   "valueBets": [
     {
-      "player": "Bobby Witt Jr.",
-      "team": "KC",
-      "opponent": "TEX",
-      "opposingPitcher": "MacKenzie Gore",
-      "hrScoreRank": 6,
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "LAD",
+      "opposingPitcher": "Justin Wrobleski",
+      "hrScoreRank": 9,
       "topStats": [
-        "hardHitRate=54.2",
-        "exitVelo=93.7"
+        "hrFBRatio=10.4",
+        "last30HR=12"
       ],
       "bullets": [
-        "hardHitRate 54.2 and exitVelo 93.7",
-        "parkFactor 0.99"
+        "last30HR 12 with hrFBRatio 10.4",
+        "barrelRate 23.6 with parkFactor 1.1"
+      ]
+    },
+    {
+      "player": "Aaron Judge",
+      "team": "NYY",
+      "opponent": "ATH",
+      "opposingPitcher": "Luis Severino",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrelRate=22.4",
+        "hardHitRate=57.5"
+      ],
+      "bullets": [
+        "barrelRate 22.4 with hardHitRate 57.5",
+        "iso 0.302 with exitVelo 94.3"
       ]
     },
     {
@@ -109,27 +124,57 @@
         "hardHitRate=61.2"
       ],
       "bullets": [
-        "barrelRate 25.9 and exitVelo 96.6",
-        "opposingPitcherHrVs 23.8"
+        "barrelRate 25.9 with hardHitRate 61.2",
+        "exitVelo 96.6 with opposingPitcherHrVs 23.8"
       ]
     },
     {
-      "player": "Aaron Judge",
-      "team": "NYY",
-      "opponent": "ATH",
-      "opposingPitcher": "Luis Severino",
-      "hrScoreRank": 8,
+      "player": "Bobby Witt Jr.",
+      "team": "KC",
+      "opponent": "TEX",
+      "opposingPitcher": "MacKenzie Gore",
+      "hrScoreRank": 6,
       "topStats": [
-        "barrelRate=22.4",
-        "hrFBRatio=8.4"
+        "Hard Hit%=54.2",
+        "Pitcher HR VS=51.4"
       ],
       "bullets": [
-        "barrelRate 22.4 and exitVelo 94.3",
-        "opposingPitcherHrVs 45"
+        "HR score 64.7 (#6)",
+        "Pitcher HR VS 51.4 at park 0.99"
       ]
     }
   ],
   "longshots": [
+    {
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "ATL",
+      "opposingPitcher": "Grant Holmes",
+      "hrScoreRank": 20,
+      "topStats": [
+        "hardHitRate=53",
+        "exitVelo=94.1"
+      ],
+      "bullets": [
+        "hardHitRate 53 with exitVelo 94.1",
+        "parkFactor 1.25 with opposingPitcherHrVs 53.1"
+      ]
+    },
+    {
+      "player": "Eric Wagaman",
+      "team": "NYM",
+      "opponent": "MIA",
+      "opposingPitcher": "Max Meyer",
+      "hrScoreRank": 19,
+      "topStats": [
+        "barrelRate=33.3",
+        "hrFBRatio=25"
+      ],
+      "bullets": [
+        "barrelRate 33.3 with hrFBRatio 25",
+        "iso 0.75 with exitVelo 94.2"
+      ]
+    },
     {
       "player": "Kyle Schwarber",
       "team": "PHI",
@@ -137,27 +182,27 @@
       "opposingPitcher": "Justin Wrobleski",
       "hrScoreRank": 9,
       "topStats": [
-        "hrFBRatio=10.4",
-        "last30HR=12"
+        "Hard Hit%=51.2",
+        "Pitcher HR VS=41.8"
       ],
       "bullets": [
-        "last30HR 12 in recent form",
-        "hrFBRatio 10.4"
+        "HR score 63.1 (#9)",
+        "Pitcher HR VS 41.8 at park 1.10"
       ]
     },
     {
-      "player": "Victor Mesa Jr.",
-      "team": "TB",
-      "opponent": "LAA",
-      "opposingPitcher": "Walbert Ureña",
+      "player": "Nathaniel Lowe",
+      "team": "CIN",
+      "opponent": "ATL",
+      "opposingPitcher": "Grant Holmes",
       "hrScoreRank": 10,
       "topStats": [
-        "xba=0.415",
-        "exitVelo=95.7"
+        "Pitcher HR VS=53.1",
+        "Hard Hit%=47.1"
       ],
       "bullets": [
-        "xba 0.415 and exitVelo 95.7",
-        "barrelRate 22.2"
+        "HR score 62.3 (#10)",
+        "Pitcher HR VS 53.1 at park 1.25"
       ]
     }
   ]
