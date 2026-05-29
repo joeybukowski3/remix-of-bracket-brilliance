@@ -1031,6 +1031,65 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
         </div>
         <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
       </div>
+      
+      {/* Mobile: 2 column layout (player info + score), stats below */}
+      <div style={{ display: "none", "@media (max-width: 640px)": { display: "block" } }}>
+        {rows.map((r, i) => {
+          const score = r.adjustedHrScore ?? r.hrScore;
+          const pillStyle = sc(score);
+          return (
+            <div key={`${r.player}-${i}`} style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}`, position: "relative" }}>
+              {/* Header: rank + player */}
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 18, fontWeight: 900, color: ACCENTS[i], minWidth: 24 }}>
+                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }}>{r.player}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
+                    <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                    <span style={{ color: "#64748b" }}>vs {r.opposingPitcher}</span>
+                  </div>
+                </div>
+                <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 8px", fontWeight: 900, fontSize: 15, whiteSpace: "nowrap" }}>
+                  {score >= 70 && "🔥"}{score.toFixed(1)}
+                </div>
+              </div>
+              {/* Stats grid: 2x2 on mobile */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12 }}>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>BARREL%</div>
+                  <div style={{ color: statCol(r.barrelRate, 20, 16), fontWeight: 600, fontSize: 13 }}>
+                    {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ marginRight: 2 }}>💣</span>}
+                    {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
+                  </div>
+                </div>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>HH%</div>
+                  <div style={{ color: statCol(r.hardHitRate, 54, 50), fontWeight: 600, fontSize: 13 }}>
+                    {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ marginRight: 2 }}>💥</span>}
+                    {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
+                  </div>
+                </div>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>L7</div>
+                  <div style={{ color: r.last7HR >= 3 ? "#22c55e" : r.last7HR >= 2 ? "#facc15" : "#94a3b8", fontWeight: 700, fontSize: 13 }}>
+                    {r.last7HR >= 3 && <span style={{ marginRight: 2 }}>📈</span>}{r.last7HR}
+                  </div>
+                </div>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>L30</div>
+                  <div style={{ color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8", fontWeight: 700, fontSize: 13 }}>
+                    {r.last30HR >= 8 && <span style={{ marginRight: 2 }}>👑</span>}{r.last30HR}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop: 7 column grid */}
       <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "5px 10px", background: "#0d1f3c", gap: 6 }}>
         {["","PLAYER","SCORE","BARREL%","HH%","L7","L30"].map((h, i) => (
           <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
@@ -1041,34 +1100,34 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
         const pillStyle = sc(score);
         return (
           <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
-            <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
-              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
-            </span>
-            <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
-              <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.player}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                <TeamLogoBadge team={r.team} size={13} showLabel={false} />
-                <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
-              </div>
-            </div>
-            <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
-              {score >= 70 && "🔥"}{score.toFixed(1)}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: statCol(r.barrelRate, 20, 16), fontSize: 14, fontWeight: 600 }}>
-              {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 12 }}>💣</span>}
-              {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: statCol(r.hardHitRate, 54, 50), fontSize: 14, fontWeight: 600 }}>
-              {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 12 }}>💥</span>}
-              {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last7HR >= 3 ? "#22c55e" : r.last7HR >= 2 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
-              {r.last7HR >= 3 && <span style={{ fontSize: 11 }}>📈</span>}{r.last7HR}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
-              {r.last30HR >= 8 && <span style={{ fontSize: 11 }}>👑</span>}{r.last30HR}
-            </div>
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
+                <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
+                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                </span>
+                <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
+                  <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.player}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                    <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                    <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
+                  </div>
+                </div>
+                <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+                  {score >= 70 && "🔥"}{score.toFixed(1)}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: statCol(r.barrelRate, 20, 16), fontSize: 14, fontWeight: 600 }}>
+                  {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 12 }}>💣</span>}
+                  {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: statCol(r.hardHitRate, 54, 50), fontSize: 14, fontWeight: 600 }}>
+                  {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 12 }}>💥</span>}
+                  {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last7HR >= 3 ? "#22c55e" : r.last7HR >= 2 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
+                  {r.last7HR >= 3 && <span style={{ fontSize: 11 }}>📈</span>}{r.last7HR}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
+                  {r.last30HR >= 8 && <span style={{ fontSize: 11 }}>👑</span>}{r.last30HR}
+                </div>
           </div>
         );
       })}
