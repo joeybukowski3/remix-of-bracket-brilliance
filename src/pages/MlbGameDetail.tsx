@@ -589,7 +589,7 @@ function PropPreviewCard({
       icon: "bg-sky-100 text-sky-700",
       label: "text-sky-700",
       hover: "hover:bg-sky-50",
-      note: "Model High Edges",
+      note: "Full Model →",
     }
     : theme === "k"
     ? {
@@ -597,14 +597,14 @@ function PropPreviewCard({
       icon: "bg-emerald-100 text-emerald-700",
       label: "text-emerald-700",
       hover: "hover:bg-emerald-50",
-      note: "Model Precision",
+      note: "Full Model →",
     }
     : {
       header: "bg-purple-50 text-purple-950",
       icon: "bg-purple-100 text-purple-700",
       label: "text-purple-700",
       hover: "hover:bg-purple-50",
-      note: "Model Matchup",
+      note: "Full Model →",
     };
 
   return (
