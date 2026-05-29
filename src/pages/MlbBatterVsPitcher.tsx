@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import MlbNavHero from "@/components/mlb/MlbNavHero";
 import {
   formatPropNumber,
   getGameCount,
@@ -155,6 +156,7 @@ export default function MlbBatterVsPitcher() {
     <SiteShell>
       <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
         <div className="site-container space-y-4">
+          <MlbNavHero />
           <ModelSummaryHeader
             eyebrow="Batter matchup model"
             title="MLB Batter vs Pitcher Model"

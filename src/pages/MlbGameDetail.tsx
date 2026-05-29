@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Rocket, Shield, Sparkles, Swords, Target, Wind } from "lucide-react";
+import MlbNavHero from "@/components/mlb/MlbNavHero";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -772,35 +773,6 @@ function MlbHubSidebar() {
   );
 }
 
-function MlbHubHero() {
-  const heroTiles = [
-    { label: "HR Props", to: "/mlb/hr-props", bg: "bg-sky-500 hover:bg-sky-600", icon: <Flame className="h-3.5 w-3.5" /> },
-    { label: "K Props", to: "/mlb/strikeout-props", bg: "bg-emerald-500 hover:bg-emerald-600", icon: <Radar className="h-3.5 w-3.5" /> },
-    { label: "Game Matchups", to: "/mlb#schedule", bg: "bg-amber-500 hover:bg-amber-600", icon: <CalendarDays className="h-3.5 w-3.5" /> },
-  ];
-
-  return (
-    <section className="flex items-center gap-4 rounded-xl bg-[#1a2b4b] px-5 py-4 shadow-sm">
-      <img src="/logos/mlb.svg" alt="MLB" className="h-10 w-auto shrink-0" />
-      <div className="min-w-0 flex-1">
-        <div className="text-xs font-bold uppercase tracking-[0.12em] text-sky-300/80">MLB Hub</div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {heroTiles.map((tile) => (
-            <Link
-              key={tile.label}
-              to={tile.to}
-              className={cn("flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition", tile.bg)}
-            >
-              {tile.icon}
-              {tile.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function HubSportsbookStrip() {
   return (
     <div className="rounded-xl border border-slate-200 bg-[#eff4ff] px-4 py-3">
@@ -1406,7 +1378,7 @@ function HomeSchedule({
 
         <div className="min-w-0 flex-1 space-y-3">
 
-          <MlbHubHero />
+          <MlbNavHero />
 
           <section id="props" className="space-y-3">
             <div>
