@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Rocket, Shield, Sparkles, Swords, Target, Wind } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
+import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -1791,6 +1792,9 @@ export default function MlbGameDetail() {
                 </MlbSectionCard>
               </div>
             </div>
+
+            {/* Model Pick Badge */}
+            <MlbModelPickBadge detail={detail} />
           </>
         )}
       </MlbMatchupLayout>
