@@ -1,9 +1,9 @@
 {
   "date": "2026-05-29",
-  "generatedAt": "2026-05-29T10:02:35.372Z",
+  "generatedAt": "2026-05-29T10:46:52.792Z",
   "slatePreview": {
-    "slateOverview": "Coors (1.40) and Great American (1.25) stand out as the only true launching pads, while Daikin and Citi offer slight boosts. Weak fly-ball arms like Lorenzen, Paddack, and Crow are the clearest targets, and the LHP vs RHB edges for Witt and Schwarber add another layer.",
-    "modelNote": "The model is leaning on barrel rate, park factor, and recent HR volume, elevating Alvarez and Soto despite modest opposing-pitcher HR rates because their raw power metrics dominate the rankings."
+    "slateOverview": "Coors Field leads the slate with a 1.40 park factor, boosting Schmitt despite Lorenzen on the mound, while Great American Ball Park (1.25) and Daikin Park (1.04) also tilt toward power. Crow vs. Alvarez and Paddack vs. Harris II stand out as favorable righty matchups, with limited weather concerns across the board.",
+    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and park-adjusted hrFBRatio, elevating Alvarez to the top spot on the strength of his 19.1 barrel rate and 53.4 hard-hit rate in a plus home park."
   },
   "bestBets": [
     {
@@ -17,8 +17,8 @@
         "hrFBRatio=9.8"
       ],
       "bullets": [
-        "barrelRate 19.1 with exitVelo 94.5",
-        "opposingPitcherHrVs 24.1 at parkFactor 1.04"
+        "barrelRate 19.1 and exitVelo 94.5",
+        "last7HR 5 in recent form"
       ]
     },
     {
@@ -29,11 +29,11 @@
       "hrScoreRank": 2,
       "topStats": [
         "barrelRate=19.5",
-        "hardHitRate=50.4"
+        "parkFactor=1.06"
       ],
       "bullets": [
-        "barrelRate 19.5 with xba 0.282",
-        "opposingPitcherHrVs 47.2 at parkFactor 1.06"
+        "parkFactor 1.06 at Citi Field",
+        "opposingPitcherHrVs 47.2"
       ]
     },
     {
@@ -44,11 +44,11 @@
       "hrScoreRank": 3,
       "topStats": [
         "parkFactor=1.4",
-        "last30HR=8"
+        "opposingPitcherHrVs=70.3"
       ],
       "bullets": [
-        "parkFactor 1.4 with opposingPitcherHrVs 70.3",
-        "last7HR 3 in last30HR 8"
+        "parkFactor 1.4 at Coors Field",
+        "opposingPitcherHrVs 70.3"
       ]
     },
     {
@@ -62,8 +62,8 @@
         "exitVelo=93.3"
       ],
       "bullets": [
-        "hardHitRate 56 with exitVelo 93.3",
-        "opposingPitcherHrVs 47.2 at parkFactor 1.25"
+        "hardHitRate 56 and exitVelo 93.3",
+        "parkFactor 1.25"
       ]
     },
     {
@@ -74,60 +74,15 @@
       "hrScoreRank": 5,
       "topStats": [
         "barrelRate=21",
-        "hardHitRate=58.8"
+        "hrFBRatio=10.1"
       ],
       "bullets": [
-        "barrelRate 21 with hardHitRate 58.8",
-        "opposingPitcherHrVs 63.6 at parkFactor 1.07"
+        "barrelRate 21 and exitVelo 94.3",
+        "opposingPitcherHrVs 63.6"
       ]
     }
   ],
   "valueBets": [
-    {
-      "player": "Matt Olson",
-      "team": "ATL",
-      "opponent": "CIN",
-      "opposingPitcher": "Chris Paddack",
-      "hrScoreRank": 11,
-      "topStats": [
-        "parkFactor=1.25",
-        "hrFBRatio=6.8"
-      ],
-      "bullets": [
-        "parkFactor 1.25 with opposingPitcherHrVs 47.2",
-        "last30HR 6 with exitVelo 93.2"
-      ]
-    },
-    {
-      "player": "Nathaniel Lowe",
-      "team": "CIN",
-      "opponent": "ATL",
-      "opposingPitcher": "Grant Holmes",
-      "hrScoreRank": 12,
-      "topStats": [
-        "parkFactor=1.25",
-        "hrFBRatio=6.8"
-      ],
-      "bullets": [
-        "parkFactor 1.25 with opposingPitcherHrVs 53.2",
-        "last7HR 2 in last30HR 4"
-      ]
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "ATH",
-      "opposingPitcher": "Luis Severino",
-      "hrScoreRank": 13,
-      "topStats": [
-        "hrFBRatio=8.7",
-        "pullRate=48.5"
-      ],
-      "bullets": [
-        "hrFBRatio 8.7 with iso 0.333",
-        "last30HR 6 with barrelRate 17.6"
-      ]
-    },
     {
       "player": "Bobby Witt Jr.",
       "team": "KC",
@@ -135,12 +90,12 @@
       "opposingPitcher": "MacKenzie Gore",
       "hrScoreRank": 6,
       "topStats": [
-        "Hard Hit%=54.2",
-        "Pitcher HR VS=51.5"
+        "hardHitRate=54.2",
+        "exitVelo=93.7"
       ],
       "bullets": [
-        "HR score 64.7 (#6)",
-        "Pitcher HR VS 51.5 at park 0.99"
+        "hardHitRate 54.2 and exitVelo 93.7",
+        "parkFactor 0.99"
       ]
     },
     {
@@ -150,31 +105,14 @@
       "opposingPitcher": "Lucas Giolito",
       "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=61.2",
-        "Barrel%=25.9"
+        "barrelRate=25.9",
+        "hardHitRate=61.2"
       ],
       "bullets": [
-        "HR score 64.1 (#7)",
-        "Pitcher HR VS 23.8 at park 0.98"
+        "barrelRate 25.9 and exitVelo 96.6",
+        "opposingPitcherHrVs 23.8"
       ]
     },
-    {
-      "player": "Aaron Judge",
-      "team": "NYY",
-      "opponent": "ATH",
-      "opposingPitcher": "Luis Severino",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=57.5",
-        "Pitcher HR VS=45.0"
-      ],
-      "bullets": [
-        "HR score 63.2 (#8)",
-        "Pitcher HR VS 45.0 at park 0.96"
-      ]
-    }
-  ],
-  "longshots": [
     {
       "player": "Aaron Judge",
       "team": "NYY",
@@ -183,13 +121,15 @@
       "hrScoreRank": 8,
       "topStats": [
         "barrelRate=22.4",
-        "hardHitRate=57.5"
+        "hrFBRatio=8.4"
       ],
       "bullets": [
-        "barrelRate 22.4 with hardHitRate 57.5",
-        "opposingPitcherHrVs 45 at parkFactor 0.96"
+        "barrelRate 22.4 and exitVelo 94.3",
+        "opposingPitcherHrVs 45"
       ]
-    },
+    }
+  ],
+  "longshots": [
     {
       "player": "Kyle Schwarber",
       "team": "PHI",
@@ -201,8 +141,8 @@
         "last30HR=12"
       ],
       "bullets": [
-        "hrFBRatio 10.4 with last30HR 12",
-        "opposingPitcherHrVs 41.8 at parkFactor 1.1"
+        "last30HR 12 in recent form",
+        "hrFBRatio 10.4"
       ]
     },
     {
@@ -212,12 +152,12 @@
       "opposingPitcher": "Walbert Ureña",
       "hrScoreRank": 10,
       "topStats": [
-        "Hard Hit%=55.6",
-        "Pitcher HR VS=28.5"
+        "xba=0.415",
+        "exitVelo=95.7"
       ],
       "bullets": [
-        "HR score 62.3 (#10)",
-        "Pitcher HR VS 28.5 at park 0.98"
+        "xba 0.415 and exitVelo 95.7",
+        "barrelRate 22.2"
       ]
     }
   ]
