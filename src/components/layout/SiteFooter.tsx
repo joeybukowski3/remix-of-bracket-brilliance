@@ -4,6 +4,7 @@ import { SPORTSBOOKS } from "@/lib/sportsbooks";
 const SECTIONS = [
   {
     label: "MLB",
+    emoji: "⚾",
     links: [
       { label: "Game Matchups",       to: "/mlb" },
       { label: "HR Props Dashboard",  to: "/mlb/hr-props" },
@@ -13,6 +14,7 @@ const SECTIONS = [
   },
   {
     label: "NCAA",
+    emoji: "🏀",
     links: [
       { label: "Power Rankings",  to: "/ncaa" },
       { label: "Schedule",        to: "/ncaa/schedule" },
@@ -23,61 +25,83 @@ const SECTIONS = [
   },
   {
     label: "PGA Tour",
+    emoji: "⛳",
     links: [
       { label: "PGA Hub",           to: "/pga" },
       { label: "Tournament Model",  to: "/pga/model" },
       { label: "Best Bets",         to: "/pga/best-bets" },
-      { label: "DFS Optimizer",     to: "/pga/dfs" },
       { label: "Custom Model",      to: "/pga/custom" },
+      { label: "DFS Optimizer",     to: "/pga/dfs" },
+    ],
+  },
+  {
+    label: "NFL",
+    emoji: "🏈",
+    links: [
+      { label: "NFL Hub", to: "/nfl", soon: true },
+    ],
+  },
+  {
+    label: "NBA",
+    emoji: "🏀",
+    links: [
+      { label: "NBA Hub", to: "/nba", soon: true },
     ],
   },
   {
     label: "Site",
+    emoji: "🔗",
     links: [
-      { label: "Home",              to: "/" },
-      { label: "Support the Site",  to: "/donate" },
+      { label: "Home",             to: "/" },
+      { label: "Support the Site", to: "/donate" },
     ],
   },
 ];
 
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-white/5 bg-[#0b1220] text-slate-400">
-      <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
+    <footer className="border-t border-white/5 bg-[#080e1a] text-slate-400">
+      <div className="mx-auto max-w-[1280px] px-4 py-14 sm:px-6 lg:px-8">
 
-        {/* Top: logo + sitemap */}
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[220px_1fr]">
+        {/* Top: brand + sitemap */}
+        <div className="grid gap-12 lg:grid-cols-[240px_1fr]">
 
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2.5 no-underline">
               <img src="/images/jkb-icon-trimmed.png" alt="Joe Knows Ball" className="h-8 w-auto" />
-              <span className="text-[16px] font-bold text-white">Joe Knows Ball</span>
+              <span className="text-[17px] font-bold text-white">Joe Knows Ball</span>
             </Link>
             <p className="text-[13px] leading-6 text-slate-500">
               Free sports analytics — MLB matchup intelligence, PGA golf models, and NCAA bracket tools. No account required.
             </p>
-            <p className="text-[11px] text-slate-600">
-              Built by someone who actually bets.
-            </p>
+            <p className="text-[11px] italic text-slate-600">Built by someone who actually bets.</p>
           </div>
 
           {/* Sitemap grid */}
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-6">
             {SECTIONS.map((section) => (
               <div key={section.label}>
-                <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-300">
-                  {section.label}
+                <div className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-300">
+                  <span>{section.emoji}</span>
+                  <span>{section.label}</span>
                 </div>
                 <ul className="space-y-2">
                   {section.links.map((link) => (
                     <li key={link.to}>
-                      <Link
-                        to={link.to}
-                        className="text-[13px] text-slate-500 no-underline transition hover:text-slate-200"
-                      >
-                        {link.label}
-                      </Link>
+                      {"soon" in link && link.soon ? (
+                        <span className="flex items-center gap-1.5 text-[12px] text-slate-600">
+                          {link.label}
+                          <span className="rounded bg-slate-700/60 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Soon</span>
+                        </span>
+                      ) : (
+                        <Link
+                          to={link.to}
+                          className="text-[12px] text-slate-500 no-underline transition-colors hover:text-slate-200"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -92,7 +116,7 @@ export default function SiteFooter() {
         {/* Partners row */}
         <div className="space-y-3">
           <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-300">
-            Bet with our partners
+            Bet with our partners — use these links to support the site
           </div>
           <div className="flex flex-wrap gap-2">
             {SPORTSBOOKS.map((sb) => (
@@ -121,8 +145,8 @@ export default function SiteFooter() {
 
         {/* Bottom bar */}
         <div className="flex flex-col gap-2 text-[11px] text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Joe Knows Ball. All rights reserved.</span>
-          <span>Must be 21+ to gamble. Gambling problem? Call <strong className="text-slate-500">1-800-GAMBLER</strong>.</span>
+          <span>© {new Date().getFullYear()} Joe Knows Ball · All rights reserved.</span>
+          <span>Must be 21+ to gamble · Problem? Call <strong className="text-slate-500">1-800-GAMBLER</strong></span>
         </div>
 
       </div>
