@@ -1032,7 +1032,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "5px 10px", background: "#0d1f3c", gap: 6 }}>
         {["","PLAYER","SCORE","BARREL%","HH%","L7","L30"].map((h, i) => (
-          <span key={i} style={{ fontSize: 9, fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
+          <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
         ))}
       </div>
       {rows.map((r, i) => {
@@ -1044,11 +1044,11 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
             <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
               {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
             </span>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 13 }}>{r.player}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                <TeamLogoBadge team={r.team} size={14} showLabel={false} />
-                <span style={{ color: "#475569", fontSize: 10 }}>vs {r.opposingPitcher}</span>
+            <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
+              <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.player}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
               </div>
             </div>
             <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
@@ -1106,39 +1106,39 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
         </div>
         <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 62px 62px 58px", padding: "4px 10px", background: "#0d1f3c", gap: 4 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
         {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
-          <span key={i} style={{ fontSize: 9, fontWeight: 700, color: "#334155", textTransform: "uppercase", letterSpacing: ".07em" }}>{h}</span>
+          <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
         ))}
       </div>
       {top.map((r, i) => {
         const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
         const pillStyle = sc(safeScore);
         return (
-          <div key={`${r.pitcher}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 62px 62px 58px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+          <div key={`${r.pitcher}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
             <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
               {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
             </span>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 12 }}>{r.pitcher}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
-                <TeamLogoBadge team={r.team} size={14} showLabel={false} />
-                <span style={{ color: "#475569", fontSize: 10 }}>vs {r.opponent}</span>
+            <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
+              <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.pitcher}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opponent}</span>
               </div>
             </div>
-            <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
+            <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 14 }}>
               {safeScore.toFixed(1)}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
               {r.pitcherKRate != null && r.pitcherKRate >= 28 && <span style={{ fontSize: 11 }}>🎯</span>}
               {r.pitcherKRate != null ? `${r.pitcherKRate.toFixed(1)}%` : "—"}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 ? "#22c55e" : r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 28 ? "#86efac" : "#94a3b8" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 ? "#22c55e" : r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 28 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
               {r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 && <span style={{ fontSize: 11 }}>🌫️</span>}
               {r.pitcherWhiffRate != null ? `${r.pitcherWhiffRate.toFixed(1)}%` : "—"}
             </div>
-            <div style={{ color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : r.opponentTeamKRate != null && r.opponentTeamKRate >= 24 ? "#86efac" : "#94a3b8" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : r.opponentTeamKRate != null && r.opponentTeamKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
               {r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 && <span style={{ fontSize: 10 }}>💀</span>}
               {r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
             </div>
