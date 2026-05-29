@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 
@@ -46,68 +47,97 @@ const navItems = [
   { label: "PGA", route: "/pga" },
 ] as const;
 
-const featuredContent = [
-  {
-    title: "Top HR Props for Today",
-    description: "Daily home run angles with park context, pitcher vulnerability, and ranked hitter power signals.",
-    route: "/mlb/hr-props",
-    eyebrow: "MLB",
-    asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
-    cta: "Open dashboard",
-    accent: "#0f3b82",
-    tone: "primary",
-  },
-  {
-    title: "MLB Matchup Analytics",
-    description: "Starting pitchers, team context, and full-game matchup detail built for the current slate.",
-    route: "/mlb",
-    eyebrow: "MLB",
-    asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
-    cta: "View matchups",
-    accent: "#153e75",
-    tone: "primary",
-  },
-  {
-    title: "MLB Strikeout Prop Model",
-    description: "Strikeout-specific pitcher projections are planned, but a dedicated public page is not live yet.",
-    eyebrow: "MLB",
-    asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
-    cta: "Page not live yet",
-    accent: "#334155",
-    tone: "secondary",
-    unavailable: true,
-  },
-  {
-    title: "Customized Golf Model",
-    description: "Adjust weightings yourself and build a tailored PGA model around the stats you trust most.",
-    route: "/pga/custom",
-    eyebrow: "PGA",
-    asset: "/logos/pga.svg",
-    cta: "Build your model",
-    accent: "#0f5132",
-    tone: "secondary",
-  },
-  {
-    title: "PGA Championship Golf Model",
-    description: "A dedicated PGA Championship model page is not published in this repo yet, so this preview stays offline.",
-    eyebrow: "PGA Championship",
-    asset: "/logos/pga.svg",
-    cta: "Tournament page not live",
-    accent: "#6b4f1d",
-    tone: "primary",
-    unavailable: true,
-  },
-  {
-    title: "PGA Championship Top 5 Picks",
-    description: "Top-5 pick coverage for the PGA Championship does not have a dedicated live route yet.",
-    eyebrow: "PGA Championship",
-    asset: "/logos/pga.svg",
-    cta: "Picks page not live",
-    accent: "#5b4a2f",
-    tone: "secondary",
-    unavailable: true,
-  },
-] as const;
+type PgaTournament = { name: string; shortName?: string; slug: string; status: string; startDate: string; endDate?: string };
+
+function useFeaturedPgaTournament() {
+  const [tournament, setTournament] = useState<PgaTournament | null>(null);
+
+  useEffect(() => {
+    fetch("/data/pga/schedule.json")
+      .then((r) => r.json())
+      .then((schedule: PgaTournament[]) => {
+        const today = new Date().toISOString().slice(0, 10);
+        // Priority 1: active
+        let found = schedule.find((t) => t.status === "active");
+        // Priority 2: currently in-window (started but not ended)
+        if (!found) found = schedule.find((t) => t.startDate <= today && (!t.endDate || t.endDate >= today));
+        // Priority 3: soonest upcoming
+        if (!found) found = schedule.filter((t) => t.status === "upcoming" || t.startDate >= today).sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
+        if (found) setTournament(found);
+      })
+      .catch(() => {});
+  }, []);
+
+  return tournament;
+}
+
+function buildFeaturedCards(pgaTournament: PgaTournament | null) {
+  const pgaName   = pgaTournament?.shortName ?? pgaTournament?.name ?? "Featured Tournament";
+  const pgaSlug   = pgaTournament?.slug ?? "";
+
+  return [
+    {
+      title: "HR Props Dashboard",
+      description: "Today's top home run edges ranked by park context, pitcher vulnerability, barrel rate, and hard-hit profile.",
+      route: "/mlb/hr-props",
+      eyebrow: "MLB",
+      asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+      cta: "Open dashboard",
+      accent: "#0f3b82",
+      tone: "primary" as const,
+    },
+    {
+      title: "MLB Matchup Analyzer",
+      description: "Starting pitchers, team context, park factors, and full game matchup detail built for the current slate.",
+      route: "/mlb",
+      eyebrow: "MLB",
+      asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+      cta: "View matchups",
+      accent: "#153e75",
+      tone: "primary" as const,
+    },
+    {
+      title: "K Props Model",
+      description: "Strikeout prop rankings for today's probable starters built from whiff rate, opponent K tendency, and park context.",
+      route: "/mlb/strikeout-props",
+      eyebrow: "MLB",
+      asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+      cta: "View model",
+      accent: "#047857",
+      tone: "secondary" as const,
+    },
+    {
+      title: "Hit Props Model",
+      description: "Top batter vs pitcher matchups ranked by xBA, hard-hit rate, barrel rate, and pitcher hit vulnerability.",
+      route: "/mlb/batter-vs-pitcher",
+      eyebrow: "MLB",
+      asset: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png",
+      cta: "View matchups",
+      accent: "#6d28d9",
+      tone: "secondary" as const,
+    },
+    {
+      title: `${pgaName} — Golf Model`,
+      description: "Weighted player rankings for this week's PGA tournament. Adjust stat weights and switch between Balanced, Outright, and Top 20 presets.",
+      route: pgaSlug ? `/pga/${pgaSlug}/model` : "/pga",
+      eyebrow: "PGA Tour",
+      asset: "/logos/pga.svg",
+      cta: "Open model",
+      accent: "#0f5132",
+      tone: "primary" as const,
+    },
+    {
+      title: `${pgaName} — Best Bets`,
+      description: "Outright, Top 5, Top 10, and Top 20 picks for this week's tournament based on course fit and model edge.",
+      route: pgaSlug ? `/pga/${pgaSlug}/picks` : "/pga",
+      eyebrow: "PGA Tour",
+      asset: "/logos/pga.svg",
+      cta: "View picks",
+      accent: "#3b6934",
+      tone: "secondary" as const,
+    },
+  ];
+}
 
 function SportCard({
   locked = false,
@@ -186,27 +216,22 @@ function FeaturedContentCard({
   title,
   accent,
   tone,
-  unavailable = false,
 }: {
   asset: string;
   cta: string;
   description: string;
   eyebrow: string;
-  route?: string;
+  route: string;
   title: string;
   accent: string;
   tone: "primary" | "secondary";
-  unavailable?: boolean;
 }) {
   const primary = tone === "primary";
-  const cardClassName = `group relative overflow-hidden rounded-[24px] border border-black/8 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] ${primary ? "xl:col-span-2" : ""} ${unavailable ? "opacity-90" : "transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)]"}`;
+  const cardClassName = `group relative overflow-hidden rounded-[24px] border border-black/8 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(15,23,42,0.12)] ${primary ? "xl:col-span-2" : ""}`;
 
   const content = (
     <>
-      <div
-        className="absolute inset-x-0 top-0 h-[4px]"
-        style={{ background: accent }}
-      />
+      <div className="absolute inset-x-0 top-0 h-[4px]" style={{ background: accent }} />
       <div className="relative flex h-full flex-col">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -224,28 +249,15 @@ function FeaturedContentCard({
         <div className="mt-5 flex items-center justify-between gap-3">
           <span
             className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]"
-            style={{
-              backgroundColor: `${accent}14`,
-              color: accent,
-            }}
+            style={{ backgroundColor: `${accent}14`, color: accent }}
           >
-            {unavailable ? "Not Published Yet" : "Latest Analysis"}
+            Latest Analysis
           </span>
-          <span className="text-[13px] font-semibold text-[#111111]">
-            {cta} {unavailable ? "" : "→"}
-          </span>
+          <span className="text-[13px] font-semibold text-[#111111]">{cta} →</span>
         </div>
       </div>
     </>
   );
-
-  if (unavailable || !route) {
-    return (
-      <div className={cardClassName} aria-disabled="true">
-        {content}
-      </div>
-    );
-  }
 
   return (
     <Link to={route} className={cardClassName}>
@@ -256,6 +268,8 @@ function FeaturedContentCard({
 
 export default function Home() {
   const seo = getSeoMeta("home");
+  const pgaTournament = useFeaturedPgaTournament();
+  const featuredCards = buildFeaturedCards(pgaTournament);
 
   usePageSeo({
     title: seo.title,
@@ -360,15 +374,15 @@ export default function Home() {
           <div className="max-w-[760px]">
             <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#5b6472]">Featured Today</div>
             <h2 className="mt-3 text-[30px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
-              Most Recent Models & Picks
+              Models & Picks
             </h2>
             <p className="mt-3 max-w-[62ch] text-[15px] leading-7 text-[#4b5563]">
-              Jump straight into the newest MLB dashboards and golf model pages currently driving the site, with fast previews built to get you into the full analysis.
+              Jump straight into the latest MLB dashboards and PGA golf models. Links update automatically as new tournaments and slates go live.
             </p>
           </div>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {featuredContent.map((item) => (
+            {featuredCards.map((item) => (
               <FeaturedContentCard key={item.title} {...item} />
             ))}
           </div>
