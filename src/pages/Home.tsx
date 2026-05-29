@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
+import SiteFooter from "@/components/layout/SiteFooter";
 
 const sports = [
   {
@@ -388,6 +389,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }
