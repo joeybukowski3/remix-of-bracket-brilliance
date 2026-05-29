@@ -13,7 +13,7 @@ const sports = [
     id: "ncaa",
     name: "NCAA",
     route: "/ncaa",
-    logo: "/logos/ncaa.svg",
+    logo: "https://cdn.worldvectorlogo.com/logos/ncaa-4.svg",
   },
   {
     id: "nfl",
