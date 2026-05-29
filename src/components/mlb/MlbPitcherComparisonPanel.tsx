@@ -37,6 +37,11 @@ export default function MlbPitcherComparisonPanel({
             <div className="truncate text-[11px] font-bold leading-tight" style={{ color: awayColors.primary }}>{awayPitcher.name}</div>
             <div className="text-[10px] text-muted-foreground">{awayPitcher.hand}HP · {awayPitcher.record}</div>
             {awayPitcher.era != null && <div className="text-[10px] font-semibold text-foreground">{Number(awayPitcher.era).toFixed(2)} ERA</div>}
+            {awayPitcher.regressionScore != null && (
+              <div className={`text-[9px] font-bold ${awayPitcher.regressionScore < -3 ? "text-green-600" : awayPitcher.regressionScore > 3 ? "text-red-600" : "text-slate-500"}`}>
+                Regr: {awayPitcher.regressionScore > 0 ? "+" : ""}{awayPitcher.regressionScore}
+              </div>
+            )}
           </div>
         </div>
 
@@ -54,6 +59,11 @@ export default function MlbPitcherComparisonPanel({
             <div className="truncate text-[11px] font-bold leading-tight" style={{ color: homeColors.primary }}>{homePitcher.name}</div>
             <div className="text-[10px] text-muted-foreground">{homePitcher.hand}HP · {homePitcher.record}</div>
             {homePitcher.era != null && <div className="text-[10px] font-semibold text-foreground">{Number(homePitcher.era).toFixed(2)} ERA</div>}
+            {homePitcher.regressionScore != null && (
+              <div className={`text-[9px] font-bold ${homePitcher.regressionScore < -3 ? "text-green-600" : homePitcher.regressionScore > 3 ? "text-red-600" : "text-slate-500"}`}>
+                Regr: {homePitcher.regressionScore > 0 ? "+" : ""}{homePitcher.regressionScore}
+              </div>
+            )}
           </div>
           <div className="relative shrink-0">
             <MlbPlayerHeadshot playerId={homePitcher.id} name={homePitcher.name} size={40} teamAbbreviation={homeAbbreviation} />

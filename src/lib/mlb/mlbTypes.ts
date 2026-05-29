@@ -58,6 +58,12 @@ export type MlbStarterProfile = {
   battersFaced: number | null;
   baseOnBalls: number | null;
   vsTeam: MlbPitcherVsTeamStats | null;
+  xfip?: number | null;          // Expected FIP
+  siera?: number | null;         // Skill-Interactive ERA
+  strandRate?: number | null;    // LOB%
+  hrfb?: number | null;          // HR/FB%
+  babip?: number | null;         // BABIP
+  regressionScore?: number | null; // -10 to +10
 };
 
 export type MlbTeamPitchingStats = {

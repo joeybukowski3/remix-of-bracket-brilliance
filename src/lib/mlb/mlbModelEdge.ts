@@ -99,9 +99,17 @@ export function computeModelEdge(detail: MlbGameDetail): ModelEdgeResult {
   const awayHR9  = computeHr9(aw.homeRuns, aw.inningsPitched);
   const homeHR9  = computeHr9(hw.homeRuns, hw.inningsPitched);
 
-  // 1. PITCHER QUALITY (30%)
-  const awayPit = eraScore(awayEra)*0.35 + k9Score(awayK9)*0.25 + bbScore(awayBB)*0.22 + hr9Score(awayHR9)*0.18;
-  const homePit = eraScore(homeEra)*0.35 + k9Score(homeK9)*0.25 + bbScore(homeBB)*0.22 + hr9Score(homeHR9)*0.18;
+  // 1. PITCHER QUALITY (30%) — ERA, K/9, BB%, HR/9 + REGRESSION RISK
+  const awayRegr = aw.regressionScore ?? 0; // -10 (lucky, will regress down) to +10 (unlucky, will improve)
+  const homeRegr = hw.regressionScore ?? 0;
+  // Negative regression = pitcher is overperforming (bad for them in future), so it's good for opponents
+  // Positive regression = pitcher is underperforming (good for them in future), so it's good for that pitcher
+  // Invert: -regr score = advantage (outperforming pitcher loses edge in future)
+  const awayRegrPenalty = -awayRegr * 3; // Each point of negative regr reduces pitcher score
+  const homeRegrPenalty = -homeRegr * 3;
+
+  const awayPit = (eraScore(awayEra)*0.35 + k9Score(awayK9)*0.25 + bbScore(awayBB)*0.22 + hr9Score(awayHR9)*0.18) + awayRegrPenalty;
+  const homePit = (eraScore(homeEra)*0.35 + k9Score(homeK9)*0.25 + bbScore(homeBB)*0.22 + hr9Score(homeHR9)*0.18) + homeRegrPenalty;
 
   // 2. MATCHUP EDGE — lineup OPS vs opposing pitcher hand + lineup K% (25%)
   const awySplit = opponentSplits.awayBattingVsHomeStarter;
