@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Rocket, Shield, Sparkles, Swords, Target, Wind } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
+import MlbPitcherRegressionTable from "@/components/mlb/MlbPitcherRegressionTable";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -20,6 +21,7 @@ import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
+import { PITCHER_REGRESSION_DATA } from "@/data/mlb/pitcherRegressionData";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
@@ -889,6 +891,20 @@ function MlbSlateAnalyzer({
                             <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.away.record}</span>
                           )}
                           {(() => { const xera = getPitcherXera(game.away.probablePitcher?.id ?? detail?.starters.away.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
+                          {(() => {
+                            const pitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
+                            const regrData = PITCHER_REGRESSION_DATA.find(p => p.name === pitcherName);
+                            if (!regrData) return null;
+                            const isNegative = regrData.regressionScore < -3;
+                            const isPositive = regrData.regressionScore > 3;
+                            const color = isNegative ? "#22c55e" : isPositive ? "#ef4444" : "#94a3b8";
+                            const bg = isNegative ? "#dcfce7" : isPositive ? "#fee2e2" : "#f1f5f9";
+                            return (
+                              <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: bg, color }}>
+                                Regr {regrData.regressionScore > 0 ? "+" : ""}{regrData.regressionScore}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                       <div className="flex items-center justify-between gap-3">
@@ -906,6 +922,20 @@ function MlbSlateAnalyzer({
                             <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.home.record}</span>
                           )}
                           {(() => { const xera = getPitcherXera(game.home.probablePitcher?.id ?? detail?.starters.home.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
+                          {(() => {
+                            const pitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
+                            const regrData = PITCHER_REGRESSION_DATA.find(p => p.name === pitcherName);
+                            if (!regrData) return null;
+                            const isNegative = regrData.regressionScore < -3;
+                            const isPositive = regrData.regressionScore > 3;
+                            const color = isNegative ? "#22c55e" : isPositive ? "#ef4444" : "#94a3b8";
+                            const bg = isNegative ? "#dcfce7" : isPositive ? "#fee2e2" : "#f1f5f9";
+                            return (
+                              <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: bg, color }}>
+                                Regr {regrData.regressionScore > 0 ? "+" : ""}{regrData.regressionScore}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                       <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">
@@ -1496,6 +1526,15 @@ function HomeSchedule({
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} />
           <MlbToolsGrid />
           <SocialMediaTablesSection />
+          
+          {/* Pitcher Regression Table */}
+          <section className="space-y-3">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-xl font-bold tracking-tight text-[#031635]">Pitcher Regression Analysis</h2>
+              <p className="text-xs text-slate-500">Today's starters — ERA vs expected metrics (xFIP/SIERA). Negative score = overperforming (regression risk), Positive = underperforming (improvement likely).</p>
+            </div>
+            <MlbPitcherRegressionTable pitchers={PITCHER_REGRESSION_DATA} />
+          </section>
         </div>
       </div>
     </div>
