@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Rocket, Shield, Sparkles, Swords, Target, Wind } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
-import MlbPitcherRegressionTable from "@/components/mlb/MlbPitcherRegressionTable";
+import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -21,7 +21,7 @@ import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
-import { PITCHER_REGRESSION_DATA } from "@/data/mlb/pitcherRegressionData";
+import { PITCHER_REGRESSION_DATA, REGRESSION_DATA_WITH_STATS } from "@/data/mlb/pitcherRegressionData";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
@@ -895,15 +895,9 @@ function MlbSlateAnalyzer({
                             const pitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
                             const regrData = PITCHER_REGRESSION_DATA.find(p => p.name === pitcherName);
                             if (!regrData) return null;
-                            const isNegative = regrData.regressionScore < -3;
-                            const isPositive = regrData.regressionScore > 3;
-                            const color = isNegative ? "#22c55e" : isPositive ? "#ef4444" : "#94a3b8";
-                            const bg = isNegative ? "#dcfce7" : isPositive ? "#fee2e2" : "#f1f5f9";
-                            return (
-                              <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: bg, color }}>
-                                Regr {regrData.regressionScore > 0 ? "+" : ""}{regrData.regressionScore}
-                              </span>
-                            );
+                            const pill = regressionPillStyle(regrData.regressionScore);
+                            const s = regrData.regressionScore;
+                            return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }}>{s > 0 ? "+" : ""}{s}</span>;
                           })()}
                         </div>
                       </div>
@@ -926,15 +920,9 @@ function MlbSlateAnalyzer({
                             const pitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
                             const regrData = PITCHER_REGRESSION_DATA.find(p => p.name === pitcherName);
                             if (!regrData) return null;
-                            const isNegative = regrData.regressionScore < -3;
-                            const isPositive = regrData.regressionScore > 3;
-                            const color = isNegative ? "#22c55e" : isPositive ? "#ef4444" : "#94a3b8";
-                            const bg = isNegative ? "#dcfce7" : isPositive ? "#fee2e2" : "#f1f5f9";
-                            return (
-                              <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: bg, color }}>
-                                Regr {regrData.regressionScore > 0 ? "+" : ""}{regrData.regressionScore}
-                              </span>
-                            );
+                            const pill = regressionPillStyle(regrData.regressionScore);
+                            const s = regrData.regressionScore;
+                            return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }}>{s > 0 ? "+" : ""}{s}</span>;
                           })()}
                         </div>
                       </div>
@@ -1063,7 +1051,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
       </div>
       
       {/* Mobile: 2 column layout (player info + score), stats below */}
-      <div style={{ display: "none", "@media (max-width: 640px)": { display: "block" } }}>
+      <div className="sm:hidden">
         {rows.map((r, i) => {
           const score = r.adjustedHrScore ?? r.hrScore;
           const pillStyle = sc(score);
@@ -1120,47 +1108,49 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
       </div>
 
       {/* Desktop: 7 column grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "5px 10px", background: "#0d1f3c", gap: 6 }}>
-        {["","PLAYER","SCORE","BARREL%","HH%","L7","L30"].map((h, i) => (
-          <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
-        ))}
-      </div>
-      {rows.map((r, i) => {
-        const score = r.adjustedHrScore ?? r.hrScore;
-        const pillStyle = sc(score);
-        return (
-          <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
-                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
-                <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
-                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
-                </span>
-                <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
-                  <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.player}</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                    <TeamLogoBadge team={r.team} size={13} showLabel={false} />
-                    <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
+      <div className="hidden sm:block">
+        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "5px 10px", background: "#0d1f3c", gap: 6 }}>
+          {["","PLAYER","SCORE","BARREL%","HH%","L7","L30"].map((h, i) => (
+            <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
+          ))}
+        </div>
+        {rows.map((r, i) => {
+          const score = r.adjustedHrScore ?? r.hrScore;
+          const pillStyle = sc(score);
+          return (
+            <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
+                  <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
+                  <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
+                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                  </span>
+                  <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
+                    <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.player}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                      <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                      <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
+                    </div>
                   </div>
-                </div>
-                <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
-                  {score >= 70 && "🔥"}{score.toFixed(1)}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: statCol(r.barrelRate, 20, 16), fontSize: 14, fontWeight: 600 }}>
-                  {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 12 }}>💣</span>}
-                  {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: statCol(r.hardHitRate, 54, 50), fontSize: 14, fontWeight: 600 }}>
-                  {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 12 }}>💥</span>}
-                  {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last7HR >= 3 ? "#22c55e" : r.last7HR >= 2 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
-                  {r.last7HR >= 3 && <span style={{ fontSize: 11 }}>📈</span>}{r.last7HR}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
-                  {r.last30HR >= 8 && <span style={{ fontSize: 11 }}>👑</span>}{r.last30HR}
-                </div>
-          </div>
-        );
-      })}
+                  <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
+                    {score >= 70 && "🔥"}{score.toFixed(1)}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: statCol(r.barrelRate, 20, 16), fontSize: 14, fontWeight: 600 }}>
+                    {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 12 }}>💣</span>}
+                    {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: statCol(r.hardHitRate, 54, 50), fontSize: 14, fontWeight: 600 }}>
+                    {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 12 }}>💥</span>}
+                    {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last7HR >= 3 ? "#22c55e" : r.last7HR >= 2 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
+                    {r.last7HR >= 3 && <span style={{ fontSize: 11 }}>📈</span>}{r.last7HR}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
+                    {r.last30HR >= 8 && <span style={{ fontSize: 11 }}>👑</span>}{r.last30HR}
+                  </div>
+            </div>
+          );
+        })}
+      </div>
       <div style={{ padding: "5px 10px", background: "#060d1a", borderTop: "1px solid #1e3a5f", display: "flex", flexWrap: "wrap", gap: 8 }}>
         {[["💣","Barrel ≥18%"],["💥","HH ≥55%"],["📈","L7 ≥3"],["👑","L30 ≥8"],["🔥","Score ≥70"]].map(([emoji, label]) => (
           <span key={label} style={{ fontSize: 9, color: "#475569" }}>{emoji} {label}</span>
@@ -1196,45 +1186,90 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
         </div>
         <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
-        {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
-          <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
-        ))}
-      </div>
-      {top.map((r, i) => {
-        const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
-        const pillStyle = sc(safeScore);
-        return (
-          <div key={`${r.pitcher}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
-            <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
-              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
-            </span>
-            <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
-              <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.pitcher}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                <TeamLogoBadge team={r.team} size={13} showLabel={false} />
-                <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opponent}</span>
+
+      {/* Mobile */}
+      <div className="sm:hidden">
+        {top.map((r, i) => {
+          const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
+          const pillStyle = sc(safeScore);
+          return (
+            <div key={`${r.pitcher}-${i}`} style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}` }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 18, fontWeight: 900, color: ACCENTS[i], minWidth: 24 }}>
+                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }}>{r.pitcher}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
+                    <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                    <span style={{ color: "#64748b" }}>vs {r.opponent}</span>
+                  </div>
+                </div>
+                <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 8px", fontWeight: 900, fontSize: 15, whiteSpace: "nowrap" }}>
+                  {safeScore.toFixed(1)}
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>K%</div>
+                  <div style={{ color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8", fontWeight: 600, fontSize: 13 }}>
+                    {r.pitcherKRate != null && r.pitcherKRate >= 28 && <span style={{ marginRight: 2 }}>🎯</span>}
+                    {r.pitcherKRate != null ? `${r.pitcherKRate.toFixed(1)}%` : "—"}
+                  </div>
+                </div>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>WHIFF%</div>
+                  <div style={{ color: r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 ? "#22c55e" : r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 28 ? "#86efac" : "#94a3b8", fontWeight: 600, fontSize: 13 }}>
+                    {r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 && <span style={{ marginRight: 2 }}>🌫️</span>}
+                    {r.pitcherWhiffRate != null ? `${r.pitcherWhiffRate.toFixed(1)}%` : "—"}
+                  </div>
+                </div>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>OPP K%</div>
+                  <div style={{ color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : r.opponentTeamKRate != null && r.opponentTeamKRate >= 24 ? "#86efac" : "#94a3b8", fontWeight: 600, fontSize: 13 }}>
+                    {r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 && <span style={{ marginRight: 2 }}>💀</span>}
+                    {r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
+                  </div>
+                </div>
               </div>
             </div>
-            <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 14 }}>
-              {safeScore.toFixed(1)}
+          );
+        })}
+      </div>
+
+      {/* Desktop */}
+      <div className="hidden sm:block">
+        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
+          {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
+            <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
+          ))}
+        </div>
+        {top.map((r, i) => {
+          const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
+          const pillStyle = sc(safeScore);
+          return (
+            <div key={`${r.pitcher}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
+              <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
+              <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
+                <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.pitcher}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}><TeamLogoBadge team={r.team} size={13} showLabel={false} /><span style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</span></div>
+              </div>
+              <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 14 }}>{safeScore.toFixed(1)}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
+                {r.pitcherKRate != null && r.pitcherKRate >= 28 && <span style={{ fontSize: 11 }}>🎯</span>}{r.pitcherKRate != null ? `${r.pitcherKRate.toFixed(1)}%` : "—"}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 ? "#22c55e" : r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 28 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
+                {r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 && <span style={{ fontSize: 11 }}>🌫️</span>}{r.pitcherWhiffRate != null ? `${r.pitcherWhiffRate.toFixed(1)}%` : "—"}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : r.opponentTeamKRate != null && r.opponentTeamKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
+                {r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 && <span style={{ fontSize: 10 }}>💀</span>}{r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
+              </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
-              {r.pitcherKRate != null && r.pitcherKRate >= 28 && <span style={{ fontSize: 11 }}>🎯</span>}
-              {r.pitcherKRate != null ? `${r.pitcherKRate.toFixed(1)}%` : "—"}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 ? "#22c55e" : r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 28 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
-              {r.pitcherWhiffRate != null && r.pitcherWhiffRate >= 32 && <span style={{ fontSize: 11 }}>🌫️</span>}
-              {r.pitcherWhiffRate != null ? `${r.pitcherWhiffRate.toFixed(1)}%` : "—"}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : r.opponentTeamKRate != null && r.opponentTeamKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
-              {r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 && <span style={{ fontSize: 10 }}>💀</span>}
-              {r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+
       <div style={{ padding: "5px 10px", background: "#060d1a", borderTop: "1px solid #1e3a5f", display: "flex", flexWrap: "wrap", gap: 8 }}>
         {[["🎯","K% ≥28%"],["🌫️","Whiff ≥32%"],["💀","Opp K ≥27%"]].map(([emoji, label]) => (
           <span key={label} style={{ fontSize: 9, color: "#475569" }}>{emoji} {label}</span>
@@ -1263,44 +1298,88 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
         </div>
         <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 64px 70px 70px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
-        {["","PLAYER","HIT SCORE","xBA","HH%","BARREL%"].map((h, i) => (
-          <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
-        ))}
-      </div>
-      {top.map((r, i) => {
-        const pillStyle = sc(r.bestMatchupScore);
-        return (
-          <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 64px 70px 70px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
-            <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
-              {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
-            </span>
-            <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
-              <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 12 }}>{r.player}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                <TeamLogoBadge team={r.team} size={13} showLabel={false} />
-                <span style={{ color: "#94a3b8", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
+
+      {/* Mobile */}
+      <div className="sm:hidden">
+        {top.map((r, i) => {
+          const pillStyle = sc(r.bestMatchupScore);
+          return (
+            <div key={`${r.player}-${i}`} style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}` }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 18, fontWeight: 900, color: ACCENTS[i], minWidth: 24 }}>
+                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }}>{r.player}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
+                    <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                    <span style={{ color: "#94a3b8" }}>vs {r.opposingPitcher}</span>
+                  </div>
+                </div>
+                <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 8px", fontWeight: 900, fontSize: 15, whiteSpace: "nowrap" }}>
+                  {r.bestMatchupScore.toFixed(1)}
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>xBA</div>
+                  <div style={{ color: r.xba != null && r.xba >= 0.31 ? "#22c55e" : r.xba != null && r.xba >= 0.28 ? "#86efac" : "#94a3b8", fontWeight: 600, fontSize: 13 }}>
+                    {r.xba != null && r.xba >= 0.31 && <span style={{ marginRight: 2 }}>🎯</span>}
+                    {r.xba != null ? r.xba.toFixed(3) : "—"}
+                  </div>
+                </div>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>HH%</div>
+                  <div style={{ color: r.hardHitRate != null && r.hardHitRate >= 55 ? "#22c55e" : r.hardHitRate != null && r.hardHitRate >= 50 ? "#86efac" : "#94a3b8", fontWeight: 600, fontSize: 13 }}>
+                    {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ marginRight: 2 }}>💥</span>}
+                    {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
+                  </div>
+                </div>
+                <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                  <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>BARREL%</div>
+                  <div style={{ color: r.barrelRate != null && r.barrelRate >= 18 ? "#22c55e" : r.barrelRate != null && r.barrelRate >= 14 ? "#86efac" : "#94a3b8", fontWeight: 600, fontSize: 13 }}>
+                    {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ marginRight: 2 }}>💣</span>}
+                    {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
+                  </div>
+                </div>
               </div>
             </div>
-            <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
-              {r.bestMatchupScore.toFixed(1)}
+          );
+        })}
+      </div>
+
+      {/* Desktop */}
+      <div className="hidden sm:block">
+        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 64px 70px 70px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
+          {["","PLAYER","HIT SCORE","xBA","HH%","BARREL%"].map((h, i) => (
+            <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
+          ))}
+        </div>
+        {top.map((r, i) => {
+          const pillStyle = sc(r.bestMatchupScore);
+          return (
+            <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 64px 70px 70px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
+              <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
+              <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
+                <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 12 }}>{r.player}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}><TeamLogoBadge team={r.team} size={13} showLabel={false} /><span style={{ color: "#94a3b8", fontSize: 10 }}>vs {r.opposingPitcher}</span></div>
+              </div>
+              <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>{r.bestMatchupScore.toFixed(1)}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.xba != null && r.xba >= 0.31 ? "#22c55e" : r.xba != null && r.xba >= 0.28 ? "#86efac" : "#94a3b8" }}>
+                {r.xba != null && r.xba >= 0.31 && <span style={{ fontSize: 10 }}>🎯</span>}{r.xba != null ? r.xba.toFixed(3) : "—"}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.hardHitRate != null && r.hardHitRate >= 55 ? "#22c55e" : r.hardHitRate != null && r.hardHitRate >= 50 ? "#86efac" : "#94a3b8" }}>
+                {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 10 }}>💥</span>}{r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.barrelRate != null && r.barrelRate >= 18 ? "#22c55e" : r.barrelRate != null && r.barrelRate >= 14 ? "#86efac" : "#94a3b8" }}>
+                {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 10 }}>💣</span>}{r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
+              </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.xba != null && r.xba >= 0.31 ? "#22c55e" : r.xba != null && r.xba >= 0.28 ? "#86efac" : "#94a3b8" }}>
-              {r.xba != null && r.xba >= 0.31 && <span style={{ fontSize: 10 }}>🎯</span>}
-              {r.xba != null ? r.xba.toFixed(3) : "—"}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.hardHitRate != null && r.hardHitRate >= 55 ? "#22c55e" : r.hardHitRate != null && r.hardHitRate >= 50 ? "#86efac" : "#94a3b8" }}>
-              {r.hardHitRate != null && r.hardHitRate >= 55 && <span style={{ fontSize: 10 }}>💥</span>}
-              {r.hardHitRate != null ? `${r.hardHitRate.toFixed(1)}%` : "—"}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.barrelRate != null && r.barrelRate >= 18 ? "#22c55e" : r.barrelRate != null && r.barrelRate >= 14 ? "#86efac" : "#94a3b8" }}>
-              {r.barrelRate != null && r.barrelRate >= 18 && <span style={{ fontSize: 10 }}>💣</span>}
-              {r.barrelRate != null ? `${r.barrelRate.toFixed(1)}%` : "—"}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+
       <div style={{ padding: "5px 10px", background: "#060d1a", borderTop: "1px solid #1e3a5f", display: "flex", flexWrap: "wrap", gap: 8 }}>
         {[["🎯","xBA ≥.310"],["💥","HH ≥55%"],["💣","Barrel ≥18%"]].map(([emoji, label]) => (
           <span key={label} style={{ fontSize: 9, color: "#475569" }}>{emoji} {label}</span>
@@ -1533,7 +1612,7 @@ function HomeSchedule({
               <h2 className="text-xl font-bold tracking-tight text-[#031635]">Pitcher Regression Analysis</h2>
               <p className="text-xs text-slate-500">Today's starters — ERA vs expected metrics (xFIP/SIERA). Negative score = overperforming (regression risk), Positive = underperforming (improvement likely).</p>
             </div>
-            <MlbPitcherRegressionTable pitchers={PITCHER_REGRESSION_DATA} />
+            <MlbPitcherRegressionTable pitchers={REGRESSION_DATA_WITH_STATS} />
           </section>
         </div>
       </div>
