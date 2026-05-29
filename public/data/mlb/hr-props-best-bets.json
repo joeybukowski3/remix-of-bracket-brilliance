@@ -1,9 +1,9 @@
 {
   "date": "2026-05-29",
-  "generatedAt": "2026-05-29T17:36:20.330Z",
+  "generatedAt": "2026-05-29T19:25:45.572Z",
   "slatePreview": {
-    "slateOverview": "Coors (1.40) and GABP (1.25) headline a boosted environment, while Daikin and Citi offer slight edges. Coleman Crow and Max Meyer face top-tier barrels from Alvarez and Soto, and Lorenzen draws the Coors boost versus Schmitt.",
-    "modelNote": "The model elevates park-adjusted barrel and hard-hit rates, then layers recent HR volume and opposing pitcher HR vulnerability to rank Alvarez first and Soto second."
+    "slateOverview": "Coors (1.40) and Great American (1.25) stand out as the primary power inflators, while Daikin and Citi offer modest boosts. Right-handed pitching dominates the slate, but several arms (Crow, Meyer, Paddack) carry elevated HR/FB marks that play into the top model targets. Warm, dry conditions are expected across the central and eastern parks, keeping fly-ball carry in play.",
+    "modelNote": "The model is overweighting barrel rate, recent home-run volume, and opposing pitcher HR vulnerability, which is why Alvarez, Soto, and Harris occupy the top three spots despite varying park factors."
   },
   "bestBets": [
     {
@@ -14,7 +14,7 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.9",
-        "hrFBRatio=9.8"
+        "hrScore=77.5"
       ],
       "bullets": [
         "barrelRate 18.9 with exitVelo 94.5",
@@ -29,10 +29,10 @@
       "hrScoreRank": 2,
       "topStats": [
         "barrelRate=19.5",
-        "hardHitRate=50.4"
+        "hrScore=70.9"
       ],
       "bullets": [
-        "opposingPitcherHrVs 47.2 with parkFactor 1.06",
+        "opposingPitcherHrVs 47.6 with parkFactor 1.06",
         "last30HR 9 with xba 0.282"
       ]
     },
@@ -44,11 +44,11 @@
       "hrScoreRank": 3,
       "topStats": [
         "hardHitRate=56.1",
-        "parkFactor=1.25"
+        "hrScore=69.7"
       ],
       "bullets": [
         "parkFactor 1.25 with hardHitRate 56.1",
-        "last30HR 7 with exitVelo 93.4"
+        "opposingPitcherHrVs 47.8 with exitVelo 93.4"
       ]
     },
     {
@@ -59,11 +59,11 @@
       "hrScoreRank": 4,
       "topStats": [
         "parkFactor=1.4",
-        "last30HR=8"
+        "hrScore=69.5"
       ],
       "bullets": [
-        "parkFactor 1.4 with opposingPitcherHrVs 70.2",
-        "last7HR 3 with barrelRate 15.2"
+        "parkFactor 1.4 with opposingPitcherHrVs 70.3",
+        "last30HR 8 with last7HR 3"
       ]
     },
     {
@@ -74,11 +74,11 @@
       "hrScoreRank": 5,
       "topStats": [
         "barrelRate=20.8",
-        "hardHitRate=58.3"
+        "hrScore=66.7"
       ],
       "bullets": [
-        "barrelRate 20.8 with hrFBRatio 10.1",
-        "opposingPitcherHrVs 63.6 with exitVelo 94.1"
+        "barrelRate 20.8 with hardHitRate 58.3",
+        "opposingPitcherHrVs 63.4 with hrFBRatio 10.1"
       ]
     }
   ],
@@ -91,7 +91,7 @@
       "hrScoreRank": 9,
       "topStats": [
         "hrFBRatio=10.4",
-        "last30HR=12"
+        "hrScore=63.2"
       ],
       "bullets": [
         "last30HR 12 with hrFBRatio 10.4",
@@ -106,7 +106,7 @@
       "hrScoreRank": 8,
       "topStats": [
         "barrelRate=22.4",
-        "hardHitRate=57.5"
+        "hrScore=63.3"
       ],
       "bullets": [
         "barrelRate 22.4 with hardHitRate 57.5",
@@ -114,18 +114,18 @@
       ]
     },
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "SD",
-      "opposingPitcher": "Lucas Giolito",
-      "hrScoreRank": 7,
+      "player": "Matt Olson",
+      "team": "ATL",
+      "opponent": "CIN",
+      "opposingPitcher": "Chris Paddack",
+      "hrScoreRank": 11,
       "topStats": [
-        "barrelRate=25.9",
-        "hardHitRate=61.2"
+        "parkFactor=1.25",
+        "hrScore=62.1"
       ],
       "bullets": [
-        "barrelRate 25.9 with hardHitRate 61.2",
-        "exitVelo 96.6 with opposingPitcherHrVs 23.8"
+        "parkFactor 1.25 with exitVelo 93.3",
+        "opposingPitcherHrVs 47.8 with iso 0.286"
       ]
     },
     {
@@ -136,43 +136,58 @@
       "hrScoreRank": 6,
       "topStats": [
         "Hard Hit%=54.2",
-        "Pitcher HR VS=51.4"
+        "Pitcher HR VS=51.6"
       ],
       "bullets": [
-        "HR score 64.7 (#6)",
-        "Pitcher HR VS 51.4 at park 0.99"
+        "HR score 64.9 (#6)",
+        "Pitcher HR VS 51.6 at park 0.99"
+      ]
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "SD",
+      "opposingPitcher": "Lucas Giolito",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Hard Hit%=61.2",
+        "Barrel%=25.9"
+      ],
+      "bullets": [
+        "HR score 64.1 (#7)",
+        "Pitcher HR VS 23.7 at park 0.98"
       ]
     }
   ],
   "longshots": [
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "ATL",
-      "opposingPitcher": "Grant Holmes",
-      "hrScoreRank": 20,
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "SD",
+      "opposingPitcher": "Lucas Giolito",
+      "hrScoreRank": 7,
       "topStats": [
-        "hardHitRate=53",
-        "exitVelo=94.1"
+        "barrelRate=25.9",
+        "hrScore=64.1"
       ],
       "bullets": [
-        "hardHitRate 53 with exitVelo 94.1",
-        "parkFactor 1.25 with opposingPitcherHrVs 53.1"
+        "barrelRate 25.9 with hardHitRate 61.2",
+        "exitVelo 96.6 with opposingPitcherHrVs 23.7"
       ]
     },
     {
-      "player": "Eric Wagaman",
-      "team": "NYM",
-      "opponent": "MIA",
-      "opposingPitcher": "Max Meyer",
-      "hrScoreRank": 19,
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "ATH",
+      "opposingPitcher": "Luis Severino",
+      "hrScoreRank": 12,
       "topStats": [
-        "barrelRate=33.3",
-        "hrFBRatio=25"
+        "hrFBRatio=8.7",
+        "hrScore=62"
       ],
       "bullets": [
-        "barrelRate 33.3 with hrFBRatio 25",
-        "iso 0.75 with exitVelo 94.2"
+        "hrFBRatio 8.7 with iso 0.333",
+        "last30HR 6 with barrelRate 17.6"
       ]
     },
     {
@@ -183,11 +198,11 @@
       "hrScoreRank": 9,
       "topStats": [
         "Hard Hit%=51.2",
-        "Pitcher HR VS=41.8"
+        "Pitcher HR VS=41.7"
       ],
       "bullets": [
-        "HR score 63.1 (#9)",
-        "Pitcher HR VS 41.8 at park 1.10"
+        "HR score 63.2 (#9)",
+        "Pitcher HR VS 41.7 at park 1.10"
       ]
     },
     {
@@ -197,12 +212,12 @@
       "opposingPitcher": "Grant Holmes",
       "hrScoreRank": 10,
       "topStats": [
-        "Pitcher HR VS=53.1",
+        "Pitcher HR VS=53.4",
         "Hard Hit%=47.1"
       ],
       "bullets": [
-        "HR score 62.3 (#10)",
-        "Pitcher HR VS 53.1 at park 1.25"
+        "HR score 62.5 (#10)",
+        "Pitcher HR VS 53.4 at park 1.25"
       ]
     }
   ]
