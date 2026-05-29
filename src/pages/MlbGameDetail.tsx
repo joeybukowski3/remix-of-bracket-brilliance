@@ -1215,7 +1215,14 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
 }
 
 function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], batters = [], games = []) {
-  if (strikeoutRows?.length) return strikeoutRows;
+  if (strikeoutRows?.length) {
+    return strikeoutRows.map(r => ({
+      ...r,
+      pitcherKRate: r.pitcherKRate ?? r.kRate ?? null,
+      pitcherWhiffRate: r.pitcherWhiffRate ?? r.whiffRate ?? null,
+      strikeoutMatchupScore: r.strikeoutMatchupScore ?? r.kMatchupScore ?? 0,
+    }));
+  }
   if (strikeoutDetailRows?.length) return strikeoutDetailRows;
 
   if (!pitchers?.length) return [];
