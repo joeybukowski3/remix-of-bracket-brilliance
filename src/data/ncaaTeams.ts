@@ -890,7 +890,7 @@ export function buildCanonicalTeams(liveTeams: LiveTeamMetadata[] = []): Team[] 
     const schoolKey = getCanonicalSchoolKey(liveTeam.name || fallback?.name || "", liveTeam.abbreviation || fallback?.abbreviation || "");
     if (fallback) fallbackMatchedKeys.add(getCanonicalSchoolKey(fallback.name, fallback.abbreviation));
     const generated = buildGeneratedLiveTeam(liveTeam, 100000 + merged.size);
-    const mergedTeam = {
+    const mergedTeam: Team = {
       ...(fallback ?? generated),
       canonicalId: fallback?.canonicalId ?? `school-${schoolKey}`,
       slug: fallback?.slug ?? slugify(liveTeam.name),

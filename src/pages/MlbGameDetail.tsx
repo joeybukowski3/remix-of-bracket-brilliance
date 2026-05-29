@@ -28,6 +28,7 @@ import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { SPORTSBOOKS } from "@/lib/sportsbooks";
 import { ScorePill, HrDashboardPitcher, TeamLogoBadge, type HrDashboardBatter, type PitcherStrikeoutTeamRow, type PitcherVsBatterRow } from "@/pages/MlbHrProps";
 
 const SEASON = new Date().getFullYear();
@@ -739,6 +740,28 @@ function MlbHubSidebar() {
           Prop Optimizer
         </Link>
       </div>
+
+      {/* Vertical "Bet with our partners" section card (stacked, no horizontal scroll) */}
+      <div className="mt-4 border-t border-slate-200 pt-3 px-3">
+        <div className="px-1 mb-1.5 text-[10px] font-semibold tracking-wide text-slate-500">
+          Bet with our partners
+        </div>
+        <div className="flex flex-col gap-1">
+          {SPORTSBOOKS.map((sb) => (
+            <a
+              key={sb.name}
+              href={sb.referralUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md px-3 py-[5px] text-[11px] font-bold text-center transition hover:opacity-95 active:opacity-90"
+              style={{ backgroundColor: sb.bgColor, color: sb.textColor }}
+            >
+              {sb.name}
+            </a>
+          ))}
+        </div>
+        <div className="mt-2 px-1 text-[9px] text-slate-400">21+ • Call 1-800-GAMBLER</div>
+      </div>
     </aside>
   );
 }
@@ -1052,6 +1075,13 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
 }
 
 function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
+  if (!rows || rows.length === 0) {
+    return (
+      <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>
+        Data Not Available
+      </div>
+    );
+  }
   const top = rows.slice(0, 5);
   function sc(s: number) {
     if (s >= 70) return { bg: "#22c55e", color: "#fff" };
@@ -1076,7 +1106,8 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
         ))}
       </div>
       {top.map((r, i) => {
-        const pillStyle = sc(r.strikeoutMatchupScore);
+        const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
+        const pillStyle = sc(safeScore);
         return (
           <div key={`${r.pitcher}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 62px 62px 58px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
@@ -1091,7 +1122,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               </div>
             </div>
             <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
-              {r.strikeoutMatchupScore.toFixed(1)}
+              {safeScore.toFixed(1)}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 2, color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8" }}>
               {r.pitcherKRate != null && r.pitcherKRate >= 28 && <span style={{ fontSize: 11 }}>🎯</span>}
@@ -1183,8 +1214,56 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
   );
 }
 
+function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], batters = [], games = []) {
+  if (strikeoutRows?.length) return strikeoutRows;
+  if (strikeoutDetailRows?.length) return strikeoutDetailRows;
+
+  if (!pitchers?.length) return [];
+
+  // Build opponent batters map (same logic as the main builder) so we can compute real opponent stats even in fallback
+  const battersByGameAndTeam = new Map();
+  batters.forEach((batter) => {
+    const key = `${batter.gameKey}|${batter.team}`;
+    if (!battersByGameAndTeam.has(key)) battersByGameAndTeam.set(key, []);
+    battersByGameAndTeam.get(key).push(batter);
+  });
+
+  const gameByKey = new Map(games.map((g) => [g.gameKey, g]));
+
+  return pitchers
+    .map((p, i) => {
+      const opponentBatters = battersByGameAndTeam.get(`${p.gameKey}|${p.opponent}`) || [];
+      const game = gameByKey.get(p.gameKey);
+
+      // For social fallback, prioritize the pitcher's own K stats for the score (opponent data may be sparse after filters)
+      const kRate = Number(p.kRate) || 0;
+      const whiffRate = Number(p.whiffRate) || 0;
+      const kVs = Number(p.kVs) || 0;
+
+      let score = kVs;
+      if (score === 0) {
+        score = (kRate * 0.5 + whiffRate * 0.5);
+      }
+      const safeScore = Math.max(0, Math.min(100, score));
+
+      return {
+        rank: i + 1,
+        pitcher: p.pitcher,
+        team: p.team,
+        opponent: p.opponent,
+        strikeoutMatchupScore: safeScore,
+        pitcherKRate: typeof p.kRate === 'number' ? p.kRate : (Number(p.kRate) || 0),
+        pitcherWhiffRate: typeof p.whiffRate === 'number' ? p.whiffRate : (Number(p.whiffRate) || 0),
+        opponentTeamKRate: typeof opponentTeamKRate === 'number' ? opponentTeamKRate : null,
+        opponentTeamWhiffRate: typeof opponentTeamWhiffRate === 'number' ? opponentTeamWhiffRate : null,
+      };
+    })
+    .sort((a, b) => (b.strikeoutMatchupScore || 0) - (a.strikeoutMatchupScore || 0))
+    .slice(0, 5);
+}
+
 function SocialMediaTablesSection() {
-  const { batters, strikeoutRows, batterVsPitcherRows, loading } = useMlbPropsData();
+  const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games, loading } = useMlbPropsData();
   const [activeTab, setActiveTab] = useState<"hr" | "k" | "hits">("hr");
 
   if (loading) return null;
@@ -1194,6 +1273,8 @@ function SocialMediaTablesSection() {
     { key: "k",    label: "K Props",   emoji: "🎯" },
     { key: "hits", label: "Hit Props", emoji: "⚔️" },
   ];
+
+  const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, games);
 
   return (
     <section style={{ marginTop: 16 }}>
@@ -1229,7 +1310,7 @@ function SocialMediaTablesSection() {
         {/* Table content */}
         <div style={{ padding: 14 }}>
           {activeTab === "hr"   && <SocialTableHR batters={batters} />}
-          {activeTab === "k"    && <SocialTableK rows={strikeoutRows} />}
+          {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
         </div>
 
@@ -1313,7 +1394,6 @@ function HomeSchedule({
         <div className="min-w-0 flex-1 space-y-3">
 
           <MlbHubHero />
-          <HubSportsbookStrip />
 
           <section id="props" className="space-y-3">
             <div>
