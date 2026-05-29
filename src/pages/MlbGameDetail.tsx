@@ -845,6 +845,7 @@ function MlbSlateAnalyzer({
               && Number.isFinite(awayScore)
               && Number.isFinite(homeScore);
 
+            return (
               <button
                 key={game.gamePk}
                 type="button"
