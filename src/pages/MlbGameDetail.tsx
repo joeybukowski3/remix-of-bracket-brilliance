@@ -23,6 +23,7 @@ import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
+import { computeModelEdge } from "@/lib/mlb/mlbModelEdge";
 import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
@@ -824,12 +825,13 @@ function MlbSlateAnalyzer({
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="hidden grid-cols-[86px_minmax(0,1.7fr)_minmax(120px,0.75fr)_minmax(120px,0.75fr)_minmax(110px,0.55fr)] border-b border-slate-200 bg-[#eff4ff] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 lg:grid">
+        <div className="hidden grid-cols-[86px_minmax(0,1.7fr)_minmax(110px,0.7fr)_minmax(110px,0.7fr)_minmax(100px,0.5fr)_minmax(110px,0.6fr)] border-b border-slate-200 bg-[#eff4ff] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 lg:grid">
           <div>Status</div>
           <div>Matchup / Pitchers</div>
           <div className="text-center">Lineup</div>
           <div className="text-center">Pitching</div>
           <div className="text-center">Total</div>
+          <div className="text-center">ML Edge</div>
         </div>
         <div>
           {games.map((game, index) => {
@@ -850,85 +852,111 @@ function MlbSlateAnalyzer({
                 onClick={() => onOpenGame(game.gamePk)}
                 className={cn(
                   "grid w-full gap-2 border-b border-slate-100 px-3 py-2 text-left transition last:border-b-0 hover:bg-[#eff4ff]",
-                  "lg:grid-cols-[86px_minmax(0,1.7fr)_minmax(120px,0.75fr)_minmax(120px,0.75fr)_minmax(110px,0.55fr)] lg:items-center",
+                  "lg:grid-cols-[86px_minmax(0,1.7fr)_minmax(110px,0.7fr)_minmax(110px,0.7fr)_minmax(100px,0.5fr)_minmax(110px,0.6fr)] lg:items-center",
                   index % 2 === 1 && "bg-slate-50/55",
-                )}
-              >
-                <div className="flex items-center justify-between gap-2 lg:block">
-                  <span
-                    className="inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold"
-                    style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
-                  >
-                    {game.status}
-                  </span>
-                  <span className="text-[11px] font-semibold text-slate-400 lg:mt-1.5 lg:block">{formatGameTime(game.gameDate)}</span>
-                </div>
+                )}>
+                {(() => {
+                  const mlEdge = detail ? computeModelEdge(detail) : null;
+                  const mlPickAbbr = mlEdge && mlEdge.pick !== "push"
+                    ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr)
+                    : null;
+                  const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
 
-                <div className="min-w-0 space-y-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <MlbTeamLogo team={game.away.abbreviation} size={18} />
-                      <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
-                      <span className="text-[10px] font-semibold text-slate-400">{game.away.record}</span>
-                      {showScore && <span className="ml-1 text-[13px] font-extrabold text-slate-900">{awayScore}</span>}
-                    </div>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="truncate text-xs font-medium text-[#031635]">
-                        {game.away.probablePitcher?.fullName || "TBD"}
+                  return (<>
+                    <div className="flex items-center justify-between gap-2 lg:block">
+                      <span
+                        className="inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold"
+                        style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
+                      >
+                        {game.status}
                       </span>
-                      {detail?.starters.away.record && (
-                        <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.away.record}</span>
-                      )}
-                      {(() => { const xera = getPitcherXera(game.away.probablePitcher?.id ?? detail?.starters.away.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
+                      <span className="text-[11px] font-semibold text-slate-400 lg:mt-1.5 lg:block">{formatGameTime(game.gameDate)}</span>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <MlbTeamLogo team={game.home.abbreviation} size={18} />
-                      <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
-                      <span className="text-[10px] font-semibold text-slate-400">{game.home.record}</span>
-                      {showScore && <span className="ml-1 text-[13px] font-extrabold text-slate-900">{homeScore}</span>}
-                    </div>
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="truncate text-xs font-medium text-[#031635]">
-                        {game.home.probablePitcher?.fullName || "TBD"}
-                      </span>
-                      {detail?.starters.home.record && (
-                        <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.home.record}</span>
-                      )}
-                      {(() => { const xera = getPitcherXera(game.home.probablePitcher?.id ?? detail?.starters.home.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">
-                    <span>{game.venue}</span>
-                    {statusCategory === "in-progress" && game.currentInning != null && (
-                      <span className="rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
-                        {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
-                      </span>
-                    )}
-                    {statusCategory === "final" && showScore && (
-                      <span className="text-[9px] font-bold text-slate-400">FINAL</span>
-                    )}
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-1.5 lg:hidden">
-                  <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Lineup</div>
-                  <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Pitching</div>
-                  <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Total</div>
-                </div>
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <MlbTeamLogo team={game.away.abbreviation} size={18} />
+                          <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
+                          <span className="text-[10px] font-semibold text-slate-400">{game.away.record}</span>
+                          {showScore && <span className="ml-1 text-[13px] font-extrabold text-slate-900">{awayScore}</span>}
+                        </div>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-xs font-medium text-[#031635]">
+                            {game.away.probablePitcher?.fullName || "TBD"}
+                          </span>
+                          {detail?.starters.away.record && (
+                            <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.away.record}</span>
+                          )}
+                          {(() => { const xera = getPitcherXera(game.away.probablePitcher?.id ?? detail?.starters.away.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <MlbTeamLogo team={game.home.abbreviation} size={18} />
+                          <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
+                          <span className="text-[10px] font-semibold text-slate-400">{game.home.record}</span>
+                          {showScore && <span className="ml-1 text-[13px] font-extrabold text-slate-900">{homeScore}</span>}
+                        </div>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-xs font-medium text-[#031635]">
+                            {game.home.probablePitcher?.fullName || "TBD"}
+                          </span>
+                          {detail?.starters.home.record && (
+                            <span className="shrink-0 text-[10px] font-semibold text-slate-400">{detail.starters.home.record}</span>
+                          )}
+                          {(() => { const xera = getPitcherXera(game.home.probablePitcher?.id ?? detail?.starters.home.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">
+                        <span>{game.venue}</span>
+                        {statusCategory === "in-progress" && game.currentInning != null && (
+                          <span className="rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
+                            {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
+                          </span>
+                        )}
+                        {statusCategory === "final" && showScore && (
+                          <span className="text-[9px] font-bold text-slate-400">FINAL</span>
+                        )}
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-3 gap-2 lg:contents">
-                  <div className="flex justify-center">
-                    <span className="rounded-md bg-sky-50 px-2 py-1 text-[10px] font-extrabold text-sky-700">{edges.lineup}</span>
-                  </div>
-                  <div className="flex justify-center">
-                    <span className="rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-extrabold text-emerald-700">{edges.pitching}</span>
-                  </div>
-                  <div className="flex justify-center">
-                    <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
-                  </div>
-                </div>
+                    {/* Mobile labels row */}
+                    <div className="grid grid-cols-4 gap-2 border-t border-slate-100 pt-1.5 lg:hidden">
+                      <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Lineup</div>
+                      <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Pitching</div>
+                      <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Total</div>
+                      <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">ML Edge</div>
+                    </div>
+
+                    {/* Data pills row */}
+                    <div className="grid grid-cols-4 gap-2 lg:contents">
+                      <div className="flex justify-center">
+                        <span className="rounded-md bg-sky-50 px-2 py-1 text-[10px] font-extrabold text-sky-700">{edges.lineup}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        <span className="rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-extrabold text-emerald-700">{edges.pitching}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        {mlPickAbbr && mlPickColor ? (
+                          <span
+                            className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white"
+                            style={{ backgroundColor: mlPickColor }}
+                          >
+                            {mlPickAbbr} {mlEdge!.confidence}%
+                          </span>
+                        ) : mlEdge ? (
+                          <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
+                        ) : (
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
+                        )}
+                      </div>
+                    </div>
+                  </>);
+                })()}
               </button>
             );
           })}
