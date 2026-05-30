@@ -36,6 +36,13 @@ permissions:
 jobs:
   post-hr-props-to-x:
     runs-on: ubuntu-latest
+    env:
+      X_EXPECTED_USERNAME: _joeknowsball_
+      X_DUPLICATE_STATE_DIR: .cache/mlb-hr-props-x-posted
+      JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+      JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+      JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+      JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -113,19 +120,14 @@ jobs:
         shell: bash
         run: |
           MODE="${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'dry-run' }}"
-          DATA_SOURCE="${{ github.event_name == 'workflow_dispatch' && inputs.data_source || 'production' }}"
-          if [ "$MODE" = "post" ]; then
-            DATA_SOURCE="production"
-          fi
-          HR_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
+          if [ -n "${JKB_X_API_KEY:-}" ]; then echo "JKB_X_API_KEY present: true"; else echo "JKB_X_API_KEY present: false"; fi
+          if [ -n "${JKB_X_API_SECRET:-}" ]; then echo "JKB_X_API_SECRET present: true"; else echo "JKB_X_API_SECRET present: false"; fi
+          if [ -n "${JKB_X_ACCESS_TOKEN:-}" ]; then echo "JKB_X_ACCESS_TOKEN present: true"; else echo "JKB_X_ACCESS_TOKEN present: false"; fi
+          if [ -n "${JKB_X_ACCESS_SECRET:-}" ]; then echo "JKB_X_ACCESS_SECRET present: true"; else echo "JKB_X_ACCESS_SECRET present: false"; fi
+          node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
-          X_EXPECTED_USERNAME: _joeknowsball_
+          HR_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && 'production' || (github.event_name == 'workflow_dispatch' && inputs.data_source || 'production') }}
           X_ALLOW_LIVE_POST: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && 'true' || 'false' }}
-          X_DUPLICATE_STATE_DIR: .cache/mlb-hr-props-x-posted
-          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
-          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
-          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
-          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
 
       - name: Upload HR props X screenshot
         if: steps.schedule_gate.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'dry-run')
