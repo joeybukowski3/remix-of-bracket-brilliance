@@ -196,9 +196,10 @@ function computeStats(seasonStats, savantRow) {
   const bf        = toNum(seasonStats.battersFaced) ?? 0;
   const hits      = toNum(seasonStats.hits) ?? 0;
   const airOuts   = toNum(seasonStats.airOuts) ?? 0;   // fly ball outs (no HR)
-  const lob       = toNum(seasonStats.leftOnBase); // null if not returned by API — do NOT default to 0
+  const lob       = toNum(seasonStats.leftOnBase); // null if not returned by API
   const hbp       = toNum(seasonStats.hitByPitch) ?? 0;
   const sf        = toNum(seasonStats.sacFlies) ?? 0;
+  const runs      = toNum(seasonStats.runs) ?? toNum(seasonStats.earnedRuns) ?? 0;
 
   if (ip == null || ip < 5) return null; // too few innings to be meaningful
 
@@ -207,8 +208,17 @@ function computeStats(seasonStats, savantRow) {
   const bbPct = bf > 0 ? (bb / bf) * 100 : null;
   const kbb   = kPct != null && bbPct != null ? Math.round((kPct - bbPct) * 10) / 10 : null;
 
-  // LOB% handled below with Savant fallback
+  // LOB% formula: (H + BB + HBP - R) / (H + BB + HBP - 1.4*HR)
+  // uses `runs` from MLB API — no leftOnBase needed
   const lobDenom = hits + bb + hbp - 1.4 * hr;
+  const lobNumerator = hits + bb + hbp - runs;
+  const savantLobPct = savantRow ? toNum(savantRow.lobPct) : null;
+  const computedStrandRate = lobDenom > 0 && lobNumerator >= 0
+    ? Math.round((lobNumerator / lobDenom) * 1000) / 10
+    : savantLobPct != null
+      ? (savantLobPct > 1 ? Math.round(savantLobPct * 10) / 10 : Math.round(savantLobPct * 1000) / 10)
+      : (lob != null && lob > 0 && lobDenom > 0 ? Math.round((lob / lobDenom) * 1000) / 10 : null);
+  const strandRate = computedStrandRate;
 
   // HR/FB%: homeRuns / (homeRuns + airOuts) — airOuts = fly ball outs
   const totalFlyBalls = hr + airOuts;
@@ -225,18 +235,6 @@ function computeStats(seasonStats, savantRow) {
 
   // xERA from Savant (best predictive metric)
   const xera = savantRow ? toNum(savantRow.xera) : null;
-
-  // LOB% — prefer MLB API leftOnBase, fall back to Savant lob_pct
-  const savantLobPct = savantRow ? toNum(savantRow.lobPct) : null;
-  const computedStrandRate = (lob != null && lob > 0 && lobDenom > 0)
-    ? Math.round((lob / lobDenom) * 1000) / 10
-    : savantLobPct != null
-      ? Math.round(savantLobPct * 10) / 10  // Savant returns as decimal (0-1) or percent
-      : null;
-  // Savant lob_pct is typically 0-1 scale, convert to percent if needed
-  const strandRate = computedStrandRate != null && computedStrandRate <= 1
-    ? Math.round(computedStrandRate * 1000) / 10
-    : computedStrandRate;
 
   return { era, xfip, xera, kbb, strandRate, hrfb, babip };
 }
