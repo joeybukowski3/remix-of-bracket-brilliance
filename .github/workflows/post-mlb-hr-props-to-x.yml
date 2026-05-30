@@ -15,6 +15,7 @@ on:
         options:
           - dry-run
           - post
+          - verify-account
       data_source:
         description: "HR props data source"
         required: true
@@ -88,6 +89,7 @@ jobs:
           node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
           HR_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.data_source || 'production' }}
+          X_EXPECTED_USERNAME: _joeknowsball_
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}

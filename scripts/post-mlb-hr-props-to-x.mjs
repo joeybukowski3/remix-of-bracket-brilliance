@@ -16,20 +16,26 @@ function usage() {
   return [
     "Usage: node scripts/post-mlb-hr-props-to-x.mjs --dry-run",
     "       node scripts/post-mlb-hr-props-to-x.mjs --post",
+    "       node scripts/post-mlb-hr-props-to-x.mjs --verify-account",
     "",
     "--dry-run  Build and print the X caption without posting.",
     "--post     Build the caption and validate X client setup, but do not post yet.",
+    "--verify-account  Verify configured X credentials and expected username without building a caption.",
     "",
     "Set HR_PROPS_DATA_SOURCE to production, github, or local.",
     "Default: production in GitHub Actions, local otherwise.",
+    "Set X_EXPECTED_USERNAME to the exact X username that is allowed to post.",
   ].join("\n");
 }
 
 function getMode() {
   const dryRun = args.has("--dry-run");
   const post = args.has("--post");
-  if (dryRun && post) throw new Error("Choose only one mode: --dry-run or --post.");
-  if (!dryRun && !post) return "dry-run";
+  const verifyAccount = args.has("--verify-account");
+  const modes = [dryRun, post, verifyAccount].filter(Boolean).length;
+  if (modes > 1) throw new Error("Choose only one mode: --dry-run, --post, or --verify-account.");
+  if (!modes) return "dry-run";
+  if (verifyAccount) return "verify-account";
   return post ? "post" : "dry-run";
 }
 
@@ -77,6 +83,10 @@ async function loadJson(location, source) {
 
 function normalizeTeam(value) {
   return normalizeText(value).toUpperCase();
+}
+
+function normalizeUsername(value) {
+  return normalizeText(value).replace(/^@/, "").toLowerCase();
 }
 
 function toFiniteNumber(value) {
@@ -234,6 +244,28 @@ function createXClientFromEnv() {
   return new TwitterApi({ appKey, appSecret, accessToken, accessSecret });
 }
 
+async function verifyExpectedXAccount() {
+  const expectedUsername = normalizeUsername(process.env.X_EXPECTED_USERNAME);
+  if (!expectedUsername) throw new Error("Missing X_EXPECTED_USERNAME. Expected X_EXPECTED_USERNAME=_joeknowsball_.");
+
+  const client = createXClientFromEnv();
+  const account = await client.v1.verifyCredentials();
+  const username = normalizeUsername(account?.screen_name);
+  const displayUsername = username ? `@${username}` : "@unknown";
+  const name = normalizeText(account?.name);
+  const id = normalizeText(account?.id_str ?? account?.id);
+
+  console.log(`[mlb-hr-props-x] Authenticated X account: ${displayUsername}${name ? ` (${name})` : ""}${id ? ` id=${id}` : ""}`);
+
+  if (!username) throw new Error("Authenticated X username was missing from verify_credentials response.");
+  if (username !== expectedUsername) {
+    throw new Error(`Authenticated X username @${username} does not match expected @${expectedUsername}.`);
+  }
+
+  console.log(`[mlb-hr-props-x] Authenticated X account matches expected @${expectedUsername}.`);
+  return { username, name, id };
+}
+
 async function main() {
   if (args.has("--help") || args.has("-h")) {
     console.log(usage());
@@ -241,6 +273,11 @@ async function main() {
   }
 
   const mode = getMode();
+  if (mode === "verify-account") {
+    await verifyExpectedXAccount();
+    return;
+  }
+
   const source = getDataSource();
   const locations = getDataLocations(source);
   const rawPayload = await loadJson(locations.raw, source);
@@ -265,9 +302,9 @@ async function main() {
   console.log(result.caption);
 
   if (mode === "post") {
-    createXClientFromEnv();
+    await verifyExpectedXAccount();
     console.log("");
-    console.log("[mlb-hr-props-x] X client validated. Live posting is intentionally disabled for this first pass.");
+    console.log("[mlb-hr-props-x] X account verified. Live posting is intentionally disabled for this first pass.");
   }
 }
 
