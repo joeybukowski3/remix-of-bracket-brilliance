@@ -717,7 +717,7 @@ const MLB_TOOL_CARDS = [
 
 function MlbHubSidebar() {
   return (
-    <aside className="hidden w-56 shrink-0 self-start border-r border-slate-200 bg-[#eff4ff] py-4 lg:sticky lg:top-24 lg:block">
+    <aside className="hidden w-56 shrink-0 self-start border-r border-slate-200 bg-[#eff4ff] py-4 lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
       <div className="mb-5 px-5">
         <img src="/logos/mlb.svg" alt="MLB" className="h-9 w-auto" />
       </div>

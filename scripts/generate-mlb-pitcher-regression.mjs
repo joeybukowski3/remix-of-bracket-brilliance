@@ -124,8 +124,9 @@ const pitcherSeasonCache = new Map();
 async function fetchPitcherSeasonStats(id) {
   if (!id) return null;
   if (pitcherSeasonCache.has(id)) return pitcherSeasonCache.get(id);
+  // Try extended stats first (includes leftOnBase, sacFlies, hitByPitch)
   const json = await fetchJson(
-    `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${SEASON}&group=pitching`
+    `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${SEASON}&group=pitching&fields=stats,splits,stat,era,inningsPitched,strikeOuts,baseOnBalls,homeRuns,battersFaced,hits,airOuts,leftOnBase,hitByPitch,sacFlies`
   );
   const stats = json?.stats?.[0]?.splits?.[0]?.stat ?? null;
   pitcherSeasonCache.set(id, stats);
@@ -135,20 +136,36 @@ async function fetchPitcherSeasonStats(id) {
 // ── Fetch Baseball Savant xERA leaderboard ──────────────────────────────────
 
 async function fetchSavantXeraMap() {
-  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1` +
-    `&selections=player_id,player_name,xera,k_percent,bb_percent,babip,woba` +
-    `&sort=xera&sortDir=asc&chart=false&csv=true`;
+  // Baseball Savant expected_statistics endpoint — returns est_era (xERA) per player
+  const url = `https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=pitcher&year=${SEASON}&position=&team=&min=1&csv=true`;
   const text = await fetchText(url);
   if (!text || text.startsWith("<!DOCTYPE")) {
-    console.warn("Savant xERA fetch returned HTML — API may be blocked");
-    return new Map();
+    // Fallback: try custom leaderboard endpoint
+    const fallbackUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1` +
+      `&selections=player_id,player_name,xera,k_percent,bb_percent,babip,woba` +
+      `&sort=xera&sortDir=asc&chart=false&csv=true`;
+    const fallbackText = await fetchText(fallbackUrl);
+    if (!fallbackText || fallbackText.startsWith("<!DOCTYPE")) {
+      console.warn("Savant xERA fetch blocked — will use xFIP as fallback");
+      return new Map();
+    }
+    const rows = parseCsv(fallbackText);
+    const map = new Map();
+    for (const row of rows) {
+      const pid = String(row.player_id ?? "").trim();
+      if (pid) map.set(pid, { xera: row.xera ?? null });
+    }
+    console.log(`Savant fallback rows: ${map.size}`);
+    return map;
   }
   const rows = parseCsv(text);
   const map = new Map();
   for (const row of rows) {
     const pid = String(row.player_id ?? "").trim();
-    if (pid) map.set(pid, row);
+    // expected_statistics uses est_era for xERA
+    if (pid) map.set(pid, { xera: row.est_era ?? row.xera ?? null });
   }
+  console.log(`Savant expected_statistics rows: ${map.size}`);
   return map;
 }
 

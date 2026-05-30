@@ -35,6 +35,7 @@ export function usePitcherRegression() {
           team: p.team,
           era: p.era,
           xfip: p.xfip ?? null,
+          xera: p.xera ?? null,
           siera: null,
           kbb: p.kbb,
           strandRate: p.strandRate,

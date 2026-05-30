@@ -10,9 +10,16 @@ export type PitcherRegressionData = {
   team: string;
   era: number | null;
   xfip: number | null;        // Expected FIP
-  siera: number | null;       // Skill-Interactive ERA
+  xera: number | null;        // Expected ERA from Statcast (Baseball Savant)
+  siera: number | null;       // Skill-Interactive ERA (fallback, often null)
   kbb: number | null;         // K-BB% (skill indicator)
   strandRate: number | null;  // LOB% (luck indicator, should be ~73%)
+  hrfb: number | null;        // HR/FB% (luck indicator, should be ~10%)
+  babip: number | null;       // Batting Avg on Balls in Play (luck)
+  regressionScore: number;    // -10 to +10
+  regressionTier: "extreme_positive" | "strong_positive" | "slight_positive" | "neutral" | "slight_negative" | "strong_negative" | "extreme_negative";
+  summary: string;
+};
   hrfb: number | null;        // HR/FB% (luck indicator, should be ~10%)
   babip: number | null;       // Batting Avg on Balls in Play (luck)
   regressionScore: number;    // -10 to +10
