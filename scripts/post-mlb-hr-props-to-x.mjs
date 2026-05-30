@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
@@ -13,6 +14,7 @@ const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-o
 const HR_PROPS_URL = "https://www.joeknowsball.com/mlb/hr-props";
 const EXPORT_SELECTOR = '[data-x-export="mlb-hr-props"]';
 const SCREENSHOT_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x.png");
+const DEFAULT_DUPLICATE_STATE_DIR = path.join(ROOT, "artifacts", "x-post-state");
 const args = new Set(process.argv.slice(2));
 
 function usage() {
@@ -20,10 +22,12 @@ function usage() {
     "Usage: node scripts/post-mlb-hr-props-to-x.mjs --dry-run",
     "       node scripts/post-mlb-hr-props-to-x.mjs --post",
     "       node scripts/post-mlb-hr-props-to-x.mjs --verify-account",
+    "       node scripts/post-mlb-hr-props-to-x.mjs --post-key-only",
     "",
     "--dry-run  Build the X caption, screenshot the HR Props table, and do not post.",
-    "--post     Validate X client setup, build the caption, screenshot the HR Props table, and do not post yet.",
+    "--post     Manual GitHub Actions only: validate account, build the caption, screenshot the HR Props table, and publish to X.",
     "--verify-account  Verify configured X credentials and expected username without building a caption.",
+    "--post-key-only  Print the deterministic duplicate-protection key for the current slate/table.",
     "",
     "Set HR_PROPS_DATA_SOURCE to production, github, or local.",
     "Default: production.",
@@ -36,10 +40,12 @@ function getMode() {
   const dryRun = args.has("--dry-run");
   const post = args.has("--post");
   const verifyAccount = args.has("--verify-account");
-  const modes = [dryRun, post, verifyAccount].filter(Boolean).length;
-  if (modes > 1) throw new Error("Choose only one mode: --dry-run, --post, or --verify-account.");
+  const postKeyOnly = args.has("--post-key-only");
+  const modes = [dryRun, post, verifyAccount, postKeyOnly].filter(Boolean).length;
+  if (modes > 1) throw new Error("Choose only one mode: --dry-run, --post, --verify-account, or --post-key-only.");
   if (!modes) return "dry-run";
   if (verifyAccount) return "verify-account";
+  if (postKeyOnly) return "post-key-only";
   return post ? "post" : "dry-run";
 }
 
@@ -167,6 +173,10 @@ function pickKey(value) {
   return `${normalizeText(value?.player)}|${normalizeTeam(value?.team)}|${normalizeTeam(value?.opponent)}`;
 }
 
+function slugifyKey(value) {
+  return normalizeText(value).replace(/[^a-zA-Z0-9._-]+/g, "-");
+}
+
 function normalizeBatter(value) {
   const player = normalizeText(value?.player);
   const team = normalizeTeam(value?.team);
@@ -235,6 +245,17 @@ function validateTopProps(topProps) {
   return "";
 }
 
+function getValidatedTopProps(rawPayload, bestBetsPayload) {
+  const freshnessError = validateFreshness(rawPayload, bestBetsPayload);
+  if (freshnessError) return { skipped: true, reason: freshnessError, topProps: [] };
+
+  const topProps = getTopHrProps(rawPayload, bestBetsPayload);
+  const topPropsError = validateTopProps(topProps);
+  if (topPropsError) return { skipped: true, reason: topPropsError, topProps: [] };
+
+  return { skipped: false, reason: "", topProps };
+}
+
 function formatDateLabel(dateValue) {
   const raw = normalizeText(dateValue);
   if (!raw) return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -245,15 +266,11 @@ function formatDateLabel(dateValue) {
 }
 
 function buildCaption(rawPayload, bestBetsPayload) {
-  const freshnessError = validateFreshness(rawPayload, bestBetsPayload);
-  if (freshnessError) return { skipped: true, reason: freshnessError, caption: "" };
-
-  const topProps = getTopHrProps(rawPayload, bestBetsPayload);
-  const topPropsError = validateTopProps(topProps);
-  if (topPropsError) return { skipped: true, reason: topPropsError, caption: "" };
+  const topPropsResult = getValidatedTopProps(rawPayload, bestBetsPayload);
+  if (topPropsResult.skipped) return { skipped: true, reason: topPropsResult.reason, caption: "", topProps: [] };
 
   const dateLabel = formatDateLabel(rawPayload?.date || bestBetsPayload?.date);
-  const lines = topProps.map((row, index) => (
+  const lines = topPropsResult.topProps.map((row, index) => (
     `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}`
   ));
 
@@ -264,10 +281,63 @@ function buildCaption(rawPayload, bestBetsPayload) {
     ...lines,
     "",
     `Full table: ${HR_PROPS_URL}`,
-    "#MLB #MLBPicks",
+    "",
+    "#MLB #HomeRunProps #MLBPicks #SportsBetting",
   ].join("\n");
 
-  return { skipped: false, reason: "", caption };
+  if (caption.length > 280) {
+    return { skipped: true, reason: `Skipping: generated caption is ${caption.length} characters; expected 280 or fewer.`, caption: "", topProps: [] };
+  }
+
+  return { skipped: false, reason: "", caption, topProps: topPropsResult.topProps };
+}
+
+function buildPostKey(rawPayload, bestBetsPayload, topProps) {
+  const slateDate = normalizeText(rawPayload?.date || bestBetsPayload?.date);
+  const tableRows = Array.isArray(rawPayload?.batters)
+    ? rawPayload.batters.map(normalizeBatter).filter(Boolean)
+    : [];
+  const tableFingerprint = tableRows
+    .map((row) => ({
+      player: row.player,
+      team: row.team,
+      opponent: row.opponent,
+      opposingPitcher: row.opposingPitcher,
+      hrScore: Number(row.hrScore.toFixed(1)),
+      hrScoreRank: row.hrScoreRank,
+    }))
+    .sort((left, right) => pickKey(left).localeCompare(pickKey(right)));
+  const topFingerprint = topProps.map((row) => ({
+    player: row.player,
+    team: row.team,
+    opponent: row.opponent,
+    hrScore: Number(row.hrScore.toFixed(1)),
+    hrScoreRank: row.hrScoreRank,
+  }));
+  const hash = createHash("sha256")
+    .update(JSON.stringify({ slateDate, tableFingerprint, topFingerprint }))
+    .digest("hex")
+    .slice(0, 16);
+
+  return `mlb-hr-props-${slateDate}-${hash}`;
+}
+
+function getDuplicateStatePath(postKey) {
+  const stateDir = normalizeText(process.env.X_DUPLICATE_STATE_DIR) || DEFAULT_DUPLICATE_STATE_DIR;
+  return path.join(stateDir, `${slugifyKey(postKey)}.json`);
+}
+
+function assertNotAlreadyPosted(postKey) {
+  const statePath = getDuplicateStatePath(postKey);
+  if (existsSync(statePath)) {
+    throw new Error(`Duplicate protection blocked posting: ${postKey} already has a post receipt at ${statePath}.`);
+  }
+  return statePath;
+}
+
+function savePostReceipt(statePath, receipt) {
+  mkdirSync(path.dirname(statePath), { recursive: true });
+  writeFileSync(statePath, `${JSON.stringify(receipt, null, 2)}\n`);
 }
 
 function createXClientFromEnv() {
@@ -302,7 +372,32 @@ async function verifyExpectedXAccount() {
   }
 
   console.log(`[mlb-hr-props-x] Authenticated X account matches expected @${expectedUsername}.`);
-  return { username, name, id };
+  return { client, username, name, id };
+}
+
+function assertLivePostAllowed() {
+  if (process.env.GITHUB_EVENT_NAME !== "workflow_dispatch") {
+    throw new Error("Live posting is only allowed from manual GitHub Actions workflow_dispatch runs.");
+  }
+  if (process.env.X_ALLOW_LIVE_POST !== "true") {
+    throw new Error("Live posting is blocked unless X_ALLOW_LIVE_POST=true is set by the manual workflow post path.");
+  }
+}
+
+async function publishPost({ client, caption, screenshotPath }) {
+  const mediaId = await client.v1.uploadMedia(screenshotPath, { mimeType: "image/png" });
+  console.log(`[mlb-hr-props-x] uploadedMediaId=${mediaId}`);
+
+  const response = await client.v2.tweet(caption, {
+    media: { media_ids: [mediaId] },
+  });
+  const tweetId = normalizeText(response?.data?.id);
+  if (!tweetId) throw new Error("X post response did not include a tweet ID.");
+
+  const tweetUrl = `https://x.com/_joeknowsball_/status/${tweetId}`;
+  console.log(`[mlb-hr-props-x] postedTweetId=${tweetId}`);
+  console.log(`[mlb-hr-props-x] postedTweetUrl=${tweetUrl}`);
+  return { tweetId, tweetUrl, mediaId };
 }
 
 async function main() {
@@ -317,15 +412,27 @@ async function main() {
     return;
   }
 
+  let account = null;
   if (mode === "post") {
-    await verifyExpectedXAccount();
+    assertLivePostAllowed();
+    account = await verifyExpectedXAccount();
   }
 
   const source = getDataSource();
+  if (mode === "post" && source !== "production") {
+    throw new Error("Live posting requires HR_PROPS_DATA_SOURCE=production.");
+  }
+
   const locations = getDataLocations(source);
   const rawPayload = await loadJson(locations.raw, source);
   const bestBetsPayload = await loadJson(locations.bestBets, source);
   const result = buildCaption(rawPayload, bestBetsPayload);
+
+  if (mode === "post-key-only") {
+    if (result.skipped) throw new Error(result.reason);
+    console.log(buildPostKey(rawPayload, bestBetsPayload, result.topProps));
+    return;
+  }
 
   console.log(`[mlb-hr-props-x] mode=${mode}`);
   console.log(`[mlb-hr-props-x] dataSource=${source}`);
@@ -341,6 +448,9 @@ async function main() {
   }
 
   console.log(`[mlb-hr-props-x] captionLength=${result.caption.length}`);
+  const postKey = buildPostKey(rawPayload, bestBetsPayload, result.topProps);
+  console.log(`[mlb-hr-props-x] postKey=${postKey}`);
+  const duplicateStatePath = mode === "post" ? assertNotAlreadyPosted(postKey) : "";
   console.log("");
   console.log(result.caption);
   console.log("");
@@ -349,8 +459,17 @@ async function main() {
   console.log(`[mlb-hr-props-x] screenshotPath=${screenshotPath}`);
 
   if (mode === "post") {
-    console.log("");
-    console.log("[mlb-hr-props-x] X account verified and screenshot generated. Live posting is intentionally disabled.");
+    const post = await publishPost({ client: account.client, caption: result.caption, screenshotPath });
+    savePostReceipt(duplicateStatePath, {
+      postKey,
+      slateDate: normalizeText(rawPayload?.date),
+      postedAt: new Date().toISOString(),
+      tweetId: post.tweetId,
+      tweetUrl: post.tweetUrl,
+      mediaId: post.mediaId,
+      screenshotPath,
+    });
+    console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
   }
 }
 

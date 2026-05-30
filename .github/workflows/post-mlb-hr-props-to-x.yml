@@ -85,14 +85,43 @@ jobs:
         if: steps.schedule_gate.outputs.should_run != 'true'
         run: echo "${{ steps.schedule_gate.outputs.message }}"
 
+      - name: Determine live post duplicate key
+        id: post_key
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'post'
+        shell: bash
+        run: |
+          POST_KEY="$(HR_PROPS_DATA_SOURCE=production node scripts/post-mlb-hr-props-to-x.mjs --post-key-only)"
+          echo "key=${POST_KEY}" >> "$GITHUB_OUTPUT"
+          echo "Live post duplicate key: ${POST_KEY}"
+
+      - name: Restore live post duplicate cache
+        id: restore_post_cache
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'post'
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/mlb-hr-props-x-posted
+          key: ${{ steps.post_key.outputs.key }}
+
+      - name: Block duplicate live post
+        if: steps.restore_post_cache.outputs.cache-hit == 'true'
+        run: |
+          echo "Duplicate protection blocked live posting for ${{ steps.post_key.outputs.key }}."
+          exit 1
+
       - name: Build HR props X caption
-        if: steps.schedule_gate.outputs.should_run == 'true'
+        if: steps.schedule_gate.outputs.should_run == 'true' && steps.restore_post_cache.outputs.cache-hit != 'true'
+        shell: bash
         run: |
           MODE="${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'dry-run' }}"
-          node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
+          DATA_SOURCE="${{ github.event_name == 'workflow_dispatch' && inputs.data_source || 'production' }}"
+          if [ "$MODE" = "post" ]; then
+            DATA_SOURCE="production"
+          fi
+          HR_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
-          HR_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.data_source || 'production' }}
           X_EXPECTED_USERNAME: _joeknowsball_
+          X_ALLOW_LIVE_POST: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && 'true' || 'false' }}
+          X_DUPLICATE_STATE_DIR: .cache/mlb-hr-props-x-posted
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
@@ -104,4 +133,19 @@ jobs:
         with:
           name: mlb-hr-props-x-screenshot
           path: artifacts/mlb-hr-props-x.png
+          if-no-files-found: error
+
+      - name: Save live post duplicate cache
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && steps.restore_post_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/mlb-hr-props-x-posted
+          key: ${{ steps.post_key.outputs.key }}
+
+      - name: Upload live post receipt
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && steps.restore_post_cache.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-hr-props-x-post-receipt
+          path: .cache/mlb-hr-props-x-posted/*.json
           if-no-files-found: error
