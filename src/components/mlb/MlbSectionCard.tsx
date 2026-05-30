@@ -21,10 +21,11 @@ export default function MlbSectionCard({
 
   return (
     <section
-      className="rounded-xl border border-border/70 bg-card shadow-[0_4px_12px_hsl(var(--foreground)/0.04)]"
+      className="rounded-xl bg-card shadow-[0_4px_12px_hsl(var(--foreground)/0.04)] overflow-hidden"
       style={{
-        borderLeftWidth: accentColor ? 4 : undefined,
-        borderLeftColor: accentColor,
+        border: accentColor ? `1px solid ${accentColor}30` : "1px solid hsl(var(--border)/0.7)",
+        borderTopWidth: accentColor ? 3 : 1,
+        borderTopColor: accentColor ?? undefined,
         ...style,
       }}
     >

@@ -20,6 +20,7 @@ import MlbStrikeoutProps from "./pages/MlbStrikeoutProps";
 import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NFL from "./pages/NFL";
+import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
 import PgaHub from "./pages/PgaHub";
@@ -79,6 +80,7 @@ const App = () => (
           <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/nfl" element={<NFL />} />
+          <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/mlb" element={<MlbGameDetail />} />
           <Route path="/mlb/props" element={<MlbPropsHub />} />
           <Route path="/mlb/hr-props" element={<MlbHrProps />} />

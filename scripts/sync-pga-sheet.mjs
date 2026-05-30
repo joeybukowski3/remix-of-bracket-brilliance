@@ -919,7 +919,10 @@ async function main() {
     loadSheetRows(sheetId, SCHEDULE_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, COURSE_WEIGHTS_TAB_NAME, serviceAccount),
     loadSheetRows(sheetId, COURSE_STATS_TAB_NAME, serviceAccount),
-    loadSheetRows(sheetId, TREND_TABLE_TAB_NAME, serviceAccount),
+    loadSheetRows(sheetId, TREND_TABLE_TAB_NAME, serviceAccount).catch(() => {
+      console.warn(`Warning: "${TREND_TABLE_TAB_NAME}" tab not found — trendRank will be null for all players.`);
+      return [];
+    }),
     loadSheetRows(sheetId, PLAYER_STATS_MASTER_TAB_NAME, serviceAccount),
   ]);
 
@@ -949,7 +952,7 @@ async function main() {
     scheduleRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, SCHEDULE_TAB_NAME);
     courseWeightsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, COURSE_WEIGHTS_TAB_NAME);
     courseStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, COURSE_STATS_TAB_NAME);
-    trendRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, TREND_TABLE_TAB_NAME);
+    trendRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, TREND_TABLE_TAB_NAME).catch(() => []);
     playerStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, PLAYER_STATS_MASTER_TAB_NAME);
     referenceDate = parseReferenceDate(siteOutputRows);
     scheduleRows = parseScheduleRows(scheduleRowsRaw);

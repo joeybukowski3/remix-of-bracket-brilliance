@@ -1,919 +1,669 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
-import SportsbookBar from "@/components/SportsbookBar";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
-import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
-import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
-import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
+import { usePageSeo } from "@/hooks/usePageSeo";
+import { SPORTSBOOKS } from "@/lib/sportsbooks";
 import {
-  EMPTY_MESSAGE,
-  CUSTOM_WEIGHT_CONTROLS,
-  type CourseWeightFeedEntry,
-  type CourseWeightSet,
-  type MovementDirection,
-  type RankedPlayerRow,
-  type SidebarFilter,
-  type StatDisplayMode,
-  THIS_WEEK_OVERRIDE_KEY,
-  WeightBadgeRow,
-  findCourseWeightEntry,
-  findDefaultWeightEntry,
+  type PgaScheduleFeedEntry,
+  type RawPlayerStat,
   getCurrentAndNextEvents,
-  getThisWeekOverride,
-  getSavedCustomWeights,
-  rankPlayers,
-  normalizeCustomWeights,
-  setSavedCustomWeights,
-  setThisWeekOverride,
-  PgaCompactTable,
-  PgaScheduleRail,
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
-import { cn } from "@/lib/utils";
 
-type ModelMode = "tournament" | "custom" | "standard";
-type TournamentMode = "current" | "next";
+type BestBetPick = { player: string; tournamentRank: number; powerRank: number; topStats: string[]; bullets: string[]; odds?: { outright?: string | null; top5?: string | null; top10?: string | null; top20?: string | null } | null };
+type BestBetsPayload = { tournament: string; course: string; outrights: BestBetPick[]; top5: BestBetPick[]; top10: BestBetPick[]; top20: BestBetPick[] };
 
-const MODEL_OPTIONS: Array<{ key: ModelMode; label: string }> = [
-  { key: "tournament", label: "Tournament" },
-  { key: "custom", label: "Custom" },
-  { key: "standard", label: "Standard" },
-];
-
-const TOURNAMENT_OPTIONS: Array<{ key: TournamentMode; label: string }> = [
-  { key: "current", label: "This Week" },
-  { key: "next", label: "Next Week" },
-];
-
-function buildMovementMap(activeRows: RankedPlayerRow[], baselineRows: RankedPlayerRow[]) {
-  const baselineRankMap = Object.fromEntries(baselineRows.map((row) => [row.player, row.rank]));
-
-  return Object.fromEntries(
-    activeRows.flatMap((row) => {
-      const baselineRank = baselineRankMap[row.player];
-      if (!baselineRank || baselineRank === row.rank) return [];
-      return [[row.player, row.rank < baselineRank ? "up" : "down"] as const];
-    }),
-  ) as Record<string, MovementDirection>;
+function useBestBets() {
+  const [data, setData] = useState<BestBetsPayload | null>(null);
+  useEffect(() => {
+    fetch("/data/pga/best-bets.json", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setData(d))
+      .catch(() => {});
+  }, []);
+  return data;
 }
 
-function toPercentWeights(weights: CourseWeightSet) {
-  return Object.fromEntries(
-    Object.entries(weights).map(([key, value]) => [key, Number((value * 100).toFixed(2))]),
-  ) as Record<keyof CourseWeightSet, number>;
+type CurrentField = { tournament: string; players: string[]; source: string };
+
+function useCurrentField() {
+  const [field, setField] = useState<CurrentField | null>(null);
+  useEffect(() => {
+    fetch("/data/pga/current-field.json", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setField(d))
+      .catch(() => {});
+  }, []);
+  return field;
 }
 
-function toFractionWeights(weights: Record<keyof CourseWeightSet, number>) {
-  return Object.fromEntries(
-    Object.entries(weights).map(([key, value]) => [key, Number((value / 100).toFixed(6))]),
-  ) as CourseWeightSet;
-}
-
-function normalizePercentageWeights(weights: Record<keyof CourseWeightSet, number>) {
-  const entries = Object.entries(weights) as [keyof CourseWeightSet, number][];
-  const total = entries.reduce((sum, [, value]) => sum + value, 0);
-  if (total <= 0) {
-    const even = Number((100 / entries.length).toFixed(2));
-    return Object.fromEntries(entries.map(([key]) => [key, even])) as Record<keyof CourseWeightSet, number>;
-  }
-
-  const normalized = Object.fromEntries(
-    entries.map(([key, value]) => [key, Number(((value / total) * 100).toFixed(2))]),
-  ) as Record<keyof CourseWeightSet, number>;
-
-  const diff = Number((100 - Object.values(normalized).reduce((sum, value) => sum + value, 0)).toFixed(2));
-  const lastKey = entries.at(-1)?.[0];
-  if (lastKey) {
-    normalized[lastKey] = Number((normalized[lastKey] + diff).toFixed(2));
-  }
-
-  return normalized;
-}
-
-function rebalanceWeights(current: Record<keyof CourseWeightSet, number>, key: keyof CourseWeightSet, nextValue: number) {
-  const clamped = Math.max(0, Math.min(100, nextValue));
-  const otherKeys = CUSTOM_WEIGHT_CONTROLS.map((entry) => entry.key).filter((entryKey) => entryKey !== key);
-  const otherTotal = otherKeys.reduce((sum, entryKey) => sum + current[entryKey], 0);
-  const remaining = Math.max(0, 100 - clamped);
-  const nextWeights = { ...current, [key]: clamped };
-
-  if (otherTotal <= 0) {
-    const even = Number((remaining / otherKeys.length).toFixed(2));
-    otherKeys.forEach((entryKey) => {
-      nextWeights[entryKey] = even;
-    });
-  } else {
-    otherKeys.forEach((entryKey) => {
-      nextWeights[entryKey] = Number(((current[entryKey] / otherTotal) * remaining).toFixed(2));
-    });
-  }
-
-  return normalizePercentageWeights(nextWeights);
-}
-
-function buildMetaLine(parts: Array<string | null | undefined>) {
-  return parts.filter(Boolean).join(" | ");
-}
-
-function stripMarkdown(value: string | null | undefined) {
-  return (value ?? "").replace(/\*\*(.*?)\*\*/g, "$1").trim();
-}
-
-function truncateTeaser(value: string | null | undefined, maxLength: number) {
-  const clean = stripMarkdown(value);
-  if (clean.length <= maxLength) return clean;
-  return `${clean.slice(0, maxLength).trimEnd()}...`;
-}
-
-function formatGeneratedDate(value: string | null | undefined) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function normalizeTournamentLabel(value: string | null | undefined) {
-  return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-type BestBetPickPreview = {
-  player: string;
-  tournamentRank?: number;
-  powerRank?: number;
-  topStats?: string[];
-  bullets?: string[];
-  odds?: Record<string, string> | null;
-};
-type BestBetsPreviewData = {
-  tournament: string;
-  course?: string;
-  generatedAt?: string;
-  preview?: {
-    tournamentOverview?: string;
-  } | null;
-  valueBets?: Array<unknown>;
-  outrights?: BestBetPickPreview[];
-  top5?: BestBetPickPreview[];
-  top10?: BestBetPickPreview[];
-  top20?: BestBetPickPreview[];
+// ─── Power Ranking Formula ────────────────────────────────────────────────────
+// Further refined: sgTotal now dominant (55%) as the core season-long / rolling
+// performance signal. Stability floor strengthened dramatically for 90%+ sgTotal
+// players so Scheffler/Rory are very difficult to push out of Top 5. Recency kept
+// light (3%) for genuine hot emerging players (Yellamaraju etc.) to reach Top 15-20.
+// No volume/cut-made data exists in RawPlayerStat, so no consistency multiplier added.
+// All weights sum to 1.0. Only this function + PR_WEIGHTS were touched.
+const PR_WEIGHTS = {
+  sgTotal:          0.55, // DOMINANT season-long anchor (50-55% target). Best proxy for full 2026 + recent 10-20 events.
+  sgApp:            0.09, // further reduced (protects vs noisy/low-sample approach numbers)
+  sgPutt:           0.04, // sharply reduced — most volatile/recency-prone component
+  trendRank:        0.03, // very light recency (kept for hot streaks only; not top-5 driver)
+  sgAtG:            0.10,
+  bogeyAvoidance:   0.14, // consistency signal (elites avoid blow-ups)
+  birdieBogeyRatio: 0.05,
 };
 
-type BestBetMarketKey = "outrights" | "top5" | "top10" | "top20";
+type PowerRankRow = RawPlayerStat & { powerScore: number; powerRank: number };
 
-type BestBetTableConfig = {
-  key: BestBetMarketKey;
-  title: string;
-  description: string;
-  href: string;
-  accentClass: string;
-  headerClass: string;
-  rankClass: string;
-};
-
-const BEST_BET_TABLES: BestBetTableConfig[] = [
-  {
-    key: "outrights",
-    title: "Outright Winners",
-    description: "Win equity",
-    href: "/pga/best-bets#outrights",
-    accentClass: "border-amber-300/70 shadow-[inset_0_3px_0_rgba(251,191,36,0.95)]",
-    headerClass: "text-amber-200",
-    rankClass: "bg-amber-100 text-amber-800",
-  },
-  {
-    key: "top5",
-    title: "Top 5 Finish",
-    description: "Ceiling with placement value",
-    href: "/pga/best-bets#top5",
-    accentClass: "border-emerald-300/70 shadow-[inset_0_3px_0_rgba(52,211,153,0.95)]",
-    headerClass: "text-emerald-200",
-    rankClass: "bg-emerald-100 text-emerald-800",
-  },
-  {
-    key: "top10",
-    title: "Top 10 Finish",
-    description: "High-floor model fits",
-    href: "/pga/best-bets#top10",
-    accentClass: "border-indigo-300/70 shadow-[inset_0_3px_0_rgba(129,140,248,0.95)]",
-    headerClass: "text-indigo-200",
-    rankClass: "bg-indigo-100 text-indigo-800",
-  },
-  {
-    key: "top20",
-    title: "Top 20 Finish",
-    description: "Safer finishing profiles",
-    href: "/pga/best-bets#top20",
-    accentClass: "border-cyan-300/70 shadow-[inset_0_3px_0_rgba(103,232,249,0.95)]",
-    headerClass: "text-cyan-200",
-    rankClass: "bg-cyan-100 text-cyan-800",
-  },
-];
-
-type CourseInformationSource = {
-  courseName?: string;
-  location?: string;
-  par?: number | string;
-  yardage?: number | string;
-  previousWinner?: string;
-  previousWinningScore?: string;
-  winningScore?: string;
-  projectedWeatherSummary?: string;
-};
-
-function formatYardage(value: CourseInformationSource["yardage"]) {
-  if (typeof value === "number") return value.toLocaleString();
-  return value;
+function percentile(value: number, sorted: number[]): number {
+  if (!sorted.length) return 50;
+  return (sorted.filter((v) => v < value).length / sorted.length) * 100;
 }
 
-function formatCourseSetup(source: CourseInformationSource | null | undefined) {
-  const par = source?.par ? `Par ${source.par}` : null;
-  const yardage = source?.yardage ? `${formatYardage(source.yardage)} yards` : null;
-  return [par, yardage].filter(Boolean).join(" · ");
+function buildPowerRankings(players: RawPlayerStat[]): PowerRankRow[] {
+  if (!players.length) return [];
+  const asc = (arr: number[]) => [...arr].sort((a, b) => a - b);
+  const sT = asc(players.map((p) => p.sgTotal));
+  const sA = asc(players.map((p) => p.sgApp));
+  const sP = asc(players.map((p) => p.sgPutt));
+  const sG = asc(players.map((p) => p.sgAtG));
+  const sB = asc(players.map((p) => p.bogeyAvoidance));
+  const sBr = asc(players.map((p) => p.birdieBogeyRatio));
+  const trendPlayers = players.filter((p) => p.trendRank != null);
+  const sR = asc(trendPlayers.map((p) => p.trendRank!));
+
+  const scored = players.map((p) => {
+    const tPct = p.trendRank != null ? 100 - percentile(p.trendRank, sR) : 50;
+
+    // Base weighted percentile (existing approach, just re-weighted)
+    const baseWeighted =
+      percentile(p.sgTotal, sT)         * PR_WEIGHTS.sgTotal +
+      percentile(p.sgApp, sA)           * PR_WEIGHTS.sgApp +
+      percentile(p.sgPutt, sP)          * PR_WEIGHTS.sgPutt +
+      tPct                              * PR_WEIGHTS.trendRank +
+      percentile(p.sgAtG, sG)           * PR_WEIGHTS.sgAtG +
+      percentile(p.bogeyAvoidance, sB)  * PR_WEIGHTS.bogeyAvoidance +
+      percentile(p.birdieBogeyRatio, sBr) * PR_WEIGHTS.birdieBogeyRatio;
+
+    // ── Stability floor / elite anchor (significantly strengthened) ───────────
+    // Much larger bonuses for 90th+ percentile sgTotal (the true season-long elites).
+    // Combined with 55% sgTotal weight, this makes Scheffler and Rory extremely
+    // hard to displace from the Top 5 even when other components are noisy in a
+    // given window. Hot players with elite sgTotal still rise; merely "hot but
+    // not elite season-long" players cannot take the very top spots.
+    // (No events-played or cuts-made data is present in the source, so no extra
+    // consistency multiplier was added.)
+    const sgTPct = percentile(p.sgTotal, sT);
+    let stabilityBonus = 0;
+    if (sgTPct >= 95) stabilityBonus = 15.0;
+    else if (sgTPct >= 90) stabilityBonus = 10.0;
+    else if (sgTPct >= 82) stabilityBonus = 5.0;
+    else if (sgTPct >= 70) stabilityBonus = 2.0;
+
+    const powerScore = baseWeighted + stabilityBonus;
+    return { ...p, powerScore };
+  });
+  return scored.sort((a, b) => b.powerScore - a.powerScore).map((r, i) => ({ ...r, powerRank: i + 1 }));
 }
 
-function getPreviousWinnerLine(source: CourseInformationSource | null | undefined) {
-  if (!source?.previousWinner) return EMPTY_MESSAGE;
-  const score = source.previousWinningScore || source.winningScore;
-  return score ? `${source.previousWinner}, ${score}` : source.previousWinner;
+// ─── Percentile Color System (MAJOR VISUAL UPGRADE) ───────────────────────────
+// Strong contrast 10-band percentile background colors (no bubble/pill).
+// All text is now forced to white for maximum readability across all bands.
+// Backgrounds are rich/saturated enough to support white text.
+function getPercentileStyles(pct: number): { bg: string; color: string } {
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  if (p >= 90) return { bg: "#00c853", color: "#ffffff" };   // Brightest Green
+  if (p >= 80) return { bg: "#00ab44", color: "#ffffff" };   // Strong Green
+  if (p >= 70) return { bg: "#008f36", color: "#ffffff" };   // Medium Green
+  if (p >= 60) return { bg: "#2e7d32", color: "#ffffff" };   // Solid Green
+  if (p >= 50) return { bg: "#455a64", color: "#ffffff" };   // Neutral Slate
+  if (p >= 40) return { bg: "#00838f", color: "#ffffff" };   // Light Cyan-Teal
+  if (p >= 30) return { bg: "#006064", color: "#ffffff" };   // Medium Teal
+  if (p >= 20) return { bg: "#004d56", color: "#ffffff" };   // Strong Deep Teal
+  if (p >= 10) return { bg: "#003d47", color: "#ffffff" };   // Dark Blue-Teal
+  return { bg: "#002b36", color: "#ffffff" };                // Deepest (0-9%)
 }
 
-function getPickMeta(pick: BestBetPickPreview) {
-  if (pick.odds?.outright) return pick.odds.outright;
-  if (typeof pick.tournamentRank === "number") return `Model #${pick.tournamentRank}`;
-  if (typeof pick.powerRank === "number") return `Power #${pick.powerRank}`;
-  return "";
-}
-
-function getPickReason(pick: BestBetPickPreview) {
-  return pick.topStats?.[0] || pick.bullets?.[0] || "";
-}
-
-function BestBetPreviewTable({ config, picks }: { config: BestBetTableConfig; picks: BestBetPickPreview[] }) {
+// Larger, high-contrast percentile tile with white text on rich background
+function PercentileCell({ value }: { value: number }) {
+  const s = getPercentileStyles(value);
   return (
-    <div className={cn("overflow-hidden rounded-[18px] border bg-green-950/62", config.accentClass)}>
-      <div className="border-b border-white/10 px-3 py-2.5">
-        <div className={cn("text-sm font-semibold tracking-[-0.01em]", config.headerClass)}>{config.title}</div>
-        <div className="mt-0.5 text-[11px] font-medium text-green-100/68">{config.description}</div>
+    <span
+      className="block text-center text-[12px] sm:text-sm font-black tabular-nums py-2"
+      style={{ backgroundColor: s.bg, color: '#ffffff' }}
+      title={`${Math.round(value)}th percentile`}
+    >
+      {Math.round(value)}
+    </span>
+  );
+}
+
+// Simple raw strokes-gained value cell (used when user switches to Raw view)
+function RawStatCell({ value }: { value: number }) {
+  const formatted = value.toFixed(2);
+  const isGood = value >= 0.5;
+  const isBad = value <= -0.5;
+  return (
+    <span
+      className={`block text-center text-[11px] sm:text-[12px] font-semibold tabular-nums py-2 ${
+        isGood ? 'text-emerald-700' : isBad ? 'text-red-600' : 'text-slate-700'
+      }`}
+      title={`Raw SG: ${formatted}`}
+    >
+      {formatted}
+    </span>
+  );
+}
+
+// ─── Tournament Hero Card ─────────────────────────────────────────────────────
+function TournamentHeroCard({ entry, isActive }: { entry: PgaScheduleFeedEntry; isActive: boolean }) {
+  const hasData = Boolean(entry.dataFile);
+  return (
+    <div className={`rounded-xl border p-4 flex flex-col gap-2 ${isActive ? "border-emerald-400 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+      {isActive && (
+        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-widest">● Live Now</span>
+      )}
+      <div>
+        <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">{entry.dateLabel}</div>
+        <div className="text-base font-black text-slate-900 leading-tight">{entry.shortName || entry.name}</div>
+        <div className="text-xs text-slate-500 mt-0.5">{entry.courseName} · {entry.location}</div>
       </div>
-      <div className="divide-y divide-white/10">
-        {picks.slice(0, 3).map((pick, index) => (
-          <Link
-            key={`${config.key}-${pick.player}-${index}`}
-            to={config.href}
-            className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 transition hover:bg-white/10"
-          >
-            <span className={cn("flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold", config.rankClass)}>
-              {index + 1}
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-white">{pick.player}</span>
-              {getPickReason(pick) ? (
-                <span className="block truncate text-[11px] text-green-100/62">{getPickReason(pick)}</span>
-              ) : null}
-            </span>
-            {getPickMeta(pick) ? (
-              <span className="rounded-full border border-white/10 bg-white/10 px-2 py-1 text-[11px] font-semibold text-green-50">
-                {getPickMeta(pick)}
-              </span>
-            ) : null}
-          </Link>
-        ))}
+      <div className="flex flex-wrap gap-2 mt-1">
+        {hasData ? (
+          <>
+            <Link to={`/pga/${entry.slug}/model`} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">View Model →</Link>
+            <Link to={`/pga/${entry.slug}`} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Picks & Best Bets</Link>
+          </>
+        ) : (
+          <span className="text-[11px] font-semibold text-slate-400 italic">Field data coming soon</span>
+        )}
       </div>
     </div>
   );
 }
 
-export default function PgaHub() {
-  const scheduleTournament = getPgaScheduleSelection().currentUpcoming;
-  const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
-  const [sidebarFilter, setSidebarFilter] = useState<SidebarFilter>("all");
-  const [modelMode, setModelMode] = useState<ModelMode>("tournament");
-  const [tournamentMode, setTournamentMode] = useState<TournamentMode>("current");
-  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
-  const [displayMode, setDisplayMode] = useState<StatDisplayMode>("percentile");
-  const [currentOverride, setCurrentOverride] = useState<CourseWeightSet | null>(null);
-  const [customPercentWeights, setCustomPercentWeights] = useState<Record<keyof CourseWeightSet, number> | null>(null);
-  const [movementMap, setMovementMap] = useState<Record<string, MovementDirection>>({});
-  const [bestBets, setBestBets] = useState<BestBetsPreviewData | null>(null);
-  const movementTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasAnimatedRef = useRef(false);
+// ─── Desktop Sidebar Schedule (REDESIGNED) ────────────────────────────────────
+// - "NOW" tournament (Charles Schwab Challenge when active) is ALWAYS pinned at the very top with strong highlight.
+// - Other upcoming events listed below it in a compact list.
+// - New clean collapsible "Previous Tournaments" section BELOW the entire current/upcoming schedule.
+// - Previous entries show Model buttons when data is available (matching main schedule style).
+function ScheduleSidebar({ schedule, current }: { schedule: PgaScheduleFeedEntry[]; current: PgaScheduleFeedEntry | null }) {
+  const [showPrevious, setShowPrevious] = useState(false);
 
-  useEffect(() => {
-    setCurrentOverride(getThisWeekOverride());
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === THIS_WEEK_OVERRIDE_KEY) {
-        setCurrentOverride(getThisWeekOverride());
-      }
-    };
-    const handleFocus = () => setCurrentOverride(getThisWeekOverride());
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    fetch("/data/pga/best-bets.json", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Missing best bets feed.");
-        return response.json();
-      })
-      .then((payload) => {
-        if (!active) return;
-        setBestBets(payload as BestBetsPreviewData);
-      })
-      .catch(() => {
-        if (!active) return;
-        setBestBets(null);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const { active: activeEvent, current: currentEvent, next: nextEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
-  const activeTournamentName =
-    currentEvent?.shortName
-    || currentEvent?.name
-    || scheduleTournament?.shortName
-    || scheduleTournament?.name
-    || FEATURED_PGA_TOURNAMENT.shortName
-    || FEATURED_PGA_TOURNAMENT.name;
-  const activeTournamentCourse =
-    currentEvent?.courseName
-    || scheduleTournament?.courseName
-    || FEATURED_PGA_TOURNAMENT.courseName;
-  const seoTitle = "PGA Tour Power Rankings & Tournament Models 2026 | Joe Knows Ball";
-  const seoDescription = "Latest PGA Tour power rankings, player models, DFS tools, and best bets for upcoming tournaments. Advanced golf analytics.";
-
-  usePageSeo({
-    title: seoTitle,
-    description: seoDescription,
-    path: "/pga",
-    structuredData: [
-      buildBreadcrumbSchema([
-        { name: "Home", path: "/" },
-        { name: "PGA", path: "/pga" },
-      ]),
-      {
-        "@context": "https://schema.org",
-        "@type": "SportsOrganization",
-        name: "Joe Knows Ball PGA Tour Models",
-        sport: "Golf",
-        url: `${CANONICAL_BASE}/pga`,
-      },
-    ],
-  });
-  const selectedFutureEvent = useMemo(
-    () => schedule.find((entry) => entry.id === selectedScheduleId) ?? null,
-    [schedule, selectedScheduleId],
+  const upcoming = useMemo(
+    () => [...schedule].filter((e) => e.status === "upcoming").sort((a, b) => a.startDate.localeCompare(b.startDate)),
+    [schedule],
+  );
+  const previous = useMemo(
+    () => [...schedule].filter((e) => e.status === "complete").sort((a, b) => b.startDate.localeCompare(a.startDate)),
+    [schedule],
   );
 
-  const defaultWeightEntry = useMemo(() => findDefaultWeightEntry(courseWeights), [courseWeights]);
-  const normalizedDefaultWeights = useMemo(
-    () => (defaultWeightEntry ? normalizeCustomWeights(defaultWeightEntry.weights) : null),
-    [defaultWeightEntry],
-  );
-  const currentWeightEntry = useMemo(() => {
-    if (!currentEvent) return null;
-    const matched = findCourseWeightEntry(courseWeights, currentEvent.name, currentEvent.courseName);
-    if (!matched) return null;
-
-    return currentOverride
-      ? { ...matched, weights: normalizeCustomWeights(currentOverride, matched.weights) }
-      : { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) };
-  }, [courseWeights, currentEvent, currentOverride, normalizedDefaultWeights]);
-  const nextWeightEntry = useMemo(
-    () => {
-      if (!nextEvent) return null;
-      const matched = findCourseWeightEntry(courseWeights, nextEvent.name, nextEvent.courseName);
-      return matched ? { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) } : null;
-    },
-    [courseWeights, nextEvent, normalizedDefaultWeights],
-  );
-  const selectedFutureWeightEntry = useMemo(
-    () => {
-      if (!selectedFutureEvent) return null;
-      const matched = findCourseWeightEntry(courseWeights, selectedFutureEvent.name, selectedFutureEvent.courseName);
-      return matched ? { ...matched, weights: normalizeCustomWeights(matched.weights, normalizedDefaultWeights) } : null;
-    },
-    [courseWeights, normalizedDefaultWeights, selectedFutureEvent],
-  );
-
-  useEffect(() => {
-    if (customPercentWeights) return;
-    const savedCustomWeights = getSavedCustomWeights(normalizedDefaultWeights);
-    if (savedCustomWeights) {
-      setCustomPercentWeights(toPercentWeights(savedCustomWeights));
-      return;
-    }
-    if (!normalizedDefaultWeights) return;
-    setCustomPercentWeights(toPercentWeights(normalizedDefaultWeights));
-  }, [normalizedDefaultWeights, customPercentWeights]);
-
-  useEffect(() => {
-    if (!customPercentWeights) return;
-    setSavedCustomWeights(toFractionWeights(customPercentWeights));
-  }, [customPercentWeights]);
-
-  const tournamentWeightEntry = useMemo(() => {
-    if (selectedFutureEvent) return selectedFutureWeightEntry;
-    return tournamentMode === "next" ? nextWeightEntry : currentWeightEntry;
-  }, [currentWeightEntry, nextWeightEntry, selectedFutureEvent, selectedFutureWeightEntry, tournamentMode]);
-
-  const tournamentMeta = useMemo(() => {
-    if (selectedFutureEvent) {
-      return {
-        title: selectedFutureEvent.name,
-        meta: buildMetaLine([selectedFutureEvent.courseName, selectedFutureEvent.dateLabel]),
-      };
-    }
-
-    if (tournamentMode === "next") {
-      return {
-        title: nextEvent?.name ?? "Next Week",
-        meta: buildMetaLine([nextEvent?.courseName ?? EMPTY_MESSAGE, nextEvent?.dateLabel]),
-      };
-    }
-
-    return {
-      title: currentEvent?.name ?? "This Week",
-      meta: buildMetaLine([currentEvent?.courseName ?? EMPTY_MESSAGE, currentEvent?.dateLabel]),
-    };
-  }, [currentEvent, nextEvent, selectedFutureEvent, tournamentMode]);
-
-  const customWeights = useMemo(
-    () => (customPercentWeights ? toFractionWeights(customPercentWeights) : null),
-    [customPercentWeights],
-  );
-
-  const baselineRows = useMemo(
-    () => (normalizedDefaultWeights ? rankPlayers(playerStats, normalizedDefaultWeights) : []),
-    [normalizedDefaultWeights, playerStats],
-  );
-  const tournamentRows = useMemo(
-    () => (tournamentWeightEntry ? rankPlayers(playerStats, tournamentWeightEntry.weights) : []),
-    [playerStats, tournamentWeightEntry],
-  );
-  const customRows = useMemo(
-    () => (customWeights ? rankPlayers(playerStats, customWeights) : []),
-    [customWeights, playerStats],
-  );
-
-  const activeContent = useMemo(() => {
-    if (modelMode === "standard") {
-      return {
-        title: "Standard Model",
-        meta: "Default baseline weights across the full active PGA field",
-        scoreLabel: "Power Score",
-        weightEntry: normalizedDefaultWeights
-          ? {
-              tournament: defaultWeightEntry?.tournament ?? "DEFAULT",
-              course: defaultWeightEntry?.course ?? "",
-              weights: normalizedDefaultWeights,
-            }
-          : null,
-        rows: baselineRows,
-      };
-    }
-
-    if (modelMode === "custom") {
-      return {
-        title: "Custom Model",
-        meta: selectedFutureEvent
-          ? buildMetaLine([selectedFutureEvent.name, selectedFutureEvent.courseName, selectedFutureEvent.dateLabel])
-          : buildMetaLine([currentEvent?.name ?? "Current Event", currentEvent?.courseName, currentEvent?.dateLabel]),
-        scoreLabel: "Custom Score",
-        weightEntry: customWeights ? { tournament: "Custom", course: selectedFutureEvent?.courseName ?? currentEvent?.courseName ?? "", weights: customWeights } : null,
-        rows: customRows,
-      };
-    }
-
-    return {
-      title: tournamentMeta.title,
-      meta: tournamentMeta.meta,
-      scoreLabel: "Tournament Score",
-      weightEntry: tournamentWeightEntry,
-      rows: tournamentRows,
-    };
-  }, [
-    baselineRows,
-    currentEvent,
-    customRows,
-    customWeights,
-    defaultWeightEntry,
-    modelMode,
-    selectedFutureEvent,
-    normalizedDefaultWeights,
-    tournamentMeta,
-    tournamentRows,
-    tournamentWeightEntry,
-  ]);
-
-  const hasBestBetsPanel = useMemo(() => {
-    if (!bestBets) return false;
-    return [bestBets.outrights, bestBets.top5, bestBets.top10, bestBets.top20].every(
-      (section) => Array.isArray(section) && section.length > 0,
-    );
-  }, [bestBets]);
-  const bestBetsMatchesActiveTournament = bestBets?.tournament
-    ? normalizeTournamentLabel(bestBets.tournament) === normalizeTournamentLabel(activeTournamentName)
-    : false;
-  const bestBetsBannerTitle = [activeTournamentName, activeTournamentCourse].filter(Boolean).join(" — ");
-  const bestBetsTeaser = bestBetsMatchesActiveTournament
-    ? truncateTeaser(bestBets?.preview?.tournamentOverview, 120)
-    : `Model-driven tournament betting analysis, picks, and odds for ${activeTournamentName} this week.`;
-  const bestBetsGeneratedLabel = formatGeneratedDate(bestBets?.generatedAt);
-  const courseInformation = (currentEvent || scheduleTournament || FEATURED_PGA_TOURNAMENT) as CourseInformationSource;
-  const courseSetup = formatCourseSetup(courseInformation);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-
-    const totalPlayers = playerStats.length;
-    const playersWithTrend = playerStats.filter((row) => row.trendRank != null).length;
-    const activeTrendWeight =
-      (modelMode === "custom" ? customWeights?.trendRank : null) ??
-      (modelMode === "tournament" ? tournamentWeightEntry?.weights.trendRank : null) ??
-      normalizedDefaultWeights?.trendRank ??
-      0;
-
-    console.info("[PGA] Trend diagnostics", {
-      totalPlayers,
-      playersWithTrend,
-      missingTrend: totalPlayers - playersWithTrend,
-      activeTrendWeight,
-      modelMode,
-    });
-  }, [customWeights, modelMode, normalizedDefaultWeights, playerStats, tournamentWeightEntry?.weights.trendRank]);
-
-  useEffect(() => {
-    if (!activeContent.rows.length || !baselineRows.length || modelMode === "standard") {
-      setMovementMap({});
-      return;
-    }
-
-    if (!hasAnimatedRef.current) {
-      hasAnimatedRef.current = true;
-      return;
-    }
-
-    setMovementMap(buildMovementMap(activeContent.rows, baselineRows));
-    if (movementTimeoutRef.current) clearTimeout(movementTimeoutRef.current);
-    movementTimeoutRef.current = setTimeout(() => setMovementMap({}), 1100);
-  }, [activeContent.rows, baselineRows, modelMode]);
+  // Separate the pinned NOW event (if present in upcoming) from the rest
+  const nowEvent = current && upcoming.some((e) => e.id === current.id) ? current : null;
+  const otherUpcoming = nowEvent
+    ? upcoming.filter((e) => e.id !== nowEvent.id)
+    : upcoming;
 
   return (
-    <SiteShell>
-      <main className="site-page overflow-x-hidden bg-[#eef3f8] pb-16 pt-4 text-slate-900">
-        <div className="site-container">
-          {hasBestBetsPanel ? (
-            <section className="mb-4 rounded-[30px] border border-green-800 bg-green-950 px-5 py-5 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
-                <div className="min-w-0 space-y-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-300/80">
-                    THIS WEEK'S BETTING PREVIEW
-                  </div>
-                  <h2 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-[2rem]">
-                    {bestBetsBannerTitle || "PGA Best Bets"}
-                  </h2>
-                  <p className="max-w-4xl text-sm text-green-100/88">
-                    {bestBetsTeaser || "Model-driven tournament betting analysis, picks, and odds for this week's PGA event."}
-                  </p>
-                  <div className="pt-2">
-                    <Link
-                      to="/pga/best-bets"
-                      className="inline-flex w-full items-center justify-center rounded-full border border-green-700 bg-green-800 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-green-700 sm:w-auto"
-                    >
-                      View Full Picks &amp; Odds →
-                    </Link>
-                  </div>
+    <aside className="hidden lg:block w-56 lg:w-60 xl:w-64 shrink-0">
+      <div className="sticky top-4 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+        {/* Header */}
+        <div className="bg-slate-900 px-4 py-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Schedule</div>
+          <div className="text-sm font-bold text-white mt-0.5">2026 PGA Tour</div>
+        </div>
+
+        <div className="max-h-[72vh] overflow-y-auto text-sm">
+          {/* === PINNED "NOW" TOURNAMENT (always at absolute top, strongly highlighted) === */}
+          {nowEvent && (
+            <div className="border-b border-emerald-200 bg-emerald-50/80 px-3 py-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-black text-white tracking-widest">● NOW</span>
+                <span className="text-[10px] font-semibold text-emerald-700">{nowEvent.dateLabel}</span>
+              </div>
+              <div className="font-bold text-emerald-900 leading-tight text-[13px]">{nowEvent.shortName || nowEvent.name}</div>
+              <div className="text-[10px] text-emerald-700/80 mt-0.5">{nowEvent.courseName} · {nowEvent.location}</div>
+
+              {nowEvent.dataFile && (
+                <div className="mt-2 flex gap-2">
+                  <Link
+                    to={`/pga/${nowEvent.slug}/model`}
+                    className="inline-flex items-center rounded-lg bg-emerald-700 px-2.5 py-1 text-[10px] font-bold text-white hover:bg-emerald-800 active:bg-emerald-900"
+                  >
+                    Model
+                  </Link>
+                  <Link
+                    to={`/pga/${nowEvent.slug}`}
+                    className="inline-flex items-center rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-[10px] font-semibold text-emerald-800 hover:bg-emerald-100"
+                  >
+                    Picks &amp; Bets
+                  </Link>
                 </div>
-
-                <aside
-                  aria-label="Course information"
-                  className="rounded-[22px] border border-green-700/80 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                >
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-green-300/82">
-                    Course Information
-                  </div>
-                  <div className="mt-2 text-lg font-semibold tracking-[-0.02em] text-white">
-                    {courseInformation.courseName || activeTournamentCourse || EMPTY_MESSAGE}
-                  </div>
-                  <dl className="mt-3 space-y-2 text-sm text-green-50/88">
-                    <div>
-                      <dt className="sr-only">Location</dt>
-                      <dd>{courseInformation.location || EMPTY_MESSAGE}</dd>
-                    </div>
-                    <div>
-                      <dt className="sr-only">Course setup</dt>
-                      <dd>{courseSetup || "Course setup unavailable in current feed"}</dd>
-                    </div>
-                    <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-2">
-                      <dt className="text-green-200/72">Previous</dt>
-                      <dd className="min-w-0 truncate">{getPreviousWinnerLine(courseInformation)}</dd>
-                    </div>
-                    <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-2">
-                      <dt className="text-green-200/72">Weather</dt>
-                      <dd className="min-w-0">{courseInformation.projectedWeatherSummary || "Forecast unavailable in current feed"}</dd>
-                    </div>
-                  </dl>
-                </aside>
-              </div>
-            </section>
-          ) : null}
-
-          {hasBestBetsPanel ? (
-            <section className="mb-4 rounded-[28px] border border-green-800 bg-green-900 p-4 text-white shadow-[0_18px_40px_rgba(20,83,45,0.26)]">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-green-200/80">Best Bets</div>
-                  <h2 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
-                    {activeTournamentName}
-                  </h2>
-                </div>
-                <Link
-                  to="/pga/best-bets"
-                  className="text-sm font-semibold text-green-100 transition hover:text-white"
-                >
-                  View Full Analysis -&gt;
-                </Link>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-green-200/82">
-                <span>Outrights: {bestBets?.outrights?.length ?? 0} picks</span>
-                <span aria-hidden="true">·</span>
-                <span>Value Bets: {bestBets?.valueBets?.length ?? 0} identified</span>
-                <span aria-hidden="true">·</span>
-                <span>Generated: {bestBetsGeneratedLabel || EMPTY_MESSAGE}</span>
-              </div>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {BEST_BET_TABLES.map((config) => (
-                  <BestBetPreviewTable
-                    key={config.key}
-                    config={config}
-                    picks={(bestBets?.[config.key] ?? []) as BestBetPickPreview[]}
-                  />
-                ))}
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm italic text-green-100/75">
-                <span>
-                  Our model analyzes strokes gained, course weights, and current odds to surface the best values. Click any
-                  category for the full breakdown.
-                </span>
-                <Link to="/pga/best-bets" className="font-semibold not-italic text-green-100 transition hover:text-white">
-                  View Full Analysis →
-                </Link>
-              </div>
-            </section>
-          ) : (
-            <div className="mb-4 px-1 text-sm text-slate-500">Best bets analysis drops every Monday</div>
+              )}
+            </div>
           )}
 
-          <div className="mb-4 rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-            <SportsbookBar />
-          </div>
-
-          <div className="grid min-w-0 gap-4 md:grid-cols-[292px_minmax(0,1fr)]">
-            <PgaScheduleRail
-              schedule={schedule}
-              activeEvent={activeEvent}
-              resolvedEvent={currentEvent}
-              sidebarFilter={sidebarFilter}
-              setSidebarFilter={setSidebarFilter}
-              selectedScheduleId={selectedScheduleId}
-              onSelect={(id) => {
-                setSelectedScheduleId(id);
-                setModelMode("tournament");
-              }}
-            />
-
-            <section className="min-w-0 space-y-4">
-              <div className="space-y-1 px-1">
-                <p className="text-sm text-muted-foreground">
-                  PGA Tour player rankings updated every Monday using strokes gained data from the PGA Tour, DataGolf course stats, and player trend tables.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Switch between the power rankings, this week&apos;s course-weighted tournament model, or build your own.
-                </p>
-                <div className="flex flex-wrap gap-4 pt-1 text-sm">
-                  <Link to="/pga/model" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
-                    Tournament model rankings
-                  </Link>
-                  <Link to="/pga/best-bets" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
-                    PGA best bets board
-                  </Link>
-                  <Link to="/pga/top-40-golf-picks" className="font-semibold text-emerald-700 transition hover:text-emerald-800">
-                    Top 40 golf picks
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-                    <div className="min-w-0 space-y-1">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">PGA Ranking Engine</div>
-                      <div className="truncate text-2xl font-semibold tracking-[-0.03em] text-slate-900">{activeContent.title}</div>
-                      <div className="truncate text-sm text-slate-500">{activeContent.meta}</div>
-                      <div className="text-xs text-slate-400">{activeContent.rows.length} active players ranked</div>
-                      <div className="pt-1">
-                        <Link to="/pga/best-bets" className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
-                          Best Bets -&gt;
-                        </Link>
+          {/* Other upcoming (non-NOW) tournaments */}
+          {otherUpcoming.length > 0 && (
+            <div className="divide-y divide-slate-100">
+              {otherUpcoming.map((e) => {
+                const hasData = Boolean(e.dataFile);
+                return (
+                  <div key={e.id} className="px-3 py-2">
+                    <div className="flex items-start justify-between gap-1.5">
+                      <div className="min-w-0">
+                        <div className="text-[12px] font-semibold leading-tight text-slate-800">{e.shortName || e.name}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">{e.dateLabel}</div>
                       </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 xl:items-end">
-                      <div className="inline-flex w-full rounded-full border border-slate-200 bg-slate-100 p-1 xl:w-auto">
-                        {MODEL_OPTIONS.map((option) => (
-                          <button
-                            key={option.key}
-                            type="button"
-                            onClick={() => {
-                              setModelMode(option.key);
-                              if (option.key !== "tournament") {
-                                setSelectedScheduleId(null);
-                              }
-                            }}
-                            className={cn(
-                              "flex-1 rounded-full px-4 py-2 text-sm font-semibold transition xl:flex-none",
-                              modelMode === option.key
-                                ? "bg-white text-slate-900 shadow-sm"
-                                : "text-slate-500 hover:text-slate-900",
-                            )}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
+                      {hasData && (
                         <Link
-                          to="/pga/dfs"
-                          className="flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold text-slate-500 transition hover:text-slate-900 xl:flex-none"
+                          to={`/pga/${e.slug}/model`}
+                          className="shrink-0 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700"
                         >
-                          DFS Upload
+                          Model
                         </Link>
-                      </div>
-
-                      <div className="inline-flex rounded-full border border-slate-200 bg-slate-100 p-1">
-                        <button
-                          type="button"
-                          onClick={() => setDisplayMode("raw")}
-                          className={cn(
-                            "rounded-full px-3 py-1.5 text-xs font-semibold transition",
-                            displayMode === "raw" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900",
-                          )}
-                        >
-                          Raw Stats
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDisplayMode("percentile")}
-                          className={cn(
-                            "rounded-full px-3 py-1.5 text-xs font-semibold transition",
-                            displayMode === "percentile" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900",
-                          )}
-                        >
-                          Percentile Rank
-                        </button>
-                      </div>
+                      )}
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
 
-                  {modelMode === "tournament" ? (
-                    <div className="flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-slate-50 p-3">
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="inline-flex rounded-full border border-slate-200 bg-white p-1">
-                          {TOURNAMENT_OPTIONS.map((option) => (
-                            <button
-                              key={option.key}
-                              type="button"
-                              onClick={() => {
-                                setTournamentMode(option.key);
-                                setSelectedScheduleId(null);
-                              }}
-                              className={cn(
-                                "rounded-full px-3 py-1.5 text-xs font-semibold transition",
-                                tournamentMode === option.key && !selectedScheduleId
-                                  ? "bg-slate-900 text-white"
-                                  : "text-slate-500 hover:text-slate-900",
-                              )}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
+          {/* === NEW: Collapsible "Previous Tournaments" section (below the current schedule) === */}
+          {previous.length > 0 && (
+            <div className="border-t border-slate-200 bg-slate-50">
+              <button
+                onClick={() => setShowPrevious((v) => !v)}
+                className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[11px] font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition"
+                aria-expanded={showPrevious}
+              >
+                <span>Previous Tournaments ({previous.length})</span>
+                <span className="text-base leading-none">{showPrevious ? "−" : "+"}</span>
+              </button>
+
+              {showPrevious && (
+                <div className="border-t border-slate-200 bg-white px-3 py-2 space-y-2">
+                  {previous.map((e) => {
+                    const hasData = Boolean(e.dataFile);
+                    return (
+                      <div key={e.id} className="flex items-center justify-between gap-2 text-[11px]">
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-700 truncate">{e.shortName || e.name}</div>
+                          <div className="text-[10px] text-slate-500">{e.dateLabel}{e.winner ? ` · ${e.winner}` : ""}</div>
                         </div>
-
-                        <div className="text-xs text-slate-500">
-                          {selectedScheduleId ? "Schedule selection overrides the weekly toggle." : "Tournament mode uses course-specific weights for the selected event."}
-                        </div>
-                      </div>
-
-                      <WeightBadgeRow entry={activeContent.weightEntry as CourseWeightFeedEntry | null} />
-                    </div>
-                  ) : null}
-
-                  {modelMode === "custom" ? (
-                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {CUSTOM_WEIGHT_CONTROLS.map((entry) => (
-                          <div key={entry.key} className="rounded-[22px] border border-slate-200 bg-slate-50 px-3 py-3">
-                            <div className="mb-2 flex items-center justify-between gap-3">
-                              <div>
-                                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{entry.short}</div>
-                                <div className="text-sm font-medium text-slate-900">{entry.label}</div>
-                              </div>
-                              <div className="text-sm font-semibold text-slate-900">
-                                {customPercentWeights ? customPercentWeights[entry.key].toFixed(1) : "--"}%
-                              </div>
-                            </div>
-                            <Slider
-                              value={[customPercentWeights?.[entry.key] ?? 0]}
-                              min={0}
-                              max={100}
-                              step={0.5}
-                              onValueChange={(value) => {
-                                if (!customPercentWeights) return;
-                                setCustomPercentWeights(rebalanceWeights(customPercentWeights, entry.key, value[0] ?? 0));
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="space-y-3 rounded-[24px] border border-slate-200 bg-slate-50 p-3">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Active Weights</div>
-                        <WeightBadgeRow entry={activeContent.weightEntry as CourseWeightFeedEntry | null} />
-                        <div className="space-y-2">
-                          <Button
-                            variant="outline"
-                            className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                            onClick={() => normalizedDefaultWeights && setCustomPercentWeights(toPercentWeights(normalizedDefaultWeights))}
+                        {hasData && (
+                          <Link
+                            to={`/pga/${e.slug}/model`}
+                            className="shrink-0 rounded bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-700"
                           >
-                            Reset to Default
-                          </Button>
-                          <Button
-                            className="w-full bg-slate-900 text-white hover:bg-slate-800"
-                            onClick={() => {
-                              if (!customWeights) return;
-                              setThisWeekOverride(customWeights);
-                              setCurrentOverride(customWeights);
-                              setModelMode("tournament");
-                              setSelectedScheduleId(null);
-                              setTournamentMode("current");
-                            }}
-                          >
-                            Apply to This Week
-                          </Button>
-                          <Button asChild variant="outline" className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-100">
-                            <Link to="/pga/custom">Open Full Builder</Link>
-                          </Button>
-                        </div>
+                            Model
+                          </Link>
+                        )}
                       </div>
-                    </div>
-                  ) : null}
-
-                  {modelMode === "standard" ? (
-                    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3">
-                      <WeightBadgeRow entry={activeContent.weightEntry as CourseWeightFeedEntry | null} />
-                    </div>
-                  ) : null}
+                    );
+                  })}
                 </div>
-              </div>
-
-              <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
-                {loading || !activeContent.rows.length ? (
-                  <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-8 text-sm text-slate-500">
-                    {loading ? "Loading PGA data..." : EMPTY_MESSAGE}
-                  </div>
-                ) : (
-                  <PgaCompactTable
-                    rows={activeContent.rows}
-                    scoreLabel={activeContent.scoreLabel}
-                    movementMap={movementMap}
-                    displayMode={displayMode}
-                  />
-                )}
-              </div>
-            </section>
-          </div>
+              )}
+            </div>
+          )}
         </div>
-      </main>
-    </SiteShell>
+      </div>
+    </aside>
   );
 }
 
+// ─── Best Bets Tiles ──────────────────────────────────────────────────────────
+const BET_SECTIONS = [
+  { key: "outrights" as const, label: "🏆 Outrights", color: "#15803d", bg: "rgba(22,163,74,0.08)", border: "rgba(22,163,74,0.25)" },
+  { key: "top5"      as const, label: "🔥 Top 5",     color: "#0369a1", bg: "rgba(14,165,233,0.07)", border: "rgba(14,165,233,0.2)" },
+  { key: "top10"     as const, label: "⭐ Top 10",    color: "#7c3aed", bg: "rgba(124,58,237,0.07)", border: "rgba(124,58,237,0.2)" },
+  { key: "top20"     as const, label: "📋 Top 20",    color: "#b45309", bg: "rgba(245,158,11,0.07)", border: "rgba(245,158,11,0.2)" },
+];
+
+function BestBetsTiles({ data }: { data: BestBetsPayload }) {
+  const hasAny = BET_SECTIONS.some(({ key }) => data[key]?.length > 0);
+  if (!hasAny) return null;
+  return (
+    <div className="mb-6">
+      <div className="mb-2 flex items-center justify-between">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Best Bets</div>
+          <div className="text-sm font-black text-slate-900">{data.tournament} · {data.course}</div>
+        </div>
+        <Link to="/pga/best-bets" className="text-xs font-bold text-emerald-700 hover:underline">View all →</Link>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {BET_SECTIONS.map(({ key, label, color, bg, border }) => {
+          const picks = data[key];
+          if (!picks?.length) return null;
+          return (
+            <div key={key} className="rounded-xl p-3 flex flex-col gap-1.5" style={{ backgroundColor: bg, border: `1px solid ${border}` }}>
+              <div className="text-[11px] font-black" style={{ color }}>{label}</div>
+              {picks.slice(0, 3).map((p) => (
+                <div key={p.player} className="flex items-center justify-between gap-1">
+                  <span className="text-[11px] font-semibold text-slate-800 truncate">{p.player}</span>
+                  <span className="shrink-0 text-[10px] font-bold text-slate-400">#{p.tournamentRank}</span>
+                </div>
+              ))}
+              {picks.length > 3 && (
+                <Link to="/pga/best-bets" className="text-[10px] font-semibold" style={{ color }}>+{picks.length - 3} more</Link>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function PgaHub() {
+  usePageSeo({
+    title: "PGA Golf Power Rankings & Tournament Model",
+    description: "Overall PGA Tour power rankings plus weekly tournament model picks, best bets, and course fits.",
+    path: "/pga",
+  });
+
+  const { schedule, playerStats, loading } = usePgaHubData();
+  const bestBets = useBestBets();
+  const currentField = useCurrentField();
+  const [search, setSearch] = useState("");
+  const [fieldOnly, setFieldOnly] = useState(true); // default to field-only when data available
+  const [showPreviousMobile, setShowPreviousMobile] = useState(false);
+
+  // View mode for the SG columns: percentile ranks (current colored view) or raw SG values
+  const [statView, setStatView] = useState<'percentile' | 'raw'>('percentile');
+
+  const { active, current } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
+
+  // Mobile: just the current/next single tournament
+  const mobileHeroTournament = useMemo(() => {
+    const sorted = [...schedule]
+      .filter((e) => e.status === "upcoming")
+      .sort((a, b) => a.startDate.localeCompare(b.startDate));
+    return active ?? sorted[0] ?? null;
+  }, [schedule, active]);
+
+  // Previous tournaments for mobile
+  const previousTournaments = useMemo(
+    () => [...schedule].filter((e) => e.status === "complete").sort((a, b) => b.startDate.localeCompare(a.startDate)),
+    [schedule],
+  );
+
+  const powerRankings = useMemo(() => buildPowerRankings(playerStats), [playerStats]);
+  const fieldSet = useMemo(() => {
+    if (!currentField?.players?.length) return null;
+    // Normalize for fuzzy matching — last name + first initial
+    const normalize = (name: string) => name.toLowerCase().replace(/[^a-z]/g, "");
+    return new Set(currentField.players.map(normalize));
+  }, [currentField]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const normalize = (name: string) => name.toLowerCase().replace(/[^a-z]/g, "");
+    return powerRankings.filter((r) => {
+      // Field filter
+      if (fieldOnly && fieldSet) {
+        const norm = normalize(r.player);
+        // Exact match or substring match (handles name format differences)
+        const inField = fieldSet.has(norm)
+          || [...fieldSet].some((fn) => fn.includes(norm.slice(0, 8)) || norm.includes(fn.slice(0, 8)));
+        if (!inField) return false;
+      }
+      if (!q) return true;
+      return r.player.toLowerCase().includes(q);
+    });
+  }, [powerRankings, search, fieldOnly, fieldSet]);
+
+  // Only show the "Form" (trendRank) column if the data source actually provided trendRank values.
+  // If the form data could not be pulled (all null), hide the entire column.
+  const hasFormData = useMemo(
+    () => powerRankings.some((r) => r.trendRank != null),
+    [powerRankings]
+  );
+
+  const fmtScore = (v: number) => v.toFixed(1);
+  const fmtPct = (v: number) => `${Math.round(v)}th`;
+
+  // Precompute percentile ranks for display
+  const pctRanks = useMemo(() => {
+    if (!powerRankings.length) return new Map<string, { sgTotal: number; sgApp: number; sgPutt: number; sgAtG: number }>();
+    const asc = (arr: number[]) => [...arr].sort((a, b) => a - b);
+    const sT = asc(powerRankings.map((p) => p.sgTotal));
+    const sA = asc(powerRankings.map((p) => p.sgApp));
+    const sP = asc(powerRankings.map((p) => p.sgPutt));
+    const sG = asc(powerRankings.map((p) => p.sgAtG));
+    return new Map(powerRankings.map((p) => [p.player, {
+      sgTotal: percentile(p.sgTotal, sT),
+      sgApp:   percentile(p.sgApp,   sA),
+      sgPutt:  percentile(p.sgPutt,  sP),
+      sgAtG:   percentile(p.sgAtG,   sG),
+    }]));
+  }, [powerRankings]);
+
+  return (
+    <SiteShell>
+      {/* Hero (now centered) */}
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 px-4 py-8 sm:px-6">
+        {/* Wider, responsive container for the hero — scales up on large screens */}
+        <div className="mx-auto w-full max-w-[1600px] 2xl:max-w-[1800px] px-4 sm:px-6 lg:px-8 xl:px-10 text-center">
+          <div className="mb-1 text-xs font-bold uppercase tracking-widest text-emerald-400">Joe Knows Ball</div>
+          <h1 className="text-2xl font-black text-white sm:text-3xl">⛳ PGA Power Rankings</h1>
+          <p className="mt-1 text-sm text-slate-300">Overall model across all players · Click a tournament to view the field-filtered model</p>
+
+          {/* Mobile: single current tournament card */}
+          {mobileHeroTournament && (
+            <div className="mt-5 lg:hidden">
+              <TournamentHeroCard entry={mobileHeroTournament} isActive={active?.id === mobileHeroTournament.id} />
+              {/* Previous tournaments (mobile) — now shows Model buttons for consistency with new desktop "Previous Tournaments" section */}
+              <div className="mt-3">
+                <button
+                  onClick={() => setShowPreviousMobile((v) => !v)}
+                  className="text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1"
+                >
+                  {showPreviousMobile ? "▲" : "▼"} Previous tournaments ({previousTournaments.length})
+                </button>
+                {showPreviousMobile && (
+                  <div className="mt-2 space-y-1.5">
+                    {previousTournaments.map((e) => (
+                      <div key={e.id} className="flex items-center justify-between gap-2 rounded-lg bg-white/10 px-3 py-2">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-white truncate">{e.shortName || e.name}</div>
+                          {e.winner && <div className="text-[10px] text-slate-400">W: {e.winner}</div>}
+                        </div>
+                        {e.dataFile && (
+                          <Link
+                            to={`/pga/${e.slug}/model`}
+                            className="shrink-0 rounded bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-emerald-600"
+                          >
+                            Model
+                          </Link>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Body: left schedule + main content + right partners panel.
+          Much wider container so the central table isn't squished. Responsive padding + higher max-width on large screens. */}
+      <div className="mx-auto w-full max-w-[1600px] 2xl:max-w-[1800px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10 lg:flex lg:gap-6">
+
+        {/* Desktop sidebar (left) */}
+        <ScheduleSidebar schedule={schedule} current={current} />
+
+        {/* Main content (center) */}
+        <div className="min-w-0 flex-1">
+          {/* Nav pills */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Link to="/pga/best-bets" className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-200">Best Bets</Link>
+            <Link to={`/pga/${mobileHeroTournament?.slug ?? "model"}/model`} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">Featured Model</Link>
+            <Link to="/pga/dfs" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-200">DFS Upload</Link>
+          </div>
+
+          {/* Best Bets tiles */}
+          {bestBets && <BestBetsTiles data={bestBets} />}
+
+          {/* Field filter toggle */}
+          {currentField && (
+            <div className="mb-3 flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+              <div className="text-[11px] font-semibold text-emerald-800">
+                {fieldOnly
+                  ? `${filtered.length} players in ${currentField.tournament} field`
+                  : `Showing all ${powerRankings.length} players`}
+              </div>
+              <button
+                onClick={() => setFieldOnly((v) => !v)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-black transition ${fieldOnly ? "bg-emerald-600 text-white" : "bg-white border border-slate-200 text-slate-600"}`}
+              >
+                {fieldOnly ? "This Week Only" : "Show All"}
+              </button>
+            </div>
+          )}
+
+          {/* Search */}
+          <div className="mb-3">
+            <input
+              type="text"
+              placeholder="Search player..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-emerald-400"
+            />
+          </div>
+
+          {/* Stat View Toggle — switch between percentile tiles and raw SG numbers */}
+          <div className="mb-3 flex items-center gap-2">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">SG Columns:</div>
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-0.5 text-[11px] font-semibold shadow-sm">
+              <button
+                onClick={() => setStatView('percentile')}
+                className={`rounded-full px-3 py-1 transition ${statView === 'percentile' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              >
+                Percentile
+              </button>
+              <button
+                onClick={() => setStatView('raw')}
+                className={`rounded-full px-3 py-1 transition ${statView === 'raw' ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              >
+                Raw
+              </button>
+            </div>
+            <div className="text-[10px] text-slate-400">
+              {statView === 'percentile' ? 'Rank vs field' : 'Actual strokes gained'}
+            </div>
+          </div>
+
+          {/* Rankings Table */}
+          {loading ? (
+            <div className="py-16 text-center text-sm text-slate-400">Loading rankings…</div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+              <table className="w-full text-left text-[12px]">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <th className="sticky left-0 z-30 bg-slate-50 px-2 py-2 w-8">#</th>
+                    <th className="sticky left-8 z-30 bg-slate-50 px-2 py-2 min-w-[140px]">Player</th>
+                    <th className="px-2 py-2 whitespace-nowrap">Score</th>
+                    <th className="px-2 py-2 whitespace-nowrap">SG Total</th>
+                    <th className="px-2 py-2 whitespace-nowrap">SG App</th>
+                    <th className="px-2 py-2 whitespace-nowrap">SG Putt</th>
+                    <th className="px-2 py-2 whitespace-nowrap">SG AtG</th>
+                    {hasFormData && <th className="px-2 py-2 whitespace-nowrap">Form</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((row, i) => {
+                    const sbg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
+                    const pct = pctRanks.get(row.player);
+                    return (
+                      <tr key={row.player} className={`${sbg} hover:bg-emerald-50/30`}>
+                        <td className={`sticky left-0 z-20 border-b border-slate-100 px-2 py-1.5 text-[11px] font-bold text-slate-400 ${sbg}`}>{row.powerRank}</td>
+                        <td className={`sticky left-8 z-20 border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900 whitespace-nowrap ${sbg}`}>{row.player}</td>
+                        <td className="border-b border-slate-100 px-2 py-1.5">
+                          <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums"
+                            style={{ backgroundColor: row.powerScore >= 65 ? "#16a34a" : row.powerScore >= 50 ? "rgba(22,163,74,0.15)" : "rgba(148,163,184,0.2)", color: row.powerScore >= 65 ? "#fff" : row.powerScore >= 50 ? "#15803d" : "#475569" }}>
+                            {fmtScore(row.powerScore)}
+                          </span>
+                        </td>
+                        {/* SG columns: either percentile (colored white-text tiles) or raw values */}
+                        {statView === 'percentile' && pct ? (
+                          <>
+                            <td className="border-b border-slate-100 p-0"><PercentileCell value={pct.sgTotal} /></td>
+                            <td className="border-b border-slate-100 p-0"><PercentileCell value={pct.sgApp} /></td>
+                            <td className="border-b border-slate-100 p-0"><PercentileCell value={pct.sgPutt} /></td>
+                            <td className="border-b border-slate-100 p-0"><PercentileCell value={pct.sgAtG} /></td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="border-b border-slate-100 p-0"><RawStatCell value={row.sgTotal} /></td>
+                            <td className="border-b border-slate-100 p-0"><RawStatCell value={row.sgApp} /></td>
+                            <td className="border-b border-slate-100 p-0"><RawStatCell value={row.sgPutt} /></td>
+                            <td className="border-b border-slate-100 p-0"><RawStatCell value={row.sgAtG} /></td>
+                          </>
+                        )}
+                        {hasFormData && (
+                          <td className="border-b border-slate-100 px-2 py-1.5 text-[11px] text-slate-500 tabular-nums">
+                            {row.trendRank != null ? `#${row.trendRank}` : "—"}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {filtered.length === 0 && !loading && (
+                <div className="py-10 text-center text-sm text-slate-400">No players match "{search}"</div>
+              )}
+            </div>
+          )}
+
+          <p className="mt-3 text-[11px] text-slate-400">
+            Power score = weighted percentile across SG Total (55% dominant season-long), SG Approach (9%), SG Putting (4%), Recent Form (3%), SG Around Green (10%), Bogey Avoidance (14%), Birdie Ratio (5%) + much stronger stability floor for 90%+ sgTotal (locks elite season performers in Top 5).
+          </p>
+        </div>
+
+        {/* Right-hand partners panel — compact names-only table style */}
+        <aside className="hidden lg:block w-44 lg:w-48 xl:w-52 shrink-0">
+          <div className="sticky top-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm text-sm">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+              Bet with our partners
+            </div>
+
+            <div className="space-y-1">
+              {SPORTSBOOKS.map((sb) => (
+                <a
+                  key={sb.name}
+                  href={sb.referralUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[11px] font-bold transition hover:opacity-90"
+                  style={{ backgroundColor: sb.bgColor, color: sb.textColor }}
+                >
+                  <img
+                    src={sb.logoUrl}
+                    alt={sb.name}
+                    className="h-4 w-4 rounded object-contain shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                  {sb.name}
+                </a>
+              ))}
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-slate-100 text-[9px] text-slate-400 leading-tight">
+              21+ • Call 1-800-GAMBLER
+            </div>
+          </div>
+        </aside>
+      </div>
+    </SiteShell>
+  );
+}

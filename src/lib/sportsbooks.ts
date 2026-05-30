@@ -4,8 +4,9 @@ export const SPORTSBOOKS = [
     shortName: "DK",
     referralUrl: "https://sportsbook.draftkings.com/r/sb/Joeywins100/US-SB/US-SC",
     bgColor: "#000000",
-    textColor: "#ffffff",
+    textColor: "#53d337",
     accentColor: "#53d337",
+    logoUrl: "https://logo.clearbit.com/draftkings.com",
   },
   {
     name: "FanDuel",
@@ -14,6 +15,7 @@ export const SPORTSBOOKS = [
     bgColor: "#1493ff",
     textColor: "#ffffff",
     accentColor: "#ffffff",
+    logoUrl: "https://logo.clearbit.com/fanduel.com",
   },
   {
     name: "Fanatics",
@@ -22,6 +24,7 @@ export const SPORTSBOOKS = [
     bgColor: "#cc0000",
     textColor: "#ffffff",
     accentColor: "#ffffff",
+    logoUrl: "https://logo.clearbit.com/fanatics.com",
   },
   {
     name: "BetMGM",
@@ -30,13 +33,15 @@ export const SPORTSBOOKS = [
     bgColor: "#d4af37",
     textColor: "#000000",
     accentColor: "#000000",
+    logoUrl: "https://logo.clearbit.com/betmgm.com",
   },
   {
     name: "Caesars",
     shortName: "CZR",
     referralUrl: "https://caesars.com/sportsbook-and-casino/referral?AR=RAF-TDS-8JA",
-    bgColor: "#003087",
-    textColor: "#ffffff",
+    bgColor: "#1a3a1a",
+    textColor: "#c8a84b",
     accentColor: "#c8a84b",
+    logoUrl: "https://logo.clearbit.com/caesars.com",
   },
 ] as const;

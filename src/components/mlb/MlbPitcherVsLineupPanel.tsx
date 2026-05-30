@@ -5,6 +5,11 @@ import type { MlbLineupSummary, MlbOpponentSplit, MlbStarterProfile } from "@/li
 
 type EdgeResult = "pitcher" | "lineup" | "even";
 
+function colorsTooSimilar(c1: string, c2: string): boolean {
+  const parse = (h: string) => { const s = h.replace("#",""); return [parseInt(s.slice(0,2),16),parseInt(s.slice(2,4),16),parseInt(s.slice(4,6),16)]; };
+  try { const [r1,g1,b1]=parse(c1); const [r2,g2,b2]=parse(c2); return Math.sqrt((r1-r2)**2+(g1-g2)**2+(b1-b2)**2)<80; } catch { return false; }
+}
+
 function getEdge(pitcherVal: number | null, lineupVal: number | null, category: string): EdgeResult {
   if (pitcherVal == null || lineupVal == null) return "even";
   if (category === "k9") return "pitcher";
@@ -24,7 +29,7 @@ function CompactBar({ label, value, barPct, color }: { label: string; value: str
   return (
     <div className="flex items-center gap-2 min-w-0">
       <span className="w-14 shrink-0 truncate text-right text-[10px] font-bold text-muted-foreground">{label}</span>
-      <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-slate-100">
+      <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
         <span className="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-amber-400" style={{ left: "50%" }} />
         <span className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${barPct}%`, backgroundColor: color }} />
       </div>
@@ -50,27 +55,18 @@ function buildRows(pitcher: MlbStarterProfile, split: MlbOpponentSplit, lineupSu
   ];
 }
 
-export default function MlbPitcherVsLineupPanel({
-  awayPitcher, homePitcher,
-  awaySplit, homeSplit,
-  awayLineupSummary, homeLineupSummary,
-  awayAbbreviation, homeAbbreviation,
-}: {
-  awayPitcher: MlbStarterProfile;
-  homePitcher: MlbStarterProfile;
-  awaySplit: MlbOpponentSplit;
-  homeSplit: MlbOpponentSplit;
-  awayLineupSummary: MlbLineupSummary;
-  homeLineupSummary: MlbLineupSummary;
-  awayAbbreviation: string;
-  homeAbbreviation: string;
+export default function MlbPitcherVsLineupPanel({ awayPitcher, homePitcher, awaySplit, homeSplit, awayLineupSummary, homeLineupSummary, awayAbbreviation, homeAbbreviation }: {
+  awayPitcher: MlbStarterProfile; homePitcher: MlbStarterProfile;
+  awaySplit: MlbOpponentSplit; homeSplit: MlbOpponentSplit;
+  awayLineupSummary: MlbLineupSummary; homeLineupSummary: MlbLineupSummary;
+  awayAbbreviation: string; homeAbbreviation: string;
 }) {
-  const awayColors = getMlbTeamColors(awayAbbreviation);
-  const homeColors = getMlbTeamColors(homeAbbreviation);
+  const rawAway = getMlbTeamColors(awayAbbreviation).primary;
+  const rawHome = getMlbTeamColors(homeAbbreviation).primary;
+  const awayColor = colorsTooSimilar(rawAway, rawHome) ? "#374151" : rawAway;
+  const homeColor = rawHome;
   const awayLastName = awayPitcher.name.split(" ").pop() ?? awayPitcher.name;
   const homeLastName = homePitcher.name.split(" ").pop() ?? homePitcher.name;
-
-  // home pitcher stats face away lineup; away pitcher stats face home lineup
   const homeRows = buildRows(homePitcher, awaySplit, awayLineupSummary);
   const awayRows = buildRows(awayPitcher, homeSplit, homeLineupSummary);
 
@@ -86,24 +82,23 @@ export default function MlbPitcherVsLineupPanel({
         const awayEdge = getEdge(awayRow.pitcherVal, awayRow.lineupVal, awayRow.edgeKey);
         const homeEdgeTeam = homeEdge === "pitcher" ? homeAbbreviation : homeEdge === "lineup" ? awayAbbreviation : null;
         const awayEdgeTeam = awayEdge === "pitcher" ? awayAbbreviation : awayEdge === "lineup" ? homeAbbreviation : null;
-
         return (
-          <div key={homeRow.category} className="space-y-1 rounded-lg bg-secondary/30 px-2.5 py-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">{homeRow.category}</span>
+          <div key={homeRow.category} className="space-y-0.5 rounded-md bg-secondary/30 px-2 py-1.5">
+            <div className="flex items-center justify-between gap-2 mb-0.5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{homeRow.category}</span>
               <div className="flex gap-1">
-                <span className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: homeEdgeTeam ? getMlbTeamColors(homeEdgeTeam).primary : "#94a3b8" }}>
-                  {homeEdge === "pitcher" ? `${homeAbbreviation}` : homeEdge === "lineup" ? `${awayAbbreviation}` : "Even"}
+                <span className="rounded-full px-2 py-0.5 text-[9px] font-bold text-white" style={{ backgroundColor: homeEdgeTeam ? getMlbTeamColors(homeEdgeTeam).primary : "#94a3b8" }}>
+                  {homeEdge === "pitcher" ? homeAbbreviation : homeEdge === "lineup" ? awayAbbreviation : "Even"}
                 </span>
-                <span className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: awayEdgeTeam ? getMlbTeamColors(awayEdgeTeam).primary : "#94a3b8" }}>
-                  {awayEdge === "pitcher" ? `${awayAbbreviation}` : awayEdge === "lineup" ? `${homeAbbreviation}` : "Even"}
+                <span className="rounded-full px-2 py-0.5 text-[9px] font-bold text-white" style={{ backgroundColor: awayEdgeTeam ? getMlbTeamColors(awayEdgeTeam).primary : "#94a3b8" }}>
+                  {awayEdge === "pitcher" ? awayAbbreviation : awayEdge === "lineup" ? homeAbbreviation : "Even"}
                 </span>
               </div>
             </div>
-            <CompactBar label={homeLastName} value={homeRow.pitcherStat} barPct={homeRow.pitcherPct} color={homeColors.primary} />
-            <CompactBar label={awayAbbreviation} value={homeRow.lineupStat} barPct={homeRow.lineupPct} color={awayColors.primary} />
-            <CompactBar label={awayLastName} value={awayRow.pitcherStat} barPct={awayRow.pitcherPct} color={awayColors.primary} />
-            <CompactBar label={homeAbbreviation} value={awayRow.lineupStat} barPct={awayRow.lineupPct} color={homeColors.primary} />
+            <CompactBar label={homeLastName} value={homeRow.pitcherStat} barPct={homeRow.pitcherPct} color={homeColor} />
+            <CompactBar label={awayAbbreviation} value={homeRow.lineupStat} barPct={homeRow.lineupPct} color={awayColor} />
+            <CompactBar label={awayLastName} value={awayRow.pitcherStat} barPct={awayRow.pitcherPct} color={awayColor} />
+            <CompactBar label={homeAbbreviation} value={awayRow.lineupStat} barPct={awayRow.lineupPct} color={homeColor} />
           </div>
         );
       })}

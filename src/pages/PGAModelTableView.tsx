@@ -65,6 +65,13 @@ export default function PGAModelTableView() {
         <div className="mx-auto w-full max-w-[1920px] px-4 sm:px-6 lg:px-8">
           <div className="space-y-6">
             <section className="surface-card">
+              <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
+                <a href="/pga" className="font-semibold text-emerald-700 hover:underline">⛳ Power Rankings</a>
+                <span>›</span>
+                <Link to={modelPath} className="text-emerald-700 hover:underline">{tournament.shortName || tournament.name}</Link>
+                <span>›</span>
+                <span>Full Table</span>
+              </div>
               <Link to={modelPath} className="text-sm text-primary transition hover:text-primary/80">
                 Back to PGA model dashboard
               </Link>

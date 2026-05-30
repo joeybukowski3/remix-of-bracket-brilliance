@@ -308,14 +308,22 @@ function directionToCompass(degrees) {
   return directions[Math.round(normalized / 22.5) % directions.length];
 }
 
+const FETCH_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Accept": "application/json, text/html, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Referer": "https://www.mlb.com/",
+  "Origin": "https://www.mlb.com",
+};
+
 async function fetchJson(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { headers: FETCH_HEADERS });
   if (!response.ok) throw new Error(`Request failed ${response.status} for ${url}`);
   return response.json();
 }
 
 async function fetchText(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { headers: FETCH_HEADERS });
   if (!response.ok) throw new Error(`Request failed ${response.status} for ${url}`);
   return response.text();
 }

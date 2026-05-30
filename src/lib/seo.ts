@@ -12,55 +12,58 @@ type SeoMeta = {
   title: string;
   description: string;
   path: string;
+  noindex?: boolean;
 };
 
 const SEO_META: Record<SeoPage, SeoMeta> = {
   home: {
-    title: "MLB Player Props, PGA Power Rankings & Sports Betting Tools | Joe Knows Ball",
+    title: "MLB Props, PGA Golf Models & Analytics | Joe Knows Ball",
     description:
-      "Advanced sports analytics for MLB daily props, PGA Tour rankings, and betting models. Free matchup analyzer, power rankings, and player projections. NFL & NBA coming soon.",
+      "Free MLB HR props, strikeout props, hit props, PGA Tour models, and game matchup analysis. Advanced sports betting analytics.",
     path: "/",
   },
   mlb: {
-    title: "MLB Matchup Analyzer & Daily Player Props | Joe Knows Ball",
+    title: "MLB Game Matchup Analysis & Daily Player Props | Joe Knows Ball",
     description:
-      "Deep MLB matchup analysis, daily player props, pitching vs batting trends, and betting recommendations. Best free MLB analytics tool.",
+      "Live MLB game matchup analyzer with park factors, pitcher vs batter analysis, lineup context, and daily HR props, strikeout props, and hit props betting models.",
     path: "/mlb",
   },
   pga: {
-    title: "PGA Tour Power Rankings & Tournament Models — Joe Knows Ball",
+    title: "PGA Tour Power Rankings & Golf Tournament Models | Joe Knows Ball",
     description:
-      "Custom-weighted PGA Tour player rankings updated every Monday. Build your own golf model, compare DFS salaries, and get course-specific tournament projections.",
+      "Custom-weighted PGA Tour player rankings updated weekly. Advanced golf analytics, course-fit models, strokes gained breakdowns, DFS salary tools, and tournament projections.",
     path: "/pga",
   },
   "pga-custom": {
-    title: "Custom Golf Model Builder — Joe Knows Ball",
+    title: "Custom PGA Golf Model Builder | Joe Knows Ball",
     description:
-      "Drag the sliders, set your own weights, and build a personalized PGA Tour ranking model based on strokes gained and course stats.",
+      "Build your own PGA Tour ranking model by adjusting strokes gained weights and course-specific stats. Personalized golf analytics and tournament predictions.",
     path: "/pga/custom",
   },
   "pga-dfs": {
-    title: "PGA DFS Upload & Salary Value Finder — Joe Knows Ball",
+    title: "PGA DFS Salary Upload & Value Finder | Joe Knows Ball",
     description:
-      "Upload DraftKings or FanDuel salary files and compare DFS pricing against Joe Knows Ball PGA model rankings.",
+      "Upload DraftKings or FanDuel PGA salary files and compare DFS pricing against Joe Knows Ball golf model rankings to find value plays.",
     path: "/pga/dfs",
   },
   nfl: {
-    title: "NFL Analytics & Betting Models — Joe Knows Ball",
+    title: "NFL Analytics & Betting Models | Joe Knows Ball",
     description:
-      "NFL matchup analytics, efficiency metrics, and betting context for every week of the season.",
+      "NFL matchup analytics, efficiency metrics, and betting context. Advanced football models coming soon.",
     path: "/nfl",
+    noindex: true,
   },
   nba: {
-    title: "NBA Matchup Analytics — Joe Knows Ball",
+    title: "NBA Analytics & Betting Models | Joe Knows Ball",
     description:
-      "NBA game breakdowns and advanced analytics to inform your bets and daily fantasy decisions.",
+      "NBA game breakdowns and advanced analytics. Basketball models coming soon.",
     path: "/nba",
+    noindex: true,
   },
   ncaa: {
-    title: "NCAA Analytics — Joe Knows Ball",
+    title: "NCAA Basketball Analytics & Bracket Tools | Joe Knows Ball",
     description:
-      "College sports analytics and matchup data across football and basketball.",
+      "College basketball analytics, custom team rankings, matchup breakdowns, and March Madness bracket builder.",
     path: "/ncaa",
   },
 };

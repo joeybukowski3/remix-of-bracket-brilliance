@@ -166,16 +166,16 @@ const basecharlesSchwabChallenge2026PicksTournament = {
     ],
     "courseInsights": [
       {
-        "title": "Course summary",
-        "body": "Colonial Country Club is the anchor for this week's model build."
+        "title": "Colonial CC Profile",
+        "body": "Par 70, 7,209 yards. A tight, tree-lined layout that demands accuracy off the tee and precision on approach. Historically one of the best ball-striker courses on Tour."
       },
       {
-        "title": "Key traits",
-        "body": "Use Colonial history as a baseline course-fit input."
+        "title": "Key Stats This Week",
+        "body": "SG: Approach is the top weighted stat (22%). Driving accuracy and bogey avoidance carry elevated weight — Colonial punishes wild misses. Course history rounds matter here."
       },
       {
-        "title": "Weekly note",
-        "body": "Layer in manual notes after the automated baseline package is generated."
+        "title": "Model Notes",
+        "body": "The Balanced preset favors iron players who avoid bogeys. Switch to Outright for more weight on ceiling stats and recent form. Top 20 preset leans safer with course-fit emphasis."
       }
     ],
     "statColumns": [

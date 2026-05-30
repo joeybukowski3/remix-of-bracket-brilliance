@@ -346,6 +346,11 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
 
       <main className="site-page pga-picks-page pb-28 pt-6 sm:pb-16 sm:pt-10">
         <div className="site-container site-stack">
+          <div className="mb-2 flex items-center gap-2 text-xs text-slate-500">
+            <a href="/pga" className="font-semibold text-emerald-700 hover:underline">⛳ Power Rankings</a>
+            <span>›</span>
+            <span>{tournament.shortName || tournament.name}</span>
+          </div>
           <section className="grid items-start gap-4 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
             <div className="pga-card h-full p-5 md:p-8">
               <div className="pga-badge">{tournament.hero.badge}</div>

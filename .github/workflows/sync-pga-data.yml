@@ -52,6 +52,11 @@ jobs:
         if: steps.gate.outputs.should_run == 'true'
         run: npm ci
 
+      - name: Fetch current tournament field
+        if: steps.gate.outputs.should_run == 'true'
+        continue-on-error: true
+        run: node scripts/fetch-pga-current-field.mjs || true
+
       - name: Sync PGA JSON from Google Sheet
         if: steps.gate.outputs.should_run == 'true'
         env:
@@ -64,7 +69,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json
+          git add public/data/pga/current-field.json public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json
           if git diff --cached --quiet; then
             echo "No PGA data changes to commit."
             exit 0

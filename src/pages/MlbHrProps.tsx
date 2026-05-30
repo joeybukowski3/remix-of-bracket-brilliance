@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import MlbNavHero from "@/components/mlb/MlbNavHero";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
@@ -145,9 +146,11 @@ type StrikeoutHeatKey =
   | "opponentTeamXba"
   | "strikeoutMatchupScore";
 
-type ParkSidebarRow = {
+export type ParkSidebarRow = {
   key: string;
   matchup: string;
+  awayTeam: string;
+  homeTeam: string;
   stadium: string;
   parkFactor: number;
   roofType: string;
@@ -498,7 +501,7 @@ export function getHeatCellStyle(
   return { color: palette.text, fontWeight: 600 };
 }
 
-/** Gradient-background stat cell: green=above avg, gray=avg, blue=below avg */
+/** Gradient-background stat cell: green=elite, white=average, blue=below avg */
 function GradCell({ value, display, avg, spread, higherBetter = true }: {
   value: number | null | undefined; display: string; avg: number; spread: number; higherBetter?: boolean;
 }) {
@@ -506,20 +509,32 @@ function GradCell({ value, display, avg, spread, higherBetter = true }: {
   const d = ((value - avg) / spread) * (higherBetter ? 1 : -1);
   const c = Math.max(-1, Math.min(1, d));
   const abs = Math.abs(c);
-  let bg = "rgba(148,163,184,0.13)"; let col = "#475569";
-  if (c > 0.15) { const op = Math.min(0.08 + abs * 0.36, 0.46); bg = `rgba(22,163,74,${op})`; col = abs > 0.5 ? "#15803d" : "#166534"; }
-  else if (c < -0.15) { const op = Math.min(0.06 + abs * 0.28, 0.38); bg = `rgba(59,130,246,${op})`; col = abs > 0.5 ? "#1d4ed8" : "#1e40af"; }
+  // White/neutral baseline — only color truly notable outliers
+  let bg = "transparent"; let col = "#374151";
+  if (c > 0) {
+    // Green only kicks in above 50th percentile equivalents
+    if (abs > 0.80) { bg = "#15803d"; col = "#fff"; }           // top ~10%: dark green
+    else if (abs > 0.55) { bg = "#22c55e"; col = "#fff"; }      // top ~20%: green
+    else if (abs > 0.35) { bg = "rgba(22,163,74,0.18)"; col = "#15803d"; } // top ~35%: soft green tint
+    // 0–0.35: white/transparent — average range, no color
+  } else if (c < 0) {
+    if (abs > 0.80) { bg = "#2563eb"; col = "#fff"; }           // bottom ~10%: blue
+    else if (abs > 0.55) { bg = "rgba(59,130,246,0.45)"; col = "#1e3a8a"; } // bottom ~20%
+    else if (abs > 0.35) { bg = "rgba(59,130,246,0.14)"; col = "#1e40af"; } // bottom ~35%: soft blue
+  }
   return <span className="inline-block rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums" style={{ backgroundColor: bg, color: col }}>{display}</span>;
 }
 
-/** Score pill: green=high, gray=avg, blue=low */
+/** Score pill: green=elite only, white=average, blue=below avg */
 function StatScorePill({ value }: { value: number | null | undefined }) {
   if (value == null || !Number.isFinite(value)) return <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-400">—</span>;
   const v = Number(value);
-  let bg = "rgba(148,163,184,0.20)"; let col = "#475569";
-  if (v >= 65) { bg = "#16a34a"; col = "#fff"; }
-  else if (v >= 58) { bg = "rgba(22,163,74,0.18)"; col = "#15803d"; }
-  else if (v < 50) { const op = Math.min(0.10 + (50 - v) / 50 * 0.30, 0.40); bg = `rgba(59,130,246,${op})`; col = "#1e40af"; }
+  let bg = "rgba(148,163,184,0.15)"; let col = "#475569";
+  if (v >= 72)      { bg = "#15803d"; col = "#fff"; }            // elite
+  else if (v >= 65) { bg = "#22c55e"; col = "#fff"; }            // strong
+  else if (v >= 58) { bg = "rgba(22,163,74,0.18)"; col = "#15803d"; } // above avg tint only
+  // 50–57: neutral gray — no color
+  else if (v < 50)  { const op = Math.min(0.10 + (50 - v) / 50 * 0.30, 0.40); bg = `rgba(59,130,246,${op})`; col = "#1e40af"; }
   return <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums" style={{ backgroundColor: bg, color: col }}>{v.toFixed(1)}</span>;
 }
 
@@ -567,10 +582,22 @@ function getRoofLabel(r: string) {
   return r || "Unknown";
 }
 
-function getParkFactorTone(value: number) {
-  if (value >= 1.15) return "bg-red-100 text-red-800";
-  if (value <= 0.9) return "bg-sky-100 text-sky-800";
-  return "bg-slate-100 text-slate-700";
+export function getParkFactorTone(value: number) {
+  if (value >= 1.10) return "bg-green-500 text-white";
+  if (value >= 1.04) return "bg-green-200 text-green-900";
+  if (value <= 0.93) return "bg-blue-500 text-white";
+  if (value <= 0.97) return "bg-blue-200 text-blue-900";
+  return "bg-slate-200 text-slate-700";
+}
+
+export function getWindArrow(dir: string): string {
+  const d = dir.trim().toUpperCase();
+  const map: Record<string, string> = {
+    N: "↓", NNE: "↓", NE: "↙", ENE: "←", E: "←", ESE: "←",
+    SE: "↖", SSE: "↑", S: "↑", SSW: "↑", SW: "↗", WSW: "→",
+    W: "→", WNW: "→", NW: "↘", NNW: "↓",
+  };
+  return map[d] ?? "";
 }
 
 function getScorePillTone(value: number | null | undefined) {
@@ -599,7 +626,8 @@ function getSparkFillClass(value: number | null | undefined, maxValue: number) {
 
 export function buildParkSidebarRows(games: HrDashboardGame[]): ParkSidebarRow[] {
   return [...games].map((g) => ({
-    key: g.gameKey, matchup: g.matchup, stadium: g.stadium, parkFactor: g.parkFactor,
+    key: g.gameKey, matchup: g.matchup, awayTeam: g.awayTeam, homeTeam: g.homeTeam,
+    stadium: g.stadium, parkFactor: g.parkFactor,
     roofType: g.roofType, temperature: g.temperature, precipitation: g.precipitation,
     windSpeed: g.windSpeed, windDirection: g.windDirection, conditions: g.conditions,
   })).sort((a, b) => b.parkFactor - a.parkFactor || a.matchup.localeCompare(b.matchup));
@@ -1250,8 +1278,8 @@ export default function MlbHrProps() {
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
 
   usePageSeo({
-    title: "Today's MLB Home Run Props & Best Bets | Joe Knows Ball",
-    description: "Daily MLB home run prop predictions and best bets using advanced models. Real-time HR prop dashboard and player projections.",
+    title: "MLB HR Props Today 2026 — Home Run Model & Rankings | Joe Knows Ball",
+    description: "Daily MLB home run prop rankings built from barrel rate, exit velocity, park factors, and pitcher HR vulnerability. Free HR prop model with Statcast power metrics updated every day.",
     path: "/mlb/hr-props",
     structuredData: [
       {
@@ -1261,6 +1289,22 @@ export default function MlbHrProps() {
           { "@type": "ListItem", position: 1, name: "Home", item: "https://www.joeknowsball.com/" },
           { "@type": "ListItem", position: 2, name: "MLB", item: "https://www.joeknowsball.com/mlb" },
           { "@type": "ListItem", position: 3, name: "MLB HR Props", item: "https://www.joeknowsball.com/mlb/hr-props" },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "How does the MLB HR prop model work?",
+            acceptedAnswer: { "@type": "Answer", text: "The HR prop model scores batters using barrel rate, hard hit rate, exit velocity, park factor, and opposing pitcher HR vulnerability. Higher scores indicate stronger edges for home run props." },
+          },
+          {
+            "@type": "Question",
+            name: "What is a good HR Score?",
+            acceptedAnswer: { "@type": "Answer", text: "Scores of 65 or higher represent strong model edges. Scores between 58 and 65 are positive edges. Scores below 50 indicate below-average matchup conditions for HR props." },
+          },
         ],
       },
     ],
@@ -1452,6 +1496,7 @@ export default function MlbHrProps() {
     <SiteShell>
       <main className={cn("site-page bg-[#edf2f7] pb-12 pt-3 text-slate-900", isMobile ? "text-[14px]" : "")}>
         <div className="site-container" style={{ maxWidth: "none", width: "100%" }}>
+          <div className="mb-3"><MlbNavHero /></div>
           {!hasData ? (
             <div className="rounded-[28px] border border-slate-200 bg-white p-3 text-sm text-slate-500 shadow-sm">
               {EMPTY_MESSAGE}
@@ -1469,29 +1514,28 @@ export default function MlbHrProps() {
                   </div>
                   <div className="mt-3 space-y-3">
                     {parkRows.map((park) => (
-                      <article key={park.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-semibold text-slate-900">{park.matchup}</div>
-                            <div className="mt-1 text-xs text-slate-500">{park.stadium}</div>
+                      <article key={park.key} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <TeamLogoBadge team={park.awayTeam} size={20} showLabel={false} />
+                            <span className="text-[10px] font-bold text-slate-400">@</span>
+                            <TeamLogoBadge team={park.homeTeam} size={20} showLabel={false} />
+                            <span className="ml-1 text-[11px] font-bold text-slate-900">{park.matchup}</span>
                           </div>
-                          <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", getParkFactorTone(park.parkFactor))}>
+                          <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold", getParkFactorTone(park.parkFactor))}>
                             {park.parkFactor.toFixed(2)}
                           </span>
                         </div>
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">{getRoofLabel(park.roofType)}</span>
-                          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                            {park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}
-                          </span>
-                          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                            Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}
-                          </span>
+                        <div className="mt-1 text-[10px] text-slate-400">{park.stadium}</div>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}</span>
+                          {park.windSpeed != null && park.windSpeed >= 10 && (
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">💨 {park.windSpeed.toFixed(0)} MPH {getWindArrow(park.windDirection)} {park.windDirection}</span>
+                          )}
                         </div>
-                        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
-                          <span>{park.windSpeed != null ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection}` : `Wind ${DASH}`}</span>
-                          <span className="truncate text-right">{park.conditions}</span>
-                        </div>
+                        <div className="mt-1.5 text-[10px] text-slate-400">{park.windSpeed != null && park.windSpeed < 10 ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection} · ` : ""}{park.conditions}</div>
                       </article>
                     ))}
                   </div>
@@ -1809,16 +1853,29 @@ export default function MlbHrProps() {
                                       <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">vs {row.opposingPitcher}</div>
                                     </td>
                                     <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.hrScore} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={5} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={7} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={1.0} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={2.5} /></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.opposingPitcherHrVs} /></td>
+                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.barrelRate != null && row.barrelRate >= 18 && <span className="text-[11px]">💣</span>}<GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={10} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.hardHitRate != null && row.hardHitRate >= 55 && <span className="text-[11px]">💥</span>}<GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={10} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last7HR != null && row.last7HR >= 3 && <span className="text-[11px]">📈</span>}<GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last30HR != null && row.last30HR >= 7 && <span className="text-[11px]">👑</span>}<GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={4.5} /></div></td>
+                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 && <span className="text-[11px]">⚔️</span>}<StatScorePill value={row.opposingPitcherHrVs} /></div></td>
                                     <td className="border-b border-slate-100 px-2 py-1">
                                       <div className="flex flex-wrap gap-1">
-                                        {row.angleTags.length ? row.angleTags.map((tag) => (
-                                          <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tag}</span>
-                                        )) : <span className="text-slate-400">{DASH}</span>}
+                                        {(() => {
+                                          const tags = row.angleTags.length ? row.angleTags : (() => {
+                                            const best: string[] = [];
+                                            if (row.barrelRate != null && row.barrelRate >= 15) best.push("Barrel edge");
+                                            else if (row.hardHitRate != null && row.hardHitRate >= 52) best.push("Hard hit edge");
+                                            else if (row.last7HR != null && row.last7HR >= 2) best.push("Hot streak");
+                                            else if (row.last30HR != null && row.last30HR >= 6) best.push("Power trend");
+                                            else if (row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 65) best.push("Weak arm");
+                                            return best;
+                                          })();
+                                          return tags.length
+                                            ? tags.map((tag) => (
+                                                <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tag}</span>
+                                              ))
+                                            : <span className="text-slate-400">{DASH}</span>;
+                                        })()}
                                       </div>
                                     </td>
                                   </tr>
