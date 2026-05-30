@@ -1,0 +1,94 @@
+name: Post MLB HR Props to X
+
+on:
+  schedule:
+    # Runs after the 1 PM ET HR props refresh normally completes.
+    - cron: "30 17 * * *" # 1:30 PM EDT
+    - cron: "30 18 * * *" # 1:30 PM EST
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode"
+        required: true
+        default: "dry-run"
+        type: choice
+        options:
+          - dry-run
+          - post
+      data_source:
+        description: "HR props data source"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - github
+          - local
+
+concurrency:
+  group: post-mlb-hr-props-to-x
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  post-hr-props-to-x:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Gate scheduled run to the correct timezone slot
+        id: schedule_gate
+        shell: bash
+        run: |
+          SHOULD_RUN="true"
+          MESSAGE=""
+
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ET_ZONE="$(TZ=America/New_York date +%Z)"
+
+            # 1:30 PM ET after the 1 PM HR props refresh.
+            if [ "$ET_ZONE" = "EDT" ]; then
+              VALID_CRONS="30 17 * * *"
+            else
+              VALID_CRONS="30 18 * * *"
+            fi
+
+            CURRENT="${{ github.event.schedule }}"
+            if echo "$VALID_CRONS" | grep -qF "$CURRENT"; then
+              SHOULD_RUN="true"
+            else
+              SHOULD_RUN="false"
+              MESSAGE="Skipping duplicate cron for $ET_ZONE: $CURRENT is not the valid posting slot."
+            fi
+          fi
+
+          echo "should_run=${SHOULD_RUN}" >> "$GITHUB_OUTPUT"
+          echo "message=${MESSAGE}" >> "$GITHUB_OUTPUT"
+
+      - name: Report skipped duplicate cron
+        if: steps.schedule_gate.outputs.should_run != 'true'
+        run: echo "${{ steps.schedule_gate.outputs.message }}"
+
+      - name: Build HR props X caption
+        if: steps.schedule_gate.outputs.should_run == 'true'
+        run: |
+          MODE="${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'dry-run' }}"
+          node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
+        env:
+          HR_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.data_source || 'production' }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
