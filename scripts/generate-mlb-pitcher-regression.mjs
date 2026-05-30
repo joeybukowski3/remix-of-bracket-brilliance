@@ -126,7 +126,7 @@ async function fetchPitcherSeasonStats(id) {
   if (pitcherSeasonCache.has(id)) return pitcherSeasonCache.get(id);
   // Try extended stats first (includes leftOnBase, sacFlies, hitByPitch)
   const json = await fetchJson(
-    `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${SEASON}&group=pitching&fields=stats,splits,stat,era,inningsPitched,strikeOuts,baseOnBalls,homeRuns,battersFaced,hits,airOuts,leftOnBase,hitByPitch,sacFlies`
+    `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${SEASON}&group=pitching&fields=stats,splits,stat,era,inningsPitched,strikeOuts,baseOnBalls,homeRuns,battersFaced,hits,runs,earnedRuns,airOuts,leftOnBase,hitByPitch,sacFlies`
   );
   const stats = json?.stats?.[0]?.splits?.[0]?.stat ?? null;
   pitcherSeasonCache.set(id, stats);
@@ -199,7 +199,12 @@ function computeStats(seasonStats, savantRow) {
   const lob       = toNum(seasonStats.leftOnBase); // null if not returned by API
   const hbp       = toNum(seasonStats.hitByPitch) ?? 0;
   const sf        = toNum(seasonStats.sacFlies) ?? 0;
-  const runs      = toNum(seasonStats.runs) ?? toNum(seasonStats.earnedRuns) ?? 0;
+  const runs = (() => {
+    const r = toNum(seasonStats.runs) ?? toNum(seasonStats.earnedRuns);
+    if (r != null && r > 0) return r;
+    // Fallback: estimate from ERA × IP / 9 (slightly underestimates due to unearned runs)
+    return (era != null && ip != null && ip > 0) ? Math.round(era * ip / 9 * 10) / 10 : 0;
+  })();
 
   if (ip == null || ip < 5) return null; // too few innings to be meaningful
 
