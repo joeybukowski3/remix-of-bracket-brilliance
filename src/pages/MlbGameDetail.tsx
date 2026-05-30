@@ -806,11 +806,13 @@ function MlbSlateAnalyzer({
   detailPreviews,
   pitchers,
   onOpenGame,
+  pitcherRegressionData,
 }: {
   games: MlbScheduleGame[];
   detailPreviews: Record<number, MlbGameDetail>;
   pitchers: HrDashboardPitcher[];
   onOpenGame: (gamePk: number) => void;
+  pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
 }) {
   function getPitcherXera(pitcherId: number | null | undefined): number | null {
     if (!pitcherId) return null;
@@ -888,7 +890,7 @@ function MlbSlateAnalyzer({
                         {(() => { const xera = getPitcherXera(game.away.probablePitcher?.id ?? detail?.starters.away.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
                         {(() => {
                           const pitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
-                          const regrData = PITCHER_REGRESSION_DATA.find(p => p.name === pitcherName);
+                          const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
                           if (!regrData) return null;
                           const pill = regressionPillStyle(regrData.regressionScore);
                           const s = regrData.regressionScore;
@@ -909,7 +911,7 @@ function MlbSlateAnalyzer({
                         {(() => { const xera = getPitcherXera(game.home.probablePitcher?.id ?? detail?.starters.home.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
                         {(() => {
                           const pitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
-                          const regrData = PITCHER_REGRESSION_DATA.find(p => p.name === pitcherName);
+                          const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
                           if (!regrData) return null;
                           const pill = regressionPillStyle(regrData.regressionScore);
                           const s = regrData.regressionScore;
@@ -1584,7 +1586,7 @@ function HomeSchedule({
             )}
           </section>
 
-          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} />
+          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={PITCHER_REGRESSION_DATA} />
           <MlbToolsGrid />
           <SocialMediaTablesSection />
           
