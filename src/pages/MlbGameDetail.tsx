@@ -923,8 +923,7 @@ function MlbSlateAnalyzer({
                       : null;
                     const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
 
-                    const renderTeamRow = (
-                      side: "away" | "home",
+                    const renderTeamCol = (
                       abbr: string,
                       record: string,
                       pitcherName: string | undefined,
@@ -939,83 +938,78 @@ function MlbSlateAnalyzer({
                       const shortLabel = s == null ? null : Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
 
                       return (
-                        <div className="flex items-start gap-3 py-1.5">
-                          {/* Logo + score */}
-                          <div className="flex shrink-0 flex-col items-center gap-0.5 w-8">
-                            <MlbTeamLogo team={abbr} size={22} />
-                            {showScore && (
-                              <span className="text-[13px] font-extrabold text-slate-900 leading-none">{score}</span>
-                            )}
+                        <div className="flex flex-col items-center gap-1 text-center min-w-0">
+                          {/* Logo */}
+                          <MlbTeamLogo team={abbr} size={30} />
+                          {/* Team abbr + record */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[13px] font-extrabold text-slate-950">{abbr}</span>
+                            <span className="text-[10px] font-semibold text-slate-400">{record}</span>
                           </div>
-                          {/* Team + pitcher info */}
-                          <div className="min-w-0 flex-1">
-                            {/* Row 1: abbr + record */}
-                            <div className="flex items-center gap-2">
-                              <span className="text-[13px] font-extrabold text-slate-950">{abbr}</span>
-                              <span className="text-[10px] font-semibold text-slate-400">{record}</span>
-                            </div>
-                            {/* Row 2: full pitcher name + record */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[12px] font-semibold text-[#031635]">
-                                {pitcherName || "TBD"}
-                              </span>
-                              {starterRecord && (
-                                <span className="text-[10px] text-slate-400">{starterRecord}</span>
-                              )}
-                            </div>
-                            {/* Row 3: xERA + regression pill */}
-                            {(xera !== null || pill) && (
-                              <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
-                                {xera !== null && (
-                                  <span className="rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">
-                                    {xera.toFixed(2)} xERA
-                                  </span>
-                                )}
-                                {pill && s != null && (
-                                  <span
-                                    className="rounded px-1.5 py-0.5 text-[10px] font-bold"
-                                    style={{ backgroundColor: pill.bg, color: pill.color }}
-                                    title={pill.label}
-                                  >
-                                    {s > 0 ? "+" : ""}{s} {shortLabel}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          {/* Score (live/final) */}
+                          {showScore && (
+                            <span className="text-[18px] font-extrabold leading-none text-slate-900">{score}</span>
+                          )}
+                          {/* Pitcher name */}
+                          <span className="text-[12px] font-semibold leading-tight text-[#031635]">
+                            {pitcherName || "TBD"}
+                          </span>
+                          {/* Pitcher record */}
+                          {starterRecord && (
+                            <span className="text-[10px] text-slate-400">{starterRecord}</span>
+                          )}
+                          {/* xERA pill */}
+                          {xera !== null && (
+                            <span className="rounded bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+                              {xera.toFixed(2)} xERA
+                            </span>
+                          )}
+                          {/* Regression pill */}
+                          {pill && s != null && (
+                            <span
+                              className="rounded px-2 py-0.5 text-[10px] font-bold"
+                              style={{ backgroundColor: pill.bg, color: pill.color }}
+                              title={pill.label}
+                            >
+                              {s > 0 ? "+" : ""}{s} {shortLabel}
+                            </span>
+                          )}
                         </div>
                       );
                     };
 
                     return (
                       <>
-                        {/* Away team */}
-                        {renderTeamRow(
-                          "away",
-                          game.away.abbreviation,
-                          game.away.record,
-                          game.away.probablePitcher?.fullName || detail?.starters.away.name,
-                          game.away.probablePitcher?.id ?? detail?.starters.away.id,
-                          detail?.starters.away.record,
-                          awayScore,
-                        )}
+                        {/* Side-by-side team columns */}
+                        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+                          {/* Away */}
+                          {renderTeamCol(
+                            game.away.abbreviation,
+                            game.away.record,
+                            game.away.probablePitcher?.fullName || detail?.starters.away.name,
+                            game.away.probablePitcher?.id ?? detail?.starters.away.id,
+                            detail?.starters.away.record,
+                            awayScore,
+                          )}
 
-                        {/* Divider */}
-                        <div className="my-0.5 border-t border-dashed border-slate-100" />
+                          {/* VS divider */}
+                          <div className="flex flex-col items-center justify-center gap-1 self-center px-1">
+                            <span className="text-[10px] font-bold text-slate-300">vs</span>
+                          </div>
 
-                        {/* Home team */}
-                        {renderTeamRow(
-                          "home",
-                          game.home.abbreviation,
-                          game.home.record,
-                          game.home.probablePitcher?.fullName || detail?.starters.home.name,
-                          game.home.probablePitcher?.id ?? detail?.starters.home.id,
-                          detail?.starters.home.record,
-                          homeScore,
-                        )}
+                          {/* Home */}
+                          {renderTeamCol(
+                            game.home.abbreviation,
+                            game.home.record,
+                            game.home.probablePitcher?.fullName || detail?.starters.home.name,
+                            game.home.probablePitcher?.id ?? detail?.starters.home.id,
+                            detail?.starters.home.record,
+                            homeScore,
+                          )}
+                        </div>
 
                         {/* Bottom bar: Total + ML Edge */}
-                        <div className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-2">
+                        <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-2.5">
                           <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 w-14">Total</span>
                           <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
                           <span className="ml-3 text-[10px] font-bold uppercase tracking-wide text-slate-400 w-16">ML Edge</span>
