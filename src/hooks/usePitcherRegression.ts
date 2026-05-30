@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
-import { buildRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 
 type RegressionJson = {
   generatedAt: string;
