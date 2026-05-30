@@ -1,6 +1,7 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
 
 const ROOT = process.cwd();
@@ -10,6 +11,8 @@ const BEST_BETS_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
 const PRODUCTION_BASE_URL = "https://www.joeknowsball.com/data/mlb";
 const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
 const HR_PROPS_URL = "https://www.joeknowsball.com/mlb/hr-props";
+const EXPORT_SELECTOR = '[data-x-export="mlb-hr-props"]';
+const SCREENSHOT_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x.png");
 const args = new Set(process.argv.slice(2));
 
 function usage() {
@@ -18,13 +21,14 @@ function usage() {
     "       node scripts/post-mlb-hr-props-to-x.mjs --post",
     "       node scripts/post-mlb-hr-props-to-x.mjs --verify-account",
     "",
-    "--dry-run  Build and print the X caption without posting.",
-    "--post     Build the caption and validate X client setup, but do not post yet.",
+    "--dry-run  Build the X caption, screenshot the HR Props table, and do not post.",
+    "--post     Validate X client setup, build the caption, screenshot the HR Props table, and do not post yet.",
     "--verify-account  Verify configured X credentials and expected username without building a caption.",
     "",
     "Set HR_PROPS_DATA_SOURCE to production, github, or local.",
-    "Default: production in GitHub Actions, local otherwise.",
+    "Default: production.",
     "Set X_EXPECTED_USERNAME to the exact X username that is allowed to post.",
+    "Set JKB_X_API_KEY, JKB_X_API_SECRET, JKB_X_ACCESS_TOKEN, and JKB_X_ACCESS_SECRET for JoeKnowsBall posting.",
   ].join("\n");
 }
 
@@ -45,11 +49,46 @@ function normalizeText(value) {
 
 function getDataSource() {
   const value = normalizeText(process.env.HR_PROPS_DATA_SOURCE).toLowerCase();
-  const source = value || (process.env.GITHUB_ACTIONS ? "production" : "local");
+  const source = value || "production";
   if (!["production", "github", "local"].includes(source)) {
     throw new Error(`Invalid HR_PROPS_DATA_SOURCE="${source}". Expected production, github, or local.`);
   }
   return source;
+}
+
+async function screenshotHrPropsTable(outputPath = SCREENSHOT_PATH) {
+  mkdirSync(path.dirname(outputPath), { recursive: true });
+
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage({
+      viewport: { width: 1280, height: 1600 },
+      deviceScaleFactor: 2,
+    });
+    page.setDefaultTimeout(60000);
+    await page.goto(HR_PROPS_URL, { waitUntil: "networkidle", timeout: 60000 });
+
+    let exportTarget = page.locator(EXPORT_SELECTOR).first();
+    try {
+      await exportTarget.waitFor({ state: "visible", timeout: 10000 });
+    } catch {
+      exportTarget = page
+        .locator("table", { hasText: "HR Score" })
+        .first()
+        .locator("xpath=ancestor::div[contains(@class, 'overflow-x-auto')][1]");
+      await exportTarget.waitFor({ state: "visible" });
+      console.log(`[mlb-hr-props-x] ${EXPORT_SELECTOR} was not found on production; used current HR Score table fallback.`);
+    }
+
+    await exportTarget.screenshot({
+      path: outputPath,
+      animations: "disabled",
+    });
+
+    return outputPath;
+  } finally {
+    await browser.close();
+  }
 }
 
 function getDataLocations(source) {
@@ -232,13 +271,13 @@ function buildCaption(rawPayload, bestBetsPayload) {
 }
 
 function createXClientFromEnv() {
-  const appKey = process.env.X_API_KEY;
-  const appSecret = process.env.X_API_SECRET;
-  const accessToken = process.env.X_ACCESS_TOKEN;
-  const accessSecret = process.env.X_ACCESS_SECRET;
+  const appKey = process.env.JKB_X_API_KEY;
+  const appSecret = process.env.JKB_X_API_SECRET;
+  const accessToken = process.env.JKB_X_ACCESS_TOKEN;
+  const accessSecret = process.env.JKB_X_ACCESS_SECRET;
 
   if (!appKey || !appSecret || !accessToken || !accessSecret) {
-    throw new Error("Missing X credentials. Expected X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, and X_ACCESS_SECRET.");
+    throw new Error("Missing JoeKnowsBall X credentials. Expected JKB_X_API_KEY, JKB_X_API_SECRET, JKB_X_ACCESS_TOKEN, and JKB_X_ACCESS_SECRET.");
   }
 
   return new TwitterApi({ appKey, appSecret, accessToken, accessSecret });
@@ -278,6 +317,10 @@ async function main() {
     return;
   }
 
+  if (mode === "post") {
+    await verifyExpectedXAccount();
+  }
+
   const source = getDataSource();
   const locations = getDataLocations(source);
   const rawPayload = await loadJson(locations.raw, source);
@@ -300,11 +343,14 @@ async function main() {
   console.log(`[mlb-hr-props-x] captionLength=${result.caption.length}`);
   console.log("");
   console.log(result.caption);
+  console.log("");
+
+  const screenshotPath = await screenshotHrPropsTable();
+  console.log(`[mlb-hr-props-x] screenshotPath=${screenshotPath}`);
 
   if (mode === "post") {
-    await verifyExpectedXAccount();
     console.log("");
-    console.log("[mlb-hr-props-x] X account verified. Live posting is intentionally disabled for this first pass.");
+    console.log("[mlb-hr-props-x] X account verified and screenshot generated. Live posting is intentionally disabled.");
   }
 }
 

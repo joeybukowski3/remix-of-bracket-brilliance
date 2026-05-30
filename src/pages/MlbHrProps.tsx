@@ -1800,7 +1800,7 @@ export default function MlbHrProps() {
                           </div>
                         </div>
                         <DataLegend />
-                        <div className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
+                        <div data-x-export="mlb-hr-props" className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
                           <table className="min-w-full border-separate border-spacing-0 text-xs">
                             <thead className="sticky top-0 z-20">
                               <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
