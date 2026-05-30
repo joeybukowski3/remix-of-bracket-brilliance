@@ -1,9 +1,9 @@
 {
   "date": "2026-05-30",
-  "generatedAt": "2026-05-30T12:46:53.578Z",
+  "generatedAt": "2026-05-30T12:51:06.399Z",
   "slatePreview": {
-    "slateOverview": "Coors (1.40) and Great American (1.25) stand out as the primary power inflators, while Daikin Park (1.04) and Globe Life (0.99) offer neutral-to-slight boosts. Sproat, Singer, and Feltner are the most vulnerable arms on the slate, each carrying elevated HR/9 marks against today's power bats. Warm, dry conditions across the central and mountain parks should keep the ball flying.",
-    "modelNote": "The model is overweighting barrel rate, park factor, and recent HR volume, which is why Alvarez, Harris, and Schmitt occupy the top three spots despite varying opposing-pitcher strength."
+    "slateOverview": "Coors (1.40) and Great American (1.25) stand out as the primary power inflators, while Daikin (1.04) and Citi (1.06) offer neutral-to-slight boosts. Sproat, Singer, and Feltner are all right-handers allowing elevated barrels and exit velos; the lefty Valdez faces Murakami in a neutral park but still cedes hard contact. No major weather suppression noted, so the environment favors the top barrel-rate bats.",
+    "modelNote": "The model is overweighting barrel/hard-hit rates and park factors first, then layering recent HR volume and opposing pitcher HR vulnerability, which is why Alvarez, Harris, and Schmitt occupy the top three ranks."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.9",
-        "hrScore=81.6"
+        "hrFBRatio=9.6"
       ],
       "bullets": [
         "barrelRate 18.9 with exitVelo 94.5",
-        "last7HR 5 in strong parkFactor 1.04"
+        "parkFactor 1.04 and last7HR=5"
       ]
     },
     {
@@ -28,12 +28,12 @@
       "opposingPitcher": "Brady Singer",
       "hrScoreRank": 2,
       "topStats": [
-        "parkFactor=1.25",
+        "hardHitRate=56.1",
         "opposingPitcherHrVs=75.6"
       ],
       "bullets": [
         "parkFactor 1.25 at Great American Ball Park",
-        "opposingPitcherHrVs 75.6 with hardHitRate 56.1"
+        "opposingPitcherHrVs 75.6"
       ]
     },
     {
@@ -44,11 +44,11 @@
       "hrScoreRank": 3,
       "topStats": [
         "parkFactor=1.4",
-        "opposingPitcherHrVs=83.9"
+        "last30HR=8"
       ],
       "bullets": [
         "parkFactor 1.4 at Coors Field",
-        "opposingPitcherHrVs 83.9 with last30HR 8"
+        "last30HR=8"
       ]
     },
     {
@@ -62,8 +62,8 @@
         "hrFBRatio=10.7"
       ],
       "bullets": [
-        "barrelRate 23.6 with exitVelo 93.4",
-        "hrFBRatio 10.7 and last30HR 11"
+        "barrelRate 23.6 with hrFBRatio 10.7",
+        "last30HR=11"
       ]
     },
     {
@@ -74,11 +74,11 @@
       "hrScoreRank": 5,
       "topStats": [
         "barrelRate=19.5",
-        "hrScore=67.9"
+        "last30HR=9"
       ],
       "bullets": [
-        "barrelRate 19.5 with hardHitRate 50.4",
-        "opposingPitcherHrVs 25.9 with bbRate 13.2"
+        "barrelRate 19.5 with exitVelo 93.1",
+        "last30HR=9"
       ]
     }
   ],
@@ -91,11 +91,26 @@
       "hrScoreRank": 4,
       "topStats": [
         "barrelRate=23.6",
-        "iso=0.374"
+        "hrFBRatio=10.7"
       ],
       "bullets": [
-        "barrelRate 23.6 with pullRate 58.5",
-        "iso 0.374 and last30HR 11"
+        "barrelRate 23.6 with hrFBRatio 10.7",
+        "last30HR=11"
+      ]
+    },
+    {
+      "player": "Juan Soto",
+      "team": "NYM",
+      "opponent": "MIA",
+      "opposingPitcher": "Tyler Phillips",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrelRate=19.5",
+        "last30HR=9"
+      ],
+      "bullets": [
+        "barrelRate 19.5 with exitVelo 93.1",
+        "last30HR=9"
       ]
     },
     {
@@ -105,12 +120,12 @@
       "opposingPitcher": "Brady Singer",
       "hrScoreRank": 6,
       "topStats": [
-        "parkFactor=1.25",
+        "hardHitRate=51.5",
         "opposingPitcherHrVs=75.6"
       ],
       "bullets": [
-        "parkFactor 1.25 with hardHitRate 51.5",
-        "opposingPitcherHrVs 75.6 and exitVelo 93.3"
+        "parkFactor 1.25 at Great American Ball Park",
+        "opposingPitcherHrVs 75.6"
       ]
     },
     {
@@ -120,12 +135,12 @@
       "opposingPitcher": "Michael King",
       "hrScoreRank": 7,
       "topStats": [
-        "barrelRate=25.9",
-        "hardHitRate=61.2"
+        "Hard Hit%=61.2",
+        "Pitcher HR VS=35.3"
       ],
       "bullets": [
-        "barrelRate 25.9 with exitVelo 96.6",
-        "hardHitRate 61.2 and bbRate 17.5"
+        "HR score 66.1 (#7)",
+        "Pitcher HR VS 35.3 at park 0.98"
       ]
     },
     {
@@ -153,26 +168,11 @@
       "hrScoreRank": 8,
       "topStats": [
         "barrelRate=20.8",
-        "hrFBRatio=10"
+        "hardHitRate=58.3"
       ],
       "bullets": [
         "barrelRate 20.8 with exitVelo 94.1",
-        "hrFBRatio 10 and last30HR 8"
-      ]
-    },
-    {
-      "player": "Luke Raley",
-      "team": "SEA",
-      "opponent": "AZ",
-      "opposingPitcher": "Ryne Nelson",
-      "hrScoreRank": 10,
-      "topStats": [
-        "barrelRate=20.2",
-        "hrFBRatio=8.3"
-      ],
-      "bullets": [
-        "barrelRate 20.2 with pullRate 49.4",
-        "hrFBRatio 8.3 and last30HR 7"
+        "last30HR=8"
       ]
     },
     {
@@ -182,12 +182,27 @@
       "opposingPitcher": "Kumar Rocker",
       "hrScoreRank": 9,
       "topStats": [
-        "Hard Hit%=54.2",
-        "Pitcher HR VS=48.1"
+        "hardHitRate=54.2",
+        "xba=0.312"
       ],
       "bullets": [
-        "HR score 64.9 (#9)",
-        "Pitcher HR VS 48.1 at park 0.99"
+        "hardHitRate 54.2 with exitVelo 93.7",
+        "last30HR=7"
+      ]
+    },
+    {
+      "player": "Luke Raley",
+      "team": "SEA",
+      "opponent": "AZ",
+      "opposingPitcher": "Ryne Nelson",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Pitcher HR VS=56.6",
+        "Hard Hit%=51.7"
+      ],
+      "bullets": [
+        "HR score 64.3 (#10)",
+        "Pitcher HR VS 56.6 at park 0.93"
       ]
     }
   ]
