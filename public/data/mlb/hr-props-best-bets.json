@@ -1,9 +1,9 @@
 {
   "date": "2026-05-30",
-  "generatedAt": "2026-05-30T12:37:23.873Z",
+  "generatedAt": "2026-05-30T12:41:51.777Z",
   "slatePreview": {
-    "slateOverview": "Coors Field leads the slate with a 1.4 park factor and Ryan Feltner on the mound, while Great American Ball Park (1.25) sets up favorably for ATL bats against Brady Singer. Daikin Park's 1.04 factor and Brandon Sproat's limited MLB track record create additional power spots, with neutral weather across most venues keeping the focus on park and matchup edges.",
-    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and park-adjusted hrFBRatio, elevating Yordan Alvarez to the top spot despite a modest 1.04 park factor due to his elite 18.9 barrel rate and 53.3 hard-hit rate."
+    "slateOverview": "Coors (1.40) and Great American (1.25) stand out as the primary power inflators, while Daikin Park (1.04) and Globe Life (0.99) offer neutral-to-slight boosts. Sproat, Singer, and Feltner are all right-handers allowing elevated HR/FB to right-handed bats, and the Coors/Feltner and GABP/Singer pairings create the clearest edges. No major weather suppression noted.",
+    "modelNote": "The model is overweighting barrel rate, park factor, and recent HR volume, which is why Alvarez (81.6) and Harris (74.3) sit atop the board despite facing capable arms."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.9",
-        "hrScore=81.6"
+        "hrFBRatio=9.6"
       ],
       "bullets": [
-        "barrelRate 18.9 with exitVelo 94.5",
-        "last7HR=5 in strong parkFactor 1.04"
+        "hrScore 81.6 leads all players",
+        "last7HR=5 in strong form"
       ]
     },
     {
@@ -32,8 +32,8 @@
         "hardHitRate=56.1"
       ],
       "bullets": [
-        "parkFactor 1.25 at Great American Ball Park",
-        "opposingPitcherHrVs=75.6"
+        "opposingPitcherHrVs=75.6 at Great American",
+        "last30HR=7"
       ]
     },
     {
@@ -44,11 +44,11 @@
       "hrScoreRank": 3,
       "topStats": [
         "parkFactor=1.4",
-        "last30HR=8"
+        "opposingPitcherHrVs=83.9"
       ],
       "bullets": [
-        "parkFactor 1.4 at Coors Field",
-        "opposingPitcherHrVs=83.9"
+        "Coors Field boosts power output",
+        "last30HR=8"
       ]
     },
     {
@@ -62,7 +62,7 @@
         "hrFBRatio=10.7"
       ],
       "bullets": [
-        "barrelRate 23.6 with iso=0.374",
+        "pullRate=58.5 creates HR angles",
         "last30HR=11"
       ]
     },
@@ -74,10 +74,10 @@
       "hrScoreRank": 5,
       "topStats": [
         "barrelRate=19.5",
-        "last30HR=9"
+        "hrFBRatio=8.2"
       ],
       "bullets": [
-        "barrelRate 19.5 with hardHitRate=50.4",
+        "opposingPitcherHrVs=25.9 favorable",
         "last30HR=9"
       ]
     }
@@ -94,7 +94,7 @@
         "hrFBRatio=10.7"
       ],
       "bullets": [
-        "barrelRate 23.6 with exitVelo 93.4",
+        "iso=0.374 power profile",
         "last30HR=11"
       ]
     },
@@ -109,8 +109,8 @@
         "hardHitRate=61.2"
       ],
       "bullets": [
-        "barrelRate 25.9 with exitVelo 96.6",
-        "hardHitRate 61.2"
+        "exitVelo=96.6 elite contact",
+        "last7HR=2"
       ]
     },
     {
@@ -121,11 +121,11 @@
       "hrScoreRank": 8,
       "topStats": [
         "barrelRate=20.8",
-        "last30HR=8"
+        "hrFBRatio=10"
       ],
       "bullets": [
-        "barrelRate 20.8 with hardHitRate=58.3",
-        "last30HR=8"
+        "last30HR=8 recent power",
+        "hardHitRate=58.3"
       ]
     },
     {
@@ -146,21 +146,6 @@
   ],
   "longshots": [
     {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "DET",
-      "opposingPitcher": "Framber Valdez",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrelRate=20.8",
-        "hrFBRatio=10"
-      ],
-      "bullets": [
-        "barrelRate 20.8 with exitVelo 94.1",
-        "last7HR=3"
-      ]
-    },
-    {
       "player": "Luke Raley",
       "team": "SEA",
       "opponent": "AZ",
@@ -171,8 +156,23 @@
         "hrFBRatio=8.3"
       ],
       "bullets": [
-        "barrelRate 20.2 with exitVelo 91.9",
+        "pullRate=49.4 creates pull HRs",
         "last30HR=7"
+      ]
+    },
+    {
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "CWS",
+      "opposingPitcher": "Anthony Kay",
+      "hrScoreRank": 11,
+      "topStats": [
+        "opposingPitcherHrVs=62.5",
+        "last30HR=6"
+      ],
+      "bullets": [
+        "parkFactor=1.07 at Rate Field",
+        "last7HR=2"
       ]
     },
     {
