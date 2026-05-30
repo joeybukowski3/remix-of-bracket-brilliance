@@ -142,7 +142,7 @@ async function fetchSavantXeraMap() {
   if (!text || text.startsWith("<!DOCTYPE")) {
     // Fallback: try custom leaderboard endpoint
     const fallbackUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1` +
-      `&selections=player_id,player_name,xera,k_percent,bb_percent,babip,woba` +
+      `&selections=player_id,player_name,xera,k_percent,bb_percent,babip,lob_pct` +
       `&sort=xera&sortDir=asc&chart=false&csv=true`;
     const fallbackText = await fetchText(fallbackUrl);
     if (!fallbackText || fallbackText.startsWith("<!DOCTYPE")) {
@@ -153,17 +153,31 @@ async function fetchSavantXeraMap() {
     const map = new Map();
     for (const row of rows) {
       const pid = String(row.player_id ?? "").trim();
-      if (pid) map.set(pid, { xera: row.xera ?? null });
+      if (pid) map.set(pid, { xera: row.xera ?? null, lobPct: row.lob_pct ?? null });
     }
     console.log(`Savant fallback rows: ${map.size}`);
     return map;
   }
   const rows = parseCsv(text);
+  // Also fetch LOB% from custom leaderboard (not in expected_statistics)
+  const lobUrl = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1` +
+    `&selections=player_id,lob_pct&sort=lob_pct&sortDir=desc&chart=false&csv=true`;
+  const lobText = await fetchText(lobUrl);
+  const lobMap = new Map();
+  if (lobText && !lobText.startsWith("<!DOCTYPE")) {
+    for (const row of parseCsv(lobText)) {
+      const pid = String(row.player_id ?? "").trim();
+      if (pid && row.lob_pct) lobMap.set(pid, row.lob_pct);
+    }
+    console.log(`Savant LOB% rows: ${lobMap.size}`);
+  }
   const map = new Map();
   for (const row of rows) {
     const pid = String(row.player_id ?? "").trim();
-    // expected_statistics uses est_era for xERA
-    if (pid) map.set(pid, { xera: row.est_era ?? row.xera ?? null });
+    if (pid) map.set(pid, {
+      xera: row.est_era ?? row.xera ?? null,
+      lobPct: lobMap.get(pid) ?? null,
+    });
   }
   console.log(`Savant expected_statistics rows: ${map.size}`);
   return map;
@@ -193,11 +207,8 @@ function computeStats(seasonStats, savantRow) {
   const bbPct = bf > 0 ? (bb / bf) * 100 : null;
   const kbb   = kPct != null && bbPct != null ? Math.round((kPct - bbPct) * 10) / 10 : null;
 
-  // LOB% (strand rate): only compute if leftOnBase was actually provided by the API
+  // LOB% handled below with Savant fallback
   const lobDenom = hits + bb + hbp - 1.4 * hr;
-  const strandRate = (lob != null && lob > 0 && lobDenom > 0)
-    ? Math.round((lob / lobDenom) * 1000) / 10
-    : null;
 
   // HR/FB%: homeRuns / (homeRuns + airOuts) — airOuts = fly ball outs
   const totalFlyBalls = hr + airOuts;
@@ -214,6 +225,18 @@ function computeStats(seasonStats, savantRow) {
 
   // xERA from Savant (best predictive metric)
   const xera = savantRow ? toNum(savantRow.xera) : null;
+
+  // LOB% — prefer MLB API leftOnBase, fall back to Savant lob_pct
+  const savantLobPct = savantRow ? toNum(savantRow.lobPct) : null;
+  const computedStrandRate = (lob != null && lob > 0 && lobDenom > 0)
+    ? Math.round((lob / lobDenom) * 1000) / 10
+    : savantLobPct != null
+      ? Math.round(savantLobPct * 10) / 10  // Savant returns as decimal (0-1) or percent
+      : null;
+  // Savant lob_pct is typically 0-1 scale, convert to percent if needed
+  const strandRate = computedStrandRate != null && computedStrandRate <= 1
+    ? Math.round(computedStrandRate * 1000) / 10
+    : computedStrandRate;
 
   return { era, xfip, xera, kbb, strandRate, hrfb, babip };
 }
