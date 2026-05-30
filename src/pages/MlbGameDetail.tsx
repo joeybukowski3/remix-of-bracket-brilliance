@@ -863,14 +863,8 @@ function MlbSlateAnalyzer({
         <span className="text-xs font-semibold text-slate-400">{games.length} games</span>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="hidden grid-cols-[100px_1fr_120px_130px] border-b border-slate-200 bg-[#eff4ff] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 lg:grid">
-          <div>Status</div>
-          <div>Matchup / Pitchers</div>
-          <div className="text-center">Total</div>
-          <div className="text-center">ML Edge</div>
-        </div>
-        <div>
+      {/* Individual game cards */}
+      <div className="space-y-2.5">
           {games.map((game, index) => {
             const detail = detailPreviews[game.gamePk];
             const edges = getSlateEdgeSummary(detail);
@@ -888,119 +882,161 @@ function MlbSlateAnalyzer({
                 type="button"
                 onClick={() => onOpenGame(game.gamePk)}
                 className={cn(
-                  "grid w-full gap-2 border-b border-slate-100 px-3 py-2 text-left transition last:border-b-0 hover:bg-[#eff4ff]",
-                  "lg:grid-cols-[100px_1fr_120px_130px] lg:items-center",
-                  index % 2 === 1 && "bg-slate-50/55",
+                  "w-full rounded-xl border text-left transition-all hover:shadow-md",
+                  statusCategory === "in-progress"
+                    ? "border-green-200 bg-green-50/40 shadow-sm"
+                    : statusCategory === "final"
+                    ? "border-slate-200 bg-slate-50/60 shadow-sm"
+                    : "border-slate-200 bg-white shadow-sm hover:border-blue-200",
                 )}>
-                {(() => {
-                  const mlEdge = detail ? computeModelEdge(detail) : null;
-                  const mlPickAbbr = mlEdge && mlEdge.pick !== "push"
-                    ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr)
-                    : null;
-                  const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
 
-                  return (<>
-                    <div className="flex items-center justify-between gap-2 lg:block">
-                      <span
-                        className="inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold"
-                        style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
-                      >
-                        {game.status}
+                {/* Top bar: status + time + venue */}
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+                      style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
+                    >
+                      {game.status}
+                    </span>
+                    {statusCategory === "in-progress" && game.currentInning != null && (
+                      <span className="rounded bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
+                        {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
                       </span>
-                      <span className="text-[11px] font-semibold text-slate-400 lg:mt-1.5 lg:block">{formatGameTime(game.gameDate)}</span>
-                    </div>
+                    )}
+                    {statusCategory === "final" && showScore && (
+                      <span className="text-[9px] font-bold text-slate-400">FINAL</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
+                    <span className="text-[11px] font-semibold text-slate-500">{formatGameTime(game.gameDate)}</span>
+                  </div>
+                </div>
 
-                    <div className="min-w-0 space-y-1">
-                      {/* Away row */}
-                      <div className="flex items-center gap-2 min-w-0">
-                        <MlbTeamLogo team={game.away.abbreviation} size={18} />
-                        <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
-                        <span className="shrink-0 text-[10px] font-semibold text-slate-400">{game.away.record}</span>
-                        {showScore && <span className="ml-1 text-[13px] font-extrabold text-slate-900">{awayScore}</span>}
-                        <span className="mx-1 text-slate-200">·</span>
-                        <span className="text-[11px] font-medium text-[#031635] truncate">{game.away.probablePitcher?.fullName || "TBD"}</span>
-                        {detail?.starters.away.record && (
-                          <span className="shrink-0 text-[10px] text-slate-400">{detail.starters.away.record}</span>
-                        )}
-                        {(() => { const xera = getPitcherXera(game.away.probablePitcher?.id ?? detail?.starters.away.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
-                        {(() => {
-                          const pitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
-                          const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
-                          if (!regrData) return null;
-                          const pill = regressionPillStyle(regrData.regressionScore);
-                          const s = regrData.regressionScore;
-                          const shortLabel = Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
-                          return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }} title={pill.label}>{s > 0 ? "+" : ""}{s} {shortLabel}</span>;
-                        })()}
-                      </div>
-                      {/* Home row */}
-                      <div className="flex items-center gap-2 min-w-0">
-                        <MlbTeamLogo team={game.home.abbreviation} size={18} />
-                        <span className="w-8 shrink-0 text-[11px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
-                        <span className="shrink-0 text-[10px] font-semibold text-slate-400">{game.home.record}</span>
-                        {showScore && <span className="ml-1 text-[13px] font-extrabold text-slate-900">{homeScore}</span>}
-                        <span className="mx-1 text-slate-200">·</span>
-                        <span className="text-[11px] font-medium text-[#031635] truncate">{game.home.probablePitcher?.fullName || "TBD"}</span>
-                        {detail?.starters.home.record && (
-                          <span className="shrink-0 text-[10px] text-slate-400">{detail.starters.home.record}</span>
-                        )}
-                        {(() => { const xera = getPitcherXera(game.home.probablePitcher?.id ?? detail?.starters.home.id); return xera !== null ? <span className="shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">{xera.toFixed(2)} xERA</span> : null; })()}
-                        {(() => {
-                          const pitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
-                          const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
-                          if (!regrData) return null;
-                          const pill = regressionPillStyle(regrData.regressionScore);
-                          const s = regrData.regressionScore;
-                          const shortLabel = Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
-                          return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }} title={pill.label}>{s > 0 ? "+" : ""}{s} {shortLabel}</span>;
-                        })()}
-                      </div>
-                      <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">
-                        <span>{game.venue}</span>
-                        {statusCategory === "in-progress" && game.currentInning != null && (
-                          <span className="rounded bg-green-50 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
-                            {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
-                          </span>
-                        )}
-                        {statusCategory === "final" && showScore && (
-                          <span className="text-[9px] font-bold text-slate-400">FINAL</span>
-                        )}
-                      </div>
-                    </div>
+                {/* Main content */}
+                <div className="px-4 py-3">
+                  {(() => {
+                    const mlEdge = detail ? computeModelEdge(detail) : null;
+                    const mlPickAbbr = mlEdge && mlEdge.pick !== "push"
+                      ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr)
+                      : null;
+                    const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
 
-                    {/* Mobile labels row — 2 cols only */}
-                    <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-1.5 lg:hidden">
-                      <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">Total</div>
-                      <div className="text-center text-[9px] font-bold uppercase tracking-[0.08em] text-slate-400">ML Edge</div>
-                    </div>
+                    const renderTeamRow = (
+                      side: "away" | "home",
+                      abbr: string,
+                      record: string,
+                      pitcherName: string | undefined,
+                      pitcherId: number | undefined,
+                      starterRecord: string | undefined,
+                      score: number,
+                    ) => {
+                      const xera = getPitcherXera(pitcherId);
+                      const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
+                      const pill = regrData ? regressionPillStyle(regrData.regressionScore) : null;
+                      const s = regrData?.regressionScore;
+                      const shortLabel = s == null ? null : Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
 
-                    {/* Data pills — Total + ML Edge only */}
-                    <div className="grid grid-cols-2 gap-2 lg:contents">
-                      <div className="flex justify-center">
-                        <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
-                      </div>
-                      <div className="flex justify-center">
-                        {mlPickAbbr && mlPickColor ? (
-                          <span
-                            className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white"
-                            style={{ backgroundColor: mlPickColor }}
-                          >
-                            {mlPickAbbr} {mlEdge!.confidence}%
-                          </span>
-                        ) : mlEdge ? (
-                          <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
-                        ) : (
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
+                      return (
+                        <div className="flex items-start gap-3 py-1.5">
+                          {/* Logo + score */}
+                          <div className="flex shrink-0 flex-col items-center gap-0.5 w-8">
+                            <MlbTeamLogo team={abbr} size={22} />
+                            {showScore && (
+                              <span className="text-[13px] font-extrabold text-slate-900 leading-none">{score}</span>
+                            )}
+                          </div>
+                          {/* Team + pitcher info */}
+                          <div className="min-w-0 flex-1">
+                            {/* Row 1: abbr + record */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-[13px] font-extrabold text-slate-950">{abbr}</span>
+                              <span className="text-[10px] font-semibold text-slate-400">{record}</span>
+                            </div>
+                            {/* Row 2: full pitcher name + record */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[12px] font-semibold text-[#031635]">
+                                {pitcherName || "TBD"}
+                              </span>
+                              {starterRecord && (
+                                <span className="text-[10px] text-slate-400">{starterRecord}</span>
+                              )}
+                            </div>
+                            {/* Row 3: xERA + regression pill */}
+                            {(xera !== null || pill) && (
+                              <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                {xera !== null && (
+                                  <span className="rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">
+                                    {xera.toFixed(2)} xERA
+                                  </span>
+                                )}
+                                {pill && s != null && (
+                                  <span
+                                    className="rounded px-1.5 py-0.5 text-[10px] font-bold"
+                                    style={{ backgroundColor: pill.bg, color: pill.color }}
+                                    title={pill.label}
+                                  >
+                                    {s > 0 ? "+" : ""}{s} {shortLabel}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    };
+
+                    return (
+                      <>
+                        {/* Away team */}
+                        {renderTeamRow(
+                          "away",
+                          game.away.abbreviation,
+                          game.away.record,
+                          game.away.probablePitcher?.fullName || detail?.starters.away.name,
+                          game.away.probablePitcher?.id ?? detail?.starters.away.id,
+                          detail?.starters.away.record,
+                          awayScore,
                         )}
-                      </div>
-                    </div>
-                  </>);
-                })()}
+
+                        {/* Divider */}
+                        <div className="my-0.5 border-t border-dashed border-slate-100" />
+
+                        {/* Home team */}
+                        {renderTeamRow(
+                          "home",
+                          game.home.abbreviation,
+                          game.home.record,
+                          game.home.probablePitcher?.fullName || detail?.starters.home.name,
+                          game.home.probablePitcher?.id ?? detail?.starters.home.id,
+                          detail?.starters.home.record,
+                          homeScore,
+                        )}
+
+                        {/* Bottom bar: Total + ML Edge */}
+                        <div className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 w-14">Total</span>
+                          <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
+                          <span className="ml-3 text-[10px] font-bold uppercase tracking-wide text-slate-400 w-16">ML Edge</span>
+                          {mlPickAbbr && mlPickColor ? (
+                            <span className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
+                              {mlPickAbbr} {mlEdge!.confidence}%
+                            </span>
+                          ) : mlEdge ? (
+                            <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
+                          ) : (
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
               </button>
             );
           })}
         </div>
-      </div>
     </section>
   );
 }
