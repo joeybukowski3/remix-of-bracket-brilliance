@@ -1495,19 +1495,199 @@ function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], ba
     .slice(0, 5);
 }
 
-function SocialMediaTablesSection() {
-  const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games, loading } = useMlbPropsData();
-  const [activeTab, setActiveTab] = useState<"hr" | "k" | "hits">("hr");
+function SocialTableML({
+  games,
+  detailPreviews,
+  pitcherRegressionData,
+}: {
+  games: MlbScheduleGame[];
+  detailPreviews: Record<number, MlbGameDetail>;
+  pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
+}) {
+  const rows = games
+    .map((game) => {
+      const detail = detailPreviews[game.gamePk];
+      if (!detail) return null;
+      const edge = computeModelEdge(detail);
+      if (edge.pick === "push") return null;
+      const pickAbbr = edge.pick === "away" ? game.away.abbreviation : game.home.abbreviation;
+      const fadeAbbr = edge.pick === "away" ? game.home.abbreviation : game.away.abbreviation;
+      const pickColors = getMlbTeamColors(pickAbbr);
+
+      const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
+      const homePitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
+      const awayReg = pitcherRegressionData.find(p => p.name === awayPitcherName);
+      const homeReg = pitcherRegressionData.find(p => p.name === homePitcherName);
+
+      // Build a context note based on regression
+      const pickIsAway = edge.pick === "away";
+      const pickPitcherReg = pickIsAway ? awayReg : homeReg;
+      const fadePitcherReg = pickIsAway ? homeReg : awayReg;
+      let context = "";
+      if (fadePitcherReg && fadePitcherReg.regressionScore < -2) {
+        context = `${fadeAbbr} pitcher overperforming`;
+      } else if (pickPitcherReg && pickPitcherReg.regressionScore > 2) {
+        context = `${pickAbbr} pitcher undervalued`;
+      }
+
+      return {
+        gamePk: game.gamePk,
+        awayAbbr: game.away.abbreviation,
+        homeAbbr: game.home.abbreviation,
+        awayPitcher: awayPitcherName,
+        homePitcher: homePitcherName,
+        pickAbbr,
+        fadeAbbr,
+        pickColors,
+        confidence: edge.confidence,
+        context,
+        gameTime: formatGameTime(game.gameDate),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b!.confidence - a!.confidence)
+    .slice(0, 8) as NonNullable<ReturnType<typeof rows[0]>>[];
+
+  const MEDALS = ["🥇", "🥈", "🥉"];
+  const ACCENTS = ["#f97316", "#fb923c", "#fbbf24", "#facc15", "#a3e635", "#34d399", "#38bdf8", "#818cf8"];
+
+  function confColor(c: number) {
+    if (c >= 70) return { bg: "#22c55e", text: "#fff" };
+    if (c >= 62) return { bg: "#facc15", text: "#000" };
+    if (c >= 57) return { bg: "#fb923c", text: "#fff" };
+    return { bg: "#475569", text: "#fff" };
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>
+        Model edge data not yet available. Check back after game previews load.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+      {/* Header */}
+      <div style={{ background: "#0a1628", borderBottom: "3px solid #3b82f6", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🏆 MLB ML EDGES</div>
+          <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>Top Model Picks · Sorted by Confidence</div>
+        </div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
+      </div>
+
+      {/* Column headers */}
+      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 90px 60px", gap: 8, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
+        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>#</div>
+        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>MATCHUP</div>
+        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "center" }}>PICK</div>
+        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "center" }}>EDGE</div>
+      </div>
+
+      {/* Rows */}
+      {rows.map((row, i) => {
+        const cc = confColor(row.confidence);
+        return (
+          <div
+            key={row.gamePk}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "28px 1fr 90px 60px",
+              gap: 8,
+              padding: "11px 12px",
+              background: i % 2 === 0 ? "#0d1e38" : "#091629",
+              borderBottom: "1px solid #1e3a5f",
+              borderLeft: `3px solid ${ACCENTS[i]}`,
+              alignItems: "center",
+            }}
+          >
+            {/* Rank */}
+            <div style={{ fontWeight: 900, color: ACCENTS[i], fontSize: i < 3 ? 16 : 13, textAlign: "center" }}>
+              {i < 3 ? MEDALS[i] : i + 1}
+            </div>
+
+            {/* Matchup */}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                <TeamLogoBadge team={row.awayAbbr} size={14} showLabel={false} />
+                <span style={{ color: "#94a3b8", fontSize: 11, fontWeight: 700 }}>{row.awayAbbr}</span>
+                <span style={{ color: "#475569", fontSize: 10 }}>@</span>
+                <TeamLogoBadge team={row.homeAbbr} size={14} showLabel={false} />
+                <span style={{ color: "#94a3b8", fontSize: 11, fontWeight: 700 }}>{row.homeAbbr}</span>
+                <span style={{ color: "#475569", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
+              </div>
+              <div style={{ fontSize: 10, color: "#475569", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {row.awayPitcher?.split(" ").pop()} vs {row.homePitcher?.split(" ").pop()}
+                {row.context ? <span style={{ color: "#38bdf8", marginLeft: 4 }}>· {row.context}</span> : null}
+              </div>
+            </div>
+
+            {/* Pick badge */}
+            <div style={{ textAlign: "center" }}>
+              <span style={{
+                display: "inline-block",
+                background: row.pickColors.primary,
+                color: "#fff",
+                borderRadius: 6,
+                padding: "4px 10px",
+                fontWeight: 900,
+                fontSize: 12,
+                letterSpacing: ".02em",
+              }}>
+                {row.pickAbbr}
+              </span>
+            </div>
+
+            {/* Confidence */}
+            <div style={{ textAlign: "center" }}>
+              <span style={{
+                display: "inline-block",
+                background: cc.bg,
+                color: cc.text,
+                borderRadius: 6,
+                padding: "4px 8px",
+                fontWeight: 900,
+                fontSize: 13,
+              }}>
+                {row.confidence}%
+              </span>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Footer */}
+      <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 10, color: "#475569" }}>Model: ERA · xFIP · xERA · K-BB% · Regression</span>
+        <span style={{ fontSize: 10, color: "#3b82f6", fontWeight: 700 }}>joeknowsball.com</span>
+      </div>
+    </div>
+  );
+}
+
+function SocialMediaTablesSection({
+  games,
+  detailPreviews,
+  pitcherRegressionData,
+}: {
+  games: MlbScheduleGame[];
+  detailPreviews: Record<number, MlbGameDetail>;
+  pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
+}) {
+  const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games: propsGames, loading } = useMlbPropsData();
+  const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits">("ml");
 
   if (loading) return null;
 
-  const tabs: { key: "hr" | "k" | "hits"; label: string; emoji: string }[] = [
+  const tabs: { key: "ml" | "hr" | "k" | "hits"; label: string; emoji: string }[] = [
+    { key: "ml",   label: "ML Edges",  emoji: "🏆" },
     { key: "hr",   label: "HR Props",  emoji: "🔥" },
     { key: "k",    label: "K Props",   emoji: "🎯" },
     { key: "hits", label: "Hit Props", emoji: "⚔️" },
   ];
 
-  const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, games);
+  const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, propsGames);
 
   return (
     <section style={{ marginTop: 16 }}>
@@ -1542,6 +1722,7 @@ function SocialMediaTablesSection() {
 
         {/* Table content */}
         <div style={{ padding: 14 }}>
+          {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} />}
           {activeTab === "hr"   && <SocialTableHR batters={batters} />}
           {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
@@ -1659,7 +1840,7 @@ function HomeSchedule({
 
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} />
           <MlbToolsGrid />
-          <SocialMediaTablesSection />
+          <SocialMediaTablesSection games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} />
           
           {/* Pitcher Regression Table */}
           <section className="space-y-3">
