@@ -1590,7 +1590,7 @@ function HomeSchedule({
             )}
           </section>
 
-          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={PITCHER_REGRESSION_DATA} />
+          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} />
           <MlbToolsGrid />
           <SocialMediaTablesSection />
           
@@ -1603,7 +1603,7 @@ function HomeSchedule({
             {regressionLoading ? (
               <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-400">Loading pitcher regression data…</div>
             ) : (
-              <MlbPitcherRegressionTable pitchers={PITCHER_REGRESSION_DATA} />
+              <MlbPitcherRegressionTable pitchers={pitcherRegressionData} />
             )}
           </section>
         </div>
