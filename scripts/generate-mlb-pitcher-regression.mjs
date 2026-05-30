@@ -165,7 +165,7 @@ function computeStats(seasonStats, savantRow) {
   const bf        = toNum(seasonStats.battersFaced) ?? 0;
   const hits      = toNum(seasonStats.hits) ?? 0;
   const airOuts   = toNum(seasonStats.airOuts) ?? 0;   // fly ball outs (no HR)
-  const lob       = toNum(seasonStats.leftOnBase) ?? 0;
+  const lob       = toNum(seasonStats.leftOnBase); // null if not returned by API — do NOT default to 0
   const hbp       = toNum(seasonStats.hitByPitch) ?? 0;
   const sf        = toNum(seasonStats.sacFlies) ?? 0;
 
@@ -176,9 +176,11 @@ function computeStats(seasonStats, savantRow) {
   const bbPct = bf > 0 ? (bb / bf) * 100 : null;
   const kbb   = kPct != null && bbPct != null ? Math.round((kPct - bbPct) * 10) / 10 : null;
 
-  // LOB% (strand rate): leftOnBase / (H + BB + HBP - 1.4*HR)
+  // LOB% (strand rate): only compute if leftOnBase was actually provided by the API
   const lobDenom = hits + bb + hbp - 1.4 * hr;
-  const strandRate = lobDenom > 0 ? Math.round((lob / lobDenom) * 1000) / 10 : null;
+  const strandRate = (lob != null && lob > 0 && lobDenom > 0)
+    ? Math.round((lob / lobDenom) * 1000) / 10
+    : null;
 
   // HR/FB%: homeRuns / (homeRuns + airOuts) — airOuts = fly ball outs
   const totalFlyBalls = hr + airOuts;
@@ -228,8 +230,11 @@ function computeRegressionScore({ era, xfip, xera, strandRate, hrfb, babip }) {
   }
 
   const total = baseDiff + luckAdj;
-  // -3 ERA gap = score of -10, +3 = score of +10
-  const score = Math.max(-10, Math.min(10, Math.round((total / 3) * 100) / 10));
+  // Scale: ±4 ERA-run gap = ±10 score (wider than before — avoids clamping at extremes)
+  // Luck adjustments are capped so they can't push past ±3 on their own
+  const clampedLuck = Math.max(-3, Math.min(3, luckAdj));
+  const adjusted = baseDiff + clampedLuck;
+  const score = Math.max(-10, Math.min(10, Math.round((adjusted / 4) * 100) / 10));
 
   let tier;
   if (score < -6.5)     tier = "extreme_positive";

@@ -773,6 +773,41 @@ function MlbHubSidebar() {
         </div>
         <div className="mt-2 px-1 text-[9px] text-slate-400">21+ • Call 1-800-GAMBLER</div>
       </div>
+
+      {/* Stat Glossary */}
+      <div className="mt-6 border-t border-slate-200 px-4 pt-4">
+        <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Stat Glossary</div>
+        <dl className="space-y-2">
+          {([
+            ["xERA", "Expected ERA from Statcast exit velocity & launch angle. Strips luck from actual results."],
+            ["xFIP", "Expected FIP — normalises HR/FB% to league average. Best predictor of future ERA."],
+            ["K-BB%", "Strikeout rate minus walk rate. Pure skill indicator — higher = better command."],
+            ["LOB%", "Left-on-base (strand) rate. League avg ~73%. >80% is unsustainable luck."],
+            ["HR/FB%", "Home runs per fly ball. League avg ~10.5%. <8% = likely lucky, >13% = unlucky."],
+            ["BABIP", "Batting avg on balls in play. Pitcher norm ~.300. <.270 = likely lucky."],
+            ["Regr ↓", "Blue pill — pitcher is overperforming ERA vs metrics. Regression toward higher ERA likely."],
+            ["Regr ↑", "Green pill — pitcher is underperforming ERA vs metrics. ERA improvement likely."],
+          ] as [string, string][]).map(([term, def]) => (
+            <div key={term}>
+              <dt className="text-[10px] font-extrabold text-slate-700">{term}</dt>
+              <dd className="text-[9px] leading-tight text-slate-500">{def}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="mt-3 rounded-md bg-slate-100 p-2">
+          <div className="mb-1 text-[9px] font-bold uppercase tracking-wide text-slate-500">Regression Scale</div>
+          <div className="flex items-center gap-1">
+            <span className="rounded px-1 py-0.5 text-[8px] font-bold" style={{ backgroundColor: "#1e3a8a", color: "#93c5fd" }}>-10</span>
+            <div className="h-1.5 flex-1 rounded-full bg-gradient-to-r from-[#1e3a8a] via-[#dbeafe] to-white to-[#dcfce7] via-white via-[50%]" style={{ background: "linear-gradient(to right, #1e3a8a, #93c5fd, #dbeafe, #f1f5f9, #dcfce7, #22c55e, #15803d)" }} />
+            <span className="rounded px-1 py-0.5 text-[8px] font-bold" style={{ backgroundColor: "#14532d", color: "#bbf7d0" }}>+10</span>
+          </div>
+          <div className="mt-0.5 flex justify-between text-[8px] text-slate-400">
+            <span>Blue = regress ↓</span>
+            <span>0 = neutral</span>
+            <span>Green = improve ↑</span>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 }
@@ -894,7 +929,8 @@ function MlbSlateAnalyzer({
                           if (!regrData) return null;
                           const pill = regressionPillStyle(regrData.regressionScore);
                           const s = regrData.regressionScore;
-                          return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }}>{s > 0 ? "+" : ""}{s}</span>;
+                          const shortLabel = Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
+                          return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }} title={pill.label}>{s > 0 ? "+" : ""}{s} {shortLabel}</span>;
                         })()}
                       </div>
                       {/* Home row */}
@@ -915,7 +951,8 @@ function MlbSlateAnalyzer({
                           if (!regrData) return null;
                           const pill = regressionPillStyle(regrData.regressionScore);
                           const s = regrData.regressionScore;
-                          return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }}>{s > 0 ? "+" : ""}{s}</span>;
+                          const shortLabel = Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
+                          return <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }} title={pill.label}>{s > 0 ? "+" : ""}{s} {shortLabel}</span>;
                         })()}
                       </div>
                       <div className="flex items-center justify-between border-t border-slate-100 pt-0.5 text-[10px] font-semibold uppercase text-slate-400">

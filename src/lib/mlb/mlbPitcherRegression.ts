@@ -74,11 +74,11 @@ export function computeRegressionScore(data: {
   // Total regression indicator
   const totalDiff = baseDiff + luckAdjustment;
 
-  // Convert to -10 to +10 scale
-  // -3 runs = extremely lucky (-10)
-  // 0 = neutral (0)
-  // +3 runs = extremely unlucky (+10)
-  const score = Math.max(-10, Math.min(10, (totalDiff / 3) * 10));
+  // Scale: ±4 ERA-run gap = ±10 (wider range, avoids clamping at extremes)
+  // Luck adjustments capped so they can't dominate the score on their own
+  const clampedLuck = Math.max(-3, Math.min(3, luckAdjustment));
+  const adjusted = baseDiff + clampedLuck;
+  const score = Math.max(-10, Math.min(10, (adjusted / 4) * 10));
 
   // Tier classification
   let tier: PitcherRegressionData["regressionTier"];
