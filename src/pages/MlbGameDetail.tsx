@@ -1499,10 +1499,14 @@ function HomeSchedule({
   games,
   detailPreviews,
   onOpenGame,
+  pitcherRegressionData,
+  regressionLoading,
 }: {
   games: MlbScheduleGame[];
   detailPreviews: Record<number, MlbGameDetail>;
   onOpenGame: (gamePk: number) => void;
+  pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
+  regressionLoading: boolean;
 }) {
   const {
     batters: propBatters,
@@ -1819,7 +1823,7 @@ export default function MlbGameDetail() {
             {scheduleError}
           </div>
         ) : routeState.view === "home" ? (
-          <HomeSchedule games={schedule} detailPreviews={detailPreviews} onOpenGame={openGame} />
+          <HomeSchedule games={schedule} detailPreviews={detailPreviews} onOpenGame={openGame} pitcherRegressionData={PITCHER_REGRESSION_DATA} regressionLoading={regressionLoading} />
         ) : detailLoading && !detail ? (
           <div className="rounded-[32px] bg-card p-8 text-sm text-muted-foreground shadow-[0_16px_36px_hsl(var(--foreground)/0.06)] ring-1 ring-border/60">
             Building matchup dashboard.
