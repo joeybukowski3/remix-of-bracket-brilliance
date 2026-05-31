@@ -864,7 +864,7 @@ function MlbSlateAnalyzer({
       </div>
 
       {/* Individual game cards */}
-      <div className="space-y-2.5">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {games.map((game, index) => {
             const detail = detailPreviews[game.gamePk];
             const edges = getSlateEdgeSummary(detail);
@@ -882,7 +882,7 @@ function MlbSlateAnalyzer({
                 type="button"
                 onClick={() => onOpenGame(game.gamePk)}
                 className={cn(
-                  "w-full rounded-xl border text-left transition-all hover:shadow-md",
+                  "flex w-full flex-col rounded-xl border text-left transition-all hover:shadow-md h-full",
                   statusCategory === "in-progress"
                     ? "border-green-200 bg-green-50/40 shadow-sm"
                     : statusCategory === "final"
@@ -931,16 +931,21 @@ function MlbSlateAnalyzer({
                       starterRecord: string | undefined,
                       score: number,
                     ) => {
-                      const xera = getPitcherXera(pitcherId);
                       const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
                       const pill = regrData ? regressionPillStyle(regrData.regressionScore) : null;
                       const s = regrData?.regressionScore;
                       const shortLabel = s == null ? null : Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
+                      // xERA: regression data first, then HR props lookup, then xFIP as labeled fallback
+                      const xeraFromRegr = regrData?.xera ?? null;
+                      const xeraFromProps = getPitcherXera(pitcherId);
+                      const xera = xeraFromRegr ?? xeraFromProps;
+                      const xeraLabel = xera != null ? "xERA" : null;
+                      const xfipFallback = (xera == null && regrData?.xfip != null) ? regrData.xfip : null;
 
                       return (
                         <div className="flex flex-col items-center gap-1 text-center min-w-0">
                           {/* Logo */}
-                          <MlbTeamLogo team={abbr} size={30} />
+                          <MlbTeamLogo team={abbr} size={28} />
                           {/* Team abbr + record */}
                           <div className="flex items-center gap-1.5">
                             <span className="text-[13px] font-extrabold text-slate-950">{abbr}</span>
@@ -958,12 +963,16 @@ function MlbSlateAnalyzer({
                           {starterRecord && (
                             <span className="text-[10px] text-slate-400">{starterRecord}</span>
                           )}
-                          {/* xERA pill */}
-                          {xera !== null && (
+                          {/* xERA pill (or xFIP fallback) */}
+                          {xera != null ? (
                             <span className="rounded bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">
-                              {xera.toFixed(2)} xERA
+                              {xera.toFixed(2)} {xeraLabel}
                             </span>
-                          )}
+                          ) : xfipFallback != null ? (
+                            <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                              {xfipFallback.toFixed(2)} xFIP
+                            </span>
+                          ) : null}
                           {/* Regression pill */}
                           {pill && s != null && (
                             <span
@@ -1009,10 +1018,10 @@ function MlbSlateAnalyzer({
                         </div>
 
                         {/* Bottom bar: Total + ML Edge */}
-                        <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-2.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 w-14">Total</span>
+                        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-slate-100 pt-2.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total</span>
                           <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
-                          <span className="ml-3 text-[10px] font-bold uppercase tracking-wide text-slate-400 w-16">ML Edge</span>
+                          <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-slate-400">ML Edge</span>
                           {mlPickAbbr && mlPickColor ? (
                             <span className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
                               {mlPickAbbr} {mlEdge!.confidence}%
