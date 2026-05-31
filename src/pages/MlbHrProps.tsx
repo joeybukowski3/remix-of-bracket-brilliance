@@ -4,6 +4,7 @@ import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +73,9 @@ export type HrDashboardBatter = {
   weatherBoost: number | null;
   hrScore: number;
   hrScoreRank: number;
+  adjustedHrScore?: number;      // hrScore weighted by pitcher xERA + regression
+  pitcherXera?: number | null;   // opposing pitcher xERA (from HR props or regression)
+  pitcherRegressionScore?: number | null; // opposing pitcher regression score
   angleTags: string[];
 };
 
@@ -108,7 +112,7 @@ type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
 type MatchupLens = "best" | "hr" | "strikeout";
 type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "hrVs" | "hitsVs" | "kVs";
-type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore";
+type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore" | "adjustedHrScore" | "pitcherXera";
 type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
 type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "parkFactor" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "opponentTeamXba" | "strikeoutMatchupScore";
 
@@ -209,7 +213,7 @@ export type PitcherStrikeoutTeamRow = {
 
 export const DEFAULT_TAB: TabKey = "batters";
 export const DEFAULT_PITCHER_SORT = { key: "hrVs" as PitcherSortKey, direction: "desc" as SortDirection };
-export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction: "desc" as SortDirection };
+export const DEFAULT_BATTER_SORT = { key: "adjustedHrScore" as BatterSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_MATCHUP_SORT = { key: "bestMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
 
 const DASH = "--";
@@ -1362,9 +1366,44 @@ export default function MlbHrProps() {
     () => allPitchers.filter((pitcher) => !tbdGameKeys.has(pitcher.gameKey) && !isStarterPlaceholder(pitcher.pitcher)),
     [allPitchers, tbdGameKeys],
   );
+  const { data: pitcherRegressionData } = usePitcherRegression();
+
+  // Pitcher quality multiplier: penalises elite pitchers, boosts vulnerable ones
+  // xERA drives the bulk of the weight; regression score adds a fine-tuning layer
+  const enrichedBatters = useMemo(() => {
+    function xeraMult(xera: number | null): number {
+      if (xera == null) return 1.0;
+      if (xera <= 2.5) return 0.80;
+      if (xera <= 3.0) return 0.85;
+      if (xera <= 3.5) return 0.91;
+      if (xera <= 4.0) return 0.96;
+      if (xera <= 4.5) return 1.00;
+      if (xera <= 5.0) return 1.05;
+      if (xera <= 5.5) return 1.10;
+      return 1.15;
+    }
+    return allBatters.map((b) => {
+      // Find pitcher xERA: check HR props pitchers first, then regression data
+      const hrPropsPitcher = allPitchers.find(
+        p => p.pitcher === b.opposingPitcher || p.pitcherId === b.opposingPitcherId
+      );
+      const regrData = pitcherRegressionData.find(p => p.name === b.opposingPitcher);
+      const pitcherXera = hrPropsPitcher?.xera ?? regrData?.xera ?? regrData?.xfip ?? null;
+      const pitcherRegressionScore = regrData?.regressionScore ?? null;
+
+      // Small regression fine-tune: overperforming pitcher (neg score) = harder; underperforming = easier
+      const regrAdj = pitcherRegressionScore != null
+        ? Math.max(0.96, Math.min(1.04, 1.0 + pitcherRegressionScore * 0.004))
+        : 1.0;
+
+      const adjustedHrScore = Math.round(b.hrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
+      return { ...b, adjustedHrScore, pitcherXera, pitcherRegressionScore };
+    });
+  }, [allBatters, allPitchers, pitcherRegressionData]);
+
   const batters = useMemo(
-    () => allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher)),
-    [allBatters, tbdGameKeys],
+    () => enrichedBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher)),
+    [enrichedBatters, tbdGameKeys],
   );
   const tbdFootnotes = useMemo(() => buildTbdFootnotes(tbdGameKeys, allGames, allPitchers, allBatters), [allBatters, allGames, allPitchers, tbdGameKeys]);
   const parkRows = useMemo(() => buildParkSidebarRows(games), [games]);
@@ -1818,12 +1857,13 @@ export default function MlbHrProps() {
                                 </th>
                                 {/* Scrollable columns */}
                                 {[
-                                  ["hrScore", "HR Score"],
+                                  ["adjustedHrScore", "HR Score ↕"],
                                   ["barrelRate", "Barrel%"],
                                   ["hardHitRate", "HH%"],
                                   ["last7HR", "L7 HR"],
                                   ["last30HR", "L30 HR"],
                                   ["opposingPitcherHrVs", "Ptch HR VS"],
+                                  ["pitcherXera", "Ptch xERA"],
                                 ].map(([key, label]) => (
                                   <th key={key} className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap">
                                     <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900">
@@ -1831,6 +1871,7 @@ export default function MlbHrProps() {
                                     </button>
                                   </th>
                                 ))}
+                                <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-slate-500">Ptch Regr</th>
                                 <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap">Angle</th>
                               </tr>
                             </thead>
@@ -1852,12 +1893,59 @@ export default function MlbHrProps() {
                                       </div>
                                       <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">vs {row.opposingPitcher}</div>
                                     </td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.hrScore} /></td>
+                                    <td className="border-b border-slate-100 px-2 py-1">
+                                      <div className="flex flex-col gap-0.5">
+                                        <StatScorePill value={row.adjustedHrScore ?? row.hrScore} />
+                                        {row.adjustedHrScore != null && Math.abs(row.adjustedHrScore - row.hrScore) >= 2 && (
+                                          <span className="text-[9px] text-slate-400 text-center">raw {row.hrScore.toFixed(1)}</span>
+                                        )}
+                                      </div>
+                                    </td>
                                     <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.barrelRate != null && row.barrelRate >= 18 && <span className="text-[11px]">💣</span>}<GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={10} /></div></td>
                                     <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.hardHitRate != null && row.hardHitRate >= 55 && <span className="text-[11px]">💥</span>}<GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={10} /></div></td>
                                     <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last7HR != null && row.last7HR >= 3 && <span className="text-[11px]">📈</span>}<GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} /></div></td>
                                     <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last30HR != null && row.last30HR >= 7 && <span className="text-[11px]">👑</span>}<GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={4.5} /></div></td>
                                     <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 && <span className="text-[11px]">⚔️</span>}<StatScorePill value={row.opposingPitcherHrVs} /></div></td>
+                                    {/* Ptch xERA — inverted: high xERA = green (easy), low = blue (hard) */}
+                                    <td className="border-b border-slate-100 px-2 py-1">
+                                      {row.pitcherXera != null ? (() => {
+                                        const x = row.pitcherXera;
+                                        const style = x <= 3.0 ? { bg: "#172554", text: "#60a5fa" }    // elite = dark blue (hard)
+                                          : x <= 3.5 ? { bg: "#1e3a8a", text: "#93c5fd" }               // great = blue
+                                          : x <= 4.0 ? { bg: "#dbeafe", text: "#1d4ed8" }               // good = light blue
+                                          : x <= 4.5 ? { bg: "#f1f5f9", text: "#64748b" }               // avg = neutral
+                                          : x <= 5.0 ? { bg: "#dcfce7", text: "#15803d" }               // below avg = light green
+                                          : x <= 5.5 ? { bg: "#166534", text: "#86efac" }               // poor = green
+                                          : { bg: "#14532d", text: "#bbf7d0" };                         // bad = dark green (easy)
+                                        return (
+                                          <span className="rounded px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
+                                            style={{ backgroundColor: style.bg, color: style.text }}>
+                                            {x.toFixed(2)}
+                                          </span>
+                                        );
+                                      })() : <span className="text-[10px] text-slate-300">—</span>}
+                                    </td>
+                                    <td className="border-b border-slate-100 px-2 py-1">
+                                      {row.pitcherRegressionScore != null ? (() => {
+                                        const s = row.pitcherRegressionScore;
+                                        // From BATTER perspective: positive regr = pitcher improving = harder
+                                        // negative regr = pitcher regressing down = easier/opportunity
+                                        const style = s >= 3 ? { bg: "#14532d", text: "#bbf7d0", label: "Improving ↑" }  // pitcher improving = green (harder)
+                                          : s >= 0.5 ? { bg: "#dcfce7", text: "#15803d", label: "Slight ↑" }
+                                          : s > -0.5 ? { bg: "#f1f5f9", text: "#64748b", label: "Neutral" }
+                                          : s > -3 ? { bg: "#dbeafe", text: "#1d4ed8", label: "Regressing ↓" }           // pitcher regressing = blue (batter opportunity)
+                                          : { bg: "#1e3a8a", text: "#93c5fd", label: "Big Regr ↓" };
+                                        return (
+                                          <div className="flex flex-col items-start gap-0.5">
+                                            <span className="rounded px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
+                                              style={{ backgroundColor: style.bg, color: style.text }}>
+                                              {s > 0 ? "+" : ""}{s.toFixed(1)}
+                                            </span>
+                                            <span className="text-[9px] font-semibold" style={{ color: style.text === "#64748b" ? "#94a3b8" : style.text }}>{style.label}</span>
+                                          </div>
+                                        );
+                                      })() : <span className="text-[10px] text-slate-300">—</span>}
+                                    </td>
                                     <td className="border-b border-slate-100 px-2 py-1">
                                       <div className="flex flex-wrap gap-1">
                                         {(() => {
