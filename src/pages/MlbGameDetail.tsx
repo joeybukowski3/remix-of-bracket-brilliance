@@ -942,6 +942,16 @@ function MlbSlateAnalyzer({
                       const xeraLabel = xera != null ? "xERA" : null;
                       const xfipFallback = (xera == null && regrData?.xfip != null) ? regrData.xfip : null;
 
+                      const xeraStyle = (v: number) => {
+                        if (v <= 3.00) return { bg: "#14532d", text: "#bbf7d0" }; // elite — dark green
+                        if (v <= 3.50) return { bg: "#166534", text: "#86efac" }; // great — green
+                        if (v <= 4.00) return { bg: "#dcfce7", text: "#15803d" }; // good — light green
+                        if (v <= 4.50) return { bg: "#f1f5f9", text: "#64748b" }; // average — neutral
+                        if (v <= 5.00) return { bg: "#dbeafe", text: "#1d4ed8" }; // below avg — light blue
+                        if (v <= 5.75) return { bg: "#1e3a8a", text: "#93c5fd" }; // poor — blue
+                        return { bg: "#172554", text: "#60a5fa" };                // bad — dark blue
+                      };
+
                       return (
                         <div className="flex flex-col items-center gap-1 text-center min-w-0">
                           {/* Logo */}
@@ -963,12 +973,15 @@ function MlbSlateAnalyzer({
                           {starterRecord && (
                             <span className="text-[10px] text-slate-400">{starterRecord}</span>
                           )}
-                          {/* xERA pill (or xFIP fallback) */}
-                          {xera != null ? (
-                            <span className="rounded bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700">
-                              {xera.toFixed(2)} {xeraLabel}
-                            </span>
-                          ) : xfipFallback != null ? (
+                          {/* xERA pill — green (elite) → neutral → blue (poor) */}
+                          {xera != null ? (() => {
+                            const xs = xeraStyle(xera);
+                            return (
+                              <span className="rounded px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: xs.bg, color: xs.text }}>
+                                {xera.toFixed(2)} {xeraLabel}
+                              </span>
+                            );
+                          })() : xfipFallback != null ? (
                             <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
                               {xfipFallback.toFixed(2)} xFIP
                             </span>
@@ -1017,20 +1030,25 @@ function MlbSlateAnalyzer({
                           )}
                         </div>
 
-                        {/* Bottom bar: Total + ML Edge */}
-                        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-slate-100 pt-2.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total</span>
-                          <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
-                          <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-slate-400">ML Edge</span>
-                          {mlPickAbbr && mlPickColor ? (
-                            <span className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
-                              {mlPickAbbr} {mlEdge!.confidence}%
-                            </span>
-                          ) : mlEdge ? (
-                            <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
-                          ) : (
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
-                          )}
+                        {/* Bottom bar: Total + ML Edge — centered */}
+                        <div className="mt-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-t border-slate-100 pt-2.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total</span>
+                            <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
+                          </div>
+                          <div className="h-3 w-px bg-slate-200" />
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">ML Edge</span>
+                            {mlPickAbbr && mlPickColor ? (
+                              <span className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
+                                {mlPickAbbr} {mlEdge!.confidence}%
+                              </span>
+                            ) : mlEdge ? (
+                              <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
+                            ) : (
+                              <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
+                            )}
+                          </div>
                         </div>
                       </>
                     );
