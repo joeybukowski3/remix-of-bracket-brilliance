@@ -1587,11 +1587,10 @@ function SocialTableML({
       </div>
 
       {/* Column headers */}
-      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 90px 60px", gap: 8, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 110px", gap: 8, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
         <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>#</div>
         <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>MATCHUP</div>
-        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "center" }}>PICK</div>
-        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "center" }}>EDGE</div>
+        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "center" }}>PICK / EDGE</div>
       </div>
 
       {/* Rows */}
@@ -1602,7 +1601,7 @@ function SocialTableML({
             key={row.gamePk}
             style={{
               display: "grid",
-              gridTemplateColumns: "28px 1fr 90px 60px",
+              gridTemplateColumns: "28px 1fr 110px",
               gap: 8,
               padding: "11px 12px",
               background: i % 2 === 0 ? "#0d1e38" : "#091629",
@@ -1632,32 +1631,19 @@ function SocialTableML({
               </div>
             </div>
 
-            {/* Pick badge */}
-            <div style={{ textAlign: "center" }}>
-              <span style={{
-                display: "inline-block",
-                background: row.pickColors.primary,
-                color: "#fff",
-                borderRadius: 6,
-                padding: "4px 10px",
-                fontWeight: 900,
-                fontSize: 12,
-                letterSpacing: ".02em",
-              }}>
-                {row.pickAbbr}
-              </span>
-            </div>
-
-            {/* Confidence */}
-            <div style={{ textAlign: "center" }}>
+            {/* Pick + confidence combined: logo beside % */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
+              <TeamLogoBadge team={row.pickAbbr} size={20} showLabel={false} />
               <span style={{
                 display: "inline-block",
                 background: cc.bg,
                 color: cc.text,
                 borderRadius: 6,
-                padding: "4px 8px",
+                padding: "4px 9px",
                 fontWeight: 900,
                 fontSize: 13,
+                minWidth: 44,
+                textAlign: "center",
               }}>
                 {row.confidence}%
               </span>

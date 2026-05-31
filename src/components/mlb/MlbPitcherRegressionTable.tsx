@@ -1,4 +1,5 @@
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 
 /**
@@ -47,16 +48,13 @@ export default function MlbPitcherRegressionTable({ pitchers }: { pitchers: Pitc
         <tbody>
           {sorted.map((pitcher, i) => {
             const pill = regressionPillStyle(pitcher.regressionScore);
-            const colors = getMlbTeamColors(pitcher.team);
             const expectedEra = pitcher.xera ?? pitcher.xfip;
 
             return (
               <tr key={pitcher.pitcherId ?? i} className={i % 2 === 1 ? "bg-slate-50/40" : ""}>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white" style={{ backgroundColor: colors.primary }}>
-                      {pitcher.team.slice(0, 2)}
-                    </div>
+                    <MlbTeamLogo team={pitcher.team} size={22} />
                     <span className="font-semibold text-slate-900 text-[12px]">{pitcher.name}</span>
                   </div>
                 </td>
