@@ -41,7 +41,7 @@ const sports = [
     id: "world-cup",
     name: "World Cup",
     route: "/world-cup",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/FIFA_World_Cup_2026.svg/200px-FIFA_World_Cup_2026.svg.png",
+    logo: "/logos/wc2026-trophy.svg",
   },
 ] as const;
 
