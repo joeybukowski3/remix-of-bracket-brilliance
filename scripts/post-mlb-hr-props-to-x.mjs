@@ -68,8 +68,8 @@ async function screenshotHrPropsTable(outputPath = SCREENSHOT_PATH) {
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage({
-      viewport: { width: 1280, height: 1600 },
-      deviceScaleFactor: 2,
+      viewport: { width: 1080, height: 1400 },
+      deviceScaleFactor: 1,   // 1x — keeps PNG well under 5 MB (X limit)
     });
     page.setDefaultTimeout(60000);
     await page.goto(HR_PROPS_URL, { waitUntil: "networkidle", timeout: 60000 });
@@ -90,6 +90,15 @@ async function screenshotHrPropsTable(outputPath = SCREENSHOT_PATH) {
       path: outputPath,
       animations: "disabled",
     });
+
+    // Log file size so we can catch future limit issues early
+    const { statSync } = await import("node:fs");
+    const { size } = statSync(outputPath);
+    const sizeMb = (size / 1_048_576).toFixed(2);
+    console.log(`[mlb-hr-props-x] screenshotSize=${sizeMb} MB`);
+    if (size > 4_900_000) {
+      console.warn(`[mlb-hr-props-x] WARNING: screenshot is ${sizeMb} MB — close to X's 5 MB limit`);
+    }
 
     return outputPath;
   } finally {

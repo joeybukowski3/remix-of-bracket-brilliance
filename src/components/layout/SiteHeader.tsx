@@ -6,9 +6,9 @@ const navItems = [
   { to: "/mlb", label: "MLB" },
   { to: "/ncaa", label: "NCAA" },
   { to: "/nfl", label: "NFL" },
-  // TODO: wire the NBA nav item once an NBA landing route exists.
-  { to: null, label: "NBA" },
+  { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
+  { to: "/world-cup", label: "⚽ WC26" },
 ];
 
 function isActive(pathname: string, item: { to: string | null; label: string }) {
