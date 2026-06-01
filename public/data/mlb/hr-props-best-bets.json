@@ -1,9 +1,9 @@
 {
   "date": "2026-06-01",
-  "generatedAt": "2026-06-01T19:22:52.997Z",
+  "generatedAt": "2026-06-01T20:49:41.134Z",
   "slatePreview": {
-    "slateOverview": "T-Mobile Park and Busch Stadium suppress power with sub-0.95 factors, but Great American Ball Park (1.25) and Nationals Park (0.98) stand out as plus venues. deGrom and Alcantara on the mound create tough individual matchups, yet the model still surfaces power bats in those spots due to elevated barrel and hard-hit rates. Warm, dry conditions across the eastern and central slates add a slight tailwind to fly-ball carry.",
-    "modelNote": "The model is prioritizing raw exit velocity and barrel rate over park or pitcher, elevating Soto despite the pitcher-friendly venue while boosting Wood and Velázquez on contact quality alone."
+    "slateOverview": "T-Mobile Park and Busch Stadium suppress power while Great American Ball Park inflates it, creating a clear split between hitter-friendly and pitcher-friendly venues. Top targets face either weak right-handers in hitter parks (Hancock, Avila) or lefties whose HR rates spike against pull-heavy bats (Rodriguez, Freeland).",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and recent HR volume over raw xBA, elevating Soto and Wood despite modest park effects while discounting Witt due to low ISO and pull rate."
   },
   "bestBets": [
     {
@@ -14,26 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.8",
-        "hrScore=74.9"
+        "hrFBRatio=8.4"
       ],
       "bullets": [
         "barrelRate 18.8 with exitVelo 93.1",
-        "parkFactor 0.93 vs Hancock 53.6 HR/9 allowed"
-      ]
-    },
-    {
-      "player": "Nelson Velázquez",
-      "team": "STL",
-      "opponent": "TEX",
-      "opposingPitcher": "Jacob deGrom",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hardHitRate=71.4",
-        "xba=0.503"
-      ],
-      "bullets": [
-        "hardHitRate 71.4 with xba 0.503",
-        "parkFactor 0.92 vs deGrom 59.7 HR/9 allowed"
+        "opposingPitcherHrVs 53.6"
       ]
     },
     {
@@ -41,14 +26,14 @@
       "team": "WSH",
       "opponent": "MIA",
       "opposingPitcher": "Sandy Alcantara",
-      "hrScoreRank": 3,
+      "hrScoreRank": 2,
       "topStats": [
         "barrelRate=25.9",
-        "exitVelo=96.5"
+        "hardHitRate=60.5"
       ],
       "bullets": [
         "barrelRate 25.9 with exitVelo 96.5",
-        "parkFactor 0.98 vs Alcantara 34 HR/9 allowed"
+        "last30HR 6"
       ]
     },
     {
@@ -56,46 +41,14 @@
       "team": "CIN",
       "opponent": "KC",
       "opposingPitcher": "Luinder Avila",
-      "hrScoreRank": 4,
-      "topStats": [
-        "parkFactor=1.25",
-        "iso=0.339"
-      ],
-      "bullets": [
-        "parkFactor 1.25 with iso 0.339",
-        "last30HR 7 with barrelRate 14.9"
-      ]
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 5,
-      "topStats": [
-        "opposingPitcherHrVs=70",
-        "barrelRate=21.4"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs 70 vs Freeland",
-        "barrelRate 21.4 with exitVelo 91.2"
-      ]
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "JJ Bleday",
-      "team": "CIN",
-      "opponent": "KC",
-      "opposingPitcher": "Luinder Avila",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
         "parkFactor=1.25",
         "pullRate=53.4"
       ],
       "bullets": [
-        "parkFactor 1.25 with pullRate 53.4",
-        "last7HR 2 with hrFBRatio 8.3"
+        "parkFactor 1.25 with iso 0.339",
+        "last30HR 7"
       ]
     },
     {
@@ -103,14 +56,14 @@
       "team": "LAA",
       "opponent": "COL",
       "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "opposingPitcherHrVs=70",
         "bbRate=21.1"
       ],
       "bullets": [
-        "opposingPitcherHrVs 70 vs Freeland",
-        "bbRate 21.1 with barrelRate 21.4"
+        "opposingPitcherHrVs 70 with exitVelo 91.2",
+        "last30HR 4"
       ]
     },
     {
@@ -118,14 +71,46 @@
       "team": "KC",
       "opponent": "CIN",
       "opposingPitcher": "Lyon Richardson",
-      "hrScoreRank": 6,
+      "hrScoreRank": 5,
       "topStats": [
-        "parkFactor=1.25",
-        "xba=0.314"
+        "xba=0.314",
+        "hardHitRate=54.2"
       ],
       "bullets": [
-        "parkFactor 1.25 with xba 0.314",
-        "last30HR 7 with exitVelo 93.8"
+        "xba 0.314 with exitVelo 93.8",
+        "parkFactor 1.25"
+      ]
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "COL",
+      "opposingPitcher": "Kyle Freeland",
+      "hrScoreRank": 4,
+      "topStats": [
+        "opposingPitcherHrVs=70",
+        "bbRate=21.1"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 70 with exitVelo 91.2",
+        "last30HR 4"
+      ]
+    },
+    {
+      "player": "Bobby Witt Jr.",
+      "team": "KC",
+      "opponent": "CIN",
+      "opposingPitcher": "Lyon Richardson",
+      "hrScoreRank": 5,
+      "topStats": [
+        "xba=0.314",
+        "hardHitRate=54.2"
+      ],
+      "bullets": [
+        "xba 0.314 with exitVelo 93.8",
+        "parkFactor 1.25"
       ]
     },
     {
@@ -133,14 +118,29 @@
       "team": "SEA",
       "opponent": "NYM",
       "opposingPitcher": "Austin Warren",
-      "hrScoreRank": 7,
+      "hrScoreRank": 6,
       "topStats": [
-        "Hard Hit%=49.0",
-        "Pitcher HR VS=41.6"
+        "hrFBRatio=8.7",
+        "pullRate=48"
       ],
       "bullets": [
-        "HR score 62.3 (#7)",
-        "Pitcher HR VS 41.6 at park 0.93"
+        "hrFBRatio 8.7 with exitVelo 90.9",
+        "last30HR 8"
+      ]
+    },
+    {
+      "player": "Jared Young",
+      "team": "NYM",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=53.6",
+        "Hard Hit%=50.0"
+      ],
+      "bullets": [
+        "HR score 60.9 (#7)",
+        "Pitcher HR VS 53.6 at park 0.93"
       ]
     },
     {
@@ -167,42 +167,12 @@
       "opposingPitcher": "Eduardo Rodriguez",
       "hrScoreRank": 8,
       "topStats": [
-        "exitVelo=93.5",
-        "hardHitRate=52.6"
+        "hardHitRate=52.6",
+        "pullRate=53.3"
       ],
       "bullets": [
-        "exitVelo 93.5 with hardHitRate 52.6",
-        "last7HR 2 with parkFactor 1.01"
-      ]
-    },
-    {
-      "player": "Joc Pederson",
-      "team": "TEX",
-      "opponent": "STL",
-      "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 18,
-      "topStats": [
-        "last7HR=5",
-        "opposingPitcherHrVs=67"
-      ],
-      "bullets": [
-        "last7HR 5 with opposingPitcherHrVs 67",
-        "parkFactor 0.92 with exitVelo 91.2"
-      ]
-    },
-    {
-      "player": "Jared Young",
-      "team": "NYM",
-      "opponent": "SEA",
-      "opposingPitcher": "Emerson Hancock",
-      "hrScoreRank": 9,
-      "topStats": [
-        "Pitcher HR VS=53.6",
-        "Hard Hit%=50.0"
-      ],
-      "bullets": [
-        "HR score 60.8 (#9)",
-        "Pitcher HR VS 53.6 at park 0.93"
+        "hardHitRate 52.6 with exitVelo 93.5",
+        "last7HR 2"
       ]
     },
     {
@@ -212,12 +182,27 @@
       "opposingPitcher": "Eduardo Rodriguez",
       "hrScoreRank": 10,
       "topStats": [
-        "Hard Hit%=49.2",
-        "Pitcher HR VS=39.1"
+        "hrFBRatio=8",
+        "pullRate=53.2"
       ],
       "bullets": [
-        "HR score 60.3 (#10)",
-        "Pitcher HR VS 39.1 at park 1.01"
+        "hrFBRatio 8 with exitVelo 91.3",
+        "last30HR 5"
+      ]
+    },
+    {
+      "player": "Brandon Nimmo",
+      "team": "TEX",
+      "opponent": "STL",
+      "opposingPitcher": "Michael McGreevy",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Pitcher HR VS=67.0",
+        "Hard Hit%=50.9"
+      ],
+      "bullets": [
+        "HR score 60.2 (#9)",
+        "Pitcher HR VS 67.0 at park 0.92"
       ]
     }
   ]
