@@ -6,7 +6,8 @@ export type SeoPage =
   | "pga-dfs"
   | "nfl"
   | "nba"
-  | "ncaa";
+  | "ncaa"
+  | "world-cup";
 
 type SeoMeta = {
   title: string;
@@ -65,6 +66,12 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "College basketball analytics, custom team rankings, matchup breakdowns, and March Madness bracket builder.",
     path: "/ncaa",
+  },
+  "world-cup": {
+    title: "FIFA World Cup 2026 Power Rankings & Bracket Predictions | Joe Knows Ball",
+    description:
+      "FIFA World Cup 2026 group stage power rankings, knockout bracket predictions, and team analytics. Model picks Brazil to beat Spain in the final. Updated daily.",
+    path: "/world-cup",
   },
 };
 

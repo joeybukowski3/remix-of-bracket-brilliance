@@ -531,9 +531,101 @@ function BracketMobile() {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function WorldCup2026() {
   usePageSeo({
-    title: "FIFA World Cup 2026 — Power Rankings & Bracket",
-    description: "Joe Knows Ball World Cup 2026 model: group stage power scores, knockout bracket prediction, and winner picks.",
+    title: "FIFA World Cup 2026 Power Rankings & Bracket Predictions",
+    description:
+      "FIFA World Cup 2026 group stage power rankings, knockout bracket predictions, and team analytics. Model picks Brazil to beat Spain in the final. Covers all 48 teams across 12 groups.",
     path: "/world-cup",
+    type: "website",
+    structuredData: [
+      // SportsEvent — the tournament itself
+      {
+        "@context": "https://schema.org",
+        "@type": "SportsEvent",
+        name: "FIFA World Cup 2026",
+        startDate: "2026-06-11",
+        endDate: "2026-07-19",
+        location: {
+          "@type": "Place",
+          name: "United States, Canada & Mexico",
+          address: { "@type": "PostalAddress", addressCountry: "US" },
+        },
+        sport: "Association Football",
+        description:
+          "The 2026 FIFA World Cup featuring 48 nations across 12 groups. Joe Knows Ball model predicts Brazil as champion.",
+        url: "https://www.joeknowsball.com/world-cup",
+        organizer: { "@type": "Organization", name: "FIFA", url: "https://www.fifa.com" },
+      },
+      // BreadcrumbList
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://www.joeknowsball.com" },
+          { "@type": "ListItem", position: 2, name: "World Cup 2026", item: "https://www.joeknowsball.com/world-cup" },
+        ],
+      },
+      // FAQPage — helps capture featured snippets
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "Who does the Joe Knows Ball model predict to win the 2026 World Cup?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "The Joe Knows Ball model predicts Brazil to win the 2026 FIFA World Cup, beating Spain 1.59–1.29 in the final and defeating Argentina 1.58–1.21 in the semi-finals.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "How is the World Cup 2026 power score calculated?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "The power score is a composite of five factors: FIFA ranking (30%), attack rating based on qualifying goals scored (25%), defense rating based on goals conceded (20%), recent form over the last 10 matches (15%), and tournament experience (10%).",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "How many teams are in the 2026 FIFA World Cup?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "The 2026 FIFA World Cup features 48 teams divided into 12 groups of 4. The top 2 teams from each group plus the 8 best third-place finishers advance to the Round of 32.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Where is the 2026 FIFA World Cup being held?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "The 2026 FIFA World Cup is co-hosted by the United States, Canada, and Mexico — the first World Cup held across three countries.",
+            },
+          },
+        ],
+      },
+      // WebPage with additional metadata
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: "FIFA World Cup 2026 Power Rankings & Bracket | Joe Knows Ball",
+        description:
+          "Group stage power rankings and knockout bracket predictions for the 2026 FIFA World Cup. Brazil predicted champion.",
+        url: "https://www.joeknowsball.com/world-cup",
+        publisher: {
+          "@type": "Organization",
+          name: "Joe Knows Ball",
+          url: "https://www.joeknowsball.com",
+          logo: { "@type": "ImageObject", url: "https://www.joeknowsball.com/favicon-32x32.png" },
+        },
+        breadcrumb: {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: "https://www.joeknowsball.com" },
+            { "@type": "ListItem", position: 2, name: "World Cup 2026", item: "https://www.joeknowsball.com/world-cup" },
+          ],
+        },
+      },
+    ],
   });
 
   const [tab, setTab] = useState<"groups" | "bracket">("groups");
