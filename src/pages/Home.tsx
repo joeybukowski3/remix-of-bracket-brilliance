@@ -151,11 +151,13 @@ function SportCard({
   logo,
   name,
   route,
+  darkBg = false,
 }: {
   locked?: boolean;
   logo: string;
   name: string;
   route: string;
+  darkBg?: boolean;
 }) {
   const cardClassName = `flex w-full max-w-[160px] flex-col items-center rounded-[14px] border border-black/8 bg-white px-4 py-5 text-center no-underline shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-md:max-w-none ${
     locked
@@ -165,7 +167,7 @@ function SportCard({
 
   const cardContent = (
     <>
-      <div className="flex h-[84px] items-center justify-center">
+      <div className={`flex h-[84px] w-full items-center justify-center rounded-[8px] ${darkBg ? "bg-black" : ""}`}>
         <img
           src={logo}
           alt={`${name} logo`}
@@ -341,6 +343,7 @@ export default function Home() {
                     logo={sport.logo}
                     name={sport.name}
                     route={sport.route}
+                    darkBg={sport.id === "world-cup"}
                   />
                 ))}
               </div>
