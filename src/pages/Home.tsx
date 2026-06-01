@@ -37,6 +37,12 @@ const sports = [
     route: "/pga",
     logo: "/logos/pga.svg",
   },
+  {
+    id: "world-cup",
+    name: "World Cup",
+    route: "/world-cup",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/FIFA_World_Cup_2026.svg/200px-FIFA_World_Cup_2026.svg.png",
+  },
 ] as const;
 
 const navItems = [
