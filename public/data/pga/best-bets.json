@@ -1,13 +1,38 @@
 {
   "tournament": "PGA Championship",
   "course": "Aronimink Golf Club",
-  "generatedAt": "2026-05-28T12:04:00.422Z",
+  "generatedAt": "2026-06-01T17:53:53.401Z",
   "preview": {
-    "tournamentOverview": "Aronimink Golf Club hosts the PGA Championship with a layout that places a premium on approach play and total strokes gained. The course demands precision iron play and consistent ball-striking over raw distance, making it a strong test for players who excel in SG:APP and SG:Total. This major carries extra weight as the final major of the season and a key measuring stick for the year's best performers.",
-    "modelExplainer": "Our model weights SG:APP at 30.7% and SG:Total at 22.8%, making approach play and overall scoring the dominant factors. SG:OTT follows at 16.2%, while SG:ATG and SG:PUTT carry 11.9% and 8.3% respectively, reflecting moderate value in short game and putting. Driving accuracy and bogey avoidance each sit at 4.2% and 3.0%, underscoring that ball-striking and scoring control outweigh pure distance metrics this week.",
-    "pickApproach": "We tier bets by combining tournamentRank and powerRank, prioritizing players strong in the highest-weighted stats like SG:APP and SG:Total. Top-tier targets include Jake Knapp and Scottie Scheffler, who lead in both rankings and key approach metrics. Mid-tier value emerges from players like Collin Morikawa and Matt Fitzpatrick, whose elite SG:APP numbers align with course demands despite slightly lower overall rankings."
+    "tournamentOverview": "Aronimink Golf Club hosts the PGA Championship with a layout that places a premium on approach play and total strokes gained. The course rewards players who hit greens from the fairway and avoid big numbers, while putting carries less weight. This major matters because it crowns a champion on a demanding, ball-striking test that often separates the field.",
+    "modelExplainer": "SG Approach receives the highest weight at 30.7%, followed by SG Total at 22.8% and SG Off-the-Tee at 16.2%. These three categories dominate because the model identifies approach accuracy and overall ball-striking as the clearest predictors of success at Aronimink. Driving accuracy and bogey avoidance receive minimal weight, confirming that raw distance and scrambling matter less than consistent iron play.",
+    "pickApproach": "The model ranks players by blending course-specific weights with season-long form to produce a power ranking. Top-tier selections focus on golfers who post strong approach and total SG marks, while mid-tier bets target value in players with balanced but slightly lower profiles. Lower-tier exposure is reserved for specialists who fit the approach-heavy profile even if their overall rank is modest."
   },
-  "valueBets": [],
+  "valueBets": [
+    {
+      "player": "Rory McIlroy",
+      "market": "outright",
+      "americanOdds": "+750",
+      "modelRank": 4,
+      "impliedProbability": "11.8%",
+      "modelEdge": "Model ranks McIlroy 4th in both tournamentRank and powerRank, yet +750 odds imply only an 11.8% chance, undervaluing his elite ball-striking and scoring stats that place him ahead of several higher-priced contenders."
+    },
+    {
+      "player": "Matt Fitzpatrick",
+      "market": "outright",
+      "americanOdds": "+2000",
+      "modelRank": 6,
+      "impliedProbability": "4.8%",
+      "modelEdge": "Despite ranking 6th in both tournamentRank and powerRank, Fitzpatrick's +2000 odds suggest just a 4.8% win probability, ignoring his top-tier approach play and scrambling metrics that support a much stronger outright chance."
+    },
+    {
+      "player": "Collin Morikawa",
+      "market": "outright",
+      "americanOdds": "+2200",
+      "modelRank": 7,
+      "impliedProbability": "4.3%",
+      "modelEdge": "Morikawa sits 7th in tournamentRank and powerRank but +2200 odds price him at only 4.3% implied probability, overlooking his elite iron play and GIR percentages that indicate he should be valued closer to the top 5."
+    }
+  ],
   "outrights": [
     {
       "player": "Rory McIlroy",
@@ -18,10 +43,12 @@
         "sgApp=0.748"
       ],
       "bullets": [
-        "sgTotal 1.785 ranks 4th",
-        "sgOTT 0.799 leads top 15"
+        "OTT 0.799 leads ranks 4-15",
+        "APP 0.748 second among ranks 4-15"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+750"
+      }
     },
     {
       "player": "Matt Fitzpatrick",
@@ -32,24 +59,28 @@
         "sgOTT=0.549"
       ],
       "bullets": [
-        "sgApp 0.81 ranks 3rd",
-        "sgTotal 1.584 ranks 6th"
+        "APP 0.81 highest in ranks 4-15",
+        "SG Total 1.584 ranks 6th"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+2000"
+      }
     },
     {
-      "player": "Akshay Bhatia",
-      "tournamentRank": 9,
-      "powerRank": 9,
+      "player": "Collin Morikawa",
+      "tournamentRank": 7,
+      "powerRank": 7,
       "topStats": [
-        "sgApp=0.792",
-        "sgPutt=0.73"
+        "sgApp=1.066",
+        "sgOTT=0.542"
       ],
       "bullets": [
-        "sgPutt 0.73 ranks 4th",
-        "sgApp 0.792 ranks 5th"
+        "APP 1.066 tops all ranks 4-15",
+        "SG Total 1.53 ranks 7th"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+2200"
+      }
     }
   ],
   "top5": [
@@ -62,8 +93,8 @@
         "sgTotal=2.002"
       ],
       "bullets": [
-        "sgTotal 2.002 leads field",
-        "sgPutt 1.285 ranks 2nd"
+        "PUTT 1.285 leads top 25",
+        "SG Total 2.002 highest overall"
       ],
       "odds": null
     },
@@ -76,10 +107,12 @@
         "sgApp=0.748"
       ],
       "bullets": [
-        "sgOTT 0.799 leads top 15",
-        "sgApp 0.748 ranks 3rd"
+        "OTT 0.799 leads ranks 4-12",
+        "APP 0.748 second in ranks 4-12"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+750"
+      }
     },
     {
       "player": "Matt Fitzpatrick",
@@ -90,10 +123,12 @@
         "sgOTT=0.549"
       ],
       "bullets": [
-        "sgApp 0.81 ranks 3rd",
-        "sgTotal 1.584 ranks 6th"
+        "APP 0.81 highest in ranks 4-12",
+        "SG Total 1.584 ranks 6th"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+2000"
+      }
     }
   ],
   "top10": [
@@ -106,8 +141,8 @@
         "sgAtG=0.111"
       ],
       "bullets": [
-        "sgPutt 1.285 leads model",
-        "sgTotal 2.002 highest floor"
+        "sgPutt=1.285 leads model",
+        "sgTotal=2.002 highest floor"
       ],
       "odds": null
     },
@@ -120,8 +155,8 @@
         "sgAtG=-0.152"
       ],
       "bullets": [
-        "sgPutt 1.339 tops field",
-        "sgTotal 1.933 second overall"
+        "sgPutt=1.339 tops field",
+        "sgTotal=1.933 second-highest"
       ],
       "odds": null
     },
@@ -134,10 +169,12 @@
         "sgPutt=0.547"
       ],
       "bullets": [
-        "sgAtG 0.618 second best",
-        "sgTotal 1.868 strong floor"
+        "sgAtG=0.618 second-best",
+        "sgTotal=1.868 strong floor"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+350"
+      }
     },
     {
       "player": "Ludvig Åberg",
@@ -148,10 +185,12 @@
         "sgPutt=0.227"
       ],
       "bullets": [
-        "sgAtG 0.42 top-5",
-        "sgTotal 1.54 top-10 floor"
+        "sgAtG=0.42 top-5",
+        "sgTotal=1.54 consistent"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+2000"
+      }
     }
   ],
   "top20": [
@@ -164,10 +203,12 @@
         "sgApp=0.499"
       ],
       "bullets": [
-        "sgOTT 0.699 top-5",
-        "sgTotal 1.574 top-10"
+        "sgOTT=0.699 top-5",
+        "sgTotal=1.574 steady"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+2000"
+      }
     },
     {
       "player": "Akshay Bhatia",
@@ -178,10 +219,12 @@
         "sgPutt=0.73"
       ],
       "bullets": [
-        "sgApp 0.792 top-5",
-        "sgTotal 1.646 top-10"
+        "sgApp=0.792 top-5",
+        "sgTotal=1.646 consistent"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+10000"
+      }
     },
     {
       "player": "Nicolai Højgaard",
@@ -192,8 +235,8 @@
         "sgPutt=0.488"
       ],
       "bullets": [
-        "sgApp 0.712 top-5",
-        "sgTotal 1.568 top-15"
+        "sgApp=0.712 top-5",
+        "sgTotal=1.568 reliable"
       ],
       "odds": null
     },
@@ -206,10 +249,12 @@
         "sgPutt=0.349"
       ],
       "bullets": [
-        "sgApp 0.662 top-10",
-        "sgTotal 1.443 top-15"
+        "sgApp=0.662 top-7",
+        "sgTotal=1.443 steady"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+1600"
+      }
     },
     {
       "player": "Tommy Fleetwood",
@@ -220,10 +265,12 @@
         "sgApp=0.459"
       ],
       "bullets": [
-        "sgAtG 0.712 leads model",
-        "sgTotal 1.343 top-15"
+        "sgAtG=0.712 leads model",
+        "sgTotal=1.343 consistent"
       ],
-      "odds": null
+      "odds": {
+        "outright": "+1400"
+      }
     }
   ]
 }
