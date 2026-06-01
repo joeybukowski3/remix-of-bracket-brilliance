@@ -1,9 +1,9 @@
 {
   "date": "2026-06-01",
-  "generatedAt": "2026-06-01T12:39:07.923Z",
+  "generatedAt": "2026-06-01T19:22:52.997Z",
   "slatePreview": {
-    "slateOverview": "T-Mobile Park and Busch Stadium suppress power, but Great American Ball Park's 1.25 factor and Angel Stadium's neutral 1.02 create the clearest edges. deGrom and Alcantara are the toughest arms on the slate, while Freeland and Avila give up hard contact at high rates. Warm, dry conditions in Cincinnati and Anaheim should amplify fly-ball carry for the top-ranked bats.",
-    "modelNote": "The model is overweighting barrel and hard-hit rates against below-average pitching while discounting park suppression, pushing Soto and Velázquez to the top despite sub-1.00 park factors."
+    "slateOverview": "T-Mobile Park and Busch Stadium suppress power with sub-0.95 factors, but Great American Ball Park (1.25) and Nationals Park (0.98) stand out as plus venues. deGrom and Alcantara on the mound create tough individual matchups, yet the model still surfaces power bats in those spots due to elevated barrel and hard-hit rates. Warm, dry conditions across the eastern and central slates add a slight tailwind to fly-ball carry.",
+    "modelNote": "The model is prioritizing raw exit velocity and barrel rate over park or pitcher, elevating Soto despite the pitcher-friendly venue while boosting Wood and Velázquez on contact quality alone."
   },
   "bestBets": [
     {
@@ -13,12 +13,12 @@
       "opposingPitcher": "Emerson Hancock",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=74.2",
-        "barrelRate=18.4"
+        "barrelRate=18.8",
+        "hrScore=74.9"
       ],
       "bullets": [
-        "parkFactor=0.93",
-        "last30HR=10"
+        "barrelRate 18.8 with exitVelo 93.1",
+        "parkFactor 0.93 vs Hancock 53.6 HR/9 allowed"
       ]
     },
     {
@@ -28,12 +28,12 @@
       "opposingPitcher": "Jacob deGrom",
       "hrScoreRank": 2,
       "topStats": [
-        "barrelRate=33.3",
-        "hardHitRate=66.7"
+        "hardHitRate=71.4",
+        "xba=0.503"
       ],
       "bullets": [
-        "exitVelo=95.7",
-        "opposingPitcherHrVs=59.6"
+        "hardHitRate 71.4 with xba 0.503",
+        "parkFactor 0.92 vs deGrom 59.7 HR/9 allowed"
       ]
     },
     {
@@ -43,12 +43,12 @@
       "opposingPitcher": "Sandy Alcantara",
       "hrScoreRank": 3,
       "topStats": [
-        "exitVelo=96.6",
-        "hardHitRate=60.7"
+        "barrelRate=25.9",
+        "exitVelo=96.5"
       ],
       "bullets": [
-        "barrelRate=25.5",
-        "last7HR=2"
+        "barrelRate 25.9 with exitVelo 96.5",
+        "parkFactor 0.98 vs Alcantara 34 HR/9 allowed"
       ]
     },
     {
@@ -62,8 +62,8 @@
         "iso=0.339"
       ],
       "bullets": [
-        "last30HR=7",
-        "last7HR=2"
+        "parkFactor 1.25 with iso 0.339",
+        "last30HR 7 with barrelRate 14.9"
       ]
     },
     {
@@ -74,28 +74,58 @@
       "hrScoreRank": 5,
       "topStats": [
         "opposingPitcherHrVs=70",
-        "bbRate=21.4"
+        "barrelRate=21.4"
       ],
       "bullets": [
-        "parkFactor=1.02",
-        "last30HR=4"
+        "opposingPitcherHrVs 70 vs Freeland",
+        "barrelRate 21.4 with exitVelo 91.2"
       ]
     }
   ],
   "valueBets": [
     {
+      "player": "JJ Bleday",
+      "team": "CIN",
+      "opponent": "KC",
+      "opposingPitcher": "Luinder Avila",
+      "hrScoreRank": 4,
+      "topStats": [
+        "parkFactor=1.25",
+        "pullRate=53.4"
+      ],
+      "bullets": [
+        "parkFactor 1.25 with pullRate 53.4",
+        "last7HR 2 with hrFBRatio 8.3"
+      ]
+    },
+    {
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "COL",
+      "opposingPitcher": "Kyle Freeland",
+      "hrScoreRank": 5,
+      "topStats": [
+        "opposingPitcherHrVs=70",
+        "bbRate=21.1"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 70 vs Freeland",
+        "bbRate 21.1 with barrelRate 21.4"
+      ]
+    },
+    {
       "player": "Bobby Witt Jr.",
       "team": "KC",
       "opponent": "CIN",
-      "opposingPitcher": "Chase Burns",
+      "opposingPitcher": "Lyon Richardson",
       "hrScoreRank": 6,
       "topStats": [
-        "xba=0.314",
-        "hardHitRate=54.8"
+        "parkFactor=1.25",
+        "xba=0.314"
       ],
       "bullets": [
-        "parkFactor=1.25",
-        "last30HR=7"
+        "parkFactor 1.25 with xba 0.314",
+        "last30HR 7 with exitVelo 93.8"
       ]
     },
     {
@@ -105,59 +135,12 @@
       "opposingPitcher": "Austin Warren",
       "hrScoreRank": 7,
       "topStats": [
-        "hrFBRatio=8.7",
-        "pullRate=48.4"
+        "Hard Hit%=49.0",
+        "Pitcher HR VS=41.6"
       ],
       "bullets": [
-        "last30HR=8",
-        "last7HR=2"
-      ]
-    },
-    {
-      "player": "Nathaniel Lowe",
-      "team": "CIN",
-      "opponent": "KC",
-      "opposingPitcher": "Luinder Avila",
-      "hrScoreRank": 8,
-      "topStats": [
-        "parkFactor=1.25",
-        "iso=0.288"
-      ],
-      "bullets": [
-        "whiffRate=22.3",
-        "last30HR=4"
-      ]
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Brandon Nimmo",
-      "team": "TEX",
-      "opponent": "STL",
-      "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 9,
-      "topStats": [
-        "opposingPitcherHrVs=66.8",
-        "xba=0.297"
-      ],
-      "bullets": [
-        "hardHitRate=51.2",
-        "last7HR=1"
-      ]
-    },
-    {
-      "player": "Joc Pederson",
-      "team": "TEX",
-      "opponent": "STL",
-      "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 15,
-      "topStats": [
-        "last7HR=5",
-        "opposingPitcherHrVs=66.8"
-      ],
-      "bullets": [
-        "parkFactor=0.92",
-        "last30HR=6"
+        "HR score 62.3 (#7)",
+        "Pitcher HR VS 41.6 at park 0.93"
       ]
     },
     {
@@ -165,14 +148,76 @@
       "team": "LAD",
       "opponent": "AZ",
       "opposingPitcher": "Eduardo Rodriguez",
-      "hrScoreRank": 10,
+      "hrScoreRank": 8,
       "topStats": [
-        "Hard Hit%=51.4",
-        "Pitcher HR VS=37.6"
+        "Hard Hit%=52.6",
+        "Pitcher HR VS=39.1"
       ],
       "bullets": [
-        "HR score 60.6 (#10)",
-        "Pitcher HR VS 37.6 at park 1.01"
+        "HR score 60.9 (#8)",
+        "Pitcher HR VS 39.1 at park 1.01"
+      ]
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "AZ",
+      "opposingPitcher": "Eduardo Rodriguez",
+      "hrScoreRank": 8,
+      "topStats": [
+        "exitVelo=93.5",
+        "hardHitRate=52.6"
+      ],
+      "bullets": [
+        "exitVelo 93.5 with hardHitRate 52.6",
+        "last7HR 2 with parkFactor 1.01"
+      ]
+    },
+    {
+      "player": "Joc Pederson",
+      "team": "TEX",
+      "opponent": "STL",
+      "opposingPitcher": "Michael McGreevy",
+      "hrScoreRank": 18,
+      "topStats": [
+        "last7HR=5",
+        "opposingPitcherHrVs=67"
+      ],
+      "bullets": [
+        "last7HR 5 with opposingPitcherHrVs 67",
+        "parkFactor 0.92 with exitVelo 91.2"
+      ]
+    },
+    {
+      "player": "Jared Young",
+      "team": "NYM",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Pitcher HR VS=53.6",
+        "Hard Hit%=50.0"
+      ],
+      "bullets": [
+        "HR score 60.8 (#9)",
+        "Pitcher HR VS 53.6 at park 0.93"
+      ]
+    },
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "AZ",
+      "opposingPitcher": "Eduardo Rodriguez",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Hard Hit%=49.2",
+        "Pitcher HR VS=39.1"
+      ],
+      "bullets": [
+        "HR score 60.3 (#10)",
+        "Pitcher HR VS 39.1 at park 1.01"
       ]
     }
   ]
