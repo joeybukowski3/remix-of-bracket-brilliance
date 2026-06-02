@@ -1550,36 +1550,58 @@ function SocialTableML({
   games,
   detailPreviews,
   pitcherRegressionData,
+  mlbOdds,
 }: {
   games: MlbScheduleGame[];
   detailPreviews: Record<number, MlbGameDetail>;
   pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
+  mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
 }) {
+  function americanToImplied(american: string | null | undefined): number | null {
+    if (!american) return null;
+    const n = parseFloat(american);
+    if (!isFinite(n)) return null;
+    return n > 0 ? 100 / (n + 100) : Math.abs(n) / (Math.abs(n) + 100);
+  }
+
   const rows = games
     .map((game) => {
       const detail = detailPreviews[game.gamePk];
       if (!detail) return null;
       const edge = computeModelEdge(detail);
       if (edge.pick === "push") return null;
+
       const pickAbbr = edge.pick === "away" ? game.away.abbreviation : game.home.abbreviation;
       const fadeAbbr = edge.pick === "away" ? game.home.abbreviation : game.away.abbreviation;
       const pickColors = getMlbTeamColors(pickAbbr);
 
+      // Look up actual ML odds for this game
+      const gameKey = `${game.away.abbreviation}@${game.home.abbreviation}`;
+      const ml = mlbOdds?.moneylines?.[gameKey];
+      const pickIsAway = edge.pick === "away";
+      const pickOddsEntry = pickIsAway ? ml?.away : ml?.home;
+      const fadeOddsEntry = pickIsAway ? ml?.home : ml?.away;
+      const pickAmerican = pickOddsEntry?.american ?? null;
+      const fadeAmerican = fadeOddsEntry?.american ?? null;
+
+      // Value edge: model win probability vs market implied probability
+      const modelProb = edge.confidence / 100;          // e.g. 0.57
+      const marketImplied = americanToImplied(pickAmerican); // e.g. 0.67 for -200
+      // Value = how much model beats the market. Positive = value, negative = market overprices pick
+      const valueEdge = marketImplied != null
+        ? Math.round((modelProb - marketImplied) * 100 * 10) / 10  // in percentage points
+        : null; // null = no odds available, rank by confidence alone
+
+      // Pitcher context
       const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
       const homePitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
       const awayReg = pitcherRegressionData.find(p => p.name === awayPitcherName);
       const homeReg = pitcherRegressionData.find(p => p.name === homePitcherName);
-
-      // Build a context note based on regression
-      const pickIsAway = edge.pick === "away";
       const pickPitcherReg = pickIsAway ? awayReg : homeReg;
       const fadePitcherReg = pickIsAway ? homeReg : awayReg;
       let context = "";
-      if (fadePitcherReg && fadePitcherReg.regressionScore < -2) {
-        context = `${fadeAbbr} pitcher overperforming`;
-      } else if (pickPitcherReg && pickPitcherReg.regressionScore > 2) {
-        context = `${pickAbbr} pitcher undervalued`;
-      }
+      if (fadePitcherReg && fadePitcherReg.regressionScore < -2) context = `${fadeAbbr} pitcher overperforming`;
+      else if (pickPitcherReg && pickPitcherReg.regressionScore > 2) context = `${pickAbbr} pitcher undervalued`;
 
       return {
         gamePk: game.gamePk,
@@ -1591,22 +1613,37 @@ function SocialTableML({
         fadeAbbr,
         pickColors,
         confidence: edge.confidence,
+        pickAmerican,
+        fadeAmerican,
+        marketImplied,
+        valueEdge,
         context,
         gameTime: formatGameTime(game.gameDate),
       };
     })
     .filter(Boolean)
-    .sort((a, b) => b!.confidence - a!.confidence)
+    // Sort by value edge first (model beats market), then by confidence as tiebreaker
+    // If no odds, sort by confidence only
+    .sort((a, b) => {
+      const va = a!.valueEdge;
+      const vb = b!.valueEdge;
+      if (va != null && vb != null) return vb - va;
+      if (va != null) return -1; // odds-ranked rows above no-odds rows
+      if (vb != null) return 1;
+      return b!.confidence - a!.confidence;
+    })
     .slice(0, 8) as NonNullable<ReturnType<typeof rows[0]>>[];
 
   const MEDALS = ["🥇", "🥈", "🥉"];
   const ACCENTS = ["#f97316", "#fb923c", "#fbbf24", "#facc15", "#a3e635", "#34d399", "#38bdf8", "#818cf8"];
 
-  function confColor(c: number) {
-    if (c >= 70) return { bg: "#22c55e", text: "#fff" };
-    if (c >= 62) return { bg: "#facc15", text: "#000" };
-    if (c >= 57) return { bg: "#fb923c", text: "#fff" };
-    return { bg: "#475569", text: "#fff" };
+  function valueColor(ve: number | null): { bg: string; text: string; label: string } {
+    if (ve == null)  return { bg: "#475569", text: "#fff", label: "No line" };
+    if (ve >= 10)    return { bg: "#16a34a", text: "#fff", label: `+${ve.toFixed(1)}% edge` };
+    if (ve >= 4)     return { bg: "#22c55e", text: "#fff", label: `+${ve.toFixed(1)}% edge` };
+    if (ve >= 0)     return { bg: "#facc15", text: "#000", label: `+${ve.toFixed(1)}%` };
+    if (ve >= -5)    return { bg: "#f97316", text: "#fff", label: `${ve.toFixed(1)}%` };
+    return           { bg: "#dc2626", text: "#fff", label: `${ve.toFixed(1)}% no val` };
   }
 
   if (rows.length === 0) {
@@ -1617,77 +1654,97 @@ function SocialTableML({
     );
   }
 
+  const hasOdds = rows.some(r => r.valueEdge != null);
+
   return (
     <div style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
       {/* Header */}
       <div style={{ background: "#0a1628", borderBottom: "3px solid #3b82f6", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🏆 MLB ML EDGES</div>
-          <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>Top Model Picks · Sorted by Confidence</div>
+          <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>
+            {hasOdds ? "Sorted by Value vs. Market Line" : "Top Model Picks · Sorted by Confidence"}
+          </div>
         </div>
         <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
       </div>
 
       {/* Column headers */}
-      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 110px", gap: 8, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr auto", gap: 8, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
         <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>#</div>
         <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>MATCHUP</div>
-        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "center" }}>PICK / EDGE</div>
+        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "right" }}>PICK · LINE · VALUE</div>
       </div>
 
       {/* Rows */}
       {rows.map((row, i) => {
-        const cc = confColor(row.confidence);
+        const vc = valueColor(row.valueEdge);
         return (
           <div
             key={row.gamePk}
             style={{
               display: "grid",
-              gridTemplateColumns: "28px 1fr 110px",
+              gridTemplateColumns: "28px 1fr auto",
               gap: 8,
-              padding: "11px 12px",
+              padding: "10px 12px",
               background: i % 2 === 0 ? "#0d1e38" : "#091629",
               borderBottom: "1px solid #1e3a5f",
-              borderLeft: `3px solid ${ACCENTS[i]}`,
+              borderLeft: `3px solid ${ACCENTS[i] ?? "#475569"}`,
               alignItems: "center",
             }}
           >
             {/* Rank */}
-            <div style={{ fontWeight: 900, color: ACCENTS[i], fontSize: i < 3 ? 16 : 13, textAlign: "center" }}>
+            <div style={{ fontWeight: 900, color: ACCENTS[i] ?? "#475569", fontSize: i < 3 ? 16 : 13, textAlign: "center" }}>
               {i < 3 ? MEDALS[i] : i + 1}
             </div>
 
             {/* Matchup */}
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                <TeamLogoBadge team={row.awayAbbr} size={14} showLabel={false} />
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
+                <TeamLogoBadge team={row.awayAbbr} size={13} showLabel={false} />
                 <span style={{ color: "#94a3b8", fontSize: 11, fontWeight: 700 }}>{row.awayAbbr}</span>
                 <span style={{ color: "#475569", fontSize: 10 }}>@</span>
-                <TeamLogoBadge team={row.homeAbbr} size={14} showLabel={false} />
+                <TeamLogoBadge team={row.homeAbbr} size={13} showLabel={false} />
                 <span style={{ color: "#94a3b8", fontSize: 11, fontWeight: 700 }}>{row.homeAbbr}</span>
                 <span style={{ color: "#475569", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
               </div>
-              <div style={{ fontSize: 10, color: "#475569", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ fontSize: 10, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {row.awayPitcher?.split(" ").pop()} vs {row.homePitcher?.split(" ").pop()}
                 {row.context ? <span style={{ color: "#38bdf8", marginLeft: 4 }}>· {row.context}</span> : null}
               </div>
             </div>
 
-            {/* Pick + confidence combined: logo beside % */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
-              <TeamLogoBadge team={row.pickAbbr} size={20} showLabel={false} />
+            {/* Pick · ML price · Value edge */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+              {/* Team logo + actual ML price */}
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <TeamLogoBadge team={row.pickAbbr} size={18} showLabel={false} />
+                <span style={{ color: "#e2e8f0", fontWeight: 900, fontSize: 12 }}>{row.pickAbbr}</span>
+                {row.pickAmerican && (
+                  <span style={{
+                    background: "#0d1e38",
+                    border: "1px solid #1e3a5f",
+                    borderRadius: 4,
+                    padding: "2px 6px",
+                    fontWeight: 800,
+                    fontSize: 11,
+                    color: row.pickAmerican.startsWith("+") ? "#34d399" : "#94a3b8",
+                  }}>
+                    {row.pickAmerican}
+                  </span>
+                )}
+              </div>
+              {/* Value edge badge */}
               <span style={{
-                display: "inline-block",
-                background: cc.bg,
-                color: cc.text,
-                borderRadius: 6,
-                padding: "4px 9px",
-                fontWeight: 900,
-                fontSize: 13,
-                minWidth: 44,
-                textAlign: "center",
+                background: vc.bg,
+                color: vc.text,
+                borderRadius: 4,
+                padding: "2px 7px",
+                fontWeight: 700,
+                fontSize: 10,
+                whiteSpace: "nowrap",
               }}>
-                {row.confidence}%
+                {vc.label}
               </span>
             </div>
           </div>
@@ -1696,7 +1753,9 @@ function SocialTableML({
 
       {/* Footer */}
       <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 10, color: "#475569" }}>Model: ERA · xFIP · xERA · K-BB% · Regression</span>
+        <span style={{ fontSize: 10, color: "#475569" }}>
+          {hasOdds ? "Value = model win% minus market implied%" : "Model: ERA · xFIP · xERA · K-BB% · Regression"}
+        </span>
         <span style={{ fontSize: 10, color: "#3b82f6", fontWeight: 700 }}>joeknowsball.com</span>
       </div>
     </div>
@@ -1707,10 +1766,12 @@ function SocialMediaTablesSection({
   games,
   detailPreviews,
   pitcherRegressionData,
+  mlbOdds,
 }: {
   games: MlbScheduleGame[];
   detailPreviews: Record<number, MlbGameDetail>;
   pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
+  mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
 }) {
   const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games: propsGames, loading } = useMlbPropsData();
   const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits">("ml");
@@ -1759,7 +1820,7 @@ function SocialMediaTablesSection({
 
         {/* Table content */}
         <div style={{ padding: 14 }}>
-          {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} />}
+          {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />}
           {activeTab === "hr"   && <SocialTableHR batters={batters} />}
           {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
@@ -1877,7 +1938,7 @@ function HomeSchedule({
 
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
           <MlbToolsGrid />
-          <SocialMediaTablesSection games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} />
+          <SocialMediaTablesSection games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
           
           {/* Pitcher Regression Table */}
           <section className="space-y-3">
