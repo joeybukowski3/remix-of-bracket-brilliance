@@ -650,7 +650,7 @@ function PropPreviewCard({
               </div>
             </div>
             <div className="min-w-0 text-[11px] font-medium text-slate-500">
-              <div className="truncate">{row.team} vs {row.opponent}</div>
+              <div className="truncate">vs {row.opponent}</div>
             </div>
             <div className="flex justify-end">
               <ScorePill value={row.score} />
