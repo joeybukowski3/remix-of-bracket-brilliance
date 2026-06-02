@@ -1790,8 +1790,8 @@ function HomeSchedule({
       player: row.player,
       position: row.position,
       team: row.team,
-      opponent: row.opponent,
-      score: row.hrScore,
+      opponent: row.opposingPitcher,
+      score: row.adjustedHrScore ?? row.hrScore,
     })),
     [topHrProps],
   );
