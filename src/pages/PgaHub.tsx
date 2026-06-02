@@ -323,18 +323,15 @@ const BET_SECTIONS = [
   { key: "top20"     as const, label: "📋 Top 20",    color: "#b45309", bg: "rgba(245,158,11,0.07)", border: "rgba(245,158,11,0.2)" },
 ];
 
-function BestBetsTiles({ data, scheduleOverride }: { data: BestBetsPayload; scheduleOverride?: { name: string; course: string } | null }) {
+function BestBetsTiles({ data }: { data: BestBetsPayload }) {
   const hasAny = BET_SECTIONS.some(({ key }) => data[key]?.length > 0);
   if (!hasAny) return null;
-  // Prefer live schedule name over potentially-stale JSON data
-  const displayName = scheduleOverride?.name ?? data.tournament;
-  const displayCourse = scheduleOverride?.course ?? data.course;
   return (
     <div className="mb-6">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Best Bets</div>
-          <div className="text-sm font-black text-slate-900">{displayName} · {displayCourse}</div>
+          <div className="text-sm font-black text-slate-900">{data.tournament} · {data.course}</div>
         </div>
         <Link to="/pga/best-bets" className="text-xs font-bold text-emerald-700 hover:underline">View all →</Link>
       </div>
@@ -512,25 +509,14 @@ export default function PgaHub() {
           </div>
 
           {/* Best Bets tiles */}
-          {bestBets && (
-            <BestBetsTiles
-              data={bestBets}
-              scheduleOverride={
-                active
-                  ? { name: active.shortName ?? active.name, course: active.courseName }
-                  : current
-                  ? { name: current.shortName ?? current.name, course: current.courseName }
-                  : null
-              }
-            />
-          )}
+          {bestBets && <BestBetsTiles data={bestBets} />}
 
           {/* Field filter toggle */}
           {currentField && (
             <div className="mb-3 flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
               <div className="text-[11px] font-semibold text-emerald-800">
                 {fieldOnly
-                  ? `${filtered.length} players in ${(active ?? current)?.shortName ?? currentField.tournament} field`
+                  ? `${filtered.length} players in ${currentField.tournament} field`
                   : `Showing all ${powerRankings.length} players`}
               </div>
               <button
