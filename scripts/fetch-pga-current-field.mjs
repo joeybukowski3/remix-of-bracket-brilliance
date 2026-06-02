@@ -139,7 +139,34 @@ async function tryPgaTourScrape(slug) {
   return { tournament: name, players, source: "pgatour-scrape" };
 }
 
-// ── Get current tournament slug from schedule ─────────────────────────────────
+// ── Strategy 3: statdata.pgatour.com (pre-tournament field API) ───────────────
+async function tryStatdataField(slug) {
+  const entry = PGA_TOUR_MAP[slug];
+  if (!entry) throw new Error(`No mapping for: ${slug}`);
+  const url = `https://statdata.pgatour.com/r/${entry.tourId}/field.json`;
+  const data = await get(url);
+  if (!data) throw new Error("Empty response");
+
+  // Field JSON from statdata has players array at various paths
+  const players = (
+    data.Tournament?.Players?.Player ??
+    data.players ??
+    data.Players ??
+    data.field ??
+    []
+  ).filter((p) => {
+    const status = (p.Status ?? p.status ?? "").toUpperCase();
+    return status !== "ALT" && status !== "WD" && status !== "DQ";
+  }).map((p) => {
+    const first = p.FirstName ?? p.firstName ?? p.first_name ?? "";
+    const last = p.LastName ?? p.lastName ?? p.last_name ?? "";
+    return p.displayName ?? p.PlayerName ?? `${first} ${last}`.trim();
+  }).filter((n) => n && n.length > 2);
+
+  if (players.length < 10) throw new Error(`Only ${players.length} players from statdata`);
+  const name = data.Tournament?.TournamentName ?? data.tournamentName ?? slug;
+  return { tournament: name, players, source: "statdata" };
+}
 async function getCurrentSlug() {
   try {
     const controller = new AbortController();
@@ -175,7 +202,10 @@ try {
   const strategies = [
     ["ESPN Scoreboard",    tryEspnScoreboard],
     ["ESPN Event Detail",  tryEspnEventDetail],
-    ...(slug ? [["PGA Tour Scrape", () => tryPgaTourScrape(slug)]] : []),
+    ...(slug ? [
+      ["Statdata Field",     () => tryStatdataField(slug)],
+      ["PGA Tour Scrape",    () => tryPgaTourScrape(slug)],
+    ] : []),
   ];
 
   for (const [name, fn] of strategies) {

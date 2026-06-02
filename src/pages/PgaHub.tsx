@@ -190,14 +190,16 @@ function TournamentHeroCard({ entry, isActive }: { entry: PgaScheduleFeedEntry; 
 // - Previous entries show Model buttons when data is available (matching main schedule style).
 function ScheduleSidebar({ schedule, current }: { schedule: PgaScheduleFeedEntry[]; current: PgaScheduleFeedEntry | null }) {
   const [showPrevious, setShowPrevious] = useState(false);
+  const today = new Date().toISOString().slice(0, 10);
 
+  // Use endDate for past/future split — schedule.status is often stale
   const upcoming = useMemo(
-    () => [...schedule].filter((e) => e.status === "upcoming").sort((a, b) => a.startDate.localeCompare(b.startDate)),
-    [schedule],
+    () => [...schedule].filter((e) => (e.endDate ?? e.startDate) >= today).sort((a, b) => a.startDate.localeCompare(b.startDate)),
+    [schedule, today],
   );
   const previous = useMemo(
-    () => [...schedule].filter((e) => e.status === "complete").sort((a, b) => b.startDate.localeCompare(a.startDate)),
-    [schedule],
+    () => [...schedule].filter((e) => (e.endDate ?? e.startDate) < today).sort((a, b) => b.startDate.localeCompare(a.startDate)),
+    [schedule, today],
   );
 
   // Separate the pinned NOW event (if present in upcoming) from the rest
@@ -380,19 +382,20 @@ export default function PgaHub() {
   const [statView, setStatView] = useState<'percentile' | 'raw'>('percentile');
 
   const { active, current } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
+  const today = new Date().toISOString().slice(0, 10);
 
   // Mobile: just the current/next single tournament
   const mobileHeroTournament = useMemo(() => {
     const sorted = [...schedule]
-      .filter((e) => e.status === "upcoming")
+      .filter((e) => (e.endDate ?? e.startDate) >= today)
       .sort((a, b) => a.startDate.localeCompare(b.startDate));
     return active ?? sorted[0] ?? null;
-  }, [schedule, active]);
+  }, [schedule, active, today]);
 
   // Previous tournaments for mobile
   const previousTournaments = useMemo(
-    () => [...schedule].filter((e) => e.status === "complete").sort((a, b) => b.startDate.localeCompare(a.startDate)),
-    [schedule],
+    () => [...schedule].filter((e) => (e.endDate ?? e.startDate) < today).sort((a, b) => b.startDate.localeCompare(a.startDate)),
+    [schedule, today],
   );
 
   const powerRankings = useMemo(() => buildPowerRankings(playerStats), [playerStats]);
