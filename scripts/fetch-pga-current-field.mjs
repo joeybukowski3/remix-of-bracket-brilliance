@@ -41,6 +41,10 @@ async function tryEspnScoreboard() {
   if (!comp) throw new Error("No competition");
 
   const players = (comp.competitors ?? [])
+    .filter((c) => {
+      const status = (c.status?.type?.id ?? c.status ?? "").toString().toUpperCase();
+      return status !== "ALT" && status !== "WD" && status !== "DQ" && !c.isAlternate;
+    })
     .map((c) => c.athlete?.displayName ?? c.athlete?.fullName)
     .filter(Boolean);
 
@@ -68,28 +72,31 @@ async function tryEspnEventDetail() {
   return { tournament: name, players, source: "espn-event-detail" };
 }
 
-// ── Strategy 3: PGA Tour __NEXT_DATA__ scrape ─────────────────────────────────
-const PGA_TOUR_IDS = {
-  "charles-schwab-challenge":         "R2026020",
-  "the-memorial-tournament":          "R2026032",
-  "travelers-championship":           "R2026033",
-  "rbc-canadian-open":                "R2026037",
-  "john-deere-classic":               "R2026021",
-  "genesis-scottish-open":            "R2026040",
-  "the-open-championship":            "R2026100",
-  "wyndham-championship":             "R2026041",
-  "fedex-st-jude-championship":       "R2026042",
-  "bmw-championship":                 "R2026043",
-  "tour-championship":                "R2026060",
-  "rocket-mortgage-classic":          "R2026030",
+// ── PGA Tour ID + URL slug map ────────────────────────────────────────────────
+// Key = schedule.json slug, value = { urlSlug, tourId }
+// urlSlug is the exact path segment used in pgatour.com URLs
+const PGA_TOUR_MAP = {
+  "the-memorial-tournament":          { urlSlug: "the-memorial-tournament-presented-by-workday",   tourId: "R2026023" },
+  "travelers-championship-2026-picks":{ urlSlug: "travelers-championship",                         tourId: "R2026033" },
+  "rbc-canadian-open-2026-picks":     { urlSlug: "rbc-canadian-open",                              tourId: "R2026037" },
+  "us-open-2026-picks":               { urlSlug: "us-open",                                        tourId: "R2026026" },
+  "john-deere-classic-2026-picks":    { urlSlug: "john-deere-classic",                             tourId: "R2026021" },
+  "genesis-scottish-open-2026-picks": { urlSlug: "genesis-scottish-open",                          tourId: "R2026040" },
+  "the-open-championship":            { urlSlug: "the-open-championship",                           tourId: "R2026100" },
+  "rocket-classic-2026-picks":        { urlSlug: "rocket-mortgage-classic",                        tourId: "R2026030" },
+  "wyndham-championship-2026-picks":  { urlSlug: "wyndham-championship",                           tourId: "R2026041" },
+  "fedex-st-jude-championship-2026-picks": { urlSlug: "fedex-st-jude-championship",               tourId: "R2026042" },
+  "bmw-championship-2026-picks":      { urlSlug: "bmw-championship",                               tourId: "R2026043" },
+  "tour-championship-2026-picks":     { urlSlug: "tour-championship",                              tourId: "R2026060" },
+  "charles-schwab-challenge-2026-picks": { urlSlug: "charles-schwab-challenge",                   tourId: "R2026020" },
 };
 
 async function tryPgaTourScrape(slug) {
   if (!slug) throw new Error("No slug");
-  const tourId = PGA_TOUR_IDS[slug];
-  if (!tourId) throw new Error(`No PGA Tour ID for: ${slug}`);
+  const entry = PGA_TOUR_MAP[slug];
+  if (!entry) throw new Error(`No PGA Tour mapping for: ${slug}`);
 
-  const url = `https://www.pgatour.com/tournaments/2026/${slug}/${tourId}/field`;
+  const url = `https://www.pgatour.com/tournaments/2026/${entry.urlSlug}/${entry.tourId}/field`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -116,10 +123,17 @@ async function tryPgaTourScrape(slug) {
   if (!Array.isArray(fieldData) || !fieldData.length) throw new Error("No field array");
 
   const players = fieldData
+    .filter((p) => {
+      // Exclude alternates — they have isAlternate, status="ALT", or WD/WD status
+      if (p.isAlternate || p.isWithdrawn) return false;
+      const status = (p.status ?? p.playerStatus ?? "").toUpperCase();
+      if (status === "ALT" || status === "WD" || status === "DQ") return false;
+      return true;
+    })
     .map((p) => p.displayName ?? p.playerName ?? ((p.firstName ?? "") + " " + (p.lastName ?? "")).trim())
-    .filter((n) => n && n.trim().length > 2);
+    .filter((n) => n && n.trim().length > 2 && !n.includes("(a)")); // "(a)" = alternate in some feeds
 
-  if (players.length < 10) throw new Error(`Only ${players.length} players from scrape`);
+  if (players.length < 10) throw new Error(`Only ${players.length} non-alternate players from scrape`);
 
   const name = pp.tournament?.name ?? pp.tournamentName ?? slug;
   return { tournament: name, players, source: "pgatour-scrape" };
