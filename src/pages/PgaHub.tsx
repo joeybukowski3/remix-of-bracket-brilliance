@@ -113,16 +113,15 @@ function buildPowerRankings(players: RawPlayerStat[]): PowerRankRow[] {
 // Backgrounds are rich/saturated enough to support white text.
 function getPercentileStyles(pct: number): { bg: string; color: string } {
   const p = Math.max(0, Math.min(100, Math.round(pct)));
-  if (p >= 90) return { bg: "#00c853", color: "#ffffff" };   // Brightest Green
-  if (p >= 80) return { bg: "#00ab44", color: "#ffffff" };   // Strong Green
-  if (p >= 70) return { bg: "#008f36", color: "#ffffff" };   // Medium Green
-  if (p >= 60) return { bg: "#2e7d32", color: "#ffffff" };   // Solid Green
-  if (p >= 50) return { bg: "#455a64", color: "#ffffff" };   // Neutral Slate
-  if (p >= 40) return { bg: "#00838f", color: "#ffffff" };   // Light Cyan-Teal
-  if (p >= 30) return { bg: "#006064", color: "#ffffff" };   // Medium Teal
-  if (p >= 20) return { bg: "#004d56", color: "#ffffff" };   // Strong Deep Teal
-  if (p >= 10) return { bg: "#003d47", color: "#ffffff" };   // Dark Blue-Teal
-  return { bg: "#002b36", color: "#ffffff" };                // Deepest (0-9%)
+  if (p >= 90) return { bg: "#bbf7d0", color: "#14532d" };   // Soft green — top tier
+  if (p >= 80) return { bg: "#86efac", color: "#14532d" };   // Light green
+  if (p >= 70) return { bg: "#4ade80", color: "#14532d" };   // Medium green
+  if (p >= 60) return { bg: "#34d399", color: "#065f46" };   // Emerald
+  if (p >= 40) return { bg: "#99f6e4", color: "#134e4a" };   // Light cyan-teal
+  if (p >= 30) return { bg: "#67e8f9", color: "#164e63" };   // Cyan
+  if (p >= 20) return { bg: "#38bdf8", color: "#0c4a6e" };   // Sky blue
+  if (p >= 10) return { bg: "#1e3a5f", color: "#93c5fd" };   // Dark blue (low)
+  return { bg: "#0f172a", color: "#64748b" };                // Darkest (0–9%)
 }
 
 // Larger, high-contrast percentile tile with white text on rich background
