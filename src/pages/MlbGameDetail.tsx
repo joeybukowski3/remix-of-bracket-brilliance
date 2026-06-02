@@ -5,6 +5,7 @@ import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
+import { useMlbOdds } from "@/hooks/useMlbOdds";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -842,12 +843,14 @@ function MlbSlateAnalyzer({
   pitchers,
   onOpenGame,
   pitcherRegressionData,
+  mlbOdds,
 }: {
   games: MlbScheduleGame[];
   detailPreviews: Record<number, MlbGameDetail>;
   pitchers: HrDashboardPitcher[];
   onOpenGame: (gamePk: number) => void;
   pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
+  mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
 }) {
   function getPitcherXera(pitcherId: number | null | undefined): number | null {
     if (!pitcherId) return null;
@@ -1030,7 +1033,7 @@ function MlbSlateAnalyzer({
                           )}
                         </div>
 
-                        {/* Bottom bar: Total + ML Edge — centered */}
+                        {/* Bottom bar: Total + ML Edge + actual ML prices */}
                         <div className="mt-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-t border-slate-100 pt-2.5">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total</span>
@@ -1049,6 +1052,27 @@ function MlbSlateAnalyzer({
                               <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
                             )}
                           </div>
+                          {/* Live ML prices from sportsbook */}
+                          {(() => {
+                            const awayAbbr = game.away.abbreviation;
+                            const homeAbbr = game.home.abbreviation;
+                            const ml = mlbOdds?.moneylines?.[`${awayAbbr}@${homeAbbr}`];
+                            if (!ml) return null;
+                            const awayPrice = ml.away.american;
+                            const homePrice = ml.home.american;
+                            if (!awayPrice || !homePrice) return null;
+                            return (
+                              <>
+                                <div className="h-3 w-px bg-slate-200" />
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Line</span>
+                                  <span className="text-[10px] font-bold text-slate-600">{awayAbbr} {awayPrice}</span>
+                                  <span className="text-[9px] text-slate-300">/</span>
+                                  <span className="text-[10px] font-bold text-slate-600">{homeAbbr} {homePrice}</span>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       </>
                     );
@@ -1851,7 +1875,7 @@ function HomeSchedule({
             )}
           </section>
 
-          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} />
+          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
           <MlbToolsGrid />
           <SocialMediaTablesSection games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} />
           
@@ -1933,6 +1957,7 @@ export default function MlbGameDetail() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [usingDevFixture, setUsingDevFixture] = useState(false);
   const { data: PITCHER_REGRESSION_DATA, loading: regressionLoading } = usePitcherRegression();
+  const mlbOdds = useMlbOdds();
 
   usePageSeo({
     title: seo.title,

@@ -77,6 +77,25 @@ function bestBook(bookmakers, marketKey) {
     .sort((a, b) => (b.outcomes?.length ?? 0) - (a.outcomes?.length ?? 0))[0] ?? null;
 }
 
+// MLB team name → abbreviation mapping (matches Odds API full names)
+const TEAM_ABBR = {
+  "Arizona Diamondbacks": "ARI", "Atlanta Braves": "ATL", "Baltimore Orioles": "BAL",
+  "Boston Red Sox": "BOS", "Chicago Cubs": "CHC", "Chicago White Sox": "CWS",
+  "Cincinnati Reds": "CIN", "Cleveland Guardians": "CLE", "Colorado Rockies": "COL",
+  "Detroit Tigers": "DET", "Houston Astros": "HOU", "Kansas City Royals": "KC",
+  "Los Angeles Angels": "LAA", "Los Angeles Dodgers": "LAD", "Miami Marlins": "MIA",
+  "Milwaukee Brewers": "MIL", "Minnesota Twins": "MIN", "New York Mets": "NYM",
+  "New York Yankees": "NYY", "Oakland Athletics": "ATH", "Athletics": "ATH",
+  "Philadelphia Phillies": "PHI", "Pittsburgh Pirates": "PIT", "San Diego Padres": "SD",
+  "San Francisco Giants": "SF", "Seattle Mariners": "SEA", "St. Louis Cardinals": "STL",
+  "Tampa Bay Rays": "TB", "Texas Rangers": "TEX", "Toronto Blue Jays": "TOR",
+  "Washington Nationals": "WSH",
+};
+
+function toAbbr(teamName) {
+  return TEAM_ABBR[teamName] ?? teamName.split(" ").pop().slice(0, 3).toUpperCase();
+}
+
 async function main() {
   const apiKey = process.env.ODDS_API_KEY;
   if (!apiKey) {
@@ -97,8 +116,10 @@ async function main() {
     for (const ev of (events ?? [])) {
       const awayTeam = ev.away_team;
       const homeTeam = ev.home_team;
-      const gameKey = `${awayTeam}@${homeTeam}`;
-      mlbEvents.push({ id: ev.id, awayTeam, homeTeam, gameKey });
+      const awayAbbr = toAbbr(awayTeam);
+      const homeAbbr = toAbbr(homeTeam);
+      const gameKey = `${awayAbbr}@${homeAbbr}`;
+      mlbEvents.push({ id: ev.id, awayTeam, homeTeam, awayAbbr, homeAbbr, gameKey });
 
       const market = bestBook(ev.bookmakers, "h2h");
       if (!market) continue;
