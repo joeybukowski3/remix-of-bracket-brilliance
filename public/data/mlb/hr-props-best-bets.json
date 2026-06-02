@@ -1,9 +1,9 @@
 {
   "date": "2026-06-02",
-  "generatedAt": "2026-06-02T11:18:47.085Z",
+  "generatedAt": "2026-06-02T19:04:32.191Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features strong HR environments at Great American Ball Park (1.25) and Citizens Bank Park (1.17), with multiple lefty-lefty and righty-righty matchups creating platoon advantages. Park factors and barrel rates align for elevated power output, particularly for Alvarez in Daikin Park and Bleday in Cincinnati.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit metrics, and recent HR volume over traditional K/BB splits, elevating Alvarez and Bleday to the top despite varying opposing pitcher HR vulnerability."
+    "slateOverview": "Today's slate features strong HR environments at Great American Ball Park (1.25) and Citizens Bank Park (1.17), with lefty-lefty and lefty-righty matchups creating platoon edges for Schwarber, Bleday, and Witt. Mild weather and fly-ball suppression from opposing arms like Cameron and Vásquez keep barrels in play rather than suppressed.",
+    "modelNote": "The model is overweighting barrel rate, exit velo, and recent HR volume while discounting park-neutral xBA, pushing Alvarez and Bleday to the top despite modest opposing-pitcher HR rates."
   },
   "bestBets": [
     {
@@ -14,12 +14,14 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=20.2",
-        "hrFBRatio=9.3"
+        "hrScore=75.6"
       ],
       "bullets": [
-        "barrelRate 20.2 with exitVelo 94.7",
-        "parkFactor 1.04 vs pitcher HR/9 45.3"
-      ]
+        "Park factor 1.04 boosts power output",
+        "Last 30 days 8 HR with 94.7 exit velo"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
     },
     {
       "player": "JJ Bleday",
@@ -29,12 +31,14 @@
       "hrScoreRank": 2,
       "topStats": [
         "parkFactor=1.25",
-        "pullRate=53.4"
+        "hrScore=70"
       ],
       "bullets": [
-        "parkFactor 1.25 with last7HR 3",
-        "hrFBRatio 8.8 vs pitcher HR/9 58.2"
-      ]
+        "Great American Ball Park 1.25 factor inflates HR",
+        "Last 7 days 3 HR with 53.9 pull rate"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
     },
     {
       "player": "Kyle Schwarber",
@@ -43,13 +47,15 @@
       "opposingPitcher": "Randy Vásquez",
       "hrScoreRank": 3,
       "topStats": [
-        "hrFBRatio=10.3",
-        "pullRate=57.8"
+        "barrelRate=23.4",
+        "hrScore=68.6"
       ],
       "bullets": [
-        "hrFBRatio 10.3 with barrelRate 23.4",
-        "last30HR 11 vs pitcher HR/9 77.2"
-      ]
+        "Citizens Bank Park 1.17 factor aids power",
+        "Opposing pitcher 77.3 HR/9 allowed"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
     },
     {
       "player": "Mike Trout",
@@ -58,28 +64,32 @@
       "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 4,
       "topStats": [
-        "opposingPitcherHrVs=83",
-        "barrelRate=21.4"
+        "barrelRate=21.1",
+        "hrScore=67.6"
       ],
       "bullets": [
-        "opposingPitcherHrVs 83 with bbRate 21.1",
-        "barrelRate 21.4 with exitVelo 91.2"
-      ]
+        "Opposing pitcher 83 HR/9 allowed",
+        "21.1 barrel rate with 91.1 exit velo"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
     },
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "MIA",
-      "opposingPitcher": "Lake Bachar",
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "TB",
+      "opposingPitcher": "Steven Matz",
       "hrScoreRank": 5,
       "topStats": [
-        "barrelRate=25.9",
-        "hardHitRate=60.5"
+        "last7HR=3",
+        "hrScore=67.3"
       ],
       "bullets": [
-        "barrelRate 25.9 with exitVelo 96.5",
-        "hardHitRate 60.5 vs pitcher HR/9 38.6"
-      ]
+        "Last 7 days 3 HR with 49.7 hard hit rate",
+        "Opposing pitcher 52.2 HR/9 allowed"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
     }
   ],
   "valueBets": [
@@ -90,75 +100,68 @@
       "opposingPitcher": "Nathan Eovaldi",
       "hrScoreRank": 6,
       "topStats": [
-        "hrFBRatio=12.5",
-        "pullRate=71.4"
+        "hardHitRate=71.4",
+        "hrScore=66"
       ],
       "bullets": [
-        "hrFBRatio 12.5 with xba 0.503",
-        "pullRate 71.4 vs pitcher HR/9 45.3"
-      ]
+        "71.4 hard hit rate with 12.5 hr/fb ratio",
+        "71.4 pull rate boosts HR odds"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
     },
     {
-      "player": "Nick Kurtz",
-      "team": "ATH",
-      "opponent": "CHC",
-      "opposingPitcher": "Jameson Taillon",
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "MIA",
+      "opposingPitcher": "Lake Bachar",
       "hrScoreRank": 7,
       "topStats": [
-        "last7HR=2",
-        "hardHitRate=58"
+        "barrelRate=25.5",
+        "hrScore=65.6"
       ],
       "bullets": [
-        "last7HR 2 with exitVelo 94.2",
-        "hardHitRate 58 vs pitcher HR/9 61.5"
-      ]
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "CLE",
-      "opposingPitcher": "Joey Cantillo",
-      "hrScoreRank": 8,
-      "topStats": [
-        "parkFactor=1.18",
-        "iso=0.352"
+        "25.5 barrel rate with 96.3 exit velo",
+        "Opposing pitcher 39.4 HR/9 allowed"
       ],
-      "bullets": [
-        "parkFactor 1.18 with last30HR 5",
-        "iso 0.352 vs pitcher HR/9 37.2"
-      ]
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Dillon Dingler",
-      "team": "DET",
-      "opponent": "TB",
-      "opposingPitcher": "Steven Matz",
-      "hrScoreRank": 9,
-      "topStats": [
-        "last7HR=3",
-        "last30HR=7"
-      ],
-      "bullets": [
-        "last7HR 3 with last30HR 7",
-        "barrelRate 12.6 vs pitcher HR/9 51.3"
-      ]
+      "hrOddsYes": null,
+      "hrValueEdge": null
     },
     {
       "player": "Miguel Vargas",
       "team": "CWS",
       "opponent": "MIN",
       "opposingPitcher": "Connor Prielipp",
-      "hrScoreRank": 11,
+      "hrScoreRank": 8,
       "topStats": [
         "last30HR=9",
-        "last7HR=3"
+        "hrScore=64.8"
       ],
       "bullets": [
-        "last30HR 9 with last7HR 3",
-        "hrFBRatio 7.1 vs pitcher HR/9 42.4"
-      ]
+        "Last 30 days 9 HR with 15.3 barrel rate",
+        "Opposing pitcher 43.2 HR/9 allowed"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "CLE",
+      "opposingPitcher": "Joey Cantillo",
+      "hrScoreRank": 9,
+      "topStats": [
+        "parkFactor=1.18",
+        "hrScore=64.2"
+      ],
+      "bullets": [
+        "Yankee Stadium 1.18 park factor boosts HR",
+        "17.8 barrel rate with 52.1 hard hit rate"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
     },
     {
       "player": "Bobby Witt Jr.",
@@ -167,13 +170,15 @@
       "opposingPitcher": "Andrew Abbott",
       "hrScoreRank": 10,
       "topStats": [
-        "Hard Hit%=54.2",
-        "Pitcher HR VS=42.6"
+        "parkFactor=1.25",
+        "hrScore=64.2"
       ],
       "bullets": [
-        "HR score 63.4 (#10)",
-        "Pitcher HR VS 42.6 at park 1.25"
-      ]
+        "Great American Ball Park 1.25 factor inflates HR",
+        "54.4 hard hit rate with 93.8 exit velo"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
     }
   ]
 }
