@@ -87,6 +87,12 @@ jobs:
         if: steps.schedule_gate.outputs.should_run != 'true'
         run: echo "${{ steps.schedule_gate.outputs.message }}"
 
+      - name: Fetch MLB odds (moneylines + HR + K props)
+        if: steps.schedule_gate.outputs.should_run == 'true'
+        run: node scripts/fetch-mlb-odds.mjs || true
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+
       - name: Generate HR props
         if: steps.schedule_gate.outputs.should_run == 'true'
         run: |

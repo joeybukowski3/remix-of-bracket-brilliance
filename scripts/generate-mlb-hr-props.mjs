@@ -7,6 +7,7 @@ const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const RAW_OUTPUT_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const BEST_BETS_OUTPUT_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
+const MLB_ODDS_PATH = path.join(DATA_DIR, "mlb-odds.json");
 const FORCE = process.argv.includes("--force");
 const MIN_GENERATION_HOUR_ET = 10;
 const GROK_API_URL = "https://api.x.ai/v1/chat/completions";
@@ -1419,14 +1420,70 @@ async function main() {
   });
   console.log(`Validated ${validatedPayload.batters.length} batters, ${validatedPayload.pitchers.length} pitchers, and ${validatedPayload.games.length} games for the MLB HR dashboard.`);
 
+  // ── Load MLB odds (written by fetch-mlb-odds.mjs before this script) ────────
+  let mlbOdds = { moneylines: {}, hrOdds: {}, kOdds: {} };
+  try {
+    if (existsSync(MLB_ODDS_PATH)) {
+      mlbOdds = JSON.parse(readFileSync(MLB_ODDS_PATH, "utf8"));
+      console.log(`Loaded MLB odds: ${Object.keys(mlbOdds.hrOdds).length} HR, ${Object.keys(mlbOdds.kOdds).length} K, ${Object.keys(mlbOdds.moneylines).length} ML`);
+    } else {
+      console.warn("mlb-odds.json not found — continuing without odds.");
+    }
+  } catch (err) {
+    console.warn("Could not load mlb-odds.json:", err.message);
+  }
+
+  // Helper: normalize player name for odds lookup
+  function normName(name) {
+    return (name ?? "")
+      .normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\./g, "").replace(/\b(jr|sr|ii|iii|iv)\b/gi, "")
+      .replace(/[^a-z0-9\s'-]/gi, " ").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  // Attach HR odds to each batter and compute value edge
+  function attachOddsAndValue(batters) {
+    return batters.map(b => {
+      const key = normName(b.player);
+      const hrOddsEntry = mlbOdds.hrOdds?.[key] ?? null;
+      const hrOddsYes = hrOddsEntry?.yes ?? null;           // e.g. "+350"
+      const hrImplied = hrOddsEntry?.impliedYes ?? null;    // e.g. 0.222
+      // Model HR probability proxy: hrScore maps roughly to 3-22% HR probability
+      const modelHrProb = hrOddsYes
+        ? Math.max(0.03, Math.min(0.25, b.hrScore * 0.0022))
+        : null;
+      const hrValueEdge = (modelHrProb && hrImplied && hrImplied > 0)
+        ? Math.round((modelHrProb / hrImplied) * 100) / 100
+        : null;
+      return { ...b, hrOddsYes, hrImplied, hrValueEdge };
+    });
+  }
+
+  const battersWithOdds = attachOddsAndValue(validatedPayload.batters);
+
+  // Build odds-enriched summary for the AI prompt
+  function buildOddsEnrichedSummary(batters, count) {
+    return batters.slice(0, count).map(b => {
+      const odds = b.hrOddsYes ? ` | HR Odds: ${b.hrOddsYes} (implied ${b.hrImplied ? (b.hrImplied * 100).toFixed(1) + "%" : "N/A"})${b.hrValueEdge ? ` | Model Edge: ${b.hrValueEdge > 1 ? "VALUE" : "fair"}` : ""}` : "";
+      return `#${b.hrScoreRank} ${b.player} (${b.team} vs ${b.opposingPitcher}): hrScore=${b.hrScore}${odds}, barrel=${b.barrelRate}%, HH=${b.hardHitRate}%, park=${b.parkFactor}`;
+    }).join("\n");
+  }
+
   const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
   let picksResult = null;
   let previewResult = null;
 
-  if (apiKey && validatedPayload.batters.length) {
-    const top20Summary = buildSummary(validatedPayload.batters, 20);
+  if (apiKey && battersWithOdds.length) {
+    const hasOdds = battersWithOdds.some(b => b.hrOddsYes);
+    const top20Summary = hasOdds
+      ? buildOddsEnrichedSummary(battersWithOdds, 20)
+      : buildSummary(validatedPayload.batters, 20);
     const top10Summary = buildSummary(validatedPayload.batters, 10);
-    const picksPrompt = `You are a sharp MLB prop betting analyst. Based on today's HR prop model data:\n${top20Summary}\n\nReturn ONLY a raw JSON object with no markdown. The object has three keys: bestBets (array of 5 top HR prop picks - highest model score players with strong matchup context), valueBets (array of 3 players where HR score is high but they may be underpriced - ranks 4-12 in the model), longshots (array of 2 high upside lower probability picks from ranks 8-20). Each pick has: player (string), team (string), opponent (string), opposingPitcher (string), hrScoreRank (number), topStats (array of exactly 2 strings highlighting their strongest metrics with values), bullets (array of exactly 2 strings referencing specific numbers from the data - barrel rate, exit velo, park factor, pitcher HR/9, or recent form). Do not include any text outside the JSON.`;
+
+    const picksPrompt = hasOdds
+      ? `You are a sharp MLB prop betting analyst. Based on today's HR prop model data with SPORTSBOOK ODDS:\n${top20Summary}\n\nReturn ONLY a raw JSON object with no markdown. The object has three keys:\nbestBets (array of 5 HR prop picks — prioritize players where hrValueEdge > 1.0, meaning the model sees MORE HR probability than the sportsbook implies. Mix high-score favorites with value plays).\nvalueBets (array of 3 players where hrScore is strong AND hrValueEdge shows model edge over the market — ranks 4-15 priced above +200).\nlongshots (array of 2 high-upside picks from ranks 8-25 with long odds but model signals like barrel rate ≥15% or park factor ≥1.1).\nEach pick: player (string), team (string), opponent (string), opposingPitcher (string), hrScoreRank (number), hrOddsYes (string, the sportsbook HR odds or null), topStats (array of exactly 2 strings), bullets (array of exactly 2 strings referencing specific numbers). Do not include text outside the JSON.`
+      : `You are a sharp MLB prop betting analyst. Based on today's HR prop model data:\n${top20Summary}\n\nReturn ONLY a raw JSON object with no markdown. The object has three keys: bestBets (array of 5 top HR prop picks - highest model score players with strong matchup context), valueBets (array of 3 players where HR score is high but they may be underpriced - ranks 4-12 in the model), longshots (array of 2 high upside lower probability picks from ranks 8-20). Each pick has: player (string), team (string), opponent (string), opposingPitcher (string), hrScoreRank (number), topStats (array of exactly 2 strings highlighting their strongest metrics with values), bullets (array of exactly 2 strings referencing specific numbers from the data - barrel rate, exit velo, park factor, pitcher HR/9, or recent form). Do not include any text outside the JSON.`;
+
     const previewPrompt = `Based on today's MLB HR prop model data:\n${top10Summary}\n\nWrite a short slate preview. Return JSON with two fields: slateOverview (2-3 sentences describing today's slate conditions - parks, pitcher matchups, weather angles that create HR opportunities), modelNote (1-2 sentences explaining how the model is weighting today's picks). Sound like a sharp analyst. No filler. No markdown.`;
 
     try {
@@ -1447,7 +1504,38 @@ async function main() {
     console.warn("GROK_API_KEY is not set. Falling back to model-generated HR prop sections.");
   }
 
-  const bestBetsPayload = buildBestBetsPayload(validatedPayload.batters, picksResult, previewResult);
+  // Attach odds to each best bet pick for display
+  function attachOddsToPick(picks, battersOdds) {
+    const lookup = new Map(battersOdds.map(b => [normName(b.player), b]));
+    return (picks ?? []).map(p => {
+      const b = lookup.get(normName(p.player));
+      return {
+        ...p,
+        hrOddsYes: p.hrOddsYes ?? b?.hrOddsYes ?? null,
+        hrValueEdge: b?.hrValueEdge ?? null,
+      };
+    });
+  }
+
+  const bestBetsPayload = buildBestBetsPayload(battersWithOdds, picksResult, previewResult);
+  // Enrich picks with odds data
+  if (bestBetsPayload.bestBets) bestBetsPayload.bestBets = attachOddsToPick(bestBetsPayload.bestBets, battersWithOdds);
+  if (bestBetsPayload.valueBets) bestBetsPayload.valueBets = attachOddsToPick(bestBetsPayload.valueBets, battersWithOdds);
+  if (bestBetsPayload.longshots) bestBetsPayload.longshots = attachOddsToPick(bestBetsPayload.longshots, battersWithOdds);
+
+  // Also enrich raw batters with odds for the HR props table
+  validatedPayload.batters = battersWithOdds.map(b => ({
+    ...b,
+    hrOddsYes: b.hrOddsYes ?? null,
+    hrValueEdge: b.hrValueEdge ?? null,
+  }));
+
+  // Attach moneyline odds to games
+  validatedPayload.games = (validatedPayload.games ?? []).map(g => {
+    const key = `${g.awayTeam ?? g.away}@${g.homeTeam ?? g.home}`;
+    const ml = mlbOdds.moneylines?.[key] ?? null;
+    return { ...g, moneylineOdds: ml };
+  });
 
   writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify(validatedPayload, null, 2)}\n`, "utf8");
   writeFileSync(BEST_BETS_OUTPUT_PATH, `${JSON.stringify(bestBetsPayload, null, 2)}\n`, "utf8");

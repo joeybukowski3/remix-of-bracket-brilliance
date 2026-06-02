@@ -73,9 +73,11 @@ export type HrDashboardBatter = {
   weatherBoost: number | null;
   hrScore: number;
   hrScoreRank: number;
-  adjustedHrScore?: number;      // hrScore weighted by pitcher xERA + regression
-  pitcherXera?: number | null;   // opposing pitcher xERA (from HR props or regression)
-  pitcherRegressionScore?: number | null; // opposing pitcher regression score
+  adjustedHrScore?: number;
+  pitcherXera?: number | null;
+  pitcherRegressionScore?: number | null;
+  hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
+  hrValueEdge?: number | null;   // model prob / implied prob (>1 = value)
   angleTags: string[];
 };
 
@@ -1864,6 +1866,7 @@ export default function MlbHrProps() {
                                   ["last30HR", "L30 HR"],
                                   ["opposingPitcherHrVs", "Ptch HR VS"],
                                   ["pitcherXera", "Ptch xERA"],
+                                  ["hrOddsYes", "HR Odds"],
                                 ].map(([key, label]) => (
                                   <th key={key} className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap">
                                     <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900">
@@ -1872,6 +1875,7 @@ export default function MlbHrProps() {
                                   </th>
                                 ))}
                                 <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-slate-500">Ptch Regr</th>
+                                <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-slate-500">HR Odds</th>
                                 <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap">Angle</th>
                               </tr>
                             </thead>
@@ -1942,6 +1946,22 @@ export default function MlbHrProps() {
                                               {s > 0 ? "+" : ""}{s.toFixed(1)}
                                             </span>
                                             <span className="text-[9px] font-semibold" style={{ color: style.text === "#64748b" ? "#94a3b8" : style.text }}>{style.label}</span>
+                                          </div>
+                                        );
+                                      })() : <span className="text-[10px] text-slate-300">—</span>}
+                                    </td>
+                                    <td className="border-b border-slate-100 px-2 py-1">
+                                      {row.hrOddsYes != null ? (() => {
+                                        const isValue = (row.hrValueEdge ?? 0) > 1.05;
+                                        const isGoodValue = (row.hrValueEdge ?? 0) > 1.25;
+                                        return (
+                                          <div className="flex flex-col items-start gap-0.5">
+                                            <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${isGoodValue ? "bg-emerald-600 text-white" : isValue ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                                              {row.hrOddsYes}
+                                            </span>
+                                            {isValue && (
+                                              <span className="text-[9px] font-bold text-emerald-600">VALUE ✓</span>
+                                            )}
                                           </div>
                                         );
                                       })() : <span className="text-[10px] text-slate-300">—</span>}
