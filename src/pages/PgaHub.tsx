@@ -397,13 +397,18 @@ function BestBetsTiles({ data, scheduleOverride }: { data: BestBetsPayload; sche
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {BET_SECTIONS.map(({ key, label, color, bg, border }) => {
-          const picks = data[key];
-          if (!picks?.length) return null;
-          // Map section key to the odds market to show
           const oddsKey = key === "outrights" ? "outright"
             : key === "top5" ? "top5"
             : key === "top10" ? "top10"
             : "top20";
+
+          // Only show picks that have odds for this specific market
+          const picks = (data[key] ?? []).filter(p => {
+            const odds = p.odds?.[oddsKey] ?? p.odds?.outright;
+            return odds != null;
+          });
+
+          if (!picks.length) return null;
           return (
             <div key={key} className="rounded-xl p-3 flex flex-col gap-1.5" style={{ backgroundColor: bg, border: `1px solid ${border}` }}>
               <div className="text-[11px] font-black" style={{ color }}>{label}</div>

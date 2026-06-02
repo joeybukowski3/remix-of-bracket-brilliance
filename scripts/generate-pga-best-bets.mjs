@@ -492,9 +492,9 @@ function validateSectionCount(name, value, expectedCount, rawResponse) {
 async function generateCombinedPicks(apiKey, summary) {
   const basePrompt = `You are a sharp data-driven golf betting analyst. Based on this tournament model data:\n${summary}\n\nReturn ONLY a raw JSON object with no markdown, no code fences, no explanation. Each pick object has these exact fields: player (string), tournamentRank (number), powerRank (number), topStats (array of exactly 2 strings showing stat=value), bullets (array of exactly 2 strings each referencing a specific number from the data).`;
 
-  const prompt1 = `${basePrompt}\n\nReturn an object with exactly two keys:\noutrights: array of exactly 3 picks from tournament ranks 4-15, high risk high reward.\ntop5: array of exactly 3 picks mixing one from ranks 1-3 and two from ranks 4-12.`;
+  const prompt1 = `${basePrompt}\n\nReturn an object with exactly two keys:\noutrights: array of exactly 5 picks from tournament ranks 3-20 that represent MODEL VALUE — players where their model rank suggests they are significantly more likely to win than their outright odds imply. Avoid heavy favorites with low odds. Prioritize players with strong course-fit stats at competitive prices.\ntop5: array of exactly 5 picks from ranks 1-15 where the model rank outperforms what the top-5 market is pricing — players the market is undervaluing relative to their stat profile.`;
 
-  const prompt2 = `${basePrompt}\n\nReturn an object with exactly two keys:\ntop10: array of exactly 4 picks prioritizing players with strong ATG and PUT scores and high floor.\ntop20: array of exactly 5 picks from ranks 8-20 prioritizing consistency over upside.`;
+  const prompt2 = `${basePrompt}\n\nReturn an object with exactly two keys:\ntop10: array of exactly 6 picks from ranks 1-20 where the model ranking and course-fit stats suggest better top-10 probability than the market is pricing. Include a mix of chalk and value plays.\ntop20: array of exactly 6 picks from ranks 5-30 where the player's floor stats (bogey avoidance, consistency) suggest top-20 probability the market is undervaluing.`;
 
   const [result1, result2] = await Promise.all([
     callGrokWithRetry(prompt1, 3, (parsed) => {
@@ -569,16 +569,58 @@ async function main() {
   // Fetch odds first
   const oddsLookup = await fetchOdds(oddsApiKey, tournamentName);
 
+  // ── Value filtering + re-ranking ─────────────────────────────────────────────
+  // Convert American odds string to implied probability
+  function toImplied(oddsStr) {
+    if (!oddsStr) return null;
+    const n = parseFloat(String(oddsStr).replace("+", ""));
+    if (!Number.isFinite(n)) return null;
+    return n > 0 ? 100 / (n + 100) : Math.abs(n) / (Math.abs(n) + 100);
+  }
+
+  // Model probability proxy: exponential decay over field rank
+  // Rank 1 gets ~100 units, rank 70 gets ~7 units (relative, not absolute %)
+  function modelProxyScore(rank) {
+    return Math.exp(-0.065 * (rank - 1)) * 100;
+  }
+
+  // Value edge: how much does model think player is better than market implies?
+  // Edge > 1.0 = model likes player MORE than market → value bet
+  function computeValueEdge(tournamentRank, oddsStr) {
+    const implied = toImplied(oddsStr);
+    if (implied == null || implied <= 0) return -1;
+    const modelProb = modelProxyScore(tournamentRank);
+    return modelProb / implied;
+  }
+
+  // Filter picks to only those with odds for the relevant market, then sort by value
+  function filterByValueAndOdds(picks, marketKey) {
+    return picks
+      .map((p) => {
+        const odds = p.odds?.[marketKey] ?? p.odds?.outright ?? null;
+        if (!odds) return null;
+        const edge = computeValueEdge(p.tournamentRank, odds);
+        return { ...p, _edge: edge };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b._edge - a._edge)
+      // eslint-disable-next-line no-unused-vars
+      .map(({ _edge, ...pick }) => pick);
+  }
+
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
   let outrights = [], top5 = [], top10 = [], top20 = [], preview = null, valueBets = [];
 
   if (apiKey) {
     const combined = await generateCombinedPicks(apiKey, summary);
-    outrights = attachOddsToPickArray(combined.outrights, oddsLookup);
-    top5 = attachOddsToPickArray(combined.top5, oddsLookup);
-    top10 = attachOddsToPickArray(combined.top10, oddsLookup);
-    top20 = attachOddsToPickArray(combined.top20, oddsLookup);
+    // Attach odds then filter + sort by value edge (removes no-odds players)
+    outrights = filterByValueAndOdds(attachOddsToPickArray(combined.outrights, oddsLookup), "outright");
+    top5      = filterByValueAndOdds(attachOddsToPickArray(combined.top5,      oddsLookup), "top5");
+    top10     = filterByValueAndOdds(attachOddsToPickArray(combined.top10,     oddsLookup), "top10");
+    top20     = filterByValueAndOdds(attachOddsToPickArray(combined.top20,     oddsLookup), "top20");
+
+    console.log(`After value filter: outrights=${outrights.length} top5=${top5.length} top10=${top10.length} top20=${top20.length}`);
 
     await new Promise((r) => setTimeout(r, 1500));
     preview = await generatePreview(apiKey, previewPrompt);
