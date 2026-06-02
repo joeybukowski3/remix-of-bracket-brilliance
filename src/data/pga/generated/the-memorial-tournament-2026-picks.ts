@@ -18,10 +18,10 @@ const baseTheMemorialTournament2026PicksTournament = {
     "blurb": "Muirfield Village is a Jack Nicklaus design that rewards precision ball-striking, elite approach play, and bogey avoidance above all else.",
     "bullets": [
       "Approach play and iron precision are the dominant factors at Muirfield Village.",
-      "No-cut Signature Event format means the field is elite — public perception can be inflated.",
-      "Bogey avoidance and scrambling matter more here than at most birdie-fest venues."
+      "No-cut Signature Event — field concentration is at its highest.",
+      "Bogey avoidance and course management separate the field here."
     ],
-    "modelFocus": "Lean heavily on SG: Approach and overall tee-to-green quality. Bogey avoidance is a strong differentiator. The no-cut Signature format means field-fit matters more than usual — fade anyone without elite Muirfield Village course history."
+    "modelFocus": "Lean heavily on SG: Approach and overall tee-to-green quality. Bogey avoidance is a strong differentiator at Muirfield Village. The no-cut Signature format means course-fit matters more than usual."
   },
   "homepageFeature": {
     "eyebrow": "Featured PGA model",
@@ -61,7 +61,7 @@ const baseTheMemorialTournament2026PicksTournament = {
       },
       {
         "question": "Is the Memorial Tournament 2026 a no-cut event?",
-        "answer": "Yes — the Memorial Tournament is a Signature Event on the PGA Tour, meaning there is no cut. The field is limited to an elite subset of players."
+        "answer": "Yes — the Memorial Tournament is a Signature Event on the PGA Tour with no cut and a limited elite field."
       }
     ]
   },
@@ -82,7 +82,7 @@ const baseTheMemorialTournament2026PicksTournament = {
     "previewSliderKeys": [
       "sgApproach",
       "bogeyAvoidance",
-      "sgTotal"
+      "par4"
     ],
     "previewThemeKeys": [
       "default",
@@ -94,55 +94,139 @@ const baseTheMemorialTournament2026PicksTournament = {
     "topProjectionPrimaryStatLabel": "Approach",
     "heroSteps": [
       {
-        "icon": "🎯",
-        "heading": "Approach play dominates",
+        "title": "Approach play dominates",
         "body": "Muirfield Village sets up as an iron-play test. SG: Approach is the strongest predictor of success here."
       },
       {
-        "icon": "🛡️",
-        "heading": "Bogey avoidance is key",
+        "title": "Bogey avoidance is key",
         "body": "The course is designed to punish mistakes. Players who avoid bogeys consistently outperform their raw scoring average."
       },
       {
-        "icon": "📜",
-        "heading": "Course history matters",
+        "title": "Course history matters",
         "body": "Muirfield Village has consistent setup tendencies. Past finishes at this venue are a meaningful edge in a no-cut field."
-      }
-    ],
-    "presets": [
-      {
-        "key": "default",
-        "label": "Balanced",
-        "description": "Standard PGA power-ranking weights with Muirfield Village course adjustments.",
-        "weights": {
-          "sgTotal": 0.40,
-          "sgApproach": 0.20,
-          "bogeyAvoidance": 0.15,
-          "sgAroundGreen": 0.10,
-          "sgPutt": 0.08,
-          "drivingAccuracy": 0.07
-        }
-      },
-      {
-        "key": "ballStriking",
-        "label": "Ball Striking",
-        "description": "Heavy emphasis on approach and tee-to-green for the Muirfield Village setup.",
-        "weights": {
-          "sgTotal": 0.30,
-          "sgApproach": 0.30,
-          "bogeyAvoidance": 0.15,
-          "sgAroundGreen": 0.08,
-          "sgPutt": 0.07,
-          "drivingAccuracy": 0.10
-        }
       }
     ],
     "previewThemes": [
       {
         "key": "default",
-        "label": "Default",
-        "primaryColor": "#166534",
-        "secondaryColor": "#dcfce7"
+        "label": "Default Model",
+        "description": "Balanced Muirfield Village weighting with heavy emphasis on approach and bogey avoidance.",
+        "weights": {
+          "sgApproach": 26,
+          "par4": 14,
+          "drivingAccuracy": 10,
+          "bogeyAvoidance": 14,
+          "sgAroundGreen": 9,
+          "trendRank": 9,
+          "birdie125150": 7,
+          "sgPutting": 5,
+          "birdieUnder125": 2,
+          "courseTrueSg": 4
+        }
+      },
+      {
+        "key": "ballStriking",
+        "label": "Ball Striking",
+        "description": "Turns the board toward elite iron play and tougher-hole control at Muirfield.",
+        "weights": {
+          "sgApproach": 32,
+          "par4": 16,
+          "drivingAccuracy": 12,
+          "bogeyAvoidance": 10,
+          "sgAroundGreen": 5,
+          "trendRank": 8,
+          "birdie125150": 6,
+          "sgPutting": 3,
+          "birdieUnder125": 1,
+          "courseTrueSg": 7
+        }
+      },
+      {
+        "key": "accuracy",
+        "label": "Accuracy",
+        "description": "Pushes toward fairways and bogey avoidance for a steadier floor at Muirfield.",
+        "weights": {
+          "sgApproach": 20,
+          "par4": 13,
+          "drivingAccuracy": 22,
+          "bogeyAvoidance": 18,
+          "sgAroundGreen": 7,
+          "trendRank": 7,
+          "birdie125150": 4,
+          "sgPutting": 3,
+          "birdieUnder125": 1,
+          "courseTrueSg": 5
+        }
+      },
+      {
+        "key": "shortGame",
+        "label": "Short Game",
+        "description": "Raises scrambling and putting when recovery matters more than usual.",
+        "weights": {
+          "sgApproach": 18,
+          "par4": 11,
+          "drivingAccuracy": 8,
+          "bogeyAvoidance": 12,
+          "sgAroundGreen": 20,
+          "trendRank": 9,
+          "birdie125150": 5,
+          "sgPutting": 11,
+          "birdieUnder125": 1,
+          "courseTrueSg": 5
+        }
+      }
+    ],
+    "presets": [
+      {
+        "key": "balanced",
+        "label": "Balanced",
+        "description": "Default Muirfield Village weighting across the full board.",
+        "weights": {
+          "sgApproach": 26,
+          "par4": 14,
+          "drivingAccuracy": 10,
+          "bogeyAvoidance": 14,
+          "sgAroundGreen": 9,
+          "trendRank": 9,
+          "birdie125150": 7,
+          "sgPutting": 5,
+          "birdieUnder125": 2,
+          "courseTrueSg": 4
+        }
+      },
+      {
+        "key": "outright",
+        "label": "Outright",
+        "description": "More ceiling and recent-form pressure for outright and top-end betting.",
+        "weights": {
+          "sgApproach": 28,
+          "par4": 13,
+          "drivingAccuracy": 6,
+          "bogeyAvoidance": 8,
+          "sgAroundGreen": 6,
+          "trendRank": 17,
+          "birdie125150": 8,
+          "sgPutting": 7,
+          "birdieUnder125": 4,
+          "courseTrueSg": 3
+        }
+      },
+      {
+        "key": "placement",
+        "label": "Placement",
+        "description": "Floor-first weighting for top-10/top-20 placement markets.",
+        "weights": {
+          "sgApproach": 22,
+          "par4": 14,
+          "drivingAccuracy": 14,
+          "bogeyAvoidance": 18,
+          "sgAroundGreen": 8,
+          "trendRank": 8,
+          "birdie125150": 5,
+          "sgPutting": 5,
+          "birdieUnder125": 2,
+          "courseTrueSg": 4
+        }
       }
     ],
     "tierOneBets": [
