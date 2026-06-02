@@ -108,20 +108,77 @@ function buildPowerRankings(players: RawPlayerStat[]): PowerRankRow[] {
 }
 
 // ─── Percentile Color System (MAJOR VISUAL UPGRADE) ───────────────────────────
-// Strong contrast 10-band percentile background colors (no bubble/pill).
-// All text is now forced to white for maximum readability across all bands.
-// Backgrounds are rich/saturated enough to support white text.
+// ── Nationality lookup for flags ──────────────────────────────────────────────
+const PLAYER_NATIONALITIES: Record<string, string> = {
+  // USA
+  "Scottie Scheffler":"us","Xander Schauffele":"us","Collin Morikawa":"us","Wyndham Clark":"us",
+  "Max Homa":"us","Sam Burns":"us","Sahith Theegala":"us","Jordan Spieth":"us","Justin Thomas":"us",
+  "Brian Harman":"us","Russell Henley":"us","Akshay Bhatia":"us","Jake Knapp":"us",
+  "Cameron Young":"us","Jacob Bridgeman":"us","Patrick Cantlay":"us","Bryson DeChambeau":"us",
+  "Tony Finau":"us","Keegan Bradley":"us","Lucas Glover":"us","Davis Riley":"us",
+  "Davis Thompson":"us","Denny McCarthy":"us","Eric Cole":"us","Harris English":"us",
+  "J.T. Poston":"us","Ryan Gerard":"us","Chris Kirk":"us","Alex Smalley":"us",
+  "Austin Smotherman":"us","Ben Griffin":"us","Andrew Putnam":"us","Kevin Yu":"us",
+  "Luke List":"us","Michael Kim":"us","Sam Stevens":"us","Trey Mullinax":"us",
+  "Vince Whaley":"us","Gary Woodland":"us","Luke Clanton":"us","Scott Stallings":"us",
+  "Sudarshan Yellamaraju":"us","Maverick McNealy":"us","Tom Hoge":"us","Brendon Todd":"us",
+  "Brice Garnett":"us","Taylor Moore":"us","David Lipsky":"us","Billy Horschel":"us",
+  // Canada
+  "Nick Taylor":"ca","Corey Conners":"ca","Adam Hadwin":"ca","Mackenzie Hughes":"ca","Taylor Pendrith":"ca",
+  // Ireland
+  "Rory McIlroy":"ie","Shane Lowry":"ie","Seamus Power":"ie","Padraig Harrington":"ie",
+  // England
+  "Tommy Fleetwood":"gb-eng","Matt Fitzpatrick":"gb-eng","Harry Hall":"gb-eng","Aaron Rai":"gb-eng","Tyrrell Hatton":"gb-eng",
+  // Scotland / NI
+  "Robert MacIntyre":"gb-sct","Martin Laird":"gb-sct","Graeme McDowell":"gb-nir",
+  // Europe
+  "Ludvig Åberg":"se","Marcus Kinhult":"se","Sepp Straka":"at","Stephan Jaeger":"de","Bernd Wiesberger":"at",
+  "Nicolai Højgaard":"dk","Rasmus Højgaard":"dk","Thorbjorn Olesen":"dk",
+  "Jon Rahm":"es","Alejandro del Rey":"es","Sergio Garcia":"es",
+  "Victor Perez":"fr","Romain Langasque":"fr","Adrian Meronk":"pl",
+  // Norway
+  "Viktor Hovland":"no",
+  // Japan
+  "Hideki Matsuyama":"jp","Ryo Hisatsune":"jp","Keita Nakajima":"jp",
+  // Korea
+  "Sungjae Im":"kr","Tom Kim":"kr","Si Woo Kim":"kr","Joohyung Kim":"kr","K.H. Lee":"kr","Byeong Hun An":"kr","Sangmoon Bae":"kr",
+  // Australia / NZ
+  "Min Woo Lee":"au","Cameron Davis":"au","Jason Day":"au","Adam Scott":"au","Marc Leishman":"au","Cameron Smith":"au",
+  "Ryan Fox":"nz","Danny Lee":"nz",
+  // Other
+  "Cam Davis":"au",
+};
+
+function PlayerFlag({ name }: { name: string }) {
+  const code = PLAYER_NATIONALITIES[name];
+  if (!code) return null;
+  return (
+    <img
+      src={`https://flagcdn.com/16x12/${code.toLowerCase()}.png`}
+      alt={code}
+      width={16}
+      height={12}
+      className="inline-block rounded-[2px] object-cover shrink-0"
+      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+    />
+  );
+}
+
+// DataGolf-style smooth gradient: p=100→dark green, p=50→white, p=0→soft red
 function getPercentileStyles(pct: number): { bg: string; color: string } {
-  const p = Math.max(0, Math.min(100, Math.round(pct)));
-  if (p >= 90) return { bg: "#bbf7d0", color: "#000000" };
-  if (p >= 80) return { bg: "#86efac", color: "#000000" };
-  if (p >= 70) return { bg: "#4ade80", color: "#000000" };
-  if (p >= 60) return { bg: "#34d399", color: "#000000" };
-  if (p >= 40) return { bg: "#99f6e4", color: "#000000" };
-  if (p >= 30) return { bg: "#67e8f9", color: "#000000" };
-  if (p >= 20) return { bg: "#38bdf8", color: "#000000" };
-  if (p >= 10) return { bg: "#1e3a5f", color: "#ffffff" };
-  return { bg: "#0f172a", color: "#ffffff" };
+  const p = Math.max(0, Math.min(100, pct));
+  if (p >= 50) {
+    const t = (p - 50) / 50;
+    const r = Math.round(255 - t * (255 - 22));
+    const g = Math.round(255 - t * (255 - 101));
+    const b = Math.round(255 - t * (255 - 52));
+    return { bg: `rgb(${r},${g},${b})`, color: "#000000" };
+  } else {
+    const t = (50 - p) / 50;
+    const g = Math.round(255 - t * (255 - 165));
+    const b = Math.round(255 - t * (255 - 165));
+    return { bg: `rgb(255,${g},${b})`, color: "#000000" };
+  }
 }
 
 // Larger, high-contrast percentile tile with white text on rich background
@@ -130,7 +187,7 @@ function PercentileCell({ value }: { value: number }) {
   return (
     <span
       className="block text-center text-[12px] sm:text-sm font-black tabular-nums py-2"
-      style={{ backgroundColor: s.bg, color: '#ffffff' }}
+      style={{ backgroundColor: s.bg, color: s.color }}
       title={`${Math.round(value)}th percentile`}
     >
       {Math.round(value)}
@@ -599,7 +656,12 @@ export default function PgaHub() {
                     return (
                       <tr key={row.player} className={`${sbg} hover:bg-emerald-50/30`}>
                         <td className={`sticky left-0 z-20 border-b border-slate-100 px-2 py-1.5 text-[11px] font-bold text-slate-400 ${sbg}`}>{row.powerRank}</td>
-                        <td className={`sticky left-8 z-20 border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900 whitespace-nowrap ${sbg}`}>{row.player}</td>
+                        <td className={`sticky left-8 z-20 border-b border-r border-slate-100 px-2 py-1.5 font-semibold text-slate-900 whitespace-nowrap ${sbg}`}>
+                          <div className="flex items-center gap-1.5">
+                            <PlayerFlag name={row.player} />
+                            {row.player}
+                          </div>
+                        </td>
                         <td className="border-b border-slate-100 px-2 py-1.5">
                           <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums"
                             style={{ backgroundColor: row.powerScore >= 65 ? "#16a34a" : row.powerScore >= 50 ? "rgba(22,163,74,0.15)" : "rgba(148,163,184,0.2)", color: row.powerScore >= 65 ? "#fff" : row.powerScore >= 50 ? "#15803d" : "#475569" }}>
