@@ -399,15 +399,31 @@ function BestBetsTiles({ data, scheduleOverride }: { data: BestBetsPayload; sche
         {BET_SECTIONS.map(({ key, label, color, bg, border }) => {
           const picks = data[key];
           if (!picks?.length) return null;
+          // Map section key to the odds market to show
+          const oddsKey = key === "outrights" ? "outright"
+            : key === "top5" ? "top5"
+            : key === "top10" ? "top10"
+            : "top20";
           return (
             <div key={key} className="rounded-xl p-3 flex flex-col gap-1.5" style={{ backgroundColor: bg, border: `1px solid ${border}` }}>
               <div className="text-[11px] font-black" style={{ color }}>{label}</div>
-              {picks.slice(0, 3).map((p) => (
-                <div key={p.player} className="flex items-center justify-between gap-1">
-                  <span className="text-[11px] font-semibold text-slate-800 truncate">{p.player}</span>
-                  <span className="shrink-0 text-[10px] font-bold text-slate-400">#{p.tournamentRank}</span>
-                </div>
-              ))}
+              {picks.slice(0, 3).map((p) => {
+                const odds = p.odds?.[oddsKey] ?? p.odds?.outright ?? null;
+                return (
+                  <div key={p.player} className="flex items-center justify-between gap-1">
+                    <span className="text-[11px] font-semibold text-slate-800 truncate">{p.player}</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {odds && (
+                        <span className="text-[10px] font-bold rounded px-1 py-0.5"
+                          style={{ backgroundColor: bg, color, border: `1px solid ${border}` }}>
+                          {odds}
+                        </span>
+                      )}
+                      <span className="text-[10px] font-bold text-slate-400">#{p.tournamentRank}</span>
+                    </div>
+                  </div>
+                );
+              })}
               {picks.length > 3 && (
                 <Link to="/pga/best-bets" className="text-[10px] font-semibold" style={{ color }}>+{picks.length - 3} more</Link>
               )}
