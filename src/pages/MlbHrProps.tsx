@@ -1844,39 +1844,43 @@ export default function MlbHrProps() {
                         <div data-x-export="mlb-hr-props" className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
                           <table className="min-w-full border-separate border-spacing-0 text-xs">
                             <thead className="sticky top-0 z-20">
-                              <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                              <tr className="text-[9px] sm:text-[10px] uppercase tracking-[0.08em] sm:tracking-[0.12em] text-slate-500">
                                 {/* Sticky: Rank */}
-                                <th className="sticky left-0 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap w-8">
+                                <th className="sticky left-0 z-30 border-b border-r border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold w-6 sm:w-8">
                                   <button type="button" onClick={() => handleBatterSort("hrScoreRank")} className="hover:text-slate-900">
                                     #{makeSortIndicator(batterSortKey === "hrScoreRank", batterSortDirection)}
                                   </button>
                                 </th>
                                 {/* Sticky: Name */}
-                                <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap min-w-[130px]">
+                                <th className="sticky left-6 sm:left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-1.5 sm:px-2 py-1.5 text-left font-bold min-w-[110px] sm:min-w-[130px]">
                                   <button type="button" onClick={() => handleBatterSort("player")} className="hover:text-slate-900">
                                     Batter{makeSortIndicator(batterSortKey === "player", batterSortDirection)}
                                   </button>
                                 </th>
-                                {/* Scrollable columns */}
-                                {[
-                                  ["adjustedHrScore", "HR Score ↕"],
-                                  ["barrelRate", "Barrel%"],
-                                  ["hardHitRate", "HH%"],
-                                  ["last7HR", "L7 HR"],
-                                  ["last30HR", "L30 HR"],
-                                  ["opposingPitcherHrVs", "Ptch HR VS"],
-                                  ["pitcherXera", "Ptch xERA"],
-                                  ["hrOddsYes", "HR Odds"],
-                                ].map(([key, label]) => (
-                                  <th key={key} className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap">
-                                    <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900">
-                                      {label}{makeSortIndicator(batterSortKey === key, batterSortDirection)}
+                                {/* Scrollable columns — short labels on mobile, full on sm+ */}
+                                {([
+                                  ["adjustedHrScore", "HR↕",    "HR Score ↕"],
+                                  ["barrelRate",       "Brl%",   "Barrel%"],
+                                  ["hardHitRate",      "HH%",    "HH%"],
+                                  ["last7HR",          "L7",     "L7 HR"],
+                                  ["last30HR",         "L30",    "L30 HR"],
+                                  ["opposingPitcherHrVs","P.HR", "Ptch HR VS"],
+                                  ["pitcherXera",      "xERA",  "Ptch xERA"],
+                                  ["hrOddsYes",        "Odds",  "HR Odds"],
+                                ] as [string, string, string][]).map(([key, short, full]) => (
+                                  <th key={key} className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[44px] sm:max-w-none sm:whitespace-nowrap">
+                                    <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900 leading-tight">
+                                      <span className="sm:hidden">{short}</span>
+                                      <span className="hidden sm:inline">{full}</span>
+                                      {makeSortIndicator(batterSortKey === key, batterSortDirection)}
                                     </button>
                                   </th>
                                 ))}
-                                <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-slate-500">Ptch Regr</th>
-                                <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap text-[10px] uppercase tracking-[0.12em] text-slate-500">HR Odds</th>
-                                <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left font-bold whitespace-nowrap">Angle</th>
+                                <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[40px] sm:max-w-none sm:whitespace-nowrap">
+                                  <span className="sm:hidden">Regr</span>
+                                  <span className="hidden sm:inline">Ptch Regr</span>
+                                </th>
+                                <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold sm:whitespace-nowrap">Angle</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1886,88 +1890,117 @@ export default function MlbHrProps() {
                                 return (
                                   <tr key={`${row.player}-${row.team}-${row.opponent}`} className={rowBg}>
                                     {/* Sticky rank */}
-                                    <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400 ${stickyBg}`}>
+                                    <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-black text-slate-400 ${stickyBg}`}>
                                       {row.hrScoreRank}
                                     </td>
                                     {/* Sticky name */}
-                                    <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1 ${stickyBg}`}>
-                                      <div className="flex items-center gap-1.5">
-                                        <TeamLogoBadge team={row.team} size={16} showLabel={false} />
-                                        <span className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.player}</span>
+                                    <td className={`sticky left-6 sm:left-8 z-10 border-b border-r border-slate-100 px-1.5 sm:px-2 py-0.5 sm:py-1 ${stickyBg}`}>
+                                      <div className="flex items-center gap-1">
+                                        <TeamLogoBadge team={row.team} size={13} showLabel={false} />
+                                        <span className="font-semibold text-slate-900 whitespace-nowrap text-[10px] sm:text-[11px]">{row.player}</span>
                                       </div>
-                                      <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">vs {row.opposingPitcher}</div>
+                                      <div className="text-[9px] text-slate-400 truncate max-w-[105px] sm:max-w-[140px]">vs {row.opposingPitcher}</div>
                                     </td>
-                                    <td className="border-b border-slate-100 px-2 py-1">
-                                      <div className="flex flex-col gap-0.5">
+                                    {/* HR Score */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      <div className="flex flex-col gap-0">
                                         <StatScorePill value={row.adjustedHrScore ?? row.hrScore} />
                                         {row.adjustedHrScore != null && Math.abs(row.adjustedHrScore - row.hrScore) >= 2 && (
-                                          <span className="text-[9px] text-slate-400 text-center">raw {row.hrScore.toFixed(1)}</span>
+                                          <span className="hidden sm:block text-[9px] text-slate-400 text-center">raw {row.hrScore.toFixed(1)}</span>
                                         )}
                                       </div>
                                     </td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.barrelRate != null && row.barrelRate >= 18 && <span className="text-[11px]">💣</span>}<GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={10} /></div></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.hardHitRate != null && row.hardHitRate >= 55 && <span className="text-[11px]">💥</span>}<GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={10} /></div></td>
-                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last7HR != null && row.last7HR >= 3 && <span className="text-[11px]">📈</span>}<GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} /></div></td>
-                                    <td className="border-b border-slate-100 px-2 py-1 text-center"><div className="flex items-center justify-center gap-1">{row.last30HR != null && row.last30HR >= 7 && <span className="text-[11px]">👑</span>}<GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={4.5} /></div></td>
-                                    <td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1">{row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 && <span className="text-[11px]">⚔️</span>}<StatScorePill value={row.opposingPitcherHrVs} /></div></td>
-                                    {/* Ptch xERA — inverted: high xERA = green (easy), low = blue (hard) */}
-                                    <td className="border-b border-slate-100 px-2 py-1">
+                                    {/* Barrel% */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      <div className="flex items-center gap-0.5">
+                                        <span className="hidden sm:inline">{row.barrelRate != null && row.barrelRate >= 18 ? "💣" : ""}</span>
+                                        <GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={10} />
+                                      </div>
+                                    </td>
+                                    {/* HH% */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      <div className="flex items-center gap-0.5">
+                                        <span className="hidden sm:inline">{row.hardHitRate != null && row.hardHitRate >= 55 ? "💥" : ""}</span>
+                                        <GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={10} />
+                                      </div>
+                                    </td>
+                                    {/* L7 HR */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-center">
+                                      <div className="flex items-center justify-center gap-0.5">
+                                        <span className="hidden sm:inline">{row.last7HR != null && row.last7HR >= 3 ? "📈" : ""}</span>
+                                        <GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} />
+                                      </div>
+                                    </td>
+                                    {/* L30 HR */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-center">
+                                      <div className="flex items-center justify-center gap-0.5">
+                                        <span className="hidden sm:inline">{row.last30HR != null && row.last30HR >= 7 ? "👑" : ""}</span>
+                                        <GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={4.5} />
+                                      </div>
+                                    </td>
+                                    {/* Ptch HR VS */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      <div className="flex items-center gap-0.5">
+                                        <span className="hidden sm:inline">{row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 ? "⚔️" : ""}</span>
+                                        <StatScorePill value={row.opposingPitcherHrVs} />
+                                      </div>
+                                    </td>
+                                    {/* Ptch xERA */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       {row.pitcherXera != null ? (() => {
                                         const x = row.pitcherXera;
-                                        const style = x <= 3.0 ? { bg: "#172554", text: "#60a5fa" }    // elite = dark blue (hard)
-                                          : x <= 3.5 ? { bg: "#1e3a8a", text: "#93c5fd" }               // great = blue
-                                          : x <= 4.0 ? { bg: "#dbeafe", text: "#1d4ed8" }               // good = light blue
-                                          : x <= 4.5 ? { bg: "#f1f5f9", text: "#64748b" }               // avg = neutral
-                                          : x <= 5.0 ? { bg: "#dcfce7", text: "#15803d" }               // below avg = light green
-                                          : x <= 5.5 ? { bg: "#166534", text: "#86efac" }               // poor = green
-                                          : { bg: "#14532d", text: "#bbf7d0" };                         // bad = dark green (easy)
+                                        const style = x <= 3.0 ? { bg: "#172554", text: "#60a5fa" }
+                                          : x <= 3.5 ? { bg: "#1e3a8a", text: "#93c5fd" }
+                                          : x <= 4.0 ? { bg: "#dbeafe", text: "#1d4ed8" }
+                                          : x <= 4.5 ? { bg: "#f1f5f9", text: "#64748b" }
+                                          : x <= 5.0 ? { bg: "#dcfce7", text: "#15803d" }
+                                          : x <= 5.5 ? { bg: "#166534", text: "#86efac" }
+                                          : { bg: "#14532d", text: "#bbf7d0" };
                                         return (
-                                          <span className="rounded px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
+                                          <span className="rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap"
                                             style={{ backgroundColor: style.bg, color: style.text }}>
                                             {x.toFixed(2)}
                                           </span>
                                         );
-                                      })() : <span className="text-[10px] text-slate-300">—</span>}
+                                      })() : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>
-                                    <td className="border-b border-slate-100 px-2 py-1">
+                                    {/* Ptch Regr */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       {row.pitcherRegressionScore != null ? (() => {
                                         const s = row.pitcherRegressionScore;
-                                        // From BATTER perspective: positive regr = pitcher improving = harder
-                                        // negative regr = pitcher regressing down = easier/opportunity
-                                        const style = s >= 3 ? { bg: "#14532d", text: "#bbf7d0", label: "Improving ↑" }  // pitcher improving = green (harder)
-                                          : s >= 0.5 ? { bg: "#dcfce7", text: "#15803d", label: "Slight ↑" }
-                                          : s > -0.5 ? { bg: "#f1f5f9", text: "#64748b", label: "Neutral" }
-                                          : s > -3 ? { bg: "#dbeafe", text: "#1d4ed8", label: "Regressing ↓" }           // pitcher regressing = blue (batter opportunity)
-                                          : { bg: "#1e3a8a", text: "#93c5fd", label: "Big Regr ↓" };
+                                        const style = s >= 3 ? { bg: "#14532d", text: "#bbf7d0", label: "↑" }
+                                          : s >= 0.5 ? { bg: "#dcfce7", text: "#15803d", label: "↑" }
+                                          : s > -0.5 ? { bg: "#f1f5f9", text: "#64748b", label: "—" }
+                                          : s > -3 ? { bg: "#dbeafe", text: "#1d4ed8", label: "↓" }
+                                          : { bg: "#1e3a8a", text: "#93c5fd", label: "↓↓" };
                                         return (
-                                          <div className="flex flex-col items-start gap-0.5">
-                                            <span className="rounded px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap"
-                                              style={{ backgroundColor: style.bg, color: style.text }}>
-                                              {s > 0 ? "+" : ""}{s.toFixed(1)}
-                                            </span>
-                                            <span className="text-[9px] font-semibold" style={{ color: style.text === "#64748b" ? "#94a3b8" : style.text }}>{style.label}</span>
-                                          </div>
+                                          <span className="rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap"
+                                            style={{ backgroundColor: style.bg, color: style.text }}>
+                                            {s > 0 ? "+" : ""}{s.toFixed(1)}<span className="hidden sm:inline"> {style.label}</span>
+                                          </span>
                                         );
-                                      })() : <span className="text-[10px] text-slate-300">—</span>}
+                                      })() : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>
-                                    <td className="border-b border-slate-100 px-2 py-1">
+                                    {/* HR Odds */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       {row.hrOddsYes != null ? (() => {
                                         const isValue = (row.hrValueEdge ?? 0) > 1.05;
                                         const isGoodValue = (row.hrValueEdge ?? 0) > 1.25;
                                         return (
-                                          <div className="flex flex-col items-start gap-0.5">
-                                            <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap ${isGoodValue ? "bg-emerald-600 text-white" : isValue ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                                          <div className="flex flex-col items-start gap-0">
+                                            <span className={`rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${isGoodValue ? "bg-emerald-600 text-white" : isValue ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
                                               {row.hrOddsYes}
                                             </span>
                                             {isValue && (
-                                              <span className="text-[9px] font-bold text-emerald-600">VALUE ✓</span>
+                                              <span className="text-[8px] sm:text-[9px] font-bold text-emerald-600">VAL✓</span>
                                             )}
                                           </div>
                                         );
-                                      })() : <span className="text-[10px] text-slate-300">—</span>}
+                                      })() : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>
-                                    <td className="border-b border-slate-100 px-2 py-1">
-                                      <div className="flex flex-wrap gap-1">
+                                    {/* Angle */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      <div className="flex flex-wrap gap-0.5 sm:gap-1">
                                         {(() => {
                                           const tags = row.angleTags.length ? row.angleTags : (() => {
                                             const best: string[] = [];
@@ -1980,7 +2013,7 @@ export default function MlbHrProps() {
                                           })();
                                           return tags.length
                                             ? tags.map((tag) => (
-                                                <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tag}</span>
+                                                <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-slate-600 whitespace-nowrap">{tag}</span>
                                               ))
                                             : <span className="text-slate-400">{DASH}</span>;
                                         })()}
