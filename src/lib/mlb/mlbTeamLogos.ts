@@ -1,5 +1,5 @@
 export const MLB_TEAM_LOGOS: Record<string, string> = {
-  ARI: "https://a.espncdn.com/i/teamlogos/mlb/500/ari.png",
+  ARI: "/logos/mlb/ari.svg",  // ESPN CDN broken for ARI after 2023 rebrand — served locally
   ATL: "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png",
   ATH: "https://a.espncdn.com/i/teamlogos/mlb/500/oak.png",
   BAL: "https://a.espncdn.com/i/teamlogos/mlb/500/bal.png",
