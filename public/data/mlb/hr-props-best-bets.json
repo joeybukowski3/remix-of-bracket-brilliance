@@ -1,9 +1,9 @@
 {
   "date": "2026-06-03",
-  "generatedAt": "2026-06-03T09:28:39.675Z",
+  "generatedAt": "2026-06-03T11:58:08.183Z",
   "slatePreview": {
-    "slateOverview": "Coors-lite conditions at Yankee Stadium (1.18) and Great American (1.25) stand out, while Skenes in Daikin and Kirby in Seattle suppress power. Lefties Gore and Corbin create platoon edges for Harris and Velázquez, and warm, dry air in Atlanta and Anaheim adds carry.",
-    "modelNote": "The model is overweighting barrel/hard-hit rates and park factors while discounting recent HR volume in small samples; Alvarez tops the list on elite batted-ball data despite Skenes."
+    "slateOverview": "Today's slate features several hitter-friendly parks with elevated park factors, including Yankee Stadium (1.18) and Great American Ball Park (1.25), while favorable weather and right-handed pitching create advantageous conditions for power bats. Top model targets like Yordan Alvarez and Ben Rice face pitchers allowing elevated home run rates, with Alvarez drawing the highest hrScore against Paul Skenes despite the tough matchup.",
+    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and recent power trends, elevating Alvarez to the top spot due to his elite 20.2% barrel rate and 53.5% hard-hit rate combined with strong park and platoon factors."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=20.2",
-        "hrScore=69.7"
+        "hrFBRatio=9.5"
       ],
       "bullets": [
-        "barrelRate 20.2 and exitVelo 94.7",
-        "parkFactor 1.04 with hrFBRatio 9.5"
+        "barrelRate 20.2 with exitVelo 94.7",
+        "parkFactor 1.04 vs Skenes 13.5 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -35,7 +35,7 @@
       ],
       "bullets": [
         "parkFactor 1.18 at Yankee Stadium",
-        "last30HR 5 with opposingPitcherHrVs 64.2"
+        "last30HR 5 with hardHitRate 52.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -48,11 +48,11 @@
       "hrScoreRank": 3,
       "topStats": [
         "hardHitRate=58",
-        "opposingPitcherHrVs=66"
+        "last7HR=3"
       ],
       "bullets": [
-        "hardHitRate 58 and exitVelo 94.2",
-        "opposingPitcherHrVs 66 with last7HR 3"
+        "hardHitRate 58 with exitVelo 94.2",
+        "last7HR 3 vs Rea 66 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -65,11 +65,11 @@
       "hrScoreRank": 4,
       "topStats": [
         "barrelRate=25.5",
-        "hardHitRate=59.7"
+        "exitVelo=96.3"
       ],
       "bullets": [
-        "barrelRate 25.5 and exitVelo 96.3",
-        "hardHitRate 59.7 with opposingPitcherHrVs 47.9"
+        "barrelRate 25.5 with exitVelo 96.3",
+        "hardHitRate 59.7 vs Meyer 47.9 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -85,8 +85,8 @@
         "kRate=14.7"
       ],
       "bullets": [
-        "last30HR 10 and hrFBRatio 8",
-        "kRate 14.7 with bbRate 13"
+        "last30HR 10 with bbRate 13",
+        "barrelRate 18.3 vs Kirby 32.5 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -100,12 +100,12 @@
       "opposingPitcher": "Walker Buehler",
       "hrScoreRank": 12,
       "topStats": [
-        "iso=0.357",
-        "hrFBRatio=10.2"
+        "hrFBRatio=10.2",
+        "parkFactor=1.17"
       ],
       "bullets": [
-        "iso 0.357 and hrFBRatio 10.2",
-        "last30HR 11 with parkFactor 1.17"
+        "hrFBRatio 10.2 with last30HR 11",
+        "parkFactor 1.17 at Citizens Bank Park"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -118,28 +118,28 @@
       "hrScoreRank": 13,
       "topStats": [
         "parkFactor=1.18",
-        "opposingPitcherHrVs=64.2"
+        "last30HR=6"
       ],
       "bullets": [
-        "parkFactor 1.18 with opposingPitcherHrVs 64.2",
-        "last30HR 6 and xba 0.281"
+        "parkFactor 1.18 with xba 0.281",
+        "last30HR 6 vs Williams 64.2 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Ronald Acuña Jr.",
-      "team": "ATL",
-      "opponent": "TOR",
-      "opposingPitcher": "Patrick Corbin",
-      "hrScoreRank": 11,
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "TB",
+      "opposingPitcher": "Nick Martinez",
+      "hrScoreRank": 14,
       "topStats": [
-        "last7HR=5",
-        "parkFactor=1.03"
+        "last7HR=3",
+        "last30HR=7"
       ],
       "bullets": [
-        "last7HR 5 and last30HR 5",
-        "parkFactor 1.03 with opposingPitcherHrVs 58.5"
+        "last7HR 3 with last30HR 7",
+        "opposingPitcherHrVs 30.7 at Tropicana"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -155,7 +155,7 @@
         "Pitcher HR VS=50.6"
       ],
       "bullets": [
-        "HR score 66.6 (#6)",
+        "HR score 66.7 (#6)",
         "Pitcher HR VS 50.6 at park 0.92"
       ],
       "hrOddsYes": null,
@@ -205,11 +205,11 @@
       "hrScoreRank": 8,
       "topStats": [
         "barrelRate=21.1",
-        "opposingPitcherHrVs=67.1"
+        "bbRate=21"
       ],
       "bullets": [
-        "barrelRate 21.1 and opposingPitcherHrVs 67.1",
-        "bbRate 21 with exitVelo 91.1"
+        "barrelRate 21.1 with bbRate 21",
+        "opposingPitcherHrVs 67.1 at Angel Stadium"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -221,12 +221,12 @@
       "opposingPitcher": "Taj Bradley",
       "hrScoreRank": 9,
       "topStats": [
-        "last30HR=8",
-        "last7HR=3"
+        "last7HR=3",
+        "last30HR=8"
       ],
       "bullets": [
-        "last30HR 8 and last7HR 3",
-        "hrFBRatio 6.9 with opposingPitcherHrVs 52.3"
+        "last7HR 3 with last30HR 8",
+        "pullRate 41.8 vs Bradley 52.3 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -242,7 +242,7 @@
         "Pitcher HR VS=28.1"
       ],
       "bullets": [
-        "HR score 64.6 (#10)",
+        "HR score 64.7 (#10)",
         "Pitcher HR VS 28.1 at park 1.25"
       ],
       "hrOddsYes": null,
