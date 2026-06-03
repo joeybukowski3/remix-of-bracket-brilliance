@@ -1864,11 +1864,35 @@ function HomeSchedule({
     pendingGames,
     nextRunAt,
   } = useMlbPropsData();
-  const topHrProps = useMemo(() => propBatters
+  // Apply the same pitcher-weighted enrichment as MlbHrProps.tsx so both tables are consistent
+  const enrichedPropBatters = useMemo(() => {
+    function xeraMult(xera: number | null): number {
+      if (xera == null) return 1.0;
+      if (xera <= 2.5) return 0.80;
+      if (xera <= 3.0) return 0.85;
+      if (xera <= 3.5) return 0.91;
+      if (xera <= 4.0) return 0.96;
+      if (xera <= 4.5) return 1.00;
+      if (xera <= 5.0) return 1.05;
+      if (xera <= 5.5) return 1.10;
+      return 1.15;
+    }
+    return propBatters.map((b) => {
+      const hrPropsPitcher = propPitchers.find(p => p.pitcher === b.opposingPitcher || p.pitcherId === b.opposingPitcherId);
+      const regrData = pitcherRegressionData.find(p => p.name === b.opposingPitcher);
+      const pitcherXera = hrPropsPitcher?.xera ?? regrData?.xera ?? regrData?.xfip ?? null;
+      const regrScore = regrData?.regressionScore ?? null;
+      const regrAdj = regrScore != null ? Math.max(0.96, Math.min(1.04, 1.0 + regrScore * 0.004)) : 1.0;
+      const adjustedHrScore = Math.round(b.hrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
+      return { ...b, adjustedHrScore };
+    });
+  }, [propBatters, propPitchers, pitcherRegressionData]);
+
+  const topHrProps = useMemo(() => enrichedPropBatters
     .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
     .slice()
-    .sort((a, b) => b.hrScore - a.hrScore)
-    .slice(0, 5), [propBatters]);
+    .sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
+    .slice(0, 5), [enrichedPropBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
   const topBvpProps = useMemo(() => batterVsPitcherRows.slice().sort((a, b) => b.bestMatchupScore - a.bestMatchupScore).slice(0, 5), [batterVsPitcherRows]);
   const hrPreviewRows = useMemo<PropPreviewRow[]>(
