@@ -1,24 +1,24 @@
 {
-  "date": "2026-06-03",
-  "generatedAt": "2026-06-03T19:38:24.971Z",
+  "date": "2026-06-04",
+  "generatedAt": "2026-06-04T10:54:34.018Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features a few hitter-friendly environments, most notably Yankee Stadium (1.18) and Daikin Park (1.04), while Wrigley and T-Mobile play more neutral to pitcher-friendly. Paul Skenes draws the toughest assignment against Yordan Alvarez, but several softer right-handers like Colin Rea, Gavin Williams, and Max Meyer create exploitable windows for power bats.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent home-run volume over park factors alone, elevating Alvarez and Kurtz despite tougher venues while still rewarding Rice's plus park and pull tendencies."
+    "slateOverview": "Today's slate features strong HR environments at Citizens Bank Park (1.17) and Yankee Stadium (1.18), with multiple right-handed pitchers allowing elevated HR rates. Chase Field and Daikin Park provide neutral-to-slight boosts, while Wrigley and Fenway offer more neutral conditions that still support power when matchup advantages align.",
+    "modelNote": "The model prioritizes barrel rate, hard-hit metrics, and recent HR volume, elevating Alvarez and Kurtz despite facing quality pitching, while park factors and opposing pitcher HR vulnerability boost Schwarber and Rice into the top tier."
   },
   "bestBets": [
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "PIT",
-      "opposingPitcher": "Paul Skenes",
+      "opposingPitcher": "Jared Jones",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate=19.8",
-        "hrFBRatio=9.5"
+        "barrelRate=19.2",
+        "hrFBRatio=9.3"
       ],
       "bullets": [
-        "parkFactor=1.04",
-        "last30HR=9"
+        "barrelRate 19.2 and exitVelo 94.8",
+        "opposingPitcherHrVs 71.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -27,15 +27,32 @@
       "player": "Nick Kurtz",
       "team": "ATH",
       "opponent": "CHC",
-      "opposingPitcher": "Colin Rea",
+      "opposingPitcher": "Shota Imanaga",
       "hrScoreRank": 2,
       "topStats": [
-        "hardHitRate=58.6",
+        "hardHitRate=58.1",
         "last7HR=3"
       ],
       "bullets": [
-        "opposingPitcherHrVs=66.1",
-        "exitVelo=94.4"
+        "hardHitRate 58.1 and exitVelo 94.3",
+        "last7HR 3"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "SD",
+      "opposingPitcher": "Lucas Giolito",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrelRate=23.8",
+        "hrFBRatio=10.5"
+      ],
+      "bullets": [
+        "barrelRate 23.8 and parkFactor 1.17",
+        "last30HR 12"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -44,49 +61,32 @@
       "player": "Ben Rice",
       "team": "NYY",
       "opponent": "CLE",
-      "opposingPitcher": "Gavin Williams",
-      "hrScoreRank": 3,
-      "topStats": [
-        "parkFactor=1.18",
-        "iso=0.345"
-      ],
-      "bullets": [
-        "hrFBRatio=8.5",
-        "pullRate=47"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Dillon Dingler",
-      "team": "DET",
-      "opponent": "TB",
-      "opposingPitcher": "Nick Martinez",
+      "opposingPitcher": "Slade Cecconi",
       "hrScoreRank": 4,
       "topStats": [
-        "last7HR=4",
-        "last30HR=8"
+        "iso=0.343",
+        "parkFactor=1.18"
       ],
       "bullets": [
-        "hardHitRate=50.6",
-        "hrFBRatio=6.9"
+        "parkFactor 1.18 and exitVelo 92.4",
+        "iso 0.343"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "MIA",
-      "opposingPitcher": "Max Meyer",
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "AZ",
+      "opposingPitcher": "Ryne Nelson",
       "hrScoreRank": 5,
       "topStats": [
-        "barrelRate=25",
-        "exitVelo=96.1"
+        "pullRate=53.8",
+        "opposingPitcherHrVs=65.9"
       ],
       "bullets": [
-        "hardHitRate=58.6",
-        "opposingPitcherHrVs=47.9"
+        "opposingPitcherHrVs 65.9 and exitVelo 91.4",
+        "pullRate 53.8"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -94,52 +94,69 @@
   ],
   "valueBets": [
     {
-      "player": "Michael Harris II",
-      "team": "ATL",
-      "opponent": "TOR",
-      "opposingPitcher": "Patrick Corbin",
-      "hrScoreRank": 6,
-      "topStats": [
-        "xba=0.308",
-        "hardHitRate=53.8"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs=58.6",
-        "parkFactor=1.03"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "SEA",
-      "opposingPitcher": "George Kirby",
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "BOS",
+      "opposingPitcher": "Brayan Bello",
       "hrScoreRank": 7,
       "topStats": [
-        "last30HR=10",
-        "hrFBRatio=8"
+        "exitVelo=95",
+        "opposingPitcherHrVs=66.1"
       ],
       "bullets": [
-        "whiffRate=21.8",
-        "kRate=14.9"
+        "exitVelo 95 and hardHitRate 55.4",
+        "opposingPitcherHrVs 66.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "MIN",
-      "opposingPitcher": "Taj Bradley",
-      "hrScoreRank": 8,
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "SF",
+      "opposingPitcher": "Adrian Houser",
+      "hrScoreRank": 6,
       "topStats": [
-        "last30HR=8",
-        "last7HR=3"
+        "hardHitRate=53.6",
+        "opposingPitcherHrVs=64.9"
       ],
       "bullets": [
-        "hrFBRatio=6.9",
-        "pullRate=42.8"
+        "hardHitRate 53.6 and exitVelo 92",
+        "opposingPitcherHrVs 64.9"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Oneil Cruz",
+      "team": "PIT",
+      "opponent": "HOU",
+      "opposingPitcher": "Kai-Wei Teng",
+      "hrScoreRank": 9,
+      "topStats": [
+        "hardHitRate=59.1",
+        "exitVelo=95.9"
+      ],
+      "bullets": [
+        "hardHitRate 59.1 and exitVelo 95.9",
+        "last7HR 3"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "AZ",
+      "opposingPitcher": "Ryne Nelson",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=65.9",
+        "Hard Hit%=52.5"
+      ],
+      "bullets": [
+        "HR score 64.6 (#8)",
+        "Pitcher HR VS 65.9 at park 1.01"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -147,52 +164,52 @@
   ],
   "longshots": [
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "SD",
-      "opposingPitcher": "Walker Buehler",
-      "hrScoreRank": 11,
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "AZ",
+      "opposingPitcher": "Ryne Nelson",
+      "hrScoreRank": 8,
       "topStats": [
-        "hrFBRatio=10.2",
-        "iso=0.357"
+        "xba=0.298",
+        "pullRate=54.3"
       ],
       "bullets": [
-        "parkFactor=1.17",
-        "last30HR=11"
+        "xba 0.298 and exitVelo 93.5",
+        "opposingPitcherHrVs 65.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Nelson Velázquez",
-      "team": "STL",
-      "opponent": "TEX",
-      "opposingPitcher": "MacKenzie Gore",
-      "hrScoreRank": 17,
+      "player": "Andy Pages",
+      "team": "LAD",
+      "opponent": "AZ",
+      "opposingPitcher": "Ryne Nelson",
+      "hrScoreRank": 19,
       "topStats": [
-        "pullRate=62.5",
-        "hardHitRate=62.5"
+        "last30HR=8",
+        "opposingPitcherHrVs=65.9"
       ],
       "bullets": [
-        "hrFBRatio=10",
-        "xba=0.36"
+        "last30HR 8 and exitVelo 89.9",
+        "opposingPitcherHrVs 65.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "COL",
-      "opposingPitcher": "Michael Lorenzen",
+      "player": "Oneil Cruz",
+      "team": "PIT",
+      "opponent": "HOU",
+      "opposingPitcher": "Kai-Wei Teng",
       "hrScoreRank": 9,
       "topStats": [
-        "Pitcher HR VS=67.1",
-        "Hard Hit%=49.7"
+        "Hard Hit%=59.1",
+        "Pitcher HR VS=27.9"
       ],
       "bullets": [
-        "HR score 65.6 (#9)",
-        "Pitcher HR VS 67.1 at park 1.02"
+        "HR score 64.5 (#9)",
+        "Pitcher HR VS 27.9 at park 1.04"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -201,15 +218,15 @@
       "player": "Paul Goldschmidt",
       "team": "NYY",
       "opponent": "CLE",
-      "opposingPitcher": "Gavin Williams",
+      "opposingPitcher": "Slade Cecconi",
       "hrScoreRank": 10,
       "topStats": [
-        "Pitcher HR VS=64.3",
-        "Hard Hit%=46.7"
+        "Hard Hit%=46.7",
+        "Pitcher HR VS=41.9"
       ],
       "bullets": [
-        "HR score 65.1 (#10)",
-        "Pitcher HR VS 64.3 at park 1.18"
+        "HR score 63.2 (#10)",
+        "Pitcher HR VS 41.9 at park 1.18"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
