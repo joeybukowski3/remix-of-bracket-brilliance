@@ -45,6 +45,8 @@ export type HrDashboardPitcher = {
   kLine?: number | null;
   kOddsOver?: string | null;
   kOddsUnder?: string | null;
+  projectedIP?: number | null;
+  projectedK9?: number | null;
 };
 
 export type HrDashboardBatter = {
@@ -302,6 +304,8 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
     kLine: normalizeNumber(entry.kLine),
     kOddsOver: normalizeText(entry.kOddsOver) || null,
     kOddsUnder: normalizeText(entry.kOddsUnder) || null,
+    projectedIP: normalizeNumber(entry.projectedIP),
+    projectedK9: normalizeNumber(entry.projectedK9),
   };
   if (!p.pitcher || !p.team || !p.opponent || p.hrVs == null || p.hitsVs == null || p.kVs == null) return null;
   return p as HrDashboardPitcher;
@@ -952,6 +956,8 @@ export function buildPitcherStrikeoutRows(
         kLine: pitcher.kLine ?? null,
         kOddsOver: pitcher.kOddsOver ?? null,
         kOddsUnder: pitcher.kOddsUnder ?? null,
+        projectedIP: pitcher.projectedIP ?? null,
+        projectedK9: pitcher.projectedK9 ?? null,
       };
     })
     .sort((left, right) =>
@@ -1883,6 +1889,7 @@ export default function MlbHrProps() {
                                 </th>
                                 {/* Scrollable columns — short labels on mobile, full on sm+ */}
                                 {([
+                                  ["hrOddsYes",        "Odds",  "HR Odds"],
                                   ["adjustedHrScore", "HR↕",    "HR Score ↕"],
                                   ["barrelRate",       "Brl%",   "Barrel%"],
                                   ["hardHitRate",      "HH%",    "HH%"],
@@ -1890,7 +1897,6 @@ export default function MlbHrProps() {
                                   ["last30HR",         "L30",    "L30 HR"],
                                   ["opposingPitcherHrVs","P.HR", "Ptch HR VS"],
                                   ["pitcherXera",      "xERA",  "Ptch xERA"],
-                                  ["hrOddsYes",        "Odds",  "HR Odds"],
                                 ] as [string, string, string][]).map(([key, short, full]) => (
                                   <th key={key} className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[44px] sm:max-w-none sm:whitespace-nowrap">
                                     <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900 leading-tight">
@@ -1924,6 +1930,26 @@ export default function MlbHrProps() {
                                         <span className="font-semibold text-slate-900 whitespace-nowrap text-[10px] sm:text-[11px]">{row.player}</span>
                                       </div>
                                       <div className="text-[9px] text-slate-400 truncate max-w-[105px] sm:max-w-[140px]">vs {row.opposingPitcher}</div>
+                                    </td>
+                                    {/* HR Odds */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      {row.hrOddsYes != null ? (() => {
+                                        const isValue = (row.hrValueEdge ?? 0) > 1.05;
+                                        const isGoodValue = (row.hrValueEdge ?? 0) > 1.25;
+                                        return (
+                                          <div className="flex flex-col items-start gap-0.5">
+                                            <div className="flex flex-col items-start gap-0">
+                                              <span className={`rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${isGoodValue ? "bg-emerald-600 text-white" : isValue ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                                                Y {row.hrOddsYes}
+                                              </span>
+                                              {row.hrOddsNo && <div className="text-[9px] text-slate-500">N {row.hrOddsNo}</div>}
+                                            </div>
+                                            {isValue && (
+                                              <span className="text-[8px] sm:text-[9px] font-bold text-emerald-600">VAL✓</span>
+                                            )}
+                                          </div>
+                                        );
+                                      })() : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>
                                     {/* HR Score */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
@@ -1980,26 +2006,6 @@ export default function MlbHrProps() {
                                             style={{ backgroundColor: style.bg, color: style.text }}>
                                             {x.toFixed(2)}
                                           </span>
-                                        );
-                                      })() : <span className="text-[9px] text-slate-300">—</span>}
-                                    </td>
-                                    {/* HR Odds */}
-                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
-                                      {row.hrOddsYes != null ? (() => {
-                                        const isValue = (row.hrValueEdge ?? 0) > 1.05;
-                                        const isGoodValue = (row.hrValueEdge ?? 0) > 1.25;
-                                        return (
-                                          <div className="flex flex-col items-start gap-0.5">
-                                            <div className="flex flex-col items-start gap-0">
-                                              <span className={`rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${isGoodValue ? "bg-emerald-600 text-white" : isValue ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
-                                                Y {row.hrOddsYes}
-                                              </span>
-                                              {row.hrOddsNo && <div className="text-[9px] text-slate-500">N {row.hrOddsNo}</div>}
-                                            </div>
-                                            {isValue && (
-                                              <span className="text-[8px] sm:text-[9px] font-bold text-emerald-600">VAL✓</span>
-                                            )}
-                                          </div>
                                         );
                                       })() : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>

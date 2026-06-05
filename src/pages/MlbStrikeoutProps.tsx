@@ -312,7 +312,8 @@ export default function MlbStrikeoutProps() {
                         <SortTh k="opponentTeamKRate" label="Opp K%" />
                         <SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" />
                         <SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" />
-                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-black uppercase tracking-widest text-left whitespace-nowrap">Edge</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-black uppercase tracking-widest text-left whitespace-nowrap">K/9</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-black uppercase tracking-widest text-left whitespace-nowrap">Avg IP</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -364,11 +365,16 @@ export default function MlbStrikeoutProps() {
                               </div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.opponentTeamStrikeoutScore} /></td>
-                            <td className="border-b border-slate-100 px-2 py-1"><PropEdgeBadge score={row.strikeoutMatchupScore} /></td>
+                            <td className="border-b border-slate-100 px-2 py-1">
+                              <span className="font-semibold text-slate-800">{row.projectedK9 != null ? row.projectedK9.toFixed(1) : "—"}</span>
+                            </td>
+                            <td className="border-b border-slate-100 px-2 py-1">
+                              <span className="font-semibold text-slate-800">{row.projectedIP != null ? row.projectedIP.toFixed(1) : "—"}</span>
+                            </td>
                           </tr>
                         );
                       }) : (
-                        <tr><td colSpan={11} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>
+                        <tr><td colSpan={12} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>
                       )}
                     </tbody>
                   </table>

@@ -191,6 +191,9 @@ function normalizePitcher(value) {
   const opponent = normalizeTeam(value?.opponent);
   const kRate = toFiniteNumber(value?.kRate);
   const kVs = toFiniteNumber(value?.kVs);
+  const projectedK9 = toFiniteNumber(value?.projectedK9);
+  const projectedIP = toFiniteNumber(value?.projectedIP);
+  const kLine = toFiniteNumber(value?.kLine);
   if (!pitcher || !team || !opponent) return null;
   return {
     pitcher,
@@ -199,6 +202,9 @@ function normalizePitcher(value) {
     kRate: kRate ?? 0,
     kVs: kVs ?? 0,
     strikeoutScore: (kRate ?? 0) + (kVs ?? 0) / 2,
+    projectedK9: projectedK9 ?? null,
+    projectedIP: projectedIP ?? null,
+    kLine: kLine ?? null,
   };
 }
 
@@ -263,19 +269,21 @@ function buildCaption(rawPayload) {
   if (topPropsResult.skipped) return { skipped: true, reason: topPropsResult.reason, caption: "", topProps: [] };
 
   const dateLabel = formatDateLabel(rawPayload?.date);
-  const lines = topPropsResult.topProps.map((row, index) => (
-    `${index + 1}. ${row.pitcher} (${row.team}) - K Score ${row.strikeoutScore.toFixed(1)}`
-  ));
+  const lines = topPropsResult.topProps.map((row, index) => {
+    const k9 = row.projectedK9 != null ? ` · K/9: ${row.projectedK9.toFixed(1)}` : "";
+    const ip = row.projectedIP != null ? ` · ${row.projectedIP.toFixed(1)} IP` : "";
+    return `${index + 1}. ${row.pitcher} (${row.team}) — ${row.strikeoutScore.toFixed(1)}${k9}${ip}`;
+  });
 
   const caption = [
     `JoeKnowsBall MLB K Props - ${dateLabel}`,
     "",
-    "Top model edges:",
+    "Top edges:",
     ...lines,
     "",
-    `Full table: ${STRIKEOUT_PROPS_URL}`,
+    STRIKEOUT_PROPS_URL,
     "",
-    "#MLB #MLBProps #PropPicks #SportsAlgorithm",
+    "#MLB #MLBProps #PropPicks",
   ].join("\n");
 
   if (caption.length > 280) {
