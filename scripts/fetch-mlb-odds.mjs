@@ -148,15 +148,15 @@ async function main() {
       const url = `${ODDS_BASE}/sports/${SPORT}/events/${ev.id}/odds?apiKey=${apiKey}&regions=us&markets=${PROP_MARKETS}&oddsFormat=american`;
       const data = await get(url);
 
-      // HR props
+      // HR props — player name is in outcome.description, side (Yes/No) is in outcome.name
       const hrMarket = bestBook(data.bookmakers, "batter_home_runs");
       if (hrMarket) {
         for (const outcome of hrMarket.outcomes) {
-          const key = normalizeName(outcome.name);
-          if (!hrOdds[key]) hrOdds[key] = {};
-          const side = outcome.description?.toLowerCase().includes("no") ? "no" : "yes";
-          hrOdds[key][side] = formatAmerican(outcome.price);
-          if (side === "yes") hrOdds[key].impliedYes = americanToImplied(outcome.price);
+          const playerKey = normalizeName(outcome.description ?? outcome.name);
+          const side = outcome.name?.toLowerCase().includes("no") ? "no" : "yes";
+          if (!hrOdds[playerKey]) hrOdds[playerKey] = {};
+          hrOdds[playerKey][side] = formatAmerican(outcome.price);
+          if (side === "yes") hrOdds[playerKey].impliedYes = americanToImplied(outcome.price);
         }
       }
 
