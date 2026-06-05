@@ -321,11 +321,10 @@ export default function MlbStrikeoutProps() {
                           <tr key={`${row.rank}-${row.pitcher}-${row.team}`} className={bg}>
                             <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-400 ${sbg}`}>{row.rank}</td>
                             <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-0.5 ${sbg}`}>
-                              <div className="flex items-center gap-1">
-                                <TeamLogoText team={row.team} size={16} />
+                              <div className="flex items-center gap-1.5">
                                 <span className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.pitcher}</span>
+                                <span className="text-[9px] text-slate-400">[vs {row.opponent}]</span>
                               </div>
-                              <div className="text-[9px] text-slate-400 leading-tight -mt-0.5">{row.team} vs {row.opponent}</div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td>
                             <td className="border-b border-slate-100 px-2 py-1">
