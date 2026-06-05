@@ -644,6 +644,68 @@ export function computePitcherMatchupRatings(pitcher, contexts) {
   };
 }
 
+// Classify pitcher as starter or reliever based on typical IP patterns
+function classifyPitcherRole(pitcher) {
+  // Heuristic: if K% is very high (28%+) with low sample, likely reliever
+  // If K% is moderate (17-23%) likely starter
+  const kRate = pitcher.kRate ?? 0;
+  if (kRate >= 27) return "reliever";
+  if (kRate >= 20) return "starter";
+  return kRate >= 15 ? "starter" : "reliever";
+}
+
+// Get average IP for pitcher role
+function getAverageIPForRole(role) {
+  return role === "starter" ? 5.5 : 1.5;
+}
+
+// Calculate innings projection based on matchup quality
+function calculateProjectedInnings(pitcher, opponentBatters = []) {
+  const role = classifyPitcherRole(pitcher);
+  const baseIP = getAverageIPForRole(role);
+  
+  // Matchup quality factors
+  const opponentBBRate = opponentBatters.length > 0
+    ? opponentBatters.reduce((sum, b) => sum + (b.bbRate ?? 0), 0) / opponentBatters.length
+    : 8;
+  const opponentKRate = opponentBatters.length > 0
+    ? opponentBatters.reduce((sum, b) => sum + (b.kRate ?? 0), 0) / opponentBatters.length
+    : 20;
+  
+  // Positive matchup: pitcher whiff rate > opponent BB rate
+  // Negative matchup: opponent has high K rate
+  const matchupFactor = 
+    (pitcher.whiffRate ?? 25) / 25 * 0.3 +  // Pitcher whiff ability
+    ((22 - (opponentBBRate ?? 8)) / 22) * 0.4 +  // Opponent discipline
+    ((27 - (opponentKRate ?? 20)) / 27) * 0.3;  // Opponent strikeout tendency
+  
+  // Project IP: base ± matchup adjustment (cap between 0.5-8)
+  const projectedIP = baseIP * matchupFactor;
+  return Math.max(0.5, Math.min(8, roundNumber(projectedIP, 1)));
+}
+
+// Calculate projected K/9 based on pitcher stats and opponent
+function calculateProjectedK9(pitcher, opponentBatters = []) {
+  const baseK9 = (pitcher.kRate ?? 20) / 100 * 9;
+  
+  // Opponent K rate adjustment (higher opponent K = better matchup for pitcher)
+  const opponentKRate = opponentBatters.length > 0
+    ? opponentBatters.reduce((sum, b) => sum + (b.kRate ?? 0), 0) / opponentBatters.length
+    : 20;
+  const kRateAdj = (opponentKRate / 20);  // Normalize to ~1.0
+  
+  // Pitcher skill multiplier based on whiff rate
+  const skillMult = (pitcher.whiffRate ?? 25) / 25;
+  
+  const projectedK9 = baseK9 * kRateAdj * skillMult;
+  return roundNumber(Math.max(6, Math.min(15, projectedK9)), 1);
+}
+
+// Calculate projected Ks for the game
+function calculateProjectedKs(projectedIP, projectedK9) {
+  return roundNumber((projectedIP * projectedK9) / 9, 1);
+}
+
 function computeWeatherBoost(gameContext) {
   if (!gameContext || gameContext.roofType !== "Open") return 0;
   let boost = 0;
@@ -804,6 +866,14 @@ function validatePitcherRows(rows) {
       hrVs: toFiniteNumber(row.hrVs),
       hitsVs: toFiniteNumber(row.hitsVs),
       kVs: toFiniteNumber(row.kVs),
+      role: normalizeText(row.role) || "reliever",
+      projectedIP: toFiniteNumber(row.projectedIP),
+      projectedK9: toFiniteNumber(row.projectedK9),
+      projectedKs: toFiniteNumber(row.projectedKs),
+      kLine: toFiniteNumber(row.kLine),
+      kAdjustment: toFiniteNumber(row.kAdjustment, 0),
+      kOddsOver: normalizeText(row.kOddsOver),
+      kOddsUnder: normalizeText(row.kOddsUnder),
     };
 
     if (!normalized.pitcher || !normalized.team || !normalized.opponent) {
@@ -1398,16 +1468,50 @@ async function main() {
       hrScoreRank: index + 1,
     }));
 
-  const validatedPitchers = validatePitcherRows(scoredPitchers.map((pitcher) => ({
-    ...pitcher,
-    xera: roundNumber(pitcher.xera, 2),
-    hardHitRate: roundNumber(pitcher.hardHitRate, 1),
-    flyBallRate: roundNumber(pitcher.flyBallRate, 1),
-    barrelRate: roundNumber(pitcher.barrelRate, 1),
-    kRate: roundNumber(pitcher.kRate, 1),
-    bbRate: roundNumber(pitcher.bbRate, 1),
-    whiffRate: roundNumber(pitcher.whiffRate, 1),
-  })));
+  const validatedPitchers = validatePitcherRows(scoredPitchers.map((pitcher) => {
+    // Get opposing batters for this pitcher's matchup
+    const opponentBatters = dedupedPool.filter(
+      (batter) => batter.opponent === pitcher.team && batter.gameKey === pitcher.gameKey
+    );
+    
+    // Calculate innings projection and K stats
+    const projectedIP = calculateProjectedInnings(pitcher, opponentBatters);
+    const projectedK9 = calculateProjectedK9(pitcher, opponentBatters);
+    const projectedKs = calculateProjectedKs(projectedIP, projectedK9);
+    const role = classifyPitcherRole(pitcher);
+    
+    // Match with K odds data
+    const pitcherNameNorm = (pitcher.pitcher ?? "")
+      .toLowerCase().replace(/\b(jr|sr|ii|iii|iv)\b/gi, "").trim();
+    const kOddsEntry = mlbOdds?.kOdds?.[pitcherNameNorm] ?? null;
+    const kLine = kOddsEntry?.line ?? null;
+    
+    // Calculate K score adjustment based on projected Ks vs line
+    let kAdjustment = 0;
+    if (kLine && projectedKs) {
+      const kDifference = projectedKs - kLine;
+      kAdjustment = kDifference * 5;  // 5 points per K over/under
+    }
+    
+    return {
+      ...pitcher,
+      xera: roundNumber(pitcher.xera, 2),
+      hardHitRate: roundNumber(pitcher.hardHitRate, 1),
+      flyBallRate: roundNumber(pitcher.flyBallRate, 1),
+      barrelRate: roundNumber(pitcher.barrelRate, 1),
+      kRate: roundNumber(pitcher.kRate, 1),
+      bbRate: roundNumber(pitcher.bbRate, 1),
+      whiffRate: roundNumber(pitcher.whiffRate, 1),
+      role,
+      projectedIP,
+      projectedK9,
+      projectedKs,
+      kLine,
+      kAdjustment: roundNumber(kAdjustment, 0),
+      kOddsOver: kOddsEntry?.over ?? null,
+      kOddsUnder: kOddsEntry?.under ?? null,
+    };
+  }));
   const validatedRows = validateBatterRows(scored);
   const validatedPayload = validateRawPayload({
     date: getTodayEt(),

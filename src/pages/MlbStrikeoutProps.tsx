@@ -303,6 +303,7 @@ export default function MlbStrikeoutProps() {
                         <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 font-black whitespace-nowrap min-w-[130px] text-left">
                           <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                         </th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-black uppercase tracking-widest text-left whitespace-nowrap min-w-[60px]">K Line</th>
                         <SortTh k="strikeoutMatchupScore" label="K Score" />
                         <SortTh k="pitcherKRate" label="K%" />
                         <SortTh k="pitcherWhiffRate" label="Whiff%" />
@@ -326,6 +327,13 @@ export default function MlbStrikeoutProps() {
                                 <MlbTeamLogo team={row.team} size={16} />
                                 <span className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.pitcher}</span>
                                 <span className="text-[9px] text-slate-400">[vs {row.opponent}]</span>
+                              </div>
+                            </td>
+                            <td className="border-b border-slate-100 px-2 py-1">
+                              <div className="flex flex-col items-start gap-0.5">
+                                <div className="font-semibold text-slate-900">{fmt(row.kLine, 1)}</div>
+                                {row.kOddsOver && <div className="text-[9px] text-slate-500">O {row.kOddsOver}</div>}
+                                {row.kOddsUnder && <div className="text-[9px] text-slate-500">U {row.kOddsUnder}</div>}
                               </div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td>

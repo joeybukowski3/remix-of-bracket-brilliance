@@ -211,6 +211,14 @@ export type PitcherStrikeoutTeamRow = {
   opponentTeamStrikeoutScore: number;
   strikeoutMatchupScore: number;
   whyItRanksWell: string;
+  role?: string;
+  projectedIP?: number | null;
+  projectedK9?: number | null;
+  projectedKs?: number | null;
+  kLine?: number | null;
+  kAdjustment?: number;
+  kOddsOver?: string | null;
+  kOddsUnder?: string | null;
 };
 
 export const DEFAULT_TAB: TabKey = "batters";
