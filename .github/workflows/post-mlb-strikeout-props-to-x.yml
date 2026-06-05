@@ -1,0 +1,157 @@
+name: Post MLB Strikeout Props to X
+
+on:
+  schedule:
+    # Runs after the 1 PM ET HR props/K props refresh normally completes.
+    - cron: "30 17 * * *" # 1:30 PM EDT
+    - cron: "30 18 * * *" # 1:30 PM EST
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode"
+        required: true
+        default: "dry-run"
+        type: choice
+        options:
+          - dry-run
+          - post
+          - post-text-only
+          - verify-account
+      data_source:
+        description: "K props data source"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - github
+          - local
+
+concurrency:
+  group: post-mlb-strikeout-props-to-x
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  post-strikeout-props-to-x:
+    runs-on: ubuntu-latest
+    env:
+      X_EXPECTED_USERNAME: _joeknowsball_
+      X_DUPLICATE_STATE_DIR: .cache/mlb-strikeout-props-x-posted
+      JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+      JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+      JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+      JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Gate scheduled run to the correct timezone slot
+        id: schedule_gate
+        shell: bash
+        run: |
+          SHOULD_RUN="true"
+          MESSAGE=""
+
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ET_ZONE="$(TZ=America/New_York date +%Z)"
+
+            # 1:30 PM ET after the 1 PM K props refresh.
+            if [ "$ET_ZONE" = "EDT" ]; then
+              VALID_CRONS="30 17 * * *"
+            else
+              VALID_CRONS="30 18 * * *"
+            fi
+
+            CURRENT="${{ github.event.schedule }}"
+            if echo "$VALID_CRONS" | grep -qF "$CURRENT"; then
+              SHOULD_RUN="true"
+            else
+              SHOULD_RUN="false"
+              MESSAGE="Skipping duplicate cron for $ET_ZONE: $CURRENT is not the valid posting slot."
+            fi
+          fi
+
+          echo "should_run=${SHOULD_RUN}" >> "$GITHUB_OUTPUT"
+          echo "message=${MESSAGE}" >> "$GITHUB_OUTPUT"
+
+      - name: Report skipped duplicate cron
+        if: steps.schedule_gate.outputs.should_run != 'true'
+        run: echo "${{ steps.schedule_gate.outputs.message }}"
+
+      - name: Determine live post duplicate key
+        id: post_key
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')
+        shell: bash
+        run: |
+          POST_KEY="$(K_PROPS_DATA_SOURCE=production node scripts/post-mlb-strikeout-props-to-x.mjs --post-key-only)"
+          if [ "${{ inputs.mode }}" = "post-text-only" ]; then
+            POST_KEY="${POST_KEY}-text-only"
+          fi
+          echo "key=${POST_KEY}" >> "$GITHUB_OUTPUT"
+          echo "Live post duplicate key: ${POST_KEY}"
+
+      - name: Restore live post duplicate cache
+        id: restore_post_cache
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/mlb-strikeout-props-x-posted
+          key: ${{ steps.post_key.outputs.key }}
+
+      - name: Block duplicate live post
+        if: steps.restore_post_cache.outputs.cache-hit == 'true'
+        run: |
+          echo "Duplicate protection blocked live posting for ${{ steps.post_key.outputs.key }}."
+          exit 1
+
+      - name: Build K props X caption
+        if: steps.schedule_gate.outputs.should_run == 'true' && steps.restore_post_cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          MODE="${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'dry-run' }}"
+          if [ -n "${JKB_X_API_KEY:-}" ]; then echo "JKB_X_API_KEY present: true"; else echo "JKB_X_API_KEY present: false"; fi
+          if [ -n "${JKB_X_API_SECRET:-}" ]; then echo "JKB_X_API_SECRET present: true"; else echo "JKB_X_API_SECRET present: false"; fi
+          if [ -n "${JKB_X_ACCESS_TOKEN:-}" ]; then echo "JKB_X_ACCESS_TOKEN present: true"; else echo "JKB_X_ACCESS_TOKEN present: false"; fi
+          if [ -n "${JKB_X_ACCESS_SECRET:-}" ]; then echo "JKB_X_ACCESS_SECRET present: true"; else echo "JKB_X_ACCESS_SECRET present: false"; fi
+          node scripts/post-mlb-strikeout-props-to-x.mjs "--${MODE}"
+        env:
+          K_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'production' || (github.event_name == 'workflow_dispatch' && inputs.data_source || 'production') }}
+          X_ALLOW_LIVE_POST: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'true' || 'false' }}
+
+      - name: Upload K props X screenshot
+        if: steps.schedule_gate.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'dry-run')
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-strikeout-props-x-screenshot
+          path: artifacts/mlb-strikeout-props-x.png
+          if-no-files-found: error
+
+      - name: Save live post duplicate cache
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && steps.restore_post_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/mlb-strikeout-props-x-posted
+          key: ${{ steps.post_key.outputs.key }}
+
+      - name: Upload live post receipt
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && steps.restore_post_cache.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-strikeout-props-x-post-receipt
+          path: .cache/mlb-strikeout-props-x-posted/*.json
+          if-no-files-found: error
