@@ -299,6 +299,9 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
     hrVs: normalizeNumber(entry.hrVs),
     hitsVs: normalizeNumber(entry.hitsVs),
     kVs: normalizeNumber(entry.kVs),
+    kLine: normalizeNumber(entry.kLine),
+    kOddsOver: normalizeText(entry.kOddsOver) || null,
+    kOddsUnder: normalizeText(entry.kOddsUnder) || null,
   };
   if (!p.pitcher || !p.team || !p.opponent || p.hrVs == null || p.hitsVs == null || p.kVs == null) return null;
   return p as HrDashboardPitcher;
@@ -336,6 +339,9 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     hrScore: normalizeNumber(entry.hrScore),
     hrScoreRank: normalizeNumber(entry.hrScoreRank),
     angleTags: normalizeStringList(entry.angleTags).slice(0, 3),
+    hrOddsYes: normalizeText(entry.hrOddsYes) || null,
+    hrOddsNo: normalizeText(entry.hrOddsNo) || null,
+    hrValueEdge: normalizeNumber(entry.hrValueEdge),
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
   return b as HrDashboardBatter;
