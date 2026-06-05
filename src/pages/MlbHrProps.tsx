@@ -77,6 +77,7 @@ export type HrDashboardBatter = {
   pitcherXera?: number | null;
   pitcherRegressionScore?: number | null;
   hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
+  hrOddsNo?: string | null;      // sportsbook no HR odds e.g. "-450"
   hrValueEdge?: number | null;   // model prob / implied prob (>1 = value)
   angleTags: string[];
 };
@@ -1998,10 +1999,13 @@ export default function MlbHrProps() {
                                         const isValue = (row.hrValueEdge ?? 0) > 1.05;
                                         const isGoodValue = (row.hrValueEdge ?? 0) > 1.25;
                                         return (
-                                          <div className="flex flex-col items-start gap-0">
-                                            <span className={`rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${isGoodValue ? "bg-emerald-600 text-white" : isValue ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
-                                              {row.hrOddsYes}
-                                            </span>
+                                          <div className="flex flex-col items-start gap-0.5">
+                                            <div className="flex flex-col items-start gap-0">
+                                              <span className={`rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${isGoodValue ? "bg-emerald-600 text-white" : isValue ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
+                                                Y {row.hrOddsYes}
+                                              </span>
+                                              {row.hrOddsNo && <div className="text-[9px] text-slate-500">N {row.hrOddsNo}</div>}
+                                            </div>
                                             {isValue && (
                                               <span className="text-[8px] sm:text-[9px] font-bold text-emerald-600">VAL✓</span>
                                             )}
