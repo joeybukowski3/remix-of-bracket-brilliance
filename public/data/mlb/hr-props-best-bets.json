@@ -1,9 +1,9 @@
 {
   "date": "2026-06-05",
-  "generatedAt": "2026-06-05T09:06:16.600Z",
+  "generatedAt": "2026-06-05T11:18:13.275Z",
   "slatePreview": {
-    "slateOverview": "Coors Field (1.40) and Citizens Bank (1.17) stand out as the primary power environments, while Chase Field and Daikin Park offer neutral-to-slight boosts. Merrill Kelly and Bryan Woo represent the toughest arms on the slate, but the model still surfaces Wood and Dingler due to elevated barrel/hard-hit rates and recent track records. Warm, dry conditions across the eastern and mountain parks should keep the ball carrying.",
-    "modelNote": "The model is prioritizing raw exit velocity and barrel rate over park factors today, which is why Wood (96.1 EV, 25% barrel) edges Alvarez despite the lower Coors-adjusted score."
+    "slateOverview": "Coors Field (1.4) and Citizens Bank Park (1.17) stand out as the primary power environments, while Chase Field and Daikin Park offer neutral-to-slight boosts. Merrill Kelly and Bryan Woo represent tougher assignments, but the Coors and Philly lefty matchups create exploitable edges for Wood, Schwarber, and the MIL stack. Warm, dry conditions are expected across the slate with no major wind suppression.",
+    "modelNote": "The model is overweighting barrel/hard-hit rates and recent 30-day HR volume while applying a heavy Coors multiplier, pushing Wood to the top despite the neutral park factor."
   },
   "bestBets": [
     {
@@ -18,7 +18,7 @@
       ],
       "bullets": [
         "barrelRate 25 and exitVelo 96.1",
-        "parkFactor 1.01 with opposingPitcherHrVs 80.8"
+        "hrScoreRank 1 with parkFactor 1.01"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -31,11 +31,11 @@
       "hrScoreRank": 2,
       "topStats": [
         "xba=0.347",
-        "hrScore=71.2"
+        "iso=0.333"
       ],
       "bullets": [
-        "parkFactor 1.04 and iso 0.333",
-        "last30HR 9 with opposingPitcherHrVs 22"
+        "xba 0.347 and hardHitRate 54.4",
+        "hrScore 71.2 with parkFactor 1.04"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -48,11 +48,45 @@
       "hrScoreRank": 3,
       "topStats": [
         "last7HR=3",
-        "hrScore=70.2"
+        "last30HR=8"
       ],
       "bullets": [
-        "last30HR 8 and hardHitRate 51.3",
-        "parkFactor 0.95 with opposingPitcherHrVs 35"
+        "last7HR 3 and last30HR 8",
+        "hrScore 70.2 with exitVelo 90.7"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "CWS",
+      "opposingPitcher": "Anthony Kay",
+      "hrScoreRank": 6,
+      "topStats": [
+        "hrFBRatio=10.3",
+        "pullRate=57.1"
+      ],
+      "bullets": [
+        "hrFBRatio 10.3 and iso 0.359",
+        "last30HR 12 with parkFactor 1.17"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "JJ Bleday",
+      "team": "CIN",
+      "opponent": "STL",
+      "opposingPitcher": "Kyle Leahy",
+      "hrScoreRank": 7,
+      "topStats": [
+        "iso=0.331",
+        "pullRate=53.2"
+      ],
+      "bullets": [
+        "iso 0.331 and hrFBRatio 8.3",
+        "last30HR 6 with opposingPitcherHrVs 76.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -64,8 +98,44 @@
       "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 4,
       "topStats": [
+        "Pitcher HR VS=80.6",
+        "Hard Hit%=48.7"
+      ],
+      "bullets": [
+        "HR score 69.3 (#4)",
+        "Pitcher HR VS 80.6 at park 1.40"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=80.6",
+        "Hard Hit%=53.6"
+      ],
+      "bullets": [
+        "HR score 69.0 (#5)",
+        "Pitcher HR VS 80.6 at park 1.40"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 4,
+      "topStats": [
         "parkFactor=1.4",
-        "hrScore=69.4"
+        "opposingPitcherHrVs=80.6"
       ],
       "bullets": [
         "parkFactor 1.4 and opposingPitcherHrVs 80.6",
@@ -82,17 +152,32 @@
       "hrScoreRank": 5,
       "topStats": [
         "parkFactor=1.4",
-        "hrScore=69.1"
+        "hardHitRate=53.6"
       ],
       "bullets": [
-        "parkFactor 1.4 and hardHitRate 53.6",
-        "last30HR 5 with opposingPitcherHrVs 80.6"
+        "parkFactor 1.4 and opposingPitcherHrVs 80.6",
+        "last30HR 5 with hardHitRate 53.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
+    },
+    {
+      "player": "Shea Langeliers",
+      "team": "ATH",
+      "opponent": "HOU",
+      "opposingPitcher": "Peter Lambert",
+      "hrScoreRank": 9,
+      "topStats": [
+        "last7HR=3",
+        "last30HR=6"
+      ],
+      "bullets": [
+        "last7HR 3 and last30HR 6",
+        "hrScore 65.2 with parkFactor 1.04"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
     {
       "player": "Kyle Schwarber",
       "team": "PHI",
@@ -100,12 +185,12 @@
       "opposingPitcher": "Anthony Kay",
       "hrScoreRank": 6,
       "topStats": [
-        "hrFBRatio=10.3",
-        "hrScore=68.1"
+        "Pitcher HR VS=63.4",
+        "Hard Hit%=51.1"
       ],
       "bullets": [
-        "last30HR 12 and pullRate 57.1",
-        "parkFactor 1.17 with opposingPitcherHrVs 63.4"
+        "HR score 68.1 (#6)",
+        "Pitcher HR VS 63.4 at park 1.17"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -117,12 +202,12 @@
       "opposingPitcher": "Kyle Leahy",
       "hrScoreRank": 7,
       "topStats": [
-        "iso=0.331",
-        "hrScore=67.6"
+        "Pitcher HR VS=76.2",
+        "Hard Hit%=50.0"
       ],
       "bullets": [
-        "iso 0.331 and hrFBRatio 8.3",
-        "last30HR 6 with opposingPitcherHrVs 76.2"
+        "HR score 67.6 (#7)",
+        "Pitcher HR VS 76.2 at park 0.92"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -134,12 +219,12 @@
       "opposingPitcher": "Michael King",
       "hrScoreRank": 8,
       "topStats": [
-        "bbRate=12.4",
-        "hrScore=65.7"
+        "Hard Hit%=48.6",
+        "Pitcher HR VS=38.3"
       ],
       "bullets": [
-        "last30HR 9 and exitVelo 92.9",
-        "parkFactor 0.89 with opposingPitcherHrVs 38.3"
+        "HR score 65.7 (#8)",
+        "Pitcher HR VS 38.3 at park 0.89"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -147,18 +232,52 @@
   ],
   "longshots": [
     {
+      "player": "Juan Soto",
+      "team": "NYM",
+      "opponent": "SD",
+      "opposingPitcher": "Michael King",
+      "hrScoreRank": 8,
+      "topStats": [
+        "last30HR=9",
+        "xba=0.289"
+      ],
+      "bullets": [
+        "last30HR 9 and xba 0.289",
+        "hrScore 65.7 with exitVelo 92.9"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Oneil Cruz",
+      "team": "PIT",
+      "opponent": "ATL",
+      "opposingPitcher": "Martín Pérez",
+      "hrScoreRank": 11,
+      "topStats": [
+        "exitVelo=96.1",
+        "hardHitRate=59.6"
+      ],
+      "bullets": [
+        "exitVelo 96.1 and hardHitRate 59.6",
+        "hrScore 64.3 with barrelRate 16.8"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
       "player": "Shea Langeliers",
       "team": "ATH",
       "opponent": "HOU",
       "opposingPitcher": "Peter Lambert",
       "hrScoreRank": 9,
       "topStats": [
-        "last7HR=3",
-        "hrScore=65.2"
+        "Hard Hit%=46.2",
+        "Pitcher HR VS=34.2"
       ],
       "bullets": [
-        "last7HR 3 and last30HR 6",
-        "parkFactor 1.04 with opposingPitcherHrVs 34.2"
+        "HR score 65.2 (#9)",
+        "Pitcher HR VS 34.2 at park 1.04"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -170,12 +289,12 @@
       "opposingPitcher": "Michael King",
       "hrScoreRank": 10,
       "topStats": [
-        "hardHitRate=56.3",
-        "hrScore=64.5"
+        "Hard Hit%=56.3",
+        "Pitcher HR VS=38.3"
       ],
       "bullets": [
-        "hardHitRate 56.3 and barrelRate 18.8",
-        "last7HR 2 with opposingPitcherHrVs 38.3"
+        "HR score 64.5 (#10)",
+        "Pitcher HR VS 38.3 at park 0.89"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
