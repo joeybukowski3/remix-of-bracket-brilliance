@@ -275,7 +275,7 @@ function buildCaption(rawPayload) {
     "",
     `Full table: ${STRIKEOUT_PROPS_URL}`,
     "",
-    "#MLB #StrikeoutProps #MLBPicks #SportsBetting",
+    "#MLB #MLBProps #PropPicks #SportsAlgorithm",
   ].join("\n");
 
   if (caption.length > 280) {
