@@ -42,6 +42,9 @@ export type HrDashboardPitcher = {
   hrVs: number;
   hitsVs: number;
   kVs: number;
+  kLine?: number | null;
+  kOddsOver?: string | null;
+  kOddsUnder?: string | null;
 };
 
 export type HrDashboardBatter = {
@@ -940,6 +943,9 @@ export function buildPitcherStrikeoutRows(
         opponentTeamStrikeoutScore: Number(opponentTeamStrikeoutScore.toFixed(1)),
         strikeoutMatchupScore,
         whyItRanksWell: "",
+        kLine: pitcher.kLine ?? null,
+        kOddsOver: pitcher.kOddsOver ?? null,
+        kOddsUnder: pitcher.kOddsUnder ?? null,
       };
     })
     .sort((left, right) =>
