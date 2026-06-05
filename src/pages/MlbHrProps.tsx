@@ -1026,6 +1026,9 @@ export function buildPitcherStrikeoutMatchupRows(
       whiffRate: row.pitcherWhiffRate,
       kMatchupScore: row.strikeoutMatchupScore,
       reasonTags: buildStrikeoutReasonTags(row, opponentKSampleSize),
+      kLine: row.kLine,
+      kOddsOver: row.kOddsOver,
+      kOddsUnder: row.kOddsUnder,
     };
   });
 }
