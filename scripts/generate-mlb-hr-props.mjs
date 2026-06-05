@@ -646,11 +646,9 @@ export function computePitcherMatchupRatings(pitcher, contexts) {
 
 // Classify pitcher as starter or reliever based on typical IP patterns
 function classifyPitcherRole(pitcher) {
-  // All pitchers in this payload are probable starters from the MLB API.
-  // Only flag as reliever if kRate is extremely high (35%+), indicating
-  // the team listed a reliever as their probable pitcher (rare edge case).
-  const kRate = pitcher.kRate ?? 0;
-  return kRate >= 35 ? "reliever" : "starter";
+  // All probable pitchers are starters; only flag reliever if no GS on record
+  if (pitcher.seasonGS != null && pitcher.seasonGS === 0) return "reliever";
+  return "starter";
 }
 
 // Get average IP for pitcher role
@@ -658,50 +656,31 @@ function getAverageIPForRole(role) {
   return role === "starter" ? 5.5 : 1.5;
 }
 
-// Calculate innings projection based on matchup quality
-function calculateProjectedInnings(pitcher, opponentBatters = []) {
+// Calculate average IP per game started from real season stats
+function calculateProjectedInnings(pitcher) {
   const role = classifyPitcherRole(pitcher);
-  const baseIP = getAverageIPForRole(role);
-  
-  // Matchup quality factors
-  const opponentBBRate = opponentBatters.length > 0
-    ? opponentBatters.reduce((sum, b) => sum + (b.bbRate ?? 0), 0) / opponentBatters.length
-    : 8;
-  const opponentKRate = opponentBatters.length > 0
-    ? opponentBatters.reduce((sum, b) => sum + (b.kRate ?? 0), 0) / opponentBatters.length
-    : 20;
-  
-  // Matchup factor: weighted blend of pitcher whiff ability + opponent discipline
-  // Designed to produce values centered around 1.0 so baseIP stays realistic
-  const whiffFactor    = (pitcher.whiffRate ?? 25) / 25;          // ~1.0 at avg
-  const bbFactor       = (22 - (opponentBBRate ?? 8)) / 14;       // ~1.0 at avg BB rate
-  const kRateFactor    = (opponentKRate ?? 20) / 20;              // ~1.0 at avg K rate
-
-  const matchupFactor = (whiffFactor * 0.4) + (bbFactor * 0.3) + (kRateFactor * 0.3);
-
-  // Project IP: base × matchup adjustment, capped 1.0–8.0 for starters
-  const minIP = role === "starter" ? 3.0 : 0.5;
-  const maxIP = role === "starter" ? 8.0 : 3.0;
-  const projectedIP = baseIP * matchupFactor;
-  return Math.max(minIP, Math.min(maxIP, roundNumber(projectedIP, 1)));
+  // Use real season IP / GS if available
+  if (pitcher.seasonIP != null && pitcher.seasonGS != null && pitcher.seasonGS > 0) {
+    const avgIP = pitcher.seasonIP / pitcher.seasonGS;
+    const minIP = role === "starter" ? 3.0 : 0.5;
+    const maxIP = role === "starter" ? 8.0 : 3.0;
+    return Math.max(minIP, Math.min(maxIP, roundNumber(avgIP, 1)));
+  }
+  // Fallback: role-based default
+  return getAverageIPForRole(role);
 }
 
-// Calculate projected K/9 based on pitcher stats and opponent
-function calculateProjectedK9(pitcher, opponentBatters = []) {
-  // baseK9: kRate% of 27 batters faced per 9 innings
+// Calculate real K/9 from season strikeouts and innings pitched
+function calculateProjectedK9(pitcher) {
+  // Use real season SO and IP if available
+  if (pitcher.seasonStrikeOuts != null && pitcher.seasonIP != null && pitcher.seasonIP > 0) {
+    const k9 = (pitcher.seasonStrikeOuts / pitcher.seasonIP) * 9;
+    return roundNumber(Math.max(1, Math.min(15, k9)), 1);
+  }
+  // Fallback: estimate from kRate%
   const baseK9 = (pitcher.kRate ?? 20) / 100 * 27;
-  
-  // Opponent K rate adjustment (higher opponent K = better matchup for pitcher)
-  const opponentKRate = opponentBatters.length > 0
-    ? opponentBatters.reduce((sum, b) => sum + (b.kRate ?? 0), 0) / opponentBatters.length
-    : 20;
-  const kRateAdj = (opponentKRate / 20);  // Normalize to ~1.0
-  
-  // Pitcher skill multiplier based on whiff rate
   const skillMult = (pitcher.whiffRate ?? 25) / 25;
-  
-  const projectedK9 = baseK9 * kRateAdj * skillMult;
-  return roundNumber(Math.max(3, Math.min(15, projectedK9)), 1);
+  return roundNumber(Math.max(3, Math.min(15, baseK9 * skillMult)), 1);
 }
 
 // Calculate projected Ks for the game
@@ -1317,6 +1296,9 @@ async function main() {
         bbRate: sanitizePercentStat(starter.statcast?.bb_percent, "Pitcher BB%", { pitcherId: starter.pitcherId })
           ?? sanitizePercentStat(deriveRatePercent(starter.seasonStats?.baseOnBalls, starter.seasonStats?.battersFaced), "Pitcher BB%", { pitcherId: starter.pitcherId, source: "season-stats" }),
         whiffRate: sanitizePercentStat(starter.statcast?.whiff_percent, "Pitcher Whiff%", { pitcherId: starter.pitcherId }),
+        seasonStrikeOuts: toFiniteNumber(starter.seasonStats?.strikeOuts) ?? null,
+        seasonIP: parseInningsPitched(starter.seasonStats?.inningsPitched) ?? null,
+        seasonGS: toFiniteNumber(starter.seasonStats?.gamesStarted) ?? null,
       });
     }
 
@@ -1491,8 +1473,8 @@ async function main() {
     );
     
     // Calculate innings projection and K stats
-    const projectedIP = calculateProjectedInnings(pitcher, opponentBatters);
-    const projectedK9 = calculateProjectedK9(pitcher, opponentBatters);
+    const projectedIP = calculateProjectedInnings(pitcher);
+    const projectedK9 = calculateProjectedK9(pitcher);
     const projectedKs = calculateProjectedKs(projectedIP, projectedK9);
     const role = classifyPitcherRole(pitcher);
     
