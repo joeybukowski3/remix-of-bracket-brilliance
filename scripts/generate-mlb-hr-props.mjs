@@ -1551,6 +1551,7 @@ async function main() {
       const key = normName(b.player);
       const hrOddsEntry = mlbOdds.hrOdds?.[key] ?? null;
       const hrOddsYes = hrOddsEntry?.yes ?? null;           // e.g. "+350"
+      const hrOddsNo  = hrOddsEntry?.no  ?? null;           // e.g. "-450"
       const hrImplied = hrOddsEntry?.impliedYes ?? null;    // e.g. 0.222
       // Model HR probability proxy: hrScore maps roughly to 3-22% HR probability
       const modelHrProb = hrOddsYes
@@ -1559,7 +1560,7 @@ async function main() {
       const hrValueEdge = (modelHrProb && hrImplied && hrImplied > 0)
         ? Math.round((modelHrProb / hrImplied) * 100) / 100
         : null;
-      return { ...b, hrOddsYes, hrImplied, hrValueEdge };
+      return { ...b, hrOddsYes, hrOddsNo, hrImplied, hrValueEdge };
     });
   }
 
@@ -1631,6 +1632,7 @@ async function main() {
   validatedPayload.batters = battersWithOdds.map(b => ({
     ...b,
     hrOddsYes: b.hrOddsYes ?? null,
+    hrOddsNo: b.hrOddsNo ?? null,
     hrValueEdge: b.hrValueEdge ?? null,
   }));
 
