@@ -1468,6 +1468,19 @@ async function main() {
       hrScoreRank: index + 1,
     }));
 
+  // ── Load MLB odds (written by fetch-mlb-odds.mjs before this script) ────────
+  let mlbOdds = { moneylines: {}, hrOdds: {}, kOdds: {} };
+  try {
+    if (existsSync(MLB_ODDS_PATH)) {
+      mlbOdds = JSON.parse(readFileSync(MLB_ODDS_PATH, "utf8"));
+      console.log(`Loaded MLB odds: ${Object.keys(mlbOdds.hrOdds).length} HR, ${Object.keys(mlbOdds.kOdds).length} K, ${Object.keys(mlbOdds.moneylines).length} ML`);
+    } else {
+      console.warn("mlb-odds.json not found — continuing without odds.");
+    }
+  } catch (err) {
+    console.warn("Could not load mlb-odds.json:", err.message);
+  }
+
   const validatedPitchers = validatePitcherRows(scoredPitchers.map((pitcher) => {
     // Get opposing batters for this pitcher's matchup
     const opponentBatters = dedupedPool.filter(
@@ -1523,19 +1536,6 @@ async function main() {
     batters: validatedRows,
   });
   console.log(`Validated ${validatedPayload.batters.length} batters, ${validatedPayload.pitchers.length} pitchers, and ${validatedPayload.games.length} games for the MLB HR dashboard.`);
-
-  // ── Load MLB odds (written by fetch-mlb-odds.mjs before this script) ────────
-  let mlbOdds = { moneylines: {}, hrOdds: {}, kOdds: {} };
-  try {
-    if (existsSync(MLB_ODDS_PATH)) {
-      mlbOdds = JSON.parse(readFileSync(MLB_ODDS_PATH, "utf8"));
-      console.log(`Loaded MLB odds: ${Object.keys(mlbOdds.hrOdds).length} HR, ${Object.keys(mlbOdds.kOdds).length} K, ${Object.keys(mlbOdds.moneylines).length} ML`);
-    } else {
-      console.warn("mlb-odds.json not found — continuing without odds.");
-    }
-  } catch (err) {
-    console.warn("Could not load mlb-odds.json:", err.message);
-  }
 
   // Helper: normalize player name for odds lookup
   function normName(name) {
