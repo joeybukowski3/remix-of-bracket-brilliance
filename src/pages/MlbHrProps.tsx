@@ -1927,12 +1927,7 @@ export default function MlbHrProps() {
                                     </td>
                                     {/* HR Score */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
-                                      <div className="flex flex-col gap-0">
-                                        <StatScorePill value={row.adjustedHrScore ?? row.hrScore} />
-                                        {row.adjustedHrScore != null && Math.abs(row.adjustedHrScore - row.hrScore) >= 2 && (
-                                          <span className="hidden sm:block text-[9px] text-slate-400 text-center">raw {row.hrScore.toFixed(1)}</span>
-                                        )}
-                                      </div>
+                                      <StatScorePill value={row.adjustedHrScore ?? row.hrScore} />
                                     </td>
                                     {/* Barrel% */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
@@ -1988,23 +1983,6 @@ export default function MlbHrProps() {
                                         );
                                       })() : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>
-                                    {/* Ptch Regr */}
-                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
-                                      {row.pitcherRegressionScore != null ? (() => {
-                                        const s = row.pitcherRegressionScore;
-                                        const style = s >= 3 ? { bg: "#14532d", text: "#bbf7d0", label: "↑" }
-                                          : s >= 0.5 ? { bg: "#dcfce7", text: "#15803d", label: "↑" }
-                                          : s > -0.5 ? { bg: "#f1f5f9", text: "#64748b", label: "—" }
-                                          : s > -3 ? { bg: "#dbeafe", text: "#1d4ed8", label: "↓" }
-                                          : { bg: "#1e3a8a", text: "#93c5fd", label: "↓↓" };
-                                        return (
-                                          <span className="rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap"
-                                            style={{ backgroundColor: style.bg, color: style.text }}>
-                                            {s > 0 ? "+" : ""}{s.toFixed(1)}<span className="hidden sm:inline"> {style.label}</span>
-                                          </span>
-                                        );
-                                      })() : <span className="text-[9px] text-slate-300">—</span>}
-                                    </td>
                                     {/* HR Odds */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       {row.hrOddsYes != null ? (() => {
@@ -2022,6 +2000,23 @@ export default function MlbHrProps() {
                                               <span className="text-[8px] sm:text-[9px] font-bold text-emerald-600">VAL✓</span>
                                             )}
                                           </div>
+                                        );
+                                      })() : <span className="text-[9px] text-slate-300">—</span>}
+                                    </td>
+                                    {/* Ptch Regr */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      {row.pitcherRegressionScore != null ? (() => {
+                                        const s = row.pitcherRegressionScore;
+                                        const style = s >= 3 ? { bg: "#14532d", text: "#bbf7d0", label: "↑" }
+                                          : s >= 0.5 ? { bg: "#dcfce7", text: "#15803d", label: "↑" }
+                                          : s > -0.5 ? { bg: "#f1f5f9", text: "#64748b", label: "—" }
+                                          : s > -3 ? { bg: "#dbeafe", text: "#1d4ed8", label: "↓" }
+                                          : { bg: "#1e3a8a", text: "#93c5fd", label: "↓↓" };
+                                        return (
+                                          <span className="rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap"
+                                            style={{ backgroundColor: style.bg, color: style.text }}>
+                                            {s > 0 ? "+" : ""}{s.toFixed(1)}<span className="hidden sm:inline"> {style.label}</span>
+                                          </span>
                                         );
                                       })() : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>
