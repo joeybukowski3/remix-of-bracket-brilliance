@@ -12,6 +12,7 @@ import {
   PropScoreBadge,
   TeamLogoText,
 } from "@/components/mlb/MlbPropModelComponents";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
@@ -322,7 +323,7 @@ export default function MlbStrikeoutProps() {
                             <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-400 ${sbg}`}>{row.rank}</td>
                             <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-0.5 ${sbg}`}>
                               <div className="flex items-center gap-1">
-                                <TeamLogoText team={row.team} size={16} />
+                                <MlbTeamLogo team={row.team} size={16} />
                                 <span className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.pitcher}</span>
                                 <span className="text-[9px] text-slate-400">[vs {row.opponent}]</span>
                               </div>
