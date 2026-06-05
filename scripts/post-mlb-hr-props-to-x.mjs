@@ -21,11 +21,13 @@ function usage() {
   return [
     "Usage: node scripts/post-mlb-hr-props-to-x.mjs --dry-run",
     "       node scripts/post-mlb-hr-props-to-x.mjs --post",
+    "       node scripts/post-mlb-hr-props-to-x.mjs --post-text-only",
     "       node scripts/post-mlb-hr-props-to-x.mjs --verify-account",
     "       node scripts/post-mlb-hr-props-to-x.mjs --post-key-only",
     "",
     "--dry-run  Build the X caption, screenshot the HR Props table, and do not post.",
     "--post     Manual GitHub Actions only: validate account, build the caption, screenshot the HR Props table, and publish to X.",
+    "--post-text-only  Manual GitHub Actions only: validate account, build the caption, and publish text only to X.",
     "--verify-account  Verify configured X credentials and expected username without building a caption.",
     "--post-key-only  Print the deterministic duplicate-protection key for the current slate/table.",
     "",
@@ -39,13 +41,15 @@ function usage() {
 function getMode() {
   const dryRun = args.has("--dry-run");
   const post = args.has("--post");
+  const postTextOnly = args.has("--post-text-only");
   const verifyAccount = args.has("--verify-account");
   const postKeyOnly = args.has("--post-key-only");
-  const modes = [dryRun, post, verifyAccount, postKeyOnly].filter(Boolean).length;
-  if (modes > 1) throw new Error("Choose only one mode: --dry-run, --post, --verify-account, or --post-key-only.");
+  const modes = [dryRun, post, postTextOnly, verifyAccount, postKeyOnly].filter(Boolean).length;
+  if (modes > 1) throw new Error("Choose only one mode: --dry-run, --post, --post-text-only, --verify-account, or --post-key-only.");
   if (!modes) return "dry-run";
   if (verifyAccount) return "verify-account";
   if (postKeyOnly) return "post-key-only";
+  if (postTextOnly) return "post-text-only";
   return post ? "post" : "dry-run";
 }
 
@@ -393,6 +397,10 @@ function assertLivePostAllowed() {
   }
 }
 
+function getLiveDuplicateKey(postKey, mode) {
+  return mode === "post-text-only" ? `${postKey}-text-only` : postKey;
+}
+
 async function publishPost({ client, caption, screenshotPath }) {
   const mediaId = await client.v1.uploadMedia(screenshotPath, { mimeType: "image/png" });
   console.log(`[mlb-hr-props-x] uploadedMediaId=${mediaId}`);
@@ -409,6 +417,93 @@ async function publishPost({ client, caption, screenshotPath }) {
   return { tweetId, tweetUrl, mediaId };
 }
 
+async function publishTextOnlyPost({ client, caption }) {
+  const response = await client.v2.tweet(caption);
+  const tweetId = normalizeText(response?.data?.id);
+  if (!tweetId) throw new Error("X text-only post response did not include a tweet ID.");
+
+  const tweetUrl = `https://x.com/_joeknowsball_/status/${tweetId}`;
+  console.log(`[mlb-hr-props-x] postedTweetId=${tweetId}`);
+  console.log(`[mlb-hr-props-x] postedTweetUrl=${tweetUrl}`);
+  return { tweetId, tweetUrl };
+}
+
+function getNestedValue(source, pathParts) {
+  let value = source;
+  for (const part of pathParts) {
+    if (!value || typeof value !== "object") return undefined;
+    value = value[part];
+  }
+  return value;
+}
+
+function getFirstDefined(source, paths) {
+  for (const pathParts of paths) {
+    const value = getNestedValue(source, pathParts);
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return undefined;
+}
+
+function sanitizeLogValue(value) {
+  let text = String(value);
+  for (const secret of [
+    process.env.JKB_X_API_KEY,
+    process.env.JKB_X_API_SECRET,
+    process.env.JKB_X_ACCESS_TOKEN,
+    process.env.JKB_X_ACCESS_SECRET,
+  ]) {
+    if (secret) text = text.split(secret).join("[redacted]");
+  }
+
+  return text
+    .replace(/authorization:\s*[^\n\r]+/gi, "authorization: [redacted]")
+    .replace(/(oauth_[a-z_]+=)"[^"]+"/gi, '$1"[redacted]"')
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer [redacted]");
+}
+
+function logXApiError(error) {
+  if (!error || typeof error !== "object") return;
+
+  const status = getFirstDefined(error, [
+    ["status"],
+    ["statusCode"],
+    ["code"],
+    ["data", "status"],
+    ["data", "statusCode"],
+    ["error", "status"],
+  ]);
+  const code = getFirstDefined(error, [
+    ["code"],
+    ["data", "code"],
+    ["data", "error", "code"],
+    ["error", "code"],
+  ]);
+  const title = getFirstDefined(error, [
+    ["data", "title"],
+    ["data", "error", "title"],
+    ["error", "title"],
+  ]);
+  const detail = getFirstDefined(error, [
+    ["data", "detail"],
+    ["data", "error", "detail"],
+    ["error", "detail"],
+  ]);
+  const errors = Array.isArray(error.data?.errors) ? error.data.errors : [];
+
+  if (status !== undefined || code !== undefined) {
+    console.error(`[mlb-hr-props-x] X API error status=${sanitizeLogValue(status ?? "unknown")} code=${sanitizeLogValue(code ?? "unknown")}`);
+  }
+  if (title !== undefined) console.error(`[mlb-hr-props-x] X API error title=${sanitizeLogValue(title)}`);
+  if (detail !== undefined) console.error(`[mlb-hr-props-x] X API error detail=${sanitizeLogValue(detail)}`);
+  for (const [index, item] of errors.entries()) {
+    const itemTitle = normalizeText(item?.title);
+    const itemDetail = normalizeText(item?.detail);
+    const itemCode = normalizeText(item?.code);
+    console.error(`[mlb-hr-props-x] X API error item ${index + 1}: code=${sanitizeLogValue(itemCode || "unknown")} title=${sanitizeLogValue(itemTitle || "unknown")} detail=${sanitizeLogValue(itemDetail || "unknown")}`);
+  }
+}
+
 async function main() {
   if (args.has("--help") || args.has("-h")) {
     console.log(usage());
@@ -422,13 +517,13 @@ async function main() {
   }
 
   let account = null;
-  if (mode === "post") {
+  if (mode === "post" || mode === "post-text-only") {
     assertLivePostAllowed();
     account = await verifyExpectedXAccount();
   }
 
   const source = getDataSource();
-  if (mode === "post" && source !== "production") {
+  if ((mode === "post" || mode === "post-text-only") && source !== "production") {
     throw new Error("Live posting requires HR_PROPS_DATA_SOURCE=production.");
   }
 
@@ -459,18 +554,22 @@ async function main() {
   console.log(`[mlb-hr-props-x] captionLength=${result.caption.length}`);
   const postKey = buildPostKey(rawPayload, bestBetsPayload, result.topProps);
   console.log(`[mlb-hr-props-x] postKey=${postKey}`);
-  const duplicateStatePath = mode === "post" ? assertNotAlreadyPosted(postKey) : "";
+  const liveDuplicateKey = mode === "post" || mode === "post-text-only" ? getLiveDuplicateKey(postKey, mode) : "";
+  const duplicateStatePath = liveDuplicateKey ? assertNotAlreadyPosted(liveDuplicateKey) : "";
   console.log("");
   console.log(result.caption);
   console.log("");
 
-  const screenshotPath = await screenshotHrPropsTable();
-  console.log(`[mlb-hr-props-x] screenshotPath=${screenshotPath}`);
+  let screenshotPath = "";
+  if (mode !== "post-text-only") {
+    screenshotPath = await screenshotHrPropsTable();
+    console.log(`[mlb-hr-props-x] screenshotPath=${screenshotPath}`);
+  }
 
   if (mode === "post") {
     const post = await publishPost({ client: account.client, caption: result.caption, screenshotPath });
     savePostReceipt(duplicateStatePath, {
-      postKey,
+      postKey: liveDuplicateKey,
       slateDate: normalizeText(rawPayload?.date),
       postedAt: new Date().toISOString(),
       tweetId: post.tweetId,
@@ -480,12 +579,26 @@ async function main() {
     });
     console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
   }
+
+  if (mode === "post-text-only") {
+    const post = await publishTextOnlyPost({ client: account.client, caption: result.caption });
+    savePostReceipt(duplicateStatePath, {
+      postKey: liveDuplicateKey,
+      mode: "text-only",
+      slateDate: normalizeText(rawPayload?.date),
+      postedAt: new Date().toISOString(),
+      tweetId: post.tweetId,
+      tweetUrl: post.tweetUrl,
+    });
+    console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
+  }
 }
 
 try {
   await main();
 } catch (error) {
-  console.error(`[mlb-hr-props-x] ${error instanceof Error ? error.message : error}`);
+  console.error(`[mlb-hr-props-x] ${sanitizeLogValue(error instanceof Error ? error.message : error)}`);
+  logXApiError(error);
   console.error("");
   console.error(usage());
   process.exitCode = 1;

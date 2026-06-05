@@ -15,6 +15,7 @@ on:
         options:
           - dry-run
           - post
+          - post-text-only
           - verify-account
       data_source:
         description: "HR props data source"
@@ -94,16 +95,19 @@ jobs:
 
       - name: Determine live post duplicate key
         id: post_key
-        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'post'
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')
         shell: bash
         run: |
           POST_KEY="$(HR_PROPS_DATA_SOURCE=production node scripts/post-mlb-hr-props-to-x.mjs --post-key-only)"
+          if [ "${{ inputs.mode }}" = "post-text-only" ]; then
+            POST_KEY="${POST_KEY}-text-only"
+          fi
           echo "key=${POST_KEY}" >> "$GITHUB_OUTPUT"
           echo "Live post duplicate key: ${POST_KEY}"
 
       - name: Restore live post duplicate cache
         id: restore_post_cache
-        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'post'
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')
         uses: actions/cache/restore@v4
         with:
           path: .cache/mlb-hr-props-x-posted
@@ -126,8 +130,8 @@ jobs:
           if [ -n "${JKB_X_ACCESS_SECRET:-}" ]; then echo "JKB_X_ACCESS_SECRET present: true"; else echo "JKB_X_ACCESS_SECRET present: false"; fi
           node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
-          HR_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && 'production' || (github.event_name == 'workflow_dispatch' && inputs.data_source || 'production') }}
-          X_ALLOW_LIVE_POST: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && 'true' || 'false' }}
+          HR_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'production' || (github.event_name == 'workflow_dispatch' && inputs.data_source || 'production') }}
+          X_ALLOW_LIVE_POST: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'true' || 'false' }}
 
       - name: Upload HR props X screenshot
         if: steps.schedule_gate.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'dry-run')
@@ -138,14 +142,14 @@ jobs:
           if-no-files-found: error
 
       - name: Save live post duplicate cache
-        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && steps.restore_post_cache.outputs.cache-hit != 'true'
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && steps.restore_post_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: .cache/mlb-hr-props-x-posted
           key: ${{ steps.post_key.outputs.key }}
 
       - name: Upload live post receipt
-        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'post' && steps.restore_post_cache.outputs.cache-hit != 'true'
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && steps.restore_post_cache.outputs.cache-hit != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: mlb-hr-props-x-post-receipt
