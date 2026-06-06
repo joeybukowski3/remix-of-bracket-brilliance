@@ -67,23 +67,28 @@ jobs:
           SHOULD_RUN="true"
           MESSAGE=""
 
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            ET_ZONE="$(TZ=America/New_York date +%Z)"
+          # Manual dispatches and re-runs always proceed
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "message=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-            # 11 AM ET strikeout props posting
-            if [ "$ET_ZONE" = "EDT" ]; then
-              VALID_CRONS="0 15 * * *"
-            else
-              VALID_CRONS="0 16 * * *"
-            fi
+          ET_ZONE="$(TZ=America/New_York date +%Z)"
 
-            CURRENT="${{ github.event.schedule }}"
-            if echo "$VALID_CRONS" | grep -qF "$CURRENT"; then
-              SHOULD_RUN="true"
-            else
-              SHOULD_RUN="false"
-              MESSAGE="Skipping duplicate cron for $ET_ZONE: $CURRENT is not the valid posting slot."
-            fi
+          # 11 AM ET strikeout props posting
+          if [ "$ET_ZONE" = "EDT" ]; then
+            VALID_CRONS="0 15 * * *"
+          else
+            VALID_CRONS="0 16 * * *"
+          fi
+
+          CURRENT="${{ github.event.schedule }}"
+          if echo "$VALID_CRONS" | grep -qF "$CURRENT"; then
+            SHOULD_RUN="true"
+          else
+            SHOULD_RUN="false"
+            MESSAGE="Skipping duplicate cron for $ET_ZONE: $CURRENT is not the valid posting slot."
           fi
 
           echo "should_run=${SHOULD_RUN}" >> "$GITHUB_OUTPUT"

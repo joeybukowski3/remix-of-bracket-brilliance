@@ -389,10 +389,14 @@ function getLiveDuplicateKey(postKey, mode) {
 
 async function publishPost({ client, caption, screenshotPath }) {
   const mediaId = await client.v1.uploadMedia(screenshotPath, { mimeType: "image/png" });
-  console.log(`[mlb-strikeout-props-x] uploadedMediaId=${mediaId}`);
+  const mediaIdStr = String(mediaId);
+  console.log(`[mlb-strikeout-props-x] uploadedMediaId=${mediaIdStr}`);
+
+  // Brief wait to ensure media is fully processed before attaching to tweet
+  await new Promise(resolve => setTimeout(resolve, 2000));
 
   const response = await client.v2.tweet(caption, {
-    media: { media_ids: [mediaId] },
+    media: { media_ids: [mediaIdStr] },
   });
   const tweetId = normalizeText(response?.data?.id);
   if (!tweetId) throw new Error("X post response did not include a tweet ID.");
@@ -400,7 +404,7 @@ async function publishPost({ client, caption, screenshotPath }) {
   const tweetUrl = `https://x.com/_joeknowsball_/status/${tweetId}`;
   console.log(`[mlb-strikeout-props-x] postedTweetId=${tweetId}`);
   console.log(`[mlb-strikeout-props-x] postedTweetUrl=${tweetUrl}`);
-  return { tweetId, tweetUrl, mediaId };
+  return { tweetId, tweetUrl, mediaId: mediaIdStr };
 }
 
 async function publishTextOnlyPost({ client, caption }) {
