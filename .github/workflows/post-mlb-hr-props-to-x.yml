@@ -3,8 +3,8 @@ name: Post MLB HR Props to X
 on:
   schedule:
     # Runs after the 1 PM ET HR props refresh normally completes.
-    - cron: "30 17 * * *" # 1:30 PM EDT
-    - cron: "30 18 * * *" # 1:30 PM EST
+    - cron: "0 15 * * *" # 11 AM EDT
+    - cron: "0 16 * * *" # 11 AM EST
   workflow_dispatch:
     inputs:
       mode:
@@ -70,11 +70,11 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then
             ET_ZONE="$(TZ=America/New_York date +%Z)"
 
-            # 1:30 PM ET after the 1 PM HR props refresh.
+            # 11 AM ET HR props posting
             if [ "$ET_ZONE" = "EDT" ]; then
-              VALID_CRONS="30 17 * * *"
+              VALID_CRONS="0 15 * * *"
             else
-              VALID_CRONS="30 18 * * *"
+              VALID_CRONS="0 16 * * *"
             fi
 
             CURRENT="${{ github.event.schedule }}"
@@ -131,7 +131,7 @@ jobs:
           node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
           HR_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'production' || (github.event_name == 'workflow_dispatch' && inputs.data_source || 'production') }}
-          X_ALLOW_LIVE_POST: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'true' || 'false' }}
+          X_ALLOW_LIVE_POST: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')) }}
 
       - name: Upload HR props X screenshot
         if: steps.schedule_gate.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'dry-run')

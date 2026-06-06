@@ -131,7 +131,7 @@ jobs:
           node scripts/post-mlb-strikeout-props-to-x.mjs "--${MODE}"
         env:
           K_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'production' || (github.event_name == 'workflow_dispatch' && inputs.data_source || 'production') }}
-          X_ALLOW_LIVE_POST: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'true' || 'false' }}
+          X_ALLOW_LIVE_POST: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')) }}
 
       - name: Upload K props X screenshot
         if: steps.schedule_gate.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'dry-run')
