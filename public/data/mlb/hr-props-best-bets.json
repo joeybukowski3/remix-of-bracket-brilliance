@@ -1,9 +1,9 @@
 {
   "date": "2026-06-07",
-  "generatedAt": "2026-06-07T17:26:16.324Z",
+  "generatedAt": "2026-06-07T18:08:24.614Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features strong HR environments at Citizens Bank Park (1.17) and Coors Field (1.40), where Schwarber and Chourio benefit from park factors and lefty matchups against Gilbert and Freeland. Dingler draws the top spot in a favorable Comerica matchup versus Castillo, while Alvarez faces a soft lefty in Jump at a slightly boosted Daikin Park. Low-scoring pitching and elevated barrel rates across multiple parks set up a concentrated power slate.",
-    "modelNote": "The model is prioritizing barrel rate, exit velo, and recent HR volume over traditional park factors, elevating Dingler to the top despite a neutral venue while still rewarding Coors and Philly bats with strong underlying contact metrics."
+    "slateOverview": "Today's slate features strong HR environments at Citizens Bank Park (1.17) and Coors Field (1.40), with multiple lefty-on-lefty matchups including Schwarber vs Gilbert and Chourio vs Freeland. Comerica Park (0.95) and Petco Park (0.89) suppress power but still surface top model plays via elite barrel/exit velo profiles against Castillo and Vásquez.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over park factors, elevating Dingler and Alvarez despite neutral-to-negative venues while discounting lower-quality contact profiles like Chourio despite Coors."
   },
   "bestBets": [
     {
@@ -31,11 +31,11 @@
       "hrScoreRank": 2,
       "topStats": [
         "hrScore=73",
-        "exitVelo=94.8"
+        "xba=0.345"
       ],
       "bullets": [
-        "barrelRate=18.9 with hardHitRate=54",
-        "iso=0.338 and last30HR=9"
+        "exitVelo=94.8 with hardHitRate=54",
+        "hrFBRatio=9.4 vs opposingPitcherHrVs=13.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,8 +51,8 @@
         "barrelRate=22.5"
       ],
       "bullets": [
-        "parkFactor=1.17 with opposingPitcherHrVs=85.2",
-        "pullRate=56.5 and iso=0.345"
+        "parkFactor=1.17 with iso=0.344",
+        "opposingPitcherHrVs=85.2 vs last30HR=10"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -68,8 +68,8 @@
         "hardHitRate=55.3"
       ],
       "bullets": [
-        "pullRate=57.9 with exitVelo=92.5",
-        "opposingPitcherHrVs=77 and last7HR=2"
+        "pullRate=57.9 with last7HR=2",
+        "opposingPitcherHrVs=77 vs exitVelo=92.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -86,7 +86,7 @@
       ],
       "bullets": [
         "last30HR=9 with xba=0.287",
-        "whiffRate=21.4 and bbRate=11.9"
+        "opposingPitcherHrVs=77 vs whiffRate=21.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -105,7 +105,7 @@
       ],
       "bullets": [
         "barrelRate=33.3 with iso=0.571",
-        "hrFBRatio=14.3 and xba=0.352"
+        "hrFBRatio=14.3 vs opposingPitcherHrVs=50.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -118,11 +118,11 @@
       "hrScoreRank": 7,
       "topStats": [
         "hrScore=68",
-        "last30HR=9"
+        "last7HR=3"
       ],
       "bullets": [
-        "last7HR=3 with hrFBRatio=6.6",
-        "opposingPitcherHrVs=63.2 and barrelRate=13.8"
+        "last30HR=9 with opposingPitcherHrVs=63.2",
+        "hrFBRatio=6.6 vs parkFactor=1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -138,14 +138,31 @@
         "parkFactor=1.17"
       ],
       "bullets": [
-        "bbRate=15.5 with last30HR=8",
-        "opposingPitcherHrVs=48.4 and hardHitRate=46.9"
+        "last30HR=8 with bbRate=15.5",
+        "opposingPitcherHrVs=48.4 vs hardHitRate=46.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     }
   ],
   "longshots": [
+    {
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "COL",
+      "opposingPitcher": "Kyle Freeland",
+      "hrScoreRank": 10,
+      "topStats": [
+        "hrScore=64.7",
+        "parkFactor=1.4"
+      ],
+      "bullets": [
+        "last7HR=2 with last30HR=4",
+        "opposingPitcherHrVs=67.8 vs barrelRate=17.1"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
     {
       "player": "Pete Crow-Armstrong",
       "team": "CHC",
@@ -157,25 +174,8 @@
         "last7HR=4"
       ],
       "bullets": [
-        "last30HR=7 with barrelRate=12.1",
-        "opposingPitcherHrVs=33.9 and hardHitRate=50.9"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Brandon Marsh",
-      "team": "PHI",
-      "opponent": "CWS",
-      "opposingPitcher": "Tyler Gilbert",
-      "hrScoreRank": 20,
-      "topStats": [
-        "hrScore=59.8",
-        "parkFactor=1.17"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs=85.2 with last7HR=2",
-        "xba=0.301 and exitVelo=90.3"
+        "last30HR=7 with opposingPitcherHrVs=33.9",
+        "hardHitRate=50.9 vs exitVelo=91.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -193,23 +193,6 @@
       "bullets": [
         "HR score 65.5 (#9)",
         "Pitcher HR VS 33.2 at park 1.01"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 10,
-      "topStats": [
-        "Pitcher HR VS=67.8",
-        "Hard Hit%=47.6"
-      ],
-      "bullets": [
-        "HR score 64.7 (#10)",
-        "Pitcher HR VS 67.8 at park 1.40"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
