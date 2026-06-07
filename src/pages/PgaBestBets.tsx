@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
 import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
 import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
@@ -231,6 +232,7 @@ function PickCard({
 }
 
 export default function PgaBestBets() {
+  usePageSeo(getSeoMeta("pga-best-bets"));
   const scheduleTournament = getPgaScheduleSelection().currentUpcoming;
   const fallbackTournamentName =
     scheduleTournament?.shortName

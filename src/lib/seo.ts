@@ -1,9 +1,15 @@
 export type SeoPage =
   | "home"
   | "mlb"
+  | "mlb-hr-props"
+  | "mlb-strikeout-props"
+  | "mlb-batter-vs-pitcher"
+  | "mlb-props-hub"
   | "pga"
   | "pga-custom"
   | "pga-dfs"
+  | "pga-best-bets"
+  | "pga-model"
   | "nfl"
   | "nba"
   | "ncaa"
@@ -29,6 +35,30 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
       "Live MLB game matchup analyzer with park factors, pitcher vs batter analysis, lineup context, and daily HR props, strikeout props, and hit props betting models.",
     path: "/mlb",
   },
+  "mlb-hr-props": {
+    title: "MLB HR Props Model — Home Run Prop Picks & Analytics",
+    description:
+      "Free MLB home run prop model ranking every batter by barrel rate, hard-hit %, park factor, and pitcher vulnerability. Daily HR prop picks with sportsbook odds.",
+    path: "/mlb/hr-props",
+  },
+  "mlb-strikeout-props": {
+    title: "MLB Strikeout Props Model — Pitcher K Prop Picks & Analytics",
+    description:
+      "Free MLB strikeout prop model ranking pitchers by K rate, whiff rate, K/9, and opponent strikeout tendency. Daily K prop picks with sportsbook odds and avg IP.",
+    path: "/mlb/strikeout-props",
+  },
+  "mlb-batter-vs-pitcher": {
+    title: "MLB Batter vs Pitcher Matchup Tool | Joe Knows Ball",
+    description:
+      "MLB batter vs pitcher matchup explorer using historical stats, handedness splits, and pitch-type data. Find today's best hitting matchups.",
+    path: "/mlb/batter-vs-pitcher",
+  },
+  "mlb-props-hub": {
+    title: "MLB Props Hub — HR, Strikeout & Hit Props | Joe Knows Ball",
+    description:
+      "Central hub for all MLB daily prop models including home run props, strikeout props, hit props, and batter vs pitcher matchup analysis.",
+    path: "/mlb/props",
+  },
   pga: {
     title: "PGA Tour Power Rankings & Golf Tournament Models | Joe Knows Ball",
     description:
@@ -46,6 +76,18 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "Upload DraftKings or FanDuel PGA salary files and compare DFS pricing against Joe Knows Ball golf model rankings to find value plays.",
     path: "/pga/dfs",
+  },
+  "pga-best-bets": {
+    title: "PGA Tour Best Bets — Golf Tournament Picks & Model Edges",
+    description:
+      "Top PGA Tour betting picks based on strokes gained models, course history, and matchup analytics. Find the best value plays for this week's golf tournament.",
+    path: "/pga/best-bets",
+  },
+  "pga-model": {
+    title: "PGA Tour Model Rankings — Strokes Gained Analytics",
+    description:
+      "Deep-dive PGA Tour player rankings powered by strokes gained off-the-tee, approach, around-the-green, and putting with course-fit adjustments.",
+    path: "/pga/model",
   },
   nfl: {
     title: "NFL Analytics & Betting Models | Joe Knows Ball",

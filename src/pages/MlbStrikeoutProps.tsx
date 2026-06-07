@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
+import { usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
 import {
   formatPropPercent,
   getGameCount,
@@ -97,6 +99,7 @@ function getKParkTone(value: number) {
 }
 
 export default function MlbStrikeoutProps() {
+  usePageSeo(getSeoMeta("mlb-strikeout-props"));
   const { dashboard, games, loading, strikeoutDetailRows } = useMlbPropsData();
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");

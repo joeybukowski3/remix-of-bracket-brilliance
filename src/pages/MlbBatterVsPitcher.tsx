@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
+import { usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
 import {
   formatPropNumber,
   getGameCount,
@@ -86,6 +88,7 @@ function getRoofLabel(r: string) {
 }
 
 export default function MlbBatterVsPitcher() {
+  usePageSeo(getSeoMeta("mlb-batter-vs-pitcher"));
   const { batterVsPitcherRows, dashboard, games, loading, pitchers } = useMlbPropsData();
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");

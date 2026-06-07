@@ -4,6 +4,8 @@ import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
@@ -1292,6 +1294,7 @@ function ThBtn({ onClick, children, style }: { onClick: () => void; children: Re
 // ââ main component âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 export default function MlbHrProps() {
+  usePageSeo(getSeoMeta("mlb-hr-props"));
   const [dashboard, setDashboard] = useState<HrDashboardPayload | null>(null);
   const [bestBets, setBestBets] = useState<HrBestBetsPayload | null>(null);
   const [isMobile, setIsMobile] = useState(false);

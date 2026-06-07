@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import PgaCourseInsightsCard from "@/components/pga/PgaCourseInsightsCard";
 import PgaFooterMeta from "@/components/pga/PgaFooterMeta";
+import { usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
 import PgaMainHeader from "@/components/pga/PgaMainHeader";
 import PgaModelTable from "@/components/pga/PgaModelTable";
 import PgaSidebar from "@/components/pga/PgaSidebar";
@@ -18,6 +20,7 @@ import { buildPgaModelTableConfig } from "@/lib/pga/tournamentUi";
 import NotFound from "@/pages/NotFound";
 
 export default function PGAModel() {
+  usePageSeo(getSeoMeta("pga-model"));
   const { tournamentSlug } = useParams();
   const featuredHub = getFeaturedPgaHubContext();
   const requestedTournament = tournamentSlug ? getPgaTournamentBySlug(tournamentSlug) : FEATURED_PGA_TOURNAMENT;
