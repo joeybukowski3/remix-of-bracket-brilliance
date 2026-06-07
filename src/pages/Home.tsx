@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import SiteFooter from "@/components/layout/SiteFooter";
+import { HRPropsTable, KPropsTable, PgaTop5Table, PgaTop10Table } from "@/components/home/SocialMediaTables";
 
 const sports = [
   {
@@ -280,6 +281,12 @@ export default function Home() {
   const pgaTournament = useFeaturedPgaTournament();
   const featuredCards = buildFeaturedCards(pgaTournament);
 
+  const [mlbHrProps, setMlbHrProps] = useState<any[]>([]);
+  const [mlbKProps, setMlbKProps] = useState<any[]>([]);
+  const [pgaBestBets, setPgaBestBets] = useState<any[]>([]);
+  const [pgaTop5, setPgaTop5] = useState<any[]>([]);
+  const [pgaTop10, setPgaTop10] = useState<any[]>([]);
+
   usePageSeo({
     title: seo.title,
     description: seo.description,
@@ -296,6 +303,34 @@ export default function Home() {
       },
     },
   });
+
+  // Load MLB and PGA data for tables
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load MLB HR Props
+        const hrResponse = await fetch("https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb/hr-props-raw.json");
+        const hrData = await hrResponse.json();
+        const hrBatters = hrData.batters?.slice(0, 5) || [];
+        setMlbHrProps(hrBatters);
+
+        // Load MLB K Props (from same file)
+        const kPitchers = hrData.pitchers?.slice(0, 5) || [];
+        setMlbKProps(kPitchers);
+
+        // Load PGA Best Bets
+        const pgaResponse = await fetch("https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/pga/best-bets.json");
+        const pgaData = await pgaResponse.json();
+        setPgaBestBets(pgaData.valueBets || []);
+        setPgaTop5(pgaData.top5 || []);
+        setPgaTop10(pgaData.top10 || []);
+      } catch (error) {
+        console.error("Error loading home page data:", error);
+      }
+    };
+
+    loadData();
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#f8f8f8]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}>
@@ -395,6 +430,44 @@ export default function Home() {
             {featuredCards.map((item) => (
               <FeaturedContentCard key={item.title} {...item} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* MLB Tables Section */}
+      <section className="border-t border-black/6 bg-white">
+        <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
+          <div className="max-w-[760px]">
+            <h2 className="text-[30px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
+              Today's MLB Props
+            </h2>
+            <p className="mt-3 max-w-[62ch] text-[15px] leading-7 text-[#4b5563]">
+              Top picks from our free MLB prop models, updated daily with the latest slate.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            <HRPropsTable picks={mlbHrProps} />
+            <KPropsTable picks={mlbKProps} />
+          </div>
+        </div>
+      </section>
+
+      {/* PGA Tables Section */}
+      <section className="border-t border-black/6 bg-[#f8f8f8]">
+        <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
+          <div className="max-w-[760px]">
+            <h2 className="text-[30px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
+              This Week's PGA Picks
+            </h2>
+            <p className="mt-3 max-w-[62ch] text-[15px] leading-7 text-[#4b5563]">
+              Top tournament picks from our free PGA golf models, updated weekly.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            <PgaTop5Table picks={pgaTop5} />
+            <PgaTop10Table picks={pgaTop10} />
           </div>
         </div>
       </section>
