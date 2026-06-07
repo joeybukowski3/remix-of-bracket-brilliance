@@ -1,0 +1,156 @@
+name: Sync PGA Tour Schedule
+
+on:
+  schedule:
+    # Run every Sunday at 10 AM ET to update for the week
+    - cron: '14 10 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-schedule:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Sync PGA Tour Schedule
+        run: |
+          node << 'SCRIPT'
+          const fs = require('fs');
+          const https = require('https');
+
+          // Fetch from PGA Tour schedule (using ESPN as backup source)
+          const schedules = [
+            // Try to get from ESPN first
+            'https://site.api.espn.com/apis/site/v2/sports/golf/pga/schedule',
+          ];
+
+          async function fetchSchedule() {
+            for (const url of schedules) {
+              try {
+                const data = await new Promise((resolve, reject) => {
+                  https.get(url, (res) => {
+                    let body = '';
+                    res.on('data', chunk => body += chunk);
+                    res.on('end', () => {
+                      if (res.statusCode === 200) {
+                        resolve(JSON.parse(body));
+                      } else {
+                        reject(new Error(`Status ${res.statusCode}`));
+                      }
+                    });
+                  }).on('error', reject);
+                });
+                return data;
+              } catch (err) {
+                console.warn(`Failed to fetch from ${url}:`, err.message);
+              }
+            }
+            throw new Error('Could not fetch PGA schedule from any source');
+          }
+
+          async function main() {
+            try {
+              console.log('Fetching current PGA Tour schedule...');
+              const espnData = await fetchSchedule();
+
+              // Read existing schedule to preserve custom fields
+              const existingSchedule = JSON.parse(
+                fs.readFileSync('public/data/pga/schedule.json', 'utf-8')
+              );
+              const existingMap = new Map(existingSchedule.map(t => [t.id || t.slug, t]));
+
+              // Parse ESPN events
+              const updated = [];
+              const today = new Date().toISOString().slice(0, 10);
+
+              if (espnData.events) {
+                espnData.events.forEach((event) => {
+                  const startDate = event.date.slice(0, 10);
+                  const name = event.name || event.shortName || '';
+                  
+                  // Skip if not a 2026 event or not PGA
+                  if (!startDate.startsWith('2026') || !event.links?.some(l => l.text?.includes('PGA'))) {
+                    return;
+                  }
+
+                  const slug = name.toLowerCase()
+                    .replace(/[^a-z0-9]/g, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/^-|-$/g, '');
+
+                  const existing = existingMap.get(slug) || {};
+
+                  // Determine status
+                  let status = 'upcoming';
+                  if (startDate <= today) {
+                    if (event.status === 'STATUS_FINAL' || event.status === 'STATUS_COMPLETED') {
+                      status = 'complete';
+                    } else {
+                      status = 'active';
+                    }
+                  }
+
+                  updated.push({
+                    id: slug,
+                    slug: slug,
+                    name: name,
+                    shortName: event.shortName || name,
+                    courseName: event.competitions?.[0]?.venue?.fullName || existing.courseName || '',
+                    location: event.competitions?.[0]?.venue?.address?.city || existing.location || 'USA',
+                    startDate: startDate,
+                    endDate: existing.endDate || startDate, // Keep existing end date if available
+                    dateLabel: existing.dateLabel || startDate.slice(5, 10),
+                    eventType: existing.eventType || 'PGA TOUR Event',
+                    category: existing.category || 'standard',
+                    status: status,
+                    winner: existing.winner || 'TBD',
+                    dataFile: existing.dataFile || '',
+                    sourceTour: 'pga',
+                    sourceCountry: 'USA'
+                  });
+                });
+              }
+
+              // Sort by start date
+              updated.sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+              // Write updated schedule
+              fs.writeFileSync(
+                'public/data/pga/schedule.json',
+                JSON.stringify(updated, null, 2)
+              );
+
+              console.log(`✓ Updated schedule with ${updated.length} tournaments`);
+              console.log(`Active: ${updated.find(t => t.status === 'active')?.name || 'None'}`);
+            } catch (err) {
+              console.error('Error syncing schedule:', err.message);
+              process.exit(1);
+            }
+          }
+
+          main();
+          SCRIPT
+
+      - name: Commit schedule update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          if git diff --quiet public/data/pga/schedule.json; then
+            echo "No changes to schedule"
+          else
+            git add public/data/pga/schedule.json
+            git commit -m "chore: auto-sync PGA Tour schedule - $(date -d 'today' +'%Y-%m-%d')"
+            git push origin HEAD:main
+            echo "✓ Schedule synced"
+          fi
