@@ -1,9 +1,9 @@
 {
   "date": "2026-06-07",
-  "generatedAt": "2026-06-07T10:22:34.671Z",
+  "generatedAt": "2026-06-07T12:14:52.571Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features strong HR environments at Coors Field (1.4 park factor) and Citizens Bank Park (1.17), where Freeland and Gilbert face elevated barrel rates from Bauers, Chourio, and Schwarber. Petco Park suppresses power despite high opposing pitcher HR vulnerability for Young and Soto, while Comerica and Daikin offer neutral-to-slightly favorable conditions for Dingler and Alvarez against Castillo and Jump.",
-    "modelNote": "The model prioritizes recent barrel/hard-hit combinations and park-adjusted opposing pitcher HR rates, elevating Dingler to the top spot despite modest last-30 volume due to his elite 73.1 hrScore and favorable righty matchup."
+    "slateOverview": "Coors (1.40) and Citizens Bank (1.17) stand out as the primary power spots, while Chase Field and Daikin Park offer neutral-to-slight boosts. Lefties Gilbert and Freeland face high-ISO bats in those parks, and Soroka’s recent homer rate (33.2) gives Wood a plus matchup despite a neutral venue.",
+    "modelNote": "The model is prioritizing barrel rate, recent HR volume, and opposing pitcher HR vulnerability, elevating Dingler and Alvarez to the top despite modest park factors because their underlying contact quality outweighs venue suppression."
   },
   "bestBets": [
     {
@@ -13,12 +13,12 @@
       "opposingPitcher": "Luis Castillo",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=73.1",
-        "barrelRate=13.7"
+        "hrScore=73.3",
+        "barrelRate=14"
       ],
       "bullets": [
-        "last30HR=8",
-        "parkFactor=0.95"
+        "hrFBRatio=6.7 with last7HR=3",
+        "parkFactor=0.95 at Comerica Park"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -30,29 +30,12 @@
       "opposingPitcher": "Gage Jump",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=72.6",
+        "hrScore=72.9",
         "exitVelo=94.8"
       ],
       "bullets": [
-        "barrelRate=18.6",
-        "last30HR=9"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jared Young",
-      "team": "NYM",
-      "opponent": "SD",
-      "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 3,
-      "topStats": [
-        "hrScore=71.8",
-        "barrelRate=19.4"
-      ],
-      "bullets": [
-        "pullRate=58.3",
-        "opposingPitcherHrVs=77"
+        "iso=0.338 with hardHitRate=54",
+        "parkFactor=1.04 at Daikin Park"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -62,14 +45,31 @@
       "team": "PHI",
       "opponent": "CWS",
       "opposingPitcher": "Tyler Gilbert",
-      "hrScoreRank": 4,
+      "hrScoreRank": 3,
       "topStats": [
-        "hrScore=71",
-        "barrelRate=22.6"
+        "hrScore=70.2",
+        "barrelRate=22.5"
       ],
       "bullets": [
-        "parkFactor=1.17",
-        "opposingPitcherHrVs=85.2"
+        "opposingPitcherHrVs=85.2 with pullRate=56.5",
+        "parkFactor=1.17 at Citizens Bank Park"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jared Young",
+      "team": "NYM",
+      "opponent": "SD",
+      "opposingPitcher": "Randy Vásquez",
+      "hrScoreRank": 4,
+      "topStats": [
+        "hrScore=69.7",
+        "hardHitRate=55.3"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs=77 with last7HR=2",
+        "pullRate=57.9 at Petco Park"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -81,12 +81,12 @@
       "opposingPitcher": "Randy Vásquez",
       "hrScoreRank": 5,
       "topStats": [
-        "hrScore=69.2",
-        "exitVelo=93"
+        "hrScore=69.4",
+        "exitVelo=93.1"
       ],
       "bullets": [
-        "last30HR=9",
-        "opposingPitcherHrVs=77"
+        "last30HR=9 with xba=0.287",
+        "opposingPitcherHrVs=77 at Petco Park"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -94,35 +94,35 @@
   ],
   "valueBets": [
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "CWS",
-      "opposingPitcher": "Tyler Gilbert",
-      "hrScoreRank": 4,
-      "topStats": [
-        "hrScore=71",
-        "barrelRate=22.6"
-      ],
-      "bullets": [
-        "parkFactor=1.17",
-        "opposingPitcherHrVs=85.2"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
       "player": "Jake Bauers",
       "team": "MIL",
       "opponent": "COL",
       "opposingPitcher": "Kyle Freeland",
       "hrScoreRank": 6,
       "topStats": [
-        "hrScore=69",
-        "hardHitRate=54.2"
+        "hrScore=69.1",
+        "parkFactor=1.4"
       ],
       "bullets": [
-        "parkFactor=1.4",
-        "last30HR=6"
+        "last7HR=2 with hardHitRate=54.5",
+        "opposingPitcherHrVs=68.5 at Coors Field"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Lars Nootbaar",
+      "team": "STL",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 7,
+      "topStats": [
+        "hrScore=69",
+        "exitVelo=96.2"
+      ],
+      "bullets": [
+        "barrelRate=33.3 with iso=0.571",
+        "whiffRate=9.1 vs Rhett Lowder"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -132,31 +132,14 @@
       "team": "SF",
       "opponent": "CHC",
       "opposingPitcher": "Jameson Taillon",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
-        "hrScore=68.9",
+        "hrScore=68",
         "last30HR=9"
       ],
       "bullets": [
-        "last7HR=3",
-        "opposingPitcherHrVs=63.5"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "AZ",
-      "opposingPitcher": "Michael Soroka",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=59.1",
-        "Pitcher HR VS=33.3"
-      ],
-      "bullets": [
-        "HR score 65.7 (#8)",
-        "Pitcher HR VS 33.3 at park 1.01"
+        "last7HR=3 with hrFBRatio=6.6",
+        "opposingPitcherHrVs=63.5 at Wrigley Field"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -164,35 +147,35 @@
   ],
   "longshots": [
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "AZ",
-      "opposingPitcher": "Michael Soroka",
-      "hrScoreRank": 8,
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "SF",
+      "opposingPitcher": "Trevor McDonald",
+      "hrScoreRank": 16,
       "topStats": [
-        "hrScore=65.7",
-        "barrelRate=25.3"
+        "hrScore=62",
+        "last7HR=4"
       ],
       "bullets": [
-        "exitVelo=96.3",
-        "hardHitRate=59.1"
+        "last30HR=7 with hardHitRate=50.9",
+        "opposingPitcherHrVs=34.3 at Wrigley Field"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "SF",
-      "opposingPitcher": "Trevor McDonald",
-      "hrScoreRank": 19,
+      "player": "Shea Langeliers",
+      "team": "ATH",
+      "opponent": "HOU",
+      "opposingPitcher": "Mike Burrows",
+      "hrScoreRank": 20,
       "topStats": [
-        "hrScore=59.9",
-        "last7HR=4"
+        "hrScore=60.8",
+        "last7HR=2"
       ],
       "bullets": [
-        "last30HR=7",
-        "opposingPitcherHrVs=34.3"
+        "hrFBRatio=6.8 with exitVelo=91.7",
+        "opposingPitcherHrVs=47.3 at Daikin Park"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -208,25 +191,25 @@
         "Hard Hit%=46.9"
       ],
       "bullets": [
-        "HR score 65.7 (#9)",
+        "HR score 65.6 (#9)",
         "Pitcher HR VS 49.1 at park 1.17"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "AZ",
+      "opposingPitcher": "Michael Soroka",
       "hrScoreRank": 10,
       "topStats": [
-        "Pitcher HR VS=68.5",
-        "Hard Hit%=46.8"
+        "Hard Hit%=58.7",
+        "Pitcher HR VS=33.2"
       ],
       "bullets": [
-        "HR score 64.2 (#10)",
-        "Pitcher HR VS 68.5 at park 1.40"
+        "HR score 65.3 (#10)",
+        "Pitcher HR VS 33.2 at park 1.01"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
