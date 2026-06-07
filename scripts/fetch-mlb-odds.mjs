@@ -32,8 +32,14 @@ async function get(url) {
     const res = await fetch(url, { headers: HEADERS, signal: controller.signal });
     clearTimeout(timer);
     const remaining = res.headers.get("x-requests-remaining");
-    if (remaining) console.log(`  Odds API requests remaining: ${remaining}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const used = res.headers.get("x-requests-used");
+    if (remaining) console.log(`  Odds API requests remaining: ${remaining} (used: ${used ?? "?"})`);
+    if (!res.ok) {
+      // Log actual response body so we can diagnose quota/auth failures
+      let body = "";
+      try { body = await res.text(); } catch (_) {}
+      throw new Error(`HTTP ${res.status} ${res.statusText} — ${body.slice(0, 200)}`);
+    }
     return await res.json();
   } finally {
     clearTimeout(timer);
@@ -102,16 +108,22 @@ async function main() {
     console.warn("ODDS_API_KEY not set — skipping MLB odds fetch.");
     process.exit(0);
   }
-
+  console.log(`ODDS_API_KEY present (length: ${apiKey.length})`);
   console.log("Fetching MLB odds...");
 
   // ── Step 1: Get today's games + moneylines ──────────────────────────────────
   const moneylines = {};    // gameKey → { away, home }
   const mlbEvents = [];     // [{id, awayTeam, homeTeam, gameKey}]
+  let fetchStatus = { moneylines: "pending", props: "pending", error: null };
 
   try {
     const url = `${ODDS_BASE}/sports/${SPORT}/odds/?apiKey=${apiKey}&regions=us&markets=h2h&oddsFormat=american&dateFormat=iso`;
+    console.log("  Fetching moneylines...");
     const events = await get(url);
+
+    if (!Array.isArray(events)) {
+      throw new Error(`Expected array, got: ${JSON.stringify(events).slice(0, 200)}`);
+    }
 
     for (const ev of (events ?? [])) {
       const awayTeam = ev.away_team;
@@ -132,8 +144,11 @@ async function main() {
       };
     }
     console.log(`✅ Moneylines: ${Object.keys(moneylines).length} games`);
+    fetchStatus.moneylines = `ok:${Object.keys(moneylines).length}`;
   } catch (err) {
     console.warn("❌ Moneylines fetch failed:", err.message);
+    fetchStatus.moneylines = "failed";
+    fetchStatus.error = err.message;
   }
 
   // ── Step 2: Player props (HR + Strikeouts) per event ───────────────────────
@@ -160,18 +175,18 @@ async function main() {
         }
       }
 
-      // Strikeout props (over/under format)
+      // Strikeout props — outcome.name = pitcher name, outcome.description = "Over"/"Under"
       const kMarket = bestBook(data.bookmakers, "pitcher_strikeouts");
       if (kMarket) {
-        // Group by player name
-        const playerMap = {};
         for (const outcome of kMarket.outcomes) {
-          const key = normalizeName(outcome.name);
-          if (!playerMap[key]) playerMap[key] = { line: outcome.point };
-          const side = outcome.name.toLowerCase().includes("over") || outcome.description?.toLowerCase() === "over" ? "over" : "under";
-          // For strikeout props, the player name is in outcome.description sometimes
-          const pitcherKey = normalizeName(outcome.description ?? outcome.name);
-          if (!kOdds[pitcherKey]) kOdds[pitcherKey] = { line: outcome.point };
+          // pitcher name is always in outcome.name for pitcher_strikeouts
+          const pitcherKey = normalizeName(outcome.name);
+          // side is in outcome.description ("Over"/"Under"); fall back to checking name
+          const sideRaw = (outcome.description ?? outcome.name ?? "").toLowerCase();
+          const side = sideRaw === "over" ? "over" : "under";
+          if (!kOdds[pitcherKey]) kOdds[pitcherKey] = { line: outcome.point ?? null };
+          // Only overwrite line if we have a real value
+          if (outcome.point != null) kOdds[pitcherKey].line = outcome.point;
           kOdds[pitcherKey][side] = formatAmerican(outcome.price);
           if (side === "over") kOdds[pitcherKey].impliedOver = americanToImplied(outcome.price);
         }
@@ -183,10 +198,12 @@ async function main() {
 
   console.log(`✅ HR odds: ${Object.keys(hrOdds).length} players`);
   console.log(`✅ K odds: ${Object.keys(kOdds).length} pitchers`);
+  fetchStatus.props = `ok:hr=${Object.keys(hrOdds).length},k=${Object.keys(kOdds).length}`;
 
   // ── Write output ────────────────────────────────────────────────────────────
   const output = {
     fetchedAt: new Date().toISOString(),
+    fetchStatus,
     sport: SPORT,
     moneylines,
     hrOdds,
