@@ -1,9 +1,13 @@
 /**
  * fetch-mlb-odds.mjs
- * Fetches MLB odds from The Odds API:
- *   - h2h (moneylines) for every today's game
- *   - batter_home_runs (anytime HR scorer)
- *   - pitcher_strikeouts (over/under)
+ * Fetches MLB odds from The Odds API using BULK endpoints only.
+ *
+ * CREDIT USAGE: 3 API calls per run (was up to 17).
+ *   Call 1: /sports/baseball_mlb/odds/?markets=h2h          → all moneylines
+ *   Call 2: /sports/baseball_mlb/odds/?markets=batter_home_runs → all HR props
+ *   Call 3: /sports/baseball_mlb/odds/?markets=pitcher_strikeouts → all K props
+ *
+ * At 4 runs/day: 12 credits/day = ~360/month (fits 500/month free tier).
  *
  * Writes public/data/mlb/mlb-odds.json
  * Always exits 0 — never fails the workflow.
@@ -15,32 +19,37 @@ import { fileURLToPath } from "node:url";
 import process from "node:process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUTPUT = path.resolve(__dirname, "../public/data/mlb/mlb-odds.json");
+const OUTPUT   = path.resolve(__dirname, "../public/data/mlb/mlb-odds.json");
 const ODDS_BASE = "https://api.the-odds-api.com/v4";
-const SPORT = "baseball_mlb";
-const TIMEOUT_MS = 15000;
+const SPORT    = "baseball_mlb";
+const TIMEOUT_MS = 20000;
 
 const HEADERS = {
   "Accept": "application/json",
   "User-Agent": "JoeKnowsBall/1.0",
 };
 
-async function get(url) {
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+async function get(url, label) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     const res = await fetch(url, { headers: HEADERS, signal: controller.signal });
     clearTimeout(timer);
     const remaining = res.headers.get("x-requests-remaining");
-    const used = res.headers.get("x-requests-used");
-    if (remaining) console.log(`  Odds API requests remaining: ${remaining} (used: ${used ?? "?"})`);
+    const used      = res.headers.get("x-requests-used");
+    console.log(`  [${label}] status=${res.status} remaining=${remaining ?? "?"} used=${used ?? "?"}`);
     if (!res.ok) {
-      // Log actual response body so we can diagnose quota/auth failures
       let body = "";
       try { body = await res.text(); } catch (_) {}
-      throw new Error(`HTTP ${res.status} ${res.statusText} — ${body.slice(0, 200)}`);
+      throw new Error(`HTTP ${res.status} ${res.statusText} — ${body.slice(0, 300)}`);
     }
-    return await res.json();
+    const data = await res.json();
+    if (!Array.isArray(data)) {
+      throw new Error(`Expected array, got: ${JSON.stringify(data).slice(0, 200)}`);
+    }
+    return data;
   } finally {
     clearTimeout(timer);
   }
@@ -68,12 +77,12 @@ function normalizeName(name) {
     .toLowerCase();
 }
 
-// Pick the bookmaker with the most outcomes (most liquid market)
+// Prefer DraftKings → FanDuel → BetMGM → most outcomes
+const PREFERRED = ["draftkings", "fanduel", "betmgm", "williamhill_us", "bovada"];
+
 function bestBook(bookmakers, marketKey) {
   if (!Array.isArray(bookmakers) || !bookmakers.length) return null;
-  // Prefer DraftKings, FanDuel, BetMGM; fall back to whoever has most outcomes
-  const preferred = ["draftkings", "fanduel", "betmgm", "williamhill_us", "bovada"];
-  for (const pref of preferred) {
+  for (const pref of PREFERRED) {
     const bk = bookmakers.find(b => b.key === pref);
     const market = bk?.markets?.find(m => m.key === marketKey);
     if (market?.outcomes?.length) return market;
@@ -83,24 +92,25 @@ function bestBook(bookmakers, marketKey) {
     .sort((a, b) => (b.outcomes?.length ?? 0) - (a.outcomes?.length ?? 0))[0] ?? null;
 }
 
-// MLB team name → abbreviation mapping (matches Odds API full names)
 const TEAM_ABBR = {
-  "Arizona Diamondbacks": "ARI", "Atlanta Braves": "ATL", "Baltimore Orioles": "BAL",
-  "Boston Red Sox": "BOS", "Chicago Cubs": "CHC", "Chicago White Sox": "CWS",
-  "Cincinnati Reds": "CIN", "Cleveland Guardians": "CLE", "Colorado Rockies": "COL",
-  "Detroit Tigers": "DET", "Houston Astros": "HOU", "Kansas City Royals": "KC",
-  "Los Angeles Angels": "LAA", "Los Angeles Dodgers": "LAD", "Miami Marlins": "MIA",
-  "Milwaukee Brewers": "MIL", "Minnesota Twins": "MIN", "New York Mets": "NYM",
-  "New York Yankees": "NYY", "Oakland Athletics": "ATH", "Athletics": "ATH",
-  "Philadelphia Phillies": "PHI", "Pittsburgh Pirates": "PIT", "San Diego Padres": "SD",
-  "San Francisco Giants": "SF", "Seattle Mariners": "SEA", "St. Louis Cardinals": "STL",
-  "Tampa Bay Rays": "TB", "Texas Rangers": "TEX", "Toronto Blue Jays": "TOR",
+  "Arizona Diamondbacks": "ARI",  "Atlanta Braves": "ATL",       "Baltimore Orioles": "BAL",
+  "Boston Red Sox": "BOS",        "Chicago Cubs": "CHC",         "Chicago White Sox": "CWS",
+  "Cincinnati Reds": "CIN",       "Cleveland Guardians": "CLE",  "Colorado Rockies": "COL",
+  "Detroit Tigers": "DET",        "Houston Astros": "HOU",       "Kansas City Royals": "KC",
+  "Los Angeles Angels": "LAA",    "Los Angeles Dodgers": "LAD",  "Miami Marlins": "MIA",
+  "Milwaukee Brewers": "MIL",     "Minnesota Twins": "MIN",      "New York Mets": "NYM",
+  "New York Yankees": "NYY",      "Oakland Athletics": "ATH",    "Athletics": "ATH",
+  "Philadelphia Phillies": "PHI", "Pittsburgh Pirates": "PIT",   "San Diego Padres": "SD",
+  "San Francisco Giants": "SF",   "Seattle Mariners": "SEA",     "St. Louis Cardinals": "STL",
+  "Tampa Bay Rays": "TB",         "Texas Rangers": "TEX",        "Toronto Blue Jays": "TOR",
   "Washington Nationals": "WSH",
 };
 
-function toAbbr(teamName) {
-  return TEAM_ABBR[teamName] ?? teamName.split(" ").pop().slice(0, 3).toUpperCase();
+function toAbbr(t) {
+  return TEAM_ABBR[t] ?? t.split(" ").pop().slice(0, 3).toUpperCase();
 }
+
+// ── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   const apiKey = process.env.ODDS_API_KEY;
@@ -109,31 +119,23 @@ async function main() {
     process.exit(0);
   }
   console.log(`ODDS_API_KEY present (length: ${apiKey.length})`);
-  console.log("Fetching MLB odds...");
+  console.log("Fetching MLB odds via bulk endpoints (3 calls total)...");
 
-  // ── Step 1: Get today's games + moneylines ──────────────────────────────────
-  const moneylines = {};    // gameKey → { away, home }
-  const mlbEvents = [];     // [{id, awayTeam, homeTeam, gameKey}]
-  let fetchStatus = { moneylines: "pending", props: "pending", error: null };
+  const moneylines = {};
+  const hrOdds     = {};
+  const kOdds      = {};
+  const fetchStatus = { moneylines: "pending", hrProps: "pending", kProps: "pending", error: null };
 
+  // ── Call 1: Moneylines (h2h) ─────────────────────────────────────────────
   try {
     const url = `${ODDS_BASE}/sports/${SPORT}/odds/?apiKey=${apiKey}&regions=us&markets=h2h&oddsFormat=american&dateFormat=iso`;
-    console.log("  Fetching moneylines...");
-    const events = await get(url);
+    const events = await get(url, "h2h");
 
-    if (!Array.isArray(events)) {
-      throw new Error(`Expected array, got: ${JSON.stringify(events).slice(0, 200)}`);
-    }
-
-    for (const ev of (events ?? [])) {
-      const awayTeam = ev.away_team;
-      const homeTeam = ev.home_team;
-      const awayAbbr = toAbbr(awayTeam);
-      const homeAbbr = toAbbr(homeTeam);
-      const gameKey = `${awayAbbr}@${homeAbbr}`;
-      mlbEvents.push({ id: ev.id, awayTeam, homeTeam, awayAbbr, homeAbbr, gameKey });
-
-      const market = bestBook(ev.bookmakers, "h2h");
+    for (const ev of events) {
+      const awayTeam  = ev.away_team;
+      const homeTeam  = ev.home_team;
+      const gameKey   = `${toAbbr(awayTeam)}@${toAbbr(homeTeam)}`;
+      const market    = bestBook(ev.bookmakers, "h2h");
       if (!market) continue;
 
       const awayOut = market.outcomes.find(o => o.name === awayTeam);
@@ -146,61 +148,65 @@ async function main() {
     console.log(`✅ Moneylines: ${Object.keys(moneylines).length} games`);
     fetchStatus.moneylines = `ok:${Object.keys(moneylines).length}`;
   } catch (err) {
-    console.warn("❌ Moneylines fetch failed:", err.message);
+    console.warn("❌ Moneylines failed:", err.message);
     fetchStatus.moneylines = "failed";
     fetchStatus.error = err.message;
   }
 
-  // ── Step 2: Player props (HR + Strikeouts) per event ───────────────────────
-  const hrOdds = {};       // normalizedPlayerName → { yes, no, implied }
-  const kOdds = {};        // normalizedPitcherName → { line, over, under, impliedOver }
+  // ── Call 2: HR props (batter_home_runs) — all games, one request ─────────
+  try {
+    const url = `${ODDS_BASE}/sports/${SPORT}/odds/?apiKey=${apiKey}&regions=us&markets=batter_home_runs&oddsFormat=american`;
+    const events = await get(url, "batter_home_runs");
 
-  const PROP_MARKETS = "batter_home_runs,pitcher_strikeouts";
+    for (const ev of events) {
+      const hrMarket = bestBook(ev.bookmakers, "batter_home_runs");
+      if (!hrMarket) continue;
 
-  for (const ev of mlbEvents.slice(0, 16)) {  // cap at 16 games to save API calls
-    await new Promise(r => setTimeout(r, 300)); // small delay between requests
-    try {
-      const url = `${ODDS_BASE}/sports/${SPORT}/events/${ev.id}/odds?apiKey=${apiKey}&regions=us&markets=${PROP_MARKETS}&oddsFormat=american`;
-      const data = await get(url);
-
-      // HR props — player name is in outcome.description, side (Yes/No) is in outcome.name
-      const hrMarket = bestBook(data.bookmakers, "batter_home_runs");
-      if (hrMarket) {
-        for (const outcome of hrMarket.outcomes) {
-          const playerKey = normalizeName(outcome.description ?? outcome.name);
-          const side = outcome.name?.toLowerCase().includes("no") ? "no" : "yes";
-          if (!hrOdds[playerKey]) hrOdds[playerKey] = {};
-          hrOdds[playerKey][side] = formatAmerican(outcome.price);
-          if (side === "yes") hrOdds[playerKey].impliedYes = americanToImplied(outcome.price);
-        }
+      for (const outcome of hrMarket.outcomes) {
+        // Odds API: outcome.description = player name, outcome.name = "Yes"/"No"
+        const playerKey = normalizeName(outcome.description ?? outcome.name);
+        const side      = (outcome.name ?? "").toLowerCase().includes("no") ? "no" : "yes";
+        if (!hrOdds[playerKey]) hrOdds[playerKey] = {};
+        hrOdds[playerKey][side] = formatAmerican(outcome.price);
+        if (side === "yes") hrOdds[playerKey].impliedYes = americanToImplied(outcome.price);
       }
-
-      // Strikeout props — outcome.name = pitcher name, outcome.description = "Over"/"Under"
-      const kMarket = bestBook(data.bookmakers, "pitcher_strikeouts");
-      if (kMarket) {
-        for (const outcome of kMarket.outcomes) {
-          // pitcher name is always in outcome.name for pitcher_strikeouts
-          const pitcherKey = normalizeName(outcome.name);
-          // side is in outcome.description ("Over"/"Under"); fall back to checking name
-          const sideRaw = (outcome.description ?? outcome.name ?? "").toLowerCase();
-          const side = sideRaw === "over" ? "over" : "under";
-          if (!kOdds[pitcherKey]) kOdds[pitcherKey] = { line: outcome.point ?? null };
-          // Only overwrite line if we have a real value
-          if (outcome.point != null) kOdds[pitcherKey].line = outcome.point;
-          kOdds[pitcherKey][side] = formatAmerican(outcome.price);
-          if (side === "over") kOdds[pitcherKey].impliedOver = americanToImplied(outcome.price);
-        }
-      }
-    } catch (err) {
-      console.warn(`  ❌ Props for ${ev.gameKey}: ${err.message}`);
     }
+    console.log(`✅ HR odds: ${Object.keys(hrOdds).length} players`);
+    fetchStatus.hrProps = `ok:${Object.keys(hrOdds).length}`;
+  } catch (err) {
+    console.warn("❌ HR props failed:", err.message);
+    fetchStatus.hrProps = "failed";
+    if (!fetchStatus.error) fetchStatus.error = err.message;
   }
 
-  console.log(`✅ HR odds: ${Object.keys(hrOdds).length} players`);
-  console.log(`✅ K odds: ${Object.keys(kOdds).length} pitchers`);
-  fetchStatus.props = `ok:hr=${Object.keys(hrOdds).length},k=${Object.keys(kOdds).length}`;
+  // ── Call 3: K props (pitcher_strikeouts) — all games, one request ────────
+  try {
+    const url = `${ODDS_BASE}/sports/${SPORT}/odds/?apiKey=${apiKey}&regions=us&markets=pitcher_strikeouts&oddsFormat=american`;
+    const events = await get(url, "pitcher_strikeouts");
 
-  // ── Write output ────────────────────────────────────────────────────────────
+    for (const ev of events) {
+      const kMarket = bestBook(ev.bookmakers, "pitcher_strikeouts");
+      if (!kMarket) continue;
+
+      for (const outcome of kMarket.outcomes) {
+        // Odds API: outcome.name = pitcher name, outcome.description = "Over"/"Under"
+        const pitcherKey = normalizeName(outcome.name);
+        const side       = (outcome.description ?? "").toLowerCase() === "over" ? "over" : "under";
+        if (!kOdds[pitcherKey]) kOdds[pitcherKey] = { line: null };
+        if (outcome.point != null) kOdds[pitcherKey].line = outcome.point;
+        kOdds[pitcherKey][side] = formatAmerican(outcome.price);
+        if (side === "over") kOdds[pitcherKey].impliedOver = americanToImplied(outcome.price);
+      }
+    }
+    console.log(`✅ K odds: ${Object.keys(kOdds).length} pitchers`);
+    fetchStatus.kProps = `ok:${Object.keys(kOdds).length}`;
+  } catch (err) {
+    console.warn("❌ K props failed:", err.message);
+    fetchStatus.kProps = "failed";
+    if (!fetchStatus.error) fetchStatus.error = err.message;
+  }
+
+  // ── Write output ──────────────────────────────────────────────────────────
   const output = {
     fetchedAt: new Date().toISOString(),
     fetchStatus,
@@ -213,6 +219,7 @@ async function main() {
   mkdirSync(path.dirname(OUTPUT), { recursive: true });
   writeFileSync(OUTPUT, JSON.stringify(output, null, 2), "utf8");
   console.log(`✅ Wrote ${OUTPUT}`);
+  console.log(`   Credits used this run: ~3 (was up to 17)`);
 }
 
 main().catch(err => {
