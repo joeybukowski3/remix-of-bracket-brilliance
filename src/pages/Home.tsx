@@ -308,18 +308,17 @@ export default function Home() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load MLB HR Props
-        const hrResponse = await fetch("https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb/hr-props-raw.json");
-        const hrData = await hrResponse.json();
-        const hrBatters = hrData.batters?.slice(0, 5) || [];
-        setMlbHrProps(hrBatters);
+        const base = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public";
+        const opts: RequestInit = { cache: "no-store" };
 
-        // Load MLB K Props (from same file)
-        const kPitchers = hrData.pitchers?.slice(0, 5) || [];
-        setMlbKProps(kPitchers);
+        // Load MLB HR Props + K Props (same file, matches useMlbPropsData hook)
+        const hrResponse = await fetch(`${base}/data/mlb/hr-props-raw.json`, opts);
+        const hrData = await hrResponse.json();
+        setMlbHrProps(hrData.batters?.slice(0, 8) || []);
+        setMlbKProps(hrData.pitchers?.slice(0, 8) || []);
 
         // Load PGA Best Bets
-        const pgaResponse = await fetch("https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/pga/best-bets.json");
+        const pgaResponse = await fetch(`${base}/data/pga/best-bets.json`, opts);
         const pgaData = await pgaResponse.json();
         setPgaBestBets(pgaData.valueBets || []);
         setPgaTop5(pgaData.top5 || []);
