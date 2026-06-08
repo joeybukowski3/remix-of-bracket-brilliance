@@ -1,9 +1,9 @@
 {
   "date": "2026-06-08",
-  "generatedAt": "2026-06-08T12:21:56.578Z",
+  "generatedAt": "2026-06-08T18:30:53.047Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features a few HR-friendly environments, most notably Rogers Centre (1.08) and Angel Stadium (1.02), while Oracle Park (0.85) and Progressive Field (0.91) suppress power. Favorable lefty-lefty and righty-righty matchups for Schwarber, Wood, and Alvarez stand out against below-average fly-ball arms like Corbin, Webb, and Rodriguez.",
-    "modelNote": "The model is overweighting barrel rate, hard-hit rate, and recent HR volume while discounting park suppression for top-ranked bats like Alvarez and Schmitt."
+    "slateOverview": "Today's slate features several hitter-friendly parks with elevated park factors at Camden Yards (1.10) and Rogers Centre (1.08), while Oracle Park (0.85) suppresses power. Favorable matchups include Schwarber and Marsh against lefty Patrick Corbin, plus Canzone and Alonso facing weaker opposing pitching in hitter-friendly venues.",
+    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and park-adjusted hrFBRatio, elevating Yordan Alvarez to the top rank due to his elite 18.6% barrel rate and favorable matchup despite a neutral park factor."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.6",
-        "hrScore=86.7"
+        "hrScore=86.2"
       ],
       "bullets": [
         "barrelRate 18.6 with exitVelo 94.9",
-        "parkFactor 1.02 at Angel Stadium"
+        "parkFactor 1.02 and opposingPitcherHrVs 76.3"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -30,12 +30,29 @@
       "opposingPitcher": "Miles Mikolas",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=69.9",
+        "hrScore=69.7",
         "last30HR=9"
       ],
       "bullets": [
-        "last30HR 9 with opposingPitcherHrVs 62.3",
-        "hrFBRatio 6.5 at Oracle Park"
+        "last30HR 9 and last7HR 3",
+        "hrFBRatio 6.5 with parkFactor 0.85"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Dominic Canzone",
+      "team": "SEA",
+      "opponent": "BAL",
+      "opposingPitcher": "Trey Gibson",
+      "hrScoreRank": 3,
+      "topStats": [
+        "opposingPitcherHrVs=79.3",
+        "parkFactor=1.1"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 79.3 and parkFactor 1.1",
+        "barrelRate 16.7 with exitVelo 93.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -45,14 +62,14 @@
       "team": "NYY",
       "opponent": "CLE",
       "opposingPitcher": "Gavin Williams",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
         "iso=0.341",
-        "hrScore=68.6"
+        "hrFBRatio=8.4"
       ],
       "bullets": [
-        "iso 0.341 with hardHitRate 50.6",
-        "opposingPitcherHrVs 64.5 at Progressive Field"
+        "iso 0.341 and hrFBRatio 8.4",
+        "barrelRate 16.7 with hardHitRate 50.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -62,31 +79,14 @@
       "team": "PHI",
       "opponent": "TOR",
       "opposingPitcher": "Patrick Corbin",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrelRate=22.1",
-        "hrFBRatio=9.8"
-      ],
-      "bullets": [
-        "barrelRate 22.1 with pullRate 57.1",
-        "parkFactor 1.08 at Rogers Centre"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "SF",
-      "opposingPitcher": "Logan Webb",
       "hrScoreRank": 5,
       "topStats": [
-        "barrelRate=25.5",
-        "hardHitRate=58.6"
+        "hrFBRatio=9.8",
+        "pullRate=57.1"
       ],
       "bullets": [
-        "barrelRate 25.5 with exitVelo 96",
-        "hardHitRate 58.6 vs Logan Webb"
+        "hrFBRatio 9.8 and pullRate 57.1",
+        "barrelRate 22.1 with parkFactor 1.08"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -94,18 +94,18 @@
   ],
   "valueBets": [
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "TOR",
-      "opposingPitcher": "Patrick Corbin",
-      "hrScoreRank": 4,
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "SEA",
+      "opposingPitcher": "Emerson Hancock",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrelRate=22.1",
-        "hrFBRatio=9.8"
+        "parkFactor=1.1",
+        "last7HR=2"
       ],
       "bullets": [
-        "barrelRate 22.1 with opposingPitcherHrVs 54.3",
-        "last30HR 9 at parkFactor 1.08"
+        "parkFactor 1.1 and exitVelo 95",
+        "last7HR 2 with hardHitRate 56.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -115,14 +115,14 @@
       "team": "WSH",
       "opponent": "SF",
       "opposingPitcher": "Logan Webb",
-      "hrScoreRank": 5,
+      "hrScoreRank": 6,
       "topStats": [
         "barrelRate=25.5",
-        "hardHitRate=58.6"
+        "exitVelo=96"
       ],
       "bullets": [
-        "barrelRate 25.5 with exitVelo 96",
-        "opposingPitcherHrVs 40.8 at Oracle Park"
+        "barrelRate 25.5 and exitVelo 96",
+        "hardHitRate 58.6 with parkFactor 0.85"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -132,14 +132,50 @@
       "team": "ATH",
       "opponent": "MIL",
       "opposingPitcher": "Kyle Harrison",
-      "hrScoreRank": 6,
+      "hrScoreRank": 8,
       "topStats": [
-        "hardHitRate=57.6",
-        "hrScore=65.7"
+        "barrelRate=18.8",
+        "hardHitRate=57.6"
       ],
       "bullets": [
-        "hardHitRate 57.6 with exitVelo 94.2",
-        "last7HR 2 with opposingPitcherHrVs 14.5"
+        "barrelRate 18.8 and hardHitRate 57.6",
+        "bbRate 20.7 with exitVelo 94.2"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Shea Langeliers",
+      "team": "ATH",
+      "opponent": "MIL",
+      "opposingPitcher": "Kyle Harrison",
+      "hrScoreRank": 18,
+      "topStats": [
+        "last7HR=2",
+        "hrFBRatio=6.6"
+      ],
+      "bullets": [
+        "last7HR 2 and last30HR 5",
+        "hrFBRatio 6.6 with parkFactor 1"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Patrick Wisdom",
+      "team": "SEA",
+      "opponent": "BAL",
+      "opposingPitcher": "Trey Gibson",
+      "hrScoreRank": 17,
+      "topStats": [
+        "barrelRate=20",
+        "opposingPitcherHrVs=79.3"
+      ],
+      "bullets": [
+        "barrelRate 20 and opposingPitcherHrVs 79.3",
+        "parkFactor 1.1 with exitVelo 92.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -149,14 +185,14 @@
       "team": "MIL",
       "opponent": "ATH",
       "opposingPitcher": "Jeffrey Springs",
-      "hrScoreRank": 7,
+      "hrScoreRank": 9,
       "topStats": [
         "Hard Hit%=49.4",
-        "Pitcher HR VS=40.4"
+        "Pitcher HR VS=39.3"
       ],
       "bullets": [
-        "HR score 63.6 (#7)",
-        "Pitcher HR VS 40.4 at park 1.00"
+        "HR score 63.1 (#9)",
+        "Pitcher HR VS 39.3 at park 1.00"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -166,84 +202,14 @@
       "team": "PHI",
       "opponent": "TOR",
       "opposingPitcher": "Patrick Corbin",
-      "hrScoreRank": 8,
+      "hrScoreRank": 10,
       "topStats": [
-        "Pitcher HR VS=54.3",
+        "Pitcher HR VS=53.6",
         "Hard Hit%=47.6"
       ],
       "bullets": [
-        "HR score 63.1 (#8)",
-        "Pitcher HR VS 54.3 at park 1.08"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Brandon Marsh",
-      "team": "PHI",
-      "opponent": "TOR",
-      "opposingPitcher": "Patrick Corbin",
-      "hrScoreRank": 8,
-      "topStats": [
-        "last7HR=3",
-        "hrScore=63.1"
-      ],
-      "bullets": [
-        "last7HR 3 with parkFactor 1.08",
-        "opposingPitcherHrVs 54.3 at Rogers Centre"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Shea Langeliers",
-      "team": "ATH",
-      "opponent": "MIL",
-      "opposingPitcher": "Kyle Harrison",
-      "hrScoreRank": 13,
-      "topStats": [
-        "last7HR=2",
-        "hrScore=59.1"
-      ],
-      "bullets": [
-        "last7HR 2 with last30HR 5",
-        "opposingPitcherHrVs 14.5 at parkFactor 1"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Willson Contreras",
-      "team": "BOS",
-      "opponent": "TB",
-      "opposingPitcher": "Ian Seymour",
-      "hrScoreRank": 9,
-      "topStats": [
-        "Hard Hit%=44.5",
-        "Pitcher HR VS=40.7"
-      ],
-      "bullets": [
-        "HR score 60.6 (#9)",
-        "Pitcher HR VS 40.7 at park 0.98"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "HOU",
-      "opposingPitcher": "Spencer Arrighetti",
-      "hrScoreRank": 10,
-      "topStats": [
-        "Hard Hit%=51.6",
-        "Pitcher HR VS=32.6"
-      ],
-      "bullets": [
-        "HR score 60.3 (#10)",
-        "Pitcher HR VS 32.6 at park 1.02"
+        "HR score 62.7 (#10)",
+        "Pitcher HR VS 53.6 at park 1.08"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
