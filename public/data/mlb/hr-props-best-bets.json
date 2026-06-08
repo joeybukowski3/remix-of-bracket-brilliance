@@ -1,9 +1,9 @@
 {
   "date": "2026-06-08",
-  "generatedAt": "2026-06-08T18:30:53.047Z",
+  "generatedAt": "2026-06-08T19:23:21.085Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly parks with elevated park factors at Camden Yards (1.10) and Rogers Centre (1.08), while Oracle Park (0.85) suppresses power. Favorable matchups include Schwarber and Marsh against lefty Patrick Corbin, plus Canzone and Alonso facing weaker opposing pitching in hitter-friendly venues.",
-    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and park-adjusted hrFBRatio, elevating Yordan Alvarez to the top rank due to his elite 18.6% barrel rate and favorable matchup despite a neutral park factor."
+    "slateOverview": "Today's slate features several hitter-friendly parks with Camden Yards (1.10) and Rogers Centre (1.08) leading the way, while Oracle Park (0.85) and Progressive Field (0.91) suppress power. Favorable matchups include Alvarez vs Rodriguez at Angel Stadium and Schwarber vs lefty Corbin, with Canzone and Alonso both benefiting from the Camden boost.",
+    "modelNote": "The model heavily weights barrel rate, hard-hit metrics, and recent HR trends, elevating Alvarez to the top spot despite a neutral park while pushing Canzone and Schmitt into the top three based on strong park factors and recent power spikes."
   },
   "bestBets": [
     {
@@ -14,28 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.6",
-        "hrScore=86.2"
+        "hrFBRatio=9.3"
       ],
       "bullets": [
         "barrelRate 18.6 with exitVelo 94.9",
-        "parkFactor 1.02 and opposingPitcherHrVs 76.3"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Casey Schmitt",
-      "team": "SF",
-      "opponent": "WSH",
-      "opposingPitcher": "Miles Mikolas",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=69.7",
-        "last30HR=9"
-      ],
-      "bullets": [
-        "last30HR 9 and last7HR 3",
-        "hrFBRatio 6.5 with parkFactor 0.85"
+        "parkFactor 1.02 at Angel Stadium"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -45,14 +28,31 @@
       "team": "SEA",
       "opponent": "BAL",
       "opposingPitcher": "Trey Gibson",
-      "hrScoreRank": 3,
+      "hrScoreRank": 2,
       "topStats": [
         "opposingPitcherHrVs=79.3",
         "parkFactor=1.1"
       ],
       "bullets": [
-        "opposingPitcherHrVs 79.3 and parkFactor 1.1",
-        "barrelRate 16.7 with exitVelo 93.6"
+        "opposingPitcherHrVs 79.3 vs Canzone",
+        "parkFactor 1.1 at Oriole Park"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Casey Schmitt",
+      "team": "SF",
+      "opponent": "WSH",
+      "opposingPitcher": "Miles Mikolas",
+      "hrScoreRank": 3,
+      "topStats": [
+        "last7HR=3",
+        "last30HR=9"
+      ],
+      "bullets": [
+        "last7HR 3 in recent form",
+        "last30HR 9 over 30 days"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -68,8 +68,8 @@
         "hrFBRatio=8.4"
       ],
       "bullets": [
-        "iso 0.341 and hrFBRatio 8.4",
-        "barrelRate 16.7 with hardHitRate 50.6"
+        "iso 0.341 power profile",
+        "hrFBRatio 8.4 fly ball pop"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -81,12 +81,12 @@
       "opposingPitcher": "Patrick Corbin",
       "hrScoreRank": 5,
       "topStats": [
-        "hrFBRatio=9.8",
+        "barrelRate=22.1",
         "pullRate=57.1"
       ],
       "bullets": [
-        "hrFBRatio 9.8 and pullRate 57.1",
-        "barrelRate 22.1 with parkFactor 1.08"
+        "barrelRate 22.1 elite contact",
+        "pullRate 57.1 at Rogers Centre"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -98,14 +98,14 @@
       "team": "BAL",
       "opponent": "SEA",
       "opposingPitcher": "Emerson Hancock",
-      "hrScoreRank": 7,
+      "hrScoreRank": 6,
       "topStats": [
-        "parkFactor=1.1",
-        "last7HR=2"
+        "hardHitRate=56.1",
+        "exitVelo=95"
       ],
       "bullets": [
-        "parkFactor 1.1 and exitVelo 95",
-        "last7HR 2 with hardHitRate 56.1"
+        "hardHitRate 56.1 with exitVelo 95",
+        "parkFactor 1.1 at Camden Yards"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -115,14 +115,14 @@
       "team": "WSH",
       "opponent": "SF",
       "opposingPitcher": "Logan Webb",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
         "barrelRate=25.5",
-        "exitVelo=96"
+        "hardHitRate=58.6"
       ],
       "bullets": [
-        "barrelRate 25.5 and exitVelo 96",
-        "hardHitRate 58.6 with parkFactor 0.85"
+        "barrelRate 25.5 with hardHitRate 58.6",
+        "exitVelo 96 at Oracle Park"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -138,8 +138,8 @@
         "hardHitRate=57.6"
       ],
       "bullets": [
-        "barrelRate 18.8 and hardHitRate 57.6",
-        "bbRate 20.7 with exitVelo 94.2"
+        "barrelRate 18.8 with hardHitRate 57.6",
+        "last30HR 7 recent power"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -151,31 +151,31 @@
       "team": "ATH",
       "opponent": "MIL",
       "opposingPitcher": "Kyle Harrison",
-      "hrScoreRank": 18,
+      "hrScoreRank": 17,
       "topStats": [
-        "last7HR=2",
-        "hrFBRatio=6.6"
+        "hrFBRatio=6.6",
+        "last7HR=2"
       ],
       "bullets": [
-        "last7HR 2 and last30HR 5",
-        "hrFBRatio 6.6 with parkFactor 1"
+        "last7HR 2 with hrFBRatio 6.6",
+        "parkFactor 1 at Las Vegas"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Patrick Wisdom",
+      "player": "Julio Rodríguez",
       "team": "SEA",
       "opponent": "BAL",
       "opposingPitcher": "Trey Gibson",
-      "hrScoreRank": 17,
+      "hrScoreRank": 19,
       "topStats": [
-        "barrelRate=20",
-        "opposingPitcherHrVs=79.3"
+        "opposingPitcherHrVs=79.3",
+        "last30HR=7"
       ],
       "bullets": [
-        "barrelRate 20 and opposingPitcherHrVs 79.3",
-        "parkFactor 1.1 with exitVelo 92.5"
+        "opposingPitcherHrVs 79.3 vs Rodriguez",
+        "last30HR 7 over 30 days"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -191,7 +191,7 @@
         "Pitcher HR VS=39.3"
       ],
       "bullets": [
-        "HR score 63.1 (#9)",
+        "HR score 63.2 (#9)",
         "Pitcher HR VS 39.3 at park 1.00"
       ],
       "hrOddsYes": null,
@@ -208,7 +208,7 @@
         "Hard Hit%=47.6"
       ],
       "bullets": [
-        "HR score 62.7 (#10)",
+        "HR score 62.8 (#10)",
         "Pitcher HR VS 53.6 at park 1.08"
       ],
       "hrOddsYes": null,
