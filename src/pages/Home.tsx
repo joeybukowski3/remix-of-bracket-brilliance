@@ -308,7 +308,7 @@ export default function Home() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const base = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public";
+        const base = "";
         const opts: RequestInit = { cache: "no-store" };
 
         // Load MLB HR Props + K Props (same file, matches useMlbPropsData hook)

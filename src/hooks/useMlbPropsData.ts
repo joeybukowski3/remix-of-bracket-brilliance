@@ -24,8 +24,9 @@ export function useMlbPropsData() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    const isDev = import.meta.env.DEV;
-    const base = isDev ? '' : "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public";
+    // Use relative paths — served from Vercel deployment, which invalidates cache
+    // instantly on every deploy. Avoids GitHub CDN cache lag on raw.githubusercontent.com.
+    const base = import.meta.env.DEV ? '' : '';
     Promise.all([
       fetch(`${base}/data/mlb/hr-props-raw.json`, { cache: "no-store" }),
       fetch(`${base}/data/mlb/hr-props-best-bets.json`, { cache: "no-store" }),
