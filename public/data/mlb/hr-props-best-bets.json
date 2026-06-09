@@ -1,9 +1,9 @@
 {
   "date": "2026-06-09",
-  "generatedAt": "2026-06-09T10:32:17.657Z",
+  "generatedAt": "2026-06-09T10:53:18.093Z",
   "slatePreview": {
-    "slateOverview": "Coors Field and Angel Stadium stand out as the primary power environments today, with park factors of 1.4 and 1.02 respectively, while Oracle Park's pitcher-friendly 0.85 factor creates a tougher test for Wood and Schmitt. Ureña and Sugano present favorable right-handed matchups against lefty-heavy power bats, and the combination of barrel rates above 18% for Alvarez and Kurtz plus Crow-Armstrong's recent 4 HR in 7 games signals elevated fly-ball outcomes.",
-    "modelNote": "The model is prioritizing barrel rate, park-adjusted hrFBRatio, and recent HR volume over raw xBA, which explains why Alvarez and Crow-Armstrong lead despite varying exit velocities and why lower-park plays like Wood still crack the top 5."
+    "slateOverview": "Coors Field and Angel Stadium stand out as the primary power spots today, with Coors' 1.4 park factor boosting both Pete Crow-Armstrong and Hunter Goodman despite tougher pitching matchups. Walbert Ureña's 25.2 HR/PA rate against lefties sets up Yordan Alvarez as the top-rated power bat in a favorable home-run environment at Angel Stadium. Oracle Park's pitcher-friendly 0.85 factor suppresses James Wood and Casey Schmitt despite strong underlying metrics.",
+    "modelNote": "The model heavily weights barrel rate, hard-hit rate, and park-adjusted opposing pitcher HR rates, elevating Alvarez to the top spot while discounting Coors' raw environment for Crow-Armstrong's lower barrel metrics."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.6",
-        "exitVelo=94.9"
+        "hrFBRatio=9.1"
       ],
       "bullets": [
-        "barrelRate 18.6 and exitVelo 94.9",
-        "parkFactor 1.02 with hrFBRatio 9.1"
+        "barrelRate 18.6 with exitVelo 94.9",
+        "parkFactor 1.02 vs pitcher with 25.2 HR/9 allowed"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -35,7 +35,7 @@
       ],
       "bullets": [
         "parkFactor 1.4 at Coors Field",
-        "last7HR 4 and opposingPitcherHrVs 82.9"
+        "last7HR 4 with opposingPitcherHrVs 82.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,8 +51,8 @@
         "hardHitRate=57.6"
       ],
       "bullets": [
-        "barrelRate 18.8 and hardHitRate 57.6",
-        "last30HR 9 with exitVelo 94.2"
+        "barrelRate 18.8 with hardHitRate 57.6",
+        "last30HR 9 vs pitcher with 28.2 HR/9 allowed"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -68,8 +68,8 @@
         "exitVelo=96"
       ],
       "bullets": [
-        "barrelRate 25.5 and exitVelo 96",
-        "hardHitRate 58.6 with iso 0.261"
+        "barrelRate 25.5 with exitVelo 96",
+        "last30HR 6 vs pitcher with 60.4 HR/9 allowed"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -85,7 +85,7 @@
         "last7HR=3"
       ],
       "bullets": [
-        "last30HR 9 and last7HR 3",
+        "last30HR 9 with last7HR 3",
         "opposingPitcherHrVs 60.5 with hrFBRatio 6.4"
       ],
       "hrOddsYes": null,
@@ -100,12 +100,12 @@
       "opposingPitcher": "Dustin May",
       "hrScoreRank": 7,
       "topStats": [
-        "xba=0.285",
-        "exitVelo=92.9"
+        "hrFBRatio=7.3",
+        "last30HR=9"
       ],
       "bullets": [
-        "xba 0.285 and exitVelo 92.9",
-        "last30HR 9 with hrFBRatio 7.3"
+        "last30HR 9 with hrFBRatio 7.3",
+        "parkFactor 1.06 vs pitcher with 46.6 HR/9 allowed"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -121,7 +121,7 @@
         "hrFBRatio=8.3"
       ],
       "bullets": [
-        "iso 0.337 and hrFBRatio 8.3",
+        "iso 0.337 with hrFBRatio 8.3",
         "barrelRate 16.7 with exitVelo 92.3"
       ],
       "hrOddsYes": null,
@@ -139,7 +139,7 @@
       ],
       "bullets": [
         "parkFactor 1.4 at Coors Field",
-        "pullRate 53.1 and opposingPitcherHrVs 69.7"
+        "pullRate 53.1 with opposingPitcherHrVs 69.7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -188,11 +188,11 @@
       "hrScoreRank": 8,
       "topStats": [
         "xba=0.31",
-        "iso=0.282"
+        "hrFBRatio=7.1"
       ],
       "bullets": [
-        "xba 0.31 and iso 0.282",
-        "opposingPitcherHrVs 60.5 with hrFBRatio 7.1"
+        "xba 0.31 with hrFBRatio 7.1",
+        "opposingPitcherHrVs 60.5 with parkFactor 1.07"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -208,7 +208,7 @@
         "exitVelo=95"
       ],
       "bullets": [
-        "hardHitRate 56.1 and exitVelo 95",
+        "hardHitRate 56.1 with exitVelo 95",
         "opposingPitcherHrVs 57.8 with parkFactor 1.1"
       ],
       "hrOddsYes": null,
