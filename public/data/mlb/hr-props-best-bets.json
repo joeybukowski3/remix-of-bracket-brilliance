@@ -1,9 +1,9 @@
 {
   "date": "2026-06-09",
-  "generatedAt": "2026-06-09T10:53:18.093Z",
+  "generatedAt": "2026-06-09T18:15:27.636Z",
   "slatePreview": {
-    "slateOverview": "Coors Field and Angel Stadium stand out as the primary power spots today, with Coors' 1.4 park factor boosting both Pete Crow-Armstrong and Hunter Goodman despite tougher pitching matchups. Walbert Ureña's 25.2 HR/PA rate against lefties sets up Yordan Alvarez as the top-rated power bat in a favorable home-run environment at Angel Stadium. Oracle Park's pitcher-friendly 0.85 factor suppresses James Wood and Casey Schmitt despite strong underlying metrics.",
-    "modelNote": "The model heavily weights barrel rate, hard-hit rate, and park-adjusted opposing pitcher HR rates, elevating Alvarez to the top spot while discounting Coors' raw environment for Crow-Armstrong's lower barrel metrics."
+    "slateOverview": "Coors Field leads the slate with a 1.4 park factor while Angel Stadium and Las Vegas Ballpark sit near neutral, setting up power spots for Alvarez and Crow-Armstrong against right-handers Ureña and Sugano. Oracle Park suppresses Wood and Schmitt despite strong barrels, whereas Citi Field and Rate Field offer slight boosts for Soto and Grichuk. Limited weather data keeps focus on park factors and opposing pitcher HR vulnerability.",
+    "modelNote": "The model elevates Alvarez to the top spot by combining elite barrel and hard-hit rates with a favorable park and pitcher matchup, while Crow-Armstrong climbs on Coors leverage despite lower exit velocity."
   },
   "bestBets": [
     {
@@ -13,12 +13,12 @@
       "opposingPitcher": "Walbert Ureña",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate=18.6",
+        "barrelRate=19",
         "hrFBRatio=9.1"
       ],
       "bullets": [
-        "barrelRate 18.6 with exitVelo 94.9",
-        "parkFactor 1.02 vs pitcher with 25.2 HR/9 allowed"
+        "barrelRate 19 with exitVelo 94.9",
+        "parkFactor 1.02 vs pitcher with 25.2 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -47,12 +47,12 @@
       "opposingPitcher": "Robert Gasser",
       "hrScoreRank": 3,
       "topStats": [
-        "barrelRate=18.8",
-        "hardHitRate=57.6"
+        "hardHitRate=58.5",
+        "barrelRate=19"
       ],
       "bullets": [
-        "barrelRate 18.8 with hardHitRate 57.6",
-        "last30HR 9 vs pitcher with 28.2 HR/9 allowed"
+        "hardHitRate 58.5 with barrelRate 19",
+        "last30HR 9 vs pitcher with 28.2 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -64,29 +64,29 @@
       "opposingPitcher": "Adrian Houser",
       "hrScoreRank": 4,
       "topStats": [
-        "barrelRate=25.5",
+        "barrelRate=25",
         "exitVelo=96"
       ],
       "bullets": [
-        "barrelRate 25.5 with exitVelo 96",
-        "last30HR 6 vs pitcher with 60.4 HR/9 allowed"
+        "barrelRate 25 with exitVelo 96",
+        "last30HR 6 vs pitcher with 60.5 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Casey Schmitt",
-      "team": "SF",
-      "opponent": "WSH",
-      "opposingPitcher": "Andrew Alvarez",
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "MIN",
+      "opposingPitcher": "Taj Bradley",
       "hrScoreRank": 5,
       "topStats": [
-        "last30HR=9",
-        "last7HR=3"
+        "xba=0.297",
+        "last30HR=8"
       ],
       "bullets": [
-        "last30HR 9 with last7HR 3",
-        "opposingPitcherHrVs 60.5 with hrFBRatio 6.4"
+        "xba 0.297 with last30HR 8",
+        "opposingPitcherHrVs 52.8 at parkFactor 0.95"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -94,45 +94,64 @@
   ],
   "valueBets": [
     {
+      "player": "Casey Schmitt",
+      "team": "SF",
+      "opponent": "WSH",
+      "opposingPitcher": "Andrew Alvarez",
+      "hrScoreRank": 6,
+      "topStats": [
+        "last30HR=9",
+        "last7HR=3"
+      ],
+      "bullets": [
+        "last30HR 9 with last7HR 3",
+        "barrelRate 13.2 at parkFactor 0.85"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
       "player": "Juan Soto",
       "team": "NYM",
       "opponent": "STL",
       "opposingPitcher": "Dustin May",
       "hrScoreRank": 7,
       "topStats": [
-        "hrFBRatio=7.3",
+        "kRate=14.6",
         "last30HR=9"
       ],
       "bullets": [
-        "last30HR 9 with hrFBRatio 7.3",
-        "parkFactor 1.06 vs pitcher with 46.6 HR/9 allowed"
+        "kRate 14.6 with last30HR 9",
+        "parkFactor 1.06 vs pitcher with 46.6 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "CLE",
-      "opposingPitcher": "Slade Cecconi",
-      "hrScoreRank": 9,
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "ATH",
+      "opposingPitcher": "J.T. Ginn",
+      "hrScoreRank": 8,
       "topStats": [
-        "iso=0.337",
-        "hrFBRatio=8.3"
+        "hardHitRate=54.1",
+        "last7HR=2"
       ],
       "bullets": [
-        "iso 0.337 with hrFBRatio 8.3",
-        "barrelRate 16.7 with exitVelo 92.3"
+        "hardHitRate 54.1 with exitVelo 92.3",
+        "last7HR 2 vs pitcher with 31.2 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
-    },
+    }
+  ],
+  "longshots": [
     {
       "player": "Hunter Goodman",
       "team": "COL",
       "opponent": "CHC",
       "opposingPitcher": "Colin Rea",
-      "hrScoreRank": 10,
+      "hrScoreRank": 11,
       "topStats": [
         "parkFactor=1.4",
         "pullRate=53.1"
@@ -145,18 +164,18 @@
       "hrValueEdge": null
     },
     {
-      "player": "Dillon Dingler",
-      "team": "DET",
-      "opponent": "MIN",
-      "opposingPitcher": "Taj Bradley",
-      "hrScoreRank": 6,
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "SEA",
+      "opposingPitcher": "Logan Gilbert",
+      "hrScoreRank": 16,
       "topStats": [
-        "Pitcher HR VS=52.7",
-        "Hard Hit%=50.3"
+        "exitVelo=94.9",
+        "hardHitRate=55.7"
       ],
       "bullets": [
-        "HR score 66.8 (#6)",
-        "Pitcher HR VS 52.7 at park 0.95"
+        "exitVelo 94.9 with hardHitRate 55.7",
+        "last30HR 5 vs pitcher with 57.8 HR/9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -166,50 +185,14 @@
       "team": "CWS",
       "opponent": "ATL",
       "opposingPitcher": "Grant Holmes",
-      "hrScoreRank": 8,
+      "hrScoreRank": 9,
       "topStats": [
         "Pitcher HR VS=60.5",
         "Hard Hit%=44.6"
       ],
       "bullets": [
-        "HR score 63.2 (#8)",
+        "HR score 63.1 (#9)",
         "Pitcher HR VS 60.5 at park 1.07"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Randal Grichuk",
-      "team": "CWS",
-      "opponent": "ATL",
-      "opposingPitcher": "Grant Holmes",
-      "hrScoreRank": 8,
-      "topStats": [
-        "xba=0.31",
-        "hrFBRatio=7.1"
-      ],
-      "bullets": [
-        "xba 0.31 with hrFBRatio 7.1",
-        "opposingPitcherHrVs 60.5 with parkFactor 1.07"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "SEA",
-      "opposingPitcher": "Logan Gilbert",
-      "hrScoreRank": 15,
-      "topStats": [
-        "hardHitRate=56.1",
-        "exitVelo=95"
-      ],
-      "bullets": [
-        "hardHitRate 56.1 with exitVelo 95",
-        "opposingPitcherHrVs 57.8 with parkFactor 1.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -219,31 +202,14 @@
       "team": "NYY",
       "opponent": "CLE",
       "opposingPitcher": "Slade Cecconi",
-      "hrScoreRank": 9,
+      "hrScoreRank": 10,
       "topStats": [
-        "Hard Hit%=50.6",
+        "Hard Hit%=50.3",
         "Pitcher HR VS=39.2"
       ],
       "bullets": [
-        "HR score 62.8 (#9)",
+        "HR score 62.9 (#10)",
         "Pitcher HR VS 39.2 at park 0.91"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "CHC",
-      "opposingPitcher": "Colin Rea",
-      "hrScoreRank": 10,
-      "topStats": [
-        "Pitcher HR VS=69.7",
-        "Hard Hit%=46.9"
-      ],
-      "bullets": [
-        "HR score 62.6 (#10)",
-        "Pitcher HR VS 69.7 at park 1.40"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
