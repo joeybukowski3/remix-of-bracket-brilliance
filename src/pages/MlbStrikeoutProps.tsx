@@ -145,6 +145,7 @@ export default function MlbStrikeoutProps() {
   const teams = useMemo(() => Array.from(new Set(strikeoutDetailRows.flatMap((r) => [r.team, r.opponent]))).sort(), [strikeoutDetailRows]);
   const gameOptions = useMemo(() => games.map((g) => ({ value: g.gameKey, label: g.matchup })), [games]);
   const bestScore = strikeoutDetailRows[0]?.strikeoutMatchupScore ?? null;
+  const hasKOdds = useMemo(() => strikeoutDetailRows.some(r => (r.kLine != null && r.kLine > 0) || !!r.kOddsOver), [strikeoutDetailRows]);
 
   const filteredRows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -306,7 +307,7 @@ export default function MlbStrikeoutProps() {
                         <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 font-black whitespace-nowrap min-w-[130px] text-left">
                           <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                         </th>
-                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-black uppercase tracking-widest text-left whitespace-nowrap min-w-[60px]">K Line</th>
+                        {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-black uppercase tracking-widest text-left whitespace-nowrap min-w-[60px]">K Line</th>}
                         <SortTh k="strikeoutMatchupScore" label="K Score" />
                         <SortTh k="pitcherKRate" label="K%" />
                         <SortTh k="pitcherWhiffRate" label="Whiff%" />
@@ -333,6 +334,7 @@ export default function MlbStrikeoutProps() {
                                 <span className="text-[9px] text-slate-400">[vs {row.opponent}]</span>
                               </div>
                             </td>
+                            {hasKOdds && (
                             <td className="border-b border-slate-100 px-2 py-1">
                               <div className="flex flex-col items-start gap-0.5">
                                 <div className="font-semibold text-slate-900">{fmt(row.kLine, 1)}</div>
@@ -340,6 +342,7 @@ export default function MlbStrikeoutProps() {
                                 {row.kOddsUnder && <div className="text-[9px] text-slate-500">U {row.kOddsUnder}</div>}
                               </div>
                             </td>
+                            )}
                             <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td>
                             <td className="border-b border-slate-100 px-2 py-1">
                               <div className="flex items-center gap-1">

@@ -1734,7 +1734,8 @@ function SocialTableML({
                   </span>
                 )}
               </div>
-              {/* Value edge badge */}
+              {/* Value edge badge — only shown when odds are available */}
+              {row.valueEdge != null && (
               <span style={{
                 background: vc.bg,
                 color: vc.text,
@@ -1746,6 +1747,7 @@ function SocialTableML({
               }}>
                 {vc.label}
               </span>
+              )}
             </div>
           </div>
         );

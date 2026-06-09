@@ -1450,6 +1450,7 @@ export default function MlbHrProps() {
   const strikeoutRows = useMemo(() => buildPitcherStrikeoutRows(batters, games, pitchers), [batters, games, pitchers]);
   const strikeoutHeat = useMemo(() => buildStrikeoutHeatRanges(strikeoutRows), [strikeoutRows]);
   const batterLookup = useMemo(() => new Map(batters.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])), [batters]);
+  const hasHrOdds = useMemo(() => batters.some(b => b.hrOddsYes != null), [batters]);
   const visibleBestBets = useMemo(
     () => bestBets?.bestBets.filter((pick) => !isStarterPlaceholder(pick.opposingPitcher) && batterLookup.has(`${pick.player}|${pick.team}|${pick.opponent}`)) ?? [],
     [bestBets, batterLookup],
@@ -1892,7 +1893,7 @@ export default function MlbHrProps() {
                                 </th>
                                 {/* Scrollable columns — short labels on mobile, full on sm+ */}
                                 {([
-                                  ["hrOddsYes",        "Odds",  "HR Odds"],
+                                  ...(hasHrOdds ? [["hrOddsYes", "Odds", "HR Odds"]] : []),
                                   ["adjustedHrScore", "HR↕",    "HR Score ↕"],
                                   ["barrelRate",       "Brl%",   "Barrel%"],
                                   ["hardHitRate",      "HH%",    "HH%"],
@@ -1935,6 +1936,7 @@ export default function MlbHrProps() {
                                       <div className="text-[9px] text-slate-400 truncate max-w-[105px] sm:max-w-[140px]">vs {row.opposingPitcher}</div>
                                     </td>
                                     {/* HR Odds */}
+                                    {hasHrOdds && (
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       {row.hrOddsYes != null ? (() => {
                                         const isValue = (row.hrValueEdge ?? 0) > 1.05;
@@ -1952,8 +1954,9 @@ export default function MlbHrProps() {
                                             )}
                                           </div>
                                         );
-                                      })() : <span className="text-[9px] text-slate-300">—</span>}
+                                      })() : null}
                                     </td>
+                                    )}
                                     {/* HR Score */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       <StatScorePill value={row.adjustedHrScore ?? row.hrScore} />
