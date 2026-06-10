@@ -296,7 +296,7 @@ export default function MlbStrikeoutProps() {
               </section>
 
               {/* Table */}
-              <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <section data-x-export="mlb-strikeout-props" className="rounded-[20px] border border-slate-200 bg-white shadow-sm overflow-hidden">
                 <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="min-w-full border-separate border-spacing-0 text-xs">
                     <thead className="sticky top-0 z-20">

@@ -128,18 +128,23 @@ jobs:
         if: steps.schedule_gate.outputs.should_run == 'true' && steps.restore_post_cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          MODE="${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'dry-run' }}"
+          # Scheduled runs post automatically; manual runs use the selected mode
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            MODE="post"
+          else
+            MODE="${{ inputs.mode || 'dry-run' }}"
+          fi
           if [ -n "${JKB_X_API_KEY:-}" ]; then echo "JKB_X_API_KEY present: true"; else echo "JKB_X_API_KEY present: false"; fi
           if [ -n "${JKB_X_API_SECRET:-}" ]; then echo "JKB_X_API_SECRET present: true"; else echo "JKB_X_API_SECRET present: false"; fi
           if [ -n "${JKB_X_ACCESS_TOKEN:-}" ]; then echo "JKB_X_ACCESS_TOKEN present: true"; else echo "JKB_X_ACCESS_TOKEN present: false"; fi
           if [ -n "${JKB_X_ACCESS_SECRET:-}" ]; then echo "JKB_X_ACCESS_SECRET present: true"; else echo "JKB_X_ACCESS_SECRET present: false"; fi
           node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
-          HR_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && 'production' || (github.event_name == 'workflow_dispatch' && inputs.data_source || 'production') }}
+          HR_PROPS_DATA_SOURCE: production
           X_ALLOW_LIVE_POST: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')) }}
 
       - name: Upload HR props X screenshot
-        if: steps.schedule_gate.outputs.should_run == 'true' && (github.event_name != 'workflow_dispatch' || inputs.mode == 'dry-run')
+        if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
         uses: actions/upload-artifact@v4
         with:
           name: mlb-hr-props-x-screenshot
