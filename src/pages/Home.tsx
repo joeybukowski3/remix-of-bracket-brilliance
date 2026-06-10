@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import SiteFooter from "@/components/layout/SiteFooter";
+import { PublicBettingPreview } from "@/components/home/PublicBettingPreview";
 import { HRPropsTable, KPropsTable, PgaTop5Table, PgaTop10Table } from "@/components/home/SocialMediaTables";
 
 const sports = [
@@ -471,6 +472,7 @@ export default function Home() {
         </div>
       </section>
 
+      <PublicBettingPreview />
       <SiteFooter />
     </main>
   );

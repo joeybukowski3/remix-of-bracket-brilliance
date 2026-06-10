@@ -51,6 +51,12 @@ jobs:
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
 
+      - name: Fetch public betting splits
+        run: node scripts/fetch-public-betting.mjs || true
+
+      - name: Resolve betting results from prior day
+        run: node scripts/resolve-betting-results.mjs || true
+
       - name: Generate HR props & best bets
         run: node scripts/generate-mlb-hr-props.mjs --force
         env:
@@ -72,7 +78,7 @@ jobs:
           TODAY="$(TZ=America/New_York date '+%Y-%m-%d')"
           sed -i "s/<lastmod>[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}<\/lastmod>/<lastmod>${TODAY}<\/lastmod>/g" public/sitemap.xml
 
-          git add public/data/mlb/ public/sitemap.xml
+          git add public/data/mlb/ public/data/betting-splits/ public/sitemap.xml
           if git diff --cached --quiet; then
             echo "No MLB data changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
