@@ -79,9 +79,14 @@ async function screenshotHrPropsTable(outputPath = SCREENSHOT_PATH) {
     page.setDefaultTimeout(60000);
     await page.goto(HR_PROPS_URL, { waitUntil: "networkidle", timeout: 60000 });
 
-    // Click the HR Props tab to surface the social table
-    const hrTab = page.getByRole("button", { name: HR_TAB_LABEL, exact: false }).first();
-    await hrTab.click();
+    // Click the HR Props tab — use text selector with emoji for reliability
+    try {
+      await page.locator(`button:has-text("HR Props")`).first().click({ timeout: 8000 });
+      console.log("[mlb-hr-props-x] Clicked HR Props tab");
+    } catch (clickErr) {
+      console.warn(`[mlb-hr-props-x] Tab click failed (${clickErr.message}), trying fallback selector`);
+      await page.locator(`button:text-is("🔥 HR Props")`).first().click({ timeout: 5000 });
+    }
 
     let exportTarget = page.locator(EXPORT_SELECTOR).first();
     try {
@@ -571,22 +576,41 @@ async function main() {
 
   let screenshotPath = "";
   if (mode !== "post-text-only") {
-    screenshotPath = await screenshotHrPropsTable();
-    console.log(`[mlb-hr-props-x] screenshotPath=${screenshotPath}`);
+    try {
+      screenshotPath = await screenshotHrPropsTable();
+      console.log(`[mlb-hr-props-x] screenshotPath=${screenshotPath}`);
+    } catch (screenshotErr) {
+      console.warn(`[mlb-hr-props-x] Screenshot failed — will post text-only: ${screenshotErr instanceof Error ? screenshotErr.message : screenshotErr}`);
+    }
   }
 
   if (mode === "post") {
-    const post = await publishPost({ client: account.client, caption: result.caption, screenshotPath });
-    savePostReceipt(duplicateStatePath, {
-      postKey: liveDuplicateKey,
-      slateDate: normalizeText(rawPayload?.date),
-      postedAt: new Date().toISOString(),
-      tweetId: post.tweetId,
-      tweetUrl: post.tweetUrl,
-      mediaId: post.mediaId,
-      screenshotPath,
-    });
-    console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
+    if (screenshotPath) {
+      const post = await publishPost({ client: account.client, caption: result.caption, screenshotPath });
+      savePostReceipt(duplicateStatePath, {
+        postKey: liveDuplicateKey,
+        slateDate: normalizeText(rawPayload?.date),
+        postedAt: new Date().toISOString(),
+        tweetId: post.tweetId,
+        tweetUrl: post.tweetUrl,
+        mediaId: post.mediaId,
+        screenshotPath,
+      });
+      console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
+    } else {
+      // Screenshot failed — fall back to text-only so the post always goes out
+      console.log("[mlb-hr-props-x] Falling back to text-only post");
+      const post = await publishTextOnlyPost({ client: account.client, caption: result.caption });
+      savePostReceipt(duplicateStatePath, {
+        postKey: liveDuplicateKey,
+        mode: "text-only-fallback",
+        slateDate: normalizeText(rawPayload?.date),
+        postedAt: new Date().toISOString(),
+        tweetId: post.tweetId,
+        tweetUrl: post.tweetUrl,
+      });
+      console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
+    }
   }
 
   if (mode === "post-text-only") {

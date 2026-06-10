@@ -141,6 +141,10 @@ jobs:
         env:
           HR_PROPS_DATA_SOURCE: production
           X_ALLOW_LIVE_POST: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')) }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
 
       - name: Upload HR props X screenshot
         if: steps.schedule_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
