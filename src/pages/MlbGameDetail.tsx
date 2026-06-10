@@ -1143,7 +1143,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
   const ACCENTS = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308","#94a3b8","#64748b","#475569"];
 
   return (
-    <div style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+    <div data-x-export="mlb-hr-social" style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
       <div style={{ background: "#0a1628", borderBottom: "3px solid #e05c2e", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🔥 MLB HR PROPS</div>
@@ -1280,7 +1280,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
   const ACCENTS = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308"];
 
   return (
-    <div style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+    <div data-x-export="mlb-k-social" style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
       <div style={{ background: "#0a1628", borderBottom: "3px solid #22c55e", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🎯 MLB K PROPS</div>

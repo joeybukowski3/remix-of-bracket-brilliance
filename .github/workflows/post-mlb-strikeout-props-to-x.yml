@@ -2,9 +2,13 @@ name: Post MLB Strikeout Props to X
 
 on:
   schedule:
-    # Runs at 11 AM EST/EDT for strikeout props posting
-    - cron: "0 15 * * *" # 11 AM EDT
-    - cron: "0 16 * * *" # 11 AM EST
+    # 5 min after each data refresh (3 AM, 9 AM, 11:45 AM ET)
+    - cron: "5 7 * * *"    # 3:05 AM EDT
+    - cron: "5 8 * * *"    # 3:05 AM EST
+    - cron: "5 13 * * *"   # 9:05 AM EDT
+    - cron: "5 14 * * *"   # 9:05 AM EST
+    - cron: "50 15 * * *"  # 11:50 AM EDT
+    - cron: "50 16 * * *"  # 11:50 AM EST
   workflow_dispatch:
     inputs:
       mode:
@@ -76,15 +80,15 @@ jobs:
 
           ET_ZONE="$(TZ=America/New_York date +%Z)"
 
-          # 11 AM ET strikeout props posting
+          # Valid crons for each timezone — one set per DST state
           if [ "$ET_ZONE" = "EDT" ]; then
-            VALID_CRONS="0 15 * * *"
+            VALID_CRONS="5 7 * * *|5 13 * * *|50 15 * * *"
           else
-            VALID_CRONS="0 16 * * *"
+            VALID_CRONS="5 8 * * *|5 14 * * *|50 16 * * *"
           fi
 
           CURRENT="${{ github.event.schedule }}"
-          if echo "$VALID_CRONS" | grep -qF "$CURRENT"; then
+          if echo "$VALID_CRONS" | tr '|' '\n' | grep -qF "$CURRENT"; then
             SHOULD_RUN="true"
           else
             SHOULD_RUN="false"

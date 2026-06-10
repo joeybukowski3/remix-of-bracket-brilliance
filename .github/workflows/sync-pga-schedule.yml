@@ -2,8 +2,8 @@ name: Sync PGA Tour Schedule
 
 on:
   schedule:
-    # Run every Sunday at 10 AM ET to update for the week
-    - cron: '14 10 * * 0'
+    # Run every Monday at 3 AM ET (7 AM UTC during EDT)
+    - cron: '0 7 * * 1'
   workflow_dispatch:
 
 permissions:

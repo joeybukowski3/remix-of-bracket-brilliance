@@ -11,8 +11,9 @@ const RAW_DATA_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const BEST_BETS_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
 const PRODUCTION_BASE_URL = "https://www.joeknowsball.com/data/mlb";
 const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
-const HR_PROPS_URL = "https://www.joeknowsball.com/mlb/hr-props";
-const EXPORT_SELECTOR = '[data-x-export="mlb-hr-props"]';
+const HR_PROPS_URL = "https://www.joeknowsball.com/mlb";
+const EXPORT_SELECTOR = '[data-x-export="mlb-hr-social"]';
+const HR_TAB_LABEL = "HR Props";
 const SCREENSHOT_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x.png");
 const DEFAULT_DUPLICATE_STATE_DIR = path.join(ROOT, "artifacts", "x-post-state");
 const args = new Set(process.argv.slice(2));
@@ -73,10 +74,14 @@ async function screenshotHrPropsTable(outputPath = SCREENSHOT_PATH) {
   try {
     const page = await browser.newPage({
       viewport: { width: 1080, height: 1400 },
-      deviceScaleFactor: 1,   // 1x — keeps PNG well under 5 MB (X limit)
+      deviceScaleFactor: 1,
     });
     page.setDefaultTimeout(60000);
     await page.goto(HR_PROPS_URL, { waitUntil: "networkidle", timeout: 60000 });
+
+    // Click the HR Props tab to surface the social table
+    const hrTab = page.getByRole("button", { name: HR_TAB_LABEL, exact: false }).first();
+    await hrTab.click();
 
     let exportTarget = page.locator(EXPORT_SELECTOR).first();
     try {
@@ -87,7 +92,7 @@ async function screenshotHrPropsTable(outputPath = SCREENSHOT_PATH) {
         .first()
         .locator("xpath=ancestor::div[contains(@class, 'overflow-x-auto')][1]");
       await exportTarget.waitFor({ state: "visible" });
-      console.log(`[mlb-hr-props-x] ${EXPORT_SELECTOR} was not found on production; used current HR Score table fallback.`);
+      console.log(`[mlb-hr-props-x] ${EXPORT_SELECTOR} was not found; used HR Score table fallback.`);
     }
 
     await exportTarget.screenshot({

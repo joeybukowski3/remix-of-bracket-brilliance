@@ -10,8 +10,9 @@ const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const RAW_DATA_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const PRODUCTION_BASE_URL = "https://www.joeknowsball.com/data/mlb";
 const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
-const STRIKEOUT_PROPS_URL = "https://www.joeknowsball.com/mlb/strikeout-props";
-const EXPORT_SELECTOR = '[data-x-export="mlb-strikeout-props"]';
+const STRIKEOUT_PROPS_URL = "https://www.joeknowsball.com/mlb";
+const EXPORT_SELECTOR = '[data-x-export="mlb-k-social"]';
+const K_TAB_LABEL = "K Props";
 const SCREENSHOT_PATH = path.join(ROOT, "artifacts", "mlb-strikeout-props-x.png");
 const DEFAULT_DUPLICATE_STATE_DIR = path.join(ROOT, "artifacts", "x-post-state");
 const args = new Set(process.argv.slice(2));
@@ -77,6 +78,10 @@ async function screenshotStrikeoutPropsTable(outputPath = SCREENSHOT_PATH) {
     page.setDefaultTimeout(60000);
     await page.goto(STRIKEOUT_PROPS_URL, { waitUntil: "networkidle", timeout: 60000 });
 
+    // Click the K Props tab to surface the social table
+    const kTab = page.getByRole("button", { name: K_TAB_LABEL, exact: false }).first();
+    await kTab.click();
+
     let exportTarget = page.locator(EXPORT_SELECTOR).first();
     try {
       await exportTarget.waitFor({ state: "visible", timeout: 10000 });
@@ -86,7 +91,7 @@ async function screenshotStrikeoutPropsTable(outputPath = SCREENSHOT_PATH) {
         .first()
         .locator("xpath=ancestor::div[contains(@class, 'overflow-x-auto')][1]");
       await exportTarget.waitFor({ state: "visible" });
-      console.log(`[mlb-strikeout-props-x] ${EXPORT_SELECTOR} was not found on production; used current K Score table fallback.`);
+      console.log(`[mlb-strikeout-props-x] ${EXPORT_SELECTOR} was not found; used K Score table fallback.`);
     }
 
     await exportTarget.screenshot({
