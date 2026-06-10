@@ -1,9 +1,9 @@
 {
   "date": "2026-06-10",
-  "generatedAt": "2026-06-10T11:31:29.809Z",
+  "generatedAt": "2026-06-10T16:40:25.847Z",
   "slatePreview": {
-    "slateOverview": "Coors Field stands out with a 1.4 park factor for Pete Crow-Armstrong, while Las Vegas Ballpark offers neutral conditions for Nick Kurtz against Brandon Sproat. Oracle Park suppresses power at 0.85 for both James Wood and Casey Schmitt, and Angel Stadium gives Yordan Alvarez a slight boost at 1.02 versus Reid Detmers. Pitcher vulnerabilities like Ryan Gusto's 76.1 HR/PA rate against Arizona and Sproat's 61.6 mark create exploitable edges despite some tough parks.",
-    "modelNote": "The model heavily weights barrel rate, hard-hit rate, and recent HR trends, elevating Kurtz to the top spot with elite 18.9 barrel and 57.7 hard-hit marks plus four HR in his last seven games."
+    "slateOverview": "Coors Field leads the slate with a 1.4 park factor, while Las Vegas Ballpark and Citi Field also sit neutral-to-hitter-friendly. Favorable lefty-lefty and righty-righty matchups for Kurtz, Alvarez, and Wood pair with several opposing pitchers allowing elevated HR rates, creating concentrated power spots.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over park factor alone, elevating Kurtz to the top despite a neutral venue."
   },
   "bestBets": [
     {
@@ -13,12 +13,12 @@
       "opposingPitcher": "Brandon Sproat",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate: 18.9",
-        "hrScore: 77"
+        "barrelRate=18.9",
+        "hrScore=77"
       ],
       "bullets": [
         "barrelRate 18.9 with exitVelo 94.4",
-        "last7HR 4 and last30HR 10"
+        "last7HR=4 and last30HR=10"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -30,8 +30,8 @@
       "opposingPitcher": "Reid Detmers",
       "hrScoreRank": 2,
       "topStats": [
-        "xba: 0.347",
-        "iso: 0.325"
+        "xba=0.347",
+        "iso=0.325"
       ],
       "bullets": [
         "barrelRate 18.8 with exitVelo 95",
@@ -47,8 +47,8 @@
       "opposingPitcher": "Robbie Ray",
       "hrScoreRank": 3,
       "topStats": [
-        "barrelRate: 25.2",
-        "exitVelo: 96"
+        "barrelRate=25.2",
+        "exitVelo=96"
       ],
       "bullets": [
         "barrelRate 25.2 with hardHitRate 58.3",
@@ -64,12 +64,12 @@
       "opposingPitcher": "Ryan Gusto",
       "hrScoreRank": 4,
       "topStats": [
-        "opposingPitcherHrVs: 76.1",
-        "last7HR: 3"
+        "opposingPitcherHrVs=76.1",
+        "last7HR=3"
       ],
       "bullets": [
-        "opposingPitcherHrVs 76.1 with last7HR 3",
-        "hardHitRate 51.1"
+        "opposingPitcherHrVs 76.1",
+        "last7HR=3 and last30HR=6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -81,12 +81,12 @@
       "opposingPitcher": "Brandon Sproat",
       "hrScoreRank": 5,
       "topStats": [
-        "hrFBRatio: 6.7",
-        "last7HR: 3"
+        "hrFBRatio=6.7",
+        "last7HR=3"
       ],
       "bullets": [
-        "hrFBRatio 6.7 with last30HR 6",
-        "opposingPitcherHrVs 61.6"
+        "hrFBRatio 6.7 with barrelRate 15",
+        "last7HR=3 and last30HR=6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -100,12 +100,46 @@
       "opposingPitcher": "Michael Lorenzen",
       "hrScoreRank": 6,
       "topStats": [
-        "parkFactor: 1.4",
-        "last30HR: 7"
+        "parkFactor=1.4",
+        "last30HR=7"
       ],
       "bullets": [
-        "parkFactor 1.4 with last7HR 3",
-        "opposingPitcherHrVs 68.1"
+        "parkFactor 1.4 at Coors Field",
+        "last30HR=7"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Casey Schmitt",
+      "team": "SF",
+      "opponent": "WSH",
+      "opposingPitcher": "Foster Griffin",
+      "hrScoreRank": 9,
+      "topStats": [
+        "last30HR=9",
+        "last7HR=3"
+      ],
+      "bullets": [
+        "last30HR=9 and last7HR=3",
+        "hrFBRatio 6.2"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Hunter Goodman",
+      "team": "COL",
+      "opponent": "CHC",
+      "opposingPitcher": "Shota Imanaga",
+      "hrScoreRank": 11,
+      "topStats": [
+        "parkFactor=1.4",
+        "pullRate=53.4"
+      ],
+      "bullets": [
+        "parkFactor 1.4 at Coors Field",
+        "pullRate 53.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -117,12 +151,12 @@
       "opposingPitcher": "Jared Jones",
       "hrScoreRank": 7,
       "topStats": [
-        "pullRate: 53.4",
-        "opposingPitcherHrVs: 71.7"
+        "Pitcher HR VS=71.7",
+        "Hard Hit%=52.3"
       ],
       "bullets": [
-        "opposingPitcherHrVs 71.7 with exitVelo 93.4",
-        "last30HR 5"
+        "HR score 65.3 (#7)",
+        "Pitcher HR VS 71.7 at park 0.90"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -134,12 +168,12 @@
       "opposingPitcher": "Austin Warren",
       "hrScoreRank": 8,
       "topStats": [
-        "exitVelo: 94.7",
-        "hrFBRatio: 7.1"
+        "Pitcher HR VS=57.5",
+        "Hard Hit%=54.5"
       ],
       "bullets": [
-        "exitVelo 94.7 with hardHitRate 54.5",
-        "hrFBRatio 7.1"
+        "HR score 64.7 (#8)",
+        "Pitcher HR VS 57.5 at park 1.06"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -147,35 +181,35 @@
   ],
   "longshots": [
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
-      "hrScoreRank": 17,
+      "player": "Lars Nootbaar",
+      "team": "STL",
+      "opponent": "NYM",
+      "opposingPitcher": "Austin Warren",
+      "hrScoreRank": 8,
       "topStats": [
-        "iso: 0.329",
-        "hrFBRatio: 9.5"
+        "exitVelo=94.7",
+        "hrFBRatio=7.1"
       ],
       "bullets": [
-        "hrFBRatio 9.5 with barrelRate 21.5",
-        "opposingPitcherHrVs 72.9"
+        "exitVelo 94.7 with hardHitRate 54.5",
+        "hrFBRatio 7.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Juan Soto",
-      "team": "NYM",
-      "opponent": "STL",
-      "opposingPitcher": "Andre Pallante",
-      "hrScoreRank": 16,
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "TOR",
+      "opposingPitcher": "Max Scherzer",
+      "hrScoreRank": 18,
       "topStats": [
-        "last30HR: 9",
-        "hrFBRatio: 7.2"
+        "iso=0.329",
+        "hrFBRatio=9.5"
       ],
       "bullets": [
-        "last30HR 9 with hrFBRatio 7.2",
-        "parkFactor 1.06"
+        "iso 0.329 with barrelRate 21.5",
+        "hrFBRatio 9.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
