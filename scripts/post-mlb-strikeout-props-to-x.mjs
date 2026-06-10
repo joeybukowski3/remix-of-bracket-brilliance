@@ -385,11 +385,13 @@ async function verifyExpectedXAccount() {
 }
 
 function assertLivePostAllowed() {
-  if (process.env.GITHUB_EVENT_NAME !== "workflow_dispatch") {
-    throw new Error("Live posting is only allowed from manual GitHub Actions workflow_dispatch runs.");
+  const eventName = process.env.GITHUB_EVENT_NAME ?? "";
+  const allowed = eventName === "workflow_dispatch" || eventName === "schedule";
+  if (!allowed) {
+    throw new Error(`Live posting is blocked for event "${eventName}". Only workflow_dispatch and schedule events may post.`);
   }
   if (process.env.X_ALLOW_LIVE_POST !== "true") {
-    throw new Error("Live posting is blocked unless X_ALLOW_LIVE_POST=true is set by the manual workflow post path.");
+    throw new Error("Live posting is blocked unless X_ALLOW_LIVE_POST=true is set by the workflow.");
   }
 }
 
