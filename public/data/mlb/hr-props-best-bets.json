@@ -1,9 +1,9 @@
 {
   "date": "2026-06-11",
-  "generatedAt": "2026-06-11T17:37:48.360Z",
+  "generatedAt": "2026-06-11T18:37:07.516Z",
   "slatePreview": {
-    "slateOverview": "Coors Field and Citi Field headline today's environment with park factors of 1.4 and 1.06 respectively, while right-handed pitching dominates the slate. Hunter Dobbins and Christian Scott face elevated opposing HR rates (75.7 and 22.2) in the thin New York air, and Zebby Matthews draws a Detroit lineup featuring Dillon Dingler's 52% hard-hit rate. Coors also boosts Pete Crow-Armstrong despite his modest barrel rate.",
-    "modelNote": "The model prioritizes barrel rate, hard-hit percentage, and park-adjusted opposing pitcher HR vulnerability, elevating Soto and Dingler to the top two ranks through their combination of 48%+ hard contact and favorable venue factors."
+    "slateOverview": "Coors Field and Citi Field headline today's environment with 1.4x and 1.06x park factors, while Hunter Dobbins and Christian Scott face elevated barrel and hard-hit rates from Soto, Young, Burleson, and Nootbaar. Coors also boosts Pete Crow-Armstrong despite a tougher matchup against Ryan Feltner.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park factor over recent HR volume, elevating Soto and Dingler to the top despite modest last-7 numbers."
   },
   "bestBets": [
     {
@@ -111,6 +111,23 @@
       "hrValueEdge": null
     },
     {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "NYM",
+      "opposingPitcher": "Christian Scott",
+      "hrScoreRank": 8,
+      "topStats": [
+        "last7HR=4",
+        "hrScore=62.4"
+      ],
+      "bullets": [
+        "last7HR 4 and hardHitRate 48.1",
+        "exitVelo 91.5 with xba 0.293"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
       "player": "Pete Alonso",
       "team": "BAL",
       "opponent": "SEA",
@@ -122,24 +139,7 @@
       ],
       "bullets": [
         "exitVelo 95 and hardHitRate 55.8",
-        "last30HR 6 with opposingPitcherHrVs 33.3"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Byron Buxton",
-      "team": "MIN",
-      "opponent": "DET",
-      "opposingPitcher": "Keider Montero",
-      "hrScoreRank": 12,
-      "topStats": [
-        "hrFBRatio=8.5",
-        "hrScore=60.5"
-      ],
-      "bullets": [
-        "hrFBRatio 8.5 and barrelRate 18.5",
-        "last30HR 7 with last7HR 2"
+        "parkFactor 1.1 with last30HR 6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -160,23 +160,6 @@
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
-    },
-    {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "NYM",
-      "opposingPitcher": "Christian Scott",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=48.1",
-        "Pitcher HR VS=22.2"
-      ],
-      "bullets": [
-        "HR score 62.4 (#8)",
-        "Pitcher HR VS 22.2 at park 1.06"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
     }
   ],
   "longshots": [
@@ -187,12 +170,12 @@
       "opposingPitcher": "Justin Wrobleski",
       "hrScoreRank": 11,
       "topStats": [
-        "iso=0.667",
+        "hrFBRatio=16.7",
         "hrScore=60.6"
       ],
       "bullets": [
-        "iso 0.667 and hrFBRatio 16.7",
-        "pullRate 70 with exitVelo 94.1"
+        "hrFBRatio 16.7 and barrelRate 30",
+        "exitVelo 94.1 with pullRate 70"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -204,12 +187,12 @@
       "opposingPitcher": "Christian Scott",
       "hrScoreRank": 10,
       "topStats": [
-        "hrFBRatio=10.5",
+        "iso=0.4",
         "hrScore=60.7"
       ],
       "bullets": [
-        "hrFBRatio 10.5 and exitVelo 95.3",
-        "hardHitRate 61.5 with opposingPitcherHrVs 22.2"
+        "iso 0.4 and exitVelo 95.3",
+        "hrFBRatio 10 with whiffRate 10.7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
