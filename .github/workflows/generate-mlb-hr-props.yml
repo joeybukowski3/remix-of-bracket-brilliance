@@ -88,15 +88,25 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "chore: refresh MLB data $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
-            # Retry push up to 3 times with rebase to handle concurrent workflow runs
+
+            # Retry push up to 3 times with rebase — handles concurrent cron runs
+            PUSHED=false
             for attempt in 1 2 3; do
               if git push origin HEAD:main; then
-                echo "changed=true" >> "$GITHUB_OUTPUT"
+                PUSHED=true
                 break
               fi
-              echo "Push attempt $attempt failed — rebasing and retrying..."
-              git pull --rebase origin main
+              echo "Push attempt $attempt failed — pulling and rebasing..."
+              git pull --rebase origin main || true
+              sleep 5
             done
+
+            if [ "$PUSHED" = "true" ]; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "All push attempts failed — build will use locally generated data."
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Build site
