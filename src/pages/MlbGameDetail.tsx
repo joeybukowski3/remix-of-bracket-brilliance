@@ -1965,8 +1965,8 @@ function HomeSchedule({
           </section>
 
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
-          <MlbToolsGrid />
           <SocialMediaTablesSection games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
+          <MlbToolsGrid />
           
           {/* Pitcher Regression Table */}
           <section className="space-y-3">
