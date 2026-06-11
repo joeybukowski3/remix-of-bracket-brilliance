@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildPitcherStrikeoutMatchupRows,
   buildPitcherStrikeoutRows,
@@ -16,40 +16,56 @@ function isStarterPlaceholder(value: unknown) {
   return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "TO BE ANNOUNCED" || normalized === "TO BE DETERMINED";
 }
 
+// Re-fetch prop data every 10 minutes so the page auto-updates when
+// the workflow deploys new data without requiring a manual refresh.
+const POLL_INTERVAL_MS = 10 * 60 * 1000;
+
 export function useMlbPropsData() {
   const [dashboard, setDashboard] = useState<HrDashboardPayload | null>(null);
   const [bestBets, setBestBets] = useState<HrBestBetsPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const lastGeneratedAt = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    // Use relative paths — served from Vercel deployment, which invalidates cache
-    // instantly on every deploy. Avoids GitHub CDN cache lag on raw.githubusercontent.com.
-    const base = import.meta.env.DEV ? '' : '';
-    Promise.all([
-      fetch(`${base}/data/mlb/hr-props-raw.json`, { cache: "no-store" }),
-      fetch(`${base}/data/mlb/hr-props-best-bets.json`, { cache: "no-store" }),
-    ])
-      .then(async ([rawResponse, bestResponse]) => {
+
+    async function fetchData() {
+      try {
+        const [rawResponse, bestResponse] = await Promise.all([
+          fetch(`/data/mlb/hr-props-raw.json`, { cache: "no-store" }),
+          fetch(`/data/mlb/hr-props-best-bets.json`, { cache: "no-store" }),
+        ]);
         if (!active) return;
+
         const rawPayload = rawResponse.ok ? await rawResponse.json() : null;
         const bestPayload = bestResponse.ok ? await bestResponse.json() : null;
         if (!active) return;
+
+        // Only update state if data actually changed (avoids unnecessary re-renders)
+        const newGeneratedAt = rawPayload?.generatedAt ?? null;
+        if (newGeneratedAt && newGeneratedAt === lastGeneratedAt.current) return;
+        lastGeneratedAt.current = newGeneratedAt;
+
         setDashboard(normalizeHrDashboardPayload(rawPayload));
         setBestBets(normalizeHrBestBetsPayload(bestPayload));
-      })
-      .catch(() => {
+      } catch {
         if (!active) return;
         setDashboard(null);
         setBestBets(null);
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoading(false);
-      });
+      }
+    }
+
+    // Initial fetch
+    fetchData();
+
+    // Poll every 10 minutes — detects when workflow deploys new data
+    const interval = setInterval(fetchData, POLL_INTERVAL_MS);
 
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -81,3 +97,4 @@ export function useMlbPropsData() {
     };
   }, [bestBets, dashboard, loading]);
 }
+
