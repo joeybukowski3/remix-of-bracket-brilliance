@@ -1,9 +1,9 @@
 {
   "date": "2026-06-11",
-  "generatedAt": "2026-06-11T11:49:15.023Z",
+  "generatedAt": "2026-06-11T12:03:54.915Z",
   "slatePreview": {
-    "slateOverview": "Coors Field and Citi Field headline today's environment with Coors' 1.4 park factor and Citi's 1.06 boost creating elevated HR odds, while Camden Yards (1.1) adds another hitter-friendly spot. Right-handed pitching dominates the slate, but weak opposing arms like Hunter Dobbins (75.7 HR/PA) and Ryan Feltner (70.9) face power bats in advantageous parks.",
-    "modelNote": "The model prioritizes barrel rate, hard-hit metrics, and park-adjusted opposing pitcher HR rates, elevating Soto and Dingler to the top despite modest recent power output due to their underlying contact quality and favorable matchups."
+    "slateOverview": "Coors Field and Citi Field stand out as the primary power spots today with 1.4 and 1.06 park factors respectively, while Hunter Dobbins and Ryan Feltner offer favorable right-handed pitching matchups for lefty power bats. Camden Yards and Comerica provide secondary boosts at 1.1 and 0.95 factors against righties who have allowed elevated HR rates. Weather angles appear neutral across the slate with no major wind or temperature factors altering the core park-driven opportunities.",
+    "modelNote": "The model heavily weights barrel rate, hard-hit metrics, and opposing pitcher HR vulnerability, elevating Soto and Dingler to the top despite modest recent power output, while Coors hitters like Goodman and Crow-Armstrong benefit from the extreme park factor despite weaker underlying contact data."
   },
   "bestBets": [
     {
@@ -17,7 +17,7 @@
         "hrScore=70.7"
       ],
       "bullets": [
-        "barrelRate 16.2 and exitVelo 92.7",
+        "barrelRate 16.2 with exitVelo 92.7",
         "opposingPitcherHrVs 75.7 at parkFactor 1.06"
       ],
       "hrOddsYes": null,
@@ -34,8 +34,8 @@
         "hrScore=70.3"
       ],
       "bullets": [
-        "hardHitRate 52 and exitVelo 90.9",
-        "last7HR 2 with hrFBRatio 7.2"
+        "hardHitRate 52 and last7HR 2",
+        "hrFBRatio 7.2 with exitVelo 90.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,8 +51,8 @@
         "hrScore=67.1"
       ],
       "bullets": [
-        "parkFactor 1.4 and pullRate 52.7",
-        "last7HR 3 with barrelRate 15.6"
+        "parkFactor 1.4 with pullRate 52.7",
+        "last7HR 3 and hrFBRatio 7.7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -104,8 +104,8 @@
         "hrScore=65.5"
       ],
       "bullets": [
-        "parkFactor 1.4 and opposingPitcherHrVs 70.9",
-        "last30HR 7 with last7HR 2"
+        "parkFactor 1.4 with opposingPitcherHrVs 70.9",
+        "last30HR 7 and last7HR 2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -121,12 +121,31 @@
         "hrScore=65"
       ],
       "bullets": [
-        "hardHitRate 64.7 and iso 0.318",
+        "hardHitRate 64.7 and xba 0.365",
         "barrelRate 17.6 with hrFBRatio 9.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
+    {
+      "player": "Jared Young",
+      "team": "NYM",
+      "opponent": "STL",
+      "opposingPitcher": "Hunter Dobbins",
+      "hrScoreRank": 8,
+      "topStats": [
+        "hrScore=62.8",
+        "opposingPitcherHrVs=75.7"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 75.7 at parkFactor 1.06",
+        "pullRate 53.2 with exitVelo 91.8"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
     {
       "player": "Pete Alonso",
       "team": "BAL",
@@ -139,43 +158,24 @@
       ],
       "bullets": [
         "exitVelo 95 and hardHitRate 55.8",
-        "last30HR 6 with last7HR 2"
+        "last7HR 2 and last30HR 6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Jared Young",
-      "team": "NYM",
-      "opponent": "STL",
-      "opposingPitcher": "Hunter Dobbins",
-      "hrScoreRank": 8,
+      "player": "Byron Buxton",
+      "team": "MIN",
+      "opponent": "DET",
+      "opposingPitcher": "Keider Montero",
+      "hrScoreRank": 11,
       "topStats": [
-        "Pitcher HR VS=75.7",
-        "Hard Hit%=51.1"
+        "barrelRate=18.5",
+        "hrScore=61.5"
       ],
       "bullets": [
-        "HR score 62.8 (#8)",
-        "Pitcher HR VS 75.7 at park 1.06"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Jared Young",
-      "team": "NYM",
-      "opponent": "STL",
-      "opposingPitcher": "Hunter Dobbins",
-      "hrScoreRank": 8,
-      "topStats": [
-        "pullRate=53.2",
-        "hrScore=62.8"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs 75.7 at parkFactor 1.06",
-        "last30HR 3 with barrelRate 14.9"
+        "barrelRate 18.5 and iso 0.306",
+        "last30HR 7 and last7HR 2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -187,29 +187,12 @@
       "opposingPitcher": "Justin Wrobleski",
       "hrScoreRank": 10,
       "topStats": [
-        "hrFBRatio=16.7",
-        "hrScore=61.8"
+        "Hard Hit%=50.0",
+        "Pitcher HR VS=41.7"
       ],
       "bullets": [
-        "hrFBRatio 16.7 and pullRate 70",
-        "exitVelo 94.1 with barrelRate 30"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "SEA",
-      "opposingPitcher": "Bryan Woo",
-      "hrScoreRank": 9,
-      "topStats": [
-        "Hard Hit%=55.8",
-        "Pitcher HR VS=33.3"
-      ],
-      "bullets": [
-        "HR score 62.0 (#9)",
-        "Pitcher HR VS 33.3 at park 1.10"
+        "HR score 61.8 (#10)",
+        "Pitcher HR VS 41.7 at park 0.90"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
