@@ -1,8 +1,12 @@
 name: Generate MLB Data
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/generate-mlb-hr-props.yml'
   schedule:
-    # 3 AM ET — overnight refresh, catches early lineup posts
+    # 3 AM ET — daily morning refresh (primary schedule)
     - cron: "0 7 * * *"    # 3 AM EDT (UTC-4)
     - cron: "0 8 * * *"    # 3 AM EST (UTC-5, winter)
     # 9 AM ET — lineups largely confirmed
