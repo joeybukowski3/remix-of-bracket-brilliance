@@ -4,7 +4,6 @@ import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { PublicBettingPreview } from "@/components/home/PublicBettingPreview";
-import { HRPropsTable, KPropsTable, PgaTop5Table, PgaTop10Table } from "@/components/home/SocialMediaTables";
 
 const sports = [
   {
@@ -282,11 +281,7 @@ export default function Home() {
   const pgaTournament = useFeaturedPgaTournament();
   const featuredCards = buildFeaturedCards(pgaTournament);
 
-  const [mlbHrProps, setMlbHrProps] = useState<any[]>([]);
-  const [mlbKProps, setMlbKProps] = useState<any[]>([]);
-  const [pgaBestBets, setPgaBestBets] = useState<any[]>([]);
-  const [pgaTop5, setPgaTop5] = useState<any[]>([]);
-  const [pgaTop10, setPgaTop10] = useState<any[]>([]);
+
 
   usePageSeo({
     title: seo.title,
@@ -306,31 +301,7 @@ export default function Home() {
   });
 
   // Load MLB and PGA data for tables
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const base = "";
-        const opts: RequestInit = { cache: "no-store" };
 
-        // Load MLB HR Props + K Props (same file, matches useMlbPropsData hook)
-        const hrResponse = await fetch(`${base}/data/mlb/hr-props-raw.json`, opts);
-        const hrData = await hrResponse.json();
-        setMlbHrProps(hrData.batters?.slice(0, 8) || []);
-        setMlbKProps(hrData.pitchers?.slice(0, 8) || []);
-
-        // Load PGA Best Bets
-        const pgaResponse = await fetch(`${base}/data/pga/best-bets.json`, opts);
-        const pgaData = await pgaResponse.json();
-        setPgaBestBets(pgaData.valueBets || []);
-        setPgaTop5(pgaData.top5 || []);
-        setPgaTop10(pgaData.top10 || []);
-      } catch (error) {
-        console.error("Error loading home page data:", error);
-      }
-    };
-
-    loadData();
-  }, []);
 
   return (
     <main className="min-h-screen bg-[#f8f8f8]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}>
@@ -434,7 +405,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* MLB Tables Section */}
+      {/* MLB Props Section — redirect cards */}
       <section className="border-t border-black/6 bg-white">
         <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
           <div className="max-w-[760px]">
@@ -446,14 +417,31 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
-            <HRPropsTable picks={mlbHrProps} />
-            <KPropsTable picks={mlbKProps} />
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { title: "HR Props Dashboard", description: "Top home run edges ranked by park context, pitcher vulnerability, barrel rate, and hard-hit profile.", route: "/mlb/hr-props", cta: "View HR Props", accent: "#0f3b82" },
+              { title: "K Props Model", description: "Strikeout prop rankings for today's probable starters built from whiff rate, opponent K tendency, and park context.", route: "/mlb/hr-props", cta: "View K Props", accent: "#7c3aed" },
+              { title: "Hit Props Model", description: "Top batter vs pitcher matchups ranked by xBA, hard-hit rate, barrel rate, and pitcher hit vulnerability.", route: "/mlb/hr-props", cta: "View matchups", accent: "#059669" },
+            ].map((card) => (
+              <Link
+                key={card.title}
+                to={card.route}
+                className="group flex flex-col rounded-2xl border border-black/8 bg-white p-6 no-underline shadow-sm transition hover:shadow-md"
+                style={{ borderTop: `3px solid ${card.accent}` }}
+              >
+                <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6b7280]">MLB</div>
+                <div className="text-[17px] font-bold tracking-[-0.02em] text-[#111111]">{card.title}</div>
+                <p className="mt-2 flex-1 text-[14px] leading-6 text-[#4b5563]">{card.description}</p>
+                <div className="mt-4 flex items-center gap-1 text-[13px] font-semibold" style={{ color: card.accent }}>
+                  {card.cta} <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* PGA Tables Section */}
+      {/* PGA Section — redirect cards */}
       <section className="border-t border-black/6 bg-[#f8f8f8]">
         <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
           <div className="max-w-[760px]">
@@ -465,9 +453,25 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
-            <PgaTop5Table picks={pgaTop5} />
-            <PgaTop10Table picks={pgaTop10} />
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { title: pgaTournament ? `${pgaTournament.shortName ?? pgaTournament.name} — Golf Model` : "PGA Tournament Model", description: "Weighted player rankings for this week's PGA tournament. Adjust stat weights and switch between Balanced, Outright, and Top 20 presets.", route: pgaTournament?.slug ? `/pga/${pgaTournament.slug}` : "/pga", cta: "Open model", accent: "#15803d" },
+              { title: pgaTournament ? `${pgaTournament.shortName ?? pgaTournament.name} — Best Bets` : "PGA Best Bets", description: "Outright, Top 5, Top 10, and Top 20 picks for this week's tournament based on course fit and model edge.", route: pgaTournament?.slug ? `/pga/${pgaTournament.slug}/picks` : "/pga", cta: "View picks", accent: "#0369a1" },
+            ].map((card) => (
+              <Link
+                key={card.title}
+                to={card.route}
+                className="group flex flex-col rounded-2xl border border-black/8 bg-white p-6 no-underline shadow-sm transition hover:shadow-md"
+                style={{ borderTop: `3px solid ${card.accent}` }}
+              >
+                <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6b7280]">PGA Tour</div>
+                <div className="text-[17px] font-bold tracking-[-0.02em] text-[#111111]">{card.title}</div>
+                <p className="mt-2 flex-1 text-[14px] leading-6 text-[#4b5563]">{card.description}</p>
+                <div className="mt-4 flex items-center gap-1 text-[13px] font-semibold" style={{ color: card.accent }}>
+                  {card.cta} <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
