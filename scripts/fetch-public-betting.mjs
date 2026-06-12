@@ -123,8 +123,21 @@ async function fetchAnSport(sportKey) {
 
   const games = data?.games ?? data?.data ?? [];
   if (!Array.isArray(games) || games.length === 0) {
-    console.log(`  [${label}] no games found for ${date}`);
+    console.log(`  [${label}] no games found for ${date}. Response keys: ${Object.keys(data || {}).join(", ")}`);
     return [];
+  }
+
+  // Debug: log first game structure to diagnose API changes
+  if (games.length > 0) {
+    const sample = games[0];
+    const odds = sample?.odds ?? [];
+    const consensus = odds.find(o => o.type === "consensus" || o.book_id === 15) ?? odds[0];
+    console.log(`  [${label}] ${games.length} games found. Sample game keys: ${Object.keys(sample).join(", ")}`);
+    console.log(`  [${label}] Sample odds count: ${odds.length}. Consensus keys: ${Object.keys(consensus ?? {}).join(", ")}`);
+    if (consensus) {
+      const pctKeys = Object.keys(consensus).filter(k => k.includes("pct") || k.includes("bet") || k.includes("ml") || k.includes("spread"));
+      console.log(`  [${label}] Consensus pct/bet keys: ${pctKeys.join(", ")}`);
+    }
   }
 
   const sides = [];

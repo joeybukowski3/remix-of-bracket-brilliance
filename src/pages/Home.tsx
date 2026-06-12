@@ -53,6 +53,8 @@ const navItems = [
   { label: "NFL", route: "/nfl" },
   { label: "NBA", route: "/nba" },
   { label: "PGA", route: "/pga" },
+  { label: "⚽ WC26", route: "/world-cup" },
+  { label: "📊 Splits", route: "/public-betting" },
 ] as const;
 
 type PgaTournament = { name: string; shortName?: string; slug: string; status: string; startDate: string; endDate?: string };
