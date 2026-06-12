@@ -293,7 +293,7 @@ function buildCaption(rawPayload) {
     "",
     STRIKEOUT_PROPS_URL,
     "",
-    "#MLB #MLBPicks #Strikeouts #PropBets #MLBBetting #DFS",
+    "#MLB #MLBPicks #Strikeouts #MLBBetting",
   ].join("\n");
 
   if (caption.length > 280) {
