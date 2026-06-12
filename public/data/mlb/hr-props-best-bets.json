@@ -1,9 +1,9 @@
 {
   "date": "2026-06-12",
-  "generatedAt": "2026-06-12T22:07:50.595Z",
+  "generatedAt": "2026-06-12T22:11:12.458Z",
   "slatePreview": {
-    "slateOverview": "Kauffman Stadium and Target Field play near neutral while Camden Yards (+10%) and Great American Ball Park (+25%) boost power. Avila, Ryan, and Bibee are soft enough to allow barrels, but Strider and Sasaki carry higher risk despite strong underlying stuff.",
-    "modelNote": "The model is prioritizing barrel and hard-hit rates over recent home-run volume, elevating Alvarez and Nootbaar despite modest last-7 numbers."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with elevated park factors, most notably Great American Ball Park (1.25) and Camden Yards (1.10), while neutral-to-pitcher venues like Kauffman and Progressive Field still surface due to weak opposing pitching. Several right-handed pitchers with elevated HR rates allowed (Strider, Ryan, Bibee) create platoon and park-driven edges, and no major weather suppressors are in play.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent form while heavily discounting park suppression, which is why Alvarez and Nootbaar lead despite below-average venues."
   },
   "bestBets": [
     {
@@ -18,7 +18,7 @@
       ],
       "bullets": [
         "barrelRate 18.6 with exitVelo 94.9",
-        "parkFactor 0.96 vs pitcher with 34.2 HR/9 allowed"
+        "parkFactor 0.96 vs opposingPitcherHrVs 34.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -34,8 +34,8 @@
         "hrScore=73.5"
       ],
       "bullets": [
-        "barrelRate 23.5 with exitVelo 96.1",
-        "last7HR 2 in favorable parkFactor 0.97"
+        "barrelRate 23.5 with hardHitRate 58.8",
+        "last7HR 2 with exitVelo 96.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,8 +51,8 @@
         "hrScore=72.5"
       ],
       "bullets": [
-        "last30HR 9 with opposingPitcherHrVs 55.9",
-        "hardHitRate 52 in parkFactor 0.91"
+        "last30HR 9 with last7HR 2",
+        "opposingPitcherHrVs 55.9 with barrelRate 13.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -64,12 +64,12 @@
       "opposingPitcher": "Griffin Canning",
       "hrScoreRank": 4,
       "topStats": [
-        "last7HR=3",
-        "hrScore=71.3"
+        "parkFactor=1.1",
+        "last7HR=3"
       ],
       "bullets": [
-        "last7HR 3 with opposingPitcherHrVs 61.1",
-        "parkFactor 1.1 boosting iso 0.212"
+        "parkFactor 1.1 with last7HR 3",
+        "opposingPitcherHrVs 61.1 with last30HR 7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -85,8 +85,8 @@
         "hrScore=69.9"
       ],
       "bullets": [
-        "last30HR 10 with exitVelo 93",
-        "parkFactor 1.06 vs pitcher with 37.7 HR/9 allowed"
+        "last30HR 10 with kRate 13.8",
+        "parkFactor 1.06 with exitVelo 93"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -100,12 +100,29 @@
       "opposingPitcher": "Griffin Canning",
       "hrScoreRank": 4,
       "topStats": [
-        "last7HR=3",
-        "hrScore=71.3"
+        "parkFactor=1.1",
+        "last7HR=3"
       ],
       "bullets": [
-        "last7HR 3 with opposingPitcherHrVs 61.1",
-        "parkFactor 1.1 boosting iso 0.212"
+        "parkFactor 1.1 with last7HR 3",
+        "opposingPitcherHrVs 61.1 with last30HR 7"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "CLE",
+      "opposingPitcher": "Tanner Bibee",
+      "hrScoreRank": 3,
+      "topStats": [
+        "last30HR=9",
+        "hrScore=72.5"
+      ],
+      "bullets": [
+        "last30HR 9 with last7HR 2",
+        "opposingPitcherHrVs 55.9 with barrelRate 13.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -122,7 +139,7 @@
       ],
       "bullets": [
         "opposingPitcherHrVs 69 with barrelRate 16.8",
-        "exitVelo 93 in parkFactor 0.98"
+        "last7HR 2 with exitVelo 93"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -134,12 +151,12 @@
       "opposingPitcher": "Roki Sasaki",
       "hrScoreRank": 7,
       "topStats": [
-        "barrelRate=28.6",
-        "hrScore=67.9"
+        "Hard Hit%=85.7",
+        "Pitcher HR VS=55.3"
       ],
       "bullets": [
-        "barrelRate 28.6 with hardHitRate 85.7",
-        "iso 0.556 in parkFactor 1.07"
+        "HR score 67.9 (#7)",
+        "Pitcher HR VS 55.3 at park 1.07"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -191,8 +208,8 @@
         "hrScore=62.2"
       ],
       "bullets": [
-        "barrelRate 25.3 with exitVelo 95.9",
-        "hardHitRate 58.4 vs pitcher with 10.4 HR/9 allowed"
+        "barrelRate 25.3 with hardHitRate 58.4",
+        "exitVelo 95.9 with opposingPitcherHrVs 10.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
