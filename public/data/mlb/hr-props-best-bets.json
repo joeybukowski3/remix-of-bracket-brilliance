@@ -1,9 +1,9 @@
 {
   "date": "2026-06-12",
-  "generatedAt": "2026-06-12T17:55:44.684Z",
+  "generatedAt": "2026-06-12T18:27:40.748Z",
   "slatePreview": {
-    "slateOverview": "Rate Field and Camden Yards lead the slate with park factors above 1.05, while Great American Ball Park's 1.25 boost sets up lefty-lefty volume for Ohtani and Carroll. Kay and Avila carry elevated HR/FB rates into hitter-friendly venues, and Strider's high whiff profile at Citi Field creates a volatile but power-friendly environment for Soto.",
-    "modelNote": "The model is overweighting barrel rate, recent HR volume, and opposing pitcher HR/FB allowed, which is why Ohtani and Alvarez occupy the top two spots despite Soto's stronger park and recent power surge."
+    "slateOverview": "Rate Field and Camden Yards carry the day's strongest park boosts while Great American Ball Park's 1.25 factor sets up lefty power. Ohtani draws the top spot against lefty Anthony Kay in the hitter-friendly home park, and Soto faces Strider in a park that still inflates fly balls despite the tough matchup.",
+    "modelNote": "The model is prioritizing barrel and hard-hit rates over recent volume, elevating Ohtani and Alvarez to the top two despite modest last-7 HR counts."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=16.3",
-        "hrScore=75.6"
+        "hrScore=75.7"
       ],
       "bullets": [
         "barrelRate 16.3 with 53.1 hardHitRate",
-        "parkFactor 1.07 and 5.3 hrFBRatio"
+        "parkFactor 1.07 and last7HR=3"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -31,11 +31,11 @@
       "hrScoreRank": 2,
       "topStats": [
         "iso=0.32",
-        "hrScore=74.7"
+        "exitVelo=94.9"
       ],
       "bullets": [
-        "exitVelo 94.9 and barrelRate 18.6",
-        "last30HR 9 with 8.9 hrFBRatio"
+        "iso 0.32 and barrelRate 18.6",
+        "last30HR=9 with hrFBRatio 8.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -48,11 +48,11 @@
       "hrScoreRank": 3,
       "topStats": [
         "barrelRate=23.5",
-        "hrScore=73.2"
+        "exitVelo=96.1"
       ],
       "bullets": [
-        "exitVelo 96.1 and hardHitRate 58.8",
-        "hrFBRatio 9.1 with iso 0.364"
+        "barrelRate 23.5 and hardHitRate 58.8",
+        "exitVelo 96.1 with iso 0.364"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -65,11 +65,11 @@
       "hrScoreRank": 5,
       "topStats": [
         "parkFactor=1.1",
-        "hrScore=71.2"
+        "last7HR=3"
       ],
       "bullets": [
-        "parkFactor 1.1 and last7HR 3",
-        "opposingPitcherHrVs 61.2 with exitVelo 95"
+        "parkFactor 1.1 and last7HR=3",
+        "opposingPitcherHrVs 61.1 with last30HR=7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -82,11 +82,11 @@
       "hrScoreRank": 6,
       "topStats": [
         "last30HR=10",
-        "hrScore=69.8"
+        "hrFBRatio=7.4"
       ],
       "bullets": [
-        "last30HR 10 and iso 0.26",
-        "barrelRate 16.5 with exitVelo 93"
+        "last30HR=10 and xba 0.293",
+        "hrFBRatio 7.4 with exitVelo 93"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -98,12 +98,12 @@
       "opposingPitcher": "Tanner Bibee",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=55.8",
+        "Pitcher HR VS=55.9",
         "Hard Hit%=52.0"
       ],
       "bullets": [
-        "HR score 72.3 (#4)",
-        "Pitcher HR VS 55.8 at park 0.91"
+        "HR score 72.4 (#4)",
+        "Pitcher HR VS 55.9 at park 0.91"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -118,11 +118,11 @@
       "hrScoreRank": 4,
       "topStats": [
         "last30HR=9",
-        "hrScore=72.3"
+        "opposingPitcherHrVs=55.9"
       ],
       "bullets": [
-        "last30HR 9 and opposingPitcherHrVs 55.8",
-        "barrelRate 13.6 with iso 0.272"
+        "last30HR=9 and barrelRate 13.6",
+        "opposingPitcherHrVs 55.9 with hrScore 72.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -134,12 +134,12 @@
       "opposingPitcher": "Zack Littell",
       "hrScoreRank": 7,
       "topStats": [
-        "opposingPitcherHrVs=69.1",
-        "hrScore=68.1"
+        "opposingPitcherHrVs=69",
+        "whiffRate=30.3"
       ],
       "bullets": [
-        "opposingPitcherHrVs 69.1 and barrelRate 16.8",
-        "exitVelo 93 with hrFBRatio 5.9"
+        "opposingPitcherHrVs 69 and barrelRate 16.8",
+        "whiffRate 30.3 with exitVelo 93"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -152,11 +152,11 @@
       "hrScoreRank": 9,
       "topStats": [
         "parkFactor=1.25",
-        "hrScore=67.2"
+        "opposingPitcherHrVs=71"
       ],
       "bullets": [
         "parkFactor 1.25 and opposingPitcherHrVs 71",
-        "last30HR 6 with barrelRate 13.3"
+        "last30HR=6 with barrelRate 13.3"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -169,11 +169,11 @@
       "hrScoreRank": 6,
       "topStats": [
         "Hard Hit%=49.7",
-        "Pitcher HR VS=37.8"
+        "Pitcher HR VS=37.7"
       ],
       "bullets": [
-        "HR score 69.8 (#6)",
-        "Pitcher HR VS 37.8 at park 1.06"
+        "HR score 69.9 (#6)",
+        "Pitcher HR VS 37.7 at park 1.06"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -186,11 +186,11 @@
       "hrScoreRank": 8,
       "topStats": [
         "Hard Hit%=85.7",
-        "Pitcher HR VS=55.4"
+        "Pitcher HR VS=55.3"
       ],
       "bullets": [
         "HR score 67.8 (#8)",
-        "Pitcher HR VS 55.4 at park 1.07"
+        "Pitcher HR VS 55.3 at park 1.07"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -205,11 +205,11 @@
       "hrScoreRank": 8,
       "topStats": [
         "hardHitRate=85.7",
-        "hrScore=67.8"
+        "iso=0.556"
       ],
       "bullets": [
         "hardHitRate 85.7 and barrelRate 28.6",
-        "iso 0.556 with hrFBRatio 11.1"
+        "iso 0.556 with exitVelo 93.3"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -221,11 +221,11 @@
       "opposingPitcher": "Kyle Leahy",
       "hrScoreRank": 15,
       "topStats": [
-        "opposingPitcherHrVs=78.5",
-        "hrScore=64.1"
+        "opposingPitcherHrVs=78.3",
+        "hrFBRatio=8.4"
       ],
       "bullets": [
-        "opposingPitcherHrVs 78.5 and hrFBRatio 8.4",
+        "opposingPitcherHrVs 78.3 and hrFBRatio 8.4",
         "barrelRate 18.1 with iso 0.303"
       ],
       "hrOddsYes": null,
@@ -242,7 +242,7 @@
         "Hard Hit%=51.1"
       ],
       "bullets": [
-        "HR score 67.2 (#9)",
+        "HR score 67.3 (#9)",
         "Pitcher HR VS 71.0 at park 1.25"
       ],
       "hrOddsYes": null,
