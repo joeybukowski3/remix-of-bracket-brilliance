@@ -110,16 +110,26 @@ async function fetchAnSport(sportKey) {
   const date  = getAnDate();
   const label = AN_SPORT_MAP[sportKey]?.label ?? sportKey.toUpperCase();
 
-  // Action Network uses uppercase for the sport param
-  const url = `https://api.actionnetwork.com/web/v1/games?sport=${sportKey.toUpperCase()}&date=${date}&include=odds`;
+  // Try Action Network API - attempt both v1 with odds and v2
+  const urls = [
+    `https://api.actionnetwork.com/web/v1/games?sport=${sportKey.toUpperCase()}&date=${date}&include=odds`,
+    `https://api.actionnetwork.com/web/v1/games?sport=${sportKey.toUpperCase()}&date=${date}`,
+  ];
 
-  let data;
-  try {
-    data = await fetchJson(url);
-  } catch (err) {
-    console.warn(`  [${label}] fetch failed: ${err.message}`);
-    return [];
+  let data = null;
+  for (const url of urls) {
+    try {
+      const result = await fetchJson(url);
+      if (result && (result.games?.length > 0 || result.data?.length > 0)) {
+        data = result;
+        console.log(`  [${label}] Successful fetch from: ${url.split('?')[0]}`);
+        break;
+      }
+    } catch (err) {
+      console.warn(`  [${label}] fetch failed for ${url}: ${err.message}`);
+    }
   }
+  if (!data) return [];
 
   const games = data?.games ?? data?.data ?? [];
   if (!Array.isArray(games) || games.length === 0) {
@@ -158,23 +168,28 @@ async function fetchAnSport(sportKey) {
     const status    = game.status ?? "scheduled";
 
     // Grab moneyline + spread odds/percentages
-    const odds = game.odds ?? [];
-    const consensus = odds.find(o => o.type === "consensus" || o.book_id === 15) ?? odds[0]; // 15 = consensus book
+    const odds = game.odds ?? game.markets ?? [];
+    // Try consensus book (id=15), then "consensus" type, then "public" type, then first available
+    const consensus = odds.find(o => o.book_id === 15)
+      ?? odds.find(o => o.type === "consensus")
+      ?? odds.find(o => o.type === "public")
+      ?? odds[0]
+      ?? {};
 
-    // Extract spread
-    const spreadLine     = consensus?.spread ?? consensus?.spread_line ?? null;
-    const awaySpreadPct  = safePercent(consensus?.away_spread_bets ?? consensus?.a_bets_pct);
-    const homeSpreadPct  = safePercent(consensus?.home_spread_bets ?? consensus?.h_bets_pct);
-    const awaySpreadMoney = safePercent(consensus?.away_spread_money_pct ?? consensus?.a_money_pct);
-    const homeSpreadMoney = safePercent(consensus?.home_spread_money_pct ?? consensus?.h_money_pct);
+    // Extract spread — support multiple field name variants
+    const spreadLine     = consensus?.spread ?? consensus?.spread_line ?? consensus?.point_spread ?? null;
+    const awaySpreadPct  = safePercent(consensus?.away_spread_bets ?? consensus?.a_bets_pct ?? consensus?.away_spread_pct ?? consensus?.away_spread_tickets_pct);
+    const homeSpreadPct  = safePercent(consensus?.home_spread_bets ?? consensus?.h_bets_pct ?? consensus?.home_spread_pct ?? consensus?.home_spread_tickets_pct);
+    const awaySpreadMoney = safePercent(consensus?.away_spread_money_pct ?? consensus?.a_money_pct ?? consensus?.away_spread_money);
+    const homeSpreadMoney = safePercent(consensus?.home_spread_money_pct ?? consensus?.h_money_pct ?? consensus?.home_spread_money);
 
-    // Extract moneyline
-    const awayMlPct   = safePercent(consensus?.away_ml_bets ?? consensus?.away_bets_pct);
-    const homeMlPct   = safePercent(consensus?.home_ml_bets ?? consensus?.home_bets_pct);
-    const awayMlMoney = safePercent(consensus?.away_ml_money_pct ?? consensus?.away_money_pct);
-    const homeMlMoney = safePercent(consensus?.home_ml_money_pct ?? consensus?.home_money_pct);
-    const awayMlLine  = consensus?.away_ml ?? consensus?.away_odds ?? null;
-    const homeMlLine  = consensus?.home_ml ?? consensus?.home_odds ?? null;
+    // Extract moneyline — support multiple field name variants
+    const awayMlPct   = safePercent(consensus?.away_ml_bets ?? consensus?.away_bets_pct ?? consensus?.away_ml_pct ?? consensus?.away_tickets_pct ?? game?.away_bets_pct);
+    const homeMlPct   = safePercent(consensus?.home_ml_bets ?? consensus?.home_bets_pct ?? consensus?.home_ml_pct ?? consensus?.home_tickets_pct ?? game?.home_bets_pct);
+    const awayMlMoney = safePercent(consensus?.away_ml_money_pct ?? consensus?.away_money_pct ?? consensus?.away_ml_money ?? game?.away_money_pct);
+    const homeMlMoney = safePercent(consensus?.home_ml_money_pct ?? consensus?.home_money_pct ?? consensus?.home_ml_money ?? game?.home_money_pct);
+    const awayMlLine  = consensus?.away_ml ?? consensus?.away_odds ?? consensus?.away_price ?? null;
+    const homeMlLine  = consensus?.home_ml ?? consensus?.home_odds ?? consensus?.home_price ?? null;
 
     // Push moneyline sides if pct available
     if (awayMlPct != null || homeMlPct != null) {
