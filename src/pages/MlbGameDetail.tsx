@@ -1766,7 +1766,7 @@ function SocialTableML({
                     padding: "2px 6px",
                     fontWeight: 800,
                     fontSize: 11,
-                    color: row.pickAmerican.startsWith("+") ? "#34d399" : "#94a3b8",
+                    color: row.pickAmerican.startsWith("+") ? "#34d399" : row.pickAmerican.endsWith("%") ? "#60a5fa" : "#94a3b8",
                   }}>
                     {row.pickAmerican}
                   </span>
