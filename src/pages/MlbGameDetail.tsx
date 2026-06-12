@@ -31,7 +31,7 @@ import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
-import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame } from "@/lib/mlb/mlbTypes";
+import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame, MlbTeamWrcData } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { SPORTSBOOKS } from "@/lib/sportsbooks";
@@ -52,6 +52,7 @@ type MlbCache = {
   teamPitching: Record<string, any>;
   hitterStats: Record<string, any>;
   lineups: Record<string, any[]>;
+  wrcData: MlbTeamWrcData | null;
 };
 
 let mlbCache: MlbCache | null = null;
@@ -82,6 +83,7 @@ function ensureCache() {
       teamPitching: {},
       hitterStats: {},
       lineups: {},
+      wrcData: null,
     };
   }
   return mlbCache;
@@ -234,11 +236,47 @@ function summarizeTeamSchedule(games: any[], teamId: number | null, opponentId: 
     homeRecord: homeGames.length ? `${homeGames.filter((item) => item.win).length}-${homeGames.filter((item) => !item.win).length}` : MLB_DASH,
     awayRecord: awayGames.length ? `${awayGames.filter((item) => item.win).length}-${awayGames.filter((item) => !item.win).length}` : MLB_DASH,
     seriesRecord: versus.length ? `${versus.filter((item) => item.win).length}-${versus.filter((item) => !item.win).length}` : MLB_DASH,
+    // wRC+ is enriched separately via fetchTeamContext
+    seasonWrcPlus: null,
+    seasonWrcPlusRank: null,
+    recentWrcPlus: null,
+    recentWrcPlusRank: null,
   };
 }
 
-async function fetchTeamContext(teamId: number | null, opponentId: number | null) {
-  return summarizeTeamSchedule(await fetchTeamSeasonSchedule(teamId), teamId, opponentId);
+async function fetchWrcData(): Promise<MlbTeamWrcData | null> {
+  const cache = ensureCache();
+  if (cache.wrcData) return cache.wrcData;
+  try {
+    const res = await fetch("/data/mlb/team-wrc-plus.json", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data: MlbTeamWrcData = await res.json();
+    cache.wrcData = data;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function lookupWrc(wrcData: MlbTeamWrcData | null, abbreviation: string) {
+  if (!wrcData) return { seasonWrcPlus: null, seasonWrcPlusRank: null, recentWrcPlus: null, recentWrcPlusRank: null };
+  const entry = wrcData.teams.find((t) => t.abbreviation === abbreviation);
+  return {
+    seasonWrcPlus: entry?.seasonWrcPlus ?? null,
+    seasonWrcPlusRank: entry?.seasonRankLabel ?? null,
+    recentWrcPlus: entry?.recentWrcPlus ?? null,
+    recentWrcPlusRank: entry?.recentRankLabel ?? null,
+  };
+}
+
+async function fetchTeamContext(teamId: number | null, opponentId: number | null, abbreviation: string) {
+  const [scheduleResult, wrcData] = await Promise.all([
+    fetchTeamSeasonSchedule(teamId),
+    fetchWrcData(),
+  ]);
+  const base = summarizeTeamSchedule(scheduleResult, teamId, opponentId);
+  const wrc = lookupWrc(wrcData, abbreviation);
+  return { ...base, ...wrc };
 }
 
 async function fetchTeamPitchingStats(teamId: number | null) {
@@ -396,8 +434,8 @@ async function buildGameDetail(gamePk: string | number) {
     homePitching,
     awayPitching,
   ] = await Promise.all([
-    fetchTeamContext(game.home.id, game.away.id),
-    fetchTeamContext(game.away.id, game.home.id),
+    fetchTeamContext(game.home.id, game.away.id, game.home.abbreviation),
+    fetchTeamContext(game.away.id, game.home.id, game.away.abbreviation),
     fetchPerson(homeStarterId),
     fetchPerson(awayStarterId),
     fetchPitcherSeasonStats(homeStarterId),

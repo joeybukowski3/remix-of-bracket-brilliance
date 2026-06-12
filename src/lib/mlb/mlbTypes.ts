@@ -31,6 +31,29 @@ export type MlbTeamContext = {
   homeRecord: string;
   awayRecord: string;
   seriesRecord: string;
+  seasonWrcPlus: number | null;
+  seasonWrcPlusRank: string | null;
+  recentWrcPlus: number | null;
+  recentWrcPlusRank: string | null;
+};
+
+export type MlbTeamWrcEntry = {
+  id: number;
+  abbreviation: string;
+  name: string;
+  seasonWrcPlus: number | null;
+  seasonRank: number | null;
+  seasonRankLabel: string | null;
+  recentWrcPlus: number | null;
+  recentRank: number | null;
+  recentRankLabel: string | null;
+};
+
+export type MlbTeamWrcData = {
+  date: string;
+  generatedAt: string;
+  season: number;
+  teams: MlbTeamWrcEntry[];
 };
 
 export type MlbPitcherVsTeamStats = {

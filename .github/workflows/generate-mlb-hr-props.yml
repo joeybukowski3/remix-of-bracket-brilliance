@@ -58,6 +58,9 @@ jobs:
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
 
+      - name: Fetch team wRC+ data
+        run: node scripts/fetch-team-wrc-plus.mjs || true
+
       - name: Fetch public betting splits
         run: node scripts/fetch-public-betting.mjs || true
 

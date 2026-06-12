@@ -14,6 +14,27 @@ function better(a: string, b: string) {
   return aw != null && bw != null && aw > bw;
 }
 
+function WrcCell({ value, rankLabel, betterThan }: { value: number | null; rankLabel: string | null; betterThan: boolean }) {
+  if (value === null) {
+    return <span className="text-muted-foreground text-xs">—</span>;
+  }
+  const colorClass =
+    value >= 110 ? "text-emerald-700" :
+    value >= 95  ? "text-foreground" :
+    "text-rose-600";
+
+  return (
+    <span className={`inline-flex flex-col items-center leading-tight ${betterThan ? "font-bold" : "font-semibold"}`}>
+      <span className={`text-xs ${colorClass} ${betterThan ? "rounded-full bg-emerald-50 px-2 py-0.5 ring-1 ring-emerald-200" : ""}`}>
+        wRC+ {value}
+      </span>
+      {rankLabel && (
+        <span className="text-[10px] text-muted-foreground mt-0.5">{rankLabel}</span>
+      )}
+    </span>
+  );
+}
+
 export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail }) {
   const { game, awayContext, homeContext } = detail;
   const awayColors = getMlbTeamColors(game.away.abbreviation);
@@ -56,6 +77,11 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
     },
   ];
 
+  const awaySeasonBetter = (awayContext.seasonWrcPlus ?? 0) > (homeContext.seasonWrcPlus ?? 0);
+  const homeSeasonBetter = (homeContext.seasonWrcPlus ?? 0) > (awayContext.seasonWrcPlus ?? 0);
+  const awayRecentBetter = (awayContext.recentWrcPlus ?? 0) > (homeContext.recentWrcPlus ?? 0);
+  const homeRecentBetter = (homeContext.recentWrcPlus ?? 0) > (awayContext.recentWrcPlus ?? 0);
+
   return (
     <div className="space-y-2">
       {/* Game info bar */}
@@ -90,6 +116,34 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
               </td>
             </tr>
           ))}
+
+          {/* Season wRC+ row */}
+          <tr>
+            <td className="py-1.5 text-muted-foreground">
+              Season wRC+
+              <span className="ml-1 text-[9px] text-muted-foreground/60">(offense vs avg)</span>
+            </td>
+            <td className="py-1.5 text-center">
+              <WrcCell value={awayContext.seasonWrcPlus} rankLabel={awayContext.seasonWrcPlusRank} betterThan={awaySeasonBetter} />
+            </td>
+            <td className="py-1.5 text-center">
+              <WrcCell value={homeContext.seasonWrcPlus} rankLabel={homeContext.seasonWrcPlusRank} betterThan={homeSeasonBetter} />
+            </td>
+          </tr>
+
+          {/* Last 14 days wRC+ row */}
+          <tr>
+            <td className="py-1.5 text-muted-foreground">
+              L14 wRC+
+              <span className="ml-1 text-[9px] text-muted-foreground/60">(last 2 weeks)</span>
+            </td>
+            <td className="py-1.5 text-center">
+              <WrcCell value={awayContext.recentWrcPlus} rankLabel={awayContext.recentWrcPlusRank} betterThan={awayRecentBetter} />
+            </td>
+            <td className="py-1.5 text-center">
+              <WrcCell value={homeContext.recentWrcPlus} rankLabel={homeContext.recentWrcPlusRank} betterThan={homeRecentBetter} />
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
