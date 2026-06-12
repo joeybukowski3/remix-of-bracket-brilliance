@@ -305,7 +305,7 @@ function buildCaption(rawPayload, bestBetsPayload) {
     "",
     `Full table: ${HR_PROPS_URL}`,
     "",
-    "#MLB #HomeRunProps #MLBPicks #SportsBetting",
+    "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting #SportsGambling",
   ].join("\n");
 
   if (caption.length > 280) {
