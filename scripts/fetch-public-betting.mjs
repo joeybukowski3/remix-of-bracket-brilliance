@@ -137,17 +137,24 @@ async function fetchAnSport(sportKey) {
     return [];
   }
 
-  // Debug: log first game structure to diagnose API changes
-  if (games.length > 0) {
+  // Debug: write first game to file so we can inspect AN API structure
+  if (games.length > 0 && sportKey === "mlb") {
     const sample = games[0];
-    const odds = sample?.odds ?? [];
-    const consensus = odds.find(o => o.type === "consensus" || o.book_id === 15) ?? odds[0];
+    const odds = sample?.odds ?? sample?.markets ?? [];
+    const consensus = odds.find(o => o.book_id === 15) ?? odds.find(o => o.type === "consensus") ?? odds[0];
     console.log(`  [${label}] ${games.length} games found. Sample game keys: ${Object.keys(sample).join(", ")}`);
     console.log(`  [${label}] Sample odds count: ${odds.length}. Consensus keys: ${Object.keys(consensus ?? {}).join(", ")}`);
     if (consensus) {
-      const pctKeys = Object.keys(consensus).filter(k => k.includes("pct") || k.includes("bet") || k.includes("ml") || k.includes("spread"));
-      console.log(`  [${label}] Consensus pct/bet keys: ${pctKeys.join(", ")}`);
+      const pctKeys = Object.keys(consensus).filter(k => k.includes("pct") || k.includes("bet") || k.includes("ml") || k.includes("spread") || k.includes("money") || k.includes("ticket"));
+      console.log(`  [${label}] Pct/bet/ml keys: ${pctKeys.join(", ")}`);
+      console.log(`  [${label}] Consensus values: ${JSON.stringify(consensus).slice(0, 500)}`);
     }
+    // Write sample to debug file for inspection
+    try {
+      import("node:fs").then(({ writeFileSync }) => {
+        writeFileSync(path.join(OUT_DIR, "debug-an-sample.json"), JSON.stringify({ gameKeys: Object.keys(sample), oddsCount: odds.length, consensusKeys: Object.keys(consensus ?? {}), consensusSample: consensus, gameSample: sample }, null, 2));
+      });
+    } catch {}
   }
 
   const sides = [];
