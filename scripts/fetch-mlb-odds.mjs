@@ -294,6 +294,59 @@ async function main() {
     return;
   }
   console.log(`ODDS_API_KEY present (length: ${apiKey.length})`);
+
+  // ── Quick quota check before spending calls ───────────────────────────────
+  // Test with a single cheap call; if 401/quota → fall back to Polymarket
+  let quotaExhausted = false;
+  try {
+    const testUrl = `${ODDS_BASE}/sports/${SPORT}/odds/?apiKey=${apiKey}&regions=us&markets=h2h&oddsFormat=american&dateFormat=iso`;
+    const testRes = await fetch(testUrl, { headers: HEADERS });
+    if (testRes.status === 401 || testRes.status === 429) {
+      const body = await testRes.text().catch(() => "");
+      if (body.includes("quota") || body.includes("OUT_OF_USAGE") || testRes.status === 401) {
+        quotaExhausted = true;
+        console.warn("⚠️ Odds API quota exhausted — falling back to Polymarket.");
+      }
+    }
+    if (!quotaExhausted && !testRes.ok) {
+      throw new Error(`HTTP ${testRes.status}`);
+    }
+  } catch (err) {
+    if (!quotaExhausted) console.warn("⚠️ Odds API check failed:", err.message);
+    quotaExhausted = true;
+  }
+
+  // If quota hit, use Polymarket fallback
+  if (quotaExhausted) {
+    let todayGames = [];
+    try {
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+      const schedRes = await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=team`, { headers: { "Accept": "application/json" } });
+      if (schedRes.ok) {
+        const sched = await schedRes.json();
+        todayGames = (sched?.dates?.[0]?.games ?? []).map(g => ({
+          awayAbbr: g?.teams?.away?.team?.abbreviation ?? "",
+          homeAbbr: g?.teams?.home?.team?.abbreviation ?? "",
+        })).filter(g => g.awayAbbr && g.homeAbbr);
+      }
+    } catch (e) {
+      console.warn("Could not fetch schedule for Polymarket matching:", e.message);
+    }
+    const moneylines = await fetchPolymarketMLB(todayGames);
+    const output = {
+      fetchedAt: new Date().toISOString(),
+      fetchStatus: { moneylines: `polymarket:${Object.keys(moneylines).length}`, hrProps: "skipped", kProps: "skipped", source: "polymarket" },
+      sport: SPORT,
+      moneylines,
+      hrOdds: {},
+      kOdds: {},
+    };
+    mkdirSync(path.dirname(OUTPUT), { recursive: true });
+    writeFileSync(OUTPUT, JSON.stringify(output, null, 2), "utf8");
+    console.log(`✅ Wrote ${OUTPUT} (Polymarket fallback)`);
+    return;
+  }
+
   console.log("Fetching MLB odds via bulk endpoints (3 calls total)...");
 
   const moneylines = {};
