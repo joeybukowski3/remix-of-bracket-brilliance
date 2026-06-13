@@ -26,17 +26,17 @@ export default function MlbPitcherComparisonPanel({
       <div className="grid grid-cols-[1fr_28px_1fr] items-center gap-1.5">
 
         {/* Away pitcher */}
-        <div className="flex items-center gap-2 rounded-xl p-2 min-w-0" style={{ backgroundColor: awayColors.tint }}>
+        <div className="flex items-center gap-2 rounded-xl border border-border/60 p-2.5 min-w-0 shadow-sm" style={{ backgroundColor: awayColors.tint }}>
           <div className="relative shrink-0">
             <MlbPlayerHeadshot playerId={awayPitcher.id} name={awayPitcher.name} size={40} teamAbbreviation={awayAbbreviation} />
-            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
+            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-1 ring-black/10 shadow-sm">
               <MlbTeamLogo team={awayAbbreviation} size={12} />
             </div>
           </div>
           <div className="min-w-0">
             <div className="truncate text-[11px] font-bold leading-tight" style={{ color: awayColors.primary }}>{awayPitcher.name}</div>
-            <div className="text-[10px] text-muted-foreground">{awayPitcher.hand}HP · {awayPitcher.record}</div>
-            {awayPitcher.era != null && <div className="text-[10px] font-semibold text-foreground">{Number(awayPitcher.era).toFixed(2)} ERA</div>}
+            <div className="text-[10px] text-muted-foreground font-medium">{awayPitcher.hand}HP · {awayPitcher.record}</div>
+            {awayPitcher.era != null && <div className="text-[10px] font-bold text-foreground">{Number(awayPitcher.era).toFixed(2)} ERA</div>}
             {awayPitcher.regressionScore != null && (
               <div className={`text-[9px] font-bold ${awayPitcher.regressionScore < -3 ? "text-green-600" : awayPitcher.regressionScore > 3 ? "text-red-600" : "text-slate-500"}`}>
                 Regr: {awayPitcher.regressionScore > 0 ? "+" : ""}{awayPitcher.regressionScore}
@@ -54,11 +54,11 @@ export default function MlbPitcherComparisonPanel({
         </div>
 
         {/* Home pitcher */}
-        <div className="flex items-center justify-end gap-2 rounded-xl p-2 min-w-0" style={{ backgroundColor: homeColors.tint }}>
+        <div className="flex items-center justify-end gap-2 rounded-xl border border-border/60 p-2.5 min-w-0 shadow-sm" style={{ backgroundColor: homeColors.tint }}>
           <div className="min-w-0 text-right">
             <div className="truncate text-[11px] font-bold leading-tight" style={{ color: homeColors.primary }}>{homePitcher.name}</div>
-            <div className="text-[10px] text-muted-foreground">{homePitcher.hand}HP · {homePitcher.record}</div>
-            {homePitcher.era != null && <div className="text-[10px] font-semibold text-foreground">{Number(homePitcher.era).toFixed(2)} ERA</div>}
+            <div className="text-[10px] text-muted-foreground font-medium">{homePitcher.hand}HP · {homePitcher.record}</div>
+            {homePitcher.era != null && <div className="text-[10px] font-bold text-foreground">{Number(homePitcher.era).toFixed(2)} ERA</div>}
             {homePitcher.regressionScore != null && (
               <div className={`text-[9px] font-bold ${homePitcher.regressionScore < -3 ? "text-green-600" : homePitcher.regressionScore > 3 ? "text-red-600" : "text-slate-500"}`}>
                 Regr: {homePitcher.regressionScore > 0 ? "+" : ""}{homePitcher.regressionScore}
@@ -67,7 +67,7 @@ export default function MlbPitcherComparisonPanel({
           </div>
           <div className="relative shrink-0">
             <MlbPlayerHeadshot playerId={homePitcher.id} name={homePitcher.name} size={40} teamAbbreviation={homeAbbreviation} />
-            <div className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
+            <div className="absolute -bottom-1 -left-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-1 ring-black/10 shadow-sm">
               <MlbTeamLogo team={homeAbbreviation} size={12} />
             </div>
           </div>

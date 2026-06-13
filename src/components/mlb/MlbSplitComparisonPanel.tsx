@@ -11,12 +11,12 @@ function colorsTooSimilar(c1: string, c2: string): boolean {
 function CompactBar({ label, value, barPct, avgPct, color }: { label: string; value: string; barPct: number; avgPct: number; color: string }) {
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <span className="w-10 shrink-0 truncate text-right text-[10px] font-bold text-muted-foreground">{label}</span>
-      <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
-        <span className="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-amber-400" style={{ left: `${avgPct}%` }} />
-        <span className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${barPct}%`, backgroundColor: color }} />
+      <span className="w-10 shrink-0 truncate text-right text-[10px] font-bold text-foreground/70">{label}</span>
+      <div className="relative h-4 flex-1 overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200/80">
+        <span className="pointer-events-none absolute inset-y-0 z-20 w-[2px] bg-amber-400 opacity-90" style={{ left: `${avgPct}%` }} />
+        <span className="absolute inset-y-0 left-0 rounded-md transition-all" style={{ width: `${barPct}%`, backgroundColor: color }} />
       </div>
-      <span className="w-12 shrink-0 text-[10px] font-semibold tabular-nums text-foreground">{value}</span>
+      <span className="w-13 shrink-0 text-[10.5px] font-bold tabular-nums text-foreground">{value}</span>
     </div>
   );
 }
@@ -43,13 +43,13 @@ export default function MlbSplitComparisonPanel({ awayMetrics, homeMetrics, away
         const awayPct = getBarScalePosition(awayM.leftValue, awayM.scaleKey);
         const homePct = getBarScalePosition(homeM?.leftValue ?? null, homeM?.scaleKey ?? awayM.scaleKey);
         return (
-          <div key={awayM.key} className="space-y-0.5 rounded-md bg-secondary/30 px-2 py-1.5">
-            <div className="flex items-center justify-between gap-2 mb-0.5">
-              <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{awayM.label}</span>
+          <div key={awayM.key} className="space-y-1 rounded-lg border border-border/40 bg-secondary/20 px-2.5 py-2">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-foreground/70">{awayM.label}</span>
               {awayM.leagueAverage != null && (
-                <span className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                  <span className="inline-block h-2 w-0.5 rounded-full bg-amber-400" />
-                  {formatMetric(awayM.leagueAverage, awayM.format)}
+                <span className="flex items-center gap-1 text-[9px] font-semibold text-amber-600">
+                  <span className="inline-block h-2 w-[2px] rounded-full bg-amber-400" />
+                  Avg {formatMetric(awayM.leagueAverage, awayM.format)}
                 </span>
               )}
             </div>

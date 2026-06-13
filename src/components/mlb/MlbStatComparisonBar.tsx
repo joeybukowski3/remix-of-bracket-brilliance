@@ -38,31 +38,31 @@ export default function MlbStatComparisonBar({
 
   return (
     <div className="grid grid-cols-[1fr_1fr] gap-2">
-      <div className="relative h-4 overflow-hidden rounded-full bg-secondary/90 ring-1 ring-border/40">
+      <div className="relative h-5 overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200/80">
         <MlbLeagueAverageTick position={tickPosition} />
         <span
-          className="absolute inset-y-0 right-0 rounded-full transition-all"
+          className="absolute inset-y-0 right-0 rounded-md transition-all"
           style={{
             width: `${leftPosition}%`,
             backgroundColor: leftColor,
-            boxShadow: leftGlow ? `0 0 16px ${leftColor}` : undefined,
+            boxShadow: leftGlow ? `0 0 12px ${leftColor}80` : undefined,
           }}
         />
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white">
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white drop-shadow-sm">
           {leftLabel}
         </span>
       </div>
-      <div className="relative h-4 overflow-hidden rounded-full bg-secondary/90 ring-1 ring-border/40">
+      <div className="relative h-5 overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200/80">
         <MlbLeagueAverageTick position={tickPosition} />
         <span
-          className="absolute inset-y-0 left-0 rounded-full transition-all"
+          className="absolute inset-y-0 left-0 rounded-md transition-all"
           style={{
             width: `${rightPosition}%`,
             backgroundColor: rightColor,
-            boxShadow: rightGlow ? `0 0 16px ${rightColor}` : undefined,
+            boxShadow: rightGlow ? `0 0 12px ${rightColor}80` : undefined,
           }}
         />
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-white drop-shadow-sm">
           {rightLabel}
         </span>
       </div>

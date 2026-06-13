@@ -21,7 +21,7 @@ export default function MlbLineupRow({
   const homeColors = getMlbTeamColors(homeTeamAbbreviation);
 
   return (
-    <div className="rounded-lg bg-secondary/20 px-2 py-1.5">
+    <div className="rounded-lg bg-card border border-border/50 px-2 py-2 shadow-sm">
       <div className="hidden items-center gap-3 lg:grid lg:grid-cols-[1.2fr_36px_1.2fr]">
         <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,44px)] items-center gap-1">
           <div className="flex min-w-0 items-center gap-1.5">
@@ -34,7 +34,7 @@ export default function MlbLineupRow({
           <MlbLineupMiniStat label="OBP" value={formatAvgLike(away.obp)} />
           <MlbLineupMiniStat label="SLG" value={formatAvgLike(away.slg)} />
         </div>
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-card text-[10px] font-bold text-foreground ring-1 ring-border/70">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-foreground ring-1 ring-border">
           {order}
         </div>
         <div className="grid grid-cols-[44px_44px_44px_minmax(0,1fr)] items-center gap-1">
@@ -56,7 +56,7 @@ export default function MlbLineupRow({
           <div className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Lineup matchup</div>
         </div>
         <div className="grid gap-1.5 sm:grid-cols-2">
-          <div className="rounded-xl bg-card/80 p-2">
+          <div className="rounded-xl bg-secondary/40 p-2">
             <div className="flex items-center gap-1.5">
               <MlbPlayerHeadshot playerId={away.id} name={away.name} size={24} teamAbbreviation={awayTeamAbbreviation} />
               <div className="text-xs font-semibold" style={{ color: awayColors.primary }}>{away.name}</div>
@@ -67,7 +67,7 @@ export default function MlbLineupRow({
               <MlbLineupMiniStat label="SLG" value={formatAvgLike(away.slg)} />
             </div>
           </div>
-          <div className="rounded-xl bg-card/80 p-2">
+          <div className="rounded-xl bg-secondary/40 p-2">
             <div className="flex items-center gap-1.5">
               <MlbPlayerHeadshot playerId={home.id} name={home.name} size={24} teamAbbreviation={homeTeamAbbreviation} />
               <div className="text-xs font-semibold" style={{ color: homeColors.primary }}>{home.name}</div>

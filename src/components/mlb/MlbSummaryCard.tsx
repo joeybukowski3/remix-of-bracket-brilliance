@@ -29,33 +29,37 @@ export default function MlbSummaryCard({
 
   return (
     <div
-      className="rounded-2xl p-3 ring-1 ring-border/60 shadow-[0_10px_24px_hsl(var(--foreground)/0.04)]"
-      style={{ backgroundColor: colors.tint, borderLeft: `4px solid ${colors.primary}` }}
+      className="rounded-xl p-3.5 ring-1 ring-border/70"
+      style={{
+        backgroundColor: colors.tint,
+        borderLeft: `4px solid ${colors.primary}`,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+      }}
     >
       <div className="flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/80 ring-1 ring-black/5">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 ring-1 ring-black/8 shadow-sm shrink-0">
             <Icon className="h-4 w-4" style={{ color: colors.primary }} />
           </span>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{card.label}</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground/60">{card.label}</div>
         </div>
         {edgeTeam ? (
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/80 ring-1 ring-black/5">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 ring-1 ring-black/8 shadow-sm shrink-0">
             <MlbTeamLogo team={edgeTeam} size={20} />
           </span>
         ) : null}
       </div>
-      <div className="mt-2">
+      <div className="mt-2.5">
         {edgeTeam ? (
           <span
-            className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold ${getStatToneClasses("positive")}`}
+            className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold ${getStatToneClasses("positive")}`}
           >
             {card.value}
           </span>
         ) : (
-          <div className="text-sm font-semibold text-foreground">{card.value}</div>
+          <div className="text-sm font-bold text-foreground">{card.value}</div>
         )}
-        <div className="mt-1 text-xs text-muted-foreground">{card.note}</div>
+        <div className="mt-1 text-xs font-medium text-muted-foreground leading-snug">{card.note}</div>
       </div>
     </div>
   );
