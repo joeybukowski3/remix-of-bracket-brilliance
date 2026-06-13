@@ -116,7 +116,8 @@ function toAbbr(t) {
 // Uses ESPN's public scoreboard API (no key, no IP restrictions).
 // odds.homeTeamOdds.moneyLine / odds.awayTeamOdds.moneyLine are DraftKings lines.
 
-const ESPN_MLB_URL = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard";
+// cdn.espn.com returns current season data; site.api.espn.com is stuck on 2024
+const ESPN_MLB_URL = "https://cdn.espn.com/core/mlb/scoreboard";
 
 // Map ESPN team abbreviations to our internal abbreviations where they differ
 const ESPN_ABBR_MAP = {
@@ -142,7 +143,7 @@ async function fetchEspnMLBOdds(dateStr) {
   const moneylines = {};
 
   try {
-    const url = `${ESPN_MLB_URL}?dates=${dateStr}&limit=30`;
+    const url = `${ESPN_MLB_URL}?xhr=1&limit=50`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     let data;
@@ -158,8 +159,9 @@ async function fetchEspnMLBOdds(dateStr) {
       clearTimeout(timer);
     }
 
-    const events = data?.events ?? [];
-    console.log(`  [espn] ${events.length} MLB games found for ${dateStr}`);
+    // CDN endpoint wraps in content.sbData; fall back to top-level events
+    const events = data?.content?.sbData?.events ?? data?.sbData?.events ?? data?.events ?? [];
+    console.log(`  [espn] ${events.length} MLB games found`);
 
     for (const event of events) {
       const comp = event.competitions?.[0];
