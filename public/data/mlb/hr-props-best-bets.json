@@ -1,9 +1,9 @@
 {
   "date": "2026-06-13",
-  "generatedAt": "2026-06-13T15:52:28.076Z",
+  "generatedAt": "2026-06-13T17:02:39.005Z",
   "slatePreview": {
-    "slateOverview": "Kauffman and Progressive Field play as the day's most pitcher-friendly venues, but the model still surfaces Yordan Alvarez and Dillon Dingler because of elite barrel and hard-hit rates against lefties. Las Vegas Ballpark and Camden Yards sit at neutral-to-hitter-friendly marks, giving Nick Kurtz and Pete Alonso plus park factors against soft-tossing southpaws Freeland and Vásquez. No major weather or wind flags appear, so the slate leans on individual power profiles rather than environmental boosts.",
-    "modelNote": "The model is prioritizing barrel rate, recent home-run volume, and opposing pitcher HR vulnerability over raw park factors, which is why Alvarez, Kurtz, and Wood occupy the top three spots despite mixed venue effects."
+    "slateOverview": "Today's slate features strong HR environments at Camden Yards (1.10), American Family Field (1.10), and Rate Field (1.07), while Coors-adjacent Las Vegas Ballpark and Kauffman Stadium (0.96) create mixed conditions. Lefties Noah Cameron and Kyle Freeland face top model targets Yordan Alvarez and Nick Kurtz, with Randy Vásquez and Aaron Nola also vulnerable to power despite right-handed matchups. Weather angles appear neutral, putting the emphasis on park factors and opposing pitcher HR rates above 70 for Alonso and Kurtz.",
+    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and recent 30-day HR volume, elevating Alvarez and Kurtz to the top despite facing lefties, while incorporating park-adjusted opposing pitcher vulnerability for the middle-tier names."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=19.1",
-        "hrFBRatio=9.5"
+        "hrScore=78.1"
       ],
       "bullets": [
-        "barrelRate 19.1 with exitVelo 94.9",
-        "last30HR=10 against LHP"
+        "barrelRate 19.1 and exitVelo 94.9",
+        "last30HR 10 with hrFBRatio 9.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -34,8 +34,8 @@
         "opposingPitcherHrVs=71.5"
       ],
       "bullets": [
-        "hardHitRate 57.4 with exitVelo 94.2",
-        "last7HR=5 vs LHP"
+        "last7HR 5 and last30HR 9",
+        "opposingPitcherHrVs 71.5 with parkFactor 1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,8 +51,8 @@
         "hardHitRate=58.6"
       ],
       "bullets": [
-        "barrelRate 25.4 with exitVelo 95.9",
-        "parkFactor 0.98"
+        "barrelRate 25.4 and exitVelo 95.9",
+        "opposingPitcherHrVs 66.6 with parkFactor 0.98"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -69,7 +69,7 @@
       ],
       "bullets": [
         "opposingPitcherHrVs 82.4 with parkFactor 1.1",
-        "last30HR=7"
+        "last30HR 7 with hardHitRate 55.7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -81,12 +81,12 @@
       "opposingPitcher": "Joey Cantillo",
       "hrScoreRank": 5,
       "topStats": [
-        "hrFBRatio=6.9",
-        "pullRate=42.2"
+        "xba=0.292",
+        "last30HR=8"
       ],
       "bullets": [
-        "hrFBRatio 6.9 with exitVelo 90.8",
-        "last30HR=8"
+        "last30HR 8 and last7HR 2",
+        "xba 0.292 with pullRate 42.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -104,8 +104,25 @@
         "bbRate=20.8"
       ],
       "bullets": [
-        "barrelRate 21 with exitVelo 91.8",
-        "parkFactor 1.02"
+        "barrelRate 21 and exitVelo 91.8",
+        "bbRate 20.8 with parkFactor 1.02"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Braden Montgomery",
+      "team": "CWS",
+      "opponent": "LAD",
+      "opposingPitcher": "Yoshinobu Yamamoto",
+      "hrScoreRank": 7,
+      "topStats": [
+        "hardHitRate=77.8",
+        "iso=0.417"
+      ],
+      "bullets": [
+        "hardHitRate 77.8 and exitVelo 93.9",
+        "iso 0.417 with barrelRate 22.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -118,45 +135,11 @@
       "hrScoreRank": 8,
       "topStats": [
         "pullRate=41.2",
-        "hrFBRatio=6.3"
-      ],
-      "bullets": [
-        "pullRate 41.2 with exitVelo 92.5",
         "last30HR=7"
       ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Byron Buxton",
-      "team": "MIN",
-      "opponent": "STL",
-      "opposingPitcher": "Matthew Liberatore",
-      "hrScoreRank": 9,
-      "topStats": [
-        "hrFBRatio=8.7",
-        "iso=0.319"
-      ],
       "bullets": [
-        "hrFBRatio 8.7 with exitVelo 90.6",
-        "last7HR=3"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Braden Montgomery",
-      "team": "CWS",
-      "opponent": "LAD",
-      "opposingPitcher": "Yoshinobu Yamamoto",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Hard Hit%=77.8",
-        "Pitcher HR VS=30.3"
-      ],
-      "bullets": [
-        "HR score 64.9 (#7)",
-        "Pitcher HR VS 30.3 at park 1.07"
+        "pullRate 41.2 and exitVelo 92.5",
+        "last30HR 7 with parkFactor 1.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -164,52 +147,18 @@
   ],
   "longshots": [
     {
-      "player": "Nelson Velázquez",
-      "team": "STL",
-      "opponent": "MIN",
-      "opposingPitcher": "Connor Prielipp",
-      "hrScoreRank": 11,
-      "topStats": [
-        "xba=0.349",
-        "pullRate=58.8"
-      ],
-      "bullets": [
-        "xba 0.349 with exitVelo 92.4",
-        "hardHitRate 64.7"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "MIN",
-      "opposingPitcher": "Connor Prielipp",
-      "hrScoreRank": 12,
-      "topStats": [
-        "last7HR=4",
-        "last30HR=6"
-      ],
-      "bullets": [
-        "last7HR=4 with last30HR=6",
-        "opposingPitcherHrVs 37.5"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
       "player": "Byron Buxton",
       "team": "MIN",
       "opponent": "STL",
       "opposingPitcher": "Matthew Liberatore",
       "hrScoreRank": 9,
       "topStats": [
-        "Pitcher HR VS=62.0",
-        "Hard Hit%=47.7"
+        "iso=0.319",
+        "hrFBRatio=8.7"
       ],
       "bullets": [
-        "HR score 64.3 (#9)",
-        "Pitcher HR VS 62.0 at park 0.97"
+        "iso 0.319 and last7HR 3",
+        "hrFBRatio 8.7 with opposingPitcherHrVs 62"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -221,12 +170,12 @@
       "opposingPitcher": "Kyle Freeland",
       "hrScoreRank": 10,
       "topStats": [
-        "Pitcher HR VS=71.5",
-        "Hard Hit%=44.2"
+        "opposingPitcherHrVs=71.5",
+        "last30HR=6"
       ],
       "bullets": [
-        "HR score 64.1 (#10)",
-        "Pitcher HR VS 71.5 at park 1.00"
+        "opposingPitcherHrVs 71.5 with parkFactor 1",
+        "last30HR 6 with barrelRate 14.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
