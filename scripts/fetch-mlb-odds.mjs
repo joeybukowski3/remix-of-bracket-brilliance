@@ -112,24 +112,9 @@ function toAbbr(t) {
 
 // ── main ─────────────────────────────────────────────────────────────────────
 
-// ── ESPN fallback ─────────────────────────────────────────────────────────────
-// Uses ESPN's public scoreboard API (no key, no IP restrictions).
-// odds.homeTeamOdds.moneyLine / odds.awayTeamOdds.moneyLine are DraftKings lines.
-
-// cdn.espn.com returns current season data; site.api.espn.com is stuck on 2024
-const ESPN_MLB_URL = "https://cdn.espn.com/core/mlb/scoreboard";
-
-// Map ESPN team abbreviations to our internal abbreviations where they differ
-const ESPN_ABBR_MAP = {
-  "WSH": "WSH", "TB":  "TB",  "KC":  "KC",  "SF":  "SF",
-  "SD":  "SD",  "NYM": "NYM", "NYY": "NYY", "LAD": "LAD",
-  "LAA": "LAA", "CHC": "CHC", "CWS": "CWS", "ATH": "ATH",
-  "OAK": "ATH", // ESPN may still use OAK
-};
-
-function normalizeEspnAbbr(abbr) {
-  return ESPN_ABBR_MAP[abbr] ?? abbr;
-}
+// ── MLB Stats API win probability fallback ─────────────────────────────────────
+// Uses MLB Stats API game predictions (no key, no IP restrictions, live 2026 data)
+// Returns implied win probabilities as American ML strings
 
 // Format implied probability as percentage string e.g. "72%"
 function priceToPercent(price) {
@@ -137,13 +122,21 @@ function priceToPercent(price) {
   return `${Math.round(price * 100)}%`;
 }
 
-async function fetchEspnMLBOdds(dateStr) {
-  // dateStr = "YYYYMMDD"
-  console.log(`Using ESPN as moneyline fallback (date: ${dateStr})`);
+// Convert 0-1 probability to American ML integer
+function probToAmerican(prob) {
+  if (prob == null || !Number.isFinite(prob) || prob <= 0 || prob >= 1) return null;
+  if (prob >= 0.5) return -Math.round(prob / (1 - prob) * 100);
+  return Math.round((1 - prob) / prob * 100);
+}
+
+async function fetchMlbStatsOdds(dateStr) {
+  // dateStr = "YYYY-MM-DD"
+  console.log(`Using MLB Stats API win probability as ML fallback (date: ${dateStr})`);
   const moneylines = {};
 
   try {
-    const url = `${ESPN_MLB_URL}?xhr=1&limit=50`;
+    // Fetch today's schedule with linescore/winProbability hydration
+    const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}&hydrate=probablePitcher,team,linescore,game(content(summary)),decisions,winProbability`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     let data;
@@ -153,86 +146,55 @@ async function fetchEspnMLBOdds(dateStr) {
         headers: { "Accept": "application/json", "User-Agent": "JoeKnowsBall/1.0" },
       });
       clearTimeout(timer);
-      if (!res.ok) throw new Error(`ESPN returned HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`MLB Stats API returned HTTP ${res.status}`);
       data = await res.json();
     } finally {
       clearTimeout(timer);
     }
 
-    // CDN endpoint wraps in content.sbData; fall back to top-level events
-    const events = data?.content?.sbData?.events ?? data?.sbData?.events ?? data?.events ?? [];
-    console.log(`  [espn] ${events.length} MLB games found`);
+    const games = data?.dates?.[0]?.games ?? [];
+    console.log(`  [mlbstats] ${games.length} games found for ${dateStr}`);
 
-    for (const event of events) {
-      const comp = event.competitions?.[0];
-      if (!comp) continue;
-
-      const competitors = comp.competitors ?? [];
-      const homeComp = competitors.find(c => c.homeAway === "home");
-      const awayComp = competitors.find(c => c.homeAway === "away");
-      if (!homeComp || !awayComp) continue;
-
-      const homeAbbr = normalizeEspnAbbr(homeComp.team?.abbreviation ?? "");
-      const awayAbbr = normalizeEspnAbbr(awayComp.team?.abbreviation ?? "");
-      if (!homeAbbr || !awayAbbr) continue;
+    for (const game of games) {
+      const awayAbbr = game?.teams?.away?.team?.abbreviation ?? "";
+      const homeAbbr = game?.teams?.home?.team?.abbreviation ?? "";
+      if (!awayAbbr || !homeAbbr) continue;
 
       const gameKey = `${awayAbbr}@${homeAbbr}`;
-      const odds = comp.odds?.[0] ?? null;
 
-      // ESPN odds field: odds.homeTeamOdds.moneyLine (integer American odds)
-      const homeML = odds?.homeTeamOdds?.moneyLine ?? odds?.homeTeamOdds?.current?.moneyLine ?? null;
-      const awayML = odds?.awayTeamOdds?.moneyLine ?? odds?.awayTeamOdds?.current?.moneyLine ?? null;
+      // Try winProbability from the game data
+      const wp = game?.winProbability ?? null;
+      const awayWinPct = game?.teams?.away?.winProbability
+        ?? (Array.isArray(wp) ? wp[wp.length - 1]?.awayTeamWinProbability : null)
+        ?? null;
+      const homeWinPct = game?.teams?.home?.winProbability
+        ?? (Array.isArray(wp) ? wp[wp.length - 1]?.homeTeamWinProbability : null)
+        ?? null;
 
-      const homeMLNum = typeof homeML === "string" ? parseInt(homeML, 10) : homeML;
-      const awayMLNum = typeof awayML === "string" ? parseInt(awayML, 10) : awayML;
-
-      if (homeMLNum == null && awayMLNum == null) {
-        // No ML in ESPN — use win probability if available
-        const homeWinPct = comp.predictor?.homeTeam?.teamChanceLoss != null
-          ? 1 - comp.predictor.homeTeam.teamChanceLoss
-          : odds?.homeTeamOdds?.winPercentage ?? null;
-        const awayWinPct = odds?.awayTeamOdds?.winPercentage ?? null;
-
-        if (homeWinPct != null || awayWinPct != null) {
-          const hp = homeWinPct != null ? homeWinPct / 100 : null;
-          const ap = awayWinPct != null ? awayWinPct / 100 : null;
-          moneylines[gameKey] = {
-            away: { team: awayAbbr, price: ap, american: priceToPercent(ap), implied: ap, source: "espn" },
-            home: { team: homeAbbr, price: hp, american: priceToPercent(hp), implied: hp, source: "espn" },
-          };
-          console.log(`  [espn] ${gameKey} → win% away=${priceToPercent(ap)} home=${priceToPercent(hp)}`);
-        }
+      if (awayWinPct != null || homeWinPct != null) {
+        const ap = awayWinPct != null ? awayWinPct / 100 : null;
+        const hp = homeWinPct != null ? homeWinPct / 100 : null;
+        const awayML = probToAmerican(ap);
+        const homeML = probToAmerican(hp);
+        moneylines[gameKey] = {
+          away: { team: awayAbbr, price: awayML, american: awayML != null ? (awayML > 0 ? `+${awayML}` : `${awayML}`) : priceToPercent(ap), implied: ap, source: "mlbstats" },
+          home: { team: homeAbbr, price: homeML, american: homeML != null ? (homeML > 0 ? `+${homeML}` : `${homeML}`) : priceToPercent(hp), implied: hp, source: "mlbstats" },
+        };
+        console.log(`  [mlbstats] ${gameKey} → away=${awayWinPct}% home=${homeWinPct}%`);
         continue;
       }
 
-      // Convert American ML to implied probability
-      function mlToImplied(ml) {
-        if (ml == null || !Number.isFinite(ml)) return null;
-        return ml > 0 ? 100 / (ml + 100) : Math.abs(ml) / (Math.abs(ml) + 100);
-      }
-
+      // Fallback: use home field advantage as a rough 54/46 split if no win prob
       moneylines[gameKey] = {
-        away: {
-          team: awayAbbr,
-          price: awayMLNum,
-          american: awayMLNum != null ? (awayMLNum > 0 ? `+${awayMLNum}` : `${awayMLNum}`) : null,
-          implied: mlToImplied(awayMLNum),
-          source: "espn",
-        },
-        home: {
-          team: homeAbbr,
-          price: homeMLNum,
-          american: homeMLNum != null ? (homeMLNum > 0 ? `+${homeMLNum}` : `${homeMLNum}`) : null,
-          implied: mlToImplied(homeMLNum),
-          source: "espn",
-        },
+        away: { team: awayAbbr, price: null, american: "46%", implied: 0.46, source: "mlbstats-estimate" },
+        home: { team: homeAbbr, price: null, american: "54%", implied: 0.54, source: "mlbstats-estimate" },
       };
-      console.log(`  [espn] ${gameKey} → away=${awayMLNum} home=${homeMLNum}`);
+      console.log(`  [mlbstats] ${gameKey} → no win prob, using HFA estimate`);
     }
 
-    console.log(`✅ ESPN moneylines: ${Object.keys(moneylines).length} games matched`);
+    console.log(`✅ MLB Stats API odds: ${Object.keys(moneylines).length} games`);
   } catch (err) {
-    console.warn("❌ ESPN fallback failed:", err.message);
+    console.warn("❌ MLB Stats API fallback failed:", err.message);
   }
 
   return moneylines;
@@ -241,12 +203,12 @@ async function fetchEspnMLBOdds(dateStr) {
 async function main() {
   const apiKey = process.env.ODDS_API_KEY;
   if (!apiKey) {
-    // No Odds API key — use ESPN as free moneyline source
-    const todayCompact = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, "");
-    const moneylines = await fetchEspnMLBOdds(todayCompact);
+    // No Odds API key — use MLB Stats API as free moneyline source
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+    const moneylines = await fetchMlbStatsOdds(today);
     const output = {
       fetchedAt: new Date().toISOString(),
-      fetchStatus: { moneylines: `espn:${Object.keys(moneylines).length}`, hrProps: "skipped", kProps: "skipped", source: "espn" },
+      fetchStatus: { moneylines: `mlbstats:${Object.keys(moneylines).length}`, hrProps: "skipped", kProps: "skipped", source: "mlbstats" },
       sport: SPORT,
       moneylines,
       hrOdds: {},
@@ -254,13 +216,13 @@ async function main() {
     };
     mkdirSync(path.dirname(OUTPUT), { recursive: true });
     writeFileSync(OUTPUT, JSON.stringify(output, null, 2), "utf8");
-    console.log(`✅ Wrote ${OUTPUT} (ESPN fallback)`);
+    console.log(`✅ Wrote ${OUTPUT} (MLB Stats API fallback)`);
     return;
   }
   console.log(`ODDS_API_KEY present (length: ${apiKey.length})`);
 
   // ── Quick quota check before spending calls ───────────────────────────────
-  // Test with a single cheap call; if 401/quota → fall back to ESPN
+  // Test with a single cheap call; if 401/quota → fall back to MLB Stats API
   let quotaExhausted = false;
   try {
     const testUrl = `${ODDS_BASE}/sports/${SPORT}/odds/?apiKey=${apiKey}&regions=us&markets=h2h&oddsFormat=american&dateFormat=iso`;
@@ -269,7 +231,7 @@ async function main() {
       const body = await testRes.text().catch(() => "");
       if (body.includes("quota") || body.includes("OUT_OF_USAGE") || testRes.status === 401) {
         quotaExhausted = true;
-        console.warn("⚠️ Odds API quota exhausted — falling back to ESPN.");
+        console.warn("⚠️ Odds API quota exhausted — falling back to MLB Stats API.");
       }
     }
     if (!quotaExhausted && !testRes.ok) {
@@ -280,13 +242,13 @@ async function main() {
     quotaExhausted = true;
   }
 
-  // If quota hit, use ESPN fallback
+  // If quota hit, use MLB Stats API fallback
   if (quotaExhausted) {
-    const todayCompact = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, "");
-    const moneylines = await fetchEspnMLBOdds(todayCompact);
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+    const moneylines = await fetchMlbStatsOdds(today);
     const output = {
       fetchedAt: new Date().toISOString(),
-      fetchStatus: { moneylines: `espn:${Object.keys(moneylines).length}`, hrProps: "skipped", kProps: "skipped", source: "espn" },
+      fetchStatus: { moneylines: `mlbstats:${Object.keys(moneylines).length}`, hrProps: "skipped", kProps: "skipped", source: "mlbstats" },
       sport: SPORT,
       moneylines,
       hrOdds: {},
@@ -294,7 +256,7 @@ async function main() {
     };
     mkdirSync(path.dirname(OUTPUT), { recursive: true });
     writeFileSync(OUTPUT, JSON.stringify(output, null, 2), "utf8");
-    console.log(`✅ Wrote ${OUTPUT} (ESPN fallback)`);
+    console.log(`✅ Wrote ${OUTPUT} (MLB Stats API fallback)`);
     return;
   }
 
