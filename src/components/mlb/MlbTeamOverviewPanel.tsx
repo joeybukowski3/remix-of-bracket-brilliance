@@ -131,17 +131,27 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
             </td>
           </tr>
 
-          {/* Last 14 days wRC+ row */}
+          {/* Last 14 days wRC+ row — falls back to season if recent data unavailable */}
           <tr>
             <td className="py-1.5 text-muted-foreground">
               L14 wRC+
-              <span className="ml-1 text-[9px] text-muted-foreground/60">(last 2 weeks)</span>
+              <span className="ml-1 text-[9px] text-muted-foreground/60">
+                {awayContext.recentWrcPlus != null || homeContext.recentWrcPlus != null ? "(last 2 weeks)" : "(unavailable, showing season)"}
+              </span>
             </td>
             <td className="py-1.5 text-center">
-              <WrcCell value={awayContext.recentWrcPlus} rankLabel={awayContext.recentWrcPlusRank} betterThan={awayRecentBetter} />
+              <WrcCell 
+                value={awayContext.recentWrcPlus ?? awayContext.seasonWrcPlus} 
+                rankLabel={awayContext.recentWrcPlusRank ?? awayContext.seasonWrcPlusRank} 
+                betterThan={awayRecentBetter || awaySeasonBetter} 
+              />
             </td>
             <td className="py-1.5 text-center">
-              <WrcCell value={homeContext.recentWrcPlus} rankLabel={homeContext.recentWrcPlusRank} betterThan={homeRecentBetter} />
+              <WrcCell 
+                value={homeContext.recentWrcPlus ?? homeContext.seasonWrcPlus} 
+                rankLabel={homeContext.recentWrcPlusRank ?? homeContext.seasonWrcPlusRank} 
+                betterThan={homeRecentBetter || homeSeasonBetter} 
+              />
             </td>
           </tr>
         </tbody>
