@@ -1814,7 +1814,7 @@ function SocialMediaTablesSection({
   mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
 }) {
   const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games: propsGames, loading } = useMlbPropsData();
-  const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits">("ml");
+  const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits">("hr");
 
   if (loading) return null;
 
