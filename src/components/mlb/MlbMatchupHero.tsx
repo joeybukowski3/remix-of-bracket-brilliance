@@ -75,6 +75,10 @@ export default function MlbMatchupHero({ detail, spotlight }: MlbMatchupHeroProp
   const awayK9 = computeK9(starters.away.strikeOuts, starters.away.inningsPitched);
   const homeK9 = computeK9(starters.home.strikeOuts, starters.home.inningsPitched);
 
+  // Responsive logo sizes: mobile 44, tablet 56, desktop 72
+  const teamLogoSize = 72;
+  const pitcherHeadshotSize = 56;
+  
   const cards = getSummaryCards(detail);
   const pitchEdge = cards.find((c) => c.label === "Pitching Edge")?.value ?? "Neutral";
   const lineupEdge = cards.find((c) => c.label === "Lineup Edge")?.value ?? "Neutral";
@@ -96,32 +100,35 @@ export default function MlbMatchupHero({ detail, spotlight }: MlbMatchupHeroProp
   return (
     <div className="relative overflow-hidden rounded-xl shadow-md"
       style={{ background: `linear-gradient(135deg, ${awayColors.primary}cc 0%, #0f172a 40%, #0f172a 60%, ${homeColors.primary}cc 100%)` }}>
-      <div className="relative px-4 py-4 space-y-3">
+      <div className="relative px-4 py-3 md:px-5 md:py-4 lg:px-6 lg:py-5 space-y-2 md:space-y-3">
 
         {/* Venue */}
-        <div className="text-center text-[10px] font-medium text-white/40">
+        <div className="text-center text-[10px] md:text-[11px] font-medium text-white/40">
           {game.venue}{detail.weather && detail.weather !== MLB_DASH ? ` · ${detail.weather}` : ""}
         </div>
 
-        {/* ── MOBILE: stacked layout ── DESKTOP: 3-col ── */}
-
-        {/* Team row: Away ←→ Home (always visible) */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Team row: Away ←→ Home */}
+        <div className="flex items-center justify-between gap-2 md:gap-4 lg:gap-6">
           {/* Away */}
-          <div className="flex items-center gap-2 min-w-0">
-            <TeamLogo abbreviation={game.away.abbreviation} size={44} />
+          <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+            <div className="shrink-0 hidden sm:block">
+              <TeamLogo abbreviation={game.away.abbreviation} size={teamLogoSize} />
+            </div>
+            <div className="shrink-0 sm:hidden">
+              <TeamLogo abbreviation={game.away.abbreviation} size={44} />
+            </div>
             <div className="min-w-0">
-              <div className="text-base font-extrabold text-white leading-tight">{game.away.abbreviation}</div>
-              <div className="text-[10px] text-white/50">{game.away.record}</div>
+              <div className="text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-tight">{game.away.abbreviation}</div>
+              <div className="text-[9px] md:text-[10px] text-white/50 font-medium">{game.away.record}</div>
             </div>
           </div>
 
           {/* Center: edge pills on md+, simple VS on mobile */}
-          <div className="hidden sm:flex flex-col items-center gap-1 shrink-0 min-w-[96px]">
+          <div className="hidden sm:flex flex-col items-center gap-1 md:gap-1.5 shrink-0 min-w-[96px] md:min-w-[120px] lg:min-w-[140px]">
             {edgePills.map((e) => (
-              <div key={e.label} className="w-full flex flex-col items-center rounded-lg px-2 py-1 text-white" style={{ backgroundColor: edgeBg(e.value) }}>
-                <span className="text-[8px] font-bold uppercase tracking-[0.1em] opacity-70">{e.label}</span>
-                <span className="text-[10px] font-extrabold leading-tight">{e.value}</span>
+              <div key={e.label} className="w-full flex flex-col items-center rounded-lg px-2 md:px-3 py-1 md:py-1.5 text-white" style={{ backgroundColor: edgeBg(e.value) }}>
+                <span className="text-[7px] md:text-[8px] lg:text-[9px] font-bold uppercase tracking-[0.1em] opacity-70">{e.label}</span>
+                <span className="text-[10px] md:text-[11px] lg:text-[12px] font-extrabold leading-tight">{e.value}</span>
               </div>
             ))}
           </div>
@@ -130,34 +137,49 @@ export default function MlbMatchupHero({ detail, spotlight }: MlbMatchupHeroProp
           <div className="sm:hidden rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white/60 shrink-0">vs</div>
 
           {/* Home */}
-          <div className="flex items-center justify-end gap-2 min-w-0">
+          <div className="flex items-center justify-end gap-2 md:gap-3 min-w-0 flex-1">
             <div className="min-w-0 text-right">
-              <div className="text-base font-extrabold text-white leading-tight">{game.home.abbreviation}</div>
-              <div className="text-[10px] text-white/50">{game.home.record}</div>
+              <div className="text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-tight">{game.home.abbreviation}</div>
+              <div className="text-[9px] md:text-[10px] text-white/50 font-medium">{game.home.record}</div>
             </div>
-            <TeamLogo abbreviation={game.home.abbreviation} size={44} />
+            <div className="shrink-0 hidden sm:block">
+              <TeamLogo abbreviation={game.home.abbreviation} size={teamLogoSize} />
+            </div>
+            <div className="shrink-0 sm:hidden">
+              <TeamLogo abbreviation={game.home.abbreviation} size={44} />
+            </div>
           </div>
         </div>
 
         {/* Pitcher row */}
-        <div className="grid grid-cols-2 gap-2 border-t border-white/10 pt-2">
+        <div className="grid grid-cols-2 gap-2 md:gap-3 lg:gap-4 border-t border-white/10 pt-2 md:pt-3 lg:pt-4">
           {/* Away pitcher */}
-          <div className="flex items-center gap-2 min-w-0">
-            <PitcherHeadshot mlbId={starters.away.id} name={starters.away.name} teamAbbreviation={game.away.abbreviation} size={40} />
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <div className="shrink-0 hidden sm:block">
+              <PitcherHeadshot mlbId={starters.away.id} name={starters.away.name} teamAbbreviation={game.away.abbreviation} size={pitcherHeadshotSize} />
+            </div>
+            <div className="shrink-0 sm:hidden">
+              <PitcherHeadshot mlbId={starters.away.id} name={starters.away.name} teamAbbreviation={game.away.abbreviation} size={40} />
+            </div>
             <div className="min-w-0">
-              <div className="truncate text-[11px] font-bold text-white">{starters.away.name}</div>
-              <div className="text-[10px] text-white/50">{starters.away.record} · {awayEra} ERA</div>
-              <div className="text-[10px] text-white/40">{awayK9?.toFixed(1) ?? MLB_DASH} K/9</div>
+              <div className="truncate text-[12px] md:text-[13px] lg:text-[14px] font-bold text-white">{starters.away.name}</div>
+              <div className="text-[9px] md:text-[10px] text-white/50 font-medium">{starters.away.record} · {awayEra} ERA</div>
+              <div className="text-[9px] md:text-[10px] text-white/40 font-medium">{awayK9?.toFixed(1) ?? MLB_DASH} K/9</div>
             </div>
           </div>
           {/* Home pitcher */}
-          <div className="flex items-center justify-end gap-2 min-w-0">
+          <div className="flex items-center justify-end gap-2 md:gap-3 min-w-0">
             <div className="min-w-0 text-right">
-              <div className="truncate text-[11px] font-bold text-white">{starters.home.name}</div>
-              <div className="text-[10px] text-white/50">{starters.home.record} · {homeEra} ERA</div>
-              <div className="text-[10px] text-white/40">{homeK9?.toFixed(1) ?? MLB_DASH} K/9</div>
+              <div className="truncate text-[12px] md:text-[13px] lg:text-[14px] font-bold text-white">{starters.home.name}</div>
+              <div className="text-[9px] md:text-[10px] text-white/50 font-medium">{starters.home.record} · {homeEra} ERA</div>
+              <div className="text-[9px] md:text-[10px] text-white/40 font-medium">{homeK9?.toFixed(1) ?? MLB_DASH} K/9</div>
             </div>
-            <PitcherHeadshot mlbId={starters.home.id} name={starters.home.name} teamAbbreviation={game.home.abbreviation} size={40} />
+            <div className="shrink-0 hidden sm:block">
+              <PitcherHeadshot mlbId={starters.home.id} name={starters.home.name} teamAbbreviation={game.home.abbreviation} size={pitcherHeadshotSize} />
+            </div>
+            <div className="shrink-0 sm:hidden">
+              <PitcherHeadshot mlbId={starters.home.id} name={starters.home.name} teamAbbreviation={game.home.abbreviation} size={40} />
+            </div>
           </div>
         </div>
 
@@ -165,21 +187,21 @@ export default function MlbMatchupHero({ detail, spotlight }: MlbMatchupHeroProp
         <div className="grid grid-cols-3 gap-1.5 sm:hidden">
           {edgePills.map((e) => (
             <div key={e.label} className="flex flex-col items-center rounded-lg px-2 py-1.5 text-white" style={{ backgroundColor: edgeBg(e.value) }}>
-              <span className="text-[9px] font-bold uppercase tracking-[0.1em] opacity-70">{e.label}</span>
-              <span className="text-[11px] font-extrabold leading-tight">{e.value}</span>
+              <span className="text-[8px] font-bold uppercase tracking-[0.1em] opacity-70">{e.label}</span>
+              <span className="text-[10px] font-extrabold leading-tight">{e.value}</span>
             </div>
           ))}
         </div>
 
         {/* Spotlight angle */}
         {spotlight && (
-          <div className="rounded-lg border border-white/10 bg-white/8 px-3 py-2">
+          <div className="rounded-lg border border-white/10 bg-white/8 px-3 md:px-4 py-2 md:py-3">
             <div className="flex items-start gap-2">
               <div className="mt-0.5 shrink-0 text-white/60">{spotlight.icon}</div>
               <div className="min-w-0">
-                <div className="text-[9px] font-bold uppercase tracking-[0.1em] text-white/50">{spotlight.eyebrow}</div>
-                <div className="text-xs font-bold text-white">{spotlight.title}</div>
-                <div className="text-[10px] leading-4 text-white/60">{spotlight.note}</div>
+                <div className="text-[8px] md:text-[9px] font-bold uppercase tracking-[0.1em] text-white/50">{spotlight.eyebrow}</div>
+                <div className="text-xs md:text-sm font-bold text-white">{spotlight.title}</div>
+                <div className="text-[10px] md:text-[11px] leading-4 text-white/60">{spotlight.note}</div>
               </div>
             </div>
           </div>
