@@ -1,9 +1,9 @@
 {
   "date": "2026-06-13",
-  "generatedAt": "2026-06-13T10:41:29.904Z",
+  "generatedAt": "2026-06-13T11:27:24.776Z",
   "slatePreview": {
-    "slateOverview": "Kauffman Stadium and Progressive Field suppress power but the model still elevates Yordan Alvarez and Dillon Dingler because of elite barrel and exit-velo marks against lefties. Coors-like conditions at Las Vegas Ballpark and a 1.10 park factor at Camden Yards boost Nick Kurtz and Pete Alonso, while Yamamoto’s strikeout rate in Rate Field creates a contrarian power lane for Braden Montgomery.",
-    "modelNote": "The model is overweighting barrel rate, hard-hit rate, and recent home-run volume while discounting park suppression when the underlying contact metrics are elite."
+    "slateOverview": "Kauffman and Camden Yards stand out as the most HR-friendly venues today, while Coors and Rate Field also carry elevated park factors. Lefties Cameron, Freeland, and Cantillo face several high-barrel, pull-heavy bats, and the model is keying on those platoon and park edges.",
+    "modelNote": "The model is overweighting barrel rate, recent HR volume, and opposing pitcher HR rates, which is why Alvarez and Kurtz occupy the top two spots despite modest park factors for some names lower on the list."
   },
   "bestBets": [
     {
@@ -17,8 +17,8 @@
         "hrScore=77.9"
       ],
       "bullets": [
-        "barrelRate 19.1 and exitVelo 94.9",
-        "last30HR 10 with hrFBRatio 9.5"
+        "barrelRate 19.1 with 94.9 exitVelo",
+        "last30HR 10 and hrFBRatio 9.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -34,8 +34,8 @@
         "opposingPitcherHrVs=71.5"
       ],
       "bullets": [
-        "opposingPitcherHrVs 71.5 and hardHitRate 57.4",
-        "last7HR 5 with exitVelo 94.2"
+        "last7HR 5 and last30HR 9",
+        "opposingPitcherHrVs 71.5 with parkFactor 1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,8 +51,8 @@
         "hardHitRate=58.6"
       ],
       "bullets": [
-        "barrelRate 25.4 and exitVelo 95.9",
-        "hardHitRate 58.6 with iso 0.271"
+        "barrelRate 25.4 with 95.9 exitVelo",
+        "hardHitRate 58.6 and iso 0.271"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -68,8 +68,8 @@
         "parkFactor=1.1"
       ],
       "bullets": [
-        "opposingPitcherHrVs 82.4 and parkFactor 1.1",
-        "last30HR 7 with hardHitRate 55.7"
+        "opposingPitcherHrVs 82.4 with parkFactor 1.1",
+        "last30HR 7 and hardHitRate 55.7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -81,52 +81,18 @@
       "opposingPitcher": "Joey Cantillo",
       "hrScoreRank": 5,
       "topStats": [
-        "pullRate=42.2",
-        "last30HR=8"
+        "xba=0.292",
+        "pullRate=42.2"
       ],
       "bullets": [
-        "last30HR 8 and pullRate 42.2",
-        "hardHitRate 51.1 with exitVelo 90.8"
+        "xba 0.292 with last30HR 8",
+        "pullRate 42.2 and barrelRate 13.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     }
   ],
   "valueBets": [
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "SD",
-      "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 4,
-      "topStats": [
-        "opposingPitcherHrVs=82.4",
-        "parkFactor=1.1"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs 82.4 and parkFactor 1.1",
-        "last30HR 7 with hardHitRate 55.7"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Dillon Dingler",
-      "team": "DET",
-      "opponent": "CLE",
-      "opposingPitcher": "Joey Cantillo",
-      "hrScoreRank": 5,
-      "topStats": [
-        "pullRate=42.2",
-        "last30HR=8"
-      ],
-      "bullets": [
-        "last30HR 8 and pullRate 42.2",
-        "hardHitRate 51.1 with exitVelo 90.8"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
     {
       "player": "Lars Nootbaar",
       "team": "STL",
@@ -135,11 +101,11 @@
       "hrScoreRank": 6,
       "topStats": [
         "hrFBRatio=7.4",
-        "pullRate=45"
+        "whiffRate=12.8"
       ],
       "bullets": [
-        "pullRate 45 and hrFBRatio 7.4",
-        "hardHitRate 55 with exitVelo 94"
+        "hrFBRatio 7.4 with exitVelo 94",
+        "whiffRate 12.8 and barrelRate 20"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -151,12 +117,29 @@
       "opposingPitcher": "Griffin Jax",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=54.2",
-        "Hard Hit%=51.8"
+        "barrelRate=21",
+        "bbRate=20.8"
       ],
       "bullets": [
-        "HR score 65.1 (#7)",
-        "Pitcher HR VS 54.2 at park 1.02"
+        "barrelRate 21 with exitVelo 91.8",
+        "bbRate 20.8 and parkFactor 1.02"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "PHI",
+      "opposingPitcher": "Aaron Nola",
+      "hrScoreRank": 9,
+      "topStats": [
+        "pullRate=41.2",
+        "last30HR=7"
+      ],
+      "bullets": [
+        "pullRate 41.2 with last30HR 7",
+        "hardHitRate 54.7 and exitVelo 92.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -191,25 +174,8 @@
         "iso=0.417"
       ],
       "bullets": [
-        "hardHitRate 77.8 and iso 0.417",
-        "barrelRate 22.2 with exitVelo 93.9"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "PHI",
-      "opposingPitcher": "Aaron Nola",
-      "hrScoreRank": 9,
-      "topStats": [
-        "pullRate=41.2",
-        "last30HR=7"
-      ],
-      "bullets": [
-        "last30HR 7 and pullRate 41.2",
-        "hardHitRate 54.7 with exitVelo 92.5"
+        "hardHitRate 77.8 with iso 0.417",
+        "barrelRate 22.2 and xba 0.351"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -221,12 +187,29 @@
       "opposingPitcher": "Matthew Liberatore",
       "hrScoreRank": 10,
       "topStats": [
-        "Pitcher HR VS=62.0",
-        "Hard Hit%=47.7"
+        "last7HR=3",
+        "hrFBRatio=8.7"
       ],
       "bullets": [
-        "HR score 64.2 (#10)",
-        "Pitcher HR VS 62.0 at park 0.97"
+        "last7HR 3 with hrFBRatio 8.7",
+        "iso 0.319 and pullRate 47.7"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "PHI",
+      "opposingPitcher": "Aaron Nola",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Hard Hit%=54.7",
+        "Pitcher HR VS=46.7"
+      ],
+      "bullets": [
+        "HR score 64.7 (#9)",
+        "Pitcher HR VS 46.7 at park 1.10"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
