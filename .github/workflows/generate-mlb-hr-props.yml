@@ -6,18 +6,22 @@ on:
     paths:
       - '.github/workflows/generate-mlb-hr-props.yml'
   schedule:
-    # NOTE: minute-0 crons are GitHub's most congested slots and get silently
-    # dropped under load. All slots use off-peak minutes + backup runs.
-    # ~3 AM ET — daily morning refresh (primary + backups)
+    # GitHub silently drops scheduled runs under load, especially overnight.
+    # Strategy: many hourly attempts through the morning. The script + commit
+    # step are idempotent (no-op when data unchanged), so extra runs are free.
+    # Each run regenerates for the CURRENT ET date, so the first one to fire
+    # after midnight ET produces the correct day's slate.
+    - cron: "23 6 * * *"   # 2:23 AM EDT
     - cron: "23 7 * * *"   # 3:23 AM EDT
-    - cron: "23 8 * * *"   # 4:23 AM EDT backup / 3:23 AM EST
-    - cron: "23 9 * * *"   # 5:23 AM EDT safety net / 4:23 AM EST backup
-    # ~9 AM ET — lineups largely confirmed
+    - cron: "23 8 * * *"   # 4:23 AM EDT
+    - cron: "23 9 * * *"   # 5:23 AM EDT
+    - cron: "23 10 * * *"  # 6:23 AM EDT
+    - cron: "23 11 * * *"  # 7:23 AM EDT
+    - cron: "23 12 * * *"  # 8:23 AM EDT
     - cron: "23 13 * * *"  # 9:23 AM EDT
-    - cron: "23 14 * * *"  # 9:23 AM EST / 10:23 AM EDT backup
-    # ~11:40 AM ET — final check before afternoon games
-    - cron: "40 15 * * *"  # 11:40 AM EDT
-    - cron: "40 16 * * *"  # 11:40 AM EST
+    - cron: "23 14 * * *"  # 10:23 AM EDT
+    - cron: "40 15 * * *"  # 11:40 AM EDT — final pre-game
+    - cron: "40 16 * * *"  # 12:40 PM EDT
   workflow_dispatch:
 
 concurrency:
