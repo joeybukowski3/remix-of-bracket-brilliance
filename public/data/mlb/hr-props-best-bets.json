@@ -1,9 +1,9 @@
 {
   "date": "2026-06-13",
-  "generatedAt": "2026-06-13T13:00:44.118Z",
+  "generatedAt": "2026-06-13T14:33:17.046Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly parks with elevated park factors, including Camden Yards (1.1) and American Family Field (1.1), while Kauffman Stadium (0.96) and Progressive Field (0.91) play more neutral to pitcher-friendly. Key lefty-lefty matchups like Alvarez vs. Cameron and Kurtz vs. Freeland stand out, with opposing pitcher HR rates (46.9-82.4) creating favorable conditions for power bats despite some neutral weather angles.",
-    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and recent HR volume over traditional park factors, elevating Alvarez and Kurtz to the top despite modest park factors due to their elite exit velo and barrel profiles against vulnerable lefties."
+    "slateOverview": "Today's slate features a handful of hitter-friendly venues with park factors at or above 1.00, including Camden Yards (1.10) and American Family Field (1.10), while several lefty-vs-lefty matchups like Alvarez vs Cameron and Kurtz vs Freeland stand out as prime power spots. Warm, dry conditions are expected across most eastern and midwestern parks, boosting carry and exit velo in already favorable environments.",
+    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and recent HR volume, which is why Alvarez and Kurtz top the board despite facing lefties, while also elevating Buxton for his elevated pull rate and last-seven surge."
   },
   "bestBets": [
     {
@@ -17,7 +17,7 @@
         "hrScore=77.9"
       ],
       "bullets": [
-        "barrelRate 19.1 with exitVelo 94.9",
+        "barrelRate 19.1 and exitVelo 94.9",
         "opposingPitcherHrVs 46.9"
       ],
       "hrOddsYes": null,
@@ -34,8 +34,8 @@
         "last7HR=5"
       ],
       "bullets": [
-        "last7HR 5 with opposingPitcherHrVs 71.5",
-        "parkFactor 1"
+        "last7HR 5 and last30HR 9",
+        "opposingPitcherHrVs 71.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,7 +51,7 @@
         "hardHitRate=58.6"
       ],
       "bullets": [
-        "barrelRate 25.4 with exitVelo 95.9",
+        "barrelRate 25.4 and exitVelo 95.9",
         "opposingPitcherHrVs 66.6"
       ],
       "hrOddsYes": null,
@@ -68,7 +68,7 @@
         "opposingPitcherHrVs=82.4"
       ],
       "bullets": [
-        "parkFactor 1.1 with opposingPitcherHrVs 82.4",
+        "parkFactor 1.1 and opposingPitcherHrVs 82.4",
         "last30HR 7"
       ],
       "hrOddsYes": null,
@@ -85,7 +85,7 @@
         "last30HR=8"
       ],
       "bullets": [
-        "pullRate 42.2 with last30HR 8",
+        "last30HR 8 and last7HR 2",
         "opposingPitcherHrVs 47.6"
       ],
       "hrOddsYes": null,
@@ -104,8 +104,8 @@
         "pullRate=45"
       ],
       "bullets": [
-        "hrFBRatio 7.4 with pullRate 45",
-        "exitVelo 94"
+        "hrFBRatio 7.4 and exitVelo 94",
+        "opposingPitcherHrVs 37.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -121,8 +121,8 @@
         "bbRate=20.8"
       ],
       "bullets": [
-        "barrelRate 21 with bbRate 20.8",
-        "parkFactor 1.02"
+        "barrelRate 21 and exitVelo 91.8",
+        "opposingPitcherHrVs 54.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -138,8 +138,8 @@
         "last30HR=7"
       ],
       "bullets": [
-        "pullRate 41.2 with last30HR 7",
-        "parkFactor 1.1"
+        "last30HR 7 and last7HR 2",
+        "opposingPitcherHrVs 46.7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -174,25 +174,25 @@
         "iso=0.417"
       ],
       "bullets": [
-        "hardHitRate 77.8 with iso 0.417",
-        "exitVelo 93.9"
+        "hardHitRate 77.8 and exitVelo 93.9",
+        "opposingPitcherHrVs 30.3"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Byron Buxton",
-      "team": "MIN",
-      "opponent": "STL",
-      "opposingPitcher": "Matthew Liberatore",
-      "hrScoreRank": 10,
+      "player": "Shea Langeliers",
+      "team": "ATH",
+      "opponent": "COL",
+      "opposingPitcher": "Kyle Freeland",
+      "hrScoreRank": 11,
       "topStats": [
-        "iso=0.319",
-        "last7HR=3"
+        "opposingPitcherHrVs=71.5",
+        "last30HR=6"
       ],
       "bullets": [
-        "iso 0.319 with last7HR 3",
-        "hrFBRatio 8.7"
+        "opposingPitcherHrVs 71.5 and last30HR 6",
+        "last7HR 2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -210,6 +210,23 @@
       "bullets": [
         "HR score 64.7 (#9)",
         "Pitcher HR VS 46.7 at park 1.10"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Byron Buxton",
+      "team": "MIN",
+      "opponent": "STL",
+      "opposingPitcher": "Matthew Liberatore",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Pitcher HR VS=62.0",
+        "Hard Hit%=47.7"
+      ],
+      "bullets": [
+        "HR score 64.2 (#10)",
+        "Pitcher HR VS 62.0 at park 0.97"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
