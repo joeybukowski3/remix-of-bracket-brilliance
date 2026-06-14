@@ -1,41 +1,41 @@
 {
-  "date": "2026-06-13",
-  "generatedAt": "2026-06-13T17:56:07.533Z",
+  "date": "2026-06-14",
+  "generatedAt": "2026-06-14T09:59:25.013Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly venues with park factors at or above 1.06, including Citi Field, Camden Yards, and Rate Field, while Kauffman Stadium and Progressive Field suppress power. Favorable left-on-left and right-on-right matchups against Freeland, Pérez, and Vásquez create elevated barrel and exit velo opportunities, especially for power bats like Alvarez and Kurtz.",
-    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and recent HR volume while adjusting for park factors and opposing pitcher HR vulnerability, pushing Alvarez and Kurtz to the top despite some neutral park environments."
+    "slateOverview": "Vegas and Camden lead the way with neutral-to-plus home run environments, while Kauffman and Progressive suppress power. Sugano’s fly-ball tendencies against Kurtz’s elite barrel and exit-velo profile, plus Buehler’s diminished stuff versus Alonso’s pull-side pop, stand out as the clearest edges.",
+    "modelNote": "The model is prioritizing barrel rate, recent home-run volume, and opposing pitcher HR vulnerability over park factor alone, which is why Kurtz and Alvarez sit at the top despite differing venue effects."
   },
   "bestBets": [
     {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "KC",
-      "opposingPitcher": "Noah Cameron",
+      "player": "Nick Kurtz",
+      "team": "ATH",
+      "opponent": "COL",
+      "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 1,
       "topStats": [
-        "barrelRate=19.1",
-        "exitVelo=94.9"
+        "barrelRate=18.7",
+        "hrFBRatio=6.4"
       ],
       "bullets": [
-        "barrelRate 19.1 and hardHitRate 54.2",
-        "last30HR 10 with hrFBRatio 9.5"
+        "opposingPitcherHrVs=81.9",
+        "last7HR=4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Nick Kurtz",
-      "team": "ATH",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "KC",
+      "opposingPitcher": "Stephen Kolek",
       "hrScoreRank": 2,
       "topStats": [
-        "hardHitRate=57.4",
-        "exitVelo=94.2"
+        "xba=0.348",
+        "iso=0.331"
       ],
       "bullets": [
-        "opposingPitcherHrVs 71.7 and last7HR 5",
-        "barrelRate 18.7 with xba 0.255"
+        "hardHitRate=54.2",
+        "last30HR=10"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -44,15 +44,68 @@
       "player": "James Wood",
       "team": "WSH",
       "opponent": "SEA",
-      "opposingPitcher": "Luis Castillo",
+      "opposingPitcher": "Emerson Hancock",
       "hrScoreRank": 3,
       "topStats": [
         "barrelRate=25.4",
-        "hardHitRate=58.6"
+        "exitVelo=95.9"
       ],
       "bullets": [
-        "barrelRate 25.4 and exitVelo 95.9",
-        "opposingPitcherHrVs 66.6 with last30HR 7"
+        "hardHitRate=58.6",
+        "opposingPitcherHrVs=57.7"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "CWS",
+      "opposingPitcher": "Erick Fedde",
+      "hrScoreRank": 4,
+      "topStats": [
+        "pullRate=52.5",
+        "parkFactor=1.07"
+      ],
+      "bullets": [
+        "last7HR=3",
+        "opposingPitcherHrVs=47.9"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Lars Nootbaar",
+      "team": "STL",
+      "opponent": "MIN",
+      "opposingPitcher": "Taj Bradley",
+      "hrScoreRank": 5,
+      "topStats": [
+        "iso=0.286",
+        "hrFBRatio=7.1"
+      ],
+      "bullets": [
+        "hardHitRate=55",
+        "opposingPitcherHrVs=60.4"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "SD",
+      "opposingPitcher": "Walker Buehler",
+      "hrScoreRank": 10,
+      "topStats": [
+        "parkFactor=1.1",
+        "exitVelo=94.9"
+      ],
+      "bullets": [
+        "last30HR=8",
+        "opposingPitcherHrVs=48"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -61,68 +114,15 @@
       "player": "Juan Soto",
       "team": "NYM",
       "opponent": "ATL",
-      "opposingPitcher": "Martín Pérez",
-      "hrScoreRank": 4,
-      "topStats": [
-        "parkFactor=1.06",
-        "exitVelo=93.1"
-      ],
-      "bullets": [
-        "parkFactor 1.06 and last30HR 10",
-        "opposingPitcherHrVs 40.6 with kRate 13.5"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "SD",
-      "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 5,
-      "topStats": [
-        "parkFactor=1.1",
-        "hardHitRate=55.7"
-      ],
-      "bullets": [
-        "parkFactor 1.1 and opposingPitcherHrVs 82.5",
-        "exitVelo 94.9 with last30HR 7"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Matt Olson",
-      "team": "ATL",
-      "opponent": "NYM",
-      "opposingPitcher": "Sean Manaea",
+      "opposingPitcher": "Bryce Elder",
       "hrScoreRank": 7,
       "topStats": [
-        "iso=0.293",
-        "exitVelo=93.6"
+        "hrFBRatio=7.7",
+        "parkFactor=1.06"
       ],
       "bullets": [
-        "iso 0.293 and hrFBRatio 7.4",
-        "parkFactor 1.06 with last7HR 3"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "TB",
-      "opposingPitcher": "Griffin Jax",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrelRate=21",
-        "bbRate=20.8"
-      ],
-      "bullets": [
-        "barrelRate 21 and exitVelo 91.8",
-        "opposingPitcherHrVs 54.4 with parkFactor 1.02"
+        "last30HR=9",
+        "opposingPitcherHrVs=20.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -131,15 +131,15 @@
       "player": "Byron Buxton",
       "team": "MIN",
       "opponent": "STL",
-      "opposingPitcher": "Matthew Liberatore",
-      "hrScoreRank": 12,
+      "opposingPitcher": "Michael McGreevy",
+      "hrScoreRank": 9,
       "topStats": [
-        "iso=0.319",
-        "hrFBRatio=8.7"
+        "iso=0.327",
+        "hrFBRatio=9"
       ],
       "bullets": [
-        "iso 0.319 and hrFBRatio 8.7",
-        "last7HR 3 with opposingPitcherHrVs 62.2"
+        "last7HR=4",
+        "opposingPitcherHrVs=58.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -148,15 +148,32 @@
       "player": "Dillon Dingler",
       "team": "DET",
       "opponent": "CLE",
-      "opposingPitcher": "Joey Cantillo",
+      "opposingPitcher": "Gavin Williams",
       "hrScoreRank": 6,
       "topStats": [
-        "Hard Hit%=51.1",
-        "Pitcher HR VS=47.9"
+        "Pitcher HR VS=66.7",
+        "Hard Hit%=51.1"
       ],
       "bullets": [
-        "HR score 67.0 (#6)",
-        "Pitcher HR VS 47.9 at park 0.91"
+        "HR score 69.6 (#6)",
+        "Pitcher HR VS 66.7 at park 0.91"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "MIN",
+      "opposingPitcher": "Taj Bradley",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=60.4",
+        "Hard Hit%=48.1"
+      ],
+      "bullets": [
+        "HR score 69.0 (#8)",
+        "Pitcher HR VS 60.4 at park 0.97"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -164,52 +181,69 @@
   ],
   "longshots": [
     {
-      "player": "Braden Montgomery",
-      "team": "CWS",
-      "opponent": "LAD",
-      "opposingPitcher": "Yoshinobu Yamamoto",
+      "player": "Nelson Velázquez",
+      "team": "STL",
+      "opponent": "MIN",
+      "opposingPitcher": "Taj Bradley",
+      "hrScoreRank": 11,
+      "topStats": [
+        "hardHitRate=64.7",
+        "xba=0.349"
+      ],
+      "bullets": [
+        "pullRate=58.8",
+        "opposingPitcherHrVs=60.4"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "MIN",
+      "opposingPitcher": "Taj Bradley",
+      "hrScoreRank": 8,
+      "topStats": [
+        "last7HR=4",
+        "pullRate=46.8"
+      ],
+      "bullets": [
+        "last30HR=6",
+        "opposingPitcherHrVs=60.4"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Byron Buxton",
+      "team": "MIN",
+      "opponent": "STL",
+      "opposingPitcher": "Michael McGreevy",
       "hrScoreRank": 9,
       "topStats": [
-        "hardHitRate=77.8",
-        "iso=0.417"
+        "Pitcher HR VS=58.5",
+        "Hard Hit%=47.7"
       ],
       "bullets": [
-        "hardHitRate 77.8 and barrelRate 22.2",
-        "iso 0.417 with xba 0.351"
+        "HR score 68.5 (#9)",
+        "Pitcher HR VS 58.5 at park 0.97"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Corbin Carroll",
-      "team": "AZ",
-      "opponent": "CIN",
-      "opposingPitcher": "Rhett Lowder",
-      "hrScoreRank": 19,
-      "topStats": [
-        "parkFactor=1.25",
-        "pullRate=43.5"
-      ],
-      "bullets": [
-        "parkFactor 1.25 and exitVelo 91.9",
-        "opposingPitcherHrVs 50.8 with last30HR 6"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "PHI",
-      "opposingPitcher": "Aaron Nola",
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "SD",
+      "opposingPitcher": "Walker Buehler",
       "hrScoreRank": 10,
       "topStats": [
-        "Hard Hit%=54.7",
-        "Pitcher HR VS=47.0"
+        "Hard Hit%=55.7",
+        "Pitcher HR VS=48.0"
       ],
       "bullets": [
-        "HR score 64.9 (#10)",
-        "Pitcher HR VS 47.0 at park 1.10"
+        "HR score 68.0 (#10)",
+        "Pitcher HR VS 48.0 at park 1.10"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
