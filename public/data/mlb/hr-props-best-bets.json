@@ -1,9 +1,9 @@
 {
   "date": "2026-06-15",
-  "generatedAt": "2026-06-15T19:31:47.449Z",
+  "generatedAt": "2026-06-15T20:06:23.041Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features strong HR conditions at Great American Ball Park (1.25) and Citizens Bank Park (1.17), with Chase Field and Daikin Park also playing favorably. Right-handed pitching dominates the top matchups, but several arms like Mitch Spence and Ryne Nelson carry elevated HR rates that create exploitable edges for power bats. Warm, dry conditions across most venues should keep the ball carrying, amplifying the leverage of high barrel and hard-hit profiles.",
-    "modelNote": "The model is prioritizing barrel rate, exit velocity, and recent HR volume while heavily discounting high whiff and K rates, which explains why Alvarez, Wood, and Soto occupy the top three spots despite varying park factors."
+    "slateOverview": "Today's slate features several hitter-friendly parks with elevated park factors, most notably Great American Ball Park (1.25) and Citizens Bank Park (1.17). Favorable right-handed pitching matchups against power bats in Yordan Alvarez, Juan Soto, and James Wood create prime HR conditions, while Chase Field and Dodger Stadium add additional boost for Trout and Ohtani.",
+    "modelNote": "The model is heavily weighting barrel rate, hard-hit metrics, and recent HR volume, elevating Alvarez and Wood to the top despite varying park factors, while incorporating opposing pitcher HR vulnerability as a key secondary driver."
   },
   "bestBets": [
     {
@@ -17,8 +17,8 @@
         "hrFBRatio=9.2"
       ],
       "bullets": [
-        "barrelRate 18.4 with exitVelo 94.4",
-        "parkFactor 1.04 vs pitcher HR/9 35.5"
+        "barrelRate 18.4 and exitVelo 94.4",
+        "parkFactor 1.04 with opposingPitcherHrVs 35.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -34,8 +34,8 @@
         "hardHitRate=58.5"
       ],
       "bullets": [
-        "barrelRate 25 with exitVelo 95.7",
-        "last7HR 3 vs pitcher HR/9 54.4"
+        "barrelRate 25 and exitVelo 95.7",
+        "last7HR 3 with opposingPitcherHrVs 54.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -52,7 +52,7 @@
       ],
       "bullets": [
         "parkFactor 1.25 with xba 0.302",
-        "last30HR 9 vs pitcher HR/9 36.1"
+        "last30HR 9 and opposingPitcherHrVs 36.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -68,8 +68,8 @@
         "pullRate=52.2"
       ],
       "bullets": [
-        "hardHitRate 53.8 with exitVelo 93.8",
-        "last7HR 3 vs pitcher HR/9 31.5"
+        "hardHitRate 53.8 and exitVelo 93.8",
+        "last7HR 3 with parkFactor 1.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -85,8 +85,8 @@
         "opposingPitcherHrVs=65.3"
       ],
       "bullets": [
-        "hardHitRate 57.1 with barrelRate 18",
-        "opposingPitcherHrVs 65.3 vs parkFactor 0.96"
+        "hardHitRate 57.1 and barrelRate 18",
+        "opposingPitcherHrVs 65.3 with last30HR 8"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -101,11 +101,11 @@
       "hrScoreRank": 6,
       "topStats": [
         "barrelRate=20.8",
-        "opposingPitcherHrVs=64.2"
+        "hardHitRate=51.7"
       ],
       "bullets": [
-        "barrelRate 20.8 with hardHitRate 51.7",
-        "opposingPitcherHrVs 64.2 vs parkFactor 1.01"
+        "barrelRate 20.8 and exitVelo 91.4",
+        "opposingPitcherHrVs 64.2 with parkFactor 1.01"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -117,12 +117,12 @@
       "opposingPitcher": "Kai-Wei Teng",
       "hrScoreRank": 7,
       "topStats": [
-        "iso=0.271",
+        "hardHitRate=51.6",
         "last30HR=8"
       ],
       "bullets": [
-        "iso 0.271 with hardHitRate 51.6",
-        "last30HR 8 vs pitcher HR/9 33.5"
+        "hardHitRate 51.6 and exitVelo 90.9",
+        "last30HR 8 with parkFactor 1.04"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -138,8 +138,8 @@
         "pullRate=46.2"
       ],
       "bullets": [
-        "last7HR 5 with last30HR 7",
-        "pullRate 46.2 vs pitcher HR/9 28"
+        "last7HR 5 and exitVelo 91.5",
+        "opposingPitcherHrVs 28 with parkFactor 0.92"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -154,11 +154,11 @@
       "hrScoreRank": 10,
       "topStats": [
         "hrFBRatio=9.3",
-        "parkFactor=1.17"
+        "pullRate=55.5"
       ],
       "bullets": [
-        "hrFBRatio 9.3 with barrelRate 20.8",
-        "parkFactor 1.17 vs pitcher HR/9 60.2"
+        "hrFBRatio 9.3 and barrelRate 20.8",
+        "parkFactor 1.17 with opposingPitcherHrVs 60.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -171,11 +171,11 @@
       "hrScoreRank": 12,
       "topStats": [
         "last30HR=9",
-        "pullRate=51.9"
+        "last7HR=3"
       ],
       "bullets": [
-        "last30HR 9 with last7HR 3",
-        "pullRate 51.9 vs pitcher HR/9 49.1"
+        "last30HR 9 and barrelRate 16",
+        "opposingPitcherHrVs 49.1 with iso 0.286"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -191,7 +191,7 @@
         "Pitcher HR VS=28.0"
       ],
       "bullets": [
-        "HR score 64.9 (#9)",
+        "HR score 65.0 (#9)",
         "Pitcher HR VS 28.0 at park 0.92"
       ],
       "hrOddsYes": null,
