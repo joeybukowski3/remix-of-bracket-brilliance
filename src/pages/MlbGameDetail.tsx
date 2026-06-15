@@ -1903,8 +1903,6 @@ function HomeSchedule({
     strikeoutRows,
     pendingGames,
     nextRunAt,
-    stale,
-    propDate,
   } = useMlbPropsData();
   // Apply the same pitcher-weighted enrichment as MlbHrProps.tsx so both tables are consistent
   const enrichedPropBatters = useMemo(() => {
