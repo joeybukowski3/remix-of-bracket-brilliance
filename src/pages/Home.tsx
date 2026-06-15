@@ -23,7 +23,6 @@ const sports = [
     name: "NFL",
     route: "/nfl",
     logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png",
-    locked: true,
   },
   {
     id: "nba",
