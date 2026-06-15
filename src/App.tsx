@@ -20,6 +20,7 @@ import MlbStrikeoutProps from "./pages/MlbStrikeoutProps";
 import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NFL from "./pages/NFL";
+import NFLStandings from "./pages/NFLStandings";
 import ComingSoon from "./pages/ComingSoon";
 import WorldCup2026 from "./pages/WorldCup2026";
 import PublicBetting from "./pages/PublicBetting";
@@ -82,6 +83,7 @@ const App = () => (
           <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/nfl" element={<NFL />} />
+          <Route path="/nfl/standings" element={<NFLStandings />} />
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/world-cup" element={<WorldCup2026 />} />
           <Route path="/public-betting" element={<PublicBetting />} />
