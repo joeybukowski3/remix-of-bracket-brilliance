@@ -1,41 +1,41 @@
 {
   "date": "2026-06-15",
-  "generatedAt": "2026-06-15T18:50:41.277Z",
+  "generatedAt": "2026-06-15T19:31:47.449Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly parks with elevated park factors, including Great American Ball Park (1.25) and Citizens Bank Park (1.17), creating favorable conditions for power. Right-handed pitching dominates the slate, but several matchups feature pitchers with elevated HR rates allowed, particularly Jared Jones (65.6) and Ryne Nelson (64.4).",
-    "modelNote": "The model prioritizes barrel rate, exit velocity, and recent power trends, elevating James Wood to the top spot despite a neutral park due to his elite 25% barrel rate and 95.7 mph exit velo."
+    "slateOverview": "Today's slate features strong HR conditions at Great American Ball Park (1.25) and Citizens Bank Park (1.17), with Chase Field and Daikin Park also playing favorably. Right-handed pitching dominates the top matchups, but several arms like Mitch Spence and Ryne Nelson carry elevated HR rates that create exploitable edges for power bats. Warm, dry conditions across most venues should keep the ball carrying, amplifying the leverage of high barrel and hard-hit profiles.",
+    "modelNote": "The model is prioritizing barrel rate, exit velocity, and recent HR volume while heavily discounting high whiff and K rates, which explains why Alvarez, Wood, and Soto occupy the top three spots despite varying park factors."
   },
   "bestBets": [
-    {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "KC",
-      "opposingPitcher": "Mitch Spence",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrelRate=25",
-        "hrScore=78.9"
-      ],
-      "bullets": [
-        "barrelRate 25 and exitVelo 95.7",
-        "last7HR 3 and last30HR 8"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "DET",
       "opposingPitcher": "Troy Melton",
-      "hrScoreRank": 2,
+      "hrScoreRank": 1,
       "topStats": [
-        "xba=0.347",
-        "iso=0.325"
+        "barrelRate=18.4",
+        "hrFBRatio=9.2"
       ],
       "bullets": [
-        "parkFactor 1.04 and hardHitRate 52.6",
-        "last30HR 9 and hrFBRatio 9.2"
+        "barrelRate 18.4 with exitVelo 94.4",
+        "parkFactor 1.04 vs pitcher HR/9 35.5"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "KC",
+      "opposingPitcher": "Mitch Spence",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrelRate=25",
+        "hardHitRate=58.5"
+      ],
+      "bullets": [
+        "barrelRate 25 with exitVelo 95.7",
+        "last7HR 3 vs pitcher HR/9 54.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -48,11 +48,11 @@
       "hrScoreRank": 3,
       "topStats": [
         "parkFactor=1.25",
-        "pullRate=37.9"
+        "last30HR=9"
       ],
       "bullets": [
-        "parkFactor 1.25 and last30HR 9",
-        "opposingPitcherHrVs 35.5 and exitVelo 93"
+        "parkFactor 1.25 with xba 0.302",
+        "last30HR 9 vs pitcher HR/9 36.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -64,12 +64,12 @@
       "opposingPitcher": "Nick Martinez",
       "hrScoreRank": 4,
       "topStats": [
-        "pullRate=52.2",
-        "last7HR=3"
+        "hardHitRate=53.8",
+        "pullRate=52.2"
       ],
       "bullets": [
-        "last7HR 3 and parkFactor 1.1",
-        "hardHitRate 53.8 and exitVelo 93.8"
+        "hardHitRate 53.8 with exitVelo 93.8",
+        "last7HR 3 vs pitcher HR/9 31.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -82,11 +82,11 @@
       "hrScoreRank": 5,
       "topStats": [
         "hardHitRate=57.1",
-        "opposingPitcherHrVs=65.6"
+        "opposingPitcherHrVs=65.3"
       ],
       "bullets": [
-        "opposingPitcherHrVs 65.6 and hardHitRate 57.1",
-        "last30HR 8 and exitVelo 94.1"
+        "hardHitRate 57.1 with barrelRate 18",
+        "opposingPitcherHrVs 65.3 vs parkFactor 0.96"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -94,35 +94,18 @@
   ],
   "valueBets": [
     {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "TB",
-      "opposingPitcher": "Nick Martinez",
-      "hrScoreRank": 4,
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "AZ",
+      "opposingPitcher": "Ryne Nelson",
+      "hrScoreRank": 6,
       "topStats": [
-        "pullRate=52.2",
-        "last7HR=3"
+        "barrelRate=20.8",
+        "opposingPitcherHrVs=64.2"
       ],
       "bullets": [
-        "last7HR 3 and parkFactor 1.1",
-        "hardHitRate 53.8 and exitVelo 93.8"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Nick Kurtz",
-      "team": "ATH",
-      "opponent": "PIT",
-      "opposingPitcher": "Jared Jones",
-      "hrScoreRank": 5,
-      "topStats": [
-        "hardHitRate=57.1",
-        "opposingPitcherHrVs=65.6"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs 65.6 and hardHitRate 57.1",
-        "last30HR 8 and exitVelo 94.1"
+        "barrelRate 20.8 with hardHitRate 51.7",
+        "opposingPitcherHrVs 64.2 vs parkFactor 1.01"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -132,71 +115,37 @@
       "team": "DET",
       "opponent": "HOU",
       "opposingPitcher": "Kai-Wei Teng",
-      "hrScoreRank": 6,
+      "hrScoreRank": 7,
       "topStats": [
-        "hardHitRate=51.6",
+        "iso=0.271",
         "last30HR=8"
       ],
       "bullets": [
-        "last30HR 8 and hardHitRate 51.6",
-        "parkFactor 1.04 and exitVelo 90.9"
+        "iso 0.271 with hardHitRate 51.6",
+        "last30HR 8 vs pitcher HR/9 33.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "AZ",
-      "opposingPitcher": "Ryne Nelson",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=64.4",
-        "Hard Hit%=51.7"
-      ],
-      "bullets": [
-        "HR score 67.3 (#7)",
-        "Pitcher HR VS 64.4 at park 1.01"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "CHC",
-      "opposingPitcher": "Shota Imanaga",
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "SD",
+      "opposingPitcher": "Wandy Peralta",
       "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=49.2",
-        "Hard Hit%=46.8"
+        "last7HR=5",
+        "pullRate=46.2"
       ],
       "bullets": [
-        "HR score 64.5 (#8)",
-        "Pitcher HR VS 49.2 at park 1.00"
+        "last7HR 5 with last30HR 7",
+        "pullRate 46.2 vs pitcher HR/9 28"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     }
   ],
   "longshots": [
-    {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "CHC",
-      "opposingPitcher": "Shota Imanaga",
-      "hrScoreRank": 8,
-      "topStats": [
-        "pullRate=51.9",
-        "last30HR=9"
-      ],
-      "bullets": [
-        "last30HR 9 and last7HR 3",
-        "hrFBRatio 7.9 and pullRate 51.9"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
     {
       "player": "Kyle Schwarber",
       "team": "PHI",
@@ -205,28 +154,45 @@
       "hrScoreRank": 10,
       "topStats": [
         "hrFBRatio=9.3",
-        "iso=0.321"
+        "parkFactor=1.17"
       ],
       "bullets": [
-        "hrFBRatio 9.3 and iso 0.321",
-        "parkFactor 1.17 and opposingPitcherHrVs 60"
+        "hrFBRatio 9.3 with barrelRate 20.8",
+        "parkFactor 1.17 vs pitcher HR/9 60.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Jac Caglianone",
-      "team": "KC",
-      "opponent": "WSH",
-      "opposingPitcher": "Andrew Alvarez",
-      "hrScoreRank": 9,
+      "player": "Hunter Goodman",
+      "team": "COL",
+      "opponent": "CHC",
+      "opposingPitcher": "Shota Imanaga",
+      "hrScoreRank": 12,
       "topStats": [
-        "Hard Hit%=56.8",
-        "Pitcher HR VS=52.7"
+        "last30HR=9",
+        "pullRate=51.9"
       ],
       "bullets": [
-        "HR score 63.4 (#9)",
-        "Pitcher HR VS 52.7 at park 0.98"
+        "last30HR 9 with last7HR 3",
+        "pullRate 51.9 vs pitcher HR/9 49.1"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Lars Nootbaar",
+      "team": "STL",
+      "opponent": "SD",
+      "opposingPitcher": "Wandy Peralta",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Hard Hit%=60.9",
+        "Pitcher HR VS=28.0"
+      ],
+      "bullets": [
+        "HR score 64.9 (#9)",
+        "Pitcher HR VS 28.0 at park 0.92"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
