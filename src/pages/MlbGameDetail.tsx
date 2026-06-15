@@ -1983,16 +1983,6 @@ function HomeSchedule({
               <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
             </div>
 
-            {stale && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 flex items-center gap-2 text-xs text-amber-800">
-                <span className="text-base">⏳</span>
-                <span>
-                  <span className="font-semibold">Today's props are generating</span>
-                  {" — showing {propDate} data while today's model refreshes. This updates automatically."
-                    .replace("{propDate}", propDate ?? "yesterday's")}
-                </span>
-              </div>
-            )}
             <div className="grid gap-3 md:grid-cols-3">
               <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" />
               <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" />
