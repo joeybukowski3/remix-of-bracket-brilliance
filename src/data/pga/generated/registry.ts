@@ -2,6 +2,7 @@ import { cadillacChampionship2026PicksTournament } from "@/data/pga/generated/ca
 import { charlesSchwabChallenge2026PicksTournament } from "@/data/pga/generated/charles-schwab-challenge-2026-picks";
 import { theMemorialTournament2026PicksTournament } from "@/data/pga/generated/the-memorial-tournament-2026-picks";
 import { zurichClassicOfNewOrleans2026PicksTournament } from "@/data/pga/generated/zurich-classic-of-new-orleans-2026-picks";
+import { usOpen2026PicksTournament } from "@/data/pga/generated/us-open-2026-picks";
 import type { PgaTournamentConfig } from "@/lib/pga/tournamentConfig";
 
 export const GENERATED_PGA_TOURNAMENTS = [
@@ -9,4 +10,5 @@ export const GENERATED_PGA_TOURNAMENTS = [
   charlesSchwabChallenge2026PicksTournament,
   theMemorialTournament2026PicksTournament,
   zurichClassicOfNewOrleans2026PicksTournament,
+  usOpen2026PicksTournament,
 ] as const satisfies readonly PgaTournamentConfig[];
