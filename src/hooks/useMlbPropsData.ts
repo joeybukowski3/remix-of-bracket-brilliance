@@ -119,21 +119,21 @@ export function useMlbPropsData() {
     const allBatters = dashboard?.batters ?? [];
     const tbdGameKeys = buildTbdGameKeySet(allPitchers, allBatters);
 
-    // Cross-validate against the live schedule: a prop game only counts if
-    // it's on today's actual MLB slate. This guarantees the prop tables can
-    // NEVER show a game the matchup cards don't, even if the file is stale.
-    // When liveGameKeys is empty (API hiccup) we fall back to showing all,
-    // so a transient fetch failure doesn't blank the tables.
+    // Cross-validate against live schedule: only show games that are on today's
+    // actual MLB slate. This prevents showing games from yesterday even when
+    // the prop file is stale. When liveGameKeys is empty (API hiccup), fall
+    // back to showing all data so a transient failure doesn't blank the tables.
     const hasLive = liveGameKeys.size > 0;
     const onSlate = (gameKey: string) => !hasLive || liveGameKeys.has(gameKey);
 
-    // If the file is stale AND we have a live schedule, suppress everything —
-    // better to show "updating" than yesterday's games.
-    const suppress = stale && hasLive;
-
-    const games = suppress ? [] : allGames.filter((game) => !tbdGameKeys.has(game.gameKey) && onSlate(game.gameKey));
-    const pitchers = suppress ? [] : allPitchers.filter((pitcher) => !tbdGameKeys.has(pitcher.gameKey) && onSlate(pitcher.gameKey) && !isStarterPlaceholder(pitcher.pitcher));
-    const batters = suppress ? [] : allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && onSlate(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher));
+    // CHANGED: Don't suppress everything when stale — the cross-validation above
+    // already filters out yesterday's games (they won't be on today's live slate).
+    // Instead, expose `stale` so the UI can show an "Updating..." banner.
+    // This means if today's games aren't on the live slate yet (early morning),
+    // the tables will show empty rows with the banner — much better than blank.
+    const games = allGames.filter((game) => !tbdGameKeys.has(game.gameKey) && onSlate(game.gameKey));
+    const pitchers = allPitchers.filter((pitcher) => !tbdGameKeys.has(pitcher.gameKey) && onSlate(pitcher.gameKey) && !isStarterPlaceholder(pitcher.pitcher));
+    const batters = allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && onSlate(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher));
     const batterVsPitcherRows = buildPitcherVsBatterRows(batters, games, pitchers);
     const strikeoutDetailRows = buildPitcherStrikeoutRows(batters, games, pitchers);
     const strikeoutRows = buildPitcherStrikeoutMatchupRows(pitchers, batters, games);
