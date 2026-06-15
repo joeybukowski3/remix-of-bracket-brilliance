@@ -22,135 +22,93 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Sync PGA Tour Schedule
+      - name: Update tournament statuses from dates
         run: |
           node << 'SCRIPT'
           const fs = require('fs');
-          const https = require('https');
 
-          // Fetch from PGA Tour schedule (using ESPN as backup source)
-          const schedules = [
-            // Try to get from ESPN first
-            'https://site.api.espn.com/apis/site/v2/sports/golf/pga/schedule',
-          ];
+          // SAFE status updater — does NOT fetch any external API and does NOT
+          // overwrite the curated schedule. It only recalculates each
+          // tournament's `status` field (upcoming / active / complete) based on
+          // the startDate/endDate already present in schedule.json.
+          //
+          // This replaced the old ESPN-fetch version, which (1) failed with
+          // HTTP 403 when ESPN blocked the endpoint, and (2) risked wiping the
+          // hand-curated schedule (endDate, winner, dataFile, etc.) for any
+          // tournament ESPN didn't return.
 
-          async function fetchSchedule() {
-            for (const url of schedules) {
-              try {
-                const data = await new Promise((resolve, reject) => {
-                  https.get(url, (res) => {
-                    let body = '';
-                    res.on('data', chunk => body += chunk);
-                    res.on('end', () => {
-                      if (res.statusCode === 200) {
-                        resolve(JSON.parse(body));
-                      } else {
-                        reject(new Error(`Status ${res.statusCode}`));
-                      }
-                    });
-                  }).on('error', reject);
-                });
-                return data;
-              } catch (err) {
-                console.warn(`Failed to fetch from ${url}:`, err.message);
-              }
+          const SCHEDULE_PATH = 'public/data/pga/schedule.json';
+
+          try {
+            const schedule = JSON.parse(fs.readFileSync(SCHEDULE_PATH, 'utf-8'));
+            if (!Array.isArray(schedule)) {
+              throw new Error('schedule.json is not an array — aborting to avoid corruption');
             }
-            throw new Error('Could not fetch PGA schedule from any source');
-          }
 
-          async function main() {
-            try {
-              console.log('Fetching current PGA Tour schedule...');
-              const espnData = await fetchSchedule();
+            const today = new Date().toISOString().slice(0, 10);
+            let changes = 0;
 
-              // Read existing schedule to preserve custom fields
-              const existingSchedule = JSON.parse(
-                fs.readFileSync('public/data/pga/schedule.json', 'utf-8')
-              );
-              const existingMap = new Map(existingSchedule.map(t => [t.id || t.slug, t]));
+            for (const t of schedule) {
+              if (!t.startDate || !t.endDate) continue; // skip malformed rows untouched
 
-              // Parse ESPN events
-              const updated = [];
-              const today = new Date().toISOString().slice(0, 10);
-
-              if (espnData.events) {
-                espnData.events.forEach((event) => {
-                  const startDate = event.date.slice(0, 10);
-                  const name = event.name || event.shortName || '';
-                  
-                  // Skip if not a 2026 event or not PGA
-                  if (!startDate.startsWith('2026') || !event.links?.some(l => l.text?.includes('PGA'))) {
-                    return;
-                  }
-
-                  const slug = name.toLowerCase()
-                    .replace(/[^a-z0-9]/g, '-')
-                    .replace(/-+/g, '-')
-                    .replace(/^-|-$/g, '');
-
-                  const existing = existingMap.get(slug) || {};
-
-                  // Determine status
-                  let status = 'upcoming';
-                  if (startDate <= today) {
-                    if (event.status === 'STATUS_FINAL' || event.status === 'STATUS_COMPLETED') {
-                      status = 'complete';
-                    } else {
-                      status = 'active';
-                    }
-                  }
-
-                  updated.push({
-                    id: slug,
-                    slug: slug,
-                    name: name,
-                    shortName: event.shortName || name,
-                    courseName: event.competitions?.[0]?.venue?.fullName || existing.courseName || '',
-                    location: event.competitions?.[0]?.venue?.address?.city || existing.location || 'USA',
-                    startDate: startDate,
-                    endDate: existing.endDate || startDate, // Keep existing end date if available
-                    dateLabel: existing.dateLabel || startDate.slice(5, 10),
-                    eventType: existing.eventType || 'PGA TOUR Event',
-                    category: existing.category || 'standard',
-                    status: status,
-                    winner: existing.winner || 'TBD',
-                    dataFile: existing.dataFile || '',
-                    sourceTour: 'pga',
-                    sourceCountry: 'USA'
-                  });
-                });
+              let newStatus;
+              if (t.endDate < today) {
+                newStatus = 'complete';
+              } else if (t.startDate <= today && t.endDate >= today) {
+                newStatus = 'active';
+              } else {
+                newStatus = 'upcoming';
               }
 
-              // Sort by start date
-              updated.sort((a, b) => a.startDate.localeCompare(b.startDate));
+              // Never downgrade a 'complete' tournament that has a recorded winner
+              // (protects manually-finalized results from date-math edge cases).
+              if (t.status === 'complete' && t.winner && t.winner !== 'TBD') {
+                newStatus = 'complete';
+              }
 
-              // Write updated schedule
-              fs.writeFileSync(
-                'public/data/pga/schedule.json',
-                JSON.stringify(updated, null, 2)
-              );
-
-              console.log(`✓ Updated schedule with ${updated.length} tournaments`);
-              console.log(`Active: ${updated.find(t => t.status === 'active')?.name || 'None'}`);
-            } catch (err) {
-              console.error('Error syncing schedule:', err.message);
-              process.exit(1);
+              if (t.status !== newStatus) {
+                console.log(`  ${t.name}: ${t.status} -> ${newStatus}`);
+                t.status = newStatus;
+                changes++;
+              }
             }
-          }
 
-          main();
+            if (changes === 0) {
+              console.log('No status changes needed.');
+            } else {
+              fs.writeFileSync(SCHEDULE_PATH, JSON.stringify(schedule, null, 2) + '\n');
+              console.log(`Updated ${changes} tournament status(es).`);
+            }
+
+            const active = schedule.find(t => t.status === 'active');
+            console.log(`Active tournament: ${active ? active.name : 'None'}`);
+          } catch (err) {
+            console.error('Error updating schedule statuses:', err.message);
+            process.exit(1);
+          }
           SCRIPT
 
       - name: Commit schedule update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
+
           if git diff --quiet public/data/pga/schedule.json; then
             echo "No changes to schedule"
           else
             git add public/data/pga/schedule.json
-            git commit -m "chore: auto-sync PGA Tour schedule - $(date -d 'today' +'%Y-%m-%d')"
-            git push origin HEAD:main
-            echo "✓ Schedule synced"
+            git commit -m "chore: auto-update PGA tournament statuses - $(TZ=America/New_York date '+%Y-%m-%d')"
+
+            PUSHED=false
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then PUSHED=true; break; fi
+              echo "Push attempt $attempt failed — pulling and rebasing..."
+              git pull --rebase origin main || true
+              sleep 5
+            done
+            if [ "$PUSHED" = "true" ]; then
+              echo "Schedule synced"
+            else
+              echo "All push attempts failed — status update not saved this run (will retry next week)."
+            fi
           fi
