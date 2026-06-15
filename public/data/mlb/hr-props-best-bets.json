@@ -1,9 +1,9 @@
 {
   "date": "2026-06-15",
-  "generatedAt": "2026-06-15T15:26:58.416Z",
+  "generatedAt": "2026-06-15T16:06:48.054Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features strong HR environments at Great American Ball Park (1.25) and Daikin Park (1.04), with Chase Burns and Troy Melton on the mound as favorable right-handed matchups. Nationals Park and Sutter Health Park sit near neutral but still offer value against weaker pitching arms like Mitch Spence and Jared Jones.",
-    "modelNote": "The model is prioritizing barrel rate, recent power spikes, and opposing pitcher HR vulnerability, elevating Wood and Alvarez to the top despite park factors under 1.05."
+    "slateOverview": "Today's slate features several hitter-friendly parks with Great American Ball Park (1.25) and Citizens Bank Park (1.17) leading the way, while Nationals Park and Sutter Health Park sit slightly pitcher-friendly. Right-handed pitching dominates the top matchups, but Chase Burns and Mitch Spence face elevated barrel and hard-hit rates from Soto and Wood respectively, creating clear power spots.",
+    "modelNote": "The model is prioritizing barrel rate and recent home run volume over park factors alone, elevating Wood and Alvarez to the top despite modest park boosts, while discounting Trout and Goodman due to lower exit velocities and tougher opposing pitcher HR rates."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=25",
-        "hrScore=78.2"
+        "hrScore=78.9"
       ],
       "bullets": [
-        "barrelRate 25 and exitVelo 95.6",
-        "last7HR 3 in recent form"
+        "barrelRate 25 and exitVelo 95.7",
+        "last7HR 3 and last30HR 8"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -30,12 +30,12 @@
       "opposingPitcher": "Troy Melton",
       "hrScoreRank": 2,
       "topStats": [
-        "xba=0.349",
+        "xba=0.347",
         "iso=0.325"
       ],
       "bullets": [
-        "parkFactor 1.04 at Daikin Park",
-        "last30HR 9 over recent stretch"
+        "parkFactor 1.04 and hardHitRate 52.6",
+        "last30HR 9 and hrFBRatio 9.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -48,11 +48,11 @@
       "hrScoreRank": 3,
       "topStats": [
         "parkFactor=1.25",
-        "pullRate=38.6"
+        "last30HR=9"
       ],
       "bullets": [
-        "parkFactor 1.25 at Great American Ball Park",
-        "last30HR 9 in recent form"
+        "parkFactor 1.25 and pullRate 37.9",
+        "last7HR 2 and last30HR 9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -64,12 +64,12 @@
       "opposingPitcher": "Nick Martinez",
       "hrScoreRank": 4,
       "topStats": [
-        "pullRate=52.2",
-        "last7HR=3"
+        "last7HR=3",
+        "pullRate=52.2"
       ],
       "bullets": [
-        "pullRate 52.2 and exitVelo 93.8",
-        "last7HR 3 in recent form"
+        "last7HR 3 and last30HR 7",
+        "parkFactor 1.1 and exitVelo 93.8"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -81,12 +81,12 @@
       "opposingPitcher": "Jared Jones",
       "hrScoreRank": 5,
       "topStats": [
-        "hardHitRate=57",
-        "opposingPitcherHrVs=65.5"
+        "hardHitRate=57.1",
+        "opposingPitcherHrVs=65.6"
       ],
       "bullets": [
-        "opposingPitcherHrVs 65.5 vs Jared Jones",
-        "hardHitRate 57 and exitVelo 94.1"
+        "opposingPitcherHrVs 65.6 and hardHitRate 57.1",
+        "last30HR 8 and exitVelo 94.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -100,12 +100,12 @@
       "opposingPitcher": "Nick Martinez",
       "hrScoreRank": 4,
       "topStats": [
-        "pullRate=52.2",
-        "last7HR=3"
+        "last7HR=3",
+        "pullRate=52.2"
       ],
       "bullets": [
-        "pullRate 52.2 and exitVelo 93.8",
-        "last7HR 3 in recent form"
+        "last7HR 3 and last30HR 7",
+        "parkFactor 1.1 and exitVelo 93.8"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -117,12 +117,12 @@
       "opposingPitcher": "Jared Jones",
       "hrScoreRank": 5,
       "topStats": [
-        "hardHitRate=57",
-        "opposingPitcherHrVs=65.5"
+        "hardHitRate=57.1",
+        "opposingPitcherHrVs=65.6"
       ],
       "bullets": [
-        "opposingPitcherHrVs 65.5 vs Jared Jones",
-        "hardHitRate 57 and exitVelo 94.1"
+        "opposingPitcherHrVs 65.6 and hardHitRate 57.1",
+        "last30HR 8 and exitVelo 94.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -134,12 +134,12 @@
       "opposingPitcher": "Kai-Wei Teng",
       "hrScoreRank": 6,
       "topStats": [
-        "hardHitRate=51.6",
-        "last30HR=8"
+        "last30HR=8",
+        "hardHitRate=51.6"
       ],
       "bullets": [
-        "hardHitRate 51.6 and exitVelo 90.9",
-        "last30HR 8 in recent form"
+        "last30HR 8 and last7HR 2",
+        "parkFactor 1.04 and exitVelo 90.9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -151,48 +151,12 @@
       "opposingPitcher": "Ryne Nelson",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=64.3",
-        "Hard Hit%=51.5"
+        "Pitcher HR VS=64.4",
+        "Hard Hit%=51.7"
       ],
       "bullets": [
-        "HR score 66.8 (#7)",
-        "Pitcher HR VS 64.3 at park 1.01"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jac Caglianone",
-      "team": "KC",
-      "opponent": "WSH",
-      "opposingPitcher": "Andrew Alvarez",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=57.2",
-        "Pitcher HR VS=52.7"
-      ],
-      "bullets": [
-        "HR score 63.9 (#8)",
-        "Pitcher HR VS 52.7 at park 0.98"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Jac Caglianone",
-      "team": "KC",
-      "opponent": "WSH",
-      "opposingPitcher": "Andrew Alvarez",
-      "hrScoreRank": 8,
-      "topStats": [
-        "hardHitRate=57.2",
-        "exitVelo=93.7"
-      ],
-      "bullets": [
-        "hardHitRate 57.2 and exitVelo 93.7",
-        "opposingPitcherHrVs 52.7 vs Andrew Alvarez"
+        "HR score 67.2 (#7)",
+        "Pitcher HR VS 64.4 at park 1.01"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -202,31 +166,67 @@
       "team": "COL",
       "opponent": "CHC",
       "opposingPitcher": "Shota Imanaga",
-      "hrScoreRank": 9,
+      "hrScoreRank": 8,
       "topStats": [
-        "hrFBRatio=7.9",
-        "last30HR=9"
+        "Pitcher HR VS=49.2",
+        "Hard Hit%=46.8"
       ],
       "bullets": [
-        "hrFBRatio 7.9 and last30HR 9",
-        "last7HR 3 in recent form"
+        "HR score 64.5 (#8)",
+        "Pitcher HR VS 49.2 at park 1.00"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "longshots": [
+    {
+      "player": "Hunter Goodman",
+      "team": "COL",
+      "opponent": "CHC",
+      "opposingPitcher": "Shota Imanaga",
+      "hrScoreRank": 8,
+      "topStats": [
+        "last30HR=9",
+        "hrFBRatio=7.9"
+      ],
+      "bullets": [
+        "last30HR 9 and last7HR 3",
+        "hrFBRatio 7.9 and iso 0.286"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Bo Bichette",
-      "team": "NYM",
-      "opponent": "CIN",
-      "opposingPitcher": "Chase Burns",
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "MIA",
+      "opposingPitcher": "Ryan Gusto",
       "hrScoreRank": 10,
       "topStats": [
-        "Hard Hit%=46.6",
-        "Pitcher HR VS=35.5"
+        "hrFBRatio=9.3",
+        "iso=0.321"
       ],
       "bullets": [
-        "HR score 62.6 (#10)",
-        "Pitcher HR VS 35.5 at park 1.25"
+        "hrFBRatio 9.3 and iso 0.321",
+        "parkFactor 1.17 and opposingPitcherHrVs 60"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jac Caglianone",
+      "team": "KC",
+      "opponent": "WSH",
+      "opposingPitcher": "Andrew Alvarez",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Hard Hit%=56.8",
+        "Pitcher HR VS=52.7"
+      ],
+      "bullets": [
+        "HR score 63.4 (#9)",
+        "Pitcher HR VS 52.7 at park 0.98"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
