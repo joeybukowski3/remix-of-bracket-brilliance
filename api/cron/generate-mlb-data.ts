@@ -64,3 +64,4 @@ export async function GET(request: Request) {
   console.log(`[generate-mlb-data cron] Dispatched ${GH_WORKFLOW} at ${nowUtc.toISOString()}`);
   return Response.json({ ok: true, skipped: false, dispatched: GH_WORKFLOW, at: nowUtc.toISOString() });
 }
+# Vercel env vars set: GH_DISPATCH_TOKEN, CRON_SECRET
