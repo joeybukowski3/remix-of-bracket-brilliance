@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "dist",
+  "crons": [
+    {
+      "path": "/api/cron/generate-mlb-data",
+      "schedule": "0 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/data/(.*)",

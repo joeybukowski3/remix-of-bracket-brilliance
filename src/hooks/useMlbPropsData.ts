@@ -121,15 +121,14 @@ export function useMlbPropsData() {
 
     // Cross-validate against live schedule: only show games that are on today's
     // actual MLB slate. When liveGameKeys is empty (API hiccup), show everything.
-    //
-    // KEY: when the data is STALE, skip this filter entirely. Stale game keys
-    // are from a different date and will never match today's live slate, so
-    // filtering would blank the tables. Show stale data as-is with the banner.
+    // When data is STALE and we have a live schedule, suppress all rows — 
+    // yesterday's matchups showing under today's date is more confusing than empty.
     const hasLive = liveGameKeys.size > 0;
-    const onSlate = (gameKey: string) => stale || !hasLive || liveGameKeys.has(gameKey);
-    const games = allGames.filter((game) => !tbdGameKeys.has(game.gameKey) && onSlate(game.gameKey));
-    const pitchers = allPitchers.filter((pitcher) => !tbdGameKeys.has(pitcher.gameKey) && onSlate(pitcher.gameKey) && !isStarterPlaceholder(pitcher.pitcher));
-    const batters = allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && onSlate(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher));
+    const suppress = stale && hasLive;
+    const onSlate = (gameKey: string) => !hasLive || liveGameKeys.has(gameKey);
+    const games = suppress ? [] : allGames.filter((game) => !tbdGameKeys.has(game.gameKey) && onSlate(game.gameKey));
+    const pitchers = suppress ? [] : allPitchers.filter((pitcher) => !tbdGameKeys.has(pitcher.gameKey) && onSlate(pitcher.gameKey) && !isStarterPlaceholder(pitcher.pitcher));
+    const batters = suppress ? [] : allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && onSlate(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher));
     const batterVsPitcherRows = buildPitcherVsBatterRows(batters, games, pitchers);
     const strikeoutDetailRows = buildPitcherStrikeoutRows(batters, games, pitchers);
     const strikeoutRows = buildPitcherStrikeoutMatchupRows(pitchers, batters, games);
