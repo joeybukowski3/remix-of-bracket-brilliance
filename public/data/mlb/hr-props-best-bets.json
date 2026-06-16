@@ -1,9 +1,9 @@
 {
   "date": "2026-06-16",
-  "generatedAt": "2026-06-16T18:12:45.691Z",
+  "generatedAt": "2026-06-16T18:41:15.576Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly parks with Great American Ball Park (1.25) and Daikin Park (1.04) standing out, while Chase Field and Globe Life Field offer neutral-to-slight boosts. Favorable matchups include Alvarez against lefty Framber Valdez in Houston and Soto facing Brady Singer in Cincinnati, with Trout and Buxton also seeing right-handers in homer-friendly venues.",
-    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and park factors while heavily weighting recent power trends, giving top billing to Alvarez and Soto who combine elite exit velo with strong park and pitcher advantages."
+    "slateOverview": "Today's slate features strong HR environments at Great American Ball Park (1.25) and Daikin Park (1.04) with lefty Framber Valdez and righty Brady Singer on the bump. Chase Field and Globe Life Field offer neutral-to-favorable conditions while several right-handed pitchers (Wacha, Kelly, Cecconi) face high barrel-rate bats in hitter-friendly or neutral parks.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent power spikes over park factors alone, elevating Yordan Alvarez and Juan Soto to the top despite mixed venue effects."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.5",
-        "hrFBRatio=9.1"
+        "hrScore=77.8"
       ],
       "bullets": [
-        "barrelRate 18.5 and exitVelo 94.6",
-        "parkFactor 1.04 with hrScore 77.8"
+        "barrelRate 18.5 with exitVelo 94.6",
+        "last30HR 9 with hrFBRatio 9.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -35,7 +35,7 @@
       ],
       "bullets": [
         "parkFactor 1.25 at Great American Ball Park",
-        "last30HR 9 with hrScore 76.5"
+        "opposingPitcherHrVs 68.4 with xba 0.299"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,25 +51,8 @@
         "hardHitRate=58.4"
       ],
       "bullets": [
-        "barrelRate 24.7 and exitVelo 95.7",
-        "last7HR 3 with hrScore 73.1"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 4,
-      "topStats": [
-        "opposingPitcherHrVs=79.5",
-        "barrelRate=21.1"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs 79.5 vs Merrill Kelly",
-        "barrelRate 21.1 with hrScore 71.8"
+        "barrelRate 24.7 with exitVelo 95.7",
+        "last7HR 3 with hardHitRate 58.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -85,14 +68,12 @@
         "hardHitRate=57.6"
       ],
       "bullets": [
-        "last30HR 10 and last7HR 3",
-        "hardHitRate 57.6 with hrScore 71.6"
+        "last30HR 10 with last7HR 3",
+        "hardHitRate 57.6 with barrelRate 18.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
+    },
     {
       "player": "Jackson Chourio",
       "team": "MIL",
@@ -104,8 +85,44 @@
         "parkFactor=1.1"
       ],
       "bullets": [
-        "last7HR 4 and last30HR 8",
-        "parkFactor 1.1 with hrScore 71.2"
+        "last7HR 4 with last30HR 8",
+        "parkFactor 1.1 with exitVelo 92.4"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=79.5",
+        "Hard Hit%=51.7"
+      ],
+      "bullets": [
+        "HR score 71.8 (#4)",
+        "Pitcher HR VS 79.5 at park 1.01"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 4,
+      "topStats": [
+        "opposingPitcherHrVs=79.5",
+        "barrelRate=21.1"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 79.5 with hrScore 71.8",
+        "barrelRate 21.1 with hardHitRate 51.7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -118,11 +135,11 @@
       "hrScoreRank": 7,
       "topStats": [
         "hrFBRatio=9.1",
-        "pullRate=47.5"
+        "last7HR=4"
       ],
       "bullets": [
-        "hrFBRatio 9.1 and iso 0.33",
-        "pullRate 47.5 with hrScore 69.2"
+        "hrFBRatio 9.1 with iso 0.33",
+        "last7HR 4 with last30HR 8"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -134,12 +151,29 @@
       "opposingPitcher": "Drew Rasmussen",
       "hrScoreRank": 8,
       "topStats": [
-        "hardHitRate=53.3",
-        "pullRate=52.2"
+        "pullRate=52.2",
+        "hardHitRate=53.3"
       ],
       "bullets": [
-        "hardHitRate 53.3 and exitVelo 93.6",
-        "pullRate 52.2 with hrScore 68.6"
+        "pullRate 52.2 with exitVelo 93.6",
+        "hardHitRate 53.3 with xba 0.296"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "CLE",
+      "opposingPitcher": "Slade Cecconi",
+      "hrScoreRank": 6,
+      "topStats": [
+        "Hard Hit%=49.1",
+        "Pitcher HR VS=41.9"
+      ],
+      "bullets": [
+        "HR score 71.2 (#6)",
+        "Pitcher HR VS 41.9 at park 1.10"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -157,8 +191,25 @@
         "exitVelo=95"
       ],
       "bullets": [
-        "hardHitRate 56.2 and exitVelo 95",
-        "opposingPitcherHrVs 58.9 with hrScore 68"
+        "hardHitRate 56.2 with exitVelo 95",
+        "opposingPitcherHrVs 58.9 with last30HR 8"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Hunter Goodman",
+      "team": "COL",
+      "opponent": "CHC",
+      "opposingPitcher": "Edward Cabrera",
+      "hrScoreRank": 19,
+      "topStats": [
+        "pullRate=52.2",
+        "last30HR=9"
+      ],
+      "bullets": [
+        "pullRate 52.2 with last30HR 9",
+        "hrFBRatio 7.8 with iso 0.282"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -170,12 +221,12 @@
       "opposingPitcher": "Michael King",
       "hrScoreRank": 10,
       "topStats": [
-        "last7HR=4",
-        "last30HR=7"
+        "Hard Hit%=47.1",
+        "Pitcher HR VS=45.3"
       ],
       "bullets": [
-        "last7HR 4 and last30HR 7",
-        "xba 0.295 with hrScore 67.2"
+        "HR score 67.2 (#10)",
+        "Pitcher HR VS 45.3 at park 0.92"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
