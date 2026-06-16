@@ -1,9 +1,9 @@
 {
   "date": "2026-06-16",
-  "generatedAt": "2026-06-16T18:41:15.576Z",
+  "generatedAt": "2026-06-16T19:06:35.202Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features strong HR environments at Great American Ball Park (1.25) and Daikin Park (1.04) with lefty Framber Valdez and righty Brady Singer on the bump. Chase Field and Globe Life Field offer neutral-to-favorable conditions while several right-handed pitchers (Wacha, Kelly, Cecconi) face high barrel-rate bats in hitter-friendly or neutral parks.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent power spikes over park factors alone, elevating Yordan Alvarez and Juan Soto to the top despite mixed venue effects."
+    "slateOverview": "Today's slate features several hitter-friendly parks with Great American Ball Park (1.25) and Daikin Park (1.04) leading the way, while Chase Field and Globe Life Field offer neutral-to-slight boosts. Favorable righty matchups for Soto, Trout, and Wood against Singer, Kelly, and Wacha create power spots, with park factors and opposing pitcher HR rates aligning for elevated home run odds.",
+    "modelNote": "The model is heavily weighting barrel/hard-hit rates and recent power trends, elevating Alvarez and Soto to the top despite Soto's lower barrel rate due to park and matchup leverage."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.5",
-        "hrScore=77.8"
+        "hrFBRatio=9.1"
       ],
       "bullets": [
         "barrelRate 18.5 with exitVelo 94.6",
-        "last30HR 9 with hrFBRatio 9.1"
+        "parkFactor 1.04 and last30HR 9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -35,7 +35,7 @@
       ],
       "bullets": [
         "parkFactor 1.25 at Great American Ball Park",
-        "opposingPitcherHrVs 68.4 with xba 0.299"
+        "opposingPitcherHrVs 68.4"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -51,8 +51,25 @@
         "hardHitRate=58.4"
       ],
       "bullets": [
-        "barrelRate 24.7 with exitVelo 95.7",
-        "last7HR 3 with hardHitRate 58.4"
+        "barrelRate 24.7 and hardHitRate 58.4",
+        "last7HR 3"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 4,
+      "topStats": [
+        "opposingPitcherHrVs=79.5",
+        "barrelRate=21.1"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 79.5",
+        "barrelRate 21.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -68,12 +85,14 @@
         "hardHitRate=57.6"
       ],
       "bullets": [
-        "last30HR 10 with last7HR 3",
-        "hardHitRate 57.6 with barrelRate 18.2"
+        "last30HR 10",
+        "hardHitRate 57.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
-    },
+    }
+  ],
+  "valueBets": [
     {
       "player": "Jackson Chourio",
       "team": "MIL",
@@ -85,44 +104,8 @@
         "parkFactor=1.1"
       ],
       "bullets": [
-        "last7HR 4 with last30HR 8",
-        "parkFactor 1.1 with exitVelo 92.4"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=79.5",
-        "Hard Hit%=51.7"
-      ],
-      "bullets": [
-        "HR score 71.8 (#4)",
-        "Pitcher HR VS 79.5 at park 1.01"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 4,
-      "topStats": [
-        "opposingPitcherHrVs=79.5",
-        "barrelRate=21.1"
-      ],
-      "bullets": [
-        "opposingPitcherHrVs 79.5 with hrScore 71.8",
-        "barrelRate 21.1 with hardHitRate 51.7"
+        "last7HR 4",
+        "parkFactor 1.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -135,11 +118,11 @@
       "hrScoreRank": 7,
       "topStats": [
         "hrFBRatio=9.1",
-        "last7HR=4"
+        "pullRate=47.5"
       ],
       "bullets": [
-        "hrFBRatio 9.1 with iso 0.33",
-        "last7HR 4 with last30HR 8"
+        "hrFBRatio 9.1",
+        "pullRate 47.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -151,29 +134,12 @@
       "opposingPitcher": "Drew Rasmussen",
       "hrScoreRank": 8,
       "topStats": [
-        "pullRate=52.2",
-        "hardHitRate=53.3"
+        "hardHitRate=53.3",
+        "parkFactor=1.1"
       ],
       "bullets": [
-        "pullRate 52.2 with exitVelo 93.6",
-        "hardHitRate 53.3 with xba 0.296"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "CLE",
-      "opposingPitcher": "Slade Cecconi",
-      "hrScoreRank": 6,
-      "topStats": [
-        "Hard Hit%=49.1",
-        "Pitcher HR VS=41.9"
-      ],
-      "bullets": [
-        "HR score 71.2 (#6)",
-        "Pitcher HR VS 41.9 at park 1.10"
+        "hardHitRate 53.3",
+        "parkFactor 1.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -187,12 +153,12 @@
       "opposingPitcher": "Logan Gilbert",
       "hrScoreRank": 9,
       "topStats": [
-        "hardHitRate=56.2",
-        "exitVelo=95"
+        "exitVelo=95",
+        "hardHitRate=56.2"
       ],
       "bullets": [
-        "hardHitRate 56.2 with exitVelo 95",
-        "opposingPitcherHrVs 58.9 with last30HR 8"
+        "exitVelo 95",
+        "hardHitRate 56.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -208,25 +174,25 @@
         "last30HR=9"
       ],
       "bullets": [
-        "pullRate 52.2 with last30HR 9",
-        "hrFBRatio 7.8 with iso 0.282"
+        "pullRate 52.2",
+        "last30HR 9"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "SD",
-      "opposingPitcher": "Michael King",
+      "player": "Bryce Eldridge",
+      "team": "SF",
+      "opponent": "ATL",
+      "opposingPitcher": "Grant Holmes",
       "hrScoreRank": 10,
       "topStats": [
-        "Hard Hit%=47.1",
-        "Pitcher HR VS=45.3"
+        "Pitcher HR VS=59.5",
+        "Hard Hit%=57.5"
       ],
       "bullets": [
         "HR score 67.2 (#10)",
-        "Pitcher HR VS 45.3 at park 0.92"
+        "Pitcher HR VS 59.5 at park 1.03"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
