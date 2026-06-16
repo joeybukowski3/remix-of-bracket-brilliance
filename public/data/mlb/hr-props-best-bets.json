@@ -1,9 +1,9 @@
 {
   "date": "2026-06-16",
-  "generatedAt": "2026-06-16T11:39:23.480Z",
+  "generatedAt": "2026-06-16T12:25:32.083Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly parks with Great American Ball Park (1.25) and Daikin Park (1.04) standing out, while lefty Framber Valdez faces Yordan Alvarez in a favorable home matchup. Right-handed pitching dominates the slate with Brady Singer, Michael Wacha, and Merrill Kelly all allowing elevated HR rates to opposing bats.",
-    "modelNote": "The model heavily weights barrel/hard-hit rates and recent power trends, elevating Alvarez to the top spot despite facing a lefty while pushing Soto up due to the extreme park factor despite modest barrel numbers."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with Great American Ball Park (1.25) and Daikin Park (1.04) standing out, while several right-handed pitchers like Brady Singer, Merrill Kelly, and Slade Cecconi take the bump against power bats. Warm conditions and elevated park factors in Cincinnati and Houston should amplify fly-ball carry, setting up favorable environments for the top-ranked HR candidates.",
+    "modelNote": "The model is heavily weighting barrel and hard-hit rates alongside recent HR form, elevating Yordan Alvarez to the top spot due to his elite 18.5% barrel rate and 53.5% hard-hit rate against a lefty in a boosted park."
   },
   "bestBets": [
     {
@@ -14,11 +14,11 @@
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.5",
-        "hrFBRatio=9.1"
+        "hrScore=77.7"
       ],
       "bullets": [
         "barrelRate 18.5 with exitVelo 94.6",
-        "last30HR 9 in favorable matchup"
+        "last30HR 9 in strong parkFactor 1.04"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -34,8 +34,8 @@
         "opposingPitcherHrVs=68.1"
       ],
       "bullets": [
-        "parkFactor 1.25 at Great American Ball Park",
-        "opposingPitcherHrVs 68.1"
+        "parkFactor 1.25 boosts power upside",
+        "opposingPitcherHrVs 68.1 with xba 0.299"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -65,11 +65,11 @@
       "hrScoreRank": 4,
       "topStats": [
         "opposingPitcherHrVs=79.4",
-        "barrelRate=21.1"
+        "bbRate=19.9"
       ],
       "bullets": [
-        "opposingPitcherHrVs 79.4 vs Merrill Kelly",
-        "barrelRate 21.1"
+        "opposingPitcherHrVs 79.4 highest in slate",
+        "bbRate 19.9 with barrelRate 21.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -85,8 +85,8 @@
         "hardHitRate=57.6"
       ],
       "bullets": [
-        "last30HR 10 with hardHitRate 57.6",
-        "barrelRate 18.2"
+        "last30HR 10 leads group",
+        "hardHitRate 57.6 with exitVelo 94.2"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -105,7 +105,7 @@
       ],
       "bullets": [
         "last7HR 4 with parkFactor 1.1",
-        "exitVelo 92.4"
+        "exitVelo 92.4 in favorable matchup"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -117,12 +117,12 @@
       "opposingPitcher": "Kumar Rocker",
       "hrScoreRank": 7,
       "topStats": [
-        "hrFBRatio=9.1",
+        "iso=0.33",
         "pullRate=47.5"
       ],
       "bullets": [
-        "hrFBRatio 9.1 with pullRate 47.5",
-        "last7HR 4"
+        "iso 0.33 with pullRate 47.5",
+        "last7HR 4 in hrFBRatio 9.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -134,12 +134,12 @@
       "opposingPitcher": "Drew Rasmussen",
       "hrScoreRank": 8,
       "topStats": [
-        "pullRate=52.2",
-        "hardHitRate=53.3"
+        "hardHitRate=53.3",
+        "pullRate=52.2"
       ],
       "bullets": [
-        "pullRate 52.2 with hardHitRate 53.3",
-        "parkFactor 1.1"
+        "hardHitRate 53.3 with pullRate 52.2",
+        "parkFactor 1.1 boosts power"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -158,7 +158,24 @@
       ],
       "bullets": [
         "exitVelo 95 with hardHitRate 56.2",
-        "opposingPitcherHrVs 58.7"
+        "opposingPitcherHrVs 58.7 in parkFactor 0.93"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Hunter Goodman",
+      "team": "COL",
+      "opponent": "CHC",
+      "opposingPitcher": "Edward Cabrera",
+      "hrScoreRank": 19,
+      "topStats": [
+        "pullRate=52.2",
+        "last30HR=9"
+      ],
+      "bullets": [
+        "pullRate 52.2 with last30HR 9",
+        "hrFBRatio 7.8 in parkFactor 1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -170,12 +187,12 @@
       "opposingPitcher": "Grant Holmes",
       "hrScoreRank": 10,
       "topStats": [
-        "xba=0.306",
-        "hardHitRate=57.5"
+        "Pitcher HR VS=59.2",
+        "Hard Hit%=57.5"
       ],
       "bullets": [
-        "xba 0.306 with hardHitRate 57.5",
-        "opposingPitcherHrVs 59.2"
+        "HR score 67.1 (#10)",
+        "Pitcher HR VS 59.2 at park 1.03"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
