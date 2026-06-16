@@ -1,41 +1,24 @@
 {
-  "date": "2026-06-15",
-  "generatedAt": "2026-06-15T20:06:23.041Z",
+  "date": "2026-06-16",
+  "generatedAt": "2026-06-16T09:01:55.111Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly parks with elevated park factors, most notably Great American Ball Park (1.25) and Citizens Bank Park (1.17). Favorable right-handed pitching matchups against power bats in Yordan Alvarez, Juan Soto, and James Wood create prime HR conditions, while Chase Field and Dodger Stadium add additional boost for Trout and Ohtani.",
-    "modelNote": "The model is heavily weighting barrel rate, hard-hit metrics, and recent HR volume, elevating Alvarez and Wood to the top despite varying park factors, while incorporating opposing pitcher HR vulnerability as a key secondary driver."
+    "slateOverview": "Today's environment tilts toward power with Great American Ball Park (1.25) and Daikin Park (1.04) as the clearest boosts, while Chase Field and Globe Life Field sit at neutral-to-slightly favorable marks. Left-on-left for Alvarez versus Valdez stands out as the strongest individual matchup, and several right-handed pitchers with elevated HR rates (Singer 68.1, Kelly 79.4) create additional edges for Soto, Trout, and Buxton.",
+    "modelNote": "The model is prioritizing barrel rate, recent HR volume, and opposing pitcher vulnerability, which is why Alvarez and Soto occupy the top two spots despite Soto’s lower barrel rate."
   },
   "bestBets": [
     {
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "DET",
-      "opposingPitcher": "Troy Melton",
+      "opposingPitcher": "Framber Valdez",
       "hrScoreRank": 1,
       "topStats": [
         "barrelRate=18.4",
-        "hrFBRatio=9.2"
+        "hrScore=77.2"
       ],
       "bullets": [
         "barrelRate 18.4 and exitVelo 94.4",
-        "parkFactor 1.04 with opposingPitcherHrVs 35.5"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "KC",
-      "opposingPitcher": "Mitch Spence",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrelRate=25",
-        "hardHitRate=58.5"
-      ],
-      "bullets": [
-        "barrelRate 25 and exitVelo 95.7",
-        "last7HR 3 with opposingPitcherHrVs 54.4"
+        "parkFactor 1.04 with hrFBRatio 9.1"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -44,15 +27,85 @@
       "player": "Juan Soto",
       "team": "NYM",
       "opponent": "CIN",
-      "opposingPitcher": "Chase Burns",
-      "hrScoreRank": 3,
+      "opposingPitcher": "Brady Singer",
+      "hrScoreRank": 2,
       "topStats": [
         "parkFactor=1.25",
-        "last30HR=9"
+        "hrScore=77.1"
       ],
       "bullets": [
-        "parkFactor 1.25 with xba 0.302",
-        "last30HR 9 and opposingPitcherHrVs 36.1"
+        "parkFactor 1.25 and opposingPitcherHrVs 68.1",
+        "last30HR 9 with xba 0.302"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "KC",
+      "opposingPitcher": "Michael Wacha",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrelRate=25",
+        "hardHitRate=58.5"
+      ],
+      "bullets": [
+        "barrelRate 25 and exitVelo 95.7",
+        "last7HR 3 with hrScore 72.8"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 4,
+      "topStats": [
+        "opposingPitcherHrVs=79.4",
+        "hrScore=71.9"
+      ],
+      "bullets": [
+        "opposingPitcherHrVs 79.4 and bbRate 20.2",
+        "barrelRate 20.8 with hrScoreRank 4"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "CLE",
+      "opposingPitcher": "Slade Cecconi",
+      "hrScoreRank": 5,
+      "topStats": [
+        "last7HR=4",
+        "hrScore=71.3"
+      ],
+      "bullets": [
+        "last7HR 4 and last30HR 8",
+        "parkFactor 1.1 with exitVelo 92.4"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Nick Kurtz",
+      "team": "ATH",
+      "opponent": "PIT",
+      "opposingPitcher": "Mitch Keller",
+      "hrScoreRank": 6,
+      "topStats": [
+        "last30HR=10",
+        "hardHitRate=57.1"
+      ],
+      "bullets": [
+        "last30HR 10 and barrelRate 18",
+        "bbRate 20.6 with hrScore 70.7"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -61,85 +114,32 @@
       "player": "Shohei Ohtani",
       "team": "LAD",
       "opponent": "TB",
-      "opposingPitcher": "Nick Martinez",
-      "hrScoreRank": 4,
-      "topStats": [
-        "hardHitRate=53.8",
-        "pullRate=52.2"
-      ],
-      "bullets": [
-        "hardHitRate 53.8 and exitVelo 93.8",
-        "last7HR 3 with parkFactor 1.1"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Nick Kurtz",
-      "team": "ATH",
-      "opponent": "PIT",
-      "opposingPitcher": "Jared Jones",
-      "hrScoreRank": 5,
-      "topStats": [
-        "hardHitRate=57.1",
-        "opposingPitcherHrVs=65.3"
-      ],
-      "bullets": [
-        "hardHitRate 57.1 and barrelRate 18",
-        "opposingPitcherHrVs 65.3 with last30HR 8"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "AZ",
-      "opposingPitcher": "Ryne Nelson",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrelRate=20.8",
-        "hardHitRate=51.7"
-      ],
-      "bullets": [
-        "barrelRate 20.8 and exitVelo 91.4",
-        "opposingPitcherHrVs 64.2 with parkFactor 1.01"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Dillon Dingler",
-      "team": "DET",
-      "opponent": "HOU",
-      "opposingPitcher": "Kai-Wei Teng",
+      "opposingPitcher": "Drew Rasmussen",
       "hrScoreRank": 7,
       "topStats": [
-        "hardHitRate=51.6",
-        "last30HR=8"
+        "pullRate=52.2",
+        "hrScore=69"
       ],
       "bullets": [
-        "hardHitRate 51.6 and exitVelo 90.9",
-        "last30HR 8 with parkFactor 1.04"
+        "pullRate 52.2 and parkFactor 1.1",
+        "last7HR 3 with exitVelo 93.8"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Alec Burleson",
-      "team": "STL",
-      "opponent": "SD",
-      "opposingPitcher": "Wandy Peralta",
+      "player": "Byron Buxton",
+      "team": "MIN",
+      "opponent": "TEX",
+      "opposingPitcher": "Kumar Rocker",
       "hrScoreRank": 8,
       "topStats": [
-        "last7HR=5",
-        "pullRate=46.2"
+        "iso=0.33",
+        "hrFBRatio=9.1"
       ],
       "bullets": [
-        "last7HR 5 and exitVelo 91.5",
-        "opposingPitcherHrVs 28 with parkFactor 0.92"
+        "iso 0.33 and hrFBRatio 9.1",
+        "last7HR 4 with opposingPitcherHrVs 50.6"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -147,35 +147,35 @@
   ],
   "longshots": [
     {
-      "player": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "MIA",
-      "opposingPitcher": "Ryan Gusto",
-      "hrScoreRank": 10,
+      "player": "Pete Alonso",
+      "team": "BAL",
+      "opponent": "SEA",
+      "opposingPitcher": "Logan Gilbert",
+      "hrScoreRank": 9,
       "topStats": [
-        "hrFBRatio=9.3",
-        "pullRate=55.5"
+        "hardHitRate=56.2",
+        "exitVelo=95"
       ],
       "bullets": [
-        "hrFBRatio 9.3 and barrelRate 20.8",
-        "parkFactor 1.17 with opposingPitcherHrVs 60.2"
+        "hardHitRate 56.2 and exitVelo 95",
+        "opposingPitcherHrVs 58.7 with last30HR 8"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
     },
     {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "CHC",
-      "opposingPitcher": "Shota Imanaga",
-      "hrScoreRank": 12,
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 18,
       "topStats": [
-        "last30HR=9",
-        "last7HR=3"
+        "opposingPitcherHrVs=72",
+        "last30HR=8"
       ],
       "bullets": [
-        "last30HR 9 and barrelRate 16",
-        "opposingPitcherHrVs 49.1 with iso 0.286"
+        "opposingPitcherHrVs 72 and last30HR 8",
+        "pullRate 47.7 with hrScore 62.5"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -184,15 +184,15 @@
       "player": "Lars Nootbaar",
       "team": "STL",
       "opponent": "SD",
-      "opposingPitcher": "Wandy Peralta",
-      "hrScoreRank": 9,
+      "opposingPitcher": "Michael King",
+      "hrScoreRank": 10,
       "topStats": [
         "Hard Hit%=60.9",
-        "Pitcher HR VS=28.0"
+        "Pitcher HR VS=44.9"
       ],
       "bullets": [
-        "HR score 65.0 (#9)",
-        "Pitcher HR VS 28.0 at park 0.92"
+        "HR score 67.7 (#10)",
+        "Pitcher HR VS 44.9 at park 0.92"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
