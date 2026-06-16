@@ -1,0 +1,93 @@
+{
+  "slug": "us-open-2026-picks",
+  "name": "U.S. Open",
+  "season": 2026,
+  "courseName": "Shinnecock Hills Golf Club",
+  "presets": [
+    {
+      "key": "shinnecock-course-fit",
+      "label": "Shinnecock Course Fit",
+      "description": "Approach-first weighting for Shinnecock Hills. Heavy on SG: APP and driving accuracy, with elevated around-green and putting to reflect firm, difficult greens.",
+      "weights": {
+        "sgApproach": 26,
+        "par4": 10,
+        "drivingAccuracy": 14,
+        "bogeyAvoidance": 12,
+        "sgAroundGreen": 12,
+        "trendRank": 6,
+        "birdie125150": 4,
+        "sgPutting": 8,
+        "birdieUnder125": 2,
+        "courseTrueSg": 6
+      }
+    },
+    {
+      "key": "approach-heavy",
+      "label": "Approach Heavy",
+      "description": "Maximum weight on approach play. GIR only 53% at Shinnecock vs 66% tour avg \u2014 iron play is the single biggest separator.",
+      "weights": {
+        "sgApproach": 35,
+        "par4": 12,
+        "drivingAccuracy": 12,
+        "bogeyAvoidance": 10,
+        "sgAroundGreen": 10,
+        "trendRank": 5,
+        "birdie125150": 3,
+        "sgPutting": 7,
+        "birdieUnder125": 2,
+        "courseTrueSg": 4
+      }
+    },
+    {
+      "key": "accuracy-grinder",
+      "label": "Accuracy & Grinder",
+      "description": "Prioritize fairway-finding and bogey avoidance. 5-inch fescue rough severely punishes missed fairways at Shinnecock.",
+      "weights": {
+        "sgApproach": 20,
+        "par4": 10,
+        "drivingAccuracy": 22,
+        "bogeyAvoidance": 18,
+        "sgAroundGreen": 10,
+        "trendRank": 6,
+        "birdie125150": 3,
+        "sgPutting": 7,
+        "birdieUnder125": 2,
+        "courseTrueSg": 2
+      }
+    },
+    {
+      "key": "short-game-putting",
+      "label": "Short Game & Putting",
+      "description": "Crowned, firm greens make scrambling and putting critical. Use when setup is playing very firm and scoring is trending over par.",
+      "weights": {
+        "sgApproach": 18,
+        "par4": 8,
+        "drivingAccuracy": 10,
+        "bogeyAvoidance": 12,
+        "sgAroundGreen": 22,
+        "trendRank": 5,
+        "birdie125150": 4,
+        "sgPutting": 16,
+        "birdieUnder125": 3,
+        "courseTrueSg": 2
+      }
+    }
+  ],
+  "previewThemes": [
+    {
+      "key": "approach",
+      "label": "Approach Play",
+      "description": "GIR rate at Shinnecock is only 53% vs 66% tour average \u2014 approach play is the #1 separator."
+    },
+    {
+      "key": "accuracy",
+      "label": "Driving Accuracy",
+      "description": "5-inch fescue rough makes missed fairways extremely costly. Accuracy beats distance this week."
+    },
+    {
+      "key": "short-game",
+      "label": "Around the Green",
+      "description": "Firm, crowned greens produce difficult scrambling situations all week."
+    }
+  ]
+}
