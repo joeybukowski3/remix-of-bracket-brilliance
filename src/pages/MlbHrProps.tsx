@@ -7,6 +7,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
+import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 
@@ -1295,8 +1296,9 @@ function ThBtn({ onClick, children, style }: { onClick: () => void; children: Re
 
 export default function MlbHrProps() {
   usePageSeo(getSeoMeta("mlb-hr-props"));
-  const [dashboard, setDashboard] = useState<HrDashboardPayload | null>(null);
-  const [bestBets, setBestBets] = useState<HrBestBetsPayload | null>(null);
+  // Use the shared hook so HR/K/hit tables and game matchups always read from
+  // the same data source and poll together every 10 minutes.
+  const { dashboard, bestBets } = useMlbPropsData();
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
@@ -1348,35 +1350,6 @@ export default function MlbHrProps() {
       },
     ],
   });
-
-  useEffect(() => {
-    let active = true;
-    Promise.all([
-      fetch("/data/mlb/hr-props-raw.json", { cache: "no-store" }),
-      fetch("/data/mlb/hr-props-best-bets.json", { cache: "no-store" }),
-    ])
-      .then(async ([rawResponse, bestResponse]) => {
-        if (!active) return;
-        if (!rawResponse.ok || !bestResponse.ok) {
-          setDashboard(null);
-          setBestBets(null);
-          return;
-        }
-        const [rawPayload, bestPayload] = await Promise.all([rawResponse.json(), bestResponse.json()]);
-        if (!active) return;
-        setDashboard(normalizeHrDashboardPayload(rawPayload));
-        setBestBets(normalizeHrBestBetsPayload(bestPayload));
-      })
-      .catch(() => {
-        if (!active) return;
-        setDashboard(null);
-        setBestBets(null);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     const syncMobile = () => {
