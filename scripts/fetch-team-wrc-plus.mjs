@@ -58,11 +58,13 @@ async function fetchTeamBatting(teamId, statsType) {
 
 // Returns last-N-days hitting split
 async function fetchTeamBattingLastDays(teamId, days = 14) {
-  // MLB Stats API doesn't have a direct "last 14 days" endpoint.
-  // Alternative: use all splits and pick the most recent non-season one,
-  // OR fall back to not having recent data (and use season for both).
-  // For now, returning null lets recent wRC+ use the fallback handler.
-  return null;
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(start.getDate() - days);
+  const fmt = (d) => d.toISOString().split("T")[0];
+  const url = `https://statsapi.mlb.com/api/v1/teams/${teamId}/stats?stats=byDateRange&group=hitting&season=${SEASON}&startDate=${fmt(start)}&endDate=${fmt(today)}`;
+  const json = await fetchJson(url);
+  return json?.stats?.[0]?.splits?.[0]?.stat ?? null;
 }
 
 function safeNum(val, fallback = 0) {
