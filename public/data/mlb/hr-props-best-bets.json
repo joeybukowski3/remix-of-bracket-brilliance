@@ -1,128 +1,41 @@
 {
-  "date": "2026-06-16",
-  "generatedAt": "2026-06-16T19:57:23.797Z",
+  "date": "2026-06-17",
+  "generatedAt": "2026-06-17T09:01:53.632Z",
   "slatePreview": {
-    "slateOverview": "Today's slate features several hitter-friendly parks with Great American Ball Park (1.25) and Daikin Park (1.04) standing out, while Chase Field and Globe Life Field offer neutral-to-slight boosts. Favorable matchups include Alvarez against lefty Framber Valdez in Houston and Soto facing Brady Singer in Cincinnati, with Trout and Kurtz also seeing plus park factors against right-handers. Weather angles appear minimal, putting the emphasis on park and matchup edges.",
-    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and recent power trends, elevating Alvarez and Soto to the top despite Soto's lower barrel numbers due to park factor and opposing pitcher vulnerabilities."
+    "slateOverview": "Great American Ball Park leads today’s HR slate with a inflated park factor of 1.25, pairing Juan Soto against Nick Lodolo’s lefty stuff that historically allows homers. Chase Field and Yankee Stadium follow with minor boosts, while Daikin Park and Dodger Stadium offer slight elevations despite Mize and McClanahan pitching.",
+    "modelNote": "The model prioritizes raw power metrics like barrelRate and exitVelo married to opposing pitcher HR vulnerability,权重的分配权重分配权重的分配权"
   },
   "bestBets": [
-    {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "DET",
-      "opposingPitcher": "Framber Valdez",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrelRate=18.5",
-        "exitVelo=94.6"
-      ],
-      "bullets": [
-        "hrScore 77.8 with 9.1 hrFBRatio",
-        "last30HR=9 vs LHP"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
     {
       "player": "Juan Soto",
       "team": "NYM",
       "opponent": "CIN",
-      "opposingPitcher": "Brady Singer",
+      "opposingPitcher": "Nick Lodolo",
+      "hrScoreRank": 1,
+      "topStats": [
+        "Pitcher HR VS=65.2",
+        "Hard Hit%=49.4"
+      ],
+      "bullets": [
+        "HR score 77.8 (#1)",
+        "Pitcher HR VS 65.2 at park 1.25"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "DET",
+      "opposingPitcher": "Casey Mize",
       "hrScoreRank": 2,
       "topStats": [
-        "parkFactor=1.25",
-        "opposingPitcherHrVs=68.4"
+        "Hard Hit%=53.5",
+        "Pitcher HR VS=21.9"
       ],
       "bullets": [
-        "Great American Ball Park boosts power",
-        "last30HR=9 in hitter-friendly venue"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "KC",
-      "opposingPitcher": "Michael Wacha",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrelRate=24.7",
-        "hardHitRate=58.4"
-      ],
-      "bullets": [
-        "elite 24.7 barrel rate leads model",
-        "last7HR=3 showing hot streak"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mike Trout",
-      "team": "LAA",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
-      "hrScoreRank": 4,
-      "topStats": [
-        "opposingPitcherHrVs=79.5",
-        "barrelRate=21.1"
-      ],
-      "bullets": [
-        "Kelly allows 79.5 HR/9 rate to lefties",
-        "21.1 barrel rate supports power upside"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Nick Kurtz",
-      "team": "ATH",
-      "opponent": "PIT",
-      "opposingPitcher": "Mitch Keller",
-      "hrScoreRank": 5,
-      "topStats": [
-        "last30HR=10",
-        "hardHitRate=57.6"
-      ],
-      "bullets": [
-        "10 HR in last 30 games",
-        "57.6 hard hit rate in favorable matchup"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "CLE",
-      "opposingPitcher": "Slade Cecconi",
-      "hrScoreRank": 6,
-      "topStats": [
-        "last7HR=4",
-        "parkFactor=1.1"
-      ],
-      "bullets": [
-        "4 HR in last 7 games",
-        "American Family Field park factor 1.1"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Byron Buxton",
-      "team": "MIN",
-      "opponent": "TEX",
-      "opposingPitcher": "Kumar Rocker",
-      "hrScoreRank": 7,
-      "topStats": [
-        "hrFBRatio=9.1",
-        "pullRate=47.5"
-      ],
-      "bullets": [
-        "9.1 hrFBRatio matches Alvarez",
-        "47.5 pull rate creates HR opportunity"
+        "HR score 75.6 (#2)",
+        "Pitcher HR VS 21.9 at park 1.04"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -131,15 +44,102 @@
       "player": "Shohei Ohtani",
       "team": "LAD",
       "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 8,
+      "opposingPitcher": "Shane McClanahan",
+      "hrScoreRank": 3,
       "topStats": [
-        "hardHitRate=53.3",
-        "exitVelo=93.6"
+        "Hard Hit%=53.3",
+        "Pitcher HR VS=44.4"
       ],
       "bullets": [
-        "53.3 hard hit rate at Dodger Stadium",
-        "Rasmussen allows just 22.4 HR/9"
+        "HR score 75.4 (#3)",
+        "Pitcher HR VS 44.4 at park 1.10"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "CLE",
+      "opposingPitcher": "Gavin Williams",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=67.0",
+        "Hard Hit%=49.1"
+      ],
+      "bullets": [
+        "HR score 75.0 (#4)",
+        "Pitcher HR VS 67.0 at park 1.10"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "KC",
+      "opposingPitcher": "Luinder Avila",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=58.4",
+        "Pitcher HR VS=41.2"
+      ],
+      "bullets": [
+        "HR score 73.0 (#5)",
+        "Pitcher HR VS 41.2 at park 0.98"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Nick Kurtz",
+      "team": "ATH",
+      "opponent": "PIT",
+      "opposingPitcher": "Braxton Ashcraft",
+      "hrScoreRank": 6,
+      "topStats": [
+        "Hard Hit%=57.6",
+        "Pitcher HR VS=26.6"
+      ],
+      "bullets": [
+        "HR score 71.1 (#6)",
+        "Pitcher HR VS 26.6 at park 0.96"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Mike Trout",
+      "team": "LAA",
+      "opponent": "AZ",
+      "opposingPitcher": "Eduardo Rodriguez",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Hard Hit%=51.7",
+        "Pitcher HR VS=43.5"
+      ],
+      "bullets": [
+        "HR score 69.1 (#7)",
+        "Pitcher HR VS 43.5 at park 1.01"
+      ],
+      "hrOddsYes": null,
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "CWS",
+      "opposingPitcher": "Anthony Kay",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=61.9",
+        "Hard Hit%=48.3"
+      ],
+      "bullets": [
+        "HR score 67.6 (#8)",
+        "Pitcher HR VS 61.9 at park 1.18"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -147,35 +147,18 @@
   ],
   "longshots": [
     {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "SEA",
-      "opposingPitcher": "Logan Gilbert",
+      "player": "Michael Harris II",
+      "team": "ATL",
+      "opponent": "SF",
+      "opposingPitcher": "Adrian Houser",
       "hrScoreRank": 9,
       "topStats": [
-        "exitVelo=95",
-        "hardHitRate=56.2"
+        "Pitcher HR VS=63.4",
+        "Hard Hit%=51.8"
       ],
       "bullets": [
-        "95 exit velo among highest in model",
-        "Gilbert allows 58.9 HR/9 to righties"
-      ],
-      "hrOddsYes": null,
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 16,
-      "topStats": [
-        "opposingPitcherHrVs=72.1",
-        "pullRate=48.5"
-      ],
-      "bullets": [
-        "Feltner allows 72.1 HR/9",
-        "48.5 pull rate at Wrigley Field"
+        "HR score 67.5 (#9)",
+        "Pitcher HR VS 63.4 at park 1.03"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
@@ -187,12 +170,12 @@
       "opposingPitcher": "Grant Holmes",
       "hrScoreRank": 10,
       "topStats": [
-        "Pitcher HR VS=59.5",
+        "Pitcher HR VS=59.3",
         "Hard Hit%=57.5"
       ],
       "bullets": [
-        "HR score 67.2 (#10)",
-        "Pitcher HR VS 59.5 at park 1.03"
+        "HR score 65.9 (#10)",
+        "Pitcher HR VS 59.3 at park 1.03"
       ],
       "hrOddsYes": null,
       "hrValueEdge": null
