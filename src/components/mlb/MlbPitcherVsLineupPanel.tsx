@@ -19,10 +19,12 @@ function getEdge(pitcherVal: number | null, lineupVal: number | null, category: 
   return "even";
 }
 
-function getNormalizedPercentile(value: number | null, scaleKey: MlbScaleKey, higherIsBetter: boolean) {
+function getNormalizedPercentile(value: number | null, scaleKey: MlbScaleKey, _higherIsBetter: boolean) {
+  // getBarScalePosition now handles lowerIsBetter inversion internally,
+  // so we just clamp the result regardless of higherIsBetter direction.
   if (value == null) return 0;
   const raw = getBarScalePosition(value, scaleKey);
-  return Math.max(1, Math.min(99, Math.round(higherIsBetter ? raw : 100 - raw)));
+  return Math.max(1, Math.min(99, Math.round(raw)));
 }
 
 function CompactBar({ label, value, barPct, color }: { label: string; value: string; barPct: number; color: string }) {
