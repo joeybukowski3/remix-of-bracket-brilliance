@@ -2365,6 +2365,7 @@ export default function MlbGameDetail() {
                       homeLineupSummary={detail.lineupSummaries.home}
                       awayAbbreviation={detail.game.away.abbreviation}
                       homeAbbreviation={detail.game.home.abbreviation}
+                      getPercentiles={getPercentiles}
                     />
                   </div>
                 </MlbSectionCard>

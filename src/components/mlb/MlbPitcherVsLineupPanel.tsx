@@ -2,6 +2,7 @@ import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { computeHr9, computeK9, computePercent, formatAvgLike, formatDecimal } from "@/lib/mlb/mlbFormatters";
 import { getBarScalePosition, type MlbScaleKey } from "@/lib/mlb/mlbBarScale";
 import type { MlbLineupSummary, MlbOpponentSplit, MlbStarterProfile } from "@/lib/mlb/mlbTypes";
+import type { PitcherPercentileEntry } from "@/hooks/usePitcherPercentiles";
 
 type EdgeResult = "pitcher" | "lineup" | "even";
 
@@ -19,47 +20,96 @@ function getEdge(pitcherVal: number | null, lineupVal: number | null, category: 
   return "even";
 }
 
-function getNormalizedPercentile(value: number | null, scaleKey: MlbScaleKey, higherIsBetter: boolean) {
+// Raw-scale fallback (used for lineup bars which don't have true percentiles)
+function rawPercentile(value: number | null, scaleKey: MlbScaleKey, higherIsBetter: boolean) {
   if (value == null) return 0;
   const raw = getBarScalePosition(value, scaleKey);
   return Math.max(1, Math.min(99, Math.round(higherIsBetter ? raw : 100 - raw)));
 }
 
-function CompactBar({ label, value, barPct, color }: { label: string; value: string; barPct: number; color: string }) {
+function CompactBar({
+  label, value, barPct, color, showPct,
+}: {
+  label: string; value: string; barPct: number; color: string; showPct?: number | null;
+}) {
   return (
     <div className="flex items-center gap-2 min-w-0">
       <span className="w-14 shrink-0 truncate text-right text-[10px] font-bold text-muted-foreground">{label}</span>
       <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
         <span className="pointer-events-none absolute inset-y-0 z-20 w-0.5 bg-amber-400" style={{ left: "50%" }} />
         <span className="absolute inset-y-0 left-0 rounded-full transition-all" style={{ width: `${barPct}%`, backgroundColor: color }} />
+        {showPct != null && barPct > 20 && (
+          <span className="absolute inset-y-0 left-1.5 flex items-center text-[8px] font-black text-white/90 z-10 leading-none">
+            {showPct}th
+          </span>
+        )}
       </div>
       <span className="w-14 shrink-0 text-[10px] font-semibold tabular-nums text-foreground">{value}</span>
     </div>
   );
 }
 
-function buildRows(pitcher: MlbStarterProfile, split: MlbOpponentSplit, lineupSummary: MlbLineupSummary) {
-  const k9Val = computeK9(pitcher.strikeOuts, pitcher.inningsPitched);
-  const bbVal = computePercent(pitcher.baseOnBalls, pitcher.battersFaced);
+function buildRows(
+  pitcher: MlbStarterProfile,
+  split: MlbOpponentSplit,
+  lineupSummary: MlbLineupSummary,
+  pitcherPcts: PitcherPercentileEntry | null,
+) {
+  const k9Val  = computeK9(pitcher.strikeOuts, pitcher.inningsPitched);
+  const bbVal  = computePercent(pitcher.baseOnBalls, pitcher.battersFaced);
   const hr9Val = computeHr9(pitcher.homeRuns, pitcher.inningsPitched);
   const eraVal = pitcher.era != null ? Number(pitcher.era) : null;
   const lineupKVal = computePercent(split?.strikeOuts ?? null, split?.plateAppearances ?? null);
   const obpVal = split?.obp ?? lineupSummary.obp ?? null;
   const slgVal = split?.slg ?? lineupSummary.slg ?? null;
   const opsVal = split?.ops ?? lineupSummary.ops ?? null;
+
+  // True percentiles from the daily data file, with raw-scale fallback
+  const k9Pct  = pitcherPcts?.k9Pct  ?? rawPercentile(k9Val,  "k9",        true);
+  const bbPct  = pitcherPcts?.bbPctPct ?? rawPercentile(bbVal,  "bbPercent", false);
+  const hr9Pct = pitcherPcts?.hr9Pct  ?? rawPercentile(hr9Val, "hr9",       false);
+  const eraPct = pitcherPcts?.eraPct  ?? rawPercentile(eraVal, "era",       false);
+
   return [
-    { category: "K/9 / K%", edgeKey: "k9", pitcherStat: `${k9Val?.toFixed(1) ?? "-"} K/9`, pitcherVal: k9Val, pitcherPct: getNormalizedPercentile(k9Val, "k9", true), lineupStat: `${lineupKVal?.toFixed(1) ?? "-"}% K`, lineupVal: lineupKVal, lineupPct: getNormalizedPercentile(lineupKVal, "percent", false) },
-    { category: "BB% / OBP", edgeKey: "bb", pitcherStat: `${bbVal?.toFixed(1) ?? "-"}% BB`, pitcherVal: bbVal, pitcherPct: getNormalizedPercentile(bbVal, "bbPercent", false), lineupStat: formatAvgLike(obpVal), lineupVal: obpVal != null ? Number(obpVal) : null, lineupPct: getNormalizedPercentile(obpVal != null ? Number(obpVal) : null, "obp", true) },
-    { category: "HR/9 / SLG", edgeKey: "hr9", pitcherStat: `${hr9Val?.toFixed(2) ?? "-"} HR/9`, pitcherVal: hr9Val, pitcherPct: getNormalizedPercentile(hr9Val, "hr9", false), lineupStat: formatAvgLike(slgVal), lineupVal: slgVal != null ? Number(slgVal) : null, lineupPct: getNormalizedPercentile(slgVal != null ? Number(slgVal) : null, "slg", true) },
-    { category: "ERA / OPS", edgeKey: "era", pitcherStat: formatDecimal(pitcher.era, 2), pitcherVal: eraVal, pitcherPct: getNormalizedPercentile(eraVal, "era", false), lineupStat: formatAvgLike(opsVal), lineupVal: opsVal != null ? Number(opsVal) : null, lineupPct: getNormalizedPercentile(opsVal != null ? Number(opsVal) : null, "ops", true) },
+    {
+      category: "K/9 / K%", edgeKey: "k9",
+      pitcherStat: `${k9Val?.toFixed(1) ?? "-"} K/9`,  pitcherVal: k9Val,  pitcherPct: k9Pct,
+      lineupStat:  `${lineupKVal?.toFixed(1) ?? "-"}% K`, lineupVal: lineupKVal,
+      lineupPct:   rawPercentile(lineupKVal, "percent", false),
+    },
+    {
+      category: "BB% / OBP", edgeKey: "bb",
+      pitcherStat: `${bbVal?.toFixed(1) ?? "-"}% BB`,  pitcherVal: bbVal,  pitcherPct: bbPct,
+      lineupStat:  formatAvgLike(obpVal),               lineupVal: obpVal != null ? Number(obpVal) : null,
+      lineupPct:   rawPercentile(obpVal != null ? Number(obpVal) : null, "obp", true),
+    },
+    {
+      category: "HR/9 / SLG", edgeKey: "hr9",
+      pitcherStat: `${hr9Val?.toFixed(2) ?? "-"} HR/9`, pitcherVal: hr9Val, pitcherPct: hr9Pct,
+      lineupStat:  formatAvgLike(slgVal),                lineupVal: slgVal != null ? Number(slgVal) : null,
+      lineupPct:   rawPercentile(slgVal != null ? Number(slgVal) : null, "slg", true),
+    },
+    {
+      category: "ERA / OPS", edgeKey: "era",
+      pitcherStat: formatDecimal(pitcher.era, 2), pitcherVal: eraVal, pitcherPct: eraPct,
+      lineupStat:  formatAvgLike(opsVal),         lineupVal: opsVal != null ? Number(opsVal) : null,
+      lineupPct:   rawPercentile(opsVal != null ? Number(opsVal) : null, "ops", true),
+    },
   ];
 }
 
-export default function MlbPitcherVsLineupPanel({ awayPitcher, homePitcher, awaySplit, homeSplit, awayLineupSummary, homeLineupSummary, awayAbbreviation, homeAbbreviation }: {
+export default function MlbPitcherVsLineupPanel({
+  awayPitcher, homePitcher,
+  awaySplit, homeSplit,
+  awayLineupSummary, homeLineupSummary,
+  awayAbbreviation, homeAbbreviation,
+  getPercentiles,
+}: {
   awayPitcher: MlbStarterProfile; homePitcher: MlbStarterProfile;
   awaySplit: MlbOpponentSplit; homeSplit: MlbOpponentSplit;
   awayLineupSummary: MlbLineupSummary; homeLineupSummary: MlbLineupSummary;
   awayAbbreviation: string; homeAbbreviation: string;
+  getPercentiles?: (id: number | null | undefined) => PitcherPercentileEntry | null;
 }) {
   const rawAway = getMlbTeamColors(awayAbbreviation).primary;
   const rawHome = getMlbTeamColors(homeAbbreviation).primary;
@@ -67,8 +117,12 @@ export default function MlbPitcherVsLineupPanel({ awayPitcher, homePitcher, away
   const homeColor = rawHome;
   const awayLastName = awayPitcher.name.split(" ").pop() ?? awayPitcher.name;
   const homeLastName = homePitcher.name.split(" ").pop() ?? homePitcher.name;
-  const homeRows = buildRows(homePitcher, awaySplit, awayLineupSummary);
-  const awayRows = buildRows(awayPitcher, homeSplit, homeLineupSummary);
+
+  const awayPcts = getPercentiles?.(awayPitcher.id) ?? null;
+  const homePcts = getPercentiles?.(homePitcher.id) ?? null;
+
+  const homeRows = buildRows(homePitcher, awaySplit, awayLineupSummary, homePcts);
+  const awayRows = buildRows(awayPitcher, homeSplit, homeLineupSummary, awayPcts);
 
   return (
     <div className="space-y-1.5">
@@ -95,9 +149,11 @@ export default function MlbPitcherVsLineupPanel({ awayPitcher, homePitcher, away
                 </span>
               </div>
             </div>
-            <CompactBar label={homeLastName} value={homeRow.pitcherStat} barPct={homeRow.pitcherPct} color={homeColor} />
+            {/* Home pitcher vs Away lineup */}
+            <CompactBar label={homeLastName} value={homeRow.pitcherStat} barPct={homeRow.pitcherPct} color={homeColor} showPct={homePcts ? homeRow.pitcherPct : null} />
             <CompactBar label={awayAbbreviation} value={homeRow.lineupStat} barPct={homeRow.lineupPct} color={awayColor} />
-            <CompactBar label={awayLastName} value={awayRow.pitcherStat} barPct={awayRow.pitcherPct} color={awayColor} />
+            {/* Away pitcher vs Home lineup */}
+            <CompactBar label={awayLastName} value={awayRow.pitcherStat} barPct={awayRow.pitcherPct} color={awayColor} showPct={awayPcts ? awayRow.pitcherPct : null} />
             <CompactBar label={homeAbbreviation} value={awayRow.lineupStat} barPct={awayRow.lineupPct} color={homeColor} />
           </div>
         );
