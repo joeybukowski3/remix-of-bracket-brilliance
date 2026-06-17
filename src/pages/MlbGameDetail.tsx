@@ -6,6 +6,7 @@ import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { useMlbOdds } from "@/hooks/useMlbOdds";
+import { usePitcherPercentiles } from "@/hooks/usePitcherPercentiles";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -2093,6 +2094,7 @@ export default function MlbGameDetail() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [usingDevFixture, setUsingDevFixture] = useState(false);
   const { data: PITCHER_REGRESSION_DATA, loading: regressionLoading } = usePitcherRegression();
+  const { getPercentiles } = usePitcherPercentiles();
   const mlbOdds = useMlbOdds();
 
   usePageSeo({
@@ -2204,7 +2206,30 @@ export default function MlbGameDetail() {
   };
 
   const summaryCards = detail ? getSummaryCards(detail) : [];
-  const pitcherMetrics = detail ? getPitcherComparisonMetrics(detail) : [];
+  const pitcherMetrics = useMemo(() => {
+    if (!detail) return [];
+    const base = getPitcherComparisonMetrics(detail);
+    const awayPcts = getPercentiles(detail.starters.away.id);
+    const homePcts = getPercentiles(detail.starters.home.id);
+    if (!awayPcts && !homePcts) return base;
+    return base.map((m) => {
+      const pctKeyMap: Record<string, keyof typeof awayPcts> = {
+        era:   "eraPct",
+        whip:  "whipPct",
+        k9:    "k9Pct",
+        kPct:  "kPctPct",
+        bbPct: "bbPctPct",
+        hr9:   "hr9Pct",
+      };
+      const pctKey = pctKeyMap[m.key];
+      if (!pctKey) return m;
+      return {
+        ...m,
+        leftPct:  awayPcts ? (awayPcts[pctKey] as number | null) : null,
+        rightPct: homePcts ? (homePcts[pctKey] as number | null) : null,
+      };
+    });
+  }, [detail, getPercentiles]);
   const parkContext = detail ? getParkContextValues(detail) : null;
   const propAngles = detail ? getPropAngles(detail) : [];
   const featuredMatchupEdge = detail ? getFeaturedMatchupEdge(detail) : null;

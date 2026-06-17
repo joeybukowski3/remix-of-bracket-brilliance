@@ -186,6 +186,8 @@ export type MlbComparisonMetric = {
   leftValue: number | null;
   rightValue: number | null;
   leagueAverage: number | null;
+  leftPct?: number | null;   // 0-100 true percentile (optional — falls back to scale)
+  rightPct?: number | null;  // 0-100 true percentile (optional — falls back to scale)
   format: "era" | "whip" | "k9" | "percent" | "rate3" | "ops" | "avg" | "factor" | "ip";
   scaleKey:
     | "era"
