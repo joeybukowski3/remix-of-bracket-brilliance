@@ -241,6 +241,10 @@ function summarizeTeamSchedule(games: any[], teamId: number | null, opponentId: 
     seasonWrcPlusRank: null,
     recentWrcPlus: null,
     recentWrcPlusRank: null,
+    vsLhpWrcPlus: null,
+    vsLhpWrcPlusRank: null,
+    vsRhpWrcPlus: null,
+    vsRhpWrcPlusRank: null,
   };
 }
 
@@ -259,13 +263,17 @@ async function fetchWrcData(): Promise<MlbTeamWrcData | null> {
 }
 
 function lookupWrc(wrcData: MlbTeamWrcData | null, abbreviation: string) {
-  if (!wrcData) return { seasonWrcPlus: null, seasonWrcPlusRank: null, recentWrcPlus: null, recentWrcPlusRank: null };
+  if (!wrcData) return { seasonWrcPlus: null, seasonWrcPlusRank: null, recentWrcPlus: null, recentWrcPlusRank: null, vsLhpWrcPlus: null, vsLhpWrcPlusRank: null, vsRhpWrcPlus: null, vsRhpWrcPlusRank: null };
   const entry = wrcData.teams.find((t) => t.abbreviation === abbreviation);
   return {
     seasonWrcPlus: entry?.seasonWrcPlus ?? null,
     seasonWrcPlusRank: entry?.seasonRankLabel ?? null,
     recentWrcPlus: entry?.recentWrcPlus ?? null,
     recentWrcPlusRank: entry?.recentRankLabel ?? null,
+    vsLhpWrcPlus: entry?.vsLhpWrcPlus ?? null,
+    vsLhpWrcPlusRank: entry?.vsLhpRankLabel ?? null,
+    vsRhpWrcPlus: entry?.vsRhpWrcPlus ?? null,
+    vsRhpWrcPlusRank: entry?.vsRhpRankLabel ?? null,
   };
 }
 

@@ -15,22 +15,14 @@ function better(a: string, b: string) {
 }
 
 function WrcCell({ value, rankLabel, betterThan }: { value: number | null; rankLabel: string | null; betterThan: boolean }) {
-  if (value === null) {
-    return <span className="text-muted-foreground text-xs">—</span>;
-  }
-  const colorClass =
-    value >= 110 ? "text-emerald-700" :
-    value >= 95  ? "text-foreground" :
-    "text-rose-600";
-
+  if (value === null) return <span className="text-muted-foreground text-xs">—</span>;
+  const colorClass = value >= 110 ? "text-emerald-700" : value >= 95 ? "text-foreground" : "text-rose-600";
   return (
     <span className={`inline-flex flex-col items-center leading-tight ${betterThan ? "font-bold" : "font-semibold"}`}>
       <span className={`text-xs ${colorClass} ${betterThan ? "rounded-full bg-emerald-50 px-2 py-0.5 ring-1 ring-emerald-200" : ""}`}>
         wRC+ {value}
       </span>
-      {rankLabel && (
-        <span className="text-[10px] text-muted-foreground mt-0.5">{rankLabel}</span>
-      )}
+      {rankLabel && <span className="text-[10px] text-muted-foreground mt-0.5">{rankLabel}</span>}
     </span>
   );
 }
@@ -44,37 +36,28 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
   const awayTrend = getTrendArrow(awayContext.lastFiveRecord);
   const homeTrend = getTrendArrow(homeContext.lastFiveRecord);
 
+  // Away team faces HOME pitcher; home team faces AWAY pitcher
+  const awayFacesHand = detail.starters?.home?.hand?.toUpperCase().startsWith("L") ? "L" : "R";
+  const homeFacesHand = detail.starters?.away?.hand?.toUpperCase().startsWith("L") ? "L" : "R";
+
+  const awayVsHandWrc  = awayFacesHand === "L" ? awayContext.vsLhpWrcPlus  : awayContext.vsRhpWrcPlus;
+  const awayVsHandRank = awayFacesHand === "L" ? awayContext.vsLhpWrcPlusRank : awayContext.vsRhpWrcPlusRank;
+  const homeVsHandWrc  = homeFacesHand === "L" ? homeContext.vsLhpWrcPlus  : homeContext.vsRhpWrcPlus;
+  const homeVsHandRank = homeFacesHand === "L" ? homeContext.vsLhpWrcPlusRank : homeContext.vsRhpWrcPlusRank;
+  const awayVsHandBetter = (awayVsHandWrc ?? 0) > (homeVsHandWrc ?? 0);
+  const homeVsHandBetter = (homeVsHandWrc ?? 0) > (awayVsHandWrc ?? 0);
+
+  // If both teams face same handedness pitcher, show one label; otherwise generic
+  const splitRowLabel = awayFacesHand === homeFacesHand ? `vs ${awayFacesHand}HP` : "vs opp. hand";
+
   const rows = [
-    {
-      label: "Season",
-      away: awayContext.seasonRecord,
-      home: homeContext.seasonRecord,
-      awayBetter: better(awayContext.seasonRecord, homeContext.seasonRecord),
-      homeBetter: better(homeContext.seasonRecord, awayContext.seasonRecord),
-    },
-    {
-      label: "Last 5",
-      away: awayContext.lastFiveRecord,
-      home: homeContext.lastFiveRecord,
-      awayBetter: better(awayContext.lastFiveRecord, homeContext.lastFiveRecord),
-      homeBetter: better(homeContext.lastFiveRecord, awayContext.lastFiveRecord),
+    { label: "Season",      away: awayContext.seasonRecord,   home: homeContext.seasonRecord,   awayBetter: better(awayContext.seasonRecord, homeContext.seasonRecord),   homeBetter: better(homeContext.seasonRecord, awayContext.seasonRecord) },
+    { label: "Last 5",      away: awayContext.lastFiveRecord, home: homeContext.lastFiveRecord, awayBetter: better(awayContext.lastFiveRecord, homeContext.lastFiveRecord), homeBetter: better(homeContext.lastFiveRecord, awayContext.lastFiveRecord),
       awayIcon: awayTrend === "up" ? <TrendingUp className="inline mr-0.5 h-3 w-3" /> : awayTrend === "down" ? <TrendingDown className="inline mr-0.5 h-3 w-3" /> : null,
       homeIcon: homeTrend === "up" ? <TrendingUp className="inline mr-0.5 h-3 w-3" /> : homeTrend === "down" ? <TrendingDown className="inline mr-0.5 h-3 w-3" /> : null,
     },
-    {
-      label: "Away / Home",
-      away: awayContext.awayRecord,
-      home: homeContext.homeRecord,
-      awayBetter: better(awayContext.awayRecord, homeContext.homeRecord),
-      homeBetter: better(homeContext.homeRecord, awayContext.awayRecord),
-    },
-    {
-      label: "Series",
-      away: awayContext.seriesRecord,
-      home: homeContext.seriesRecord,
-      awayBetter: false,
-      homeBetter: false,
-    },
+    { label: "Away / Home", away: awayContext.awayRecord,     home: homeContext.homeRecord,     awayBetter: better(awayContext.awayRecord, homeContext.homeRecord),       homeBetter: better(homeContext.homeRecord, awayContext.awayRecord) },
+    { label: "Series",      away: awayContext.seriesRecord,   home: homeContext.seriesRecord,   awayBetter: false, homeBetter: false },
   ];
 
   const awaySeasonBetter = (awayContext.seasonWrcPlus ?? 0) > (homeContext.seasonWrcPlus ?? 0);
@@ -84,14 +67,12 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
 
   return (
     <div className="space-y-2">
-      {/* Game info bar */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-secondary/30 px-3 py-1.5 text-[10px] text-muted-foreground">
         <span className="font-semibold text-foreground">{game.venue}</span>
         {weather && <span>{weather} {detail.weather}</span>}
         <span style={statusTheme} className="rounded-full px-2 py-0.5 font-bold">{game.status}</span>
       </div>
 
-      {/* Side-by-side comparison table */}
       <table className="w-full text-xs">
         <thead>
           <tr>
@@ -117,42 +98,37 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
             </tr>
           ))}
 
-          {/* Season wRC+ row */}
+          {/* Season wRC+ */}
           <tr>
             <td className="py-1.5 text-muted-foreground">
-              Season wRC+
-              <span className="ml-1 text-[9px] text-muted-foreground/60">(offense vs avg)</span>
+              Season wRC+<span className="ml-1 text-[9px] text-muted-foreground/60">(offense vs avg)</span>
             </td>
-            <td className="py-1.5 text-center">
-              <WrcCell value={awayContext.seasonWrcPlus} rankLabel={awayContext.seasonWrcPlusRank} betterThan={awaySeasonBetter} />
-            </td>
-            <td className="py-1.5 text-center">
-              <WrcCell value={homeContext.seasonWrcPlus} rankLabel={homeContext.seasonWrcPlusRank} betterThan={homeSeasonBetter} />
-            </td>
+            <td className="py-1.5 text-center"><WrcCell value={awayContext.seasonWrcPlus} rankLabel={awayContext.seasonWrcPlusRank} betterThan={awaySeasonBetter} /></td>
+            <td className="py-1.5 text-center"><WrcCell value={homeContext.seasonWrcPlus} rankLabel={homeContext.seasonWrcPlusRank} betterThan={homeSeasonBetter} /></td>
           </tr>
 
-          {/* Last 14 days wRC+ row — falls back to season if recent data unavailable */}
+          {/* L14 wRC+ */}
           <tr>
             <td className="py-1.5 text-muted-foreground">
-              L14 wRC+
-              <span className="ml-1 text-[9px] text-muted-foreground/60">
+              L14 wRC+<span className="ml-1 text-[9px] text-muted-foreground/60">
                 {awayContext.recentWrcPlus != null || homeContext.recentWrcPlus != null ? "(last 2 weeks)" : "(unavailable, showing season)"}
               </span>
             </td>
             <td className="py-1.5 text-center">
-              <WrcCell 
-                value={awayContext.recentWrcPlus ?? awayContext.seasonWrcPlus} 
-                rankLabel={awayContext.recentWrcPlusRank ?? awayContext.seasonWrcPlusRank} 
-                betterThan={awayRecentBetter || awaySeasonBetter} 
-              />
+              <WrcCell value={awayContext.recentWrcPlus ?? awayContext.seasonWrcPlus} rankLabel={awayContext.recentWrcPlusRank ?? awayContext.seasonWrcPlusRank} betterThan={awayRecentBetter || awaySeasonBetter} />
             </td>
             <td className="py-1.5 text-center">
-              <WrcCell 
-                value={homeContext.recentWrcPlus ?? homeContext.seasonWrcPlus} 
-                rankLabel={homeContext.recentWrcPlusRank ?? homeContext.seasonWrcPlusRank} 
-                betterThan={homeRecentBetter || homeSeasonBetter} 
-              />
+              <WrcCell value={homeContext.recentWrcPlus ?? homeContext.seasonWrcPlus} rankLabel={homeContext.recentWrcPlusRank ?? homeContext.seasonWrcPlusRank} betterThan={homeRecentBetter || homeSeasonBetter} />
             </td>
+          </tr>
+
+          {/* vs Pitcher Handedness wRC+ */}
+          <tr>
+            <td className="py-1.5 text-muted-foreground">
+              {splitRowLabel} wRC+<span className="ml-1 text-[9px] text-muted-foreground/60">(vs today's starter)</span>
+            </td>
+            <td className="py-1.5 text-center"><WrcCell value={awayVsHandWrc} rankLabel={awayVsHandRank} betterThan={awayVsHandBetter} /></td>
+            <td className="py-1.5 text-center"><WrcCell value={homeVsHandWrc} rankLabel={homeVsHandRank} betterThan={homeVsHandBetter} /></td>
           </tr>
         </tbody>
       </table>

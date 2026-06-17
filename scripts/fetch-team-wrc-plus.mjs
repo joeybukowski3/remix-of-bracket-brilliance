@@ -67,6 +67,13 @@ async function fetchTeamBattingLastDays(teamId, days = 14) {
   return json?.stats?.[0]?.splits?.[0]?.stat ?? null;
 }
 
+// Returns season hitting split vs LHP or RHP (sitCodes: vl or vr)
+async function fetchTeamBattingSplit(teamId, sitCode) {
+  const url = `https://statsapi.mlb.com/api/v1/teams/${teamId}/stats?stats=statSplits&group=hitting&season=${SEASON}&sitCodes=${sitCode}`;
+  const json = await fetchJson(url);
+  return json?.stats?.[0]?.splits?.[0]?.stat ?? null;
+}
+
 function safeNum(val, fallback = 0) {
   const n = parseFloat(val);
   return Number.isFinite(n) ? n : fallback;
@@ -74,8 +81,9 @@ function safeNum(val, fallback = 0) {
 
 /**
  * Approximate wRC+ from a stat object.
- * Uses wOBA if available; falls back to OPS-based approximation.
- * lgWoba / lgRunsPerPA are derived from league aggregate passed in.
+ * Uses wOBA if available; falls back to OBP as wOBA proxy.
+ * For splits (vsLHP/vsRHP) the MLB API omits runs, so we use a
+ * well-known constant lgR/PA (0.122) rather than deriving it from the data.
  */
 function approximateWrcPlus(stat, lgWoba, lgRunsPerPA) {
   if (!stat) return null;
@@ -83,9 +91,25 @@ function approximateWrcPlus(stat, lgWoba, lgRunsPerPA) {
   const woba = safeNum(stat.wOBA ?? stat.obp, null);
   if (woba === null) return null;
 
+  // Use passed-in lgRunsPerPA if valid, otherwise fall back to constant
+  const rpa = (lgRunsPerPA > 0) ? lgRunsPerPA : 0.122;
+
   // wRC+ = ((wOBA - lgWOBA) / wOBAScale + lgR/PA) / lgR/PA * 100
-  const wrcPlus = ((woba - lgWoba) / WOBA_SCALE + lgRunsPerPA) / lgRunsPerPA * 100;
+  const wrcPlus = ((woba - lgWoba) / WOBA_SCALE + rpa) / rpa * 100;
   return Math.round(wrcPlus);
+}
+
+/**
+ * For split stats that lack runs (vsLHP/vsRHP), compute league wOBA
+ * from OBP across all teams and use constant lgR/PA.
+ */
+function computeLeagueAveragesForSplits(teamStats) {
+  const valid = teamStats.filter((s) => s && safeNum(s.obp) > 0);
+  if (valid.length < 15) return { lgWoba: 0.310, lgRunsPerPA: 0.122 };
+  const totalPA = valid.reduce((sum, s) => sum + safeNum(s.plateAppearances), 0);
+  const totalWoba = valid.reduce((sum, s) => sum + safeNum(s.obp) * safeNum(s.plateAppearances), 0);
+  const lgWoba = totalPA > 0 ? totalWoba / totalPA : 0.310;
+  return { lgWoba, lgRunsPerPA: 0.122 };
 }
 
 /**
@@ -144,23 +168,36 @@ async function main() {
     teams.map((t) => fetchTeamBattingLastDays(t.id, 14).catch(() => null))
   );
 
+  console.log("[wrc-plus] Fetching vs LHP / vs RHP splits...");
+  const [vsLhpStats, vsRhpStats] = await Promise.all([
+    Promise.all(teams.map((t) => fetchTeamBattingSplit(t.id, "vl").catch(() => null))),
+    Promise.all(teams.map((t) => fetchTeamBattingSplit(t.id, "vr").catch(() => null))),
+  ]);
+
   // Compute league averages from season stats
   const { lgWoba: lgWobaSeason, lgRunsPerPA: lgRpaSeason } = computeLeagueAverages(seasonStats);
   const { lgWoba: lgWobaRecent, lgRunsPerPA: lgRpaRecent } = computeLeagueAverages(recentStats);
+  const { lgWoba: lgWobaVsL, lgRunsPerPA: lgRpaVsL } = computeLeagueAveragesForSplits(vsLhpStats);
+  const { lgWoba: lgWobaVsR, lgRunsPerPA: lgRpaVsR } = computeLeagueAveragesForSplits(vsRhpStats);
 
   console.log(`[wrc-plus] League avg season wOBA=${lgWobaSeason.toFixed(3)} R/PA=${lgRpaSeason.toFixed(3)}`);
   console.log(`[wrc-plus] League avg recent wOBA=${lgWobaRecent.toFixed(3)} R/PA=${lgRpaRecent.toFixed(3)}`);
+  console.log(`[wrc-plus] League avg vsLHP wOBA=${lgWobaVsL.toFixed(3)} | vsRHP wOBA=${lgWobaVsR.toFixed(3)}`);
 
   // Compute raw wRC+ for each team
   const withWrc = teams.map((team, i) => ({
     ...team,
     seasonWrcPlus: approximateWrcPlus(seasonStats[i], lgWobaSeason, lgRpaSeason),
     recentWrcPlus: approximateWrcPlus(recentStats[i], lgWobaRecent, lgRpaRecent),
+    vsLhpWrcPlus: approximateWrcPlus(vsLhpStats[i], lgWobaVsL, lgRpaVsL),
+    vsRhpWrcPlus: approximateWrcPlus(vsRhpStats[i], lgWobaVsR, lgRpaVsR),
   }));
 
   // Rank teams (1 = best)
   const seasonRanks = rankTeams(withWrc, "seasonWrcPlus");
   const recentRanks = rankTeams(withWrc, "recentWrcPlus");
+  const vsLhpRanks = rankTeams(withWrc, "vsLhpWrcPlus");
+  const vsRhpRanks = rankTeams(withWrc, "vsRhpWrcPlus");
 
   const result = withWrc.map((team) => ({
     id: team.id,
@@ -172,6 +209,12 @@ async function main() {
     recentWrcPlus: team.recentWrcPlus,
     recentRank: recentRanks.get(team.abbreviation) ?? null,
     recentRankLabel: recentRanks.has(team.abbreviation) ? ordinalRank(recentRanks.get(team.abbreviation)) : null,
+    vsLhpWrcPlus: team.vsLhpWrcPlus,
+    vsLhpRank: vsLhpRanks.get(team.abbreviation) ?? null,
+    vsLhpRankLabel: vsLhpRanks.has(team.abbreviation) ? ordinalRank(vsLhpRanks.get(team.abbreviation)) : null,
+    vsRhpWrcPlus: team.vsRhpWrcPlus,
+    vsRhpRank: vsRhpRanks.get(team.abbreviation) ?? null,
+    vsRhpRankLabel: vsRhpRanks.has(team.abbreviation) ? ordinalRank(vsRhpRanks.get(team.abbreviation)) : null,
   }));
 
   const output = {

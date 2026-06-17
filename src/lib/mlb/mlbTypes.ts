@@ -35,6 +35,10 @@ export type MlbTeamContext = {
   seasonWrcPlusRank: string | null;
   recentWrcPlus: number | null;
   recentWrcPlusRank: string | null;
+  vsLhpWrcPlus: number | null;
+  vsLhpWrcPlusRank: string | null;
+  vsRhpWrcPlus: number | null;
+  vsRhpWrcPlusRank: string | null;
 };
 
 export type MlbTeamWrcEntry = {
@@ -47,6 +51,12 @@ export type MlbTeamWrcEntry = {
   recentWrcPlus: number | null;
   recentRank: number | null;
   recentRankLabel: string | null;
+  vsLhpWrcPlus: number | null;
+  vsLhpRank: number | null;
+  vsLhpRankLabel: string | null;
+  vsRhpWrcPlus: number | null;
+  vsRhpRank: number | null;
+  vsRhpRankLabel: string | null;
 };
 
 export type MlbTeamWrcData = {
