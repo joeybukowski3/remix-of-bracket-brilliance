@@ -1861,7 +1861,7 @@ function SocialMediaTablesSection({
         {/* Table content */}
         <div style={{ padding: 14 }}>
           {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />}
-          {activeTab === "hr"   && <SocialTableHR batters={batters} />}
+          {activeTab === "hr"   && <SocialTableHR batters={enrichedPropBatters} />}
           {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
         </div>
