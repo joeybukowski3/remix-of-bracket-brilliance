@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type PitcherPercentileEntry = {
   id: number;
@@ -49,10 +49,13 @@ export function usePitcherPercentiles() {
     fetchPercentiles().then(setData);
   }, []);
 
-  function getPercentiles(pitcherId: number | null | undefined): PitcherPercentileEntry | null {
-    if (!pitcherId || !data) return null;
-    return data.pitchers[String(pitcherId)] ?? null;
-  }
+  const getPercentiles = useCallback(
+    (pitcherId: number | null | undefined): PitcherPercentileEntry | null => {
+      if (!pitcherId || !data) return null;
+      return data.pitchers[String(pitcherId)] ?? null;
+    },
+    [data],
+  );
 
   return { data, getPercentiles };
 }
