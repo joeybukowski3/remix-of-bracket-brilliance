@@ -1012,13 +1012,19 @@ function MlbSlateAnalyzer({
 
                   // OPS vs opposing pitcher handedness
                   // Home team BATS against AWAY pitcher
-                  const homeVsHandOps = awayHand?.toUpperCase().startsWith("L") ? homeWrc?.vsLhpOps : homeWrc?.vsRhpOps;
-                  // Away team BATS against HOME pitcher
-                  const awayVsHandOps = homeHand?.toUpperCase().startsWith("L") ? awayWrc?.vsLhpOps : awayWrc?.vsRhpOps;
-                  const awayVsHandLabel = homeHand?.toUpperCase().startsWith("L") ? "vs LHP" : "vs RHP";
-                  const homeVsHandLabel = awayHand?.toUpperCase().startsWith("L") ? "vs LHP" : "vs RHP";
-                  const vsHandRowLabel = awayVsHandLabel === homeVsHandLabel
-                    ? `OPS ${awayVsHandLabel}` : "OPS vs hand";
+                  const awayHandIsL = awayHand?.toUpperCase().startsWith("L") ?? false;
+                  const homeHandIsL = homeHand?.toUpperCase().startsWith("L") ?? false;
+
+                  // Each team faces the OPPOSING pitcher's hand
+                  const homeVsHandOps  = awayHandIsL ? (homeWrc?.vsLhpOps ?? null) : (homeWrc?.vsRhpOps ?? null);
+                  const awayVsHandOps  = homeHandIsL ? (awayWrc?.vsLhpOps ?? null) : (awayWrc?.vsRhpOps ?? null);
+                  const homeVsHandTag  = awayHandIsL ? "vs LHP" : "vs RHP";
+                  const awayVsHandTag  = homeHandIsL ? "vs LHP" : "vs RHP";
+                  // If both teams face same handedness, one shared label; if different, label per side
+                  const vsHandRowLabel = "OPS vs hand";
+                  // Format value with its own parenthetical split label
+                  const fmtOps = (val: number | null | undefined, tag: string) =>
+                    val != null ? `${fmt3(val)} (${tag})` : "—";
 
                   type Row = { label: string; awaySzn: string; awayL14: string; homeSzn: string; homeL14: string; sznAdv: "home"|"away"|null; l14Adv: "home"|"away"|null };
                   const rows: Row[] = [
@@ -1051,9 +1057,9 @@ function MlbSlateAnalyzer({
                     },
                     {
                       label: vsHandRowLabel,
-                      awaySzn: awayVsHandOps != null ? fmt3(awayVsHandOps) : "—",
+                      awaySzn: fmtOps(awayVsHandOps, awayVsHandTag),
                       awayL14: "—",
-                      homeSzn: homeVsHandOps != null ? fmt3(homeVsHandOps) : "—",
+                      homeSzn: fmtOps(homeVsHandOps, homeVsHandTag),
                       homeL14: "—",
                       sznAdv: adv(homeVsHandOps, awayVsHandOps),
                       l14Adv: null,
