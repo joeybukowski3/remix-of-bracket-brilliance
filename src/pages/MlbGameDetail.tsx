@@ -1794,9 +1794,18 @@ function SocialTableML({
       if (vb != null) return 1;
       return b!.confidence - a!.confidence;
     })
-    // Only show picks where the model beats the market (positive edge).
-    // If no odds available for a game, still include it (ranked by model confidence).
-    .filter(r => r!.valueEdge == null || r!.valueEdge > 0)
+    // Only show picks where either:
+    // (a) model has a genuine positive edge vs market, OR
+    // (b) model is near-push (edge >= -1.5%) AND team is an underdog (+odds)
+    //     → underdog at near-even model odds = value even without a clear model edge
+    // Games with no odds available still show (sorted by confidence only)
+    .filter(r => {
+      if (r!.valueEdge == null) return true; // no odds — always include
+      if (r!.valueEdge > 0) return true;     // genuine positive edge
+      // Near-push underdog: model within 1.5% of market AND pick is +odds
+      const isUnderdog = r!.pickAmerican != null && r!.pickAmerican.startsWith("+");
+      return r!.valueEdge >= -1.5 && isUnderdog;
+    })
     .slice(0, 8) as NonNullable<ReturnType<typeof rows[0]>>[];
 
   const MEDALS = ["🥇", "🥈", "🥉"];
