@@ -1056,8 +1056,8 @@ function MlbSlateAnalyzer({
                     // Stat table for one team: label | season | last 2 weeks
                     const renderStatTable = (
                       wrc: typeof awayWrc,
-                      recordLabel: string,
-                      seasonRecord: string,
+                      splitLabel: string,
+                      splitRecord: string,
                       oppPitcherHand: string | undefined,
                     ) => {
                       const handIsL = oppPitcherHand?.toUpperCase().startsWith("L");
@@ -1065,7 +1065,7 @@ function MlbSlateAnalyzer({
                       const vsHandLabel = handIsL ? "wRC+ vs LHP" : "wRC+ vs RHP";
 
                       const rows: { label: string; season: string; recent: string }[] = [
-                        { label: recordLabel, season: seasonRecord || "—", recent: wrc?.last14Record ?? "—" },
+                        { label: `Record (${splitLabel})`, season: splitRecord || "—", recent: wrc?.last14Record ?? "—" },
                         { label: "Batting xBA", season: fmt3(wrc?.seasonXba), recent: wrc?.recentAvg != null ? `${fmt3(wrc.recentAvg)} AVG` : "—" },
                         { label: "wRC+", season: wrc?.seasonWrcPlus != null ? String(wrc.seasonWrcPlus) : "—", recent: wrc?.recentWrcPlus != null ? String(wrc.recentWrcPlus) : "—" },
                         { label: vsHandLabel, season: vsHandWrc != null ? String(vsHandWrc) : "—", recent: "—" },
@@ -1131,7 +1131,7 @@ function MlbSlateAnalyzer({
                               <MlbTeamLogo team={game.home.abbreviation} size={16} />
                               <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">{game.home.abbreviation} (Home)</span>
                             </div>
-                            {renderStatTable(homeWrc, "Team home record", game.home.record, awayHand)}
+                            {renderStatTable(homeWrc, "Home", detail?.homeContext?.homeRecord || game.home.record, awayHand)}
                           </div>
                           {/* Away team block */}
                           <div className="rounded-lg border border-slate-100 bg-slate-50/50 px-2.5 py-1.5">
@@ -1139,7 +1139,7 @@ function MlbSlateAnalyzer({
                               <MlbTeamLogo team={game.away.abbreviation} size={16} />
                               <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">{game.away.abbreviation} (Away)</span>
                             </div>
-                            {renderStatTable(awayWrc, "Team away record", game.away.record, homeHand)}
+                            {renderStatTable(awayWrc, "Away", detail?.awayContext?.awayRecord || game.away.record, homeHand)}
                           </div>
                         </div>
 
