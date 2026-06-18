@@ -271,6 +271,8 @@ async function main() {
     recentWrcPlus: approximateWrcPlus(recentStats[i], lgWobaRecent, lgRpaRecent),
     vsLhpWrcPlus: approximateWrcPlus(vsLhpStats[i], lgWobaVsL, lgRpaVsL),
     vsRhpWrcPlus: approximateWrcPlus(vsRhpStats[i], lgWobaVsR, lgRpaVsR),
+    vsLhpOps: vsLhpStats[i]?.ops != null ? parseFloat(vsLhpStats[i].ops) : null,
+    vsRhpOps: vsRhpStats[i]?.ops != null ? parseFloat(vsRhpStats[i].ops) : null,
     seasonAvg: seasonStats[i]?.avg != null ? parseFloat(seasonStats[i].avg) : null,
     recentAvg: recentStats[i]?.avg != null ? parseFloat(recentStats[i].avg) : null,
     last14Record: last14Records[i] ?? null,
@@ -283,6 +285,8 @@ async function main() {
   const recentRanks = rankTeams(withWrc, "recentWrcPlus");
   const vsLhpRanks = rankTeams(withWrc, "vsLhpWrcPlus");
   const vsRhpRanks = rankTeams(withWrc, "vsRhpWrcPlus");
+  const vsLhpOpsRanks = rankTeams(withWrc, "vsLhpOps");
+  const vsRhpOpsRanks = rankTeams(withWrc, "vsRhpOps");
 
   const result = withWrc.map((team) => ({
     id: team.id,
@@ -300,6 +304,10 @@ async function main() {
     vsRhpWrcPlus: team.vsRhpWrcPlus,
     vsRhpRank: vsRhpRanks.get(team.abbreviation) ?? null,
     vsRhpRankLabel: vsRhpRanks.has(team.abbreviation) ? ordinalRank(vsRhpRanks.get(team.abbreviation)) : null,
+    vsLhpOps: team.vsLhpOps ?? null,
+    vsLhpOpsRank: vsLhpOpsRanks.get(team.abbreviation) ?? null,
+    vsRhpOps: team.vsRhpOps ?? null,
+    vsRhpOpsRank: vsRhpOpsRanks.get(team.abbreviation) ?? null,
     seasonXba: xbaMap.get(team.abbreviation) ?? null,
     seasonAvg: team.seasonAvg ?? null,
     recentAvg: team.recentAvg ?? null,

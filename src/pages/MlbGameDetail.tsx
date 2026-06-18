@@ -1010,15 +1010,15 @@ function MlbSlateAnalyzer({
                     return homeVal > awayVal ? "home" : "away";
                   };
 
-                  // wRC+ vs opposing pitcher handedness
+                  // OPS vs opposing pitcher handedness
                   // Home team BATS against AWAY pitcher
-                  const homeVsHandWrc = awayHand?.toUpperCase().startsWith("L") ? homeWrc?.vsLhpWrcPlus : homeWrc?.vsRhpWrcPlus;
+                  const homeVsHandOps = awayHand?.toUpperCase().startsWith("L") ? homeWrc?.vsLhpOps : homeWrc?.vsRhpOps;
                   // Away team BATS against HOME pitcher
-                  const awayVsHandWrc = homeHand?.toUpperCase().startsWith("L") ? awayWrc?.vsLhpWrcPlus : awayWrc?.vsRhpWrcPlus;
+                  const awayVsHandOps = homeHand?.toUpperCase().startsWith("L") ? awayWrc?.vsLhpOps : awayWrc?.vsRhpOps;
                   const awayVsHandLabel = homeHand?.toUpperCase().startsWith("L") ? "vs LHP" : "vs RHP";
                   const homeVsHandLabel = awayHand?.toUpperCase().startsWith("L") ? "vs LHP" : "vs RHP";
                   const vsHandRowLabel = awayVsHandLabel === homeVsHandLabel
-                    ? `wRC+ ${awayVsHandLabel}` : "wRC+ vs hand";
+                    ? `OPS ${awayVsHandLabel}` : "OPS vs hand";
 
                   type Row = { label: string; awaySzn: string; awayL14: string; homeSzn: string; homeL14: string; sznAdv: "home"|"away"|null; l14Adv: "home"|"away"|null };
                   const rows: Row[] = [
@@ -1051,11 +1051,11 @@ function MlbSlateAnalyzer({
                     },
                     {
                       label: vsHandRowLabel,
-                      awaySzn: awayVsHandWrc != null ? String(awayVsHandWrc) : "—",
+                      awaySzn: awayVsHandOps != null ? fmt3(awayVsHandOps) : "—",
                       awayL14: "—",
-                      homeSzn: homeVsHandWrc != null ? String(homeVsHandWrc) : "—",
+                      homeSzn: homeVsHandOps != null ? fmt3(homeVsHandOps) : "—",
                       homeL14: "—",
-                      sznAdv: adv(homeVsHandWrc, awayVsHandWrc),
+                      sznAdv: adv(homeVsHandOps, awayVsHandOps),
                       l14Adv: null,
                     },
                   ];
