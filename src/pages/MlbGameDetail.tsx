@@ -1167,7 +1167,7 @@ function MlbSlateAnalyzer({
                               <MlbTeamLogo team={game.away.abbreviation} size={12} />
                             </div>
                           </div>
-                          {rows.map((r) => (
+                          {rows.filter(r => r.homeL14 !== "—" || r.awayL14 !== "—").map((r) => (
                             <div key={`l14-${r.label}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
                               <div className="flex items-center gap-0.5 min-w-0">
                                 {r.l14Adv === "home" && <span className="text-emerald-500 text-[11px] leading-none shrink-0">✓</span>}
