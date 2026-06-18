@@ -1794,6 +1794,9 @@ function SocialTableML({
       if (vb != null) return 1;
       return b!.confidence - a!.confidence;
     })
+    // Only show picks where the model beats the market (positive edge).
+    // If no odds available for a game, still include it (ranked by model confidence).
+    .filter(r => r!.valueEdge == null || r!.valueEdge > 0)
     .slice(0, 8) as NonNullable<ReturnType<typeof rows[0]>>[];
 
   const MEDALS = ["🥇", "🥈", "🥉"];
