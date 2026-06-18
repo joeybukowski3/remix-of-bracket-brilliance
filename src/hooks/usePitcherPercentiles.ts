@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type PitcherPercentileEntry = {
   id: number;
@@ -37,24 +37,42 @@ async function fetchPercentiles(): Promise<PitcherPercentilesData | null> {
   _promise = fetch("/data/mlb/pitcher-percentiles.json", { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : null))
     .then((d) => { _cache = d; return d; })
-    .catch(() => null);
+    .catch(() => null)
+    .finally(() => { _promise = null; });
   return _promise;
 }
 
 export function usePitcherPercentiles() {
   const [data, setData] = useState<PitcherPercentilesData | null>(_cache);
+  const dataRef = useRef<PitcherPercentilesData | null>(_cache);
+  dataRef.current = data;
 
   useEffect(() => {
-    if (_cache) { setData(_cache); return; }
-    fetchPercentiles().then(setData);
+    let cancelled = false;
+
+    if (_cache) {
+      dataRef.current = _cache;
+      setData(_cache);
+      return;
+    }
+
+    fetchPercentiles().then((nextData) => {
+      if (cancelled) return;
+      dataRef.current = nextData;
+      setData(nextData);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const getPercentiles = useCallback(
     (pitcherId: number | null | undefined): PitcherPercentileEntry | null => {
-      if (!pitcherId || !data) return null;
-      return data.pitchers[String(pitcherId)] ?? null;
+      if (!pitcherId) return null;
+      return dataRef.current?.pitchers[String(pitcherId)] ?? null;
     },
-    [data],
+    [],
   );
 
   return { data, getPercentiles };
