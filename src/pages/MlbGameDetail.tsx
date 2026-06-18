@@ -1848,7 +1848,7 @@ function SocialTableML({
               display: "grid",
               gridTemplateColumns: "28px 1fr auto",
               gap: 8,
-              padding: "10px 12px",
+              padding: "8px 12px",
               background: i % 2 === 0 ? "#0d1e38" : "#091629",
               borderBottom: "1px solid #1e3a5f",
               borderLeft: `3px solid ${ACCENTS[i] ?? "#475569"}`,
@@ -1862,15 +1862,15 @@ function SocialTableML({
 
             {/* Matchup */}
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-                <TeamLogoBadge team={row.awayAbbr} size={13} showLabel={false} />
-                <span style={{ color: "#94a3b8", fontSize: 11, fontWeight: 700 }}>{row.awayAbbr}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
+                <TeamLogoBadge team={row.awayAbbr} size={22} showLabel={false} />
+                <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.awayAbbr}</span>
                 <span style={{ color: "#475569", fontSize: 10 }}>@</span>
-                <TeamLogoBadge team={row.homeAbbr} size={13} showLabel={false} />
-                <span style={{ color: "#94a3b8", fontSize: 11, fontWeight: 700 }}>{row.homeAbbr}</span>
-                <span style={{ color: "#475569", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
+                <TeamLogoBadge team={row.homeAbbr} size={22} showLabel={false} />
+                <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.homeAbbr}</span>
+                <span style={{ color: "#64748b", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
               </div>
-              <div style={{ fontSize: 10, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div style={{ fontSize: 11, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {row.awayPitcher?.split(" ").pop()} vs {row.homePitcher?.split(" ").pop()}
                 {row.context ? <span style={{ color: "#38bdf8", marginLeft: 4 }}>· {row.context}</span> : null}
               </div>
@@ -1880,8 +1880,8 @@ function SocialTableML({
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
               {/* Team logo + actual ML price */}
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <TeamLogoBadge team={row.pickAbbr} size={18} showLabel={false} />
-                <span style={{ color: "#e2e8f0", fontWeight: 900, fontSize: 12 }}>{row.pickAbbr}</span>
+                <TeamLogoBadge team={row.pickAbbr} size={22} showLabel={false} />
+                <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>{row.pickAbbr}</span>
                 {row.pickAmerican && (
                   <span style={{
                     background: "#0d1e38",
@@ -1896,7 +1896,7 @@ function SocialTableML({
                   </span>
                 )}
               </div>
-              {/* Value edge badge — only shown when odds are available */}
+              {/* Value edge badge */}
               {row.valueEdge != null && (
               <span style={{
                 background: vc.bg,
