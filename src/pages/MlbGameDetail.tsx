@@ -1136,8 +1136,8 @@ function MlbSlateAnalyzer({
                       {/* Shared layout: Home value | Stat label (center) | Away value */}
                       <div className="mt-2 space-y-2">
                         {/* Season block */}
-                        <div>
-                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 pb-1 border-b border-slate-200">
+                        <div className="w-full max-w-[320px] mx-auto">
+                          <div className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 pb-1 border-b border-slate-200">
                             <div className="flex items-center gap-1">
                               <MlbTeamLogo team={game.home.abbreviation} size={12} />
                               <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Season</span>
@@ -1149,7 +1149,7 @@ function MlbSlateAnalyzer({
                             </div>
                           </div>
                           {rows.filter(r => r.homeSzn !== "—" || r.awaySzn !== "—").map((r) => (
-                            <div key={`szn-${r.label}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
+                            <div key={`szn-${r.label}`} className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
                               <div className="flex items-center gap-0.5 min-w-0">
                                 {r.sznAdv === "home" && <span className="text-emerald-500 text-[12px] leading-none shrink-0">✓</span>}
                                 <span className={cn("text-[11px] tabular-nums font-bold truncate", r.sznAdv === "home" ? "text-emerald-700" : "text-slate-900")}>{r.homeSzn}</span>
@@ -1164,8 +1164,8 @@ function MlbSlateAnalyzer({
                         </div>
 
                         {/* Last 14 block */}
-                        <div>
-                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 pb-1 border-b border-slate-200">
+                        <div className="w-full max-w-[320px] mx-auto">
+                          <div className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 pb-1 border-b border-slate-200">
                             <div className="flex items-center gap-1">
                               <MlbTeamLogo team={game.home.abbreviation} size={12} />
                               <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Last 14</span>
@@ -1177,7 +1177,7 @@ function MlbSlateAnalyzer({
                             </div>
                           </div>
                           {rows.filter(r => r.homeL14 !== "—" || r.awayL14 !== "—").map((r) => (
-                            <div key={`l14-${r.label}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
+                            <div key={`l14-${r.label}`} className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
                               <div className="flex items-center gap-0.5 min-w-0">
                                 {r.l14Adv === "home" && <span className="text-emerald-500 text-[11px] leading-none shrink-0">✓</span>}
                                 <span className={cn("text-[11px] tabular-nums font-bold truncate", r.l14Adv === "home" ? "text-emerald-700" : "text-slate-700")}>{r.homeL14}</span>
