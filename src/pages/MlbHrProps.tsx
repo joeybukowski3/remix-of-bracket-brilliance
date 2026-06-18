@@ -602,9 +602,10 @@ function formatDateLabel(v?: string) {
 function formatPercent(v: number | null | undefined, digits = 1) { return Number.isFinite(v) ? `${Number(v).toFixed(digits)}%` : DASH; }
 function formatNumber(v: number | null | undefined, digits = 1) { return Number.isFinite(v) ? Number(v).toFixed(digits) : DASH; }
 function formatDecimal(v: number | null | undefined, digits = 3) { return Number.isFinite(v) ? Number(v).toFixed(digits) : DASH; }
-function getEspnTeamLogo(team?: string) {
+function getEspnTeamLogo(team?: string, dark = false) {
   const t = normalizeTeamValue(team) || "TBD";
-  return `https://a.espncdn.com/i/teamlogos/mlb/500/${ESPN_TEAM_ABBR[t] ?? t.toLowerCase()}.png`;
+  const folder = dark ? "500-dark" : "500";
+  return `https://a.espncdn.com/i/teamlogos/mlb/${folder}/${ESPN_TEAM_ABBR[t] ?? t.toLowerCase()}.png`;
 }
 function getRoofLabel(r: string) {
   if (/open/i.test(r)) return "Open";
@@ -1147,7 +1148,7 @@ function scorePillStyle(v: number | null | undefined): React.CSSProperties {
 
 // ââ sub-components âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
-export function TeamLogoBadge({ team, size = 24, showLabel = true }: { team?: string; size?: number; showLabel?: boolean }) {
+export function TeamLogoBadge({ team, size = 24, showLabel = true, dark = false }: { team?: string; size?: number; showLabel?: boolean; dark?: boolean }) {
   const [failed, setFailed] = useState(false);
   const t = normalizeTeamValue(team) || "TBD";
   const colors = getMlbTeamColors(t);
@@ -1160,7 +1161,7 @@ export function TeamLogoBadge({ team, size = 24, showLabel = true }: { team?: st
   }
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-      <img src={getEspnTeamLogo(t)} alt={`${t} logo`} width={size} height={size} style={{ objectFit: "contain" }} loading="lazy" onError={() => setFailed(true)} />
+      <img src={getEspnTeamLogo(t, dark)} alt={`${t} logo`} width={size} height={size} style={{ objectFit: "contain" }} loading="lazy" onError={() => setFailed(true)} />
       {showLabel && <span style={{ fontSize: 13, fontWeight: 500, color: "#475569" }}>{t}</span>}
     </span>
   );

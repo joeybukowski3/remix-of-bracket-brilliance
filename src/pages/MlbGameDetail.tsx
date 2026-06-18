@@ -1329,7 +1329,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }}>{r.player}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
-                    <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                    <TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} />
                     <span style={{ color: "#64748b" }}>vs {r.opposingPitcher}</span>
                   </div>
                 </div>
@@ -1390,7 +1390,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
                   <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
                     <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.player}</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                      <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                      <TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} />
                       <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
                     </div>
                   </div>
@@ -1465,7 +1465,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }}>{r.pitcher}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
-                    <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                    <TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} />
                     <span style={{ color: "#64748b" }}>vs {r.opponent}</span>
                   </div>
                 </div>
@@ -1517,7 +1517,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
               <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
                 <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.pitcher}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 3 }}><TeamLogoBadge team={r.team} size={13} showLabel={false} /><span style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</span></div>
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}><TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} /><span style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</span></div>
               </div>
               <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 14 }}>{safeScore.toFixed(1)}</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
@@ -1576,7 +1576,7 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }}>{r.player}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
-                    <TeamLogoBadge team={r.team} size={13} showLabel={false} />
+                    <TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} />
                     <span style={{ color: "#94a3b8" }}>vs {r.opposingPitcher}</span>
                   </div>
                 </div>
@@ -1627,7 +1627,7 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
               <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
               <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
                 <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 12 }}>{r.player}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 3 }}><TeamLogoBadge team={r.team} size={13} showLabel={false} /><span style={{ color: "#94a3b8", fontSize: 10 }}>vs {r.opposingPitcher}</span></div>
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}><TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} /><span style={{ color: "#94a3b8", fontSize: 10 }}>vs {r.opposingPitcher}</span></div>
               </div>
               <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>{r.bestMatchupScore.toFixed(1)}</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, color: r.xba != null && r.xba >= 0.31 ? "#22c55e" : r.xba != null && r.xba >= 0.28 ? "#86efac" : "#94a3b8" }}>
@@ -1875,10 +1875,10 @@ function SocialTableML({
             {/* Matchup */}
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                <TeamLogoBadge team={row.awayAbbr} size={22} showLabel={false} />
+                <TeamLogoBadge team={row.awayAbbr} size={22} showLabel={false} dark={true} />
                 <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.awayAbbr}</span>
                 <span style={{ color: "#475569", fontSize: 10 }}>@</span>
-                <TeamLogoBadge team={row.homeAbbr} size={22} showLabel={false} />
+                <TeamLogoBadge team={row.homeAbbr} size={22} showLabel={false} dark={true} />
                 <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.homeAbbr}</span>
                 <span style={{ color: "#64748b", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
               </div>
@@ -1892,7 +1892,7 @@ function SocialTableML({
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
               {/* Team logo + actual ML price */}
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <TeamLogoBadge team={row.pickAbbr} size={22} showLabel={false} />
+                <TeamLogoBadge team={row.pickAbbr} size={22} showLabel={false} dark={true} />
                 <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>{row.pickAbbr}</span>
                 {row.pickAmerican && (
                   <span style={{
