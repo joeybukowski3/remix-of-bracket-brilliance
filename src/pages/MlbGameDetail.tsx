@@ -1216,17 +1216,22 @@ function MlbSlateAnalyzer({
                           const homeAbbr = game.home.abbreviation;
                           const ml = mlbOdds?.moneylines?.[`${awayAbbr}@${homeAbbr}`];
                           if (!ml) return null;
-                          const awayPrice = ml.away.american;
-                          const homePrice = ml.home.american;
-                          if (!awayPrice || !homePrice) return null;
+                          const awayAmerican = ml.away.american;
+                          const homeAmerican = ml.home.american;
+                          if (!awayAmerican || !homeAmerican) return null;
+                          // Check if these are real American odds (e.g. -120, +105) vs win% estimates (e.g. 46%)
+                          const isRealOdds = (v: string) => /^[+-]\d+$/.test(String(v).trim());
+                          const awayIsReal = isRealOdds(awayAmerican);
+                          const homeIsReal = isRealOdds(homeAmerican);
+                          const bothReal = awayIsReal && homeIsReal;
                           return (
                             <>
                               <div className="h-3 w-px bg-slate-200" />
                               <div className="flex items-center gap-1">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Line</span>
-                                <span className="text-[10px] font-bold text-slate-600">{awayAbbr} {awayPrice}</span>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">{bothReal ? "Line" : "Win%"}</span>
+                                <span className="text-[10px] font-bold text-slate-600">{awayAbbr} {awayAmerican}</span>
                                 <span className="text-[9px] text-slate-300">/</span>
-                                <span className="text-[10px] font-bold text-slate-600">{homeAbbr} {homePrice}</span>
+                                <span className="text-[10px] font-bold text-slate-600">{homeAbbr} {homeAmerican}</span>
                               </div>
                             </>
                           );
