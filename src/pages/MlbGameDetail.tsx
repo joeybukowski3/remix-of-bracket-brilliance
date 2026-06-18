@@ -915,284 +915,330 @@ function MlbSlateAnalyzer({
         <span className="text-xs font-semibold text-slate-400">{games.length} games</span>
       </div>
 
-      {/* Individual game cards */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          {games.map((game, index) => {
-            const detail = detailPreviews[game.gamePk];
-            const edges = getSlateEdgeSummary(detail);
-            const statusTheme = getStatusBadgeTheme(game.status);
-            const statusCategory = getSlateStatusCategory(game.status);
-            const awayScore = Number(game.away.score);
-            const homeScore = Number(game.home.score);
-            const showScore = (statusCategory === "in-progress" || statusCategory === "final")
-              && Number.isFinite(awayScore)
-              && Number.isFinite(homeScore);
+      {/* Individual game cards — one per row full width */}
+      <div className="flex flex-col gap-4">
+        {games.map((game) => {
+          const detail = detailPreviews[game.gamePk];
+          const edges = getSlateEdgeSummary(detail);
+          const statusTheme = getStatusBadgeTheme(game.status);
+          const statusCategory = getSlateStatusCategory(game.status);
+          const awayScore = Number(game.away.score);
+          const homeScore = Number(game.home.score);
+          const showScore = (statusCategory === "in-progress" || statusCategory === "final")
+            && Number.isFinite(awayScore) && Number.isFinite(homeScore);
 
-            return (
-              <button
-                key={game.gamePk}
-                type="button"
-                onClick={() => onOpenGame(game.gamePk)}
-                className={cn(
-                  "flex w-full flex-col rounded-xl border text-left transition-all hover:shadow-md h-full",
-                  statusCategory === "in-progress"
-                    ? "border-green-200 bg-green-50/40 shadow-sm"
-                    : statusCategory === "final"
-                    ? "border-slate-200 bg-slate-50/60 shadow-sm"
-                    : "border-slate-200 bg-white shadow-sm hover:border-blue-200",
-                )}>
+          return (
+            <button
+              key={game.gamePk}
+              type="button"
+              onClick={() => onOpenGame(game.gamePk)}
+              className={cn(
+                "flex w-full flex-col rounded-xl border text-left transition-all hover:shadow-md",
+                statusCategory === "in-progress"
+                  ? "border-green-200 bg-green-50/40 shadow-sm"
+                  : statusCategory === "final"
+                  ? "border-slate-200 bg-slate-50/60 shadow-sm"
+                  : "border-slate-200 bg-white shadow-sm hover:border-blue-200",
+              )}>
 
-                {/* Top bar: status + time + venue */}
-                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold"
-                      style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}
-                    >
-                      {game.status}
+              {/* Top bar */}
+              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+                    style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}>
+                    {game.status}
+                  </span>
+                  {statusCategory === "in-progress" && game.currentInning != null && (
+                    <span className="rounded bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
+                      {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
                     </span>
-                    {statusCategory === "in-progress" && game.currentInning != null && (
-                      <span className="rounded bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
-                        {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
-                      </span>
-                    )}
-                    {statusCategory === "final" && showScore && (
-                      <span className="text-[9px] font-bold text-slate-400">FINAL</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
-                    <span className="text-[11px] font-semibold text-slate-500">{formatGameTime(game.gameDate)}</span>
-                  </div>
+                  )}
+                  {statusCategory === "final" && showScore && (
+                    <span className="text-[9px] font-bold text-slate-400">FINAL</span>
+                  )}
                 </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
+                  <span className="text-[11px] font-semibold text-slate-500">{formatGameTime(game.gameDate)}</span>
+                </div>
+              </div>
 
-                {/* Main content */}
-                <div className="px-4 py-3">
-                  {(() => {
-                    const mlEdge = detail ? computeModelEdge(detail) : null;
-                    const mlPickAbbr = mlEdge && mlEdge.pick !== "push"
-                      ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr)
-                      : null;
-                    const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
+              {/* Main content */}
+              <div className="px-4 py-3">
+                {(() => {
+                  const mlEdge = detail ? computeModelEdge(detail) : null;
+                  const mlPickAbbr = mlEdge && mlEdge.pick !== "push"
+                    ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr) : null;
+                  const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
 
-                    const awayWrc = getTeam(game.away.abbreviation);
-                    const homeWrc = getTeam(game.home.abbreviation);
+                  const awayWrc = getTeam(game.away.abbreviation);
+                  const homeWrc = getTeam(game.home.abbreviation);
 
-                    const xeraStyle = (v: number) => {
-                      if (v <= 3.00) return { bg: "#14532d", text: "#bbf7d0" };
-                      if (v <= 3.50) return { bg: "#166534", text: "#86efac" };
-                      if (v <= 4.00) return { bg: "#dcfce7", text: "#15803d" };
-                      if (v <= 4.50) return { bg: "#f1f5f9", text: "#64748b" };
-                      if (v <= 5.00) return { bg: "#dbeafe", text: "#1d4ed8" };
-                      if (v <= 5.75) return { bg: "#1e3a8a", text: "#93c5fd" };
-                      return { bg: "#172554", text: "#60a5fa" };
-                    };
+                  const xeraStyle = (v: number) => {
+                    if (v <= 3.00) return { bg: "#14532d", text: "#bbf7d0" };
+                    if (v <= 3.50) return { bg: "#166534", text: "#86efac" };
+                    if (v <= 4.00) return { bg: "#dcfce7", text: "#15803d" };
+                    if (v <= 4.50) return { bg: "#f1f5f9", text: "#64748b" };
+                    if (v <= 5.00) return { bg: "#dbeafe", text: "#1d4ed8" };
+                    if (v <= 5.75) return { bg: "#1e3a8a", text: "#93c5fd" };
+                    return { bg: "#172554", text: "#60a5fa" };
+                  };
+                  const fmt3 = (v: number | null | undefined) =>
+                    v == null ? "—" : v.toFixed(3).replace(/^0/, "");
 
-                    const fmt3 = (v: number | null | undefined) =>
-                      v == null ? "—" : v.toFixed(3).replace(/^0/, "");
+                  const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
+                  const homePitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
+                  const awayHand = detail?.starters.away.hand;
+                  const homeHand = detail?.starters.home.hand;
 
-                    // Team header: logo, record, pitcher, xERA + regression pills
-                    const renderTeamHeader = (
-                      abbr: string,
-                      record: string,
-                      pitcherName: string | undefined,
-                      pitcherId: number | undefined,
-                      starterRecord: string | undefined,
-                      score: number,
-                      align: "left" | "right",
-                    ) => {
-                      const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
-                      const pill = regrData ? regressionPillStyle(regrData.regressionScore) : null;
-                      const s = regrData?.regressionScore;
-                      const shortLabel = s == null ? null : Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
-                      const xera = regrData?.xera ?? getPitcherXera(pitcherId);
-                      const xfipFallback = (xera == null && regrData?.xfip != null) ? regrData.xfip : null;
-                      const itemsAlign = align === "left" ? "items-start text-left" : "items-end text-right";
+                  const getPInfo = (pitcherName: string | undefined, pitcherId: number | undefined) => {
+                    const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
+                    const pill = regrData ? regressionPillStyle(regrData.regressionScore) : null;
+                    const s = regrData?.regressionScore;
+                    const shortLabel = s == null ? null : Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
+                    const xera = regrData?.xera ?? getPitcherXera(pitcherId);
+                    const xfipFallback = (xera == null && regrData?.xfip != null) ? regrData.xfip : null;
+                    return { pill, s, shortLabel, xera, xfipFallback };
+                  };
+                  const awayPI = getPInfo(awayPitcherName, game.away.probablePitcher?.id ?? detail?.starters.away.id);
+                  const homePI = getPInfo(homePitcherName, game.home.probablePitcher?.id ?? detail?.starters.home.id);
 
-                      return (
-                        <div className={cn("flex min-w-0 flex-1 flex-col gap-1", itemsAlign)}>
-                          {/* Logo + abbr + record */}
-                          <div className={cn("flex items-center gap-1.5", align === "right" && "flex-row-reverse")}>
-                            <MlbTeamLogo team={abbr} size={26} />
-                            <span className="text-[13px] font-extrabold text-slate-950">{abbr}</span>
-                            <span className="text-[10px] font-semibold text-slate-400">{record}</span>
-                            {showScore && (
-                              <span className="text-[16px] font-extrabold leading-none text-slate-900">{score}</span>
-                            )}
+                  // Advantage helper — returns "away", "home", or null
+                  const parseW = (r: string | null | undefined) => { const n = parseInt(r?.split("-")[0] ?? ""); return isNaN(n) ? null : n; };
+                  const adv = (homeVal: number | null | undefined, awayVal: number | null | undefined): "home" | "away" | null => {
+                    if (homeVal == null || awayVal == null || homeVal === awayVal) return null;
+                    return homeVal > awayVal ? "home" : "away";
+                  };
+
+                  // wRC+ vs opposing pitcher handedness
+                  // Home team BATS against AWAY pitcher
+                  const homeVsHandWrc = awayHand?.toUpperCase().startsWith("L") ? homeWrc?.vsLhpWrcPlus : homeWrc?.vsRhpWrcPlus;
+                  // Away team BATS against HOME pitcher
+                  const awayVsHandWrc = homeHand?.toUpperCase().startsWith("L") ? awayWrc?.vsLhpWrcPlus : awayWrc?.vsRhpWrcPlus;
+                  const awayVsHandLabel = homeHand?.toUpperCase().startsWith("L") ? "vs LHP" : "vs RHP";
+                  const homeVsHandLabel = awayHand?.toUpperCase().startsWith("L") ? "vs LHP" : "vs RHP";
+                  const vsHandRowLabel = awayVsHandLabel === homeVsHandLabel
+                    ? `wRC+ ${awayVsHandLabel}` : "wRC+ vs hand";
+
+                  type Row = { label: string; awaySzn: string; awayL14: string; homeSzn: string; homeL14: string; sznAdv: "home"|"away"|null; l14Adv: "home"|"away"|null };
+                  const rows: Row[] = [
+                    {
+                      label: "Record",
+                      awaySzn: awayWrc?.awayRecord ? `${awayWrc.awayRecord} (A)` : "—",
+                      awayL14: awayWrc?.last14Record ?? "—",
+                      homeSzn: homeWrc?.homeRecord ? `${homeWrc.homeRecord} (H)` : "—",
+                      homeL14: homeWrc?.last14Record ?? "—",
+                      sznAdv: adv(parseW(homeWrc?.homeRecord), parseW(awayWrc?.awayRecord)),
+                      l14Adv: adv(parseW(homeWrc?.last14Record), parseW(awayWrc?.last14Record)),
+                    },
+                    {
+                      label: "Batting xBA",
+                      awaySzn: fmt3(awayWrc?.seasonXba),
+                      awayL14: awayWrc?.recentAvg != null ? `${fmt3(awayWrc.recentAvg)} AVG` : "—",
+                      homeSzn: fmt3(homeWrc?.seasonXba),
+                      homeL14: homeWrc?.recentAvg != null ? `${fmt3(homeWrc.recentAvg)} AVG` : "—",
+                      sznAdv: adv(homeWrc?.seasonXba, awayWrc?.seasonXba),
+                      l14Adv: adv(homeWrc?.recentAvg, awayWrc?.recentAvg),
+                    },
+                    {
+                      label: "wRC+",
+                      awaySzn: awayWrc?.seasonWrcPlus != null ? String(awayWrc.seasonWrcPlus) : "—",
+                      awayL14: awayWrc?.recentWrcPlus != null ? String(awayWrc.recentWrcPlus) : "—",
+                      homeSzn: homeWrc?.seasonWrcPlus != null ? String(homeWrc.seasonWrcPlus) : "—",
+                      homeL14: homeWrc?.recentWrcPlus != null ? String(homeWrc.recentWrcPlus) : "—",
+                      sznAdv: adv(homeWrc?.seasonWrcPlus, awayWrc?.seasonWrcPlus),
+                      l14Adv: adv(homeWrc?.recentWrcPlus, awayWrc?.recentWrcPlus),
+                    },
+                    {
+                      label: vsHandRowLabel,
+                      awaySzn: awayVsHandWrc != null ? String(awayVsHandWrc) : "—",
+                      awayL14: "—",
+                      homeSzn: homeVsHandWrc != null ? String(homeVsHandWrc) : "—",
+                      homeL14: "—",
+                      sznAdv: adv(homeVsHandWrc, awayVsHandWrc),
+                      l14Adv: null,
+                    },
+                  ];
+
+                  const PitcherPills = ({ pi }: { pi: ReturnType<typeof getPInfo> }) => (
+                    <div className="flex flex-wrap gap-1">
+                      {pi.xera != null ? (() => { const xs = xeraStyle(pi.xera!); return (
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: xs.bg, color: xs.text }}>
+                          {pi.xera!.toFixed(2)} xERA
+                        </span>
+                      ); })() : pi.xfipFallback != null ? (
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+                          {pi.xfipFallback.toFixed(2)} xFIP
+                        </span>
+                      ) : null}
+                      {pi.pill && pi.s != null && (
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-bold"
+                          style={{ backgroundColor: pi.pill.bg, color: pi.pill.color }}>
+                          {pi.s > 0 ? "+" : ""}{pi.s} {pi.shortLabel}
+                        </span>
+                      )}
+                    </div>
+                  );
+
+                  return (
+                    <>
+                      {/* ── Pitcher headers: Home LEFT, Away RIGHT ── */}
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 pb-3 border-b border-slate-100">
+                        {/* Home LEFT */}
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <MlbTeamLogo team={game.home.abbreviation} size={26} />
+                            <span className="text-[13px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
+                            <span className="text-[10px] font-semibold text-slate-400">{game.home.record}</span>
+                            {showScore && <span className="text-[16px] font-extrabold text-slate-900">{homeScore}</span>}
                           </div>
-                          {/* Pitcher name + record */}
-                          <div className={cn("flex flex-col gap-0.5", align === "right" && "items-end")}>
-                            <span className="text-[12px] font-semibold leading-tight text-[#031635] truncate max-w-full">
-                              {pitcherName || "TBD"}
-                            </span>
-                            {starterRecord && (
-                              <span className="text-[10px] text-slate-400">{starterRecord}</span>
-                            )}
+                          <span className="text-[12px] font-semibold text-[#031635] truncate">{homePitcherName || "TBD"}</span>
+                          {detail?.starters.home.record && <span className="text-[10px] text-slate-400">{detail.starters.home.record}</span>}
+                          <PitcherPills pi={homePI} />
+                        </div>
+                        <div className="self-center text-[10px] font-bold text-slate-300 px-1">vs</div>
+                        {/* Away RIGHT */}
+                        <div className="flex flex-col items-end gap-1 text-right min-w-0">
+                          <div className="flex items-center gap-1.5 flex-row-reverse">
+                            <MlbTeamLogo team={game.away.abbreviation} size={26} />
+                            <span className="text-[13px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
+                            <span className="text-[10px] font-semibold text-slate-400">{game.away.record}</span>
+                            {showScore && <span className="text-[16px] font-extrabold text-slate-900">{awayScore}</span>}
                           </div>
-                          {/* xERA + regression pills */}
-                          <div className={cn("flex flex-wrap gap-1", align === "right" && "justify-end")}>
-                            {xera != null ? (() => {
-                              const xs = xeraStyle(xera);
-                              return (
-                                <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: xs.bg, color: xs.text }}>
-                                  {xera.toFixed(2)} xERA
-                                </span>
-                              );
-                            })() : xfipFallback != null ? (
-                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
-                                {xfipFallback.toFixed(2)} xFIP
-                              </span>
-                            ) : null}
-                            {pill && s != null && (
-                              <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }} title={pill.label}>
-                                {s > 0 ? "+" : ""}{s} {shortLabel}
-                              </span>
-                            )}
+                          <span className="text-[12px] font-semibold text-[#031635] truncate">{awayPitcherName || "TBD"}</span>
+                          {detail?.starters.away.record && <span className="text-[10px] text-slate-400">{detail.starters.away.record}</span>}
+                          <div className="flex flex-wrap gap-1 justify-end">
+                            <PitcherPills pi={awayPI} />
                           </div>
                         </div>
-                      );
-                    };
+                      </div>
 
-                    // Stat table for one team: label | season | last 2 weeks
-                    const renderStatTable = (
-                      wrc: typeof awayWrc,
-                      splitType: "Home" | "Away",
-                      oppPitcherHand: string | undefined,
-                    ) => {
-                      const handIsL = oppPitcherHand?.toUpperCase().startsWith("L");
-                      const vsHandWrc = handIsL ? wrc?.vsLhpWrcPlus : wrc?.vsRhpWrcPlus;
-                      const vsHandLabel = handIsL ? "wRC+ vs LHP" : "wRC+ vs RHP";
-                      const splitRecord = splitType === "Home" ? wrc?.homeRecord : wrc?.awayRecord;
-
-                      const rows: { label: string; season: string; recent: string }[] = [
-                        { label: "Record", season: splitRecord ? `${splitRecord} (${splitType})` : "—", recent: wrc?.last14Record ?? "—" },
-                        { label: "Batting xBA", season: fmt3(wrc?.seasonXba), recent: wrc?.recentAvg != null ? `${fmt3(wrc.recentAvg)} AVG` : "—" },
-                        { label: "wRC+", season: wrc?.seasonWrcPlus != null ? String(wrc.seasonWrcPlus) : "—", recent: wrc?.recentWrcPlus != null ? String(wrc.recentWrcPlus) : "—" },
-                        { label: vsHandLabel, season: vsHandWrc != null ? String(vsHandWrc) : "—", recent: "—" },
-                      ];
-
-                      return (
-                        <table className="w-full border-collapse text-[11px]">
-                          <thead>
-                            <tr className="border-b border-slate-200">
-                              <th className="py-1 text-left font-bold uppercase tracking-wide text-slate-400 text-[9px]">Stat</th>
-                              <th className="py-1 text-right font-bold uppercase tracking-wide text-slate-400 text-[9px]">Season</th>
-                              <th className="py-1 text-right font-bold uppercase tracking-wide text-slate-400 text-[9px]">Last 2 Weeks</th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                      {/* ── Side-by-side stat tables: Season stacked over L14, Home LEFT / Away RIGHT ── */}
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        {/* HOME stat column */}
+                        <div className="min-w-0">
+                          {/* Season block */}
+                          <div className="mb-2">
+                            <div className="flex items-center gap-1 pb-1 border-b border-slate-200">
+                              <MlbTeamLogo team={game.home.abbreviation} size={11} />
+                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Season</span>
+                            </div>
                             {rows.map((r) => (
-                              <tr key={r.label} className="border-b border-slate-100 last:border-0">
-                                <td className="py-1 pr-2 text-slate-500">{r.label}</td>
-                                <td className="py-1 text-right font-bold tabular-nums text-slate-900">{r.season}</td>
-                                <td className="py-1 text-right font-bold tabular-nums text-slate-700">{r.recent}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      );
-                    };
-
-                    const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
-                    const homePitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
-                    const awayHand = detail?.starters.away.hand;
-                    const homeHand = detail?.starters.home.hand;
-
-                    return (
-                      <>
-                        {/* Team headers side by side */}
-                        <div className="flex items-start gap-2">
-                          {renderTeamHeader(
-                            game.away.abbreviation,
-                            game.away.record,
-                            awayPitcherName,
-                            game.away.probablePitcher?.id ?? detail?.starters.away.id,
-                            detail?.starters.away.record,
-                            awayScore,
-                            "left",
-                          )}
-                          <span className="self-center px-1 text-[10px] font-bold text-slate-300">vs</span>
-                          {renderTeamHeader(
-                            game.home.abbreviation,
-                            game.home.record,
-                            homePitcherName,
-                            game.home.probablePitcher?.id ?? detail?.starters.home.id,
-                            detail?.starters.home.record,
-                            homeScore,
-                            "right",
-                          )}
-                        </div>
-
-                        {/* Stacked stat tables: home block, then away block */}
-                        <div className="mt-3 space-y-3">
-                          {/* Home team block */}
-                          <div className="rounded-lg border border-slate-100 bg-slate-50/50 px-2.5 py-1.5">
-                            <div className="mb-0.5 flex items-center gap-1.5">
-                              <MlbTeamLogo team={game.home.abbreviation} size={16} />
-                              <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">{game.home.abbreviation} (Home)</span>
-                            </div>
-                            {renderStatTable(homeWrc, "Home", awayHand)}
-                          </div>
-                          {/* Away team block */}
-                          <div className="rounded-lg border border-slate-100 bg-slate-50/50 px-2.5 py-1.5">
-                            <div className="mb-0.5 flex items-center gap-1.5">
-                              <MlbTeamLogo team={game.away.abbreviation} size={16} />
-                              <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">{game.away.abbreviation} (Away)</span>
-                            </div>
-                            {renderStatTable(awayWrc, "Away", homeHand)}
-                          </div>
-                        </div>
-
-                        {/* Bottom bar: Total + ML Edge + actual ML prices */}
-                        <div className="mt-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-t border-slate-100 pt-2.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total</span>
-                            <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
-                          </div>
-                          <div className="h-3 w-px bg-slate-200" />
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">ML Edge</span>
-                            {mlPickAbbr && mlPickColor ? (
-                              <span className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
-                                {mlPickAbbr} {mlEdge!.confidence}%
-                              </span>
-                            ) : mlEdge ? (
-                              <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
-                            ) : (
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
-                            )}
-                          </div>
-                          {/* Live ML prices from sportsbook */}
-                          {(() => {
-                            const awayAbbr = game.away.abbreviation;
-                            const homeAbbr = game.home.abbreviation;
-                            const ml = mlbOdds?.moneylines?.[`${awayAbbr}@${homeAbbr}`];
-                            if (!ml) return null;
-                            const awayPrice = ml.away.american;
-                            const homePrice = ml.home.american;
-                            if (!awayPrice || !homePrice) return null;
-                            return (
-                              <>
-                                <div className="h-3 w-px bg-slate-200" />
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Line</span>
-                                  <span className="text-[10px] font-bold text-slate-600">{awayAbbr} {awayPrice}</span>
-                                  <span className="text-[9px] text-slate-300">/</span>
-                                  <span className="text-[10px] font-bold text-slate-600">{homeAbbr} {homePrice}</span>
+                              <div key={`home-szn-${r.label}`} className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
+                                <span className="text-[10px] text-slate-400 truncate pr-1">{r.label}</span>
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  <span className={cn("text-[11px] tabular-nums font-bold", r.sznAdv === "home" ? "text-emerald-700" : "text-slate-900")}>{r.homeSzn}</span>
+                                  {r.sznAdv === "home" && <span className="text-emerald-500 text-[11px] leading-none">✓</span>}
                                 </div>
-                              </>
-                            );
-                          })()}
+                              </div>
+                            ))}
+                          </div>
+                          {/* L14 block */}
+                          <div>
+                            <div className="flex items-center gap-1 pb-1 border-b border-slate-200">
+                              <MlbTeamLogo team={game.home.abbreviation} size={11} />
+                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Last 14</span>
+                            </div>
+                            {rows.map((r) => (
+                              <div key={`home-l14-${r.label}`} className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
+                                <span className="text-[10px] text-slate-400 truncate pr-1">{r.label}</span>
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  <span className={cn("text-[11px] tabular-nums font-bold", r.l14Adv === "home" ? "text-emerald-700" : "text-slate-700")}>{r.homeL14}</span>
+                                  {r.l14Adv === "home" && <span className="text-emerald-500 text-[11px] leading-none">✓</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+
+                        {/* AWAY stat column */}
+                        <div className="min-w-0">
+                          {/* Season block */}
+                          <div className="mb-2">
+                            <div className="flex items-center gap-1 pb-1 border-b border-slate-200">
+                              <MlbTeamLogo team={game.away.abbreviation} size={11} />
+                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Season</span>
+                            </div>
+                            {rows.map((r) => (
+                              <div key={`away-szn-${r.label}`} className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
+                                <span className="text-[10px] text-slate-400 truncate pr-1">{r.label}</span>
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  <span className={cn("text-[11px] tabular-nums font-bold", r.sznAdv === "away" ? "text-emerald-700" : "text-slate-900")}>{r.awaySzn}</span>
+                                  {r.sznAdv === "away" && <span className="text-emerald-500 text-[11px] leading-none">✓</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {/* L14 block */}
+                          <div>
+                            <div className="flex items-center gap-1 pb-1 border-b border-slate-200">
+                              <MlbTeamLogo team={game.away.abbreviation} size={11} />
+                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Last 14</span>
+                            </div>
+                            {rows.map((r) => (
+                              <div key={`away-l14-${r.label}`} className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
+                                <span className="text-[10px] text-slate-400 truncate pr-1">{r.label}</span>
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  <span className={cn("text-[11px] tabular-nums font-bold", r.l14Adv === "away" ? "text-emerald-700" : "text-slate-700")}>{r.awayL14}</span>
+                                  {r.l14Adv === "away" && <span className="text-emerald-500 text-[11px] leading-none">✓</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Footer ── */}
+                      <div className="mt-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-t border-slate-100 pt-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total</span>
+                          <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
+                        </div>
+                        <div className="h-3 w-px bg-slate-200" />
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">ML Edge</span>
+                          {mlPickAbbr && mlPickColor ? (
+                            <span className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
+                              {mlPickAbbr} {mlEdge!.confidence}%
+                            </span>
+                          ) : mlEdge ? (
+                            <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
+                          ) : (
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
+                          )}
+                        </div>
+                        {(() => {
+                          const awayAbbr = game.away.abbreviation;
+                          const homeAbbr = game.home.abbreviation;
+                          const ml = mlbOdds?.moneylines?.[`${awayAbbr}@${homeAbbr}`];
+                          if (!ml) return null;
+                          const awayPrice = ml.away.american;
+                          const homePrice = ml.home.american;
+                          if (!awayPrice || !homePrice) return null;
+                          return (
+                            <>
+                              <div className="h-3 w-px bg-slate-200" />
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Line</span>
+                                <span className="text-[10px] font-bold text-slate-600">{awayAbbr} {awayPrice}</span>
+                                <span className="text-[9px] text-slate-300">/</span>
+                                <span className="text-[10px] font-bold text-slate-600">{homeAbbr} {homePrice}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </section>
+  );
+}
   );
 }
 
