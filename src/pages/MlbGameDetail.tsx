@@ -1952,9 +1952,7 @@ function SocialMediaTablesSection({
   const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games: propsGames, loading } = useMlbPropsData();
   const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits">("hr");
 
-  if (loading) return null;
-
-  // Apply same pitcher-weighted enrichment as the top HR Props table
+  // Must be before early return — hooks cannot be called conditionally
   const enrichedBatters = useMemo(() => {
     function xeraMult(xera: number | null): number {
       if (xera == null) return 1.0;
@@ -1973,6 +1971,8 @@ function SocialMediaTablesSection({
       return { ...b, adjustedHrScore };
     });
   }, [batters, pitchers, pitcherRegressionData]);
+
+  if (loading) return null;
 
   const tabs: { key: "ml" | "hr" | "k" | "hits"; label: string; emoji: string }[] = [
     { key: "ml",   label: "ML Edges",  emoji: "🏆" },
