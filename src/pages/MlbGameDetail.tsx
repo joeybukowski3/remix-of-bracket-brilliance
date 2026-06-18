@@ -1239,9 +1239,6 @@ function MlbSlateAnalyzer({
     </section>
   );
 }
-  );
-}
-
 function MlbToolsGrid() {
   return (
     <section id="tools" className="space-y-4">
