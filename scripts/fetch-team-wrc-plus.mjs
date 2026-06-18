@@ -93,6 +93,28 @@ async function fetchTeamXba() {
   return map;
 }
 
+// Returns home and away split records for all teams from the standings API
+async function fetchAllTeamSplitRecords() {
+  const url = `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${SEASON}&standingsTypes=regularSeason&hydrate=team,record(overallRecords)`;
+  const json = await fetchJson(url);
+  const map = new Map(); // teamId -> { homeRecord, awayRecord }
+  for (const division of json?.records ?? []) {
+    for (const tr of division?.teamRecords ?? []) {
+      const teamId = tr.team?.id;
+      const splits = tr.records?.overallRecords ?? [];
+      const home = splits.find((r) => r.type === "home");
+      const away = splits.find((r) => r.type === "away");
+      if (teamId && home && away) {
+        map.set(teamId, {
+          homeRecord: `${home.wins}-${home.losses}`,
+          awayRecord: `${away.wins}-${away.losses}`,
+        });
+      }
+    }
+  }
+  return map;
+}
+
 // Returns a team's W-L record over their most recent N completed games
 async function fetchTeamLast14Record(teamId, n = 14) {
   const today = new Date().toISOString().split("T")[0];
@@ -226,6 +248,12 @@ async function main() {
     teams.map((t) => fetchTeamLast14Record(t.id, 14).catch(() => null))
   );
 
+  console.log("[wrc-plus] Fetching home/away split records from standings...");
+  const splitRecordsMap = await fetchAllTeamSplitRecords().catch((e) => {
+    console.warn("[wrc-plus] Split records fetch failed:", e.message);
+    return new Map();
+  });
+
   // Compute league averages from season stats
   const { lgWoba: lgWobaSeason, lgRunsPerPA: lgRpaSeason } = computeLeagueAverages(seasonStats);
   const { lgWoba: lgWobaRecent, lgRunsPerPA: lgRpaRecent } = computeLeagueAverages(recentStats);
@@ -246,6 +274,8 @@ async function main() {
     seasonAvg: seasonStats[i]?.avg != null ? parseFloat(seasonStats[i].avg) : null,
     recentAvg: recentStats[i]?.avg != null ? parseFloat(recentStats[i].avg) : null,
     last14Record: last14Records[i] ?? null,
+    homeRecord: splitRecordsMap.get(team.id)?.homeRecord ?? null,
+    awayRecord: splitRecordsMap.get(team.id)?.awayRecord ?? null,
   }));
 
   // Rank teams (1 = best)
@@ -274,6 +304,8 @@ async function main() {
     seasonAvg: team.seasonAvg ?? null,
     recentAvg: team.recentAvg ?? null,
     last14Record: team.last14Record ?? null,
+    homeRecord: team.homeRecord ?? null,
+    awayRecord: team.awayRecord ?? null,
   }));
 
   const output = {

@@ -61,6 +61,8 @@ export type MlbTeamWrcEntry = {
   seasonAvg: number | null;
   recentAvg: number | null;
   last14Record: string | null;
+  homeRecord: string | null;
+  awayRecord: string | null;
 };
 
 export type MlbTeamWrcData = {
