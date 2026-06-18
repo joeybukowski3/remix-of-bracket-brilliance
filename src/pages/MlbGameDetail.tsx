@@ -1954,6 +1954,26 @@ function SocialMediaTablesSection({
 
   if (loading) return null;
 
+  // Apply same pitcher-weighted enrichment as the top HR Props table
+  const enrichedBatters = useMemo(() => {
+    function xeraMult(xera: number | null): number {
+      if (xera == null) return 1.0;
+      if (xera <= 2.5) return 0.80; if (xera <= 3.0) return 0.85;
+      if (xera <= 3.5) return 0.91; if (xera <= 4.0) return 0.96;
+      if (xera <= 4.5) return 1.00; if (xera <= 5.0) return 1.05;
+      if (xera <= 5.5) return 1.10; return 1.15;
+    }
+    return batters.map((b) => {
+      const hrPropsPitcher = pitchers.find(p => p.pitcher === b.opposingPitcher || p.pitcherId === b.opposingPitcherId);
+      const regrData = pitcherRegressionData.find(p => p.name === b.opposingPitcher);
+      const pitcherXera = hrPropsPitcher?.xera ?? regrData?.xera ?? regrData?.xfip ?? null;
+      const regrScore = regrData?.regressionScore ?? null;
+      const regrAdj = regrScore != null ? Math.max(0.96, Math.min(1.04, 1.0 + regrScore * 0.004)) : 1.0;
+      const adjustedHrScore = Math.round(b.hrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
+      return { ...b, adjustedHrScore };
+    });
+  }, [batters, pitchers, pitcherRegressionData]);
+
   const tabs: { key: "ml" | "hr" | "k" | "hits"; label: string; emoji: string }[] = [
     { key: "ml",   label: "ML Edges",  emoji: "🏆" },
     { key: "hr",   label: "HR Props",  emoji: "🔥" },
@@ -1997,7 +2017,7 @@ function SocialMediaTablesSection({
         {/* Table content */}
         <div style={{ padding: 14 }}>
           {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />}
-          {activeTab === "hr"   && <SocialTableHR batters={batters} />}
+          {activeTab === "hr"   && <SocialTableHR batters={enrichedBatters} />}
           {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
         </div>
