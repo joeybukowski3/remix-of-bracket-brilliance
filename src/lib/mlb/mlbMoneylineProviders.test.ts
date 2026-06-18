@@ -151,13 +151,14 @@ describe("MLB moneyline provider fallbacks", () => {
     expect(result.metadata.source).toBe("none");
     expect(result.metadata.fallbackUsed).toBe(true);
     expect(result.moneylines).toEqual({});
-    expect(result.metadata.providerErrors.length).toBe(3);
+    expect(result.metadata.providerErrors.length).toBe(4);
   });
 
   it("handles malformed provider responses without crashing", async () => {
     const fetchFn = async (url: string) => {
       if (url.includes("api.the-odds-api.com")) return textResponse("not json");
       if (url.includes("api.sportsgameodds.com")) return jsonResponse({ data: [{ odds: {} }] });
+      // ESPN and odds-api-io return non-JSON to force failure
       return textResponse("not json");
     };
 
@@ -172,5 +173,47 @@ describe("MLB moneyline provider fallbacks", () => {
     expect(result.metadata.source).toBe("none");
     expect(result.moneylines).toEqual({});
     expect(result.metadata.providerErrors.join(" ")).toContain("malformed JSON");
+  });
+
+  it("uses ESPN when all keyed providers fail", async () => {
+    const calls: string[] = [];
+    const fetchFn = async (url: string) => {
+      calls.push(url);
+      if (url.includes("scoreboard")) {
+        return new Response(JSON.stringify({
+          events: [{
+            id: "123",
+            competitions: [{
+              competitors: [
+                { homeAway: "away", team: { abbreviation: "TOR" } },
+                { homeAway: "home", team: { abbreviation: "BOS" } },
+              ],
+            }],
+          }],
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (url.includes("/odds")) {
+        return new Response(JSON.stringify({
+          items: [{
+            provider: { name: "DraftKings" },
+            awayTeamOdds: { moneyLine: 104 },
+            homeTeamOdds: { moneyLine: -126 },
+          }],
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      return new Response("not found", { status: 404, headers: { "content-type": "text/plain" } });
+    };
+
+    const result = await getMlbMoneylinesWithFallbacks({
+      oddsApiKey: undefined,
+      sportsGameOddsApiKey: undefined,
+      oddsApiIoKey: undefined,
+      fetchFn: fetchFn as typeof fetch,
+      logger: {},
+    });
+
+    expect(result.metadata.source).toBe("espn");
+    expect(result.moneylines["TOR@BOS"]?.away?.american).toBe("+104");
+    expect(result.moneylines["TOR@BOS"]?.home?.american).toBe("-126");
   });
 });

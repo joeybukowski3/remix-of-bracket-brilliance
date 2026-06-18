@@ -296,6 +296,56 @@ export async function fetchOddsApiIoMlbMoneylines({ apiKey, fetchFn = fetch } = 
   return normalizeOddsApiIoMoneylines(oddsPayload);
 }
 
+export async function fetchEspnMlbMoneylines({ fetchFn = fetch } = {}) {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }).replace(/-/g, "");
+  // Step 1: get event IDs from the ESPN scoreboard (1 call, includes team abbrs)
+  const scoreboard = await fetchJson(
+    `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${today}&limit=25`,
+    { fetchFn, label: "espn:scoreboard" }
+  );
+  const events = scoreboard?.events;
+  if (!Array.isArray(events) || events.length === 0) throw new Error("ESPN scoreboard returned no MLB events");
+
+  // Build a map of eventId -> { awayAbbr, homeAbbr }
+  const eventMeta = {};
+  for (const ev of events) {
+    const id = ev?.id;
+    const comp = ev?.competitions?.[0];
+    const competitors = comp?.competitors ?? [];
+    const awayAbbr = competitors.find((c) => c.homeAway === "away")?.team?.abbreviation;
+    const homeAbbr = competitors.find((c) => c.homeAway === "home")?.team?.abbreviation;
+    if (id && awayAbbr && homeAbbr) eventMeta[id] = { awayAbbr, homeAbbr };
+  }
+
+  // Step 2: fetch odds for each event from the core API (parallel)
+  const oddsResults = await Promise.all(
+    Object.keys(eventMeta).map(async (id) => {
+      try {
+        const data = await fetchJson(
+          `https://sports.core.api.espn.com/v2/sports/baseball/leagues/mlb/events/${id}/competitions/${id}/odds`,
+          { fetchFn, label: `espn:odds:${id}` }
+        );
+        return { id, data };
+      } catch {
+        return { id, data: null };
+      }
+    })
+  );
+
+  const moneylines = {};
+  for (const { id, data } of oddsResults) {
+    const meta = eventMeta[id];
+    if (!meta || !data) continue;
+    const item = data?.items?.[0];
+    const awayML = item?.awayTeamOdds?.moneyLine;
+    const homeML = item?.homeTeamOdds?.moneyLine;
+    const row = makeMoneyline(meta.awayAbbr, meta.homeAbbr, awayML, homeML);
+    if (row) moneylines[row.key] = row.value;
+  }
+  if (!hasUsableMoneylines(moneylines)) throw new Error("ESPN returned no usable moneyline prices");
+  return moneylines;
+}
+
 export async function getMlbMoneylinesWithFallbacks({
   oddsApiKey,
   sportsGameOddsApiKey,
@@ -308,6 +358,7 @@ export async function getMlbMoneylinesWithFallbacks({
     ["the-odds-api", () => fetchTheOddsApiMlbMoneylines({ apiKey: oddsApiKey, fetchFn })],
     ["sportsgameodds", () => fetchSportsGameOddsMlbMoneylines({ apiKey: sportsGameOddsApiKey, fetchFn })],
     ["odds-api-io", () => fetchOddsApiIoMlbMoneylines({ apiKey: oddsApiIoKey, fetchFn })],
+    ["espn", () => fetchEspnMlbMoneylines({ fetchFn })],
   ];
 
   for (const [source, load] of providers) {
@@ -325,7 +376,8 @@ export async function getMlbMoneylinesWithFallbacks({
     } catch (err) {
       const message = `${source}: ${safeMessage(err)}`;
       providerErrors.push(message);
-      if ((source === "sportsgameodds" && !sportsGameOddsApiKey) || (source === "odds-api-io" && !oddsApiIoKey)) {
+      const missingKey = (source === "sportsgameodds" && !sportsGameOddsApiKey) || (source === "odds-api-io" && !oddsApiIoKey);
+      if (missingKey) {
         logger.debug?.(`[mlb-moneylines] ${message}`);
       } else {
         logger.warn?.(`[mlb-moneylines] ${message}`);
