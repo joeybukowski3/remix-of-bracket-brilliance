@@ -1066,6 +1066,15 @@ function MlbSlateAnalyzer({
                       sznAdv: adv(homeVsHandOps, awayVsHandOps),
                       l14Adv: null,
                     },
+                    {
+                      label: "SLG",
+                      awaySzn: "—",
+                      awayL14: awayWrc?.recentSlg != null ? fmt3(awayWrc.recentSlg) : "—",
+                      homeSzn: "—",
+                      homeL14: homeWrc?.recentSlg != null ? fmt3(homeWrc.recentSlg) : "—",
+                      sznAdv: null,
+                      l14Adv: adv(homeWrc?.recentSlg, awayWrc?.recentSlg),
+                    },
                   ];
 
                   const PitcherPills = ({ pi }: { pi: ReturnType<typeof getPInfo> }) => (
@@ -1139,7 +1148,7 @@ function MlbSlateAnalyzer({
                               <MlbTeamLogo team={game.away.abbreviation} size={12} />
                             </div>
                           </div>
-                          {rows.map((r) => (
+                          {rows.filter(r => r.homeSzn !== "—" || r.awaySzn !== "—").map((r) => (
                             <div key={`szn-${r.label}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
                               <div className="flex items-center gap-0.5 min-w-0">
                                 {r.sznAdv === "home" && <span className="text-emerald-500 text-[12px] leading-none shrink-0">✓</span>}

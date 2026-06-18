@@ -61,6 +61,7 @@ export type MlbTeamWrcEntry = {
   vsLhpOpsRank: number | null;
   vsRhpOps: number | null;
   vsRhpOpsRank: number | null;
+  recentSlg: number | null;
   seasonXba: number | null;
   seasonAvg: number | null;
   recentAvg: number | null;
