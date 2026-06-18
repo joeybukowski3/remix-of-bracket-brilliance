@@ -211,7 +211,7 @@ function normalizePitcher(value) {
     opponent,
     kRate: kRate ?? 0,
     kVs: kVs ?? 0,
-    strikeoutScore: (kRate ?? 0) + (kVs ?? 0) / 2,
+    strikeoutScore: kVs ?? 0,  // Match the screenshot which sorts by kVs (strikeoutMatchupScore)
     projectedK9: projectedK9 ?? null,
     projectedIP: projectedIP ?? null,
     kLine: kLine ?? null,
