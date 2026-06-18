@@ -1025,6 +1025,8 @@ function MlbSlateAnalyzer({
                   // Format value with its own parenthetical split label
                   const fmtOps = (val: number | null | undefined, tag: string) =>
                     val != null ? `${fmt3(val)} (${tag})` : "—";
+                  const homeVsHandTagShort = awayHandIsL ? "LHP" : "RHP";
+                  const awayVsHandTagShort = homeHandIsL ? "LHP" : "RHP";
 
                   type Row = { label: string; awaySzn: string; awayL14: string; homeSzn: string; homeL14: string; sznAdv: "home"|"away"|null; l14Adv: "home"|"away"|null };
                   const rows: Row[] = [
@@ -1057,9 +1059,9 @@ function MlbSlateAnalyzer({
                     },
                     {
                       label: vsHandRowLabel,
-                      awaySzn: fmtOps(awayVsHandOps, awayVsHandTag),
+                      awaySzn: fmtOps(awayVsHandOps, awayVsHandTagShort),
                       awayL14: "—",
-                      homeSzn: fmtOps(homeVsHandOps, homeVsHandTag),
+                      homeSzn: fmtOps(homeVsHandOps, homeVsHandTagShort),
                       homeL14: "—",
                       sznAdv: adv(homeVsHandOps, awayVsHandOps),
                       l14Adv: null,
@@ -1139,14 +1141,14 @@ function MlbSlateAnalyzer({
                           </div>
                           {rows.map((r) => (
                             <div key={`szn-${r.label}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
-                              <div className="flex items-center gap-0.5">
-                                {r.sznAdv === "home" && <span className="text-emerald-500 text-[12px] leading-none">✓</span>}
-                                <span className={cn("text-[12px] tabular-nums font-bold", r.sznAdv === "home" ? "text-emerald-700" : "text-slate-900")}>{r.homeSzn}</span>
+                              <div className="flex items-center gap-0.5 min-w-0">
+                                {r.sznAdv === "home" && <span className="text-emerald-500 text-[12px] leading-none shrink-0">✓</span>}
+                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.sznAdv === "home" ? "text-emerald-700" : "text-slate-900")}>{r.homeSzn}</span>
                               </div>
-                              <div className="text-center text-[10px] text-slate-400 font-medium min-w-[72px] px-1">{r.label}</div>
-                              <div className="flex items-center gap-0.5 justify-end">
-                                <span className={cn("text-[12px] tabular-nums font-bold", r.sznAdv === "away" ? "text-emerald-700" : "text-slate-900")}>{r.awaySzn}</span>
-                                {r.sznAdv === "away" && <span className="text-emerald-500 text-[12px] leading-none">✓</span>}
+                              <div className="text-center text-[10px] text-slate-400 font-medium min-w-[68px] px-1">{r.label}</div>
+                              <div className="flex items-center gap-0.5 justify-end min-w-0">
+                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.sznAdv === "away" ? "text-emerald-700" : "text-slate-900")}>{r.awaySzn}</span>
+                                {r.sznAdv === "away" && <span className="text-emerald-500 text-[12px] leading-none shrink-0">✓</span>}
                               </div>
                             </div>
                           ))}
@@ -1167,14 +1169,14 @@ function MlbSlateAnalyzer({
                           </div>
                           {rows.map((r) => (
                             <div key={`l14-${r.label}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
-                              <div className="flex items-center gap-0.5">
-                                {r.l14Adv === "home" && <span className="text-emerald-500 text-[12px] leading-none">✓</span>}
-                                <span className={cn("text-[12px] tabular-nums font-bold", r.l14Adv === "home" ? "text-emerald-700" : "text-slate-700")}>{r.homeL14}</span>
+                              <div className="flex items-center gap-0.5 min-w-0">
+                                {r.l14Adv === "home" && <span className="text-emerald-500 text-[11px] leading-none shrink-0">✓</span>}
+                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.l14Adv === "home" ? "text-emerald-700" : "text-slate-700")}>{r.homeL14}</span>
                               </div>
-                              <div className="text-center text-[10px] text-slate-400 font-medium min-w-[72px] px-1">{r.label}</div>
-                              <div className="flex items-center gap-0.5 justify-end">
-                                <span className={cn("text-[12px] tabular-nums font-bold", r.l14Adv === "away" ? "text-emerald-700" : "text-slate-700")}>{r.awayL14}</span>
-                                {r.l14Adv === "away" && <span className="text-emerald-500 text-[12px] leading-none">✓</span>}
+                              <div className="text-center text-[10px] text-slate-400 font-medium min-w-[68px] px-1">{r.label}</div>
+                              <div className="flex items-center gap-0.5 justify-end min-w-0">
+                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.l14Adv === "away" ? "text-emerald-700" : "text-slate-700")}>{r.awayL14}</span>
+                                {r.l14Adv === "away" && <span className="text-emerald-500 text-[11px] leading-none shrink-0">✓</span>}
                               </div>
                             </div>
                           ))}
