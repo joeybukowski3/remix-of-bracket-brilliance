@@ -1,31 +1,24 @@
 name: Post MLB Strikeout Props to X
 
 on:
-  workflow_run:
-    workflows: ["Generate MLB Data"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       mode:
         description: "Run mode"
         required: true
-        default: "dry-run"
+        default: "post"
         type: choice
-        options:
-          - dry-run
-          - post
-          - post-text-only
-          - verify-account
+        options: [dry-run, post, post-text-only, verify-account]
       data_source:
-        description: "K props data source"
+        description: "Data source"
         required: true
         default: "production"
         type: choice
-        options:
-          - production
-          - github
-          - local
+        options: [production, github, local]
+  workflow_run:
+    workflows: ["Generate MLB Data"]
+    types: [completed]
+    branches: [main]
 
 concurrency:
   group: post-mlb-strikeout-props-to-x
@@ -53,74 +46,38 @@ jobs:
       JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
       JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
-      - name: Gate: only post once per day (9 AM ET window)
+      - name: Time gate (9-11 AM ET for workflow_run only)
         id: time_gate
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            exit 0
+            echo "should_run=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-
           ET_HOUR="$(TZ=America/New_York date +%H)"
           if [ "$ET_HOUR" -ge 9 ] && [ "$ET_HOUR" -lt 11 ]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "Time gate passed: ${ET_HOUR}:xx ET is in the 9-11 AM posting window"
+            echo "Time gate passed: ${ET_HOUR}:xx ET"
           else
             echo "should_run=false" >> "$GITHUB_OUTPUT"
-            echo "Time gate blocked: ${ET_HOUR}:xx ET is outside 9-11 AM posting window"
+            echo "Time gate blocked: ${ET_HOUR}:xx ET outside 9-11 AM window"
           fi
 
-      - name: Determine duplicate key
-        id: post_key
-        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')
-        shell: bash
-        run: |
-          POST_KEY="$(K_PROPS_DATA_SOURCE=production node scripts/post-mlb-strikeout-props-to-x.mjs --post-key-only)"
-          if [ "${{ inputs.mode }}" = "post-text-only" ]; then
-            POST_KEY="${POST_KEY}-text-only"
-          fi
-          echo "key=${POST_KEY}" >> "$GITHUB_OUTPUT"
-
-      - name: Restore duplicate cache
-        id: restore_post_cache
-        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only')
-        uses: actions/cache/restore@v4
-        with:
-          path: .cache/mlb-strikeout-props-x-posted
-          key: ${{ steps.post_key.outputs.key }}
-
-      - name: Block duplicate live post
-        if: steps.restore_post_cache.outputs.cache-hit == 'true'
-        run: |
-          echo "Duplicate protection blocked live posting."
-          exit 1
-
-      - name: Build K props X caption and post
-        if: steps.time_gate.outputs.should_run == 'true' && steps.restore_post_cache.outputs.cache-hit != 'true'
+      - name: Post Strikeout Props
+        if: steps.time_gate.outputs.should_run == 'true'
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
             MODE="post"
           else
-            MODE="${{ inputs.mode || 'dry-run' }}"
+            MODE="${{ inputs.mode || 'post' }}"
           fi
-          echo "Running in mode: $MODE"
+          echo "Mode: $MODE"
           node scripts/post-mlb-strikeout-props-to-x.mjs "--${MODE}"
         env:
           K_PROPS_DATA_SOURCE: production
@@ -137,18 +94,3 @@ jobs:
           name: mlb-strikeout-props-x-screenshot
           path: artifacts/mlb-strikeout-props-x.png
           if-no-files-found: error
-
-      - name: Save duplicate cache
-        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && steps.restore_post_cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: .cache/mlb-strikeout-props-x-posted
-          key: ${{ steps.post_key.outputs.key }}
-
-      - name: Upload post receipt
-        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && (inputs.mode == 'post' || inputs.mode == 'post-text-only') && steps.restore_post_cache.outputs.cache-hit != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: mlb-strikeout-props-x-post-receipt
-          path: .cache/mlb-strikeout-props-x-posted/*.json
-          if-no-files-found: warn
