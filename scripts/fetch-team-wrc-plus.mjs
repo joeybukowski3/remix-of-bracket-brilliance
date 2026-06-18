@@ -74,6 +74,47 @@ async function fetchTeamBattingSplit(teamId, sitCode) {
   return json?.stats?.[0]?.splits?.[0]?.stat ?? null;
 }
 
+// Returns season team xBA (expected batting average) keyed by MLB team_id, from Baseball Savant
+async function fetchTeamXba() {
+  const url = `https://baseballsavant.mlb.com/leaderboard/expected_statistics?type=batter-team&year=${SEASON}&team=&min=q&csv=true`;
+  const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; joeknowsball/1.0)" } });
+  if (!res.ok) throw new Error(`HTTP ${res.status} for Savant xBA`);
+  const text = await res.text();
+  const lines = text.trim().split("\n");
+  const map = new Map(); // abbreviation -> xBA
+  for (let i = 1; i < lines.length; i++) {
+    // CSV: "team","team_id","year","pa","bip","ba","est_ba",...
+    // NOTE: Savant's "team_id" column actually holds the team ABBREVIATION (e.g. "PIT")
+    const cols = lines[i].split(",");
+    const abbr = cols[1]?.replace(/"/g, "").trim();
+    const estBa = parseFloat(cols[6]);
+    if (abbr && Number.isFinite(estBa)) map.set(abbr, estBa);
+  }
+  return map;
+}
+
+// Returns a team's W-L record over their most recent N completed games
+async function fetchTeamLast14Record(teamId, n = 14) {
+  const today = new Date().toISOString().split("T")[0];
+  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=${teamId}&season=${SEASON}&gameType=R&startDate=${SEASON}-03-01&endDate=${today}&fields=dates,games,status,codedGameState,teams,home,away,team,id,isWinner`;
+  const json = await fetchJson(url);
+  const games = [];
+  for (const day of json?.dates ?? []) {
+    for (const g of day?.games ?? []) {
+      if (g?.status?.codedGameState === "F") games.push(g);
+    }
+  }
+  const last = games.slice(-n);
+  let w = 0, l = 0;
+  for (const g of last) {
+    const isHome = g.teams?.home?.team?.id === teamId;
+    const side = isHome ? g.teams.home : g.teams.away;
+    if (side?.isWinner === true) w++;
+    else if (side?.isWinner === false) l++;
+  }
+  return `${w}-${l}`;
+}
+
 function safeNum(val, fallback = 0) {
   const n = parseFloat(val);
   return Number.isFinite(n) ? n : fallback;
@@ -174,6 +215,17 @@ async function main() {
     Promise.all(teams.map((t) => fetchTeamBattingSplit(t.id, "vr").catch(() => null))),
   ]);
 
+  console.log("[wrc-plus] Fetching team xBA from Baseball Savant...");
+  const xbaMap = await fetchTeamXba().catch((e) => {
+    console.warn("[wrc-plus] xBA fetch failed:", e.message);
+    return new Map();
+  });
+
+  console.log("[wrc-plus] Fetching last-14-games records...");
+  const last14Records = await Promise.all(
+    teams.map((t) => fetchTeamLast14Record(t.id, 14).catch(() => null))
+  );
+
   // Compute league averages from season stats
   const { lgWoba: lgWobaSeason, lgRunsPerPA: lgRpaSeason } = computeLeagueAverages(seasonStats);
   const { lgWoba: lgWobaRecent, lgRunsPerPA: lgRpaRecent } = computeLeagueAverages(recentStats);
@@ -191,6 +243,9 @@ async function main() {
     recentWrcPlus: approximateWrcPlus(recentStats[i], lgWobaRecent, lgRpaRecent),
     vsLhpWrcPlus: approximateWrcPlus(vsLhpStats[i], lgWobaVsL, lgRpaVsL),
     vsRhpWrcPlus: approximateWrcPlus(vsRhpStats[i], lgWobaVsR, lgRpaVsR),
+    seasonAvg: seasonStats[i]?.avg != null ? parseFloat(seasonStats[i].avg) : null,
+    recentAvg: recentStats[i]?.avg != null ? parseFloat(recentStats[i].avg) : null,
+    last14Record: last14Records[i] ?? null,
   }));
 
   // Rank teams (1 = best)
@@ -215,6 +270,10 @@ async function main() {
     vsRhpWrcPlus: team.vsRhpWrcPlus,
     vsRhpRank: vsRhpRanks.get(team.abbreviation) ?? null,
     vsRhpRankLabel: vsRhpRanks.has(team.abbreviation) ? ordinalRank(vsRhpRanks.get(team.abbreviation)) : null,
+    seasonXba: xbaMap.get(team.abbreviation) ?? null,
+    seasonAvg: team.seasonAvg ?? null,
+    recentAvg: team.recentAvg ?? null,
+    last14Record: team.last14Record ?? null,
   }));
 
   const output = {

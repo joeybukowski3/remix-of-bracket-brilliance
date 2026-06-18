@@ -57,6 +57,10 @@ export type MlbTeamWrcEntry = {
   vsRhpWrcPlus: number | null;
   vsRhpRank: number | null;
   vsRhpRankLabel: string | null;
+  seasonXba: number | null;
+  seasonAvg: number | null;
+  recentAvg: number | null;
+  last14Record: string | null;
 };
 
 export type MlbTeamWrcData = {

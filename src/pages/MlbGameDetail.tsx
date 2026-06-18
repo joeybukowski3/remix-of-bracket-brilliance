@@ -7,6 +7,7 @@ import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { useMlbOdds } from "@/hooks/useMlbOdds";
 import { usePitcherPercentiles } from "@/hooks/usePitcherPercentiles";
+import { useTeamWrc } from "@/hooks/useTeamWrc";
 import SportsbookBar from "@/components/SportsbookBar";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
@@ -903,6 +904,7 @@ function MlbSlateAnalyzer({
     if (!pitcherId) return null;
     return pitchers.find((p) => p.pitcherId === pitcherId)?.xera ?? null;
   }
+  const { getTeam } = useTeamWrc();
   return (
     <section id="schedule" className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -973,111 +975,172 @@ function MlbSlateAnalyzer({
                       : null;
                     const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
 
-                    const renderTeamCol = (
+                    const awayWrc = getTeam(game.away.abbreviation);
+                    const homeWrc = getTeam(game.home.abbreviation);
+
+                    const xeraStyle = (v: number) => {
+                      if (v <= 3.00) return { bg: "#14532d", text: "#bbf7d0" };
+                      if (v <= 3.50) return { bg: "#166534", text: "#86efac" };
+                      if (v <= 4.00) return { bg: "#dcfce7", text: "#15803d" };
+                      if (v <= 4.50) return { bg: "#f1f5f9", text: "#64748b" };
+                      if (v <= 5.00) return { bg: "#dbeafe", text: "#1d4ed8" };
+                      if (v <= 5.75) return { bg: "#1e3a8a", text: "#93c5fd" };
+                      return { bg: "#172554", text: "#60a5fa" };
+                    };
+
+                    const fmt3 = (v: number | null | undefined) =>
+                      v == null ? "—" : v.toFixed(3).replace(/^0/, "");
+
+                    // Team header: logo, record, pitcher, xERA + regression pills
+                    const renderTeamHeader = (
                       abbr: string,
                       record: string,
                       pitcherName: string | undefined,
                       pitcherId: number | undefined,
                       starterRecord: string | undefined,
                       score: number,
+                      align: "left" | "right",
                     ) => {
                       const regrData = pitcherRegressionData.find(p => p.name === pitcherName);
                       const pill = regrData ? regressionPillStyle(regrData.regressionScore) : null;
                       const s = regrData?.regressionScore;
                       const shortLabel = s == null ? null : Math.abs(s) <= 0.5 ? "Neutral" : s < 0 ? "Regr ↓" : "Regr ↑";
-                      // xERA: regression data first, then HR props lookup, then xFIP as labeled fallback
-                      const xeraFromRegr = regrData?.xera ?? null;
-                      const xeraFromProps = getPitcherXera(pitcherId);
-                      const xera = xeraFromRegr ?? xeraFromProps;
-                      const xeraLabel = xera != null ? "xERA" : null;
+                      const xera = regrData?.xera ?? getPitcherXera(pitcherId);
                       const xfipFallback = (xera == null && regrData?.xfip != null) ? regrData.xfip : null;
-
-                      const xeraStyle = (v: number) => {
-                        if (v <= 3.00) return { bg: "#14532d", text: "#bbf7d0" }; // elite — dark green
-                        if (v <= 3.50) return { bg: "#166534", text: "#86efac" }; // great — green
-                        if (v <= 4.00) return { bg: "#dcfce7", text: "#15803d" }; // good — light green
-                        if (v <= 4.50) return { bg: "#f1f5f9", text: "#64748b" }; // average — neutral
-                        if (v <= 5.00) return { bg: "#dbeafe", text: "#1d4ed8" }; // below avg — light blue
-                        if (v <= 5.75) return { bg: "#1e3a8a", text: "#93c5fd" }; // poor — blue
-                        return { bg: "#172554", text: "#60a5fa" };                // bad — dark blue
-                      };
+                      const itemsAlign = align === "left" ? "items-start text-left" : "items-end text-right";
 
                       return (
-                        <div className="flex flex-col items-center gap-1 text-center min-w-0">
-                          {/* Logo */}
-                          <MlbTeamLogo team={abbr} size={28} />
-                          {/* Team abbr + record */}
-                          <div className="flex items-center gap-1.5">
+                        <div className={cn("flex min-w-0 flex-1 flex-col gap-1", itemsAlign)}>
+                          {/* Logo + abbr + record */}
+                          <div className={cn("flex items-center gap-1.5", align === "right" && "flex-row-reverse")}>
+                            <MlbTeamLogo team={abbr} size={26} />
                             <span className="text-[13px] font-extrabold text-slate-950">{abbr}</span>
                             <span className="text-[10px] font-semibold text-slate-400">{record}</span>
+                            {showScore && (
+                              <span className="text-[16px] font-extrabold leading-none text-slate-900">{score}</span>
+                            )}
                           </div>
-                          {/* Score (live/final) */}
-                          {showScore && (
-                            <span className="text-[18px] font-extrabold leading-none text-slate-900">{score}</span>
-                          )}
-                          {/* Pitcher name */}
-                          <span className="text-[12px] font-semibold leading-tight text-[#031635]">
-                            {pitcherName || "TBD"}
-                          </span>
-                          {/* Pitcher record */}
-                          {starterRecord && (
-                            <span className="text-[10px] text-slate-400">{starterRecord}</span>
-                          )}
-                          {/* xERA pill — green (elite) → neutral → blue (poor) */}
-                          {xera != null ? (() => {
-                            const xs = xeraStyle(xera);
-                            return (
-                              <span className="rounded px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: xs.bg, color: xs.text }}>
-                                {xera.toFixed(2)} {xeraLabel}
+                          {/* Pitcher name + record */}
+                          <div className={cn("flex flex-col gap-0.5", align === "right" && "items-end")}>
+                            <span className="text-[12px] font-semibold leading-tight text-[#031635] truncate max-w-full">
+                              {pitcherName || "TBD"}
+                            </span>
+                            {starterRecord && (
+                              <span className="text-[10px] text-slate-400">{starterRecord}</span>
+                            )}
+                          </div>
+                          {/* xERA + regression pills */}
+                          <div className={cn("flex flex-wrap gap-1", align === "right" && "justify-end")}>
+                            {xera != null ? (() => {
+                              const xs = xeraStyle(xera);
+                              return (
+                                <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: xs.bg, color: xs.text }}>
+                                  {xera.toFixed(2)} xERA
+                                </span>
+                              );
+                            })() : xfipFallback != null ? (
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
+                                {xfipFallback.toFixed(2)} xFIP
                               </span>
-                            );
-                          })() : xfipFallback != null ? (
-                            <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-                              {xfipFallback.toFixed(2)} xFIP
-                            </span>
-                          ) : null}
-                          {/* Regression pill */}
-                          {pill && s != null && (
-                            <span
-                              className="rounded px-2 py-0.5 text-[10px] font-bold"
-                              style={{ backgroundColor: pill.bg, color: pill.color }}
-                              title={pill.label}
-                            >
-                              {s > 0 ? "+" : ""}{s} {shortLabel}
-                            </span>
-                          )}
+                            ) : null}
+                            {pill && s != null && (
+                              <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: pill.bg, color: pill.color }} title={pill.label}>
+                                {s > 0 ? "+" : ""}{s} {shortLabel}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     };
 
+                    // Stat table for one team: label | season | last 2 weeks
+                    const renderStatTable = (
+                      wrc: typeof awayWrc,
+                      recordLabel: string,
+                      seasonRecord: string,
+                      oppPitcherHand: string | undefined,
+                    ) => {
+                      const handIsL = oppPitcherHand?.toUpperCase().startsWith("L");
+                      const vsHandWrc = handIsL ? wrc?.vsLhpWrcPlus : wrc?.vsRhpWrcPlus;
+                      const vsHandLabel = handIsL ? "wRC+ vs LHP" : "wRC+ vs RHP";
+
+                      const rows: { label: string; season: string; recent: string }[] = [
+                        { label: recordLabel, season: seasonRecord || "—", recent: wrc?.last14Record ?? "—" },
+                        { label: "Batting xBA", season: fmt3(wrc?.seasonXba), recent: wrc?.recentAvg != null ? `${fmt3(wrc.recentAvg)} AVG` : "—" },
+                        { label: "wRC+", season: wrc?.seasonWrcPlus != null ? String(wrc.seasonWrcPlus) : "—", recent: wrc?.recentWrcPlus != null ? String(wrc.recentWrcPlus) : "—" },
+                        { label: vsHandLabel, season: vsHandWrc != null ? String(vsHandWrc) : "—", recent: "—" },
+                      ];
+
+                      return (
+                        <table className="w-full border-collapse text-[11px]">
+                          <thead>
+                            <tr className="border-b border-slate-200">
+                              <th className="py-1 text-left font-bold uppercase tracking-wide text-slate-400 text-[9px]">Stat</th>
+                              <th className="py-1 text-right font-bold uppercase tracking-wide text-slate-400 text-[9px]">Season</th>
+                              <th className="py-1 text-right font-bold uppercase tracking-wide text-slate-400 text-[9px]">Last 2 Weeks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((r) => (
+                              <tr key={r.label} className="border-b border-slate-100 last:border-0">
+                                <td className="py-1 pr-2 text-slate-500">{r.label}</td>
+                                <td className="py-1 text-right font-bold tabular-nums text-slate-900">{r.season}</td>
+                                <td className="py-1 text-right font-bold tabular-nums text-slate-700">{r.recent}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      );
+                    };
+
+                    const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
+                    const homePitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
+                    const awayHand = detail?.starters.away.hand;
+                    const homeHand = detail?.starters.home.hand;
+
                     return (
                       <>
-                        {/* Side-by-side team columns */}
-                        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
-                          {/* Away */}
-                          {renderTeamCol(
+                        {/* Team headers side by side */}
+                        <div className="flex items-start gap-2">
+                          {renderTeamHeader(
                             game.away.abbreviation,
                             game.away.record,
-                            game.away.probablePitcher?.fullName || detail?.starters.away.name,
+                            awayPitcherName,
                             game.away.probablePitcher?.id ?? detail?.starters.away.id,
                             detail?.starters.away.record,
                             awayScore,
+                            "left",
                           )}
-
-                          {/* VS divider */}
-                          <div className="flex flex-col items-center justify-center gap-1 self-center px-1">
-                            <span className="text-[10px] font-bold text-slate-300">vs</span>
-                          </div>
-
-                          {/* Home */}
-                          {renderTeamCol(
+                          <span className="self-center px-1 text-[10px] font-bold text-slate-300">vs</span>
+                          {renderTeamHeader(
                             game.home.abbreviation,
                             game.home.record,
-                            game.home.probablePitcher?.fullName || detail?.starters.home.name,
+                            homePitcherName,
                             game.home.probablePitcher?.id ?? detail?.starters.home.id,
                             detail?.starters.home.record,
                             homeScore,
+                            "right",
                           )}
+                        </div>
+
+                        {/* Stacked stat tables: home block, then away block */}
+                        <div className="mt-3 space-y-3">
+                          {/* Home team block */}
+                          <div className="rounded-lg border border-slate-100 bg-slate-50/50 px-2.5 py-1.5">
+                            <div className="mb-0.5 flex items-center gap-1.5">
+                              <MlbTeamLogo team={game.home.abbreviation} size={16} />
+                              <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">{game.home.abbreviation} (Home)</span>
+                            </div>
+                            {renderStatTable(homeWrc, "Team home record", game.home.record, awayHand)}
+                          </div>
+                          {/* Away team block */}
+                          <div className="rounded-lg border border-slate-100 bg-slate-50/50 px-2.5 py-1.5">
+                            <div className="mb-0.5 flex items-center gap-1.5">
+                              <MlbTeamLogo team={game.away.abbreviation} size={16} />
+                              <span className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">{game.away.abbreviation} (Away)</span>
+                            </div>
+                            {renderStatTable(awayWrc, "Team away record", game.away.record, homeHand)}
+                          </div>
                         </div>
 
                         {/* Bottom bar: Total + ML Edge + actual ML prices */}
