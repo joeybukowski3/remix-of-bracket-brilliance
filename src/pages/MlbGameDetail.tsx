@@ -915,8 +915,8 @@ function MlbSlateAnalyzer({
         <span className="text-xs font-semibold text-slate-400">{games.length} games</span>
       </div>
 
-      {/* Individual game cards — one per row full width */}
-      <div className="flex flex-col gap-4">
+      {/* 2 cards per row on lg+, 1 on mobile */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {games.map((game) => {
           const detail = detailPreviews[game.gamePk];
           const edges = getSlateEdgeSummary(detail);
@@ -1083,108 +1083,95 @@ function MlbSlateAnalyzer({
                   return (
                     <>
                       {/* ── Pitcher headers: Home LEFT, Away RIGHT ── */}
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 pb-3 border-b border-slate-100">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 pb-2.5 border-b border-slate-100">
                         {/* Home LEFT */}
-                        <div className="flex flex-col gap-1 min-w-0">
+                        <div className="flex flex-col gap-0.5 min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <MlbTeamLogo team={game.home.abbreviation} size={26} />
-                            <span className="text-[13px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
-                            <span className="text-[10px] font-semibold text-slate-400">{game.home.record}</span>
-                            {showScore && <span className="text-[16px] font-extrabold text-slate-900">{homeScore}</span>}
+                            <MlbTeamLogo team={game.home.abbreviation} size={28} />
+                            <span className="text-[15px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
+                            <span className="text-[11px] font-semibold text-slate-400">{game.home.record}</span>
+                            {showScore && <span className="text-[18px] font-extrabold text-slate-900">{homeScore}</span>}
                           </div>
                           <span className="text-[12px] font-semibold text-[#031635] truncate">{homePitcherName || "TBD"}</span>
-                          {detail?.starters.home.record && <span className="text-[10px] text-slate-400">{detail.starters.home.record}</span>}
-                          <PitcherPills pi={homePI} />
+                          <div className="flex items-center gap-1.5">
+                            {detail?.starters.home.record && <span className="text-[11px] text-slate-400">{detail.starters.home.record}</span>}
+                            <PitcherPills pi={homePI} />
+                          </div>
                         </div>
-                        <div className="self-center text-[10px] font-bold text-slate-300 px-1">vs</div>
+                        <div className="self-center text-[11px] font-bold text-slate-300 px-1">vs</div>
                         {/* Away RIGHT */}
-                        <div className="flex flex-col items-end gap-1 text-right min-w-0">
+                        <div className="flex flex-col items-end gap-0.5 text-right min-w-0">
                           <div className="flex items-center gap-1.5 flex-row-reverse">
-                            <MlbTeamLogo team={game.away.abbreviation} size={26} />
-                            <span className="text-[13px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
-                            <span className="text-[10px] font-semibold text-slate-400">{game.away.record}</span>
-                            {showScore && <span className="text-[16px] font-extrabold text-slate-900">{awayScore}</span>}
+                            <MlbTeamLogo team={game.away.abbreviation} size={28} />
+                            <span className="text-[15px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
+                            <span className="text-[11px] font-semibold text-slate-400">{game.away.record}</span>
+                            {showScore && <span className="text-[18px] font-extrabold text-slate-900">{awayScore}</span>}
                           </div>
                           <span className="text-[12px] font-semibold text-[#031635] truncate">{awayPitcherName || "TBD"}</span>
-                          {detail?.starters.away.record && <span className="text-[10px] text-slate-400">{detail.starters.away.record}</span>}
-                          <div className="flex flex-wrap gap-1 justify-end">
+                          <div className="flex items-center gap-1.5 justify-end">
+                            {detail?.starters.away.record && <span className="text-[11px] text-slate-400">{detail.starters.away.record}</span>}
                             <PitcherPills pi={awayPI} />
                           </div>
                         </div>
                       </div>
 
-                      {/* ── Side-by-side stat tables: Season stacked over L14, Home LEFT / Away RIGHT ── */}
-                      <div className="mt-3 grid grid-cols-2 gap-3">
-                        {/* HOME stat column */}
-                        <div className="min-w-0">
-                          {/* Season block */}
-                          <div className="mb-2">
-                            <div className="flex items-center gap-1 pb-1 border-b border-slate-200">
-                              <MlbTeamLogo team={game.home.abbreviation} size={11} />
-                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Season</span>
+                      {/* ── Stat comparison: Season block then L14 block ── */}
+                      {/* Shared layout: Home value | Stat label (center) | Away value */}
+                      <div className="mt-2 space-y-2">
+                        {/* Season block */}
+                        <div>
+                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 pb-1 border-b border-slate-200">
+                            <div className="flex items-center gap-1">
+                              <MlbTeamLogo team={game.home.abbreviation} size={12} />
+                              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Season</span>
                             </div>
-                            {rows.map((r) => (
-                              <div key={`home-szn-${r.label}`} className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
-                                <span className="text-[10px] text-slate-400 truncate pr-1">{r.label}</span>
-                                <div className="flex items-center gap-0.5 shrink-0">
-                                  <span className={cn("text-[11px] tabular-nums font-bold", r.sznAdv === "home" ? "text-emerald-700" : "text-slate-900")}>{r.homeSzn}</span>
-                                  {r.sznAdv === "home" && <span className="text-emerald-500 text-[11px] leading-none">✓</span>}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          {/* L14 block */}
-                          <div>
-                            <div className="flex items-center gap-1 pb-1 border-b border-slate-200">
-                              <MlbTeamLogo team={game.home.abbreviation} size={11} />
-                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Last 14</span>
+                            <div className="text-center text-[10px] font-bold uppercase tracking-wide text-slate-300 min-w-[72px]">Stat</div>
+                            <div className="flex items-center gap-1 justify-end">
+                              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Season</span>
+                              <MlbTeamLogo team={game.away.abbreviation} size={12} />
                             </div>
-                            {rows.map((r) => (
-                              <div key={`home-l14-${r.label}`} className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
-                                <span className="text-[10px] text-slate-400 truncate pr-1">{r.label}</span>
-                                <div className="flex items-center gap-0.5 shrink-0">
-                                  <span className={cn("text-[11px] tabular-nums font-bold", r.l14Adv === "home" ? "text-emerald-700" : "text-slate-700")}>{r.homeL14}</span>
-                                  {r.l14Adv === "home" && <span className="text-emerald-500 text-[11px] leading-none">✓</span>}
-                                </div>
-                              </div>
-                            ))}
                           </div>
+                          {rows.map((r) => (
+                            <div key={`szn-${r.label}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
+                              <div className="flex items-center gap-0.5">
+                                {r.sznAdv === "home" && <span className="text-emerald-500 text-[12px] leading-none">✓</span>}
+                                <span className={cn("text-[12px] tabular-nums font-bold", r.sznAdv === "home" ? "text-emerald-700" : "text-slate-900")}>{r.homeSzn}</span>
+                              </div>
+                              <div className="text-center text-[10px] text-slate-400 font-medium min-w-[72px] px-1">{r.label}</div>
+                              <div className="flex items-center gap-0.5 justify-end">
+                                <span className={cn("text-[12px] tabular-nums font-bold", r.sznAdv === "away" ? "text-emerald-700" : "text-slate-900")}>{r.awaySzn}</span>
+                                {r.sznAdv === "away" && <span className="text-emerald-500 text-[12px] leading-none">✓</span>}
+                              </div>
+                            </div>
+                          ))}
                         </div>
 
-                        {/* AWAY stat column */}
-                        <div className="min-w-0">
-                          {/* Season block */}
-                          <div className="mb-2">
-                            <div className="flex items-center gap-1 pb-1 border-b border-slate-200">
-                              <MlbTeamLogo team={game.away.abbreviation} size={11} />
-                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Season</span>
+                        {/* Last 14 block */}
+                        <div>
+                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 pb-1 border-b border-slate-200">
+                            <div className="flex items-center gap-1">
+                              <MlbTeamLogo team={game.home.abbreviation} size={12} />
+                              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Last 14</span>
                             </div>
-                            {rows.map((r) => (
-                              <div key={`away-szn-${r.label}`} className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
-                                <span className="text-[10px] text-slate-400 truncate pr-1">{r.label}</span>
-                                <div className="flex items-center gap-0.5 shrink-0">
-                                  <span className={cn("text-[11px] tabular-nums font-bold", r.sznAdv === "away" ? "text-emerald-700" : "text-slate-900")}>{r.awaySzn}</span>
-                                  {r.sznAdv === "away" && <span className="text-emerald-500 text-[11px] leading-none">✓</span>}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          {/* L14 block */}
-                          <div>
-                            <div className="flex items-center gap-1 pb-1 border-b border-slate-200">
-                              <MlbTeamLogo team={game.away.abbreviation} size={11} />
-                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Last 14</span>
+                            <div className="text-center text-[10px] font-bold uppercase tracking-wide text-slate-300 min-w-[72px]">Stat</div>
+                            <div className="flex items-center gap-1 justify-end">
+                              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Last 14</span>
+                              <MlbTeamLogo team={game.away.abbreviation} size={12} />
                             </div>
-                            {rows.map((r) => (
-                              <div key={`away-l14-${r.label}`} className="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
-                                <span className="text-[10px] text-slate-400 truncate pr-1">{r.label}</span>
-                                <div className="flex items-center gap-0.5 shrink-0">
-                                  <span className={cn("text-[11px] tabular-nums font-bold", r.l14Adv === "away" ? "text-emerald-700" : "text-slate-700")}>{r.awayL14}</span>
-                                  {r.l14Adv === "away" && <span className="text-emerald-500 text-[11px] leading-none">✓</span>}
-                                </div>
-                              </div>
-                            ))}
                           </div>
+                          {rows.map((r) => (
+                            <div key={`l14-${r.label}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
+                              <div className="flex items-center gap-0.5">
+                                {r.l14Adv === "home" && <span className="text-emerald-500 text-[12px] leading-none">✓</span>}
+                                <span className={cn("text-[12px] tabular-nums font-bold", r.l14Adv === "home" ? "text-emerald-700" : "text-slate-700")}>{r.homeL14}</span>
+                              </div>
+                              <div className="text-center text-[10px] text-slate-400 font-medium min-w-[72px] px-1">{r.label}</div>
+                              <div className="flex items-center gap-0.5 justify-end">
+                                <span className={cn("text-[12px] tabular-nums font-bold", r.l14Adv === "away" ? "text-emerald-700" : "text-slate-700")}>{r.awayL14}</span>
+                                {r.l14Adv === "away" && <span className="text-emerald-500 text-[12px] leading-none">✓</span>}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
 
