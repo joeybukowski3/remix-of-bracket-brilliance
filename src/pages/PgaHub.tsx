@@ -478,14 +478,16 @@ export default function PgaHub() {
   const powerRankings = useMemo(() => buildPowerRankings(playerStats), [playerStats]);
   const fieldSet = useMemo(() => {
     if (!currentField?.players?.length) return null;
-    // Normalize for fuzzy matching — last name + first initial
-    const normalize = (name: string) => name.toLowerCase().replace(/[^a-z]/g, "");
+    // Normalize for fuzzy matching — strip accents first (Å→A, é→e, etc.) then drop non-letters
+    const normalize = (name: string) =>
+      name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
     return new Set(currentField.players.map(normalize));
   }, [currentField]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const normalize = (name: string) => name.toLowerCase().replace(/[^a-z]/g, "");
+    const normalize = (name: string) =>
+      name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
     return powerRankings.filter((r) => {
       // Field filter
       if (fieldOnly && fieldSet) {
