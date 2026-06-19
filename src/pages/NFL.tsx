@@ -118,6 +118,15 @@ export default function NFL() {
 
             <div className="nfl-pr-scroll">
               <table className="nfl-pr-table">
+                <colgroup>
+                  <col className="nfl-pr-col-rank" />
+                  <col className="nfl-pr-col-team" />
+                  <col className="nfl-pr-col-rating" />
+                  <col className="nfl-pr-col-rating" />
+                  <col className="nfl-pr-col-rating" />
+                  <col className="nfl-pr-col-record" />
+                  <col className="nfl-pr-col-win" />
+                </colgroup>
                 <thead>
                   <tr>
                     <th className="nfl-pr-th-rank">Rank</th>
@@ -170,7 +179,7 @@ const STYLES = `
   .nfl-pr-subnav-link{font-size:13px;font-weight:600;color:#1a3a5c;background:#eef2f7;border-radius:999px;padding:7px 16px;text-decoration:none;transition:background .15s}
   .nfl-pr-subnav-link:hover{background:#dde6f0}
 
-  .nfl-pr-panel{background:#fff;border:1px solid #e3e8ef;border-radius:16px;box-shadow:0 2px 12px rgba(12,31,58,.06);overflow:hidden;margin-top:18px}
+  .nfl-pr-panel{width:100%;max-width:1080px;background:#fff;border:1px solid #e3e8ef;border-radius:16px;box-shadow:0 2px 12px rgba(12,31,58,.06);overflow:hidden;margin:18px auto 0}
   .nfl-pr-controls{padding:18px 20px 12px;border-bottom:1px solid #eef2f7}
   .nfl-pr-toggle{display:inline-flex;background:#eef2f7;border-radius:10px;padding:3px}
   .nfl-pr-toggle button{appearance:none;border:0;background:transparent;font-size:13px;font-weight:700;color:#5a6878;padding:8px 16px;border-radius:8px;cursor:pointer;transition:all .15s}
@@ -179,11 +188,16 @@ const STYLES = `
 
   .nfl-pr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .nfl-pr-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+  .nfl-pr-col-rank{width:48px}
+  .nfl-pr-col-team{width:220px}
+  .nfl-pr-col-rating{width:170px}
+  .nfl-pr-col-record{width:70px}
+  .nfl-pr-col-win{width:85px}
   .nfl-pr-table thead th{position:sticky;top:0;background:#0c1f3a;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:11px 10px;text-align:center;white-space:nowrap}
-  .nfl-pr-th-rank{width:38px}
-  .nfl-pr-th-team{text-align:left!important;width:170px}
-  .nfl-pr-th-rec{width:52px}
-  .nfl-pr-th-win{width:60px}
+  .nfl-pr-th-rank{width:48px}
+  .nfl-pr-th-team{text-align:left!important;width:220px}
+  .nfl-pr-th-rec{width:70px}
+  .nfl-pr-th-win{width:85px}
   .nfl-pr-table tbody tr{border-bottom:1px solid #eef2f7}
   .nfl-pr-table tbody tr:hover{background:#f7faff}
   .nfl-pr-table tbody tr:hover .nfl-pr-heat{filter:brightness(.97)}
@@ -195,7 +209,7 @@ const STYLES = `
   .nfl-pr-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:.02em}
   .nfl-pr-name{font-weight:700;font-size:13px;color:#1a2a3f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  .nfl-pr-heat{text-align:center;padding:9px 6px;transition:filter .15s}
+  .nfl-pr-heat{text-align:center;padding:7px 6px;transition:filter .15s}
   .nfl-pr-heatval{display:block;font-weight:800;font-size:13px;font-variant-numeric:tabular-nums;line-height:1.1}
   .nfl-pr-heatrank{display:block;font-size:9.5px;color:#8a96a4;font-weight:600;margin-top:1px}
 
@@ -206,12 +220,17 @@ const STYLES = `
 
   @media(max-width:640px){
     .nfl-pr-title{font-size:1.5rem}
-    .nfl-pr-table{font-size:11px}
+    .nfl-pr-table{min-width:560px;font-size:11px}
+    .nfl-pr-col-rank{width:38px}
+    .nfl-pr-col-team{width:60px}
+    .nfl-pr-col-rating{width:115px}
+    .nfl-pr-col-record{width:55px}
+    .nfl-pr-col-win{width:60px}
     .nfl-pr-table thead th{font-size:9px;padding:8px 4px;letter-spacing:.02em}
-    .nfl-pr-th-rank{width:26px}
-    .nfl-pr-th-team{width:44px}
-    .nfl-pr-th-rec{width:36px}
-    .nfl-pr-th-win{width:36px}
+    .nfl-pr-th-rank{width:38px}
+    .nfl-pr-th-team{width:60px}
+    .nfl-pr-th-rec{width:55px}
+    .nfl-pr-th-win{width:60px}
     .nfl-pr-rank{font-size:12px}
     .nfl-pr-team{padding:6px 4px;gap:0}
     .nfl-pr-accent{display:none}
