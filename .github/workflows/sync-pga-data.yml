@@ -66,12 +66,27 @@ jobs:
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: node scripts/sync-pga-sheet.mjs
 
+      - name: Check player stats freshness
+        if: steps.gate.outputs.should_run == 'true'
+        id: freshness
+        continue-on-error: true
+        run: node scripts/check-pga-stats-freshness.mjs
+
+      - name: Fallback - fetch player stats directly from PGA Tour API
+        if: steps.gate.outputs.should_run == 'true' && steps.freshness.outcome == 'failure'
+        continue-on-error: true
+        env:
+          PGA_API_KEY: ${{ secrets.PGA_API_KEY }}
+        run: |
+          echo "Sheet data is stale or missing — falling back to direct PGA Tour API pull."
+          node scripts/fetch-pga-player-stats.mjs
+
       - name: Commit and push updates
         if: steps.gate.outputs.should_run == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/pga/current-field.json public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json
+          git add public/data/pga/current-field.json public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json public/data/pga/player-stats-meta.json
           if git diff --cached --quiet; then
             echo "No PGA data changes to commit."
             exit 0

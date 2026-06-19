@@ -843,15 +843,24 @@ function buildCourseWeightsFeed(scheduleRows, courseStatsRows, courseWeightRowsR
   ];
 }
 
+function extractStatsExportDate(rows) {
+  // Row 0 looks like: "PGA Tour Stats Export — 2026-04-14 08:38 — Season 2026"
+  const titleCell = String(rows?.[0]?.[0] ?? "");
+  const match = titleCell.match(/(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : null;
+}
+
 function parsePlayerStatsRows(rows, trendIndex) {
   if (rows.length < 3) {
-    return [];
+    return { rows: [], exportDate: null };
   }
+
+  const exportDate = extractStatsExportDate(rows);
 
   const headerRow = rows[1].map((cell) => String(cell ?? "").trim());
   const headerIndex = Object.fromEntries(headerRow.map((header, index) => [header, index]));
 
-  return rows
+  const parsedRows = rows
     .slice(2)
     .map((row) => ({
       player: String(row[headerIndex["Player Name"]] ?? "").trim(),
@@ -890,6 +899,8 @@ function parsePlayerStatsRows(rows, trendIndex) {
       bogeyAvoidance: roundWeight(row.bogeyAvoidance),
       birdieBogeyRatio: roundWeight(row.birdieBogeyRatio),
     }));
+
+  return { rows: parsedRows, exportDate };
 }
 
 async function writeJsonFile(relativePath, payload) {
@@ -964,7 +975,9 @@ async function main() {
   const courseWeightsFeed = buildCourseWeightsFeed(scheduleRows, courseStatsRows, courseWeightsRowsRaw);
   const trendRows = parseTrendRows(trendRowsRaw);
   const trendIndex = buildTrendIndex(trendRows);
-  const playerStatsFeed = parsePlayerStatsRows(playerStatsRowsRaw, trendIndex);
+  const playerStatsResult = parsePlayerStatsRows(playerStatsRowsRaw, trendIndex);
+  const playerStatsFeed = playerStatsResult.rows;
+  const playerStatsExportDate = playerStatsResult.exportDate;
 
   await Promise.all([
     ...SECTION_CONFIG.map((section) => {
@@ -977,6 +990,12 @@ async function main() {
     writeJsonFile("public/data/pga/schedule.json", scheduleRows),
     writeJsonFile("public/data/pga/course-weights.json", courseWeightsFeed),
     writeJsonFile("public/data/pga/player-stats-raw.json", playerStatsFeed),
+    writeJsonFile("public/data/pga/player-stats-meta.json", {
+      exportDate: playerStatsExportDate,
+      syncedAt: new Date().toISOString(),
+      playerCount: playerStatsFeed.length,
+      source: "google-sheet",
+    }),
   ]);
 
   for (const section of parsedSections) {
