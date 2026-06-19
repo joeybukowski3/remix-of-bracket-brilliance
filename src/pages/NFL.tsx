@@ -84,7 +84,8 @@ export default function NFL() {
 
             <nav className="nfl-pr-subnav" aria-label="NFL sections">
               <span className="nfl-pr-subnav-active">Power Ratings</span>
-              <Link to="/nfl/standings" className="nfl-pr-subnav-link">Standings by Division &rarr;</Link>
+              <Link to="/nfl/standings" className="nfl-pr-subnav-link">Standings by Division</Link>
+              <Link to="/nfl/super-bowl" className="nfl-pr-subnav-link">Super Bowl Odds</Link>
             </nav>
           </section>
 

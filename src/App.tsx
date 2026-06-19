@@ -21,6 +21,7 @@ import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
+import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import ComingSoon from "./pages/ComingSoon";
 import WorldCup2026 from "./pages/WorldCup2026";
 import PublicBetting from "./pages/PublicBetting";
@@ -84,6 +85,7 @@ const App = () => (
           <Route path="/donate" element={<Donate />} />
           <Route path="/nfl" element={<NFL />} />
           <Route path="/nfl/standings" element={<NFLStandings />} />
+          <Route path="/nfl/super-bowl" element={<NFLSuperBowlOdds />} />
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/world-cup" element={<WorldCup2026 />} />
           <Route path="/public-betting" element={<PublicBetting />} />
