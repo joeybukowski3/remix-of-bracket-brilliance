@@ -228,13 +228,35 @@ function fetchPgaStat_(statId, season) {
   const options = {
     method: "post",
     contentType: "application/json",
-    headers: { "x-api-key": PGA_API_KEY },
+    headers: {
+      "x-api-key": PGA_API_KEY,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept": "application/json",
+      "Origin": "https://www.pgatour.com",
+      "Referer": "https://www.pgatour.com/stats/stat." + statId + ".html",
+    },
     payload: JSON.stringify(payload),
     muteHttpExceptions: true,
   };
   const response = UrlFetchApp.fetch(GRAPHQL_URL, options);
   const code = response.getResponseCode();
-  const json = JSON.parse(response.getContentText());
+  const bodyText = response.getContentText();
+
+  let json;
+  try {
+    json = JSON.parse(bodyText);
+  } catch (parseErr) {
+    // Log the actual response so we can see WHY it's not JSON
+    // (e.g. a Cloudflare/WAF block page, a redirect, a 403 HTML page, etc.)
+    Logger.log("Stat " + statId + " — HTTP " + code + " — response is not JSON. First 500 chars:");
+    Logger.log(bodyText.substring(0, 500));
+    throw new Error(
+      "Stat " + statId + " returned non-JSON (HTTP " + code + "). " +
+      "This usually means PGA Tour's edge/WAF is blocking the request " +
+      "from Google's servers, or the API key has rotated. " +
+      "Check the log line above this error for the actual response body."
+    );
+  }
 
   if (code !== 200 || json.errors) {
     throw new Error(
