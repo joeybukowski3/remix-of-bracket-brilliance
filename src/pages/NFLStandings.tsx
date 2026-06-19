@@ -110,8 +110,9 @@ export default function NFLStandings() {
             <p className="nfl-st-sub">Sorted by record, then preseason power rank · Records show 2025 finish until 2026 games begin</p>
 
             <nav className="nfl-st-subnav" aria-label="NFL sections">
-              <Link to="/nfl" className="nfl-st-subnav-link">&larr; Power Ratings</Link>
+              <Link to="/nfl" className="nfl-st-subnav-link">Power Ratings</Link>
               <span className="nfl-st-subnav-active">Standings by Division</span>
+              <Link to="/nfl/super-bowl" className="nfl-st-subnav-link">Super Bowl Odds</Link>
             </nav>
           </section>
 
