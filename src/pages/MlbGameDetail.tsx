@@ -1751,11 +1751,13 @@ function SocialTableML({
   detailPreviews,
   pitcherRegressionData,
   mlbOdds,
+  polymarketGames,
 }: {
   games: MlbScheduleGame[];
   detailPreviews: Record<number, MlbGameDetail>;
   pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
   mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
+  polymarketGames?: import("@/lib/mlb/polymarketMoneylines").MoneylineGame[];
 }) {
   function americanToImplied(american: string | null | undefined): number | null {
     if (!american) return null;
@@ -1783,6 +1785,12 @@ function SocialTableML({
       const fadeOddsEntry = pickIsAway ? ml?.home : ml?.away;
       const pickAmerican = pickOddsEntry?.american ?? null;
       const fadeAmerican = fadeOddsEntry?.american ?? null;
+
+      // Polymarket YES/NO reference prices for the picked team
+      const pmGame = polymarketGames?.find((g) => g.gamePk === game.gamePk);
+      const pmPickSide = pmGame ? (pickIsAway ? pmGame.away : pmGame.home) : null;
+      const pmYes = pmPickSide?.yesPrice ?? null;
+      const pmNo = pmPickSide?.noPrice ?? null;
 
       // Value edge: model win probability vs market implied probability
       const modelProb = edge.confidence / 100;          // e.g. 0.57
@@ -1817,6 +1825,8 @@ function SocialTableML({
         fadeAmerican,
         marketImplied,
         valueEdge,
+        pmYes,
+        pmNo,
         context,
         gameTime: formatGameTime(game.gameDate),
       };
@@ -1867,9 +1877,21 @@ function SocialTableML({
   }
 
   const hasOdds = rows.some(r => r.valueEdge != null);
+  const todayEt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 
   return (
-    <div style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+    <div
+      data-x-export="mlb-ml-social"
+      data-ml-date={todayEt}
+      data-ml-generated-at={new Date().toISOString()}
+      data-ml-row-count={rows.length}
+      style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}
+    >
       {/* Header */}
       <div style={{ background: "#0a1628", borderBottom: "3px solid #3b82f6", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
@@ -1894,6 +1916,16 @@ function SocialTableML({
         return (
           <div
             key={row.gamePk}
+            data-ml-row={i}
+            data-ml-away={row.awayAbbr}
+            data-ml-home={row.homeAbbr}
+            data-ml-pick={row.pickAbbr}
+            data-ml-confidence={row.confidence}
+            data-ml-value-edge={row.valueEdge ?? ""}
+            data-ml-pick-american={row.pickAmerican ?? ""}
+            data-ml-poly-yes={row.pmYes ?? ""}
+            data-ml-poly-no={row.pmNo ?? ""}
+            data-ml-game-time={row.gameTime}
             style={{
               display: "grid",
               gridTemplateColumns: "28px 1fr auto",
@@ -1960,6 +1992,38 @@ function SocialTableML({
                 {vc.label}
               </span>
               )}
+              {/* Polymarket YES/NO reference */}
+              {(row.pmYes != null || row.pmNo != null) && (
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ color: "#64748b", fontSize: 9, fontWeight: 700 }}>Poly</span>
+                  {row.pmYes != null && (
+                    <span style={{
+                      background: "rgba(34,197,94,0.12)",
+                      color: "#4ade80",
+                      borderRadius: 3,
+                      padding: "1px 5px",
+                      fontWeight: 700,
+                      fontSize: 9,
+                      whiteSpace: "nowrap",
+                    }}>
+                      Y {Math.round(row.pmYes * 100)}¢
+                    </span>
+                  )}
+                  {row.pmNo != null && (
+                    <span style={{
+                      background: "rgba(248,113,113,0.12)",
+                      color: "#f87171",
+                      borderRadius: 3,
+                      padding: "1px 5px",
+                      fontWeight: 700,
+                      fontSize: 9,
+                      whiteSpace: "nowrap",
+                    }}>
+                      N {Math.round(row.pmNo * 100)}¢
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         );
@@ -1969,6 +2033,7 @@ function SocialTableML({
       <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 10, color: "#475569" }}>
           {hasOdds ? "Value = model win% minus market implied%" : "Model: ERA · xFIP · xERA · K-BB% · Regression"}
+          {rows.some(r => r.pmYes != null) ? " · Poly = Polymarket YES/NO" : ""}
         </span>
         <span style={{ fontSize: 10, color: "#3b82f6", fontWeight: 700 }}>joeknowsball.com</span>
       </div>
@@ -1989,6 +2054,7 @@ function SocialMediaTablesSection({
 }) {
   const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games: propsGames, loading } = useMlbPropsData();
   const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits">("hr");
+  const { data: polymarketData } = usePolymarketMlbMoneylines();
 
   // Must be before early return — hooks cannot be called conditionally
   const enrichedBatters = useMemo(() => {
@@ -2054,7 +2120,7 @@ function SocialMediaTablesSection({
 
         {/* Table content */}
         <div style={{ padding: 14 }}>
-          {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />}
+          {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
           {activeTab === "hr"   && <SocialTableHR batters={enrichedBatters} />}
           {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
