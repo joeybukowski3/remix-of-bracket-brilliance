@@ -63,6 +63,7 @@ export type MoneylineGame = {
     abbreviation: string;
     yesPrice: number | null;
     noPrice: number | null;
+    probablePitcher: string | null;
   };
   home: {
     id: number;
@@ -70,6 +71,7 @@ export type MoneylineGame = {
     abbreviation: string;
     yesPrice: number | null;
     noPrice: number | null;
+    probablePitcher: string | null;
   };
   matched: boolean;
   eventId: string | null;
@@ -371,8 +373,8 @@ export type ScheduleGame = {
   status: string;
   venue: string;
   gameNumber?: number;
-  away: { id: number; name: string; abbreviation: string };
-  home: { id: number; name: string; abbreviation: string };
+  away: { id: number; name: string; abbreviation: string; probablePitcher?: string | null };
+  home: { id: number; name: string; abbreviation: string; probablePitcher?: string | null };
 };
 
 /**
@@ -522,11 +524,13 @@ export function normalizeMoneylineResponse(
     gameResults.set(game.gamePk, {
       away: {
         ...game.away,
+        probablePitcher: game.away.probablePitcher ?? null,
         yesPrice: awayPrices?.yesPrice ?? null,
         noPrice: awayPrices?.noPrice ?? null,
       },
       home: {
         ...game.home,
+        probablePitcher: game.home.probablePitcher ?? null,
         yesPrice: homePrices?.yesPrice ?? null,
         noPrice: homePrices?.noPrice ?? null,
       },
@@ -560,8 +564,8 @@ export function normalizeMoneylineResponse(
         gameDate: game.gameDate,
         status: game.status,
         venue: game.venue,
-        away: { ...game.away, yesPrice: null, noPrice: null },
-        home: { ...game.home, yesPrice: null, noPrice: null },
+        away: { ...game.away, probablePitcher: game.away.probablePitcher ?? null, yesPrice: null, noPrice: null },
+        home: { ...game.home, probablePitcher: game.home.probablePitcher ?? null, yesPrice: null, noPrice: null },
         matched: false,
         eventId: null,
         eventTitle: null,

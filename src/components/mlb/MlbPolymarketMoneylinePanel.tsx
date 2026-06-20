@@ -1,8 +1,10 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, MapPin } from "lucide-react";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
+import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { formatCents } from "@/lib/mlb/polymarketMoneylines";
 import type { MoneylineGame } from "@/lib/mlb/polymarketMoneylines";
+import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 
 // ---------------------------------------------------------------------------
 // Time formatting
@@ -32,13 +34,13 @@ function formatUpdatedAgo(updatedAt: string): string {
   return `Updated ${mins} min ago`;
 }
 
-function statusLabel(status: string): string {
+function statusLabel(status: string): string | null {
   const s = status.toLowerCase();
   if (s.includes("final")) return "Final";
   if (s.includes("progress") || s.includes("live")) return "Live";
   if (s.includes("postpone")) return "PPD";
   if (s.includes("suspend")) return "Susp";
-  return "Sched";
+  return null; // Scheduled — venue is shown instead
 }
 
 // ---------------------------------------------------------------------------
@@ -53,13 +55,15 @@ function PriceChip({
 }: {
   label: string;
   price: number | null;
-  tone: "yes" | "no";
+  tone: "higher" | "lower" | "neutral";
   ariaTeam: string;
 }) {
   const display = formatCents(price);
   const bg =
-    tone === "yes"
+    tone === "higher"
       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : tone === "lower"
+      ? "bg-red-50 text-red-700 border-red-200"
       : "bg-slate-50 text-slate-600 border-slate-200";
   return (
     <span
@@ -72,7 +76,15 @@ function PriceChip({
   );
 }
 
-function GameCard({ game, onOpenGame }: { game: MoneylineGame; onOpenGame?: (gamePk: number) => void }) {
+function GameCard({
+  game,
+  onOpenGame,
+  getPitcherXera,
+}: {
+  game: MoneylineGame;
+  onOpenGame?: (gamePk: number) => void;
+  getPitcherXera: (name: string | null) => number | null;
+}) {
   const time = formatGameTime(game.gameDate);
   const status = statusLabel(game.status);
 
@@ -91,17 +103,24 @@ function GameCard({ game, onOpenGame }: { game: MoneylineGame; onOpenGame?: (gam
       onClick={handleClick}
       className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition hover:border-sky-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
     >
-      {/* Header row: time + status + external link */}
-      <div className="mb-1.5 flex items-center justify-between text-[10px] text-slate-400">
-        <span>
-          {time}{time && " · "}{status}
+      {/* Header row: time + venue + external link */}
+      <div className="mb-1.5 flex items-center justify-between gap-2 text-[10px] text-slate-400">
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="shrink-0">{time}{status && ` · ${status}`}</span>
+          {game.venue && game.venue !== "Unknown" && (
+            <span className="flex min-w-0 items-center gap-0.5 truncate">
+              <span className="shrink-0">·</span>
+              <MapPin className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">{game.venue}</span>
+            </span>
+          )}
         </span>
         {game.marketUrl && (
           <a
             href={game.marketUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-0.5 text-sky-500 transition hover:text-sky-700"
+            className="flex shrink-0 items-center gap-0.5 text-sky-500 transition hover:text-sky-700"
             aria-label={`View ${game.away.abbreviation} vs ${game.home.abbreviation} on Polymarket`}
           >
             <ExternalLink className="h-2.5 w-2.5" />
@@ -115,9 +134,9 @@ function GameCard({ game, onOpenGame }: { game: MoneylineGame; onOpenGame?: (gam
       </div>
 
       {game.matched ? (
-        <div className="space-y-1">
-          <TeamRow team={game.away} />
-          <TeamRow team={game.home} />
+        <div className="space-y-1.5">
+          <TeamRow team={game.away} pitcherXera={getPitcherXera(game.away.probablePitcher)} />
+          <TeamRow team={game.home} pitcherXera={getPitcherXera(game.home.probablePitcher)} />
         </div>
       ) : (
         <div className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-400">
@@ -130,18 +149,44 @@ function GameCard({ game, onOpenGame }: { game: MoneylineGame; onOpenGame?: (gam
 
 function TeamRow({
   team,
+  pitcherXera,
 }: {
   team: MoneylineGame["away"] | MoneylineGame["home"];
+  pitcherXera: number | null;
 }) {
+  // Within this team's own YES/NO pair, the lower price is red, the higher is green
+  const yesTone: "higher" | "lower" | "neutral" =
+    team.yesPrice == null || team.noPrice == null || team.yesPrice === team.noPrice
+      ? "neutral"
+      : team.yesPrice > team.noPrice
+      ? "higher"
+      : "lower";
+  const noTone: "higher" | "lower" | "neutral" =
+    team.yesPrice == null || team.noPrice == null || team.yesPrice === team.noPrice
+      ? "neutral"
+      : team.noPrice > team.yesPrice
+      ? "higher"
+      : "lower";
+
   return (
     <div className="flex items-center gap-1.5">
       <MlbTeamLogo team={team.abbreviation} size={18} />
-      <span className="w-8 text-[11px] font-extrabold text-slate-800">
-        {team.abbreviation}
-      </span>
-      <div className="flex flex-1 items-center justify-end gap-1">
-        <PriceChip label="YES" price={team.yesPrice} tone="yes" ariaTeam={team.name || team.abbreviation} />
-        <PriceChip label="NO" price={team.noPrice} tone="no" ariaTeam={team.name || team.abbreviation} />
+      <div className="min-w-0 flex-1">
+        <span className="text-[11px] font-extrabold text-slate-800">
+          {team.abbreviation}
+        </span>
+        {team.probablePitcher && (
+          <span className="ml-1.5 truncate text-[9px] font-medium text-slate-400">
+            {team.probablePitcher}
+            {pitcherXera != null && (
+              <span className="ml-1 font-semibold text-slate-500">{pitcherXera.toFixed(2)} xERA</span>
+            )}
+          </span>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <PriceChip label="YES" price={team.yesPrice} tone={yesTone} ariaTeam={team.name || team.abbreviation} />
+        <PriceChip label="NO" price={team.noPrice} tone={noTone} ariaTeam={team.name || team.abbreviation} />
       </div>
     </div>
   );
@@ -153,7 +198,7 @@ function LoadingSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="h-[72px] animate-pulse rounded-xl border border-slate-100 bg-slate-50"
+          className="h-[88px] animate-pulse rounded-xl border border-slate-100 bg-slate-50"
         />
       ))}
     </div>
@@ -166,6 +211,13 @@ function LoadingSkeleton() {
 
 export default function MlbPolymarketMoneylinePanel({ onOpenGame }: { onOpenGame?: (gamePk: number) => void } = {}) {
   const { data, isLoading, isError } = usePolymarketMlbMoneylines();
+  const { data: pitcherRegressionData } = usePitcherRegression();
+
+  const getPitcherXera = (name: string | null): number | null => {
+    if (!name) return null;
+    const match = pitcherRegressionData.find((p: PitcherRegressionData) => p.name === name);
+    return match?.xera ?? null;
+  };
 
   return (
     <div className="polymarket-panel">
@@ -202,7 +254,7 @@ export default function MlbPolymarketMoneylinePanel({ onOpenGame }: { onOpenGame
       ) : data && data.games.length > 0 ? (
         <div className="space-y-2">
           {data.games.map((game) => (
-            <GameCard key={game.gamePk} game={game} onOpenGame={onOpenGame} />
+            <GameCard key={game.gamePk} game={game} onOpenGame={onOpenGame} getPitcherXera={getPitcherXera} />
           ))}
         </div>
       ) : data && data.totalGames === 0 ? (

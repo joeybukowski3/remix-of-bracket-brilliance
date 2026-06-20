@@ -43,7 +43,7 @@ async function fetchJson(url: string): Promise<unknown> {
 // ---------------------------------------------------------------------------
 
 async function fetchMlbSchedule(date: string): Promise<ScheduleGame[]> {
-  const url = `${MLB_SCHEDULE_API}?sportId=1&date=${date}&hydrate=team`;
+  const url = `${MLB_SCHEDULE_API}?sportId=1&date=${date}&hydrate=team,probablePitcher`;
   const data = (await fetchJson(url)) as {
     dates?: Array<{
       games?: Array<{
@@ -53,8 +53,14 @@ async function fetchMlbSchedule(date: string): Promise<ScheduleGame[]> {
         status?: { detailedState?: string };
         venue?: { name?: string };
         teams?: {
-          away?: { team?: { id?: number; name?: string; abbreviation?: string } };
-          home?: { team?: { id?: number; name?: string; abbreviation?: string } };
+          away?: {
+            team?: { id?: number; name?: string; abbreviation?: string };
+            probablePitcher?: { fullName?: string };
+          };
+          home?: {
+            team?: { id?: number; name?: string; abbreviation?: string };
+            probablePitcher?: { fullName?: string };
+          };
         };
       }>;
     }>;
@@ -77,11 +83,13 @@ async function fetchMlbSchedule(date: string): Promise<ScheduleGame[]> {
           id: away.id ?? 0,
           name: away.name ?? "",
           abbreviation: away.abbreviation,
+          probablePitcher: game.teams?.away?.probablePitcher?.fullName ?? null,
         },
         home: {
           id: home.id ?? 0,
           name: home.name ?? "",
           abbreviation: home.abbreviation,
+          probablePitcher: game.teams?.home?.probablePitcher?.fullName ?? null,
         },
       });
     }
