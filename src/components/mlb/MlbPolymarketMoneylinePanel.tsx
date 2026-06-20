@@ -72,12 +72,25 @@ function PriceChip({
   );
 }
 
-function GameCard({ game }: { game: MoneylineGame }) {
+function GameCard({ game, onOpenGame }: { game: MoneylineGame; onOpenGame?: (gamePk: number) => void }) {
   const time = formatGameTime(game.gameDate);
   const status = statusLabel(game.status);
 
+  const handleClick = () => {
+    if (onOpenGame) {
+      onOpenGame(game.gamePk);
+    } else {
+      // Fallback: navigate via hash if no callback
+      window.location.hash = `#game-${game.gamePk}`;
+    }
+  };
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+    <button
+      type="button"
+      onClick={handleClick}
+      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition hover:border-sky-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+    >
       {/* Header row: time + status + external link */}
       <div className="mb-1.5 flex items-center justify-between text-[10px] text-slate-400">
         <span>
@@ -111,7 +124,7 @@ function GameCard({ game }: { game: MoneylineGame }) {
           No Polymarket moneyline found
         </div>
       )}
-    </div>
+    </button>
   );
 }
 
@@ -151,7 +164,7 @@ function LoadingSkeleton() {
 // Main panel
 // ---------------------------------------------------------------------------
 
-export default function MlbPolymarketMoneylinePanel() {
+export default function MlbPolymarketMoneylinePanel({ onOpenGame }: { onOpenGame?: (gamePk: number) => void } = {}) {
   const { data, isLoading, isError } = usePolymarketMlbMoneylines();
 
   return (
@@ -189,7 +202,7 @@ export default function MlbPolymarketMoneylinePanel() {
       ) : data && data.games.length > 0 ? (
         <div className="space-y-2">
           {data.games.map((game) => (
-            <GameCard key={game.gamePk} game={game} />
+            <GameCard key={game.gamePk} game={game} onOpenGame={onOpenGame} />
           ))}
         </div>
       ) : data && data.totalGames === 0 ? (

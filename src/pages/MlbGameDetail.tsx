@@ -6,6 +6,7 @@ import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { useMlbOdds } from "@/hooks/useMlbOdds";
+import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
 import { usePitcherPercentiles } from "@/hooks/usePitcherPercentiles";
 import { useTeamWrc } from "@/hooks/useTeamWrc";
 import SportsbookBar from "@/components/SportsbookBar";
@@ -901,11 +902,35 @@ function MlbSlateAnalyzer({
   pitcherRegressionData: import("@/lib/mlb/mlbPitcherRegression").PitcherRegressionData[];
   mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
 }) {
+  const { data: polymarketData } = usePolymarketMlbMoneylines();
+
   function getPitcherXera(pitcherId: number | null | undefined): number | null {
     if (!pitcherId) return null;
     return pitchers.find((p) => p.pitcherId === pitcherId)?.xera ?? null;
   }
-  const { getTeam } = useTeamWrc();
+
+  function getPolymarketEdge(gamePk: number, mlEdge: any) {
+    if (!polymarketData || !mlEdge) return null;
+    
+    const game = polymarketData.games.find(g => g.gamePk === gamePk);
+    if (!game || !game.matched) return null;
+
+    const polyAwayProb = game.away.yesPrice;
+    const polyHomeProb = game.home.yesPrice;
+    if (polyAwayProb == null || polyHomeProb == null) return null;
+
+    const modelPickIsAway = mlEdge.pick === "away" && mlEdge.pick !== "push";
+    const modelPickIsHome = mlEdge.pick === "home" && mlEdge.pick !== "push";
+    
+    if (!modelPickIsAway && !modelPickIsHome) return null;
+
+    const polyProb = modelPickIsAway ? polyAwayProb : polyHomeProb;
+    const edge = Math.round((polyProb * 100)) - 50;  // Show edge vs 50/50
+    const team = modelPickIsAway ? game.away.abbreviation : game.home.abbreviation;
+    const edgePercent = Math.round((polyProb - 0.5) * 100);
+
+    return { team, edgePercent, polyProb };
+  }
   return (
     <section id="schedule" className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -971,6 +996,7 @@ function MlbSlateAnalyzer({
                   const mlPickAbbr = mlEdge && mlEdge.pick !== "push"
                     ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr) : null;
                   const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
+                  const pmEdge = getPolymarketEdge(game.gamePk, mlEdge);
 
                   const awayWrc = getTeam(game.away.abbreviation);
                   const homeWrc = getTeam(game.home.abbreviation);
@@ -2162,7 +2188,7 @@ function HomeSchedule({
 
           {/* Polymarket panel — inline on screens below 2xl */}
           <div className="2xl:hidden">
-            <MlbPolymarketMoneylinePanel />
+            <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} />
           </div>
 
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
@@ -2185,7 +2211,7 @@ function HomeSchedule({
 
         {/* Polymarket panel — sticky right sidebar on 2xl+ screens */}
         <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:scrollbar-thin">
-          <MlbPolymarketMoneylinePanel />
+          <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} />
         </aside>
       </div>
     </div>
