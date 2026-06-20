@@ -2127,7 +2127,7 @@ function HomeSchedule({
 
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
-      <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
+      <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8 2xl:max-w-[1900px]">
         <MlbHubSidebar />
 
         <div className="min-w-0 flex-1 space-y-3">
