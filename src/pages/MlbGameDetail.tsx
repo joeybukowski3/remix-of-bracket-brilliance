@@ -696,7 +696,7 @@ function PropPreviewCard({
             <div className="flex min-w-0 items-center gap-2">
               <TeamAbbrBadge team={row.team} />
               <div className="min-w-0">
-                <div className="truncate text-xs font-bold leading-5 text-slate-950">{row.player}</div>
+                <div className="text-xs font-bold leading-5 text-slate-950">{row.player}</div>
                 {row.position && <div className="text-[10px] font-semibold uppercase text-slate-400">{row.position}</div>}
               </div>
             </div>
@@ -2177,10 +2177,9 @@ function HomeSchedule({
               <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2">
               <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" />
               <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" />
-              <PropPreviewCard title="Top Batter vs Pitcher" rows={bvpPreviewRows} to="/mlb/batter-vs-pitcher" theme="bvp" />
             </div>
 
             {pendingGames.length > 0 && (
