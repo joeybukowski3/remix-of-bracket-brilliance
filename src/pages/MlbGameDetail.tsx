@@ -23,6 +23,7 @@ import MlbSectionHeader from "@/components/mlb/MlbSectionHeader";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
+import MlbPolymarketMoneylinePanel from "@/components/mlb/MlbPolymarketMoneylinePanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
@@ -2126,7 +2127,7 @@ function HomeSchedule({
 
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
-      <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8 2xl:max-w-[1600px]">
         <MlbHubSidebar />
 
         <div className="min-w-0 flex-1 space-y-3">
@@ -2159,6 +2160,11 @@ function HomeSchedule({
             )}
           </section>
 
+          {/* Polymarket panel — inline on screens below 2xl */}
+          <div className="2xl:hidden">
+            <MlbPolymarketMoneylinePanel />
+          </div>
+
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
           <SocialMediaTablesSection games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
           <MlbToolsGrid />
@@ -2176,6 +2182,11 @@ function HomeSchedule({
             )}
           </section>
         </div>
+
+        {/* Polymarket panel — sticky right sidebar on 2xl+ screens */}
+        <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:scrollbar-thin">
+          <MlbPolymarketMoneylinePanel />
+        </aside>
       </div>
     </div>
   );
