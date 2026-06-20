@@ -930,6 +930,7 @@ function MlbSlateAnalyzer({
 
     return { team, edge, sign, polyProb };
   }
+  const { getTeam } = useTeamWrc();
   return (
     <section id="schedule" className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
