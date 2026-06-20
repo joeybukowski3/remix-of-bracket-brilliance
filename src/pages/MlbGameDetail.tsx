@@ -915,21 +915,20 @@ function MlbSlateAnalyzer({
     const game = polymarketData.games.find(g => g.gamePk === gamePk);
     if (!game || !game.matched) return null;
 
-    const polyAwayProb = game.away.yesPrice;
-    const polyHomeProb = game.home.yesPrice;
-    if (polyAwayProb == null || polyHomeProb == null) return null;
-
     const modelPickIsAway = mlEdge.pick === "away" && mlEdge.pick !== "push";
     const modelPickIsHome = mlEdge.pick === "home" && mlEdge.pick !== "push";
     
     if (!modelPickIsAway && !modelPickIsHome) return null;
 
-    const polyProb = modelPickIsAway ? polyAwayProb : polyHomeProb;
-    const edge = Math.round((polyProb * 100)) - 50;  // Show edge vs 50/50
-    const team = modelPickIsAway ? game.away.abbreviation : game.home.abbreviation;
-    const edgePercent = Math.round((polyProb - 0.5) * 100);
+    const polyProb = modelPickIsAway ? game.away.yesPrice : game.home.yesPrice;
+    if (polyProb == null) return null;
 
-    return { team, edgePercent, polyProb };
+    const modelConfidence = mlEdge.confidence / 100; // Convert 65 to 0.65
+    const edge = Math.round((modelConfidence - polyProb) * 100);
+    const team = modelPickIsAway ? game.away.abbreviation : game.home.abbreviation;
+    const sign = edge > 0 ? "+" : "";
+
+    return { team, edge, sign, polyProb };
   }
   return (
     <section id="schedule" className="space-y-3">
@@ -1238,6 +1237,17 @@ function MlbSlateAnalyzer({
                             <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
                           )}
                         </div>
+                        {pmEdge && (
+                          <>
+                            <div className="h-3 w-px bg-slate-200" />
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Polymarket Value</span>
+                              <span className={`rounded-full px-3 py-1 text-[10px] font-extrabold text-white ${pmEdge.edge > 0 ? "bg-emerald-600" : "bg-red-600"}`}>
+                                {pmEdge.team} {pmEdge.sign}{Math.abs(pmEdge.edge)}%
+                              </span>
+                            </div>
+                          </>
+                        )}
                         {(() => {
                           const awayAbbr = game.away.abbreviation;
                           const homeAbbr = game.home.abbreviation;
