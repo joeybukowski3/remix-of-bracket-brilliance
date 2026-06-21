@@ -1,0 +1,104 @@
+name: Post MLB ML Edges to X
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode"
+        required: true
+        default: "post"
+        type: choice
+        options: [dry-run, post, post-text-only, verify-account]
+  workflow_run:
+    workflows: ["Generate MLB Data"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: post-mlb-ml-edges-to-x
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  post-ml-edges-to-x:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'schedule' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+    env:
+      X_EXPECTED_USERNAME: _joeknowsball_
+      X_DUPLICATE_STATE_DIR: .cache/mlb-ml-edges-x-posted
+      JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+      JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+      JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+      JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Compute ET date for cache key
+        id: et_date
+        shell: bash
+        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore duplicate-post state
+        uses: actions/cache@v4
+        with:
+          path: .cache/mlb-ml-edges-x-posted
+          # Keyed by ET date: a fresh key each day, but multiple runs on the
+          # same day (e.g. the 9:23 AM and 10:23 AM Generate MLB Data crons
+          # both land inside the 9-11 AM ET post window) share the same key
+          # and see each other's post receipt, preventing a double-post.
+          key: mlb-ml-edges-x-posted-${{ steps.et_date.outputs.date }}
+
+      - name: Time gate (9-11 AM ET for workflow_run only)
+        id: time_gate
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          ET_HOUR="$(TZ=America/New_York date +%H)"
+          if [ "$ET_HOUR" -ge 9 ] && [ "$ET_HOUR" -lt 11 ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "Time gate passed: ${ET_HOUR}:xx ET"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Time gate blocked: ${ET_HOUR}:xx ET outside 9-11 AM window"
+          fi
+
+      - name: Post ML Edges
+        if: steps.time_gate.outputs.should_run == 'true'
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            MODE="post"
+          else
+            MODE="${{ inputs.mode || 'post' }}"
+          fi
+          echo "Mode: $MODE"
+          node scripts/post-mlb-ml-edges-to-x.mjs "--${MODE}"
+        env:
+          X_ALLOW_LIVE_POST: "true"
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+      - name: Upload screenshot (dry-run)
+        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-ml-edges-x-screenshot
+          path: artifacts/mlb-ml-edges-x.png
+          if-no-files-found: error
