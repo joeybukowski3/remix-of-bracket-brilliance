@@ -235,7 +235,23 @@ function buildCaption({ date, rows }) {
   ].join("\n");
 
   if (caption.length > 280) {
-    return { skipped: true, reason: `Skipping: generated caption is ${caption.length} characters; expected 280 or fewer.`, caption: "", topProps: [] };
+    // Retry with a shorter line format (drop K%/Whiff% detail) before giving up.
+    const shortLines = topProps.map((row, index) => `${index + 1}. ${row.pitcher} (${row.team}) — ${row.strikeoutScore.toFixed(1)}`);
+    const shortCaption = [
+      `JoeKnowsBall MLB K Props - ${dateLabel}`,
+      "",
+      "Top edges:",
+      ...shortLines,
+      "",
+      STRIKEOUT_PROPS_URL,
+      "",
+      "#MLB #MLBPicks #Strikeouts",
+    ].join("\n");
+
+    if (shortCaption.length > 280) {
+      return { skipped: true, reason: `Skipping: generated caption is ${caption.length} characters (and ${shortCaption.length} shortened); expected 280 or fewer.`, caption: "", topProps: [] };
+    }
+    return { skipped: false, reason: "", caption: shortCaption, topProps };
   }
 
   return { skipped: false, reason: "", caption, topProps };
