@@ -99,14 +99,28 @@ function slugifyKey(value) {
  */
 async function loadMlEdgesFromPage(page) {
   await page.goto(ML_EDGES_URL, { waitUntil: "networkidle", timeout: 60000 });
+  // The live page polls several data sources after initial load (Polymarket
+  // moneylines, pitcher regression, etc.); give those a moment to settle
+  // before interacting, since networkidle can resolve before all of the
+  // page's own client-side fetches have finished rendering.
+  await page.waitForTimeout(1500);
 
   try {
-    await page.locator(`button:has-text("${ML_TAB_LABEL}")`).first().click({ timeout: 8000 });
+    // Role-based exact match — a plain text substring selector for "ML Edges"
+    // also matches the much larger "ML Edge" pick badge rendered on every
+    // Game Matchup Analyzer card, which sits earlier in the DOM and was
+    // being clicked instead of the actual tab button.
+    const tab = page.getByRole("button", { name: ML_TAB_LABEL }).first();
+    await tab.scrollIntoViewIfNeeded({ timeout: 8000 });
+    await tab.click({ timeout: 8000 });
     console.log("[mlb-ml-edges-x] Clicked ML Edges tab");
   } catch (clickErr) {
     console.warn(`[mlb-ml-edges-x] Tab click failed (${clickErr.message}), trying fallback selector`);
-    await page.locator(`button:text-is("🏆 ML Edges")`).first().click({ timeout: 5000 });
+    const fallbackTab = page.locator(`button:text-is("🏆 ML Edges")`).first();
+    await fallbackTab.scrollIntoViewIfNeeded({ timeout: 5000 });
+    await fallbackTab.click({ timeout: 5000 });
   }
+  await page.waitForTimeout(500);
 
   const exportTarget = page.locator(EXPORT_SELECTOR).first();
   await exportTarget.waitFor({ state: "visible", timeout: 15000 });

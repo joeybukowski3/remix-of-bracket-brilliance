@@ -1478,9 +1478,21 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
     return { bg: "#fb923c", color: "#fff" };
   }
   const ACCENTS = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308"];
+  const todayEt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 
   return (
-    <div data-x-export="mlb-k-social" style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+    <div
+      data-x-export="mlb-k-social"
+      data-k-date={todayEt}
+      data-k-generated-at={new Date().toISOString()}
+      data-k-row-count={top.length}
+      style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}
+    >
       <div style={{ background: "#0a1628", borderBottom: "3px solid #22c55e", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🎯 MLB K PROPS</div>
@@ -1550,7 +1562,18 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
           const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
           const pillStyle = sc(safeScore);
           return (
-            <div key={`${r.pitcher}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+            <div
+              key={`${r.pitcher}-${i}`}
+              data-k-row={i}
+              data-k-pitcher={r.pitcher}
+              data-k-team={r.team}
+              data-k-opponent={r.opponent}
+              data-k-score={safeScore}
+              data-k-rate={r.pitcherKRate ?? ""}
+              data-k-whiff-rate={r.pitcherWhiffRate ?? ""}
+              data-k-opp-rate={r.opponentTeamKRate ?? ""}
+              style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
+            >
               <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
               <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
               <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
