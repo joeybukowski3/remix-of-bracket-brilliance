@@ -108,6 +108,11 @@ export type MlbStarterProfile = {
   hrfb?: number | null;          // HR/FB%
   babip?: number | null;         // BABIP
   regressionScore?: number | null; // -10 to +10
+  /** Pitcher's home and away ERA/WHIP/SO splits for the current season */
+  locationSplits?: {
+    home: { era: string | number | null; whip: string | number | null; strikeOuts: number | null; inningsPitched: string | number | null } | null;
+    away: { era: string | number | null; whip: string | number | null; strikeOuts: number | null; inningsPitched: string | number | null } | null;
+  } | null;
 };
 
 export type MlbTeamPitchingStats = {

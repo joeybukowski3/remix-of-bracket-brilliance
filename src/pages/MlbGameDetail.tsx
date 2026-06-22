@@ -51,6 +51,7 @@ type MlbCache = {
   detailPromises: Record<string, Promise<MlbGameDetail>>;
   people: Record<string, any>;
   pitcherVsTeam: Record<string, any>;
+  pitcherLocationSplits: Record<string, any>;
   teamSplits: Record<string, any>;
   teamSchedules: Record<string, any[]>;
   teamPitching: Record<string, any>;
@@ -82,6 +83,7 @@ function ensureCache() {
       detailPromises: {},
       people: {},
       pitcherVsTeam: {},
+      pitcherLocationSplits: {},
       teamSplits: {},
       teamSchedules: {},
       teamPitching: {},
@@ -188,6 +190,32 @@ async function fetchPitcherVsTeam(id: number | undefined | null, teamId: number 
   );
   cache.pitcherVsTeam[key] = json?.stats?.[0]?.splits?.[0]?.stat || null;
   return cache.pitcherVsTeam[key];
+}
+
+/**
+ * Fetch a pitcher's home and away split stats for the current season.
+ * Returns { home: stat | null, away: stat | null } where each stat has
+ * era, whip, strikeOuts, inningsPitched, battersFaced, homeRuns, avg fields.
+ * Uses sitCodes h=home, a=away — each is a separate element in the splits array.
+ */
+async function fetchPitcherLocationSplits(id: number | undefined | null) {
+  if (!id) return { home: null, away: null };
+  const cache = ensureCache();
+  const key = `loc-${id}`;
+  if (cache.pitcherLocationSplits[key]) return cache.pitcherLocationSplits[key];
+
+  const json = await fetchJson(
+    `https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=statSplits&group=pitching&season=${SEASON}&sitCodes=h,a`,
+  );
+  const splits: any[] = json?.stats?.[0]?.splits ?? [];
+  const findSplit = (code: string) =>
+    splits.find((s: any) =>
+      s?.split?.code === code || s?.split?.description?.toLowerCase().startsWith(code === "h" ? "home" : "away"),
+    )?.stat ?? null;
+
+  const result = { home: findSplit("h"), away: findSplit("a") };
+  cache.pitcherLocationSplits[key] = result;
+  return result;
 }
 
 async function fetchTeamHittingSplit(teamId: number | null, pitcherHand: string) {
@@ -441,6 +469,8 @@ async function buildGameDetail(gamePk: string | number) {
     awayPitcherStat,
     homePitcherVsTeam,
     awayPitcherVsTeam,
+    homePitcherLocationSplits,
+    awayPitcherLocationSplits,
     homeLineupData,
     awayLineupData,
     homePitching,
@@ -454,6 +484,8 @@ async function buildGameDetail(gamePk: string | number) {
     fetchPitcherSeasonStats(awayStarterId),
     fetchPitcherVsTeam(homeStarterId, game.away.id),
     fetchPitcherVsTeam(awayStarterId, game.home.id),
+    fetchPitcherLocationSplits(homeStarterId),
+    fetchPitcherLocationSplits(awayStarterId),
     buildLineup(game.home, currentHomeLineup),
     buildLineup(game.away, currentAwayLineup),
     fetchTeamPitchingStats(game.home.id),
@@ -487,6 +519,7 @@ async function buildGameDetail(gamePk: string | number) {
         battersFaced: homePitcherStat?.battersFaced ?? null,
         baseOnBalls: homePitcherStat?.baseOnBalls ?? null,
         vsTeam: homePitcherVsTeam,
+        locationSplits: homePitcherLocationSplits,
       },
       away: {
         id: awayStarterId,
@@ -504,6 +537,7 @@ async function buildGameDetail(gamePk: string | number) {
         battersFaced: awayPitcherStat?.battersFaced ?? null,
         baseOnBalls: awayPitcherStat?.baseOnBalls ?? null,
         vsTeam: awayPitcherVsTeam,
+        locationSplits: awayPitcherLocationSplits,
       },
     },
     pitching: { home: homePitching, away: awayPitching },
@@ -1055,6 +1089,77 @@ function MlbSlateAnalyzer({
                   const homeVsHandTagShort = awayHandIsL ? "LHP" : "RHP";
                   const awayVsHandTagShort = homeHandIsL ? "LHP" : "RHP";
 
+                  // ── Home/Away split adjustment ──────────────────────────────
+                  // Compute how much each pitcher's ERA differs home vs away
+                  // and how much each team's batting record differs home vs away.
+                  // A positive adjustment means the pitcher/team is materially better
+                  // in the context they're in today (home pitcher at home, away team away).
+                  const parseEra = (v: string | number | null | undefined) => {
+                    const n = parseFloat(String(v ?? ""));
+                    return isFinite(n) ? n : null;
+                  };
+                  const parseWinPctFromRecord = (r: string | null | undefined) => {
+                    const parts = (r ?? "").replace(/[^0-9-]/g, "").split("-").map(Number);
+                    const [w, l] = parts;
+                    return isFinite(w) && isFinite(l) && w + l > 0 ? w / (w + l) : null;
+                  };
+
+                  // Home pitcher is pitching AT HOME — compare home ERA vs away ERA
+                  const homePitcherHomeEra = parseEra(detail?.starters.home.locationSplits?.home?.era);
+                  const homePitcherAwayEra = parseEra(detail?.starters.home.locationSplits?.away?.era);
+                  const homePitcherHomeIp  = parseFloat(String(detail?.starters.home.locationSplits?.home?.inningsPitched ?? "")) || 0;
+                  const homePitcherAwayIp  = parseFloat(String(detail?.starters.home.locationSplits?.away?.inningsPitched ?? "")) || 0;
+
+                  // Away pitcher is pitching AWAY — compare away ERA vs home ERA
+                  const awayPitcherAwayEra = parseEra(detail?.starters.away.locationSplits?.away?.era);
+                  const awayPitcherHomeEra = parseEra(detail?.starters.away.locationSplits?.home?.era);
+                  const awayPitcherAwayIp  = parseFloat(String(detail?.starters.away.locationSplits?.away?.inningsPitched ?? "")) || 0;
+                  const awayPitcherHomeIp  = parseFloat(String(detail?.starters.away.locationSplits?.home?.inningsPitched ?? "")) || 0;
+
+                  // For the display value: format "H: X.XX / A: X.XX"
+                  const fmtEra = (v: number | null) => v != null ? v.toFixed(2) : "—";
+                  const homePitcherSplitStr = (homePitcherHomeEra != null || homePitcherAwayEra != null)
+                    ? `H ${fmtEra(homePitcherHomeEra)} / A ${fmtEra(homePitcherAwayEra)}` : "—";
+                  const awayPitcherSplitStr = (awayPitcherAwayEra != null || awayPitcherHomeEra != null)
+                    ? `H ${fmtEra(awayPitcherHomeEra)} / A ${fmtEra(awayPitcherAwayEra)}` : "—";
+
+                  // Adjustment score: negative ERA delta = pitcher is better in this context (good for that side)
+                  // Home pitcher advantage: homePitcherAwayEra - homePitcherHomeEra > 0 (i.e. home ERA < away ERA)
+                  // Only meaningful with sufficient IP (>= 15 IP in each split)
+                  const homePitcherAdj = (homePitcherHomeEra != null && homePitcherAwayEra != null && homePitcherHomeIp >= 10 && homePitcherAwayIp >= 10)
+                    ? Math.round((homePitcherAwayEra - homePitcherHomeEra) * 10) / 10 : null;
+                  const awayPitcherAdj = (awayPitcherAwayEra != null && awayPitcherHomeEra != null && awayPitcherAwayIp >= 10 && awayPitcherHomeIp >= 10)
+                    ? Math.round((awayPitcherHomeEra - awayPitcherAwayEra) * 10) / 10 : null;
+
+                  // Team batting: home team bats at home, away team bats away
+                  const homeBatHomeWinPct = parseWinPctFromRecord(homeWrc?.homeRecord);
+                  const homeBatAwayWinPct = parseWinPctFromRecord(homeWrc?.awayRecord);
+                  const awayBatAwayWinPct = parseWinPctFromRecord(awayWrc?.awayRecord);
+                  const awayBatHomeWinPct = parseWinPctFromRecord(awayWrc?.homeRecord);
+
+                  // Batting context: +% = team is better in their current context (H vs A record delta)
+                  const homeBatAdj = (homeBatHomeWinPct != null && homeBatAwayWinPct != null)
+                    ? Math.round((homeBatHomeWinPct - homeBatAwayWinPct) * 100) : null;
+                  const awayBatAdj = (awayBatAwayWinPct != null && awayBatHomeWinPct != null)
+                    ? Math.round((awayBatAwayWinPct - awayBatHomeWinPct) * 100) : null;
+
+                  // Combine into a composite summary: pitcher ERA adj + batting adj
+                  // Positive = meaningful advantage in current context
+                  const fmtAdj = (pitcherAdj: number | null, batAdj: number | null, isPitcherAtHome: boolean) => {
+                    const parts: string[] = [];
+                    if (pitcherAdj != null) {
+                      const better = pitcherAdj > 0;
+                      const tag = better ? `↑ ERA +${pitcherAdj.toFixed(1)} at ${isPitcherAtHome ? "home" : "away"}` : pitcherAdj < 0 ? `↓ ERA ${pitcherAdj.toFixed(1)} at ${isPitcherAtHome ? "home" : "away"}` : "ERA neutral";
+                      parts.push(tag);
+                    }
+                    if (batAdj != null) {
+                      const better = batAdj > 0;
+                      const tag = better ? `↑ Bat +${batAdj}%` : batAdj < 0 ? `↓ Bat ${batAdj}%` : "Bat neutral";
+                      parts.push(tag);
+                    }
+                    return parts.length ? parts.join(" · ") : "—";
+                  };
+
                   type Row = { label: string; awaySzn: string; awayL14: string; homeSzn: string; homeL14: string; sznAdv: "home"|"away"|null; l14Adv: "home"|"away"|null };
                   const rows: Row[] = [
                     {
@@ -1217,6 +1322,88 @@ function MlbSlateAnalyzer({
                             </div>
                           ))}
                         </div>
+
+                        {/* Home/Away Context Splits */}
+                        {(homePitcherSplitStr !== "—" || awayPitcherSplitStr !== "—" || homeBatAdj != null || awayBatAdj != null) && (() => {
+                          const homePitcherIsFavorable = homePitcherAdj != null && homePitcherAdj > 0.3;
+                          const homePitcherIsUnfavorable = homePitcherAdj != null && homePitcherAdj < -0.3;
+                          const awayPitcherIsFavorable = awayPitcherAdj != null && awayPitcherAdj > 0.3;
+                          const awayPitcherIsUnfavorable = awayPitcherAdj != null && awayPitcherAdj < -0.3;
+                          const homeBatIsFavorable = homeBatAdj != null && homeBatAdj > 4;
+                          const homeBatIsUnfavorable = homeBatAdj != null && homeBatAdj < -4;
+                          const awayBatIsFavorable = awayBatAdj != null && awayBatAdj > 4;
+                          const awayBatIsUnfavorable = awayBatAdj != null && awayBatAdj < -4;
+
+                          const adjColor = (favorable: boolean, unfavorable: boolean) =>
+                            favorable ? "text-emerald-700 font-bold" : unfavorable ? "text-blue-700 font-bold" : "text-slate-600 font-semibold";
+
+                          return (
+                            <div className="w-full max-w-[320px] mx-auto">
+                              <div className="flex items-center gap-1.5 pb-1 border-b border-slate-200">
+                                <span className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Home / Away Context</span>
+                                <span className="text-[9px] text-slate-300 italic">pitcher ERA · team record split</span>
+                              </div>
+
+                              {/* Pitcher ERA split row */}
+                              {(homePitcherSplitStr !== "—" || awayPitcherSplitStr !== "—") && (
+                                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-1 py-1.5 border-b border-slate-100">
+                                  <div className="min-w-0">
+                                    <div className={cn("text-[10px] tabular-nums truncate leading-tight", adjColor(homePitcherIsFavorable, homePitcherIsUnfavorable))}>
+                                      {homePitcherSplitStr}
+                                    </div>
+                                    {homePitcherAdj != null && (
+                                      <div className={cn("text-[9px] leading-none mt-0.5", homePitcherIsFavorable ? "text-emerald-600" : homePitcherIsUnfavorable ? "text-blue-600" : "text-slate-400")}>
+                                        {homePitcherAdj > 0 ? `↑ +${homePitcherAdj.toFixed(1)} ERA at home` : homePitcherAdj < 0 ? `↓ ${homePitcherAdj.toFixed(1)} ERA at home` : "neutral at home"}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-center text-[9px] text-slate-300 font-medium px-1 shrink-0">Pitcher ERA</div>
+                                  <div className="min-w-0 text-right">
+                                    <div className={cn("text-[10px] tabular-nums truncate leading-tight", adjColor(awayPitcherIsFavorable, awayPitcherIsUnfavorable))}>
+                                      {awayPitcherSplitStr}
+                                    </div>
+                                    {awayPitcherAdj != null && (
+                                      <div className={cn("text-[9px] leading-none mt-0.5", awayPitcherIsFavorable ? "text-emerald-600" : awayPitcherIsUnfavorable ? "text-blue-600" : "text-slate-400")}>
+                                        {awayPitcherAdj > 0 ? `↑ +${awayPitcherAdj.toFixed(1)} ERA away` : awayPitcherAdj < 0 ? `↓ ${awayPitcherAdj.toFixed(1)} ERA away` : "neutral away"}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Team batting context row */}
+                              {(homeBatAdj != null || awayBatAdj != null) && (
+                                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-1 py-1.5">
+                                  <div className="min-w-0">
+                                    <div className={cn("text-[10px] tabular-nums truncate", adjColor(homeBatIsFavorable, homeBatIsUnfavorable))}>
+                                      {homeWrc?.homeRecord ?? "—"} (H) vs {homeWrc?.awayRecord ?? "—"} (A)
+                                    </div>
+                                    {homeBatAdj != null && (
+                                      <div className={cn("text-[9px] leading-none mt-0.5", homeBatIsFavorable ? "text-emerald-600" : homeBatIsUnfavorable ? "text-blue-600" : "text-slate-400")}>
+                                        {homeBatAdj > 0 ? `↑ +${homeBatAdj}% win at home` : homeBatAdj < 0 ? `↓ ${homeBatAdj}% win at home` : "neutral at home"}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-center text-[9px] text-slate-300 font-medium px-1 shrink-0">Team Bat</div>
+                                  <div className="min-w-0 text-right">
+                                    <div className={cn("text-[10px] tabular-nums truncate", adjColor(awayBatIsFavorable, awayBatIsUnfavorable))}>
+                                      {awayWrc?.homeRecord ?? "—"} (H) vs {awayWrc?.awayRecord ?? "—"} (A)
+                                    </div>
+                                    {awayBatAdj != null && (
+                                      <div className={cn("text-[9px] leading-none mt-0.5", awayBatIsFavorable ? "text-emerald-600" : awayBatIsUnfavorable ? "text-blue-600" : "text-slate-400")}>
+                                        {awayBatAdj > 0 ? `↑ +${awayBatAdj}% win away` : awayBatAdj < 0 ? `↓ ${awayBatAdj}% win away` : "neutral away"}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="text-[8px] text-slate-300 pt-1 leading-tight">
+                                Green = better in today's context (pitcher at home/away) · Blue = worse · min. 10 IP per split
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* ── Footer ── */}
@@ -2281,7 +2468,7 @@ function HomeSchedule({
 
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
-      <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8 2xl:max-w-[1900px]">
+      <div className="mx-auto flex max-w-[1280px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:max-w-[1400px] 2xl:max-w-[1600px] 2xl:gap-6 3xl:max-w-[1800px] 3xl:px-10 4xl:max-w-[1900px] 4xl:px-12">
         <MlbHubSidebar />
 
         <div className="min-w-0 flex-1 space-y-3">
@@ -2338,7 +2525,7 @@ function HomeSchedule({
         </div>
 
         {/* Polymarket panel — sticky right sidebar on 2xl+ screens */}
-        <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:overflow-x-hidden polymarket-panel-scroll">
+        <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:overflow-x-hidden 3xl:w-[360px] 4xl:w-[410px] polymarket-panel-scroll">
           <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} mlEdges={mlEdges} />
         </aside>
       </div>

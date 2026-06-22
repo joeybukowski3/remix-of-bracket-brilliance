@@ -53,6 +53,86 @@ export function getMlbTeamColors(teamAbbreviation: string | null | undefined): M
   return TEAM_COLORS[teamAbbreviation.toUpperCase()] ?? FALLBACK;
 }
 
+// ---------------------------------------------------------------------------
+// Contrast helpers
+// ---------------------------------------------------------------------------
+
+/** Parse a hex color string (#rrggbb) into [r, g, b] in 0-255 range. */
+function hexToRgb(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
+  if (!m) return null;
+  return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+}
+
+/**
+ * Compute WCAG relative luminance for an sRGB triplet [0-255].
+ * https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+ */
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  const linearize = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+}
+
+/**
+ * WCAG contrast ratio between two colors. Values ≥ 3.0 are acceptable for
+ * large/bold text; ≥ 4.5 for body text.
+ */
+function contrastRatio(hex1: string, hex2: string): number {
+  const rgb1 = hexToRgb(hex1);
+  const rgb2 = hexToRgb(hex2);
+  if (!rgb1 || !rgb2) return 1;
+  const L1 = relativeLuminance(rgb1);
+  const L2 = relativeLuminance(rgb2);
+  const lighter = Math.max(L1, L2);
+  const darker  = Math.min(L1, L2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * Return the best readable color for this team when placed on a dark background.
+ *
+ * Strategy (in priority order):
+ * 1. If the primary color has sufficient contrast on the given `bgHex`, use it.
+ * 2. If the secondary color has better contrast, use it instead.
+ * 3. Fall back to a bright tint of the primary (+80% lightness boost).
+ * 4. Final fallback: white.
+ *
+ * `minContrast` defaults to 3.0 (WCAG AA for large/bold text).
+ */
+export function getReadableOnDark(
+  teamAbbreviation: string | null | undefined,
+  bgHex = "#0b1220",
+  minContrast = 3.0,
+): string {
+  const entry = getMlbTeamColors(teamAbbreviation);
+
+  const primaryContrast   = contrastRatio(entry.primary, bgHex);
+  const secondaryContrast = entry.secondary ? contrastRatio(entry.secondary, bgHex) : 0;
+
+  // Primary is readable — use it
+  if (primaryContrast >= minContrast) return entry.primary;
+
+  // Secondary is readable and better than primary — use it
+  if (secondaryContrast >= minContrast && secondaryContrast > primaryContrast) {
+    return entry.secondary!;
+  }
+
+  // Neither is readable — lighten the primary by blending toward white
+  const rgb = hexToRgb(entry.primary);
+  if (rgb) {
+    // Blend 65% toward white to guarantee visibility
+    const blend = (c: number) => Math.round(c + (255 - c) * 0.65);
+    const [r, g, b] = rgb.map(blend) as [number, number, number];
+    const lightHex = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+    if (contrastRatio(lightHex, bgHex) >= minContrast) return lightHex;
+  }
+
+  return "#ffffff";
+}
+
 export function getStatusBadgeTheme(status: string) {
   const normalized = status.toLowerCase();
   if (normalized.includes("progress") || normalized.includes("live") || normalized.includes("delayed")) {
