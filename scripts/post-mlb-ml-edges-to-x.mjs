@@ -232,9 +232,9 @@ function buildCaption({ date, rows }) {
     subtitle,
     ...lines,
     "",
-    `Full board: ${ML_EDGES_URL}`,
+    "Full board at link in bio",
     "",
-    "#MLB #MLBPicks #MoneyLine #PropBets #MLBBetting #SportsGambling",
+    "#MLB #MLBPicks #MoneyLine #MLBBetting",
   ].join("\n");
 
   if (caption.length > 280) {
@@ -252,7 +252,7 @@ function buildCaption({ date, rows }) {
       "Top model edges:",
       ...shortLines,
       "",
-      `Full board: ${ML_EDGES_URL}`,
+      "Full board at link in bio",
       "",
       "#MLB #MLBPicks #MoneyLine #MLBBetting",
     ].join("\n");

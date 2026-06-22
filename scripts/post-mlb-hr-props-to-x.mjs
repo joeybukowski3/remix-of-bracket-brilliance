@@ -303,9 +303,9 @@ function buildCaption(rawPayload, bestBetsPayload) {
     "Top model edges:",
     ...lines,
     "",
-    `Full table: ${HR_PROPS_URL}`,
+    "Full table at link in bio",
     "",
-    "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting #SportsGambling",
+    "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting",
   ].join("\n");
 
   if (caption.length > 280) {
