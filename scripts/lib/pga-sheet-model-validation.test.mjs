@@ -34,6 +34,10 @@ describe("PGA sheet model source validation", () => {
     expect(parseEmbeddedReferenceDate([["No date"]])).toBeNull();
   });
 
+  it("maps a date inside an active event back to that event", () => {
+    expect(buildScheduleContext(schedule, "2026-05-08").currentUpcoming?.name).toBe("Truist Championship");
+  });
+
   it("rejects stale Truist rows from being relabeled as Travelers", () => {
     const result = buildValidation("current-tournament", "2026-05-07");
     expect(result.valid).toBe(false);
@@ -42,15 +46,15 @@ describe("PGA sheet model source validation", () => {
     expect(result.errors.join(" ")).toContain("Expected Travelers Championship");
   });
 
-  it("rejects a stale embedded date even when the source tournament otherwise exists", () => {
+  it("rejects a stale embedded date", () => {
     const result = buildValidation("current-tournament", "2026-05-07");
     expect(result.errors.some((error) => error.includes("days old"))).toBe(true);
+    expect(result.errors.some((error) => error.includes("too early"))).toBe(true);
   });
 
-  it("accepts a current Travelers sheet", () => {
-    const result = buildValidation("current-tournament", "2026-06-22");
-    expect(result.valid).toBe(true);
-    expect(result.source.name).toBe("Travelers Championship");
+  it("accepts a current Travelers sheet dated during preparation week or tournament week", () => {
+    expect(buildValidation("current-tournament", "2026-06-22").valid).toBe(true);
+    expect(buildValidation("current-tournament", "2026-06-25").valid).toBe(true);
   });
 
   it("validates the next tournament independently", () => {
@@ -80,7 +84,7 @@ describe("PGA sheet model source validation", () => {
     const payload = buildValidatedModelPayload({
       section: "current-tournament",
       rawPayload: { title: "CURRENT TOURNAMENT MODEL", rows: rawRows },
-      validation: buildValidation("current-tournament", "2026-06-22"),
+      validation: buildValidation("current-tournament", "2026-06-25"),
       generatedAt: "2026-06-22T20:00:00.000Z",
     });
     expect(payload.modelAvailable).toBe(true);
@@ -101,6 +105,20 @@ describe("PGA sheet model source validation", () => {
       sourceValidated: false,
       rows: rawRows,
     })).toThrow("Unavailable models must have zero rows");
+  });
+
+  it("requires identity metadata and explicit booleans", () => {
+    expect(() => assertModelPayload({
+      section: "current-tournament",
+      tournamentName: "Travelers Championship",
+      tournamentId: "",
+      startDate: "2026-06-25",
+      endDate: "2026-06-28",
+      modelAvailable: false,
+      modelSource: "google-sheet",
+      sourceValidated: false,
+      rows: [],
+    })).toThrow("Invalid required model metadata: tournamentId");
   });
 
   it("blocks the exact safe-to-unsafe regression", () => {
