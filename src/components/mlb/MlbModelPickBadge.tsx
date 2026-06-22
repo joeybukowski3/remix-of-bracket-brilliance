@@ -1,6 +1,8 @@
-import { getMlbTeamColors } from "@/lib/mlbTeamColors";
+import { getMlbTeamColors, getReadableOnDark } from "@/lib/mlbTeamColors";
 import { computeModelEdge } from "@/lib/mlb/mlbModelEdge";
 import type { MlbGameDetail } from "@/lib/mlb/mlbTypes";
+
+const BG = "#0b1220"; // the dark card background
 
 const ESPN_ABBR: Record<string, string> = {
   AZ:"ari",ATH:"oak",WSH:"wsh",CWS:"chw",KCR:"kc",SDP:"sd",SFG:"sf",TBR:"tb",
@@ -28,18 +30,19 @@ function FactorBar({ label, awayScore, homeScore, weight, awayColor, homeColor, 
         <span className="font-semibold text-white/70">{label}</span>
         <div className="flex items-center gap-1">
           <span className="font-bold" style={{ color: leaderColor }}>{leader}</span>
-          <span className="text-white/30">+{diff}</span>
+          <span className="text-white/50">+{diff}</span>
           <span className="text-white/30">·</span>
-          <span className="text-white/30">{Math.round(weight * 100)}% wt</span>
+          <span className="text-white/40">{Math.round(weight * 100)}% wt</span>
         </div>
       </div>
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-white/10">
         <div className="h-full rounded-l-full transition-all" style={{ width: `${awayPct}%`, backgroundColor: awayColor }} />
         <div className="h-full rounded-r-full transition-all" style={{ width: `${homePct}%`, backgroundColor: homeColor }} />
       </div>
-      <div className="flex justify-between text-[9px] text-white/30">
-        <span>{awayAbbr} {awayPct}%</span>
-        <span>{homePct}% {homeAbbr}</span>
+      <div className="flex justify-between text-[9px] text-white/40">
+        <span style={{ color: awayColor }}>{awayAbbr}</span>
+        <span className="text-white/30">{awayPct}% vs {homePct}%</span>
+        <span style={{ color: homeColor }}>{homeAbbr}</span>
       </div>
     </div>
   );
@@ -47,12 +50,17 @@ function FactorBar({ label, awayScore, homeScore, weight, awayColor, homeColor, 
 
 export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail }) {
   const result = computeModelEdge(detail);
-  const awayColors = getMlbTeamColors(result.awayAbbr);
-  const homeColors = getMlbTeamColors(result.homeAbbr);
+
+  // Raw palette colors (may be dark — e.g. NYY navy, DET navy)
+  const awayColorRaw = getMlbTeamColors(result.awayAbbr);
+  const homeColorRaw = getMlbTeamColors(result.homeAbbr);
+
+  // Readable versions for use on the dark card background
+  const awayColor = getReadableOnDark(result.awayAbbr, BG);
+  const homeColor = getReadableOnDark(result.homeAbbr, BG);
 
   const isPush = result.pick === "push";
-  const pickColors = result.pick === "away" ? awayColors : result.pick === "home" ? homeColors : null;
-  const oppColors  = result.pick === "away" ? homeColors : result.pick === "home" ? awayColors : null;
+  const pickColor  = result.pick === "away" ? awayColor  : result.pick === "home" ? homeColor  : null;
   const pickAbbr   = result.pick === "away" ? result.awayAbbr : result.pick === "home" ? result.homeAbbr : "";
   const oppAbbr    = result.pick === "away" ? result.homeAbbr : result.pick === "home" ? result.awayAbbr : "";
 
@@ -65,8 +73,8 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
     <div
       className="overflow-hidden rounded-xl shadow-lg"
       style={{
-        background: `linear-gradient(135deg, ${awayColors.primary}22 0%, #0b1220 30%, #0b1220 70%, ${homeColors.primary}22 100%)`,
-        border: `1px solid ${isPush ? "#ffffff18" : `${pickColors?.primary}40`}`,
+        background: `linear-gradient(135deg, ${awayColorRaw.primary}22 0%, ${BG} 30%, ${BG} 70%, ${homeColorRaw.primary}22 100%)`,
+        border: `1px solid ${isPush ? "#ffffff18" : `${pickColor}40`}`,
       }}
     >
       {/* Header */}
@@ -90,7 +98,7 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
             </div>
           ) : (
             <>
-              {/* Team logo + vs */}
+              {/* Team logo + label */}
               <div className="flex items-center gap-2">
                 <img src={logoUrl(pickAbbr)} alt={pickAbbr} className="h-10 w-10 object-contain drop-shadow" />
                 <div className="flex flex-col items-start">
@@ -104,7 +112,7 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
               <div className="w-full space-y-1">
                 <div className="flex justify-between text-[9px] text-white/40">
                   <span>50%</span>
-                  <span className="font-bold" style={{ color: pickColors?.primary }}>{result.confidence}%</span>
+                  <span className="font-bold" style={{ color: pickColor ?? "#fff" }}>{result.confidence}%</span>
                   <span>82%</span>
                 </div>
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
@@ -112,7 +120,9 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
                     className="h-full rounded-full transition-all"
                     style={{
                       width: `${((result.confidence - 50) / 32) * 100}%`,
-                      background: `linear-gradient(90deg, ${pickColors?.primary}88, ${pickColors?.primary})`,
+                      background: pickColor
+                        ? `linear-gradient(90deg, ${pickColor}88, ${pickColor})`
+                        : "rgba(255,255,255,0.4)",
                     }}
                   />
                 </div>
@@ -123,17 +133,24 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
 
               {/* Score badges */}
               <div className="flex gap-3">
-                <div className="flex flex-col items-center rounded-lg px-3 py-1.5" style={{ backgroundColor: `${pickColors?.primary}25`, border: `1px solid ${pickColors?.primary}40` }}>
+                <div
+                  className="flex flex-col items-center rounded-lg px-3 py-1.5"
+                  style={{ backgroundColor: `${pickColor}20`, border: `1px solid ${pickColor}50` }}
+                >
                   <span className="text-[8px] uppercase tracking-wide text-white/40">{pickAbbr} score</span>
-                  <span className="text-base font-extrabold" style={{ color: pickColors?.primary }}>
-                    {result.pick === "away" ? result.factors.reduce((s, f) => s + f.awayScore * f.weight, 0).toFixed(0) : result.factors.reduce((s, f) => s + f.homeScore * f.weight, 0).toFixed(0)}
+                  <span className="text-base font-extrabold" style={{ color: pickColor ?? "#fff" }}>
+                    {result.pick === "away"
+                      ? result.factors.reduce((s, f) => s + f.awayScore * f.weight, 0).toFixed(0)
+                      : result.factors.reduce((s, f) => s + f.homeScore * f.weight, 0).toFixed(0)}
                   </span>
                 </div>
-                <div className="flex items-center text-white/20 text-sm font-bold">vs</div>
+                <div className="flex items-center text-white/30 text-sm font-bold">vs</div>
                 <div className="flex flex-col items-center rounded-lg px-3 py-1.5 bg-white/5 border border-white/10">
                   <span className="text-[8px] uppercase tracking-wide text-white/40">{oppAbbr} score</span>
                   <span className="text-base font-extrabold text-white/50">
-                    {result.pick === "away" ? result.factors.reduce((s, f) => s + f.homeScore * f.weight, 0).toFixed(0) : result.factors.reduce((s, f) => s + f.awayScore * f.weight, 0).toFixed(0)}
+                    {result.pick === "away"
+                      ? result.factors.reduce((s, f) => s + f.homeScore * f.weight, 0).toFixed(0)
+                      : result.factors.reduce((s, f) => s + f.awayScore * f.weight, 0).toFixed(0)}
                   </span>
                 </div>
               </div>
@@ -146,7 +163,7 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
 
         {/* Right: factor breakdown */}
         <div className="space-y-3">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">Factor Breakdown</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/50">Factor Breakdown</div>
           {result.factors.map((f) => (
             <FactorBar
               key={f.label}
@@ -154,13 +171,13 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
               awayScore={f.awayScore}
               homeScore={f.homeScore}
               weight={f.weight}
-              awayColor={awayColors.primary}
-              homeColor={homeColors.primary}
+              awayColor={awayColor}
+              homeColor={homeColor}
               awayAbbr={result.awayAbbr}
               homeAbbr={result.homeAbbr}
             />
           ))}
-          <p className="pt-1 text-[10px] italic leading-5 text-white/30">{result.summary}</p>
+          <p className="pt-1 text-[10px] italic leading-5 text-white/40">{result.summary}</p>
         </div>
       </div>
     </div>
