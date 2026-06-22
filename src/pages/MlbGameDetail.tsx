@@ -2281,7 +2281,7 @@ function HomeSchedule({
 
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
-      <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8 2xl:max-w-[1900px]">
+      <div className="mx-auto flex max-w-[1280px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:max-w-[1400px] 2xl:max-w-[1600px] 2xl:gap-6 3xl:max-w-[1800px] 3xl:px-10 4xl:max-w-[1900px] 4xl:px-12">
         <MlbHubSidebar />
 
         <div className="min-w-0 flex-1 space-y-3">
@@ -2338,7 +2338,7 @@ function HomeSchedule({
         </div>
 
         {/* Polymarket panel — sticky right sidebar on 2xl+ screens */}
-        <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:overflow-x-hidden polymarket-panel-scroll">
+        <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:overflow-x-hidden 3xl:w-[360px] 4xl:w-[410px] polymarket-panel-scroll">
           <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} mlEdges={mlEdges} />
         </aside>
       </div>

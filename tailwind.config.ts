@@ -13,6 +13,12 @@ export default {
       },
     },
     extend: {
+      screens: {
+        // Custom wide breakpoints for the MLB dashboard
+        // 2xl is already defined as 1400px in the container section above
+        "3xl": "1600px",   // medium-wide: start expanding layout
+        "4xl": "1800px",   // ultrawide: max expansion
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
