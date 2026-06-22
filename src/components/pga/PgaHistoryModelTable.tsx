@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import type { PgaHistoryResult, PgaTournamentModelRow } from "@/lib/pga/historyModel";
+import { useJkbTrendRankings, type JkbTrendRanking } from "@/hooks/useJkbTrendRankings";
+import { normalizePlayerKey, type PgaHistoryResult, type PgaTournamentModelRow } from "@/lib/pga/historyModel";
 
 type Props = {
   rows: PgaTournamentModelRow[];
@@ -13,8 +14,19 @@ const statKeys = ["sgTotal", "sgApp", "sgPutt", "sgAtG", "drivingAccuracy", "dri
 const statLabels = ["SG Total", "SG App", "SG Putt", "SG ARG", "Drive Acc.", "Drive Dist."];
 
 export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLabel }: Props) {
+  const { payload: trendPayload, rankingMap, error: trendError } = useJkbTrendRankings();
+
   return (
     <>
+      {trendPayload?.generatedAt ? (
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-[10px] text-cyan-950">
+          <span><strong>JKB Trend Rank:</strong> trailing 20 adjusted rounds across PGA, LIV and DP World Tour data.</span>
+          <span>Updated {new Date(trendPayload.generatedAt).toLocaleDateString()}</span>
+        </div>
+      ) : trendError ? (
+        <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] text-amber-900">JKB Trend Rank is temporarily unavailable; the previous finish-based trend is shown.</div>
+      ) : null}
+
       <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:block">
         <table className="w-full table-fixed text-center text-[9px] leading-tight">
           <DesktopColumnWidths isMajor={isMajor} />
@@ -42,7 +54,7 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
                 </th>
               ))}
               <th className="border-l border-slate-200 px-0.5 py-2">Fit</th>
-              <th className="px-0.5 py-2">Trend</th>
+              <th className="px-0.5 py-2">JKB Trend</th>
               <th className="border-l border-slate-200 px-1 py-2 text-[8px] text-slate-400">Latest → Older</th>
               {isMajor ? (
                 <>
@@ -56,7 +68,14 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <DesktopRow key={row.player} row={row} index={index} statView={statView} isMajor={isMajor} />
+              <DesktopRow
+                key={row.player}
+                row={row}
+                index={index}
+                statView={statView}
+                isMajor={isMajor}
+                trendRanking={rankingMap.get(normalizePlayerKey(row.player)) ?? null}
+              />
             ))}
           </tbody>
         </table>
@@ -64,7 +83,14 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
 
       <div className="space-y-3 lg:hidden">
         {rows.map((row) => (
-          <MobileCard key={row.player} row={row} statView={statView} isMajor={isMajor} eventLabel={eventLabel} />
+          <MobileCard
+            key={row.player}
+            row={row}
+            statView={statView}
+            isMajor={isMajor}
+            eventLabel={eventLabel}
+            trendRanking={rankingMap.get(normalizePlayerKey(row.player)) ?? null}
+          />
         ))}
       </div>
     </>
@@ -87,11 +113,12 @@ function DesktopColumnWidths({ isMajor }: { isMajor: boolean }) {
   );
 }
 
-function DesktopRow({ row, index, statView, isMajor }: {
+function DesktopRow({ row, index, statView, isMajor, trendRanking }: {
   row: PgaTournamentModelRow;
   index: number;
   statView: "percentile" | "raw";
   isMajor: boolean;
+  trendRanking: JkbTrendRanking | null;
 }) {
   const bg = index % 2 ? "bg-slate-50" : "bg-white";
 
@@ -110,7 +137,7 @@ function DesktopRow({ row, index, statView, isMajor }: {
       ))}
 
       <td className="border-b border-l border-slate-100 p-0"><Percentile value={row.courseFit} /></td>
-      <td className="border-b border-slate-100 px-1 py-1.5"><Trend direction={row.trend.direction} label={row.trend.label} /></td>
+      <td className="border-b border-slate-100 px-1 py-1"><Trend ranking={trendRanking} direction={row.trend.direction} label={row.trend.label} /></td>
       <td className="border-b border-l border-slate-100 px-1 py-1"><FinishStrip values={row.recentResults} count={RECENT_START_COUNT} trendStyle /></td>
 
       {isMajor ? (
@@ -125,11 +152,12 @@ function DesktopRow({ row, index, statView, isMajor }: {
   );
 }
 
-function MobileCard({ row, statView, isMajor, eventLabel }: {
+function MobileCard({ row, statView, isMajor, eventLabel, trendRanking }: {
   row: PgaTournamentModelRow;
   statView: "percentile" | "raw";
   isMajor: boolean;
   eventLabel: string;
+  trendRanking: JkbTrendRanking | null;
 }) {
   return (
     <article className="rounded-xl border bg-white p-3 shadow-sm">
@@ -149,7 +177,7 @@ function MobileCard({ row, statView, isMajor, eventLabel }: {
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Metric label="Course Fit" value={row.courseFit == null ? "—" : String(Math.round(row.courseFit))} />
-        <Metric label="Trend" value={row.trend.label} />
+        <Metric label="JKB Trend" value={trendMetric(trendRanking, row.trend.label)} />
       </div>
 
       <Strip label="Last 5 Starts" values={row.recentResults} count={RECENT_START_COUNT} trendStyle />
@@ -252,8 +280,32 @@ function Score({ value }: { value: number }) {
   return <span className="inline-flex min-w-0 justify-center rounded-full bg-emerald-600 px-1.5 py-1 text-[9px] font-black text-white">{value.toFixed(1)}</span>;
 }
 
-function Trend({ direction, label }: { direction: "up" | "down" | "flat"; label: string }) {
-  const icon = direction === "up" ? "↑" : direction === "down" ? "↓" : "→";
+function Trend({ ranking, direction, label }: {
+  ranking: JkbTrendRanking | null;
+  direction: "up" | "down" | "flat" | "unknown";
+  label: string;
+}) {
+  if (ranking?.rank != null) {
+    const sources = Object.entries(ranking.sourceCounts ?? {}).map(([tour, count]) => `${tour}: ${count}`).join(" · ");
+    const title = [
+      `JKB Trend Rank #${ranking.rank}`,
+      `Recent 20: ${signed(ranking.recent20)}`,
+      `Vs baseline: ${signed(ranking.vsBaseline)}`,
+      `${ranking.roundsUsed} rounds`,
+      ranking.confidence === "provisional" ? "Provisional sample" : "Official sample",
+      sources,
+    ].filter(Boolean).join(" · ");
+    return (
+      <div title={title} className="flex flex-col items-center leading-none">
+        <span className="text-[11px] font-black text-cyan-800">#{ranking.rank}{ranking.confidence === "provisional" ? "*" : ""}</span>
+        <span className={`mt-0.5 text-[8px] font-bold ${(ranking.vsBaseline ?? 0) > 0.15 ? "text-emerald-700" : (ranking.vsBaseline ?? 0) < -0.15 ? "text-red-600" : "text-slate-500"}`}>
+          {signed(ranking.recent20)}
+        </span>
+      </div>
+    );
+  }
+
+  const icon = direction === "up" ? "↑" : direction === "down" ? "↓" : direction === "flat" ? "→" : "";
   const className = direction === "up" ? "text-emerald-700" : direction === "down" ? "text-red-600" : "text-slate-500";
   return <span className={`whitespace-nowrap font-black ${className}`}>{icon} {label}</span>;
 }
@@ -298,4 +350,14 @@ function raw(row: PgaTournamentModelRow, key: typeof statKeys[number]) {
 
 function pct(value: number | null) {
   return value == null ? "—" : `${Math.round(value)}th`;
+}
+
+function signed(value: number | null) {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
+}
+
+function trendMetric(ranking: JkbTrendRanking | null, fallback: string) {
+  if (ranking?.rank == null) return fallback;
+  return `#${ranking.rank}${ranking.confidence === "provisional" ? "*" : ""} · ${signed(ranking.recent20)}`;
 }
