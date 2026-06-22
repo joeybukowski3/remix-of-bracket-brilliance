@@ -29,7 +29,19 @@ import { SPORTSBOOKS } from "@/lib/sportsbooks";
 const BASE_WEIGHTS = { sgTotal: .55, sgApp: .12, sgPutt: .06, sgAtG: .10, sgOTT: .07, drivingAccuracy: .05, bogeyAvoidance: .05 };
 const RECENT_START_COUNT = 5;
 
-type CurrentField = { tournament: string; players: string[]; source: string };
+type CurrentField = {
+  tournament: string;
+  tournamentId?: string;
+  tournamentSlug?: string;
+  localScheduleId?: string;
+  source: string;
+  sourceUrl?: string;
+  validated?: boolean;
+  fieldCount?: number;
+  alternatesExcluded?: boolean;
+  fetchedAt?: string;
+  players: string[];
+};
 
 export default function PgaHistoryModel() {
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
@@ -57,7 +69,32 @@ export default function PgaHistoryModel() {
     [courseWeights, event],
   );
 
-  const fieldSet = useMemo(() => new Set((field?.players ?? []).map(normalizePlayerKey)), [field]);
+  const fieldMatchesEvent = useMemo(() => {
+    if (!field || !event) return false;
+    const expected = new Set([
+      event.id,
+      event.slug,
+      event.name,
+      event.shortName,
+    ].filter(Boolean).map(normalizeEventIdentity));
+    return [field.localScheduleId, field.tournamentSlug, field.tournament]
+      .filter(Boolean)
+      .map(normalizeEventIdentity)
+      .some((value) => expected.has(value));
+  }, [field, event]);
+
+  const fieldUsable = Boolean(
+    field
+    && fieldMatchesEvent
+    && field.validated !== false
+    && Array.isArray(field.players)
+    && field.players.length > 0,
+  );
+
+  const fieldSet = useMemo(
+    () => new Set(fieldUsable ? field?.players.map(normalizePlayerKey) ?? [] : []),
+    [field, fieldUsable],
+  );
 
   const modelRows = useMemo(() => {
     const merged = playerStats.map((player) => {
@@ -123,16 +160,18 @@ export default function PgaHistoryModel() {
       } satisfies PgaTournamentModelRow;
     });
 
-    return rows.sort((a, b) => b.modelScore - a.modelScore || a.player.localeCompare(b.player)).map((row, index) => ({ ...row, modelRank: index + 1 }));
+    return rows
+      .sort((a, b) => b.modelScore - a.modelScore || a.player.localeCompare(b.player))
+      .map((row, index) => ({ ...row, modelRank: index + 1 }));
   }, [playerStats, playerHistoryMap, majorHistoryMap, activeWeights, eventSlug, eventName, event, majorType, isMajor]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return modelRows.filter((row) => {
-      if (fieldOnly && fieldSet.size && !fieldSet.has(normalizePlayerKey(row.player))) return false;
+      if (fieldOnly && fieldUsable && fieldSet.size && !fieldSet.has(normalizePlayerKey(row.player))) return false;
       return !query || row.player.toLowerCase().includes(query);
     });
-  }, [modelRows, fieldOnly, fieldSet, search]);
+  }, [modelRows, fieldOnly, fieldUsable, fieldSet, search]);
 
   return (
     <SiteShell>
@@ -143,7 +182,30 @@ export default function PgaHistoryModel() {
         <aside className="hidden w-60 shrink-0 lg:block"><div className="sticky top-4 overflow-hidden rounded-xl border bg-white shadow-sm"><div className="bg-slate-900 px-4 py-3 text-sm font-black text-white">2026 PGA Tour</div><div className="max-h-[72vh] divide-y overflow-y-auto">{schedule.filter((entry) => entry.startDate >= new Date().toISOString().slice(0, 10)).slice(0, 12).map((entry) => <div key={entry.id} className={`px-3 py-2 ${entry.id === event?.id ? "bg-emerald-50" : ""}`}><div className="text-xs font-bold">{entry.shortName || entry.name}</div><div className="text-[10px] text-slate-400">{entry.dateLabel}</div>{entry.dataFile && <Link to={`/pga/${entry.slug}/model`} className="mt-1 inline-block text-[10px] font-bold text-emerald-700">View model →</Link>}</div>)}</div></div></aside>
         <main className="min-w-0 flex-1">
           <div className="mb-4 flex flex-wrap gap-2"><Link to="/pga/best-bets" className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">Best Bets</Link><Link to="/pga/dfs" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">DFS Upload</Link></div>
-          <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border bg-white p-3 shadow-sm"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search player..." className="min-w-52 flex-1 rounded-lg border px-3 py-2 text-sm" /><button onClick={() => setFieldOnly((value) => !value)} className={`rounded-full px-3 py-1.5 text-xs font-black ${fieldOnly ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-700"}`}>{fieldOnly ? `Field only (${filtered.length})` : "All players"}</button><div className="inline-flex rounded-full border p-0.5 text-xs font-bold"><button onClick={() => setStatView("percentile")} className={`rounded-full px-3 py-1 ${statView === "percentile" ? "bg-emerald-600 text-white" : ""}`}>Percentile</button><button onClick={() => setStatView("raw")} className={`rounded-full px-3 py-1 ${statView === "raw" ? "bg-emerald-600 text-white" : ""}`}>Raw</button></div></div>
+          <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border bg-white p-3 shadow-sm">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search player..." className="min-w-52 flex-1 rounded-lg border px-3 py-2 text-sm" />
+            <button
+              type="button"
+              disabled={!fieldUsable}
+              onClick={() => setFieldOnly((value) => !value)}
+              className={`rounded-full px-3 py-1.5 text-xs font-black ${!fieldUsable ? "cursor-not-allowed bg-slate-100 text-slate-400" : fieldOnly ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-700"}`}
+            >
+              {!fieldUsable ? "Field sync pending" : fieldOnly ? `Field only (${filtered.length})` : "All players"}
+            </button>
+            <div className="inline-flex rounded-full border p-0.5 text-xs font-bold"><button onClick={() => setStatView("percentile")} className={`rounded-full px-3 py-1 ${statView === "percentile" ? "bg-emerald-600 text-white" : ""}`}>Percentile</button><button onClick={() => setStatView("raw")} className={`rounded-full px-3 py-1 ${statView === "raw" ? "bg-emerald-600 text-white" : ""}`}>Raw</button></div>
+          </div>
+
+          {fieldUsable ? (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+              <span><strong>Official PGA TOUR field:</strong> {field.fieldCount ?? field.players.length} players for {field.tournament}{field.alternatesExcluded ? " · alternates excluded" : ""}</span>
+              {field.sourceUrl ? <a href={field.sourceUrl} target="_blank" rel="noreferrer" className="font-black text-emerald-800 underline">View source</a> : null}
+            </div>
+          ) : field ? (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              The saved field is for <strong>{field.tournament}</strong>, not {eventName}. Field filtering is disabled until the official PGA TOUR field sync runs.
+            </div>
+          ) : null}
+
           {historyError && <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">History data is partially unavailable: {historyError}</div>}
           {loading || historyLoading ? <div className="py-16 text-center text-sm text-slate-400">Loading tournament model…</div> : <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} />}
           <p className="mt-3 text-[11px] text-slate-400">Regular events use core stats, the last five starts, course fit, same-event history and trend. Majors replace event history with the last four starts in that major plus the last eight major starts overall.</p>
@@ -152,6 +214,17 @@ export default function PgaHistoryModel() {
       </div>
     </SiteShell>
   );
+}
+
+function normalizeEventIdentity(value: unknown) {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(the|presented by|championship|tournament|2026|picks)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 function buildBaseScores(players: Array<RawPlayerStat & { drivingDistance: number | null }>) {
