@@ -49,21 +49,10 @@ export function usePgaPlayerHistory() {
 
     async function load() {
       try {
-        const [historyResponse, majorResponse] = await Promise.all([
-          fetch("/data/pga/player-history-compact.json", { cache: "no-store" }),
-          fetch("/data/pga/major-history.json", { cache: "no-store" }),
+        const [playerHistory, majorHistory] = await Promise.all([
+          loadPlayerHistory(),
+          loadMajorHistory(),
         ]);
-
-        if (!historyResponse.ok) {
-          throw new Error(`Player history request failed with HTTP ${historyResponse.status}`);
-        }
-
-        const historyText = await historyResponse.text();
-        const compact = parseCompactHistoryJson(historyText);
-        const playerHistory = expandCompactHistory(compact);
-        const majorHistory = majorResponse.ok
-          ? ((await majorResponse.json()) as PgaMajorHistoryPayload)
-          : EMPTY_MAJOR_HISTORY;
 
         if (active) {
           setState({ playerHistory, majorHistory, loading: false, error: null });
@@ -102,25 +91,126 @@ export function usePgaPlayerHistory() {
   };
 }
 
+async function loadPlayerHistory(): Promise<PgaPlayerHistoryPayload> {
+  const fullHistory = await tryLoadJson<PgaPlayerHistoryPayload>("/data/pga/player-history.json");
+  if (fullHistory?.version && Array.isArray(fullHistory.players)) {
+    return fullHistory;
+  }
+
+  const compactResponse = await fetch("/data/pga/player-history-compact.json", { cache: "no-store" });
+  if (!compactResponse.ok) {
+    throw new Error(`Player history request failed with HTTP ${compactResponse.status}`);
+  }
+
+  const compact = parseCompactHistoryJson(await compactResponse.text());
+  return expandCompactHistory(compact);
+}
+
+async function loadMajorHistory() {
+  return (await tryLoadJson<PgaMajorHistoryPayload>("/data/pga/major-history.json"))
+    ?? EMPTY_MAJOR_HISTORY;
+}
+
+async function tryLoadJson<T>(url: string): Promise<T | null> {
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) return null;
+
+    const contentType = response.headers.get("content-type") ?? "";
+    const text = await response.text();
+    if (!contentType.includes("json") && !text.trim().startsWith("{")) return null;
+
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 export function parseCompactHistoryJson(text: string): CompactHistoryPayload {
   const normalized = text.replace(/^\uFEFF/, "").trim();
 
   try {
     return JSON.parse(normalized) as CompactHistoryPayload;
   } catch (initialError) {
-    const repaired = repairMissingArrayCommas(normalized);
+    const balanced = repairUnbalancedClosures(normalized);
+    const repaired = repairMissingArrayCommas(balanced);
+
     if (repaired !== normalized) {
       try {
         const payload = JSON.parse(repaired) as CompactHistoryPayload;
         console.warn("[pga-history] Repaired malformed compact history JSON while loading.");
         return payload;
       } catch {
-        // Fall through to the original parse error so the user sees the true source issue.
+        // Fall through to the original parse error so the source problem stays visible.
       }
     }
 
     throw initialError;
   }
+}
+
+function repairUnbalancedClosures(source: string) {
+  let output = "";
+  const stack: Array<"{" | "["> = [];
+  let inString = false;
+  let escaped = false;
+  let changed = false;
+
+  for (const character of source) {
+    if (inString) {
+      output += character;
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      inString = true;
+      output += character;
+      continue;
+    }
+
+    if (character === "{" || character === "[") {
+      stack.push(character);
+      output += character;
+      continue;
+    }
+
+    if (character === "}" || character === "]") {
+      const expectedOpen = character === "}" ? "{" : "[";
+      const expectedClose = character === "}" ? "]" : "}";
+
+      while (stack.length && stack[stack.length - 1] !== expectedOpen) {
+        const open = stack.pop();
+        output += open === "[" ? "]" : "}";
+        changed = true;
+      }
+
+      if (stack[stack.length - 1] === expectedOpen) {
+        stack.pop();
+      } else if (expectedClose) {
+        return source;
+      }
+
+      output += character;
+      continue;
+    }
+
+    output += character;
+  }
+
+  while (stack.length) {
+    const open = stack.pop();
+    output += open === "[" ? "]" : "}";
+    changed = true;
+  }
+
+  return changed ? output : source;
 }
 
 function repairMissingArrayCommas(source: string) {
@@ -161,8 +251,8 @@ function insertLikelyMissingComma(source: string, position: number) {
   const current = source[index] ?? "";
   const previous = source[index - 1] ?? "";
 
-  const previousCanEndValue = /[\]}"]/.test(previous) || /[0-9el]/i.test(previous);
-  const currentCanStartValue = /[\[{"n\-0-9]/.test(current);
+  const previousCanEndValue = /[\]}\"]/.test(previous) || /[0-9el]/i.test(previous);
+  const currentCanStartValue = /[\[{\"n\-0-9]/.test(current);
 
   if (previousCanEndValue && currentCanStartValue) {
     return `${source.slice(0, index)},${source.slice(index)}`;
