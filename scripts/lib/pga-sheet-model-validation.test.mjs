@@ -5,6 +5,7 @@ import {
   buildScheduleContext,
   buildValidatedModelPayload,
   calculateFieldDiagnostics,
+  extractSheetIdentity,
   parseEmbeddedReferenceDate,
   validateSheetSource,
 } from "./pga-sheet-model-validation.mjs";
@@ -18,12 +19,14 @@ const schedule = [
 
 const rawRows = [{ rank: 1, player: "Scottie Scheffler", modelScore: "90" }];
 
-function buildValidation(section, sheetDate, today = "2026-06-22") {
+function buildValidation(section, sheetDate, today = "2026-06-22", explicit = {}) {
   return validateSheetSource({
     section,
     expectedContext: buildScheduleContext(schedule, today),
     sourceContext: sheetDate ? buildScheduleContext(schedule, sheetDate) : { currentUpcoming: null, nextWeek: null },
     sourceReferenceDate: sheetDate,
+    sheetTournamentName: explicit.tournamentName ?? null,
+    sheetCourseName: explicit.courseName ?? null,
     today,
   });
 }
@@ -36,6 +39,24 @@ describe("PGA sheet model source validation", () => {
 
   it("maps a date inside an active event back to that event", () => {
     expect(buildScheduleContext(schedule, "2026-05-08").currentUpcoming?.name).toBe("Truist Championship");
+  });
+
+  it("extracts explicit tournament identity from sheet headers when available", () => {
+    const identity = extractSheetIdentity([["Truist Championship", "Quail Hollow Club", "05/07/2026"]], schedule);
+    expect(identity).toMatchObject({
+      referenceDate: "2026-05-07",
+      tournamentName: "Truist Championship",
+      courseName: "Quail Hollow Club",
+    });
+  });
+
+  it("rejects a current date when the sheet explicitly names an old tournament", () => {
+    const result = buildValidation("current-tournament", "2026-06-25", "2026-06-22", {
+      tournamentName: "Truist Championship",
+      courseName: "Quail Hollow Club",
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(" ")).toContain("explicitly identifies Truist Championship");
   });
 
   it("rejects stale Truist rows from being relabeled as Travelers", () => {
@@ -84,7 +105,10 @@ describe("PGA sheet model source validation", () => {
     const payload = buildValidatedModelPayload({
       section: "current-tournament",
       rawPayload: { title: "CURRENT TOURNAMENT MODEL", rows: rawRows },
-      validation: buildValidation("current-tournament", "2026-06-25"),
+      validation: buildValidation("current-tournament", "2026-06-25", "2026-06-22", {
+        tournamentName: "Travelers Championship",
+        courseName: "TPC River Highlands",
+      }),
       generatedAt: "2026-06-22T20:00:00.000Z",
     });
     expect(payload.modelAvailable).toBe(true);
