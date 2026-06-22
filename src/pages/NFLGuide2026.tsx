@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import NflGuideNav from "@/components/nfl/NflGuideNav";
@@ -117,7 +118,7 @@ export default function NFLGuide2026() {
   );
 }
 
-function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-black text-slate-900">{title}</h2><p className="mt-1 text-xs text-slate-500">{subtitle}</p><div className="mt-4">{children}</div></div>;
 }
 function StatCard({ label, value, detail }: { label: string; value: string; detail: string }) { return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-3xl font-black text-slate-900">{value}</div><div className="mt-1 text-xs text-slate-500">{detail}</div></div>; }
