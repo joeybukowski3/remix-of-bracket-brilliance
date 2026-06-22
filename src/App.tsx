@@ -28,6 +28,7 @@ import PublicBetting from "./pages/PublicBetting";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
 import PgaHub from "./pages/PgaHub";
+import PgaHistoryModel from "./pages/PgaHistoryModel";
 import PgaCustom from "./pages/PgaCustom";
 import PgaDfsUpload from "./pages/PgaDfsUpload";
 import PgaBestBets from "./pages/PgaBestBets";
@@ -95,21 +96,16 @@ const App = () => (
           <Route path="/mlb/strikeout-props" element={<MlbStrikeoutProps />} />
           <Route path="/mlb/batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
-          <Route path="/pga" element={<PgaHub />} />
+          <Route path="/pga" element={<PgaHistoryModel />} />
+          <Route path="/pga/legacy" element={<PgaHub />} />
           <Route path="/pga/custom" element={<PgaCustom />} />
           <Route path="/pga/dfs" element={<PgaDfsUpload />} />
           <Route path="/pga/best-bets" element={<PgaBestBets />} />
           <Route path="/pga/model" element={<PGAModel />} />
           <Route path="/pga/model/table" element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug" element={<PGA />} />
-          <Route
-            path={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)}
-            element={<PGAModel />}
-          />
-          <Route
-            path={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)}
-            element={<PGAModelTableView />}
-          />
+          <Route path={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)} element={<PGAModel />} />
+          <Route path={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)} element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug/model" element={<PGAModel />} />
           <Route path="/pga/:tournamentSlug/model/table" element={<PGAModelTableView />} />
           {PGA_TOURNAMENTS.map((tournament) => (
