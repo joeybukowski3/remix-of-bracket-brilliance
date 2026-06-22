@@ -600,6 +600,9 @@ function formatScheduleDateLabel(startDate, endDate) {
 }
 
 function buildScheduleContext(scheduleRows, referenceDate) {
+  // Find the current/upcoming tournament: the first scheduled entry whose
+  // startDate is on or after today. "Upcoming" includes a tournament that
+  // starts today or in the future; completed tournaments are excluded.
   const currentUpcoming = scheduleRows.find((entry) => entry.startDate >= referenceDate) ?? scheduleRows.at(-1) ?? null;
   const nextWeek = currentUpcoming
     ? scheduleRows.find((entry) => entry.startDate > currentUpcoming.startDate) ?? null
@@ -609,6 +612,87 @@ function buildScheduleContext(scheduleRows, referenceDate) {
     currentUpcoming,
     nextWeek,
   };
+}
+
+/**
+ * Return today's date in YYYY-MM-DD format using the system clock.
+ * We deliberately ignore any date embedded in the Google Sheet because that
+ * date reflects the last time someone updated the sheet — it can be weeks or
+ * months stale, causing buildScheduleContext to identify the wrong tournament.
+ */
+function getTodayDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Validate that a tournament model payload is consistent with the schedule
+ * and, when available, with the official current-field.json.
+ *
+ * Throws with a descriptive message when validation fails so the caller can
+ * decide whether to abort the write or to preserve the existing file.
+ */
+function validateTournamentPayload(payload, scheduleContext, currentFieldPath) {
+  const { currentUpcoming, nextWeek } = scheduleContext;
+
+  const expectedBySlug = {
+    "power-rankings": currentUpcoming,
+    "current-tournament": currentUpcoming,
+    "next-tournament": nextWeek,
+  };
+
+  const expectedEntry = expectedBySlug[payload.section];
+  if (!expectedEntry) {
+    if (payload.section === "next-tournament") {
+      // No following tournament on schedule — acceptable to skip write
+      throw new Error(
+        `Refusing to write next-tournament.json: no following scheduled tournament found after ${currentUpcoming?.name ?? "unknown"}.`
+      );
+    }
+    throw new Error(`No schedule entry found for section "${payload.section}".`);
+  }
+
+  const expected = expectedEntry.name;
+  const actual = payload.tournamentName;
+
+  if (!actual || actual.trim() === "") {
+    throw new Error(
+      `Refusing to write ${payload.section}.json: tournamentName is empty. Expected "${expected}".`
+    );
+  }
+
+  // Normalize for comparison (lower-case, collapse spaces)
+  const normalize = (s) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  if (normalize(actual) !== normalize(expected)) {
+    throw new Error(
+      `Tournament identity mismatch for ${payload.section}.json:\n` +
+        `  Expected (from schedule): "${expected}" (startDate: ${expectedEntry.startDate})\n` +
+        `  Found in model payload:  "${actual}"\n` +
+        `Refusing to write stale tournament data with an updated timestamp.`
+    );
+  }
+
+  // For current-tournament, cross-check against official current-field.json when available
+  if (payload.section === "current-tournament" && currentFieldPath) {
+    try {
+      const fieldData = JSON.parse(readFileSync(currentFieldPath, "utf8"));
+      const fieldTournament = fieldData.tournament ?? "";
+      if (fieldTournament && normalize(fieldTournament) !== normalize(actual)) {
+        throw new Error(
+          `Tournament identity mismatch between current-tournament.json and current-field.json:\n` +
+            `  current-tournament would be: "${actual}"\n` +
+            `  current-field.json says:     "${fieldTournament}"\n` +
+            `Refusing to write model for a different tournament than the official field.`
+        );
+      }
+    } catch (fieldError) {
+      if (fieldError.code === "ENOENT") {
+        // No official field yet — allow write without cross-check
+        console.warn(`Warning: current-field.json not found; skipping field cross-check for ${payload.section}.`);
+      } else {
+        throw fieldError;
+      }
+    }
+  }
 }
 
 function parseCourseStatsRows(rows) {
@@ -947,7 +1031,11 @@ async function main() {
   let courseStatsRowsRaw = courseStatsRowsPrimary;
   let trendRowsRaw = trendRowsPrimary;
   let playerStatsRowsRaw = playerStatsRowsPrimary;
-  let referenceDate = parseReferenceDate(siteOutputRows);
+  // Always use today's actual date as the schedule reference.
+  // parseReferenceDate() used to read a date from the sheet header, but that
+  // date reflects the last time the sheet was updated — it can be weeks or
+  // months old, causing buildScheduleContext to identify the wrong tournament.
+  let referenceDate = getTodayDate();
   let scheduleRows = parseScheduleRows(scheduleRowsRaw);
   let scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
   let parsedSections;
@@ -965,7 +1053,7 @@ async function main() {
     courseStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, COURSE_STATS_TAB_NAME);
     trendRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, TREND_TABLE_TAB_NAME).catch(() => []);
     playerStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, PLAYER_STATS_MASTER_TAB_NAME);
-    referenceDate = parseReferenceDate(siteOutputRows);
+    referenceDate = getTodayDate(); // Still use today's date, not a stale sheet header date
     scheduleRows = parseScheduleRows(scheduleRowsRaw);
     scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
     parsedSections = parseSiteOutputRows(siteOutputRows, scheduleContext);
@@ -979,14 +1067,30 @@ async function main() {
   const playerStatsFeed = playerStatsResult.rows;
   const playerStatsExportDate = playerStatsResult.exportDate;
 
+  // Validate tournament identity for every model section before writing.
+  // Abort individual section writes (not the entire run) when identity is stale,
+  // so other files (schedule, player-stats, course-weights) still update.
+  const currentFieldPath = path.resolve(repoRoot, "public/data/pga/current-field.json");
+  const sectionWritePromises = SECTION_CONFIG.map((section) => {
+    const payload = parsedSections.find((entry) => entry.section === section.slug);
+    if (!payload) {
+      throw new Error(`Missing parsed payload for ${section.slug}.`);
+    }
+
+    try {
+      validateTournamentPayload(payload, scheduleContext, currentFieldPath);
+    } catch (validationError) {
+      console.error(`\n[VALIDATION FAILED] Skipping write of ${section.outputPath}:`);
+      console.error(`  ${validationError.message}\n`);
+      // Preserve the existing file — do not overwrite with stale data.
+      return Promise.resolve();
+    }
+
+    return writeJsonFile(section.outputPath, payload);
+  });
+
   await Promise.all([
-    ...SECTION_CONFIG.map((section) => {
-      const payload = parsedSections.find((entry) => entry.section === section.slug);
-      if (!payload) {
-        throw new Error(`Missing parsed payload for ${section.slug}.`);
-      }
-      return writeJsonFile(section.outputPath, payload);
-    }),
+    ...sectionWritePromises,
     writeJsonFile("public/data/pga/schedule.json", scheduleRows),
     writeJsonFile("public/data/pga/course-weights.json", courseWeightsFeed),
     writeJsonFile("public/data/pga/player-stats-raw.json", playerStatsFeed),
