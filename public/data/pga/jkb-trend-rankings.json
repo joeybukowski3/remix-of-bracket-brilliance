@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "name": "JKB Trend Rank",
+  "generatedAt": null,
+  "asOf": null,
+  "methodology": {
+    "lookbackDays": 214,
+    "recentRounds": 20,
+    "baselineRounds": 50,
+    "officialMinRounds": 20,
+    "provisionalMinRounds": 12,
+    "recentRoundMaxAgeDays": 28,
+    "weights": {
+      "recent20": 0.7,
+      "versusBaseline": 0.2,
+      "lastFiveFinishes": 0.1
+    }
+  },
+  "sources": {
+    "PGA": { "rounds": 0, "sourceUrl": "https://www.pgatour.com/" },
+    "LIV": { "rounds": 0, "sourceUrl": "https://www.livgolf.com/leaderboard" },
+    "DPWT": { "rounds": 0, "sourceUrl": "https://www.europeantour.com/dpworld-tour/schedule/" }
+  },
+  "players": []
+}
