@@ -141,6 +141,21 @@ function assertFieldMatchesExpected(field, expected) {
 }
 
 async function main() {
+  const contractFiles = [
+    ["current-tournament", "public/data/pga/current-tournament.json"],
+    ["next-tournament", "public/data/pga/next-tournament.json"],
+  ];
+
+  if (process.argv.includes("--contracts-only")) {
+    for (const [section, relativePath] of contractFiles) {
+      const payload = readJson(relativePath);
+      assertModelPayload(payload);
+      assertNoUnsafeRegression(previousPayload(relativePath), payload);
+      console.log(`[pga-sheet-contract] ${section}: valid`);
+    }
+    return;
+  }
+
   const today = process.env.PGA_REFERENCE_DATE ?? new Date().toISOString().slice(0, 10);
   const generatedAt = new Date().toISOString();
   const schedule = readJson("public/data/pga/schedule.json");
@@ -157,8 +172,8 @@ async function main() {
   assertFieldMatchesExpected(field, expectedContext.currentUpcoming);
 
   const sections = [
-    ["current-tournament", "public/data/pga/current-tournament.json", rawCurrent],
-    ["next-tournament", "public/data/pga/next-tournament.json", rawNext],
+    ["current-tournament", contractFiles[0][1], rawCurrent],
+    ["next-tournament", contractFiles[1][1], rawNext],
   ];
 
   for (const [section, relativePath, rawPayload] of sections) {
