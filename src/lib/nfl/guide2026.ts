@@ -7,13 +7,10 @@ import {
 
 export type NflMarketLean = "Over" | "Under" | "Pass";
 export type NflRegressionSignal = "Bounce Back" | "Regression" | "Stable";
-
-export type NflGuideQuestion = {
-  title: string;
-  answer: string;
-};
+export type NflGuideQuestion = { title: string; answer: string };
 
 export type NflGuideTeam = NflPowerTeam & {
+  powerRank: number;
   slug: string;
   division: string;
   conference: "AFC" | "NFC";
@@ -44,52 +41,37 @@ export type NflPlayoffProjection = {
 const divisionByAbbr = new Map<string, { division: string; scheduleRank: number | null }>();
 for (const division of NFL_DIVISION_ORDER) {
   for (const team of NFL_DIVISIONS[division] ?? []) {
-    divisionByAbbr.set(team.abbr.toLowerCase(), {
-      division,
-      scheduleRank: team.sos,
-    });
+    divisionByAbbr.set(team.abbr.toLowerCase(), { division, scheduleRank: team.sos });
   }
 }
 
-export const NFL_GUIDE_TEAMS: NflGuideTeam[] = NFL_POWER_RATINGS.map((team) => buildGuideTeam(team));
+export const NFL_GUIDE_TEAMS: NflGuideTeam[] = NFL_POWER_RATINGS.map(buildGuideTeam);
 export const NFL_GUIDE_TEAM_BY_SLUG = new Map(NFL_GUIDE_TEAMS.map((team) => [team.slug, team]));
 export const NFL_GUIDE_TEAM_BY_ABBR = new Map(NFL_GUIDE_TEAMS.map((team) => [team.abbr.toLowerCase(), team]));
-
 export const NFL_GUIDE_DIVISIONS = NFL_DIVISION_ORDER.map((division) => ({
   division,
-  teams: NFL_GUIDE_TEAMS
-    .filter((team) => team.division === division)
-    .sort((a, b) => b.projectedWins - a.projectedWins),
+  teams: NFL_GUIDE_TEAMS.filter((team) => team.division === division).sort(sortProjection),
 }));
-
 export const NFL_GUIDE_PLAYOFFS = {
   AFC: buildConferenceProjection("AFC"),
   NFC: buildConferenceProjection("NFC"),
 };
-
 export const NFL_GUIDE_SUPER_BOWL_PICK = [
   NFL_GUIDE_PLAYOFFS.AFC.conferenceChampion,
   NFL_GUIDE_PLAYOFFS.NFC.conferenceChampion,
-].sort((a, b) => b.projectedWins - a.projectedWins || a.powerRank - b.powerRank)[0];
-
+].sort(sortProjection)[0];
 export const NFL_GUIDE_TOP_MARKET_EDGES = NFL_GUIDE_TEAMS
   .filter((team) => team.modelEdge != null)
   .sort((a, b) => Math.abs(b.modelEdge ?? 0) - Math.abs(a.modelEdge ?? 0));
-
 export const NFL_GUIDE_BOUNCE_BACKS = NFL_GUIDE_TEAMS
   .filter((team) => team.regressionSignal === "Bounce Back")
   .sort((a, b) => b.regressionGap - a.regressionGap);
-
 export const NFL_GUIDE_REGRESSION_CANDIDATES = NFL_GUIDE_TEAMS
   .filter((team) => team.regressionSignal === "Regression")
   .sort((a, b) => a.regressionGap - b.regressionGap);
 
 export function slugifyNflTeam(team: string) {
-  return team
-    .toLowerCase()
-    .replace(/\./g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+  return team.toLowerCase().replace(/\./g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 export function formatSigned(value: number, digits = 1) {
@@ -109,55 +91,26 @@ function buildGuideTeam(team: NflPowerTeam): NflGuideTeam {
   const conference = division.startsWith("AFC") ? "AFC" : "NFC";
   const scheduleRank = divisionData?.scheduleRank ?? null;
   const [wins2025, losses2025] = parseRecord(team.record2025);
-
-  // Transparent preseason baseline:
-  // 8.5 league-average wins + 0.35 wins per point of composite strength,
-  // then a schedule adjustment where #1 is hardest and #32 is easiest.
   const scheduleAdjustment = scheduleRank == null ? 0 : (scheduleRank - 16.5) * 0.04;
   const projectedWins = roundOne(clamp(8.5 + team.ovrPct * 0.35 + scheduleAdjustment, 3, 13));
   const modelEdge = team.winTotal == null ? null : roundOne(projectedWins - team.winTotal);
-  const marketLean = modelEdge == null ? "Pass" : modelEdge >= 0.75 ? "Over" : modelEdge <= -0.75 ? "Under" : "Pass";
-  const marketConfidence = modelEdge == null || Math.abs(modelEdge) < 0.75
-    ? "Low"
-    : Math.abs(modelEdge) >= 1.75
-      ? "High"
-      : "Medium";
-
+  const marketLean: NflMarketLean = modelEdge == null ? "Pass" : modelEdge >= 0.75 ? "Over" : modelEdge <= -0.75 ? "Under" : "Pass";
+  const marketConfidence = modelEdge == null || Math.abs(modelEdge) < 0.75 ? "Low" : Math.abs(modelEdge) >= 1.75 ? "High" : "Medium";
   const regressionGap = roundOne(projectedWins - wins2025);
-  const regressionSignal: NflRegressionSignal = regressionGap >= 1.5
-    ? "Bounce Back"
-    : regressionGap <= -1.5
-      ? "Regression"
-      : "Stable";
-
+  const regressionSignal: NflRegressionSignal = regressionGap >= 1.5 ? "Bounce Back" : regressionGap <= -1.5 ? "Regression" : "Stable";
   const unitGap = team.offRank - team.defRank;
-  const unitIdentity = Math.abs(unitGap) < 6
-    ? "balanced profile"
-    : unitGap < 0
-      ? "offense-led profile"
-      : "defense-led profile";
-
-  const headline = buildHeadline(team, projectedWins, regressionSignal, marketLean);
-  const summary = buildSummary(team, projectedWins, division, scheduleRank, regressionSignal, marketLean, modelEdge);
-  const strengths = buildStrengths(team, scheduleRank, projectedWins, marketLean);
-  const concerns = buildConcerns(team, scheduleRank, wins2025, projectedWins);
-  const questions = buildQuestions(team, projectedWins, scheduleRank, marketLean, modelEdge, regressionSignal, unitIdentity);
+  const unitIdentity = Math.abs(unitGap) < 6 ? "balanced profile" : unitGap < 0 ? "offense-led profile" : "defense-led profile";
 
   return {
     ...team,
+    powerRank: team.rank,
     slug: slugifyNflTeam(team.team),
     division,
     conference,
     wins2025,
     losses2025,
     scheduleRank,
-    scheduleLabel: scheduleRank == null
-      ? "Not available"
-      : scheduleRank <= 8
-        ? "Hard"
-        : scheduleRank >= 25
-          ? "Soft"
-          : "Average",
+    scheduleLabel: scheduleRank == null ? "Not available" : scheduleRank <= 8 ? "Hard" : scheduleRank >= 25 ? "Soft" : "Average",
     projectedWins,
     modelEdge,
     marketLean,
@@ -165,60 +118,46 @@ function buildGuideTeam(team: NflPowerTeam): NflGuideTeam {
     regressionGap,
     regressionSignal,
     unitIdentity,
-    headline,
-    summary,
-    strengths,
-    concerns,
-    questions,
+    headline: buildHeadline(team, regressionSignal, marketLean),
+    summary: buildSummary(team, projectedWins, division, scheduleRank, regressionSignal, marketLean, modelEdge),
+    strengths: buildStrengths(team, scheduleRank, projectedWins, marketLean),
+    concerns: buildConcerns(team, scheduleRank, wins2025, projectedWins),
+    questions: buildQuestions(team, projectedWins, scheduleRank, marketLean, modelEdge, regressionSignal, unitIdentity),
   };
 }
 
 function buildConferenceProjection(conference: "AFC" | "NFC"): NflPlayoffProjection {
-  const conferenceTeams = NFL_GUIDE_TEAMS.filter((team) => team.conference === conference);
   const divisionWinners = NFL_GUIDE_DIVISIONS
     .filter(({ division }) => division.startsWith(conference))
     .map(({ teams }) => teams[0])
-    .filter(Boolean)
-    .sort((a, b) => b.projectedWins - a.projectedWins || a.powerRank - b.powerRank);
-
-  const divisionWinnerAbbrs = new Set(divisionWinners.map((team) => team.abbr));
-  const wildCards = conferenceTeams
-    .filter((team) => !divisionWinnerAbbrs.has(team.abbr))
-    .sort((a, b) => b.projectedWins - a.projectedWins || a.powerRank - b.powerRank)
+    .filter((team): team is NflGuideTeam => Boolean(team))
+    .sort(sortProjection);
+  const winners = new Set(divisionWinners.map((team) => team.abbr));
+  const wildCards = NFL_GUIDE_TEAMS
+    .filter((team) => team.conference === conference && !winners.has(team.abbr))
+    .sort(sortProjection)
     .slice(0, 3);
-
-  return {
-    divisionWinners,
-    wildCards,
-    conferenceChampion: divisionWinners[0],
-  };
+  return { divisionWinners, wildCards, conferenceChampion: divisionWinners[0] };
 }
 
-function buildHeadline(team: NflPowerTeam, projectedWins: number, signal: NflRegressionSignal, lean: NflMarketLean) {
+function buildHeadline(team: NflPowerTeam, signal: NflRegressionSignal, lean: NflMarketLean) {
   if (signal === "Bounce Back") return `${team.team} profiles as a 2026 bounce-back candidate`;
   if (signal === "Regression") return `${team.team} faces a meaningful regression test`;
   if (lean !== "Pass") return `${team.team} creates an early ${lean.toLowerCase()} lean`;
   return `${team.team} lands near the middle of the preseason market`;
 }
 
-function buildSummary(
-  team: NflPowerTeam,
-  projectedWins: number,
-  division: string,
-  scheduleRank: number | null,
-  signal: NflRegressionSignal,
-  lean: NflMarketLean,
-  edge: number | null,
-) {
+function buildSummary(team: NflPowerTeam, projectedWins: number, division: string, scheduleRank: number | null, signal: NflRegressionSignal, lean: NflMarketLean, edge: number | null) {
   const marketSentence = team.winTotal == null
     ? "A widely available win total was not included in the current data snapshot."
     : lean === "Pass"
       ? `The model's ${projectedWins.toFixed(1)}-win baseline is close to the ${team.winTotal.toFixed(1)} market total.`
       : `The model's ${projectedWins.toFixed(1)}-win baseline creates a ${formatSigned(edge ?? 0)}-win ${lean.toLowerCase()} edge against a ${team.winTotal.toFixed(1)} total.`;
+  const correction = projectedWins - parseRecord(team.record2025)[0];
   const regressionSentence = signal === "Bounce Back"
-    ? `That forecast is ${formatSigned(projectedWins - parseRecord(team.record2025)[0])} wins above the 2025 finish, so improvement is already built into our view.`
+    ? `That forecast is ${formatSigned(correction)} wins above the 2025 finish, so improvement is built into our view.`
     : signal === "Regression"
-      ? `That forecast is ${Math.abs(projectedWins - parseRecord(team.record2025)[0]).toFixed(1)} wins below the 2025 finish, making sustainability the main question.`
+      ? `That forecast is ${Math.abs(correction).toFixed(1)} wins below the 2025 finish, making sustainability the main question.`
       : "The model does not see an extreme year-over-year correction at this stage.";
   const scheduleSentence = scheduleRank == null ? "" : ` The ${division} schedule rank is #${scheduleRank}, with #1 hardest and #32 easiest.`;
   return `${marketSentence} ${regressionSentence}${scheduleSentence}`;
@@ -228,7 +167,7 @@ function buildStrengths(team: NflPowerTeam, scheduleRank: number | null, project
   const strengths: string[] = [];
   if (team.offRank <= 8) strengths.push(`Top-eight offense in the 2025 performance model (#${team.offRank}).`);
   if (team.defRank <= 8) strengths.push(`Top-eight defense in the 2025 performance model (#${team.defRank}).`);
-  if (team.powerRank <= 10) strengths.push(`Top-10 overall composite power rating (#${team.powerRank}).`);
+  if (team.rank <= 10) strengths.push(`Top-10 overall composite power rating (#${team.rank}).`);
   if (scheduleRank != null && scheduleRank >= 25) strengths.push(`Favorable schedule profile (#${scheduleRank}, where #32 is easiest).`);
   if (lean === "Over") strengths.push(`Model projection of ${projectedWins.toFixed(1)} wins is above the current total.`);
   if (!strengths.length) strengths.push("No single elite indicator; the case depends on balanced improvement across multiple areas.");
@@ -246,71 +185,37 @@ function buildConcerns(team: NflPowerTeam, scheduleRank: number | null, wins2025
   return concerns.slice(0, 3);
 }
 
-function buildQuestions(
-  team: NflPowerTeam,
-  projectedWins: number,
-  scheduleRank: number | null,
-  lean: NflMarketLean,
-  edge: number | null,
-  signal: NflRegressionSignal,
-  unitIdentity: string,
-): NflGuideQuestion[] {
+function buildQuestions(team: NflPowerTeam, projectedWins: number, scheduleRank: number | null, lean: NflMarketLean, edge: number | null, signal: NflRegressionSignal, unitIdentity: string): NflGuideQuestion[] {
   const marketQuestion = team.winTotal == null
-    ? {
-        title: "Where should the market open?",
-        answer: `Our current baseline is ${projectedWins.toFixed(1)} wins. Until a reliable total is available, the better use of the model is comparing ${team.team} with division rivals and monitoring price discovery.`,
-      }
+    ? { title: "Where should the market open?", answer: `Our current baseline is ${projectedWins.toFixed(1)} wins. Until a reliable total is available, compare ${team.team} with division rivals and monitor price discovery.` }
     : {
         title: `Is the ${team.winTotal.toFixed(1)} win total priced correctly?`,
         answer: lean === "Pass"
-          ? `The projection is ${projectedWins.toFixed(1)} wins, close enough to the market that there is no automatic bet. A move of a half-win or a major injury update could create the edge.`
-          : `The projection is ${projectedWins.toFixed(1)} wins, producing a ${formatSigned(edge ?? 0)}-win gap and an early ${lean.toLowerCase()} lean. The edge should still be checked against price and injury news.`,
+          ? `The projection is ${projectedWins.toFixed(1)} wins, close enough to the market that there is no automatic bet. A half-win move or major injury update could create the edge.`
+          : `The projection is ${projectedWins.toFixed(1)} wins, producing a ${formatSigned(edge ?? 0)}-win gap and an early ${lean.toLowerCase()} lean. Price and injury news still matter.`,
       };
 
   const unitQuestion = team.offRank + 7 < team.defRank
-    ? {
-        title: "Can the defense become good enough for the offense?",
-        answer: `${team.team} enters with an offense ranked #${team.offRank} and a defense ranked #${team.defRank}. The ceiling depends on narrowing that gap; an average defense would materially improve the full-team projection.`,
-      }
+    ? { title: "Can the defense become good enough for the offense?", answer: `${team.team} enters with offense #${team.offRank} and defense #${team.defRank}. The ceiling depends on narrowing that gap; an average defense would materially improve the full-team projection.` }
     : team.defRank + 7 < team.offRank
-      ? {
-          title: "Can the offense support an already strong defense?",
-          answer: `${team.team} enters with a defense ranked #${team.defRank} but an offense ranked #${team.offRank}. Avoiding short fields, sustaining drives and improving early-down efficiency are the clearest paths to outperforming the baseline.`,
-        }
-      : {
-          title: "Is the balanced profile strong enough to separate?",
-          answer: `${team.team} has a ${unitIdentity}, with offense #${team.offRank} and defense #${team.defRank}. With no massive unit gap, quarterback play, coaching and close-game execution become the main separators.`,
-        };
+      ? { title: "Can the offense support an already strong defense?", answer: `${team.team} enters with defense #${team.defRank} but offense #${team.offRank}. Sustaining drives and improving early-down efficiency are the clearest paths to beating the baseline.` }
+      : { title: "Is the balanced profile strong enough to separate?", answer: `${team.team} has a ${unitIdentity}, with offense #${team.offRank} and defense #${team.defRank}. Quarterback play, coaching and close-game execution become the main separators.` };
 
   const regressionQuestion = signal === "Regression"
-    ? {
-        title: "How much of last season is repeatable?",
-        answer: `The model projects ${projectedWins.toFixed(1)} wins after a ${team.record2025} finish. That does not guarantee decline, but it flags a team whose record was stronger than its current power-and-schedule baseline.`,
-      }
+    ? { title: "How much of last season is repeatable?", answer: `The model projects ${projectedWins.toFixed(1)} wins after a ${team.record2025} finish. That flags a team whose record was stronger than its current power-and-schedule baseline.` }
     : signal === "Bounce Back"
-      ? {
-          title: "What needs to change for the bounce back?",
-          answer: `The model projects ${projectedWins.toFixed(1)} wins after a ${team.record2025} season. Better health, normal close-game variance and improvement from the weaker unit are the main ways the rebound can materialize.`,
-        }
-      : {
-          title: "Will the schedule create separation?",
-          answer: scheduleRank == null
-            ? "The current profile is close to neutral, so schedule sequencing and quarterback availability will determine whether the team moves above or below the middle tier."
-            : `${getScheduleDescription(scheduleRank)} The model already includes a modest schedule adjustment, but clusters of road games and division matchups can still create meaningful volatility.`,
-        };
+      ? { title: "What needs to change for the bounce back?", answer: `The model projects ${projectedWins.toFixed(1)} wins after a ${team.record2025} season. Better health, normal close-game variance and improvement from the weaker unit are the clearest paths.` }
+      : { title: "Will the schedule create separation?", answer: scheduleRank == null ? "The current profile is close to neutral, so schedule sequencing and quarterback availability will determine the outcome." : `${getScheduleDescription(scheduleRank)} The model includes a modest schedule adjustment, but road clusters and division games can still create volatility.` };
 
   return [marketQuestion, unitQuestion, regressionQuestion];
 }
 
+function sortProjection(a: NflGuideTeam, b: NflGuideTeam) {
+  return b.projectedWins - a.projectedWins || a.powerRank - b.powerRank;
+}
 function parseRecord(record: string): [number, number] {
   const [wins = 0, losses = 0] = record.split("-").map((value) => Number.parseInt(value, 10) || 0);
   return [wins, losses];
 }
-
-function roundOne(value: number) {
-  return Math.round(value * 10) / 10;
-}
-
-function clamp(value: number, minimum: number, maximum: number) {
-  return Math.min(maximum, Math.max(minimum, value));
-}
+function roundOne(value: number) { return Math.round(value * 10) / 10; }
+function clamp(value: number, minimum: number, maximum: number) { return Math.min(maximum, Math.max(minimum, value)); }
