@@ -10,6 +10,7 @@ import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
+import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
 
 export type HrDashboardGame = {
   gameKey: string;
@@ -168,6 +169,7 @@ export type ParkSidebarRow = {
   homeTeam: string;
   stadium: string;
   parkFactor: number;
+  hrPerGame: number | null;
   roofType: string;
   temperature: number | null;
   precipitation: number | null;
@@ -657,12 +659,16 @@ function getSparkFillClass(value: number | null | undefined, maxValue: number) {
 }
 
 export function buildParkSidebarRows(games: HrDashboardGame[]): ParkSidebarRow[] {
-  return [...games].map((g) => ({
-    key: g.gameKey, matchup: g.matchup, awayTeam: g.awayTeam, homeTeam: g.homeTeam,
-    stadium: g.stadium, parkFactor: g.parkFactor,
-    roofType: g.roofType, temperature: g.temperature, precipitation: g.precipitation,
-    windSpeed: g.windSpeed, windDirection: g.windDirection, conditions: g.conditions,
-  })).sort((a, b) => b.parkFactor - a.parkFactor || a.matchup.localeCompare(b.matchup));
+  return [...games].map((g) => {
+    const factors = getParkFactors(g.stadium);
+    return {
+      key: g.gameKey, matchup: g.matchup, awayTeam: g.awayTeam, homeTeam: g.homeTeam,
+      stadium: g.stadium, parkFactor: g.parkFactor,
+      hrPerGame: factors?.hrPerGame ?? null,
+      roofType: g.roofType, temperature: g.temperature, precipitation: g.precipitation,
+      windSpeed: g.windSpeed, windDirection: g.windDirection, conditions: g.conditions,
+    };
+  }).sort((a, b) => b.parkFactor - a.parkFactor || a.matchup.localeCompare(b.matchup));
 }
 
 export function buildSlateSummary(pitchers: HrDashboardPitcher[], batters: HrDashboardBatter[], games: HrDashboardGame[]): SlateSummary {
@@ -1576,6 +1582,19 @@ export default function MlbHrProps() {
                           </span>
                         </div>
                         <div className="mt-1 text-[10px] text-slate-400">{park.stadium}</div>
+                        {park.hrPerGame != null && (
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <span className={cn(
+                              "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                              park.hrPerGame >= 2.7 ? "bg-red-100 text-red-700" :
+                              park.hrPerGame >= 2.3 ? "bg-orange-100 text-orange-700" :
+                              park.hrPerGame >= 2.0 ? "bg-amber-100 text-amber-700" :
+                              "bg-slate-100 text-slate-600"
+                            )}>
+                              ⚾ {park.hrPerGame.toFixed(2)} HR/game
+                            </span>
+                          </div>
+                        )}
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
@@ -1614,6 +1633,17 @@ export default function MlbHrProps() {
                             <div>
                               <div className="text-sm font-semibold text-slate-900">{park.matchup}</div>
                               <div className="mt-1 text-xs text-slate-500">{park.stadium}</div>
+                              {park.hrPerGame != null && (
+                                <span className={cn(
+                                  "mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold",
+                                  park.hrPerGame >= 2.7 ? "bg-red-100 text-red-700" :
+                                  park.hrPerGame >= 2.3 ? "bg-orange-100 text-orange-700" :
+                                  park.hrPerGame >= 2.0 ? "bg-amber-100 text-amber-700" :
+                                  "bg-slate-100 text-slate-600"
+                                )}>
+                                  ⚾ {park.hrPerGame.toFixed(2)} HR/game
+                                </span>
+                              )}
                             </div>
                             <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", getParkFactorTone(park.parkFactor))}>
                               {park.parkFactor.toFixed(2)}

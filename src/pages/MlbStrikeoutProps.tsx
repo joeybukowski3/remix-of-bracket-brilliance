@@ -255,6 +255,19 @@ export default function MlbStrikeoutProps() {
                           {park.parkFactor.toFixed(2)}
                         </span>
                       </div>
+                      {park.hrPerGame != null && (
+                        <div className="mt-1">
+                          <span className={cn(
+                            "rounded-full px-1.5 py-0.5 text-[9px] font-bold",
+                            park.hrPerGame >= 2.7 ? "bg-red-100 text-red-700" :
+                            park.hrPerGame >= 2.3 ? "bg-orange-100 text-orange-700" :
+                            park.hrPerGame >= 2.0 ? "bg-amber-100 text-amber-700" :
+                            "bg-slate-100 text-slate-600"
+                          )}>
+                            ⚾ {park.hrPerGame.toFixed(2)} HR/G
+                          </span>
+                        </div>
+                      )}
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
                         <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
