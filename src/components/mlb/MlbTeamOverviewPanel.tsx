@@ -27,6 +27,57 @@ function WrcCell({ value, rankLabel, betterThan }: { value: number | null; rankL
   );
 }
 
+/** Format a pitcher's home/away ERA split inline: "H 2.80 / A 4.10" */
+function EraCell({
+  homeEra,
+  awayEra,
+  homeIp,
+  awayIp,
+  isAtHome,           // true = this pitcher is starting AT HOME today
+}: {
+  homeEra: number | null;
+  awayEra: number | null;
+  homeIp: number;
+  awayIp: number;
+  isAtHome: boolean;
+}) {
+  const hasData = homeEra != null || awayEra != null;
+  if (!hasData) return <span className="text-muted-foreground text-xs">—</span>;
+
+  const hasSample = homeIp >= 10 && awayIp >= 10;
+  const fmt = (v: number | null) => (v != null ? v.toFixed(2) : "—");
+
+  // Compute ERA delta in context: positive = better today (e.g. home pitcher ERA lower at home)
+  const contextEra   = isAtHome ? homeEra : awayEra;
+  const nonContextEra = isAtHome ? awayEra : homeEra;
+  const delta =
+    hasSample && contextEra != null && nonContextEra != null
+      ? nonContextEra - contextEra   // positive = pitcher is BETTER in today's context
+      : null;
+
+  const isFavorable   = delta != null && delta >  0.4;
+  const isUnfavorable = delta != null && delta < -0.4;
+
+  return (
+    <span className="inline-flex flex-col items-center gap-0.5 leading-tight">
+      <span className="text-xs font-semibold text-foreground tabular-nums">
+        <span className={isAtHome && contextEra != null ? "font-bold" : ""}>{isAtHome ? "🏠" : "✈"} {fmt(contextEra)}</span>
+        <span className="text-muted-foreground mx-0.5">/</span>
+        <span className={!isAtHome && contextEra != null ? "font-bold" : ""}>{isAtHome ? "✈" : "🏠"} {fmt(nonContextEra)}</span>
+      </span>
+      {delta != null && Math.abs(delta) > 0.4 && (
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+          isFavorable   ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" :
+          isUnfavorable ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200" : ""
+        }`}>
+          {isFavorable ? "↑" : "↓"} {Math.abs(delta).toFixed(1)} ERA {isAtHome ? "at home" : "away"}
+        </span>
+      )}
+      {!hasSample && <span className="text-[9px] text-muted-foreground/50">low sample</span>}
+    </span>
+  );
+}
+
 export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail }) {
   const { game, awayContext, homeContext } = detail;
   const awayColors = getMlbTeamColors(game.away.abbreviation);
@@ -47,8 +98,26 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
   const awayVsHandBetter = (awayVsHandWrc ?? 0) > (homeVsHandWrc ?? 0);
   const homeVsHandBetter = (homeVsHandWrc ?? 0) > (awayVsHandWrc ?? 0);
 
-  // If both teams face same handedness pitcher, show one label; otherwise generic
   const splitRowLabel = awayFacesHand === homeFacesHand ? `vs ${awayFacesHand}HP` : "vs opp. hand";
+
+  // Pitcher home/away ERA splits — already on the starters object from buildGameDetail
+  const parseEra = (v: string | number | null | undefined) => { const n = parseFloat(String(v ?? "")); return isFinite(n) ? n : null; };
+  const parseIp  = (v: string | number | null | undefined) => parseFloat(String(v ?? "")) || 0;
+
+  // Home pitcher is at home; away pitcher is away
+  const homePitcherHomeEra = parseEra(detail.starters.home.locationSplits?.home?.era);
+  const homePitcherAwayEra = parseEra(detail.starters.home.locationSplits?.away?.era);
+  const homePitcherHomeIp  = parseIp(detail.starters.home.locationSplits?.home?.inningsPitched);
+  const homePitcherAwayIp  = parseIp(detail.starters.home.locationSplits?.away?.inningsPitched);
+
+  const awayPitcherHomeEra = parseEra(detail.starters.away.locationSplits?.home?.era);
+  const awayPitcherAwayEra = parseEra(detail.starters.away.locationSplits?.away?.era);
+  const awayPitcherHomeIp  = parseIp(detail.starters.away.locationSplits?.home?.inningsPitched);
+  const awayPitcherAwayIp  = parseIp(detail.starters.away.locationSplits?.away?.inningsPitched);
+
+  const hasPitcherSplits =
+    homePitcherHomeEra != null || homePitcherAwayEra != null ||
+    awayPitcherHomeEra != null || awayPitcherAwayEra != null;
 
   const rows = [
     { label: "Season",      away: awayContext.seasonRecord,   home: homeContext.seasonRecord,   awayBetter: better(awayContext.seasonRecord, homeContext.seasonRecord),   homeBetter: better(homeContext.seasonRecord, awayContext.seasonRecord) },
@@ -130,6 +199,114 @@ export default function MlbTeamOverviewPanel({ detail }: { detail: MlbGameDetail
             <td className="py-1.5 text-center"><WrcCell value={awayVsHandWrc} rankLabel={awayVsHandRank} betterThan={awayVsHandBetter} /></td>
             <td className="py-1.5 text-center"><WrcCell value={homeVsHandWrc} rankLabel={homeVsHandRank} betterThan={homeVsHandBetter} /></td>
           </tr>
+
+          {/* ── Home/Away ERA Split section ─────────────────────────────── */}
+          {hasPitcherSplits && (
+            <tr>
+              <td colSpan={3} className="pt-3 pb-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground/70">
+                    Home / Away Context
+                  </span>
+                  <span className="text-[9px] text-muted-foreground/40 italic">🏠 = home context · ✈ = away context</span>
+                </div>
+                <p className="mt-0.5 text-[9px] leading-snug text-muted-foreground/50">
+                  Shows how much each pitcher's ERA and each team's record differ by context.
+                  Bold = today's context. ↑ Green = better today. ↓ Blue = worse today (min. 10 IP per split).
+                </p>
+              </td>
+            </tr>
+          )}
+
+          {hasPitcherSplits && (
+            <tr>
+              <td className="py-1.5 text-muted-foreground leading-snug">
+                Pitcher ERA<br />
+                <span className="text-[9px] text-muted-foreground/50">H ERA / A ERA</span>
+              </td>
+              {/* Away team column = away pitcher (pitching away today) */}
+              <td className="py-1.5 text-center">
+                <EraCell
+                  homeEra={awayPitcherHomeEra}
+                  awayEra={awayPitcherAwayEra}
+                  homeIp={awayPitcherHomeIp}
+                  awayIp={awayPitcherAwayIp}
+                  isAtHome={false}
+                />
+              </td>
+              {/* Home team column = home pitcher (pitching at home today) */}
+              <td className="py-1.5 text-center">
+                <EraCell
+                  homeEra={homePitcherHomeEra}
+                  awayEra={homePitcherAwayEra}
+                  homeIp={homePitcherHomeIp}
+                  awayIp={homePitcherAwayIp}
+                  isAtHome={true}
+                />
+              </td>
+            </tr>
+          )}
+
+          {/* Team batting home/away record split */}
+          {(awayContext.awayRecord !== "—" || homeContext.homeRecord !== "—") && hasPitcherSplits && (() => {
+            const parseWinPct = (r: string) => {
+              const [w, l] = r.split("-").map(Number);
+              return isFinite(w) && isFinite(l) && w + l > 0 ? w / (w + l) : null;
+            };
+            // Home team bats at home; away team bats away
+            const homeBatHomeWinPct = parseWinPct(homeContext.homeRecord);
+            const homeBatAwayWinPct = parseWinPct(homeContext.awayRecord);
+            const awayBatAwayWinPct = parseWinPct(awayContext.awayRecord);
+            const awayBatHomeWinPct = parseWinPct(awayContext.seasonRecord); // full season as proxy when split is same as homeRecord
+
+            const homeBatDelta = homeBatHomeWinPct != null && homeBatAwayWinPct != null
+              ? Math.round((homeBatHomeWinPct - homeBatAwayWinPct) * 100) : null;
+            const awayBatDelta = awayBatAwayWinPct != null && awayBatHomeWinPct != null
+              ? Math.round((awayBatAwayWinPct - awayBatHomeWinPct) * 100) : null;
+
+            const ContextBadge = ({ delta, isAtHome }: { delta: number | null; isAtHome: boolean }) => {
+              if (delta == null || Math.abs(delta) <= 4) return null;
+              const favorable = delta > 0;
+              return (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  favorable
+                    ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                    : "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+                }`}>
+                  {favorable ? "↑" : "↓"} {Math.abs(delta)}% {isAtHome ? "at home" : "away"}
+                </span>
+              );
+            };
+
+            return (
+              <tr>
+                <td className="py-1.5 text-muted-foreground leading-snug">
+                  Team bat split<br />
+                  <span className="text-[9px] text-muted-foreground/50">H rec / A rec</span>
+                </td>
+                <td className="py-1.5 text-center">
+                  <span className="inline-flex flex-col items-center gap-0.5 leading-tight">
+                    <span className="text-xs font-semibold text-foreground tabular-nums">
+                      <span>{awayContext.homeRecord}</span>
+                      <span className="text-muted-foreground mx-0.5">/</span>
+                      <span className="font-bold">{awayContext.awayRecord}</span>
+                    </span>
+                    <ContextBadge delta={awayBatDelta} isAtHome={false} />
+                  </span>
+                </td>
+                <td className="py-1.5 text-center">
+                  <span className="inline-flex flex-col items-center gap-0.5 leading-tight">
+                    <span className="text-xs font-semibold text-foreground tabular-nums">
+                      <span className="font-bold">{homeContext.homeRecord}</span>
+                      <span className="text-muted-foreground mx-0.5">/</span>
+                      <span>{homeContext.awayRecord}</span>
+                    </span>
+                    <ContextBadge delta={homeBatDelta} isAtHome={true} />
+                  </span>
+                </td>
+              </tr>
+            );
+          })()}
         </tbody>
       </table>
     </div>
