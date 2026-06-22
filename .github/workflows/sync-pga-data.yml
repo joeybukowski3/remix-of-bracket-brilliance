@@ -10,6 +10,8 @@ on:
     paths:
       - ".github/workflows/sync-pga-data.yml"
       - "scripts/sync-pga-sheet.mjs"
+      - "scripts/validate-pga-sheet-models.mjs"
+      - "scripts/lib/pga-sheet-model-validation.mjs"
       - "scripts/generate-pga-best-bets.mjs"
       - "scripts/fetch-pga-current-field.mjs"
       - "public/data/pga/schedule.json"
@@ -60,12 +62,16 @@ jobs:
         if: steps.gate.outputs.should_run == 'true'
         run: node scripts/fetch-pga-current-field.mjs
 
-      - name: Sync PGA JSON from Google Sheet
+      - name: Sync PGA JSON from Google Sheet and validate source identity
         if: steps.gate.outputs.should_run == 'true'
         env:
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-        run: node scripts/sync-pga-sheet.mjs
+        run: npm run pga:sync-sheet
+
+      - name: Validate generated PGA model contracts
+        if: steps.gate.outputs.should_run == 'true'
+        run: npm run pga:validate-sheet-contracts
 
       - name: Check player stats freshness
         if: steps.gate.outputs.should_run == 'true'
