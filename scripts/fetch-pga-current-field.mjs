@@ -1,394 +1,337 @@
-/**
- * fetch-pga-current-field.mjs
- *
- * Fetches the PGA Tour current field using MULTIPLE sources and cross-validates.
- * Only writes the field if at least 2 independent sources agree on the player list.
- * Logs every discrepancy so bad data is visible in workflow logs.
- *
- * Sources tried (in priority order):
- *  1. ESPN Scoreboard API        — real-time, reliable
- *  2. PGA Tour statdata API      — official field API, pre-tournament
- *  3. PGA Tour website scrape    — __NEXT_DATA__ JSON, most complete
- *  4. DataGolf API (free tier)   — independent third-party source
- *
- * Validation rules:
- *  - At least 2 sources must return ≥ 50 players (major fields use 156)
- *  - Cross-source agreement must be ≥ 80% (overlap / union)
- *  - Players only in one source are flagged as "unconfirmed"
- *  - If sources disagree badly, old file is preserved and warning logged
- */
-
-import { writeFile, mkdir, readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUTPUT   = path.resolve(__dirname, "../public/data/pga/current-field.json");
-const SCHEDULE = path.resolve(__dirname, "../public/data/pga/schedule.json");
-const TIMEOUT  = 15000;
-const MIN_PLAYERS = 30;   // minimum to consider a source valid
-const MIN_AGREEMENT = 0.70; // 70% overlap required between two sources
+const OUTPUT = path.resolve(__dirname, "../public/data/pga/current-field.json");
+const SCHEDULE_PATH = path.resolve(__dirname, "../public/data/pga/schedule.json");
+const GRAPHQL_URL = "https://orchestrator.pgatour.com/graphql";
+const TOUR_CODE = "R";
+const DEFAULT_API_KEY = "da2-gsrx5bibzbb4njvhl7t37wqyl4";
+const API_KEY = process.env.PGA_API_KEY || process.env.PGA_TOUR_GQL_API_KEY || DEFAULT_API_KEY;
+const OVERRIDE_ID = clean(process.env.PGA_TOURNAMENT_ID);
+const OVERRIDE_URL = clean(process.env.PGA_TOURNAMENT_URL);
+const AS_OF = process.env.PGA_FIELD_AS_OF
+  ? new Date(`${process.env.PGA_FIELD_AS_OF}T12:00:00Z`)
+  : new Date();
 
-const HEADERS = {
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-  "Accept": "application/json",
-};
-
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-async function get(url, extraHeaders = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT);
-  try {
-    const res = await fetch(url, {
-      headers: { ...HEADERS, ...extraHeaders },
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
-    return await res.json();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function normalize(name) {
-  // Normalize player names for comparison: lowercase, remove punctuation/suffixes
-  return (name ?? "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")          // strip accents
-    .replace(/\b(jr|sr|ii|iii|iv)\b\.?/gi, "")
-    .replace(/[^a-z\s]/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
-function crossValidate(sourceA, sourceB) {
-  const setA = new Set(sourceA.players.map(normalize));
-  const setB = new Set(sourceB.players.map(normalize));
-
-  const overlap = [...setA].filter(n => setB.has(n)).length;
-  const union   = new Set([...setA, ...setB]).size;
-  const agreement = union > 0 ? overlap / union : 0;
-
-  const onlyInA = sourceA.players.filter(n => !setB.has(normalize(n)));
-  const onlyInB = sourceB.players.filter(n => !setA.has(normalize(n)));
-
-  return { agreement, overlap, union, onlyInA, onlyInB };
-}
-
-function mergeConfirmed(sources) {
-  // Players in ALL sources = fully confirmed
-  // Players in ≥ 2 sources = confirmed
-  // Players in only 1 source = flagged as unconfirmed
-  const counts = new Map(); // normalized name → [original names]
-  for (const src of sources) {
-    const seen = new Set();
-    for (const p of src.players) {
-      const key = normalize(p);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      if (!counts.has(key)) counts.set(key, { name: p, sources: [], count: 0 });
-      counts.get(key).sources.push(src.source);
-      counts.get(key).count++;
+const SCHEDULE_QUERY = `
+query Schedule($tourCode: String!, $year: String) {
+  schedule(tourCode: $tourCode, year: $year) {
+    completed {
+      tournaments {
+        id
+        tournamentName
+        startDate
+        city
+        state
+        country
+        status { __typename }
+      }
+    }
+    upcoming {
+      tournaments {
+        id
+        tournamentName
+        startDate
+        city
+        state
+        country
+        status { __typename }
+      }
     }
   }
+}`;
 
-  const confirmed   = [];
-  const unconfirmed = [];
-  for (const [, v] of counts) {
-    if (v.count >= 2) confirmed.push(v.name);
-    else              unconfirmed.push(v.name);
+const FIELD_QUERY = `
+query TournamentField($ids: [ID!], $fieldId: ID!) {
+  tournaments(ids: $ids) {
+    id
+    tournamentName
+    tournamentLocation
+    tournamentStatus
+    displayDate
+    courses {
+      id
+      courseName
+    }
   }
-  return { confirmed: confirmed.sort(), unconfirmed: unconfirmed.sort() };
+  field: field(id: $fieldId) {
+    players {
+      id
+      firstName
+      lastName
+    }
+  }
+}`;
+
+async function postGraphql(query, variables) {
+  const response = await fetch(GRAPHQL_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY,
+      "x-pgat-platform": "web",
+      Referer: "https://www.pgatour.com/",
+      Origin: "https://www.pgatour.com",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  if (!response.ok) throw new Error(`PGA Tour GraphQL HTTP ${response.status}`);
+  const payload = await response.json();
+  if (payload.errors?.length) throw new Error(payload.errors.map((error) => error.message).join("; "));
+  return payload.data ?? {};
 }
 
-// ── current tournament from schedule ─────────────────────────────────────────
+async function readLocalSchedule() {
+  const schedule = JSON.parse(await readFile(SCHEDULE_PATH, "utf8"));
+  if (!Array.isArray(schedule)) throw new Error("PGA schedule.json must contain an array.");
+  return schedule;
+}
 
-async function getActiveTournament() {
+function selectLocalTarget(schedule) {
+  const asOfDate = AS_OF.toISOString().slice(0, 10);
+  const eligible = schedule
+    .filter((event) => !String(event.eventType ?? "").toLowerCase().includes("alternate field"))
+    .filter((event) => event.startDate && event.endDate)
+    .sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
+
+  const active = eligible.find((event) => event.startDate <= asOfDate && event.endDate >= asOfDate);
+  if (active) return active;
+
+  const upcoming = eligible.find((event) => event.startDate >= asOfDate);
+  if (upcoming) return upcoming;
+
+  throw new Error(`No current or future non-alternate PGA event found for ${asOfDate}.`);
+}
+
+async function fetchOfficialSchedule(year) {
+  const data = await postGraphql(SCHEDULE_QUERY, { tourCode: TOUR_CODE, year: String(year) });
+  const buckets = [
+    ["completed", data?.schedule?.completed ?? []],
+    ["upcoming", data?.schedule?.upcoming ?? []],
+  ];
+
+  return buckets.flatMap(([bucket, groups]) => (groups ?? []).flatMap((group) =>
+    (group?.tournaments ?? []).map((event) => ({
+      ...event,
+      bucket,
+      startDateIso: normalizePgaTimestamp(event?.startDate),
+    })),
+  ));
+}
+
+function resolveTournamentIdFromUrl(value) {
+  const text = String(value ?? "");
+  const match = text.match(/\b(R\d{7,})\b/i);
+  return match ? match[1].toUpperCase() : null;
+}
+
+function matchOfficialTournament(localEvent, officialEvents) {
+  const explicitId = OVERRIDE_ID || resolveTournamentIdFromUrl(OVERRIDE_URL) || clean(localEvent.pgaTourId);
+  if (explicitId) {
+    return officialEvents.find((event) => event.id === explicitId)
+      ?? { id: explicitId, tournamentName: localEvent.name, startDateIso: localEvent.startDate };
+  }
+
+  const localName = normalizeEventName(localEvent.name);
+  const localDate = localEvent.startDate;
+  const scored = officialEvents.map((event) => {
+    const officialName = normalizeEventName(event.tournamentName);
+    const exactName = officialName === localName;
+    const containsName = officialName.includes(localName) || localName.includes(officialName);
+    const dateDiff = dayDifference(localDate, event.startDateIso);
+    let score = 0;
+    if (exactName) score += 100;
+    else if (containsName) score += 70;
+    if (dateDiff === 0) score += 30;
+    else if (dateDiff <= 3) score += 15;
+    return { event, score, dateDiff };
+  }).sort((a, b) => b.score - a.score || a.dateDiff - b.dateDiff);
+
+  const best = scored[0];
+  if (!best || best.score < 85) {
+    const candidates = scored.slice(0, 5).map(({ event, score }) => `${event.id} ${event.tournamentName} (${score})`).join(", ");
+    throw new Error(`Unable to confidently match ${localEvent.name} to the official PGA schedule. Candidates: ${candidates}`);
+  }
+  return best.event;
+}
+
+async function fetchOfficialField(tournamentId) {
+  const data = await postGraphql(FIELD_QUERY, { ids: [tournamentId], fieldId: tournamentId });
+  const tournament = data?.tournaments?.[0] ?? null;
+  const rawPlayers = Array.isArray(data?.field?.players) ? data.field.players : [];
+
+  const playersByKey = new Map();
+  for (const player of rawPlayers) {
+    const name = [player?.firstName, player?.lastName].filter(Boolean).join(" ").trim();
+    const id = clean(player?.id);
+    if (!name) continue;
+    const key = id || normalizePlayerName(name);
+    if (!playersByKey.has(key)) playersByKey.set(key, { id: id || null, name });
+  }
+
+  const players = [...playersByKey.values()].sort((a, b) => a.name.localeCompare(b.name));
+  if (players.length < 20) throw new Error(`Official field returned only ${players.length} players for ${tournamentId}.`);
+  return { tournament, players };
+}
+
+async function fetchEspnCrossCheck(expectedTournament) {
   try {
-    const raw = await readFile(SCHEDULE, "utf8");
-    const schedule = JSON.parse(raw);
-    const today = new Date().toISOString().slice(0, 10);
-
-    // Active first
-    const active = schedule.find(t =>
-      t.status === "active" ||
-      (t.startDate <= today && t.endDate >= today)
+    const response = await fetch("https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard");
+    if (!response.ok) return null;
+    const payload = await response.json();
+    const event = (payload?.events ?? []).find((candidate) =>
+      normalizeEventName(candidate?.shortName ?? candidate?.name) === normalizeEventName(expectedTournament),
     );
-    if (active) return active;
-
-    // Then next upcoming within 7 days
-    const upcoming = schedule
-      .filter(t => t.status === "upcoming" && t.startDate >= today &&
-                   t.startDate <= new Date(Date.now() + 7*24*3600*1000).toISOString().slice(0, 10))
-      .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
-    return upcoming ?? null;
+    const competitors = event?.competitions?.[0]?.competitors ?? [];
+    const players = competitors
+      .filter((competitor) => !competitor?.isAlternate)
+      .filter((competitor) => {
+        const status = String(competitor?.status?.type?.id ?? competitor?.status ?? "").toUpperCase();
+        return status !== "ALT" && status !== "WD" && status !== "DQ";
+      })
+      .map((competitor) => competitor?.athlete?.displayName ?? competitor?.athlete?.fullName)
+      .filter(Boolean);
+    return players.length ? players : null;
   } catch {
     return null;
   }
 }
 
-// ── Source 1: ESPN scoreboard ─────────────────────────────────────────────────
-
-async function tryEspn() {
-  const data = await get("https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard");
-  const events = data?.events ?? [];
-  if (!events.length) throw new Error("No events");
-
-  const event = events[0];
-  const name  = event.shortName ?? event.name ?? "Unknown";
-  const comp  = event.competitions?.[0];
-  if (!comp) throw new Error("No competition");
-
-  const players = (comp.competitors ?? [])
-    .filter(c => {
-      if (c.isAlternate) return false;
-      const s = String(c.status?.type?.id ?? c.status ?? "").toUpperCase();
-      return s !== "ALT" && s !== "WD" && s !== "DQ";
-    })
-    .map(c => c.athlete?.displayName ?? c.athlete?.fullName)
-    .filter(Boolean);
-
-  if (players.length < MIN_PLAYERS) throw new Error(`Only ${players.length} players`);
-  return { tournament: name, players, source: "espn-scoreboard" };
-}
-
-// ── Source 2: statdata.pgatour.com ────────────────────────────────────────────
-
-const TOUR_ID_MAP = {
-  "rbc canadian open":                         "R2026037",
-  "us open":                                   "R2026026",
-  "u.s. open":                                 "R2026026",
-  "travelers championship":                    "R2026033",
-  "john deere classic":                        "R2026021",
-  "genesis scottish open":                     "R2026040",
-  "the open championship":                     "R2026100",
-  "3m open":                                   "R2026025",
-  "rocket mortgage classic":                   "R2026030",
-  "wyndham championship":                      "R2026041",
-  "fedex st. jude championship":               "R2026042",
-  "bmw championship":                          "R2026043",
-  "tour championship":                         "R2026060",
-  "memorial tournament":                       "R2026023",
-  "charles schwab challenge":                  "R2026020",
-  "pga championship":                          "R2026018",
-  "masters tournament":                        "R2026014",
-};
-
-function getTourId(tournamentName) {
-  const lower = (tournamentName ?? "").toLowerCase();
-  for (const [key, id] of Object.entries(TOUR_ID_MAP)) {
-    if (lower.includes(key)) return id;
-  }
-  return null;
-}
-
-async function tryStatdata(tournament) {
-  const tourId = getTourId(tournament?.name ?? "");
-  if (!tourId) throw new Error(`No Tour ID for: ${tournament?.name}`);
-
-  const data = await get(`https://statdata.pgatour.com/r/${tourId}/field.json`);
-  const raw = data?.Tournament?.Players?.Player ?? data?.players ?? data?.Players ?? data?.field ?? [];
-
-  const players = raw
-    .filter(p => {
-      const s = String(p.Status ?? p.status ?? "").toUpperCase();
-      return s !== "ALT" && s !== "WD" && s !== "DQ";
-    })
-    .map(p => {
-      const first = p.FirstName ?? p.firstName ?? "";
-      const last  = p.LastName  ?? p.lastName  ?? "";
-      return p.displayName ?? p.PlayerName ?? `${first} ${last}`.trim();
-    })
-    .filter(n => n && n.length > 2);
-
-  if (players.length < MIN_PLAYERS) throw new Error(`Only ${players.length} players`);
-  const name = data?.Tournament?.TournamentName ?? tournament?.name ?? tourId;
-  return { tournament: name, players, source: "statdata-pgatour" };
-}
-
-// ── Source 3: DataGolf API (free tier, no key needed) ─────────────────────────
-
-async function tryDataGolf() {
-  const data = await get("https://feeds.datagolf.com/field-updates?tour=pga&file_format=json");
-  // DataGolf returns { field: [{ player_name, dg_id, ... }] }
-  const raw = data?.field ?? data?.players ?? [];
-  if (!Array.isArray(raw) || raw.length < MIN_PLAYERS) throw new Error(`Only ${raw.length} players`);
-
-  const players = raw
-    .filter(p => {
-      const s = String(p.status ?? p.Status ?? "").toLowerCase();
-      return s !== "wd" && s !== "dq" && s !== "alt" && s !== "withdrawn";
-    })
-    .map(p => p.player_name ?? p.name ?? p.playerName)
-    .filter(Boolean);
-
-  if (players.length < MIN_PLAYERS) throw new Error(`Only ${players.length} non-WD players`);
-  const name = data?.event_name ?? data?.tournament ?? "Current Event";
-  return { tournament: name, players, source: "datagolf" };
-}
-
-// ── Source 4: PGA Tour __NEXT_DATA__ scrape ───────────────────────────────────
-
-const URL_SLUG_MAP = {
-  "R2026037": "rbc-canadian-open",
-  "R2026026": "us-open",
-  "R2026033": "travelers-championship",
-  "R2026021": "john-deere-classic",
-  "R2026040": "genesis-scottish-open",
-  "R2026100": "the-open-championship",
-  "R2026025": "3m-open",
-  "R2026030": "rocket-mortgage-classic",
-  "R2026041": "wyndham-championship",
-  "R2026042": "fedex-st-jude-championship",
-  "R2026043": "bmw-championship",
-  "R2026060": "tour-championship",
-  "R2026023": "the-memorial-tournament-presented-by-workday",
-  "R2026020": "charles-schwab-challenge",
-};
-
-async function tryPgaTourScrape(tournament) {
-  const tourId  = getTourId(tournament?.name ?? "");
-  const urlSlug = tourId ? URL_SLUG_MAP[tourId] : null;
-  if (!tourId || !urlSlug) throw new Error(`No URL mapping for: ${tournament?.name}`);
-
-  const url = `https://www.pgatour.com/tournaments/2026/${urlSlug}/${tourId}/field`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT);
-
-  let html;
-  try {
-    const res = await fetch(url, {
-      headers: { ...HEADERS, Accept: "text/html" },
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    html = await res.text();
-  } finally {
-    clearTimeout(timer);
-  }
-
-  const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-  if (!match) throw new Error("No __NEXT_DATA__");
-
-  const pp = JSON.parse(match[1])?.props?.pageProps ?? {};
-  const raw = pp.tournamentFieldPlayers ?? pp.fieldPlayers ?? pp.players ?? pp.entries ?? [];
-  if (!Array.isArray(raw) || !raw.length) throw new Error("No field array");
-
-  const players = raw
-    .filter(p => {
-      if (p.isAlternate || p.isWithdrawn) return false;
-      const s = String(p.status ?? p.playerStatus ?? "").toUpperCase();
-      return s !== "ALT" && s !== "WD" && s !== "DQ";
-    })
-    .map(p => p.displayName ?? p.playerName ?? `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim())
-    .filter(n => n && n.length > 2);
-
-  if (players.length < MIN_PLAYERS) throw new Error(`Only ${players.length} players from scrape`);
-  const name = pp.tournament?.name ?? tournament?.name ?? urlSlug;
-  return { tournament: name, players, source: "pgatour-scrape" };
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
-
-console.log("=== PGA Field Fetch with Multi-Source Validation ===");
-const tournament = await getActiveTournament();
-console.log(`Active tournament: ${tournament?.name ?? "unknown"} (${tournament?.startDate ?? "?"})`);
-
-const strategies = [
-  ["ESPN",           tryEspn],
-  ["DataGolf",       tryDataGolf],
-  ...(tournament ? [
-    ["Statdata",     () => tryStatdata(tournament)],
-    ["PGATour Scrape", () => tryPgaTourScrape(tournament)],
-  ] : []),
-];
-
-const results = [];
-for (const [name, fn] of strategies) {
-  try {
-    process.stdout.write(`  Trying ${name}... `);
-    const r = await fn();
-    console.log(`✅ ${r.players.length} players`);
-    results.push(r);
-  } catch (err) {
-    console.log(`❌ ${err.message}`);
-  }
-}
-
-if (results.length === 0) {
-  console.log("❌ No sources returned data. Preserving existing field file.");
-  process.exit(0);
-}
-
-if (results.length === 1) {
-  console.warn(`⚠️  Only 1 source succeeded (${results[0].source}). Writing unvalidated field — VERIFY MANUALLY.`);
-  const output = {
-    tournament: results[0].tournament,
-    source: results[0].source,
-    validated: false,
-    validationNote: "Only 1 source available — not cross-validated",
-    fetchedAt: new Date().toISOString(),
-    players: [...new Set(results[0].players)].sort(),
+function calculateAgreement(officialPlayers, comparisonPlayers) {
+  if (!comparisonPlayers?.length) return null;
+  const official = new Set(officialPlayers.map((player) => normalizePlayerName(player.name)));
+  const comparison = new Set(comparisonPlayers.map(normalizePlayerName));
+  const overlap = [...official].filter((name) => comparison.has(name)).length;
+  const union = new Set([...official, ...comparison]).size;
+  return {
+    overlap,
+    union,
+    agreementPercent: union ? Math.round((overlap / union) * 1000) / 10 : 0,
   };
-  await mkdir(path.dirname(OUTPUT), { recursive: true });
-  await writeFile(OUTPUT, JSON.stringify(output, null, 2), "utf-8");
-  console.log(`⚠️  Saved ${output.players.length} players (unvalidated)`);
-  process.exit(0);
 }
 
-// Cross-validate all pairs
-console.log("\n=== Cross-Validation ===");
-let bestAgreement = 0;
-let bestPair = null;
+function updateScheduleMetadata(schedule, localEvent, officialEvent, sourceUrl) {
+  return schedule.map((event) => event.id === localEvent.id ? {
+    ...event,
+    pgaTourId: officialEvent.id,
+    pgaTourUrl: sourceUrl,
+    fieldSource: "pga-tour-official",
+  } : event);
+}
 
-for (let i = 0; i < results.length; i++) {
-  for (let j = i + 1; j < results.length; j++) {
-    const v = crossValidate(results[i], results[j]);
-    console.log(`  ${results[i].source} ↔ ${results[j].source}: ${(v.agreement * 100).toFixed(1)}% agreement (${v.overlap}/${v.union})`);
-    if (v.onlyInA.length > 0) console.log(`    Only in ${results[i].source}: ${v.onlyInA.slice(0,5).join(", ")}${v.onlyInA.length > 5 ? ` +${v.onlyInA.length-5} more` : ""}`);
-    if (v.onlyInB.length > 0) console.log(`    Only in ${results[j].source}: ${v.onlyInB.slice(0,5).join(", ")}${v.onlyInB.length > 5 ? ` +${v.onlyInB.length-5} more` : ""}`);
-    if (v.agreement > bestAgreement) {
-      bestAgreement = v.agreement;
-      bestPair = { a: results[i], b: results[j], ...v };
-    }
+async function main() {
+  const schedule = await readLocalSchedule();
+  const localTarget = selectLocalTarget(schedule);
+  const year = Number(String(localTarget.startDate).slice(0, 4)) || AS_OF.getUTCFullYear();
+  const officialSchedule = await fetchOfficialSchedule(year);
+  const officialTarget = matchOfficialTournament(localTarget, officialSchedule);
+  const tournamentId = officialTarget.id;
+  const sourceSlug = slugify(localTarget.name).replace(/-2026$/, "");
+  const sourceUrl = OVERRIDE_URL || `https://www.pgatour.com/tournaments/${year}/${sourceSlug}/${tournamentId}`;
+  const { tournament, players } = await fetchOfficialField(tournamentId);
+
+  const officialName = tournament?.tournamentName || officialTarget.tournamentName || localTarget.name;
+  if (normalizeEventName(officialName) !== normalizeEventName(localTarget.name)) {
+    throw new Error(`Official field tournament mismatch: local=${localTarget.name}, official=${officialName}`);
   }
+
+  const espnPlayers = await fetchEspnCrossCheck(officialName);
+  const crossCheck = calculateAgreement(players, espnPlayers);
+  const output = {
+    version: 2,
+    tournament: officialName,
+    tournamentId,
+    tournamentSlug: localTarget.slug,
+    localScheduleId: localTarget.id,
+    startDate: localTarget.startDate,
+    endDate: localTarget.endDate,
+    source: "pga-tour-official-field",
+    sourceUrl,
+    validated: true,
+    validationNote: "Tournament ID, tournament name, dates, and player list were matched to the official PGA TOUR schedule and field endpoints.",
+    fetchedAt: new Date().toISOString(),
+    fieldCount: players.length,
+    alternatesExcluded: true,
+    alternatePolicy: "Only field.players is imported. Alternate lists are intentionally not queried or merged.",
+    crossCheck: crossCheck ? {
+      source: "espn-scoreboard",
+      playerCount: espnPlayers.length,
+      ...crossCheck,
+    } : null,
+    players: players.map((player) => player.name),
+    playerDetails: players,
+  };
+
+  await writeFile(OUTPUT, JSON.stringify(output, null, 2) + "\n", "utf8");
+  const updatedSchedule = updateScheduleMetadata(schedule, localTarget, officialTarget, sourceUrl);
+  await writeFile(SCHEDULE_PATH, JSON.stringify(updatedSchedule, null, 2) + "\n", "utf8");
+
+  console.log(`[pga-field] ${officialName} (${tournamentId})`);
+  console.log(`[pga-field] Imported ${players.length} official field players.`);
+  console.log("[pga-field] Alternates excluded by policy.");
+  if (crossCheck) console.log(`[pga-field] ESPN cross-check agreement: ${crossCheck.agreementPercent}% (${crossCheck.overlap}/${crossCheck.union})`);
+  console.log(`[pga-field] Source: ${sourceUrl}`);
 }
 
-console.log(`\nBest agreement: ${(bestAgreement * 100).toFixed(1)}% (threshold: ${MIN_AGREEMENT * 100}%)`);
-
-if (bestAgreement < MIN_AGREEMENT) {
-  console.warn(`⚠️  Sources disagree below threshold. Preserving existing file — INVESTIGATE.`);
-  console.warn(`    This usually means stale data from a previous tournament or WD/alt contamination.`);
-  process.exit(0);
+function normalizePgaTimestamp(value) {
+  if (value == null) return null;
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    const milliseconds = numeric > 100_000_000_000 ? numeric : numeric * 1000;
+    return new Date(milliseconds).toISOString().slice(0, 10);
+  }
+  const parsed = new Date(String(value));
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
 }
 
-// Build merged confirmed field
-const { confirmed, unconfirmed } = mergeConfirmed(results);
-console.log(`\n✅ Confirmed (≥2 sources): ${confirmed.length} players`);
-if (unconfirmed.length > 0) {
-  console.log(`⚠️  Unconfirmed (1 source only): ${unconfirmed.length} players`);
-  console.log(`   ${unconfirmed.slice(0, 10).join(", ")}${unconfirmed.length > 10 ? ` +${unconfirmed.length - 10} more` : ""}`);
+function normalizeEventName(value) {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(the|presented by|championship|tournament|2026)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
-const primaryName = results.reduce((best, r) =>
-  r.players.length > (best?.players.length ?? 0) ? r : best, null
-)?.tournament ?? tournament?.name ?? "Unknown";
+function normalizePlayerName(value) {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(jr|sr|ii|iii|iv)\b/g, "")
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
 
-const output = {
-  tournament: primaryName,
-  sources: results.map(r => ({ name: r.source, playerCount: r.players.length })),
-  validated: true,
-  bestAgreement: Math.round(bestAgreement * 100),
-  fetchedAt: new Date().toISOString(),
-  players: confirmed,
-  unconfirmedPlayers: unconfirmed,
-};
+function slugify(value) {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
-await mkdir(path.dirname(OUTPUT), { recursive: true });
-await writeFile(OUTPUT, JSON.stringify(output, null, 2), "utf-8");
-console.log(`\n✅ Saved ${confirmed.length} validated players → current-field.json`);
+function dayDifference(left, right) {
+  if (!left || !right) return 999;
+  const leftTime = new Date(`${left}T12:00:00Z`).getTime();
+  const rightTime = new Date(`${right}T12:00:00Z`).getTime();
+  if (!Number.isFinite(leftTime) || !Number.isFinite(rightTime)) return 999;
+  return Math.round(Math.abs(leftTime - rightTime) / 86_400_000);
+}
+
+function clean(value) {
+  const text = String(value ?? "").trim();
+  return text || null;
+}
+
+main().catch((error) => {
+  console.error(`[pga-field] Fatal error: ${error instanceof Error ? error.message : String(error)}`);
+  process.exitCode = 1;
+});
