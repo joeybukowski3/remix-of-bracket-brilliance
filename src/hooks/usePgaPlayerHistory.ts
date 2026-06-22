@@ -58,7 +58,8 @@ export function usePgaPlayerHistory() {
           throw new Error(`Player history request failed with HTTP ${historyResponse.status}`);
         }
 
-        const compact = (await historyResponse.json()) as CompactHistoryPayload;
+        const historyText = await historyResponse.text();
+        const compact = parseCompactHistoryJson(historyText);
         const playerHistory = expandCompactHistory(compact);
         const majorHistory = majorResponse.ok
           ? ((await majorResponse.json()) as PgaMajorHistoryPayload)
@@ -99,6 +100,85 @@ export function usePgaPlayerHistory() {
     playerHistoryMap,
     majorHistoryMap,
   };
+}
+
+export function parseCompactHistoryJson(text: string): CompactHistoryPayload {
+  const normalized = text.replace(/^\uFEFF/, "").trim();
+
+  try {
+    return JSON.parse(normalized) as CompactHistoryPayload;
+  } catch (initialError) {
+    const repaired = repairMissingArrayCommas(normalized);
+    if (repaired !== normalized) {
+      try {
+        const payload = JSON.parse(repaired) as CompactHistoryPayload;
+        console.warn("[pga-history] Repaired malformed compact history JSON while loading.");
+        return payload;
+      } catch {
+        // Fall through to the original parse error so the user sees the true source issue.
+      }
+    }
+
+    throw initialError;
+  }
+}
+
+function repairMissingArrayCommas(source: string) {
+  let candidate = source;
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    try {
+      JSON.parse(candidate);
+      return candidate;
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) return source;
+      const position = extractJsonErrorPosition(error.message);
+      if (position == null || position < 0 || position > candidate.length) return source;
+
+      const repaired = insertLikelyMissingComma(candidate, position);
+      if (repaired === candidate) return source;
+      candidate = repaired;
+    }
+  }
+
+  return source;
+}
+
+function extractJsonErrorPosition(message: string) {
+  const positionMatch = message.match(/position\s+(\d+)/i);
+  if (positionMatch) return Number(positionMatch[1]);
+
+  const columnMatch = message.match(/column\s+(\d+)/i);
+  if (columnMatch) return Math.max(0, Number(columnMatch[1]) - 1);
+
+  return null;
+}
+
+function insertLikelyMissingComma(source: string, position: number) {
+  let index = Math.min(position, source.length);
+  while (index > 0 && /\s/.test(source[index - 1])) index -= 1;
+
+  const current = source[index] ?? "";
+  const previous = source[index - 1] ?? "";
+
+  const previousCanEndValue = /[\]}"]/.test(previous) || /[0-9el]/i.test(previous);
+  const currentCanStartValue = /[\[{"n\-0-9]/.test(current);
+
+  if (previousCanEndValue && currentCanStartValue) {
+    return `${source.slice(0, index)},${source.slice(index)}`;
+  }
+
+  const nearbyStart = Math.max(0, position - 12);
+  const nearbyEnd = Math.min(source.length, position + 12);
+  const nearby = source.slice(nearbyStart, nearbyEnd);
+  const boundaryMatch = nearby.match(/([\]}])\s*([\[{])/);
+
+  if (boundaryMatch && boundaryMatch.index != null) {
+    const insertionPoint = nearbyStart + boundaryMatch.index + boundaryMatch[1].length;
+    return `${source.slice(0, insertionPoint)},${source.slice(insertionPoint)}`;
+  }
+
+  return source;
 }
 
 function expandCompactHistory(payload: CompactHistoryPayload): PgaPlayerHistoryPayload {
