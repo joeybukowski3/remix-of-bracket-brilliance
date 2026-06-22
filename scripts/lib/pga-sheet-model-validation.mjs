@@ -44,6 +44,42 @@ export function buildScheduleContext(schedule, referenceDate) {
   return { currentUpcoming, nextWeek };
 }
 
+export function extractSheetIdentity(rows, schedule) {
+  const referenceDate = parseEmbeddedReferenceDate(rows);
+  const headerText = normalizeModelKey(
+    (Array.isArray(rows) ? rows : [])
+      .slice(0, 20)
+      .flatMap((row) => (Array.isArray(row) ? row : []))
+      .join(" "),
+  );
+  const candidates = sortSchedule(schedule)
+    .map((entry) => ({
+      entry,
+      nameKey: normalizeModelKey(entry.name),
+      courseKey: normalizeModelKey(entry.courseName),
+    }))
+    .filter(({ nameKey, courseKey }) =>
+      (nameKey.length >= 5 && headerText.includes(nameKey)) ||
+      (courseKey.length >= 5 && headerText.includes(courseKey)),
+    )
+    .sort((left, right) =>
+      Math.max(right.nameKey.length, right.courseKey.length) - Math.max(left.nameKey.length, left.courseKey.length),
+    );
+
+  let matched = null;
+  if (referenceDate) {
+    const datedEvent = buildScheduleContext(schedule, referenceDate).currentUpcoming;
+    matched = candidates.find(({ entry }) => normalizeModelKey(entry.name) === normalizeModelKey(datedEvent?.name))?.entry ?? null;
+  }
+  matched ??= candidates[0]?.entry ?? null;
+
+  return {
+    referenceDate,
+    tournamentName: matched?.name ?? null,
+    courseName: matched?.courseName ?? null,
+  };
+}
+
 export function daysBetween(laterDate, earlierDate) {
   const later = new Date(`${laterDate}T00:00:00Z`).getTime();
   const earlier = new Date(`${earlierDate}T00:00:00Z`).getTime();
@@ -96,6 +132,8 @@ export function validateSheetSource({
   expectedContext,
   sourceContext,
   sourceReferenceDate,
+  sheetTournamentName = null,
+  sheetCourseName = null,
   today,
   maxSourceAgeDays = 14,
   maxDaysBeforeCurrentStart = 7,
@@ -128,6 +166,14 @@ export function validateSheetSource({
     }
   }
 
+  if (sheetTournamentName && expectedCurrent && normalizeModelKey(sheetTournamentName) !== normalizeModelKey(expectedCurrent.name)) {
+    errors.push(`The Google Sheet explicitly identifies ${sheetTournamentName}, but the expected current tournament is ${expectedCurrent.name}.`);
+  }
+
+  if (sheetCourseName && expectedCurrent?.courseName && normalizeModelKey(sheetCourseName) !== normalizeModelKey(expectedCurrent.courseName)) {
+    errors.push(`The Google Sheet explicitly identifies course ${sheetCourseName}, but the expected current course is ${expectedCurrent.courseName}.`);
+  }
+
   if (expected && source && normalizeModelKey(expected.name) !== normalizeModelKey(source.name)) {
     errors.push(`Expected ${expected.name}, but the Google Sheet reference date maps to ${source.name}.`);
   }
@@ -142,6 +188,8 @@ export function validateSheetSource({
     expected,
     source,
     sourceReferenceDate: sourceReferenceDate ?? null,
+    sheetTournamentName: sheetTournamentName ?? null,
+    sheetCourseName: sheetCourseName ?? null,
   };
 }
 
@@ -173,6 +221,8 @@ export function buildValidatedModelPayload({
     modelAvailable,
     modelSource: "google-sheet",
     sourceTournamentName: validation.source?.name ?? null,
+    sourceSheetTournamentName: validation.sheetTournamentName ?? null,
+    sourceSheetCourseName: validation.sheetCourseName ?? null,
     sourceReferenceDate: validation.sourceReferenceDate,
     sourceValidated,
     sourceValidationErrors: rejectionReasons,
