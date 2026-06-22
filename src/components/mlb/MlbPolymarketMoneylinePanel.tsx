@@ -7,6 +7,13 @@ import type { MoneylineGame } from "@/lib/mlb/polymarketMoneylines";
 import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 
 // ---------------------------------------------------------------------------
+// Shared layout constants
+// ---------------------------------------------------------------------------
+// Fixed-column grid for every team row: logo | team | pitcher (flex) | YES | NO
+// Only the pitcher-information column is allowed to flex/truncate.
+const TEAM_ROW_GRID = "grid-cols-[20px_34px_minmax(0,1fr)_50px_50px]";
+
+// ---------------------------------------------------------------------------
 // Time formatting
 // ---------------------------------------------------------------------------
 
@@ -53,7 +60,7 @@ function PriceChip({
   tone,
   ariaTeam,
 }: {
-  label: string;
+  label: "YES" | "NO";
   price: number | null;
   tone: "higher" | "lower" | "neutral";
   ariaTeam: string;
@@ -65,12 +72,13 @@ function PriceChip({
       : tone === "lower"
       ? "bg-red-50 text-red-700 border-red-200"
       : "bg-slate-50 text-slate-600 border-slate-200";
+  const word = label === "YES" ? "YES" : "NO";
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${bg}`}
-      aria-label={`${ariaTeam} ${label} price: ${display}`}
+      className={`inline-flex h-6 w-[50px] shrink-0 items-center justify-center gap-0.5 rounded-md border text-[10px] font-bold tabular-nums leading-none whitespace-nowrap ${bg}`}
+      aria-label={`${ariaTeam} ${word} price: ${display}`}
     >
-      <span className="text-[9px] font-semibold opacity-70">{label}</span>
+      <span className="text-[8px] font-semibold opacity-70">{label}</span>
       {display}
     </span>
   );
@@ -87,6 +95,7 @@ function GameCard({
 }) {
   const time = formatGameTime(game.gameDate);
   const status = statusLabel(game.status);
+  const hasVenue = Boolean(game.venue && game.venue !== "Unknown");
 
   const handleClick = () => {
     if (onOpenGame) {
@@ -101,38 +110,42 @@ function GameCard({
     <button
       type="button"
       onClick={handleClick}
-      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition hover:border-sky-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+      className="box-border block w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition hover:border-sky-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
     >
-      {/* Header row: time + venue + external link */}
-      <div className="mb-1.5 flex items-center justify-between gap-2 text-[10px] text-slate-400">
-        <span className="flex min-w-0 items-center gap-1">
-          <span className="shrink-0">{time}{status && ` · ${status}`}</span>
-          {game.venue && game.venue !== "Unknown" && (
-            <span className="flex min-w-0 items-center gap-0.5 truncate">
+      {/* Top metadata row — fixed height, time/venue left, link icon top-right */}
+      <div className="flex h-4 items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1 text-[10px] text-slate-400">
+          <span className="shrink-0 whitespace-nowrap">{time}{status && ` · ${status}`}</span>
+          {hasVenue && (
+            <span className="flex min-w-0 items-center gap-0.5 overflow-hidden">
               <span className="shrink-0">·</span>
               <MapPin className="h-2.5 w-2.5 shrink-0" />
-              <span className="truncate">{game.venue}</span>
+              <span className="truncate" title={game.venue}>{game.venue}</span>
             </span>
           )}
         </span>
-        {game.marketUrl && (
+        {game.marketUrl ? (
           <a
             href={game.marketUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex shrink-0 items-center gap-0.5 text-sky-500 transition hover:text-sky-700"
-            aria-label={`View ${game.away.abbreviation} vs ${game.home.abbreviation} on Polymarket`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-4 w-4 shrink-0 items-center justify-center text-sky-500 transition hover:text-sky-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-sky-500"
+            aria-label={`View ${game.away.name || game.away.abbreviation} vs ${game.home.name || game.home.abbreviation} on Polymarket`}
           >
             <ExternalLink className="h-2.5 w-2.5" />
           </a>
+        ) : (
+          <span className="h-4 w-4 shrink-0" aria-hidden="true" />
         )}
       </div>
 
-      {/* Matchup label */}
-      <div className="mb-1.5 text-[10px] font-bold tracking-wide text-slate-500">
+      {/* Matchup row — centered, consistent height/margins */}
+      <div className="mt-1.5 mb-2 text-center text-[10px] font-bold tracking-wide text-slate-500">
         {game.away.abbreviation} @ {game.home.abbreviation}
       </div>
 
+      {/* Team rows */}
       {game.matched ? (
         <div className="space-y-1.5">
           <TeamRow team={game.away} pitcherXera={getPitcherXera(game.away.probablePitcher)} />
@@ -168,26 +181,41 @@ function TeamRow({
       ? "higher"
       : "lower";
 
+  const teamLabel = team.name || team.abbreviation;
+  const pitcherTitle = team.probablePitcher
+    ? pitcherXera != null
+      ? `${team.probablePitcher} — ${pitcherXera.toFixed(2)} xERA`
+      : team.probablePitcher
+    : undefined;
+
   return (
-    <div className="flex items-center gap-1.5">
-      <MlbTeamLogo team={team.abbreviation} size={18} />
-      <div className="min-w-0 flex-1">
-        <span className="text-[11px] font-extrabold text-slate-800">
-          {team.abbreviation}
-        </span>
-        {team.probablePitcher && (
-          <span className="ml-1.5 truncate text-[9px] font-medium text-slate-400">
+    <div className={`grid min-h-[22px] ${TEAM_ROW_GRID} items-center gap-1.5 py-0.5`}>
+      <div className="flex h-5 w-5 shrink-0 items-center justify-center">
+        <MlbTeamLogo team={team.abbreviation} size={18} />
+      </div>
+
+      <span className="shrink-0 text-left text-[11px] font-extrabold text-slate-800">
+        {team.abbreviation}
+      </span>
+
+      <div className="min-w-0">
+        {team.probablePitcher ? (
+          <span
+            className="block truncate whitespace-nowrap text-[9.5px] font-medium leading-tight text-slate-400"
+            title={pitcherTitle}
+          >
             {team.probablePitcher}
             {pitcherXera != null && (
               <span className="ml-1 font-semibold text-slate-500">{pitcherXera.toFixed(2)} xERA</span>
             )}
           </span>
+        ) : (
+          <span className="block text-[9px] text-slate-300">—</span>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <PriceChip label="YES" price={team.yesPrice} tone={yesTone} ariaTeam={team.name || team.abbreviation} />
-        <PriceChip label="NO" price={team.noPrice} tone={noTone} ariaTeam={team.name || team.abbreviation} />
-      </div>
+
+      <PriceChip label="YES" price={team.yesPrice} tone={yesTone} ariaTeam={teamLabel} />
+      <PriceChip label="NO" price={team.noPrice} tone={noTone} ariaTeam={teamLabel} />
     </div>
   );
 }
@@ -198,7 +226,7 @@ function LoadingSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="h-[88px] animate-pulse rounded-xl border border-slate-100 bg-slate-50"
+          className="h-[88px] w-full animate-pulse rounded-xl border border-slate-100 bg-slate-50"
         />
       ))}
     </div>
@@ -220,17 +248,17 @@ export default function MlbPolymarketMoneylinePanel({ onOpenGame }: { onOpenGame
   };
 
   return (
-    <div className="polymarket-panel">
-      {/* Header */}
-      <div className="mb-3 rounded-xl bg-[#031635] px-4 py-3">
-        <div className="text-[11px] font-extrabold tracking-wide text-white">
+    <div className="polymarket-panel box-border w-full min-w-0 pr-1.5">
+      {/* Header — same left/right edge as cards below */}
+      <div className="mb-2.5 rounded-xl bg-[#031635] px-3 py-2.5">
+        <div className="text-[11px] font-extrabold leading-tight tracking-wide text-white">
           Polymarket Moneylines
         </div>
-        <div className="mt-0.5 text-[10px] text-sky-300/80">
+        <div className="mt-0.5 text-[10px] leading-tight text-sky-300/80">
           Live YES / NO prices for today's games
         </div>
         {data && (
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[9px] text-slate-400">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[9px] tabular-nums text-slate-400">
             <span>{formatUpdatedAgo(data.updatedAt)}</span>
             <span>
               {data.matchedCount} of {data.totalGames} games matched

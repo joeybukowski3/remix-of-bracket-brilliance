@@ -1137,7 +1137,7 @@ function MlbSlateAnalyzer({
                             {showScore && <span className="text-[18px] font-extrabold text-slate-900">{homeScore}</span>}
                           </div>
                           <span className="text-[12px] font-semibold text-[#031635] truncate">{homePitcherName || "TBD"}</span>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex flex-col gap-0.5">
                             {detail?.starters.home.record && <span className="text-[11px] text-slate-400">{detail.starters.home.record}</span>}
                             <PitcherPills pi={homePI} />
                           </div>
@@ -1152,7 +1152,7 @@ function MlbSlateAnalyzer({
                             {showScore && <span className="text-[18px] font-extrabold text-slate-900">{awayScore}</span>}
                           </div>
                           <span className="text-[12px] font-semibold text-[#031635] truncate">{awayPitcherName || "TBD"}</span>
-                          <div className="flex items-center gap-1.5 justify-end">
+                          <div className="flex flex-col items-end gap-0.5">
                             {detail?.starters.away.record && <span className="text-[11px] text-slate-400">{detail.starters.away.record}</span>}
                             <PitcherPills pi={awayPI} />
                           </div>
@@ -2285,12 +2285,13 @@ function HomeSchedule({
             )}
           </section>
 
-          {/* Polymarket panel — inline on screens below 2xl */}
+          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
+
+          {/* Polymarket panel — inline on screens below 2xl, shown AFTER the Game Matchup Analyzer */}
           <div className="2xl:hidden">
             <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} />
           </div>
 
-          <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
           <SocialMediaTablesSection games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
           <MlbToolsGrid />
           
@@ -2309,7 +2310,7 @@ function HomeSchedule({
         </div>
 
         {/* Polymarket panel — sticky right sidebar on 2xl+ screens */}
-        <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:scrollbar-thin">
+        <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:overflow-x-hidden polymarket-panel-scroll">
           <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} />
         </aside>
       </div>
