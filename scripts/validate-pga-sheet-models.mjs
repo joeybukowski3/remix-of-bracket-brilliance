@@ -9,8 +9,8 @@ import {
   buildScheduleContext,
   buildValidatedModelPayload,
   calculateFieldDiagnostics,
+  extractSheetIdentity,
   normalizeModelKey,
-  parseEmbeddedReferenceDate,
   validateSheetSource,
 } from "./lib/pga-sheet-model-validation.mjs";
 
@@ -163,7 +163,8 @@ async function main() {
   const rawCurrent = readJson("public/data/pga/current-tournament.json");
   const rawNext = readJson("public/data/pga/next-tournament.json");
   const sheetRows = await fetchSiteOutputRows();
-  const sourceReferenceDate = parseEmbeddedReferenceDate(sheetRows);
+  const sheetIdentity = extractSheetIdentity(sheetRows, schedule);
+  const sourceReferenceDate = sheetIdentity.referenceDate;
   const expectedContext = buildScheduleContext(schedule, today);
   const sourceContext = sourceReferenceDate
     ? buildScheduleContext(schedule, sourceReferenceDate)
@@ -182,6 +183,8 @@ async function main() {
       expectedContext,
       sourceContext,
       sourceReferenceDate,
+      sheetTournamentName: sheetIdentity.tournamentName,
+      sheetCourseName: sheetIdentity.courseName,
       today,
     });
     const diagnostics = section === "current-tournament"
@@ -202,6 +205,8 @@ async function main() {
     console.log(`[pga-sheet-source] ${section}`);
     console.log(`  Expected: ${validation.expected?.name ?? "none"}`);
     console.log(`  Sheet source: ${validation.source?.name ?? "untrusted"}`);
+    console.log(`  Explicit sheet tournament: ${sheetIdentity.tournamentName ?? "not found"}`);
+    console.log(`  Explicit sheet course: ${sheetIdentity.courseName ?? "not found"}`);
     console.log(`  Sheet reference date: ${sourceReferenceDate ?? "missing"}`);
     console.log(`  Source validated: ${payload.sourceValidated}`);
     console.log(`  Published rows: ${payload.rows.length}`);
