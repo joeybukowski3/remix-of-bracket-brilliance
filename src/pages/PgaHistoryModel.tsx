@@ -27,6 +27,7 @@ import {
 import { SPORTSBOOKS } from "@/lib/sportsbooks";
 
 const BASE_WEIGHTS = { sgTotal: .55, sgApp: .12, sgPutt: .06, sgAtG: .10, sgOTT: .07, drivingAccuracy: .05, bogeyAvoidance: .05 };
+const RECENT_START_COUNT = 5;
 
 type CurrentField = { tournament: string; players: string[]; source: string };
 
@@ -81,7 +82,7 @@ export default function PgaHistoryModel() {
       const key = normalizePlayerKey(player.player);
       const history = playerHistoryMap.get(key);
       const majorHistory = majorHistoryMap.get(key)?.results ?? [];
-      const recentResults = history?.recentResults.slice(0, 8) ?? [];
+      const recentResults = history?.recentResults.slice(0, RECENT_START_COUNT) ?? [];
       const eventResults = findEventHistory(history, eventSlug, eventName);
       const specificMajorResults = selectSpecificMajorHistory(majorHistory, majorType);
       const allMajorResults = selectAllMajorHistory(majorHistory);
@@ -145,7 +146,7 @@ export default function PgaHistoryModel() {
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border bg-white p-3 shadow-sm"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search player..." className="min-w-52 flex-1 rounded-lg border px-3 py-2 text-sm" /><button onClick={() => setFieldOnly((value) => !value)} className={`rounded-full px-3 py-1.5 text-xs font-black ${fieldOnly ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-700"}`}>{fieldOnly ? `Field only (${filtered.length})` : "All players"}</button><div className="inline-flex rounded-full border p-0.5 text-xs font-bold"><button onClick={() => setStatView("percentile")} className={`rounded-full px-3 py-1 ${statView === "percentile" ? "bg-emerald-600 text-white" : ""}`}>Percentile</button><button onClick={() => setStatView("raw")} className={`rounded-full px-3 py-1 ${statView === "raw" ? "bg-emerald-600 text-white" : ""}`}>Raw</button></div></div>
           {historyError && <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">History data is partially unavailable: {historyError}</div>}
           {loading || historyLoading ? <div className="py-16 text-center text-sm text-slate-400">Loading tournament model…</div> : <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} />}
-          <p className="mt-3 text-[11px] text-slate-400">Regular events use core stats, last eight starts, course fit, same-event history and trend. Majors replace event history with the last four starts in that major plus the last eight major starts overall.</p>
+          <p className="mt-3 text-[11px] text-slate-400">Regular events use core stats, the last five starts, course fit, same-event history and trend. Majors replace event history with the last four starts in that major plus the last eight major starts overall.</p>
         </main>
         <aside className="hidden w-48 shrink-0 xl:block"><div className="sticky top-4 rounded-xl border bg-white p-3 shadow-sm"><div className="mb-2 text-[10px] font-black uppercase text-slate-500">Bet with our partners</div><div className="space-y-1">{SPORTSBOOKS.map((book) => <a key={book.name} href={book.referralUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded px-2 py-1.5 text-[11px] font-bold" style={{ backgroundColor: book.bgColor, color: book.textColor }}>{book.name}</a>)}</div></div></aside>
       </div>
