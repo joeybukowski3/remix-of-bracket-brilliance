@@ -102,8 +102,7 @@ async function loadPlayerHistory(): Promise<PgaPlayerHistoryPayload> {
     throw new Error(`Player history request failed with HTTP ${compactResponse.status}`);
   }
 
-  const compact = parseCompactHistoryJson(await compactResponse.text());
-  return expandCompactHistory(compact);
+  return expandCompactHistory(parseCompactHistoryJson(await compactResponse.text()));
 }
 
 async function loadMajorHistory() {
@@ -183,7 +182,6 @@ function repairUnbalancedClosures(source: string) {
 
     if (character === "}" || character === "]") {
       const expectedOpen = character === "}" ? "{" : "[";
-      const expectedClose = character === "}" ? "]" : "}";
 
       while (stack.length && stack[stack.length - 1] !== expectedOpen) {
         const open = stack.pop();
@@ -191,12 +189,8 @@ function repairUnbalancedClosures(source: string) {
         changed = true;
       }
 
-      if (stack[stack.length - 1] === expectedOpen) {
-        stack.pop();
-      } else if (expectedClose) {
-        return source;
-      }
-
+      if (stack[stack.length - 1] !== expectedOpen) return source;
+      stack.pop();
       output += character;
       continue;
     }
