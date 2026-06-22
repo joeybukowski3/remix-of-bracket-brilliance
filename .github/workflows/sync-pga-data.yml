@@ -20,6 +20,8 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
     steps:
       - name: Check Eastern runtime window
         id: gate
@@ -40,7 +42,7 @@ jobs:
         if: steps.gate.outputs.should_run == 'true'
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
 
       - name: Set up Node
@@ -56,8 +58,7 @@ jobs:
 
       - name: Fetch current tournament field
         if: steps.gate.outputs.should_run == 'true'
-        continue-on-error: true
-        run: node scripts/fetch-pga-current-field.mjs || true
+        run: node scripts/fetch-pga-current-field.mjs
 
       - name: Sync PGA JSON from Google Sheet
         if: steps.gate.outputs.should_run == 'true'
@@ -92,16 +93,18 @@ jobs:
             exit 0
           fi
           git commit -m "chore: sync PGA sheet data"
-          git push origin HEAD:main
+          git push origin HEAD:${TARGET_BRANCH}
 
   generate-best-bets:
     needs: sync
     runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
 
       - name: Set up Node
@@ -128,5 +131,6 @@ jobs:
             echo "No best bets changes to commit."
             exit 0
           fi
+          node --input-type=module -e "import fs from 'node:fs'; const field = JSON.parse(fs.readFileSync('public/data/pga/current-field.json', 'utf8')); const bets = JSON.parse(fs.readFileSync('public/data/pga/best-bets.json', 'utf8')); const normalize = (value) => value.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); if (normalize(field.tournament) !== normalize(bets.tournament)) throw new Error(\`Refusing to commit best bets for ${bets.tournament}; official field is ${field.tournament}.\`);"
           git commit -m "chore: generate PGA best bets"
-          git push origin HEAD:main
+          git push origin HEAD:${TARGET_BRANCH}

@@ -419,7 +419,10 @@ export function parseModelJson(text) {
   throw lastError ?? new Error("Unable to parse model JSON response.");
 }
 
-function validatePickArray(value) {
+export function validatePickArray(value, officialPlayers = null) {
+  const officialPlayerKeys = officialPlayers
+    ? new Set(officialPlayers.map((player) => normalizeName(player)))
+    : null;
   return Array.isArray(value)
     ? value
         .map((entry) => ({
@@ -430,6 +433,7 @@ function validatePickArray(value) {
           bullets: Array.isArray(entry?.bullets) ? entry.bullets.slice(0, 3).map(String) : [],
         }))
         .filter((e) => e.player && e.topStats.length && e.bullets.length)
+        .filter((e) => !officialPlayerKeys || officialPlayerKeys.has(normalizeName(e.player)))
     : [];
 }
 
@@ -489,7 +493,7 @@ function validateSectionCount(name, value, expectedCount, rawResponse) {
   return validatePickArray(value);
 }
 
-async function generateCombinedPicks(apiKey, summary) {
+async function generateCombinedPicks(apiKey, summary, officialPlayers) {
   const basePrompt = `You are a sharp data-driven golf betting analyst. Based on this tournament model data:\n${summary}\n\nReturn ONLY a raw JSON object with no markdown, no code fences, no explanation. Each pick object has these exact fields: player (string), tournamentRank (number), powerRank (number), topStats (array of exactly 2 strings showing stat=value), bullets (array of exactly 2 strings each referencing a specific number from the data).`;
 
   const prompt1 = `${basePrompt}\n\nReturn an object with exactly two keys:\noutrights: array of exactly 5 picks from tournament ranks 3-20 that represent MODEL VALUE — players where their model rank suggests they are significantly more likely to win than their outright odds imply. Avoid heavy favorites with low odds. Prioritize players with strong course-fit stats at competitive prices.\ntop5: array of exactly 5 picks from ranks 1-15 where the model rank outperforms what the top-5 market is pricing — players the market is undervaluing relative to their stat profile.`;
@@ -508,20 +512,75 @@ async function generateCombinedPicks(apiKey, summary) {
   await new Promise((r) => setTimeout(r, 1000));
 
   return {
-    outrights: validatePickArray(result1.outrights),
-    top5: validatePickArray(result1.top5),
-    top10: validatePickArray(result2.top10),
-    top20: validatePickArray(result2.top20),
+    outrights: validatePickArray(result1.outrights, officialPlayers),
+    top5: validatePickArray(result1.top5, officialPlayers),
+    top10: validatePickArray(result2.top10, officialPlayers),
+    top20: validatePickArray(result2.top20, officialPlayers),
   };
 }
 
-function pickTournamentData(currentTournament, nextTournament) {
-  const isMondayEt = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "long" }).format(new Date()) === "Monday";
-  if (nextTournament?.rows?.length) {
-    console.log(isMondayEt ? "Using next-tournament data for Monday generation." : "Using next-tournament data for manual or mid-week generation.");
-    return nextTournament;
+function getEventIdentifiers(event) {
+  return [
+    event?.tournamentId,
+    event?.tournamentID,
+    event?.id,
+    event?.tournamentSlug,
+    event?.slug,
+  ].filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim().toLowerCase());
+}
+
+export function validateCurrentField(currentField) {
+  if (!currentField?.validated) return "current-field.json is not validated";
+  if (currentField.source !== "pga-tour-official-field") return "current-field.json is not sourced from the official PGA TOUR field";
+  if (!currentField.alternatesExcluded) return "current-field.json does not confirm alternates are excluded";
+  if (!currentField.tournament || !Array.isArray(currentField.players) || !currentField.players.length) {
+    return "current-field.json is missing a tournament name or official players";
   }
-  return currentTournament;
+  return null;
+}
+
+export function modelMatchesCurrentField(model, currentField) {
+  if (!model || !currentField) return false;
+  if (normalizeEventKey(model.tournamentName) === normalizeEventKey(currentField.tournament)) return true;
+  const fieldIdentifiers = new Set(getEventIdentifiers(currentField));
+  return getEventIdentifiers(model).some((identifier) => fieldIdentifiers.has(identifier));
+}
+
+export function pickTournamentData(currentField, currentTournament, nextTournament) {
+  const candidates = [
+    ["current-tournament.json", currentTournament],
+    ["next-tournament.json", nextTournament],
+  ];
+  const match = candidates.find(([, model]) => modelMatchesCurrentField(model, currentField));
+  if (!match) return null;
+  const [source, tournamentData] = match;
+  return { source, tournamentData };
+}
+
+export function prepareTournamentModel(tournamentData, currentField) {
+  if (!tournamentData?.rows?.length) return { model: null, reason: "matching tournament model has no rows" };
+  const officialPlayers = new Set(currentField.players.map((player) => normalizeName(player)));
+  const matchedRows = tournamentData.rows.filter((row) => officialPlayers.has(normalizeName(row.player)));
+  const coverage = matchedRows.length / tournamentData.rows.length;
+  if (coverage < 0.7) {
+    return { model: null, reason: `matching tournament model only contains ${(coverage * 100).toFixed(0)}% official-field players` };
+  }
+  return { model: { ...tournamentData, rows: matchedRows }, reason: null };
+}
+
+export function canGenerateBestBets({ currentField, tournamentData, apiKey }) {
+  const fieldError = validateCurrentField(currentField);
+  if (fieldError) return fieldError;
+  if (!tournamentData || !modelMatchesCurrentField(tournamentData, currentField)) {
+    return "no tournament model matches the official current field";
+  }
+  if (!apiKey) return "GROK_API_KEY or XAI_API_KEY is not set";
+  return null;
+}
+
+export function preparePicksForOutput(picks, oddsLookup, hasOddsApiKey) {
+  const withOdds = attachOddsToPickArray(picks, oddsLookup);
+  return hasOddsApiKey ? withOdds : withOdds.map((pick) => ({ ...pick, odds: null }));
 }
 
 function shouldSkip(outputPath, force) {
@@ -547,23 +606,33 @@ async function main() {
     return;
   }
 
+  const currentField = loadJson("public/data/pga/current-field.json");
   const nextTournament = loadJson("public/data/pga/next-tournament.json");
   const currentTournament = loadJson("public/data/pga/current-tournament.json");
   const powerRankings = loadJson("public/data/pga/power-rankings.json");
   const playerStats = loadJson("public/data/pga/player-stats-raw.json");
   const courseWeights = loadJson("public/data/pga/course-weights.json");
-  const tournamentData = pickTournamentData(currentTournament, nextTournament);
-
-  if (!tournamentData?.rows?.length) throw new Error("No tournament rows available.");
-
   const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
   const oddsApiKey = process.env.ODDS_API_KEY;
+  const selection = pickTournamentData(currentField, currentTournament, nextTournament);
+  const selectionError = canGenerateBestBets({ currentField, tournamentData: selection?.tournamentData, apiKey });
+  if (selectionError) {
+    console.warn(`[pga-best-bets] Skipping generation: ${selectionError}. Checked public/data/pga/current-tournament.json and public/data/pga/next-tournament.json against official current-field.json (${currentField?.tournament ?? "unknown event"}).`);
+    return;
+  }
+
+  const { model: tournamentData, reason: modelError } = prepareTournamentModel(selection.tournamentData, currentField);
+  if (modelError) {
+    console.warn(`[pga-best-bets] Skipping generation: ${modelError}. Checked ${selection.source} against official current-field.json (${currentField.tournament}).`);
+    return;
+  }
+
+  console.log(`[pga-best-bets] Using ${selection.source} for ${currentField.tournament}.`);
   const summary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 25);
   const previewSummary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 20);
   const tournamentName = tournamentData.tournamentName;
   const courseName = tournamentData.courseName;
 
-  if (!apiKey) console.warn("GROK_API_KEY is not set. Writing empty best-bets sections.");
   if (!oddsApiKey) console.warn("ODDS_API_KEY is not set. Odds will not be attached.");
 
   // Fetch odds first
@@ -613,12 +682,22 @@ async function main() {
   let outrights = [], top5 = [], top10 = [], top20 = [], preview = null, valueBets = [];
 
   if (apiKey) {
-    const combined = await generateCombinedPicks(apiKey, summary);
-    // Attach odds then filter + sort by value edge (removes no-odds players)
-    outrights = filterByValueAndOdds(attachOddsToPickArray(combined.outrights, oddsLookup), "outright");
-    top5      = filterByValueAndOdds(attachOddsToPickArray(combined.top5,      oddsLookup), "top5");
-    top10     = filterByValueAndOdds(attachOddsToPickArray(combined.top10,     oddsLookup), "top10");
-    top20     = filterByValueAndOdds(attachOddsToPickArray(combined.top20,     oddsLookup), "top20");
+    const combined = await generateCombinedPicks(apiKey, summary, currentField.players);
+    const pickArrays = {
+      outrights: preparePicksForOutput(combined.outrights, oddsLookup, Boolean(oddsApiKey)),
+      top5: preparePicksForOutput(combined.top5, oddsLookup, Boolean(oddsApiKey)),
+      top10: preparePicksForOutput(combined.top10, oddsLookup, Boolean(oddsApiKey)),
+      top20: preparePicksForOutput(combined.top20, oddsLookup, Boolean(oddsApiKey)),
+    };
+
+    if (oddsApiKey) {
+      outrights = filterByValueAndOdds(pickArrays.outrights, "outright");
+      top5 = filterByValueAndOdds(pickArrays.top5, "top5");
+      top10 = filterByValueAndOdds(pickArrays.top10, "top10");
+      top20 = filterByValueAndOdds(pickArrays.top20, "top20");
+    } else {
+      ({ outrights, top5, top10, top20 } = pickArrays);
+    }
 
     console.log(`After value filter: outrights=${outrights.length} top5=${top5.length} top10=${top10.length} top20=${top20.length}`);
 
@@ -626,7 +705,9 @@ async function main() {
     preview = await generatePreview(apiKey, previewPrompt);
 
     await new Promise((r) => setTimeout(r, 1500));
-    valueBets = await generateValueBets(apiKey, { outrights: combined.outrights, top5: combined.top5, top10: combined.top10, top20: combined.top20 }, oddsLookup);
+    if (oddsApiKey) {
+      valueBets = await generateValueBets(apiKey, combined, oddsLookup);
+    }
   }
 
   const payload = {
@@ -640,6 +721,10 @@ async function main() {
     top10,
     top20,
   };
+
+  if (normalizeEventKey(payload.tournament) !== normalizeEventKey(currentField.tournament)) {
+    throw new Error(`Refusing to write best-bets.json for ${payload.tournament}; official current field is ${currentField.tournament}.`);
+  }
 
   writeFileSync(OUTPUT_PATH, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   console.log(`Wrote ${OUTPUT_PATH}`);

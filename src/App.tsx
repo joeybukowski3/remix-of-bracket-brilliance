@@ -22,12 +22,16 @@ import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
+import NFLGuide2026 from "./pages/NFLGuide2026";
+import NFLRegression2026 from "./pages/NFLRegression2026";
+import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
 import ComingSoon from "./pages/ComingSoon";
 import WorldCup2026 from "./pages/WorldCup2026";
 import PublicBetting from "./pages/PublicBetting";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
 import PgaHub from "./pages/PgaHub";
+import PgaHistoryModel from "./pages/PgaHistoryModel";
 import PgaCustom from "./pages/PgaCustom";
 import PgaDfsUpload from "./pages/PgaDfsUpload";
 import PgaBestBets from "./pages/PgaBestBets";
@@ -86,6 +90,10 @@ const App = () => (
           <Route path="/nfl" element={<NFL />} />
           <Route path="/nfl/standings" element={<NFLStandings />} />
           <Route path="/nfl/super-bowl" element={<NFLSuperBowlOdds />} />
+          <Route path="/nfl/guide" element={<NFLGuide2026 />} />
+          <Route path="/nfl/guide/regression" element={<NFLRegression2026 />} />
+          <Route path="/nfl/guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
+          <Route path="/nfl/2026-guide" element={<Navigate to="/nfl/guide" replace />} />
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/world-cup" element={<WorldCup2026 />} />
           <Route path="/public-betting" element={<PublicBetting />} />
@@ -95,21 +103,16 @@ const App = () => (
           <Route path="/mlb/strikeout-props" element={<MlbStrikeoutProps />} />
           <Route path="/mlb/batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
-          <Route path="/pga" element={<PgaHub />} />
+          <Route path="/pga" element={<PgaHistoryModel />} />
+          <Route path="/pga/legacy" element={<PgaHub />} />
           <Route path="/pga/custom" element={<PgaCustom />} />
           <Route path="/pga/dfs" element={<PgaDfsUpload />} />
           <Route path="/pga/best-bets" element={<PgaBestBets />} />
           <Route path="/pga/model" element={<PGAModel />} />
           <Route path="/pga/model/table" element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug" element={<PGA />} />
-          <Route
-            path={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)}
-            element={<PGAModel />}
-          />
-          <Route
-            path={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)}
-            element={<PGAModelTableView />}
-          />
+          <Route path={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)} element={<PGAModel />} />
+          <Route path={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)} element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug/model" element={<PGAModel />} />
           <Route path="/pga/:tournamentSlug/model/table" element={<PGAModelTableView />} />
           {PGA_TOURNAMENTS.map((tournament) => (
