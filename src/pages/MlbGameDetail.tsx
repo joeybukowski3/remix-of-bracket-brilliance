@@ -24,7 +24,7 @@ import MlbSectionHeader from "@/components/mlb/MlbSectionHeader";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
-import MlbPolymarketMoneylinePanel from "@/components/mlb/MlbPolymarketMoneylinePanel";
+import MlbPolymarketMoneylinePanel, { type PanelMlEdge } from "@/components/mlb/MlbPolymarketMoneylinePanel";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
@@ -2251,6 +2251,34 @@ function HomeSchedule({
     [topBvpProps],
   );
 
+  // Build ML edge map (gamePk → PanelMlEdge) for the Polymarket panel.
+  // Uses the same computeModelEdge logic as the Game Matchup Analyzer so
+  // the panel's sorting and badges always match what the analyzer shows.
+  const { data: polymarketData } = usePolymarketMlbMoneylines();
+  const mlEdges = useMemo<Record<number, PanelMlEdge>>(() => {
+    if (!polymarketData?.games?.length) return {};
+    const map: Record<number, PanelMlEdge> = {};
+    for (const pmGame of polymarketData.games) {
+      if (!pmGame.matched) continue;
+      const detail = detailPreviews[pmGame.gamePk];
+      if (!detail) continue;
+      const edge = computeModelEdge(detail);
+      if (edge.pick === "push") continue;
+
+      const pickIsAway = edge.pick === "away";
+      const pickAbbr = pickIsAway ? pmGame.away.abbreviation : pmGame.home.abbreviation;
+      const polyProb = pickIsAway ? pmGame.away.yesPrice : pmGame.home.yesPrice;
+
+      // valueEdge: how many percentage points our model beats Polymarket's implied probability
+      const valueEdge = polyProb != null
+        ? Math.round((edge.confidence / 100 - polyProb) * 1000) / 10
+        : null;
+
+      map[pmGame.gamePk] = { pickAbbr, confidence: edge.confidence, valueEdge };
+    }
+    return map;
+  }, [detailPreviews, polymarketData]);
+
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
       <div className="mx-auto flex max-w-[1280px] gap-8 px-4 py-6 sm:px-6 lg:px-8 2xl:max-w-[1900px]">
@@ -2289,7 +2317,7 @@ function HomeSchedule({
 
           {/* Polymarket panel — inline on screens below 2xl, shown AFTER the Game Matchup Analyzer */}
           <div className="2xl:hidden">
-            <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} />
+            <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} mlEdges={mlEdges} />
           </div>
 
           <SocialMediaTablesSection games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
@@ -2311,7 +2339,7 @@ function HomeSchedule({
 
         {/* Polymarket panel — sticky right sidebar on 2xl+ screens */}
         <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:overflow-x-hidden polymarket-panel-scroll">
-          <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} />
+          <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} mlEdges={mlEdges} />
         </aside>
       </div>
     </div>

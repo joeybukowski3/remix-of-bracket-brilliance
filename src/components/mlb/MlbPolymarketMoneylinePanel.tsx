@@ -13,6 +13,13 @@ import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 // Only the pitcher-information column is allowed to flex/truncate.
 const TEAM_ROW_GRID = "grid-cols-[20px_34px_minmax(0,1fr)_50px_50px]";
 
+// ML edge data keyed by gamePk, computed in the parent from detailPreviews
+export type PanelMlEdge = {
+  pickAbbr: string;          // e.g. "NYY"
+  confidence: number;        // 50–82, model win probability %
+  valueEdge: number | null;  // confidence - polymarket implied prob, in percentage points
+};
+
 // ---------------------------------------------------------------------------
 // Time formatting
 // ---------------------------------------------------------------------------
@@ -86,10 +93,12 @@ function PriceChip({
 
 function GameCard({
   game,
+  mlEdge,
   onOpenGame,
   getPitcherXera,
 }: {
   game: MoneylineGame;
+  mlEdge: PanelMlEdge | null;
   onOpenGame?: (gamePk: number) => void;
   getPitcherXera: (name: string | null) => number | null;
 }) {
@@ -97,11 +106,24 @@ function GameCard({
   const status = statusLabel(game.status);
   const hasVenue = Boolean(game.venue && game.venue !== "Unknown");
 
+  // Edge badge styling
+  const edgeBadge = mlEdge && mlEdge.valueEdge != null ? (() => {
+    const v = mlEdge.valueEdge;
+    if (v >= 8)  return { bg: "bg-emerald-600 text-white",       label: `${mlEdge.pickAbbr} +${v.toFixed(1)}%` };
+    if (v >= 4)  return { bg: "bg-emerald-100 text-emerald-800", label: `${mlEdge.pickAbbr} +${v.toFixed(1)}%` };
+    if (v >= 1)  return { bg: "bg-sky-100 text-sky-800",         label: `${mlEdge.pickAbbr} +${v.toFixed(1)}%` };
+    if (v <= -1) return { bg: "bg-slate-100 text-slate-500",     label: `${mlEdge.pickAbbr} ${v.toFixed(1)}%` };
+    return null;
+  })() : mlEdge ? {
+    // confidence only, no polymarket price to compare against
+    bg: "bg-slate-100 text-slate-600",
+    label: `${mlEdge.pickAbbr} ${mlEdge.confidence}%`,
+  } : null;
+
   const handleClick = () => {
     if (onOpenGame) {
       onOpenGame(game.gamePk);
     } else {
-      // Fallback: navigate via hash if no callback
       window.location.hash = `#game-${game.gamePk}`;
     }
   };
@@ -112,7 +134,7 @@ function GameCard({
       onClick={handleClick}
       className="box-border block w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition hover:border-sky-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
     >
-      {/* Top metadata row — fixed height, time/venue left, link icon top-right */}
+      {/* Top metadata row */}
       <div className="flex h-4 items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1 text-[10px] text-slate-400">
           <span className="shrink-0 whitespace-nowrap">{time}{status && ` · ${status}`}</span>
@@ -140,16 +162,31 @@ function GameCard({
         )}
       </div>
 
-      {/* Matchup row — centered, consistent height/margins */}
-      <div className="mt-1.5 mb-2 text-center text-[10px] font-bold tracking-wide text-slate-500">
-        {game.away.abbreviation} @ {game.home.abbreviation}
+      {/* Matchup + edge badge row */}
+      <div className="mt-1.5 mb-2 flex items-center justify-between gap-2">
+        <span className="text-[10px] font-bold tracking-wide text-slate-500">
+          {game.away.abbreviation} @ {game.home.abbreviation}
+        </span>
+        {edgeBadge && (
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold leading-none ${edgeBadge.bg}`}>
+            {edgeBadge.label}
+          </span>
+        )}
       </div>
 
       {/* Team rows */}
       {game.matched ? (
         <div className="space-y-1.5">
-          <TeamRow team={game.away} pitcherXera={getPitcherXera(game.away.probablePitcher)} />
-          <TeamRow team={game.home} pitcherXera={getPitcherXera(game.home.probablePitcher)} />
+          <TeamRow
+            team={game.away}
+            pitcherXera={getPitcherXera(game.away.probablePitcher)}
+            isModelPick={mlEdge?.pickAbbr === game.away.abbreviation}
+          />
+          <TeamRow
+            team={game.home}
+            pitcherXera={getPitcherXera(game.home.probablePitcher)}
+            isModelPick={mlEdge?.pickAbbr === game.home.abbreviation}
+          />
         </div>
       ) : (
         <div className="rounded-md bg-slate-50 px-2 py-1.5 text-[10px] text-slate-400">
@@ -163,9 +200,11 @@ function GameCard({
 function TeamRow({
   team,
   pitcherXera,
+  isModelPick = false,
 }: {
   team: MoneylineGame["away"] | MoneylineGame["home"];
   pitcherXera: number | null;
+  isModelPick?: boolean;
 }) {
   // Within this team's own YES/NO pair, the lower price is red, the higher is green
   const yesTone: "higher" | "lower" | "neutral" =
@@ -194,7 +233,7 @@ function TeamRow({
         <MlbTeamLogo team={team.abbreviation} size={18} />
       </div>
 
-      <span className="shrink-0 text-left text-[11px] font-extrabold text-slate-800">
+      <span className={`shrink-0 text-left text-[11px] font-extrabold ${isModelPick ? "text-slate-950" : "text-slate-400"}`}>
         {team.abbreviation}
       </span>
 
@@ -237,7 +276,13 @@ function LoadingSkeleton() {
 // Main panel
 // ---------------------------------------------------------------------------
 
-export default function MlbPolymarketMoneylinePanel({ onOpenGame }: { onOpenGame?: (gamePk: number) => void } = {}) {
+export default function MlbPolymarketMoneylinePanel({
+  onOpenGame,
+  mlEdges = {},
+}: {
+  onOpenGame?: (gamePk: number) => void;
+  mlEdges?: Record<number, PanelMlEdge>;
+} = {}) {
   const { data, isLoading, isError } = usePolymarketMlbMoneylines();
   const { data: pitcherRegressionData } = usePitcherRegression();
 
@@ -247,15 +292,28 @@ export default function MlbPolymarketMoneylinePanel({ onOpenGame }: { onOpenGame
     return match?.xera ?? null;
   };
 
+  // Sort games by ML value edge descending — best edges first, unmatched last
+  const sortedGames = data?.games ? [...data.games].sort((a, b) => {
+    const edgeA = mlEdges[a.gamePk]?.valueEdge ?? null;
+    const edgeB = mlEdges[b.gamePk]?.valueEdge ?? null;
+    // Games with no edge data go to the bottom
+    if (edgeA == null && edgeB == null) return 0;
+    if (edgeA == null) return 1;
+    if (edgeB == null) return -1;
+    return edgeB - edgeA;
+  }) : [];
+
+  const hasEdges = Object.keys(mlEdges).length > 0;
+
   return (
     <div className="polymarket-panel box-border w-full min-w-0 pr-1.5">
-      {/* Header — same left/right edge as cards below */}
+      {/* Header */}
       <div className="mb-2.5 rounded-xl bg-[#031635] px-3 py-2.5">
         <div className="text-[11px] font-extrabold leading-tight tracking-wide text-white">
           Polymarket Moneylines
         </div>
         <div className="mt-0.5 text-[10px] leading-tight text-sky-300/80">
-          Live YES / NO prices for today's games
+          {hasEdges ? "Sorted by model value edge" : "Live YES / NO prices for today's games"}
         </div>
         {data && (
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[9px] tabular-nums text-slate-400">
@@ -279,10 +337,16 @@ export default function MlbPolymarketMoneylinePanel({ onOpenGame }: { onOpenGame
         <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-[11px] text-red-700">
           Unable to load Polymarket data. The MLB page is unaffected.
         </div>
-      ) : data && data.games.length > 0 ? (
+      ) : sortedGames.length > 0 ? (
         <div className="space-y-2">
-          {data.games.map((game) => (
-            <GameCard key={game.gamePk} game={game} onOpenGame={onOpenGame} getPitcherXera={getPitcherXera} />
+          {sortedGames.map((game) => (
+            <GameCard
+              key={game.gamePk}
+              game={game}
+              mlEdge={mlEdges[game.gamePk] ?? null}
+              onOpenGame={onOpenGame}
+              getPitcherXera={getPitcherXera}
+            />
           ))}
         </div>
       ) : data && data.totalGames === 0 ? (
