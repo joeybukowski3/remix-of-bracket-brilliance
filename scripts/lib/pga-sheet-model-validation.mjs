@@ -34,7 +34,10 @@ export function sortSchedule(schedule) {
 
 export function buildScheduleContext(schedule, referenceDate) {
   const rows = sortSchedule(schedule);
-  const currentUpcoming = rows.find((entry) => entry.startDate >= referenceDate) ?? rows.at(-1) ?? null;
+  const active = rows.find(
+    (entry) => entry.startDate <= referenceDate && String(entry.endDate ?? entry.startDate) >= referenceDate,
+  );
+  const currentUpcoming = active ?? rows.find((entry) => entry.startDate >= referenceDate) ?? rows.at(-1) ?? null;
   const nextWeek = currentUpcoming
     ? rows.find((entry) => entry.startDate > currentUpcoming.startDate) ?? null
     : null;
@@ -95,9 +98,12 @@ export function validateSheetSource({
   sourceReferenceDate,
   today,
   maxSourceAgeDays = 14,
+  maxDaysBeforeCurrentStart = 7,
+  maxDaysAfterCurrentEnd = 4,
 }) {
   const expected = expectedEntryForSection(section, expectedContext);
   const source = expectedEntryForSection(section, sourceContext);
+  const expectedCurrent = expectedContext.currentUpcoming;
   const errors = [];
 
   if (!expected) errors.push(`No expected schedule entry exists for ${section}.`);
@@ -106,9 +112,19 @@ export function validateSheetSource({
 
   if (sourceReferenceDate) {
     const age = daysBetween(today, sourceReferenceDate);
-    if (age < -1) errors.push(`The Google Sheet reference date ${sourceReferenceDate} is in the future.`);
     if (age > maxSourceAgeDays) {
       errors.push(`The Google Sheet reference date ${sourceReferenceDate} is ${age} days old (maximum ${maxSourceAgeDays}).`);
+    }
+
+    if (expectedCurrent) {
+      const daysBeforeStart = daysBetween(expectedCurrent.startDate, sourceReferenceDate);
+      const daysAfterEnd = daysBetween(sourceReferenceDate, expectedCurrent.endDate ?? expectedCurrent.startDate);
+      if (daysBeforeStart > maxDaysBeforeCurrentStart) {
+        errors.push(`The Google Sheet reference date ${sourceReferenceDate} is too early for ${expectedCurrent.name}.`);
+      }
+      if (daysAfterEnd > maxDaysAfterCurrentEnd) {
+        errors.push(`The Google Sheet reference date ${sourceReferenceDate} is too late for ${expectedCurrent.name}.`);
+      }
     }
   }
 
@@ -185,6 +201,14 @@ export function assertModelPayload(payload) {
   for (const key of required) {
     if (!(key in payload)) throw new Error(`Missing required model metadata: ${key}`);
   }
+
+  for (const key of ["section", "tournamentName", "tournamentId", "startDate", "endDate", "modelSource"]) {
+    if (typeof payload[key] !== "string" || payload[key].trim() === "") {
+      throw new Error(`Invalid required model metadata: ${key}`);
+    }
+  }
+  if (typeof payload.modelAvailable !== "boolean") throw new Error("modelAvailable must be boolean.");
+  if (typeof payload.sourceValidated !== "boolean") throw new Error("sourceValidated must be boolean.");
   if (!Array.isArray(payload.rows)) throw new Error("Model rows must be an array.");
   if (payload.modelAvailable === false && payload.rows.length > 0) {
     throw new Error("Unavailable models must have zero rows.");
