@@ -25,4 +25,16 @@ describe("parseCompactHistoryJson", () => {
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  it("repairs the missing final players-array bracket in the Travelers seed", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const truncated = '{"v":1,"source":"test","event":"travelers-championship","years":[2025],"players":[["Player One",[1],["T5"],["T10"]]}';
+
+    const payload = parseCompactHistoryJson(truncated);
+
+    expect(payload.players).toHaveLength(1);
+    expect(payload.players[0][0]).toBe("Player One");
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });
