@@ -5,7 +5,7 @@ const navItems = [
   { to: "/", label: "Home" },
   { to: "/mlb", label: "MLB" },
   { to: "/ncaa", label: "NCAA" },
-  { to: "/nfl", label: "NFL" },
+  { to: "/nfl/guide", label: "NFL" },
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
   { to: "/world-cup", label: "⚽ WC26" },
@@ -19,6 +19,10 @@ function isActive(pathname: string, item: { to: string | null; label: string }) 
 
   if (item.label === "PGA") {
     return pathname === "/pga" || pathname.startsWith("/pga/") || pathname === "/rbc-heritage-2026-picks";
+  }
+
+  if (item.label === "NFL") {
+    return pathname === "/nfl" || pathname.startsWith("/nfl/");
   }
 
   if (item.label === "NBA" || !item.to) {
