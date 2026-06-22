@@ -1,0 +1,74 @@
+name: Backfill PGA Player History
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: Oldest PGA Tour season to include
+        required: false
+        default: "2016"
+      player_limit:
+        description: Optional player limit for a test run; use 0 for all players
+        required: false
+        default: "0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backfill-pga-history-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh PGA Tour stats and player IDs
+        env:
+          PGA_API_KEY: ${{ secrets.PGA_API_KEY }}
+        run: npm run pga:fetch-stats-fallback
+
+      - name: Backfill PGA Tour tournament history
+        env:
+          PGA_API_KEY: ${{ secrets.PGA_API_KEY }}
+          PGA_HISTORY_START_YEAR: ${{ inputs.start_year }}
+          PGA_HISTORY_PLAYER_LIMIT: ${{ inputs.player_limit }}
+        run: npm run pga:fetch-history
+
+      - name: Validate generated JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('public/data/pga/player-stats-raw.json','utf8')); JSON.parse(require('fs').readFileSync('public/data/pga/player-history.json','utf8')); JSON.parse(require('fs').readFileSync('public/data/pga/major-history.json','utf8')); console.log('PGA JSON validation passed')"
+
+      - name: Run focused PGA tests
+        run: npx vitest run src/lib/pga/historyModel.test.ts src/hooks/usePgaPlayerHistory.test.ts
+
+      - name: Commit refreshed history
+        shell: bash
+        run: |
+          if git diff --quiet -- public/data/pga/player-stats-raw.json public/data/pga/player-stats-meta.json public/data/pga/player-history.json public/data/pga/major-history.json; then
+            echo "No PGA history changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/pga/player-stats-raw.json public/data/pga/player-stats-meta.json public/data/pga/player-history.json public/data/pga/major-history.json
+          git commit -m "Refresh PGA Tour player history"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
