@@ -61,6 +61,7 @@ jobs:
         run: node scripts/fetch-mlb-odds.mjs || true
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEY_BACKUP: ${{ secrets.ODDS_API_KEY_BACKUP }}
 
       - name: Fetch team wRC+ data
         run: node scripts/fetch-team-wrc-plus.mjs || true

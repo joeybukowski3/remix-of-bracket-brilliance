@@ -91,9 +91,40 @@ function bestBook(bookmakers, marketKey) {
 // ── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const apiKey = process.env.ODDS_API_KEY;
-  if (apiKey) console.log(`ODDS_API_KEY present (length: ${apiKey.length})`);
-  else console.warn("ODDS_API_KEY is not set — The Odds API moneylines/props will be skipped.");
+  const primaryKey = process.env.ODDS_API_KEY;
+  const backupKey  = process.env.ODDS_API_KEY_BACKUP;
+
+  // Resolve which key to use: prefer primary unless quota is exhausted or missing.
+  // A lightweight quota check hits /remaining which costs 0 requests.
+  async function resolveApiKey() {
+    if (!primaryKey && !backupKey) return null;
+    if (!primaryKey) { console.log("Primary ODDS_API_KEY not set — using backup."); return backupKey; }
+
+    try {
+      const res = await fetch(
+        `${ODDS_BASE}/sports?apiKey=${primaryKey}`,
+        { signal: AbortSignal.timeout(8000), headers: HEADERS }
+      );
+      const remaining = parseInt(res.headers.get("x-requests-remaining") ?? "1", 10);
+      if (res.status === 401 || res.status === 402 || remaining <= 0) {
+        if (backupKey) {
+          console.warn(`Primary key exhausted (status=${res.status} remaining=${remaining}) — switching to backup key.`);
+          return backupKey;
+        }
+        console.warn(`Primary key exhausted and no backup key set.`);
+        return null;
+      }
+      console.log(`ODDS_API_KEY active (remaining=${remaining})`);
+      return primaryKey;
+    } catch (err) {
+      console.warn(`Primary key check failed (${err.message}) — trying backup.`);
+      return backupKey ?? primaryKey;
+    }
+  }
+
+  const apiKey = await resolveApiKey();
+  if (!apiKey) console.warn("No Odds API key available — moneylines/props will be skipped.");
+  else console.log(`Using Odds API key ending …${apiKey.slice(-4)}`);
 
   console.log("Fetching MLB odds via bulk endpoints...");
 
