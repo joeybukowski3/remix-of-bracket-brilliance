@@ -11,7 +11,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
-import { useMlbOdds } from "@/hooks/useMlbOdds";
+import { useMlbOdds, type MlbOddsData } from "@/hooks/useMlbOdds";
 import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
 import { buildMetricPercentiles } from "@/lib/pga/historyModel";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
@@ -101,7 +101,7 @@ function SectionWrap({ eyebrow, title, subtitle, cta, ctaTo, children }: {
 
 // ─── HR Props table ───────────────────────────────────────────────────────
 
-function HRTable({ batters, mlbOdds }: { batters: HrDashboardBatter[]; mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null }) {
+function HRTable({ batters, mlbOdds }: { batters: HrDashboardBatter[]; mlbOdds: MlbOddsData | null }) {
   const rows = batters
     .filter(b => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
     .slice().sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
@@ -166,7 +166,7 @@ function HRTable({ batters, mlbOdds }: { batters: HrDashboardBatter[]; mlbOdds: 
 
 type KRow = { pitcher: string; team: string; opponent: string; kMatchupScore?: number; kRate?: number | null; whiffRate?: number | null; opponentTeamKRate?: number | null };
 
-function KTable({ rows, mlbOdds }: { rows: KRow[]; mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null }) {
+function KTable({ rows, mlbOdds }: { rows: KRow[]; mlbOdds: MlbOddsData | null }) {
   const top = [...rows]
     .sort((a, b) => (b.kMatchupScore ?? 0) - (a.kMatchupScore ?? 0))
     .slice(0, 5);
