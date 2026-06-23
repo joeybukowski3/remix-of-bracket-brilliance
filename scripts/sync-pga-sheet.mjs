@@ -323,7 +323,7 @@ function findSectionStartIndexes(rows) {
   return startIndexBySlug;
 }
 
-function parseSectionFromExplicitHeaders(rows, section, sectionStartIndex, sectionEndIndex, metadataBySection) {
+function parseSectionFromExplicitHeaders(rows, section, sectionStartIndex, sectionEndIndex) {
   const slice = rows.slice(sectionStartIndex, sectionEndIndex);
   if (slice.length === 0) {
     throw new Error(`Section "${section.title}" is empty.`);
@@ -341,7 +341,6 @@ function parseSectionFromExplicitHeaders(rows, section, sectionStartIndex, secti
   const headerRow = slice[headerRowIndex];
   const indexMap = buildHeaderIndexMap(headerRow);
   const dataRows = slice.slice(headerRowIndex + 1).filter((row) => !isBlankRow(row));
-  const metadata = metadataBySection[section.slug] ?? {};
 
   const rowsOut = dataRows
     .map((row, rowIndex) => {
@@ -365,14 +364,9 @@ function parseSectionFromExplicitHeaders(rows, section, sectionStartIndex, secti
     })
     .filter(Boolean);
 
-  return {
-    section: section.slug,
-    title: section.title,
-    tournamentName: metadata.tournamentName ?? "",
-    courseName: metadata.courseName ?? "",
-    generatedAt: new Date().toISOString(),
-    rows: rowsOut,
-  };
+  // Return raw rows only — tournament identity is determined separately via
+  // the schedule and independently validated against the sheet's embedded date.
+  return rowsOut;
 }
 
 function extractRepeatedTables(rows) {
@@ -449,62 +443,45 @@ function parseReferenceDate(rows) {
   return new Date().toISOString().slice(0, 10);
 }
 
-function mapRepeatedTablesToSections(rows, scheduleContext) {
+function mapRepeatedTablesToSections(rows) {
   const tables = extractRepeatedTables(rows);
   if (tables.length < 3) {
     throw new Error(`Expected 3 repeated player tables in SITE OUTPUT, found ${tables.length}.`);
   }
 
-  return SECTION_CONFIG.map((section, index) => {
-    const metadata =
-      section.slug === "next-tournament"
-        ? scheduleContext.nextWeek
-        : scheduleContext.currentUpcoming;
-
-    return {
-      section: section.slug,
-      title: section.title,
-      tournamentName: metadata?.name ?? "",
-      courseName: metadata?.courseName ?? "",
-      generatedAt: new Date().toISOString(),
-      rows: tables[index] ?? [],
-    };
-  });
+  // Return a map of section slug → raw player rows (no tournament identity attached)
+  return Object.fromEntries(
+    SECTION_CONFIG.map((section, index) => [section.slug, tables[index] ?? []])
+  );
 }
 
-function parseSiteOutputRows(rows, scheduleContext) {
+/**
+ * Parse the SITE OUTPUT sheet rows into raw player rows keyed by section slug.
+ * Tournament identity is NOT applied here — it is determined separately from
+ * the schedule and validated against the sheet's own embedded date.
+ *
+ * Returns: { "power-rankings": [...], "current-tournament": [...], "next-tournament": [...] }
+ */
+function parseSiteOutputRows(rows) {
   const sectionStartIndexes = findSectionStartIndexes(rows);
 
   if (sectionStartIndexes.size === SECTION_CONFIG.length) {
-    const metadataBySection = {
-      "power-rankings": {
-        tournamentName: scheduleContext.currentUpcoming?.name ?? "",
-        courseName: scheduleContext.currentUpcoming?.courseName ?? "",
-      },
-      "current-tournament": {
-        tournamentName: scheduleContext.currentUpcoming?.name ?? "",
-        courseName: scheduleContext.currentUpcoming?.courseName ?? "",
-      },
-      "next-tournament": {
-        tournamentName: scheduleContext.nextWeek?.name ?? "",
-        courseName: scheduleContext.nextWeek?.courseName ?? "",
-      },
-    };
+    return Object.fromEntries(
+      SECTION_CONFIG.map((section, index) => {
+        const sectionStartIndex = sectionStartIndexes.get(section.slug);
+        const nextSection = SECTION_CONFIG[index + 1];
+        const sectionEndIndex = nextSection ? sectionStartIndexes.get(nextSection.slug) : rows.length;
 
-    return SECTION_CONFIG.map((section, index) => {
-      const sectionStartIndex = sectionStartIndexes.get(section.slug);
-      const nextSection = SECTION_CONFIG[index + 1];
-      const sectionEndIndex = nextSection ? sectionStartIndexes.get(nextSection.slug) : rows.length;
+        if (typeof sectionStartIndex !== "number" || typeof sectionEndIndex !== "number") {
+          throw new Error(`Could not determine bounds for "${section.title}".`);
+        }
 
-      if (typeof sectionStartIndex !== "number" || typeof sectionEndIndex !== "number") {
-        throw new Error(`Could not determine bounds for "${section.title}".`);
-      }
-
-      return parseSectionFromExplicitHeaders(rows, section, sectionStartIndex, sectionEndIndex, metadataBySection);
-    });
+        return [section.slug, parseSectionFromExplicitHeaders(rows, section, sectionStartIndex, sectionEndIndex)];
+      })
+    );
   }
 
-  return mapRepeatedTablesToSections(rows, scheduleContext);
+  return mapRepeatedTablesToSections(rows);
 }
 
 function toSlug(value) {
@@ -599,6 +576,241 @@ function formatScheduleDateLabel(startDate, endDate) {
   return `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
 }
 
+/**
+ * Extract the date embedded in the Google Sheet's SITE OUTPUT header rows.
+ * This date reflects when the sheet was last updated/published, not today.
+ * Returns null when no date is found.
+ */
+function extractSheetReferenceDate(rows) {
+  const datePattern = /\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/;
+  for (const row of rows.slice(0, 8)) {
+    for (const cell of row) {
+      const match = String(cell ?? "").match(datePattern);
+      if (!match) continue;
+      const month = match[1].padStart(2, "0");
+      const day = match[2].padStart(2, "0");
+      const year = match[3];
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Determine what tournament the Google Sheet's rows represent, independently
+ * of the schedule-derived expected tournament.
+ *
+ * Returns:
+ *   { sheetDate, sheetTournamentEntry } where sheetTournamentEntry is the
+ *   schedule entry whose window contains sheetDate, or null when not found.
+ *
+ * This value is derived solely from the sheet's own embedded date, not from
+ * today's date. It answers: "Which tournament was in progress on the date
+ * the sheet was last edited?"
+ */
+function getSheetTournamentIdentity(siteOutputRows, scheduleRows) {
+  const sheetDate = extractSheetReferenceDate(siteOutputRows);
+  if (!sheetDate) {
+    return { sheetDate: null, sheetTournamentEntry: null };
+  }
+
+  // Find the schedule entry whose tournament window contains sheetDate.
+  // A tournament's "window" is startDate through endDate (inclusive).
+  // Fall back to the nearest upcoming entry whose startDate <= sheetDate + 7 days
+  // to handle sheets updated the week before or during a tournament.
+  const normalize = (s) => s.toLowerCase().replace(/\s+/g, " ").trim();
+
+  // First try: tournament that started before/on sheetDate and ends after it
+  let entry = scheduleRows.find(
+    (e) => e.startDate <= sheetDate && (e.endDate ?? e.startDate) >= sheetDate
+  );
+
+  // Second try: most recent tournament that started before sheetDate
+  if (!entry) {
+    const pastOrCurrent = scheduleRows.filter((e) => e.startDate <= sheetDate);
+    entry = pastOrCurrent.at(-1) ?? null;
+  }
+
+  return { sheetDate, sheetTournamentEntry: entry ?? null };
+}
+
+/**
+ * Validate that the sheet's independently-derived tournament identity matches
+ * the schedule-expected tournament.
+ *
+ * Throws when:
+ *  - The sheet has no embedded date (cannot verify freshness)
+ *  - The sheet date is older than maxAgeDays from today
+ *  - The sheet's tournament entry does not match the expected entry
+ *  - The sheet's tournament name/course differs from the expected event
+ *
+ * Returns the sheetDate when valid so callers can embed it as sourceReferenceDate.
+ */
+function validateSheetIdentity(sheetDate, sheetTournamentEntry, expectedEntry, maxAgeDays = 14) {
+  const normalize = (s) => (s ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+
+  if (!sheetDate) {
+    throw new Error(
+      `Cannot validate sheet freshness: no date found in SITE OUTPUT header.\n` +
+        `Expected tournament: "${expectedEntry.name}" (${expectedEntry.startDate}).\n` +
+        `Refusing to publish rows without a verifiable sheet date.`
+    );
+  }
+
+  // Freshness check: reject sheets older than maxAgeDays from today
+  const today = getTodayDate();
+  const sheetDateMs = new Date(sheetDate + "T00:00:00Z").getTime();
+  const todayMs = new Date(today + "T00:00:00Z").getTime();
+  const ageInDays = (todayMs - sheetDateMs) / (1000 * 60 * 60 * 24);
+  if (ageInDays > maxAgeDays) {
+    throw new Error(
+      `Sheet is too stale to publish as "${expectedEntry.name}".\n` +
+        `  Sheet date: ${sheetDate} (${Math.round(ageInDays)} days ago)\n` +
+        `  Maximum allowed age: ${maxAgeDays} days\n` +
+        `  Expected tournament: "${expectedEntry.name}" (starts ${expectedEntry.startDate})\n` +
+        `Refusing to relabel stale rows with the current tournament's name.`
+    );
+  }
+
+  // Identity check: the sheet's identified tournament must match the expected one
+  if (!sheetTournamentEntry) {
+    throw new Error(
+      `Cannot map sheet date "${sheetDate}" to any schedule entry.\n` +
+        `Expected tournament: "${expectedEntry.name}" (${expectedEntry.startDate}).\n` +
+        `Refusing to publish rows without a verifiable source tournament.`
+    );
+  }
+
+  if (normalize(sheetTournamentEntry.name) !== normalize(expectedEntry.name)) {
+    throw new Error(
+      `Sheet tournament identity does not match expected tournament.\n` +
+        `  Sheet date: ${sheetDate} → sheet tournament: "${sheetTournamentEntry.name}"\n` +
+        `  Expected tournament (from today's schedule): "${expectedEntry.name}"\n` +
+        `The sheet rows belong to a different tournament. Refusing to relabel them.`
+    );
+  }
+
+  return sheetDate;
+}
+
+/**
+ * Build a tournament model payload with full source metadata.
+ * When sourceValidated is true, rows are included.
+ * When sourceValidated is false, rows are empty and modelAvailable is false.
+ */
+function buildTournamentPayload({
+  section,
+  title,
+  scheduleEntry,
+  rows,
+  sourceValidated,
+  sourceTournamentName,
+  sourceReferenceDate,
+  modelNote,
+}) {
+  return {
+    section,
+    title,
+    tournamentName: scheduleEntry?.name ?? "",
+    courseName: scheduleEntry?.courseName ?? "",
+    tournamentId: scheduleEntry?.id ?? null,
+    startDate: scheduleEntry?.startDate ?? null,
+    endDate: scheduleEntry?.endDate ?? null,
+    generatedAt: new Date().toISOString(),
+    modelAvailable: sourceValidated && rows.length > 0,
+    modelSource: "google-sheet",
+    sourceTournamentName: sourceValidated ? sourceTournamentName : null,
+    sourceReferenceDate: sourceValidated ? sourceReferenceDate : null,
+    sourceValidated,
+    modelNote: modelNote ?? null,
+    rows: sourceValidated ? rows : [],
+  };
+}
+
+/**
+ * Validate a fully-constructed tournament model file before writing.
+ *
+ * Guards against the specific regression pattern:
+ *   Before: modelAvailable=false, rows=0
+ *   After:  modelAvailable missing/true, rows>0, sourceValidated missing
+ *
+ * Also rejects:
+ *  - modelAvailable=true with no sourceValidated=true
+ *  - non-empty rows with sourceValidated=false
+ *  - missing tournamentId/startDate/endDate
+ *  - tournamentName mismatch vs schedule
+ *  - cross-check with current-field.json when available
+ */
+function validateTournamentPayload(payload, scheduleContext, currentFieldPath) {
+  const { currentUpcoming, nextWeek } = scheduleContext;
+  const normalize = (s) => (s ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+
+  const expectedBySlug = {
+    "power-rankings": currentUpcoming,
+    "current-tournament": currentUpcoming,
+    "next-tournament": nextWeek,
+  };
+  const expectedEntry = expectedBySlug[payload.section];
+
+  // Required structural fields
+  if (!payload.tournamentId) {
+    throw new Error(`${payload.section}.json is missing tournamentId.`);
+  }
+  if (!payload.startDate || !payload.endDate) {
+    throw new Error(`${payload.section}.json is missing startDate or endDate.`);
+  }
+
+  // tournamentName must match the schedule entry
+  if (!expectedEntry) {
+    throw new Error(`No schedule entry found for section "${payload.section}".`);
+  }
+  if (!payload.tournamentName || normalize(payload.tournamentName) !== normalize(expectedEntry.name)) {
+    throw new Error(
+      `${payload.section}.json tournamentName "${payload.tournamentName}" does not match schedule entry "${expectedEntry.name}".`
+    );
+  }
+
+  // Rows must be empty when sourceValidated is not true
+  const hasRows = Array.isArray(payload.rows) && payload.rows.length > 0;
+  if (hasRows && !payload.sourceValidated) {
+    throw new Error(
+      `${payload.section}.json has ${payload.rows.length} rows but sourceValidated is not true.\n` +
+        `Rows cannot be published without independent source validation.\n` +
+        `This prevents stale rows from being relabeled with the current tournament's name.`
+    );
+  }
+
+  // modelAvailable must be consistent with rows and sourceValidated
+  if (payload.modelAvailable === true && (!payload.sourceValidated || !hasRows)) {
+    throw new Error(
+      `${payload.section}.json has modelAvailable=true but sourceValidated=${payload.sourceValidated} and rows=${payload.rows?.length ?? 0}. Inconsistent.`
+    );
+  }
+  if (hasRows && payload.modelAvailable !== true) {
+    throw new Error(
+      `${payload.section}.json has ${payload.rows.length} rows but modelAvailable is not true.`
+    );
+  }
+
+  // Cross-check current-tournament against current-field.json
+  if (payload.section === "current-tournament" && currentFieldPath) {
+    try {
+      const fieldData = JSON.parse(readFileSync(currentFieldPath, "utf8"));
+      const fieldTournament = fieldData.tournament ?? "";
+      if (fieldTournament && normalize(fieldTournament) !== normalize(payload.tournamentName)) {
+        throw new Error(
+          `current-tournament.json tournamentName "${payload.tournamentName}" does not match current-field.json tournament "${fieldTournament}".`
+        );
+      }
+    } catch (fieldError) {
+      if (fieldError.code === "ENOENT") {
+        console.warn(`Warning: current-field.json not found; skipping field cross-check.`);
+      } else {
+        throw fieldError;
+      }
+    }
+  }
+}
 function buildScheduleContext(scheduleRows, referenceDate) {
   // Find the current/upcoming tournament: the first scheduled entry whose
   // startDate is on or after today. "Upcoming" includes a tournament that
@@ -622,77 +834,6 @@ function buildScheduleContext(scheduleRows, referenceDate) {
  */
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
-}
-
-/**
- * Validate that a tournament model payload is consistent with the schedule
- * and, when available, with the official current-field.json.
- *
- * Throws with a descriptive message when validation fails so the caller can
- * decide whether to abort the write or to preserve the existing file.
- */
-function validateTournamentPayload(payload, scheduleContext, currentFieldPath) {
-  const { currentUpcoming, nextWeek } = scheduleContext;
-
-  const expectedBySlug = {
-    "power-rankings": currentUpcoming,
-    "current-tournament": currentUpcoming,
-    "next-tournament": nextWeek,
-  };
-
-  const expectedEntry = expectedBySlug[payload.section];
-  if (!expectedEntry) {
-    if (payload.section === "next-tournament") {
-      // No following tournament on schedule — acceptable to skip write
-      throw new Error(
-        `Refusing to write next-tournament.json: no following scheduled tournament found after ${currentUpcoming?.name ?? "unknown"}.`
-      );
-    }
-    throw new Error(`No schedule entry found for section "${payload.section}".`);
-  }
-
-  const expected = expectedEntry.name;
-  const actual = payload.tournamentName;
-
-  if (!actual || actual.trim() === "") {
-    throw new Error(
-      `Refusing to write ${payload.section}.json: tournamentName is empty. Expected "${expected}".`
-    );
-  }
-
-  // Normalize for comparison (lower-case, collapse spaces)
-  const normalize = (s) => s.toLowerCase().replace(/\s+/g, " ").trim();
-  if (normalize(actual) !== normalize(expected)) {
-    throw new Error(
-      `Tournament identity mismatch for ${payload.section}.json:\n` +
-        `  Expected (from schedule): "${expected}" (startDate: ${expectedEntry.startDate})\n` +
-        `  Found in model payload:  "${actual}"\n` +
-        `Refusing to write stale tournament data with an updated timestamp.`
-    );
-  }
-
-  // For current-tournament, cross-check against official current-field.json when available
-  if (payload.section === "current-tournament" && currentFieldPath) {
-    try {
-      const fieldData = JSON.parse(readFileSync(currentFieldPath, "utf8"));
-      const fieldTournament = fieldData.tournament ?? "";
-      if (fieldTournament && normalize(fieldTournament) !== normalize(actual)) {
-        throw new Error(
-          `Tournament identity mismatch between current-tournament.json and current-field.json:\n` +
-            `  current-tournament would be: "${actual}"\n` +
-            `  current-field.json says:     "${fieldTournament}"\n` +
-            `Refusing to write model for a different tournament than the official field.`
-        );
-      }
-    } catch (fieldError) {
-      if (fieldError.code === "ENOENT") {
-        // No official field yet — allow write without cross-check
-        console.warn(`Warning: current-field.json not found; skipping field cross-check for ${payload.section}.`);
-      } else {
-        throw fieldError;
-      }
-    }
-  }
 }
 
 function parseCourseStatsRows(rows) {
@@ -1031,17 +1172,15 @@ async function main() {
   let courseStatsRowsRaw = courseStatsRowsPrimary;
   let trendRowsRaw = trendRowsPrimary;
   let playerStatsRowsRaw = playerStatsRowsPrimary;
-  // Always use today's actual date as the schedule reference.
-  // parseReferenceDate() used to read a date from the sheet header, but that
-  // date reflects the last time the sheet was updated — it can be weeks or
-  // months old, causing buildScheduleContext to identify the wrong tournament.
-  let referenceDate = getTodayDate();
+  // Use today's real system date for selecting the expected tournament from the schedule.
+  // The sheet's embedded date is extracted separately for SOURCE identity validation.
+  const referenceDate = getTodayDate();
   let scheduleRows = parseScheduleRows(scheduleRowsRaw);
   let scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
-  let parsedSections;
+  let rawRowsBySection;
 
   try {
-    parsedSections = parseSiteOutputRows(siteOutputRows, scheduleContext);
+    rawRowsBySection = parseSiteOutputRows(siteOutputRows);
   } catch (primaryError) {
     if (!serviceAccount) {
       throw primaryError;
@@ -1053,11 +1192,17 @@ async function main() {
     courseStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, COURSE_STATS_TAB_NAME);
     trendRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, TREND_TABLE_TAB_NAME).catch(() => []);
     playerStatsRowsRaw = await fetchSheetRowsViaPublicCsv(sheetId, PLAYER_STATS_MASTER_TAB_NAME);
-    referenceDate = getTodayDate(); // Still use today's date, not a stale sheet header date
     scheduleRows = parseScheduleRows(scheduleRowsRaw);
     scheduleContext = buildScheduleContext(scheduleRows, referenceDate);
-    parsedSections = parseSiteOutputRows(siteOutputRows, scheduleContext);
+    rawRowsBySection = parseSiteOutputRows(siteOutputRows);
   }
+
+  // Independently determine the sheet's tournament identity from its embedded date.
+  // This is the critical independent check: derived solely from the sheet, NOT from today's schedule.
+  const { sheetDate, sheetTournamentEntry } = getSheetTournamentIdentity(siteOutputRows, scheduleRows);
+  console.log(`Sheet embedded date: ${sheetDate ?? "not found"}`);
+  console.log(`Sheet tournament identity: ${sheetTournamentEntry?.name ?? "unknown"}`);
+  console.log(`Expected current tournament (today=${referenceDate}): ${scheduleContext.currentUpcoming?.name ?? "none"}`);
 
   const courseStatsRows = parseCourseStatsRows(courseStatsRowsRaw);
   const courseWeightsFeed = buildCourseWeightsFeed(scheduleRows, courseStatsRows, courseWeightsRowsRaw);
@@ -1067,25 +1212,71 @@ async function main() {
   const playerStatsFeed = playerStatsResult.rows;
   const playerStatsExportDate = playerStatsResult.exportDate;
 
-  // Validate tournament identity for every model section before writing.
-  // Abort individual section writes (not the entire run) when identity is stale,
-  // so other files (schedule, player-stats, course-weights) still update.
   const currentFieldPath = path.resolve(repoRoot, "public/data/pga/current-field.json");
+
+  // Build payloads with independent source validation.
+  // Sheet rows are only included when the sheet's own embedded tournament identity
+  // independently matches the schedule-derived expected tournament.
+  const parsedSections = SECTION_CONFIG.map((section) => {
+    const rawRows = rawRowsBySection[section.slug] ?? [];
+    const expectedEntry =
+      section.slug === "next-tournament"
+        ? scheduleContext.nextWeek
+        : scheduleContext.currentUpcoming;
+
+    if (!expectedEntry) {
+      return buildTournamentPayload({
+        section: section.slug,
+        title: section.title,
+        scheduleEntry: null,
+        rows: [],
+        sourceValidated: false,
+        sourceTournamentName: null,
+        sourceReferenceDate: null,
+        modelNote: `No scheduled ${section.slug === "next-tournament" ? "following" : "upcoming"} tournament found.`,
+      });
+    }
+
+    let sourceValidated = false;
+    let validatedSheetDate = null;
+    let validationNote = null;
+
+    try {
+      validatedSheetDate = validateSheetIdentity(sheetDate, sheetTournamentEntry, expectedEntry);
+      sourceValidated = true;
+    } catch (identityError) {
+      validationNote = identityError.message;
+      console.warn(`\n[SHEET IDENTITY MISMATCH] ${section.slug}: ${identityError.message}\n`);
+    }
+
+    return buildTournamentPayload({
+      section: section.slug,
+      title: section.title,
+      scheduleEntry: expectedEntry,
+      rows: sourceValidated ? rawRows : [],
+      sourceValidated,
+      sourceTournamentName: sourceValidated ? (sheetTournamentEntry?.name ?? null) : null,
+      sourceReferenceDate: validatedSheetDate,
+      modelNote: validationNote,
+    });
+  });
+
+  // Second guard: validate each payload for internal consistency before writing.
   const sectionWritePromises = SECTION_CONFIG.map((section) => {
     const payload = parsedSections.find((entry) => entry.section === section.slug);
     if (!payload) {
-      throw new Error(`Missing parsed payload for ${section.slug}.`);
+      throw new Error(`Missing payload for ${section.slug}.`);
     }
 
     try {
       validateTournamentPayload(payload, scheduleContext, currentFieldPath);
     } catch (validationError) {
-      console.error(`\n[VALIDATION FAILED] Skipping write of ${section.outputPath}:`);
+      console.error(`\n[PAYLOAD VALIDATION FAILED] Skipping write of ${section.outputPath}:`);
       console.error(`  ${validationError.message}\n`);
-      // Preserve the existing file — do not overwrite with stale data.
       return Promise.resolve();
     }
 
+    console.log(`Writing ${section.outputPath}: tournamentName="${payload.tournamentName}" rows=${payload.rows.length} sourceValidated=${payload.sourceValidated}`);
     return writeJsonFile(section.outputPath, payload);
   });
 
