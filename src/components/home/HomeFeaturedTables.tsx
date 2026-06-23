@@ -132,7 +132,9 @@ function HRTable({ batters }: { batters: HrDashboardBatter[] }) {
 
 // ─── K Props table ────────────────────────────────────────────────────────
 
-function KTable({ rows }: { rows: ReturnType<typeof import("@/pages/MlbHrProps").buildPitcherStrikeoutMatchupRows> }) {
+type KRow = { pitcher: string; team: string; opponent: string; kMatchupScore?: number; kRate?: number | null; whiffRate?: number | null; opponentTeamKRate?: number | null };
+
+function KTable({ rows }: { rows: KRow[] }) {
   const top = [...rows]
     .sort((a, b) => (b.kMatchupScore ?? 0) - (a.kMatchupScore ?? 0))
     .slice(0, 5);
