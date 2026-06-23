@@ -229,7 +229,7 @@ function buildCaption({ date, rows }) {
     "Top edges:",
     ...lines,
     "",
-    "Full table at link in bio",
+    "Free Access to Full Table at Link in Bio",
     "",
     "#MLB #MLBPicks #Strikeouts #MLBBetting",
   ].join("\n");
@@ -243,7 +243,7 @@ function buildCaption({ date, rows }) {
       "Top edges:",
       ...shortLines,
       "",
-      "Full table at link in bio",
+      "Free Access to Full Table at Link in Bio",
       "",
       "#MLB #MLBPicks #Strikeouts",
     ].join("\n");

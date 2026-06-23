@@ -303,7 +303,7 @@ function buildCaption(rawPayload, bestBetsPayload) {
     "Top model edges:",
     ...lines,
     "",
-    "Full table at link in bio",
+    "Free Access to Full Table at Link in Bio",
     "",
     "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting",
   ].join("\n");

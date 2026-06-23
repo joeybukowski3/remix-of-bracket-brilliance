@@ -1546,7 +1546,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🔥 MLB HR PROPS</div>
           <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>Top 8 Home Run Edges · Today's Slate</div>
         </div>
-        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
       </div>
       
       {/* Mobile: 2 column layout (player info + score), stats below */}
@@ -1695,7 +1695,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🎯 MLB K PROPS</div>
           <div style={{ color: "#86efac", fontSize: 11, marginTop: 2 }}>Top 5 Strikeout Edges · Today's Slate</div>
         </div>
-        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
       </div>
 
       {/* Mobile */}
@@ -1818,7 +1818,7 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>⚔️ MLB HIT PROPS</div>
           <div style={{ color: "#c4b5fd", fontSize: 11, marginTop: 2 }}>Top 10 Batter vs Pitcher Edges · Today's Slate</div>
         </div>
-        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
       </div>
 
       {/* Mobile */}
@@ -2120,7 +2120,7 @@ function SocialTableML({
             {hasOdds ? "Sorted by Value vs. Market Line" : "Top Model Picks · Sorted by Confidence"}
           </div>
         </div>
-        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#64748b" }}>joeknowsball.com</div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
       </div>
 
       {/* Column headers */}
