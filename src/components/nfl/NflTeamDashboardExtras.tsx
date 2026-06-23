@@ -7,6 +7,7 @@ import { calculateRankGap, getRankGapSignal, type SuperBowlMarketTeam } from "@/
 import type { NflScheduleGame, NflTeamScheduleResponse } from "@/lib/nfl/teamSchedule";
 
 type LoadStatus = "loading" | "success" | "error";
+type MatchupTone = "advantage" | "disadvantage" | "even" | "neutral";
 
 type SuperBowlOddsResponse = {
   updatedAt: string;
@@ -128,7 +129,7 @@ function ScheduleSection({ team }: { team: NflGuideTeam }) {
       <SectionHeading
         eyebrow="Week by week"
         title="2026 regular-season schedule"
-        description="Dates, opponents, locations and results are loaded through a cached schedule endpoint. Opponents link to their own team dashboards."
+        description="Each matchup includes the opponent's current power rating and the model's offensive and defensive matchup edges. Away games use a blue background."
       />
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {status === "loading" && <ScheduleLoading />}
@@ -137,7 +138,9 @@ function ScheduleSection({ team }: { team: NflGuideTeam }) {
           <>
             {data.stale && <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-xs font-bold text-amber-800">Showing the most recent cached schedule.</div>}
             <div className="grid sm:grid-cols-2 xl:grid-cols-3">
-              {data.games.map((game, index) => <ScheduleGameCard key={game.id} game={game} fallbackWeek={index + 1} />)}
+              {data.games.map((game, index) => (
+                <ScheduleGameCard key={game.id} team={team} game={game} fallbackWeek={index + 1} />
+              ))}
             </div>
           </>
         )}
@@ -207,25 +210,100 @@ function MoveCard({ title, moves, direction }: { title: string; moves: NflPlayer
 }
 
 function ScheduleLoading() {
-  return <div className="grid sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }, (_, index) => <div key={index} className="animate-pulse border-b border-r border-slate-100 p-5"><div className="h-3 w-16 rounded bg-slate-200" /><div className="mt-4 h-8 w-40 rounded bg-slate-200" /><div className="mt-3 h-3 w-28 rounded bg-slate-100" /></div>)}</div>;
+  return <div className="grid sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }, (_, index) => <div key={index} className="animate-pulse border-b border-r border-slate-100 p-5"><div className="h-3 w-16 rounded bg-slate-200" /><div className="mt-4 h-8 w-40 rounded bg-slate-200" /><div className="mt-3 h-3 w-28 rounded bg-slate-100" /><div className="mt-4 grid grid-cols-3 gap-2"><div className="h-14 rounded bg-slate-100" /><div className="h-14 rounded bg-slate-100" /><div className="h-14 rounded bg-slate-100" /></div></div>)}</div>;
 }
 
-function ScheduleGameCard({ game, fallbackWeek }: { game: NflScheduleGame; fallbackWeek: number }) {
+function ScheduleGameCard({ team, game, fallbackWeek }: { team: NflGuideTeam; game: NflScheduleGame; fallbackWeek: number }) {
   const opponent = NFL_GUIDE_TEAM_BY_ABBR.get(game.opponentAbbr);
   const opponentName = opponent?.team ?? game.opponentName;
   const date = game.date ? new Date(game.date) : null;
   const dateText = date && !Number.isNaN(date.getTime()) ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date) : game.status;
+  const isAway = game.homeAway === "away";
+  const offenseEdge = opponent ? team.offPct - opponent.defPct : null;
+  const defenseEdge = opponent ? team.defPct - opponent.offPct : null;
 
   return (
-    <div className="border-b border-r border-slate-100 p-5">
-      <div className="flex items-center justify-between gap-3"><div className="text-[10px] font-black uppercase tracking-wider text-blue-600">Week {game.week ?? fallbackWeek}</div><div className="text-xs font-bold text-slate-400">{game.result ?? game.status}</div></div>
+    <article className={`border-b border-r p-5 transition-colors ${isAway ? "border-blue-100 bg-blue-50/80" : "border-slate-100 bg-white"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="text-[10px] font-black uppercase tracking-wider text-blue-600">Week {game.week ?? fallbackWeek}</div>
+          {isAway && <span className="rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-700">Away</span>}
+        </div>
+        <div className="text-xs font-bold text-slate-400">{game.result ?? game.status}</div>
+      </div>
+
       <div className="mt-3 flex items-center gap-3">
         <img src={nflLogoUrl(game.opponentAbbr)} alt="" className="h-9 w-9 object-contain" />
-        <div><div className="text-xs font-bold uppercase tracking-wide text-slate-400">{game.homeAway === "away" ? "at" : game.homeAway === "neutral" ? "vs · neutral" : "vs"}</div>{opponent ? <Link to={`/nfl/guide/team/${opponent.slug}`} className="text-lg font-black text-slate-900 hover:text-blue-700">{opponentName}</Link> : <div className="text-lg font-black text-slate-900">{opponentName}</div>}</div>
+        <div>
+          <div className="text-xs font-bold uppercase tracking-wide text-slate-400">{isAway ? "at" : game.homeAway === "neutral" ? "vs · neutral" : "vs"}</div>
+          {opponent ? <Link to={`/nfl/guide/team/${opponent.slug}`} className="text-lg font-black text-slate-900 hover:text-blue-700 hover:underline">{opponentName}</Link> : <div className="text-lg font-black text-slate-900">{opponentName}</div>}
+        </div>
       </div>
+
       <div className="mt-3 text-xs leading-5 text-slate-500">{dateText}{game.venue ? ` · ${game.venue}` : ""}</div>
+
+      {opponent && (
+        <div className="mt-4 grid grid-cols-3 gap-2" aria-label={`Model matchup ratings against ${opponentName}`}>
+          <MatchupMetric
+            label="Opponent power"
+            value={`#${opponent.powerRank}`}
+            detail={`${formatModelRating(opponent.ovrPct)} overall`}
+            tone="neutral"
+          />
+          <MatchupMetric
+            label="Offense edge"
+            value={formatModelRating(offenseEdge)}
+            detail={getEdgeLabel(offenseEdge)}
+            tone={getEdgeTone(offenseEdge)}
+          />
+          <MatchupMetric
+            label="Defense edge"
+            value={formatModelRating(defenseEdge)}
+            detail={getEdgeLabel(defenseEdge)}
+            tone={getEdgeTone(defenseEdge)}
+          />
+        </div>
+      )}
+    </article>
+  );
+}
+
+function MatchupMetric({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: MatchupTone }) {
+  const classes = tone === "advantage"
+    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+    : tone === "disadvantage"
+      ? "border-red-200 bg-red-50 text-red-700"
+      : tone === "even"
+        ? "border-slate-200 bg-slate-50 text-slate-700"
+        : "border-blue-200/70 bg-white/80 text-slate-900";
+
+  return (
+    <div className={`min-w-0 rounded-lg border px-2 py-2.5 text-center ${classes}`}>
+      <div className="truncate text-[8px] font-black uppercase tracking-wide opacity-70">{label}</div>
+      <div className="mt-1 text-sm font-black tabular-nums">{value}</div>
+      <div className="mt-0.5 truncate text-[9px] font-bold opacity-75">{detail}</div>
     </div>
   );
+}
+
+function formatModelRating(value: number | null) {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
+}
+
+function getEdgeTone(value: number | null): MatchupTone {
+  if (value == null || !Number.isFinite(value)) return "neutral";
+  if (value > 0) return "advantage";
+  if (value < 0) return "disadvantage";
+  return "even";
+}
+
+function getEdgeLabel(value: number | null) {
+  const tone = getEdgeTone(value);
+  if (tone === "advantage") return "Advantage";
+  if (tone === "disadvantage") return "Disadvantage";
+  if (tone === "even") return "Even";
+  return "Unavailable";
 }
 
 function formatVerifiedDate(value: string) {
