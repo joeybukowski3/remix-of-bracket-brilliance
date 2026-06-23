@@ -1,369 +1,310 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface BettingSide {
-  id: string;
-  sport: string;
-  sportKey: string;
-  gameId: string;
-  awayTeam: string;
-  homeTeam: string;
-  awayAbbr: string;
-  homeAbbr: string;
-  betType: "ML" | "Spread";
-  side: "away" | "home";
-  teamName: string;
-  teamAbbr: string;
-  publicBetPct: number | null;
-  publicMoneyPct: number | null;
-  line: string | null;
-  gameTime: string | null;
-  status: string;
-  highPublic: boolean;
-  result: "win" | "loss" | "push" | null;
-  pnl: number | null;
-  gameKey: string;
-  date: string;
+interface Snapshot {
+  time: string;
+  awayPrice: number;
+  homePrice: number;
+  volume24hr: number;
+  liquidity: number;
+  source: string;
 }
 
-interface TodayData {
-  fetchedAt: string | null;
-  date: string | null;
-  sides: BettingSide[];
+interface OpenPrice {
+  away: number;
+  home: number;
+}
+
+interface TrackedGame {
+  gameId: string;
+  eventId: string | null;
+  awayAbbr: string;
+  homeAbbr: string;
+  awayName: string;
+  homeName: string;
+  gameTime: string | null;
+  openPrice: OpenPrice;
+  openTime: string;
+  snapshots: Snapshot[];
+  graded: boolean;
+  result: GradeResult | null;
+  movement?: Movement | null;
+}
+
+interface Movement {
+  openHomePrice: number;
+  openAwayPrice: number;
+  closeHomePrice: number;
+  closeAwayPrice: number;
+  delta: number;
+  movedToward: "home" | "away" | "none";
+  qualifies5c: boolean;
+  qualifies10c: boolean;
+  lateMoveDelta: number | null;
+  maxSingleHourMove: number;
+  closeVolume24hr: number;
+  closeLiquidity: number;
+  snapshotCount: number;
+}
+
+interface GradeResult {
+  winner: "home" | "away";
+  resultSource: string;
+  movementCorrect: boolean | null;
+  result5c: boolean | null;
+  result10c: boolean | null;
+}
+
+interface SnapshotData {
+  date: string;
+  updatedAt: string | null;
+  fetchedCount: number;
+  games: TrackedGame[];
+}
+
+interface HistoryGame {
+  date: string;
+  gameId: string;
+  awayAbbr: string;
+  homeAbbr: string;
+  gameTime: string | null;
+  movement: Movement;
+  result: GradeResult;
 }
 
 interface HistoryData {
   updatedAt: string | null;
-  sides: BettingSide[];
+  games: HistoryGame[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatTime(iso: string | null) {
+function getEtDate() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+}
+
+function fmtTime(iso: string | null) {
   if (!iso) return "—";
   try {
     return new Date(iso).toLocaleTimeString("en-US", {
-      hour: "numeric", minute: "2-digit", timeZone: "America/New_York", hour12: true,
+      hour: "numeric", minute: "2-digit",
+      timeZone: "America/New_York", hour12: true,
     });
   } catch { return "—"; }
 }
 
-function pctColor(pct: number | null): string {
-  if (pct == null) return "text-slate-400";
-  if (pct >= 80) return "text-rose-500 font-bold";
-  if (pct >= 75) return "text-orange-500 font-bold";
-  if (pct >= 65) return "text-amber-500";
-  return "text-slate-600";
+function fmtPrice(p: number | null | undefined) {
+  if (p == null) return "—";
+  return `${Math.round(p * 100)}¢`;
 }
 
-function ResultBadge({ result }: { result: BettingSide["result"] }) {
-  if (!result) return <span className="text-slate-400 text-xs">Pending</span>;
-  const map = {
-    win:  "bg-emerald-100 text-emerald-700 border border-emerald-200",
-    loss: "bg-rose-100 text-rose-700 border border-rose-100",
-    push: "bg-slate-100 text-slate-600 border border-slate-200",
+function fmtDelta(delta: number) {
+  const cents = Math.round(delta * 100);
+  return cents >= 0 ? `+${cents}¢` : `${cents}¢`;
+}
+
+/** Compute live movement from today's snapshot data */
+function computeMovement(game: TrackedGame): Movement | null {
+  const snaps = game.snapshots || [];
+  if (snaps.length < 1) return null;
+  const open = game.openPrice;
+  if (!open?.home) return null;
+
+  const gameStartMs = game.gameTime ? new Date(game.gameTime).getTime() : Infinity;
+  const preGameSnaps = snaps.filter(s => new Date(s.time).getTime() < gameStartMs);
+  const closeSnap = preGameSnaps.at(-1) || snaps.at(-1)!;
+
+  const openHomePrice = open.home;
+  const closeHomePrice = closeSnap.homePrice;
+  const delta = Math.round((closeHomePrice - openHomePrice) * 1000) / 1000;
+  const movedToward: "home" | "away" | "none" =
+    Math.abs(delta) < 0.005 ? "none" : delta > 0 ? "home" : "away";
+  const absDelta = Math.abs(delta);
+
+  const twoHrBeforeMs = gameStartMs - 2 * 60 * 60 * 1000;
+  const lateSnaps = preGameSnaps.filter(s => new Date(s.time).getTime() >= twoHrBeforeMs);
+  const lateMoveDelta = lateSnaps.length >= 2
+    ? Math.round((lateSnaps.at(-1)!.homePrice - lateSnaps[0].homePrice) * 1000) / 1000
+    : null;
+
+  let maxSingleHourMove = 0;
+  for (let i = 1; i < snaps.length; i++) {
+    const move = Math.abs(snaps[i].homePrice - snaps[i - 1].homePrice);
+    if (move > maxSingleHourMove) maxSingleHourMove = move;
+  }
+
+  return {
+    openHomePrice,
+    openAwayPrice: open.away,
+    closeHomePrice,
+    closeAwayPrice: Math.round((1 - closeHomePrice) * 1000) / 1000,
+    delta,
+    movedToward,
+    qualifies5c: absDelta >= 0.05,
+    qualifies10c: absDelta >= 0.10,
+    lateMoveDelta,
+    maxSingleHourMove: Math.round(maxSingleHourMove * 1000) / 1000,
+    closeVolume24hr: closeSnap.volume24hr || 0,
+    closeLiquidity: closeSnap.liquidity || 0,
+    snapshotCount: snaps.length,
   };
-  return (
-    <span className={`inline-block rounded-md px-2 py-0.5 text-[11px] font-bold uppercase ${map[result]}`}>
-      {result}
-    </span>
-  );
 }
 
-function SportBadge({ sport }: { sport: string }) {
-  const map: Record<string, string> = {
-    MLB:        "bg-blue-50 text-blue-700 border border-blue-100",
-    NBA:        "bg-purple-50 text-purple-700 border border-purple-100",
-    NFL:        "bg-green-50 text-green-700 border border-green-100",
-    "World Cup":"bg-amber-50 text-amber-700 border border-amber-100",
-  };
-  return (
-    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${map[sport] ?? "bg-slate-100 text-slate-600"}`}>
-      {sport}
-    </span>
-  );
+/** Compute win/loss record from history for a given threshold */
+function computeRecord(games: HistoryGame[], threshold: "5c" | "10c") {
+  const key = threshold === "5c" ? "result5c" : "result10c";
+  const qualified = games.filter(g => g.result?.[key] != null);
+  const wins = qualified.filter(g => g.result[key] === true).length;
+  const losses = qualified.filter(g => g.result[key] === false).length;
+  return { wins, losses, total: qualified.length };
 }
 
-function PnlBadge({ pnl }: { pnl: number | null }) {
-  if (pnl == null) return <span className="text-slate-400 text-xs">—</span>;
-  const positive = pnl >= 0;
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function RecordBadge({ wins, losses, total, label }: { wins: number; losses: number; total: number; label: string }) {
+  const pct = total > 0 ? Math.round((wins / total) * 100) : null;
+  const color = pct == null ? "text-slate-400"
+    : pct >= 60 ? "text-emerald-700" : pct >= 50 ? "text-amber-700" : "text-rose-700";
   return (
-    <span className={`text-xs font-bold ${positive ? "text-emerald-600" : "text-rose-600"}`}>
-      {positive ? "+" : ""}{pnl.toFixed(2)}u
-    </span>
-  );
-}
-
-function MatchupCell({ side }: { side: BettingSide }) {
-  const matchup = `${side.awayAbbr} @ ${side.homeAbbr}`;
-  if (side.sportKey === "mlb") {
-    return (
-      <Link
-        to={`/mlb#game-${side.gameKey}`}
-        className="font-semibold text-sky-700 hover:underline text-sm"
-      >
-        {matchup}
-      </Link>
-    );
-  }
-  return <span className="font-semibold text-slate-800 text-sm">{matchup}</span>;
-}
-
-// ─── Summary Stats ────────────────────────────────────────────────────────────
-
-function SummaryStats({ sides, label }: { sides: BettingSide[]; label: string }) {
-  const resolved = sides.filter(s => s.result && s.result !== "push");
-  const wins   = resolved.filter(s => s.result === "win").length;
-  const losses = resolved.filter(s => s.result === "loss").length;
-  const pushes = sides.filter(s => s.result === "push").length;
-  const totalPnl = sides.reduce((acc, s) => acc + (s.pnl ?? 0), 0);
-  const pctStr = resolved.length > 0 ? `${Math.round((wins / resolved.length) * 100)}%` : "—";
-
-  return (
-    <div className="flex flex-wrap gap-4 text-sm">
-      <div>
-        <div className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">{label}</div>
-        <div className="font-bold text-slate-900">
-          {wins}-{losses}{pushes > 0 ? `-${pushes}` : ""}
-          <span className="ml-2 font-normal text-slate-500">{pctStr}</span>
-        </div>
-      </div>
-      <div>
-        <div className="text-xs text-slate-500 uppercase tracking-wider mb-0.5">P/L</div>
-        <div className={`font-bold ${totalPnl >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
-          {totalPnl >= 0 ? "+" : ""}{totalPnl.toFixed(2)} units
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Today's Table ────────────────────────────────────────────────────────────
-
-function TodayTable({ sides }: { sides: BettingSide[] }) {
-  if (sides.length === 0) {
-    return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-10 text-center text-slate-500 text-sm">
-        No data available yet for today. Check back after the morning data refresh.
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
-      <table className="min-w-full text-sm border-separate border-spacing-0">
-        <thead>
-          <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500">
-            <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Sport</th>
-            <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Matchup</th>
-            <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Backed Side</th>
-            <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Type</th>
-            <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Bet%</th>
-            <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Money%</th>
-            <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Line</th>
-            <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Time (ET)</th>
-            <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Result</th>
-            <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">P/L</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sides.map((side, i) => {
-            const rowBg = side.highPublic
-              ? i % 2 === 0 ? "bg-amber-50/60" : "bg-amber-50/40"
-              : i % 2 === 0 ? "bg-white" : "bg-slate-50/50";
-            return (
-              <tr key={side.id} className={`${rowBg} hover:bg-slate-50 transition-colors`}>
-                <td className="px-4 py-3 border-b border-slate-100">
-                  <SportBadge sport={side.sport} />
-                </td>
-                <td className="px-4 py-3 border-b border-slate-100 whitespace-nowrap">
-                  <MatchupCell side={side} />
-                </td>
-                <td className="px-4 py-3 border-b border-slate-100 whitespace-nowrap">
-                  <span className="font-semibold text-slate-900">{side.teamAbbr}</span>
-                  {side.highPublic && (
-                    <span className="ml-1.5 inline-block rounded bg-orange-100 px-1 py-0.5 text-[9px] font-bold text-orange-600 uppercase">Hot</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 border-b border-slate-100">
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
-                    {side.betType}
-                  </span>
-                </td>
-                <td className={`px-4 py-3 border-b border-slate-100 text-center ${pctColor(side.publicBetPct)}`}>
-                  {side.publicBetPct != null ? `${side.publicBetPct}%` : "—"}
-                </td>
-                <td className={`px-4 py-3 border-b border-slate-100 text-center ${pctColor(side.publicMoneyPct)}`}>
-                  {side.publicMoneyPct != null ? `${side.publicMoneyPct}%` : "—"}
-                </td>
-                <td className="px-4 py-3 border-b border-slate-100 text-center text-slate-600 font-mono text-xs">
-                  {side.line ?? "—"}
-                </td>
-                <td className="px-4 py-3 border-b border-slate-100 text-center text-slate-500 text-xs whitespace-nowrap">
-                  {formatTime(side.gameTime)}
-                </td>
-                <td className="px-4 py-3 border-b border-slate-100 text-center">
-                  <ResultBadge result={side.result} />
-                </td>
-                <td className="px-4 py-3 border-b border-slate-100 text-center">
-                  <PnlBadge pnl={side.pnl} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ─── History Table ────────────────────────────────────────────────────────────
-
-function HistoryTable({ sides }: { sides: BettingSide[] }) {
-  const [sportFilter, setSportFilter] = useState("All");
-  const [betFilter, setBetFilter] = useState("All");
-  const [pctFilter, setPctFilter] = useState("75+");
-
-  const sports = useMemo(() => ["All", ...Array.from(new Set(sides.map(s => s.sport))).sort()], [sides]);
-
-  const filtered = useMemo(() => {
-    return sides.filter(s => {
-      if (sportFilter !== "All" && s.sport !== sportFilter) return false;
-      if (betFilter !== "All" && s.betType !== betFilter) return false;
-      if (pctFilter === "75+" && (s.publicBetPct ?? 0) < 75) return false;
-      if (pctFilter === "80+" && (s.publicBetPct ?? 0) < 80) return false;
-      if (pctFilter === "85+" && (s.publicBetPct ?? 0) < 85) return false;
-      return s.result != null; // only resolved
-    });
-  }, [sides, sportFilter, betFilter, pctFilter]);
-
-  const last7 = useMemo(() => {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 7);
-    return filtered.filter(s => new Date(s.date) >= cutoff);
-  }, [filtered]);
-
-  if (sides.length === 0) {
-    return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-10 text-center text-slate-500 text-sm">
-        Historical results will appear here as games are resolved.
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-5">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 font-medium">Sport</label>
-          <select
-            value={sportFilter}
-            onChange={e => setSportFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-sky-300"
-          >
-            {sports.map(s => <option key={s}>{s}</option>)}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 font-medium">Bet type</label>
-          <select
-            value={betFilter}
-            onChange={e => setBetFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-sky-300"
-          >
-            {["All", "ML", "Spread"].map(s => <option key={s}>{s}</option>)}
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500 font-medium">Min public%</label>
-          <select
-            value={pctFilter}
-            onChange={e => setPctFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 outline-none focus:border-sky-300"
-          >
-            {["All", "75+", "80+", "85+"].map(s => <option key={s}>{s}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {/* Summary row */}
-      <div className="flex flex-wrap gap-8 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
-        <SummaryStats sides={filtered} label="Overall" />
-        <div className="w-px bg-slate-200 self-stretch" />
-        <SummaryStats sides={last7} label="Last 7 days" />
-      </div>
-
-      {/* Table */}
-      {filtered.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-8 text-center text-slate-500 text-sm">
-          No resolved results match the current filters.
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="min-w-full text-sm border-separate border-spacing-0">
-            <thead>
-              <tr className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500">
-                <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Date</th>
-                <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Sport</th>
-                <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Matchup</th>
-                <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Backed Side</th>
-                <th className="px-4 py-3 text-left font-semibold border-b border-slate-200">Type</th>
-                <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Bet%</th>
-                <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Money%</th>
-                <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Line</th>
-                <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">Result</th>
-                <th className="px-4 py-3 text-center font-semibold border-b border-slate-200">P/L</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((side, i) => {
-                const rowBg = i % 2 === 0 ? "bg-white" : "bg-slate-50/50";
-                return (
-                  <tr key={side.id} className={`${rowBg} hover:bg-slate-50 transition-colors`}>
-                    <td className="px-4 py-2.5 border-b border-slate-100 text-xs text-slate-500 whitespace-nowrap">
-                      {side.date}
-                    </td>
-                    <td className="px-4 py-2.5 border-b border-slate-100">
-                      <SportBadge sport={side.sport} />
-                    </td>
-                    <td className="px-4 py-2.5 border-b border-slate-100 whitespace-nowrap">
-                      <MatchupCell side={side} />
-                    </td>
-                    <td className="px-4 py-2.5 border-b border-slate-100 font-semibold text-slate-800 whitespace-nowrap">
-                      {side.teamAbbr}
-                    </td>
-                    <td className="px-4 py-2.5 border-b border-slate-100">
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
-                        {side.betType}
-                      </span>
-                    </td>
-                    <td className={`px-4 py-2.5 border-b border-slate-100 text-center ${pctColor(side.publicBetPct)}`}>
-                      {side.publicBetPct != null ? `${side.publicBetPct}%` : "—"}
-                    </td>
-                    <td className={`px-4 py-2.5 border-b border-slate-100 text-center ${pctColor(side.publicMoneyPct)}`}>
-                      {side.publicMoneyPct != null ? `${side.publicMoneyPct}%` : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 border-b border-slate-100 text-center text-slate-600 font-mono text-xs">
-                      {side.line ?? "—"}
-                    </td>
-                    <td className="px-4 py-2.5 border-b border-slate-100 text-center">
-                      <ResultBadge result={side.result} />
-                    </td>
-                    <td className="px-4 py-2.5 border-b border-slate-100 text-center">
-                      <PnlBadge pnl={side.pnl} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+    <div className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">{label}</span>
+      <span className={cn("mt-1 text-2xl font-extrabold tabular-nums", color)}>
+        {total === 0 ? "—" : `${wins}-${losses}`}
+      </span>
+      {pct != null && (
+        <span className={cn("text-[11px] font-semibold", color)}>{pct}%</span>
       )}
+      <span className="mt-0.5 text-[9px] text-slate-400">{total} games</span>
+    </div>
+  );
+}
+
+function MovementChip({ delta, movedToward, movedAbbr }: {
+  delta: number; movedToward: "home" | "away" | "none"; movedAbbr: string;
+}) {
+  if (movedToward === "none" || Math.abs(delta) < 0.005) {
+    return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-400">Flat</span>;
+  }
+  const absCents = Math.round(Math.abs(delta) * 100);
+  const qualifies10 = absCents >= 10;
+  const qualifies5 = absCents >= 5;
+  const bgColor = qualifies10 ? "bg-violet-100 text-violet-800" : qualifies5 ? "bg-sky-100 text-sky-800" : "bg-slate-100 text-slate-500";
+  return (
+    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", bgColor)}>
+      {movedAbbr} {fmtDelta(delta)}
+    </span>
+  );
+}
+
+function GameRow({ game }: { game: TrackedGame }) {
+  const movement = game.movement ?? computeMovement(game);
+  const latest = game.snapshots.at(-1);
+  const movedAbbr = movement?.movedToward === "home" ? game.homeAbbr
+    : movement?.movedToward === "away" ? game.awayAbbr : "";
+
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm">
+      {/* Teams */}
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="flex items-center gap-1">
+          <MlbTeamLogo team={game.awayAbbr} size={18} />
+          <span className="text-[11px] font-bold text-slate-700">{game.awayAbbr}</span>
+        </div>
+        <span className="text-[9px] text-slate-300 font-bold">@</span>
+        <div className="flex items-center gap-1">
+          <MlbTeamLogo team={game.homeAbbr} size={18} />
+          <span className="text-[11px] font-bold text-slate-700">{game.homeAbbr}</span>
+        </div>
+        <span className="text-[10px] text-slate-400">{fmtTime(game.gameTime)}</span>
+      </div>
+
+      {/* Current prices */}
+      <div className="flex flex-col items-center text-center">
+        <span className="text-[9px] text-slate-400">Now</span>
+        <span className="text-[11px] font-bold tabular-nums text-slate-700">
+          {fmtPrice(latest?.awayPrice)} / {fmtPrice(latest?.homePrice)}
+        </span>
+        <span className="text-[9px] text-slate-400">A / H</span>
+      </div>
+
+      {/* Movement */}
+      <div className="flex flex-col items-end gap-0.5">
+        {movement ? (
+          <MovementChip delta={movement.delta} movedToward={movement.movedToward} movedAbbr={movedAbbr} />
+        ) : (
+          <span className="text-[10px] text-slate-300">—</span>
+        )}
+        {movement?.lateMoveDelta != null && Math.abs(movement.lateMoveDelta) >= 0.03 && (
+          <span className="text-[9px] text-orange-600 font-semibold">
+            Late {fmtDelta(movement.lateMoveDelta)}
+          </span>
+        )}
+        {latest?.volume24hr != null && latest.volume24hr > 0 && (
+          <span className="text-[9px] text-slate-300">
+            ${Math.round(latest.volume24hr).toLocaleString()} vol
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function HistoryRow({ game }: { game: HistoryGame }) {
+  const { movement, result } = game;
+  const movedAbbr = movement.movedToward === "home" ? game.homeAbbr
+    : movement.movedToward === "away" ? game.awayAbbr : "";
+  const winnerAbbr = result.winner === "home" ? game.homeAbbr : game.awayAbbr;
+  const correct = result.movementCorrect;
+
+  return (
+    <div className="flex items-center gap-2 border-b border-slate-100 py-2 last:border-0">
+      {/* Date + Teams */}
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-center gap-1.5">
+          <MlbTeamLogo team={game.awayAbbr} size={14} />
+          <span className="text-[10px] font-bold text-slate-700">{game.awayAbbr}</span>
+          <span className="text-[9px] text-slate-300">@</span>
+          <MlbTeamLogo team={game.homeAbbr} size={14} />
+          <span className="text-[10px] font-bold text-slate-700">{game.homeAbbr}</span>
+        </div>
+        <span className="text-[9px] text-slate-400">{game.date}</span>
+      </div>
+
+      {/* Movement */}
+      <div className="flex flex-col items-center gap-0.5">
+        <MovementChip delta={movement.delta} movedToward={movement.movedToward} movedAbbr={movedAbbr} />
+        <span className="text-[9px] text-slate-400">
+          {fmtPrice(movement.openHomePrice)} → {fmtPrice(movement.closeHomePrice)} H
+        </span>
+      </div>
+
+      {/* Result */}
+      <div className="flex flex-col items-end gap-0.5">
+        <span className="text-[10px] font-bold text-slate-700">W: {winnerAbbr}</span>
+        <div className="flex items-center gap-1">
+          {result.result5c != null && (
+            <span className={cn("rounded px-1.5 py-0.5 text-[9px] font-bold",
+              result.result5c ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+            )}>5¢ {result.result5c ? "✓" : "✗"}</span>
+          )}
+          {result.result10c != null && (
+            <span className={cn("rounded px-1.5 py-0.5 text-[9px] font-bold",
+              result.result10c ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+            )}>10¢ {result.result10c ? "✓" : "✗"}</span>
+          )}
+          {correct == null && movement.movedToward !== "none" && (
+            <span className="text-[9px] text-slate-300">flat</span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -371,106 +312,146 @@ function HistoryTable({ sides }: { sides: BettingSide[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PublicBetting() {
-  usePageSeo({
-    title: "Public Betting Tracker — High-Backed Sides & Results",
-    description: "Track today's most publicly backed sides (75%+) across MLB, NBA, NFL, and World Cup. See live results and historical P/L performance.",
-    path: "/public-betting",
-  });
+  usePageSeo({ title: "Odds Tracker | JoeKnowsBall", description: "Polymarket MLB odds movement tracker" });
 
-  const [today, setToday] = useState<TodayData>({ fetchedAt: null, date: null, sides: [] });
-  const [history, setHistory] = useState<HistoryData>({ updatedAt: null, sides: [] });
+  const [today, setToday] = useState<SnapshotData | null>(null);
+  const [history, setHistory] = useState<HistoryData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState<"all" | "5c" | "10c">("all");
+
+  const todayDate = getEtDate();
 
   useEffect(() => {
-    const opts: RequestInit = { cache: "no-store" };
+    setLoading(true);
+    const opts = { cache: "no-store" as RequestCache };
     Promise.all([
-      fetch("/data/betting-splits/today.json", opts).then(r => r.ok ? r.json() : null),
-      fetch("/data/betting-splits/history.json", opts).then(r => r.ok ? r.json() : null),
+      fetch(`/data/polymarket/snapshots-${todayDate}.json`, opts).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch("/data/polymarket/history.json", opts).then(r => r.ok ? r.json() : null).catch(() => null),
     ]).then(([t, h]) => {
-      if (t) setToday(t);
-      if (h) setHistory(h);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+      setToday(t);
+      setHistory(h);
+      setLoading(false);
+    });
+  }, [todayDate]);
 
-  const highPublicToday = useMemo(
-    () => today.sides.filter(s => s.highPublic),
-    [today.sides]
-  );
+  const record5c = useMemo(() => computeRecord(history?.games ?? [], "5c"), [history]);
+  const record10c = useMemo(() => computeRecord(history?.games ?? [], "10c"), [history]);
+
+  const todayGames = useMemo(() => {
+    if (!today?.games) return [];
+    return [...today.games].sort((a, b) => {
+      const aTime = a.gameTime ? new Date(a.gameTime).getTime() : Infinity;
+      const bTime = b.gameTime ? new Date(b.gameTime).getTime() : Infinity;
+      return aTime - bTime;
+    });
+  }, [today]);
+
+  const filteredHistory = useMemo(() => {
+    const games = history?.games ?? [];
+    if (historyFilter === "5c") return games.filter(g => g.movement.qualifies5c);
+    if (historyFilter === "10c") return games.filter(g => g.movement.qualifies10c);
+    return games;
+  }, [history, historyFilter]);
+
+  const lastUpdated = today?.updatedAt
+    ? new Date(today.updatedAt).toLocaleTimeString("en-US", {
+        hour: "numeric", minute: "2-digit", timeZone: "America/New_York", hour12: true,
+      })
+    : null;
 
   return (
     <SiteShell>
-      {/* Hero */}
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-1">
-            <div className="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-              Betting Tracker
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Public Betting Splits
-            </h1>
-            <p className="mt-2 max-w-[60ch] text-[15px] leading-7 text-slate-500">
-              Tracking sides with ≥75% public backing across MLB, NBA, NFL, and World Cup.
-              Data sourced from public betting consensus, updated with each morning refresh.
-            </p>
-          </div>
-          {today.fetchedAt && (
-            <p className="mt-3 text-xs text-slate-400">
-              Last updated {new Date(today.fetchedAt).toLocaleString("en-US", { timeZone: "America/New_York" })} ET
-            </p>
+      <div className="mx-auto max-w-xl px-4 py-6">
+        {/* Header */}
+        <div className="mb-5">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Polymarket · MLB</p>
+          <h1 className="text-2xl font-extrabold text-slate-950">Odds Tracker</h1>
+          <p className="mt-1 text-[12px] text-slate-500">
+            Hourly Polymarket price snapshots. Tracks movement from opening price and grades results the following morning.
+          </p>
+          {lastUpdated && (
+            <p className="mt-1 text-[10px] text-slate-400">Last snapshot: {lastUpdated} ET</p>
           )}
         </div>
-      </section>
 
-      {/* Today */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mb-5 flex items-baseline justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Today's Slate</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                All sides for {today.date ?? "today"}
-                {highPublicToday.length > 0 && (
-                  <> — <span className="font-semibold text-orange-600">{highPublicToday.length} at ≥75%</span></>
-                )}
-              </p>
+        {/* Record cards */}
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <RecordBadge wins={record5c.wins} losses={record5c.losses} total={record5c.total} label="≥5¢ Move" />
+          <RecordBadge wins={record10c.wins} losses={record10c.losses} total={record10c.total} label="≥10¢ Move" />
+        </div>
+
+        {/* Legend */}
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 font-bold text-violet-800">TM +12¢</span>
+          <span>≥10¢ move</span>
+          <span className="rounded-full bg-sky-100 px-2 py-0.5 font-bold text-sky-800">TM +6¢</span>
+          <span>≥5¢ move</span>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-400">Flat</span>
+          <span>&lt;5¢</span>
+        </div>
+
+        {/* Today's games */}
+        <div className="mb-6">
+          <h2 className="mb-2 text-[13px] font-extrabold uppercase tracking-wide text-slate-700">
+            Today · {todayDate}
+          </h2>
+          {loading ? (
+            <div className="space-y-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+              ))}
+            </div>
+          ) : todayGames.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center text-[12px] text-slate-400">
+              No games found yet for today. First snapshot runs at 7am ET.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {todayGames.map(game => (
+                <GameRow key={game.gameId} game={game} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Historical results */}
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-[13px] font-extrabold uppercase tracking-wide text-slate-700">
+              Historical Results
+            </h2>
+            <div className="flex rounded-lg border border-slate-200 bg-white p-0.5 text-[10px] font-semibold">
+              {(["all", "5c", "10c"] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setHistoryFilter(f)}
+                  className={cn("rounded-md px-2.5 py-1 transition",
+                    historyFilter === f ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  {f === "all" ? "All" : `≥${f}`}
+                </button>
+              ))}
             </div>
           </div>
 
           {loading ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-6 py-10 text-center text-slate-400 text-sm animate-pulse">
-              Loading today's splits…
+            <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
+          ) : filteredHistory.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-6 text-center text-[12px] text-slate-400">
+              {history?.games?.length === 0
+                ? "Historical results will appear here after the first graded day."
+                : "No games match this filter."}
             </div>
           ) : (
-            <TodayTable sides={today.sides} />
-          )}
-        </div>
-      </section>
-
-      {/* History */}
-      <section className="border-t border-slate-100 bg-slate-50/50">
-        <div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mb-5">
-            <h2 className="text-xl font-bold text-slate-900">Historical Results</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              All resolved sides from prior days with W/L results and P/L tracking.
-              {history.updatedAt && (
-                <span className="ml-2 text-xs text-slate-400">
-                  Updated {new Date(history.updatedAt).toLocaleString("en-US", { timeZone: "America/New_York" })} ET
-                </span>
-              )}
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-400 text-sm animate-pulse">
-              Loading history…
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-1">
+              {[...filteredHistory].reverse().map((game, i) => (
+                <HistoryRow key={`${game.date}-${game.gameId}-${i}`} game={game} />
+              ))}
             </div>
-          ) : (
-            <HistoryTable sides={history.sides} />
           )}
         </div>
-      </section>
+      </div>
     </SiteShell>
   );
 }

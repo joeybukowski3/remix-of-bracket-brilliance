@@ -96,7 +96,8 @@ const App = () => (
           <Route path="/nfl/2026-guide" element={<Navigate to="/nfl/guide" replace />} />
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/world-cup" element={<WorldCup2026 />} />
-          <Route path="/public-betting" element={<PublicBetting />} />
+          <Route path="/odds-tracker" element={<PublicBetting />} />
+          <Route path="/public-betting" element={<Navigate to="/odds-tracker" replace />} />
           <Route path="/mlb" element={<MlbGameDetail />} />
           <Route path="/mlb/props" element={<MlbPropsHub />} />
           <Route path="/mlb/hr-props" element={<MlbHrProps />} />

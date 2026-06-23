@@ -65,12 +65,6 @@ jobs:
       - name: Fetch team wRC+ data
         run: node scripts/fetch-team-wrc-plus.mjs || true
 
-      - name: Fetch public betting splits
-        run: node scripts/fetch-public-betting.mjs || true
-
-      - name: Resolve betting results from prior day
-        run: node scripts/resolve-betting-results.mjs || true
-
       - name: Generate HR props & best bets
         run: node scripts/generate-mlb-hr-props.mjs --force
         env:

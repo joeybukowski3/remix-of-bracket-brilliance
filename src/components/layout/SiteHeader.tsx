@@ -9,7 +9,7 @@ const navItems = [
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
   { to: "/world-cup", label: "⚽ WC26" },
-  { to: "/public-betting", label: "📊 Splits" },
+  { to: "/odds-tracker", label: "📊 Odds Tracker" },
 ];
 
 function isActive(pathname: string, item: { to: string | null; label: string }) {
