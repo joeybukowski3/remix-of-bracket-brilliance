@@ -16,7 +16,6 @@ import {
   TeamLogoText,
 } from "@/components/mlb/MlbPropModelComponents";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
-import { usePageSeo } from "@/hooks/usePageSeo";
 import {
   buildParkSidebarRows,
   getParkFactorTone,

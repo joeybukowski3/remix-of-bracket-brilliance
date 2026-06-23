@@ -5,7 +5,6 @@ import MlbNavHero from "@/components/mlb/MlbNavHero";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
-import { usePageSeo } from "@/hooks/usePageSeo";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";

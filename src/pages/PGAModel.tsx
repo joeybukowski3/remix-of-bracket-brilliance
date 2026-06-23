@@ -10,7 +10,6 @@ import PgaModelTable from "@/components/pga/PgaModelTable";
 import PgaSidebar from "@/components/pga/PgaSidebar";
 import PgaTopProjectionsCard from "@/components/pga/PgaTopProjectionsCard";
 import { usePgaTournamentPlayers } from "@/hooks/usePgaTournamentPlayers";
-import { usePageSeo } from "@/hooks/usePageSeo";
 import { areWeightsEqual, buildTournamentMeta, getTopProjections, rankPlayersByScore } from "@/lib/pga/modelEngine";
 import { detectActivePreset, getStoredPgaActivePreset, getStoredPgaAppliedWeights, getWeightsForPreset, storePgaActivePreset, storePgaAppliedWeights } from "@/lib/pga/pgaWeights";
 import { FEATURED_PGA_TOURNAMENT, getFeaturedPgaHubContext, getPgaTournamentBySlug } from "@/lib/pga/tournaments";
