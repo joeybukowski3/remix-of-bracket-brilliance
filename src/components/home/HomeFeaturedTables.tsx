@@ -35,7 +35,18 @@ function TeamLogo({ team, size = 18, dark = false }: { team?: string; size?: num
   return <img src={src} alt={t} width={size} height={size} style={{ objectFit:"contain" }} loading="lazy" onError={() => setFailed(true)} />;
 }
 
-// ─── Shared ───────────────────────────────────────────────────────────────
+// Mirrors normalizeName() in fetch-mlb-odds.mjs for key lookups
+function normKey(name: string) {
+  return name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\./g, "")
+    .replace(/\b(jr|sr|ii|iii|iv)\b/gi, "")
+    .replace(/[^a-z0-9\s'-]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 const ACCENTS8 = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308","#94a3b8","#64748b","#475569"];
@@ -90,7 +101,7 @@ function SectionWrap({ eyebrow, title, subtitle, cta, ctaTo, children }: {
 
 // ─── HR Props table ───────────────────────────────────────────────────────
 
-function HRTable({ batters }: { batters: HrDashboardBatter[] }) {
+function HRTable({ batters, mlbOdds }: { batters: HrDashboardBatter[]; mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null }) {
   const rows = batters
     .filter(b => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
     .slice().sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
@@ -107,16 +118,17 @@ function HRTable({ batters }: { batters: HrDashboardBatter[] }) {
         </div>
         {LOGO}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 80px 80px 46px 46px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
-        {["","PLAYER","SCORE","BARREL%","HH%","L7","L30"].map((h, i) => (
+      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 80px 80px 46px 46px 64px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
+        {["","PLAYER","SCORE","BARREL%","HH%","L7","L30","HR LINE"].map((h, i) => (
           <span key={i} style={{ fontSize: 10, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
         ))}
       </div>
       {rows.map((r, i) => {
         const score = r.adjustedHrScore ?? r.hrScore;
         const pill = sc(score);
+        const hrLine = mlbOdds?.hrOdds?.[normKey(r.player)]?.yes;
         return (
-          <div key={r.player + i} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 80px 80px 46px 46px", padding: "6px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+          <div key={r.player + i} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 80px 80px 46px 46px 64px", padding: "6px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: ACCENTS8[i] }} />
             <span style={{ fontSize: i < 3 ? 17 : 13, fontWeight: 900, color: ACCENTS8[i], paddingLeft: 5 }}>{i < 3 ? MEDAL[i] : i + 1}</span>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 6, rowGap: 1, minWidth: 0 }}>
@@ -137,6 +149,7 @@ function HRTable({ batters }: { batters: HrDashboardBatter[] }) {
             </div>
             <div style={{ textAlign: "center", color: r.last7HR >= 3 ? "#22c55e" : r.last7HR >= 2 ? "#facc15" : "#94a3b8", fontWeight: 700, fontSize: 13 }}>{r.last7HR}</div>
             <div style={{ textAlign: "center", color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8", fontWeight: 700, fontSize: 13 }}>{r.last30HR}</div>
+            <div style={{ textAlign: "center", fontWeight: 700, fontSize: 11, color: hrLine ? (hrLine.startsWith("+") ? "#4ade80" : "#94a3b8") : "#334155" }}>{hrLine ?? "—"}</div>
           </div>
         );
       })}
@@ -153,7 +166,7 @@ function HRTable({ batters }: { batters: HrDashboardBatter[] }) {
 
 type KRow = { pitcher: string; team: string; opponent: string; kMatchupScore?: number; kRate?: number | null; whiffRate?: number | null; opponentTeamKRate?: number | null };
 
-function KTable({ rows }: { rows: KRow[] }) {
+function KTable({ rows, mlbOdds }: { rows: KRow[]; mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null }) {
   const top = [...rows]
     .sort((a, b) => (b.kMatchupScore ?? 0) - (a.kMatchupScore ?? 0))
     .slice(0, 5);
@@ -168,16 +181,18 @@ function KTable({ rows }: { rows: KRow[] }) {
         </div>
         {LOGO}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 78px 68px 68px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
-        {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
+      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 78px 68px 68px 68px 72px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
+        {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%","K LINE"].map((h, i) => (
           <span key={i} style={{ fontSize: 10, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
         ))}
       </div>
       {top.map((r, i) => {
         const score = r.kMatchupScore ?? 0;
         const pill = sc(score);
+        const kData = mlbOdds?.kOdds?.[normKey(r.pitcher)];
+        const kLineStr = kData?.line != null && kData?.over ? `O${kData.line} ${kData.over}` : null;
         return (
-          <div key={r.pitcher + i} style={{ display: "grid", gridTemplateColumns: "36px 1fr 78px 68px 68px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+          <div key={r.pitcher + i} style={{ display: "grid", gridTemplateColumns: "36px 1fr 78px 68px 68px 68px 72px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: KA[i] }} />
             <span style={{ fontSize: i < 3 ? 17 : 13, fontWeight: 900, color: KA[i], paddingLeft: 5 }}>{i < 3 ? MEDAL[i] : i + 1}</span>
             <div>
@@ -199,6 +214,7 @@ function KTable({ rows }: { rows: KRow[] }) {
             <div style={{ textAlign: "center", color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : "#94a3b8", fontWeight: 600, fontSize: 12 }}>
               {r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
             </div>
+            <div style={{ textAlign: "center", fontWeight: 700, fontSize: 11, color: kLineStr ? "#86efac" : "#334155" }}>{kLineStr ?? "—"}</div>
           </div>
         );
       })}
@@ -388,6 +404,7 @@ interface PgaTournamentProp {
 
 export function HomeFeaturedTables({ pgaTournament }: { pgaTournament: PgaTournamentProp | null }) {
   const { batters, strikeoutRows, loading } = useMlbPropsData();
+  const { data: mlbOdds } = useMlbOdds();
 
   const pgaLabel = pgaTournament?.shortName ?? pgaTournament?.name ?? "PGA Current Power Ratings";
   const pgaRoute = pgaTournament?.slug ? `/pga/${pgaTournament.slug}` : "/pga";
@@ -411,7 +428,7 @@ export function HomeFeaturedTables({ pgaTournament }: { pgaTournament: PgaTourna
             cta="Full HR Props Dashboard"
             ctaTo="/mlb/hr-props"
           >
-            {loading ? <Skeleton /> : <HRTable batters={batters} />}
+            {loading ? <Skeleton /> : <HRTable batters={batters} mlbOdds={mlbOdds} />}
           </SectionWrap>
 
           <SectionWrap
@@ -421,7 +438,7 @@ export function HomeFeaturedTables({ pgaTournament }: { pgaTournament: PgaTourna
             cta="Full K Props Model"
             ctaTo="/mlb/strikeout-props"
           >
-            {loading ? <Skeleton /> : <KTable rows={strikeoutRows} />}
+            {loading ? <Skeleton /> : <KTable rows={strikeoutRows} mlbOdds={mlbOdds} />}
           </SectionWrap>
 
           <SectionWrap
