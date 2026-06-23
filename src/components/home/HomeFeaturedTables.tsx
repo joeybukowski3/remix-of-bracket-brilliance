@@ -14,7 +14,26 @@ import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { useMlbOdds } from "@/hooks/useMlbOdds";
 import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
 import { buildMetricPercentiles } from "@/lib/pga/historyModel";
-import { TeamLogoBadge, type HrDashboardBatter } from "@/pages/MlbHrProps";
+import { getMlbTeamColors } from "@/lib/mlbTeamColors";
+import type { HrDashboardBatter } from "@/pages/MlbHrProps";
+
+// Inline TeamLogoBadge — avoids importing the entire MlbHrProps page module
+// which causes a circular dependency crash when loaded from Home.tsx
+const ESPN_ABBR: Record<string, string> = {
+  AZ:"ari",ATH:"oak",WSH:"wsh",CWS:"chw",KCR:"kc",SDP:"sd",SFG:"sf",TBR:"tb",
+  NYY:"nyy",NYM:"nym",LAD:"lad",LAA:"laa",BOS:"bos",CHC:"chc",CIN:"cin",
+  CLE:"cle",COL:"col",DET:"det",HOU:"hou",MIA:"mia",MIL:"mil",MIN:"min",
+  PHI:"phi",PIT:"pit",SEA:"sea",STL:"stl",TEX:"tex",TOR:"tor",ATL:"atl",BAL:"bal",
+};
+function TeamLogo({ team, size = 18, dark = false }: { team?: string; size?: number; dark?: boolean }) {
+  const t = (team ?? "").toUpperCase();
+  const folder = dark ? "500-dark" : "500";
+  const src = `https://a.espncdn.com/i/teamlogos/mlb/${folder}/${ESPN_ABBR[t] ?? t.toLowerCase()}.png`;
+  const colors = getMlbTeamColors(t);
+  const [failed, setFailed] = useState(false);
+  if (failed) return <span style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", borderRadius:999, padding:"1px 5px", fontSize:10, fontWeight:700, color:"#fff", backgroundColor:colors.primary, minWidth:size }}>{t}</span>;
+  return <img src={src} alt={t} width={size} height={size} style={{ objectFit:"contain" }} loading="lazy" onError={() => setFailed(true)} />;
+}
 
 // ─── Shared ───────────────────────────────────────────────────────────────
 
@@ -103,7 +122,7 @@ function HRTable({ batters }: { batters: HrDashboardBatter[] }) {
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 6, rowGap: 1, minWidth: 0 }}>
               <span style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 12 }}>{r.player}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                <TeamLogoBadge team={r.team} size={12} showLabel={false} dark />
+                <TeamLogo team={r.team} size={12} dark />
                 <span style={{ color: "#64748b", fontSize: 10 }}>vs {r.opposingPitcher}</span>
               </div>
             </div>
@@ -164,7 +183,7 @@ function KTable({ rows }: { rows: KRow[] }) {
             <div>
               <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 12 }}>{r.pitcher}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 2 }}>
-                <TeamLogoBadge team={r.team} size={12} showLabel={false} dark />
+                <TeamLogo team={r.team} size={12} dark />
                 <span style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</span>
               </div>
             </div>
