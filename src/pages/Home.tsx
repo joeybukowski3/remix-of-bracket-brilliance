@@ -4,6 +4,7 @@ import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { PublicBettingPreview } from "@/components/home/PublicBettingPreview";
+import { HomePropsPreview } from "@/components/home/HomePropsPreview";
 
 const sports = [
   {
@@ -406,74 +407,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* MLB Props Section — redirect cards */}
-      <section className="border-t border-black/6 bg-white">
-        <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
-          <div className="max-w-[760px]">
-            <h2 className="text-[30px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
-              Today's MLB Props
-            </h2>
-            <p className="mt-3 max-w-[62ch] text-[15px] leading-7 text-[#4b5563]">
-              Top picks from our free MLB prop models, updated daily with the latest slate.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { title: "HR Props Dashboard", description: "Top home run edges ranked by park context, pitcher vulnerability, barrel rate, and hard-hit profile.", route: "/mlb/hr-props", cta: "View HR Props", accent: "#0f3b82" },
-              { title: "K Props Model", description: "Strikeout prop rankings for today's probable starters built from whiff rate, opponent K tendency, and park context.", route: "/mlb/hr-props", cta: "View K Props", accent: "#7c3aed" },
-              { title: "Hit Props Model", description: "Top batter vs pitcher matchups ranked by xBA, hard-hit rate, barrel rate, and pitcher hit vulnerability.", route: "/mlb/hr-props", cta: "View matchups", accent: "#059669" },
-            ].map((card) => (
-              <Link
-                key={card.title}
-                to={card.route}
-                className="group flex flex-col rounded-2xl border border-black/8 bg-white p-6 no-underline shadow-sm transition hover:shadow-md"
-                style={{ borderTop: `3px solid ${card.accent}` }}
-              >
-                <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6b7280]">MLB</div>
-                <div className="text-[17px] font-bold tracking-[-0.02em] text-[#111111]">{card.title}</div>
-                <p className="mt-2 flex-1 text-[14px] leading-6 text-[#4b5563]">{card.description}</p>
-                <div className="mt-4 flex items-center gap-1 text-[13px] font-semibold" style={{ color: card.accent }}>
-                  {card.cta} <span className="transition-transform group-hover:translate-x-0.5">→</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* PGA Section — redirect cards */}
+      {/* Live Props & Rankings Preview */}
       <section className="border-t border-black/6 bg-[#f8f8f8]">
         <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
-          <div className="max-w-[760px]">
-            <h2 className="text-[30px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
-              This Week's PGA Picks
+          <div className="max-w-[760px] mb-10">
+            <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#5b6472]">Live Models</div>
+            <h2 className="mt-3 text-[30px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
+              Today's Top Picks
             </h2>
             <p className="mt-3 max-w-[62ch] text-[15px] leading-7 text-[#4b5563]">
-              Top tournament picks from our free PGA golf models, updated weekly.
+              Live tables from our free MLB and PGA models, updated throughout the day. Click any table to open the full analysis.
             </p>
           </div>
-
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { title: pgaTournament ? `${pgaTournament.shortName ?? pgaTournament.name} — Golf Model` : "PGA Tournament Model", description: "Weighted player rankings for this week's PGA tournament. Adjust stat weights and switch between Balanced, Outright, and Top 20 presets.", route: pgaTournament?.slug ? `/pga/${pgaTournament.slug}` : "/pga", cta: "Open model", accent: "#15803d" },
-              { title: pgaTournament ? `${pgaTournament.shortName ?? pgaTournament.name} — Best Bets` : "PGA Best Bets", description: "Outright, Top 5, Top 10, and Top 20 picks for this week's tournament based on course fit and model edge.", route: pgaTournament?.slug ? `/pga/${pgaTournament.slug}/picks` : "/pga", cta: "View picks", accent: "#0369a1" },
-            ].map((card) => (
-              <Link
-                key={card.title}
-                to={card.route}
-                className="group flex flex-col rounded-2xl border border-black/8 bg-white p-6 no-underline shadow-sm transition hover:shadow-md"
-                style={{ borderTop: `3px solid ${card.accent}` }}
-              >
-                <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#6b7280]">PGA Tour</div>
-                <div className="text-[17px] font-bold tracking-[-0.02em] text-[#111111]">{card.title}</div>
-                <p className="mt-2 flex-1 text-[14px] leading-6 text-[#4b5563]">{card.description}</p>
-                <div className="mt-4 flex items-center gap-1 text-[13px] font-semibold" style={{ color: card.accent }}>
-                  {card.cta} <span className="transition-transform group-hover:translate-x-0.5">→</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <HomePropsPreview
+            pgaTournamentName={pgaTournament ? (pgaTournament.shortName ?? pgaTournament.name) : "PGA Current Power Ratings"}
+            pgaTournamentRoute={pgaTournament?.slug ? `/pga/${pgaTournament.slug}` : "/pga"}
+          />
         </div>
       </section>
 
