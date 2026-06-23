@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import SiteFooter from "@/components/layout/SiteFooter";
-import { PublicBettingPreview } from "@/components/home/PublicBettingPreview";
-import { HomePropsPreview } from "@/components/home/HomePropsPreview";
+import { HomeFeaturedTables } from "@/components/home/HomeFeaturedTables";
 
 const sports = [
   {
@@ -407,26 +406,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Live Props & Rankings Preview */}
-      <section className="border-t border-black/6 bg-[#f8f8f8]">
-        <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
-          <div className="max-w-[760px] mb-10">
-            <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#5b6472]">Live Models</div>
-            <h2 className="mt-3 text-[30px] font-bold tracking-[-0.03em] text-[#111111] sm:text-[34px]">
-              Today's Top Picks
-            </h2>
-            <p className="mt-3 max-w-[62ch] text-[15px] leading-7 text-[#4b5563]">
-              Live tables from our free MLB and PGA models, updated throughout the day. Click any table to open the full analysis.
-            </p>
-          </div>
-          <HomePropsPreview
-            pgaTournamentName={pgaTournament ? (pgaTournament.shortName ?? pgaTournament.name) : "PGA Current Power Ratings"}
-            pgaTournamentRoute={pgaTournament?.slug ? `/pga/${pgaTournament.slug}` : "/pga"}
-          />
-        </div>
-      </section>
-
-      <PublicBettingPreview />
+      <HomeFeaturedTables pgaTournament={pgaTournament} />
       <SiteFooter />
     </main>
   );
