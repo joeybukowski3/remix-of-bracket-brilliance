@@ -1,5 +1,5 @@
 // Selective 2026 NFL offseason snapshot compiled from public transaction reporting.
-// Updated through June 23, 2026. This is not a complete 90-man roster transaction log.
+// Updated through June 23, 2026. This is not a complete roster transaction log.
 
 export type NflCoachStatus = "Changed" | "Returning";
 export type NflMoveMethod = "Free agency" | "Trade";
@@ -64,80 +64,40 @@ const COACH_CHANGES: Record<string, Omit<NflCoachChange, "abbr">> = {
 };
 
 export const NFL_NOTABLE_PLAYER_MOVES: NflPlayerMove[] = [
-  { player: "Kirk Cousins", position: "QB", from: "atl", to: "lv", method: "Free agency" },
-  { player: "Gardner Minshew", position: "QB", from: "kc", to: "ari", method: "Free agency" },
   { player: "Kyler Murray", position: "QB", from: "ari", to: "min", method: "Free agency" },
   { player: "Tua Tagovailoa", position: "QB", from: "mia", to: "atl", method: "Free agency" },
   { player: "Malik Willis", position: "QB", from: "gb", to: "mia", method: "Free agency" },
-  { player: "Rico Dowdle", position: "RB", from: "car", to: "pit", method: "Free agency" },
-  { player: "Travis Etienne", position: "RB", from: "jax", to: "no", method: "Free agency" },
-  { player: "Kenneth Gainwell", position: "RB", from: "pit", to: "tb", method: "Free agency" },
-  { player: "Isiah Pacheco", position: "RB", from: "kc", to: "det", method: "Free agency" },
-  { player: "Patrick Ricard", position: "FB", from: "bal", to: "nyg", method: "Free agency" },
-  { player: "Kenneth Walker III", position: "RB", from: "sea", to: "kc", method: "Free agency" },
-  { player: "Rachaad White", position: "RB", from: "tb", to: "wsh", method: "Free agency" },
-  { player: "Romeo Doubs", position: "WR", from: "gb", to: "ne", method: "Free agency" },
-  { player: "Mike Evans", position: "WR", from: "tb", to: "sf", method: "Free agency" },
-  { player: "Jauan Jennings", position: "WR", from: "sf", to: "min", method: "Free agency" },
-  { player: "Darnell Mooney", position: "WR", from: "atl", to: "nyg", method: "Free agency" },
-  { player: "Kalif Raymond", position: "WR", from: "det", to: "chi", method: "Free agency" },
-  { player: "Wan'Dale Robinson", position: "WR", from: "nyg", to: "ten", method: "Free agency" },
-  { player: "Isaiah Likely", position: "TE", from: "bal", to: "nyg", method: "Free agency" },
-  { player: "David Njoku", position: "TE", from: "cle", to: "lac", method: "Free agency" },
-  { player: "David Edwards", position: "OL", from: "buf", to: "no", method: "Free agency" },
-  { player: "Zion Johnson", position: "G", from: "lac", to: "cle", method: "Free agency" },
-  { player: "Tyler Linderbaum", position: "C", from: "bal", to: "lv", method: "Free agency" },
-  { player: "Dylan Parham", position: "G", from: "lv", to: "nyj", method: "Free agency" },
-  { player: "Wyatt Teller", position: "G", from: "cle", to: "hou", method: "Free agency" },
-  { player: "Alijah Vera-Tucker", position: "G", from: "nyj", to: "ne", method: "Free agency" },
-  { player: "Lucas Patrick", position: "OL", from: "cin", to: "nyg", method: "Free agency" },
-  { player: "Elgton Jenkins", position: "G", from: "gb", to: "cle", method: "Free agency" },
-  { player: "Rasheed Walker", position: "OT", from: "gb", to: "car", method: "Free agency" },
-  { player: "John Franklin-Myers", position: "DL", from: "den", to: "ten", method: "Free agency" },
-  { player: "Trey Hendrickson", position: "EDGE", from: "cin", to: "bal", method: "Free agency" },
-  { player: "Dre'Mont Jones", position: "DL", from: "bal", to: "ne", method: "Free agency" },
-  { player: "Kwity Paye", position: "EDGE", from: "ind", to: "lv", method: "Free agency" },
-  { player: "Joseph Ossai", position: "EDGE", from: "cin", to: "nyj", method: "Free agency" },
-  { player: "Odafe Oweh", position: "EDGE", from: "lac", to: "wsh", method: "Free agency" },
-  { player: "Cameron Sample", position: "EDGE", from: "cin", to: "sf", method: "Free agency" },
-  { player: "Jonathan Allen", position: "DT", from: "min", to: "cin", method: "Free agency" },
-  { player: "Alex Anzalone", position: "LB", from: "det", to: "tb", method: "Free agency" },
-  { player: "Bradley Chubb", position: "EDGE", from: "mia", to: "buf", method: "Free agency" },
-  { player: "Demario Davis", position: "LB", from: "no", to: "nyj", method: "Free agency" },
-  { player: "Tremaine Edmunds", position: "LB", from: "chi", to: "nyg", method: "Free agency" },
-  { player: "Kaden Elliss", position: "LB", from: "atl", to: "no", method: "Free agency" },
-  { player: "Devin Lloyd", position: "LB", from: "jax", to: "car", method: "Free agency" },
-  { player: "Boye Mafe", position: "EDGE", from: "sea", to: "cin", method: "Free agency" },
-  { player: "Jaelan Phillips", position: "EDGE", from: "phi", to: "car", method: "Free agency" },
-  { player: "Quay Walker", position: "LB", from: "gb", to: "lv", method: "Free agency" },
-  { player: "Quincy Williams", position: "LB", from: "nyj", to: "cle", method: "Free agency" },
-  { player: "Akeem Davis-Gaither", position: "LB", from: "ari", to: "ind", method: "Free agency" },
-  { player: "David Ojabo", position: "EDGE", from: "bal", to: "mia", method: "Free agency" },
-  { player: "Coby Bryant", position: "DB", from: "sea", to: "chi", method: "Free agency" },
-  { player: "Kevin Byard", position: "S", from: "chi", to: "ne", method: "Free agency" },
-  { player: "Bryan Cook", position: "S", from: "kc", to: "cin", method: "Free agency" },
-  { player: "Nick Cross", position: "S", from: "ind", to: "wsh", method: "Free agency" },
-  { player: "Jamel Dean", position: "CB", from: "tb", to: "pit", method: "Free agency" },
-  { player: "Cobie Durant", position: "CB", from: "lar", to: "dal", method: "Free agency" },
-  { player: "C. J. Gardner-Johnson", position: "S", from: "chi", to: "buf", method: "Free agency" },
-  { player: "Alontae Taylor", position: "CB", from: "no", to: "ten", method: "Free agency" },
-  { player: "Jalen Thompson", position: "S", from: "ari", to: "dal", method: "Free agency" },
-  { player: "Jaylen Watson", position: "CB", from: "kc", to: "lar", method: "Free agency" },
-  { player: "L'Jarius Sneed", position: "CB", from: "ten", to: "kc", method: "Free agency" },
-  { player: "Tariq Woolen", position: "CB", from: "sea", to: "phi", method: "Fre agency" },
-  { player: "Cam Taylor-Britt", position: "CB", from: "cin", to: "ind", method: "Fre agency" },
-  { player: "Marco Wilson", position: "CB", from: "cin", to: "mia", method: "Free agency" },
-  { player: "Geno Stone", position: "S", from: "cin", to: "buf", method: "Free agency" },
-  { player: "Kyle Dugger", position: "S", from: "pit", to: "cin", method: "Fre agency" },
-  { player: "Ja'Sir Taylor", position: "CB", from: "nyj", to: "cin", method: "Fre agency" },
   { player: "Geno Smith", position: "QB", from: "lv", to: "nyj", method: "Trade" },
-  { player: "David Montgomery", position: "RB", from: "det", to: "hou", method: "Trade" },
-  { player: "Juice Scruggs", position: "C", from: "hou", to: "det", method: "Trade" },
+  { player: "Kenneth Walker III", position: "RB", from: "sea", to: "kc", method: "Free agency" },
+  { player: "Mike Evans", position: "WR", from: "tb", to: "sf", method: "Free agency" },
+  { player: "Romeo Doubs", position: "WR", from: "gb", to: "ne", method: "Free agency" },
+  { player: "Jaylen Waddle", position: "WR", from: "mia", to: "den", method: "Trade" },
   { player: "D. J. Moore", position: "WR", from: "chi", to: "buf", method: "Trade" },
-  { player: "Trent McDuffie", position: "CB", from: "kc", to: "lar", method: "Trade" },
+  { player: "A. J. Brown", position: "WR", from: "phi", to: "ne", method: "Trade" },
+  { player: "Trey Hendrickson", position: "EDGE", from: "cin", to: "bal", method: "Free agency" },
   { player: "Minkah Fitzpatrick", position: "S", from: "mia", to: "nyj", method: "Trade" },
-  { player: "Colby Wooden", position: "DT", from: "gb", to: "ind", method: "Trade" },
-  { player: "Zaire Franklin", position: "LB", from: "ind", to: "gb", method: "Trade" },
-  { player: "Rashan Gary", position: "EDGE", from: "gb", to: "dal", method: "Trade" },
-  { player: "T'Vondre Sweat", position: "DT", from: "ten", to: "nyj", method: "Trade" },
-  { player: "Jermaine Johnson IHˆ°Á½Í¥Ñ¥½¸è€‰ˆ°™É½´è€‰¹å¨ˆ°Ñ¼è€‰Ñ•¸ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰=Í„=‘¥¡¥éÕÝ„ˆ°Á½Í¥Ñ¥½¸è€‰Pˆ°™É½´è€‰‘…°ˆ°Ñ¼è€‰Í˜ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰Q…É½¸)½¡¹Í½¸ˆ°Á½Í¥Ñ¥½¸è€‰ˆ°™É½´è€‰‰Õ˜ˆ°Ñ¼è€‰±Øˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰)…å±•¸]…‘‘±”ˆ°Á½Í¥Ñ¥½¸è€‰]Hˆ°™É½´è€‰µ¥„ˆ°Ñ¼è€‰‘•¸ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰Må‘¹•ä	É½Ý¸ˆ°Á½Í¥Ñ¥½¸è€‰Lˆ°™É½´è€‰Á¡¤ˆ°Ñ¼è€‰…Ñ°ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰¹‘ä…±Ñ½¸ˆ°Á½Í¥Ñ¥½¸è€‰Eˆ°™É½´è€‰…Èˆ°Ñ¼è€‰Á¡¤ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰IÕ­”=É¡½É¡½É¼ˆ°Á½Í¥Ñ¥½¸è€‰Pˆ°™É½´è€‰…Ñ°ˆ°Ñ¼è€‰©…àˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰5……Í½¸Mµ¥Ñ ˆ°Á½Í¥Ñ¥½¸è€‰Pˆ°™É½´è€‰©…àˆ°Ñ¼è€‰…Ñ°ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰•áÑ•È1…ÝÉ•¹”ˆ°Á½Í¥Ñ¥½¸è€‰Pˆ°™É½´è€‰¹åœˆ°Ñ¼è€‰¥¸ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰)½¹…Ñ¡…¸É••¹…Éˆ°Á½Í¥Ñ¥½¸è€‰ˆ°™É½´è€‰µ¥¸ˆ°Ñ¼è€‰Á¡¤ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰5å±•Ì…ÉÉ•ÑÐˆ°Á½Í¥Ñ¥½¸è€‰ˆ°™É½´è€‰±”ˆ°Ñ¼è€‰±…Èˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰)…É•Y•ÉÍ”ˆ°Á½Í¥Ñ¥½¸è€‰ˆ°™É½´è€‰±…Èˆ°Ñ¼è€‰±”ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°(€ìÁ±…å•Èè€‰¸(¸	É½Ý¸ˆ°Á½Í¥Ñ¥½¸è€‰]Hˆ°™É½´è€‰Á¡¤ˆ°Ñ¼è€‰¹”ˆ°µ•Ñ¡½è€‰QÉ…‘”ˆô°)tì()•áÁ½ÉÐ™Õ¹Ñ¥½¸•Ñ9™±=™™Í•…Í½¹AÉ½™¥±”¡…‰‰ÈèÍÑÉ¥¹œ¤è9™±=™™Í•…Í½¹AÉ½™¥±”ì(€½¹ÍÐ­•ä€ô…‰‰È¹Ñ½1½Ý•É…Í” ¤ì(€½¹ÍÐ½… €ô=!}!9Mm­•åt€üüì(€€€¡•…‘½… ÈÀÈÔè€‰9½Ð…Ù…¥±…‰±”ˆ°(€€€¡•…‘½… ÈÀÈØè€‰9½Ð…Ù…¥±…‰±”ˆ°(€€€ÍÑ…ÑÕÌè€‰I•ÑÕÉ¹¥¹œˆ…Ì½¹ÍÐ°(€€€¹½Ñ”è€‰½…¡¥¹œ¥¹™½Éµ…Ñ¥½¸¡…Ì¹½Ð‰••¸Ù•É¥™¥•¸ˆ°(€ôì((€É•ÑÕÉ¸ì(€€€…‰‰Èè­•ä°(€€€€¸¸¹½… °(€€€…‘‘¥Ñ¥½¹Ìè91}9=Q	1}A1eI}5=YL¹™¥±Ñ•È ¡µ½Ù”¤€ôøµ½Ù”¹Ñ¼€ôôô­•ä¤°(€€€‘•Á…ÉÑÕÉ•Ìè91}9=Q	1}A1eI}5=YL¹™¥±Ñ•È ¡µ½Ù”¤€ôøµ½Ù”¹™É½´€ôôô­•ä¤°(€€€Ù•É¥™¥•‘Ðè91}=MM=9}Q}YI%%}P°(€ôì)ô()•áÁ½ÉÐ½¹ÍÐ91}=MM=9}Q5}=U9P€ô=‰©•Ð¹­•åÌ¡=!}!9L¤¹±•¹Ñ ì(
+  { player: "Trent McDuffie", position: "CB", from: "kc", to: "lar", method: "Trade" },
+  { player: "Myles Garrett", position: "EDGE", from: "cle", to: "lar", method: "Trade" },
+  { player: "Jared Verse", position: "EDGE", from: "lar", to: "cle", method: "Trade" },
+  { player: "Dexter Lawrence II", position: "DT", from: "nyg", to: "cin", method: "Trade" },
+];
+
+export function getNflOffseasonProfile(abbr: string): NflOffseasonProfile {
+  const key = abbr.toLowerCase();
+  const coach = COACH_CHANGES[key] ?? {
+    headCoach2025: "Not available",
+    headCoach2026: "Not available",
+    status: "Returning" as const,
+    note: "Coaching information has not been verified.",
+  };
+
+  return {
+    abbr: key,
+    ...coach,
+    additions: NFL_NOTABLE_PLAYER_MOVES.filter((move) => move.to === key),
+    departures: NFL_NOTABLE_PLAYER_MOVES.filter((move) => move.from === key),
+    verifiedAt: NFL_OFFSEASON_DATA_VERIFIED_AT,
+  };
+}
+
+export const NFL_OFFSEASON_TEAM_COUNT = Object.keys(COACH_CHANGES).length;
