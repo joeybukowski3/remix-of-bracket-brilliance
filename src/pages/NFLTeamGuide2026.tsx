@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import NflGuideNav from "@/components/nfl/NflGuideNav";
+import NflTeamDashboardExtras from "@/components/nfl/NflTeamDashboardExtras";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
@@ -16,13 +17,13 @@ export default function NFLTeamGuide2026() {
   const team = NFL_GUIDE_TEAM_BY_SLUG.get(teamSlug);
 
   usePageSeo({
-    title: team ? `${team.team} 2026 Preview, Win Total & Model | Joe Knows Ball` : "2026 NFL Team Preview | Joe Knows Ball",
-    description: team ? `${team.team} 2026 team preview with projected wins, market edge, power ratings, schedule strength, regression outlook and three burning questions.` : "2026 NFL team preview.",
+    title: team ? `${team.team} 2026 Schedule, Stats, Odds & Roster Changes | Joe Knows Ball` : "2026 NFL Team Dashboard | Joe Knows Ball",
+    description: team ? `${team.team} 2026 schedule, power rating, offense and defense stats, win-total and Super Bowl value, coaching changes and notable player movement.` : "2026 NFL team schedule, ratings, odds and roster changes.",
     path: `/nfl/guide/team/${teamSlug}`,
     noindex: !team,
   });
 
-  if (!team) return <Navigate to="/nfl/guide" replace />;
+  if (!team) return <Navigate to="/nfl" replace />;
   const divisionTeams = NFL_GUIDE_DIVISIONS.find((entry) => entry.division === team.division)?.teams ?? [];
 
   return (
@@ -30,16 +31,16 @@ export default function NFLTeamGuide2026() {
       <main className="min-h-screen bg-slate-50 pb-16">
         <section className="border-b border-slate-800 text-white" style={{ background: `linear-gradient(125deg, #020617 0%, ${team.color} 135%)` }}>
           <div className="mx-auto max-w-[1400px] px-4 py-9 sm:px-6 lg:px-8">
-            <Link to="/nfl/guide" className="text-xs font-black text-sky-200 hover:text-white">← Back to 2026 guide</Link>
+            <Link to="/nfl" className="text-xs font-black text-sky-200 hover:text-white">← Back to NFL power ratings</Link>
             <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
               <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-white/15 bg-white/10 p-3"><img src={nflLogoUrl(team.abbr)} alt={`${team.team} logo`} className="h-full w-full object-contain" /></div>
-              <div className="min-w-0"><div className="text-xs font-black uppercase tracking-[0.2em] text-sky-200">{team.division} · 2026 Team Preview</div><h1 className="mt-1 text-4xl font-black tracking-tight sm:text-5xl">{team.team}</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">{team.headline}</p></div>
+              <div className="min-w-0"><div className="text-xs font-black uppercase tracking-[0.2em] text-sky-200">{team.division} · 2026 Team Dashboard</div><h1 className="mt-1 text-4xl font-black tracking-tight sm:text-5xl">{team.team}</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">{team.headline}</p></div>
             </div>
             <div className="mt-7"><NflGuideNav /></div>
           </div>
         </section>
 
-        <div className="mx-auto max-w-[1400px] space-y-7 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-8 px-4 py-8 sm:px-6 lg:px-8">
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
             <Metric label="2025 record" value={team.record2025} />
             <Metric label="Model wins" value={team.projectedWins.toFixed(1)} emphasis />
@@ -73,12 +74,14 @@ export default function NFLTeamGuide2026() {
             </aside>
           </section>
 
+          <NflTeamDashboardExtras team={team} />
+
           <section>
             <div className="mb-4"><h2 className="text-2xl font-black text-slate-900">{team.division} model board</h2><p className="mt-1 text-sm text-slate-500">Compare the team directly with its three division rivals.</p></div>
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead><tr className="bg-slate-900 text-[10px] font-black uppercase tracking-wider text-white"><th className="px-4 py-3 text-left">Team</th><th>Model wins</th><th>Market</th><th>Edge</th><th>Power</th><th>Off</th><th>Def</th><th>Schedule</th></tr></thead><tbody>{divisionTeams.map((rival) => <DivisionRow key={rival.abbr} team={rival} active={rival.abbr === team.abbr} />)}</tbody></table></div></div>
           </section>
 
-          <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950"><div className="font-black">Preseason status</div><p className="mt-1">This page is designed to be updated as roster news, injuries, odds and weekly results change. The current version uses the site's 2025 performance model and June preseason totals as its baseline.</p></section>
+          <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950"><div className="font-black">Preseason status</div><p className="mt-1">Ratings use the site's 2025 performance model and June preseason totals as the baseline. Schedule, roster and market sections are isolated so unavailable upstream data cannot overwrite the core team model.</p></section>
         </div>
       </main>
     </SiteShell>
