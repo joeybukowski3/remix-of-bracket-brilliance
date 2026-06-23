@@ -1,164 +1,142 @@
 {
-  "fetchedAt": "2026-06-23T14:22:37.714Z",
-  "source": "espn",
-  "fallbackUsed": true,
-  "providerErrors": [
-    "the-odds-api: ODDS_API_KEY missing",
-    "sportsgameodds: SPORTSGAMEODDS_API_KEY missing",
-    "odds-api-io: ODDS_API_IO_KEY missing"
-  ],
-  "generatedAt": "2026-06-23T14:22:37.714Z",
+  "fetchedAt": "2026-06-23T15:27:22.188Z",
+  "source": "the-odds-api",
+  "fallbackUsed": false,
+  "providerErrors": [],
+  "generatedAt": "2026-06-23T15:27:22.115Z",
   "fetchStatus": {
-    "moneylines": "espn:15",
-    "hrProps": "skipped",
-    "kProps": "skipped",
-    "error": "the-odds-api: ODDS_API_KEY missing",
-    "source": "espn",
-    "fallbackUsed": true,
-    "providerErrors": [
-      "the-odds-api: ODDS_API_KEY missing",
-      "sportsgameodds: SPORTSGAMEODDS_API_KEY missing",
-      "odds-api-io: ODDS_API_IO_KEY missing"
-    ],
-    "generatedAt": "2026-06-23T14:22:37.714Z"
+    "moneylines": "the-odds-api:15",
+    "hrProps": "failed",
+    "kProps": "failed",
+    "error": "HTTP 422 Unprocessable Entity — {\"message\":\"Markets not supported by this endpoint: batter_home_runs\",\"error_code\":\"INVALID_MARKET\",\"details_url\":\"https://the-odds-api.com/liveapi/guides/v4/api-error-codes.html#invalid-market\"}\n",
+    "source": "the-odds-api",
+    "fallbackUsed": false,
+    "providerErrors": [],
+    "generatedAt": "2026-06-23T15:27:22.115Z"
   },
   "sport": "baseball_mlb",
   "moneylines": {
-    "CHC@NYM": {
-      "away": {
-        "team": "CHC",
-        "price": -102,
-        "american": "-102",
-        "implied": 0.504950495049505
-      },
-      "home": {
-        "team": "NYM",
-        "price": -119,
-        "american": "-119",
-        "implied": 0.54337899543379
-      }
-    },
     "HOU@TOR": {
       "away": {
-        "team": "HOU",
+        "team": "Houston Astros",
         "price": 109,
         "american": "+109",
         "implied": 0.4784688995215311
       },
       "home": {
-        "team": "TOR",
+        "team": "Toronto Blue Jays",
         "price": -131,
         "american": "-131",
         "implied": 0.5670995670995671
-      }
-    },
-    "KC@TB": {
-      "away": {
-        "team": "KC",
-        "price": 158,
-        "american": "+158",
-        "implied": 0.3875968992248062
-      },
-      "home": {
-        "team": "TB",
-        "price": -193,
-        "american": "-193",
-        "implied": 0.658703071672355
-      }
-    },
-    "MIL@CIN": {
-      "away": {
-        "team": "MIL",
-        "price": -112,
-        "american": "-112",
-        "implied": 0.5283018867924528
-      },
-      "home": {
-        "team": "CIN",
-        "price": -107,
-        "american": "-107",
-        "implied": 0.5169082125603864
       }
     },
     "NYY@DET": {
       "away": {
-        "team": "NYY",
-        "price": -112,
-        "american": "-112",
-        "implied": 0.5283018867924528
-      },
-      "home": {
-        "team": "DET",
-        "price": -107,
-        "american": "-107",
-        "implied": 0.5169082125603864
-      }
-    },
-    "PHI@WSH": {
-      "away": {
-        "team": "PHI",
-        "price": -173,
-        "american": "-173",
-        "implied": 0.6336996336996337
-      },
-      "home": {
-        "team": "WSH",
-        "price": 143,
-        "american": "+143",
-        "implied": 0.411522633744856
-      }
-    },
-    "SEA@PIT": {
-      "away": {
-        "team": "SEA",
-        "price": -131,
-        "american": "-131",
-        "implied": 0.5670995670995671
-      },
-      "home": {
-        "team": "PIT",
-        "price": 109,
-        "american": "+109",
-        "implied": 0.4784688995215311
-      }
-    },
-    "TEX@MIA": {
-      "away": {
-        "team": "TEX",
-        "price": 135,
-        "american": "+135",
-        "implied": 0.425531914893617
-      },
-      "home": {
-        "team": "MIA",
-        "price": -163,
-        "american": "-163",
-        "implied": 0.6197718631178707
-      }
-    },
-    "ARI@STL": {
-      "away": {
-        "team": "ARI",
-        "price": -105,
-        "american": "-105",
-        "implied": 0.5121951219512195
-      },
-      "home": {
-        "team": "STL",
-        "price": -115,
-        "american": "-115",
-        "implied": 0.5348837209302325
-      }
-    },
-    "CLE@CWS": {
-      "away": {
-        "team": "CLE",
+        "team": "New York Yankees",
         "price": -114,
         "american": "-114",
         "implied": 0.5327102803738317
       },
       "home": {
-        "team": "CHW",
+        "team": "Detroit Tigers",
+        "price": -105,
+        "american": "-105",
+        "implied": 0.5121951219512195
+      }
+    },
+    "KC@TB": {
+      "away": {
+        "team": "Kansas City Royals",
+        "price": 159,
+        "american": "+159",
+        "implied": 0.3861003861003861
+      },
+      "home": {
+        "team": "Tampa Bay Rays",
+        "price": -194,
+        "american": "-194",
+        "implied": 0.6598639455782312
+      }
+    },
+    "TEX@MIA": {
+      "away": {
+        "team": "Texas Rangers",
+        "price": 135,
+        "american": "+135",
+        "implied": 0.425531914893617
+      },
+      "home": {
+        "team": "Miami Marlins",
+        "price": -163,
+        "american": "-163",
+        "implied": 0.6197718631178707
+      }
+    },
+    "SEA@PIT": {
+      "away": {
+        "team": "Seattle Mariners",
+        "price": -126,
+        "american": "-126",
+        "implied": 0.5575221238938053
+      },
+      "home": {
+        "team": "Pittsburgh Pirates",
+        "price": 105,
+        "american": "+105",
+        "implied": 0.4878048780487805
+      }
+    },
+    "PHI@WSH": {
+      "away": {
+        "team": "Philadelphia Phillies",
+        "price": -173,
+        "american": "-173",
+        "implied": 0.6336996336996337
+      },
+      "home": {
+        "team": "Washington Nationals",
+        "price": 143,
+        "american": "+143",
+        "implied": 0.411522633744856
+      }
+    },
+    "CHC@NYM": {
+      "away": {
+        "team": "Chicago Cubs",
+        "price": -102,
+        "american": "-102",
+        "implied": 0.504950495049505
+      },
+      "home": {
+        "team": "New York Mets",
+        "price": -119,
+        "american": "-119",
+        "implied": 0.54337899543379
+      }
+    },
+    "MIL@CIN": {
+      "away": {
+        "team": "Milwaukee Brewers",
+        "price": -109,
+        "american": "-109",
+        "implied": 0.5215311004784688
+      },
+      "home": {
+        "team": "Cincinnati Reds",
+        "price": -110,
+        "american": "-110",
+        "implied": 0.5238095238095238
+      }
+    },
+    "CLE@CWS": {
+      "away": {
+        "team": "Cleveland Guardians",
+        "price": -114,
+        "american": "-114",
+        "implied": 0.5327102803738317
+      },
+      "home": {
+        "team": "Chicago White Sox",
         "price": -105,
         "american": "-105",
         "implied": 0.5121951219512195
@@ -166,72 +144,86 @@
     },
     "LAD@MIN": {
       "away": {
-        "team": "LAD",
+        "team": "Los Angeles Dodgers",
         "price": -181,
         "american": "-181",
         "implied": 0.6441281138790036
       },
       "home": {
-        "team": "MIN",
+        "team": "Minnesota Twins",
         "price": 149,
         "american": "+149",
         "implied": 0.40160642570281124
       }
     },
-    "BOS@COL": {
+    "ARI@STL": {
       "away": {
-        "team": "BOS",
-        "price": -168,
-        "american": "-168",
-        "implied": 0.6268656716417911
+        "team": "Arizona Diamondbacks",
+        "price": -105,
+        "american": "-105",
+        "implied": 0.5121951219512195
       },
       "home": {
-        "team": "COL",
-        "price": 139,
-        "american": "+139",
-        "implied": 0.41841004184100417
+        "team": "St. Louis Cardinals",
+        "price": -115,
+        "american": "-115",
+        "implied": 0.5348837209302325
       }
     },
-    "ATH@SF": {
+    "BOS@COL": {
       "away": {
-        "team": "ATH",
-        "price": 109,
-        "american": "+109",
-        "implied": 0.4784688995215311
+        "team": "Boston Red Sox",
+        "price": -164,
+        "american": "-164",
+        "implied": 0.6212121212121212
       },
       "home": {
-        "team": "SF",
-        "price": -132,
-        "american": "-132",
-        "implied": 0.5689655172413793
+        "team": "Colorado Rockies",
+        "price": 136,
+        "american": "+136",
+        "implied": 0.423728813559322
+      }
+    },
+    "BAL@LAA": {
+      "away": {
+        "team": "Baltimore Orioles",
+        "price": -144,
+        "american": "-144",
+        "implied": 0.5901639344262295
+      },
+      "home": {
+        "team": "Los Angeles Angels",
+        "price": 119,
+        "american": "+119",
+        "implied": 0.45662100456621
       }
     },
     "ATL@SD": {
       "away": {
-        "team": "ATL",
+        "team": "Atlanta Braves",
         "price": -114,
         "american": "-114",
         "implied": 0.5327102803738317
       },
       "home": {
-        "team": "SD",
+        "team": "San Diego Padres",
         "price": -105,
         "american": "-105",
         "implied": 0.5121951219512195
       }
     },
-    "BAL@LAA": {
+    "ATH@SF": {
       "away": {
-        "team": "BAL",
-        "price": -157,
-        "american": "-157",
-        "implied": 0.6108949416342413
+        "team": "Athletics",
+        "price": 118,
+        "american": "+118",
+        "implied": 0.45871559633027525
       },
       "home": {
-        "team": "LAA",
-        "price": 130,
-        "american": "+130",
-        "implied": 0.43478260869565216
+        "team": "San Francisco Giants",
+        "price": -142,
+        "american": "-142",
+        "implied": 0.5867768595041323
       }
     }
   },
