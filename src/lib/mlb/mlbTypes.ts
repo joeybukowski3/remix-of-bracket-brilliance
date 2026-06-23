@@ -172,6 +172,10 @@ export type MlbGameDetail = {
     awayBattingVsHomeStarter: MlbOpponentSplit;
     homeBattingVsAwayStarter: MlbOpponentSplit;
   };
+  teamLocationSplits: {
+    home: { home: { ops: string; avg: string; atBats: number } | null; away: { ops: string; avg: string; atBats: number } | null };
+    away: { home: { ops: string; avg: string; atBats: number } | null; away: { ops: string; avg: string; atBats: number } | null };
+  };
   lineupSummaries: {
     home: MlbLineupSummary;
     away: MlbLineupSummary;
