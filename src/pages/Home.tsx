@@ -66,12 +66,14 @@ function useFeaturedPgaTournament() {
       .then((r) => r.json())
       .then((schedule: PgaTournament[]) => {
         const today = new Date().toISOString().slice(0, 10);
-        // Priority 1: active
+        // Priority 1: active tournament
         let found = schedule.find((t) => t.status === "active");
-        // Priority 2: currently in-window (started but not ended)
+        // Priority 2: currently in-window (started but not ended yet)
         if (!found) found = schedule.find((t) => t.startDate <= today && (!t.endDate || t.endDate >= today));
-        // Priority 3: soonest upcoming
-        if (!found) found = schedule.filter((t) => t.status === "upcoming" || t.startDate >= today).sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
+        // Priority 3: soonest upcoming — must have startDate >= today (never return past tournaments)
+        if (!found) found = schedule
+          .filter((t) => t.startDate >= today)
+          .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
         if (found) setTournament(found);
       })
       .catch(() => {});

@@ -14,7 +14,7 @@ import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { useMlbOdds } from "@/hooks/useMlbOdds";
 import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
 import { buildMetricPercentiles } from "@/lib/pga/historyModel";
-import { TeamLogoBadge, type HrDashboardBatter, type PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
+import { TeamLogoBadge, type HrDashboardBatter } from "@/pages/MlbHrProps";
 
 // ─── Shared ───────────────────────────────────────────────────────────────
 
@@ -132,8 +132,10 @@ function HRTable({ batters }: { batters: HrDashboardBatter[] }) {
 
 // ─── K Props table ────────────────────────────────────────────────────────
 
-function KTable({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
-  const top = rows.slice(0, 5);
+function KTable({ rows }: { rows: ReturnType<typeof import("@/pages/MlbHrProps").buildPitcherStrikeoutMatchupRows> }) {
+  const top = [...rows]
+    .sort((a, b) => (b.kMatchupScore ?? 0) - (a.kMatchupScore ?? 0))
+    .slice(0, 5);
   if (!top.length) return <Skeleton />;
   const KA = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308"];
   return (
@@ -151,7 +153,8 @@ function KTable({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
         ))}
       </div>
       {top.map((r, i) => {
-        const pill = sc(r.strikeoutMatchupScore);
+        const score = r.kMatchupScore ?? 0;
+        const pill = sc(score);
         return (
           <div key={r.pitcher + i} style={{ display: "grid", gridTemplateColumns: "36px 1fr 78px 68px 68px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: KA[i] }} />
@@ -164,7 +167,7 @@ function KTable({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               </div>
             </div>
             <div style={{ ...pill, borderRadius: 7, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
-              {r.strikeoutMatchupScore.toFixed(1)}
+              {score.toFixed(1)}
             </div>
             <div style={{ textAlign: "center", color: r.kRate != null && r.kRate >= 28 ? "#22c55e" : "#94a3b8", fontWeight: 600, fontSize: 12 }}>
               {r.kRate != null ? `${r.kRate.toFixed(1)}%` : "—"}
@@ -172,8 +175,8 @@ function KTable({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
             <div style={{ textAlign: "center", color: r.whiffRate != null && r.whiffRate >= 32 ? "#22c55e" : "#94a3b8", fontWeight: 600, fontSize: 12 }}>
               {r.whiffRate != null ? `${r.whiffRate.toFixed(1)}%` : "—"}
             </div>
-            <div style={{ textAlign: "center", color: r.oppKRate != null && r.oppKRate >= 27 ? "#22c55e" : "#94a3b8", fontWeight: 600, fontSize: 12 }}>
-              {r.oppKRate != null ? `${r.oppKRate.toFixed(1)}%` : "—"}
+            <div style={{ textAlign: "center", color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : "#94a3b8", fontWeight: 600, fontSize: 12 }}>
+              {r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
             </div>
           </div>
         );
@@ -185,7 +188,9 @@ function KTable({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
   );
 }
 
-// ─── ML / Polymarket Odds table ───────────────────────────────────────────
+// ─── ML Edges table ───────────────────────────────────────────────────────
+// Shows games ranked by Polymarket market conviction (how far the favored
+// team's price is from 50¢). Includes sportsbook ML for context.
 
 function MLTable() {
   const { data: polyData } = usePolymarketMlbMoneylines();
@@ -195,12 +200,25 @@ function MLTable() {
     if (!polyData?.games?.length) return [];
     return polyData.games
       .filter(g => g.matched && g.away.yesPrice != null && g.home.yesPrice != null)
-      .sort((a, b) => new Date(a.gameDate ?? 0).getTime() - new Date(b.gameDate ?? 0).getTime())
-      .slice(0, 8);
-  }, [polyData]);
+      .map(g => {
+        // Determine which side the market favors and by how much
+        const homeFavored = (g.home.yesPrice ?? 0) > (g.away.yesPrice ?? 0);
+        const pickAbbr   = homeFavored ? g.home.abbreviation : g.away.abbreviation;
+        const fadeAbbr   = homeFavored ? g.away.abbreviation : g.home.abbreviation;
+        const pickPrice  = homeFavored ? g.home.yesPrice! : g.away.yesPrice!;
+        const edge       = Math.round((pickPrice - 0.5) * 100); // cents above 50¢
+        const gameKey    = `${g.away.abbreviation}@${g.home.abbreviation}`;
+        const ml         = mlbOdds?.moneylines?.[gameKey];
+        const pickAmerican = homeFavored ? ml?.home?.american : ml?.away?.american;
+        return { g, pickAbbr, fadeAbbr, pickPrice, edge, gameKey, pickAmerican };
+      })
+      .filter(r => r.edge > 0)
+      .sort((a, b) => b.edge - a.edge)
+      .slice(0, 6);
+  }, [polyData, mlbOdds]);
 
-  const fmtOdds = (american: string | null | undefined) => american ?? "—";
-  const fmtCents = (p: number | null | undefined) => p != null ? `${Math.round(p * 100)}¢` : "—";
+  const fmtCents = (p: number) => `${Math.round(p * 100)}¢`;
+  const ML_ACCENTS = ["#6366f1","#818cf8","#a5b4fc","#c7d2fe","#e0e7ff","#ede9fe"];
 
   if (!rows.length) return <Skeleton />;
 
@@ -208,35 +226,49 @@ function MLTable() {
     <div style={{ background: "#060d1a", overflow: "hidden", fontSize: 12 }}>
       <div style={{ background: "#0a1628", borderBottom: "3px solid #6366f1", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff" }}>🏆 POLYMARKET ML ODDS</div>
-          <div style={{ color: "#a5b4fc", fontSize: 11, marginTop: 2 }}>Live YES / NO prices for today's games</div>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff" }}>🏆 ML EDGES</div>
+          <div style={{ color: "#a5b4fc", fontSize: 11, marginTop: 2 }}>Sorted by Polymarket Market Conviction</div>
         </div>
         {LOGO}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 56px 56px 56px 56px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
-        {["MATCHUP","AWAY YES","HM YES","AWAY ML","HM ML"].map((h, i) => (
-          <span key={i} style={{ fontSize: 9, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".05em", textAlign: i > 0 ? "center" : "left" }}>{h}</span>
+      <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 72px 72px 72px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
+        {["","MATCHUP","PICK","POLY PRICE","BOOK ML"].map((h, i) => (
+          <span key={i} style={{ fontSize: 10, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
         ))}
       </div>
-      {rows.map((g, i) => {
-        const gameKey = `${g.away.abbreviation}@${g.home.abbreviation}`;
-        const ml = mlbOdds?.moneylines?.[gameKey];
+      {rows.map(({ g, pickAbbr, fadeAbbr, pickPrice, edge, pickAmerican }, i) => {
+        const edgeColor = edge >= 15 ? "#22c55e" : edge >= 8 ? "#4ade80" : "#a5b4fc";
         return (
-          <div key={g.gamePk + i} style={{ display: "grid", gridTemplateColumns: "1fr 56px 56px 56px 56px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4 }}>
-            <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 12 }}>
-              <span style={{ color: "#94a3b8" }}>{g.away.abbreviation}</span>
-              <span style={{ color: "#475569", margin: "0 4px" }}>@</span>
-              <span>{g.home.abbreviation}</span>
+          <div key={g.gamePk + i} style={{ display: "grid", gridTemplateColumns: "36px 1fr 72px 72px 72px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: ML_ACCENTS[i] }} />
+            <span style={{ fontSize: i < 3 ? 17 : 13, fontWeight: 900, color: ML_ACCENTS[i], paddingLeft: 5 }}>{i < 3 ? MEDAL[i] : i + 1}</span>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 12 }}>{pickAbbr}</span>
+                <span style={{ color: "#475569", fontSize: 10 }}>vs {fadeAbbr}</span>
+              </div>
+              <div style={{ fontSize: 9, color: "#475569", marginTop: 1 }}>
+                {g.away.abbreviation} @ {g.home.abbreviation}
+              </div>
             </div>
-            <div style={{ textAlign: "center", color: "#38bdf8", fontWeight: 700 }}>{fmtCents(g.away.yesPrice)}</div>
-            <div style={{ textAlign: "center", color: "#38bdf8", fontWeight: 700 }}>{fmtCents(g.home.yesPrice)}</div>
-            <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 11 }}>{fmtOdds(ml?.away?.american)}</div>
-            <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 11 }}>{fmtOdds(ml?.home?.american)}</div>
+            {/* Pick label with edge */}
+            <div style={{ background: edgeColor + "22", color: edgeColor, border: `1px solid ${edgeColor}55`, borderRadius: 7, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 12 }}>
+              {pickAbbr}
+            </div>
+            {/* Polymarket price */}
+            <div style={{ textAlign: "center", color: "#38bdf8", fontWeight: 700, fontSize: 13 }}>
+              {fmtCents(pickPrice)}
+              <div style={{ fontSize: 9, color: "#475569", fontWeight: 500 }}>+{edge}¢ edge</div>
+            </div>
+            {/* Sportsbook ML */}
+            <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 12 }}>
+              {pickAmerican ?? "—"}
+            </div>
           </div>
         );
       })}
       <div style={{ padding: "4px 10px", background: "#060d1a", borderTop: "1px solid #1e3a5f" }}>
-        <span style={{ fontSize: 9, color: "#475569" }}>Prices = Polymarket prediction market bids · Not sportsbook odds</span>
+        <span style={{ fontSize: 9, color: "#475569" }}>Edge = Polymarket price minus 50¢ · Full model picks on the MLB page</span>
       </div>
     </div>
   );
