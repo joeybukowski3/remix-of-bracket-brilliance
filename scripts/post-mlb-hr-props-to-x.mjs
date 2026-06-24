@@ -9,6 +9,7 @@ const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const RAW_DATA_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const BEST_BETS_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
+const PITCHER_REGRESSION_PATH = path.join(DATA_DIR, "pitcher-regression.json");
 const PRODUCTION_BASE_URL = "https://www.joeknowsball.com/data/mlb";
 const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
 const HR_PROPS_URL = "https://www.joeknowsball.com/mlb";
@@ -125,6 +126,7 @@ function getDataLocations(source) {
     return {
       raw: `${PRODUCTION_BASE_URL}/hr-props-raw.json`,
       bestBets: `${PRODUCTION_BASE_URL}/hr-props-best-bets.json`,
+      pitcherRegression: `${PRODUCTION_BASE_URL}/pitcher-regression.json`,
     };
   }
 
@@ -132,12 +134,14 @@ function getDataLocations(source) {
     return {
       raw: `${GITHUB_BASE_URL}/hr-props-raw.json`,
       bestBets: `${GITHUB_BASE_URL}/hr-props-best-bets.json`,
+      pitcherRegression: `${GITHUB_BASE_URL}/pitcher-regression.json`,
     };
   }
 
   return {
     raw: RAW_DATA_PATH,
     bestBets: BEST_BETS_PATH,
+    pitcherRegression: PITCHER_REGRESSION_PATH,
   };
 }
 
@@ -151,6 +155,33 @@ async function loadJson(location, source) {
 
 function normalizeTeam(value) {
   return normalizeText(value).toUpperCase();
+}
+
+// Must match the xeraMult + regrAdj logic in MlbHrProps.tsx / MlbGameDetail.tsx exactly
+// so the tweet text always ranks players the same way the table does.
+function xeraMult(xera) {
+  if (xera == null) return 1.0;
+  if (xera <= 2.5) return 0.80;
+  if (xera <= 3.0) return 0.85;
+  if (xera <= 3.5) return 0.91;
+  if (xera <= 4.0) return 0.96;
+  if (xera <= 4.5) return 1.00;
+  if (xera <= 5.0) return 1.05;
+  if (xera <= 5.5) return 1.10;
+  return 1.15;
+}
+
+function computeAdjustedHrScore(batter, pitchers, regressionData) {
+  const hrPropsPitcher = pitchers.find(
+    p => p.pitcher === batter.opposingPitcher || (batter.opposingPitcherId && p.pitcherId === batter.opposingPitcherId)
+  );
+  const regrEntry = regressionData.find(p => p.name === batter.opposingPitcher);
+  const pitcherXera = hrPropsPitcher?.xera ?? regrEntry?.xera ?? regrEntry?.xfip ?? null;
+  const regressionScore = regrEntry?.regressionScore ?? null;
+  const regrAdj = regressionScore != null
+    ? Math.max(0.96, Math.min(1.04, 1.0 + regressionScore * 0.004))
+    : 1.0;
+  return Math.round(batter.hrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
 }
 
 function normalizeUsername(value) {
@@ -212,17 +243,25 @@ function normalizeBatter(value) {
     team,
     opponent,
     opposingPitcher: normalizeText(value?.opposingPitcher) || "TBD",
+    opposingPitcherId: value?.opposingPitcherId ?? null,
     hrScore,
     hrScoreRank,
   };
 }
 
-function getTopHrProps(rawPayload, bestBetsPayload, limit = 3) {
+function getTopHrProps(rawPayload, bestBetsPayload, pitchers, regressionData, limit = 3) {
   const batters = Array.isArray(rawPayload?.batters)
     ? rawPayload.batters.map(normalizeBatter).filter(Boolean)
     : [];
 
-  const batterLookup = new Map(batters.map((row) => [pickKey(row), row]));
+  // Enrich every batter with adjustedHrScore using the same formula the site uses.
+  // This ensures text and table always rank players identically.
+  const enriched = batters.map(b => ({
+    ...b,
+    adjustedHrScore: computeAdjustedHrScore(b, pitchers, regressionData),
+  }));
+
+  const batterLookup = new Map(enriched.map((row) => [pickKey(row), row]));
   const curatedPicks = Array.isArray(bestBetsPayload?.bestBets) ? bestBetsPayload.bestBets : [];
   const visibleBestBets = curatedPicks
     .map((pick) => batterLookup.get(pickKey(pick)))
@@ -230,9 +269,11 @@ function getTopHrProps(rawPayload, bestBetsPayload, limit = 3) {
 
   if (visibleBestBets.length >= limit) return visibleBestBets.slice(0, limit);
 
-  return batters
+  return enriched
     .filter((row) => !isStarterPlaceholder(row.opposingPitcher))
-    .sort((left, right) => right.hrScore - left.hrScore || left.hrScoreRank - right.hrScoreRank)
+    .sort((left, right) =>
+      right.adjustedHrScore - left.adjustedHrScore || left.hrScoreRank - right.hrScoreRank
+    )
     .slice(0, limit);
 }
 
@@ -268,11 +309,11 @@ function validateTopProps(topProps) {
   return "";
 }
 
-function getValidatedTopProps(rawPayload, bestBetsPayload) {
+function getValidatedTopProps(rawPayload, bestBetsPayload, pitchers, regressionData) {
   const freshnessError = validateFreshness(rawPayload, bestBetsPayload);
   if (freshnessError) return { skipped: true, reason: freshnessError, topProps: [] };
 
-  const topProps = getTopHrProps(rawPayload, bestBetsPayload);
+  const topProps = getTopHrProps(rawPayload, bestBetsPayload, pitchers, regressionData);
   const topPropsError = validateTopProps(topProps);
   if (topPropsError) return { skipped: true, reason: topPropsError, topProps: [] };
 
@@ -288,13 +329,13 @@ function formatDateLabel(dateValue) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function buildCaption(rawPayload, bestBetsPayload) {
-  const topPropsResult = getValidatedTopProps(rawPayload, bestBetsPayload);
+function buildCaption(rawPayload, bestBetsPayload, pitchers, regressionData) {
+  const topPropsResult = getValidatedTopProps(rawPayload, bestBetsPayload, pitchers, regressionData);
   if (topPropsResult.skipped) return { skipped: true, reason: topPropsResult.reason, caption: "", topProps: [] };
 
   const dateLabel = formatDateLabel(rawPayload?.date || bestBetsPayload?.date);
   const lines = topPropsResult.topProps.map((row, index) => (
-    `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}`
+    `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.adjustedHrScore.toFixed(1)}`
   ));
 
   const caption = [
@@ -546,7 +587,20 @@ async function main() {
   const locations = getDataLocations(source);
   const rawPayload = await loadJson(locations.raw, source);
   const bestBetsPayload = await loadJson(locations.bestBets, source);
-  const result = buildCaption(rawPayload, bestBetsPayload);
+
+  // Load pitcher regression data (used to compute adjustedHrScore matching the site table)
+  let pitcherRegressionData = [];
+  try {
+    const regrPayload = await loadJson(locations.pitcherRegression, source);
+    pitcherRegressionData = Array.isArray(regrPayload) ? regrPayload : [];
+  } catch {
+    console.warn("[mlb-hr-props-x] pitcher-regression.json unavailable — adjustedHrScore will use xERA from raw pitchers only");
+  }
+
+  // Pitchers are embedded in the raw payload alongside batters
+  const pitchersFromRaw = Array.isArray(rawPayload?.pitchers) ? rawPayload.pitchers : [];
+
+  const result = buildCaption(rawPayload, bestBetsPayload, pitchersFromRaw, pitcherRegressionData);
 
   if (mode === "post-key-only") {
     if (result.skipped) throw new Error(result.reason);
