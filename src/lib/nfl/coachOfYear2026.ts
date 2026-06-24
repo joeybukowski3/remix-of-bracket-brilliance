@@ -10,6 +10,7 @@ export type CoachOfYearHistoryRow = {
   season: number;
   coach: string;
   team: string;
+  teamAbbr: string;
   tenureYear: number;
   priorRecord: string;
   priorPlayoffs: boolean;
@@ -25,16 +26,16 @@ export type CoachOfYearHistoryRow = {
 };
 
 export const COACH_OF_YEAR_HISTORY: CoachOfYearHistoryRow[] = [
-  { season: 2025, coach: "Mike Vrabel", team: "New England Patriots", tenureYear: 1, priorRecord: "4-13", priorPlayoffs: false, awardRecord: "14-3", winIncrease: 10, divisionWinner: true, priorPpg: 17.0, awardPpg: 28.8, ppgIncrease: 11.8, awardPlayoffs: true, priorSos: .471, awardSos: .391 },
-  { season: 2024, coach: "Kevin O'Connell", team: "Minnesota Vikings", tenureYear: 3, priorRecord: "7-10", priorPlayoffs: false, awardRecord: "14-3", winIncrease: 7, divisionWinner: false, priorPpg: 20.2, awardPpg: 25.4, ppgIncrease: 5.2, awardPlayoffs: true, priorSos: .509, awardSos: .474 },
-  { season: 2023, coach: "Kevin Stefanski", team: "Cleveland Browns", tenureYear: 4, priorRecord: "7-10", priorPlayoffs: false, awardRecord: "11-6", winIncrease: 4, divisionWinner: false, priorPpg: 21.2, awardPpg: 23.3, ppgIncrease: 2.1, awardPlayoffs: true, priorSos: .524, awardSos: .536 },
-  { season: 2022, coach: "Brian Daboll", team: "New York Giants", tenureYear: 1, priorRecord: "4-13", priorPlayoffs: false, awardRecord: "9-7-1", winIncrease: 5, divisionWinner: false, priorPpg: 15.2, awardPpg: 21.5, ppgIncrease: 6.3, awardPlayoffs: true, priorSos: .536, awardSos: .526 },
-  { season: 2021, coach: "Mike Vrabel", team: "Tennessee Titans", tenureYear: 4, priorRecord: "11-5", priorPlayoffs: true, awardRecord: "12-5", winIncrease: 1, divisionWinner: true, priorPpg: 30.7, awardPpg: 24.6, ppgIncrease: -6.1, awardPlayoffs: true, priorSos: .475, awardSos: .472 },
-  { season: 2020, coach: "Kevin Stefanski", team: "Cleveland Browns", tenureYear: 1, priorRecord: "6-10", priorPlayoffs: false, awardRecord: "11-5", winIncrease: 5, divisionWinner: false, priorPpg: 20.9, awardPpg: 25.5, ppgIncrease: 4.6, awardPlayoffs: true, priorSos: .533, awardSos: .451 },
-  { season: 2019, coach: "John Harbaugh", team: "Baltimore Ravens", tenureYear: 12, priorRecord: "10-6", priorPlayoffs: true, awardRecord: "14-2", winIncrease: 4, divisionWinner: true, priorPpg: 24.3, awardPpg: 33.2, ppgIncrease: 8.9, awardPlayoffs: true, priorSos: .496, awardSos: .494 },
-  { season: 2018, coach: "Matt Nagy", team: "Chicago Bears", tenureYear: 1, priorRecord: "5-11", priorPlayoffs: false, awardRecord: "12-4", winIncrease: 7, divisionWinner: true, priorPpg: 16.5, awardPpg: 26.3, ppgIncrease: 9.8, awardPlayoffs: true, priorSos: .559, awardSos: .430 },
-  { season: 2017, coach: "Sean McVay", team: "Los Angeles Rams", tenureYear: 1, priorRecord: "4-12", priorPlayoffs: false, awardRecord: "11-5", winIncrease: 7, divisionWinner: true, priorPpg: 14.0, awardPpg: 29.9, ppgIncrease: 15.9, awardPlayoffs: true, priorSos: .504, awardSos: .504 },
-  { season: 2016, coach: "Jason Garrett", team: "Dallas Cowboys", tenureYear: 6, priorRecord: "4-12", priorPlayoffs: false, awardRecord: "13-3", winIncrease: 9, divisionWinner: true, priorPpg: 17.2, awardPpg: 26.3, ppgIncrease: 9.1, awardPlayoffs: true, priorSos: .531, awardSos: .471 },
+  { season: 2025, coach: "Mike Vrabel", team: "New England Patriots", teamAbbr: "ne", tenureYear: 1, priorRecord: "4-13", priorPlayoffs: false, awardRecord: "14-3", winIncrease: 10, divisionWinner: true, priorPpg: 17.0, awardPpg: 28.8, ppgIncrease: 11.8, awardPlayoffs: true, priorSos: .471, awardSos: .391 },
+  { season: 2024, coach: "Kevin O'Connell", team: "Minnesota Vikings", teamAbbr: "min", tenureYear: 3, priorRecord: "7-10", priorPlayoffs: false, awardRecord: "14-3", winIncrease: 7, divisionWinner: false, priorPpg: 20.2, awardPpg: 25.4, ppgIncrease: 5.2, awardPlayoffs: true, priorSos: .509, awardSos: .474 },
+  { season: 2023, coach: "Kevin Stefanski", team: "Cleveland Browns", teamAbbr: "cle", tenureYear: 4, priorRecord: "7-10", priorPlayoffs: false, awardRecord: "11-6", winIncrease: 4, divisionWinner: false, priorPpg: 21.2, awardPpg: 23.3, ppgIncrease: 2.1, awardPlayoffs: true, priorSos: .524, awardSos: .536 },
+  { season: 2022, coach: "Brian Daboll", team: "New York Giants", teamAbbr: "nyg", tenureYear: 1, priorRecord: "4-13", priorPlayoffs: false, awardRecord: "9-7-1", winIncrease: 5, divisionWinner: false, priorPpg: 15.2, awardPpg: 21.5, ppgIncrease: 6.3, awardPlayoffs: true, priorSos: .536, awardSos: .526 },
+  { season: 2021, coach: "Mike Vrabel", team: "Tennessee Titans", teamAbbr: "ten", tenureYear: 4, priorRecord: "11-5", priorPlayoffs: true, awardRecord: "12-5", winIncrease: 1, divisionWinner: true, priorPpg: 30.7, awardPpg: 24.6, ppgIncrease: -6.1, awardPlayoffs: true, priorSos: .475, awardSos: .472 },
+  { season: 2020, coach: "Kevin Stefanski", team: "Cleveland Browns", teamAbbr: "cle", tenureYear: 1, priorRecord: "6-10", priorPlayoffs: false, awardRecord: "11-5", winIncrease: 5, divisionWinner: false, priorPpg: 20.9, awardPpg: 25.5, ppgIncrease: 4.6, awardPlayoffs: true, priorSos: .533, awardSos: .451 },
+  { season: 2019, coach: "John Harbaugh", team: "Baltimore Ravens", teamAbbr: "bal", tenureYear: 12, priorRecord: "10-6", priorPlayoffs: true, awardRecord: "14-2", winIncrease: 4, divisionWinner: true, priorPpg: 24.3, awardPpg: 33.2, ppgIncrease: 8.9, awardPlayoffs: true, priorSos: .496, awardSos: .494 },
+  { season: 2018, coach: "Matt Nagy", team: "Chicago Bears", teamAbbr: "chi", tenureYear: 1, priorRecord: "5-11", priorPlayoffs: false, awardRecord: "12-4", winIncrease: 7, divisionWinner: true, priorPpg: 16.5, awardPpg: 26.3, ppgIncrease: 9.8, awardPlayoffs: true, priorSos: .559, awardSos: .430 },
+  { season: 2017, coach: "Sean McVay", team: "Los Angeles Rams", teamAbbr: "lar", tenureYear: 1, priorRecord: "4-12", priorPlayoffs: false, awardRecord: "11-5", winIncrease: 7, divisionWinner: true, priorPpg: 14.0, awardPpg: 29.9, ppgIncrease: 15.9, awardPlayoffs: true, priorSos: .504, awardSos: .504 },
+  { season: 2016, coach: "Jason Garrett", team: "Dallas Cowboys", teamAbbr: "dal", tenureYear: 6, priorRecord: "4-12", priorPlayoffs: false, awardRecord: "13-3", winIncrease: 9, divisionWinner: true, priorPpg: 17.2, awardPpg: 26.3, ppgIncrease: 9.1, awardPlayoffs: true, priorSos: .531, awardSos: .471 },
 ];
 
 export type CoachCandidateBucket = "eliminated" | "unlikely" | "rated";
@@ -50,6 +51,7 @@ export type CoachCandidateScore = {
 export type CoachCandidateRow = {
   team: NflGuideTeam;
   coach: string;
+  yearsWithTeam: number;
   firstYearCoach: boolean;
   made2025Playoffs: boolean;
   winningRecord2025: boolean;
@@ -67,6 +69,13 @@ const PLAYOFF_TEAMS_2025 = new Set([
   "buf", "den", "hou", "jax", "lac", "ne", "pit",
   "car", "chi", "gb", "lar", "phi", "sea", "sf",
 ]);
+
+const COACH_TENURE_2026: Record<string, number> = {
+  ari: 1, atl: 1, bal: 1, buf: 1, car: 3, chi: 2, cin: 8, cle: 1,
+  dal: 2, den: 4, det: 6, gb: 8, hou: 4, ind: 4, jax: 2, kc: 14,
+  lv: 1, lac: 3, lar: 10, mia: 1, min: 5, ne: 2, no: 2, nyg: 1,
+  nyj: 2, phi: 6, pit: 1, sf: 10, sea: 3, tb: 5, ten: 1, wsh: 3,
+};
 
 const VERIFIED_SIGNIFICANT_SOS_INCREASES: Record<string, string> = {
   dal: "From the #2 easiest schedule in 2025 to the #4 toughest in 2026.",
@@ -89,7 +98,8 @@ function buildCandidate(team: NflGuideTeam): CoachCandidateRow {
   const winningRecord2025 = team.wins2025 > team.losses2025;
   const sosChangeNote = VERIFIED_SIGNIFICANT_SOS_INCREASES[team.abbr] ?? null;
   const significantSosIncrease = Boolean(sosChangeNote);
-  const firstYearCoach = coachProfile.status === "Changed";
+  const yearsWithTeam = COACH_TENURE_2026[team.abbr] ?? (coachProfile.status === "Changed" ? 1 : 2);
+  const firstYearCoach = yearsWithTeam === 1;
   const sharpSosRank = sharp?.strengthOfSchedule.hardestFirstRank ?? team.scheduleRank ?? 16;
 
   let bucket: CoachCandidateBucket = "rated";
@@ -119,6 +129,7 @@ function buildCandidate(team: NflGuideTeam): CoachCandidateRow {
   return {
     team,
     coach: coachProfile.headCoach2026,
+    yearsWithTeam,
     firstYearCoach,
     made2025Playoffs,
     winningRecord2025,
@@ -136,31 +147,20 @@ function buildCandidate(team: NflGuideTeam): CoachCandidateRow {
 function scoreCandidate(team: NflGuideTeam, sharpSosRank: number, firstYearCoach: boolean): CoachCandidateScore {
   const schedule = Math.round(((sharpSosRank - 1) / 31) * 25);
   const firstYearCoachScore = firstYearCoach ? 15 : 0;
-
   const improvementGap = Math.max(0, team.projectedWins - team.wins2025);
   const improvementFromGap = Math.min(20, improvementGap * 5);
   const lowExpectationBonus = team.winTotal == null ? 0 : team.winTotal <= 7.5 ? 8 : team.winTotal <= 9 ? 4 : 0;
   const modelEdgeBonus = team.modelEdge == null ? 0 : Math.min(7, Math.max(0, team.modelEdge) * 4);
   const improvement = Math.round(Math.min(35, improvementFromGap + lowExpectationBonus + modelEdgeBonus));
-
   const division = NFL_GUIDE_DIVISIONS.find((entry) => entry.division === team.division);
   const rivals = division?.teams.filter((entry) => entry.abbr !== team.abbr) ?? [];
   const bestRivalWins = rivals.length ? Math.max(...rivals.map((entry) => entry.projectedWins)) : team.projectedWins;
-  const averageRivalPowerRank = rivals.length
-    ? rivals.reduce((sum, entry) => sum + entry.powerRank, 0) / rivals.length
-    : 16.5;
+  const averageRivalPowerRank = rivals.length ? rivals.reduce((sum, entry) => sum + entry.powerRank, 0) / rivals.length : 16.5;
   const gapToBest = bestRivalWins - team.projectedWins;
   const contentionScore = gapToBest <= 0 ? 15 : gapToBest <= 1 ? 12 : gapToBest <= 2 ? 8 : gapToBest <= 3 ? 4 : 0;
   const divisionStrengthScore = averageRivalPowerRank >= 20 ? 10 : averageRivalPowerRank >= 15 ? 6 : 2;
   const path = contentionScore + divisionStrengthScore;
-
-  return {
-    schedule,
-    firstYearCoach: firstYearCoachScore,
-    improvement,
-    path,
-    total: schedule + firstYearCoachScore + improvement + path,
-  };
+  return { schedule, firstYearCoach: firstYearCoachScore, improvement, path, total: schedule + firstYearCoachScore + improvement + path };
 }
 
 function getDivisionPathLabel(team: NflGuideTeam) {
@@ -179,7 +179,6 @@ function getDivisionPathLabel(team: NflGuideTeam) {
 export function getCoachOfYearHistorySummary() {
   const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
   const percentage = (values: boolean[]) => Math.round((values.filter(Boolean).length / values.length) * 100);
-
   return {
     firstYearCoachPct: percentage(COACH_OF_YEAR_HISTORY.map((row) => row.tenureYear === 1)),
     missedPriorPlayoffsPct: percentage(COACH_OF_YEAR_HISTORY.map((row) => !row.priorPlayoffs)),

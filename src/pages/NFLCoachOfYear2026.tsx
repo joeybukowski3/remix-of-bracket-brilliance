@@ -122,7 +122,7 @@ export default function NFLCoachOfYear2026() {
 
         <div className="mx-auto max-w-[1500px] space-y-10 px-4 py-8 sm:px-6 lg:px-8">
           <section>
-            <SectionHeading eyebrow="Historical profile" title="What the last 10 winners had in common" description="Award seasons 2016–2025. The header emphasizes the traits that drive the 2026 screening model." />
+            <SectionHeading eyebrow="Historical profile" title="What the last 10 winners had in common" description="Award seasons 2016–2025. Team logos and color-coded cells make the common winner traits easier to scan." />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <SummaryTile label="First-year coach" value={`${summary.firstYearCoachPct}%`} />
               <SummaryTile label="Missed prior playoffs" value={`${summary.missedPriorPlayoffsPct}%`} />
@@ -138,25 +138,51 @@ export default function NFLCoachOfYear2026() {
 
             <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1180px] text-xs">
-                  <thead><tr className="bg-slate-950 text-[9px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3 text-left">Season</th><th className="px-3 py-3 text-left">Coach / Team</th><th>Year</th><th>Prior record</th><th>Prior playoffs</th><th>Award record</th><th>Win increase</th><th>Division</th><th>PPG increase</th><th>Award playoffs</th><th>Prior SOS</th><th>Award SOS</th></tr></thead>
+                <table className="w-full min-w-[1220px] text-xs">
+                  <thead>
+                    <tr className="bg-slate-950 text-[9px] font-black uppercase tracking-wider text-white">
+                      <th className="px-3 py-3 text-left">Season</th>
+                      <th className="px-3 py-3 text-left">Coach / Team</th>
+                      <th>Years with team</th>
+                      <th>Prior record</th>
+                      <th>Prior playoffs</th>
+                      <th>Award record</th>
+                      <th>Win increase</th>
+                      <th>Division</th>
+                      <th>PPG increase</th>
+                      <th>Award playoffs</th>
+                      <th>Prior SOS</th>
+                      <th>Award SOS</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {COACH_OF_YEAR_HISTORY.map((row) => (
-                      <tr key={row.season} className="border-t border-slate-100">
-                        <td className="px-3 py-3 font-black text-slate-900">{row.season}</td>
-                        <td className="px-3 py-3"><div className="font-black text-slate-900">{row.coach}</div><div className="text-slate-500">{row.team}</div></td>
-                        <td className="text-center font-bold">{ordinal(row.tenureYear)}</td>
-                        <td className="text-center">{row.priorRecord}</td>
-                        <BooleanCell value={row.priorPlayoffs} />
-                        <td className="text-center font-bold">{row.awardRecord}</td>
-                        <td className="text-center font-black text-emerald-700">+{row.winIncrease}</td>
-                        <BooleanCell value={row.divisionWinner} />
-                        <td className={`text-center font-black ${row.ppgIncrease > 0 ? "text-emerald-700" : "text-red-600"}`}>{signed(row.ppgIncrease)}</td>
-                        <BooleanCell value={row.awardPlayoffs} />
-                        <td className="text-center">{row.priorSos.toFixed(3)}</td>
-                        <td className="text-center">{row.awardSos.toFixed(3)}</td>
-                      </tr>
-                    ))}
+                    {COACH_OF_YEAR_HISTORY.map((row) => {
+                      const easierSchedule = row.awardSos < row.priorSos;
+                      return (
+                        <tr key={row.season} className="border-t border-slate-100 transition-colors hover:bg-slate-50">
+                          <td className="px-3 py-3 font-black text-slate-900">{row.season}</td>
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-3">
+                              <img src={nflLogoUrl(row.teamAbbr)} alt="" className="h-9 w-9 object-contain" />
+                              <div><div className="font-black text-slate-900">{row.coach}</div><div className="text-slate-500">{row.team}</div></div>
+                            </div>
+                          </td>
+                          <td className="text-center"><TenureBadge years={row.tenureYear} /></td>
+                          <td className="text-center font-bold text-slate-700">{row.priorRecord}</td>
+                          <BooleanCell value={row.priorPlayoffs} />
+                          <td className="bg-blue-50 text-center font-black text-blue-800">{row.awardRecord}</td>
+                          <HistoricalHeatCell value={`+${row.winIncrease}`} strength={row.winIncrease / 10} positive />
+                          <BooleanCell value={row.divisionWinner} />
+                          <HistoricalHeatCell value={signed(row.ppgIncrease)} strength={row.ppgIncrease / 12} positive={row.ppgIncrease >= 0} />
+                          <BooleanCell value={row.awardPlayoffs} />
+                          <td className="text-center text-slate-600">{row.priorSos.toFixed(3)}</td>
+                          <td className={`text-center font-black ${easierSchedule ? "bg-emerald-100 text-emerald-800" : row.awardSos > row.priorSos ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700"}`}>
+                            {row.awardSos.toFixed(3)}
+                            <div className="text-[8px] uppercase tracking-wider">{easierSchedule ? "easier" : row.awardSos > row.priorSos ? "harder" : "same"}</div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -180,7 +206,7 @@ export default function NFLCoachOfYear2026() {
           </section>
 
           <section>
-            <SectionHeading eyebrow="Tiered candidate board" title="Remaining 2026 Coach of the Year candidates" description="All existing model columns remain visible, with Vegas O/U added for context. The tiers reflect the ranking logic agreed during review rather than only the raw 100-point score." />
+            <SectionHeading eyebrow="Tiered candidate board" title="Remaining 2026 Coach of the Year candidates" description="Vegas O/U, unit ratings, coach tenure and model projection remain visible. First-year coaches are highlighted in green." />
             <TieredCandidateTable candidateByAbbr={candidateByAbbr} />
           </section>
 
@@ -208,7 +234,7 @@ function TopCandidateCard({ row, rank }: { row: CoachCandidateRow; rank: number 
         <div className="flex items-center gap-3">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-black">#{rank}</span>
           <img src={nflLogoUrl(row.team.abbr)} alt="" className="h-10 w-10 object-contain" />
-          <div><div className="text-lg font-black">{row.team.team}</div><div className="text-xs text-slate-300">{row.coach}</div></div>
+          <div><div className="text-lg font-black">{row.team.team}</div><div className="text-xs text-slate-300">{row.coach} · {tenureLabel(row.yearsWithTeam)}</div></div>
         </div>
         <div className="text-right text-xs"><div className="font-black text-emerald-300">{row.team.projectedWins.toFixed(1)} model wins</div><div className="text-slate-300">Vegas {row.team.winTotal?.toFixed(1) ?? "—"}</div></div>
       </div>
@@ -224,9 +250,7 @@ function CaseBlock({ title, tone, items }: { title: string; tone: "good" | "bad"
   return (
     <div className={`rounded-2xl border p-4 ${tone === "good" ? "border-emerald-200 bg-emerald-50" : "border-red-200 bg-red-50"}`}>
       <div className={`text-[10px] font-black uppercase tracking-wider ${tone === "good" ? "text-emerald-700" : "text-red-700"}`}>{title}</div>
-      <ul className="mt-2 space-y-2 text-xs leading-5 text-slate-700">
-        {items.map((item) => <li key={item} className="flex gap-2"><span className="font-black">•</span><span>{item}</span></li>)}
-      </ul>
+      <ul className="mt-2 space-y-2 text-xs leading-5 text-slate-700">{items.map((item) => <li key={item} className="flex gap-2"><span className="font-black">•</span><span>{item}</span></li>)}</ul>
     </div>
   );
 }
@@ -235,7 +259,7 @@ function TieredCandidateTable({ candidateByAbbr }: { candidateByAbbr: Map<string
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1360px] text-xs">
+        <table className="w-full min-w-[1320px] text-xs">
           <CandidateHeader showScore />
           <tbody>
             {REMAINING_TIERS.map((tier) => {
@@ -256,7 +280,7 @@ function CandidateTable({ rows }: { rows: CoachCandidateRow[] }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] text-xs">
+        <table className="w-full min-w-[1020px] text-xs">
           <CandidateHeader />
           <tbody>{rows.map((row) => <CandidateRow key={row.team.abbr} row={row} />)}</tbody>
         </table>
@@ -266,7 +290,7 @@ function CandidateTable({ rows }: { rows: CoachCandidateRow[] }) {
 }
 
 function CandidateHeader({ showScore = false }: { showScore?: boolean }) {
-  return <thead><tr className="bg-slate-900 text-[9px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3 text-left">Team / Coach</th><th>2025</th><th>Playoffs</th><th>SoS</th><th>First year</th><th>Off rating</th><th>Def rating</th><th>Vegas O/U</th><th>Model Wins +/-</th><th>Division path</th>{showScore && <><th>Sched</th><th>Coach</th><th>Improve</th><th>Path</th><th>Total</th></>}</tr></thead>;
+  return <thead><tr className="bg-slate-900 text-[9px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3 text-left">Team / Coach</th><th>2025</th><th>Playoffs</th><th>SoS</th><th>Years w/ team</th><th>Off rating</th><th>Def rating</th><th>Vegas O/U</th><th>Model Wins +/-</th><th>Division path</th>{showScore && <><th>Sched</th><th>Improve</th><th>Path</th><th>Total</th></>}</tr></thead>;
 }
 
 function CandidateRow({ row, showScore = false, rankLabel }: { row: CoachCandidateRow; showScore?: boolean; rankLabel?: string }) {
@@ -282,20 +306,32 @@ function CandidateRow({ row, showScore = false, rankLabel }: { row: CoachCandida
       <td className="text-center font-bold">{row.team.record2025}</td>
       <BooleanCell value={row.made2025Playoffs} />
       <HeatCell value={`#${row.sharpSosRank}`} detail="hardest" strength={(row.sharpSosRank - 16.5) / 15.5} />
-      <BooleanCell value={row.firstYearCoach} />
+      <td className="text-center"><TenureBadge years={row.yearsWithTeam} /></td>
       <RatingCell value={row.team.offPct} rank={row.team.offRank} />
       <RatingCell value={row.team.defPct} rank={row.team.defRank} />
       <td className="text-center"><div className="font-black tabular-nums text-slate-900">{row.team.winTotal?.toFixed(1) ?? "—"}</div><div className="text-[9px] text-slate-400">market total</div></td>
       <HeatCell value={row.team.projectedWins.toFixed(1)} detail={`${signed(row.team.regressionGap)} vs 2025 · ${signed(row.team.modelEdge ?? 0)} vs Vegas`} strength={Math.max(row.team.regressionGap, row.team.modelEdge ?? 0) / 5} greenOnly />
       <td className="px-2 text-center font-bold text-slate-600">{row.divisionPathLabel}</td>
-      {showScore && row.score && <><ScoreCell value={row.score.schedule} max={25} /><ScoreCell value={row.score.firstYearCoach} max={15} /><ScoreCell value={row.score.improvement} max={35} /><ScoreCell value={row.score.path} max={25} /><td className="text-center"><span className="inline-flex min-w-10 justify-center rounded-full bg-blue-600 px-2 py-1 font-black text-white">{row.score.total}</span></td></>}
+      {showScore && row.score && <><ScoreCell value={row.score.schedule} max={25} /><ScoreCell value={row.score.improvement} max={35} /><ScoreCell value={row.score.path} max={25} /><td className="text-center"><span className="inline-flex min-w-10 justify-center rounded-full bg-blue-600 px-2 py-1 font-black text-white">{row.score.total}</span></td></>}
     </tr>
   );
 }
 
 function TierRow({ label, description, tone }: { label: string; description: string; tone: string }) {
   const classes = tone === "emerald" ? "bg-emerald-100 text-emerald-900" : tone === "blue" ? "bg-blue-100 text-blue-900" : tone === "amber" ? "bg-amber-100 text-amber-900" : "bg-slate-200 text-slate-800";
-  return <tr className={classes}><td colSpan={15} className="px-4 py-3"><span className="font-black uppercase tracking-wider">{label}</span><span className="ml-3 text-[10px] font-bold opacity-75">{description}</span></td></tr>;
+  return <tr className={classes}><td colSpan={14} className="px-4 py-3"><span className="font-black uppercase tracking-wider">{label}</span><span className="ml-3 text-[10px] font-bold opacity-75">{description}</span></td></tr>;
+}
+
+function TenureBadge({ years }: { years: number }) {
+  const firstYear = years === 1;
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-wide ${firstYear ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300" : "bg-slate-100 text-slate-600"}`}>{tenureLabel(years)}</span>;
+}
+
+function HistoricalHeatCell({ value, strength, positive }: { value: string; strength: number; positive: boolean }) {
+  const alpha = 0.08 + Math.min(1, Math.abs(strength)) * 0.24;
+  const backgroundColor = positive ? `rgba(16, 185, 129, ${alpha})` : `rgba(239, 68, 68, ${alpha})`;
+  const color = positive ? "#047857" : "#b91c1c";
+  return <td className="text-center font-black" style={{ backgroundColor, color }}>{value}</td>;
 }
 
 function RatingCell({ value, rank }: { value: number; rank: number }) {
@@ -331,6 +367,10 @@ function BooleanCell({ value }: { value: boolean }) {
 function ScoreCell({ value, max }: { value: number; max: number }) {
   const ratio = value / max;
   return <td className="px-2 py-2 text-center" style={{ backgroundColor: `rgba(16, 185, 129, ${0.04 + ratio * 0.18})` }}><span className="font-black text-emerald-800">{value}</span><span className="text-[9px] text-slate-400">/{max}</span></td>;
+}
+
+function tenureLabel(years: number) {
+  return years === 1 ? "1st year" : years === 2 ? "2nd year" : years === 3 ? "3rd year" : `${years}th year`;
 }
 
 function signed(value: number) { return `${value > 0 ? "+" : ""}${value.toFixed(1)}`; }
