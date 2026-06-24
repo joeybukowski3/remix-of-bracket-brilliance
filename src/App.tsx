@@ -20,6 +20,7 @@ import MlbPropsHub from "./pages/MlbPropsHub";
 import MlbStrikeoutProps from "./pages/MlbStrikeoutProps";
 import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
+import MlbNumerologyPage from "./pages/MlbNumerologyPage";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
@@ -105,6 +106,7 @@ const App = () => (
           <Route path="/mlb/hr-props" element={<MlbHrProps />} />
           <Route path="/mlb/strikeout-props" element={<MlbStrikeoutProps />} />
           <Route path="/mlb/batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
+          <Route path="/mlb/numerology" element={<MlbNumerologyPage />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<PgaHistoryModel />} />
           <Route path="/pga/legacy" element={<PgaHub />} />

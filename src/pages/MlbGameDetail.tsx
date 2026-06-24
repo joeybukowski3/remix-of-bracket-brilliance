@@ -2504,6 +2504,22 @@ function HomeSchedule({
               <MlbPitcherRegressionTable pitchers={pitcherRegressionData} />
             )}
           </section>
+
+          {/* Discreet numerology entry icon — intentional site easter egg */}
+          <div className="flex justify-end pb-2">
+            <Link
+              to="/mlb/numerology"
+              aria-label="Open MLB numerical alignment analysis"
+              className="group inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/60 text-[11px] font-black text-slate-400/40 transition-all duration-300 hover:border-violet-300/50 hover:text-violet-400/70 hover:shadow-[0_0_12px_rgba(139,92,246,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 motion-reduce:transition-none"
+              style={{ opacity: 0.4 }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.4")}
+              onFocus={(e) => (e.currentTarget.style.opacity = "0.85")}
+              onBlur={(e) => (e.currentTarget.style.opacity = "0.4")}
+            >
+              369
+            </Link>
+          </div>
         </div>
 
         {/* Polymarket panel — sticky right sidebar on 2xl+ screens */}
