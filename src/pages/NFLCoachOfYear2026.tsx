@@ -4,6 +4,7 @@ import NflGuideNav from "@/components/nfl/NflGuideNav";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import {
+  COACH_OF_YEAR_ELEVATED_CANDIDATES,
   COACH_OF_YEAR_ELIMINATED,
   COACH_OF_YEAR_HISTORY,
   COACH_OF_YEAR_RATED_CANDIDATES,
@@ -28,23 +29,19 @@ export default function NFLCoachOfYear2026() {
     <SiteShell>
       <main className="min-h-screen bg-slate-50 pb-16">
         <section className="border-b border-slate-800 bg-slate-950 text-white">
-          <div className="mx-auto max-w-[1400px] px-4 py-9 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1500px] px-4 py-9 sm:px-6 lg:px-8">
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-300">NFL awards research</div>
             <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">2026 Coach of the Year candidate model</h1>
             <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-300">
-              A historical profile of the last 10 AP winners, followed by a transparent elimination funnel and preliminary score for the 2026 field. This is a research framework, not a finalized betting card.
+              A historical profile of the last 10 AP winners, followed by a transparent elimination funnel and preliminary score for the 2026 field.
             </p>
             <div className="mt-6"><NflGuideNav /></div>
           </div>
         </section>
 
-        <div className="mx-auto max-w-[1400px] space-y-10 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1500px] space-y-10 px-4 py-8 sm:px-6 lg:px-8">
           <section>
-            <SectionHeading
-              eyebrow="Historical profile"
-              title="What the last 10 winners had in common"
-              description="Award seasons 2016–2025. The header emphasizes the traits that will drive the 2026 screening model."
-            />
+            <SectionHeading eyebrow="Historical profile" title="What the last 10 winners had in common" description="Award seasons 2016–2025. The header emphasizes the traits that drive the 2026 screening model." />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <SummaryTile label="First-year coach" value={`${summary.firstYearCoachPct}%`} />
               <SummaryTile label="Missed prior playoffs" value={`${summary.missedPriorPlayoffsPct}%`} />
@@ -61,13 +58,7 @@ export default function NFLCoachOfYear2026() {
             <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1180px] text-xs">
-                  <thead>
-                    <tr className="bg-slate-950 text-[9px] font-black uppercase tracking-wider text-white">
-                      <th className="px-3 py-3 text-left">Season</th>
-                      <th className="px-3 py-3 text-left">Coach / Team</th>
-                      <th>Year</th><th>Prior record</th><th>Prior playoffs</th><th>Award record</th><th>Win increase</th><th>Division</th><th>PPG increase</th><th>Award playoffs</th><th>Prior SOS</th><th>Award SOS</th>
-                    </tr>
-                  </thead>
+                  <thead><tr className="bg-slate-950 text-[9px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3 text-left">Season</th><th className="px-3 py-3 text-left">Coach / Team</th><th>Year</th><th>Prior record</th><th>Prior playoffs</th><th>Award record</th><th>Win increase</th><th>Division</th><th>PPG increase</th><th>Award playoffs</th><th>Prior SOS</th><th>Award SOS</th></tr></thead>
                   <tbody>
                     {COACH_OF_YEAR_HISTORY.map((row) => (
                       <tr key={row.season} className="border-t border-slate-100">
@@ -92,11 +83,7 @@ export default function NFLCoachOfYear2026() {
           </section>
 
           <section>
-            <SectionHeading
-              eyebrow="2026 candidate funnel"
-              title="Eliminate, downgrade, then rate the remaining field"
-              description="The first pass follows the historical profile: prior playoff teams are removed, winning non-playoff teams and verified major schedule jumps are downgraded, and the remainder receive a 100-point opportunity score."
-            />
+            <SectionHeading eyebrow="2026 candidate funnel" title="Eliminate, downgrade, then rate the remaining field" description="Prior playoff teams are removed, winning non-playoff teams and verified major schedule jumps are downgraded, and the remainder receive a 100-point opportunity score." />
             <div className="grid gap-4 md:grid-cols-3">
               <FunnelTile label="Eliminated" value={counts.eliminated} detail="Made the 2025 playoffs" tone="red" />
               <FunnelTile label="Unlikely" value={counts.unlikely} detail="Winning 2025 record or major SOS jump" tone="amber" />
@@ -104,39 +91,25 @@ export default function NFLCoachOfYear2026() {
             </div>
           </section>
 
+          <section className="rounded-3xl border-2 border-emerald-300 bg-emerald-50/70 p-5 shadow-sm">
+            <SectionHeading eyebrow="Elevated profile" title="Teams matching all four improvement filters" description="Requires 7+ projected wins, +3.0 or more projected improvement, an easier-half SoS (#17–32), and a top-20 offense or defense rating." />
+            <CandidateTable rows={COACH_OF_YEAR_ELEVATED_CANDIDATES} showScore elevatedOnly />
+          </section>
+
           <section>
-            <SectionHeading
-              eyebrow="Preliminary leaderboard"
-              title="Remaining 2026 Coach of the Year candidates"
-              description="Score weights: schedule 25, first-year coach 15, improvement/expectations 35, and division/playoff path 25. The weights are intentionally visible so they can be adjusted after review."
-            />
+            <SectionHeading eyebrow="Preliminary leaderboard" title="Remaining 2026 Coach of the Year candidates" description="Score weights: schedule 25, first-year coach 15, improvement/expectations 35, and division/playoff path 25. Elevated rows are highlighted." />
             <CandidateTable rows={COACH_OF_YEAR_RATED_CANDIDATES} showScore />
           </section>
 
           <section className="grid gap-8 xl:grid-cols-2">
             <div>
-              <SectionHeading
-                eyebrow="Secondary cut"
-                title="Unlikely profiles"
-                description="These teams missed the playoffs, but begin with a less typical winner profile because they already had a winning record or face a verified major schedule increase."
-              />
+              <SectionHeading eyebrow="Secondary cut" title="Unlikely profiles" description="Missed the playoffs, but begin with a less typical winner profile because they already had a winning record or face a verified major schedule increase." />
               <CandidateTable rows={COACH_OF_YEAR_UNLIKELY} />
             </div>
             <div>
-              <SectionHeading
-                eyebrow="Automatic cut"
-                title="Eliminated: 2025 playoff teams"
-                description="Eight of the last 10 winners took over or elevated a team that had missed the previous postseason, so prior playoff teams are removed in this first version."
-              />
+              <SectionHeading eyebrow="Automatic cut" title="Eliminated: 2025 playoff teams" description="Prior playoff teams are removed in this first version of the model." />
               <CandidateTable rows={COACH_OF_YEAR_ELIMINATED} />
             </div>
-          </section>
-
-          <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-7 text-blue-950">
-            <div className="font-black">Model notes</div>
-            <p className="mt-1">
-              The 2026 rating uses Warren Sharp schedule rank, the site’s preseason power and win projection, current head-coach tenure, and projected division competition. Dallas is the only non-playoff team currently tagged with a fully verified “significant SOS increase” because its source explicitly moves from the #2 easiest schedule in 2025 to the #4 toughest in 2026. More year-over-year schedule changes can be added as they are validated.
-            </p>
           </section>
         </div>
       </main>
@@ -144,21 +117,33 @@ export default function NFLCoachOfYear2026() {
   );
 }
 
-function CandidateTable({ rows, showScore = false }: { rows: CoachCandidateRow[]; showScore?: boolean }) {
+function CandidateTable({ rows, showScore = false, elevatedOnly = false }: { rows: CoachCandidateRow[]; showScore?: boolean; elevatedOnly?: boolean }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] text-xs">
-          <thead><tr className="bg-slate-900 text-[9px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3 text-left">Team / Coach</th><th>2025</th><th>Playoffs</th><th>Sharp SOS</th><th>First year</th><th>Model wins</th><th>Division path</th>{showScore && <><th>Sched</th><th>Coach</th><th>Improve</th><th>Path</th><th>Total</th></>}</tr></thead>
+        <table className="w-full min-w-[1250px] text-xs">
+          <thead>
+            <tr className="bg-slate-900 text-[9px] font-black uppercase tracking-wider text-white">
+              <th className="px-3 py-3 text-left">Team / Coach</th><th>2025</th><th>Playoffs</th><th>SoS</th><th>First year</th><th>Off rating</th><th>Def rating</th><th>Model Wins +/-</th><th>Division path</th>{showScore && <><th>Sched</th><th>Coach</th><th>Improve</th><th>Path</th><th>Total</th></>}
+            </tr>
+          </thead>
           <tbody>
+            {rows.length === 0 && <tr><td colSpan={showScore ? 14 : 9} className="px-4 py-8 text-center text-sm text-slate-500">No teams currently meet all filters.</td></tr>}
             {rows.map((row) => (
-              <tr key={row.team.abbr} className="border-t border-slate-100 align-middle hover:bg-slate-50">
-                <td className="px-3 py-3"><Link to={`/nfl/guide/team/${row.team.slug}`} className="flex items-center gap-3"><img src={nflLogoUrl(row.team.abbr)} alt="" className="h-8 w-8 object-contain" /><span><span className="block font-black text-slate-900">{row.team.team}</span><span className="block text-slate-500">{row.coach}</span>{row.sosChangeNote && <span className="mt-1 block max-w-[260px] text-[10px] font-bold leading-4 text-amber-700">{row.sosChangeNote}</span>}</span></Link></td>
+              <tr key={row.team.abbr} className={`border-t border-slate-100 align-middle ${row.elevated ? "bg-emerald-50/60" : "hover:bg-slate-50"}`}>
+                <td className="px-3 py-3">
+                  <Link to={`/nfl/guide/team/${row.team.slug}`} className="flex items-center gap-3">
+                    <img src={nflLogoUrl(row.team.abbr)} alt="" className="h-8 w-8 object-contain" />
+                    <span><span className="flex items-center gap-2 font-black text-slate-900">{row.team.team}{row.elevated && <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[8px] uppercase tracking-wider text-white">Elevated</span>}</span><span className="block text-slate-500">{row.coach}</span>{row.sosChangeNote && <span className="mt-1 block max-w-[260px] text-[10px] font-bold leading-4 text-amber-700">{row.sosChangeNote}</span>}</span>
+                  </Link>
+                </td>
                 <td className="text-center font-bold">{row.team.record2025}</td>
                 <BooleanCell value={row.made2025Playoffs} />
-                <td className="text-center"><span className="font-black">#{row.sharpSosRank}</span><div className="text-[9px] text-slate-400">1 hardest</div></td>
+                <HeatCell value={`#${row.sharpSosRank}`} detail="hardest" strength={(row.sharpSosRank - 16.5) / 15.5} />
                 <BooleanCell value={row.firstYearCoach} />
-                <td className="text-center"><span className="font-black">{row.team.projectedWins.toFixed(1)}</span><div className="text-[9px] text-slate-400">{signed(row.team.regressionGap)} vs 2025</div></td>
+                <RatingCell value={row.team.offPct} rank={row.team.offRank} />
+                <RatingCell value={row.team.defPct} rank={row.team.defRank} />
+                <HeatCell value={row.team.projectedWins.toFixed(1)} detail={`${signed(row.team.regressionGap)} vs 2025`} strength={row.team.regressionGap / 5} greenOnly />
                 <td className="px-2 text-center font-bold text-slate-600">{row.divisionPathLabel}</td>
                 {showScore && row.score && <><ScoreCell value={row.score.schedule} max={25} /><ScoreCell value={row.score.firstYearCoach} max={15} /><ScoreCell value={row.score.improvement} max={35} /><ScoreCell value={row.score.path} max={25} /><td className="text-center"><span className="inline-flex min-w-10 justify-center rounded-full bg-blue-600 px-2 py-1 font-black text-white">{row.score.total}</span></td></>}
               </tr>
@@ -166,8 +151,24 @@ function CandidateTable({ rows, showScore = false }: { rows: CoachCandidateRow[]
           </tbody>
         </table>
       </div>
+      {elevatedOnly && <div className="border-t border-emerald-200 bg-emerald-50 px-4 py-3 text-[11px] font-bold text-emerald-800">This tier is a filter match, not yet a final bet recommendation.</div>}
     </div>
   );
+}
+
+function RatingCell({ value, rank }: { value: number; rank: number }) {
+  return <HeatCell value={`${value > 0 ? "+" : ""}${value.toFixed(1)}%`} detail={`Rank #${rank}`} strength={value / 10} />;
+}
+
+function HeatCell({ value, detail, strength, greenOnly = false }: { value: string; detail: string; strength: number; greenOnly?: boolean }) {
+  const clamped = Math.max(-1, Math.min(1, strength));
+  const positive = clamped >= 0;
+  const alpha = 0.05 + Math.abs(clamped) * 0.24;
+  const backgroundColor = positive || greenOnly
+    ? `rgba(16, 185, 129, ${Math.max(0.04, positive ? alpha : 0.04)})`
+    : `rgba(239, 68, 68, ${alpha})`;
+  const color = positive || greenOnly ? "#047857" : "#b91c1c";
+  return <td className="px-2 py-2 text-center" style={{ backgroundColor }}><div className="font-black tabular-nums" style={{ color }}>{value}</div><div className="text-[9px] font-bold text-slate-500">{detail}</div></td>;
 }
 
 function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
@@ -188,14 +189,9 @@ function BooleanCell({ value }: { value: boolean }) {
 }
 
 function ScoreCell({ value, max }: { value: number; max: number }) {
-  return <td className="text-center"><span className="font-black text-slate-900">{value}</span><span className="text-[9px] text-slate-400">/{max}</span></td>;
+  const ratio = value / max;
+  return <td className="px-2 py-2 text-center" style={{ backgroundColor: `rgba(16, 185, 129, ${0.04 + ratio * 0.18})` }}><span className="font-black text-emerald-800">{value}</span><span className="text-[9px] text-slate-400">/{max}</span></td>;
 }
 
-function signed(value: number) {
-  return `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
-}
-
-function ordinal(value: number) {
-  const suffix = value % 10 === 1 && value % 100 !== 11 ? "st" : value % 10 === 2 && value % 100 !== 12 ? "nd" : value % 10 === 3 && value % 100 !== 13 ? "rd" : "th";
-  return `${value}${suffix}`;
-}
+function signed(value: number) { return `${value > 0 ? "+" : ""}${value.toFixed(1)}`; }
+function ordinal(value: number) { const suffix = value % 10 === 1 && value % 100 !== 11 ? "st" : value % 10 === 2 && value % 100 !== 12 ? "nd" : value % 10 === 3 && value % 100 !== 13 ? "rd" : "th"; return `${value}${suffix}`; }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   COACH_OF_YEAR_CANDIDATES,
+  COACH_OF_YEAR_ELEVATED_CANDIDATES,
   COACH_OF_YEAR_HISTORY,
   COACH_OF_YEAR_RATED_CANDIDATES,
   getCandidateByAbbr,
@@ -24,11 +25,7 @@ describe("NFL Coach of the Year research model", () => {
 
   it("places every NFL team into exactly one candidate bucket", () => {
     expect(COACH_OF_YEAR_CANDIDATES).toHaveLength(32);
-    expect(getCoachCandidateCounts()).toEqual({
-      eliminated: 14,
-      unlikely: 3,
-      rated: 15,
-    });
+    expect(getCoachCandidateCounts()).toEqual({ eliminated: 14, unlikely: 3, rated: 15 });
   });
 
   it("eliminates the 2025 playoff field", () => {
@@ -41,11 +38,16 @@ describe("NFL Coach of the Year research model", () => {
   it("downgrades winning non-playoff teams and Dallas' verified SOS jump", () => {
     expect(getCandidateByAbbr("det")?.bucket).toBe("unlikely");
     expect(getCandidateByAbbr("min")?.bucket).toBe("unlikely");
-    expect(getCandidateByAbbr("dal")).toMatchObject({
-      bucket: "unlikely",
-      significantSosIncrease: true,
-      sharpSosRank: 4,
-    });
+    expect(getCandidateByAbbr("dal")).toMatchObject({ bucket: "unlikely", significantSosIncrease: true, sharpSosRank: 4 });
+  });
+
+  it("identifies elevated teams using all four published filters", () => {
+    expect(COACH_OF_YEAR_ELEVATED_CANDIDATES.map((row) => row.team.abbr)).toEqual(["no"]);
+    const saints = COACH_OF_YEAR_ELEVATED_CANDIDATES[0];
+    expect(saints.team.projectedWins).toBeGreaterThanOrEqual(7);
+    expect(saints.team.regressionGap).toBeGreaterThanOrEqual(3);
+    expect(saints.sharpSosRank).toBeGreaterThanOrEqual(17);
+    expect(Math.min(saints.team.offRank, saints.team.defRank)).toBeLessThanOrEqual(20);
   });
 
   it("keeps all rated scores inside the published 100-point framework", () => {
@@ -59,9 +61,7 @@ describe("NFL Coach of the Year research model", () => {
       expect(row.score.improvement).toBeLessThanOrEqual(35);
       expect(row.score.path).toBeGreaterThanOrEqual(0);
       expect(row.score.path).toBeLessThanOrEqual(25);
-      expect(row.score.total).toBe(
-        row.score.schedule + row.score.firstYearCoach + row.score.improvement + row.score.path,
-      );
+      expect(row.score.total).toBe(row.score.schedule + row.score.firstYearCoach + row.score.improvement + row.score.path);
     }
   });
 });

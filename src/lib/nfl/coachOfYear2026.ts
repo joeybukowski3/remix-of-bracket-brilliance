@@ -57,6 +57,7 @@ export type CoachCandidateRow = {
   sosChangeNote: string | null;
   sharpSosRank: number;
   divisionPathLabel: string;
+  elevated: boolean;
   bucket: CoachCandidateBucket;
   bucketReason: string;
   score: CoachCandidateScore | null;
@@ -77,6 +78,7 @@ export const COACH_OF_YEAR_CANDIDATES: CoachCandidateRow[] = NFL_GUIDE_TEAMS
     const bucketOrder: Record<CoachCandidateBucket, number> = { rated: 0, unlikely: 1, eliminated: 2 };
     const bucketDiff = bucketOrder[a.bucket] - bucketOrder[b.bucket];
     if (bucketDiff !== 0) return bucketDiff;
+    if (a.elevated !== b.elevated) return a.elevated ? -1 : 1;
     return (b.score?.total ?? -1) - (a.score?.total ?? -1) || a.team.powerRank - b.team.powerRank;
   });
 
@@ -108,6 +110,12 @@ function buildCandidate(team: NflGuideTeam): CoachCandidateRow {
     score = scoreCandidate(team, sharpSosRank, firstYearCoach);
   }
 
+  const elevated = bucket === "rated"
+    && team.projectedWins >= 7
+    && team.regressionGap >= 3
+    && sharpSosRank >= 17
+    && (team.offRank <= 20 || team.defRank <= 20);
+
   return {
     team,
     coach: coachProfile.headCoach2026,
@@ -118,6 +126,7 @@ function buildCandidate(team: NflGuideTeam): CoachCandidateRow {
     sosChangeNote,
     sharpSosRank,
     divisionPathLabel: getDivisionPathLabel(team),
+    elevated,
     bucket,
     bucketReason,
     score,
@@ -201,5 +210,6 @@ export function getCoachCandidateCounts() {
 export const COACH_OF_YEAR_RATED_CANDIDATES = COACH_OF_YEAR_CANDIDATES.filter(
   (row): row is CoachCandidateRow & { score: CoachCandidateScore } => row.bucket === "rated" && row.score != null,
 );
+export const COACH_OF_YEAR_ELEVATED_CANDIDATES = COACH_OF_YEAR_RATED_CANDIDATES.filter((row) => row.elevated);
 export const COACH_OF_YEAR_ELIMINATED = COACH_OF_YEAR_CANDIDATES.filter((row) => row.bucket === "eliminated");
 export const COACH_OF_YEAR_UNLIKELY = COACH_OF_YEAR_CANDIDATES.filter((row) => row.bucket === "unlikely");
