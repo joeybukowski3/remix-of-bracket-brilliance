@@ -871,6 +871,7 @@ function validateBatterRows(rows) {
       angleTags: Array.isArray(row.angleTags) ? row.angleTags.map((entry) => normalizeText(entry)).filter(Boolean).slice(0, 3) : [],
       pitcherXera: toFiniteNumber(row.pitcherXera) ?? null,
       pitcherRegressionScore: toFiniteNumber(row.pitcherRegressionScore) ?? null,
+      pitcherFlyBallRate: toFiniteNumber(row.pitcherFlyBallRate) ?? null,
     };
 
     if (!normalized.player || !normalized.team || !normalized.opponent) {
@@ -1547,6 +1548,7 @@ async function main() {
     const regrEntry = pitcherRegressionData.find(p => p.name === enriched.opposingPitcher);
     const pitcherXera = opposingPitcher?.xera ?? regrEntry?.xera ?? regrEntry?.xfip ?? null;
     const pitcherRegressionScore = regrEntry?.regressionScore ?? null;
+    const pitcherFlyBallRate = opposingPitcher?.flyBallRate ?? null;
     const regrAdj = pitcherRegressionScore != null
       ? Math.max(0.96, Math.min(1.04, 1.0 + pitcherRegressionScore * 0.004))
       : 1.0;
@@ -1557,6 +1559,7 @@ async function main() {
       hrScore,
       pitcherXera: pitcherXera != null ? roundNumber(pitcherXera, 2) : null,
       pitcherRegressionScore: pitcherRegressionScore != null ? roundNumber(pitcherRegressionScore, 1) : null,
+      pitcherFlyBallRate: pitcherFlyBallRate != null ? roundNumber(pitcherFlyBallRate, 1) : null,
       angleTags: deriveAngleTags({ ...enriched, hrScore }, gamePool.find((game) => game.gameKey === enriched.gameKey)),
     };
   }).sort((left, right) => right.hrScore - left.hrScore || left.player.localeCompare(right.player))
@@ -1592,6 +1595,7 @@ async function main() {
       hrScoreRank: index + 1,
       pitcherXera: player.pitcherXera ?? null,
       pitcherRegressionScore: player.pitcherRegressionScore ?? null,
+      pitcherFlyBallRate: player.pitcherFlyBallRate ?? null,
     }));
 
   // ── Load MLB odds (written by fetch-mlb-odds.mjs before this script) ────────

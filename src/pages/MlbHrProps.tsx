@@ -86,6 +86,7 @@ export type HrDashboardBatter = {
   adjustedHrScore?: number;
   pitcherXera?: number | null;
   pitcherRegressionScore?: number | null;
+  pitcherFlyBallRate?: number | null;
   hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
   hrOddsNo?: string | null;      // sportsbook no HR odds e.g. "-450"
   hrValueEdge?: number | null;   // model prob / implied prob (>1 = value)
@@ -125,7 +126,7 @@ type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
 type MatchupLens = "best" | "hr" | "strikeout";
 type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "flyBallRate" | "hrVs" | "hitsVs" | "kVs" | "last7HR" | "hrPerStart";
-type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore" | "hrScore" | "pitcherXera";
+type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore" | "hrScore" | "pitcherXera" | "pitcherFlyBallRate";
 type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
 type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "parkFactor" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "opponentTeamXba" | "strikeoutMatchupScore";
 
@@ -354,6 +355,9 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     hrOddsYes: normalizeText(entry.hrOddsYes) || null,
     hrOddsNo: normalizeText(entry.hrOddsNo) || null,
     hrValueEdge: normalizeNumber(entry.hrValueEdge),
+    pitcherXera: normalizeNumber(entry.pitcherXera) ?? null,
+    pitcherRegressionScore: normalizeNumber(entry.pitcherRegressionScore) ?? null,
+    pitcherFlyBallRate: normalizeNumber(entry.pitcherFlyBallRate) ?? null,
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
   return b as HrDashboardBatter;
@@ -2009,7 +2013,8 @@ export default function MlbHrProps() {
                                   ["last7HR",          "L7",     "L7 HR"],
                                   ["last30HR",         "L30",    "L30 HR"],
                                   ["opposingPitcherHrVs","P.HR", "Ptch HR VS"],
-                                  ["pitcherXera",      "xERA",  "Ptch xERA"],
+                                  ["pitcherXera",      "xERA",    "Ptch xERA"],
+                                  ["pitcherFlyBallRate", "FB%",   "Ptch FB%"],
                                 ] as [string, string, string][]).map(([key, short, full]) => (
                                   <th key={key} className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[44px] sm:max-w-none sm:whitespace-nowrap">
                                     <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900 leading-tight">
@@ -2123,6 +2128,12 @@ export default function MlbHrProps() {
                                           </span>
                                         );
                                       })() : <span className="text-[9px] text-slate-300">—</span>}
+                                    </td>
+                                    {/* Ptch FB% */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      {row.pitcherFlyBallRate != null
+                                        ? <span className="text-[9px] sm:text-[10px] font-semibold text-slate-600">{row.pitcherFlyBallRate.toFixed(1)}%</span>
+                                        : <span className="text-[9px] text-slate-300">—</span>}
                                     </td>
                                     {/* Ptch Regr */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
