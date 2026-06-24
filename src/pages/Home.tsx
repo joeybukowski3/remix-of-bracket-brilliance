@@ -389,6 +389,10 @@ export default function Home() {
         </div>
       </section>
 
+      <ErrorBoundary section="Live Models">
+        <HomeFeaturedTables pgaTournament={pgaTournament} />
+      </ErrorBoundary>
+
       <section className="border-t border-black/6 bg-[#f8f8f8]">
         <div className="mx-auto max-w-[1280px] px-4 py-12 sm:px-6 lg:px-8">
           <div className="max-w-[760px]">
@@ -409,9 +413,6 @@ export default function Home() {
         </div>
       </section>
 
-      <ErrorBoundary section="Live Models">
-        <HomeFeaturedTables pgaTournament={pgaTournament} />
-      </ErrorBoundary>
       <SiteFooter />
     </main>
   );
