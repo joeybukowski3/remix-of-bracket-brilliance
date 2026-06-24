@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { NFL_SECTION_NAV_ITEMS, isNflSectionPathActive } from "@/lib/nfl/sectionNav";
 
 describe("NFL section navigation", () => {
-  it("contains the five major NFL destinations", () => {
+  it("contains the six major NFL destinations", () => {
     expect(NFL_SECTION_NAV_ITEMS.map((item) => item.to)).toEqual([
       "/nfl",
       "/nfl/standings",
       "/nfl/super-bowl",
+      "/nfl/coach-of-year",
       "/nfl/guide",
       "/nfl/guide/regression",
     ]);

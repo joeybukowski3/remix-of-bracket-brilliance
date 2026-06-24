@@ -25,6 +25,7 @@ import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import NFLGuide2026 from "./pages/NFLGuide2026";
 import NFLRegression2026 from "./pages/NFLRegression2026";
 import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
+import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
 import ComingSoon from "./pages/ComingSoon";
 import WorldCup2026 from "./pages/WorldCup2026";
 import PublicBetting from "./pages/PublicBetting";
@@ -90,6 +91,7 @@ const App = () => (
           <Route path="/nfl" element={<NFL />} />
           <Route path="/nfl/standings" element={<NFLStandings />} />
           <Route path="/nfl/super-bowl" element={<NFLSuperBowlOdds />} />
+          <Route path="/nfl/coach-of-year" element={<NFLCoachOfYear2026 />} />
           <Route path="/nfl/guide" element={<NFLGuide2026 />} />
           <Route path="/nfl/guide/regression" element={<NFLRegression2026 />} />
           <Route path="/nfl/guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
@@ -111,11 +113,11 @@ const App = () => (
           <Route path="/pga/best-bets" element={<PgaBestBets />} />
           <Route path="/pga/model" element={<PGAModel />} />
           <Route path="/pga/model/table" element={<PGAModelTableView />} />
-          <Route path="/pga/:tournamentSlug" element={<PGA />} />
           <Route path={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)} element={<PGAModel />} />
           <Route path={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)} element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug/model" element={<PGAModel />} />
           <Route path="/pga/:tournamentSlug/model/table" element={<PGAModelTableView />} />
+          <Route path="/pga/:tournamentSlug" element={<PGA />} />
           {PGA_TOURNAMENTS.map((tournament) => (
             <Route
               key={`${tournament.slug}-legacy-alias`}

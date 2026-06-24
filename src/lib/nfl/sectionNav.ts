@@ -29,6 +29,13 @@ export const NFL_SECTION_NAV_ITEMS: NflSectionNavItem[] = [
     marker: "SB",
   },
   {
+    to: "/nfl/coach-of-year",
+    label: "Coach of the Year",
+    shortLabel: "Coach of Year",
+    description: "Historical winner profile and 2026 candidate elimination model.",
+    marker: "CY",
+  },
+  {
     to: "/nfl/guide",
     label: "2026 Team Guide",
     shortLabel: "2026 Guide",
