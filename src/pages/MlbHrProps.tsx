@@ -42,6 +42,8 @@ export type HrDashboardPitcher = {
   kRate: number | null;
   bbRate: number | null;
   whiffRate: number | null;
+  last7HR: number;
+  hrPerStart: number | null;
   hrVs: number;
   hitsVs: number;
   kVs: number;
@@ -122,7 +124,7 @@ export type HrBestBetsPayload = {
 type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
 type MatchupLens = "best" | "hr" | "strikeout";
-type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "hrVs" | "hitsVs" | "kVs";
+type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "flyBallRate" | "hrVs" | "hitsVs" | "kVs" | "last7HR" | "hrPerStart";
 type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore" | "hrScore" | "pitcherXera";
 type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
 type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "parkFactor" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "opponentTeamXba" | "strikeoutMatchupScore";
@@ -298,6 +300,8 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
     xera: normalizeNumber(entry.xera),
     hardHitRate: normalizeNumber(entry.hardHitRate),
     flyBallRate: normalizeNumber(entry.flyBallRate),
+    last7HR: normalizeNumber(entry.last7HR) ?? 0,
+    hrPerStart: normalizeNumber(entry.hrPerStart) ?? null,
     barrelRate: normalizeNumber(entry.barrelRate),
     kRate: normalizeNumber(entry.kRate),
     bbRate: normalizeNumber(entry.bbRate),
@@ -1767,6 +1771,7 @@ export default function MlbHrProps() {
                                   ["parkFactor", "Park"],
                                   ["xera", "xERA"],
                                   ["hardHitRate", "Hard Hit%"],
+                                  ["flyBallRate", "FB%"],
                                   ["barrelRate", "Barrel%"],
                                   ["kRate", "K%"],
                                   ["bbRate", "BB%"],
@@ -1774,6 +1779,8 @@ export default function MlbHrProps() {
                                   ["hrVs", "HR VS"],
                                   ["hitsVs", "Hits VS"],
                                   ["kVs", "K VS"],
+                                  ["last7HR", "L7 HR"],
+                                  ["hrPerStart", "HR/GS"],
                                 ].map(([key, label]) => (
                                   <th key={key} className="border-b border-slate-200 bg-white px-4 py-1 text-left font-semibold whitespace-nowrap">
                                     <button type="button" onClick={() => handlePitcherSort(key as PitcherSortKey)} className="transition hover:text-slate-900">
@@ -1806,6 +1813,7 @@ export default function MlbHrProps() {
                                   </td>
                                   <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("xera", pitcher.xera, pitcherHeat)}>{formatNumber(pitcher.xera, 2)}</td>
                                   <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("hardHitRate", pitcher.hardHitRate, pitcherHeat)}>{formatPercent(pitcher.hardHitRate)}</td>
+                                  <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("flyBallRate", pitcher.flyBallRate, pitcherHeat)}>{formatPercent(pitcher.flyBallRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("barrelRate", pitcher.barrelRate, pitcherHeat)}>{formatPercent(pitcher.barrelRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("kRate", pitcher.kRate, pitcherHeat)}>{formatPercent(pitcher.kRate)}</td>
                                   <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("bbRate", pitcher.bbRate, pitcherHeat)}>{formatPercent(pitcher.bbRate)}</td>
@@ -1813,10 +1821,12 @@ export default function MlbHrProps() {
                                   <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("hrVs", pitcher.hrVs, pitcherHeat)}><ScorePill value={pitcher.hrVs} /></td>
                                   <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("hitsVs", pitcher.hitsVs, pitcherHeat)}><ScorePill value={pitcher.hitsVs} /></td>
                                   <td className="border-b border-slate-100 px-4 py-1.5" style={getPitcherTableHeatStyle("kVs", pitcher.kVs, pitcherHeat)}><ScorePill value={pitcher.kVs} /></td>
+                                  <td className="border-b border-slate-100 px-4 py-1.5 text-center font-semibold">{pitcher.last7HR}</td>
+                                  <td className="border-b border-slate-100 px-4 py-1.5 text-center text-slate-600">{pitcher.hrPerStart != null ? pitcher.hrPerStart.toFixed(2) : "—"}</td>
                                 </tr>
                               )) : (
                                 <tr>
-                                  <td colSpan={12} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={14} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No pitchers match the current search or game filter.
                                   </td>
                                 </tr>
@@ -2377,7 +2387,7 @@ export default function MlbHrProps() {
                                   </tr>
                                 )) : (
                                   <tr>
-                                    <td colSpan={12} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                    <td colSpan={14} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                       No matchup rows match the current search or game filter.
                                     </td>
                                   </tr>

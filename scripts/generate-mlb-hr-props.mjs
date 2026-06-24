@@ -496,6 +496,78 @@ async function fetchStatcastBatterMap() {
   }
 }
 
+
+// FanGraphs pitcher leaderboard — FB% (flyball rate), HR, GS
+// Used as a more reliable flyball% source than Statcast's fb_rate which often returns 0
+async function fetchFanGraphsPitcherMap() {
+  const url = `https://www.fangraphs.com/api/leaders/major-league/data?age=0&pos=all&stats=pit&lg=all&qual=0&season=${SEASON}&season1=${SEASON}&ind=0&team=0&rost=0&players=0&type=0&sortcol=7&sortdir=default&pageitems=300&pagenum=1`;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.fangraphs.com/leaders/major-league",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const rows = Array.isArray(data?.data) ? data.data : [];
+    const byMlbamId = new Map();
+    for (const row of rows) {
+      const mlbamId = String(row.xMLBAMID ?? "").trim();
+      if (!mlbamId || mlbamId === "0") continue;
+      const fbPct = typeof row["FB%"] === "number" ? Math.round(row["FB%"] * 1000) / 10 : null;
+      const hrTotal = typeof row.HR === "number" ? row.HR : null;
+      const gs = typeof row.GS === "number" ? row.GS : null;
+      const hrPerStart = (hrTotal != null && gs != null && gs > 0)
+        ? Math.round((hrTotal / gs) * 100) / 100
+        : null;
+      byMlbamId.set(mlbamId, { flyBallRate: fbPct, hrTotal, gs, hrPerStart });
+    }
+    console.log(`FanGraphs: loaded ${byMlbamId.size} pitcher entries.`);
+    return byMlbamId;
+  } catch (err) {
+    console.warn("FanGraphs pitcher fetch failed:", err.message);
+    return new Map();
+  }
+}
+
+// MLB Stats API pitcher game log — last N starts with HRs allowed, plus season flyball data
+const pitcherGameLogCache = new Map();
+async function fetchPitcherGameLog(id) {
+  if (!id) return { starts: [], seasonAirOuts: 0, seasonGroundOuts: 0 };
+  if (pitcherGameLogCache.has(id)) return pitcherGameLogCache.get(id);
+  try {
+    const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=gameLog&season=${SEASON}&group=pitching`);
+    const splits = json?.stats?.[0]?.splits ?? [];
+    // Only count starts (not relief appearances)
+    const starts = splits
+      .filter(s => (s.stat?.gamesStarted ?? 0) >= 1)
+      .map(s => ({
+        date: s.date,
+        homeRuns: s.stat?.homeRuns ?? 0,
+        airOuts: s.stat?.airOuts ?? 0,
+        groundOuts: s.stat?.groundOuts ?? 0,
+      }));
+    // Season aggregate for flyball% (airOuts / (airOuts + groundOuts))
+    const seasonAirOuts = starts.reduce((sum, g) => sum + g.airOuts, 0);
+    const seasonGroundOuts = starts.reduce((sum, g) => sum + g.groundOuts, 0);
+    const result = { starts, seasonAirOuts, seasonGroundOuts };
+    pitcherGameLogCache.set(id, result);
+    return result;
+  } catch {
+    const empty = { starts: [], seasonAirOuts: 0, seasonGroundOuts: 0 };
+    pitcherGameLogCache.set(id, empty);
+    return empty;
+  }
+}
+
 async function fetchStatcastPitcherMap() {
   const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1&selections=player_id,player_name,xera,hard_hit_percent,barrel_batted_rate,whiff_percent,k_percent,bb_percent,fb_rate,exit_velocity_avg&sort=hard_hit_percent&sortDir=desc&chart=false&csv=true`;
   try {
@@ -861,6 +933,8 @@ function validatePitcherRows(rows) {
       kRate: toFiniteNumber(row.kRate),
       bbRate: toFiniteNumber(row.bbRate),
       whiffRate: toFiniteNumber(row.whiffRate),
+      last7HR: toFiniteNumber(row.last7HR) ?? 0,
+      hrPerStart: toFiniteNumber(row.hrPerStart) ?? null,
       hrVs: toFiniteNumber(row.hrVs),
       hitsVs: toFiniteNumber(row.hitsVs),
       kVs: toFiniteNumber(row.kVs),
@@ -1202,6 +1276,7 @@ async function main() {
 
   const statcastBatters = await fetchStatcastBatterMap();
   const statcastPitchers = await fetchStatcastPitcherMap();
+  const fangraphsPitchers = await fetchFanGraphsPitcherMap();
   const weatherByGameKey = await fetchPropFinderWeatherMap();
   const batterPool = [];
   const pitcherPool = [];
@@ -1245,6 +1320,10 @@ async function main() {
     const homePitcherStats = await fetchPitcherSeasonStats(game.home.probablePitcher?.id ?? null);
     const awayPitcherStatcast = statcastPitchers.rowsByPlayerId.get(String(game.away.probablePitcher?.id ?? ""));
     const homePitcherStatcast = statcastPitchers.rowsByPlayerId.get(String(game.home.probablePitcher?.id ?? ""));
+    const awayFanGraphs = fangraphsPitchers.get(String(game.away.probablePitcher?.id ?? ""));
+    const homeFanGraphs = fangraphsPitchers.get(String(game.home.probablePitcher?.id ?? ""));
+    const awayGameLog = await fetchPitcherGameLog(game.away.probablePitcher?.id ?? null);
+    const homeGameLog = await fetchPitcherGameLog(game.home.probablePitcher?.id ?? null);
     const weatherContext = weatherByGameKey.get(gameKey) ?? {
       stadium: game.venue,
       roofType: "Unknown",
@@ -1278,6 +1357,8 @@ async function main() {
         pitcherPerson: awayPitcherPerson,
         seasonStats: awayPitcherStats,
         statcast: awayPitcherStatcast,
+        fangraphs: awayFanGraphs,
+        gameLog: awayGameLog,
         team: game.away.abbreviation,
         opponent: game.home.abbreviation,
       },
@@ -1287,6 +1368,8 @@ async function main() {
         pitcherPerson: homePitcherPerson,
         seasonStats: homePitcherStats,
         statcast: homePitcherStatcast,
+        fangraphs: homeFanGraphs,
+        gameLog: homeGameLog,
         team: game.home.abbreviation,
         opponent: game.away.abbreviation,
       },
@@ -1304,8 +1387,17 @@ async function main() {
         parkFactor,
         xera: sanitizeMetric(starter.statcast?.xera, "xERA", { pitcherId: starter.pitcherId }),
         hardHitRate: sanitizePercentStat(starter.statcast?.hard_hit_percent, "Pitcher Hard Hit%", { pitcherId: starter.pitcherId }),
-        flyBallRate: sanitizePercentStat(starter.statcast?.fb_rate, "Pitcher Fly Ball%", { pitcherId: starter.pitcherId })
-          ?? sanitizePercentStat(deriveFlyBallRate(starter.seasonStats), "Pitcher Fly Ball%", { pitcherId: starter.pitcherId, source: "season-stats" }),
+        flyBallRate: (() => {
+          // Statcast fb_rate is not populated for 2026; derive from game log airOuts/groundOuts
+          const total = starter.gameLog.seasonAirOuts + starter.gameLog.seasonGroundOuts;
+          const derived = total > 0
+            ? Math.round((starter.gameLog.seasonAirOuts / total) * 1000) / 10
+            : null;
+          return derived
+            ?? sanitizePercentStat(starter.statcast?.fb_rate, "Pitcher Fly Ball%", { pitcherId: starter.pitcherId })
+            ?? starter.fangraphs?.flyBallRate
+            ?? null;
+        })(),
         barrelRate: sanitizePercentStat(starter.statcast?.barrel_batted_rate, "Pitcher Barrel%", { pitcherId: starter.pitcherId }),
         kRate: sanitizePercentStat(starter.statcast?.k_percent, "Pitcher K%", { pitcherId: starter.pitcherId })
           ?? sanitizePercentStat(deriveRatePercent(starter.seasonStats?.strikeOuts, starter.seasonStats?.battersFaced), "Pitcher K%", { pitcherId: starter.pitcherId, source: "season-stats" }),
@@ -1315,6 +1407,13 @@ async function main() {
         seasonStrikeOuts: toFiniteNumber(starter.seasonStats?.strikeOuts) ?? null,
         seasonIP: parseInningsPitched(starter.seasonStats?.inningsPitched) ?? null,
         seasonGS: toFiniteNumber(starter.seasonStats?.gamesStarted) ?? null,
+        last7HR: starter.gameLog.starts.slice(-7).reduce((sum, g) => sum + g.homeRuns, 0),
+        hrPerStart: starter.fangraphs?.hrPerStart
+          ?? (() => {
+            const gs = starter.gameLog.starts.length;
+            const totalHR = starter.gameLog.starts.reduce((sum, g) => sum + g.homeRuns, 0);
+            return gs > 0 ? Math.round((totalHR / gs) * 100) / 100 : null;
+          })(),
       });
     }
 
@@ -1542,6 +1641,8 @@ async function main() {
       kRate: roundNumber(pitcher.kRate, 1),
       bbRate: roundNumber(pitcher.bbRate, 1),
       whiffRate: roundNumber(pitcher.whiffRate, 1),
+      last7HR: pitcher.last7HR ?? 0,
+      hrPerStart: pitcher.hrPerStart != null ? roundNumber(pitcher.hrPerStart, 2) : null,
       role,
       projectedIP,
       projectedK9,
