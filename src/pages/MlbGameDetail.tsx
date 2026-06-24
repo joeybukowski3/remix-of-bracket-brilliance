@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Rocket, Shield, Sparkles, Swords, Target, Wind } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Rocket, Shield, Sparkles, Swords, Target, TrendingUp, Wind } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
@@ -781,11 +781,13 @@ function PropPreviewCard({
 }
 
 const MLB_HUB_LINKS = [
-  { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: <Swords className="h-4 w-4" /> },
-  { label: "HR Props", to: "/mlb/hr-props", icon: <Flame className="h-4 w-4" /> },
-  { label: "K Props", to: "/mlb/strikeout-props", icon: <Radar className="h-4 w-4" /> },
-  { label: "Game Matchups", to: "/mlb#schedule", icon: <CalendarDays className="h-4 w-4" /> },
-  { label: "Schedule", to: "/mlb#schedule", icon: <CalendarDays className="h-4 w-4" /> },
+  { label: "Hit Props",             to: "/mlb/batter-vs-pitcher",       icon: <Swords      className="h-4 w-4" /> },
+  { label: "HR Props",              to: "/mlb/hr-props",                 icon: <Flame       className="h-4 w-4" /> },
+  { label: "K Props",               to: "/mlb/strikeout-props",          icon: <Radar       className="h-4 w-4" /> },
+  { label: "Game Matchups",         to: "/mlb#schedule",                 icon: <CalendarDays className="h-4 w-4" /> },
+  { label: "Moneyline Picks",       to: "/mlb#moneylines",               icon: <TrendingUp  className="h-4 w-4" /> },
+  { label: "Pitcher Regression",    to: "/mlb#pitcher-regression",       icon: <BarChart3   className="h-4 w-4" /> },
+  { label: "Schedule",              to: "/mlb#schedule",                 icon: <CalendarDays className="h-4 w-4" /> },
 ];
 
 const MLB_TOOL_CARDS = [
@@ -840,14 +842,25 @@ function MlbHubSidebar() {
         <img src="/logos/mlb.svg" alt="MLB" className="h-9 w-auto" />
       </div>
       <nav className="flex flex-col gap-1">
-        {MLB_HUB_LINKS.slice(0, 4).map((item, index) => (
+        {MLB_HUB_LINKS.slice(0, 4).map((item) => (
           <Link
             key={item.label}
             to={item.to}
             className={cn(
               "mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:translate-x-1 hover:bg-[#dce9ff] hover:text-[#031635]",
-              index === 0 && "bg-[#7bc2ff] text-[#004f7b] shadow-sm",
             )}
+          >
+            {item.icon}
+            {item.label}
+          </Link>
+        ))}
+        <div className="mx-4 my-2 border-t border-slate-200" />
+        <div className="px-5 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">Tables</div>
+        {MLB_HUB_LINKS.slice(4, 6).map((item) => (
+          <Link
+            key={item.label}
+            to={item.to}
+            className="mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:translate-x-1 hover:bg-[#dce9ff] hover:text-[#031635]"
           >
             {item.icon}
             {item.label}
@@ -2513,7 +2526,7 @@ function HomeSchedule({
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
 
           {/* Polymarket panel — inline on screens below 2xl, shown AFTER the Game Matchup Analyzer */}
-          <div className="2xl:hidden">
+          <div id="moneylines" className="2xl:hidden">
             <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} mlEdges={mlEdges} />
           </div>
 
@@ -2521,7 +2534,7 @@ function HomeSchedule({
           <MlbToolsGrid />
           
           {/* Pitcher Regression Table */}
-          <section className="space-y-3">
+          <section id="pitcher-regression" className="space-y-3">
             <div className="flex flex-col gap-1">
               <h2 className="text-xl font-bold tracking-tight text-[#031635]">Pitcher Regression Analysis</h2>
               <p className="text-xs text-slate-500">Today's starters — ERA vs expected metrics (xFIP/xERA). Negative score = overperforming (regression risk), Positive = underperforming (improvement likely). Auto-generated from MLB Stats API + Baseball Savant.</p>
