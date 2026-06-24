@@ -1,0 +1,114 @@
+name: Generate MLB Numerology
+
+on:
+  schedule:
+    # 9:36 AM America/New_York = 13:36 UTC (EDT, UTC-4) / 14:36 UTC (EST, UTC-5)
+    # Run both slots so daylight-saving transitions are covered.
+    # The script is idempotent for the same date — second run is a no-op if data unchanged.
+    - cron: "36 13 * * *"  # 9:36 AM EDT (summer)
+    - cron: "36 14 * * *"  # 9:36 AM EST (winter)
+    # Numerological note: 9+3+6 = 18 → 9; reinforces the 3-6-9 identity of the 369 entry symbol.
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional Eastern Time slate date (YYYY-MM-DD)"
+        required: false
+        type: string
+      dry_run:
+        description: "Generate and validate without committing"
+        required: false
+        default: "false"
+        type: string
+      use_fixture:
+        description: "Use fixture data instead of live external APIs"
+        required: false
+        default: "false"
+        type: string
+
+concurrency:
+  group: mlb-numerology-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  generate-numerology:
+    name: Generate daily MLB Numerology
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/New_York
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npx vitest run src/lib/numerology/numerology.test.ts
+        continue-on-error: false
+
+      - name: Generate numerology
+        id: generate
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: |
+          DATE_FLAG=""
+          if [ -n "${{ inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ inputs.date }}"
+          fi
+
+          DRY_FLAG=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_FLAG="--dry-run"
+          fi
+
+          FIXTURE_FLAG=""
+          if [ "${{ inputs.use_fixture }}" = "true" ]; then
+            FIXTURE_FLAG="--fixture"
+          fi
+
+          node scripts/generate-mlb-numerology.mjs $DATE_FLAG $DRY_FLAG $FIXTURE_FLAG
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      - name: Commit and push
+        if: ${{ inputs.dry_run != 'true' }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add public/data/mlb/numerology-daily.json public/data/mlb/numerology/ 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No numerology changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          PUSHED=false
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && PUSHED=true && break
+            echo "Push attempt $attempt failed, retrying in $((attempt * 10))s..."
+            sleep $((attempt * 10))
+          done
+
+          if [ "$PUSHED" != "true" ]; then
+            echo "ERROR: All push attempts failed — numerology data was NOT committed" >&2
+            exit 1
+          fi

@@ -1,0 +1,75 @@
+{
+  "version": "2.0.0",
+  "description": "JoeKnowsBall MLB Numerology Methodology. All weights and rules are fixed here. Grok may only produce narrative text.",
+  "numerologySystem": "Pythagorean",
+  "masterNumbers": [11, 22, 33],
+  "numberFamilies": [[1, 4, 7], [2, 5, 8], [3, 6, 9]],
+  "balancingComplementRule": "complement_to_10",
+  "countercurrentRule": "9_minus_root_zero_becomes_9",
+  "primaryUniversalDayMethod": "full_date_all_digits",
+  "calendarDayMethod": "day_of_month_digits",
+  "universalYearMethod": "year_all_digits",
+  "universalMonthMethod": "calendar_month_plus_universal_year_root",
+  "structuralEchoMethod": "month_root_plus_calday_root_plus_year_root",
+  "weights": {
+    "personalDayExactMaster": 20,
+    "personalDayRoot": 14,
+    "jerseyExactMaster": 16,
+    "jerseyRoot": 12,
+    "battingOrderExactRoot": 12,
+    "lifePathExactMaster": 14,
+    "lifePathRoot": 10,
+    "birthDayExactCompound": 10,
+    "birthDayRoot": 7,
+    "ageExactCompound": 9,
+    "ageRoot": 5,
+    "expressionRoot": 6,
+    "primaryFamilyMatch": 3,
+    "calendarDayExactCompound": 8,
+    "calendarDayRoot": 5,
+    "secondaryFamilyMatch": 2,
+    "repeatedDateDigit": 2,
+    "gameTimeMatch": 1,
+    "contextMatch": 1,
+    "countercurrentHighField": 6,
+    "countercurrentMultiple": 3,
+    "convergenceMaxBonus": 8,
+    "numerologyWeight": 0.60,
+    "baseballWeight": 0.40
+  },
+  "doubleCounting": {
+    "rule": "Once a source field awards points at any tier, it does not award additional points at a lower tier.",
+    "convergenceCap": "Convergence bonus capped at convergenceMaxBonus. Requires 3+ independent source fields.",
+    "examples": [
+      "Jersey 22 on a 22/4 day: exact master only, no additional root points.",
+      "Batting 4th on a root-4 day: exact root only, no family points.",
+      "Jersey 33 on Calendar Day 24/6: shared root-6, not exact compound match."
+    ]
+  },
+  "finalScoreFormula": "Final = 60% × NumerologyResonance + 40% × BaseballOpportunity",
+  "scoreTiers": {
+    "85": "Elite Alignment",
+    "75": "Strong Alignment",
+    "65": "Moderate Alignment",
+    "0": "Watchlist"
+  },
+  "prohibitedLanguage": ["guaranteed", "lock", "destined", "certain", "can't lose", "proven"],
+  "grokPermittedFields": [
+    "dailyProfile.interpretation",
+    "featuredPlays[].summary",
+    "featuredPlays[].marketExplanation",
+    "featuredPlays[].primaryPatternLabel",
+    "featuredPlays[].countercurrentExplanation",
+    "watchlist[].summary",
+    "narrative.closingObservation"
+  ],
+  "grokProhibitedActions": [
+    "Change any calculated number",
+    "Change any score",
+    "Add unknown players",
+    "Change opponent or lineup status",
+    "Change odds or lines",
+    "Use prohibited language",
+    "Claim causation"
+  ]
+}
