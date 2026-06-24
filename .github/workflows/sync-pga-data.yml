@@ -67,6 +67,10 @@ jobs:
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: node scripts/sync-pga-sheet.mjs
 
+      - name: Generate tournament rankings from player stats
+        if: steps.gate.outputs.should_run == 'true'
+        run: node scripts/generate-pga-tournament-rankings.mjs
+
       - name: Check player stats freshness
         if: steps.gate.outputs.should_run == 'true'
         id: freshness
