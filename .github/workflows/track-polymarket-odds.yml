@@ -2,6 +2,16 @@ name: Track Polymarket Odds
 
 on:
   workflow_dispatch:
+    inputs:
+      task:
+        description: "Polymarket task to run"
+        required: true
+        default: snapshot
+        type: choice
+        options:
+          - snapshot
+          - grade
+          - both
   schedule:
     # Hourly snapshots 11am–11pm UTC (7am–7pm ET) — covers full MLB day
     - cron: "0 11 * * *"
@@ -21,24 +31,31 @@ on:
     - cron: "0 0 * * *"
     - cron: "0 1 * * *"
     - cron: "0 2 * * *"
-    # 3am ET grader (7am UTC)
+    # Daily grader (7am UTC)
     - cron: "0 7 * * *"
 
-# Prevent overlapping runs — if a snapshot is already in progress, wait for it
-# rather than cancelling it (cancel-in-progress: false)
+permissions:
+  contents: write
+
+# Prevent separate Polymarket runs from racing each other on generated files or git pushes.
 concurrency:
-  group: polymarket-odds
+  group: polymarket-odds-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
   snapshot:
     name: Snapshot Polymarket prices
     runs-on: ubuntu-latest
-    # Skip the 3am grader run (7 UTC) from this job
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && (github.event.schedule != '0 7 * * *'))
+    timeout-minutes: 20
+    if: >-
+      (github.event_name == 'workflow_dispatch' &&
+        (github.event.inputs.task == 'snapshot' || github.event.inputs.task == 'both')) ||
+      (github.event_name == 'schedule' && github.event.schedule != '0 7 * * *')
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
@@ -52,41 +69,59 @@ jobs:
         run: node scripts/fetch-polymarket-snapshots.mjs
 
       - name: Commit snapshot
-        id: commit
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/polymarket/
 
           if git diff --cached --quiet; then
-            echo "No changes to commit"
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            git commit -m "chore: polymarket snapshot $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
-            PUSHED=false
-            for attempt in 1 2 3 4 5; do
-              git pull --rebase origin main && git push origin HEAD:main && PUSHED=true && break
-              echo "Push attempt $attempt failed, retrying in $((attempt * 10))s..."
-              sleep $((attempt * 10))
-            done
-            if [ "$PUSHED" = "true" ]; then
-              echo "changed=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "changed=false" >> "$GITHUB_OUTPUT"
-              echo "ERROR: All push attempts failed — snapshot data was NOT committed" >&2
-              exit 1
+            echo "No snapshot changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: polymarket snapshot $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting rebase before retry" >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
             fi
+
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — snapshot data was NOT committed" >&2
+            exit 1
           fi
 
   grade:
     name: Grade yesterday's results
     runs-on: ubuntu-latest
-    # Only run at 3am ET (7am UTC)
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 7 * * *')
+    timeout-minutes: 20
+    # Waiting on snapshot serializes a manual "both" run. A skipped snapshot is
+    # expected for scheduled grading and manual grade-only runs.
+    needs: snapshot
+    if: >-
+      always() &&
+      (needs.snapshot.result == 'success' || needs.snapshot.result == 'skipped') &&
+      ((github.event_name == 'workflow_dispatch' &&
+        (github.event.inputs.task == 'grade' || github.event.inputs.task == 'both')) ||
+       (github.event_name == 'schedule' && github.event.schedule == '0 7 * * *'))
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
@@ -102,16 +137,35 @@ jobs:
       - name: Commit graded results
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/polymarket/
 
           if git diff --cached --quiet; then
             echo "No new grades to commit"
-          else
-            git commit -m "chore: grade polymarket results $(TZ=America/New_York date '+%Y-%m-%d')"
-            for attempt in 1 2 3 4 5; do
-              git pull --rebase origin main && git push origin HEAD:main && break
-              sleep $((attempt * 10))
-            done
+            exit 0
+          fi
+
+          git commit -m "chore: grade polymarket results $(TZ=America/New_York date '+%Y-%m-%d')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting rebase before retry" >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — graded results were NOT committed" >&2
+            exit 1
           fi
