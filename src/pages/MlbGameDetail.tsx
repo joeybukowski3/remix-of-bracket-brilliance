@@ -781,13 +781,15 @@ function PropPreviewCard({
 }
 
 const MLB_HUB_LINKS = [
-  { label: "Hit Props",             to: "/mlb/batter-vs-pitcher",       icon: <Swords      className="h-4 w-4" /> },
-  { label: "HR Props",              to: "/mlb/hr-props",                 icon: <Flame       className="h-4 w-4" /> },
-  { label: "K Props",               to: "/mlb/strikeout-props",          icon: <Radar       className="h-4 w-4" /> },
-  { label: "Game Matchups",         to: "/mlb#schedule",                 icon: <CalendarDays className="h-4 w-4" /> },
-  { label: "Moneyline Picks",       to: "/mlb#moneylines",               icon: <TrendingUp  className="h-4 w-4" /> },
-  { label: "Pitcher Regression",    to: "/mlb#pitcher-regression",       icon: <BarChart3   className="h-4 w-4" /> },
-  { label: "Schedule",              to: "/mlb#schedule",                 icon: <CalendarDays className="h-4 w-4" /> },
+  { label: "Hit Props",             to: "/mlb/batter-vs-pitcher",             icon: <Swords      className="h-4 w-4" /> },
+  { label: "HR Props",              to: "/mlb/hr-props",                       icon: <Flame       className="h-4 w-4" /> },
+  { label: "K Props",               to: "/mlb/strikeout-props",                icon: <Radar       className="h-4 w-4" /> },
+  { label: "Game Matchups",         to: "/mlb#schedule",                       icon: <CalendarDays className="h-4 w-4" /> },
+  { label: "Moneyline Picks",       to: "/mlb#moneylines",                     icon: <TrendingUp  className="h-4 w-4" /> },
+  { label: "Pitcher Regression",    to: "/mlb#pitcher-regression",             icon: <BarChart3   className="h-4 w-4" /> },
+  { label: "Overdue Batters",       to: "/mlb/hr-props#overdue",               icon: <Flame       className="h-4 w-4" /> },
+  { label: "Biggest Mismatches",    to: "/mlb/hr-props#mismatches",            icon: <Swords      className="h-4 w-4" /> },
+  { label: "Schedule",              to: "/mlb#schedule",                       icon: <CalendarDays className="h-4 w-4" /> },
 ];
 
 const MLB_TOOL_CARDS = [
@@ -856,7 +858,7 @@ function MlbHubSidebar() {
         ))}
         <div className="mx-4 my-2 border-t border-slate-200" />
         <div className="px-5 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">Tables</div>
-        {MLB_HUB_LINKS.slice(4, 6).map((item) => (
+        {MLB_HUB_LINKS.slice(4, 8).map((item) => (
           <Link
             key={item.label}
             to={item.to}

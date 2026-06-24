@@ -1844,7 +1844,7 @@ export default function MlbHrProps() {
                     {activeTab === "batters" ? (
                       <section className="space-y-3">
 
-                        {/* ── Overdue Batters ──────────────────────────────── */}
+                        {/* ── Insight tables: Overdue Batters + Biggest Mismatches ── */}
                         {(() => {
                           const overdue = batters
                             .filter(b =>
@@ -1852,126 +1852,126 @@ export default function MlbHrProps() {
                               !isStarterPlaceholder(b.opposingPitcher) &&
                               (b.atBats == null || b.atBats >= 50) &&
                               (b.barrelRate == null || b.barrelRate <= 25) &&
-                              (b.hrScore) >= 58 &&
+                              b.hrScore >= 58 &&
                               (b.last7HR ?? 0) <= 1 &&
                               ((b.barrelRate ?? 0) >= 11 || (b.hardHitRate ?? 0) >= 45)
                             )
-                            .sort((a, b) => (b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
+                            .sort((a, b) => b.hrScore - a.hrScore)
                             .slice(0, 8);
-                          if (!overdue.length) return null;
-                          return (
-                            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                              <div className="mb-3">
-                                <h3 className="text-base font-extrabold text-amber-900">⏳ Overdue Batters</h3>
-                                <p className="text-xs text-amber-700 mt-0.5">Strong HR score + good power metrics, but 0–1 HRs in last 7 days. Due for a breakout.</p>
-                              </div>
-                              <div className="overflow-x-auto">
-                                <table className="w-full min-w-[520px] text-xs">
-                                  <thead>
-                                    <tr className="text-[10px] font-bold uppercase tracking-wide text-amber-700 border-b border-amber-200">
-                                      <th className="pb-1.5 text-left">Batter</th>
-                                      <th className="pb-1.5 text-center">Score</th>
-                                      <th className="pb-1.5 text-center">Barrel%</th>
-                                      <th className="pb-1.5 text-center">HH%</th>
-                                      <th className="pb-1.5 text-center">L7 HR</th>
-                                      <th className="pb-1.5 text-center">L30 HR</th>
-                                      <th className="pb-1.5 text-center">Ptch xERA</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {overdue.map((row) => (
-                                      <tr key={`od-${row.player}-${row.team}`} className="border-b border-amber-100 last:border-0">
-                                        <td className="py-1.5 pr-3">
-                                          <div className="flex items-center gap-1.5">
-                                            <TeamLogoBadge team={row.team} size={14} showLabel={false} />
-                                            <span className="font-semibold text-slate-900">{row.player}</span>
-                                          </div>
-                                          <div className="text-[10px] text-slate-400">vs {row.opposingPitcher}</div>
-                                        </td>
-                                        <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
-                                        <td className="py-1.5 text-center font-semibold text-slate-700">{row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}</td>
-                                        <td className="py-1.5 text-center font-semibold text-slate-700">{row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : "—"}</td>
-                                        <td className="py-1.5 text-center">
-                                          <span className="rounded-full bg-amber-200 px-2 py-0.5 font-black text-amber-900">{row.last7HR ?? "—"}</span>
-                                        </td>
-                                        <td className="py-1.5 text-center font-semibold text-slate-600">{row.last30HR ?? "—"}</td>
-                                        <td className="py-1.5 text-center font-semibold text-slate-600">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          );
-                        })()}
 
-                        {/* ── Biggest Mismatches ───────────────────────────── */}
-                        {(() => {
                           const mismatches = batters
                             .filter(b =>
                               !tbdGameKeys.has(b.gameKey) &&
                               !isStarterPlaceholder(b.opposingPitcher) &&
                               (b.atBats == null || b.atBats >= 50) &&
                               (b.barrelRate == null || b.barrelRate <= 25) &&
-                              (b.hrScore) >= 58 &&
+                              b.hrScore >= 58 &&
                               (b.opposingPitcherHrVs ?? 0) >= 55 &&
                               ((b.pitcherXera ?? 0) >= 4.5 || (b.pitcherRegressionScore ?? 0) > 2)
                             )
-                            .sort((a, b) => (b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
+                            .sort((a, b) => b.hrScore - a.hrScore)
                             .slice(0, 8);
-                          if (!mismatches.length) return null;
+
+                          if (!overdue.length && !mismatches.length) return null;
+
                           return (
-                            <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
-                              <div className="mb-3">
-                                <h3 className="text-base font-extrabold text-red-900">⚔️ Biggest Mismatches</h3>
-                                <p className="text-xs text-red-700 mt-0.5">Elite HR score vs a vulnerable pitcher — high HR VS + weak xERA or regression risk. Maximum edge plays.</p>
-                              </div>
-                              <div className="overflow-x-auto">
-                                <table className="w-full min-w-[560px] text-xs">
-                                  <thead>
-                                    <tr className="text-[10px] font-bold uppercase tracking-wide text-red-700 border-b border-red-200">
-                                      <th className="pb-1.5 text-left">Batter</th>
-                                      <th className="pb-1.5 text-center">Score</th>
-                                      <th className="pb-1.5 text-center">Barrel%</th>
-                                      <th className="pb-1.5 text-center">HH%</th>
-                                      <th className="pb-1.5 text-center">HR VS</th>
-                                      <th className="pb-1.5 text-center">Ptch xERA</th>
-                                      <th className="pb-1.5 text-center">Regr</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {mismatches.map((row) => (
-                                      <tr key={`mm-${row.player}-${row.team}`} className="border-b border-red-100 last:border-0">
-                                        <td className="py-1.5 pr-3">
-                                          <div className="flex items-center gap-1.5">
-                                            <TeamLogoBadge team={row.team} size={14} showLabel={false} />
-                                            <span className="font-semibold text-slate-900">{row.player}</span>
-                                          </div>
-                                          <div className="text-[10px] text-slate-400">vs {row.opposingPitcher}</div>
-                                        </td>
-                                        <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
-                                        <td className="py-1.5 text-center font-semibold text-slate-700">{row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}</td>
-                                        <td className="py-1.5 text-center font-semibold text-slate-700">{row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : "—"}</td>
-                                        <td className="py-1.5 text-center">
-                                          <span className="rounded-full bg-red-200 px-2 py-0.5 font-black text-red-900">{row.opposingPitcherHrVs?.toFixed(1) ?? "—"}</span>
-                                        </td>
-                                        <td className="py-1.5 text-center font-semibold text-slate-700">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</td>
-                                        <td className="py-1.5 text-center">
-                                          {row.pitcherRegressionScore != null ? (
-                                            <span className={`font-bold ${row.pitcherRegressionScore > 2 ? "text-red-700" : "text-slate-500"}`}>
-                                              {row.pitcherRegressionScore > 0 ? `+${row.pitcherRegressionScore.toFixed(1)}` : row.pitcherRegressionScore.toFixed(1)}
-                                            </span>
-                                          ) : "—"}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                              {/* Overdue Batters */}
+                              {overdue.length > 0 && (
+                                <div id="overdue" className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                                  <div className="mb-3">
+                                    <h3 className="text-base font-extrabold text-amber-900">⏳ Overdue Batters</h3>
+                                    <p className="text-xs text-amber-700 mt-0.5">Strong HR score + good power metrics, but 0–1 HRs in last 7 days. Due for a breakout.</p>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[400px] text-xs">
+                                      <thead>
+                                        <tr className="text-[10px] font-bold uppercase tracking-wide text-amber-700 border-b border-amber-200">
+                                          <th className="pb-1.5 text-left">Batter</th>
+                                          <th className="pb-1.5 text-center">Score</th>
+                                          <th className="pb-1.5 text-center">Barrel%</th>
+                                          <th className="pb-1.5 text-center">L7</th>
+                                          <th className="pb-1.5 text-center">L30</th>
+                                          <th className="pb-1.5 text-center">xERA</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {overdue.map((row) => (
+                                          <tr key={`od-${row.player}-${row.team}`} className="border-b border-amber-100 last:border-0">
+                                            <td className="py-1.5 pr-2">
+                                              <div className="flex items-center gap-1.5">
+                                                <TeamLogoBadge team={row.team} size={13} showLabel={false} />
+                                                <span className="font-semibold text-slate-900 text-[11px]">{row.player}</span>
+                                              </div>
+                                              <div className="text-[9px] text-slate-400">vs {row.opposingPitcher}</div>
+                                            </td>
+                                            <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
+                                            <td className="py-1.5 text-center font-semibold text-slate-700">{row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}</td>
+                                            <td className="py-1.5 text-center">
+                                              <span className="rounded-full bg-amber-200 px-2 py-0.5 font-black text-amber-900">{row.last7HR ?? "—"}</span>
+                                            </td>
+                                            <td className="py-1.5 text-center font-semibold text-slate-600">{row.last30HR ?? "—"}</td>
+                                            <td className="py-1.5 text-center font-semibold text-slate-600">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Biggest Mismatches */}
+                              {mismatches.length > 0 && (
+                                <div id="mismatches" className="rounded-2xl border border-red-200 bg-red-50 p-4">
+                                  <div className="mb-3">
+                                    <h3 className="text-base font-extrabold text-red-900">⚔️ Biggest Mismatches</h3>
+                                    <p className="text-xs text-red-700 mt-0.5">Elite HR score vs a vulnerable pitcher — high HR VS + weak xERA or regression risk.</p>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[400px] text-xs">
+                                      <thead>
+                                        <tr className="text-[10px] font-bold uppercase tracking-wide text-red-700 border-b border-red-200">
+                                          <th className="pb-1.5 text-left">Batter</th>
+                                          <th className="pb-1.5 text-center">Score</th>
+                                          <th className="pb-1.5 text-center">HR VS</th>
+                                          <th className="pb-1.5 text-center">xERA</th>
+                                          <th className="pb-1.5 text-center">Regr</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {mismatches.map((row) => (
+                                          <tr key={`mm-${row.player}-${row.team}`} className="border-b border-red-100 last:border-0">
+                                            <td className="py-1.5 pr-2">
+                                              <div className="flex items-center gap-1.5">
+                                                <TeamLogoBadge team={row.team} size={13} showLabel={false} />
+                                                <span className="font-semibold text-slate-900 text-[11px]">{row.player}</span>
+                                              </div>
+                                              <div className="text-[9px] text-slate-400">vs {row.opposingPitcher}</div>
+                                            </td>
+                                            <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
+                                            <td className="py-1.5 text-center">
+                                              <span className="rounded-full bg-red-200 px-2 py-0.5 font-black text-red-900">{row.opposingPitcherHrVs?.toFixed(1) ?? "—"}</span>
+                                            </td>
+                                            <td className="py-1.5 text-center font-semibold text-slate-700">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</td>
+                                            <td className="py-1.5 text-center">
+                                              {row.pitcherRegressionScore != null ? (
+                                                <span className={`font-bold ${row.pitcherRegressionScore > 2 ? "text-red-700" : "text-slate-500"}`}>
+                                                  {row.pitcherRegressionScore > 0 ? `+${row.pitcherRegressionScore.toFixed(1)}` : row.pitcherRegressionScore.toFixed(1)}
+                                                </span>
+                                              ) : "—"}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              )}
+
                             </div>
                           );
                         })()}
-
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
                             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">💥 Batter View</h2>
