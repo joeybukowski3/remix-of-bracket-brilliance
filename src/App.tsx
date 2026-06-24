@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Home from "./pages/Home";
 import Rankings from "./pages/Rankings";
 import Schedule from "./pages/Schedule";
@@ -69,6 +70,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter basename={routerBase}>
+        <ErrorBoundary section="Page">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/rankings" element={<Rankings />} />
@@ -126,6 +128,7 @@ const App = () => (
           <Route path="/pga/top-40-golf-picks" element={<PGATop40Picks />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

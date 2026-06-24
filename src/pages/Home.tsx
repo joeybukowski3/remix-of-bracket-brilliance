@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SiteFooter from "@/components/layout/SiteFooter";
 import { HomeFeaturedTables } from "@/components/home/HomeFeaturedTables";
 
@@ -408,7 +409,9 @@ export default function Home() {
         </div>
       </section>
 
-      <HomeFeaturedTables pgaTournament={pgaTournament} />
+      <ErrorBoundary section="Live Models">
+        <HomeFeaturedTables pgaTournament={pgaTournament} />
+      </ErrorBoundary>
       <SiteFooter />
     </main>
   );
