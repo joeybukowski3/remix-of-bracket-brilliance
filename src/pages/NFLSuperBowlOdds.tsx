@@ -5,6 +5,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { NFL_POWER_RATINGS, nflLogoUrl, type NflPowerTeam } from "@/data/nflPreseason2026";
 import { slugifyNflTeam } from "@/lib/nfl/guide2026";
 import { calculateRankGap, getRankGapSignal, type SuperBowlMarketTeam } from "@/lib/nfl/superBowlMarkets";
+import NflGuideNav from "@/components/nfl/NflGuideNav";
 
 type SuperBowlOddsResponse = {
   source: "polymarket";
@@ -96,11 +97,7 @@ export default function NFLSuperBowlOdds() {
             <div className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">NFL · Prediction Markets</div>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">Super Bowl Odds Tracker</h1>
             <p className="mt-2 text-sm text-slate-500">Live Super Bowl market prices compared with the Joe Knows Ball power rankings · Select a team for its complete dashboard</p>
-            <nav className="mt-5 flex flex-wrap gap-2" aria-label="NFL sections">
-              <Link to="/nfl" className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700">Power Ratings</Link>
-              <Link to="/nfl/standings" className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700">Standings by Division</Link>
-              <span className="rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white">Super Bowl Odds</span>
-            </nav>
+            <div className="mt-5"><NflGuideNav /></div>
           </section>
 
           <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Super Bowl market summary">

@@ -5,6 +5,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { NFL_DIVISIONS, NFL_DIVISION_ORDER, nflLogoUrl, type NflDivisionTeam } from "@/data/nflPreseason2026";
 import { slugifyNflTeam } from "@/lib/nfl/guide2026";
+import NflGuideNav from "@/components/nfl/NflGuideNav";
 
 function winPct(record: string) {
   const [wins, losses] = record.split("-").map((value) => parseInt(value, 10) || 0);
@@ -79,11 +80,7 @@ export default function NFLStandings() {
             <div className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">NFL · Standings</div>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">2026 NFL Standings by Division</h1>
             <p className="mt-2 text-sm text-slate-500">Sorted by record, then preseason power rank · Select a team for its full dashboard</p>
-            <nav className="mt-5 flex flex-wrap gap-2" aria-label="NFL sections">
-              <Link to="/nfl" className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700">Power Ratings</Link>
-              <span className="rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white">Standings by Division</span>
-              <Link to="/nfl/super-bowl" className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700">Super Bowl Odds</Link>
-            </nav>
+            <div className="mt-5"><NflGuideNav /></div>
           </section>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
