@@ -434,7 +434,21 @@ export default function MlbNumerologyPage() {
                 </section>
               )}
 
-              {data.featuredPlays.length === 0 && (
+              {data.featuredPlays.length === 0 && (data as any).bestAvailable?.length > 0 && (
+                <section>
+                  <SectionLabel>Best Available Alignments</SectionLabel>
+                  <div className="mb-3 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[10px] text-amber-300/70">
+                    Best available today — below the featured-play threshold (60). No player on today's slate has reached qualifying alignment.
+                  </div>
+                  <div className="space-y-3">
+                    {(data as any).bestAvailable.map((play: any) => (
+                      <PlayCard key={`ba-${play.rank}-${play.playerName}`} play={play} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {data.featuredPlays.length === 0 && !((data as any).bestAvailable?.length) && (
                 <div className="rounded-xl border border-white/8 bg-[#0a1628] px-4 py-8 text-center text-xs text-white/25">
                   No featured plays available. Check back after the morning model run.
                 </div>

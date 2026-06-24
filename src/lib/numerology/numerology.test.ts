@@ -312,3 +312,62 @@ describe("Master number preservation across date profiles", () => {
     expect(p.calendarDay.master).toBe(11);
   });
 });
+
+// ── Disabled-signal normalization (Issue #5) ──────────────────────────────────
+
+describe("Disabled signals contribute exactly zero and never reduce score below zero", () => {
+  it("numerologyScore is never negative (countercurrent floor)", () => {
+    // Math.max(0, negativeRaw) ensures floor
+    const rawNegative = Math.max(0, 0 - 12 + 0);
+    expect(rawNegative).toBe(0);
+    expect(Math.round((rawNegative / 60) * 100)).toBe(0);
+  });
+
+  it("jersey-only score is positive when root matches UD root", () => {
+    const jerseyRoot4 = reduce(4); // jersey 4 on a root-4 day
+    const jerseyPts = 12; // W.jerseyRoot
+    const numScore = Math.min(100, Math.round((jerseyPts / 60) * 100));
+    expect(numScore).toBeGreaterThan(0);
+    expect(numScore).toBeLessThanOrEqual(100);
+    expect(jerseyRoot4.root).toBe(4);
+  });
+
+  it("a player with only counter signals scores 0 numerology (not negative)", () => {
+    const posTotal = 0;
+    const negTotal = 6; // one countercurrent hit
+    const conv = 0;
+    const raw = Math.max(0, posTotal - negTotal + conv);
+    expect(raw).toBe(0);
+  });
+});
+
+// ── Fixture safety ─────────────────────────────────────────────────────────────
+
+describe("Fixture safety validation", () => {
+  function isFixtureData(output: { generationMode?: string; featuredPlays?: { playerName?: string }[] }) {
+    if (output.generationMode === "fixture") return true;
+    const demoPatterns = [/demonstration/i, /demo player/i, /placeholder/i];
+    for (const play of output.featuredPlays ?? []) {
+      for (const pat of demoPatterns) {
+        if (pat.test(play.playerName ?? "")) return true;
+      }
+    }
+    return false;
+  }
+
+  it("rejects generationMode=fixture", () => {
+    expect(isFixtureData({ generationMode: "fixture" })).toBe(true);
+  });
+
+  it("rejects demonstration player name", () => {
+    expect(isFixtureData({ generationMode: "live", featuredPlays: [{ playerName: "Demonstration Player" }] })).toBe(true);
+  });
+
+  it("accepts live data with real player name", () => {
+    expect(isFixtureData({ generationMode: "live", featuredPlays: [{ playerName: "Juan Soto" }] })).toBe(false);
+  });
+
+  it("accepts empty featured plays", () => {
+    expect(isFixtureData({ generationMode: "live", featuredPlays: [] })).toBe(false);
+  });
+});

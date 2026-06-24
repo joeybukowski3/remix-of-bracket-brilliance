@@ -200,6 +200,25 @@ async function loadMlbData() {
   return JSON.parse(readFileSync(rawPath, "utf8"));
 }
 
+// Load pre-built player identity cache (built by update-player-identity-cache.mjs)
+function loadIdentityCache() {
+  const cachePath = path.join(DATA_DIR, "player-identity-cache.json");
+  if (!existsSync(cachePath)) {
+    console.warn("[numerology] player-identity-cache.json not found — bio data unavailable. Run scripts/update-player-identity-cache.mjs first.");
+    return new Map();
+  }
+  const raw = JSON.parse(readFileSync(cachePath, "utf8"));
+  const map = new Map();
+  for (const [key, entry] of Object.entries(raw)) {
+    map.set(key, entry);
+  }
+  console.log(`[numerology] Identity cache: ${map.size} entries`);
+  const withBd = [...map.values()].filter(e => e.birthDate).length;
+  const withJ = [...map.values()].filter(e => e.jerseyNumber != null).length;
+  console.log(`[numerology] Cache coverage: birthDate=${withBd}/${map.size}, jersey=${withJ}/${map.size}`);
+  return map;
+}
+
 const personCache = new Map();
 async function fetchPerson(id) {
   if (!id) return null;
@@ -306,10 +325,28 @@ function ageOnDate(birthDate, slateDate) {
 // ── Scoring ───────────────────────────────────────────────────────────────────
 const W = METHODOLOGY.weights;
 
-function scorePlayerForNumerology(playerProfile, dailyProfile) {
+function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = []) {
   const signals = [];
   const awarded = new Set();
   const ud = dailyProfile.universalDay;
+
+  // Maximum achievable raw score — only count signals whose source data IS available
+  // This prevents penalizing players for missing disabled/unavailable data
+  let maxAchievable = 0;
+  maxAchievable += W.jerseyExactMaster; // jersey
+  maxAchievable += W.expressionRoot; // expression (always available)
+  if (!missingData.includes("birthDate")) {
+    maxAchievable += W.personalDayExactMaster; // personalDay
+    maxAchievable += W.lifePathExactMaster; // lifePath
+    maxAchievable += W.birthDayExactCompound; // birthDay
+    maxAchievable += W.ageExactCompound; // age
+  }
+  if (playerProfile.battingOrder != null) {
+    maxAchievable += W.battingOrderExactRoot;
+  }
+  maxAchievable += W.convergenceMaxBonus;
+  // Use a floor of 60 to preserve score scale when most data is available
+  const normCeiling = Math.max(60, maxAchievable);
 
   function award(field, label, type, points, description, key) {
     if (awarded.has(key) || points === 0) return;
@@ -427,8 +464,8 @@ function scorePlayerForNumerology(playerProfile, dailyProfile) {
   const independentSources = new Set(pos.filter(s => !["family_support","contextual_echo"].includes(s.type)).map(s=>s.field));
   const convergenceBonus = Math.min(independentSources.size >= 4 ? W.convergenceMaxBonus : independentSources.size >= 3 ? Math.round(W.convergenceMaxBonus*0.5) : 0, W.convergenceMaxBonus);
   const rawNumerology = Math.max(0, positiveTotal - countercurrentTotal + convergenceBonus);
-  const numerologyScore = Math.min(100, Math.round((rawNumerology / 60) * 100));
-  return { signals, positiveTotal, countercurrentTotal, convergenceBonus, numerologyScore };
+  const numerologyScore = Math.min(100, Math.round((rawNumerology / normCeiling) * 100));
+  return { signals, positiveTotal, countercurrentTotal, convergenceBonus, numerologyScore, normCeiling };
 }
 
 // ── Lineup status (Issue #7) ──────────────────────────────────────────────────
@@ -605,9 +642,10 @@ async function main() {
     : `${dailyProfile.universalDay.compound}/${dailyProfile.universalDay.root}`;
   console.log(`[numerology] Universal Day: ${udLabel} | Calendar Day: ${dailyProfile.calendarDay.original}/${dailyProfile.calendarDay.root} | Primary Family: [${dailyProfile.primaryFamily.join("-")}]`);
 
-  // Step 2: Load MLB data
+  // Step 2: Load MLB data + identity cache
   const mlbData = await loadMlbData();
   const batters = mlbData.batters ?? [];
+  const identityCache = loadIdentityCache();
   const candidatePoolType = "jkb_hr_props";
   const eligiblePlayerCount = batters.length;
 
@@ -639,7 +677,7 @@ async function main() {
     console.warn(`[numerology] Schedule fetch failed: ${e.message}`);
   }
 
-  // Step 4: Score all candidates
+  // Step 4: Score all candidates using cache (no sequential API calls)
   const candidates = [];
   const seen = new Set();
   const universalYearRoot = dailyProfile.universalYear.root;
@@ -650,26 +688,20 @@ async function main() {
     if (seen.has(key)) { exclusionReasons.push({ player: batter.player, reason: "duplicate" }); continue; }
     seen.add(key);
 
-    // Stable ID resolution — exact name match required (Issue #5)
-    const personId = await resolvePlayerId(batter.player, batter.team);
-    let person = null;
-    if (personId) {
-      person = await fetchPerson(personId);
-    } else {
-      console.warn(`[numerology] Could not resolve MLB ID for ${batter.player} (${batter.team})`);
-    }
-
-    const birthDate = person?.birthDate ?? null;
-    const jerseyNum = person?.primaryNumber != null ? parseInt(String(person.primaryNumber), 10) : null;
+    // Look up from pre-built cache (Issue #3 — no sequential API calls)
+    const cached = identityCache.get(key);
+    const personId = cached?.mlbId ?? null;
+    const birthDate = cached?.birthDate ?? null;
+    const jerseyNum = cached?.jerseyNumber ?? null;
     const missingData = [];
+    if (!personId) missingData.push("mlbId");
     if (!birthDate) missingData.push("birthDate");
     if (jerseyNum == null) missingData.push("jersey");
-    if (!personId) missingData.push("mlbId");
 
-    // Lineup status (Issue #7)
+    // Lineup status from schedule roster
     const rosterEntry = scheduleRoster.find(r => r.id === personId);
     const lineupInfo = computeLineupStatus(rosterEntry, isPreLineupTime);
-    const battingOrder = rosterEntry?.battingOrder ?? null; // already normalized 1-9
+    const battingOrder = rosterEntry?.battingOrder ?? null;
 
     // Numerology profile
     const jerseyReduced = jerseyNum != null ? reduce(jerseyNum) : null;
@@ -692,7 +724,7 @@ async function main() {
       expressionNum: exprNum,
     };
 
-    const { signals, positiveTotal, countercurrentTotal, convergenceBonus, numerologyScore } = scorePlayerForNumerology(playerNumerology, dailyProfile);
+    const { signals, positiveTotal, countercurrentTotal, convergenceBonus, numerologyScore } = scorePlayerForNumerology(playerNumerology, dailyProfile, missingData);
     const bbScore = baseballScore(batter);
     const finalScore = Math.round(W.numerologyWeight * numerologyScore + W.baseballWeight * bbScore);
     const market = selectMarket(batter);
@@ -727,6 +759,9 @@ async function main() {
   candidates.forEach((c, i) => { c.rank = i + 1; });
 
   const featured = candidates.filter(c => c.finalScore >= 60).slice(0, 5);
+  const bestAvailable = featured.length < 3
+    ? candidates.filter(c => c.finalScore < 60).slice(0, 3 - featured.length)
+    : [];
   const watchlist = candidates.filter(c => c.finalScore < 60 && c.finalScore >= 45).slice(0, 6);
   const countercurrents = candidates.filter(c => c.countercurrentTotal > 0 && c.numerologyScore < 40).slice(0, 3);
   const confirmedCount = candidates.filter(c => c.lineupStatus === "confirmed").length;
@@ -809,6 +844,23 @@ async function main() {
       counterSignals: c.signals.filter(s => s.points < 0),
       missingData: c.missingData,
       ...getNarrative(c.rank),
+    })),
+    bestAvailable: bestAvailable.map(c => ({
+      rank: c.rank,
+      playerId: c.personId ?? null,
+      playerName: c.playerName,
+      team: c.team,
+      opponent: c.opponent,
+      lineupStatus: c.lineupStatus,
+      battingOrder: c.battingOrder,
+      jerseyNumber: c.jerseyNumber,
+      recommendedMarket: c.recommendedMarket,
+      numerologyScore: c.numerologyScore,
+      baseballScore: c.baseballScore,
+      finalScore: c.finalScore,
+      primarySignal: c.signals.filter(s => s.points > 0)[0]?.label ?? null,
+      missingData: c.missingData,
+      belowThresholdLabel: "Best available today — below the featured-play threshold",
     })),
     watchlist: watchlist.map(c => ({
       rank: c.rank,
