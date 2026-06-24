@@ -231,7 +231,7 @@ function KTable({ rows, mlbOdds }: { rows: KRow[]; mlbOdds: MlbOddsData | null }
 
 function MLTable() {
   const { data: polyData } = usePolymarketMlbMoneylines();
-  const { data: mlbOdds } = useMlbOdds();
+  const mlbOdds = useMlbOdds();
 
   const rows = useMemo(() => {
     if (!polyData?.games?.length) return [];
@@ -404,7 +404,7 @@ interface PgaTournamentProp {
 
 export function HomeFeaturedTables({ pgaTournament }: { pgaTournament: PgaTournamentProp | null }) {
   const { batters, strikeoutRows, loading } = useMlbPropsData();
-  const { data: mlbOdds } = useMlbOdds();
+  const mlbOdds = useMlbOdds();
 
   const pgaLabel = pgaTournament?.shortName ?? pgaTournament?.name ?? "PGA Current Power Ratings";
   const pgaRoute = pgaTournament?.slug ? `/pga/${pgaTournament.slug}` : "/pga";
