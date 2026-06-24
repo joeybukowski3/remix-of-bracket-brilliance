@@ -104,7 +104,7 @@ function SectionWrap({ eyebrow, title, subtitle, cta, ctaTo, children }: {
 function HRTable({ batters, mlbOdds }: { batters: HrDashboardBatter[]; mlbOdds: MlbOddsData | null }) {
   const rows = batters
     .filter(b => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
-    .slice().sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
+    .slice().sort((a, b) => (b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
     .slice(0, 8);
 
   if (!rows.length) return <Skeleton />;
@@ -124,7 +124,7 @@ function HRTable({ batters, mlbOdds }: { batters: HrDashboardBatter[]; mlbOdds: 
         ))}
       </div>
       {rows.map((r, i) => {
-        const score = r.adjustedHrScore ?? r.hrScore;
+        const score = r.hrScore;
         const pill = sc(score);
         const hrLine = mlbOdds?.hrOdds?.[normKey(r.player)]?.yes;
         return (

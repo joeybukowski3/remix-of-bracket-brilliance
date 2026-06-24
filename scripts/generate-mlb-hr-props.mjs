@@ -8,6 +8,7 @@ const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const RAW_OUTPUT_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const BEST_BETS_OUTPUT_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
 const MLB_ODDS_PATH = path.join(DATA_DIR, "mlb-odds.json");
+const PITCHER_REGRESSION_PATH = path.join(DATA_DIR, "pitcher-regression.json");
 const FORCE = process.argv.includes("--force");
 const MIN_GENERATION_HOUR_ET = 10;
 const GROK_API_URL = "https://api.x.ai/v1/chat/completions";
@@ -796,6 +797,8 @@ function validateBatterRows(rows) {
       hrScore: toFiniteNumber(row.hrScore),
       hrScoreRank: toFiniteNumber(row.hrScoreRank),
       angleTags: Array.isArray(row.angleTags) ? row.angleTags.map((entry) => normalizeText(entry)).filter(Boolean).slice(0, 3) : [],
+      pitcherXera: toFiniteNumber(row.pitcherXera) ?? null,
+      pitcherRegressionScore: toFiniteNumber(row.pitcherRegressionScore) ?? null,
     };
 
     if (!normalized.player || !normalized.team || !normalized.opponent) {
@@ -821,6 +824,19 @@ function validateBatterRows(rows) {
   });
 
   return validated;
+}
+
+// Pitcher xERA multiplier — same scale used across all pipeline stages
+function xeraMult(xera) {
+  if (xera == null) return 1.0;
+  if (xera <= 2.5) return 0.80;
+  if (xera <= 3.0) return 0.85;
+  if (xera <= 3.5) return 0.91;
+  if (xera <= 4.0) return 0.96;
+  if (xera <= 4.5) return 1.00;
+  if (xera <= 5.0) return 1.05;
+  if (xera <= 5.5) return 1.10;
+  return 1.15;
 }
 
 function validatePitcherRows(rows) {
@@ -1406,6 +1422,18 @@ async function main() {
     parkValues: dedupedPool.map((player) => player.parkFactor),
   };
 
+  // Load pitcher regression data for xERA multiplier
+  let pitcherRegressionData = [];
+  try {
+    if (existsSync(PITCHER_REGRESSION_PATH)) {
+      pitcherRegressionData = JSON.parse(readFileSync(PITCHER_REGRESSION_PATH, "utf8"));
+      if (!Array.isArray(pitcherRegressionData)) pitcherRegressionData = [];
+      console.log(`Loaded ${pitcherRegressionData.length} pitcher regression entries.`);
+    }
+  } catch (err) {
+    console.warn("Could not load pitcher-regression.json — skipping pitcher adjustment:", err.message);
+  }
+
   const scored = dedupedPool.map((player) => {
     const opposingPitcher = pitcherLookup.get(String(player.opposingPitcherId ?? ""));
     const enriched = {
@@ -1414,10 +1442,22 @@ async function main() {
       opposingPitcherHitsVs: opposingPitcher?.hitsVs ?? 50,
       opposingPitcherKVs: opposingPitcher?.kVs ?? 50,
     };
-    const hrScore = computeBatterHrScore(enriched, batterContexts);
+    const baseHrScore = computeBatterHrScore(enriched, batterContexts);
+
+    // Apply pitcher quality adjustment at generation time so hrScore is the final number
+    const regrEntry = pitcherRegressionData.find(p => p.name === enriched.opposingPitcher);
+    const pitcherXera = opposingPitcher?.xera ?? regrEntry?.xera ?? regrEntry?.xfip ?? null;
+    const pitcherRegressionScore = regrEntry?.regressionScore ?? null;
+    const regrAdj = pitcherRegressionScore != null
+      ? Math.max(0.96, Math.min(1.04, 1.0 + pitcherRegressionScore * 0.004))
+      : 1.0;
+    const hrScore = Math.round(baseHrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
+
     return {
       ...enriched,
       hrScore,
+      pitcherXera: pitcherXera != null ? roundNumber(pitcherXera, 2) : null,
+      pitcherRegressionScore: pitcherRegressionScore != null ? roundNumber(pitcherRegressionScore, 1) : null,
       angleTags: deriveAngleTags({ ...enriched, hrScore }, gamePool.find((game) => game.gameKey === enriched.gameKey)),
     };
   }).sort((left, right) => right.hrScore - left.hrScore || left.player.localeCompare(right.player))
@@ -1451,6 +1491,8 @@ async function main() {
       angleTags: player.angleTags,
       hrScore: player.hrScore,
       hrScoreRank: index + 1,
+      pitcherXera: player.pitcherXera ?? null,
+      pitcherRegressionScore: player.pitcherRegressionScore ?? null,
     }));
 
   // ── Load MLB odds (written by fetch-mlb-odds.mjs before this script) ────────

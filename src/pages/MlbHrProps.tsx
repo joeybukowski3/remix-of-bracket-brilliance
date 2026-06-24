@@ -123,7 +123,7 @@ type SortDirection = "asc" | "desc";
 type TabKey = "pitchers" | "batters" | "matchups";
 type MatchupLens = "best" | "hr" | "strikeout";
 type PitcherSortKey = "pitcher" | "gameKey" | "parkFactor" | "xera" | "hardHitRate" | "barrelRate" | "kRate" | "bbRate" | "whiffRate" | "hrVs" | "hitsVs" | "kVs";
-type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore" | "adjustedHrScore" | "pitcherXera";
+type BatterSortKey = "hrScoreRank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "kRate" | "bbRate" | "barrelRate" | "hardHitRate" | "xba" | "whiffRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs" | "hrScore" | "hrScore" | "pitcherXera";
 type MatchupSortKey = "rank" | "player" | "team" | "opposingPitcher" | "parkFactor" | "hrScore" | "opposingPitcherHrVs" | "opposingPitcherHitsVs" | "opposingPitcherKVs" | "hrTargetScore" | "bestMatchupScore" | "strikeoutMatchupScore" | "barrelRate" | "hardHitRate" | "xba" | "kRate" | "whiffRate";
 type StrikeoutSortKey = "rank" | "pitcher" | "team" | "opponent" | "parkFactor" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "opponentTeamXba" | "strikeoutMatchupScore";
 
@@ -233,7 +233,7 @@ export type PitcherStrikeoutTeamRow = {
 
 export const DEFAULT_TAB: TabKey = "batters";
 export const DEFAULT_PITCHER_SORT = { key: "hrVs" as PitcherSortKey, direction: "desc" as SortDirection };
-export const DEFAULT_BATTER_SORT = { key: "adjustedHrScore" as BatterSortKey, direction: "desc" as SortDirection };
+export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_MATCHUP_SORT = { key: "bestMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
 
 const DASH = "--";
@@ -1382,42 +1382,9 @@ export default function MlbHrProps() {
   );
   const { data: pitcherRegressionData } = usePitcherRegression();
 
-  // Pitcher quality multiplier: penalises elite pitchers, boosts vulnerable ones
-  // xERA drives the bulk of the weight; regression score adds a fine-tuning layer
-  const enrichedBatters = useMemo(() => {
-    function xeraMult(xera: number | null): number {
-      if (xera == null) return 1.0;
-      if (xera <= 2.5) return 0.80;
-      if (xera <= 3.0) return 0.85;
-      if (xera <= 3.5) return 0.91;
-      if (xera <= 4.0) return 0.96;
-      if (xera <= 4.5) return 1.00;
-      if (xera <= 5.0) return 1.05;
-      if (xera <= 5.5) return 1.10;
-      return 1.15;
-    }
-    return allBatters.map((b) => {
-      // Find pitcher xERA: check HR props pitchers first, then regression data
-      const hrPropsPitcher = allPitchers.find(
-        p => p.pitcher === b.opposingPitcher || p.pitcherId === b.opposingPitcherId
-      );
-      const regrData = pitcherRegressionData.find(p => p.name === b.opposingPitcher);
-      const pitcherXera = hrPropsPitcher?.xera ?? regrData?.xera ?? regrData?.xfip ?? null;
-      const pitcherRegressionScore = regrData?.regressionScore ?? null;
-
-      // Small regression fine-tune: overperforming pitcher (neg score) = harder; underperforming = easier
-      const regrAdj = pitcherRegressionScore != null
-        ? Math.max(0.96, Math.min(1.04, 1.0 + pitcherRegressionScore * 0.004))
-        : 1.0;
-
-      const adjustedHrScore = Math.round(b.hrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
-      return { ...b, adjustedHrScore, pitcherXera, pitcherRegressionScore };
-    });
-  }, [allBatters, allPitchers, pitcherRegressionData]);
-
   const batters = useMemo(
-    () => enrichedBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher)),
-    [enrichedBatters, tbdGameKeys],
+    () => allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher)),
+    [allBatters, tbdGameKeys],
   );
   const tbdFootnotes = useMemo(() => buildTbdFootnotes(tbdGameKeys, allGames, allPitchers, allBatters), [allBatters, allGames, allPitchers, tbdGameKeys]);
   const parkRows = useMemo(() => buildParkSidebarRows(games), [games]);
@@ -1865,17 +1832,17 @@ export default function MlbHrProps() {
 
                         {/* ── Overdue Batters ──────────────────────────────── */}
                         {(() => {
-                          const overdue = enrichedBatters
+                          const overdue = batters
                             .filter(b =>
                               !tbdGameKeys.has(b.gameKey) &&
                               !isStarterPlaceholder(b.opposingPitcher) &&
                               (b.atBats == null || b.atBats >= 50) &&
                               (b.barrelRate == null || b.barrelRate <= 25) &&
-                              (b.adjustedHrScore ?? b.hrScore) >= 58 &&
+                              (b.hrScore) >= 58 &&
                               (b.last7HR ?? 0) <= 1 &&
                               ((b.barrelRate ?? 0) >= 11 || (b.hardHitRate ?? 0) >= 45)
                             )
-                            .sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
+                            .sort((a, b) => (b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
                             .slice(0, 8);
                           if (!overdue.length) return null;
                           return (
@@ -1907,7 +1874,7 @@ export default function MlbHrProps() {
                                           </div>
                                           <div className="text-[10px] text-slate-400">vs {row.opposingPitcher}</div>
                                         </td>
-                                        <td className="py-1.5 text-center"><StatScorePill value={row.adjustedHrScore ?? row.hrScore} /></td>
+                                        <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
                                         <td className="py-1.5 text-center font-semibold text-slate-700">{row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}</td>
                                         <td className="py-1.5 text-center font-semibold text-slate-700">{row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : "—"}</td>
                                         <td className="py-1.5 text-center">
@@ -1926,17 +1893,17 @@ export default function MlbHrProps() {
 
                         {/* ── Biggest Mismatches ───────────────────────────── */}
                         {(() => {
-                          const mismatches = enrichedBatters
+                          const mismatches = batters
                             .filter(b =>
                               !tbdGameKeys.has(b.gameKey) &&
                               !isStarterPlaceholder(b.opposingPitcher) &&
                               (b.atBats == null || b.atBats >= 50) &&
                               (b.barrelRate == null || b.barrelRate <= 25) &&
-                              (b.adjustedHrScore ?? b.hrScore) >= 58 &&
+                              (b.hrScore) >= 58 &&
                               (b.opposingPitcherHrVs ?? 0) >= 55 &&
                               ((b.pitcherXera ?? 0) >= 4.5 || (b.pitcherRegressionScore ?? 0) > 2)
                             )
-                            .sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
+                            .sort((a, b) => (b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
                             .slice(0, 8);
                           if (!mismatches.length) return null;
                           return (
@@ -1968,7 +1935,7 @@ export default function MlbHrProps() {
                                           </div>
                                           <div className="text-[10px] text-slate-400">vs {row.opposingPitcher}</div>
                                         </td>
-                                        <td className="py-1.5 text-center"><StatScorePill value={row.adjustedHrScore ?? row.hrScore} /></td>
+                                        <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
                                         <td className="py-1.5 text-center font-semibold text-slate-700">{row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}</td>
                                         <td className="py-1.5 text-center font-semibold text-slate-700">{row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : "—"}</td>
                                         <td className="py-1.5 text-center">
@@ -2026,7 +1993,7 @@ export default function MlbHrProps() {
                                 {/* Scrollable columns — short labels on mobile, full on sm+ */}
                                 {([
                                   ...(hasHrOdds ? [["hrOddsYes", "Odds", "HR Odds"]] : []),
-                                  ["adjustedHrScore", "HR↕",    "HR Score ↕"],
+                                  ["hrScore", "HR↕",    "HR Score ↕"],
                                   ["barrelRate",       "Brl%",   "Barrel%"],
                                   ["hardHitRate",      "HH%",    "HH%"],
                                   ["last7HR",          "L7",     "L7 HR"],
@@ -2091,7 +2058,7 @@ export default function MlbHrProps() {
                                     )}
                                     {/* HR Score */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
-                                      <StatScorePill value={row.adjustedHrScore ?? row.hrScore} />
+                                      <StatScorePill value={row.hrScore} />
                                     </td>
                                     {/* Barrel% */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">

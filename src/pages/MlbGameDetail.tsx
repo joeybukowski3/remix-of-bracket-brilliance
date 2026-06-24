@@ -1537,7 +1537,7 @@ function MlbToolsGrid() {
 function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
   const rows = batters
     .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
-    .slice().sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
+    .slice().sort((a, b) => b.hrScore - a.hrScore)
     .slice(0, 8);
 
   function sc(s: number) {
@@ -1565,7 +1565,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
       {/* Mobile: 2 column layout (player info + score), stats below */}
       <div className="sm:hidden">
         {rows.map((r, i) => {
-          const score = r.adjustedHrScore ?? r.hrScore;
+          const score = r.hrScore;
           const pillStyle = sc(score);
           return (
             <div key={`${r.player}-${i}`} style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}`, position: "relative" }}>
@@ -1627,7 +1627,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
           ))}
         </div>
         {rows.map((r, i) => {
-          const score = r.adjustedHrScore ?? r.hrScore;
+          const score = r.hrScore;
           const pillStyle = sc(score);
           return (
             <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
@@ -2289,26 +2289,6 @@ function SocialMediaTablesSection({
   const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits">("hr");
   const { data: polymarketData } = usePolymarketMlbMoneylines();
 
-  // Must be before early return — hooks cannot be called conditionally
-  const enrichedBatters = useMemo(() => {
-    function xeraMult(xera: number | null): number {
-      if (xera == null) return 1.0;
-      if (xera <= 2.5) return 0.80; if (xera <= 3.0) return 0.85;
-      if (xera <= 3.5) return 0.91; if (xera <= 4.0) return 0.96;
-      if (xera <= 4.5) return 1.00; if (xera <= 5.0) return 1.05;
-      if (xera <= 5.5) return 1.10; return 1.15;
-    }
-    return batters.map((b) => {
-      const hrPropsPitcher = pitchers.find(p => p.pitcher === b.opposingPitcher || p.pitcherId === b.opposingPitcherId);
-      const regrData = pitcherRegressionData.find(p => p.name === b.opposingPitcher);
-      const pitcherXera = hrPropsPitcher?.xera ?? regrData?.xera ?? regrData?.xfip ?? null;
-      const regrScore = regrData?.regressionScore ?? null;
-      const regrAdj = regrScore != null ? Math.max(0.96, Math.min(1.04, 1.0 + regrScore * 0.004)) : 1.0;
-      const adjustedHrScore = Math.round(b.hrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
-      return { ...b, adjustedHrScore };
-    });
-  }, [batters, pitchers, pitcherRegressionData]);
-
   if (loading) return null;
 
   const tabs: { key: "ml" | "hr" | "k" | "hits"; label: string; emoji: string }[] = [
@@ -2354,7 +2334,7 @@ function SocialMediaTablesSection({
         {/* Table content */}
         <div style={{ padding: 14 }}>
           {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
-          {activeTab === "hr"   && <SocialTableHR batters={enrichedBatters} />}
+          {activeTab === "hr"   && <SocialTableHR batters={batters} />}
           {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
           {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
         </div>
@@ -2397,35 +2377,12 @@ function HomeSchedule({
     pendingGames,
     nextRunAt,
   } = useMlbPropsData();
-  // Apply the same pitcher-weighted enrichment as MlbHrProps.tsx so both tables are consistent
-  const enrichedPropBatters = useMemo(() => {
-    function xeraMult(xera: number | null): number {
-      if (xera == null) return 1.0;
-      if (xera <= 2.5) return 0.80;
-      if (xera <= 3.0) return 0.85;
-      if (xera <= 3.5) return 0.91;
-      if (xera <= 4.0) return 0.96;
-      if (xera <= 4.5) return 1.00;
-      if (xera <= 5.0) return 1.05;
-      if (xera <= 5.5) return 1.10;
-      return 1.15;
-    }
-    return propBatters.map((b) => {
-      const hrPropsPitcher = propPitchers.find(p => p.pitcher === b.opposingPitcher || p.pitcherId === b.opposingPitcherId);
-      const regrData = pitcherRegressionData.find(p => p.name === b.opposingPitcher);
-      const pitcherXera = hrPropsPitcher?.xera ?? regrData?.xera ?? regrData?.xfip ?? null;
-      const regrScore = regrData?.regressionScore ?? null;
-      const regrAdj = regrScore != null ? Math.max(0.96, Math.min(1.04, 1.0 + regrScore * 0.004)) : 1.0;
-      const adjustedHrScore = Math.round(b.hrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
-      return { ...b, adjustedHrScore };
-    });
-  }, [propBatters, propPitchers, pitcherRegressionData]);
 
-  const topHrProps = useMemo(() => enrichedPropBatters
+  const topHrProps = useMemo(() => propBatters
     .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
     .slice()
-    .sort((a, b) => (b.adjustedHrScore ?? b.hrScore) - (a.adjustedHrScore ?? a.hrScore))
-    .slice(0, 5), [enrichedPropBatters]);
+    .sort((a, b) => b.hrScore - a.hrScore)
+    .slice(0, 5), [propBatters]);
   const topStrikeoutProps = useMemo(() => strikeoutRows.slice(0, 5), [strikeoutRows]);
   const topBvpProps = useMemo(() => batterVsPitcherRows.slice().sort((a, b) => b.bestMatchupScore - a.bestMatchupScore).slice(0, 5), [batterVsPitcherRows]);
   const hrPreviewRows = useMemo<PropPreviewRow[]>(
@@ -2435,7 +2392,7 @@ function HomeSchedule({
       position: row.position,
       team: row.team,
       opponent: row.opposingPitcher,
-      score: row.adjustedHrScore ?? row.hrScore,
+      score: row.hrScore,
     })),
     [topHrProps],
   );

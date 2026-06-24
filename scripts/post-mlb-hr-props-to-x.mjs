@@ -249,19 +249,13 @@ function normalizeBatter(value) {
   };
 }
 
-function getTopHrProps(rawPayload, bestBetsPayload, pitchers, regressionData, limit = 3) {
+function getTopHrProps(rawPayload, bestBetsPayload, limit = 3) {
   const batters = Array.isArray(rawPayload?.batters)
     ? rawPayload.batters.map(normalizeBatter).filter(Boolean)
     : [];
 
-  // Enrich every batter with adjustedHrScore using the same formula the site uses.
-  // This ensures text and table always rank players identically.
-  const enriched = batters.map(b => ({
-    ...b,
-    adjustedHrScore: computeAdjustedHrScore(b, pitchers, regressionData),
-  }));
-
-  const batterLookup = new Map(enriched.map((row) => [pickKey(row), row]));
+  // hrScore is now pitcher-adjusted at generation time — sort directly
+  const batterLookup = new Map(batters.map((row) => [pickKey(row), row]));
   const curatedPicks = Array.isArray(bestBetsPayload?.bestBets) ? bestBetsPayload.bestBets : [];
   const visibleBestBets = curatedPicks
     .map((pick) => batterLookup.get(pickKey(pick)))
@@ -269,11 +263,9 @@ function getTopHrProps(rawPayload, bestBetsPayload, pitchers, regressionData, li
 
   if (visibleBestBets.length >= limit) return visibleBestBets.slice(0, limit);
 
-  return enriched
+  return batters
     .filter((row) => !isStarterPlaceholder(row.opposingPitcher))
-    .sort((left, right) =>
-      right.adjustedHrScore - left.adjustedHrScore || left.hrScoreRank - right.hrScoreRank
-    )
+    .sort((left, right) => right.hrScore - left.hrScore || left.hrScoreRank - right.hrScoreRank)
     .slice(0, limit);
 }
 
@@ -309,11 +301,11 @@ function validateTopProps(topProps) {
   return "";
 }
 
-function getValidatedTopProps(rawPayload, bestBetsPayload, pitchers, regressionData) {
+function getValidatedTopProps(rawPayload, bestBetsPayload) {
   const freshnessError = validateFreshness(rawPayload, bestBetsPayload);
   if (freshnessError) return { skipped: true, reason: freshnessError, topProps: [] };
 
-  const topProps = getTopHrProps(rawPayload, bestBetsPayload, pitchers, regressionData);
+  const topProps = getTopHrProps(rawPayload, bestBetsPayload);
   const topPropsError = validateTopProps(topProps);
   if (topPropsError) return { skipped: true, reason: topPropsError, topProps: [] };
 
@@ -329,13 +321,13 @@ function formatDateLabel(dateValue) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function buildCaption(rawPayload, bestBetsPayload, pitchers, regressionData) {
-  const topPropsResult = getValidatedTopProps(rawPayload, bestBetsPayload, pitchers, regressionData);
+function buildCaption(rawPayload, bestBetsPayload) {
+  const topPropsResult = getValidatedTopProps(rawPayload, bestBetsPayload);
   if (topPropsResult.skipped) return { skipped: true, reason: topPropsResult.reason, caption: "", topProps: [] };
 
   const dateLabel = formatDateLabel(rawPayload?.date || bestBetsPayload?.date);
   const lines = topPropsResult.topProps.map((row, index) => (
-    `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.adjustedHrScore.toFixed(1)}`
+    `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}`
   ));
 
   const caption = [
@@ -588,19 +580,7 @@ async function main() {
   const rawPayload = await loadJson(locations.raw, source);
   const bestBetsPayload = await loadJson(locations.bestBets, source);
 
-  // Load pitcher regression data (used to compute adjustedHrScore matching the site table)
-  let pitcherRegressionData = [];
-  try {
-    const regrPayload = await loadJson(locations.pitcherRegression, source);
-    pitcherRegressionData = Array.isArray(regrPayload) ? regrPayload : [];
-  } catch {
-    console.warn("[mlb-hr-props-x] pitcher-regression.json unavailable — adjustedHrScore will use xERA from raw pitchers only");
-  }
-
-  // Pitchers are embedded in the raw payload alongside batters
-  const pitchersFromRaw = Array.isArray(rawPayload?.pitchers) ? rawPayload.pitchers : [];
-
-  const result = buildCaption(rawPayload, bestBetsPayload, pitchersFromRaw, pitcherRegressionData);
+  const result = buildCaption(rawPayload, bestBetsPayload);
 
   if (mode === "post-key-only") {
     if (result.skipped) throw new Error(result.reason);
