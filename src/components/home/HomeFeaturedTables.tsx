@@ -58,8 +58,8 @@ const LOGO = (
 
 function sc(s: number) {
   if (s >= 70) return { bg: "#22c55e", color: "#fff" };
-  if (s >= 65) return { bg: "#4ade80", color: "#000" };
-  if (s >= 62) return { bg: "#facc15", color: "#000" };
+  if (s >= 65) return { bg: "#4ade80", color: "#fff" };
+  if (s >= 62) return { bg: "#d97706", color: "#fff" };
   return { bg: "#fb923c", color: "#fff" };
 }
 function statCol(v: number | null, hi: number, mid: number) {
@@ -131,14 +131,12 @@ function HRTable({ batters, mlbOdds }: { batters: HrDashboardBatter[]; mlbOdds: 
           <div key={r.player + i} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 80px 80px 46px 46px 64px", padding: "6px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}>
             <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: ACCENTS8[i] }} />
             <span style={{ fontSize: i < 3 ? 17 : 13, fontWeight: 900, color: ACCENTS8[i], paddingLeft: 5 }}>{i < 3 ? MEDAL[i] : i + 1}</span>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 6, rowGap: 1, minWidth: 0 }}>
-              <span style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 12 }}>{r.player}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                <TeamLogo team={r.team} size={12} dark />
-                <span style={{ color: "#64748b", fontSize: 10 }}>vs {r.opposingPitcher}</span>
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0, overflow: "hidden" }}>
+              <span style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flexShrink: 1 }}>{r.player}</span>
+              <TeamLogo team={r.team} size={12} dark />
+              <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flexShrink: 2 }}>vs {r.opposingPitcher}</span>
             </div>
-            <div style={{ ...pill, borderRadius: 7, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
+            <div style={{ ...pill, color: "#fff", borderRadius: 7, padding: "3px 0", fontWeight: 900, textAlign: "center", fontSize: 13 }}>
               {score >= 70 && "🔥"}{score.toFixed(1)}
             </div>
             <div style={{ textAlign: "center", color: statCol(r.barrelRate, 20, 16), fontWeight: 600, fontSize: 12 }}>
