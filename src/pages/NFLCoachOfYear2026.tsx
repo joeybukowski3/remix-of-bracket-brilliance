@@ -25,6 +25,7 @@ const COY_ODDS: Record<string, string> = {
   no: "+1267",
   ind: "+2500",
   atl: "+1400",
+  cle: "+2200",
   nyg: "+717",
   bal: "+717",
   ten: "+1233",
@@ -94,7 +95,7 @@ const TOP_PROFILE_COPY: Record<string, { headline: string; metrics: { label: str
       { label: "Customized SOS", value: "#4 easiest" },
       { label: "Model vs Vegas", value: "+1.3 wins" },
       { label: "Defensive efficiency", value: "#2" },
-      { label: "Yards/drive allowed", value: "#1" },
+      { label: "COY odds", value: "+2200" },
     ],
     support: [
       "Cleveland finished second in total defensive efficiency and EPA allowed per play, second against the pass and fourth against the run.",
@@ -104,123 +105,34 @@ const TOP_PROFILE_COPY: Record<string, { headline: string; metrics: { label: str
     ],
     against: [
       "The model projects only 7.8 wins, so the Browns still need to outperform the baseline to reach the playoffs.",
-      "The offense opens 32nd, quarterback uncertainty is substantial and the defense has experienced meaningful personnel turnover.",
+      "The offense opens 32nd, quarterback uncertainty is substantial and the AFC North path is less forgiving than New Orleans or Atlanta.",
     ],
   },
 };
 
 export default function NFLCoachOfYear2026() {
-  usePageSeo({
-    title: "2026 NFL Coach of the Year Best Bets & Candidate Model | Joe Knows Ball",
-    description: "A 10-year AP NFL Coach of the Year profile and a transparent 2026 candidate funnel using playoff history, schedule, coaching tenure, model improvement and division path.",
-    path: "/nfl/coach-of-year",
-    noindex: false,
-  });
-
+  usePageSeo({ title: "2026 NFL Coach of the Year Best Bets & Candidate Model | Joe Knows Ball", description: "A 10-year AP NFL Coach of the Year profile and a transparent 2026 candidate funnel using playoff history, schedule, coaching tenure, model improvement and division path.", path: "/nfl/coach-of-year", noindex: false });
   const summary = getCoachOfYearHistorySummary();
   const counts = getCoachCandidateCounts();
   const candidateByAbbr = new Map(COACH_OF_YEAR_RATED_CANDIDATES.map((row) => [row.team.abbr, row]));
   const topProfiles = ["no", "ind", "atl", "cle"].map((abbr) => candidateByAbbr.get(abbr)).filter((row): row is CoachCandidateRow => Boolean(row));
 
-  return (
-    <SiteShell>
-      <main className="min-h-screen bg-slate-50 pb-16">
-        <section className="border-b border-slate-800 bg-slate-950 text-white">
-          <div className="mx-auto max-w-[1500px] px-4 py-9 sm:px-6 lg:px-8">
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-300">NFL awards research</div>
-            <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">2026 Coach of the Year candidate model</h1>
-            <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-300">Historical winner traits, a transparent elimination funnel and a tiered 2026 candidate board built around playoff viability, model improvement and market expectations.</p>
-            <div className="mt-6"><NflGuideNav /></div>
-          </div>
-        </section>
-
-        <div className="mx-auto max-w-[1500px] space-y-10 px-4 py-8 sm:px-6 lg:px-8">
-          <section>
-            <SectionHeading eyebrow="Historical profile" title="What the last 10 winners had in common" description="Award seasons 2016–2025. Team logos and color-coded cells make the common winner traits easier to scan." />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <SummaryTile label="First-year coach" value={`${summary.firstYearCoachPct}%`} />
-              <SummaryTile label="Missed prior playoffs" value={`${summary.missedPriorPlayoffsPct}%`} />
-              <SummaryTile label="Award-year playoffs" value={`${summary.awardPlayoffsPct}%`} tone="good" />
-              <SummaryTile label="Won division" value={`${summary.divisionWinnerPct}%`} />
-              <SummaryTile label="Improved scoring" value={`${summary.improvedPpgPct}%`} />
-              <SummaryTile label="Average win increase" value={`+${summary.averageWinIncrease.toFixed(1)}`} tone="good" />
-              <SummaryTile label="Average PPG increase" value={`+${summary.averagePpgIncrease.toFixed(1)}`} tone="good" />
-              <SummaryTile label="Easier award SOS" value={`${summary.easierSchedulePct}%`} />
-              <SummaryTile label="Average prior SOS" value={summary.averagePriorSos.toFixed(3)} />
-              <SummaryTile label="Average award SOS" value={summary.averageAwardSos.toFixed(3)} />
-            </div>
-            <HistoryTable />
-          </section>
-
-          <section>
-            <SectionHeading eyebrow="2026 candidate funnel" title="Eliminate, downgrade, then tier the remaining field" description="Prior playoff teams are removed, winning non-playoff teams and verified major schedule jumps are downgraded, and the remaining candidates are grouped by award viability." />
-            <div className="grid gap-4 md:grid-cols-3">
-              <FunnelTile label="Eliminated" value={counts.eliminated} detail="Made the 2025 playoffs" tone="red" />
-              <FunnelTile label="Unlikely" value={counts.unlikely} detail="Winning 2025 record or major SOS jump" tone="amber" />
-              <FunnelTile label="Remaining field" value={counts.rated} detail="Advanced to the tiered board" tone="green" />
-            </div>
-          </section>
-
-          <section>
-            <SectionHeading eyebrow="Top four profiles" title="The case for and against the leading candidates" description="Each team has a full-width expandable profile. New Orleans is open by default." />
-            <TopCandidateAccordions rows={topProfiles} />
-            <p className="mt-3 text-[10px] leading-5 text-slate-400">Coach of the Year odds are consensus or featured prices published by SportsBettingDime on June 9, 2026. Exact prices were not exposed in the article text for every coach.</p>
-          </section>
-
-          <section>
-            <SectionHeading eyebrow="Tiered candidate board" title="Remaining 2026 Coach of the Year candidates" description="Vegas O/U, Coach of the Year odds, unit ratings, coach tenure and model projection remain visible. First-year coaches are highlighted in green." />
-            <TieredCandidateTable candidateByAbbr={candidateByAbbr} />
-          </section>
-
-          <section className="grid gap-8 xl:grid-cols-2">
-            <div><SectionHeading eyebrow="Secondary cut" title="Unlikely profiles" description="Missed the playoffs, but begin with a less typical winner profile because they already had a winning record or face a verified major schedule increase." /><CandidateTable rows={COACH_OF_YEAR_UNLIKELY} /></div>
-            <div><SectionHeading eyebrow="Automatic cut" title="Eliminated: 2025 playoff teams" description="Prior playoff teams are removed in this first version of the model." /><CandidateTable rows={COACH_OF_YEAR_ELIMINATED} /></div>
-          </section>
-        </div>
-      </main>
-    </SiteShell>
-  );
+  return <SiteShell><main className="min-h-screen bg-slate-50 pb-16"><section className="border-b border-slate-800 bg-slate-950 text-white"><div className="mx-auto max-w-[1500px] px-4 py-9 sm:px-6 lg:px-8"><div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-300">NFL awards research</div><h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">2026 Coach of the Year candidate model</h1><p className="mt-3 max-w-4xl text-sm leading-7 text-slate-300">Historical winner traits, a transparent elimination funnel and a tiered 2026 candidate board built around playoff viability, model improvement and market expectations.</p><div className="mt-6"><NflGuideNav /></div></div></section><div className="mx-auto max-w-[1500px] space-y-10 px-4 py-8 sm:px-6 lg:px-8">
+    <section><SectionHeading eyebrow="Historical profile" title="What the last 10 winners had in common" description="Award seasons 2016–2025. Team logos and color-coded cells make the common winner traits easier to scan." /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><SummaryTile label="First-year coach" value={`${summary.firstYearCoachPct}%`} /><SummaryTile label="Missed prior playoffs" value={`${summary.missedPriorPlayoffsPct}%`} /><SummaryTile label="Award-year playoffs" value={`${summary.awardPlayoffsPct}%`} tone="good" /><SummaryTile label="Won division" value={`${summary.divisionWinnerPct}%`} /><SummaryTile label="Improved scoring" value={`${summary.improvedPpgPct}%`} /><SummaryTile label="Average win increase" value={`+${summary.averageWinIncrease.toFixed(1)}`} tone="good" /><SummaryTile label="Average PPG increase" value={`+${summary.averagePpgIncrease.toFixed(1)}`} tone="good" /><SummaryTile label="Easier award SOS" value={`${summary.easierSchedulePct}%`} /><SummaryTile label="Average prior SOS" value={summary.averagePriorSos.toFixed(3)} /><SummaryTile label="Average award SOS" value={summary.averageAwardSos.toFixed(3)} /></div><HistoryTable /></section>
+    <section><SectionHeading eyebrow="2026 candidate funnel" title="Eliminate, downgrade, then tier the remaining field" description="Prior playoff teams are removed, winning non-playoff teams and verified major schedule jumps are downgraded, and the remaining candidates are grouped by award viability." /><div className="grid gap-4 md:grid-cols-3"><FunnelTile label="Eliminated" value={counts.eliminated} detail="Made the 2025 playoffs" tone="red" /><FunnelTile label="Unlikely" value={counts.unlikely} detail="Winning 2025 record or major SOS jump" tone="amber" /><FunnelTile label="Remaining field" value={counts.rated} detail="Advanced to the tiered board" tone="green" /></div></section>
+    <section><SectionHeading eyebrow="Top four profiles" title="The case for and against the leading candidates" description="Each team has a full-width expandable profile. New Orleans is open by default." /><TopCandidateAccordions rows={topProfiles} /><p className="mt-3 text-[10px] leading-5 text-slate-400">Coach of the Year odds are consensus or featured prices published by SportsBettingDime on June 9, 2026, with Todd Monken updated to +2200.</p></section>
+    <section><SectionHeading eyebrow="Tiered candidate board" title="Remaining 2026 Coach of the Year candidates" description="Vegas O/U, Coach of the Year odds, unit ratings, coach tenure and model projection remain visible. First-year coaches are highlighted in green." /><TieredCandidateTable candidateByAbbr={candidateByAbbr} /></section>
+    <section className="grid gap-8 xl:grid-cols-2"><div><SectionHeading eyebrow="Secondary cut" title="Unlikely profiles" description="Missed the playoffs, but begin with a less typical winner profile because they already had a winning record or face a verified major schedule increase." /><CandidateTable rows={COACH_OF_YEAR_UNLIKELY} /></div><div><SectionHeading eyebrow="Automatic cut" title="Eliminated: 2025 playoff teams" description="Prior playoff teams are removed in this first version of the model." /><CandidateTable rows={COACH_OF_YEAR_ELIMINATED} /></div></section>
+  </div></main></SiteShell>;
 }
 
-function HistoryTable() {
-  return (
-    <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto"><table className="w-full min-w-[1220px] text-xs"><thead><tr className="bg-slate-950 text-[9px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3 text-left">Season</th><th className="px-3 py-3 text-left">Coach / Team</th><th>Years with team</th><th>Prior record</th><th>Prior playoffs</th><th>Award record</th><th>Win increase</th><th>Division</th><th>PPG increase</th><th>Award playoffs</th><th>Prior SOS</th><th>Award SOS</th></tr></thead><tbody>
-        {COACH_OF_YEAR_HISTORY.map((row) => { const easier = row.awardSos < row.priorSos; return <tr key={row.season} className="border-t border-slate-100 hover:bg-slate-50"><td className="px-3 py-3 font-black">{row.season}</td><td className="px-3 py-3"><div className="flex items-center gap-3"><img src={nflLogoUrl(row.teamAbbr)} alt="" className="h-9 w-9 object-contain" /><div><div className="font-black">{row.coach}</div><div className="text-slate-500">{row.team}</div></div></div></td><td className="text-center"><TenureBadge years={row.tenureYear} /></td><td className="text-center font-bold">{row.priorRecord}</td><BooleanCell value={row.priorPlayoffs} /><td className="bg-blue-50 text-center font-black text-blue-800">{row.awardRecord}</td><HistoricalHeatCell value={`+${row.winIncrease}`} strength={row.winIncrease / 10} positive /><BooleanCell value={row.divisionWinner} /><HistoricalHeatCell value={signed(row.ppgIncrease)} strength={row.ppgIncrease / 12} positive={row.ppgIncrease >= 0} /><BooleanCell value={row.awardPlayoffs} /><td className="text-center">{row.priorSos.toFixed(3)}</td><td className={`text-center font-black ${easier ? "bg-emerald-100 text-emerald-800" : row.awardSos > row.priorSos ? "bg-red-100 text-red-700" : "bg-slate-100"}`}>{row.awardSos.toFixed(3)}<div className="text-[8px] uppercase tracking-wider">{easier ? "easier" : row.awardSos > row.priorSos ? "harder" : "same"}</div></td></tr>; })}
-      </tbody></table></div>
-    </div>
-  );
-}
-
-function TopCandidateAccordions({ rows }: { rows: CoachCandidateRow[] }) {
-  const [openAbbr, setOpenAbbr] = useState(rows[0]?.team.abbr ?? "no");
-  return <div className="space-y-4">{rows.map((row, index) => <TopCandidateAccordion key={row.team.abbr} row={row} rank={index + 1} open={openAbbr === row.team.abbr} onToggle={() => setOpenAbbr(openAbbr === row.team.abbr ? "" : row.team.abbr)} />)}</div>;
-}
-
-function TopCandidateAccordion({ row, rank, open, onToggle }: { row: CoachCandidateRow; rank: number; open: boolean; onToggle: () => void }) {
-  const copy = TOP_PROFILE_COPY[row.team.abbr];
-  const odds = COY_ODDS[row.team.abbr] ?? "—";
-  return <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-    <button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-4 bg-slate-950 px-5 py-4 text-left text-white">
-      <div className="flex min-w-0 items-center gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black">#{rank}</span><img src={nflLogoUrl(row.team.abbr)} alt="" className="h-10 w-10 object-contain" /><div className="min-w-0"><div className="truncate text-lg font-black">{row.team.team}</div><div className="text-xs text-slate-300">{row.coach} · {tenureLabel(row.yearsWithTeam)}</div></div></div>
-      <div className="flex shrink-0 items-center gap-5"><div className="hidden text-right text-xs sm:block"><div className="font-black text-emerald-300">{row.team.projectedWins.toFixed(1)} model wins</div><div className="text-slate-300">Vegas {row.team.winTotal?.toFixed(1) ?? "—"}</div></div><div className="text-right"><div className="text-[9px] font-black uppercase tracking-wider text-sky-300">COY odds</div><div className="text-lg font-black">{odds}</div></div><span className={`text-xl transition-transform ${open ? "rotate-180" : ""}`}>⌄</span></div>
-    </button>
-    {open && <div className="p-5 sm:p-6"><p className="text-base font-black text-slate-900">{copy.headline}</p><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{copy.metrics.map((metric) => <div key={metric.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-3"><div className="text-[9px] font-black uppercase tracking-wider text-slate-400">{metric.label}</div><div className="mt-1 text-lg font-black text-slate-900">{metric.value}</div></div>)}</div><div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><div className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Why the case works</div><ul className="mt-3 grid gap-3 text-sm leading-6 text-slate-700 lg:grid-cols-2">{copy.support.map((item) => <li key={item} className="flex gap-2"><span className="font-black text-emerald-700">•</span><span>{item}</span></li>)}</ul></div><div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5"><div className="text-[10px] font-black uppercase tracking-wider text-red-700">Case against</div><ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">{copy.against.map((item) => <li key={item} className="flex gap-2"><span className="font-black text-red-700">•</span><span>{item}</span></li>)}</ul></div></div>}
-  </article>;
-}
-
-function TieredCandidateTable({ candidateByAbbr }: { candidateByAbbr: Map<string, CoachCandidateRow> }) {
-  return <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[1420px] text-xs"><CandidateHeader showScore /><tbody>{REMAINING_TIERS.map((tier) => { const rows = tier.teams.map((abbr) => candidateByAbbr.get(abbr)).filter((row): row is CoachCandidateRow => Boolean(row)); return [<TierRow key={`${tier.key}-heading`} label={tier.label} description={tier.description} tone={tier.tone} />, ...rows.map((row, index) => <CandidateRow key={row.team.abbr} row={row} showScore rankLabel={`${index + 1}`} />)]; })}</tbody></table></div></div>;
-}
-
+function HistoryTable() { return <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[1220px] text-xs"><thead><tr className="bg-slate-950 text-[9px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3 text-left">Season</th><th className="px-3 py-3 text-left">Coach / Team</th><th>Years with team</th><th>Prior record</th><th>Prior playoffs</th><th>Award record</th><th>Win increase</th><th>Division</th><th>PPG increase</th><th>Award playoffs</th><th>Prior SOS</th><th>Award SOS</th></tr></thead><tbody>{COACH_OF_YEAR_HISTORY.map((row) => { const easier = row.awardSos < row.priorSos; return <tr key={row.season} className="border-t border-slate-100 hover:bg-slate-50"><td className="px-3 py-3 font-black">{row.season}</td><td className="px-3 py-3"><div className="flex items-center gap-3"><img src={nflLogoUrl(row.teamAbbr)} alt="" className="h-9 w-9 object-contain" /><div><div className="font-black">{row.coach}</div><div className="text-slate-500">{row.team}</div></div></div></td><td className="text-center"><TenureBadge years={row.tenureYear} /></td><td className="text-center font-bold">{row.priorRecord}</td><BooleanCell value={row.priorPlayoffs} /><td className="bg-blue-50 text-center font-black text-blue-800">{row.awardRecord}</td><HistoricalHeatCell value={`+${row.winIncrease}`} strength={row.winIncrease / 10} positive /><BooleanCell value={row.divisionWinner} /><HistoricalHeatCell value={signed(row.ppgIncrease)} strength={row.ppgIncrease / 12} positive={row.ppgIncrease >= 0} /><BooleanCell value={row.awardPlayoffs} /><td className="text-center">{row.priorSos.toFixed(3)}</td><td className={`text-center font-black ${easier ? "bg-emerald-100 text-emerald-800" : row.awardSos > row.priorSos ? "bg-red-100 text-red-700" : "bg-slate-100"}`}>{row.awardSos.toFixed(3)}<div className="text-[8px] uppercase tracking-wider">{easier ? "easier" : row.awardSos > row.priorSos ? "harder" : "same"}</div></td></tr>; })}</tbody></table></div></div>; }
+function TopCandidateAccordions({ rows }: { rows: CoachCandidateRow[] }) { const [openAbbr, setOpenAbbr] = useState(rows[0]?.team.abbr ?? "no"); return <div className="space-y-4">{rows.map((row, index) => <TopCandidateAccordion key={row.team.abbr} row={row} rank={index + 1} open={openAbbr === row.team.abbr} onToggle={() => setOpenAbbr(openAbbr === row.team.abbr ? "" : row.team.abbr)} />)}</div>; }
+function TopCandidateAccordion({ row, rank, open, onToggle }: { row: CoachCandidateRow; rank: number; open: boolean; onToggle: () => void }) { const copy = TOP_PROFILE_COPY[row.team.abbr]; const odds = COY_ODDS[row.team.abbr] ?? "—"; return <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center bg-slate-950 text-white"><button type="button" onClick={onToggle} className="flex min-w-0 flex-1 items-center justify-between gap-4 px-5 py-4 text-left"><div className="flex min-w-0 items-center gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black">#{rank}</span><img src={nflLogoUrl(row.team.abbr)} alt="" className="h-10 w-10 object-contain" /><div className="min-w-0"><div className="truncate text-lg font-black">{row.team.team}</div><div className="text-xs text-slate-300">{row.coach} · {tenureLabel(row.yearsWithTeam)}</div></div></div><div className="flex shrink-0 items-center gap-5"><div className="hidden text-right text-xs sm:block"><div className="font-black text-emerald-300">{row.team.projectedWins.toFixed(1)} model wins</div><div className="text-slate-300">Vegas {row.team.winTotal?.toFixed(1) ?? "—"}</div></div><div className="text-right"><div className="text-[9px] font-black uppercase tracking-wider text-sky-300">COY odds</div><div className="text-lg font-black">{odds}</div></div><span className={`text-xl transition-transform ${open ? "rotate-180" : ""}`}>⌄</span></div></button><Link to={`/nfl/guide/team/${row.team.slug}#coach-of-year-case`} className="mr-4 shrink-0 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white hover:bg-white/20">Full Breakdown</Link></div>{open && <div className="p-5 sm:p-6"><p className="text-base font-black text-slate-900">{copy.headline}</p><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{copy.metrics.map((metric) => <div key={metric.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-3"><div className="text-[9px] font-black uppercase tracking-wider text-slate-400">{metric.label}</div><div className="mt-1 text-lg font-black text-slate-900">{metric.value}</div></div>)}</div><div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><div className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Why the case works</div><ul className="mt-3 grid gap-3 text-sm leading-6 text-slate-700 lg:grid-cols-2">{copy.support.map((item) => <li key={item} className="flex gap-2"><span className="font-black text-emerald-700">•</span><span>{item}</span></li>)}</ul></div><div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5"><div className="text-[10px] font-black uppercase tracking-wider text-red-700">Case against</div><ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">{copy.against.map((item) => <li key={item} className="flex gap-2"><span className="font-black text-red-700">•</span><span>{item}</span></li>)}</ul></div></div>}</article>; }
+function TieredCandidateTable({ candidateByAbbr }: { candidateByAbbr: Map<string, CoachCandidateRow> }) { return <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[1420px] text-xs"><CandidateHeader showScore /><tbody>{REMAINING_TIERS.map((tier) => { const rows = tier.teams.map((abbr) => candidateByAbbr.get(abbr)).filter((row): row is CoachCandidateRow => Boolean(row)); return [<TierRow key={`${tier.key}-heading`} label={tier.label} description={tier.description} tone={tier.tone} />, ...rows.map((row, index) => <CandidateRow key={row.team.abbr} row={row} showScore rankLabel={`${index + 1}`} />)]; })}</tbody></table></div></div>; }
 function CandidateTable({ rows }: { rows: CoachCandidateRow[] }) { return <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="overflow-x-auto"><table className="w-full min-w-[1120px] text-xs"><CandidateHeader /><tbody>{rows.map((row) => <CandidateRow key={row.team.abbr} row={row} />)}</tbody></table></div></div>; }
-
 function CandidateHeader({ showScore = false }: { showScore?: boolean }) { return <thead><tr className="bg-slate-900 text-[9px] font-black uppercase tracking-wider text-white"><th className="px-3 py-3 text-left">Team / Coach</th><th>2025</th><th>Playoffs</th><th>SoS</th><th>Years w/ team</th><th>Off rating</th><th>Def rating</th><th>Vegas O/U</th><th>COY odds</th><th>Model Wins +/-</th><th>Division path</th>{showScore && <><th>Sched</th><th>Improve</th><th>Path</th><th>Total</th></>}</tr></thead>; }
-
-function CandidateRow({ row, showScore = false, rankLabel }: { row: CoachCandidateRow; showScore?: boolean; rankLabel?: string }) {
-  return <tr className="border-t border-slate-100 align-middle hover:bg-slate-50"><td className="px-3 py-3"><Link to={`/nfl/guide/team/${row.team.slug}`} className="flex items-center gap-3">{rankLabel && <span className="w-5 text-center text-[10px] font-black text-slate-400">{rankLabel}</span>}<img src={nflLogoUrl(row.team.abbr)} alt="" className="h-8 w-8 object-contain" /><span><span className="block font-black">{row.team.team}</span><span className="block text-slate-500">{row.coach}</span></span></Link></td><td className="text-center font-bold">{row.team.record2025}</td><BooleanCell value={row.made2025Playoffs} /><HeatCell value={`#${row.sharpSosRank}`} detail="hardest" strength={(row.sharpSosRank - 16.5) / 15.5} /><td className="text-center"><TenureBadge years={row.yearsWithTeam} /></td><RatingCell value={row.team.offPct} rank={row.team.offRank} /><RatingCell value={row.team.defPct} rank={row.team.defRank} /><td className="text-center"><div className="font-black">{row.team.winTotal?.toFixed(1) ?? "—"}</div><div className="text-[9px] text-slate-400">market total</div></td><td className="text-center"><div className="font-black text-blue-700">{COY_ODDS[row.team.abbr] ?? "—"}</div><div className="text-[9px] text-slate-400">consensus/featured</div></td><HeatCell value={row.team.projectedWins.toFixed(1)} detail={`${signed(row.team.regressionGap)} vs 2025 · ${signed(row.team.modelEdge ?? 0)} vs Vegas`} strength={Math.max(row.team.regressionGap, row.team.modelEdge ?? 0) / 5} greenOnly /><td className="px-2 text-center font-bold text-slate-600">{row.divisionPathLabel}</td>{showScore && row.score && <><ScoreCell value={row.score.schedule} max={25} /><ScoreCell value={row.score.improvement} max={35} /><ScoreCell value={row.score.path} max={25} /><td className="text-center"><span className="inline-flex min-w-10 justify-center rounded-full bg-blue-600 px-2 py-1 font-black text-white">{row.score.total}</span></td></>}</tr>;
-}
-
+function CandidateRow({ row, showScore = false, rankLabel }: { row: CoachCandidateRow; showScore?: boolean; rankLabel?: string }) { return <tr className="border-t border-slate-100 align-middle hover:bg-slate-50"><td className="px-3 py-3"><Link to={`/nfl/guide/team/${row.team.slug}`} className="flex items-center gap-3">{rankLabel && <span className="w-5 text-center text-[10px] font-black text-slate-400">{rankLabel}</span>}<img src={nflLogoUrl(row.team.abbr)} alt="" className="h-8 w-8 object-contain" /><span><span className="block font-black">{row.team.team}</span><span className="block text-slate-500">{row.coach}</span></span></Link></td><td className="text-center font-bold">{row.team.record2025}</td><BooleanCell value={row.made2025Playoffs} /><HeatCell value={`#${row.sharpSosRank}`} detail="hardest" strength={(row.sharpSosRank - 16.5) / 15.5} /><td className="text-center"><TenureBadge years={row.yearsWithTeam} /></td><RatingCell value={row.team.offPct} rank={row.team.offRank} /><RatingCell value={row.team.defPct} rank={row.team.defRank} /><td className="text-center"><div className="font-black">{row.team.winTotal?.toFixed(1) ?? "—"}</div><div className="text-[9px] text-slate-400">market total</div></td><td className="text-center"><div className="font-black text-blue-700">{COY_ODDS[row.team.abbr] ?? "—"}</div><div className="text-[9px] text-slate-400">consensus/featured</div></td><HeatCell value={row.team.projectedWins.toFixed(1)} detail={`${signed(row.team.regressionGap)} vs 2025 · ${signed(row.team.modelEdge ?? 0)} vs Vegas`} strength={Math.max(row.team.regressionGap, row.team.modelEdge ?? 0) / 5} greenOnly /><td className="px-2 text-center font-bold text-slate-600">{row.divisionPathLabel}</td>{showScore && row.score && <><ScoreCell value={row.score.schedule} max={25} /><ScoreCell value={row.score.improvement} max={35} /><ScoreCell value={row.score.path} max={25} /><td className="text-center"><span className="inline-flex min-w-10 justify-center rounded-full bg-blue-600 px-2 py-1 font-black text-white">{row.score.total}</span></td></>}</tr>; }
 function TierRow({ label, description, tone }: { label: string; description: string; tone: string }) { const classes = tone === "emerald" ? "bg-emerald-100 text-emerald-900" : tone === "blue" ? "bg-blue-100 text-blue-900" : tone === "amber" ? "bg-amber-100 text-amber-900" : "bg-slate-200 text-slate-800"; return <tr className={classes}><td colSpan={15} className="px-4 py-3"><span className="font-black uppercase tracking-wider">{label}</span><span className="ml-3 text-[10px] font-bold opacity-75">{description}</span></td></tr>; }
 function TenureBadge({ years }: { years: number }) { const first = years === 1; return <span className={`inline-flex rounded-full px-2.5 py-1 text-[9px] font-black uppercase ${first ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300" : "bg-slate-100 text-slate-600"}`}>{tenureLabel(years)}</span>; }
 function HistoricalHeatCell({ value, strength, positive }: { value: string; strength: number; positive: boolean }) { const alpha = 0.08 + Math.min(1, Math.abs(strength)) * 0.24; return <td className="text-center font-black" style={{ backgroundColor: positive ? `rgba(16,185,129,${alpha})` : `rgba(239,68,68,${alpha})`, color: positive ? "#047857" : "#b91c1c" }}>{value}</td>; }

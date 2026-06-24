@@ -2,6 +2,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import NflGuideNav from "@/components/nfl/NflGuideNav";
 import NflTeamDashboardExtras from "@/components/nfl/NflTeamDashboardExtras";
+import NflCoachOfYearCase from "@/components/nfl/NflCoachOfYearCase";
 import {
   NflTeamHeaderOdds,
   NflTeamStatsSidebar,
@@ -32,7 +33,7 @@ export default function NFLTeamGuide2026() {
 
   return (
     <SiteShell>
-      <main className="min-h-screen bg-slate-50 pb-16">
+      <main id="top" className="min-h-screen bg-slate-50 pb-16">
         <section className="border-b border-slate-800 text-white" style={{ background: `linear-gradient(125deg, #020617 0%, ${team.color} 135%)` }}>
           <div className="mx-auto max-w-[1400px] px-4 py-9 sm:px-6 lg:px-8">
             <Link to="/nfl" className="text-xs font-black text-sky-200 hover:text-white">← Back to NFL power ratings</Link>
@@ -71,6 +72,7 @@ export default function NFLTeamGuide2026() {
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
             <div className="min-w-0 space-y-8">
               <NflTeamDashboardExtras team={team} />
+              <NflCoachOfYearCase team={team} />
 
               <section className="space-y-6">
                 <div>
