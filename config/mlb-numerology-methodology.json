@@ -1,6 +1,6 @@
 {
   "version": "2.0.0",
-  "description": "JoeKnowsBall MLB Numerology Methodology. All weights and rules are fixed here. Grok may only produce narrative text.",
+  "description": "JoeKnowsBall MLB Numerology Methodology. All weights and rules version-controlled here. Grok may only produce narrative text.",
   "numerologySystem": "Pythagorean",
   "masterNumbers": [11, 22, 33],
   "numberFamilies": [[1, 4, 7], [2, 5, 8], [3, 6, 9]],
@@ -37,13 +37,28 @@
     "numerologyWeight": 0.60,
     "baseballWeight": 0.40
   },
+  "signalCapabilities": {
+    "personalDay": "implemented",
+    "jersey": "implemented",
+    "battingOrder": "implemented",
+    "lifePath": "implemented",
+    "birthDay": "implemented",
+    "age": "implemented",
+    "expressionNumber": "implemented",
+    "repeatedDateDigits": "implemented",
+    "multipleCountercurrentPenalty": "implemented",
+    "gameStartTimeNumber": "disabled — requires confirmed game-time data per batter, not yet in candidate payload",
+    "teamCityBallpark": "disabled — deterministic name-number formulas for team/city/ballpark defined but MLB team names not yet in scoring pipeline",
+    "opposingPitcherProfile": "disabled — pitcher numerology fields collected but cross-signal scoring vs batter not yet implemented",
+    "statisticalMilestone": "disabled — milestone detection requires rolling game-log lookup not in current pipeline"
+  },
   "doubleCounting": {
     "rule": "Once a source field awards points at any tier, it does not award additional points at a lower tier.",
     "convergenceCap": "Convergence bonus capped at convergenceMaxBonus. Requires 3+ independent source fields.",
     "examples": [
-      "Jersey 22 on a 22/4 day: exact master only, no additional root points.",
-      "Batting 4th on a root-4 day: exact root only, no family points.",
-      "Jersey 33 on Calendar Day 24/6: shared root-6, not exact compound match."
+      "Jersey 22 on a 22/4 day: exact master only, not root points additionally.",
+      "Batting 4th on a root-4 day: exact root only, not family points additionally.",
+      "Jersey 33 on Calendar Day 24/6: shared root-6, not exact compound match to 24."
     ]
   },
   "finalScoreFormula": "Final = 60% × NumerologyResonance + 40% × BaseballOpportunity",
@@ -53,7 +68,7 @@
     "65": "Moderate Alignment",
     "0": "Watchlist"
   },
-  "prohibitedLanguage": ["guaranteed", "lock", "destined", "certain", "can't lose", "proven"],
+  "prohibitedLanguage": ["guaranteed", "lock", "destined", "certain", "can't lose", "will win", "sure thing"],
   "grokPermittedFields": [
     "dailyProfile.interpretation",
     "featuredPlays[].summary",
@@ -64,11 +79,9 @@
     "narrative.closingObservation"
   ],
   "grokProhibitedActions": [
-    "Change any calculated number",
-    "Change any score",
+    "Change any calculated number or score",
     "Add unknown players",
-    "Change opponent or lineup status",
-    "Change odds or lines",
+    "Change opponent, lineup status, odds, or lines",
     "Use prohibited language",
     "Claim causation"
   ]

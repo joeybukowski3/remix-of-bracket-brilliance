@@ -236,7 +236,66 @@ describe("Pythagorean name numerology", () => {
   });
 });
 
-// ── Master number preservation ─────────────────────────────────────────────────
+// ── Repeated date digits (Issue #3) ──────────────────────────────────────────
+
+describe("June 24, 2026 repeated digits — both 2 and 6 must appear", () => {
+  const profile = buildDailyProfile("2026-06-24");
+
+  it("digit 2 appears 3 times in 20260624", () => {
+    const entry = profile.repeatedDigits.find(r => r.digit === 2);
+    expect(entry).toBeDefined();
+    expect(entry!.count).toBe(3);
+  });
+
+  it("digit 6 appears 2 times in 20260624", () => {
+    const entry = profile.repeatedDigits.find(r => r.digit === 6);
+    expect(entry).toBeDefined();
+    expect(entry!.count).toBe(2);
+  });
+
+  it("returns both repeated digits", () => {
+    const digits = profile.repeatedDigits.map(r => r.digit).sort();
+    expect(digits).toContain(2);
+    expect(digits).toContain(6);
+    expect(profile.repeatedDigits.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("digit 2 reinforces 'neither' (2 not in primary [1,4,7] or secondary [3,6,9])", () => {
+    const entry = profile.repeatedDigits.find(r => r.digit === 2);
+    expect(entry!.reinforces).toBe("neither");
+  });
+
+  it("digit 6 reinforces 'secondary' (6 is in [3,6,9])", () => {
+    const entry = profile.repeatedDigits.find(r => r.digit === 6);
+    expect(entry!.reinforces).toBe("secondary");
+  });
+});
+
+// ── Batting order normalization (Issue #6) ────────────────────────────────────
+
+describe("normalizeBattingOrder()", () => {
+  // Inline the function for testing (mirrors generate-mlb-numerology.mjs)
+  function normalizeBattingOrder(raw: string | number | null | undefined): number | null {
+    if (raw == null) return null;
+    const n = parseInt(String(raw), 10);
+    if (!isFinite(n)) return null;
+    const pos = n >= 100 ? Math.round(n / 100) : n;
+    return (pos >= 1 && pos <= 9) ? pos : null;
+  }
+
+  it("string '100' → 1", () => expect(normalizeBattingOrder("100")).toBe(1));
+  it("number 100 → 1", () => expect(normalizeBattingOrder(100)).toBe(1));
+  it("number 400 → 4", () => expect(normalizeBattingOrder(400)).toBe(4));
+  it("number 900 → 9", () => expect(normalizeBattingOrder(900)).toBe(9));
+  it("string '4' → 4", () => expect(normalizeBattingOrder("4")).toBe(4));
+  it("number 4 → 4", () => expect(normalizeBattingOrder(4)).toBe(4));
+  it("null → null", () => expect(normalizeBattingOrder(null)).toBeNull());
+  it("undefined → null", () => expect(normalizeBattingOrder(undefined)).toBeNull());
+  it("0 → null (invalid)", () => expect(normalizeBattingOrder(0)).toBeNull());
+  it("10 → null (not 100-based, invalid single digit)", () => expect(normalizeBattingOrder(10)).toBeNull());
+  it("1000 → null (out of range after /100)", () => expect(normalizeBattingOrder(1000)).toBeNull());
+  it("'abc' → null", () => expect(normalizeBattingOrder("abc")).toBeNull());
+});
 
 describe("Master number preservation across date profiles", () => {
   it("2/9/2029 produces master 22 Universal Day", () => {

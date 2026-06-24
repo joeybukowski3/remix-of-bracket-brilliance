@@ -2,12 +2,10 @@ name: Generate MLB Numerology
 
 on:
   schedule:
-    # 9:36 AM America/New_York = 13:36 UTC (EDT, UTC-4) / 14:36 UTC (EST, UTC-5)
-    # Run both slots so daylight-saving transitions are covered.
-    # The script is idempotent for the same date — second run is a no-op if data unchanged.
-    - cron: "36 13 * * *"  # 9:36 AM EDT (summer)
-    - cron: "36 14 * * *"  # 9:36 AM EST (winter)
-    # Numerological note: 9+3+6 = 18 → 9; reinforces the 3-6-9 identity of the 369 entry symbol.
+    # 9:36 AM America/New_York — timezone-aware, single schedule
+    # 9+3+6 = 18 → 9, reinforcing the 3-6-9 identity of the 369 entry symbol
+    - cron: "36 9 * * *"
+      timezone: "America/New_York"
   workflow_dispatch:
     inputs:
       date:
@@ -15,12 +13,12 @@ on:
         required: false
         type: string
       dry_run:
-        description: "Generate and validate without committing"
+        description: "Generate and validate without committing or writing files"
         required: false
         default: "false"
         type: string
       use_fixture:
-        description: "Use fixture data instead of live external APIs"
+        description: "Write to fixture path only — never overwrites production"
         required: false
         default: "false"
         type: string
@@ -55,9 +53,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests
+      - name: Run numerology unit tests
         run: npx vitest run src/lib/numerology/numerology.test.ts
-        continue-on-error: false
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
 
       - name: Generate numerology
         id: generate
@@ -80,10 +83,6 @@ jobs:
           fi
 
           node scripts/generate-mlb-numerology.mjs $DATE_FLAG $DRY_FLAG $FIXTURE_FLAG
-
-      - name: TypeScript check
-        run: npx tsc --noEmit
-        continue-on-error: true
 
       - name: Commit and push
         if: ${{ inputs.dry_run != 'true' }}
