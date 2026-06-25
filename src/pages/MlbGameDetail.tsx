@@ -736,15 +736,22 @@ function PropPreviewCard({
           <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
           {theme === "hr" ? <Flame className="h-4 w-4" /> : theme === "k" ? <Radar className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
           </span>
-          <h3 className="text-base font-bold text-[#031635]">{title}</h3>
+          <h3 className="text-[17px] font-bold text-[#031635] 2xl:text-lg">{title}</h3>
         </div>
         <Link to={to} className={cn("text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
           {themeClasses.note}
         </Link>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px] items-center gap-2 border-b border-slate-200 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-        <div>Player</div>
+      <div
+        className={cn(
+          "grid items-center gap-x-1.5 border-b border-slate-300 px-3 py-2.5 text-[10px] font-bold uppercase tracking-[0.1em] text-slate-600 2xl:gap-x-2 2xl:px-4 2xl:text-[11px]",
+          theme === "hr"
+            ? "grid-cols-[20px_minmax(90px,1fr)_minmax(116px,1.08fr)_56px] 2xl:grid-cols-[20px_minmax(120px,1fr)_minmax(150px,1.12fr)_64px]"
+            : "grid-cols-[20px_minmax(116px,1fr)_minmax(56px,0.45fr)_56px] 2xl:grid-cols-[20px_minmax(140px,1fr)_minmax(72px,0.48fr)_64px]",
+        )}
+      >
+        <div className="col-span-2">Player</div>
         <div>Matchup</div>
         <div className="text-right">Score</div>
       </div>
@@ -755,20 +762,33 @@ function PropPreviewCard({
             key={row.key}
             to={to}
             className={cn(
-              "group grid grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px] items-center gap-2 border-b border-slate-100 px-4 py-2 transition last:border-b-0",
+              "group grid items-center gap-x-1.5 border-b border-slate-200/80 px-3 transition last:border-b-0 2xl:gap-x-2 2xl:px-4",
+              theme === "hr"
+                ? "grid-cols-[20px_minmax(90px,1fr)_minmax(116px,1.08fr)_56px] py-2.5 2xl:grid-cols-[20px_minmax(120px,1fr)_minmax(150px,1.12fr)_64px] 2xl:py-3"
+                : "grid-cols-[20px_minmax(116px,1fr)_minmax(56px,0.45fr)_56px] py-2.5 2xl:grid-cols-[20px_minmax(140px,1fr)_minmax(72px,0.48fr)_64px]",
               index % 2 === 1 && "bg-slate-50/50",
               themeClasses.hover,
             )}
           >
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex items-center justify-center">
               <TeamAbbrBadge team={row.team} />
-              <div className="min-w-0">
-                <div className="text-xs font-bold leading-5 text-slate-950">{row.player}</div>
-                {row.position && <div className="text-[10px] font-semibold uppercase text-slate-400">{row.position}</div>}
-              </div>
             </div>
-            <div className="min-w-0 text-[11px] font-medium text-slate-500">
-              <div className="truncate">vs {row.opponent}</div>
+            <div className="min-w-0 overflow-hidden">
+              <div
+                className="overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold leading-5 text-slate-950 2xl:text-[13px]"
+                title={row.player}
+              >
+                {row.player}
+              </div>
+              {row.position && <div className="text-[9px] font-semibold uppercase text-slate-400">{row.position}</div>}
+            </div>
+            <div className="min-w-0 overflow-hidden text-[11px] font-medium text-slate-600 2xl:text-xs">
+              <div
+                className="overflow-hidden text-ellipsis whitespace-nowrap"
+                title={`vs ${row.opponent}`}
+              >
+                vs {row.opponent}
+              </div>
             </div>
             <div className="flex justify-end">
               <ScorePill value={row.score} />
@@ -1005,34 +1025,70 @@ function MlbSlateAnalyzer({
 
   function getPolymarketEdge(gamePk: number, mlEdge: any) {
     if (!polymarketData || !mlEdge) return null;
-    
+
     const game = polymarketData.games.find(g => g.gamePk === gamePk);
     if (!game || !game.matched) return null;
 
-    const modelPickIsAway = mlEdge.pick === "away" && mlEdge.pick !== "push";
-    const modelPickIsHome = mlEdge.pick === "home" && mlEdge.pick !== "push";
-    
-    if (!modelPickIsAway && !modelPickIsHome) return null;
+    const confidence = mlEdge.confidence / 100;
+    const awayModelProb = mlEdge.pick === "away" ? confidence : mlEdge.pick === "home" ? 1 - confidence : 0.5;
+    const homeModelProb = 1 - awayModelProb;
+    const candidates: Array<{ team: string; edge: number; polyProb: number }> = [];
 
-    const polyProb = modelPickIsAway ? game.away.yesPrice : game.home.yesPrice;
-    if (polyProb == null) return null;
+    if (game.away.yesPrice != null) {
+      candidates.push({
+        team: game.away.abbreviation,
+        edge: Math.round((awayModelProb - game.away.yesPrice) * 1000) / 10,
+        polyProb: game.away.yesPrice,
+      });
+    }
+    if (game.home.yesPrice != null) {
+      candidates.push({
+        team: game.home.abbreviation,
+        edge: Math.round((homeModelProb - game.home.yesPrice) * 1000) / 10,
+        polyProb: game.home.yesPrice,
+      });
+    }
+    if (!candidates.length) return null;
 
-    const modelConfidence = mlEdge.confidence / 100; // Convert 65 to 0.65
-    const edge = Math.round((modelConfidence - polyProb) * 100);
-    const team = modelPickIsAway ? game.away.abbreviation : game.home.abbreviation;
-    const sign = edge > 0 ? "+" : "";
+    const best = candidates.sort((a, b) => b.edge - a.edge)[0];
+    if (best.edge <= 0) {
+      return { team: null, edge: 0, sign: "", polyProb: best.polyProb, isEven: true };
+    }
 
-    return { team, edge, sign, polyProb };
+    return { team: best.team, edge: best.edge, sign: "+", polyProb: best.polyProb, isEven: false };
   }
   const { getTeam } = useTeamWrc();
   return (
     <section id="schedule" className="space-y-3">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-[#031635]">Game Matchup Analyzer</h2>
-          <p className="text-xs text-slate-500">Daily predictive analysis and situational edges from the live slate.</p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <h2 className="shrink-0 text-xl font-bold tracking-tight text-[#031635] 2xl:text-2xl">Game Matchup Analyzer</h2>
+            <label className="relative min-w-0 sm:w-[220px] 2xl:w-[260px]">
+              <span className="sr-only">Jump to a game</span>
+              <select
+                defaultValue=""
+                onChange={(event) => {
+                  const gamePk = event.currentTarget.value;
+                  if (!gamePk) return;
+                  document.getElementById(`mlb-game-${gamePk}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  event.currentTarget.value = "";
+                }}
+                className="h-9 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 pr-8 text-xs font-semibold text-slate-700 shadow-sm outline-none transition hover:border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">Jump to game…</option>
+                {games.map((game) => (
+                  <option key={game.gamePk} value={game.gamePk}>
+                    {game.away.abbreviation} @ {game.home.abbreviation} — {formatGameTime(game.gameDate)}
+                  </option>
+                ))}
+              </select>
+              <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">▼</span>
+            </label>
+          </div>
+          <p className="mt-1 text-xs text-slate-500 2xl:text-sm">Daily predictive analysis and situational edges from the live slate.</p>
         </div>
-        <span className="text-xs font-semibold text-slate-400">{games.length} games</span>
+        <span className="shrink-0 text-xs font-semibold text-slate-400">{games.length} games</span>
       </div>
 
       {/* 2 cards per row on lg+, 1 on mobile */}
@@ -1049,11 +1105,12 @@ function MlbSlateAnalyzer({
 
           return (
             <button
+              id={`mlb-game-${game.gamePk}`}
               key={game.gamePk}
               type="button"
               onClick={() => onOpenGame(game.gamePk)}
               className={cn(
-                "flex w-full flex-col rounded-xl border text-left transition-all hover:shadow-md",
+                "scroll-mt-28 flex w-full flex-col rounded-xl border text-left transition-all hover:shadow-md",
                 statusCategory === "in-progress"
                   ? "border-green-200 bg-green-50/40 shadow-sm"
                   : statusCategory === "final"
@@ -1256,58 +1313,78 @@ function MlbSlateAnalyzer({
                     },
                   ];
 
-                  const PitcherPills = ({ pi }: { pi: ReturnType<typeof getPInfo> }) => (
-                    <div className="flex flex-wrap gap-1">
-                      {pi.xera != null ? (() => { const xs = xeraStyle(pi.xera!); return (
-                        <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: xs.bg, color: xs.text }}>
-                          {pi.xera!.toFixed(2)} xERA
-                        </span>
-                      ); })() : pi.xfipFallback != null ? (
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
-                          {pi.xfipFallback.toFixed(2)} xFIP
-                        </span>
-                      ) : null}
-                      {pi.pill && pi.s != null && (
-                        <span className="rounded px-1.5 py-0.5 text-[10px] font-bold"
-                          style={{ backgroundColor: pi.pill.bg, color: pi.pill.color }}>
-                          {pi.s > 0 ? "+" : ""}{pi.s} {pi.shortLabel}
-                        </span>
-                      )}
-                    </div>
-                  );
+                  const PitcherPills = ({ pi, align = "left" }: { pi: ReturnType<typeof getPInfo>; align?: "left" | "right" }) => {
+                    const metric = pi.xera != null
+                      ? { label: `${pi.xera.toFixed(2)} xERA`, style: xeraStyle(pi.xera) }
+                      : pi.xfipFallback != null
+                        ? { label: `${pi.xfipFallback.toFixed(2)} xFIP`, style: { bg: "#f1f5f9", text: "#64748b" } }
+                        : null;
+
+                    return (
+                      <div className={cn(
+                        "grid h-5 grid-cols-[60px_70px] items-center gap-1",
+                        align === "right" ? "justify-end" : "justify-start",
+                      )}>
+                        {metric ? (
+                          <span
+                            className="inline-flex h-5 w-[60px] items-center justify-center whitespace-nowrap rounded px-1 text-[9px] font-bold tabular-nums"
+                            style={{ backgroundColor: metric.style.bg, color: metric.style.text }}
+                          >
+                            {metric.label}
+                          </span>
+                        ) : (
+                          <span aria-hidden="true" className="invisible h-5 w-[60px]">—</span>
+                        )}
+                        {pi.pill && pi.s != null ? (
+                          <span
+                            className="inline-flex h-5 w-[70px] items-center justify-center whitespace-nowrap rounded px-1 text-[9px] font-bold tabular-nums"
+                            style={{ backgroundColor: pi.pill.bg, color: pi.pill.color }}
+                          >
+                            {pi.s > 0 ? "+" : ""}{pi.s} {pi.shortLabel}
+                          </span>
+                        ) : (
+                          <span aria-hidden="true" className="invisible h-5 w-[70px]">—</span>
+                        )}
+                      </div>
+                    );
+                  };
 
                   return (
                     <>
                       {/* ── Pitcher headers: Home LEFT, Away RIGHT ── */}
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 pb-2.5 border-b border-slate-100">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 border-b border-slate-100 pb-2.5">
                         {/* Home LEFT */}
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <div className="flex items-center gap-1.5">
+                        <div className="grid min-w-0 grid-rows-[28px_18px_16px_20px] gap-0.5">
+                          <div className="flex h-7 items-center gap-1.5 overflow-hidden">
                             <MlbTeamLogo team={game.home.abbreviation} size={28} />
                             <span className="text-[15px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
-                            <span className="text-[11px] font-semibold text-slate-400">{game.home.record}</span>
+                            <span className="truncate text-[11px] font-semibold text-slate-400">{game.home.record}</span>
                             {showScore && <span className="text-[18px] font-extrabold text-slate-900">{homeScore}</span>}
                           </div>
-                          <span className="text-[12px] font-semibold text-[#031635] truncate">{homePitcherName || "TBD"}</span>
-                          <div className="flex flex-col gap-0.5">
-                            {detail?.starters.home.record && <span className="text-[11px] text-slate-400">{detail.starters.home.record}</span>}
-                            <PitcherPills pi={homePI} />
-                          </div>
+                          <span className="block h-[18px] truncate text-[12px] font-semibold leading-[18px] text-[#031635]" title={homePitcherName || "TBD"}>
+                            {homePitcherName || "TBD"}
+                          </span>
+                          <span className="block h-4 text-[11px] leading-4 text-slate-400">
+                            {detail?.starters.home.record || " "}
+                          </span>
+                          <PitcherPills pi={homePI} align="left" />
                         </div>
-                        <div className="self-center text-[11px] font-bold text-slate-300 px-1">vs</div>
+                        <div className="self-center px-1 pt-7 text-[11px] font-bold text-slate-300">vs</div>
                         {/* Away RIGHT */}
-                        <div className="flex flex-col items-end gap-0.5 text-right min-w-0">
-                          <div className="flex items-center gap-1.5 flex-row-reverse">
+                        <div className="grid min-w-0 grid-rows-[28px_18px_16px_20px] justify-items-end gap-0.5 text-right">
+                          <div className="flex h-7 max-w-full flex-row-reverse items-center gap-1.5 overflow-hidden">
                             <MlbTeamLogo team={game.away.abbreviation} size={28} />
                             <span className="text-[15px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
-                            <span className="text-[11px] font-semibold text-slate-400">{game.away.record}</span>
+                            <span className="truncate text-[11px] font-semibold text-slate-400">{game.away.record}</span>
                             {showScore && <span className="text-[18px] font-extrabold text-slate-900">{awayScore}</span>}
                           </div>
-                          <span className="text-[12px] font-semibold text-[#031635] truncate">{awayPitcherName || "TBD"}</span>
-                          <div className="flex flex-col items-end gap-0.5">
-                            {detail?.starters.away.record && <span className="text-[11px] text-slate-400">{detail.starters.away.record}</span>}
-                            <PitcherPills pi={awayPI} />
-                          </div>
+                          <span className="block h-[18px] max-w-full truncate text-[12px] font-semibold leading-[18px] text-[#031635]" title={awayPitcherName || "TBD"}>
+                            {awayPitcherName || "TBD"}
+                          </span>
+                          <span className="block h-4 text-[11px] leading-4 text-slate-400">
+                            {detail?.starters.away.record || " "}
+                          </span>
+                          <PitcherPills pi={awayPI} align="right" />
                         </div>
                       </div>
 
@@ -1443,62 +1520,141 @@ function MlbSlateAnalyzer({
                         )}
                       </div>
 
-                      {/* ── Footer ── */}
-                      <div className="mt-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 border-t border-slate-100 pt-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total</span>
-                          <span className="rounded-full bg-[#031635] px-3 py-1 text-[10px] font-extrabold text-white">{edges.total}</span>
-                        </div>
-                        <div className="h-3 w-px bg-slate-200" />
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">ML Edge</span>
-                          {mlPickAbbr && mlPickColor ? (
-                            <span className="rounded-full px-3 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
-                              {mlPickAbbr} {mlEdge!.confidence}%
-                            </span>
-                          ) : mlEdge ? (
-                            <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
-                          ) : (
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold text-slate-400">—</span>
-                          )}
-                        </div>
-                        {pmEdge && (
-                          <>
-                            <div className="h-3 w-px bg-slate-200" />
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Polymarket Value</span>
-                              <span className={`rounded-full px-3 py-1 text-[10px] font-extrabold text-white ${pmEdge.edge > 0 ? "bg-emerald-600" : "bg-red-600"}`}>
-                                {pmEdge.team} {pmEdge.sign}{Math.abs(pmEdge.edge)}%
-                              </span>
-                            </div>
-                          </>
-                        )}
-                        {(() => {
-                          const awayAbbr = game.away.abbreviation;
-                          const homeAbbr = game.home.abbreviation;
-                          const ml = mlbOdds?.moneylines?.[`${awayAbbr}@${homeAbbr}`];
-                          if (!ml) return null;
-                          const awayAmerican = ml.away.american;
-                          const homeAmerican = ml.home.american;
-                          if (!awayAmerican || !homeAmerican) return null;
-                          // Check if these are real American odds (e.g. -120, +105) vs win% estimates (e.g. 46%)
-                          const isRealOdds = (v: string) => /^[+-]\d+$/.test(String(v).trim());
-                          const awayIsReal = isRealOdds(awayAmerican);
-                          const homeIsReal = isRealOdds(homeAmerican);
-                          const bothReal = awayIsReal && homeIsReal;
-                          return (
-                            <>
-                              <div className="h-3 w-px bg-slate-200" />
-                              <div className="flex items-center gap-1">
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">{bothReal ? "Line" : "Win%"}</span>
-                                <span className="text-[10px] font-bold text-slate-600">{awayAbbr} {awayAmerican}</span>
-                                <span className="text-[9px] text-slate-300">/</span>
-                                <span className="text-[10px] font-bold text-slate-600">{homeAbbr} {homeAmerican}</span>
+                      {/* ── Model drivers + market summary footer ── */}
+                      {(() => {
+                        const driverRows = mlEdge
+                          ? mlEdge.factors
+                              .map((factor) => {
+                                const weightedDifference = factor.weightedDifference;
+                                const favoredSide = Math.abs(weightedDifference) < 0.05
+                                  ? "push"
+                                  : weightedDifference > 0 ? "away" : "home";
+                                const favoredTeam = favoredSide === "away"
+                                  ? game.away.abbreviation
+                                  : favoredSide === "home" ? game.home.abbreviation : null;
+                                return { ...factor, weightedDifference, favoredSide, favoredTeam };
+                              })
+                              .sort((a, b) => Math.abs(b.weightedDifference) - Math.abs(a.weightedDifference))
+                              .slice(0, 3)
+                          : [];
+                        const maxContribution = Math.max(
+                          ...driverRows.map((factor) => Math.abs(factor.weightedDifference)),
+                          1,
+                        );
+                        const awayColor = getMlbTeamColors(game.away.abbreviation).primary;
+                        const homeColor = getMlbTeamColors(game.home.abbreviation).primary;
+                        const awayAbbr = game.away.abbreviation;
+                        const homeAbbr = game.home.abbreviation;
+                        const ml = mlbOdds?.moneylines?.[`${awayAbbr}@${homeAbbr}`];
+                        const awayAmerican = ml?.away?.american ?? null;
+                        const homeAmerican = ml?.home?.american ?? null;
+                        const isRealOdds = (value: string | null) => value != null && /^[+-]\d+$/.test(String(value).trim());
+                        const bothReal = isRealOdds(awayAmerican) && isRealOdds(homeAmerican);
+
+                        return (
+                          <div className="mt-auto border-t border-slate-100 bg-slate-50/70 px-3 pb-3 pt-2.5">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.45fr)_minmax(145px,0.75fr)] sm:gap-4">
+                              <div className="min-w-0">
+                                <div className="mb-2 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Top Model Drivers</div>
+                                {driverRows.length ? (
+                                  <div className="space-y-2">
+                                    {driverRows.map((factor) => {
+                                      const magnitude = Math.abs(factor.weightedDifference);
+                                      const width = Math.min(50, (magnitude / maxContribution) * 50);
+                                      const contributionLabel = factor.favoredTeam
+                                        ? `${factor.favoredTeam} +${magnitude.toFixed(1)}`
+                                        : "Even";
+                                      const tooltip = `${awayAbbr} ${factor.awayScore} − ${homeAbbr} ${factor.homeScore}; × ${Math.round(factor.weight * 100)}% = ${contributionLabel}`;
+                                      return (
+                                        <div key={factor.label} title={tooltip} className="min-w-0">
+                                          <div className="mb-0.5 flex items-center justify-between gap-2">
+                                            <span className="truncate text-[9px] font-semibold text-slate-500">{factor.label}</span>
+                                            <span className="shrink-0 text-[9px] font-extrabold tabular-nums text-slate-700">{contributionLabel}</span>
+                                          </div>
+                                          <div className="grid grid-cols-[24px_minmax(0,1fr)_24px] items-center gap-1">
+                                            <span className="text-[8px] font-bold text-slate-400">{awayAbbr}</span>
+                                            <div className="relative h-2.5 overflow-hidden rounded-full bg-slate-200/80">
+                                              <div className="absolute inset-y-0 left-1/2 z-10 w-px bg-slate-400/80" />
+                                              {factor.favoredSide === "away" && (
+                                                <div
+                                                  className="absolute inset-y-0 right-1/2 rounded-l-full"
+                                                  style={{ width: `${width}%`, backgroundColor: awayColor }}
+                                                />
+                                              )}
+                                              {factor.favoredSide === "home" && (
+                                                <div
+                                                  className="absolute inset-y-0 left-1/2 rounded-r-full"
+                                                  style={{ width: `${width}%`, backgroundColor: homeColor }}
+                                                />
+                                              )}
+                                              {factor.favoredSide === "push" && (
+                                                <div className="absolute left-1/2 top-1/2 z-20 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-500" />
+                                              )}
+                                            </div>
+                                            <span className="text-right text-[8px] font-bold text-slate-400">{homeAbbr}</span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] text-slate-400">Model drivers unavailable.</div>
+                                )}
                               </div>
-                            </>
-                          );
-                        })()}
-                      </div>
+
+                              <div className="border-t border-slate-200 pt-2.5 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                                <div className="mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Market Summary</div>
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
+                                    <span className="rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold text-white">{edges.total}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3" title="Model confidence index, not a guaranteed win probability.">
+                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">ML Edge</span>
+                                    {mlPickAbbr && mlPickColor ? (
+                                      <span className="rounded-full px-2.5 py-1 text-[9px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
+                                        {mlPickAbbr} {mlEdge!.confidence}
+                                      </span>
+                                    ) : mlEdge ? (
+                                      <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold text-slate-500">Even</span>
+                                    ) : (
+                                      <span className="text-[10px] font-semibold text-slate-400">—</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket Value</span>
+                                    {pmEdge ? (
+                                      <span className={cn(
+                                        "rounded-full px-2.5 py-1 text-[9px] font-extrabold",
+                                        pmEdge.isEven
+                                          ? "bg-slate-200 text-slate-600"
+                                          : pmEdge.edge >= 2
+                                            ? "bg-emerald-100 text-emerald-700"
+                                            : "bg-sky-100 text-sky-700",
+                                      )}>
+                                        {pmEdge.isEven ? "Even" : `${pmEdge.team} +${pmEdge.edge.toFixed(1)}%`}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] font-semibold text-slate-400">—</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <span className="pt-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-400">{bothReal ? "Line" : "Win%"}</span>
+                                    {awayAmerican && homeAmerican ? (
+                                      <div className="text-right text-[9px] font-bold leading-4 text-slate-600">
+                                        <div className={mlPickAbbr === awayAbbr ? "text-slate-900" : undefined}>{awayAbbr} {awayAmerican}</div>
+                                        <div className={mlPickAbbr === homeAbbr ? "text-slate-900" : undefined}>{homeAbbr} {homeAmerican}</div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-[10px] font-semibold text-slate-400">—</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </>
                   );
                 })()}
@@ -1554,8 +1710,6 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
     .slice().sort((a, b) => b.hrScore - a.hrScore)
     .slice(0, 8);
 
-  const hasHrOdds = rows.some(r => r.hrOddsYes != null);
-
   function sc(s: number) {
     if (s >= 70) return { bg: "#22c55e", color: "#fff" };
     if (s >= 65) return { bg: "#4ade80", color: "#000" };
@@ -1597,15 +1751,8 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
                     <span style={{ color: "#64748b" }}>vs {r.opposingPitcher}</span>
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                  <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 8px", fontWeight: 900, fontSize: 15, whiteSpace: "nowrap" }}>
-                    {score >= 70 && "🔥"}{score.toFixed(1)}
-                  </div>
-                  {r.hrOddsYes != null && (
-                    <div style={{ background: "#0d1f3c", border: "1px solid #1e3a5f", borderRadius: 5, padding: "2px 6px", fontSize: 11, fontWeight: 800, color: r.hrOddsYes.startsWith("+") ? "#4ade80" : "#94a3b8", whiteSpace: "nowrap" }}>
-                      {r.hrOddsYes}
-                    </div>
-                  )}
+                <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 8px", fontWeight: 900, fontSize: 15, whiteSpace: "nowrap" }}>
+                  {score >= 70 && "🔥"}{score.toFixed(1)}
                 </div>
               </div>
               {/* Stats grid: 2x2 on mobile */}
@@ -1642,10 +1789,10 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
         })}
       </div>
 
-      {/* Desktop: 8 column grid when odds available, 7 otherwise */}
+      {/* Desktop: 7 column grid */}
       <div className="hidden sm:block">
-        <div style={{ display: "grid", gridTemplateColumns: hasHrOdds ? "36px 1fr 88px 84px 84px 50px 50px 72px" : "36px 1fr 88px 84px 84px 50px 50px", padding: "5px 10px", background: "#0d1f3c", gap: 6 }}>
-          {[...["","PLAYER","SCORE","BARREL%","HH%","L7","L30"], ...(hasHrOdds ? ["ODDS"] : [])].map((h, i) => (
+        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "5px 10px", background: "#0d1f3c", gap: 6 }}>
+          {["","PLAYER","SCORE","BARREL%","HH%","L7","L30"].map((h, i) => (
             <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
           ))}
         </div>
@@ -1653,7 +1800,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
           const score = r.hrScore;
           const pillStyle = sc(score);
           return (
-            <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: hasHrOdds ? "36px 1fr 88px 84px 84px 50px 50px 72px" : "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
+            <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
                   <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
                   <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
                     {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
@@ -1682,17 +1829,6 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
                     {r.last30HR >= 8 && <span style={{ fontSize: 11 }}>👑</span>}{r.last30HR}
                   </div>
-                  {hasHrOdds && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {r.hrOddsYes != null ? (
-                        <span style={{ background: "#0d1f3c", border: "1px solid #1e3a5f", borderRadius: 5, padding: "3px 7px", fontSize: 12, fontWeight: 800, color: r.hrOddsYes.startsWith("+") ? "#4ade80" : "#94a3b8", whiteSpace: "nowrap" }}>
-                          {r.hrOddsYes}
-                        </span>
-                      ) : (
-                        <span style={{ color: "#334155", fontSize: 11 }}>—</span>
-                      )}
-                    </div>
-                  )}
             </div>
           );
         })}
@@ -1715,7 +1851,6 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
     );
   }
   const top = rows.slice(0, 5);
-  const hasKOdds = top.some(r => r.kOddsOver != null);
   function sc(s: number) {
     if (s >= 70) return { bg: "#22c55e", color: "#fff" };
     if (s >= 65) return { bg: "#4ade80", color: "#000" };
@@ -1768,7 +1903,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
                   {safeScore.toFixed(1)}
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: hasKOdds ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
                 <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
                   <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>K%</div>
                   <div style={{ color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8", fontWeight: 600, fontSize: 13 }}>
@@ -1790,14 +1925,6 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
                     {r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
                   </div>
                 </div>
-                {hasKOdds && (
-                  <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
-                    <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>OVER</div>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: "#4ade80", whiteSpace: "nowrap" }}>
-                      {r.kOddsOver ?? "—"}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           );
@@ -1806,8 +1933,8 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
 
       {/* Desktop */}
       <div className="hidden sm:block">
-        <div style={{ display: "grid", gridTemplateColumns: hasKOdds ? "36px 1fr 84px 72px 72px 68px 70px" : "36px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
-          {[...["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"], ...(hasKOdds ? ["OVER"] : [])].map((h, i) => (
+        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
+          {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
             <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
           ))}
         </div>
@@ -1825,8 +1952,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-rate={r.pitcherKRate ?? ""}
               data-k-whiff-rate={r.pitcherWhiffRate ?? ""}
               data-k-opp-rate={r.opponentTeamKRate ?? ""}
-              data-k-odds-over={r.kOddsOver ?? ""}
-              style={{ display: "grid", gridTemplateColumns: hasKOdds ? "36px 1fr 84px 72px 72px 68px 70px" : "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
+              style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
             >
               <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
               <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
@@ -1844,17 +1970,6 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : r.opponentTeamKRate != null && r.opponentTeamKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
                 {r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 && <span style={{ fontSize: 10 }}>💀</span>}{r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
               </div>
-              {hasKOdds && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {r.kOddsOver != null ? (
-                    <span style={{ background: "#0d1f3c", border: "1px solid #1e3a5f", borderRadius: 5, padding: "3px 7px", fontSize: 12, fontWeight: 800, color: "#4ade80", whiteSpace: "nowrap" }}>
-                      {r.kOddsOver}
-                    </span>
-                  ) : (
-                    <span style={{ color: "#334155", fontSize: 11 }}>—</span>
-                  )}
-                </div>
-              )}
             </div>
           );
         })}
@@ -2489,21 +2604,36 @@ function HomeSchedule({
 
       const pickIsAway = edge.pick === "away";
       const pickAbbr = pickIsAway ? pmGame.away.abbreviation : pmGame.home.abbreviation;
-      const polyProb = pickIsAway ? pmGame.away.yesPrice : pmGame.home.yesPrice;
+      const confidence = edge.confidence / 100;
+      const awayModelProb = pickIsAway ? confidence : 1 - confidence;
+      const homeModelProb = 1 - awayModelProb;
+      const candidates: Array<{ valueAbbr: string; valueEdge: number }> = [];
 
-      // valueEdge: how many percentage points our model beats Polymarket's implied probability
-      const valueEdge = polyProb != null
-        ? Math.round((edge.confidence / 100 - polyProb) * 1000) / 10
-        : null;
+      if (pmGame.away.yesPrice != null) {
+        candidates.push({
+          valueAbbr: pmGame.away.abbreviation,
+          valueEdge: Math.round((awayModelProb - pmGame.away.yesPrice) * 1000) / 10,
+        });
+      }
+      if (pmGame.home.yesPrice != null) {
+        candidates.push({
+          valueAbbr: pmGame.home.abbreviation,
+          valueEdge: Math.round((homeModelProb - pmGame.home.yesPrice) * 1000) / 10,
+        });
+      }
 
-      map[pmGame.gamePk] = { pickAbbr, confidence: edge.confidence, valueEdge };
+      const best = candidates.sort((a, b) => b.valueEdge - a.valueEdge)[0] ?? null;
+      const valueEdge = best && best.valueEdge > 0 ? best.valueEdge : best ? 0 : null;
+      const valueAbbr = valueEdge != null && valueEdge > 0 ? best!.valueAbbr : null;
+
+      map[pmGame.gamePk] = { pickAbbr, confidence: edge.confidence, valueAbbr, valueEdge };
     }
     return map;
   }, [detailPreviews, polymarketData]);
 
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
-      <div className="mx-auto flex max-w-[1280px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:max-w-[1400px] 2xl:max-w-[1600px] 2xl:gap-6 3xl:max-w-[1800px] 3xl:px-10 4xl:max-w-[1900px] 4xl:px-12">
+      <div className="mx-auto flex max-w-[1360px] gap-5 px-4 py-6 sm:px-5 lg:px-6 xl:max-w-[1560px] 2xl:max-w-[1800px] 2xl:gap-5 3xl:max-w-[1920px] 3xl:px-6 4xl:max-w-[2048px] 4xl:px-8">
         <MlbHubSidebar />
 
         <div className="min-w-0 flex-1 space-y-3">
@@ -2516,7 +2646,7 @@ function HomeSchedule({
               <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 3xl:gap-5">
               <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" />
               <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" />
             </div>

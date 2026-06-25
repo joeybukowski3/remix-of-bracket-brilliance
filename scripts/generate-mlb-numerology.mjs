@@ -2,7 +2,7 @@
 /**
  * generate-mlb-numerology.mjs
  * JoeKnowsBall MLB Numerical Alignment — Daily Generation Script
- * Methodology v2.0.0
+ * Methodology v2.1.0
  *
  * Three-layer architecture:
  *   Layer 1: Deterministic numerology engine (this script)
@@ -287,10 +287,10 @@ async function resolvePlayerId(playerName, teamAbbr) {
 // ── Baseball Opportunity Score (reuses existing model data) ─────────────────
 function baseballScore(batter) {
   const hr = safeNum(batter.hrScore);
-  if (hr == null) return 50;
-  const normalized = Math.min(100, Math.max(0, Math.round(((hr - 40) / 50) * 100)));
-  const pitcherPenalty = (!batter.opposingPitcher || batter.opposingPitcher === "TBD") ? -20 : 0;
-  return Math.max(0, normalized + pitcherPenalty);
+  // Display the existing JoeKnowsBall HR score directly as context.
+  // This value is never used for numerology selection or ranking.
+  if (hr == null) return 0;
+  return Math.min(100, Math.max(0, Math.round(hr)));
 }
 
 // Market selection: use HR market when hrScore is available (Issue #9)
@@ -359,8 +359,8 @@ function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = [])
   if (pd) {
     if (ud.master != null && (pd.compound === ud.master || pd.master === ud.master)) {
       award("personalDay", `Personal Day ${pd.compound}/${pd.root} — Master Match`, "primary_exact_master", W.personalDayExactMaster, `Personal Day matches Universal Day master ${ud.master}.`, "pd:master");
-    } else if (pd.original === ud.compound || (ud.compound > 9 && pd.compound === ud.compound)) {
-      award("personalDay", `Personal Day ${pd.compound} — Exact Primary`, "primary_exact_root", W.personalDayExactMaster - 4, `Personal Day ${pd.compound} matches Universal Day.`, "pd:exact");
+    } else if (pd.original === ud.rawSum || pd.compound === ud.rawSum) {
+      award("personalDay", `Personal Day ${pd.original}/${pd.root} — Exact Primary`, "primary_exact_root", W.personalDayExactMaster - 4, `Personal Day ${pd.original} matches Universal Day compound ${ud.rawSum}.`, "pd:exact");
     } else if (pd.root === ud.root) {
       award("personalDay", `Personal Day root ${pd.root} — Root Match`, "personal_cycle", W.personalDayRoot, `Personal Day root ${pd.root} matches Universal Day root.`, "pd:root");
     } else if (pd.root === dailyProfile.countercurrent) {
@@ -375,8 +375,8 @@ function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = [])
       award("jersey", `Jersey ${j.original} — Exact Master`, "primary_exact_master", W.jerseyExactMaster, `Jersey ${j.original} matches Universal Day master.`, "jersey:master");
     } else if (j.original === dailyProfile.calendarDay.original) {
       award("jersey", `Jersey ${j.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, `Jersey ${j.original} equals Calendar Day ${dailyProfile.calendarDay.original}.`, "jersey:calexact");
-    } else if (j.compound === ud.compound && ud.compound <= 9) {
-      award("jersey", `Jersey ${j.original} — Exact Primary`, "primary_exact_root", W.jerseyExactMaster - 2, `Jersey ${j.original} matches Universal Day.`, "jersey:udexact");
+    } else if (j.original === ud.rawSum) {
+      award("jersey", `Jersey ${j.original} — Exact Primary`, "primary_exact_root", W.jerseyExactMaster - 2, `Jersey ${j.original} matches Universal Day compound ${ud.rawSum}.`, "jersey:udexact");
     } else if (j.root === ud.root) {
       award("jersey", `Jersey ${j.original}/${j.root} — Root Match`, "primary_root", W.jerseyRoot, `Jersey ${j.original} reduces to ${j.root}.`, "jersey:root");
     } else if (j.root === dailyProfile.calendarDay.root && j.root !== ud.root) {
@@ -520,7 +520,7 @@ async function callGrokForNarratives(candidates, dailyProfile, apiKey) {
   const payload = {
     dailyProfile: {
       date: dailyProfile.date,
-      universalDay: { compound: dailyProfile.universalDay.compound, master: dailyProfile.universalDay.master, root: dailyProfile.universalDay.root, rawSum: dailyProfile.universalDay.rawSum },
+      universalDay: { compound: dailyProfile.universalDay.rawSum, master: dailyProfile.universalDay.master, root: dailyProfile.universalDay.root, rawSum: dailyProfile.universalDay.rawSum },
       calendarDay: { compound: dailyProfile.calendarDay.original, root: dailyProfile.calendarDay.root },
       primaryFamily: dailyProfile.primaryFamily,
       secondaryFamily: dailyProfile.secondaryFamily,
@@ -593,6 +593,9 @@ function validateOutput(output, slateDate) {
   if (output.dailyProfile?.universalDayRawSum !== expectedRawSum) {
     errors.push(`universalDayRawSum ${output.dailyProfile?.universalDayRawSum} ≠ expected ${expectedRawSum}`);
   }
+  if (output.dailyProfile?.universalDayCompound !== expectedRawSum) {
+    errors.push(`universalDayCompound ${output.dailyProfile?.universalDayCompound} ≠ full-date compound ${expectedRawSum}`);
+  }
 
   // Master number preservation
   if (MASTER_NUMBERS.has(expectedRawSum) && output.dailyProfile?.universalDayMaster !== expectedRawSum) {
@@ -610,12 +613,14 @@ function validateOutput(output, slateDate) {
     errors.push(`methodologyVersion mismatch: ${output.methodologyVersion}`);
   }
 
-  // 60/40 formula check on each featured play
-  for (const play of (output.featuredPlays ?? [])) {
-    const expected = Math.round(W.numerologyWeight * play.numerologyScore + W.baseballWeight * play.baseballScore);
-    if (play.finalScore !== expected) {
-      errors.push(`finalScore for ${play.playerName}: ${play.finalScore} ≠ expected ${expected}`);
+  // Baseball context must never alter an alignment score.
+  for (const play of [...(output.featuredPlays ?? []), ...(output.bestAvailable ?? []), ...(output.watchlist ?? [])]) {
+    if (play.finalScore !== play.numerologyScore) {
+      errors.push(`alignment score for ${play.playerName} must equal numerology score`);
     }
+  }
+  if (output.rankingBasis !== "numerology_only" || output.baseballContextOnly !== true) {
+    errors.push("Missing numerology-only ranking declaration");
   }
 
   // Candidate pool disclosure
@@ -639,7 +644,9 @@ async function main() {
   const dailyProfile = buildDailyProfile(slateDate);
   const udLabel = dailyProfile.universalDay.master
     ? `${dailyProfile.universalDay.master}/${dailyProfile.universalDay.root}`
-    : `${dailyProfile.universalDay.compound}/${dailyProfile.universalDay.root}`;
+    : dailyProfile.universalDay.rawSum > 9
+      ? `${dailyProfile.universalDay.rawSum}/${dailyProfile.universalDay.root}`
+      : String(dailyProfile.universalDay.root);
   console.log(`[numerology] Universal Day: ${udLabel} | Calendar Day: ${dailyProfile.calendarDay.original}/${dailyProfile.calendarDay.root} | Primary Family: [${dailyProfile.primaryFamily.join("-")}]`);
 
   // Step 2: Load MLB data + identity cache
@@ -726,7 +733,9 @@ async function main() {
 
     const { signals, positiveTotal, countercurrentTotal, convergenceBonus, numerologyScore } = scorePlayerForNumerology(playerNumerology, dailyProfile, missingData);
     const bbScore = baseballScore(batter);
-    const finalScore = Math.round(W.numerologyWeight * numerologyScore + W.baseballWeight * bbScore);
+    // Alignment is determined only by numerology. Baseball opportunity is
+    // retained as context but cannot affect selection, rank, or qualification.
+    const finalScore = numerologyScore;
     const market = selectMarket(batter);
 
     candidates.push({
@@ -754,15 +763,21 @@ async function main() {
     });
   }
 
-  // Rank
-  candidates.sort((a, b) => b.finalScore - a.finalScore);
+  // Rank exclusively by numerology. Tie-breakers are also numerology-only.
+  candidates.sort((a, b) =>
+    b.numerologyScore - a.numerologyScore ||
+    b.positiveTotal - a.positiveTotal ||
+    b.convergenceBonus - a.convergenceBonus ||
+    a.countercurrentTotal - b.countercurrentTotal ||
+    a.playerName.localeCompare(b.playerName)
+  );
   candidates.forEach((c, i) => { c.rank = i + 1; });
 
-  const featured = candidates.filter(c => c.finalScore >= 60).slice(0, 5);
+  const featured = candidates.filter(c => c.numerologyScore >= 60).slice(0, 5);
   const bestAvailable = featured.length < 3
-    ? candidates.filter(c => c.finalScore < 60).slice(0, 3 - featured.length)
+    ? candidates.filter(c => c.numerologyScore < 60).slice(0, 3 - featured.length)
     : [];
-  const watchlist = candidates.filter(c => c.finalScore < 60 && c.finalScore >= 45).slice(0, 6);
+  const watchlist = candidates.filter(c => c.numerologyScore < 60 && c.numerologyScore >= 45).slice(0, 6);
   const countercurrents = candidates.filter(c => c.countercurrentTotal > 0 && c.numerologyScore < 40).slice(0, 3);
   const confirmedCount = candidates.filter(c => c.lineupStatus === "confirmed").length;
 
@@ -792,6 +807,8 @@ async function main() {
     lineupDataAsOf,
     generationMode: IS_DRY_RUN ? "dry_run" : USE_FIXTURE ? "fixture" : "live",
     narrativeSource,
+    rankingBasis: "numerology_only",
+    baseballContextOnly: true,
     dataStatus: computeDataStatus(batters, scheduleRoster, confirmedCount),
     candidatePool: {
       candidatePoolType,
@@ -803,7 +820,7 @@ async function main() {
     },
     dailyProfile: {
       universalDayRawSum: dailyProfile.universalDay.rawSum,
-      universalDayCompound: dailyProfile.universalDay.compound,
+      universalDayCompound: dailyProfile.universalDay.rawSum,
       universalDayMaster: dailyProfile.universalDay.master,
       universalDayRoot: dailyProfile.universalDay.root,
       universalDayTrace: dailyProfile.universalDay.trace,
@@ -838,8 +855,8 @@ async function main() {
       numerologyScore: c.numerologyScore,
       baseballScore: c.baseballScore,
       finalScore: c.finalScore,
-      formula: `${Math.round(W.numerologyWeight*100)}% × ${c.numerologyScore} + ${Math.round(W.baseballWeight*100)}% × ${c.baseballScore} = ${c.finalScore}`,
-      confidence: c.finalScore >= 75 ? "high" : c.finalScore >= 60 ? "medium" : "low",
+      formula: `Numerology alignment: ${c.numerologyScore}. Baseball context: ${c.baseballScore} (not used in rank).`,
+      confidence: c.numerologyScore >= 75 ? "high" : c.numerologyScore >= 60 ? "medium" : "low",
       positiveSignals: c.signals.filter(s => s.points > 0),
       counterSignals: c.signals.filter(s => s.points < 0),
       missingData: c.missingData,
@@ -851,16 +868,27 @@ async function main() {
       playerName: c.playerName,
       team: c.team,
       opponent: c.opponent,
+      opposingPitcher: c.opposingPitcher,
       lineupStatus: c.lineupStatus,
+      lineupSource: c.lineupSource,
       battingOrder: c.battingOrder,
       jerseyNumber: c.jerseyNumber,
       recommendedMarket: c.recommendedMarket,
+      marketModelSource: c.marketModelSource,
+      marketScore: c.marketScore,
+      marketSelectionReason: c.marketSelectionReason,
+      odds: c.hrOdds ?? null,
       numerologyScore: c.numerologyScore,
       baseballScore: c.baseballScore,
-      finalScore: c.finalScore,
+      finalScore: c.numerologyScore,
+      formula: `Numerology alignment: ${c.numerologyScore}. Baseball context: ${c.baseballScore} (not used in rank).`,
+      confidence: c.numerologyScore >= 75 ? "high" : c.numerologyScore >= 60 ? "medium" : "low",
+      positiveSignals: c.signals.filter(s => s.points > 0),
+      counterSignals: c.signals.filter(s => s.points < 0),
       primarySignal: c.signals.filter(s => s.points > 0)[0]?.label ?? null,
       missingData: c.missingData,
-      belowThresholdLabel: "Best available today — below the featured-play threshold",
+      summary: getNarrative(c.rank).summary ?? "Best available numerology alignment; baseball context did not affect this ranking.",
+      belowThresholdLabel: "Best available today — below the numerology threshold",
     })),
     watchlist: watchlist.map(c => ({
       rank: c.rank,
@@ -887,7 +915,12 @@ async function main() {
       finalScore: c.finalScore,
       countercurrentSignals: c.signals.filter(s => s.points < 0),
     })),
-    scoringConfiguration: { weights: W, methodologyVersion: METHODOLOGY_VERSION },
+    scoringConfiguration: {
+      weights: W,
+      methodologyVersion: METHODOLOGY_VERSION,
+      rankingBasis: "numerology_only",
+      baseballContextOnly: true,
+    },
     sources: {
       hrPropsRaw: existsSync(path.join(DATA_DIR,"hr-props-raw.json")) ? "loaded" : "missing",
       mlbStatsApi: "used",
