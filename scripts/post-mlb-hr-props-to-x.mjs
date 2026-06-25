@@ -246,6 +246,7 @@ function normalizeBatter(value) {
     opposingPitcherId: value?.opposingPitcherId ?? null,
     hrScore,
     hrScoreRank,
+    hrOddsYes: normalizeText(value?.hrOddsYes) || null,
   };
 }
 
@@ -326,9 +327,10 @@ function buildCaption(rawPayload, bestBetsPayload) {
   if (topPropsResult.skipped) return { skipped: true, reason: topPropsResult.reason, caption: "", topProps: [] };
 
   const dateLabel = formatDateLabel(rawPayload?.date || bestBetsPayload?.date);
-  const lines = topPropsResult.topProps.map((row, index) => (
-    `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}`
-  ));
+  const lines = topPropsResult.topProps.map((row, index) => {
+    const oddsPart = row.hrOddsYes ? ` (${row.hrOddsYes})` : "";
+    return `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}${oddsPart}`;
+  });
 
   const caption = [
     `JoeKnowsBall MLB HR Props - ${dateLabel}`,
@@ -342,6 +344,23 @@ function buildCaption(rawPayload, bestBetsPayload) {
   ].join("\n");
 
   if (caption.length > 280) {
+    // Retry without odds before giving up
+    const shortLines = topPropsResult.topProps.map((row, index) =>
+      `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}`
+    );
+    const shortCaption = [
+      `JoeKnowsBall MLB HR Props - ${dateLabel}`,
+      "",
+      "Top model edges:",
+      ...shortLines,
+      "",
+      "Free Access to Full Table at Link in Bio",
+      "",
+      "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting",
+    ].join("\n");
+    if (shortCaption.length <= 280) {
+      return { skipped: false, reason: "", caption: shortCaption, topProps: topPropsResult.topProps };
+    }
     return { skipped: true, reason: `Skipping: generated caption is ${caption.length} characters; expected 280 or fewer.`, caption: "", topProps: [] };
   }
 

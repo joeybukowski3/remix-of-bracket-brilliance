@@ -1554,6 +1554,8 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
     .slice().sort((a, b) => b.hrScore - a.hrScore)
     .slice(0, 8);
 
+  const hasHrOdds = rows.some(r => r.hrOddsYes != null);
+
   function sc(s: number) {
     if (s >= 70) return { bg: "#22c55e", color: "#fff" };
     if (s >= 65) return { bg: "#4ade80", color: "#000" };
@@ -1595,8 +1597,15 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
                     <span style={{ color: "#64748b" }}>vs {r.opposingPitcher}</span>
                   </div>
                 </div>
-                <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 8px", fontWeight: 900, fontSize: 15, whiteSpace: "nowrap" }}>
-                  {score >= 70 && "🔥"}{score.toFixed(1)}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                  <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 8px", fontWeight: 900, fontSize: 15, whiteSpace: "nowrap" }}>
+                    {score >= 70 && "🔥"}{score.toFixed(1)}
+                  </div>
+                  {r.hrOddsYes != null && (
+                    <div style={{ background: "#0d1f3c", border: "1px solid #1e3a5f", borderRadius: 5, padding: "2px 6px", fontSize: 11, fontWeight: 800, color: r.hrOddsYes.startsWith("+") ? "#4ade80" : "#94a3b8", whiteSpace: "nowrap" }}>
+                      {r.hrOddsYes}
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Stats grid: 2x2 on mobile */}
@@ -1633,10 +1642,10 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
         })}
       </div>
 
-      {/* Desktop: 7 column grid */}
+      {/* Desktop: 8 column grid when odds available, 7 otherwise */}
       <div className="hidden sm:block">
-        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "5px 10px", background: "#0d1f3c", gap: 6 }}>
-          {["","PLAYER","SCORE","BARREL%","HH%","L7","L30"].map((h, i) => (
+        <div style={{ display: "grid", gridTemplateColumns: hasHrOdds ? "36px 1fr 88px 84px 84px 50px 50px 72px" : "36px 1fr 88px 84px 84px 50px 50px", padding: "5px 10px", background: "#0d1f3c", gap: 6 }}>
+          {[...["","PLAYER","SCORE","BARREL%","HH%","L7","L30"], ...(hasHrOdds ? ["ODDS"] : [])].map((h, i) => (
             <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
           ))}
         </div>
@@ -1644,7 +1653,7 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
           const score = r.hrScore;
           const pillStyle = sc(score);
           return (
-            <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
+            <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: hasHrOdds ? "36px 1fr 88px 84px 84px 50px 50px 72px" : "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
                   <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
                   <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
                     {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
@@ -1673,6 +1682,17 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1, color: r.last30HR >= 8 ? "#22c55e" : r.last30HR >= 5 ? "#facc15" : "#94a3b8", fontSize: 15, fontWeight: 700 }}>
                     {r.last30HR >= 8 && <span style={{ fontSize: 11 }}>👑</span>}{r.last30HR}
                   </div>
+                  {hasHrOdds && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {r.hrOddsYes != null ? (
+                        <span style={{ background: "#0d1f3c", border: "1px solid #1e3a5f", borderRadius: 5, padding: "3px 7px", fontSize: 12, fontWeight: 800, color: r.hrOddsYes.startsWith("+") ? "#4ade80" : "#94a3b8", whiteSpace: "nowrap" }}>
+                          {r.hrOddsYes}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#334155", fontSize: 11 }}>—</span>
+                      )}
+                    </div>
+                  )}
             </div>
           );
         })}
@@ -1695,6 +1715,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
     );
   }
   const top = rows.slice(0, 5);
+  const hasKOdds = top.some(r => r.kOddsOver != null);
   function sc(s: number) {
     if (s >= 70) return { bg: "#22c55e", color: "#fff" };
     if (s >= 65) return { bg: "#4ade80", color: "#000" };
@@ -1747,7 +1768,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
                   {safeScore.toFixed(1)}
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: hasKOdds ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
                 <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
                   <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>K%</div>
                   <div style={{ color: r.pitcherKRate != null && r.pitcherKRate >= 28 ? "#22c55e" : r.pitcherKRate != null && r.pitcherKRate >= 24 ? "#86efac" : "#94a3b8", fontWeight: 600, fontSize: 13 }}>
@@ -1769,6 +1790,14 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
                     {r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
                   </div>
                 </div>
+                {hasKOdds && (
+                  <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                    <div style={{ color: "#94a3b8", fontSize: 10, marginBottom: 2 }}>OVER</div>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: "#4ade80", whiteSpace: "nowrap" }}>
+                      {r.kOddsOver ?? "—"}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -1777,8 +1806,8 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
 
       {/* Desktop */}
       <div className="hidden sm:block">
-        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
-          {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
+        <div style={{ display: "grid", gridTemplateColumns: hasKOdds ? "36px 1fr 84px 72px 72px 68px 70px" : "36px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
+          {[...["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"], ...(hasKOdds ? ["OVER"] : [])].map((h, i) => (
             <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
           ))}
         </div>
@@ -1796,7 +1825,8 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-rate={r.pitcherKRate ?? ""}
               data-k-whiff-rate={r.pitcherWhiffRate ?? ""}
               data-k-opp-rate={r.opponentTeamKRate ?? ""}
-              style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
+              data-k-odds-over={r.kOddsOver ?? ""}
+              style={{ display: "grid", gridTemplateColumns: hasKOdds ? "36px 1fr 84px 72px 72px 68px 70px" : "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
             >
               <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
               <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
@@ -1814,6 +1844,17 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 ? "#22c55e" : r.opponentTeamKRate != null && r.opponentTeamKRate >= 24 ? "#86efac" : "#94a3b8", fontSize: 14, fontWeight: 600 }}>
                 {r.opponentTeamKRate != null && r.opponentTeamKRate >= 27 && <span style={{ fontSize: 10 }}>💀</span>}{r.opponentTeamKRate != null ? `${r.opponentTeamKRate.toFixed(1)}%` : "—"}
               </div>
+              {hasKOdds && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {r.kOddsOver != null ? (
+                    <span style={{ background: "#0d1f3c", border: "1px solid #1e3a5f", borderRadius: 5, padding: "3px 7px", fontSize: 12, fontWeight: 800, color: "#4ade80", whiteSpace: "nowrap" }}>
+                      {r.kOddsOver}
+                    </span>
+                  ) : (
+                    <span style={{ color: "#334155", fontSize: 11 }}>—</span>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

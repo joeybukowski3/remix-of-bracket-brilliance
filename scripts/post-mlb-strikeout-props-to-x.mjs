@@ -100,6 +100,7 @@ async function loadKPropsFromPage(page) {
       kRate: el.getAttribute("data-k-rate") || "",
       whiffRate: el.getAttribute("data-k-whiff-rate") || "",
       oppRate: el.getAttribute("data-k-opp-rate") || "",
+      oddsOver: el.getAttribute("data-k-odds-over") || "",
     }));
     rows.push({
       pitcher: normalizeText(data.pitcher),
@@ -109,6 +110,7 @@ async function loadKPropsFromPage(page) {
       kRate: toFiniteNumber(data.kRate),
       whiffRate: toFiniteNumber(data.whiffRate),
       oppRate: toFiniteNumber(data.oppRate),
+      oddsOver: normalizeText(data.oddsOver) || null,
     });
   }
 
@@ -218,9 +220,10 @@ function buildCaption({ date, rows }) {
   const topProps = rows.slice(0, 3);
   const dateLabel = formatDateLabel(date);
   const lines = topProps.map((row, index) => {
+    const oddsPart = row.oddsOver ? ` · Over ${row.oddsOver}` : "";
     const kPart = row.kRate != null ? ` · K%: ${row.kRate.toFixed(1)}` : "";
     const whiffPart = row.whiffRate != null ? ` · Whiff%: ${row.whiffRate.toFixed(1)}` : "";
-    return `${index + 1}. ${row.pitcher} (${row.team}) — ${row.strikeoutScore.toFixed(1)}${kPart}${whiffPart}`;
+    return `${index + 1}. ${row.pitcher} (${row.team}) — ${row.strikeoutScore.toFixed(1)}${oddsPart}${kPart}${whiffPart}`;
   });
 
   const caption = [
