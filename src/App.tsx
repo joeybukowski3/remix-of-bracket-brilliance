@@ -30,6 +30,7 @@ import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
 import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
 import ComingSoon from "./pages/ComingSoon";
 import WorldCup2026 from "./pages/WorldCup2026";
+import WorldCupAnalyzer from "./pages/WorldCupAnalyzer";
 import PublicBetting from "./pages/PublicBetting";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
@@ -101,6 +102,7 @@ const App = () => (
           <Route path="/nfl/2026-guide" element={<Navigate to="/nfl/guide" replace />} />
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/world-cup" element={<WorldCup2026 />} />
+          <Route path="/world-cup/analyzer" element={<WorldCupAnalyzer />} />
           <Route path="/odds-tracker" element={<PublicBetting />} />
           <Route path="/public-betting" element={<Navigate to="/odds-tracker" replace />} />
           <Route path="/mlb" element={<MlbGameDetail />} />

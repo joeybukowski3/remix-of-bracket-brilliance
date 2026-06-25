@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -663,6 +664,15 @@ export default function WorldCup2026() {
               Beats Spain 1.59 – 1.29 in the final<br/>
               Defeats Argentina 1.58 – 1.21 in the semi
             </div>
+          </div>
+          {/* Analyzer link */}
+          <div className="mt-4">
+            <Link
+              to="/world-cup/analyzer"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#e05c2e]/40 bg-[#e05c2e]/10 px-4 py-2.5 text-sm font-bold text-[#e05c2e] hover:bg-[#e05c2e]/20 transition"
+            >
+              ⚔️ Matchup Analyzer — Compare any two teams →
+            </Link>
           </div>
         </div>
       </div>
