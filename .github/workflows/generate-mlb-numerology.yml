@@ -1,59 +1,104 @@
 name: Generate MLB Numerology
 
 on:
-  schedule:
-    # 9:36 AM America/New_York — timezone-aware, single schedule
-    # 9+3+6 = 18 → 9, reinforcing the 3-6-9 identity of the 369 entry symbol
-    - cron: "36 9 * * *"
-      timezone: "America/New_York"
-  workflow_dispatch:
-    inputs:
-      date:
-        description: "Optional Eastern Time slate date (YYYY-MM-DD)"
-        required: false
-        type: string
-      dry_run:
-        description: "Generate and validate without committing or writing files"
-        required: false
-        default: "false"
-        type: string
-      use_fixture:
-        description: "Write to fixture path only — never overwrites production"
-        required: false
-        default: "false"
-        type: string
-
-concurrency:
-  group: mlb-numerology-daily
-  cancel-in-progress: false
+  push:
+    branches:
+      - test/mlb-model-drivers-footer
+    paths:
+      - .github/workflows/generate-mlb-numerology.yml
 
 permissions:
   contents: write
 
+concurrency:
+  group: test-lineup-aware-numerology
+  cancel-in-progress: false
+
 jobs:
-  generate-numerology:
-    name: Generate daily MLB Numerology
+  apply-generate-and-validate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       TZ: America/New_York
 
     steps:
-      - name: Check out repository
+      - name: Check out test branch
         uses: actions/checkout@v4
         with:
+          ref: test/mlb-model-drivers-footer
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run numerology unit tests
+      - name: Apply lineup-alignment patch
+        run: python scripts/apply-numerology-lineup-alignment.py
+
+      - name: Resolve current Eastern date
+        id: date
+        shell: bash
+        run: echo "date=$(TZ=America/New_York date '+%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate HR props with batting order
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: node scripts/generate-mlb-hr-props.mjs --force
+
+      - name: Refresh player identity cache
+        run: node scripts/update-player-identity-cache.mjs
+
+      - name: Replace current-day archive
+        shell: bash
+        run: rm -f "public/data/mlb/numerology/history/${{ steps.date.outputs.date }}.json"
+
+      - name: Generate lineup-aware numerology
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: node scripts/generate-mlb-numerology.mjs --date "${{ steps.date.outputs.date }}"
+
+      - name: Validate lineup scoring and traces
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const raw = JSON.parse(fs.readFileSync('public/data/mlb/hr-props-raw.json', 'utf8'));
+          const report = JSON.parse(fs.readFileSync('public/data/mlb/numerology-daily.json', 'utf8'));
+          const expectedDate = process.env.EXPECTED_DATE;
+
+          if (raw.date !== expectedDate) throw new Error(`HR data date mismatch: ${raw.date}`);
+          if (report.date !== expectedDate) throw new Error(`Numerology date mismatch: ${report.date}`);
+
+          const validOrders = (raw.batters ?? []).filter((row) => Number.isInteger(row.battingOrder) && row.battingOrder >= 1 && row.battingOrder <= 9);
+          if (!validOrders.length) throw new Error('No batting orders published in HR data.');
+
+          const surfaced = [...(report.featuredPlays ?? []), ...(report.bestAvailable ?? []), ...(report.watchlist ?? [])];
+          const surfacedWithOrder = surfaced.filter((row) => Number.isInteger(row.battingOrder));
+          if (!surfacedWithOrder.length) throw new Error('No surfaced player received a batting order.');
+
+          for (const play of report.bestAvailable ?? []) {
+            if (!Array.isArray(play.positiveSignals) || !Array.isArray(play.counterSignals)) {
+              throw new Error(`Missing calculation trace for ${play.playerName}`);
+            }
+          }
+
+          const exactSlot = report.dailyProfile.universalDayRoot;
+          const exactOrderMatches = validOrders.filter((row) => row.battingOrder === exactSlot).length;
+          console.log(`Published batting orders: ${validOrders.length}/${raw.batters.length}`);
+          console.log(`Surfaced with batting order: ${surfacedWithOrder.length}/${surfaced.length}`);
+          console.log(`Exact daily batting slot #${exactSlot}: ${exactOrderMatches} players`);
+          NODE
+        env:
+          EXPECTED_DATE: ${{ steps.date.outputs.date }}
+
+      - name: Run numerology tests
         run: npx vitest run src/lib/numerology/numerology.test.ts
 
       - name: TypeScript check
@@ -62,55 +107,29 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: Update player identity cache
-        run: node scripts/update-player-identity-cache.mjs
-
-      - name: Generate numerology
-        id: generate
-        env:
-          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
-        run: |
-          DATE_FLAG=""
-          if [ -n "${{ inputs.date }}" ]; then
-            DATE_FLAG="--date ${{ inputs.date }}"
-          fi
-
-          DRY_FLAG=""
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            DRY_FLAG="--dry-run"
-          fi
-
-          FIXTURE_FLAG=""
-          if [ "${{ inputs.use_fixture }}" = "true" ]; then
-            FIXTURE_FLAG="--fixture"
-          fi
-
-          node scripts/generate-mlb-numerology.mjs $DATE_FLAG $DRY_FLAG $FIXTURE_FLAG
-
-      - name: Commit and push
-        if: ${{ inputs.dry_run != 'true' }}
+      - name: Commit validated test-branch update
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/data/mlb/numerology-daily.json public/data/mlb/numerology/ public/data/mlb/player-identity-cache.json 2>/dev/null || true
+          # Restore the normal scheduled workflow and remove one-off patch files.
+          git checkout HEAD^ -- .github/workflows/generate-mlb-numerology.yml
+          rm -f scripts/apply-numerology-lineup-alignment.py
+          rm -f .github/workflows/apply-test-numerology-lineup-alignment.yml
 
-          if git diff --cached --quiet; then
-            echo "No numerology changes to commit."
-            exit 0
-          fi
+          git add \
+            .github/workflows/generate-mlb-numerology.yml \
+            .github/workflows/apply-test-numerology-lineup-alignment.yml \
+            scripts/apply-numerology-lineup-alignment.py \
+            scripts/generate-mlb-hr-props.mjs \
+            scripts/generate-mlb-numerology.mjs \
+            src/pages/MlbNumerologyPage.tsx \
+            public/data/mlb/hr-props-raw.json \
+            public/data/mlb/hr-props-best-bets.json \
+            public/data/mlb/numerology-daily.json \
+            public/data/mlb/numerology/history/ \
+            public/data/mlb/player-identity-cache.json
 
-          git commit -m "chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
-
-          PUSHED=false
-          for attempt in 1 2 3 4 5; do
-            git pull --rebase origin main && git push origin HEAD:main && PUSHED=true && break
-            echo "Push attempt $attempt failed, retrying in $((attempt * 10))s..."
-            sleep $((attempt * 10))
-          done
-
-          if [ "$PUSHED" != "true" ]; then
-            echo "ERROR: All push attempts failed — numerology data was NOT committed" >&2
-            exit 1
-          fi
+          git commit -m "fix: score projected lineup positions in MLB numerology"
+          git push origin HEAD:test/mlb-model-drivers-footer
