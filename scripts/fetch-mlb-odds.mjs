@@ -1,14 +1,13 @@
 /**
  * fetch-mlb-odds.mjs
- * Fetches MLB odds from The Odds API using BULK endpoints and provider fallbacks.
+ * Fetches MLB odds with provider fallbacks.
  *
- * THE ODDS API CREDIT USAGE: 3 API calls per run when the primary provider is available (was up to 17).
- *   Call 1: /sports/baseball_mlb/odds/?markets=h2h          → all moneylines
- *   Call 2: /sports/baseball_mlb/odds/?markets=batter_home_runs → all HR props
- *   Call 3: /sports/baseball_mlb/odds/?markets=pitcher_strikeouts → all K props
- *   Backup moneylines: SportsGameOdds, then Odds-API.io
+ * PLAYER PROPS — ParlayAPI (primary, 3 credits/run):
+ *   GET /v1/sports/baseball_mlb/props?markets=batter_home_runs,pitcher_strikeouts
+ *   Returns ALL players across ALL games in one call. Auth via X-API-Key header.
+ *   Free tier: 1,000 credits/month. 4 runs/day = 12 credits/day ≈ 360/month → fits free tier.
  *
- * At 4 runs/day: 12 credits/day = ~360/month (fits 500/month free tier).
+ * MONEYLINES — The Odds API → SportsGameOdds → Odds-API.io → TheRundown → ESPN
  *
  * Writes public/data/mlb/mlb-odds.json
  * Always exits 0 — never fails the workflow.
@@ -24,10 +23,11 @@ import {
   getMlbMoneylinesWithFallbacks,
 } from "./lib/mlb-moneyline-providers.mjs";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUTPUT   = path.resolve(__dirname, "../public/data/mlb/mlb-odds.json");
-const ODDS_BASE = "https://api.the-odds-api.com/v4";
-const SPORT    = "baseball_mlb";
+const __dirname  = path.dirname(fileURLToPath(import.meta.url));
+const OUTPUT     = path.resolve(__dirname, "../public/data/mlb/mlb-odds.json");
+const ODDS_BASE  = "https://api.the-odds-api.com/v4";
+const PARLAY_BASE = "https://parlay-api.com/v1";
+const SPORT      = "baseball_mlb";
 const TIMEOUT_MS = 20000;
 
 const HEADERS = {
@@ -37,11 +37,14 @@ const HEADERS = {
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-async function get(url, label) {
+async function fetchJson(url, { extraHeaders = {}, label = url } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, { headers: HEADERS, signal: controller.signal });
+    const res = await fetch(url, {
+      headers: { ...HEADERS, ...extraHeaders },
+      signal: controller.signal,
+    });
     clearTimeout(timer);
     const remaining = res.headers.get("x-requests-remaining");
     const used      = res.headers.get("x-requests-used");
@@ -51,11 +54,7 @@ async function get(url, label) {
       try { body = await res.text(); } catch (_) {}
       throw new Error(`HTTP ${res.status} ${res.statusText} — ${body.slice(0, 300)}`);
     }
-    const data = await res.json();
-    if (!Array.isArray(data)) {
-      throw new Error(`Expected array, got: ${JSON.stringify(data).slice(0, 200)}`);
-    }
-    return data;
+    return res.json();
   } finally {
     clearTimeout(timer);
   }
@@ -73,147 +72,149 @@ function normalizeName(name) {
     .toLowerCase();
 }
 
-// Prefer DraftKings → FanDuel → BetMGM → most outcomes
-const PREFERRED = ["draftkings", "fanduel", "betmgm", "williamhill_us", "bovada"];
+// ── ParlayAPI props (HR + K in one call, 3 credits) ──────────────────────────
 
-function bestBook(bookmakers, marketKey) {
-  if (!Array.isArray(bookmakers) || !bookmakers.length) return null;
-  for (const pref of PREFERRED) {
-    const bk = bookmakers.find(b => b.key === pref);
-    const market = bk?.markets?.find(m => m.key === marketKey);
-    if (market?.outcomes?.length) return market;
+async function fetchParlayApiProps(parlayKey) {
+  const url = `${PARLAY_BASE}/sports/${SPORT}/props?markets=batter_home_runs,pitcher_strikeouts`;
+  const data = await fetchJson(url, {
+    extraHeaders: { "X-API-Key": parlayKey },
+    label: "parlayapi:props",
+  });
+
+  const props = Array.isArray(data) ? data : (data?.props ?? []);
+  const hrOdds = {};
+  const kOdds  = {};
+
+  // Book preference order for picking the canonical line when multiple books differ
+  const PREFERRED = ["draftkings", "fanduel", "betmgm", "caesars", "pinnacle", "bovada"];
+
+  // Group rows by (player, market) and pick preferred book
+  const grouped = {};
+  for (const row of props) {
+    const market = row.market_key;
+    if (market !== "batter_home_runs" && market !== "pitcher_strikeouts") continue;
+    const key = `${normalizeName(row.player)}|${market}`;
+    const bookRank = PREFERRED.indexOf(row.bookmaker ?? row.source ?? "");
+    const rank = bookRank === -1 ? PREFERRED.length : bookRank;
+    if (!grouped[key] || rank < grouped[key].rank) {
+      grouped[key] = { row, rank };
+    }
   }
-  return bookmakers
-    .flatMap(b => b.markets?.filter(m => m.key === marketKey) ?? [])
-    .sort((a, b) => (b.outcomes?.length ?? 0) - (a.outcomes?.length ?? 0))[0] ?? null;
+
+  for (const { row } of Object.values(grouped)) {
+    const playerKey = normalizeName(row.player);
+    if (row.market_key === "batter_home_runs") {
+      // ParlayAPI batter_home_runs: over_price = "Yes" side (anytime HR)
+      hrOdds[playerKey] = {
+        yes: formatAmerican(row.over_price),
+        no:  formatAmerican(row.under_price),
+        impliedYes: americanToImplied(row.over_price),
+      };
+    } else if (row.market_key === "pitcher_strikeouts") {
+      kOdds[playerKey] = {
+        line:        row.line ?? null,
+        over:        formatAmerican(row.over_price),
+        under:       formatAmerican(row.under_price),
+        impliedOver: americanToImplied(row.over_price),
+      };
+    }
+  }
+
+  return { hrOdds, kOdds };
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const primaryKey = process.env.ODDS_API_KEY;
-  const backupKey  = process.env.ODDS_API_KEY_BACKUP;
+  const oddsApiPrimaryKey = process.env.ODDS_API_KEY;
+  const oddsApiBackupKey  = process.env.ODDS_API_KEY_BACKUP;
+  const parlayKey         = process.env.PARLAYAPI;
+  const theRundownKey     = process.env.THERUNDOWNAPI;
 
-  // Resolve which key to use: prefer primary unless quota is exhausted or missing.
-  // A lightweight quota check hits /remaining which costs 0 requests.
-  async function resolveApiKey() {
-    if (!primaryKey && !backupKey) return null;
-    if (!primaryKey) { console.log("Primary ODDS_API_KEY not set — using backup."); return backupKey; }
-
+  // Resolve Odds API key for moneylines (0-credit quota check)
+  async function resolveOddsApiKey() {
+    if (!oddsApiPrimaryKey && !oddsApiBackupKey) return null;
+    if (!oddsApiPrimaryKey) { console.log("Primary ODDS_API_KEY not set — using backup."); return oddsApiBackupKey; }
     try {
       const res = await fetch(
-        `${ODDS_BASE}/sports?apiKey=${primaryKey}`,
+        `${ODDS_BASE}/sports?apiKey=${oddsApiPrimaryKey}`,
         { signal: AbortSignal.timeout(8000), headers: HEADERS }
       );
       const remaining = parseInt(res.headers.get("x-requests-remaining") ?? "1", 10);
       if (res.status === 401 || res.status === 402 || remaining <= 0) {
-        if (backupKey) {
+        if (oddsApiBackupKey) {
           console.warn(`Primary key exhausted (status=${res.status} remaining=${remaining}) — switching to backup key.`);
-          return backupKey;
+          return oddsApiBackupKey;
         }
-        console.warn(`Primary key exhausted and no backup key set.`);
+        console.warn("Primary key exhausted and no backup key set.");
         return null;
       }
       console.log(`ODDS_API_KEY active (remaining=${remaining})`);
-      return primaryKey;
+      return oddsApiPrimaryKey;
     } catch (err) {
       console.warn(`Primary key check failed (${err.message}) — trying backup.`);
-      return backupKey ?? primaryKey;
+      return oddsApiBackupKey ?? oddsApiPrimaryKey;
     }
   }
 
-  const apiKey = await resolveApiKey();
-  if (!apiKey) console.warn("No Odds API key available — moneylines/props will be skipped.");
-  else console.log(`Using Odds API key ending …${apiKey.slice(-4)}`);
+  const oddsApiKey = await resolveOddsApiKey();
 
-  console.log("Fetching MLB odds via bulk endpoints...");
-
+  // ── Moneylines ────────────────────────────────────────────────────────────
+  console.log("Fetching MLB moneylines...");
   const moneylineResult = await getMlbMoneylinesWithFallbacks({
-    oddsApiKey: apiKey,
+    oddsApiKey,
     sportsGameOddsApiKey: process.env.SPORTSGAMEODDS_API_KEY,
-    oddsApiIoKey: process.env.ODDS_API_IO_KEY,
+    oddsApiIoKey:         process.env.ODDS_API_IO_KEY,
+    theRundownApiKey:     theRundownKey,
     fetchFn: fetch,
     logger: console,
   });
   const moneylines = moneylineResult.moneylines;
-  const hrOdds     = {};
-  const kOdds      = {};
-  const fetchStatus = {
-    moneylines: `${moneylineResult.metadata.source}:${Object.keys(moneylines).length}`,
-    hrProps: apiKey ? "pending" : "skipped",
-    kProps: apiKey ? "pending" : "skipped",
-    error: moneylineResult.metadata.providerErrors[0] ?? null,
-    source: moneylineResult.metadata.source,
-    fallbackUsed: moneylineResult.metadata.fallbackUsed,
-    providerErrors: moneylineResult.metadata.providerErrors,
-    generatedAt: moneylineResult.metadata.generatedAt,
-  };
   console.log(`✅ Moneylines: ${Object.keys(moneylines).length} games via ${moneylineResult.metadata.source}`);
 
-  // ── Call 2: HR props (batter_home_runs) — all games, one request ─────────
-  if (apiKey) {
+  // ── Player props (HR + K) via ParlayAPI ──────────────────────────────────
+  let hrOdds = {};
+  let kOdds  = {};
+  const fetchStatus = {
+    moneylines:   `${moneylineResult.metadata.source}:${Object.keys(moneylines).length}`,
+    hrProps:      parlayKey ? "pending" : "skipped:no-PARLAYAPI-key",
+    kProps:       parlayKey ? "pending" : "skipped:no-PARLAYAPI-key",
+    propsSource:  null,
+    error:        moneylineResult.metadata.providerErrors[0] ?? null,
+    source:       moneylineResult.metadata.source,
+    fallbackUsed: moneylineResult.metadata.fallbackUsed,
+    providerErrors: moneylineResult.metadata.providerErrors,
+    generatedAt:  moneylineResult.metadata.generatedAt,
+  };
+
+  if (parlayKey) {
+    console.log("Fetching MLB player props via ParlayAPI...");
     try {
-      const url = `${ODDS_BASE}/sports/${SPORT}/odds/?apiKey=${apiKey}&regions=us&markets=batter_home_runs&oddsFormat=american`;
-      const events = await get(url, "batter_home_runs");
-
-      for (const ev of events) {
-        const hrMarket = bestBook(ev.bookmakers, "batter_home_runs");
-        if (!hrMarket) continue;
-
-        for (const outcome of hrMarket.outcomes) {
-          // Odds API: outcome.description = player name, outcome.name = "Yes"/"No"
-          const playerKey = normalizeName(outcome.description ?? outcome.name);
-          const side      = (outcome.name ?? "").toLowerCase().includes("no") ? "no" : "yes";
-          if (!hrOdds[playerKey]) hrOdds[playerKey] = {};
-          hrOdds[playerKey][side] = formatAmerican(outcome.price);
-          if (side === "yes") hrOdds[playerKey].impliedYes = americanToImplied(outcome.price);
-        }
-      }
+      const result = await fetchParlayApiProps(parlayKey);
+      hrOdds = result.hrOdds;
+      kOdds  = result.kOdds;
       console.log(`✅ HR odds: ${Object.keys(hrOdds).length} players`);
-      fetchStatus.hrProps = `ok:${Object.keys(hrOdds).length}`;
+      console.log(`✅ K odds:  ${Object.keys(kOdds).length} pitchers`);
+      fetchStatus.hrProps    = `ok:${Object.keys(hrOdds).length}`;
+      fetchStatus.kProps     = `ok:${Object.keys(kOdds).length}`;
+      fetchStatus.propsSource = "parlayapi";
     } catch (err) {
-      console.warn("❌ HR props failed:", err.message);
+      console.warn("❌ ParlayAPI props failed:", err.message);
       fetchStatus.hrProps = "failed";
+      fetchStatus.kProps  = "failed";
       if (!fetchStatus.error) fetchStatus.error = err.message;
     }
-  }
-
-  // ── Call 3: K props (pitcher_strikeouts) — all games, one request ────────
-  if (apiKey) {
-    try {
-      const url = `${ODDS_BASE}/sports/${SPORT}/odds/?apiKey=${apiKey}&regions=us&markets=pitcher_strikeouts&oddsFormat=american`;
-      const events = await get(url, "pitcher_strikeouts");
-
-      for (const ev of events) {
-        const kMarket = bestBook(ev.bookmakers, "pitcher_strikeouts");
-        if (!kMarket) continue;
-
-        for (const outcome of kMarket.outcomes) {
-          // Odds API: outcome.name = pitcher name, outcome.description = "Over"/"Under"
-          const pitcherKey = normalizeName(outcome.name);
-          const side       = (outcome.description ?? "").toLowerCase() === "over" ? "over" : "under";
-          if (!kOdds[pitcherKey]) kOdds[pitcherKey] = { line: null };
-          if (outcome.point != null) kOdds[pitcherKey].line = outcome.point;
-          kOdds[pitcherKey][side] = formatAmerican(outcome.price);
-          if (side === "over") kOdds[pitcherKey].impliedOver = americanToImplied(outcome.price);
-        }
-      }
-      console.log(`✅ K odds: ${Object.keys(kOdds).length} pitchers`);
-      fetchStatus.kProps = `ok:${Object.keys(kOdds).length}`;
-    } catch (err) {
-      console.warn("❌ K props failed:", err.message);
-      fetchStatus.kProps = "failed";
-      if (!fetchStatus.error) fetchStatus.error = err.message;
-    }
+  } else {
+    console.warn("No PARLAYAPI key — player props skipped. Set the PARLAYAPI secret to enable HR and K odds.");
   }
 
   // ── Write output ──────────────────────────────────────────────────────────
   const output = {
-    fetchedAt: new Date().toISOString(),
-    source: moneylineResult.metadata.source,
-    fallbackUsed: moneylineResult.metadata.fallbackUsed,
+    fetchedAt:      new Date().toISOString(),
+    source:         moneylineResult.metadata.source,
+    fallbackUsed:   moneylineResult.metadata.fallbackUsed,
     providerErrors: moneylineResult.metadata.providerErrors,
-    generatedAt: moneylineResult.metadata.generatedAt,
+    generatedAt:    moneylineResult.metadata.generatedAt,
     fetchStatus,
     sport: SPORT,
     moneylines,
@@ -224,7 +225,7 @@ async function main() {
   mkdirSync(path.dirname(OUTPUT), { recursive: true });
   writeFileSync(OUTPUT, JSON.stringify(output, null, 2), "utf8");
   console.log(`✅ Wrote ${OUTPUT}`);
-  console.log("   The Odds API credits used this run: up to 3 when all primary calls succeed");
+  console.log("   ParlayAPI credits used this run: 3 (when key is present)");
 }
 
 main().catch(err => {
