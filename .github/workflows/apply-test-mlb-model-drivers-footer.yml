@@ -1,0 +1,64 @@
+name: Apply test MLB model drivers footer
+
+on:
+  push:
+    branches:
+      - test/mlb-model-drivers-footer
+
+permissions:
+  contents: write
+
+concurrency:
+  group: test-mlb-model-drivers-footer
+  cancel-in-progress: false
+
+jobs:
+  apply-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out test branch
+        uses: actions/checkout@v4
+        with:
+          ref: test/mlb-model-drivers-footer
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Normalize one-off patch script escaping
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/apply-mlb-model-drivers-footer.mjs')
+          text = p.read_text()
+          text = text.replace('\\\\`', '\\`')
+          text = text.replace('\\\\${', '\\${')
+          p.write_text(text)
+          PY
+
+      - name: Apply footer redesign
+        run: node scripts/apply-mlb-model-drivers-footer.mjs
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit validated test-branch changes
+        run: |
+          rm -f scripts/apply-mlb-model-drivers-footer.mjs
+          rm -f .github/workflows/apply-test-mlb-model-drivers-footer.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/mlb/mlbModelEdge.ts src/pages/MlbGameDetail.tsx
+          git add -u scripts/apply-mlb-model-drivers-footer.mjs .github/workflows/apply-test-mlb-model-drivers-footer.yml
+          git commit -m "feat: show weighted MLB model drivers in matchup cards"
+          git push origin HEAD:test/mlb-model-drivers-footer
