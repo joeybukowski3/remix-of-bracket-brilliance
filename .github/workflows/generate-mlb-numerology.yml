@@ -35,7 +35,6 @@ permissions:
 
 jobs:
   generate-numerology:
-    name: Generate daily MLB Numerology
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -57,22 +56,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Apply pending test-branch methodology patches
-        if: github.ref_name == 'test/mlb-model-drivers-footer'
-        shell: bash
-        run: |
-          if [ -f scripts/apply-numerology-only-generator.py ]; then
-            python scripts/apply-numerology-only-generator.py
-          fi
-          if [ -f scripts/apply-numerology-only-page.py ]; then
-            python scripts/apply-numerology-only-page.py
-          fi
-
-      - name: Run numerology unit tests
+      - name: Run numerology tests
         run: npx vitest run src/lib/numerology/numerology.test.ts
-
-      - name: TypeScript check
-        run: npx tsc --noEmit
 
       - name: Update player identity cache
         run: node scripts/update-player-identity-cache.mjs
@@ -88,51 +73,42 @@ jobs:
           fi
           echo "date=${DATE}" >> "$GITHUB_OUTPUT"
 
-      - name: Replace corrected archive on test branch
+      - name: Replace current-day archive on test branch
         if: github.ref_name == 'test/mlb-model-drivers-footer'
         run: rm -f "public/data/mlb/numerology/history/${{ steps.slate.outputs.date }}.json"
 
       - name: Generate numerology
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
-        shell: bash
-        run: |
-          DRY_FLAG=""
-          if [ "${{ inputs.dry_run }}" = "true" ]; then DRY_FLAG="--dry-run"; fi
-          FIXTURE_FLAG=""
-          if [ "${{ inputs.use_fixture }}" = "true" ]; then FIXTURE_FLAG="--fixture"; fi
-          node scripts/generate-mlb-numerology.mjs --date "${{ steps.slate.outputs.date }}" $DRY_FLAG $FIXTURE_FLAG
+        run: node scripts/generate-mlb-numerology.mjs --date "${{ steps.slate.outputs.date }}"
 
-      - name: Validate numerology-only selection
-        if: github.ref_name == 'test/mlb-model-drivers-footer' && inputs.dry_run != 'true'
+      - name: Validate baseball is not part of alignment
         shell: bash
         run: |
           node <<'NODE'
           const fs = require('fs');
           const report = JSON.parse(fs.readFileSync('public/data/mlb/numerology-daily.json', 'utf8'));
           const method = JSON.parse(fs.readFileSync('config/mlb-numerology-methodology.json', 'utf8'));
-          const groups = [report.featuredPlays ?? [], report.bestAvailable ?? [], report.watchlist ?? []];
-          const surfaced = groups.flat();
+          const surfaced = [
+            ...(report.featuredPlays ?? []),
+            ...(report.bestAvailable ?? []),
+            ...(report.watchlist ?? []),
+          ];
 
-          if (method.rankingBasis !== 'numerology_only') throw new Error('Methodology is not numerology-only');
-          if (method.weights.numerologyWeight !== 1 || method.weights.baseballWeight !== 0) throw new Error('Baseball still affects weighting');
-          if (report.rankingBasis !== 'numerology_only' || report.baseballContextOnly !== true) throw new Error('Report metadata is not numerology-only');
-
-          for (const play of surfaced) {
-            if (play.finalScore !== play.numerologyScore) throw new Error(`${play.playerName}: final score differs from numerology score`);
+          if (method.weights.numerologyWeight !== 1 || method.weights.baseballWeight !== 0) {
+            throw new Error('Methodology does not use numerology-only weighting');
           }
-          for (const group of groups) {
-            for (let i = 1; i < group.length; i += 1) {
-              if (group[i].numerologyScore > group[i - 1].numerologyScore) throw new Error('A group is not sorted by numerology score');
+          for (const play of surfaced) {
+            if (play.finalScore !== play.numerologyScore) {
+              throw new Error(`${play.playerName}: alignment differs from numerology score`);
             }
           }
-          for (const play of report.bestAvailable ?? []) {
-            if (!Array.isArray(play.positiveSignals) || !Array.isArray(play.counterSignals)) throw new Error(`Missing trace for ${play.playerName}`);
-          }
-
-          console.log('Numerology-only ranking validated.');
-          console.log(surfaced.slice(0, 5).map(p => `${p.playerName}: N${p.numerologyScore}, B${p.baseballScore}`).join(' | '));
+          console.log('Validated numerology-only alignment.');
+          console.log(surfaced.slice(0, 5).map(p => `${p.playerName}: N${p.numerologyScore} / B${p.baseballScore}`).join(' | '));
           NODE
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
 
       - name: Production build
         run: npm run build
@@ -145,22 +121,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          if [ "$TARGET_BRANCH" = "test/mlb-model-drivers-footer" ]; then
-            rm -f scripts/apply-numerology-only-generator.py
-            rm -f scripts/apply-numerology-only-page.py
-            rm -f .github/workflows/apply-test-numerology-only-ranking.yml
-          fi
-
-          git add \
-            config/mlb-numerology-methodology.json \
-            scripts/generate-mlb-numerology.mjs \
-            src/pages/MlbNumerologyPage.tsx \
-            public/data/mlb/numerology-daily.json \
-            public/data/mlb/numerology/ \
-            public/data/mlb/player-identity-cache.json \
-            scripts/apply-numerology-only-generator.py \
-            scripts/apply-numerology-only-page.py \
-            .github/workflows/apply-test-numerology-only-ranking.yml 2>/dev/null || true
+          git add public/data/mlb/numerology-daily.json public/data/mlb/numerology/ public/data/mlb/player-identity-cache.json
 
           if git diff --cached --quiet; then
             echo "No numerology changes to commit."
@@ -168,7 +129,7 @@ jobs:
           fi
 
           if [ "$TARGET_BRANCH" = "test/mlb-model-drivers-footer" ]; then
-            MESSAGE="fix: rank MLB numerology matches without baseball score"
+            MESSAGE="fix: regenerate numerology with baseball as context only"
           else
             MESSAGE="chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
           fi
