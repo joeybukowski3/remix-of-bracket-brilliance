@@ -743,7 +743,14 @@ function PropPreviewCard({
         </Link>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px] items-center gap-2 border-b border-slate-200 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+      <div
+        className={cn(
+          "grid items-center gap-2 border-b border-slate-200 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500",
+          theme === "hr"
+            ? "grid-cols-[minmax(0,1fr)_minmax(108px,0.78fr)_58px]"
+            : "grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px]",
+        )}
+      >
         <div>Player</div>
         <div>Matchup</div>
         <div className="text-right">Score</div>
@@ -755,7 +762,10 @@ function PropPreviewCard({
             key={row.key}
             to={to}
             className={cn(
-              "group grid grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px] items-center gap-2 border-b border-slate-100 px-4 py-2 transition last:border-b-0",
+              "group grid items-center gap-2 border-b border-slate-100 px-4 transition last:border-b-0",
+              theme === "hr"
+                ? "grid-cols-[minmax(0,1fr)_minmax(108px,0.78fr)_58px] py-2.5"
+                : "grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px] py-2",
               index % 2 === 1 && "bg-slate-50/50",
               themeClasses.hover,
             )}
@@ -768,7 +778,16 @@ function PropPreviewCard({
               </div>
             </div>
             <div className="min-w-0 text-[11px] font-medium text-slate-500">
-              <div className="truncate">vs {row.opponent}</div>
+              <div
+                className={cn(
+                  theme === "hr"
+                    ? "whitespace-normal break-words leading-[1.25]"
+                    : "truncate",
+                )}
+                title={`vs ${row.opponent}`}
+              >
+                vs {row.opponent}
+              </div>
             </div>
             <div className="flex justify-end">
               <ScorePill value={row.score} />
