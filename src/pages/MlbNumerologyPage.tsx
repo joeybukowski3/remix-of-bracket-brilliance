@@ -44,7 +44,7 @@ type ExplorerPlay = {
   source: "Qualified" | "Best available" | "Watchlist";
 };
 
-type SortMode = "final" | "numerology" | "baseball" | "battingOrder";
+type SortMode = "numerology" | "baseball" | "battingOrder";
 
 function getEtDate() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -255,7 +255,7 @@ function PlayCard({ play }: { play: NumerologyPlay }) {
           <ScoreBar value={play.numerologyScore} barColor="bg-violet-400" />
         </div>
         <div>
-          <div className="mb-1 flex justify-between"><span className="text-[9px] text-white/30">Baseball</span><span className="text-[9px] font-bold text-sky-300">{play.baseballScore}</span></div>
+          <div className="mb-1 flex justify-between"><span className="text-[9px] text-white/30">Baseball context <span className="text-white/15">(not ranked)</span></span><span className="text-[9px] font-bold text-sky-300">{play.baseballScore}</span></div>
           <ScoreBar value={play.baseballScore} barColor="bg-sky-400" />
         </div>
       </div>
@@ -438,7 +438,7 @@ function SlateExplorer({ rows }: { rows: ExplorerPlay[] }) {
   const [query, setQuery] = useState("");
   const [team, setTeam] = useState("all");
   const [confirmedOnly, setConfirmedOnly] = useState(false);
-  const [sort, setSort] = useState<SortMode>("final");
+  const [sort, setSort] = useState<SortMode>("numerology");
   const teams = useMemo(() => Array.from(new Set(rows.map((row) => row.team))).sort(), [rows]);
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -470,7 +470,7 @@ function SlateExplorer({ rows }: { rows: ExplorerPlay[] }) {
               <option value="all">All teams</option>{teams.map((value) => <option key={value} value={value}>{value}</option>)}
             </select>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} className="rounded-lg border border-white/8 bg-[#0d1728] px-2 py-2 text-[10px] text-white/60 outline-none">
-              <option value="final">Final score</option><option value="numerology">Numerology</option><option value="baseball">Baseball</option><option value="battingOrder">Batting order</option>
+              <option value="numerology">Numerology alignment</option><option value="baseball">Baseball context</option><option value="battingOrder">Batting order</option>
             </select>
           </div>
         </div>
@@ -519,7 +519,7 @@ function MethodologyLedger({ version, weights }: { version: string; weights?: Re
         <div className="space-y-3 border-t border-white/8 px-5 pb-5 pt-4 text-[11px] leading-5 text-white/40">
           <div><span className="font-semibold text-white/60">Version:</span> {version}</div>
           <div><span className="font-semibold text-white/60">Primary Universal Day:</span> Full-date digit sum. Master numbers 11, 22 and 33 are preserved.</div>
-          <div><span className="font-semibold text-white/60">Final Score Formula:</span> 60% Numerology Resonance + 40% Baseball Opportunity.</div>
+          <div><span className="font-semibold text-white/60">Alignment ranking:</span> Numerology Resonance only. Baseball Opportunity is displayed as context and never affects selection, qualification, or rank.</div>
           <div><span className="font-semibold text-white/60">Numerology system:</span> Pythagorean.</div>
           <div><span className="font-semibold text-white/60">Balancing complement:</span> Model-defined as the number completing 10.</div>
           <div><span className="font-semibold text-white/60">Countercurrent:</span> Model-defined as 9 minus the root. It indicates tension, not predicted failure.</div>
@@ -558,7 +558,7 @@ export default function MlbNumerologyPage() {
             <p className="mb-3 text-[10px] italic text-white/20">The model does not claim causation. It records recurrence.</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[9px] text-white/25"><span>Date: {etDate}</span><span>Scheduled: {data?.scheduledFor ?? "09:36 ET"}</span>{data?.generatedAt && <span>Updated: {new Date(data.generatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET</span>}{data?.methodologyVersion && <span>v{data.methodologyVersion}</span>}{data?.dataStatus && <span className="capitalize text-amber-400/60">{data.dataStatus.replace(/_/g, " ")}</span>}</div>
             {(data?.dataStatus === "morning_projected" || isStale) && <div className="mt-3 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[10px] text-amber-300/70">{isStale ? "⚠️ Previous Analysis — today's alignment has not been generated yet." : "⏳ Morning analysis — batting orders may be projected. Lineup confirmation pending."}</div>}
-            <p className="mt-3 rounded-lg border border-white/6 bg-white/3 px-3 py-2 text-[10px] text-white/30">This experimental feature analyzes numerical patterns for research and entertainment. It does not guarantee player performance.</p>
+            <p className="mt-3 rounded-lg border border-white/6 bg-white/3 px-3 py-2 text-[10px] text-white/30">This experimental feature analyzes numerical patterns for research and entertainment. Players are selected and ranked only by numerology; baseball ratings are separate context and never affect alignment.</p>
           </div>
 
           {loading && <div className="space-y-3">{[1, 2, 3].map((item) => <div key={item} className="h-28 animate-pulse rounded-2xl bg-white/4" />)}</div>}
@@ -573,17 +573,17 @@ export default function MlbNumerologyPage() {
               <section><SectionLabel>Slate Shape</SectionLabel><div className="grid gap-3 md:grid-cols-2"><ScoreDistribution data={data} explorer={explorer} /><DataCompleteness data={data} explorer={explorer} /></div></section>
 
               {data.featuredPlays.length > 0 && <section><SectionLabel>Highest Alignment</SectionLabel><div className="space-y-3">{data.featuredPlays.map((play) => <PlayCard key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
-              {data.featuredPlays.length === 0 && (data.bestAvailable?.length ?? 0) > 0 && <section><SectionLabel>Best Available Alignments</SectionLabel><div className="mb-3 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[10px] text-amber-300/70">Best available today — below the featured-play threshold (60). No player on today's slate has reached qualifying alignment.</div><div className="space-y-3">{data.bestAvailable!.map((play) => <PlayCard key={`ba-${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
+              {data.featuredPlays.length === 0 && (data.bestAvailable?.length ?? 0) > 0 && <section><SectionLabel>Best Available Alignments</SectionLabel><div className="mb-3 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[10px] text-amber-300/70">Best available today — below the featured-play threshold (60). No player on today's slate has reached the numerology-only qualifying threshold.</div><div className="space-y-3">{data.bestAvailable!.map((play) => <PlayCard key={`ba-${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
               {data.featuredPlays.length === 0 && !(data.bestAvailable?.length) && <div className="rounded-xl border border-white/8 bg-[#0a1628] px-4 py-8 text-center text-xs text-white/25">No featured plays available. Check back after the morning model run.</div>}
 
-              {(data.countercurrents?.length ?? 0) > 0 && <section><SectionLabel>Countercurrents</SectionLabel><p className="mb-3 text-[10px] text-white/30">Conflicting or opposing patterns. These are not predicted failures — they represent tension between numerical fields and baseball opportunity.</p><div className="rounded-2xl border border-rose-500/15 bg-[#0a1628] px-4 py-1">{data.countercurrents!.map((item, index) => <div key={`${item.playerName}-${index}`} className="flex items-center justify-between gap-3 border-b border-white/6 py-2.5 last:border-0"><div><span className="text-[11px] font-semibold text-white/60">{item.playerName}</span><span className="ml-2 text-[9px] text-white/25">{item.team}</span></div><div className="flex items-center gap-3 font-mono text-[9px]"><span className="text-violet-300/60">N:{item.numerologyScore}</span><span className="text-sky-300/60">B:{item.baseballScore}</span><span className="text-white/40">{item.finalScore}</span></div></div>)}</div></section>}
+              {(data.countercurrents?.length ?? 0) > 0 && <section><SectionLabel>Countercurrents</SectionLabel><p className="mb-3 text-[10px] text-white/30">Conflicting or opposing numerical patterns. These are not predicted failures. Baseball context is displayed separately and does not affect classification.</p><div className="rounded-2xl border border-rose-500/15 bg-[#0a1628] px-4 py-1">{data.countercurrents!.map((item, index) => <div key={`${item.playerName}-${index}`} className="flex items-center justify-between gap-3 border-b border-white/6 py-2.5 last:border-0"><div><span className="text-[11px] font-semibold text-white/60">{item.playerName}</span><span className="ml-2 text-[9px] text-white/25">{item.team}</span></div><div className="flex items-center gap-3 font-mono text-[9px]"><span className="text-violet-300/60">N:{item.numerologyScore}</span><span className="text-sky-300/60">B:{item.baseballScore}</span><span className="text-white/40">{item.finalScore}</span></div></div>)}</div></section>}
               {data.watchlist.length > 0 && <section><SectionLabel>Numerical Watchlist</SectionLabel><div className="rounded-2xl border border-white/8 bg-[#0a1628] px-4 py-1">{data.watchlist.map((play) => <WatchlistRow key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
 
               <SlateExplorer rows={explorer} />
               <section><SectionLabel>Research and Calibration</SectionLabel><ResearchLog data={data} /></section>
               {data.narrative?.closingObservation && <p className="px-4 text-center text-[10px] italic text-white/25">{data.narrative.closingObservation}</p>}
               <section><MethodologyLedger version={data.methodologyVersion} weights={data.scoringConfiguration?.weights} /></section>
-              <p className="text-center text-[9px] text-white/15">Strong numerical overlap can coexist with poor baseball opportunity. Unknown data is shown as unknown.</p>
+              <p className="text-center text-[9px] text-white/15">Players are selected and ranked only by numerology. Baseball opportunity is context only and may support or conflict with a match without changing its alignment score.</p>
             </div>
           )}
         </div>
