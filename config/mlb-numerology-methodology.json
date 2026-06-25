@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
-  "description": "JoeKnowsBall MLB Numerology Methodology. All weights and rules version-controlled here. Grok may only produce narrative text.",
+  "version": "2.1.0",
+  "description": "JoeKnowsBall MLB Numerology Methodology. Players are selected and ranked only by deterministic numerology resonance. Baseball opportunity is displayed as context only and never affects alignment, qualification, or rank.",
   "numerologySystem": "Pythagorean",
   "masterNumbers": [11, 22, 33],
   "numberFamilies": [[1, 4, 7], [2, 5, 8], [3, 6, 9]],
@@ -11,6 +11,8 @@
   "universalYearMethod": "year_all_digits",
   "universalMonthMethod": "calendar_month_plus_universal_year_root",
   "structuralEchoMethod": "month_root_plus_calday_root_plus_year_root",
+  "rankingBasis": "numerology_only",
+  "baseballContextOnly": true,
   "weights": {
     "personalDayExactMaster": 20,
     "personalDayRoot": 14,
@@ -34,8 +36,8 @@
     "countercurrentHighField": 6,
     "countercurrentMultiple": 3,
     "convergenceMaxBonus": 8,
-    "numerologyWeight": 0.60,
-    "baseballWeight": 0.40
+    "numerologyWeight": 1,
+    "baseballWeight": 0
   },
   "signalCapabilities": {
     "personalDay": "implemented",
@@ -61,11 +63,11 @@
       "Jersey 33 on Calendar Day 24/6: shared root-6, not exact compound match to 24."
     ]
   },
-  "finalScoreFormula": "Final = 60% × NumerologyResonance + 40% × BaseballOpportunity",
+  "finalScoreFormula": "Alignment Score = Numerology Resonance only. Baseball Opportunity is displayed as context only and does not affect selection, qualification, or rank.",
   "scoreTiers": {
     "85": "Elite Alignment",
     "75": "Strong Alignment",
-    "65": "Moderate Alignment",
+    "60": "Qualified Alignment",
     "0": "Watchlist"
   },
   "prohibitedLanguage": ["guaranteed", "lock", "destined", "certain", "can't lose", "will win", "sure thing"],
