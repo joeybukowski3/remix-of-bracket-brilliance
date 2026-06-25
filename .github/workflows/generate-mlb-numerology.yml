@@ -23,8 +23,9 @@ on:
         default: "false"
         type: string
 
+# Serialize with the other workflows that commit generated data to main.
 concurrency:
-  group: mlb-numerology-daily
+  group: main-data-writers-${{ github.repository }}
   cancel-in-progress: false
 
 permissions:
@@ -41,6 +42,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -91,6 +93,7 @@ jobs:
         if: ${{ inputs.dry_run != 'true' }}
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -103,14 +106,21 @@ jobs:
 
           git commit -m "chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
 
-          PUSHED=false
+          pushed=false
           for attempt in 1 2 3 4 5; do
-            git pull --rebase origin main && git push origin HEAD:main && PUSHED=true && break
-            echo "Push attempt $attempt failed, retrying in $((attempt * 10))s..."
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
             sleep $((attempt * 10))
           done
 
-          if [ "$PUSHED" != "true" ]; then
-            echo "ERROR: All push attempts failed — numerology data was NOT committed" >&2
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — numerology data was not committed." >&2
             exit 1
           fi
