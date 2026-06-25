@@ -3,6 +3,7 @@ import NflMarketValueSection from "@/components/nfl/team-dashboard/NflMarketValu
 import NflOffseasonSection from "@/components/nfl/team-dashboard/NflOffseasonSection";
 import NflScheduleSection from "@/components/nfl/team-dashboard/NflScheduleSection";
 import NflWarrenSharpTeamProfile from "@/components/nfl/team-dashboard/NflWarrenSharpTeamProfile";
+import NflWarrenSharpAdvancedMetrics from "@/components/nfl/team-dashboard/NflWarrenSharpAdvancedMetrics";
 
 export default function NflTeamDashboardExtras({ team }: { team: NflGuideTeam }) {
   return (
@@ -11,6 +12,7 @@ export default function NflTeamDashboardExtras({ team }: { team: NflGuideTeam })
       <NflScheduleSection team={team} />
       <NflOffseasonSection team={team} />
       <NflWarrenSharpTeamProfile team={team} />
+      <NflWarrenSharpAdvancedMetrics team={team} />
     </div>
   );
 }
