@@ -1,64 +1,116 @@
-name: Apply Numerology Context Labels
+name: Generate MLB Numerology
 
 on:
-  push:
-    branches:
-      - test/mlb-model-drivers-footer
-    paths:
-      - config/numerology-ui-refresh.txt
+  schedule:
+    # 9:36 AM America/New_York — timezone-aware, single schedule
+    # 9+3+6 = 18 → 9, reinforcing the 3-6-9 identity of the 369 entry symbol
+    - cron: "36 9 * * *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional Eastern Time slate date (YYYY-MM-DD)"
+        required: false
+        type: string
+      dry_run:
+        description: "Generate and validate without committing or writing files"
+        required: false
+        default: "false"
+        type: string
+      use_fixture:
+        description: "Write to fixture path only — never overwrites production"
+        required: false
+        default: "false"
+        type: string
+
+concurrency:
+  group: mlb-numerology-daily
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
-  update-labels:
+  generate-numerology:
+    name: Generate daily MLB Numerology
     runs-on: ubuntu-latest
+    env:
+      TZ: America/New_York
+
     steps:
-      - name: Check out test branch
+      - name: Check out repository
         uses: actions/checkout@v4
         with:
-          ref: test/mlb-model-drivers-footer
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update numerology page labels
-        shell: bash
-        run: |
-          python <<'PY'
-          from pathlib import Path
-          p = Path('src/pages/MlbNumerologyPage.tsx')
-          text = p.read_text()
-          replacements = [
-            ('type SortMode = "final" | "numerology" | "baseball" | "battingOrder";', 'type SortMode = "numerology" | "baseball" | "battingOrder";'),
-            ('const [sort, setSort] = useState<SortMode>("final");', 'const [sort, setSort] = useState<SortMode>("numerology");'),
-            ('<option value="final">Final score</option><option value="numerology">Numerology</option><option value="baseball">Baseball</option><option value="battingOrder">Batting order</option>', '<option value="numerology">Numerology alignment</option><option value="baseball">Baseball context</option><option value="battingOrder">Batting order</option>'),
-            ('<div><span className="font-semibold text-white/60">Final Score Formula:</span> 60% Numerology Resonance + 40% Baseball Opportunity.</div>', '<div><span className="font-semibold text-white/60">Alignment ranking:</span> Numerology Resonance only. Baseball Opportunity is displayed as context and never affects selection, qualification, or rank.</div>'),
-            ('<div className="mb-1 flex justify-between"><span className="text-[9px] text-white/30">Baseball</span><span className="text-[9px] font-bold text-sky-300">{play.baseballScore}</span></div>', '<div className="mb-1 flex justify-between"><span className="text-[9px] text-white/30">Baseball context <span className="text-white/15">(not ranked)</span></span><span className="text-[9px] font-bold text-sky-300">{play.baseballScore}</span></div>'),
-            ('This experimental feature analyzes numerical patterns for research and entertainment. It does not guarantee player performance.', 'This experimental feature analyzes numerical patterns for research and entertainment. Players are selected and ranked only by numerology; baseball ratings are separate context and never affect alignment.'),
-            ("No player on today's slate has reached qualifying alignment.", "No player on today's slate has reached the numerology-only qualifying threshold."),
-            ('Conflicting or opposing patterns. These are not predicted failures — they represent tension between numerical fields and baseball opportunity.', 'Conflicting or opposing numerical patterns. These are not predicted failures. Baseball context is displayed separately and does not affect classification.'),
-            ('Strong numerical overlap can coexist with poor baseball opportunity. Unknown data is shown as unknown.', 'Players are selected and ranked only by numerology. Baseball opportunity is context only and may support or conflict with a match without changing its alignment score.'),
-          ]
-          for old, new in replacements:
-            if old not in text:
-              raise SystemExit(f'Missing expected page text: {old[:70]}')
-            text = text.replace(old, new, 1)
-          p.write_text(text)
-          PY
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run numerology unit tests
+        run: npx vitest run src/lib/numerology/numerology.test.ts
 
       - name: TypeScript check
-        run: |
-          npm ci
-          npx tsc --noEmit
+        run: npx tsc --noEmit
 
       - name: Production build
         run: npm run build
 
-      - name: Commit page update
+      - name: Update player identity cache
+        run: node scripts/update-player-identity-cache.mjs
+
+      - name: Generate numerology
+        id: generate
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: |
+          DATE_FLAG=""
+          if [ -n "${{ inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ inputs.date }}"
+          fi
+
+          DRY_FLAG=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_FLAG="--dry-run"
+          fi
+
+          FIXTURE_FLAG=""
+          if [ "${{ inputs.use_fixture }}" = "true" ]; then
+            FIXTURE_FLAG="--fixture"
+          fi
+
+          node scripts/generate-mlb-numerology.mjs $DATE_FLAG $DRY_FLAG $FIXTURE_FLAG
+
+      - name: Commit and push
+        if: ${{ inputs.dry_run != 'true' }}
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/pages/MlbNumerologyPage.tsx
-          git commit -m "fix: label baseball as context-only in numerology"
-          git push origin HEAD:test/mlb-model-drivers-footer
+
+          git add public/data/mlb/numerology-daily.json public/data/mlb/numerology/ public/data/mlb/player-identity-cache.json 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No numerology changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          PUSHED=false
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase origin main && git push origin HEAD:main && PUSHED=true && break
+            echo "Push attempt $attempt failed, retrying in $((attempt * 10))s..."
+            sleep $((attempt * 10))
+          done
+
+          if [ "$PUSHED" != "true" ]; then
+            echo "ERROR: All push attempts failed — numerology data was NOT committed" >&2
+            exit 1
+          fi
