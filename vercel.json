@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "dist",
+  "ignoreCommand": "node -e \"const m=process.env.VERCEL_GIT_COMMIT_MESSAGE||'';const b=process.env.VERCEL_GIT_COMMIT_REF||'';const skip=b&&b!=='main'&&/^(test|chore|ci|docs):/i.test(m);process.exit(skip?0:1)\"",
   "headers": [
     {
       "source": "/data/(.*)",

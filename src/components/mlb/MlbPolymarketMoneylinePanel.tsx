@@ -15,9 +15,10 @@ const TEAM_ROW_GRID = "grid-cols-[20px_34px_minmax(0,1fr)_50px_50px]";
 
 // ML edge data keyed by gamePk, computed in the parent from detailPreviews
 export type PanelMlEdge = {
-  pickAbbr: string;          // e.g. "NYY"
-  confidence: number;        // 50–82, model win probability %
-  valueEdge: number | null;  // confidence - polymarket implied prob, in percentage points
+  pickAbbr: string;          // model lean, e.g. "NYY"
+  confidence: number;        // 50–82 confidence index
+  valueAbbr: string | null;  // side with positive Polymarket value; null means Even
+  valueEdge: number | null;  // always non-negative; 0 means Even
 };
 
 // ---------------------------------------------------------------------------
@@ -106,18 +107,17 @@ function GameCard({
   const status = statusLabel(game.status);
   const hasVenue = Boolean(game.venue && game.venue !== "Unknown");
 
-  // Edge badge styling
+  // Edge badge styling — always show positive value on the correct side, or Even.
   const edgeBadge = mlEdge && mlEdge.valueEdge != null ? (() => {
     const v = mlEdge.valueEdge;
-    if (v >= 8)  return { bg: "bg-emerald-600 text-white",       label: `${mlEdge.pickAbbr} +${v.toFixed(1)}%` };
-    if (v >= 4)  return { bg: "bg-emerald-100 text-emerald-800", label: `${mlEdge.pickAbbr} +${v.toFixed(1)}%` };
-    if (v >= 1)  return { bg: "bg-sky-100 text-sky-800",         label: `${mlEdge.pickAbbr} +${v.toFixed(1)}%` };
-    if (v <= -1) return { bg: "bg-slate-100 text-slate-500",     label: `${mlEdge.pickAbbr} ${v.toFixed(1)}%` };
-    return null;
+    if (v <= 0 || !mlEdge.valueAbbr) return { bg: "bg-slate-100 text-slate-600", label: "Even" };
+    if (v >= 8) return { bg: "bg-emerald-600 text-white", label: `${mlEdge.valueAbbr} +${v.toFixed(1)}%` };
+    if (v >= 4) return { bg: "bg-emerald-100 text-emerald-800", label: `${mlEdge.valueAbbr} +${v.toFixed(1)}%` };
+    return { bg: "bg-sky-100 text-sky-800", label: `${mlEdge.valueAbbr} +${v.toFixed(1)}%` };
   })() : mlEdge ? {
-    // confidence only, no polymarket price to compare against
+    // confidence only, no Polymarket price to compare against
     bg: "bg-slate-100 text-slate-600",
-    label: `${mlEdge.pickAbbr} ${mlEdge.confidence}%`,
+    label: `${mlEdge.pickAbbr} model ${mlEdge.confidence}`,
   } : null;
 
   const handleClick = () => {
@@ -237,19 +237,26 @@ function TeamRow({
         {team.abbreviation}
       </span>
 
-      <div className="min-w-0">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_58px] items-center gap-1">
         {team.probablePitcher ? (
           <span
             className="block truncate whitespace-nowrap text-[9.5px] font-medium leading-tight text-slate-400"
             title={pitcherTitle}
           >
             {team.probablePitcher}
-            {pitcherXera != null && (
-              <span className="ml-1 font-semibold text-slate-500">{pitcherXera.toFixed(2)} xERA</span>
-            )}
           </span>
         ) : (
-          <span className="block text-[9px] text-slate-300">—</span>
+          <span className="block truncate text-[9px] text-slate-300">—</span>
+        )}
+        {pitcherXera != null ? (
+          <span
+            className="inline-flex h-5 w-[58px] items-center justify-center whitespace-nowrap rounded bg-slate-100 px-1 text-[9px] font-semibold tabular-nums text-slate-600"
+            title={`${pitcherXera.toFixed(2)} expected ERA`}
+          >
+            {pitcherXera.toFixed(2)} xERA
+          </span>
+        ) : (
+          <span aria-hidden="true" className="invisible h-5 w-[58px]">—</span>
         )}
       </div>
 

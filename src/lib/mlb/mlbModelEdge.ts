@@ -7,6 +7,7 @@ export type ModelFactor = {
   awayScore: number;   // 0–100
   homeScore: number;
   weight: number;
+  weightedDifference: number; // exact weighted away-minus-home contribution
   description: string;
 };
 
@@ -159,14 +160,14 @@ export function computeModelEdge(detail: MlbGameDetail): ModelEdgeResult {
   const confidence = pick === "push" ? 50 : Math.round(Math.min(82, 52 + (absDiff / 5) * 4));
 
   const factors: ModelFactor[] = [
-    { label: "Pitcher Quality",  awayScore: Math.round(awayPit),   homeScore: Math.round(homePit),   weight: 0.30, description: "ERA, K/9, BB%, HR/9" },
-    { label: "Matchup Edge",     awayScore: Math.round(awayMatch), homeScore: Math.round(homeMatch), weight: 0.25, description: "Lineup OPS vs pitcher hand · lineup K%" },
-    { label: "Lineup Offense",   awayScore: Math.round(awayOff),   homeScore: Math.round(homeOff),   weight: 0.20, description: "OPS, SLG, OBP" },
-    { label: "Recent Form",      awayScore: Math.round(awayForm),  homeScore: Math.round(homeForm),  weight: 0.15, description: "Last 5 games · home/away split" },
-    { label: "Season Quality",   awayScore: Math.round(awaySzn),   homeScore: Math.round(homeSzn),   weight: 0.10, description: "Season win %" },
+    { label: "Pitcher Quality",  awayScore: Math.round(awayPit),   homeScore: Math.round(homePit),   weight: 0.30, weightedDifference: (awayPit - homePit) * 0.30, description: "ERA, K/9, BB%, HR/9" },
+    { label: "Matchup Edge",     awayScore: Math.round(awayMatch), homeScore: Math.round(homeMatch), weight: 0.25, weightedDifference: (awayMatch - homeMatch) * 0.25, description: "Lineup OPS vs pitcher hand · lineup K%" },
+    { label: "Lineup Offense",   awayScore: Math.round(awayOff),   homeScore: Math.round(homeOff),   weight: 0.20, weightedDifference: (awayOff - homeOff) * 0.20, description: "OPS, SLG, OBP" },
+    { label: "Recent Form",      awayScore: Math.round(awayForm),  homeScore: Math.round(homeForm),  weight: 0.15, weightedDifference: (awayForm - homeForm) * 0.15, description: "Last 5 games · home/away split" },
+    { label: "Season Quality",   awayScore: Math.round(awaySzn),   homeScore: Math.round(homeSzn),   weight: 0.10, weightedDifference: (awaySzn - homeSzn) * 0.10, description: "Season win %" },
   ];
 
-  const top = factors.reduce((b, f) => Math.abs(f.awayScore - f.homeScore) > Math.abs(b.awayScore - b.homeScore) ? f : b);
+  const top = factors.reduce((b, f) => Math.abs(f.weightedDifference) > Math.abs(b.weightedDifference) ? f : b);
   const pickAbbr = pick === "away" ? game.away.abbreviation : pick === "home" ? game.home.abbreviation : "";
 
   return {

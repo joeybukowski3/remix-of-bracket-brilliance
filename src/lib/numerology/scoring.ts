@@ -76,7 +76,7 @@ const MAX_CONVERGENCE_BONUS = 8;
 /** Returns true if n matches the primary Universal Day (exact compound/master or root) */
 function matchesPrimaryExact(n: ReducedNumber, profile: DailyProfile): boolean {
   const ud = profile.universalDay;
-  return n.compound === ud.compound || (ud.master != null && n.compound === ud.master) || n.original === ud.compound;
+  return n.original === ud.rawSum || n.compound === ud.rawSum || (ud.master != null && (n.compound === ud.master || n.original === ud.master));
 }
 
 function matchesPrimaryRoot(n: ReducedNumber, profile: DailyProfile): boolean {
@@ -146,7 +146,7 @@ export function scorePlayer(
       award(
         "personalDay", `Personal Day ${pd.compound} — Exact Primary`,
         "primary_exact_root", weights.personalDayExactMaster - 4,
-        `Personal Day ${pd.compound} matches Universal Day ${dailyProfile.universalDay.compound}.`,
+        `Personal Day ${pd.original} matches Universal Day compound ${dailyProfile.universalDay.rawSum}.`,
         "personalDay:exactPrimary"
       );
     } else if (matchesPrimaryRoot(pd, dailyProfile)) {
@@ -188,7 +188,7 @@ export function scorePlayer(
       award(
         "jersey", `Jersey ${jersey.original} — Exact Primary Match`,
         "primary_exact_root", weights.jerseyExactMaster - 2,
-        `Jersey ${jersey.original} matches Universal Day compound ${dailyProfile.universalDay.compound}.`,
+        `Jersey ${jersey.original} matches Universal Day compound ${dailyProfile.universalDay.rawSum}.`,
         "jersey:exactPrimary"
       );
     } else if (matchesPrimaryRoot(jersey, dailyProfile)) {
