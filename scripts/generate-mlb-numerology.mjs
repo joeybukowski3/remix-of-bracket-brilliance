@@ -287,10 +287,10 @@ async function resolvePlayerId(playerName, teamAbbr) {
 // ── Baseball Opportunity Score (reuses existing model data) ─────────────────
 function baseballScore(batter) {
   const hr = safeNum(batter.hrScore);
-  if (hr == null) return 50;
-  const normalized = Math.min(100, Math.max(0, Math.round(((hr - 40) / 50) * 100)));
-  const pitcherPenalty = (!batter.opposingPitcher || batter.opposingPitcher === "TBD") ? -20 : 0;
-  return Math.max(0, normalized + pitcherPenalty);
+  // Display the existing JoeKnowsBall HR score directly as context.
+  // This value is never used for numerology selection or ranking.
+  if (hr == null) return 0;
+  return Math.min(100, Math.max(0, Math.round(hr)));
 }
 
 // Market selection: use HR market when hrScore is available (Issue #9)
