@@ -1,11 +1,6 @@
 name: Generate MLB Numerology
 
 on:
-  push:
-    branches:
-      - test/mlb-model-drivers-footer
-    paths:
-      - .github/workflows/generate-mlb-numerology.yml
   schedule:
     # 9:36 AM America/New_York — timezone-aware, single schedule
     # 9+3+6 = 18 → 9, reinforcing the 3-6-9 identity of the 369 entry symbol
@@ -39,7 +34,6 @@ jobs:
   generate-numerology:
     name: Generate daily MLB Numerology
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     env:
       TZ: America/New_York
 
@@ -65,6 +59,9 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      - name: Production build
+        run: npm run build
+
       - name: Update player identity cache
         run: node scripts/update-player-identity-cache.mjs
 
@@ -72,7 +69,6 @@ jobs:
         id: generate
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
-        shell: bash
         run: |
           DATE_FLAG=""
           if [ -n "${{ inputs.date }}" ]; then
@@ -91,57 +87,25 @@ jobs:
 
           node scripts/generate-mlb-numerology.mjs $DATE_FLAG $DRY_FLAG $FIXTURE_FLAG
 
-      - name: Validate current-day output
-        if: ${{ inputs.dry_run != 'true' }}
-        shell: bash
-        run: |
-          EXPECTED_DATE="$(TZ=America/New_York date '+%Y-%m-%d')"
-          node -e '
-            const fs = require("fs");
-            const data = JSON.parse(fs.readFileSync("public/data/mlb/numerology-daily.json", "utf8"));
-            const expected = process.argv[1];
-            if (data.date !== expected) throw new Error(`Expected ${expected}, received ${data.date}`);
-            if (data.generationMode === "fixture") throw new Error("Fixture output cannot be published.");
-            if (!data.dailyProfile || !Number.isFinite(data.dailyProfile.universalDayRoot)) throw new Error("Missing Universal Day profile.");
-            console.log(`Validated ${data.date}: compound ${data.dailyProfile.universalDayCompound}, root ${data.dailyProfile.universalDayRoot}`);
-          ' "$EXPECTED_DATE"
-
-      - name: Production build
-        if: ${{ inputs.dry_run != 'true' }}
-        run: npm run build
-
       - name: Commit and push
         if: ${{ inputs.dry_run != 'true' }}
         shell: bash
         run: |
-          TARGET_BRANCH="${GITHUB_REF_NAME}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # This push-trigger is temporary. Restore the workflow to its prior
-          # branch version in the same commit that publishes the generated data.
-          if [ "$TARGET_BRANCH" = "test/mlb-model-drivers-footer" ]; then
-            git checkout HEAD^ -- .github/workflows/generate-mlb-numerology.yml
-          fi
-
-          git add public/data/mlb/numerology-daily.json public/data/mlb/numerology/ public/data/mlb/player-identity-cache.json .github/workflows/generate-mlb-numerology.yml 2>/dev/null || true
+          git add public/data/mlb/numerology-daily.json public/data/mlb/numerology/ public/data/mlb/player-identity-cache.json 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "No numerology changes to commit."
             exit 0
           fi
 
-          if [ "$TARGET_BRANCH" = "test/mlb-model-drivers-footer" ]; then
-            COMMIT_MESSAGE="fix: refresh MLB numerology on test branch"
-          else
-            COMMIT_MESSAGE="chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
-          fi
-
-          git commit -m "$COMMIT_MESSAGE"
+          git commit -m "chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
 
           PUSHED=false
           for attempt in 1 2 3 4 5; do
-            git pull --rebase origin "$TARGET_BRANCH" && git push origin HEAD:"$TARGET_BRANCH" && PUSHED=true && break
+            git pull --rebase origin main && git push origin HEAD:main && PUSHED=true && break
             echo "Push attempt $attempt failed, retrying in $((attempt * 10))s..."
             sleep $((attempt * 10))
           done
