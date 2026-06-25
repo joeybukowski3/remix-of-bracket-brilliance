@@ -1005,24 +1005,37 @@ function MlbSlateAnalyzer({
 
   function getPolymarketEdge(gamePk: number, mlEdge: any) {
     if (!polymarketData || !mlEdge) return null;
-    
+
     const game = polymarketData.games.find(g => g.gamePk === gamePk);
     if (!game || !game.matched) return null;
 
-    const modelPickIsAway = mlEdge.pick === "away" && mlEdge.pick !== "push";
-    const modelPickIsHome = mlEdge.pick === "home" && mlEdge.pick !== "push";
-    
-    if (!modelPickIsAway && !modelPickIsHome) return null;
+    const confidence = mlEdge.confidence / 100;
+    const awayModelProb = mlEdge.pick === "away" ? confidence : mlEdge.pick === "home" ? 1 - confidence : 0.5;
+    const homeModelProb = 1 - awayModelProb;
+    const candidates: Array<{ team: string; edge: number; polyProb: number }> = [];
 
-    const polyProb = modelPickIsAway ? game.away.yesPrice : game.home.yesPrice;
-    if (polyProb == null) return null;
+    if (game.away.yesPrice != null) {
+      candidates.push({
+        team: game.away.abbreviation,
+        edge: Math.round((awayModelProb - game.away.yesPrice) * 1000) / 10,
+        polyProb: game.away.yesPrice,
+      });
+    }
+    if (game.home.yesPrice != null) {
+      candidates.push({
+        team: game.home.abbreviation,
+        edge: Math.round((homeModelProb - game.home.yesPrice) * 1000) / 10,
+        polyProb: game.home.yesPrice,
+      });
+    }
+    if (!candidates.length) return null;
 
-    const modelConfidence = mlEdge.confidence / 100; // Convert 65 to 0.65
-    const edge = Math.round((modelConfidence - polyProb) * 1000) / 10;
-    const team = modelPickIsAway ? game.away.abbreviation : game.home.abbreviation;
-    const sign = edge > 0 ? "+" : "";
+    const best = candidates.sort((a, b) => b.edge - a.edge)[0];
+    if (best.edge <= 0) {
+      return { team: null, edge: 0, sign: "", polyProb: best.polyProb, isEven: true };
+    }
 
-    return { team, edge, sign, polyProb };
+    return { team: best.team, edge: best.edge, sign: "+", polyProb: best.polyProb, isEven: false };
   }
   const { getTeam } = useTeamWrc();
   return (
@@ -1256,58 +1269,78 @@ function MlbSlateAnalyzer({
                     },
                   ];
 
-                  const PitcherPills = ({ pi }: { pi: ReturnType<typeof getPInfo> }) => (
-                    <div className="flex flex-wrap gap-1">
-                      {pi.xera != null ? (() => { const xs = xeraStyle(pi.xera!); return (
-                        <span className="rounded px-1.5 py-0.5 text-[10px] font-bold" style={{ backgroundColor: xs.bg, color: xs.text }}>
-                          {pi.xera!.toFixed(2)} xERA
-                        </span>
-                      ); })() : pi.xfipFallback != null ? (
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">
-                          {pi.xfipFallback.toFixed(2)} xFIP
-                        </span>
-                      ) : null}
-                      {pi.pill && pi.s != null && (
-                        <span className="rounded px-1.5 py-0.5 text-[10px] font-bold"
-                          style={{ backgroundColor: pi.pill.bg, color: pi.pill.color }}>
-                          {pi.s > 0 ? "+" : ""}{pi.s} {pi.shortLabel}
-                        </span>
-                      )}
-                    </div>
-                  );
+                  const PitcherPills = ({ pi, align = "left" }: { pi: ReturnType<typeof getPInfo>; align?: "left" | "right" }) => {
+                    const metric = pi.xera != null
+                      ? { label: `${pi.xera.toFixed(2)} xERA`, style: xeraStyle(pi.xera) }
+                      : pi.xfipFallback != null
+                        ? { label: `${pi.xfipFallback.toFixed(2)} xFIP`, style: { bg: "#f1f5f9", text: "#64748b" } }
+                        : null;
+
+                    return (
+                      <div className={cn(
+                        "grid h-5 grid-cols-[60px_70px] items-center gap-1",
+                        align === "right" ? "justify-end" : "justify-start",
+                      )}>
+                        {metric ? (
+                          <span
+                            className="inline-flex h-5 w-[60px] items-center justify-center whitespace-nowrap rounded px-1 text-[9px] font-bold tabular-nums"
+                            style={{ backgroundColor: metric.style.bg, color: metric.style.text }}
+                          >
+                            {metric.label}
+                          </span>
+                        ) : (
+                          <span aria-hidden="true" className="invisible h-5 w-[60px]">—</span>
+                        )}
+                        {pi.pill && pi.s != null ? (
+                          <span
+                            className="inline-flex h-5 w-[70px] items-center justify-center whitespace-nowrap rounded px-1 text-[9px] font-bold tabular-nums"
+                            style={{ backgroundColor: pi.pill.bg, color: pi.pill.color }}
+                          >
+                            {pi.s > 0 ? "+" : ""}{pi.s} {pi.shortLabel}
+                          </span>
+                        ) : (
+                          <span aria-hidden="true" className="invisible h-5 w-[70px]">—</span>
+                        )}
+                      </div>
+                    );
+                  };
 
                   return (
                     <>
                       {/* ── Pitcher headers: Home LEFT, Away RIGHT ── */}
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 pb-2.5 border-b border-slate-100">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 border-b border-slate-100 pb-2.5">
                         {/* Home LEFT */}
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <div className="flex items-center gap-1.5">
+                        <div className="grid min-w-0 grid-rows-[28px_18px_16px_20px] gap-0.5">
+                          <div className="flex h-7 items-center gap-1.5 overflow-hidden">
                             <MlbTeamLogo team={game.home.abbreviation} size={28} />
                             <span className="text-[15px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
-                            <span className="text-[11px] font-semibold text-slate-400">{game.home.record}</span>
+                            <span className="truncate text-[11px] font-semibold text-slate-400">{game.home.record}</span>
                             {showScore && <span className="text-[18px] font-extrabold text-slate-900">{homeScore}</span>}
                           </div>
-                          <span className="text-[12px] font-semibold text-[#031635] truncate">{homePitcherName || "TBD"}</span>
-                          <div className="flex flex-col gap-0.5">
-                            {detail?.starters.home.record && <span className="text-[11px] text-slate-400">{detail.starters.home.record}</span>}
-                            <PitcherPills pi={homePI} />
-                          </div>
+                          <span className="block h-[18px] truncate text-[12px] font-semibold leading-[18px] text-[#031635]" title={homePitcherName || "TBD"}>
+                            {homePitcherName || "TBD"}
+                          </span>
+                          <span className="block h-4 text-[11px] leading-4 text-slate-400">
+                            {detail?.starters.home.record || " "}
+                          </span>
+                          <PitcherPills pi={homePI} align="left" />
                         </div>
-                        <div className="self-center text-[11px] font-bold text-slate-300 px-1">vs</div>
+                        <div className="self-center px-1 pt-7 text-[11px] font-bold text-slate-300">vs</div>
                         {/* Away RIGHT */}
-                        <div className="flex flex-col items-end gap-0.5 text-right min-w-0">
-                          <div className="flex items-center gap-1.5 flex-row-reverse">
+                        <div className="grid min-w-0 grid-rows-[28px_18px_16px_20px] justify-items-end gap-0.5 text-right">
+                          <div className="flex h-7 max-w-full flex-row-reverse items-center gap-1.5 overflow-hidden">
                             <MlbTeamLogo team={game.away.abbreviation} size={28} />
                             <span className="text-[15px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
-                            <span className="text-[11px] font-semibold text-slate-400">{game.away.record}</span>
+                            <span className="truncate text-[11px] font-semibold text-slate-400">{game.away.record}</span>
                             {showScore && <span className="text-[18px] font-extrabold text-slate-900">{awayScore}</span>}
                           </div>
-                          <span className="text-[12px] font-semibold text-[#031635] truncate">{awayPitcherName || "TBD"}</span>
-                          <div className="flex flex-col items-end gap-0.5">
-                            {detail?.starters.away.record && <span className="text-[11px] text-slate-400">{detail.starters.away.record}</span>}
-                            <PitcherPills pi={awayPI} />
-                          </div>
+                          <span className="block h-[18px] max-w-full truncate text-[12px] font-semibold leading-[18px] text-[#031635]" title={awayPitcherName || "TBD"}>
+                            {awayPitcherName || "TBD"}
+                          </span>
+                          <span className="block h-4 text-[11px] leading-4 text-slate-400">
+                            {detail?.starters.away.record || " "}
+                          </span>
+                          <PitcherPills pi={awayPI} align="right" />
                         </div>
                       </div>
 
@@ -1549,11 +1582,13 @@ function MlbSlateAnalyzer({
                                     {pmEdge ? (
                                       <span className={cn(
                                         "rounded-full px-2.5 py-1 text-[9px] font-extrabold",
-                                        pmEdge.edge >= 2 ? "bg-emerald-100 text-emerald-700"
-                                          : pmEdge.edge > 0 ? "bg-sky-100 text-sky-700"
-                                          : "bg-rose-100 text-rose-700",
+                                        pmEdge.isEven
+                                          ? "bg-slate-200 text-slate-600"
+                                          : pmEdge.edge >= 2
+                                            ? "bg-emerald-100 text-emerald-700"
+                                            : "bg-sky-100 text-sky-700",
                                       )}>
-                                        {pmEdge.team} {pmEdge.sign}{pmEdge.edge.toFixed(1)}%
+                                        {pmEdge.isEven ? "Even" : `${pmEdge.team} +${pmEdge.edge.toFixed(1)}%`}
                                       </span>
                                     ) : (
                                       <span className="text-[10px] font-semibold text-slate-400">—</span>
@@ -2525,14 +2560,29 @@ function HomeSchedule({
 
       const pickIsAway = edge.pick === "away";
       const pickAbbr = pickIsAway ? pmGame.away.abbreviation : pmGame.home.abbreviation;
-      const polyProb = pickIsAway ? pmGame.away.yesPrice : pmGame.home.yesPrice;
+      const confidence = edge.confidence / 100;
+      const awayModelProb = pickIsAway ? confidence : 1 - confidence;
+      const homeModelProb = 1 - awayModelProb;
+      const candidates: Array<{ valueAbbr: string; valueEdge: number }> = [];
 
-      // valueEdge: how many percentage points our model beats Polymarket's implied probability
-      const valueEdge = polyProb != null
-        ? Math.round((edge.confidence / 100 - polyProb) * 1000) / 10
-        : null;
+      if (pmGame.away.yesPrice != null) {
+        candidates.push({
+          valueAbbr: pmGame.away.abbreviation,
+          valueEdge: Math.round((awayModelProb - pmGame.away.yesPrice) * 1000) / 10,
+        });
+      }
+      if (pmGame.home.yesPrice != null) {
+        candidates.push({
+          valueAbbr: pmGame.home.abbreviation,
+          valueEdge: Math.round((homeModelProb - pmGame.home.yesPrice) * 1000) / 10,
+        });
+      }
 
-      map[pmGame.gamePk] = { pickAbbr, confidence: edge.confidence, valueEdge };
+      const best = candidates.sort((a, b) => b.valueEdge - a.valueEdge)[0] ?? null;
+      const valueEdge = best && best.valueEdge > 0 ? best.valueEdge : best ? 0 : null;
+      const valueAbbr = valueEdge != null && valueEdge > 0 ? best!.valueAbbr : null;
+
+      map[pmGame.gamePk] = { pickAbbr, confidence: edge.confidence, valueAbbr, valueEdge };
     }
     return map;
   }, [detailPreviews, polymarketData]);
