@@ -56,6 +56,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Apply numerology-only page labels
+        if: github.ref_name == 'test/mlb-model-drivers-footer'
+        run: |
+          if [ -f scripts/apply-numerology-only-page.py ]; then
+            python scripts/apply-numerology-only-page.py
+          fi
+
       - name: Run numerology tests
         run: npx vitest run src/lib/numerology/numerology.test.ts
 
@@ -104,7 +111,6 @@ jobs:
             }
           }
           console.log('Validated numerology-only alignment.');
-          console.log(surfaced.slice(0, 5).map(p => `${p.playerName}: N${p.numerologyScore} / B${p.baseballScore}`).join(' | '));
           NODE
 
       - name: TypeScript check
@@ -121,7 +127,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/data/mlb/numerology-daily.json public/data/mlb/numerology/ public/data/mlb/player-identity-cache.json
+          if [ "$TARGET_BRANCH" = "test/mlb-model-drivers-footer" ]; then
+            rm -f scripts/apply-numerology-only-page.py
+            rm -f scripts/apply-numerology-only-generator.py
+            rm -f .github/workflows/apply-test-numerology-only-ranking.yml
+          fi
+
+          git add \
+            src/pages/MlbNumerologyPage.tsx \
+            public/data/mlb/numerology-daily.json \
+            public/data/mlb/numerology/ \
+            public/data/mlb/player-identity-cache.json \
+            scripts/apply-numerology-only-page.py \
+            scripts/apply-numerology-only-generator.py \
+            .github/workflows/apply-test-numerology-only-ranking.yml 2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "No numerology changes to commit."
@@ -129,7 +148,7 @@ jobs:
           fi
 
           if [ "$TARGET_BRANCH" = "test/mlb-model-drivers-footer" ]; then
-            MESSAGE="fix: regenerate numerology with baseball as context only"
+            MESSAGE="fix: label baseball as context-only in numerology"
           else
             MESSAGE="chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
           fi
