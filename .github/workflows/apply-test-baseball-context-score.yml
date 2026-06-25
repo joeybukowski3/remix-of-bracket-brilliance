@@ -1,0 +1,108 @@
+name: Show test baseball score as context only
+
+on:
+  push:
+    branches:
+      - test/mlb-model-drivers-footer
+    paths:
+      - .github/workflows/apply-test-baseball-context-score.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: test-baseball-context-score
+  cancel-in-progress: false
+
+jobs:
+  patch-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: America/New_York
+
+    steps:
+      - name: Check out test branch
+        uses: actions/checkout@v4
+        with:
+          ref: test/mlb-model-drivers-footer
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Use actual JKB score for baseball context
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          p = Path('scripts/generate-mlb-numerology.mjs')
+          text = p.read_text()
+          old = '''function baseballScore(batter) {
+            const hr = safeNum(batter.hrScore);
+            if (hr == null) return 50;
+            const normalized = Math.min(100, Math.max(0, Math.round(((hr - 40) / 50) * 100)));
+            const pitcherPenalty = (!batter.opposingPitcher || batter.opposingPitcher === "TBD") ? -20 : 0;
+            return Math.max(0, normalized + pitcherPenalty);
+          }'''
+          new = '''function baseballScore(batter) {
+            const hr = safeNum(batter.hrScore);
+            // Display the existing JoeKnowsBall HR score directly as context.
+            // This value is never used for numerology selection or ranking.
+            if (hr == null) return 0;
+            return Math.min(100, Math.max(0, Math.round(hr)));
+          }'''
+          if old not in text:
+            raise SystemExit('Could not locate baseballScore function')
+          p.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Resolve current date and regenerate
+        id: slate
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: |
+          DATE="$(TZ=America/New_York date '+%Y-%m-%d')"
+          echo "date=${DATE}" >> "$GITHUB_OUTPUT"
+          rm -f "public/data/mlb/numerology/history/${DATE}.json"
+          node scripts/generate-mlb-numerology.mjs --date "${DATE}"
+
+      - name: Validate independent ranking and context score
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('public/data/mlb/numerology-daily.json', 'utf8'));
+          const visible = report.featuredPlays.length ? report.featuredPlays : report.bestAvailable;
+          for (const p of visible) {
+            if (p.finalScore !== p.numerologyScore) throw new Error(`${p.playerName}: baseball affected alignment`);
+            if (p.marketScore != null && Math.abs(p.baseballScore - Math.round(p.marketScore)) > 0) {
+              throw new Error(`${p.playerName}: context score does not match JKB HR score`);
+            }
+          }
+          console.log(visible.map(p => `${p.playerName}: N${p.numerologyScore}, JKB ${p.baseballScore}`).join(' | '));
+          NODE
+
+      - name: Run checks
+        run: |
+          npx vitest run src/lib/numerology/numerology.test.ts
+          npx tsc --noEmit
+          npm run build
+
+      - name: Commit validated update
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-test-baseball-context-score.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/generate-mlb-numerology.mjs public/data/mlb/numerology-daily.json public/data/mlb/numerology/history/ .github/workflows/apply-test-baseball-context-score.yml
+          git commit -m "fix: show JKB baseball score as unranked context"
+          git push origin HEAD:test/mlb-model-drivers-footer
