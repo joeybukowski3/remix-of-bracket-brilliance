@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
@@ -87,6 +87,7 @@ export type HrDashboardBatter = {
   pitcherXera?: number | null;
   pitcherRegressionScore?: number | null;
   pitcherFlyBallRate?: number | null;
+  bats?: "L" | "R" | "S" | null;
   hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
   hrOddsNo?: string | null;      // sportsbook no HR odds e.g. "-450"
   hrValueEdge?: number | null;   // model prob / implied prob (>1 = value)
@@ -203,6 +204,11 @@ export type PitcherVsBatterRow = {
   xba: number | null;
   kRate: number | null;
   whiffRate: number | null;
+  pitcherBarrelRate: number | null;
+  pitcherHardHitRate: number | null;
+  pitcherKRate: number | null;
+  pitcherFlyBallRate: number | null;
+  windBlowingOut: boolean;
   angleTags: string[];
 };
 
@@ -358,6 +364,7 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     pitcherXera: normalizeNumber(entry.pitcherXera) ?? null,
     pitcherRegressionScore: normalizeNumber(entry.pitcherRegressionScore) ?? null,
     pitcherFlyBallRate: normalizeNumber(entry.pitcherFlyBallRate) ?? null,
+    bats: (["L","R","S"].includes(String(entry.bats ?? "")) ? String(entry.bats) as "L"|"R"|"S" : null),
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
   return b as HrDashboardBatter;
@@ -694,6 +701,73 @@ export function buildSlateSummary(pitchers: HrDashboardPitcher[], batters: HrDas
   };
 }
 
+// ── Ballpark CF bearing (degrees from N, clockwise) ─────────────────────────
+// The "CF bearing" is the compass direction a ball must travel to reach center
+// field from home plate. Wind "blows out" when the wind direction is within
+// ±75° of this bearing (wind pushing toward the outfield).
+// Source: stadium orientations from publicly known field layouts.
+const CF_BEARING: Record<string, number> = {
+  "Truist Park": 35,          // ATL — CF toward NE
+  "Oriole Park at Camden Yards": 55,  // BAL — CF toward NE
+  "Fenway Park": 95,          // BOS — CF roughly E
+  "Wrigley Field": 45,        // CHC — CF toward NE, SW wind blows out
+  "Guaranteed Rate Field": 5, // CWS — CF toward N
+  "Great American Ball Park": 20, // CIN — CF toward NNE
+  "Progressive Field": 30,    // CLE — CF toward NNE
+  "Coors Field": 15,          // COL — CF toward NNE
+  "Comerica Park": 330,       // DET — CF toward NNW
+  "Minute Maid Park": 25,     // HOU — retractable, irrelevant when closed
+  "Kauffman Stadium": 10,     // KC — CF toward N
+  "Dodger Stadium": 330,      // LAD — CF toward NNW
+  "Angel Stadium": 30,        // LAA — CF toward NNE
+  "loanDepot park": 20,       // MIA — retractable
+  "American Family Field": 5, // MIL — retractable
+  "Target Field": 350,        // MIN — CF toward N
+  "Citi Field": 5,            // NYM — CF toward N
+  "Yankee Stadium": 25,       // NYY — CF toward NNE
+  "Oakland Coliseum": 350,    // ATH — CF toward N
+  "Citizens Bank Park": 40,   // PHI — CF toward NE
+  "PNC Park": 355,            // PIT — CF toward N
+  "Petco Park": 340,          // SD — CF toward NNW
+  "Oracle Park": 310,         // SF — CF toward NW (McCovey Cove end)
+  "T-Mobile Park": 350,       // SEA — retractable
+  "Busch Stadium": 5,         // STL — CF toward N
+  "Tropicana Field": 0,       // TB — dome, irrelevant
+  "Globe Life Field": 350,    // TEX — retractable
+  "Rogers Centre": 15,        // TOR — retractable
+  "Nationals Park": 5,        // WSH — CF toward N
+  "Chase Field": 350,         // ARI — retractable
+};
+
+const RETRACTABLE_PARKS = new Set([
+  "Minute Maid Park", "loanDepot park", "American Family Field",
+  "T-Mobile Park", "Globe Life Field", "Rogers Centre", "Chase Field",
+  "Tropicana Field",
+]);
+
+function isWindBlowingOut(stadium: string, roofType: string, windDirection: string, windSpeed: number | null): boolean {
+  if (!windDirection || windDirection === "—" || windDirection === "CALM") return false;
+  if (roofType === "Dome") return false;
+  if (roofType === "Retractable" || RETRACTABLE_PARKS.has(stadium)) return false;
+  if ((windSpeed ?? 0) < 4) return false; // too light to matter
+
+  const cfBearing = CF_BEARING[stadium];
+  if (cfBearing == null) return false;
+
+  // Convert compass abbreviation to degrees
+  const COMPASS: Record<string, number> = {
+    N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5,
+    SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5,
+    W: 270, WNW: 292.5, NW: 315, NNW: 337.5,
+  };
+  const windDeg = COMPASS[windDirection.toUpperCase()];
+  if (windDeg == null) return false;
+
+  // Wind "blows out" when wind direction is within ±75° of CF bearing
+  const diff = Math.abs(((windDeg - cfBearing) + 540) % 360 - 180);
+  return diff <= 75;
+}
+
 export function buildPitcherVsBatterRows(
   batters: HrDashboardBatter[],
   games: HrDashboardGame[],
@@ -765,7 +839,13 @@ export function buildPitcherVsBatterRows(
       batterPowerScore: Number(batterPowerScore.toFixed(1)),
       pitcherVulnerabilityScore: Number(pitcherVulnerabilityScore.toFixed(1)),
       contextScore: Number(contextScore.toFixed(1)),
-      barrelRate: b.barrelRate, hardHitRate: b.hardHitRate, xba: b.xba, kRate: b.kRate, whiffRate: b.whiffRate, angleTags: b.angleTags,
+      barrelRate: b.barrelRate, hardHitRate: b.hardHitRate, xba: b.xba, kRate: b.kRate, whiffRate: b.whiffRate,
+      pitcherBarrelRate: pitcher?.barrelRate ?? null,
+      pitcherHardHitRate: pitcher?.hardHitRate ?? null,
+      pitcherKRate: pitcher?.kRate ?? null,
+      pitcherFlyBallRate: pitcher?.flyBallRate ?? null,
+      windBlowingOut: isWindBlowingOut(game?.stadium ?? b.ballpark, game?.roofType ?? "", game?.windDirection ?? "—", game?.windSpeed ?? null),
+      angleTags: b.angleTags,
     };
   }).sort((a, b) =>
     b.bestMatchupScore - a.bestMatchupScore
@@ -1331,6 +1411,7 @@ export default function MlbHrProps() {
   const [pitcherGameFilter, setPitcherGameFilter] = useState("all");
   const [batterGameFilter, setBatterGameFilter] = useState("all");
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
+  const [hrFilterActive, setHrFilterActive] = useState(false);
 
   usePageSeo({
     title: "MLB HR Props Today 2026 — Home Run Model & Rankings | Joe Knows Ball",
@@ -1433,6 +1514,51 @@ export default function MlbHrProps() {
     return sortPitchers(rows, pitcherSortKey, pitcherSortDirection);
   }, [pitcherGameFilter, pitcherSearch, pitcherSortDirection, pitcherSortKey, pitchers]);
 
+  const gameByKey = useMemo(() => new Map(games.map((g) => [g.gameKey, g])), [games]);
+
+  // HR smart filter — applies all criteria from the screenshot
+  const applyHrFilter = useCallback((
+    row: { gameKey: string; barrelRate?: number | null; hardHitRate?: number | null; exitVelo?: number | null;
+           pullRate?: number | null; pitcherBarrelRate?: number | null; pitcherHardHitRate?: number | null;
+           pitcherFlyBallRate?: number | null; pitcherKRate?: number | null; parkFactor?: number | null;
+           bats?: "L" | "R" | "S" | null; pitcherHand?: string; windBlowingOut?: boolean;
+           temperature?: number | null; weatherBoost?: number | null; },
+  ) => {
+    if (!hrFilterActive) return true;
+    const game = gameByKey.get(row.gameKey);
+    const temp = row.temperature ?? game?.temperature ?? null;
+    const windOut = row.windBlowingOut ??
+      isWindBlowingOut(game?.stadium ?? "", game?.roofType ?? "", game?.windDirection ?? "—", game?.windSpeed ?? null);
+    const pitcherFB   = row.pitcherFlyBallRate ?? null;
+    const pitcherBrl  = row.pitcherBarrelRate  ?? null;
+    const pitcherHH   = row.pitcherHardHitRate ?? null;
+    const pitcherK    = row.pitcherKRate       ?? null;
+
+    // Hitter criteria
+    if ((row.barrelRate ?? 0)  < 12)  return false;
+    if ((row.pullRate   ?? 0)  < 20)  return false;
+    if ((row.hardHitRate ?? 0) < 45)  return false;
+    if ((row.exitVelo   ?? 0)  < 92)  return false;
+    // Pitcher criteria (skip if data unavailable)
+    if (pitcherBrl  != null && pitcherBrl  < 10)  return false;
+    if (pitcherHH   != null && pitcherHH   < 42)  return false;
+    if (pitcherFB   != null && pitcherFB   < 40)  return false;
+    if (pitcherK    != null && pitcherK    > 22)  return false;
+    // Environment criteria
+    if (temp != null && temp < 75)  return false;
+    if (!windOut) return false;
+    if ((row.parkFactor ?? 1) < 1.0) return false;
+    // Handedness split — favorable = batter has platoon advantage
+    // L batter vs R pitcher OR R/S batter vs L pitcher
+    if (row.bats && row.pitcherHand) {
+      const favorable =
+        (row.bats === "L" && row.pitcherHand === "R") ||
+        (row.bats !== "L" && row.pitcherHand === "L");
+      if (!favorable) return false;
+    }
+    return true;
+  }, [hrFilterActive, gameByKey]);
+
   const filteredBatters = useMemo(() => {
     const query = batterSearch.trim().toLowerCase();
     const rows = batters.filter((row) => {
@@ -1441,6 +1567,7 @@ export default function MlbHrProps() {
       if (row.atBats != null && row.atBats < 50) return false;
       // Barrel rate sanity cap — >25% is a small-sample artifact (no MLB player sustains this)
       if (row.barrelRate != null && row.barrelRate > 25) return false;
+      if (!applyHrFilter(row)) return false;
       if (!query) return true;
       return [
         row.player,
@@ -1450,12 +1577,13 @@ export default function MlbHrProps() {
       ].some((value) => value.toLowerCase().includes(query));
     });
     return sortBatters(rows, batterSortKey, batterSortDirection);
-  }, [batterGameFilter, batterSearch, batterSortDirection, batterSortKey, batters]);
+  }, [applyHrFilter, batterGameFilter, batterSearch, batterSortDirection, batterSortKey, batters]);
 
   const filteredMatchups = useMemo(() => {
     const query = matchupSearch.trim().toLowerCase();
     const rows = matchupRows.filter((row) => {
       if (matchupGameFilter !== "all" && row.gameKey !== matchupGameFilter) return false;
+      if (!applyHrFilter(row)) return false;
       if (!query) return true;
       return [
         row.player,
@@ -1465,7 +1593,7 @@ export default function MlbHrProps() {
       ].some((value) => value.toLowerCase().includes(query));
     });
     return sortMatchups(rows, matchupSortKey, matchupSortDirection);
-  }, [matchupGameFilter, matchupRows, matchupSearch, matchupSortDirection, matchupSortKey]);
+  }, [applyHrFilter, matchupGameFilter, matchupRows, matchupSearch, matchupSortDirection, matchupSortKey]);
 
   const filteredStrikeoutRows = useMemo(() => {
     const query = matchupSearch.trim().toLowerCase();
@@ -1985,6 +2113,20 @@ export default function MlbHrProps() {
                               className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
                             />
                             <GameSelect value={batterGameFilter} onChange={setBatterGameFilter} options={gameOptions} label="Game" />
+                            <button
+                              type="button"
+                              onClick={() => setHrFilterActive((v) => !v)}
+                              title="HR Smart Filter: Barrel 12%+, Pull Air 20%+, HH 45%+, EV 92+, Pitcher FB 40%+, Barrel Allowed 10%+, HH Allowed 42%+, K% under 22%, Temp 75°F+, Wind Out, HR-friendly park, Favorable handedness"
+                              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition whitespace-nowrap ${
+                                hrFilterActive
+                                  ? "border-amber-400 bg-amber-50 text-amber-700 shadow-sm"
+                                  : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                              }`}
+                            >
+                              <span>⚡</span>
+                              <span>HR Filter</span>
+                              {hrFilterActive && <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-white">{filteredBatters.length}</span>}
+                            </button>
                           </div>
                         </div>
                         <DataLegend />
@@ -2203,6 +2345,22 @@ export default function MlbHrProps() {
                               className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
                             />
                             <GameSelect value={matchupGameFilter} onChange={setMatchupGameFilter} options={gameOptions} label="Game" />
+                            {activeMatchupLens !== "strikeout" && (
+                              <button
+                                type="button"
+                                onClick={() => setHrFilterActive((v) => !v)}
+                                title="HR Smart Filter: Barrel 12%+, Pull Air 20%+, HH 45%+, EV 92+, Pitcher FB 40%+, Barrel Allowed 10%+, HH Allowed 42%+, K% under 22%, Temp 75°F+, Wind Out, HR-friendly park, Favorable handedness"
+                                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition whitespace-nowrap ${
+                                  hrFilterActive
+                                    ? "border-amber-400 bg-amber-50 text-amber-700 shadow-sm"
+                                    : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                                }`}
+                              >
+                                <span>⚡</span>
+                                <span>HR Filter</span>
+                                {hrFilterActive && <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-white">{filteredMatchups.length}</span>}
+                              </button>
+                            )}
                           </div>
                         </div>
 
