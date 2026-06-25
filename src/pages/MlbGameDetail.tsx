@@ -736,7 +736,7 @@ function PropPreviewCard({
           <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
           {theme === "hr" ? <Flame className="h-4 w-4" /> : theme === "k" ? <Radar className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
           </span>
-          <h3 className="text-base font-bold text-[#031635]">{title}</h3>
+          <h3 className="text-[17px] font-bold text-[#031635] 2xl:text-lg">{title}</h3>
         </div>
         <Link to={to} className={cn("text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
           {themeClasses.note}
@@ -745,10 +745,10 @@ function PropPreviewCard({
 
       <div
         className={cn(
-          "grid items-center gap-2 border-b border-slate-200 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500",
+          "grid items-center gap-3 border-b border-slate-300 px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600 2xl:px-5",
           theme === "hr"
-            ? "grid-cols-[minmax(0,1fr)_minmax(108px,0.78fr)_58px]"
-            : "grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px]",
+            ? "grid-cols-[minmax(0,1fr)_minmax(122px,0.88fr)_58px] 2xl:grid-cols-[minmax(0,1fr)_minmax(150px,1fr)_64px]"
+            : "grid-cols-[minmax(0,1fr)_minmax(84px,0.6fr)_58px] 2xl:grid-cols-[minmax(0,1fr)_minmax(104px,0.7fr)_64px]",
         )}
       >
         <div>Player</div>
@@ -762,10 +762,10 @@ function PropPreviewCard({
             key={row.key}
             to={to}
             className={cn(
-              "group grid items-center gap-2 border-b border-slate-100 px-4 transition last:border-b-0",
+              "group grid items-center gap-3 border-b border-slate-200/80 px-4 transition last:border-b-0 2xl:px-5",
               theme === "hr"
-                ? "grid-cols-[minmax(0,1fr)_minmax(108px,0.78fr)_58px] py-2.5"
-                : "grid-cols-[minmax(0,1fr)_minmax(76px,0.55fr)_58px] py-2",
+                ? "grid-cols-[minmax(0,1fr)_minmax(122px,0.88fr)_58px] py-2.5 2xl:grid-cols-[minmax(0,1fr)_minmax(150px,1fr)_64px] 2xl:py-3"
+                : "grid-cols-[minmax(0,1fr)_minmax(84px,0.6fr)_58px] py-2.5 2xl:grid-cols-[minmax(0,1fr)_minmax(104px,0.7fr)_64px]",
               index % 2 === 1 && "bg-slate-50/50",
               themeClasses.hover,
             )}
@@ -773,15 +773,15 @@ function PropPreviewCard({
             <div className="flex min-w-0 items-center gap-2">
               <TeamAbbrBadge team={row.team} />
               <div className="min-w-0">
-                <div className="text-xs font-bold leading-5 text-slate-950">{row.player}</div>
+                <div className="whitespace-nowrap text-[13px] font-bold leading-5 text-slate-950 2xl:text-sm">{row.player}</div>
                 {row.position && <div className="text-[10px] font-semibold uppercase text-slate-400">{row.position}</div>}
               </div>
             </div>
-            <div className="min-w-0 text-[11px] font-medium text-slate-500">
+            <div className="min-w-0 text-xs font-medium text-slate-600 2xl:text-[13px]">
               <div
                 className={cn(
                   theme === "hr"
-                    ? "whitespace-normal break-words leading-[1.25]"
+                    ? "whitespace-normal break-words leading-[1.25] 2xl:whitespace-nowrap"
                     : "truncate",
                 )}
                 title={`vs ${row.opponent}`}
@@ -1061,8 +1061,8 @@ function MlbSlateAnalyzer({
     <section id="schedule" className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-[#031635]">Game Matchup Analyzer</h2>
-          <p className="text-xs text-slate-500">Daily predictive analysis and situational edges from the live slate.</p>
+          <h2 className="text-xl font-bold tracking-tight text-[#031635] 2xl:text-2xl">Game Matchup Analyzer</h2>
+          <p className="text-xs text-slate-500 2xl:text-sm">Daily predictive analysis and situational edges from the live slate.</p>
         </div>
         <span className="text-xs font-semibold text-slate-400">{games.length} games</span>
       </div>
@@ -2608,7 +2608,7 @@ function HomeSchedule({
 
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
-      <div className="mx-auto flex max-w-[1280px] gap-6 px-4 py-6 sm:px-6 lg:px-8 xl:max-w-[1400px] 2xl:max-w-[1600px] 2xl:gap-6 3xl:max-w-[1800px] 3xl:px-10 4xl:max-w-[1900px] 4xl:px-12">
+      <div className="mx-auto flex max-w-[1360px] gap-5 px-4 py-6 sm:px-5 lg:px-6 xl:max-w-[1560px] 2xl:max-w-[1800px] 2xl:gap-5 3xl:max-w-[1920px] 3xl:px-6 4xl:max-w-[2048px] 4xl:px-8">
         <MlbHubSidebar />
 
         <div className="min-w-0 flex-1 space-y-3">
@@ -2621,7 +2621,7 @@ function HomeSchedule({
               <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 3xl:gap-5">
               <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" />
               <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" />
             </div>
