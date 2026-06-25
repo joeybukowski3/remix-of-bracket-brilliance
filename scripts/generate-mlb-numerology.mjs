@@ -2,7 +2,7 @@
 /**
  * generate-mlb-numerology.mjs
  * JoeKnowsBall MLB Numerical Alignment — Daily Generation Script
- * Methodology v2.0.0
+ * Methodology v2.1.0
  *
  * Three-layer architecture:
  *   Layer 1: Deterministic numerology engine (this script)
@@ -613,12 +613,14 @@ function validateOutput(output, slateDate) {
     errors.push(`methodologyVersion mismatch: ${output.methodologyVersion}`);
   }
 
-  // 60/40 formula check on each featured play
-  for (const play of (output.featuredPlays ?? [])) {
-    const expected = Math.round(W.numerologyWeight * play.numerologyScore + W.baseballWeight * play.baseballScore);
-    if (play.finalScore !== expected) {
-      errors.push(`finalScore for ${play.playerName}: ${play.finalScore} ≠ expected ${expected}`);
+  // Baseball context must never alter an alignment score.
+  for (const play of [...(output.featuredPlays ?? []), ...(output.bestAvailable ?? []), ...(output.watchlist ?? [])]) {
+    if (play.finalScore !== play.numerologyScore) {
+      errors.push(`alignment score for ${play.playerName} must equal numerology score`);
     }
+  }
+  if (output.rankingBasis !== "numerology_only" || output.baseballContextOnly !== true) {
+    errors.push("Missing numerology-only ranking declaration");
   }
 
   // Candidate pool disclosure
@@ -731,7 +733,9 @@ async function main() {
 
     const { signals, positiveTotal, countercurrentTotal, convergenceBonus, numerologyScore } = scorePlayerForNumerology(playerNumerology, dailyProfile, missingData);
     const bbScore = baseballScore(batter);
-    const finalScore = Math.round(W.numerologyWeight * numerologyScore + W.baseballWeight * bbScore);
+    // Alignment is determined only by numerology. Baseball opportunity is
+    // retained as context but cannot affect selection, rank, or qualification.
+    const finalScore = numerologyScore;
     const market = selectMarket(batter);
 
     candidates.push({
@@ -759,15 +763,21 @@ async function main() {
     });
   }
 
-  // Rank
-  candidates.sort((a, b) => b.finalScore - a.finalScore);
+  // Rank exclusively by numerology. Tie-breakers are also numerology-only.
+  candidates.sort((a, b) =>
+    b.numerologyScore - a.numerologyScore ||
+    b.positiveTotal - a.positiveTotal ||
+    b.convergenceBonus - a.convergenceBonus ||
+    a.countercurrentTotal - b.countercurrentTotal ||
+    a.playerName.localeCompare(b.playerName)
+  );
   candidates.forEach((c, i) => { c.rank = i + 1; });
 
-  const featured = candidates.filter(c => c.finalScore >= 60).slice(0, 5);
+  const featured = candidates.filter(c => c.numerologyScore >= 60).slice(0, 5);
   const bestAvailable = featured.length < 3
-    ? candidates.filter(c => c.finalScore < 60).slice(0, 3 - featured.length)
+    ? candidates.filter(c => c.numerologyScore < 60).slice(0, 3 - featured.length)
     : [];
-  const watchlist = candidates.filter(c => c.finalScore < 60 && c.finalScore >= 45).slice(0, 6);
+  const watchlist = candidates.filter(c => c.numerologyScore < 60 && c.numerologyScore >= 45).slice(0, 6);
   const countercurrents = candidates.filter(c => c.countercurrentTotal > 0 && c.numerologyScore < 40).slice(0, 3);
   const confirmedCount = candidates.filter(c => c.lineupStatus === "confirmed").length;
 
@@ -797,6 +807,8 @@ async function main() {
     lineupDataAsOf,
     generationMode: IS_DRY_RUN ? "dry_run" : USE_FIXTURE ? "fixture" : "live",
     narrativeSource,
+    rankingBasis: "numerology_only",
+    baseballContextOnly: true,
     dataStatus: computeDataStatus(batters, scheduleRoster, confirmedCount),
     candidatePool: {
       candidatePoolType,
@@ -843,8 +855,8 @@ async function main() {
       numerologyScore: c.numerologyScore,
       baseballScore: c.baseballScore,
       finalScore: c.finalScore,
-      formula: `${Math.round(W.numerologyWeight*100)}% × ${c.numerologyScore} + ${Math.round(W.baseballWeight*100)}% × ${c.baseballScore} = ${c.finalScore}`,
-      confidence: c.finalScore >= 75 ? "high" : c.finalScore >= 60 ? "medium" : "low",
+      formula: `Numerology alignment: ${c.numerologyScore}. Baseball context: ${c.baseballScore} (not used in rank).`,
+      confidence: c.numerologyScore >= 75 ? "high" : c.numerologyScore >= 60 ? "medium" : "low",
       positiveSignals: c.signals.filter(s => s.points > 0),
       counterSignals: c.signals.filter(s => s.points < 0),
       missingData: c.missingData,
@@ -856,16 +868,27 @@ async function main() {
       playerName: c.playerName,
       team: c.team,
       opponent: c.opponent,
+      opposingPitcher: c.opposingPitcher,
       lineupStatus: c.lineupStatus,
+      lineupSource: c.lineupSource,
       battingOrder: c.battingOrder,
       jerseyNumber: c.jerseyNumber,
       recommendedMarket: c.recommendedMarket,
+      marketModelSource: c.marketModelSource,
+      marketScore: c.marketScore,
+      marketSelectionReason: c.marketSelectionReason,
+      odds: c.hrOdds ?? null,
       numerologyScore: c.numerologyScore,
       baseballScore: c.baseballScore,
-      finalScore: c.finalScore,
+      finalScore: c.numerologyScore,
+      formula: `Numerology alignment: ${c.numerologyScore}. Baseball context: ${c.baseballScore} (not used in rank).`,
+      confidence: c.numerologyScore >= 75 ? "high" : c.numerologyScore >= 60 ? "medium" : "low",
+      positiveSignals: c.signals.filter(s => s.points > 0),
+      counterSignals: c.signals.filter(s => s.points < 0),
       primarySignal: c.signals.filter(s => s.points > 0)[0]?.label ?? null,
       missingData: c.missingData,
-      belowThresholdLabel: "Best available today — below the featured-play threshold",
+      summary: getNarrative(c.rank).summary ?? "Best available numerology alignment; baseball context did not affect this ranking.",
+      belowThresholdLabel: "Best available today — below the numerology threshold",
     })),
     watchlist: watchlist.map(c => ({
       rank: c.rank,
@@ -892,7 +915,12 @@ async function main() {
       finalScore: c.finalScore,
       countercurrentSignals: c.signals.filter(s => s.points < 0),
     })),
-    scoringConfiguration: { weights: W, methodologyVersion: METHODOLOGY_VERSION },
+    scoringConfiguration: {
+      weights: W,
+      methodologyVersion: METHODOLOGY_VERSION,
+      rankingBasis: "numerology_only",
+      baseballContextOnly: true,
+    },
     sources: {
       hrPropsRaw: existsSync(path.join(DATA_DIR,"hr-props-raw.json")) ? "loaded" : "missing",
       mlbStatsApi: "used",
