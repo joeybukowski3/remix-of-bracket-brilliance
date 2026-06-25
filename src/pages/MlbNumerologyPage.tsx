@@ -13,7 +13,33 @@ import type {
 } from "@/types/mlbNumerology";
 import { ChevronDown, ChevronUp, Filter, Search } from "lucide-react";
 
+type NumberMatch = {
+  field: string;
+  value: number;
+  root?: number;
+  label: string;
+};
+
+type NumberMatchPlayer = {
+  playerId?: number | null;
+  playerName: string;
+  team: string;
+  opponent: string;
+  opposingPitcher?: string | null;
+  lineupStatus: NumerologyPlay["lineupStatus"];
+  battingOrder?: number | null;
+  jerseyNumber?: number | null;
+  numerologyScore: number;
+  baseballScore: number | null;
+  matches: NumberMatch[];
+  candidateSource?: string;
+  recommendedMarket?: string;
+  marketScore?: number | null;
+};
+
 type ExtendedNumerologyData = NumerologyDailyData & {
+  exactNumberMatches?: NumberMatchPlayer[];
+  rootNumberMatches?: NumberMatchPlayer[];
   bestAvailable?: NumerologyPlay[];
   evaluationSummary?: {
     playersEvaluated?: number;
@@ -202,6 +228,81 @@ function DailyKeys({ profile }: { profile: DailyProfile }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function NumberMatchList({
+  title,
+  subtitle,
+  players,
+  accent,
+}: {
+  title: string;
+  subtitle: string;
+  players: NumberMatchPlayer[];
+  accent: "exact" | "root";
+}) {
+  const [expanded, setExpanded] = useState(accent === "exact");
+  const visible = expanded ? players : players.slice(0, 12);
+  const exact = accent === "exact";
+
+  return (
+    <section className="rounded-2xl border border-white/10 bg-[#0a1628] p-4 sm:p-5">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className={`text-[9px] font-bold uppercase tracking-[0.2em] ${exact ? "text-amber-300/70" : "text-violet-300/60"}`}>
+            {exact ? "Direct daily-number matches" : "Reduced-root matches"}
+          </p>
+          <h2 className="mt-1 text-base font-black text-white">{title}</h2>
+          <p className="mt-1 max-w-3xl text-[11px] leading-5 text-white/40">{subtitle}</p>
+        </div>
+        <span className={`rounded-full px-3 py-1 font-mono text-xs font-black ${exact ? "bg-amber-400/15 text-amber-200" : "bg-violet-400/15 text-violet-200"}`}>
+          {players.length} players
+        </span>
+      </div>
+
+      {players.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-white/35">No players on today&apos;s game-team rosters match this level.</div>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          {visible.map((player) => (
+            <div key={`${player.playerName}-${player.team}`} className="rounded-xl border border-white/8 bg-white/[0.025] p-3">
+              <div className="flex items-start gap-2.5">
+                {player.playerId != null && (
+                  <MlbPlayerHeadshot playerId={player.playerId} name={player.playerName} teamAbbreviation={player.team} size={38} />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="truncate text-xs font-bold text-white">{player.playerName}</span>
+                    <span className="text-[10px] text-white/30">{player.team} vs {player.opponent}</span>
+                    {player.jerseyNumber != null && <span className="rounded bg-white/8 px-1.5 py-0.5 text-[9px] font-bold text-white/45">#{player.jerseyNumber}</span>}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {player.matches.map((match) => (
+                      <span key={`${match.field}-${match.label}`} className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${exact ? "bg-amber-400/15 text-amber-200" : "bg-violet-400/15 text-violet-200"}`}>
+                        {match.label}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-white/30">
+                    <span>Alignment <strong className="text-violet-300">{player.numerologyScore}</strong></span>
+                    <span>Baseball context <strong className="text-sky-300">{player.baseballScore ?? "N/A"}</strong></span>
+                    {player.battingOrder != null && <span>Batting #{player.battingOrder}</span>}
+                    {player.candidateSource === "team_40_man_roster" && <span className="text-amber-300/50">Team 40-man roster</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {players.length > 12 && (
+        <button type="button" onClick={() => setExpanded((value) => !value)} className="mt-3 w-full rounded-lg border border-white/8 py-2 text-[10px] font-bold text-white/45 transition hover:bg-white/5 hover:text-white/70">
+          {expanded ? "Show fewer" : `Show all ${players.length} players`}
+        </button>
+      )}
+    </section>
   );
 }
 
@@ -549,7 +650,7 @@ export default function MlbNumerologyPage() {
     <SiteShell>
       <main className="relative min-h-screen" style={{ background: "linear-gradient(150deg,#04080f 0%,#090f1e 40%,#0b0b16 100%)" }}>
         <div className="pointer-events-none absolute inset-0 overflow-hidden select-none" aria-hidden><div className="absolute left-[-2%] top-[8%] text-[30vw] font-black leading-none text-white/[0.015]">3</div><div className="absolute bottom-[10%] right-[-2%] text-[25vw] font-black leading-none text-white/[0.012]">9</div></div>
-        <div className="relative mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6">
           <Link to="/mlb" className="mb-6 inline-flex items-center gap-1.5 text-[10px] font-semibold text-white/20 transition hover:text-white/50">← MLB</Link>
 
           <div className="mb-7">
@@ -572,8 +673,21 @@ export default function MlbNumerologyPage() {
               <section><SectionLabel>The Daily Code</SectionLabel><DailyCode profile={data.dailyProfile} date={data.date} /></section>
               <section><SectionLabel>Slate Shape</SectionLabel><div className="grid gap-3 md:grid-cols-2"><ScoreDistribution data={data} explorer={explorer} /><DataCompleteness data={data} explorer={explorer} /></div></section>
 
-              {data.featuredPlays.length > 0 && <section><SectionLabel>Highest Alignment</SectionLabel><div className="space-y-3">{data.featuredPlays.map((play) => <PlayCard key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
-              {data.featuredPlays.length === 0 && (data.bestAvailable?.length ?? 0) > 0 && <section><SectionLabel>Best Available Alignments</SectionLabel><div className="mb-3 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[10px] text-amber-300/70">Best available today — below the featured-play threshold (60). No player on today's slate has reached the numerology-only qualifying threshold.</div><div className="space-y-3">{data.bestAvailable!.map((play) => <PlayCard key={`ba-${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
+              <NumberMatchList
+                title={`Exact ${data.dailyProfile.universalDayRawSum} matches`}
+                subtitle={`Every hitter on the 40-man rosters of today's teams with a direct ${data.dailyProfile.universalDayRawSum} connection through jersey number, age, birth day, Personal Day, Life Path or Expression number. This list is complete and is not limited by the aggregate alignment score.`}
+                players={data.exactNumberMatches ?? []}
+                accent="exact"
+              />
+              <NumberMatchList
+                title={`Root ${data.dailyProfile.universalDayRoot} matches`}
+                subtitle={`Every remaining hitter whose number reduces to today's root ${data.dailyProfile.universalDayRoot}, including batting-order matches. Exact ${data.dailyProfile.universalDayRawSum} matches stay separated above.`}
+                players={data.rootNumberMatches ?? []}
+                accent="root"
+              />
+
+              {data.featuredPlays.length > 0 && <section><SectionLabel>Highest Aggregate Numerology Scores</SectionLabel><div className="space-y-3">{data.featuredPlays.map((play) => <PlayCard key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
+              {data.featuredPlays.length === 0 && (data.bestAvailable?.length ?? 0) > 0 && <section><SectionLabel>Highest Aggregate Numerology Scores</SectionLabel><div className="mb-3 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[10px] text-amber-300/70">These are the highest combined numerology-signal totals, not the complete list of players matching today's number. Exact and root matches are listed above.</div><div className="space-y-3">{data.bestAvailable!.map((play) => <PlayCard key={`ba-${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
               {data.featuredPlays.length === 0 && !(data.bestAvailable?.length) && <div className="rounded-xl border border-white/8 bg-[#0a1628] px-4 py-8 text-center text-xs text-white/25">No featured plays available. Check back after the morning model run.</div>}
 
               {(data.countercurrents?.length ?? 0) > 0 && <section><SectionLabel>Countercurrents</SectionLabel><p className="mb-3 text-[10px] text-white/30">Conflicting or opposing numerical patterns. These are not predicted failures. Baseball context is displayed separately and does not affect classification.</p><div className="rounded-2xl border border-rose-500/15 bg-[#0a1628] px-4 py-1">{data.countercurrents!.map((item, index) => <div key={`${item.playerName}-${index}`} className="flex items-center justify-between gap-3 border-b border-white/6 py-2.5 last:border-0"><div><span className="text-[11px] font-semibold text-white/60">{item.playerName}</span><span className="ml-2 text-[9px] text-white/25">{item.team}</span></div><div className="flex items-center gap-3 font-mono text-[9px]"><span className="text-violet-300/60">N:{item.numerologyScore}</span><span className="text-sky-300/60">B:{item.baseballScore}</span><span className="text-white/40">{item.finalScore}</span></div></div>)}</div></section>}
