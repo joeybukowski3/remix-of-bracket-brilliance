@@ -126,6 +126,20 @@ describe("June 24, 2026 — canonical fixture", () => {
   });
 });
 
+describe("June 25, 2026 — compound display regression", () => {
+  const profile = buildDailyProfile("2026-06-25");
+
+  it("preserves 23 as the full-date compound and reduces it to root 5", () => {
+    expect(profile.universalDay.rawSum).toBe(23);
+    expect(profile.universalDay.root).toBe(5);
+    expect(profile.universalDay.master).toBeNull();
+  });
+
+  it("does not treat 5 as the compound number", () => {
+    expect(profile.universalDay.rawSum).not.toBe(profile.universalDay.root);
+  });
+});
+
 // ── Signal classification ──────────────────────────────────────────────────────
 
 describe("Signal classification on June 24, 2026 (22/4 day)", () => {

@@ -121,7 +121,9 @@ function DailyCode({ profile, date }: { profile: DailyProfile; date: string }) {
   const [, month, day] = date.split("-");
   const universalDayLabel = profile.universalDayMaster
     ? `${profile.universalDayMaster}/${profile.universalDayRoot}`
-    : `${profile.universalDayCompound}/${profile.universalDayRoot}`;
+    : profile.universalDayRawSum > 9
+      ? `${profile.universalDayRawSum}/${profile.universalDayRoot}`
+      : String(profile.universalDayRoot);
   const calendarDayLabel = `${profile.calendarDayCompound}/${profile.calendarDayRoot}`;
 
   return (

@@ -359,8 +359,8 @@ function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = [])
   if (pd) {
     if (ud.master != null && (pd.compound === ud.master || pd.master === ud.master)) {
       award("personalDay", `Personal Day ${pd.compound}/${pd.root} — Master Match`, "primary_exact_master", W.personalDayExactMaster, `Personal Day matches Universal Day master ${ud.master}.`, "pd:master");
-    } else if (pd.original === ud.compound || (ud.compound > 9 && pd.compound === ud.compound)) {
-      award("personalDay", `Personal Day ${pd.compound} — Exact Primary`, "primary_exact_root", W.personalDayExactMaster - 4, `Personal Day ${pd.compound} matches Universal Day.`, "pd:exact");
+    } else if (pd.original === ud.rawSum || pd.compound === ud.rawSum) {
+      award("personalDay", `Personal Day ${pd.original}/${pd.root} — Exact Primary`, "primary_exact_root", W.personalDayExactMaster - 4, `Personal Day ${pd.original} matches Universal Day compound ${ud.rawSum}.`, "pd:exact");
     } else if (pd.root === ud.root) {
       award("personalDay", `Personal Day root ${pd.root} — Root Match`, "personal_cycle", W.personalDayRoot, `Personal Day root ${pd.root} matches Universal Day root.`, "pd:root");
     } else if (pd.root === dailyProfile.countercurrent) {
@@ -375,8 +375,8 @@ function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = [])
       award("jersey", `Jersey ${j.original} — Exact Master`, "primary_exact_master", W.jerseyExactMaster, `Jersey ${j.original} matches Universal Day master.`, "jersey:master");
     } else if (j.original === dailyProfile.calendarDay.original) {
       award("jersey", `Jersey ${j.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, `Jersey ${j.original} equals Calendar Day ${dailyProfile.calendarDay.original}.`, "jersey:calexact");
-    } else if (j.compound === ud.compound && ud.compound <= 9) {
-      award("jersey", `Jersey ${j.original} — Exact Primary`, "primary_exact_root", W.jerseyExactMaster - 2, `Jersey ${j.original} matches Universal Day.`, "jersey:udexact");
+    } else if (j.original === ud.rawSum) {
+      award("jersey", `Jersey ${j.original} — Exact Primary`, "primary_exact_root", W.jerseyExactMaster - 2, `Jersey ${j.original} matches Universal Day compound ${ud.rawSum}.`, "jersey:udexact");
     } else if (j.root === ud.root) {
       award("jersey", `Jersey ${j.original}/${j.root} — Root Match`, "primary_root", W.jerseyRoot, `Jersey ${j.original} reduces to ${j.root}.`, "jersey:root");
     } else if (j.root === dailyProfile.calendarDay.root && j.root !== ud.root) {
@@ -520,7 +520,7 @@ async function callGrokForNarratives(candidates, dailyProfile, apiKey) {
   const payload = {
     dailyProfile: {
       date: dailyProfile.date,
-      universalDay: { compound: dailyProfile.universalDay.compound, master: dailyProfile.universalDay.master, root: dailyProfile.universalDay.root, rawSum: dailyProfile.universalDay.rawSum },
+      universalDay: { compound: dailyProfile.universalDay.rawSum, master: dailyProfile.universalDay.master, root: dailyProfile.universalDay.root, rawSum: dailyProfile.universalDay.rawSum },
       calendarDay: { compound: dailyProfile.calendarDay.original, root: dailyProfile.calendarDay.root },
       primaryFamily: dailyProfile.primaryFamily,
       secondaryFamily: dailyProfile.secondaryFamily,
@@ -593,6 +593,9 @@ function validateOutput(output, slateDate) {
   if (output.dailyProfile?.universalDayRawSum !== expectedRawSum) {
     errors.push(`universalDayRawSum ${output.dailyProfile?.universalDayRawSum} ≠ expected ${expectedRawSum}`);
   }
+  if (output.dailyProfile?.universalDayCompound !== expectedRawSum) {
+    errors.push(`universalDayCompound ${output.dailyProfile?.universalDayCompound} ≠ full-date compound ${expectedRawSum}`);
+  }
 
   // Master number preservation
   if (MASTER_NUMBERS.has(expectedRawSum) && output.dailyProfile?.universalDayMaster !== expectedRawSum) {
@@ -639,7 +642,9 @@ async function main() {
   const dailyProfile = buildDailyProfile(slateDate);
   const udLabel = dailyProfile.universalDay.master
     ? `${dailyProfile.universalDay.master}/${dailyProfile.universalDay.root}`
-    : `${dailyProfile.universalDay.compound}/${dailyProfile.universalDay.root}`;
+    : dailyProfile.universalDay.rawSum > 9
+      ? `${dailyProfile.universalDay.rawSum}/${dailyProfile.universalDay.root}`
+      : String(dailyProfile.universalDay.root);
   console.log(`[numerology] Universal Day: ${udLabel} | Calendar Day: ${dailyProfile.calendarDay.original}/${dailyProfile.calendarDay.root} | Primary Family: [${dailyProfile.primaryFamily.join("-")}]`);
 
   // Step 2: Load MLB data + identity cache
@@ -803,7 +808,7 @@ async function main() {
     },
     dailyProfile: {
       universalDayRawSum: dailyProfile.universalDay.rawSum,
-      universalDayCompound: dailyProfile.universalDay.compound,
+      universalDayCompound: dailyProfile.universalDay.rawSum,
       universalDayMaster: dailyProfile.universalDay.master,
       universalDayRoot: dailyProfile.universalDay.root,
       universalDayTrace: dailyProfile.universalDay.trace,
