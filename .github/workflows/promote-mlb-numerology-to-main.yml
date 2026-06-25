@@ -1,0 +1,88 @@
+name: Promote MLB and numerology updates
+
+on:
+  push:
+    branches:
+      - promote/mlb-numerology-20260625
+    paths:
+      - .github/workflows/promote-mlb-numerology-to-main.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: promote-mlb-numerology-20260625
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out promotion branch
+        uses: actions/checkout@v4
+        with:
+          ref: promote/mlb-numerology-20260625
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch tested source branch
+        run: git fetch origin test/mlb-model-drivers-footer
+
+      - name: Copy approved MLB and numerology files
+        run: |
+          git checkout origin/test/mlb-model-drivers-footer -- \
+            config/mlb-numerology-methodology.json \
+            public/data/mlb/numerology-daily.json \
+            public/data/mlb/numerology/history/2026-06-25.json \
+            public/data/mlb/player-identity-cache.json \
+            scripts/generate-mlb-numerology.mjs \
+            src/components/mlb/MlbPolymarketMoneylinePanel.tsx \
+            src/lib/mlb/mlbModelEdge.ts \
+            src/lib/numerology/numerology.test.ts \
+            src/lib/numerology/scoring.ts \
+            src/pages/MlbGameDetail.tsx \
+            src/pages/MlbNumerologyPage.tsx \
+            vercel.json
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run numerology tests
+        run: npx vitest run src/lib/numerology/numerology.test.ts
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit promoted files
+        run: |
+          rm -f .github/workflows/promote-mlb-numerology-to-main.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            config/mlb-numerology-methodology.json \
+            public/data/mlb/numerology-daily.json \
+            public/data/mlb/numerology/history/2026-06-25.json \
+            public/data/mlb/player-identity-cache.json \
+            scripts/generate-mlb-numerology.mjs \
+            src/components/mlb/MlbPolymarketMoneylinePanel.tsx \
+            src/lib/mlb/mlbModelEdge.ts \
+            src/lib/numerology/numerology.test.ts \
+            src/lib/numerology/scoring.ts \
+            src/pages/MlbGameDetail.tsx \
+            src/pages/MlbNumerologyPage.tsx \
+            vercel.json \
+            .github/workflows/promote-mlb-numerology-to-main.yml
+          git commit -m "feat: promote updated MLB pages and numerology model"
+          git push origin HEAD:promote/mlb-numerology-20260625
