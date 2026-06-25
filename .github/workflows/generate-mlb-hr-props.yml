@@ -1,46 +1,38 @@
+```yaml
 name: Generate MLB Data
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/generate-mlb-hr-props.yml'
+  # Four strategic updates instead of eleven hourly attempts.
+  # Times are automatically adjusted for EST/EDT.
   schedule:
-    # GitHub silently drops scheduled runs under load, especially overnight.
-    # Strategy: many hourly attempts through the morning. The script + commit
-    # step are idempotent (no-op when data unchanged), so extra runs are free.
-    # Each run regenerates for the CURRENT ET date, so the first one to fire
-    # after midnight ET produces the correct day's slate.
-    - cron: "23 6 * * *"   # 2:23 AM EDT
-    - cron: "23 7 * * *"   # 3:23 AM EDT
-    - cron: "23 8 * * *"   # 4:23 AM EDT
-    - cron: "23 9 * * *"   # 5:23 AM EDT
-    - cron: "23 10 * * *"  # 6:23 AM EDT
-    - cron: "23 11 * * *"  # 7:23 AM EDT
-    - cron: "23 12 * * *"  # 8:23 AM EDT
-    - cron: "23 13 * * *"  # 9:23 AM EDT
-    - cron: "23 14 * * *"  # 10:23 AM EDT
-    - cron: "40 15 * * *"  # 11:40 AM EDT — final pre-game
-    - cron: "40 16 * * *"  # 12:40 PM EDT
+    - cron: "23 3 * * *"
+      timezone: "America/New_York" # 3:23 AM ET — initial daily slate
+
+    - cron: "23 8 * * *"
+      timezone: "America/New_York" # 8:23 AM ET — morning refresh
+
+    - cron: "23 10 * * *"
+      timezone: "America/New_York" # 10:23 AM ET — odds and lineup refresh
+
+    - cron: "40 11 * * *"
+      timezone: "America/New_York" # 11:40 AM ET — final early-game refresh
+
+  # Allows you to run it manually from the Actions tab.
   workflow_dispatch:
 
 concurrency:
   group: generate-mlb-data
-  cancel-in-progress: false
+  # Prevent overlapping scheduled runs from creating competing commits.
+  cancel-in-progress: true
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
-
-env:
-  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   generate-mlb-data:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -66,7 +58,7 @@ jobs:
       - name: Fetch team wRC+ data
         run: node scripts/fetch-team-wrc-plus.mjs || true
 
-      - name: Generate HR props & best bets
+      - name: Generate HR props and best bets
         run: node scripts/generate-mlb-hr-props.mjs --force
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
@@ -76,63 +68,174 @@ jobs:
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
 
-      - name: Commit updated MLB data
-        id: commit
+      # Generated JSON files contain timestamps that change every run.
+      # This restores a file when timestamps are its only differences,
+      # preventing unnecessary commits and Vercel deployments.
+      - name: Remove timestamp-only data changes
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const { execFileSync } = require("child_process");
+
+          const volatileKeys = new Set([
+            "generatedAt",
+            "fetchedAt",
+            "updatedAt",
+            "lastUpdated",
+            "scheduledFor",
+            "nextRunAt",
+            "lineupDataAsOf",
+            "generationStartedAt",
+            "generationCompletedAt",
+            "actualWorkflowStart"
+          ]);
+
+          function clean(value) {
+            if (Array.isArray(value)) {
+              return value.map(clean);
+            }
+
+            if (value && typeof value === "object") {
+              return Object.fromEntries(
+                Object.entries(value)
+                  .filter(([key]) => !volatileKeys.has(key))
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([key, child]) => [key, clean(child)])
+              );
+            }
+
+            return value;
+          }
+
+          let changedFiles = [];
+
+          try {
+            changedFiles = execFileSync(
+              "git",
+              [
+                "diff",
+                "--name-only",
+                "--",
+                "public/data/mlb",
+                "public/data/betting-splits"
+              ],
+              { encoding: "utf8" }
+            )
+              .trim()
+              .split("\n")
+              .filter(Boolean);
+          } catch {
+            changedFiles = [];
+          }
+
+          for (const file of changedFiles) {
+            if (!file.endsWith(".json") || !fs.existsSync(file)) {
+              continue;
+            }
+
+            let previousText;
+
+            try {
+              previousText = execFileSync(
+                "git",
+                ["show", `HEAD:${file}`],
+                {
+                  encoding: "utf8",
+                  stdio: ["ignore", "pipe", "ignore"]
+                }
+              );
+            } catch {
+              // New file: keep it.
+              continue;
+            }
+
+            try {
+              const previous = clean(JSON.parse(previousText));
+              const current = clean(JSON.parse(fs.readFileSync(file, "utf8")));
+
+              if (JSON.stringify(previous) === JSON.stringify(current)) {
+                execFileSync(
+                  "git",
+                  ["restore", "--worktree", "--source=HEAD", "--", file],
+                  { stdio: "inherit" }
+                );
+
+                console.log(`Restored timestamp-only file: ${file}`);
+              }
+            } catch (error) {
+              console.warn(
+                `Could not compare ${file}; keeping the generated version.`,
+                error.message
+              );
+            }
+          }
+          NODE
+
+      - name: Detect meaningful MLB data changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- public/data/mlb public/data/betting-splits)" ]; then
+            echo "No meaningful MLB data changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Meaningful MLB data changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update sitemap date
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          TODAY="$(TZ=America/New_York date '+%Y-%m-%d')"
+
+          sed -i \
+            "s/<lastmod>[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}<\/lastmod>/<lastmod>${TODAY}<\/lastmod>/g" \
+            public/sitemap.xml
+
+      # Validate the generated site before pushing anything to main.
+      - name: Build site
+        if: steps.changes.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Commit and push updated MLB data
+        if: steps.changes.outputs.changed == 'true'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Update sitemap lastmod to today so Google recrawls daily pages
-          TODAY="$(TZ=America/New_York date '+%Y-%m-%d')"
-          sed -i "s/<lastmod>[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}<\/lastmod>/<lastmod>${TODAY}<\/lastmod>/g" public/sitemap.xml
+          git add \
+            public/data/mlb/ \
+            public/data/betting-splits/ \
+            public/sitemap.xml
 
-          git add public/data/mlb/ public/data/betting-splits/ public/sitemap.xml
           if git diff --cached --quiet; then
-            echo "No MLB data changes."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            git commit -m "chore: refresh MLB data $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
-
-            # Retry push up to 3 times with rebase — handles concurrent cron runs
-            PUSHED=false
-            for attempt in 1 2 3; do
-              if git push origin HEAD:main; then
-                PUSHED=true
-                break
-              fi
-              echo "Push attempt $attempt failed — pulling and rebasing..."
-              git pull --rebase origin main || true
-              sleep 5
-            done
-
-            if [ "$PUSHED" = "true" ]; then
-              echo "changed=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "All push attempts failed — build will use locally generated data."
-              echo "changed=false" >> "$GITHUB_OUTPUT"
-            fi
+            echo "No staged MLB data changes."
+            exit 0
           fi
 
-      - name: Build site
-        run: npm run build
+          git commit -m "chore: refresh MLB data $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
 
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        continue-on-error: true
-        with:
-          path: dist
+          PUSHED=false
 
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
-        continue-on-error: true
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              PUSHED=true
+              break
+            fi
 
-      - name: Deploy to Vercel
-        shell: bash
-        continue-on-error: true
-        run: |
-          if [ -z "${VERCEL_TOKEN}" ]; then exit 0; fi
-          npm install --global vercel@latest --quiet
-          vercel pull --yes --environment=production --token="${VERCEL_TOKEN}" || exit 0
-          vercel build --prod --token="${VERCEL_TOKEN}" || exit 0
-          vercel deploy --prebuilt --prod --token="${VERCEL_TOKEN}" || exit 0
+            echo "Push attempt ${attempt} failed — pulling and rebasing..."
+            git pull --rebase origin main || true
+            sleep 5
+          done
+
+          if [ "$PUSHED" != "true" ]; then
+            echo "All push attempts failed."
+            exit 1
+          fi
+
+          echo "MLB data pushed successfully."
+          echo "Vercel's Git integration will create the production deployment."
+```
