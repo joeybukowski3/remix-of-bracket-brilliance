@@ -346,19 +346,58 @@ export async function fetchEspnMlbMoneylines({ fetchFn = fetch } = {}) {
   return moneylines;
 }
 
+// sport_id 4 = MLB in TheRundown API
+const THERUNDOWN_BASE = "https://therundown.io/api/v2";
+
+export async function fetchTheRundownMlbMoneylines({ apiKey, fetchFn = fetch } = {}) {
+  if (!apiKey) throw new Error("THERUNDOWNAPI missing");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  const url = `${THERUNDOWN_BASE}/sports/4/events/${today}?key=${apiKey}&include=scores&limit=30`;
+  const payload = await fetchJson(url, { fetchFn, label: "therundown:events" });
+  const events = payload?.events ?? [];
+  if (!Array.isArray(events) || events.length === 0) throw new Error("TheRundown returned no MLB events");
+
+  const moneylines = {};
+  for (const ev of events) {
+    // TheRundown v2: teams[0]=away, teams[1]=home; lines array has per-book odds
+    const teams = ev?.teams ?? [];
+    const awayTeam = teams[0]?.name;
+    const homeTeam = teams[1]?.name;
+    // Pick first available affiliate line with moneyline prices
+    const lines = Array.isArray(ev?.lines) ? ev.lines : Object.values(ev?.lines ?? {});
+    let awayPrice = null;
+    let homePrice = null;
+    for (const line of lines) {
+      const aw = line?.moneyline?.moneyline_away;
+      const hm = line?.moneyline?.moneyline_home;
+      if (aw != null && hm != null && aw !== 0 && hm !== 0) {
+        awayPrice = aw;
+        homePrice = hm;
+        break;
+      }
+    }
+    const row = makeMoneyline(awayTeam, homeTeam, awayPrice, homePrice);
+    if (row) moneylines[row.key] = row.value;
+  }
+  if (!hasUsableMoneylines(moneylines)) throw new Error("TheRundown returned no usable moneyline prices");
+  return moneylines;
+}
+
 export async function getMlbMoneylinesWithFallbacks({
   oddsApiKey,
   sportsGameOddsApiKey,
   oddsApiIoKey,
+  theRundownApiKey,
   fetchFn = fetch,
   logger = console,
 } = {}) {
   const providerErrors = [];
   const providers = [
-    ["the-odds-api", () => fetchTheOddsApiMlbMoneylines({ apiKey: oddsApiKey, fetchFn })],
+    ["the-odds-api",   () => fetchTheOddsApiMlbMoneylines({ apiKey: oddsApiKey, fetchFn })],
     ["sportsgameodds", () => fetchSportsGameOddsMlbMoneylines({ apiKey: sportsGameOddsApiKey, fetchFn })],
-    ["odds-api-io", () => fetchOddsApiIoMlbMoneylines({ apiKey: oddsApiIoKey, fetchFn })],
-    ["espn", () => fetchEspnMlbMoneylines({ fetchFn })],
+    ["odds-api-io",    () => fetchOddsApiIoMlbMoneylines({ apiKey: oddsApiIoKey, fetchFn })],
+    ["therundown",     () => fetchTheRundownMlbMoneylines({ apiKey: theRundownApiKey, fetchFn })],
+    ["espn",           () => fetchEspnMlbMoneylines({ fetchFn })],
   ];
 
   for (const [source, load] of providers) {
@@ -376,7 +415,7 @@ export async function getMlbMoneylinesWithFallbacks({
     } catch (err) {
       const message = `${source}: ${safeMessage(err)}`;
       providerErrors.push(message);
-      const missingKey = (source === "sportsgameodds" && !sportsGameOddsApiKey) || (source === "odds-api-io" && !oddsApiIoKey);
+      const missingKey = (source === "sportsgameodds" && !sportsGameOddsApiKey) || (source === "odds-api-io" && !oddsApiIoKey) || (source === "therundown" && !theRundownApiKey);
       if (missingKey) {
         logger.debug?.(`[mlb-moneylines] ${message}`);
       } else {

@@ -54,6 +54,8 @@ jobs:
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           ODDS_API_KEY_BACKUP: ${{ secrets.ODDS_API_KEY_BACKUP }}
+          PARLAYAPI: ${{ secrets.PARLAYAPI }}
+          THERUNDOWNAPI: ${{ secrets.THERUNDOWNAPI }}
 
       - name: Fetch team wRC+ data
         run: node scripts/fetch-team-wrc-plus.mjs || true

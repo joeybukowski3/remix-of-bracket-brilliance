@@ -151,7 +151,7 @@ describe("MLB moneyline provider fallbacks", () => {
     expect(result.metadata.source).toBe("none");
     expect(result.metadata.fallbackUsed).toBe(true);
     expect(result.moneylines).toEqual({});
-    expect(result.metadata.providerErrors.length).toBe(4);
+    expect(result.metadata.providerErrors.length).toBe(5);
   });
 
   it("handles malformed provider responses without crashing", async () => {
