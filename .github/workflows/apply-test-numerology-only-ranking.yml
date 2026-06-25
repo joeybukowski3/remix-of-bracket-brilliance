@@ -1,0 +1,136 @@
+name: Apply test numerology-only ranking
+
+on:
+  push:
+    branches:
+      - test/mlb-model-drivers-footer
+    paths:
+      - .github/workflows/apply-test-numerology-only-ranking.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: test-numerology-only-ranking
+  cancel-in-progress: false
+
+jobs:
+  apply-generate-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: America/New_York
+
+    steps:
+      - name: Check out test branch
+        uses: actions/checkout@v4
+        with:
+          ref: test/mlb-model-drivers-footer
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply numerology-only generator
+        run: python scripts/apply-numerology-only-generator.py
+
+      - name: Apply numerology-only page copy
+        run: python scripts/apply-numerology-only-page.py
+
+      - name: Resolve current Eastern date
+        id: date
+        shell: bash
+        run: echo "date=$(TZ=America/New_York date '+%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Replace current-day archive
+        shell: bash
+        run: rm -f "public/data/mlb/numerology/history/${{ steps.date.outputs.date }}.json"
+
+      - name: Regenerate numerology report
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: node scripts/generate-mlb-numerology.mjs --date "${{ steps.date.outputs.date }}"
+
+      - name: Validate numerology-only selection
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('public/data/mlb/numerology-daily.json', 'utf8'));
+          const methodology = JSON.parse(fs.readFileSync('config/mlb-numerology-methodology.json', 'utf8'));
+          const groups = [report.featuredPlays ?? [], report.bestAvailable ?? [], report.watchlist ?? []];
+          const surfaced = groups.flat();
+
+          if (report.rankingBasis !== 'numerology_only') throw new Error('rankingBasis is not numerology_only');
+          if (report.baseballContextOnly !== true) throw new Error('baseballContextOnly is not true');
+          if (methodology.rankingBasis !== 'numerology_only') throw new Error('methodology rankingBasis mismatch');
+          if (methodology.weights.numerologyWeight !== 1 || methodology.weights.baseballWeight !== 0) {
+            throw new Error('Methodology weights do not enforce numerology-only ranking');
+          }
+
+          for (const play of surfaced) {
+            if (play.finalScore !== play.numerologyScore) {
+              throw new Error(`${play.playerName} alignment score was influenced by non-numerology data`);
+            }
+          }
+
+          for (const group of groups) {
+            for (let i = 1; i < group.length; i += 1) {
+              if (group[i].numerologyScore > group[i - 1].numerologyScore) {
+                throw new Error(`Group is not sorted by numerology: ${group[i].playerName}`);
+              }
+            }
+          }
+
+          for (const play of report.bestAvailable ?? []) {
+            if (!Array.isArray(play.positiveSignals) || !Array.isArray(play.counterSignals)) {
+              throw new Error(`Missing calculation trace for ${play.playerName}`);
+            }
+            if (!String(play.formula ?? '').includes('not used in rank')) {
+              throw new Error(`Missing baseball context disclosure for ${play.playerName}`);
+            }
+          }
+
+          console.log('Numerology-only ranking validated.');
+          console.log('Top matches:', surfaced.slice(0, 5).map(p => `${p.playerName} N:${p.numerologyScore} B:${p.baseballScore}`).join(' | '));
+          NODE
+
+      - name: Run numerology tests
+        run: npx vitest run src/lib/numerology/numerology.test.ts
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit validated update
+        shell: bash
+        run: |
+          rm -f scripts/apply-numerology-only-generator.py
+          rm -f scripts/apply-numerology-only-page.py
+          rm -f .github/workflows/apply-test-numerology-only-ranking.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            config/mlb-numerology-methodology.json \
+            scripts/generate-mlb-numerology.mjs \
+            src/pages/MlbNumerologyPage.tsx \
+            public/data/mlb/numerology-daily.json \
+            public/data/mlb/numerology/history/ \
+            scripts/apply-numerology-only-generator.py \
+            scripts/apply-numerology-only-page.py \
+            .github/workflows/apply-test-numerology-only-ranking.yml
+
+          git commit -m "fix: rank MLB numerology matches without baseball score"
+          git push origin HEAD:test/mlb-model-drivers-footer
