@@ -625,6 +625,12 @@ function validateOutput(output, slateDate) {
 
   // Candidate pool disclosure
   if (!output.candidatePool) errors.push("Missing candidatePool disclosure");
+  if (!Array.isArray(output.exactNumberMatches) || !Array.isArray(output.rootNumberMatches)) {
+    errors.push("Missing complete daily number-match lists");
+  }
+  for (const player of output.exactNumberMatches ?? []) {
+    if (!player.matches?.length) errors.push(`Exact match missing reason: ${player.playerName}`);
+  }
 
   if (errors.length > 0) throw new Error(`Output validation failed:\n  ${errors.join("\n  ")}`);
 }
@@ -653,23 +659,39 @@ async function main() {
   const mlbData = await loadMlbData();
   const batters = mlbData.batters ?? [];
   const identityCache = loadIdentityCache();
-  const candidatePoolType = "jkb_hr_props";
-  const eligiblePlayerCount = batters.length;
+  const candidatePoolType = "game_team_40_man_rosters_with_jkb_context";
+  let eligiblePlayerCount = batters.length;
 
   if (batters.length === 0) {
     console.warn("[numerology] No batters in MLB data");
   }
 
-  // Step 3: Schedule lineup (Issue #7 — proper lineup status)
+  // Step 3: Schedule lineups plus every active hitter on today's teams.
+  // The old candidate pool only contained the projected nine-man lineups, which
+  // could hide an exact jersey-number match such as a bench catcher wearing #23.
   let scheduleRoster = [];
   let lineupDataAsOf = null;
+  const activeRosterProfiles = new Map();
   const isPreLineupTime = new Date().getUTCHours() < 16; // before noon ET roughly
 
   try {
-    const sched = await fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${slateDate}&hydrate=probablePitcher,lineups`);
+    const [sched, teamDirectory] = await Promise.all([
+      fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${slateDate}&hydrate=probablePitcher,lineups`),
+      fetchJson("https://statsapi.mlb.com/api/v1/teams?sportId=1"),
+    ]);
     const games = sched?.dates?.[0]?.games ?? [];
+    const abbreviationById = new Map((teamDirectory?.teams ?? []).map(team => [team.id, team.abbreviation]));
+    const teamContexts = new Map();
     lineupDataAsOf = new Date().toISOString();
+
     for (const g of games) {
+      const away = g?.teams?.away?.team ?? {};
+      const home = g?.teams?.home?.team ?? {};
+      const awayAbbr = abbreviationById.get(away.id) ?? away.abbreviation ?? away.teamCode?.toUpperCase();
+      const homeAbbr = abbreviationById.get(home.id) ?? home.abbreviation ?? home.teamCode?.toUpperCase();
+      if (away.id && awayAbbr) teamContexts.set(away.id, { team: awayAbbr, opponent: homeAbbr ?? "TBD" });
+      if (home.id && homeAbbr) teamContexts.set(home.id, { team: homeAbbr, opponent: awayAbbr ?? "TBD" });
+
       const awayLineup = g.lineups?.awayPlayers ?? [];
       const homeLineup = g.lineups?.homePlayers ?? [];
       for (const player of [...awayLineup, ...homeLineup]) {
@@ -679,25 +701,110 @@ async function main() {
         }
       }
     }
-    console.log(`[numerology] Schedule roster: ${scheduleRoster.length} players`);
+
+    const rosterResults = await Promise.allSettled(
+      [...teamContexts.entries()].map(async ([teamId, context]) => {
+        const roster = await fetchJson(`https://statsapi.mlb.com/api/v1/teams/${teamId}/roster?rosterType=40Man&hydrate=person`);
+        return { context, roster: roster?.roster ?? [] };
+      }),
+    );
+
+    for (const result of rosterResults) {
+      if (result.status !== "fulfilled") continue;
+      const { context, roster } = result.value;
+      for (const entry of roster) {
+        const person = entry.person ?? {};
+        const position = entry.position ?? person.primaryPosition ?? {};
+        const isPitcherOnly = position.type === "Pitcher" || position.abbreviation === "P";
+        if (isPitcherOnly || !person.id || !person.fullName) continue;
+        const key = `${person.fullName}|${context.team}`;
+        activeRosterProfiles.set(key, {
+          mlbId: person.id,
+          fullName: person.fullName,
+          team: context.team,
+          opponent: context.opponent,
+          birthDate: person.birthDate ?? null,
+          jerseyNumber: Number.isFinite(Number(entry.jerseyNumber ?? person.primaryNumber))
+            ? Number(entry.jerseyNumber ?? person.primaryNumber)
+            : null,
+          position: position.abbreviation ?? null,
+        });
+      }
+    }
+
+    console.log(`[numerology] Schedule lineup: ${scheduleRoster.length} | Active hitters: ${activeRosterProfiles.size}`);
   } catch (e) {
-    console.warn(`[numerology] Schedule fetch failed: ${e.message}`);
+    console.warn(`[numerology] Schedule/active roster fetch failed: ${e.message}`);
   }
 
-  // Step 4: Score all candidates using cache (no sequential API calls)
+  const candidateBatters = [...batters];
+  const candidateKeys = new Set(candidateBatters.map(batter => `${batter.player}|${batter.team}`));
+  for (const [key, profile] of activeRosterProfiles) {
+    if (candidateKeys.has(key)) continue;
+    candidateKeys.add(key);
+    candidateBatters.push({
+      player: profile.fullName,
+      playerId: profile.mlbId,
+      team: profile.team,
+      opponent: profile.opponent,
+      opposingPitcher: "TBD",
+      hrScore: null,
+      hrOddsYes: null,
+      candidateSource: "team_40_man_roster",
+    });
+  }
+
+  eligiblePlayerCount = candidateBatters.length;
+
+  // Step 4: Score every active hitter. JKB model data remains optional context.
   const candidates = [];
   const seen = new Set();
   const universalYearRoot = dailyProfile.universalYear.root;
   const exclusionReasons = [];
 
-  for (const batter of batters) {
+  function collectNumberMatches(profile) {
+    const exact = [];
+    const root = [];
+    const target = dailyProfile.universalDay.rawSum;
+    const targetRoot = dailyProfile.universalDay.root;
+
+    const addExact = (field, value, label) => {
+      if (value === target) exact.push({ field, value, label });
+    };
+    const addRoot = (field, reduced, label) => {
+      if (!reduced || reduced.original === target) return;
+      if (reduced.root === targetRoot) root.push({ field, value: reduced.original, root: reduced.root, label });
+    };
+
+    addExact("jersey", profile.jerseyNumber, `Jersey #${profile.jerseyNumber}`);
+    addExact("age", profile.age, `Age ${profile.age}`);
+    addExact("birthDay", profile.birthDayNum?.original, `Born on day ${profile.birthDayNum?.original}`);
+    addExact("personalDay", profile.personalDay?.original, `Personal Day ${profile.personalDay?.original}`);
+    addExact("lifePath", profile.lifePath?.original, `Life Path ${profile.lifePath?.original}`);
+    addExact("expression", profile.expressionNum?.original, `Expression ${profile.expressionNum?.original}`);
+
+    addRoot("jersey", profile.jerseyReduced, `Jersey #${profile.jerseyNumber} → ${targetRoot}`);
+    addRoot("age", profile.ageReduced, `Age ${profile.age} → ${targetRoot}`);
+    addRoot("birthDay", profile.birthDayNum, `Birth day ${profile.birthDayNum?.original} → ${targetRoot}`);
+    addRoot("personalDay", profile.personalDay, `Personal Day ${profile.personalDay?.original} → ${targetRoot}`);
+    addRoot("lifePath", profile.lifePath, `Life Path ${profile.lifePath?.original} → ${targetRoot}`);
+    addRoot("expression", profile.expressionNum, `Expression ${profile.expressionNum?.original} → ${targetRoot}`);
+    if (profile.battingOrder === targetRoot) {
+      root.push({ field: "battingOrder", value: profile.battingOrder, root: targetRoot, label: `Batting #${profile.battingOrder}` });
+    }
+
+    return { exact, root };
+  }
+
+  for (const batter of candidateBatters) {
     const key = `${batter.player}|${batter.team}`;
     if (seen.has(key)) { exclusionReasons.push({ player: batter.player, reason: "duplicate" }); continue; }
     seen.add(key);
 
     // Look up from pre-built cache (Issue #3 — no sequential API calls)
-    const cached = identityCache.get(key);
-    const personId = cached?.mlbId ?? null;
+    const rosterProfile = activeRosterProfiles.get(key);
+    const cached = identityCache.get(key) ?? rosterProfile;
+    const personId = cached?.mlbId ?? batter.playerId ?? null;
     const birthDate = cached?.birthDate ?? null;
     const jerseyNum = cached?.jerseyNumber ?? null;
     const missingData = [];
@@ -713,6 +820,7 @@ async function main() {
     // Numerology profile
     const jerseyReduced = jerseyNum != null ? reduce(jerseyNum) : null;
     const age = ageOnDate(birthDate, slateDate);
+    const ageReduced = age != null ? reduce(age) : null;
 
     let lpNum = null, birthDayNum = null, pdResult = null;
     if (birthDate) {
@@ -726,10 +834,17 @@ async function main() {
 
     const exprNum = expressionNum(batter.player);
     const playerNumerology = {
-      jerseyReduced, battingOrder, age,
-      personalDay: pdResult, lifePath: lpNum, birthDayNum,
+      jerseyNumber: jerseyNum,
+      jerseyReduced,
+      battingOrder,
+      age,
+      ageReduced,
+      personalDay: pdResult,
+      lifePath: lpNum,
+      birthDayNum,
       expressionNum: exprNum,
     };
+    const numberMatches = collectNumberMatches(playerNumerology);
 
     const { signals, positiveTotal, countercurrentTotal, convergenceBonus, numerologyScore } = scorePlayerForNumerology(playerNumerology, dailyProfile, missingData);
     const bbScore = baseballScore(batter);
@@ -758,6 +873,9 @@ async function main() {
       positiveTotal,
       countercurrentTotal,
       convergenceBonus,
+      exactNumberMatches: numberMatches.exact,
+      rootNumberMatches: numberMatches.root,
+      candidateSource: batter.candidateSource ?? "jkb_hr_props",
       missingData,
       hrScore: batter.hrScore,
     });
@@ -779,6 +897,17 @@ async function main() {
     : [];
   const watchlist = candidates.filter(c => c.numerologyScore < 60 && c.numerologyScore >= 45).slice(0, 6);
   const countercurrents = candidates.filter(c => c.countercurrentTotal > 0 && c.numerologyScore < 40).slice(0, 3);
+  const exactFieldPriority = { jersey: 0, personalDay: 1, lifePath: 2, birthDay: 3, age: 4, expression: 5 };
+  const exactNumberMatches = candidates
+    .filter(c => c.exactNumberMatches.length > 0)
+    .sort((a, b) => {
+      const aPriority = Math.min(...a.exactNumberMatches.map(match => exactFieldPriority[match.field] ?? 99));
+      const bPriority = Math.min(...b.exactNumberMatches.map(match => exactFieldPriority[match.field] ?? 99));
+      return aPriority - bPriority || b.exactNumberMatches.length - a.exactNumberMatches.length || b.numerologyScore - a.numerologyScore || a.playerName.localeCompare(b.playerName);
+    });
+  const rootNumberMatches = candidates
+    .filter(c => c.exactNumberMatches.length === 0 && c.rootNumberMatches.length > 0)
+    .sort((a, b) => b.rootNumberMatches.length - a.rootNumberMatches.length || b.numerologyScore - a.numerologyScore || a.playerName.localeCompare(b.playerName));
   const confirmedCount = candidates.filter(c => c.lineupStatus === "confirmed").length;
 
   console.log(`[numerology] Scored ${candidates.length} | Featured: ${featured.length} | Watchlist: ${watchlist.length}`);
@@ -812,7 +941,7 @@ async function main() {
     dataStatus: computeDataStatus(batters, scheduleRoster, confirmedCount),
     candidatePool: {
       candidatePoolType,
-      description: "Players available in the JoeKnowsBall HR props dataset.",
+      description: "Every non-pitcher on the 40-man rosters of teams playing today; JoeKnowsBall HR scores are attached only when available.",
       eligiblePlayerCount,
       evaluatedPlayerCount: candidates.length,
       excludedPlayerCount: eligiblePlayerCount - candidates.length,
@@ -836,6 +965,38 @@ async function main() {
       repeatedDigits: dailyProfile.repeatedDigits,
       interpretation: narratives?.dailyInterpretation ?? `Universal Day ${udLabel} — ${dailyProfile.primaryFamily.join("–")} family dominant. Countercurrent at ${dailyProfile.countercurrent}. Balancing complement at ${dailyProfile.balancingComplement}. Patterns are documented, not guaranteed.`,
     },
+    exactNumberMatches: exactNumberMatches.map(c => ({
+      playerId: c.personId ?? null,
+      playerName: c.playerName,
+      team: c.team,
+      opponent: c.opponent,
+      opposingPitcher: c.opposingPitcher,
+      lineupStatus: c.lineupStatus,
+      battingOrder: c.battingOrder,
+      jerseyNumber: c.jerseyNumber,
+      numerologyScore: c.numerologyScore,
+      baseballScore: c.marketScore == null ? null : c.baseballScore,
+      matches: c.exactNumberMatches,
+      candidateSource: c.candidateSource,
+      recommendedMarket: c.recommendedMarket,
+      marketScore: c.marketScore,
+    })),
+    rootNumberMatches: rootNumberMatches.map(c => ({
+      playerId: c.personId ?? null,
+      playerName: c.playerName,
+      team: c.team,
+      opponent: c.opponent,
+      opposingPitcher: c.opposingPitcher,
+      lineupStatus: c.lineupStatus,
+      battingOrder: c.battingOrder,
+      jerseyNumber: c.jerseyNumber,
+      numerologyScore: c.numerologyScore,
+      baseballScore: c.marketScore == null ? null : c.baseballScore,
+      matches: c.rootNumberMatches,
+      candidateSource: c.candidateSource,
+      recommendedMarket: c.recommendedMarket,
+      marketScore: c.marketScore,
+    })),
     featuredPlays: featured.map(c => ({
       rank: c.rank,
       playerId: c.personId ?? null,
