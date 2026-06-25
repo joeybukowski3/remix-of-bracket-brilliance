@@ -1,0 +1,54 @@
+name: Apply test wide-screen MLB layout
+
+on:
+  push:
+    branches:
+      - test/mlb-model-drivers-footer
+
+permissions:
+  contents: write
+
+concurrency:
+  group: test-wide-mlb-layout
+  cancel-in-progress: false
+
+jobs:
+  apply-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out test branch
+        uses: actions/checkout@v4
+        with:
+          ref: test/mlb-model-drivers-footer
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply wide-screen layout update
+        run: python scripts/apply-wide-mlb-layout.py
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit validated change
+        run: |
+          rm -f scripts/apply-wide-mlb-layout.py
+          rm -f .github/workflows/apply-test-wide-mlb-layout.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/MlbGameDetail.tsx
+          git add -u scripts/apply-wide-mlb-layout.py .github/workflows/apply-test-wide-mlb-layout.yml
+          git commit -m "fix: widen MLB desktop layout and enlarge prop preview text"
+          git push origin HEAD:test/mlb-model-drivers-footer
