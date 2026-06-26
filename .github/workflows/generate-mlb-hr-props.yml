@@ -80,6 +80,12 @@ jobs:
       - name: Inject batter handedness
         run: node scripts/inject-batter-handedness.mjs || true
 
+      - name: Inject batter HR odds (lines + yes price)
+        run: node scripts/inject-batter-hr-odds.mjs || true
+
+      - name: Inject pitcher K odds (line + over/under price)
+        run: node scripts/inject-k-odds.mjs || true
+
       - name: Generate pitcher regression
         shell: bash
         env:

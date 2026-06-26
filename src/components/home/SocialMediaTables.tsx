@@ -66,6 +66,7 @@ export function HRPropsTable({ picks }: { picks: HRPropRow[] }) {
             <tr className="text-slate-300 uppercase tracking-wider">
               <th className="px-6 py-3 text-left font-semibold">Player</th>
               <th className="px-4 py-3 text-center font-semibold">Score</th>
+              <th className="px-4 py-3 text-center font-semibold">Line</th>
               <th className="px-4 py-3 text-center font-semibold">Barrel%</th>
               <th className="px-4 py-3 text-center font-semibold">HH%</th>
               <th className="px-4 py-3 text-center font-semibold">L7</th>
@@ -95,6 +96,13 @@ export function HRPropsTable({ picks }: { picks: HRPropRow[] }) {
                   }`}>
                     {pick.hrScore?.toFixed(1)}
                   </span>
+                </td>
+                <td className="px-4 py-4 text-center">
+                  {pick.hrOddsYes ? (
+                    <span className="font-bold text-amber-400">{pick.hrOddsYes}</span>
+                  ) : (
+                    <span className="text-slate-600">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-4 text-center text-slate-300">
                   {formatPercent(pick.barrelRate)}
@@ -141,10 +149,10 @@ export function KPropsTable({ picks }: { picks: KPropRow[] }) {
             <tr className="text-slate-300 uppercase tracking-wider">
               <th className="px-6 py-3 text-left font-semibold">Pitcher</th>
               <th className="px-4 py-3 text-center font-semibold">Score</th>
-              <th className="px-4 py-3 text-center font-semibold">K/9</th>
-              <th className="px-4 py-3 text-center font-semibold">IP</th>
+              <th className="px-4 py-3 text-center font-semibold">Line</th>
               <th className="px-4 py-3 text-center font-semibold">K%</th>
               <th className="px-4 py-3 text-center font-semibold">Whiff%</th>
+              <th className="px-4 py-3 text-center font-semibold">Opp K%</th>
             </tr>
           </thead>
           <tbody>
@@ -171,17 +179,25 @@ export function KPropsTable({ picks }: { picks: KPropRow[] }) {
                     {pick.strikeoutMatchupScore?.toFixed(1)}
                   </span>
                 </td>
-                <td className="px-4 py-4 text-center text-slate-300">
-                  {formatNumber(pick.projectedK9, 1)}
-                </td>
-                <td className="px-4 py-4 text-center text-slate-300">
-                  {formatNumber(pick.projectedIP, 1)}
+                <td className="px-4 py-4 text-center">
+                  {pick.kLine != null ? (
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="font-bold text-amber-400">o{pick.kLine}</span>
+                      {pick.kOddsOver && <span className="text-[10px] text-slate-400">{pick.kOddsOver}</span>}
+                    </div>
+                  ) : (
+                    <span className="text-slate-600">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-4 text-center text-slate-300">
                   {formatPercent(pick.kRate)}
                 </td>
                 <td className="px-4 py-4 text-center text-slate-300">
                   {formatPercent(pick.whiffRate)}
+                </td>
+                <td className="px-4 py-4 text-center text-slate-300">
+                  {/* oppKRate not in type yet — show placeholder */}
+                  <span className="text-slate-600">—</span>
                 </td>
               </tr>
             ))}
