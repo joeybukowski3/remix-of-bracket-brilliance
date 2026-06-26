@@ -69,6 +69,36 @@
         }
       })();
     </script>
+    <style>
+      a[href="/mlb/numerology"][aria-label="Open MLB numerical alignment analysis"] {
+        display: inline-flex !important;
+        width: 2rem;
+        height: 2rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        color: transparent !important;
+        font-size: 0 !important;
+        user-select: none !important;
+        text-decoration: none;
+        transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+      }
+
+      a[href="/mlb/numerology"][aria-label="Open MLB numerical alignment analysis"]::before {
+        content: "𓂀";
+        color: #7c3aed;
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      a[href="/mlb/numerology"][aria-label="Open MLB numerical alignment analysis"]:hover,
+      a[href="/mlb/numerology"][aria-label="Open MLB numerical alignment analysis"]:focus-visible {
+        background: rgba(124, 58, 237, 0.1);
+        box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.25), 0 0 14px rgba(124, 58, 237, 0.2);
+        transform: scale(1.05);
+        outline: none;
+      }
+    </style>
   </head>
 
   <body>
