@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * Filters generated MLB numerology output to hitters likely to appear today.
+ * Restricts generated MLB numerology output to the active hitter pool already
+ * produced by the Joe Knows Ball HR model for the same daily slate.
  *
  * Eligibility:
- * 1. If a team's active lineup is available, the player must appear in it.
- * 2. If that team's lineup is not available, the player must have recorded
- *    at least one at-bat across his previous three completed MLB games.
+ * 1. The player must be listed in hr-props-raw.json batters.
+ * 2. The player's team must appear in that file's daily game schedule.
  *
- * This script runs after generate-mlb-numerology.mjs and rewrites only the
- * generated daily JSON. Numerology scoring and ranking are not recalculated.
+ * The HR model is the source of truth for likely active hitters. This avoids
+ * expanding numerology results to the broader 40-man roster and does not alter
+ * numerology scoring or ranking.
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -18,63 +19,24 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
-const OUTPUT_PATH = path.join(ROOT, "public", "data", "mlb", "numerology-daily.json");
-const TIMEOUT_MS = 20000;
-const CONCURRENCY = 8;
+const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
+const OUTPUT_PATH = path.join(DATA_DIR, "numerology-daily.json");
+const HR_MODEL_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 
-function getArg(name) {
-  const index = process.argv.indexOf(name);
-  return index >= 0 ? process.argv[index + 1] : null;
+function normalizeName(value) {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
 
-async function fetchJson(url) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
-    return await response.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+function playerKey(playerName, team) {
+  return `${normalizeName(playerName)}|${String(team ?? "").toUpperCase()}`;
 }
 
-async function mapLimit(values, limit, mapper) {
-  const results = new Array(values.length);
-  let cursor = 0;
-  async function worker() {
-    while (cursor < values.length) {
-      const index = cursor++;
-      results[index] = await mapper(values[index], index);
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, values.length) }, worker));
-  return results;
-}
-
-function playerIdOf(player) {
-  const value = player?.playerId ?? player?.personId ?? null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function playerKey(player) {
-  return `${playerIdOf(player) ?? "no-id"}|${player?.playerName ?? "unknown"}|${player?.team ?? "unknown"}`;
-}
-
-function extractPreviousThreeAtBats(statsJson, slateDate) {
-  const splits = statsJson?.stats?.flatMap((group) => group?.splits ?? []) ?? [];
-  return splits
-    .filter((split) => {
-      const date = split?.date ?? split?.game?.gameDate?.slice?.(0, 10) ?? null;
-      return date && date < slateDate;
-    })
-    .sort((a, b) => String(b.date ?? "").localeCompare(String(a.date ?? "")))
-    .slice(0, 3)
-    .reduce((total, split) => total + (Number(split?.stat?.atBats) || 0), 0);
+function entryKey(player) {
+  return playerKey(player?.playerName, player?.team);
 }
 
 function collectAllPlayers(data) {
@@ -88,96 +50,52 @@ function collectAllPlayers(data) {
   ];
 }
 
-function filterAndAnnotate(list, eligibility) {
+function filterAndAnnotate(list, eligibleKeys, hrBatterByKey, checkedAt) {
   return (list ?? [])
-    .filter((player) => eligibility.get(playerKey(player))?.eligible)
+    .filter((player) => eligibleKeys.has(entryKey(player)))
     .map((player) => {
-      const activity = eligibility.get(playerKey(player));
+      const hrBatter = hrBatterByKey.get(entryKey(player));
       return {
         ...player,
-        lineupStatus: activity?.source === "active_lineup" ? "confirmed" : player.lineupStatus,
+        opposingPitcher: hrBatter?.opposingPitcher ?? player.opposingPitcher ?? null,
+        baseballScore: hrBatter?.hrScore != null ? Math.round(Number(hrBatter.hrScore)) : player.baseballScore,
+        hrScore: hrBatter?.hrScore ?? player.hrScore ?? null,
+        marketScore: hrBatter?.hrScore ?? player.marketScore ?? null,
+        candidateSource: "jkb_hr_props",
         recentActivity: {
-          source: activity?.source,
-          previousThreeGameAtBats: activity?.previousThreeGameAtBats ?? null,
-          checkedAt: activity?.checkedAt,
+          source: "jkb_hr_model_active_pool",
+          checkedAt,
         },
       };
     });
 }
 
-async function main() {
+function main() {
   if (!existsSync(OUTPUT_PATH)) throw new Error(`Missing generated output: ${OUTPUT_PATH}`);
+  if (!existsSync(HR_MODEL_PATH)) throw new Error(`Missing HR model output: ${HR_MODEL_PATH}`);
+
   const data = JSON.parse(readFileSync(OUTPUT_PATH, "utf8"));
-  const slateDate = getArg("--date") ?? data.date;
-  const year = Number(slateDate.slice(0, 4));
-
-  const [schedule, teams] = await Promise.all([
-    fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${slateDate}&hydrate=lineups`),
-    fetchJson("https://statsapi.mlb.com/api/v1/teams?sportId=1"),
-  ]);
-
-  const abbreviationById = new Map((teams?.teams ?? []).map((team) => [team.id, team.abbreviation]));
-  const activeLineupsByTeam = new Map();
-
-  for (const game of schedule?.dates?.[0]?.games ?? []) {
-    const awayId = game?.teams?.away?.team?.id;
-    const homeId = game?.teams?.home?.team?.id;
-    const away = abbreviationById.get(awayId) ?? game?.teams?.away?.team?.abbreviation;
-    const home = abbreviationById.get(homeId) ?? game?.teams?.home?.team?.abbreviation;
-    const awayPlayers = game?.lineups?.awayPlayers ?? [];
-    const homePlayers = game?.lineups?.homePlayers ?? [];
-    if (away && awayPlayers.length > 0) activeLineupsByTeam.set(away, new Set(awayPlayers.map((player) => Number(player.id)).filter(Number.isFinite)));
-    if (home && homePlayers.length > 0) activeLineupsByTeam.set(home, new Set(homePlayers.map((player) => Number(player.id)).filter(Number.isFinite)));
-  }
-
-  const uniquePlayers = [...new Map(collectAllPlayers(data).map((player) => [playerKey(player), player])).values()];
-  const eligibility = new Map();
+  const hrModel = JSON.parse(readFileSync(HR_MODEL_PATH, "utf8"));
   const checkedAt = new Date().toISOString();
 
-  await mapLimit(uniquePlayers, CONCURRENCY, async (player) => {
-    const key = playerKey(player);
-    const id = playerIdOf(player);
-    const teamLineup = activeLineupsByTeam.get(player.team);
+  if (hrModel.date && data.date && hrModel.date !== data.date) {
+    throw new Error(`Slate date mismatch: numerology=${data.date}, hrModel=${hrModel.date}`);
+  }
 
-    if (teamLineup) {
-      eligibility.set(key, {
-        eligible: id != null && teamLineup.has(id),
-        source: "active_lineup",
-        previousThreeGameAtBats: null,
-        checkedAt,
-      });
-      return;
-    }
+  const scheduledTeams = new Set();
+  for (const game of hrModel.games ?? []) {
+    if (game.awayTeam) scheduledTeams.add(String(game.awayTeam).toUpperCase());
+    if (game.homeTeam) scheduledTeams.add(String(game.homeTeam).toUpperCase());
+  }
 
-    if (id == null) {
-      eligibility.set(key, {
-        eligible: false,
-        source: "missing_player_id",
-        previousThreeGameAtBats: null,
-        checkedAt,
-      });
-      return;
-    }
-
-    try {
-      const gameLog = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=gameLog&group=hitting&season=${year}`);
-      const atBats = extractPreviousThreeAtBats(gameLog, slateDate);
-      eligibility.set(key, {
-        eligible: atBats >= 1,
-        source: "previous_three_games",
-        previousThreeGameAtBats: atBats,
-        checkedAt,
-      });
-    } catch (error) {
-      console.warn(`[numerology-active] game-log lookup failed for ${player.playerName}: ${error.message}`);
-      eligibility.set(key, {
-        eligible: false,
-        source: "game_log_unavailable",
-        previousThreeGameAtBats: null,
-        checkedAt,
-      });
-    }
-  });
+  const hrBatterByKey = new Map();
+  for (const batter of hrModel.batters ?? []) {
+    const team = String(batter.team ?? "").toUpperCase();
+    if (!team || !scheduledTeams.has(team) || !batter.player) continue;
+    hrBatterByKey.set(playerKey(batter.player, team), batter);
+  }
+  const eligibleKeys = new Set(hrBatterByKey.keys());
+  const uniqueGeneratedPlayers = new Set(collectAllPlayers(data).map(entryKey));
 
   const before = {
     exact: data.exactNumberMatches?.length ?? 0,
@@ -188,31 +106,34 @@ async function main() {
     countercurrents: data.countercurrents?.length ?? 0,
   };
 
-  data.exactNumberMatches = filterAndAnnotate(data.exactNumberMatches, eligibility);
-  data.rootNumberMatches = filterAndAnnotate(data.rootNumberMatches, eligibility);
-  data.featuredPlays = filterAndAnnotate(data.featuredPlays, eligibility);
-  data.bestAvailable = filterAndAnnotate(data.bestAvailable, eligibility);
-  data.watchlist = filterAndAnnotate(data.watchlist, eligibility);
-  data.countercurrents = filterAndAnnotate(data.countercurrents, eligibility);
+  data.exactNumberMatches = filterAndAnnotate(data.exactNumberMatches, eligibleKeys, hrBatterByKey, checkedAt);
+  data.rootNumberMatches = filterAndAnnotate(data.rootNumberMatches, eligibleKeys, hrBatterByKey, checkedAt);
+  data.featuredPlays = filterAndAnnotate(data.featuredPlays, eligibleKeys, hrBatterByKey, checkedAt);
+  data.bestAvailable = filterAndAnnotate(data.bestAvailable, eligibleKeys, hrBatterByKey, checkedAt);
+  data.watchlist = filterAndAnnotate(data.watchlist, eligibleKeys, hrBatterByKey, checkedAt);
+  data.countercurrents = filterAndAnnotate(data.countercurrents, eligibleKeys, hrBatterByKey, checkedAt);
 
-  const eligibleKeys = [...eligibility.values()].filter((entry) => entry.eligible).length;
   data.candidatePool = {
     ...(data.candidatePool ?? {}),
-    candidatePoolType: "today_lineup_or_recent_three_game_activity",
-    description: "Players in an available active lineup; when a team lineup is unavailable, players must have at least one at-bat across their previous three completed MLB games.",
-    preActivityFilterCount: uniquePlayers.length,
-    activityEligibleCount: eligibleKeys,
+    candidatePoolType: "daily_jkb_hr_model_batters",
+    description: "Only hitters listed in the Joe Knows Ball HR model for teams on today's MLB schedule are eligible for the numerology page.",
+    preHrModelFilterCount: uniqueGeneratedPlayers.size,
+    eligiblePlayerCount: eligibleKeys.size,
+    evaluatedPlayerCount: eligibleKeys.size,
     activityFilterCheckedAt: checkedAt,
   };
   data.activityFilter = {
-    rule: "active_lineup_or_at_least_1_ab_in_previous_3_games",
-    activeLineupTeams: [...activeLineupsByTeam.keys()].sort(),
+    rule: "must_be_listed_in_daily_jkb_hr_model",
+    scheduleDate: hrModel.date ?? data.date,
+    scheduledTeams: [...scheduledTeams].sort(),
+    hrModelGeneratedAt: hrModel.generatedAt ?? null,
     checkedAt,
   };
 
   writeFileSync(OUTPUT_PATH, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 
-  console.log("[numerology-active] filtered generated output", {
+  console.log("[numerology-active] restricted output to daily HR model pool", {
+    hrModelBatters: eligibleKeys.size,
     before,
     after: {
       exact: data.exactNumberMatches.length,
@@ -225,7 +146,9 @@ async function main() {
   });
 }
 
-main().catch((error) => {
+try {
+  main();
+} catch (error) {
   console.error(`[numerology-active] ${error.stack ?? error.message}`);
   process.exit(1);
-});
+}
