@@ -1,22 +1,27 @@
 name: Props Value Refresh
 run-name: Props Value Refresh • ${{ github.event_name }}
 
-# Runs every 15 minutes from 10 AM – 4 PM ET daily.
-# Checks whether today's player prop lines are posted by ParlayAPI.
-# Strategy:
-#   • 4 hrs before first pitch → start trying
-#   • Every 15 min → fetch odds + check if lines are populated
-#   • First run that finds lines → inject odds, rebuild, push, then stop early
-#   • If lines never appear by 30 min before first pitch → give up gracefully
+# Strategy: find today's first pitch from the site's own Polymarket snapshot
+# (already written to public/data/polymarket/ by the nightly workflow), fall
+# back to ESPN public scoreboard if not yet available.
 #
-# Cron runs every 15 min 10:00–16:00 UTC = 6:00 AM – 12:00 PM ET.
-# First MLB games are typically 12:10 PM ET earliest; most slates start 6–7 PM ET.
-# 10:00 UTC (6 AM ET) start gives a 6-hour window for afternoon/evening games.
-# GitHub Actions cron is always UTC.
+# Triggers run at fixed UTC times that cover the plausible 4-hour-before window
+# for any MLB first pitch between 12:05 PM and 10:05 PM ET:
+#
+#   12:05 PM ET first pitch → 4 hrs before = 8:05 AM ET  = 12:05 UTC
+#    7:05 PM ET first pitch → 4 hrs before = 3:05 PM ET  = 19:05 UTC
+#   10:05 PM ET first pitch → 4 hrs before = 6:05 PM ET  = 22:05 UTC
+#
+# We run hourly from 12 UTC – 22 UTC (8 AM – 6 PM ET) to catch all windows.
+# The gate step immediately exits if we are not yet within 4 hours of first pitch
+# OR if lines are already populated — so most runs are ~10-second no-ops.
+# Once lines are found, the workflow injects them, rebuilds, and pushes.
+# After that the gate's "already populated" check stops all future runs for the day.
 
 on:
   schedule:
-    - cron: "0,15,30,45 10,11,12,13,14,15,16 * * *"
+    # Hourly 12:00–22:00 UTC = 8 AM–6 PM ET
+    - cron: "5 12,13,14,15,16,17,18,19,20,21,22 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -48,127 +53,156 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # ── Gate: only proceed if we are within 4 hours of first pitch AND
-      #          lines are not already fully populated ──────────────────────────
-      - name: Check gate conditions
+      # ── Gate ────────────────────────────────────────────────────────────────
+      # Reads the site's own data files to find first pitch time.
+      # Exits early (run=false) unless:
+      #   • We are 0–4 hours before first pitch, AND
+      #   • HR/K lines are not yet populated in hr-props-raw.json
+      - name: Gate — check window and line status
         id: gate
         shell: bash
         run: |
           node << 'NODE'
-          const { execFileSync } = require("child_process");
-          const fs = require("fs");
+          const fs   = require("fs");
           const path = require("path");
 
-          async function main() {
-            const nowMs = Date.now();
+          async function findFirstPitchMs() {
+            // ── Primary: site's own Polymarket snapshot (written at 3 AM ET) ──
+            const today = new Intl.DateTimeFormat("en-CA", {
+              timeZone: "America/New_York",
+              year: "numeric", month: "2-digit", day: "2-digit",
+            }).format(new Date());
 
-            // ── 1. Get today's first pitch time from ESPN ──────────────────
-            let firstPitchMs = null;
+            const snapPath = path.join(
+              process.cwd(),
+              `public/data/polymarket/snapshots-${today}.json`
+            );
+            if (fs.existsSync(snapPath)) {
+              try {
+                const snap = JSON.parse(fs.readFileSync(snapPath, "utf8"));
+                const times = (snap.games || [])
+                  .map(g => new Date(g.gameTime).getTime())
+                  .filter(t => !isNaN(t) && t > Date.now() - 3 * 3600 * 1000) // not already hours old
+                  .sort((a, b) => a - b);
+                if (times.length > 0) {
+                  console.log(`First pitch from Polymarket snapshot: ${new Date(times[0]).toISOString()}`);
+                  return times[0];
+                }
+              } catch (e) {
+                console.log("Polymarket snapshot parse failed:", e.message);
+              }
+            }
+
+            // ── Fallback: ESPN public scoreboard API ─────────────────────────
+            console.log("Falling back to ESPN scoreboard API...");
             try {
               const resp = await fetch(
                 "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
               );
               const data = await resp.json();
-              const dates = (data.events || [])
-                .map((e) => new Date(e.date).getTime())
-                .filter((t) => !isNaN(t))
+              const times = (data.events || [])
+                .map(e => new Date(e.date).getTime())
+                .filter(t => !isNaN(t))
                 .sort((a, b) => a - b);
-              if (dates.length > 0) firstPitchMs = dates[0];
-            } catch (err) {
-              console.log("ESPN fetch failed:", err.message);
+              if (times.length > 0) {
+                console.log(`First pitch from ESPN: ${new Date(times[0]).toISOString()}`);
+                return times[0];
+              }
+            } catch (e) {
+              console.log("ESPN API failed:", e.message);
             }
 
+            return null;
+          }
+
+          async function main() {
+            const nowMs         = Date.now();
+            const firstPitchMs  = await findFirstPitchMs();
+
             if (!firstPitchMs) {
-              console.log("::set-output name=run::false");
-              console.log("No games found — skipping.");
+              console.log("No game times found — skipping.");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
               return;
             }
 
             const minsToFirstPitch = (firstPitchMs - nowMs) / 60000;
-            console.log(`First pitch in ${minsToFirstPitch.toFixed(0)} minutes.`);
+            const hrsLabel = (minsToFirstPitch / 60).toFixed(1);
+            console.log(`First pitch in ${hrsLabel} hours (${minsToFirstPitch.toFixed(0)} min).`);
 
-            // ── 2. Gate: only run 4 hrs (240 min) before first pitch ───────
+            // Not yet within 4-hour window
             if (minsToFirstPitch > 240) {
               console.log("More than 4 hours away — skipping.");
-              console.log("run=false >> GITHUB_OUTPUT");
-              process.stdout.write("run=false\n");
               fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
               return;
             }
 
-            // ── 3. Gate: stop 15 min before first pitch (too late) ─────────
-            if (minsToFirstPitch < 15) {
-              console.log("Within 15 min of first pitch — stopping polling.");
+            // Game already started (>15 min ago) — stop trying
+            if (minsToFirstPitch < -15) {
+              console.log("Game already started — stopping.");
               fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
               return;
             }
 
-            // ── 4. Check if lines are already populated in hr-props-raw ────
+            // Lines already populated in hr-props-raw.json — nothing to do
             const rawPath = path.join(process.cwd(), "public/data/mlb/hr-props-raw.json");
-            let linesAlreadyPopulated = false;
             if (fs.existsSync(rawPath)) {
               try {
-                const raw = JSON.parse(fs.readFileSync(rawPath, "utf8"));
-                const hrFilled = (raw.batters || []).some((b) => b.hrOddsYes != null);
-                const kFilled  = (raw.pitchers || []).some((p) => p.kLine != null && p.kLine > 0);
-                linesAlreadyPopulated = hrFilled && kFilled;
-                console.log(`HR lines filled: ${hrFilled}, K lines filled: ${kFilled}`);
+                const raw      = JSON.parse(fs.readFileSync(rawPath, "utf8"));
+                const hrFilled = (raw.batters  || []).some(b => b.hrOddsYes != null);
+                const kFilled  = (raw.pitchers || []).some(p => p.kLine != null && p.kLine > 0);
+                console.log(`Lines already in file — HR: ${hrFilled}, K: ${kFilled}`);
+                if (hrFilled && kFilled) {
+                  console.log("Both HR and K lines populated — skipping.");
+                  fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
+                  return;
+                }
               } catch (e) {
                 console.log("Could not read hr-props-raw.json:", e.message);
               }
             }
 
-            if (linesAlreadyPopulated) {
-              console.log("Lines already populated — skipping redundant rebuild.");
-              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
-              return;
-            }
-
-            console.log(`Within window (${minsToFirstPitch.toFixed(0)} min to first pitch) and lines not yet populated — proceeding.`);
+            console.log(`Within window and lines not yet populated — proceeding.`);
             fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=true\n");
           }
 
-          main().catch((e) => {
-            console.error("Gate check error:", e.message);
-            // On error, default to skipping
-            const fs = require("fs");
+          main().catch(e => {
+            console.error("Gate error:", e.message);
             fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
           });
           NODE
 
-      # All subsequent steps only run if gate says run=true ──────────────────
+      # ── Fetch + inject (only when gate says go) ──────────────────────────────
 
       - name: Fetch MLB odds (ParlayAPI + moneylines)
         if: steps.gate.outputs.run == 'true'
         run: node scripts/fetch-mlb-odds.mjs || true
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEY:        ${{ secrets.ODDS_API_KEY }}
           ODDS_API_KEY_BACKUP: ${{ secrets.ODDS_API_KEY_BACKUP }}
-          PARLAYAPI: ${{ secrets.PARLAYAPI }}
-          THERUNDOWNAPI: ${{ secrets.THERUNDOWNAPI }}
+          PARLAYAPI:           ${{ secrets.PARLAYAPI }}
+          THERUNDOWNAPI:       ${{ secrets.THERUNDOWNAPI }}
 
-      # ── Check whether this fetch actually returned any lines ───────────────
-      - name: Check if lines came back
+      - name: Check if ParlayAPI returned lines
         id: lines
         if: steps.gate.outputs.run == 'true'
         shell: bash
         run: |
           node << 'NODE'
-          const fs = require("fs");
+          const fs   = require("fs");
           const path = require("path");
           const oddsPath = path.join(process.cwd(), "public/data/mlb/mlb-odds.json");
           let hasLines = false;
           try {
-            const odds = JSON.parse(fs.readFileSync(oddsPath, "utf8"));
+            const odds    = JSON.parse(fs.readFileSync(oddsPath, "utf8"));
             const hrCount = Object.keys(odds.hrOdds || {}).length;
             const kCount  = Object.keys(odds.kOdds  || {}).length;
-            console.log(`HR lines from ParlayAPI: ${hrCount}, K lines: ${kCount}`);
+            console.log(`ParlayAPI returned ${hrCount} HR lines, ${kCount} K lines.`);
             hasLines = hrCount > 0 || kCount > 0;
           } catch (e) {
             console.log("Could not read mlb-odds.json:", e.message);
           }
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_lines=${hasLines}\n`);
-          if (!hasLines) console.log("No lines returned — will skip rebuild.");
+          if (!hasLines) console.log("No lines yet — will try again next scheduled run.");
           NODE
 
       - name: Inject batter HR odds
@@ -179,29 +213,24 @@ jobs:
         if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
         run: node scripts/inject-k-odds.mjs || true
 
-      - name: Remove timestamp-only data changes
+      - name: Remove timestamp-only changes
         if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
         shell: bash
         run: |
-          node <<'NODE'
-          const fs = require("fs");
+          node << 'NODE'
+          const fs  = require("fs");
           const { execFileSync } = require("child_process");
-          const volatileKeys = new Set([
-            "generatedAt","fetchedAt","updatedAt","lastUpdated",
-            "scheduledFor","nextRunAt","lineupDataAsOf",
-            "generationStartedAt","generationCompletedAt","actualWorkflowStart"
-          ]);
+          const skip = new Set(["generatedAt","fetchedAt","updatedAt","lastUpdated","scheduledFor","nextRunAt","lineupDataAsOf","generationStartedAt","generationCompletedAt","actualWorkflowStart"]);
           function clean(v) {
             if (Array.isArray(v)) return v.map(clean);
-            if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([k])=>!volatileKeys.has(k)).sort(([a],[b])=>a.localeCompare(b)).map(([k,c])=>[k,clean(c)]));
+            if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([k])=>!skip.has(k)).sort(([a],[b])=>a.localeCompare(b)).map(([k,c])=>[k,clean(c)]));
             return v;
           }
           let changed = [];
           try { changed = execFileSync("git",["diff","--name-only","--","public/data/mlb"],{encoding:"utf8"}).trim().split("\n").filter(Boolean); } catch {}
           for (const f of changed) {
-            if (!f.endsWith(".json")||!fs.existsSync(f)) continue;
-            let prev;
-            try { prev = execFileSync("git",["show",`HEAD:${f}`],{encoding:"utf8",stdio:["ignore","pipe","ignore"]}); } catch { continue; }
+            if (!f.endsWith(".json") || !fs.existsSync(f)) continue;
+            let prev; try { prev = execFileSync("git",["show",`HEAD:${f}`],{encoding:"utf8",stdio:["ignore","pipe","ignore"]}); } catch { continue; }
             try {
               if (JSON.stringify(clean(JSON.parse(prev))) === JSON.stringify(clean(JSON.parse(fs.readFileSync(f,"utf8"))))) {
                 execFileSync("git",["restore","--worktree","--source=HEAD","--",f],{stdio:"inherit"});
@@ -233,14 +262,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
+          git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/mlb/
 
-          if git diff --cached --quiet; then
-            echo "Nothing staged."
-            exit 0
-          fi
+          if git diff --cached --quiet; then echo "Nothing staged."; exit 0; fi
 
           git commit -m "chore: inject prop lines $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
 
@@ -248,17 +274,10 @@ jobs:
           for attempt in 1 2 3 4 5; do
             echo "Push attempt ${attempt}/5"
             git fetch origin main
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-            elif git push origin HEAD:main; then
-              pushed=true
-              break
-            fi
+            if ! git rebase origin/main; then git rebase --abort || true;
+            elif git push origin HEAD:main; then pushed=true; break; fi
             sleep $((attempt * 10))
           done
 
-          if [ "$pushed" != "true" ]; then
-            echo "ERROR: All push attempts failed." >&2
-            exit 1
-          fi
-          echo "Prop lines pushed successfully."
+          $pushed || { echo "ERROR: all push attempts failed." >&2; exit 1; }
+          echo "Prop lines pushed."
