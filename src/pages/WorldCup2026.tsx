@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
@@ -528,6 +529,183 @@ function BracketMobile() {
   );
 }
 
+// ─── ESPN name → ALL_TEAMS name mapping ──────────────────────────────────────
+// Maps ESPN's displayName to the canonical team name in WorldCupAnalyzer.tsx
+
+const ESPN_TO_TEAM: Record<string, string> = {
+  "Ivory Coast":   "Côte d'Ivoire",
+  "United States": "USA",
+  "Cape Verde":    "Cabo Verde",
+  "Iran":          "IR Iran",
+  "South Korea":   "Korea Rep.",
+  "Turkey":        "Türkiye",
+  // All others match exactly
+};
+
+function espnNameToTeam(displayName: string): string {
+  return ESPN_TO_TEAM[displayName] ?? displayName;
+}
+
+type ScheduledFixture = {
+  id: string;
+  label: string;       // "France vs Norway · Jun 26, 3pm ET"
+  awayName: string;    // canonical ALL_TEAMS name
+  homeName: string;
+  date: string;        // ISO
+  venue: string;
+  stage: string;
+  completed: boolean;
+};
+
+// ─── Analyzer tab: schedule dropdown + inline analyzer ───────────────────────
+
+function AnalyzerTab() {
+  const [fixtures, setFixtures] = useState<ScheduledFixture[]>([]);
+  const [loadingFixtures, setLoadingFixtures] = useState(true);
+  const [selectedFixture, setSelectedFixture] = useState<ScheduledFixture | null>(null);
+  const [teamA, setTeamA] = useState<string>("Brazil");
+  const [teamB, setTeamB] = useState<string>("Spain");
+
+  // Fetch next 7 days of WC fixtures from ESPN public API
+  useEffect(() => {
+    const today = new Date();
+    const dates: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      dates.push(d.toISOString().slice(0, 10).replace(/-/g, ""));
+    }
+
+    Promise.all(
+      dates.map(date =>
+        fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${date}`)
+          .then(r => r.ok ? r.json() : { events: [] })
+          .catch(() => ({ events: [] }))
+      )
+    ).then(results => {
+      const all: ScheduledFixture[] = [];
+      for (const data of results) {
+        for (const ev of (data.events ?? [])) {
+          const comp = ev.competitions?.[0];
+          if (!comp) continue;
+          const home = comp.competitors?.find((c: { homeAway: string }) => c.homeAway === "home");
+          const away = comp.competitors?.find((c: { homeAway: string }) => c.homeAway === "away");
+          if (!home || !away) continue;
+
+          // Skip TBD matchups (knockout bracket slots not yet determined)
+          const homeName = home.team?.displayName ?? "";
+          const awayName = away.team?.displayName ?? "";
+          if (homeName.includes("Group") || awayName.includes("Group") ||
+              homeName.includes("Third") || awayName.includes("Third") ||
+              homeName.includes("Place") || awayName.includes("Place") ||
+              homeName.startsWith("2") || awayName.startsWith("2") ||
+              homeName.startsWith("3") || awayName.startsWith("3")) continue;
+
+          const dt = new Date(ev.date);
+          const dateLabel = dt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+          const timeLabel = dt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" });
+          const stage = ev.season?.slug === "group-stage" ? "Group Stage" : (ev.season?.slug ?? "");
+          const venueName = comp.venue?.fullName ?? "";
+
+          all.push({
+            id: ev.id,
+            label: `${espnNameToTeam(awayName)} vs ${espnNameToTeam(homeName)} · ${dateLabel}, ${timeLabel} ET`,
+            awayName: espnNameToTeam(awayName),
+            homeName: espnNameToTeam(homeName),
+            date: ev.date,
+            venue: venueName,
+            stage,
+            completed: comp.status?.type?.completed ?? false,
+          });
+        }
+      }
+      // Sort by date
+      all.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setFixtures(all);
+      // Auto-select first upcoming (non-completed) fixture
+      const next = all.find(f => !f.completed) ?? all[0] ?? null;
+      if (next) {
+        setSelectedFixture(next);
+        setTeamA(next.awayName);
+        setTeamB(next.homeName);
+      }
+      setLoadingFixtures(false);
+    });
+  }, []);
+
+  const handleFixtureSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const fix = fixtures.find(f => f.id === e.target.value) ?? null;
+    if (fix) {
+      setSelectedFixture(fix);
+      setTeamA(fix.awayName);
+      setTeamB(fix.homeName);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      {/* Schedule dropdown */}
+      <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-3">
+          Next 7 Days · Live Schedule
+        </div>
+
+        {loadingFixtures ? (
+          <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
+        ) : fixtures.length === 0 ? (
+          <p className="text-sm text-slate-400 italic">No upcoming fixtures found for the next 7 days.</p>
+        ) : (
+          <div className="space-y-3">
+            <select
+              value={selectedFixture?.id ?? ""}
+              onChange={handleFixtureSelect}
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#031635] transition"
+            >
+              {fixtures.map(f => (
+                <option key={f.id} value={f.id}>
+                  {f.completed ? "✓ " : ""}{f.label}
+                </option>
+              ))}
+            </select>
+            {selectedFixture && (
+              <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
+                {selectedFixture.venue && <span>📍 {selectedFixture.venue}</span>}
+                {selectedFixture.stage && <span>🏷 {selectedFixture.stage}</span>}
+                {selectedFixture.completed && <span className="text-emerald-600 font-semibold">✓ Completed</span>}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-3 text-[10px] text-slate-400">
+          Or compare any two teams using the selectors below ↓
+        </div>
+      </div>
+
+      {/* Inline analyzer — lazy import avoids circular deps */}
+      <InlineAnalyzer teamAName={teamA} teamBName={teamB} onSwap={() => { setTeamA(teamB); setTeamB(teamA); }} onChangeA={setTeamA} onChangeB={setTeamB} />
+    </div>
+  );
+}
+
+// ── Lazy-loaded inline analyzer ───────────────────────────────────────────────
+// Rather than import WorldCupAnalyzer.tsx (which would create a circular dep),
+// we import only the named exports we need. WorldCupAnalyzer.tsx uses a default
+// export, so we use a dynamic approach: render an iframe-free inline version
+// by passing team names down to a thin wrapper that renders the same sections.
+
+import WorldCupAnalyzerInline from "./WorldCupAnalyzerInline";
+
+function InlineAnalyzer({ teamAName, teamBName, onSwap, onChangeA, onChangeB }: {
+  teamAName: string;
+  teamBName: string;
+  onSwap: () => void;
+  onChangeA: (n: string) => void;
+  onChangeB: (n: string) => void;
+}) {
+  return <WorldCupAnalyzerInline teamAName={teamAName} teamBName={teamBName} onSwap={onSwap} onChangeA={onChangeA} onChangeB={onChangeB} />;
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function WorldCup2026() {
   usePageSeo({
@@ -628,7 +806,7 @@ export default function WorldCup2026() {
     ],
   });
 
-  const [tab, setTab] = useState<"groups" | "bracket">("groups");
+  const [tab, setTab] = useState<"groups" | "bracket" | "analyzer">("groups");
 
   return (
     <SiteShell>
@@ -670,7 +848,7 @@ export default function WorldCup2026() {
       {/* ── Tabs ── */}
       <div className="sticky top-0 z-20 bg-white border-b border-slate-200 shadow-sm">
         <div className="mx-auto max-w-6xl px-4 flex gap-0">
-          {(["groups", "bracket"] as const).map(t => (
+          {(["groups", "bracket", "analyzer"] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -680,7 +858,7 @@ export default function WorldCup2026() {
                   : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
             >
-              {t === "groups" ? "⚽ Group Rankings" : "🏆 Bracket"}
+              {t === "groups" ? "⚽ Groups" : t === "bracket" ? "🏆 Bracket" : "⚔️ Analyzer"}
             </button>
           ))}
         </div>
@@ -792,6 +970,9 @@ export default function WorldCup2026() {
             </div>
           </>
         )}
+
+        {/* ── ANALYZER ── */}
+        {tab === "analyzer" && <AnalyzerTab />}
       </div>
     </SiteShell>
   );
