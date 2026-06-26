@@ -3,22 +3,24 @@
   "timezone": "America/New_York",
   "methodologyVersion": "2.1.0",
   "scheduledFor": "09:36 America/New_York",
-  "generationStartedAt": "2026-06-26T12:34:57.178Z",
-  "generationCompletedAt": "2026-06-26T12:34:57.561Z",
-  "generatedAt": "2026-06-26T12:34:57.561Z",
-  "lineupDataAsOf": "2026-06-26T12:34:57.290Z",
+  "generationStartedAt": "2026-06-26T14:43:53.579Z",
+  "generationCompletedAt": "2026-06-26T14:43:54.195Z",
+  "generatedAt": "2026-06-26T14:43:54.195Z",
+  "lineupDataAsOf": "2026-06-26T14:43:53.826Z",
   "generationMode": "live",
   "narrativeSource": "fallback",
   "rankingBasis": "numerology_only",
   "baseballContextOnly": true,
   "dataStatus": "unavailable",
   "candidatePool": {
-    "candidatePoolType": "game_team_40_man_rosters_with_jkb_context",
-    "description": "Every non-pitcher on the 40-man rosters of teams playing today; JoeKnowsBall HR scores are attached only when available.",
-    "eligiblePlayerCount": 589,
-    "evaluatedPlayerCount": 589,
+    "candidatePoolType": "daily_jkb_hr_model_batters",
+    "description": "Only hitters listed in the Joe Knows Ball HR model for teams on today's MLB schedule are eligible for the numerology page.",
+    "eligiblePlayerCount": 216,
+    "evaluatedPlayerCount": 216,
     "excludedPlayerCount": 0,
-    "exclusionReasons": []
+    "exclusionReasons": [],
+    "preHrModelFilterCount": 289,
+    "activityFilterCheckedAt": "2026-06-26T14:43:54.251Z"
   },
   "dailyProfile": {
     "universalDayRawSum": 24,
@@ -85,88 +87,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 67.9
-    },
-    {
-      "playerId": 800050,
-      "playerName": "Chase DeLauter",
-      "team": "CLE",
-      "opponent": "SEA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 24,
-      "numerologyScore": 43,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 24,
-          "label": "Jersey #24"
-        },
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 542303,
-      "playerName": "Marcell Ozuna",
-      "team": "PIT",
-      "opponent": "CIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 24,
-      "numerologyScore": 43,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 24,
-          "label": "Jersey #24"
-        },
-        {
-          "field": "lifePath",
-          "value": 24,
-          "label": "Life Path 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 682818,
-      "playerName": "Yohendrick Piñango",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 24,
-      "numerologyScore": 25,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 24,
-          "label": "Jersey #24"
-        },
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 67.9,
+      "hrScore": 67.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 607043,
@@ -188,7 +114,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 72.7
+      "marketScore": 72.7,
+      "hrScore": 72.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 691176,
@@ -210,95 +141,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 26.9
-    },
-    {
-      "playerId": 695731,
-      "playerName": "Braden Montgomery",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 24,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 24,
-          "label": "Jersey #24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691185,
-      "playerName": "Maximo Acosta",
-      "team": "MIA",
-      "opponent": "STL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 24,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 24,
-          "label": "Jersey #24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 823550,
-      "playerName": "Sung-Mun Song",
-      "team": "SD",
-      "opponent": "LAD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 24,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 24,
-          "label": "Jersey #24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 805373,
-      "playerName": "Nacho Alvarez Jr.",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 24,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 24,
-          "label": "Jersey #24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 26.9,
+      "hrScore": 26.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 666971,
@@ -320,61 +168,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 27.5
-    },
-    {
-      "playerId": 690976,
-      "playerName": "Alex Freeland",
-      "team": "LAD",
-      "opponent": "SD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 76,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        },
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 682877,
-      "playerName": "Juan Brito",
-      "team": "CLE",
-      "opponent": "SEA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 34,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        },
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 27.5,
+      "hrScore": 27.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 691016,
@@ -401,183 +200,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 42.8
-    },
-    {
-      "playerId": 804606,
-      "playerName": "Konnor Griffin",
-      "team": "PIT",
-      "opponent": "CIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 25,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 641555,
-      "playerName": "J.C. Escarra",
-      "team": "NYY",
-      "opponent": "BOS",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 25,
-      "numerologyScore": 16,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 571771,
-      "playerName": "Enrique Hernández",
-      "team": "LAD",
-      "opponent": "SD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 8,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 669398,
-      "playerName": "Gage Workman",
-      "team": "DET",
-      "opponent": "HOU",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 99,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 500743,
-      "playerName": "Miguel Rojas",
-      "team": "LAD",
-      "opponent": "SD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 72,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 646240,
-      "playerName": "Rafael Devers",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 16,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 700242,
-      "playerName": "Trey Sweeney",
-      "team": "DET",
-      "opponent": "HOU",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 27,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 682988,
-      "playerName": "Tyler Locklear",
-      "team": "AZ",
-      "opponent": "TB",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 31,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 42.8,
+      "hrScore": 42.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 650489,
@@ -599,7 +227,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 41.4
+      "marketScore": 41.4,
+      "hrScore": 41.4,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 677800,
@@ -621,127 +254,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 48.7
-    },
-    {
-      "playerId": 695391,
-      "playerName": "Brett Harris",
-      "team": "ATH",
-      "opponent": "LAA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 11,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 688363,
-      "playerName": "Graham Pauley",
-      "team": "MIA",
-      "opponent": "STL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 21,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 24,
-          "label": "Born on day 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 807713,
-      "playerName": "Matt Shaw",
-      "team": "CHC",
-      "opponent": "MIL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 48,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        },
-        {
-          "field": "expression",
-          "value": 24,
-          "label": "Expression 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 692216,
-      "playerName": "CJ Kayfus",
-      "team": "CLE",
-      "opponent": "SEA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 2,
-      "numerologyScore": 16,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        },
-        {
-          "field": "expression",
-          "value": 24,
-          "label": "Expression 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 807727,
-      "playerName": "Charles McAdoo",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 26,
-      "numerologyScore": 51,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 48.7,
+      "hrScore": 48.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 691023,
@@ -763,51 +281,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 51.9
-    },
-    {
-      "playerId": 690987,
-      "playerName": "Robert Hassell III",
-      "team": "WSH",
-      "opponent": "BAL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 36,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 813841,
-      "playerName": "Jonah Cox",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 53,
-      "numerologyScore": 29,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 51.9,
+      "hrScore": 51.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 694371,
@@ -829,7 +308,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 43.2
+      "marketScore": 43.2,
+      "hrScore": 43.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 690993,
@@ -851,7 +335,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 44.6
+      "marketScore": 44.6,
+      "hrScore": 44.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 805300,
@@ -873,139 +362,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 33.1
-    },
-    {
-      "playerId": 683679,
-      "playerName": "Jesus Rodriguez",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 79,
-      "numerologyScore": 23,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 678662,
-      "playerName": "Ezequiel Tovar",
-      "team": "COL",
-      "opponent": "MIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 14,
-      "numerologyScore": 22,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691019,
-      "playerName": "Kyle Teel",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 8,
-      "numerologyScore": 22,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 805367,
-      "playerName": "Chase Meidroth",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 10,
-      "numerologyScore": 18,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 682626,
-      "playerName": "Francisco Alvarez",
-      "team": "NYM",
-      "opponent": "PHI",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 4,
-      "numerologyScore": 18,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 694410,
-      "playerName": "LuJames Groover",
-      "team": "AZ",
-      "opponent": "TB",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 16,
-      "numerologyScore": 18,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 33.1,
+      "hrScore": 33.1,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 690984,
@@ -1027,7 +389,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 29.5
+      "marketScore": 29.5,
+      "hrScore": 29.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 694671,
@@ -1049,7 +416,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 59.5
+      "marketScore": 59.5,
+      "hrScore": 59.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 683002,
@@ -1071,29 +443,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 42.3
-    },
-    {
-      "playerId": 682674,
-      "playerName": "Victor Bericoto",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 78,
-      "numerologyScore": 16,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 42.3,
+      "hrScore": 42.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 682829,
@@ -1115,7 +470,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 42
+      "marketScore": 42,
+      "hrScore": 42,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 699625,
@@ -1137,51 +497,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 36.9
-    },
-    {
-      "playerId": 682729,
-      "playerName": "Jonatan Clase",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 8,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 695657,
-      "playerName": "Colson Montgomery",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 12,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 36.9,
+      "hrScore": 36.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 686611,
@@ -1203,29 +524,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 51.3
-    },
-    {
-      "playerId": 691011,
-      "playerName": "Drew Romo",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 36,
-      "numerologyScore": 10,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 51.3,
+      "hrScore": 51.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 694384,
@@ -1247,117 +551,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 30.5
-    },
-    {
-      "playerId": 682663,
-      "playerName": "Agustín Ramírez",
-      "team": "MIA",
-      "opponent": "STL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 50,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 687231,
-      "playerName": "Darell Hernaiz",
-      "team": "ATH",
-      "opponent": "LAA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 2,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 805779,
-      "playerName": "Jacob Wilson",
-      "team": "ATH",
-      "opponent": "LAA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 5,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691858,
-      "playerName": "Jared Serna",
-      "team": "MIA",
-      "opponent": "STL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 68,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 682657,
-      "playerName": "Angel Martínez",
-      "team": "CLE",
-      "opponent": "SEA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 1,
-      "numerologyScore": 6,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 30.5,
+      "hrScore": 30.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 694728,
@@ -1379,7 +578,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 30.6
+      "marketScore": 30.6,
+      "hrScore": 30.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 691723,
@@ -1401,7 +605,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 45.5
+      "marketScore": 45.5,
+      "hrScore": 45.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 694249,
@@ -1423,51 +632,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 41.8
-    },
-    {
-      "playerId": 678577,
-      "playerName": "Junior Perez",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 37,
-      "numerologyScore": 6,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 677347,
-      "playerName": "Kyren Paris",
-      "team": "LAA",
-      "opponent": "ATH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 19,
-      "numerologyScore": 6,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 41.8,
+      "hrScore": 41.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 691026,
@@ -1489,7 +659,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 32.3
+      "marketScore": 32.3,
+      "hrScore": 32.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 682622,
@@ -1511,7 +686,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 19.1
+      "marketScore": 19.1,
+      "hrScore": 19.1,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 691718,
@@ -1533,29 +713,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 48.3
-    },
-    {
-      "playerId": 695336,
-      "playerName": "Thomas Saggese",
-      "team": "STL",
-      "opponent": "MIA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 25,
-      "numerologyScore": 6,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 48.3,
+      "hrScore": 48.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 683748,
@@ -1577,183 +740,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 53.4
-    },
-    {
-      "playerId": 694673,
-      "playerName": "Abimelec Ortiz",
-      "team": "WSH",
-      "opponent": "BAL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 81,
-      "numerologyScore": 2,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 694378,
-      "playerName": "Jacob Gonzalez",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 7,
-      "numerologyScore": 2,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 694377,
-      "playerName": "Nick Yorke",
-      "team": "PIT",
-      "opponent": "CIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 38,
-      "numerologyScore": 1,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 687637,
-      "playerName": "Dylan Beavers",
-      "team": "BAL",
-      "opponent": "WSH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 12,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 682668,
-      "playerName": "Luisangel Acuña",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 0,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691907,
-      "playerName": "Tsung-Che Cheng",
-      "team": "BOS",
-      "opponent": "NYY",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 39,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691728,
-      "playerName": "Zac Veen",
-      "team": "COL",
-      "opponent": "MIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 13,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 24,
-          "label": "Age 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 668709,
-      "playerName": "JJ Bleday",
-      "team": "CIN",
-      "opponent": "PIT",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 22,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 24,
-          "label": "Expression 24"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 53.4,
+      "hrScore": 53.4,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 694374,
@@ -1775,80 +767,15 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 19.8
+      "marketScore": 19.8,
+      "hrScore": 19.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     }
   ],
   "rootNumberMatches": [
-    {
-      "playerId": 624641,
-      "playerName": "Edmundo Sosa",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 33,
-      "numerologyScore": 47,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 33,
-          "root": 6,
-          "label": "Jersey #33 → 6"
-        },
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        },
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 663697,
-      "playerName": "Jonathan India",
-      "team": "KC",
-      "opponent": "CWS",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 47,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        },
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        },
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
     {
       "playerId": 665953,
       "playerName": "Andrés Chaparro",
@@ -1882,112 +809,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 41.2
-    },
-    {
-      "playerId": 691620,
-      "playerName": "Jeferson Quero",
-      "team": "MIL",
-      "opponent": "CHC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 15,
-      "numerologyScore": 46,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 15,
-          "root": 6,
-          "label": "Jersey #15 → 6"
-        },
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 69,
-          "root": 6,
-          "label": "Expression 69 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 805999,
-      "playerName": "A.J. Ewing",
-      "team": "NYM",
-      "opponent": "PHI",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 9,
-      "numerologyScore": 45,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 33,
-          "root": 6,
-          "label": "Expression 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 681047,
-      "playerName": "Christian Franklin",
-      "team": "WSH",
-      "opponent": "BAL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 33,
-      "numerologyScore": 41,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 33,
-          "root": 6,
-          "label": "Jersey #33 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 87,
-          "root": 6,
-          "label": "Expression 87 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 41.2,
+      "hrScore": 41.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 665877,
@@ -2022,199 +849,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 29.8
-    },
-    {
-      "playerId": 663698,
-      "playerName": "Joey Bart",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 16,
-      "numerologyScore": 37,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        },
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 33,
-          "root": 6,
-          "label": "Expression 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 606992,
-      "playerName": "Eric Haase",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 18,
-      "numerologyScore": 34,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 42,
-          "root": 6,
-          "label": "Expression 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 596115,
-      "playerName": "Trevor Story",
-      "team": "BOS",
-      "opponent": "NYY",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 10,
-      "numerologyScore": 27,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        },
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 592450,
-      "playerName": "Aaron Judge",
-      "team": "NYY",
-      "opponent": "BOS",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 99,
-      "numerologyScore": 40,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 42,
-          "root": 6,
-          "label": "Expression 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 700337,
-      "playerName": "Edgar Quero",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 26,
-      "numerologyScore": 35,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 656976,
-      "playerName": "Pavin Smith",
-      "team": "AZ",
-      "opponent": "TB",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 26,
-      "numerologyScore": 35,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 29.8,
+      "hrScore": 29.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 696100,
@@ -2243,94 +883,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 54.9
-    },
-    {
-      "playerId": 673490,
-      "playerName": "Ha-Seong Kim",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 7,
-      "numerologyScore": 29,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 663584,
-      "playerName": "Hayden Senger",
-      "team": "NYM",
-      "opponent": "PHI",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 29,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 624431,
-      "playerName": "Jose Trevino",
-      "team": "CIN",
-      "opponent": "PIT",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 35,
-      "numerologyScore": 29,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 54.9,
+      "hrScore": 54.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 656555,
@@ -2359,36 +917,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 38.4
-    },
-    {
-      "playerId": 701350,
-      "playerName": "Roman Anthony",
-      "team": "BOS",
-      "opponent": "NYY",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 19,
-      "numerologyScore": 29,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 38.4,
+      "hrScore": 38.4,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 670764,
@@ -2417,94 +951,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 22.4
-    },
-    {
-      "playerId": 664056,
-      "playerName": "Harrison Bader",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 9,
-      "numerologyScore": 28,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 69,
-          "root": 6,
-          "label": "Expression 69 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 665861,
-      "playerName": "Sebastián Rivero",
-      "team": "LAA",
-      "opponent": "ATH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 38,
-      "numerologyScore": 27,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 69,
-          "root": 6,
-          "label": "Expression 69 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 543685,
-      "playerName": "Anthony Rendon",
-      "team": "LAA",
-      "opponent": "ATH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 25,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        },
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 22.4,
+      "hrScore": 22.4,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 681909,
@@ -2533,7 +985,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 25.5
+      "marketScore": 25.5,
+      "hrScore": 25.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 807712,
@@ -2562,326 +1019,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 36.9
-    },
-    {
-      "playerId": 807747,
-      "playerName": "Rikuu Nishida",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 51,
-      "numerologyScore": 25,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 51,
-          "root": 6,
-          "label": "Jersey #51 → 6"
-        },
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 680728,
-      "playerName": "Adrian Del Castillo",
-      "team": "AZ",
-      "opponent": "TB",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 25,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 69,
-          "root": 6,
-          "label": "Expression 69 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 666152,
-      "playerName": "David Hamilton",
-      "team": "MIL",
-      "opponent": "CHC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 687551,
-      "playerName": "Drew Gilbert",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 0,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 694230,
-      "playerName": "Hendry Mendez",
-      "team": "MIN",
-      "opponent": "COL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 64,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 69,
-          "root": 6,
-          "label": "Expression 69 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 665856,
-      "playerName": "Jair Camargo",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 78,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 78,
-          "root": 6,
-          "label": "Jersey #78 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 571657,
-      "playerName": "Kyle Farmer",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 15,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 15,
-          "root": 6,
-          "label": "Jersey #15 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 682515,
-      "playerName": "Logan Porter",
-      "team": "LAA",
-      "opponent": "ATH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 33,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 33,
-          "root": 6,
-          "label": "Jersey #33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 680574,
-      "playerName": "Matt McLain",
-      "team": "CIN",
-      "opponent": "PIT",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 9,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 42,
-          "root": 6,
-          "label": "Life Path 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 665833,
-      "playerName": "Oneil Cruz",
-      "team": "PIT",
-      "opponent": "CIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 15,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 15,
-          "root": 6,
-          "label": "Jersey #15 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 681082,
-      "playerName": "Bryson Stott",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 5,
-      "numerologyScore": 23,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        },
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 36.9,
+      "hrScore": 36.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 696030,
@@ -2910,36 +1053,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 38.6
-    },
-    {
-      "playerId": 695600,
-      "playerName": "Carter Jensen",
-      "team": "KC",
-      "opponent": "CWS",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 22,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 38.6,
+      "hrScore": 38.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 664040,
@@ -2968,7 +1087,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 53
+      "marketScore": 53,
+      "hrScore": 53,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 672724,
@@ -2997,36 +1121,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 31.6
-    },
-    {
-      "playerId": 595978,
-      "playerName": "Austin Hedges",
-      "team": "CLE",
-      "opponent": "SEA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 27,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 31.6,
+      "hrScore": 31.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 592518,
@@ -3055,123 +1155,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 48
-    },
-    {
-      "playerId": 606192,
-      "playerName": "Teoscar Hernández",
-      "team": "LAD",
-      "opponent": "SD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 37,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        },
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 596146,
-      "playerName": "Max Kepler",
-      "team": "AZ",
-      "opponent": "TB",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 22,
-      "numerologyScore": 13,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 42,
-          "root": 6,
-          "label": "Expression 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 663853,
-      "playerName": "Romy Gonzalez",
-      "team": "BOS",
-      "opponent": "NYY",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 23,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 69,
-          "root": 6,
-          "label": "Expression 69 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 656941,
-      "playerName": "Kyle Schwarber",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 12,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        },
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 48,
+      "hrScore": 48,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 678554,
@@ -3194,7 +1183,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 63.9
+      "marketScore": 63.9,
+      "hrScore": 63.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 676914,
@@ -3217,99 +1211,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 40.1
-    },
-    {
-      "playerId": 687515,
-      "playerName": "Colby Thomas",
-      "team": "ATH",
-      "opponent": "LAA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 32,
-      "numerologyScore": 28,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 666126,
-      "playerName": "Carlos Cortes",
-      "team": "ATH",
-      "opponent": "LAA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 26,
-      "numerologyScore": 27,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 682848,
-      "playerName": "Endy Rodríguez",
-      "team": "PIT",
-      "opponent": "CIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 13,
-      "numerologyScore": 24,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691277,
-      "playerName": "Deyvison De Los Santos",
-      "team": "MIA",
-      "opponent": "STL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 63,
-      "numerologyScore": 20,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 40.1,
+      "hrScore": 40.1,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 665052,
@@ -3332,53 +1239,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 65.9
-    },
-    {
-      "playerId": 680777,
-      "playerName": "Ryan Jeffers",
-      "team": "MIN",
-      "opponent": "COL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 27,
-      "numerologyScore": 20,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 676475,
-      "playerName": "Alec Burleson",
-      "team": "STL",
-      "opponent": "MIA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 41,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 65.9,
+      "hrScore": 65.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 702284,
@@ -3401,30 +1267,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 41.8
-    },
-    {
-      "playerId": 662139,
-      "playerName": "Daulton Varsho",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 5,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 41.8,
+      "hrScore": 41.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 677649,
@@ -3447,99 +1295,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 43.7
-    },
-    {
-      "playerId": 660688,
-      "playerName": "Keibert Ruiz",
-      "team": "WSH",
-      "opponent": "BAL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 20,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 663656,
-      "playerName": "Kyle Tucker",
-      "team": "LAD",
-      "opponent": "SD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 23,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 669397,
-      "playerName": "Nick Allen",
-      "team": "HOU",
-      "opponent": "DET",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 20,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 686765,
-      "playerName": "Nick Sogard",
-      "team": "BOS",
-      "opponent": "NYY",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 20,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 43.7,
+      "hrScore": 43.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 663538,
@@ -3562,53 +1323,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 21.3
-    },
-    {
-      "playerId": 602104,
-      "playerName": "Ramón Urías",
-      "team": "STL",
-      "opponent": "MIA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 29,
-      "numerologyScore": 19,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 701162,
-      "playerName": "Ben Malgeri",
-      "team": "DET",
-      "opponent": "HOU",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 53,
-      "numerologyScore": 18,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 6,
-          "root": 6,
-          "label": "Life Path 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 21.3,
+      "hrScore": 21.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 572233,
@@ -3631,76 +1351,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 40.2
-    },
-    {
-      "playerId": 810938,
-      "playerName": "Ben Williamson",
-      "team": "TB",
-      "opponent": "AZ",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 15,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 15,
-          "root": 6,
-          "label": "Jersey #15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691458,
-      "playerName": "Blaze Jordan",
-      "team": "STL",
-      "opponent": "MIA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 33,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 33,
-          "root": 6,
-          "label": "Jersey #33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 680977,
-      "playerName": "Brendan Donovan",
-      "team": "SEA",
-      "opponent": "CLE",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 33,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 33,
-          "root": 6,
-          "label": "Jersey #33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 40.2,
+      "hrScore": 40.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 608348,
@@ -3723,76 +1379,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 28.2
-    },
-    {
-      "playerId": 806068,
-      "playerName": "Colt Emerson",
-      "team": "SEA",
-      "opponent": "CLE",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 4,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691740,
-      "playerName": "Daniel Susac",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 680577,
-      "playerName": "DaShawn Keirsey Jr.",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 0,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 28.2,
+      "hrScore": 28.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 681807,
@@ -3815,53 +1407,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 24.7
-    },
-    {
-      "playerId": 666397,
-      "playerName": "Edouard Julien",
-      "team": "COL",
-      "opponent": "MIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691181,
-      "playerName": "Emmanuel Rodriguez",
-      "team": "MIN",
-      "opponent": "COL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 33,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 33,
-          "root": 6,
-          "label": "Jersey #33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 24.7,
+      "hrScore": 24.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 703607,
@@ -3884,122 +1435,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 31.1
-    },
-    {
-      "playerId": 808975,
-      "playerName": "Hyeseong Kim",
-      "team": "LAD",
-      "opponent": "SD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 545121,
-      "playerName": "Ildemaro Vargas",
-      "team": "AZ",
-      "opponent": "TB",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 673962,
-      "playerName": "Josh Jung",
-      "team": "TEX",
-      "opponent": "TOR",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 668942,
-      "playerName": "Josh Rojas",
-      "team": "KC",
-      "opponent": "CWS",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 40,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 808982,
-      "playerName": "Jung Hoo Lee",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 51,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 51,
-          "root": 6,
-          "label": "Jersey #51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 31.1,
+      "hrScore": 31.1,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 672960,
@@ -4022,7 +1463,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 61
+      "marketScore": 61,
+      "hrScore": 61,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 693459,
@@ -4045,53 +1491,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 22.8
-    },
-    {
-      "playerId": 657041,
-      "playerName": "Lane Thomas",
-      "team": "KC",
-      "opponent": "CWS",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 15,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 15,
-          "root": 6,
-          "label": "Jersey #15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 666160,
-      "playerName": "Mickey Moniak",
-      "team": "COL",
-      "opponent": "MIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 22,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 22.8,
+      "hrScore": 22.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 670032,
@@ -4114,30 +1519,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 32.3
-    },
-    {
-      "playerId": 805249,
-      "playerName": "Otto Kemp",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 4,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 32.3,
+      "hrScore": 32.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 672640,
@@ -4160,76 +1547,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 56.9
-    },
-    {
-      "playerId": 804668,
-      "playerName": "Rafael Flores Jr.",
-      "team": "PIT",
-      "opponent": "CIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 43,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 665561,
-      "playerName": "Rafael Marchán",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 13,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 663624,
-      "playerName": "Ryan Mountcastle",
-      "team": "BAL",
-      "opponent": "WSH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 56.9,
+      "hrScore": 56.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 669392,
@@ -4252,7 +1575,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 30.3
+      "marketScore": 30.3,
+      "hrScore": 30.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 682987,
@@ -4275,7 +1603,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 24.8
+      "marketScore": 24.8,
+      "hrScore": 24.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 683953,
@@ -4298,99 +1631,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 41.2
-    },
-    {
-      "playerId": 607208,
-      "playerName": "Trea Turner",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 7,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 695238,
-      "playerName": "Will Wagner",
-      "team": "SD",
-      "opponent": "LAD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 7,
-      "numerologyScore": 17,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 668901,
-      "playerName": "Mark Vientos",
-      "team": "NYM",
-      "opponent": "PHI",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 27,
-      "numerologyScore": 16,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 656305,
-      "playerName": "Matt Chapman",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 26,
-      "numerologyScore": 16,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 41.2,
+      "hrScore": 41.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 701398,
@@ -4413,53 +1659,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 37.2
-    },
-    {
-      "playerId": 680718,
-      "playerName": "Addison Barger",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 47,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 668939,
-      "playerName": "Adley Rutschman",
-      "team": "BAL",
-      "opponent": "WSH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 35,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 37.2,
+      "hrScore": 37.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 668930,
@@ -4482,7 +1687,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 59.5
+      "marketScore": 59.5,
+      "hrScore": 59.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 682928,
@@ -4505,53 +1715,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 52.6
-    },
-    {
-      "playerId": 642086,
-      "playerName": "Dominic Smith",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 8,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 666158,
-      "playerName": "Gavin Lux",
-      "team": "TB",
-      "opponent": "AZ",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 11,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 52.6,
+      "hrScore": 52.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 672695,
@@ -4574,53 +1743,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 31.5
-    },
-    {
-      "playerId": 679032,
-      "playerName": "Johan Rojas",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 23,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 679822,
-      "playerName": "Justin Foscue",
-      "team": "TEX",
-      "opponent": "TOR",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 14,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 31.5,
+      "hrScore": 31.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 670042,
@@ -4643,30 +1771,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 52.2
-    },
-    {
-      "playerId": 808959,
-      "playerName": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 5,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 6,
-          "root": 6,
-          "label": "Life Path 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 52.2,
+      "hrScore": 52.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 664770,
@@ -4689,99 +1799,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 32.7
-    },
-    {
-      "playerId": 701655,
-      "playerName": "Reed Trimble",
-      "team": "BAL",
-      "opponent": "WSH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 62,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 803011,
-      "playerName": "Sam Antonacci",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 17,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 687462,
-      "playerName": "Spencer Horwitz",
-      "team": "PIT",
-      "opponent": "CIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 2,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 671976,
-      "playerName": "Tristan Peters",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 29,
-      "numerologyScore": 14,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 32.7,
+      "hrScore": 32.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 670623,
@@ -4804,99 +1827,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 34.2
-    },
-    {
-      "playerId": 543510,
-      "playerName": "James McCann",
-      "team": "AZ",
-      "opponent": "TB",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 8,
-      "numerologyScore": 13,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 33,
-          "root": 6,
-          "label": "Expression 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 663837,
-      "playerName": "Matt Vierling",
-      "team": "DET",
-      "opponent": "HOU",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 8,
-      "numerologyScore": 13,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 814439,
-      "playerName": "Ryan Waldschmidt",
-      "team": "AZ",
-      "opponent": "TB",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 15,
-      "numerologyScore": 13,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 15,
-          "root": 6,
-          "label": "Jersey #15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 677943,
-      "playerName": "Will Banfield",
-      "team": "CIN",
-      "opponent": "PIT",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 60,
-      "numerologyScore": 13,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 60,
-          "root": 6,
-          "label": "Jersey #60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 34.2,
+      "hrScore": 34.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 575929,
@@ -4919,99 +1855,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 46.4
-    },
-    {
-      "playerId": 666969,
-      "playerName": "Adolis García",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 53,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 681460,
-      "playerName": "Brooks Baldwin",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 27,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 643376,
-      "playerName": "Danny Jansen",
-      "team": "TEX",
-      "opponent": "TOR",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 9,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 677008,
-      "playerName": "Heston Kjerstad",
-      "team": "BAL",
-      "opponent": "WSH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 13,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 46.4,
+      "hrScore": 46.4,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 641343,
@@ -5034,30 +1883,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 74.5
-    },
-    {
-      "playerId": 672284,
-      "playerName": "Jarred Kelenic",
-      "team": "TEX",
-      "opponent": "TOR",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 25,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 42,
-          "root": 6,
-          "label": "Life Path 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 74.5,
+      "hrScore": 74.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 643446,
@@ -5080,53 +1911,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 24.7
-    },
-    {
-      "playerId": 641598,
-      "playerName": "Mitch Garver",
-      "team": "SEA",
-      "opponent": "CLE",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 18,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 694208,
-      "playerName": "Moisés Ballesteros",
-      "team": "CHC",
-      "opponent": "MIL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 25,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 24.7,
+      "hrScore": 24.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 624413,
@@ -5149,7 +1939,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 61.9
+      "marketScore": 61.9,
+      "hrScore": 61.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 681198,
@@ -5172,145 +1967,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 40.4
-    },
-    {
-      "playerId": 671213,
-      "playerName": "Triston Casas",
-      "team": "BOS",
-      "opponent": "NYY",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 36,
-      "numerologyScore": 12,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 643217,
-      "playerName": "Andrew Benintendi",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 23,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 686452,
-      "playerName": "Drew Millas",
-      "team": "WSH",
-      "opponent": "BAL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 14,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 596117,
-      "playerName": "Garrett Stubbs",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 21,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 663330,
-      "playerName": "Jahmai Jones",
-      "team": "DET",
-      "opponent": "HOU",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 18,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 42,
-          "root": 6,
-          "label": "Expression 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 805347,
-      "playerName": "Jim Jarvis",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 74,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 40.4,
+      "hrScore": 40.4,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 665019,
@@ -5333,53 +1995,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 66.7
-    },
-    {
-      "playerId": 573262,
-      "playerName": "Mike Yastrzemski",
-      "team": "ATL",
-      "opponent": "SF",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 18,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 69,
-          "root": 6,
-          "label": "Expression 69 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 657656,
-      "playerName": "Ramón Laureano",
-      "team": "SD",
-      "opponent": "LAD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 5,
-      "numerologyScore": 11,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 66.7,
+      "hrScore": 66.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 665489,
@@ -5402,7 +2023,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 44.2
+      "marketScore": 44.2,
+      "hrScore": 44.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 669743,
@@ -5425,7 +2051,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 23.5
+      "marketScore": 23.5,
+      "hrScore": 23.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 663494,
@@ -5448,7 +2079,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 27.9
+      "marketScore": 27.9,
+      "hrScore": 27.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 678882,
@@ -5471,99 +2107,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 28.5
-    },
-    {
-      "playerId": 596142,
-      "playerName": "Gary Sánchez",
-      "team": "MIL",
-      "opponent": "CHC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 99,
-      "numerologyScore": 10,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 657757,
-      "playerName": "Gavin Sheets",
-      "team": "SD",
-      "opponent": "LAD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 30,
-      "numerologyScore": 10,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 676694,
-      "playerName": "Jake Meyers",
-      "team": "HOU",
-      "opponent": "DET",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "numerologyScore": 10,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "jersey",
-          "value": 6,
-          "root": 6,
-          "label": "Jersey #6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 649966,
-      "playerName": "Luis Urías",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 48,
-      "numerologyScore": 10,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "personalDay",
-          "value": 33,
-          "root": 6,
-          "label": "Personal Day 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 28.5,
+      "hrScore": 28.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 664702,
@@ -5586,7 +2135,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 29.9
+      "marketScore": 29.9,
+      "hrScore": 29.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 669384,
@@ -5609,76 +2163,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 22.8
-    },
-    {
-      "playerId": 695020,
-      "playerName": "Tanner Murray",
-      "team": "CWS",
-      "opponent": "KC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 41,
-      "numerologyScore": 10,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 805672,
-      "playerName": "Collin Price",
-      "team": "HOU",
-      "opponent": "DET",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 37,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 15,
-          "root": 6,
-          "label": "Birth day 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 608841,
-      "playerName": "Joey Meneses",
-      "team": "ATH",
-      "opponent": "LAA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 13,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 22.8,
+      "hrScore": 22.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 514888,
@@ -5701,30 +2191,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 33.1
-    },
-    {
-      "playerId": 608070,
-      "playerName": "José Ramírez",
-      "team": "CLE",
-      "opponent": "SEA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 11,
-      "numerologyScore": 8,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 33.1,
+      "hrScore": 33.1,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 605137,
@@ -5747,7 +2219,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 58.1
+      "marketScore": 58.1,
+      "hrScore": 58.1,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 807799,
@@ -5770,7 +2247,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 26.6
+      "marketScore": 26.6,
+      "hrScore": 26.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 624424,
@@ -5793,7 +2275,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 35.1
+      "marketScore": 35.1,
+      "hrScore": 35.1,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 605141,
@@ -5816,7 +2303,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 45.5
+      "marketScore": 45.5,
+      "hrScore": 45.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 593428,
@@ -5839,53 +2331,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 34.7
-    },
-    {
-      "playerId": 677950,
-      "playerName": "Alek Thomas",
-      "team": "LAD",
-      "opponent": "SD",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 0,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 33,
-          "root": 6,
-          "label": "Expression 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 668885,
-      "playerName": "Austin Martin",
-      "team": "MIN",
-      "opponent": "COL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 16,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 34.7,
+      "hrScore": 34.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 663368,
@@ -5908,7 +2359,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 35.2
+      "marketScore": 35.2,
+      "hrScore": 35.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 677587,
@@ -5931,76 +2387,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 30.9
-    },
-    {
-      "playerId": 667670,
-      "playerName": "Brent Rooker",
-      "team": "ATH",
-      "opponent": "LAA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 25,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 671083,
-      "playerName": "Buddy Kennedy",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 41,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 700246,
-      "playerName": "Carson Williams",
-      "team": "TB",
-      "opponent": "AZ",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 7,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 30.9,
+      "hrScore": 30.9,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 676391,
@@ -6023,7 +2415,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 27.7
+      "marketScore": 27.7,
+      "hrScore": 27.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 681715,
@@ -6046,30 +2443,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 63
-    },
-    {
-      "playerId": 687394,
-      "playerName": "Jack Brannigan",
-      "team": "PIT",
-      "opponent": "CIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 76,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 63,
+      "hrScore": 63,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 663968,
@@ -6092,7 +2471,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 27.2
+      "marketScore": 27.2,
+      "hrScore": 27.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 681546,
@@ -6115,30 +2499,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 19.8
-    },
-    {
-      "playerId": 682634,
-      "playerName": "Kevin Alcántara",
-      "team": "CHC",
-      "opponent": "MIL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 13,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 19.8,
+      "hrScore": 19.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 671732,
@@ -6161,30 +2527,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 31.3
-    },
-    {
-      "playerId": 699114,
-      "playerName": "Leo Balcazar",
-      "team": "CIN",
-      "opponent": "PIT",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 85,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 42,
-          "root": 6,
-          "label": "Expression 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 31.3,
+      "hrScore": 31.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 677870,
@@ -6207,7 +2555,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 38.6
+      "marketScore": 38.6,
+      "hrScore": 38.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 571448,
@@ -6230,30 +2583,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 31.2
-    },
-    {
-      "playerId": 672275,
-      "playerName": "Patrick Bailey",
-      "team": "CLE",
-      "opponent": "SEA",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 16,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 31.2,
+      "hrScore": 31.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 686217,
@@ -6276,7 +2611,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 34.7
+      "marketScore": 34.7,
+      "hrScore": 34.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 669242,
@@ -6299,53 +2639,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 31.6
-    },
-    {
-      "playerId": 592122,
-      "playerName": "Tyler Austin",
-      "team": "CHC",
-      "opponent": "MIL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 17,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "birthDay",
-          "value": 6,
-          "root": 6,
-          "label": "Birth day 6 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 680862,
-      "playerName": "Willie MacIver",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 0,
-      "numerologyScore": 7,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 69,
-          "root": 6,
-          "label": "Expression 69 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 31.6,
+      "hrScore": 31.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 695578,
@@ -6368,145 +2667,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 66
-    },
-    {
-      "playerId": 595879,
-      "playerName": "Javier Báez",
-      "team": "DET",
-      "opponent": "HOU",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 28,
-      "numerologyScore": 6,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 676059,
-      "playerName": "Jordan Westburg",
-      "team": "BAL",
-      "opponent": "WSH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 11,
-      "numerologyScore": 6,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 668731,
-      "playerName": "Akil Baddoo",
-      "team": "MIL",
-      "opponent": "CHC",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 25,
-      "numerologyScore": 5,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 42,
-          "root": 6,
-          "label": "Life Path 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 691781,
-      "playerName": "Brady House",
-      "team": "WSH",
-      "opponent": "BAL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 12,
-      "numerologyScore": 5,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 677060,
-      "playerName": "Chad Stevens",
-      "team": "COL",
-      "opponent": "MIN",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 39,
-      "numerologyScore": 5,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 678391,
-      "playerName": "Jorbit Vivas",
-      "team": "WSH",
-      "opponent": "BAL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 84,
-      "numerologyScore": 5,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 15,
-          "root": 6,
-          "label": "Life Path 15 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 66,
+      "hrScore": 66,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 693304,
@@ -6529,53 +2695,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 38.5
-    },
-    {
-      "playerId": 669087,
-      "playerName": "Sam Huff",
-      "team": "BAL",
-      "opponent": "WSH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 31,
-      "numerologyScore": 5,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "lifePath",
-          "value": 33,
-          "root": 6,
-          "label": "Life Path 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
-    },
-    {
-      "playerId": 687529,
-      "playerName": "Grant McCray",
-      "team": "SF",
-      "opponent": "ATL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 58,
-      "numerologyScore": 4,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 51,
-          "root": 6,
-          "label": "Expression 51 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 38.5,
+      "hrScore": 38.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 702616,
@@ -6598,7 +2723,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 45.6
+      "marketScore": 45.6,
+      "hrScore": 45.6,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 665862,
@@ -6621,30 +2751,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 31.4
-    },
-    {
-      "playerId": 545361,
-      "playerName": "Mike Trout",
-      "team": "LAA",
-      "opponent": "ATH",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 27,
-      "numerologyScore": 4,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 42,
-          "root": 6,
-          "label": "Expression 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 31.4,
+      "hrScore": 31.4,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 682985,
@@ -6667,30 +2779,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 56.8
-    },
-    {
-      "playerId": 656582,
-      "playerName": "Connor Joe",
-      "team": "SEA",
-      "opponent": "CLE",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 9,
-      "numerologyScore": 2,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 56.8,
+      "hrScore": 56.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 641680,
@@ -6713,7 +2807,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 26.4
+      "marketScore": 26.4,
+      "hrScore": 26.4,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 624585,
@@ -6736,7 +2835,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 39
+      "marketScore": 39,
+      "hrScore": 39,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 543309,
@@ -6759,7 +2863,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 46.8
+      "marketScore": 46.8,
+      "hrScore": 46.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 672386,
@@ -6782,7 +2891,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 23.3
+      "marketScore": 23.3,
+      "hrScore": 23.3,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 665923,
@@ -6805,7 +2919,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 34.5
+      "marketScore": 34.5,
+      "hrScore": 34.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 675961,
@@ -6828,30 +2947,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 18.2
-    },
-    {
-      "playerId": 547180,
-      "playerName": "Bryce Harper",
-      "team": "PHI",
-      "opponent": "NYM",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 3,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "age",
-          "value": 33,
-          "root": 6,
-          "label": "Age 33 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 18.2,
+      "hrScore": 18.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 682177,
@@ -6874,7 +2975,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 33.2
+      "marketScore": 33.2,
+      "hrScore": 33.2,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 641487,
@@ -6897,30 +3003,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 38.5
-    },
-    {
-      "playerId": 660821,
-      "playerName": "Jesús Sánchez",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 12,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 42,
-          "root": 6,
-          "label": "Expression 42 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 38.5,
+      "hrScore": 38.5,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 681481,
@@ -6943,7 +3031,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 41.7
+      "marketScore": 41.7,
+      "hrScore": 41.7,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 571970,
@@ -6966,7 +3059,12 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 53.8
+      "marketScore": 53.8,
+      "hrScore": 53.8,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "playerId": 691777,
@@ -6989,91 +3087,16 @@
       ],
       "candidateSource": "jkb_hr_props",
       "recommendedMarket": "Home run",
-      "marketScore": 42
-    },
-    {
-      "playerId": 681508,
-      "playerName": "Mickey Gasper",
-      "team": "BOS",
-      "opponent": "NYY",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 30,
-      "numerologyScore": 0,
-      "baseballScore": null,
-      "matches": [
-        {
-          "field": "expression",
-          "value": 60,
-          "root": 6,
-          "label": "Expression 60 → 6"
-        }
-      ],
-      "candidateSource": "team_40_man_roster",
-      "recommendedMarket": "Monitor",
-      "marketScore": null
+      "marketScore": 42,
+      "hrScore": 42,
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     }
   ],
   "featuredPlays": [],
   "bestAvailable": [
-    {
-      "rank": 1,
-      "playerId": 807727,
-      "playerName": "Charles McAdoo",
-      "team": "TOR",
-      "opponent": "TEX",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "lineupSource": null,
-      "battingOrder": null,
-      "jerseyNumber": 26,
-      "recommendedMarket": "Monitor",
-      "marketModelSource": "unavailable",
-      "marketScore": null,
-      "marketSelectionReason": "No model score available for this player.",
-      "odds": null,
-      "numerologyScore": 51,
-      "baseballScore": 0,
-      "finalScore": 51,
-      "formula": "Numerology alignment: 51. Baseball context: 0 (not used in rank).",
-      "confidence": "low",
-      "positiveSignals": [
-        {
-          "field": "personalDay",
-          "label": "Personal Day root 6 — Root Match",
-          "type": "personal_cycle",
-          "points": 14,
-          "description": "Personal Day root 6 matches Universal Day root."
-        },
-        {
-          "field": "jersey",
-          "label": "Jersey 26 — Calendar Day Exact",
-          "type": "secondary_exact",
-          "points": 8,
-          "description": "Jersey 26 equals Calendar Day 26."
-        },
-        {
-          "field": "birthDay",
-          "label": "Birth Day 6/6 — Root Match",
-          "type": "primary_root",
-          "points": 7,
-          "description": "Birth day root 6 matches Universal Day."
-        },
-        {
-          "field": "age",
-          "label": "Age 24 root 6 — Root Match",
-          "type": "primary_root",
-          "points": 5,
-          "description": "Age 24 reduces to 6."
-        }
-      ],
-      "counterSignals": [],
-      "primarySignal": "Personal Day root 6 — Root Match",
-      "missingData": [],
-      "summary": "Alignment is not probability. Patterns are documented, not guaranteed.",
-      "belowThresholdLabel": "Best available today — below the numerology threshold"
-    },
     {
       "rank": 2,
       "playerId": 661388,
@@ -7129,91 +3152,16 @@
       "primarySignal": "Personal Day root 6 — Root Match",
       "missingData": [],
       "summary": "Alignment is not probability. Patterns are documented, not guaranteed.",
-      "belowThresholdLabel": "Best available today — below the numerology threshold"
-    },
-    {
-      "rank": 3,
-      "playerId": 807713,
-      "playerName": "Matt Shaw",
-      "team": "CHC",
-      "opponent": "MIL",
-      "opposingPitcher": "TBD",
-      "lineupStatus": "unknown",
-      "lineupSource": null,
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "recommendedMarket": "Monitor",
-      "marketModelSource": "unavailable",
-      "marketScore": null,
-      "marketSelectionReason": "No model score available for this player.",
-      "odds": null,
-      "numerologyScore": 48,
-      "baseballScore": 0,
-      "finalScore": 48,
-      "formula": "Numerology alignment: 48. Baseball context: 0 (not used in rank).",
-      "confidence": "low",
-      "positiveSignals": [
-        {
-          "field": "jersey",
-          "label": "Jersey 6/6 — Root Match",
-          "type": "primary_root",
-          "points": 12,
-          "description": "Jersey 6 reduces to 6."
-        },
-        {
-          "field": "birthDay",
-          "label": "Birth Day 6/6 — Root Match",
-          "type": "primary_root",
-          "points": 7,
-          "description": "Birth day root 6 matches Universal Day."
-        },
-        {
-          "field": "age",
-          "label": "Age 24 root 6 — Root Match",
-          "type": "primary_root",
-          "points": 5,
-          "description": "Age 24 reduces to 6."
-        },
-        {
-          "field": "expression",
-          "label": "Expression 6/6 — Root Match",
-          "type": "name_resonance",
-          "points": 6,
-          "description": "Name Expression root matches Universal Day root."
-        },
-        {
-          "field": "repeatedDigit",
-          "label": "Date digit 6 (×3) — Contextual Echo",
-          "type": "contextual_echo",
-          "points": 2,
-          "description": "Digit 6 repeats 3× in today's date."
-        }
-      ],
-      "counterSignals": [],
-      "primarySignal": "Jersey 6/6 — Root Match",
-      "missingData": [],
-      "summary": "Alignment is not probability. Patterns are documented, not guaranteed.",
-      "belowThresholdLabel": "Best available today — below the numerology threshold"
+      "belowThresholdLabel": "Best available today — below the numerology threshold",
+      "hrScore": 67.9,
+      "candidateSource": "jkb_hr_props",
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     }
   ],
   "watchlist": [
-    {
-      "rank": 1,
-      "playerId": 807727,
-      "playerName": "Charles McAdoo",
-      "team": "TOR",
-      "opponent": "TEX",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 26,
-      "recommendedMarket": "Monitor",
-      "numerologyScore": 51,
-      "baseballScore": 0,
-      "finalScore": 51,
-      "primarySignal": "Personal Day root 6 — Root Match",
-      "missingData": [],
-      "summary": "Alignment is not probability. Patterns are documented, not guaranteed."
-    },
     {
       "rank": 2,
       "playerId": 661388,
@@ -7229,58 +3177,15 @@
       "finalScore": 49,
       "primarySignal": "Personal Day root 6 — Root Match",
       "missingData": [],
-      "summary": "Alignment is not probability. Patterns are documented, not guaranteed."
-    },
-    {
-      "rank": 3,
-      "playerId": 807713,
-      "playerName": "Matt Shaw",
-      "team": "CHC",
-      "opponent": "MIL",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "recommendedMarket": "Monitor",
-      "numerologyScore": 48,
-      "baseballScore": 0,
-      "finalScore": 48,
-      "primarySignal": "Jersey 6/6 — Root Match",
-      "missingData": [],
-      "summary": "Alignment is not probability. Patterns are documented, not guaranteed."
-    },
-    {
-      "rank": 4,
-      "playerId": 624641,
-      "playerName": "Edmundo Sosa",
-      "team": "PHI",
-      "opponent": "NYM",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 33,
-      "recommendedMarket": "Monitor",
-      "numerologyScore": 47,
-      "baseballScore": 0,
-      "finalScore": 47,
-      "primarySignal": "Personal Day root 6 — Root Match",
-      "missingData": [],
-      "summary": "Alignment is not probability. Patterns are documented, not guaranteed."
-    },
-    {
-      "rank": 5,
-      "playerId": 663697,
-      "playerName": "Jonathan India",
-      "team": "KC",
-      "opponent": "CWS",
-      "lineupStatus": "unknown",
-      "battingOrder": null,
-      "jerseyNumber": 6,
-      "recommendedMarket": "Monitor",
-      "numerologyScore": 47,
-      "baseballScore": 0,
-      "finalScore": 47,
-      "primarySignal": "Personal Day root 6 — Root Match",
-      "missingData": [],
-      "summary": "Alignment is not probability. Patterns are documented, not guaranteed."
+      "summary": "Alignment is not probability. Patterns are documented, not guaranteed.",
+      "opposingPitcher": "Colin Rea",
+      "hrScore": 67.9,
+      "marketScore": 67.9,
+      "candidateSource": "jkb_hr_props",
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     },
     {
       "rank": 6,
@@ -7297,59 +3202,18 @@
       "finalScore": 46,
       "primarySignal": "Personal Day root 6 — Root Match",
       "missingData": [],
-      "summary": "Alignment is not probability. Patterns are documented, not guaranteed."
+      "summary": "Alignment is not probability. Patterns are documented, not guaranteed.",
+      "opposingPitcher": "Trevor Rogers",
+      "hrScore": 41.2,
+      "marketScore": 41.2,
+      "candidateSource": "jkb_hr_props",
+      "recentActivity": {
+        "source": "jkb_hr_model_active_pool",
+        "checkedAt": "2026-06-26T14:43:54.251Z"
+      }
     }
   ],
-  "countercurrents": [
-    {
-      "playerName": "Colby Thomas",
-      "team": "ATH",
-      "numerologyScore": 28,
-      "baseballScore": 0,
-      "finalScore": 28,
-      "countercurrentSignals": [
-        {
-          "field": "lifePath",
-          "label": "Life Path — Countercurrent",
-          "type": "countercurrent",
-          "points": -3,
-          "description": "Life Path root 3 is countercurrent."
-        }
-      ]
-    },
-    {
-      "playerName": "Ezequiel Tovar",
-      "team": "COL",
-      "numerologyScore": 22,
-      "baseballScore": 0,
-      "finalScore": 22,
-      "countercurrentSignals": [
-        {
-          "field": "lifePath",
-          "label": "Life Path — Countercurrent",
-          "type": "countercurrent",
-          "points": -3,
-          "description": "Life Path root 3 is countercurrent."
-        }
-      ]
-    },
-    {
-      "playerName": "Kyle Teel",
-      "team": "CWS",
-      "numerologyScore": 22,
-      "baseballScore": 0,
-      "finalScore": 22,
-      "countercurrentSignals": [
-        {
-          "field": "lifePath",
-          "label": "Life Path — Countercurrent",
-          "type": "countercurrent",
-          "points": -3,
-          "description": "Life Path root 3 is countercurrent."
-        }
-      ]
-    }
-  ],
+  "countercurrents": [],
   "scoringConfiguration": {
     "weights": {
       "personalDayExactMaster": 20,
@@ -7388,5 +3252,37 @@
   },
   "narrative": {
     "closingObservation": "Patterns are documented, not guaranteed. The model records recurrence without claiming causation."
+  },
+  "activityFilter": {
+    "rule": "must_be_listed_in_daily_jkb_hr_model",
+    "scheduleDate": "2026-06-26",
+    "scheduledTeams": [
+      "ATH",
+      "AZ",
+      "BAL",
+      "BOS",
+      "CHC",
+      "CIN",
+      "CLE",
+      "COL",
+      "DET",
+      "HOU",
+      "LAA",
+      "LAD",
+      "MIA",
+      "MIL",
+      "MIN",
+      "NYY",
+      "PIT",
+      "SD",
+      "SEA",
+      "STL",
+      "TB",
+      "TEX",
+      "TOR",
+      "WSH"
+    ],
+    "hrModelGeneratedAt": "2026-06-26T11:24:31.985Z",
+    "checkedAt": "2026-06-26T14:43:54.251Z"
   }
 }
