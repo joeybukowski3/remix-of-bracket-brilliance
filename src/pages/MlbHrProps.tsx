@@ -10,6 +10,7 @@ import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
+import { classifyWind, getSinCityResults, evaluateSinCityHitter, type WindSignal } from "@/lib/mlb/mlbHrFilter";
 
 export type HrDashboardGame = {
   gameKey: string;
@@ -701,73 +702,6 @@ export function buildSlateSummary(pitchers: HrDashboardPitcher[], batters: HrDas
   };
 }
 
-// ── Ballpark CF bearing (degrees from N, clockwise) ─────────────────────────
-// The "CF bearing" is the compass direction a ball must travel to reach center
-// field from home plate. Wind "blows out" when the wind direction is within
-// ±75° of this bearing (wind pushing toward the outfield).
-// Source: stadium orientations from publicly known field layouts.
-const CF_BEARING: Record<string, number> = {
-  "Truist Park": 35,          // ATL — CF toward NE
-  "Oriole Park at Camden Yards": 55,  // BAL — CF toward NE
-  "Fenway Park": 95,          // BOS — CF roughly E
-  "Wrigley Field": 45,        // CHC — CF toward NE, SW wind blows out
-  "Guaranteed Rate Field": 5, // CWS — CF toward N
-  "Great American Ball Park": 20, // CIN — CF toward NNE
-  "Progressive Field": 30,    // CLE — CF toward NNE
-  "Coors Field": 15,          // COL — CF toward NNE
-  "Comerica Park": 330,       // DET — CF toward NNW
-  "Minute Maid Park": 25,     // HOU — retractable, irrelevant when closed
-  "Kauffman Stadium": 10,     // KC — CF toward N
-  "Dodger Stadium": 330,      // LAD — CF toward NNW
-  "Angel Stadium": 30,        // LAA — CF toward NNE
-  "loanDepot park": 20,       // MIA — retractable
-  "American Family Field": 5, // MIL — retractable
-  "Target Field": 350,        // MIN — CF toward N
-  "Citi Field": 5,            // NYM — CF toward N
-  "Yankee Stadium": 25,       // NYY — CF toward NNE
-  "Oakland Coliseum": 350,    // ATH — CF toward N
-  "Citizens Bank Park": 40,   // PHI — CF toward NE
-  "PNC Park": 355,            // PIT — CF toward N
-  "Petco Park": 340,          // SD — CF toward NNW
-  "Oracle Park": 310,         // SF — CF toward NW (McCovey Cove end)
-  "T-Mobile Park": 350,       // SEA — retractable
-  "Busch Stadium": 5,         // STL — CF toward N
-  "Tropicana Field": 0,       // TB — dome, irrelevant
-  "Globe Life Field": 350,    // TEX — retractable
-  "Rogers Centre": 15,        // TOR — retractable
-  "Nationals Park": 5,        // WSH — CF toward N
-  "Chase Field": 350,         // ARI — retractable
-};
-
-const RETRACTABLE_PARKS = new Set([
-  "Minute Maid Park", "loanDepot park", "American Family Field",
-  "T-Mobile Park", "Globe Life Field", "Rogers Centre", "Chase Field",
-  "Tropicana Field",
-]);
-
-function isWindBlowingOut(stadium: string, roofType: string, windDirection: string, windSpeed: number | null): boolean {
-  if (!windDirection || windDirection === "—" || windDirection === "CALM") return false;
-  if (roofType === "Dome") return false;
-  if (roofType === "Retractable" || RETRACTABLE_PARKS.has(stadium)) return false;
-  if ((windSpeed ?? 0) < 4) return false; // too light to matter
-
-  const cfBearing = CF_BEARING[stadium];
-  if (cfBearing == null) return false;
-
-  // Convert compass abbreviation to degrees
-  const COMPASS: Record<string, number> = {
-    N: 0, NNE: 22.5, NE: 45, ENE: 67.5, E: 90, ESE: 112.5,
-    SE: 135, SSE: 157.5, S: 180, SSW: 202.5, SW: 225, WSW: 247.5,
-    W: 270, WNW: 292.5, NW: 315, NNW: 337.5,
-  };
-  const windDeg = COMPASS[windDirection.toUpperCase()];
-  if (windDeg == null) return false;
-
-  // Wind "blows out" when wind direction is within ±75° of CF bearing
-  const diff = Math.abs(((windDeg - cfBearing) + 540) % 360 - 180);
-  return diff <= 75;
-}
-
 export function buildPitcherVsBatterRows(
   batters: HrDashboardBatter[],
   games: HrDashboardGame[],
@@ -844,7 +778,7 @@ export function buildPitcherVsBatterRows(
       pitcherHardHitRate: pitcher?.hardHitRate ?? null,
       pitcherKRate: pitcher?.kRate ?? null,
       pitcherFlyBallRate: pitcher?.flyBallRate ?? null,
-      windBlowingOut: isWindBlowingOut(game?.stadium ?? b.ballpark, game?.roofType ?? "", game?.windDirection ?? "—", game?.windSpeed ?? null),
+      windBlowingOut: classifyWind(game?.stadium ?? b.ballpark, game?.roofType ?? "", game?.windDirection ?? "—", game?.windSpeed ?? null) === "out",
       angleTags: b.angleTags,
     };
   }).sort((a, b) =>
@@ -1411,7 +1345,8 @@ export default function MlbHrProps() {
   const [pitcherGameFilter, setPitcherGameFilter] = useState("all");
   const [batterGameFilter, setBatterGameFilter] = useState("all");
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
-  const [hrFilterActive, setHrFilterActive] = useState(false);
+  const [hrFilterActive, setHrFilterActive] = useState(false); // kept for matchup tab legacy
+  const [batterModel, setBatterModel] = useState<"all" | "sincity">("all");
 
   usePageSeo({
     title: "MLB HR Props Today 2026 — Home Run Model & Rankings | Joe Knows Ball",
@@ -1516,47 +1451,50 @@ export default function MlbHrProps() {
 
   const gameByKey = useMemo(() => new Map(games.map((g) => [g.gameKey, g])), [games]);
 
-  // HR smart filter — applies all criteria from the screenshot
+  // HR smart filter — shared logic from mlbHrFilter.ts
+  // Uses passesHrFilter so the button count and table rows always use the same predicate.
   const applyHrFilter = useCallback((
-    row: { gameKey: string; barrelRate?: number | null; hardHitRate?: number | null; exitVelo?: number | null;
-           pullRate?: number | null; pitcherBarrelRate?: number | null; pitcherHardHitRate?: number | null;
-           pitcherFlyBallRate?: number | null; pitcherKRate?: number | null; parkFactor?: number | null;
-           bats?: "L" | "R" | "S" | null; pitcherHand?: string; windBlowingOut?: boolean;
-           temperature?: number | null; weatherBoost?: number | null; },
+    row: {
+      gameKey: string;
+      barrelRate?: number | null;
+      hardHitRate?: number | null;
+      exitVelo?: number | null;
+      pullRate?: number | null;
+      pitcherFlyBallRate?: number | null;
+      parkFactor?: number | null;
+      bats?: "L" | "R" | "S" | null;
+      pitcherHand?: string | null;
+      // windBlowingOut is pre-computed on matchup rows; batter rows resolve via gameByKey
+      windBlowingOut?: boolean;
+    },
   ) => {
     if (!hrFilterActive) return true;
     const game = gameByKey.get(row.gameKey);
-    const temp = row.temperature ?? game?.temperature ?? null;
-    const windOut = row.windBlowingOut ??
-      isWindBlowingOut(game?.stadium ?? "", game?.roofType ?? "", game?.windDirection ?? "—", game?.windSpeed ?? null);
-    const pitcherFB   = row.pitcherFlyBallRate ?? null;
-    const pitcherBrl  = row.pitcherBarrelRate  ?? null;
-    const pitcherHH   = row.pitcherHardHitRate ?? null;
-    const pitcherK    = row.pitcherKRate       ?? null;
+    const windSignal: WindSignal = (() => {
+      // matchup rows carry pre-computed windBlowingOut
+      if (row.windBlowingOut === true)  return "out";
+      if (row.windBlowingOut === false) {
+        // false could mean "not out" OR "unknown" — re-derive from game data
+        if (!game) return "unknown";
+        return classifyWind(game.stadium, game.roofType, game.windDirection, game.windSpeed);
+      }
+      // batter rows don't have windBlowingOut — derive from game
+      if (!game) return "unknown";
+      return classifyWind(game.stadium, game.roofType, game.windDirection, game.windSpeed);
+    })();
 
-    // Hitter criteria
-    if ((row.barrelRate ?? 0)  < 12)  return false;
-    if ((row.pullRate   ?? 0)  < 20)  return false;
-    if ((row.hardHitRate ?? 0) < 45)  return false;
-    if ((row.exitVelo   ?? 0)  < 92)  return false;
-    // Pitcher criteria (skip if data unavailable)
-    if (pitcherBrl  != null && pitcherBrl  < 10)  return false;
-    if (pitcherHH   != null && pitcherHH   < 42)  return false;
-    if (pitcherFB   != null && pitcherFB   < 40)  return false;
-    if (pitcherK    != null && pitcherK    > 22)  return false;
-    // Environment criteria
-    if (temp != null && temp < 75)  return false;
-    if (!windOut) return false;
-    if ((row.parkFactor ?? 1) < 1.0) return false;
-    // Handedness split — favorable = batter has platoon advantage
-    // L batter vs R pitcher OR R/S batter vs L pitcher
-    if (row.bats && row.pitcherHand) {
-      const favorable =
-        (row.bats === "L" && row.pitcherHand === "R") ||
-        (row.bats !== "L" && row.pitcherHand === "L");
-      if (!favorable) return false;
-    }
-    return true;
+    return passesHrFilter({
+      barrelRate:         row.barrelRate,
+      hardHitRate:        row.hardHitRate,
+      exitVelo:           row.exitVelo,
+      pullRate:           row.pullRate,
+      pitcherFlyBallRate: row.pitcherFlyBallRate,
+      parkFactor:         row.parkFactor,
+      windSignal,
+      temperature:        game?.temperature ?? null,
+      bats:               row.bats,
+      pitcherHand:        row.pitcherHand,
+    });
   }, [hrFilterActive, gameByKey]);
 
   const filteredBatters = useMemo(() => {
@@ -1578,6 +1516,22 @@ export default function MlbHrProps() {
     });
     return sortBatters(rows, batterSortKey, batterSortDirection);
   }, [applyHrFilter, batterGameFilter, batterSearch, batterSortDirection, batterSortKey, batters]);
+
+  // Sin City model — applied on top of game+search filters in correct order:
+  // 1. game filter, 2. text search, 3. AB/barrel-cap sanity, 4. Sin City evaluation
+  const sinCityResults = useMemo(() => {
+    if (batterModel !== "sincity") return null;
+    const query = batterSearch.trim().toLowerCase();
+    const preFiltered = batters.filter((row) => {
+      if (batterGameFilter !== "all" && row.gameKey !== batterGameFilter) return false;
+      if (row.atBats != null && row.atBats < 50) return false;
+      if (row.barrelRate != null && row.barrelRate > 25) return false;
+      if (!query) return true;
+      return [row.player, row.team, row.opposingPitcher, row.ballpark]
+        .some(v => v.toLowerCase().includes(query));
+    });
+    return getSinCityResults(preFiltered);
+  }, [batterModel, batters, batterGameFilter, batterSearch]);
 
   const filteredMatchups = useMemo(() => {
     const query = matchupSearch.trim().toLowerCase();
@@ -1970,7 +1924,7 @@ export default function MlbHrProps() {
                     ) : null}
 
                     {activeTab === "batters" ? (
-                      <section className="space-y-3">
+                      <section className="space-y-3 min-h-[200px]">
 
                         {/* ── Insight tables: Overdue Batters + Biggest Mismatches ── */}
                         {(() => {
@@ -2103,34 +2057,136 @@ export default function MlbHrProps() {
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
                             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">💥 Batter View</h2>
-                            <p className="mt-1 text-sm text-slate-500">HR Score drives the strongest cue. Supporting power and recent-HR stats only tint when the edge is clearly real.</p>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {batterModel === "sincity"
+                                ? "Sin City — qualifies on 3 of 4 core power criteria: Barrel% ≥12, Pull Air% ≥20, HH% ≥45, EV ≥92 mph."
+                                : "HR Score drives the strongest cue. Supporting power and recent-HR stats only tint when the edge is clearly real."}
+                            </p>
                           </div>
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                          <div className="flex flex-wrap gap-2 sm:gap-3 sm:flex-nowrap sm:items-center">
                             <input
                               value={batterSearch}
                               onChange={(event) => setBatterSearch(event.target.value)}
                               placeholder="Search batter, pitcher, or team"
-                              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
+                              className="w-full sm:w-auto rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:bg-white"
                             />
                             <GameSelect value={batterGameFilter} onChange={setBatterGameFilter} options={gameOptions} label="Game" />
-                            <button
-                              type="button"
-                              onClick={() => setHrFilterActive((v) => !v)}
-                              title="HR Smart Filter: Barrel 12%+, Pull Air 20%+, HH 45%+, EV 92+, Pitcher FB 40%+, Barrel Allowed 10%+, HH Allowed 42%+, K% under 22%, Temp 75°F+, Wind Out, HR-friendly park, Favorable handedness"
-                              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition whitespace-nowrap ${
-                                hrFilterActive
-                                  ? "border-amber-400 bg-amber-50 text-amber-700 shadow-sm"
-                                  : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                              }`}
-                            >
-                              <span>⚡</span>
-                              <span>HR Filter</span>
-                              {hrFilterActive && <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-white">{filteredBatters.length}</span>}
-                            </button>
+                            {/* Model selector */}
+                            <div className="flex rounded-xl border border-slate-200 overflow-hidden text-sm font-semibold shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setBatterModel("all")}
+                                className={`px-3 py-2 transition whitespace-nowrap ${batterModel === "all" ? "bg-sky-700 text-white" : "bg-slate-50 text-slate-500 hover:text-slate-800"}`}
+                              >
+                                All Batters
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setBatterModel("sincity")}
+                                className={`px-3 py-2 transition whitespace-nowrap border-l border-slate-200 ${batterModel === "sincity" ? "bg-amber-500 text-white" : "bg-slate-50 text-slate-500 hover:text-slate-800"}`}
+                              >
+                                🎰 Sin City
+                                {batterModel === "sincity" && sinCityResults && (
+                                  <span className="ml-1.5 rounded-full bg-white/30 px-1.5 py-0.5 text-[10px] font-bold">
+                                    {sinCityResults.rows.length}
+                                  </span>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </div>
                         <DataLegend />
-                        <div data-x-export="mlb-hr-props" className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
+
+                        {/* ── Sin City model view ────────────────────────────── */}
+                        {batterModel === "sincity" && sinCityResults && (
+                          <div className="space-y-2">
+                            {sinCityResults.isFallback && sinCityResults.rows.length > 0 && (
+                              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                                <strong>No hitters met at least 3 of 4 Sin City criteria.</strong> Showing the five closest matches.
+                              </div>
+                            )}
+                            {sinCityResults.rows.length === 0 && (
+                              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-6 text-center text-sm text-slate-500">
+                                No batters match the current search or game filter.
+                              </div>
+                            )}
+                            {sinCityResults.rows.length > 0 && (
+                              <div className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
+                                <table className="min-w-full border-separate border-spacing-0 text-xs">
+                                  <thead className="sticky top-0 z-20">
+                                    <tr className="text-[9px] sm:text-[10px] uppercase tracking-[0.08em] sm:tracking-[0.12em] text-slate-500">
+                                      <th className="sticky left-0 z-30 border-b border-r border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold w-6 sm:w-8">#</th>
+                                      <th className="sticky left-6 sm:left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-1.5 sm:px-2 py-1.5 text-left font-bold min-w-[110px] sm:min-w-[130px]">Batter</th>
+                                      <th className="border-b border-slate-200 bg-amber-50 px-1 sm:px-2 py-1.5 text-center font-bold whitespace-nowrap">Match</th>
+                                      <th className="border-b border-slate-200 bg-amber-50 px-1 sm:px-2 py-1.5 text-center font-bold whitespace-nowrap">Barrel%</th>
+                                      <th className="border-b border-slate-200 bg-amber-50 px-1 sm:px-2 py-1.5 text-center font-bold whitespace-nowrap">Pull Air%</th>
+                                      <th className="border-b border-slate-200 bg-amber-50 px-1 sm:px-2 py-1.5 text-center font-bold whitespace-nowrap">HH%</th>
+                                      <th className="border-b border-slate-200 bg-amber-50 px-1 sm:px-2 py-1.5 text-center font-bold whitespace-nowrap">EV</th>
+                                      <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold whitespace-nowrap">HR Score</th>
+                                      <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold whitespace-nowrap">Pitcher</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {sinCityResults.rows.map((r, i) => {
+                                      const row = r.batter;
+                                      const ev = r.evaluation;
+                                      const rowBg = i % 2 === 0 ? "bg-white" : "bg-slate-50/70";
+                                      const stickyBg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
+                                      const matchLabel = `${ev.matchCount}/4`;
+                                      const matchColor = ev.matchCount === 4 ? "bg-emerald-600 text-white" : ev.matchCount === 3 ? "bg-amber-500 text-white" : "bg-slate-200 text-slate-600";
+
+                                      const criterionCell = (crit: typeof ev.criteria[0]) => (
+                                        <td key={crit.name} className={`border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-center ${rowBg}`}>
+                                          <div className="flex flex-col items-center gap-0.5">
+                                            <span className={`rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${crit.pass ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-700"}`}>
+                                              {crit.pass ? "✓" : "✗"} {crit.value != null ? (crit.name === "Exit Velo" ? `${crit.value.toFixed(1)}` : `${crit.value.toFixed(1)}%`) : "N/A"}
+                                            </span>
+                                          </div>
+                                        </td>
+                                      );
+
+                                      return (
+                                        <tr key={`${row.player}-${row.team}-${row.opponent}-sc`} className={rowBg}>
+                                          <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-black text-slate-400 ${stickyBg}`}>
+                                            {i + 1}
+                                          </td>
+                                          <td className={`sticky left-6 sm:left-8 z-10 border-b border-r border-slate-100 px-1.5 sm:px-2 py-0.5 sm:py-1 ${stickyBg}`}>
+                                            <div className="flex items-center gap-1">
+                                              <TeamLogoBadge team={row.team} size={13} showLabel={false} />
+                                              <span className="font-semibold text-slate-900 whitespace-nowrap text-[10px] sm:text-[11px]">{row.player}</span>
+                                            </div>
+                                            <div className="text-[9px] text-slate-400 truncate max-w-[105px] sm:max-w-[140px]">{row.team}</div>
+                                            {r.isFallback && (
+                                              <span className="rounded bg-slate-200 px-1 py-0.5 text-[8px] font-bold text-slate-600">Closest Match</span>
+                                            )}
+                                          </td>
+                                          {/* Match count badge */}
+                                          <td className={`border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-center ${rowBg}`}>
+                                            <span className={`rounded-full px-2 py-0.5 text-[10px] sm:text-[11px] font-black ${matchColor}`}>{matchLabel}</span>
+                                          </td>
+                                          {/* Four criteria cells */}
+                                          {ev.criteria.map(crit => criterionCell(crit))}
+                                          {/* HR Score */}
+                                          <td className={`border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 ${rowBg}`}>
+                                            <StatScorePill value={row.hrScore} />
+                                          </td>
+                                          {/* Pitcher */}
+                                          <td className={`border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] text-slate-500 max-w-[100px] sm:max-w-none truncate ${rowBg}`}>
+                                            vs {row.opposingPitcher}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Normal All Batters table ───────────────────────── */}
+                        {batterModel === "all" && (
+                          <div data-x-export="mlb-hr-props" className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
                           <table className="min-w-full border-separate border-spacing-0 text-xs">
                             <thead className="sticky top-0 z-20">
                               <tr className="text-[9px] sm:text-[10px] uppercase tracking-[0.08em] sm:tracking-[0.12em] text-slate-500">
@@ -2327,6 +2383,7 @@ export default function MlbHrProps() {
                             </tbody>
                           </table>
                         </div>
+                        )} {/* end batterModel === "all" */}
                       </section>
                     ) : null}
 
@@ -2349,7 +2406,7 @@ export default function MlbHrProps() {
                               <button
                                 type="button"
                                 onClick={() => setHrFilterActive((v) => !v)}
-                                title="HR Smart Filter: Barrel 12%+, Pull Air 20%+, HH 45%+, EV 92+, Pitcher FB 40%+, Barrel Allowed 10%+, HH Allowed 42%+, K% under 22%, Temp 75°F+, Wind Out, HR-friendly park, Favorable handedness"
+                                title="HR Smart Filter: Barrel ≥10%, HH ≥43%, EV ≥91 mph, Pull ≥18%, Park factor ≥0.95 (hard gates). Supporting signals: pitcher FB%, temperature, wind direction, handedness split. Wind is one supporting input — unknown or indoor wind is treated as neutral."
                                 className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition whitespace-nowrap ${
                                   hrFilterActive
                                     ? "border-amber-400 bg-amber-50 text-amber-700 shadow-sm"
