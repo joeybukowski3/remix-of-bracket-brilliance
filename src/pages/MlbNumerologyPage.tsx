@@ -1,21 +1,27 @@
-import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import {
+  AlertTriangle,
+  BarChart3,
+  BookOpen,
+  Calculator,
+  ChevronDown,
+  Eye,
+  Home,
+  Search,
+  Sparkles,
+  Star,
+  TrendingUp,
+} from "lucide-react";
 import SiteShell from "@/components/layout/SiteShell";
+import MlbPlayerHeadshot from "@/components/mlb/MlbPlayerHeadshot";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useMLBNumerology } from "@/hooks/useMLBNumerology";
-import type { NumerologyDailyData, NumerologyPlay } from "@/types/mlbNumerology";
-
-const TEAM_CODES: Record<string, string> = {
-  AZ: "ari", ATH: "oak", CWS: "chw", KC: "kc", SD: "sd", SF: "sf", TB: "tb", WSH: "wsh",
-};
-
-const teamLogo = (team: string) => `https://a.espncdn.com/i/teamlogos/mlb/500/${TEAM_CODES[team] ?? team.toLowerCase()}.png`;
-const normalize = (value: string) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+import type { NumerologyDailyData, NumerologyPlay, WatchlistPlay } from "@/types/mlbNumerology";
 
 type Match = { field: string; value: number; root?: number; label: string };
 type MatchPlayer = {
-  playerId?: number | null;
-  personId?: number | null;
+  playerId?: string | number | null;
+  personId?: string | number | null;
   playerName: string;
   team: string;
   opponent: string;
@@ -30,172 +36,172 @@ type MatchPlayer = {
   rootNumberMatches?: Match[];
 };
 
-type HrBatter = {
-  player: string;
-  team: string;
-  opponent?: string;
-  opposingPitcher?: string;
-  barrelRate?: number | null;
-  hardHitRate?: number | null;
-  exitVelo?: number | null;
-  iso?: number | null;
-  hrFBRatio?: number | null;
-  pullRate?: number | null;
-  last7HR?: number | null;
-  last30HR?: number | null;
-  hrScore?: number | null;
-  hrScoreRank?: number | null;
-};
-
 type ExtendedData = NumerologyDailyData & {
   exactNumberMatches?: MatchPlayer[];
   rootNumberMatches?: MatchPlayer[];
   bestAvailable?: NumerologyPlay[];
 };
 
-function value(value: number | null | undefined, suffix = "") {
-  return value == null || !Number.isFinite(Number(value)) ? "N/A" : `${Number(value).toFixed(Number(value) % 1 === 0 ? 0 : 1)}${suffix}`;
+type ExplorerRow = MatchPlayer & { matchType: "Exact Match" | "Root Match" | "Neutral" };
+
+const panel = "rounded-xl border border-[#1c223d] bg-[rgba(18,22,38,0.72)] backdrop-blur-xl";
+const label = "text-[11px] font-bold uppercase tracking-[0.1em]";
+
+function safeNumber(value: number | null | undefined) {
+  return value == null || !Number.isFinite(Number(value)) ? "N/A" : Number(value).toFixed(Number(value) % 1 === 0 ? 0 : 1);
 }
 
-function StatusPill({ status }: { status?: string }) {
-  const confirmed = status === "confirmed";
-  return <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${confirmed ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-200"}`}>Today&apos;s Lineup: {confirmed ? "Confirmed" : "Unconfirmed"}</span>;
-}
-
-function ModelGrid({ batter }: { batter: HrBatter | null }) {
-  const rows = [
-    ["HR Score", batter?.hrScore], ["HR Rank", batter?.hrScoreRank], ["Barrel %", batter?.barrelRate],
-    ["Hard Hit %", batter?.hardHitRate], ["Exit Velocity", batter?.exitVelo], ["ISO", batter?.iso],
-    ["HR/FB %", batter?.hrFBRatio], ["Pull %", batter?.pullRate], ["Last 7 HR", batter?.last7HR], ["Last 30 HR", batter?.last30HR],
-  ] as const;
-  return <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-sky-300/15 bg-sky-300/10 sm:grid-cols-3">{rows.map(([label, metric]) => <div key={label} className="bg-[#0d1422] p-2.5"><div className="text-[9px] font-bold uppercase tracking-wide text-sky-300/55">{label}</div><div className="mt-1 font-mono text-sm font-bold text-sky-300">{value(metric)}</div></div>)}</div>;
-}
-
-function MatchTile({ player, batter, accent }: { player: MatchPlayer; batter: HrBatter | null; accent: "exact" | "root" }) {
-  const [numerologyOpen, setNumerologyOpen] = useState(false);
-  const [baseballOpen, setBaseballOpen] = useState(false);
-  const matches = [...(player.matches ?? []), ...(player.exactNumberMatches ?? []), ...(player.rootNumberMatches ?? [])]
+function mergeMatches(player: MatchPlayer) {
+  return [
+    ...(Array.isArray(player.matches) ? player.matches : []),
+    ...(Array.isArray(player.exactNumberMatches) ? player.exactNumberMatches : []),
+    ...(Array.isArray(player.rootNumberMatches) ? player.rootNumberMatches : []),
+  ].filter((item): item is Match => Boolean(item?.field && item?.label))
     .filter((item, index, all) => all.findIndex((other) => other.field === item.field && other.label === item.label) === index);
-  const exact = accent === "exact";
+}
 
-  return <article className={`rounded-xl border bg-white/[0.025] p-3 ${exact ? "border-amber-300/25" : "border-violet-300/20"}`}>
-    <div className="flex items-start gap-3">
-      <img src={teamLogo(player.team)} alt={`${player.team} logo`} className="h-9 w-9 shrink-0 object-contain" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+function validPlayerId(player: MatchPlayer) {
+  const value = Number(player.playerId ?? player.personId);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function NavLink({ href, icon, children, active = false }: { href: string; icon: ReactNode; children: ReactNode; active?: boolean }) {
+  return <a href={href} className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition ${active ? "bg-[#a078ff] font-bold text-[#340080]" : "text-[#cbc3d7] hover:bg-[#282a32]"}`}>{icon}{children}</a>;
+}
+
+function MatchCard({ player, kind }: { player: MatchPlayer; kind: "exact" | "root" }) {
+  const matches = mergeMatches(player);
+  const primary = matches[0];
+  const id = validPlayerId(player);
+  const exact = kind === "exact";
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  return <article className={`${panel} p-6 transition hover:-translate-y-1 ${exact ? "border-l-4 border-l-[#e9c349] shadow-[0_0_15px_rgba(212,175,55,.12)]" : "border-t border-t-[#d0bcff]/30 shadow-[0_0_15px_rgba(139,92,246,.12)]"}`}>
+    <div className="flex items-start gap-4">
+      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[#494454] bg-[#0c0e16]">
+        {id ? <MlbPlayerHeadshot playerId={id} playerName={player.playerName} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-lg font-bold text-[#d0bcff]">{player.team?.slice(0, 2) || "ML"}</div>}
+      </div>
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-bold text-white">{player.playerName}</span>
-          {player.jerseyNumber != null && <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/55">#{player.jerseyNumber}</span>}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-serif text-2xl font-semibold text-[#e2e1ee]">{player.playerName}</h3>
+            <p className="text-sm text-[#cbc3d7]">{player.team} vs {player.opponent}</p>
+          </div>
+          <span className={`rounded px-2 py-1 ${label} ${exact ? "bg-[#af8d11] text-[#342800]" : "bg-[#d0bcff]/15 text-[#d0bcff]"}`}>{primary?.label ?? (exact ? "Exact Match" : "Root Match")}</span>
         </div>
-        <div className="mt-0.5 text-[11px] text-white/40">{player.team} vs {player.opponent}{player.opposingPitcher ? ` · ${player.opposingPitcher}` : ""}</div>
-        <div className="mt-2 flex flex-wrap gap-1.5">{(player.matches ?? []).map((match) => <span key={`${match.field}-${match.label}`} className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${exact ? "bg-amber-300/15 text-amber-200" : "bg-violet-300/15 text-violet-200"}`}>{match.label}</span>)}</div>
       </div>
     </div>
 
-    <div className="mt-3 space-y-2">
-      <button type="button" onClick={() => setNumerologyOpen((open) => !open)} className="flex w-full items-center justify-between rounded-lg border border-violet-300/20 bg-violet-300/10 px-3 py-2 text-left text-xs font-bold text-violet-200">
-        <span>Numerology</span><span className="flex items-center gap-2 font-mono">{player.numerologyScore}{numerologyOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
-      </button>
-      {numerologyOpen && <div className="rounded-lg border border-white/8 bg-[#0d1422] p-3"><div className="space-y-2">{matches.length ? matches.map((match) => <div key={`${match.field}-${match.label}`} className="flex items-center justify-between gap-3 rounded-md bg-violet-300/5 px-3 py-2"><span className="text-xs font-semibold text-white/80">{match.label}</span><span className="text-[9px] uppercase tracking-wide text-violet-300/55">{match.field}</span></div>) : <div className="text-xs text-white/40">No detailed matching fields were provided.</div>}</div></div>}
-
-      <button type="button" onClick={() => setBaseballOpen((open) => !open)} className="flex w-full items-center justify-between rounded-lg border border-sky-300/20 bg-sky-300/10 px-3 py-2 text-left text-xs font-bold text-sky-300">
-        <span>Baseball Model Stats</span><span className="flex items-center gap-2 font-mono">{value(batter?.hrScore ?? player.baseballScore)}{baseballOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</span>
-      </button>
-      {baseballOpen && <div className="rounded-lg border border-white/8 bg-[#0d1422] p-3"><ModelGrid batter={batter} />{!batter && <p className="mt-2 text-[10px] text-amber-200/65">This player is not currently available in the HR model data.</p>}</div>}
+    <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="rounded-lg border border-[#d0bcff]/20 bg-[#d0bcff]/10 p-4"><p className={`${label} text-[#d0bcff]`}>Numerology</p><p className="mt-2 font-mono text-xl font-medium text-[#d0bcff]">{safeNumber(player.numerologyScore)}</p></div>
+      <div className="rounded-lg border border-[#89ceff]/20 bg-[#89ceff]/10 p-4"><p className={`${label} text-[#89ceff]`}>Model Rating</p><p className="mt-2 font-mono text-xl font-medium text-[#89ceff]">{safeNumber(player.baseballScore)}</p></div>
     </div>
 
-    <div className="mt-3"><StatusPill status={player.lineupStatus} /></div>
+    <button type="button" onClick={() => setDetailsOpen((value) => !value)} className="mt-4 flex w-full items-center justify-between rounded-lg border border-[#494454] bg-[#191b24] px-4 py-3 text-sm text-[#cbc3d7]">
+      <span>View alignment details</span><ChevronDown className={`h-4 w-4 transition ${detailsOpen ? "rotate-180" : ""}`} />
+    </button>
+    {detailsOpen && <div className="mt-3 space-y-2 rounded-lg border border-[#494454]/60 bg-[#0c0e16] p-4">
+      <p className="text-xs italic text-[#958ea0]">Model Rating is informational and does not affect numerology eligibility or ranking.</p>
+      {matches.length ? matches.map((match) => <div key={`${match.field}-${match.label}`} className="flex items-center justify-between gap-3 text-sm"><span className="text-[#e2e1ee]">{match.label}</span><span className="font-mono text-[#d0bcff]">{match.value}{match.root != null && match.root !== match.value ? ` → ${match.root}` : ""}</span></div>) : <p className="text-sm text-[#958ea0]">No detailed fields were supplied.</p>}
+    </div>}
   </article>;
 }
 
-function MatchSection({ id, title, description, players, hrMap, accent }: { id: string; title: string; description: string; players: MatchPlayer[]; hrMap: Map<string, HrBatter>; accent: "exact" | "root" }) {
-  const [expanded, setExpanded] = useState(accent === "exact");
-  const visible = expanded ? players : players.slice(0, 12);
-  return <section id={id} className="rounded-2xl border border-white/10 bg-[#111827] p-4 sm:p-5">
-    <div className="mb-4 flex items-start justify-between gap-3"><div><h2 className="text-lg font-black text-white">{title}</h2><p className="mt-1 max-w-3xl text-xs leading-5 text-white/45">{description}</p></div><span className="rounded-full bg-white/8 px-3 py-1 font-mono text-xs font-bold text-white/65">{players.length}</span></div>
-    {players.length === 0 ? <div className="rounded-xl border border-dashed border-white/10 py-8 text-center text-sm text-white/40">No eligible players match this category today.</div> : <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{visible.map((player) => <MatchTile key={`${player.playerName}-${player.team}`} player={player} batter={hrMap.get(`${normalize(player.playerName)}|${player.team}`) ?? null} accent={accent} />)}</div>}
-    {players.length > 12 && <button type="button" onClick={() => setExpanded((open) => !open)} className="mt-4 w-full rounded-lg border border-white/10 py-2 text-xs font-bold text-white/50 hover:bg-white/5">{expanded ? "Show fewer" : `Show all ${players.length}`}</button>}
-  </section>;
+function WatchRow({ play, positive }: { play: WatchlistPlay | NumerologyPlay; positive: boolean }) {
+  return <div className="flex items-center justify-between border-b border-[#494454]/30 p-6 last:border-b-0 hover:bg-[#282a32]">
+    <div><p className="text-lg font-semibold text-[#e2e1ee]">{play.playerName}</p><p className="text-sm text-[#cbc3d7]">{play.team} vs {play.opponent}</p></div>
+    <div className="text-right"><p className={`font-mono text-lg ${positive ? "text-emerald-400" : "text-[#ffb4ab]"}`}>{positive ? "+" : "-"}{safeNumber(Math.abs(Number(play.numerologyScore ?? 0)))}</p><p className={`${label} text-[#958ea0]`}>{positive ? "Resonance" : "Friction"}</p></div>
+  </div>;
 }
 
 export default function MlbNumerologyPage() {
-  usePageSeo({ title: "MLB Numerology Dashboard | Joe Knows Ball", description: "Daily MLB numerology matches with supporting baseball-model context.", path: "/mlb/numerology" });
+  usePageSeo({ title: "MLB Numerology | Joe Knows Ball", description: "Daily numerical alignment across today’s MLB slate.", path: "/mlb/numerology" });
   const { data, loading, error, isStale } = useMLBNumerology();
-  const [hrBatters, setHrBatters] = useState<HrBatter[]>([]);
   const [query, setQuery] = useState("");
   const [team, setTeam] = useState("all");
-  const [exactOnly, setExactOnly] = useState(false);
-  const [rootOnly, setRootOnly] = useState(false);
-  const [confirmedOnly, setConfirmedOnly] = useState(false);
-  const [hasHrOnly, setHasHrOnly] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    fetch("/data/mlb/hr-props-raw.json", { cache: "no-store" }).then((response) => response.ok ? response.json() : null).then((payload) => { if (active) setHrBatters(Array.isArray(payload?.batters) ? payload.batters : []); }).catch(() => undefined);
-    return () => { active = false; };
-  }, []);
+  const [matchType, setMatchType] = useState("all");
 
   const extended = data as ExtendedData | null;
-  const exact = extended?.exactNumberMatches ?? [];
-  const root = extended?.rootNumberMatches ?? [];
-  const hrMap = useMemo(() => new Map(hrBatters.map((batter) => [`${normalize(batter.player)}|${batter.team}`, batter])), [hrBatters]);
-  const teams = useMemo(() => [...new Set([...exact, ...root].map((player) => player.team))].sort(), [exact, root]);
+  const exact = Array.isArray(extended?.exactNumberMatches) ? extended.exactNumberMatches : [];
+  const root = Array.isArray(extended?.rootNumberMatches) ? extended.rootNumberMatches : [];
+  const featured = Array.isArray(data?.featuredPlays) ? data.featuredPlays : [];
+  const watchlist = Array.isArray(data?.watchlist) ? data.watchlist : [];
+  const countercurrents = Array.isArray(data?.countercurrents) ? data.countercurrents : [];
+  const profile = data?.dailyProfile;
 
   const explorer = useMemo(() => {
-    const records = new Map<string, MatchPlayer & { exact: boolean; root: boolean; batter: HrBatter | null }>();
-    const add = (player: MatchPlayer, kind: "exact" | "root") => {
-      const key = `${normalize(player.playerName)}|${player.team}`;
-      const current = records.get(key);
-      records.set(key, { ...(current ?? player), ...player, exact: current?.exact || kind === "exact", root: current?.root || kind === "root", batter: hrMap.get(key) ?? null });
+    const rows = new Map<string, ExplorerRow>();
+    const add = (player: MatchPlayer, type: ExplorerRow["matchType"]) => {
+      if (!player?.playerName || !player?.team) return;
+      const key = `${player.playerName.toLowerCase()}|${player.team}`;
+      const current = rows.get(key);
+      if (!current || type === "Exact Match") rows.set(key, { ...player, matchType: type });
     };
-    exact.forEach((player) => add(player, "exact"));
-    root.forEach((player) => add(player, "root"));
-    const normalizedQuery = query.trim().toLowerCase();
-    return [...records.values()].filter((player) => {
+    exact.forEach((player) => add(player, "Exact Match"));
+    root.forEach((player) => add(player, "Root Match"));
+    featured.forEach((player) => add(player, "Neutral"));
+    const needle = query.trim().toLowerCase();
+    return [...rows.values()].filter((player) => {
       if (team !== "all" && player.team !== team) return false;
-      if (exactOnly && !player.exact) return false;
-      if (rootOnly && !player.root) return false;
-      if (confirmedOnly && player.lineupStatus !== "confirmed") return false;
-      if (hasHrOnly && player.batter?.hrScore == null) return false;
-      if (!normalizedQuery) return true;
-      return `${player.playerName} ${player.team} ${player.opponent} ${player.opposingPitcher ?? ""}`.toLowerCase().includes(normalizedQuery);
-    }).sort((a, b) => b.numerologyScore - a.numerologyScore || a.playerName.localeCompare(b.playerName));
-  }, [exact, root, hrMap, query, team, exactOnly, rootOnly, confirmedOnly, hasHrOnly]);
+      if (matchType !== "all" && player.matchType !== matchType) return false;
+      return !needle || `${player.playerName} ${player.team} ${player.opponent}`.toLowerCase().includes(needle);
+    }).sort((a, b) => Number(b.numerologyScore || 0) - Number(a.numerologyScore || 0));
+  }, [exact, root, featured, query, team, matchType]);
+
+  const teams = useMemo(() => [...new Set(explorer.map((player) => player.team).filter(Boolean))].sort(), [explorer]);
+  const universalLabel = profile ? `${profile.universalDayCompound}/${profile.universalDayRoot}` : "—";
+  const calendarLabel = profile ? `${profile.calendarDayCompound}/${profile.calendarDayRoot}` : "—";
 
   return <SiteShell>
-    <main className="site-page min-h-screen bg-[#070b13] pb-16 pt-4 text-white">
-      <div className="site-container" style={{ maxWidth: "1500px" }}>
-        <section className="rounded-3xl border border-violet-300/15 bg-gradient-to-br from-[#17132a] to-[#0d1422] p-5 sm:p-7">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="text-xs font-black uppercase tracking-[0.22em] text-violet-300">𓂀 MLB Numerology</div><h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Daily Alignment Dashboard</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-white/55">Numerology determines the ranking. Baseball model statistics are displayed only as supporting context.</p></div>{data && <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm"><div className="text-white/45">Slate date</div><div className="mt-1 font-mono font-bold text-violet-200">{data.date}</div></div>}</div>
-        </section>
+    <div className="min-h-screen bg-[#0a0c14] text-[#e2e1ee]">
+      <div className="flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-[#494454] bg-[#1d1f28] p-4 lg:flex">
+          <div className="mb-10 px-2 pt-6"><h2 className="font-serif text-3xl text-[#d0bcff]">MLB Numerology</h2><p className="mt-1 text-sm text-[#cbc3d7]">The Enlightened Fan</p></div>
+          <nav className="flex flex-col gap-2">
+            <NavLink href="#overview" icon={<Home className="h-5 w-5" />} active>Overview</NavLink>
+            <NavLink href="#exact-matches" icon={<Star className="h-5 w-5" />}>Exact Matches</NavLink>
+            <NavLink href="#root-matches" icon={<Calculator className="h-5 w-5" />}>Root Matches</NavLink>
+            <NavLink href="#top-alignments" icon={<TrendingUp className="h-5 w-5" />}>Top Alignments</NavLink>
+            <NavLink href="#watchlist" icon={<Eye className="h-5 w-5" />}>Watchlist</NavLink>
+            <NavLink href="#explorer" icon={<Search className="h-5 w-5" />}>Explorer</NavLink>
+            <NavLink href="#methodology" icon={<BookOpen className="h-5 w-5" />}>Methodology</NavLink>
+          </nav>
+        </aside>
 
-        {loading && <div className="mt-4 rounded-2xl border border-white/10 bg-[#111827] py-16 text-center text-white/45">Loading numerology data…</div>}
-        {!loading && error && <div className="mt-4 rounded-2xl border border-red-300/20 bg-red-500/10 p-5 text-red-200">Unable to load numerology data: {error}</div>}
-        {!loading && !error && !data && <div className="mt-4 rounded-2xl border border-white/10 bg-[#111827] py-16 text-center text-white/45">No numerology data is available.</div>}
-
-        {!loading && !error && data && <div className="mt-4 space-y-4">
-          {(isStale || data.dataStatus === "unavailable") && <div className="rounded-xl border border-amber-300/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-100">{isStale ? "The published numerology slate is from a previous date. " : ""}{data.dataStatus === "unavailable" ? "Some contextual lineup information was unavailable, but the generated numerology matches remain visible." : ""}</div>}
-
-          <section className="grid gap-3 md:grid-cols-4">
-            <div className="rounded-xl border border-white/10 bg-[#111827] p-4"><div className="text-[10px] uppercase tracking-wide text-white/35">Universal Day</div><div className="mt-1 font-mono text-2xl font-black text-violet-300">{data.dailyProfile.universalDayRawSum}/{data.dailyProfile.universalDayRoot}</div></div>
-            <div className="rounded-xl border border-white/10 bg-[#111827] p-4"><div className="text-[10px] uppercase tracking-wide text-white/35">Primary Family</div><div className="mt-1 font-mono text-2xl font-black text-violet-300">{(data.dailyProfile.primaryFamily ?? []).join(" · ")}</div></div>
-            <div className="rounded-xl border border-white/10 bg-[#111827] p-4"><div className="text-[10px] uppercase tracking-wide text-white/35">Exact Matches</div><div className="mt-1 font-mono text-2xl font-black text-amber-200">{exact.length}</div></div>
-            <div className="rounded-xl border border-white/10 bg-[#111827] p-4"><div className="text-[10px] uppercase tracking-wide text-white/35">Root Matches</div><div className="mt-1 font-mono text-2xl font-black text-violet-200">{root.length}</div></div>
-          </section>
-
-          <MatchSection id="exact-matches" title="Exact Number Matches" description="Direct compound-number connections to today’s daily code." players={exact} hrMap={hrMap} accent="exact" />
-          <MatchSection id="root-matches" title="Reduced-Root Matches" description="Players whose relevant values reduce to today’s primary number family." players={root} hrMap={hrMap} accent="root" />
-
-          <section id="explorer" className="rounded-2xl border border-white/10 bg-[#111827] p-4 sm:p-5">
-            <h2 className="text-lg font-black">Player Explorer</h2><p className="mt-1 text-xs text-white/45">Search and combine criteria to build your own numerology match list.</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-[1fr_180px]">
-              <label className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search player, team, opponent, or pitcher" className="w-full rounded-xl border border-white/10 bg-black/20 py-2.5 pl-10 pr-3 text-sm text-white outline-none" /></label>
-              <select value={team} onChange={(event) => setTeam(event.target.value)} className="rounded-xl border border-white/10 bg-[#0d1422] px-3 py-2.5 text-sm text-white"><option value="all">All teams</option>{teams.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+        <main className="min-w-0 flex-1 px-5 py-8 sm:px-8 lg:px-10">
+          <section className="mb-10 border-b border-[#494454] pb-6">
+            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+              <div><div className="mb-2 flex items-center gap-2 text-[#d0bcff]"><Eye className="h-5 w-5 fill-current" /><span className={label}>Sacred Alignment</span></div><h1 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl">MLB Numerology</h1><p className="mt-3 max-w-2xl text-base text-[#cbc3d7]">Daily numerical alignment across today’s MLB slate.</p></div>
+              <div className="text-left md:text-right"><div className="mb-2 flex gap-2 md:justify-end"><span className={`rounded border border-[#494454] bg-[#282a32] px-3 py-1 ${label}`}>Methodology {data?.methodologyVersion ?? "v2.1"}</span><span className={`rounded bg-[#93000a] px-3 py-1 text-[#ffdad6] ${label}`}>Disclaimer</span></div><p className="font-mono text-sm text-[#cbc3d7]">{data?.date ?? "—"} • <span className="text-[#d0bcff]">{isStale ? "Stale data" : "Current slate"}</span></p></div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-3">{[[exactOnly, setExactOnly, "Exact match"], [rootOnly, setRootOnly, "Root match"], [confirmedOnly, setConfirmedOnly, "Confirmed lineup"], [hasHrOnly, setHasHrOnly, "Has HR model data"]].map(([checked, setter, label]) => <label key={String(label)} className="flex cursor-pointer items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs text-white/65"><input type="checkbox" checked={Boolean(checked)} onChange={() => (setter as React.Dispatch<React.SetStateAction<boolean>>)((current) => !current)} />{String(label)}</label>)}</div>
-            <div className="mt-4 divide-y divide-white/8">{explorer.map((player) => <div key={`${player.playerName}-${player.team}`} className="grid gap-3 py-3 sm:grid-cols-[1fr_auto_auto]"><div><div className="font-bold">{player.playerName}</div><div className="text-xs text-white/40">{player.team} vs {player.opponent}{player.opposingPitcher ? ` · ${player.opposingPitcher}` : ""}</div><div className="mt-1 flex gap-1">{player.exact && <span className="rounded bg-amber-300/10 px-2 py-0.5 text-[9px] text-amber-200">Exact</span>}{player.root && <span className="rounded bg-violet-300/10 px-2 py-0.5 text-[9px] text-violet-200">Root</span>}</div></div><div className="sm:text-right"><div className="text-[9px] uppercase text-violet-300/50">Numerology</div><div className="font-mono font-black text-violet-200">{player.numerologyScore}</div></div><div className="sm:text-right"><div className="text-[9px] uppercase text-sky-300/50">HR Score</div><div className="font-mono font-black text-sky-300">{value(player.batter?.hrScore ?? player.baseballScore)}</div></div></div>)}{explorer.length === 0 && <div className="py-10 text-center text-sm text-white/40">No players match all selected criteria.</div>}</div>
           </section>
-        </div>}
+
+          {loading && <div className={`${panel} p-12 text-center text-[#cbc3d7]`}>Loading numerology data…</div>}
+          {!loading && error && <div className="rounded-xl border border-[#ffb4ab]/30 bg-[#93000a]/25 p-6 text-[#ffdad6]">Unable to load numerology data: {error}</div>}
+          {!loading && !error && (!data || !profile) && <div className={`${panel} p-12 text-center text-[#cbc3d7]`}>No numerology data is available.</div>}
+
+          {!loading && !error && data && profile && <>
+            <section id="overview" className="mb-16 grid gap-5 md:grid-cols-2">
+              <div className={`${panel} relative overflow-hidden p-6`}><Calculator className="absolute -right-6 -top-6 h-32 w-32 text-[#d0bcff]/5" /><h3 className={`${label} mb-6 border-b border-[#494454]/30 pb-2 text-[#e9c349]`}>Core Frequencies</h3><div className="mb-8 flex items-baseline gap-4"><span className="font-serif text-5xl font-bold text-[#d0bcff]">{universalLabel}</span><span className="text-xl font-semibold text-[#cbc3d7]">Universal Day</span></div><div className="grid grid-cols-2 gap-6"><div><p className={`${label} mb-2 text-[#cbc3d7]`}>Calculation Formula</p><p className="font-mono text-lg">{Array.isArray(profile.universalDayTrace) ? profile.universalDayTrace[0] : "—"}</p></div><div><p className={`${label} mb-2 text-[#cbc3d7]`}>Calendar Day</p><p className="font-mono text-lg">{calendarLabel}</p></div></div><div className="mt-8 rounded-lg border border-[#494454]/20 bg-[#0c0e16] p-4"><p className={`${label} mb-3 text-[#d0bcff]`}>Primary Family</p><div className="flex gap-6 font-mono text-lg">{(Array.isArray(profile.primaryFamily) ? profile.primaryFamily : []).map((number) => <span key={number} className="text-[#d0bcff]">{number}</span>)}</div></div></div>
+              <div className={`${panel} p-6`}><h3 className={`${label} mb-6 border-b border-[#494454]/30 pb-2 text-[#e9c349]`}>Energy Balancing</h3><div className="mb-8 grid grid-cols-2 gap-8"><div className="space-y-6"><div><p className={`${label} mb-2 text-[#cbc3d7]`}>Secondary Family</p><p className="font-mono text-lg">{(Array.isArray(profile.secondaryFamily) ? profile.secondaryFamily : []).join("-") || "—"}</p></div><div><p className={`${label} mb-2 text-[#cbc3d7]`}>Balancing Complement</p><p className="font-mono text-lg text-[#e9c349]">{profile.balancingComplement}</p></div></div><div className="space-y-6"><div><p className={`${label} mb-2 text-[#cbc3d7]`}>Countercurrent</p><p className="font-mono text-lg text-[#ffb4ab]">{profile.countercurrent}</p></div><div><p className={`${label} mb-2 text-[#cbc3d7]`}>Repeated Digits</p><p className="font-mono text-lg">{(Array.isArray(profile.repeatedDigits) ? profile.repeatedDigits : []).map((item) => item.digit).join(", ") || "None"}</p></div></div></div><div className="rounded-lg border-l-2 border-[#e9c349] bg-[#33343e]/30 p-4 text-sm italic leading-6 text-[#cbc3d7]">“{profile.interpretation || "Today’s slate is evaluated strictly through the published numerology model."}”</div></div>
+            </section>
+
+            <section id="exact-matches" className="mb-16"><div className="mb-5 flex items-center gap-2"><Star className="h-5 w-5 fill-[#e9c349] text-[#e9c349]" /><h2 className="text-xl font-semibold">Exact Matches</h2><span className={`ml-auto rounded bg-[#e9c349]/10 px-3 py-1 text-[#af8d11] ${label}`}>High Probability</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{exact.length ? exact.map((player) => <MatchCard key={`${player.playerName}-${player.team}`} player={player} kind="exact" />) : <div className={`${panel} col-span-full p-8 text-center text-[#958ea0]`}>No exact matches today.</div>}</div></section>
+
+            <section id="root-matches" className="mb-16"><div className="mb-5 flex items-center gap-2"><Calculator className="h-5 w-5 text-[#d0bcff]" /><h2 className="text-xl font-semibold">Reduced-Root Matches</h2></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{root.length ? root.map((player) => <MatchCard key={`${player.playerName}-${player.team}`} player={player} kind="root" />) : <div className={`${panel} col-span-full p-8 text-center text-[#958ea0]`}>No root matches today.</div>}</div></section>
+
+            <section id="top-alignments" className="mb-16"><div className="mb-5 flex items-center gap-2"><BarChart3 className="h-5 w-5 text-[#89ceff]" /><h2 className="text-xl font-semibold">Top Alignments</h2></div><div className="grid gap-4 md:grid-cols-3">{featured.slice(0, 6).map((play) => <div key={`${play.playerName}-${play.team}`} className={`${panel} p-5`}><p className="font-serif text-xl font-semibold">{play.playerName}</p><p className="mt-1 text-sm text-[#cbc3d7]">{play.team} vs {play.opponent}</p><div className="mt-5 h-1 rounded bg-[#1c223d]"><div className="h-full rounded bg-[#d0bcff]" style={{ width: `${Math.min(100, Math.max(0, play.numerologyScore))}%` }} /></div><p className={`${label} mt-2 text-right text-[#cbc3d7]`}>Strength: {safeNumber(play.numerologyScore)}%</p></div>)}</div></section>
+
+            <section id="watchlist" className="mb-16 grid gap-5 md:grid-cols-2"><div className={`${panel} overflow-hidden border-emerald-500/20`}><div className="flex items-center justify-between border-b border-emerald-500/20 bg-emerald-500/10 p-4"><div className="flex items-center gap-2"><Eye className="h-5 w-5 text-emerald-400" /><h3 className={`${label} text-emerald-400`}>Watchlist Signals</h3></div><span className={`${label} text-emerald-400/70`}>Flowing</span></div>{watchlist.slice(0, 5).map((play) => <WatchRow key={`${play.playerName}-${play.team}`} play={play} positive />)}</div><div className={`${panel} overflow-hidden border-[#ffb4ab]/20`}><div className="flex items-center justify-between border-b border-[#ffb4ab]/20 bg-[#ffb4ab]/10 p-4"><div className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-[#ffb4ab]" /><h3 className={`${label} text-[#ffb4ab]`}>Countercurrents</h3></div><span className={`${label} text-[#ffb4ab]/70`}>Resistance</span></div>{countercurrents.slice(0, 5).map((play) => <WatchRow key={`${play.playerName}-${play.team}`} play={{ ...play, opponent: "", lineupStatus: "unknown", battingOrder: null, jerseyNumber: null, recommendedMarket: "", odds: null, formula: "", confidence: "low", positiveSignals: [], counterSignals: [], rank: 0, playerId: null }} positive={false} />)}</div></section>
+
+            <section id="explorer" className="mb-16"><div className="mb-5 flex items-center gap-2"><Search className="h-5 w-5 text-[#d0bcff]" /><h2 className="text-xl font-semibold">Player Explorer</h2></div><div className={`${panel} overflow-hidden`}><div className="flex flex-wrap items-center gap-4 border-b border-[#494454] bg-[#191b24] p-6"><input value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-[220px] flex-1 rounded-lg border border-[#494454] bg-[#1d1f28] px-4 py-2 text-sm outline-none focus:border-[#d0bcff]" placeholder="Search players" /><select value={team} onChange={(event) => setTeam(event.target.value)} className="rounded-lg border border-[#494454] bg-[#1d1f28] px-4 py-2 text-sm"><option value="all">All Teams</option>{teams.map((value) => <option key={value} value={value}>{value}</option>)}</select><select value={matchType} onChange={(event) => setMatchType(event.target.value)} className="rounded-lg border border-[#494454] bg-[#1d1f28] px-4 py-2 text-sm"><option value="all">All Match Types</option><option>Exact Match</option><option>Root Match</option><option>Neutral</option></select></div><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left"><thead className="bg-[#33343e]/20"><tr>{["Player","Match Type","Numerology","Model Rating","Lineup Pos","Status"].map((heading) => <th key={heading} className={`border-b border-[#494454] p-5 text-[#cbc3d7] ${label}`}>{heading}</th>)}</tr></thead><tbody>{explorer.map((player) => <tr key={`${player.playerName}-${player.team}`} className="hover:bg-[#282a32]"><td className="border-b border-[#494454]/30 p-5"><div className="font-semibold">{player.playerName}</div><div className="text-sm text-[#cbc3d7]">{player.team} vs {player.opponent}</div></td><td className="border-b border-[#494454]/30 p-5"><span className={`rounded px-2 py-1 ${label} ${player.matchType === "Exact Match" ? "bg-[#e9c349]/20 text-[#e9c349]" : player.matchType === "Root Match" ? "bg-[#d0bcff]/20 text-[#d0bcff]" : "bg-[#958ea0]/20 text-[#cbc3d7]"}`}>{player.matchType}</span></td><td className="border-b border-[#494454]/30 p-5 font-mono">{safeNumber(player.numerologyScore)}</td><td className="border-b border-[#494454]/30 p-5 font-mono">{safeNumber(player.baseballScore)}</td><td className="border-b border-[#494454]/30 p-5 font-mono">{player.battingOrder ?? "—"}</td><td className="border-b border-[#494454]/30 p-5"><span className={`rounded px-2 py-1 ${label} ${player.lineupStatus === "confirmed" ? "bg-emerald-500/20 text-emerald-400" : "bg-[#e9c349]/20 text-[#e9c349]"}`}>{player.lineupStatus ?? "unknown"}</span></td></tr>)}</tbody></table></div></div></section>
+
+            <section id="methodology" className="mb-20"><details className={`${panel} group overflow-hidden`}><summary className="flex cursor-pointer list-none items-center justify-between bg-[#282a32]/50 p-6"><div className="flex items-center gap-3"><BookOpen className="h-5 w-5 text-[#d0bcff]" /><h2 className="text-xl font-semibold">Methodology & Mathematical Constraints</h2></div><ChevronDown className="h-5 w-5 transition group-open:rotate-180" /></summary><div className="space-y-4 border-t border-[#494454] p-6 text-sm leading-7 text-[#cbc3d7]"><p>The existing numerology engine and generated data remain unchanged. This page only presents the current model through the approved Stitch visual design.</p><p><strong className="text-[#e2e1ee]">Exact Matches:</strong> Direct compound or master-number alignments generated by the current model.</p><p><strong className="text-[#e2e1ee]">Reduced-Root Matches:</strong> Root-family relationships generated by the current model.</p><p className="rounded-lg bg-[#0c0e16] p-4 italic">Disclaimer: MLB Numerology is for entertainment and esoteric research purposes only. Model Rating is supplemental and never affects numerology eligibility or ranking.</p></div></details></section>
+          </>}
+        </main>
       </div>
-    </main>
+
+      <nav className="fixed bottom-0 left-0 z-50 flex w-full justify-around border-t border-[#494454]/30 bg-[#191b24]/90 px-5 py-3 backdrop-blur-xl lg:hidden"><a href="#overview" className="flex flex-col items-center text-[#d0bcff]"><Home className="h-5 w-5" /><span className={label}>Overview</span></a><a href="#exact-matches" className="flex flex-col items-center text-[#cbc3d7]"><Sparkles className="h-5 w-5" /><span className={label}>Matches</span></a><a href="#watchlist" className="flex flex-col items-center text-[#cbc3d7]"><Eye className="h-5 w-5" /><span className={label}>Watchlist</span></a><a href="#explorer" className="flex flex-col items-center text-[#cbc3d7]"><Search className="h-5 w-5" /><span className={label}>Explorer</span></a></nav>
+    </div>
   </SiteShell>;
 }
