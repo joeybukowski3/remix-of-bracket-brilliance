@@ -1,7 +1,6 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
-import MlbPlayerHeadshot from "@/components/mlb/MlbPlayerHeadshot";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useMLBNumerology } from "@/hooks/useMLBNumerology";
 import type {
@@ -22,6 +21,7 @@ type NumberMatch = {
 
 type NumberMatchPlayer = {
   playerId?: number | null;
+  personId?: number | null;
   playerName: string;
   team: string;
   opponent: string;
@@ -32,10 +32,87 @@ type NumberMatchPlayer = {
   numerologyScore: number;
   baseballScore: number | null;
   matches: NumberMatch[];
-  candidateSource?: string;
-  recommendedMarket?: string;
-  marketScore?: number | null;
+  exactNumberMatches?: NumberMatch[];
+  rootNumberMatches?: NumberMatch[];
 };
+
+type BattingLine = {
+  gamesPlayed?: number;
+  atBats?: number;
+  runs?: number;
+  hits?: number;
+  homeRuns?: number;
+  rbi?: number;
+  baseOnBalls?: number;
+  strikeOuts?: number;
+  avg?: string;
+  obp?: string;
+  slg?: string;
+  ops?: string;
+};
+
+type StatsBundle = { season: BattingLine | null; last14: BattingLine | null };
+
+const statsCache = new Map<number, Promise<StatsBundle>>();
+
+type HrBatter = {
+  player: string;
+  team: string;
+  barrelRate?: number | null;
+  hardHitRate?: number | null;
+  exitVelo?: number | null;
+  hrScore?: number | null;
+  hrScoreRank?: number | null;
+  opposingPitcherHrVs?: number | null;
+  pitcherXera?: number | null;
+  pitcherFlyBallRate?: number | null;
+  last7HR?: number | null;
+  last30HR?: number | null;
+};
+
+const TEAM_LOGO_CODES: Record<string, string> = {
+  AZ: "ari", ATH: "ath", ATL: "atl", BAL: "bal", BOS: "bos", CHC: "chc", CWS: "chw",
+  CIN: "cin", CLE: "cle", COL: "col", DET: "det", HOU: "hou", KC: "kc", LAA: "laa",
+  LAD: "lad", MIA: "mia", MIL: "mil", MIN: "min", NYM: "nym", NYY: "nyy", PHI: "phi",
+  PIT: "pit", SD: "sd", SEA: "sea", SF: "sf", STL: "stl", TB: "tb", TEX: "tex",
+  TOR: "tor", WSH: "wsh",
+};
+
+function teamLogoUrl(team: string) {
+  const code = TEAM_LOGO_CODES[team] ?? team.toLowerCase();
+  return `https://www.mlbstatic.com/team-logos/${code}.svg`;
+}
+
+function normalizePlayerKey(name: string) {
+  return name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function resolvePlayerId(player: NumberMatchPlayer): number | null {
+  const v = Number(player.playerId ?? player.personId);
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+function extractBattingLine(json: unknown, type: "season" | "byDateRange"): BattingLine | null {
+  const groups = (json as { stats?: Array<{ type?: { displayName?: string }; splits?: Array<{ stat?: BattingLine }> }> })?.stats ?? [];
+  const group = groups.find((item) => item.type?.displayName === type) ?? groups[0];
+  return group?.splits?.[0]?.stat ?? null;
+}
+
+function loadPlayerStats(id: number, slateDate: string): Promise<StatsBundle> {
+  const existing = statsCache.get(id);
+  if (existing) return existing;
+  const end = new Date(`${slateDate}T12:00:00`);
+  const start = new Date(end);
+  start.setDate(start.getDate() - 14);
+  const year = end.getFullYear();
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const request = Promise.all([
+    fetch(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${year}&group=hitting`).then(r => r.json()),
+    fetch(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=byDateRange&season=${year}&startDate=${fmt(start)}&endDate=${fmt(end)}&group=hitting`).then(r => r.json()),
+  ]).then(([s, r]) => ({ season: extractBattingLine(s, "season"), last14: extractBattingLine(r, "byDateRange") }));
+  statsCache.set(id, request);
+  return request;
+}
 
 type ExtendedNumerologyData = NumerologyDailyData & {
   exactNumberMatches?: NumberMatchPlayer[];
@@ -55,19 +132,22 @@ type ExtendedNumerologyData = NumerologyDailyData & {
   };
 };
 
-type ExplorerPlay = {
+type FilterKey = "exact" | "root" | "confirmed" | "hasJersey" | "hasBattingOrder" | "hasHrScore";
+
+type ExplorerRecord = {
   key: string;
   playerName: string;
   team: string;
   opponent: string;
+  opposingPitcher?: string | null;
   lineupStatus: NumerologyPlay["lineupStatus"];
   battingOrder?: number | null;
   jerseyNumber?: number | null;
-  recommendedMarket: string;
   numerologyScore: number;
-  baseballScore: number;
-  finalScore: number;
-  source: "Qualified" | "Best available" | "Watchlist";
+  baseballScore: number | null;
+  exact: boolean;
+  root: boolean;
+  hr: HrBatter | null;
 };
 
 type SortMode = "numerology" | "baseball" | "battingOrder";
@@ -231,23 +311,123 @@ function DailyKeys({ profile }: { profile: DailyProfile }) {
   );
 }
 
+function StatTable({ stats, loading }: { stats: StatsBundle | null; loading: boolean }) {
+  const cols: [string, keyof BattingLine][] = [["AB","atBats"],["H","hits"],["HR","homeRuns"],["RBI","rbi"],["BB","baseOnBalls"],["K","strikeOuts"],["AVG","avg"],["OBP","obp"],["SLG","slg"]];
+  return (
+    <div className="overflow-x-auto rounded-lg border border-white/8">
+      <table className="w-full text-[9px]">
+        <thead><tr className="border-b border-white/8"><th className="px-2 py-1.5 text-left text-white/25 font-semibold">Split</th>{cols.map(([h]) => <th key={h} className="px-2 py-1.5 text-center text-white/25 font-semibold">{h}</th>)}</tr></thead>
+        <tbody>
+          {(["season","last14"] as const).map(split => (
+            <tr key={split} className="border-b border-white/5 last:border-0">
+              <td className="px-2 py-1.5 text-white/50 font-semibold whitespace-nowrap">{split === "season" ? "Season" : "Last 14"}</td>
+              {cols.map(([, key]) => <td key={key} className="px-2 py-1.5 text-center font-mono text-white/55">{loading ? "…" : (stats?.[split]?.[key] ?? "—")}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function HrModelRow({ batter }: { batter: HrBatter | null }) {
+  if (!batter) return <p className="text-[9px] text-white/25 italic">Not in today's HR model pool.</p>;
+  const fields: [string, string][] = [
+    ["HR Score", batter.hrScore != null ? String(batter.hrScore) : "—"],
+    ["Rank", batter.hrScoreRank != null ? `#${batter.hrScoreRank}` : "—"],
+    ["Barrel%", batter.barrelRate != null ? `${batter.barrelRate.toFixed(1)}%` : "—"],
+    ["HH%", batter.hardHitRate != null ? `${batter.hardHitRate.toFixed(1)}%` : "—"],
+    ["EV", batter.exitVelo != null ? `${batter.exitVelo.toFixed(1)}` : "—"],
+    ["L7 HR", batter.last7HR != null ? String(batter.last7HR) : "—"],
+    ["L30 HR", batter.last30HR != null ? String(batter.last30HR) : "—"],
+    ["Pitcher HR VS", batter.opposingPitcherHrVs != null ? batter.opposingPitcherHrVs.toFixed(1) : "—"],
+    ["Ptch xERA", batter.pitcherXera != null ? batter.pitcherXera.toFixed(2) : "—"],
+    ["Ptch FB%", batter.pitcherFlyBallRate != null ? `${batter.pitcherFlyBallRate.toFixed(1)}%` : "—"],
+  ];
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[9px]">
+      {fields.map(([label, val]) => <span key={label} className="text-white/35"><span className="text-white/20">{label}: </span><span className="font-mono font-semibold text-sky-300/70">{val}</span></span>)}
+    </div>
+  );
+}
+
+function TileDetails({ player, batter, slateDate }: { player: NumberMatchPlayer; batter: HrBatter | null; slateDate: string }) {
+  const [numerologyOpen, setNumerologyOpen] = useState(false);
+  const [baseballOpen, setBaseballOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [stats, setStats] = useState<StatsBundle | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const id = resolvePlayerId(player);
+
+  useEffect(() => {
+    if (!statsOpen || !id) return;
+    if (stats) return;
+    setStatsLoading(true);
+    loadPlayerStats(id, slateDate).then(s => { setStats(s); setStatsLoading(false); }).catch(() => setStatsLoading(false));
+  }, [statsOpen, id, slateDate, stats]);
+
+  const allMatches = [...(player.exactNumberMatches ?? []), ...(player.rootNumberMatches ?? []), ...(player.matches ?? [])];
+  const uniqueMatches = allMatches.filter((m, i, arr) => arr.findIndex(x => x.field === m.field && x.label === m.label) === i);
+
+  return (
+    <div className="mt-2 space-y-1.5 border-t border-white/6 pt-2">
+      {/* Numerology detail */}
+      <button type="button" onClick={() => setNumerologyOpen(v => !v)} className="flex w-full items-center justify-between text-[9px] text-white/35 hover:text-white/60 transition">
+        <span className="font-semibold">Numerology Detail</span>
+        {numerologyOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {numerologyOpen && (
+        <div className="rounded-lg bg-white/[0.03] p-2.5 space-y-1">
+          <div className="flex flex-wrap gap-1">
+            {uniqueMatches.map(m => <span key={`${m.field}-${m.label}`} className="rounded bg-violet-400/15 px-2 py-0.5 text-[9px] font-bold text-violet-200">{m.label} ({m.field}: {m.value}{m.root != null ? ` → ${m.root}` : ""})</span>)}
+          </div>
+          <div className="flex gap-3 text-[9px] text-white/30 mt-1">
+            <span>Alignment: <strong className="text-violet-300">{player.numerologyScore}</strong></span>
+            <span>Baseball: <strong className="text-sky-300">{player.baseballScore ?? "N/A"}</strong></span>
+            {player.battingOrder != null && <span>Batting #{player.battingOrder}</span>}
+          </div>
+          <LineupBadge status={player.lineupStatus} />
+        </div>
+      )}
+
+      {/* Baseball model stats */}
+      <button type="button" onClick={() => setBaseballOpen(v => !v)} className="flex w-full items-center justify-between text-[9px] text-white/35 hover:text-white/60 transition">
+        <span className="font-semibold">Baseball Model Stats</span>
+        {baseballOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {baseballOpen && <div className="rounded-lg bg-white/[0.03] p-2.5"><HrModelRow batter={batter} /></div>}
+
+      {/* Season / Last 14 stats */}
+      <button type="button" onClick={() => setStatsOpen(v => !v)} className="flex w-full items-center justify-between text-[9px] text-white/35 hover:text-white/60 transition">
+        <span className="font-semibold">Season & Last 14 Stats</span>
+        {statsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {statsOpen && <StatTable stats={stats} loading={statsLoading} />}
+    </div>
+  );
+}
+
 function NumberMatchList({
   title,
   subtitle,
   players,
   accent,
+  hrByPlayer,
+  slateDate,
 }: {
   title: string;
   subtitle: string;
   players: NumberMatchPlayer[];
   accent: "exact" | "root";
+  hrByPlayer: Map<string, HrBatter>;
+  slateDate: string;
 }) {
   const [expanded, setExpanded] = useState(accent === "exact");
   const visible = expanded ? players : players.slice(0, 12);
   const exact = accent === "exact";
 
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#0a1628] p-4 sm:p-5">
+    <section id={exact ? "exact-matches" : "root-matches"} className="rounded-2xl border border-white/10 bg-[#0a1628] p-4 sm:p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className={`text-[9px] font-bold uppercase tracking-[0.2em] ${exact ? "text-amber-300/70" : "text-violet-300/60"}`}>
@@ -262,38 +442,40 @@ function NumberMatchList({
       </div>
 
       {players.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-white/35">No players on today&apos;s game-team rosters match this level.</div>
+        <div className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-white/35">No players on today&apos;s slate match this level.</div>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {visible.map((player) => (
-            <div key={`${player.playerName}-${player.team}`} className="rounded-xl border border-white/8 bg-white/[0.025] p-3">
-              <div className="flex items-start gap-2.5">
-                {player.playerId != null && (
-                  <MlbPlayerHeadshot playerId={player.playerId} name={player.playerName} teamAbbreviation={player.team} size={38} />
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="truncate text-xs font-bold text-white">{player.playerName}</span>
-                    <span className="text-[10px] text-white/30">{player.team} vs {player.opponent}</span>
-                    {player.jerseyNumber != null && <span className="rounded bg-white/8 px-1.5 py-0.5 text-[9px] font-bold text-white/45">#{player.jerseyNumber}</span>}
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {player.matches.map((match) => (
-                      <span key={`${match.field}-${match.label}`} className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${exact ? "bg-amber-400/15 text-amber-200" : "bg-violet-400/15 text-violet-200"}`}>
-                        {match.label}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-white/30">
-                    <span>Alignment <strong className="text-violet-300">{player.numerologyScore}</strong></span>
-                    <span>Baseball context <strong className="text-sky-300">{player.baseballScore ?? "N/A"}</strong></span>
-                    {player.battingOrder != null && <span>Batting #{player.battingOrder}</span>}
-                    {player.candidateSource === "team_40_man_roster" && <span className="text-amber-300/50">Team 40-man roster</span>}
+          {visible.map((player) => {
+            const batter = hrByPlayer.get(`${normalizePlayerKey(player.playerName)}|${player.team}`) ?? null;
+            return (
+              <article key={`${player.playerName}-${player.team}`} className="rounded-xl border border-white/8 bg-white/[0.025] p-3">
+                <div className="flex items-start gap-2.5">
+                  {/* Team logo */}
+                  <img
+                    src={teamLogoUrl(player.team)}
+                    alt={`${player.team} logo`}
+                    className="h-8 w-8 shrink-0 object-contain"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="truncate text-xs font-bold text-white">{player.playerName}</span>
+                      <span className="text-[10px] text-white/30">{player.team} vs {player.opponent}</span>
+                      {player.jerseyNumber != null && <span className="rounded bg-white/8 px-1.5 py-0.5 text-[9px] font-bold text-white/45">#{player.jerseyNumber}</span>}
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {player.matches.map((match) => (
+                        <span key={`${match.field}-${match.label}`} className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${exact ? "bg-amber-400/15 text-amber-200" : "bg-violet-400/15 text-violet-200"}`}>
+                          {match.label}
+                        </span>
+                      ))}
+                    </div>
+                    <TileDetails player={player} batter={batter} slateDate={slateDate} />
                   </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
 
@@ -331,10 +513,6 @@ function PlayCard({ play }: { play: NumerologyPlay }) {
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <LineupBadge status={play.lineupStatus} />
             {play.battingOrder != null && <span className="text-[9px] text-white/30">Batting {play.battingOrder}</span>}
-          </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-white/60">{play.recommendedMarket}</span>
-            {play.odds != null && <span className="text-xs font-bold text-emerald-400">{play.odds}</span>}
           </div>
         </div>
         <div className="shrink-0 text-right">
@@ -413,7 +591,7 @@ function WatchlistRow({ play }: { play: WatchlistPlay }) {
       <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/6 text-[9px] font-black text-white/35">{play.rank}</div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5"><span className="text-[11px] font-semibold text-white/75">{play.playerName}</span><span className="text-[9px] text-white/30">{play.team} vs {play.opponent}</span>{play.jerseyNumber != null && <span className="text-[9px] text-white/25">#{play.jerseyNumber}</span>}</div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-1.5"><span className="text-[9px] text-white/40">{play.recommendedMarket}</span><LineupBadge status={play.lineupStatus} /></div>
+        <div className="mt-0.5 flex flex-wrap items-center gap-1.5"><LineupBadge status={play.lineupStatus} /></div>
         {play.primarySignal && <p className="mt-0.5 truncate text-[9px] text-white/25">{play.primarySignal}</p>}
       </div>
       <span className={`font-mono text-sm font-black tabular-nums ${tier.color}`}>{play.finalScore}</span>
@@ -421,38 +599,165 @@ function WatchlistRow({ play }: { play: WatchlistPlay }) {
   );
 }
 
-function buildExplorer(data: ExtendedNumerologyData): ExplorerPlay[] {
-  const rows: ExplorerPlay[] = [];
-  const add = (play: NumerologyPlay | WatchlistPlay, source: ExplorerPlay["source"]) => {
-    const key = `${play.playerName}-${play.team}-${play.recommendedMarket}`;
-    if (rows.some((row) => row.key === key)) return;
-    rows.push({
-      key,
-      playerName: play.playerName,
-      team: play.team,
-      opponent: play.opponent,
-      lineupStatus: play.lineupStatus,
-      battingOrder: play.battingOrder,
-      jerseyNumber: play.jerseyNumber,
-      recommendedMarket: play.recommendedMarket,
-      numerologyScore: play.numerologyScore,
-      baseballScore: play.baseballScore,
-      finalScore: play.finalScore,
-      source,
-    });
+function buildExplorerRecords(data: ExtendedNumerologyData, hrByPlayer: Map<string, HrBatter>): ExplorerRecord[] {
+  const map = new Map<string, ExplorerRecord>();
+  const add = (player: NumberMatchPlayer, kind?: "exact" | "root") => {
+    const key = `${normalizePlayerKey(player.playerName)}|${player.team}`;
+    const current = map.get(key);
+    const merged: ExplorerRecord = {
+      ...(current ?? {}),
+      key: `${player.playerName}-${player.team}`,
+      playerName: player.playerName,
+      team: player.team,
+      opponent: player.opponent,
+      opposingPitcher: player.opposingPitcher,
+      lineupStatus: player.lineupStatus,
+      battingOrder: player.battingOrder,
+      jerseyNumber: player.jerseyNumber,
+      numerologyScore: player.numerologyScore,
+      baseballScore: player.baseballScore,
+      exact: current?.exact || kind === "exact",
+      root: current?.root || kind === "root",
+      hr: hrByPlayer.get(key) ?? null,
+    };
+    map.set(key, merged);
   };
-  data.featuredPlays.forEach((play) => add(play, "Qualified"));
-  data.bestAvailable?.forEach((play) => add(play, "Best available"));
-  data.watchlist.forEach((play) => add(play, "Watchlist"));
-  return rows;
+  (data.exactNumberMatches ?? []).forEach(p => add(p as NumberMatchPlayer, "exact"));
+  (data.rootNumberMatches ?? []).forEach(p => add(p as NumberMatchPlayer, "root"));
+  data.featuredPlays.forEach(p => add(p as unknown as NumberMatchPlayer));
+  data.bestAvailable?.forEach(p => add(p as unknown as NumberMatchPlayer));
+  data.watchlist.forEach(p => add(p as unknown as NumberMatchPlayer));
+  return [...map.values()].sort((a, b) => b.numerologyScore - a.numerologyScore || a.playerName.localeCompare(b.playerName));
 }
 
-function SlateSummary({ data, explorer }: { data: ExtendedNumerologyData; explorer: ExplorerPlay[] }) {
+const FILTER_CRITERIA: { key: FilterKey; label: string; description: string }[] = [
+  { key: "exact",         label: "Exact match",        description: "Direct connection to today's universal day number" },
+  { key: "root",          label: "Root match",          description: "Reduced-root connection to today's number" },
+  { key: "confirmed",     label: "Confirmed lineup",    description: "Confirmed in today's starting lineup" },
+  { key: "hasJersey",     label: "Jersey number known", description: "Jersey number is available for evaluation" },
+  { key: "hasBattingOrder", label: "Batting order set", description: "Batting position is confirmed or projected" },
+  { key: "hasHrScore",    label: "In HR model",         description: "Listed in today's HR prop model" },
+];
+
+function passesFilter(record: ExplorerRecord, selected: Set<FilterKey>): boolean {
+  if (selected.has("exact") && !record.exact) return false;
+  if (selected.has("root") && !record.root) return false;
+  if (selected.has("confirmed") && record.lineupStatus !== "confirmed") return false;
+  if (selected.has("hasJersey") && record.jerseyNumber == null) return false;
+  if (selected.has("hasBattingOrder") && record.battingOrder == null) return false;
+  if (selected.has("hasHrScore") && !record.hr) return false;
+  return true;
+}
+
+function PlayerExplorer({ records }: { records: ExplorerRecord[] }) {
+  const [query, setQuery] = useState("");
+  const [team, setTeam] = useState("all");
+  const [selected, setSelected] = useState<Set<FilterKey>>(new Set());
+  const [sort, setSort] = useState<SortMode>("numerology");
+  const teams = useMemo(() => [...new Set(records.map(r => r.team))].sort(), [records]);
+
+  const toggle = (key: FilterKey) => setSelected(cur => {
+    const next = new Set(cur);
+    next.has(key) ? next.delete(key) : next.add(key);
+    return next;
+  });
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return records
+      .filter(r => team === "all" || r.team === team)
+      .filter(r => !q || `${r.playerName} ${r.team} ${r.opponent} ${r.opposingPitcher ?? ""}`.toLowerCase().includes(q))
+      .filter(r => passesFilter(r, selected))
+      .sort((a, b) => {
+        if (sort === "numerology") return b.numerologyScore - a.numerologyScore;
+        if (sort === "baseball") return (b.baseballScore ?? 0) - (a.baseballScore ?? 0);
+        if (sort === "battingOrder") return (a.battingOrder ?? 99) - (b.battingOrder ?? 99);
+        return b.numerologyScore - a.numerologyScore;
+      });
+  }, [query, team, selected, sort, records]);
+
+  if (records.length === 0) return null;
+
+  return (
+    <section id="explorer">
+      <SectionLabel>Player Explorer</SectionLabel>
+      <div className="rounded-2xl border border-white/8 bg-[#0a1628] p-4 space-y-3">
+        {/* Search + team + sort */}
+        <div className="grid gap-2 sm:grid-cols-3">
+          <label className="relative sm:col-span-1">
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-white/25" />
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search player, team, pitcher"
+              className="w-full rounded-lg border border-white/8 bg-white/4 py-2 pl-9 pr-3 text-[10px] text-white/70 outline-none placeholder:text-white/20 focus:border-violet-400/40" />
+          </label>
+          <select value={team} onChange={e => setTeam(e.target.value)} className="rounded-lg border border-white/8 bg-[#0d1728] px-2 py-2 text-[10px] text-white/60 outline-none">
+            <option value="all">All teams</option>
+            {teams.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select value={sort} onChange={e => setSort(e.target.value as SortMode)} className="rounded-lg border border-white/8 bg-[#0d1728] px-2 py-2 text-[10px] text-white/60 outline-none">
+            <option value="numerology">Sort: Numerology</option>
+            <option value="baseball">Sort: Baseball</option>
+            <option value="battingOrder">Sort: Batting order</option>
+          </select>
+        </div>
+
+        {/* Criteria builder */}
+        <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5"><Filter className="h-3 w-3 text-white/30" /><span className="text-[9px] font-bold text-white/35 uppercase tracking-wide">Filter criteria</span>{selected.size > 0 && <span className="rounded-full bg-violet-500/30 px-1.5 py-0.5 text-[8px] font-black text-violet-300">{selected.size} active · AND logic</span>}</div>
+            {selected.size > 0 && <button type="button" onClick={() => setSelected(new Set())} className="text-[9px] text-white/30 hover:text-white/60 transition">Reset</button>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {FILTER_CRITERIA.map(({ key, label, description }) => {
+              const active = selected.has(key);
+              return (
+                <button key={key} type="button" title={description} onClick={() => toggle(key)}
+                  className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[9px] font-semibold transition ${active ? "border-violet-400/50 bg-violet-500/15 text-violet-200" : "border-white/8 bg-white/3 text-white/35 hover:text-white/60"}`}>
+                  {active && <span className="text-violet-300">✓</span>}
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="divide-y divide-white/6">
+          {filtered.map(record => (
+            <div key={record.key} className="grid grid-cols-[1fr_auto] gap-3 py-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <img src={teamLogoUrl(record.team)} alt={`${record.team} logo`} className="h-4 w-4 object-contain" onError={e => {(e.target as HTMLImageElement).style.display="none";}} />
+                  <span className="text-[11px] font-bold text-white/75">{record.playerName}</span>
+                  <span className="text-[9px] text-white/25">{record.team} vs {record.opponent}</span>
+                  {record.jerseyNumber != null && <span className="text-[9px] text-white/20">#{record.jerseyNumber}</span>}
+                  <LineupBadge status={record.lineupStatus} />
+                </div>
+                <div className="mt-1 flex flex-wrap gap-2 text-[9px] text-white/30">
+                  {record.exact && <span className="text-amber-300/60">Exact match</span>}
+                  {record.root && !record.exact && <span className="text-violet-300/60">Root match</span>}
+                  {record.hr && <span className="text-sky-300/60">HR model ✓</span>}
+                  {record.battingOrder != null && <span>Batting #{record.battingOrder}</span>}
+                  <span>N:{record.numerologyScore}</span>
+                  <span>B:{record.baseballScore ?? "—"}</span>
+                </div>
+              </div>
+              <span className={`font-mono text-base font-black ${scoreTier(record.numerologyScore).color}`}>{record.numerologyScore}</span>
+            </div>
+          ))}
+          {filtered.length === 0 && <p className="py-6 text-center text-[10px] text-white/25">No players match the active filters.</p>}
+        </div>
+        <p className="text-[9px] text-white/20">Checked criteria use AND logic — a player must satisfy every selected criterion to appear.</p>
+      </div>
+    </section>
+  );
+}
+
+function SlateSummary({ data, explorer }: { data: ExtendedNumerologyData; explorer: ExplorerRecord[] }) {
   const summary = data.evaluationSummary;
   const surfaced = explorer.length;
-  const bestScore = summary?.maxScore ?? Math.max(0, ...explorer.map((play) => play.finalScore));
-  const confirmed = summary?.confirmedLineups ?? explorer.filter((play) => play.lineupStatus === "confirmed").length;
-  const projected = summary?.projectedLineups ?? explorer.filter((play) => ["projected", "morning_projected"].includes(play.lineupStatus)).length;
+  const bestScore = summary?.maxScore ?? Math.max(0, ...explorer.map((r) => r.numerologyScore));
+  const confirmed = summary?.confirmedLineups ?? explorer.filter((r) => r.lineupStatus === "confirmed").length;
+  const projected = summary?.projectedLineups ?? explorer.filter((r) => ["projected", "morning_projected"].includes(r.lineupStatus ?? "")).length;
   const metrics = [
     { label: summary?.playersEvaluated != null ? "Players evaluated" : "Players surfaced", value: summary?.playersEvaluated ?? surfaced },
     { label: "Qualified plays", value: data.featuredPlays.length },
@@ -476,16 +781,16 @@ function SlateSummary({ data, explorer }: { data: ExtendedNumerologyData; explor
   );
 }
 
-function ScoreDistribution({ data, explorer }: { data: ExtendedNumerologyData; explorer: ExplorerPlay[] }) {
+function ScoreDistribution({ data, explorer }: { data: ExtendedNumerologyData; explorer: ExplorerRecord[] }) {
   const published = data.evaluationSummary?.scoreDistribution;
   const buckets: { label: string; count: number }[] = published
     ? Object.entries(published).map(([label, count]) => ({ label, count: Number(count) }))
     : [
-        { label: "60+", count: explorer.filter((play) => play.finalScore >= 60).length },
-        { label: "55–59", count: explorer.filter((play) => play.finalScore >= 55 && play.finalScore < 60).length },
-        { label: "50–54", count: explorer.filter((play) => play.finalScore >= 50 && play.finalScore < 55).length },
-        { label: "45–49", count: explorer.filter((play) => play.finalScore >= 45 && play.finalScore < 50).length },
-        { label: "Below 45", count: explorer.filter((play) => play.finalScore < 45).length },
+        { label: "60+", count: explorer.filter((r) => r.numerologyScore >= 60).length },
+        { label: "55–59", count: explorer.filter((r) => r.numerologyScore >= 55 && r.numerologyScore < 60).length },
+        { label: "50–54", count: explorer.filter((r) => r.numerologyScore >= 50 && r.numerologyScore < 55).length },
+        { label: "45–49", count: explorer.filter((r) => r.numerologyScore >= 45 && r.numerologyScore < 50).length },
+        { label: "Below 45", count: explorer.filter((r) => r.numerologyScore < 45).length },
       ];
   const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
   return (
@@ -507,10 +812,10 @@ function ScoreDistribution({ data, explorer }: { data: ExtendedNumerologyData; e
   );
 }
 
-function DataCompleteness({ explorer, data }: { explorer: ExplorerPlay[]; data: ExtendedNumerologyData }) {
+function DataCompleteness({ explorer, data }: { explorer: ExplorerRecord[]; data: ExtendedNumerologyData }) {
   const profiles = data.evaluationSummary?.completeProfiles;
-  const jersey = explorer.filter((play) => play.jerseyNumber != null).length;
-  const batting = explorer.filter((play) => play.battingOrder != null).length;
+  const jersey = explorer.filter((r) => r.jerseyNumber != null).length;
+  const batting = explorer.filter((r) => r.battingOrder != null).length;
   return (
     <div className="rounded-2xl border border-white/8 bg-[#0a1628] p-5">
       <h3 className="text-sm font-black text-white/70">Data completeness</h3>
@@ -519,7 +824,7 @@ function DataCompleteness({ explorer, data }: { explorer: ExplorerPlay[]; data: 
         {profiles != null && <CompletenessRow label="Complete player profiles" value={profiles} total={data.evaluationSummary?.playersEvaluated ?? profiles} />}
         <CompletenessRow label="Jersey numbers" value={jersey} total={Math.max(1, explorer.length)} />
         <CompletenessRow label="Batting-order positions" value={batting} total={Math.max(1, explorer.length)} />
-        <CompletenessRow label="Known lineup status" value={explorer.filter((play) => play.lineupStatus !== "unknown").length} total={Math.max(1, explorer.length)} />
+        <CompletenessRow label="Known lineup status" value={explorer.filter((r) => r.lineupStatus !== "unknown").length} total={Math.max(1, explorer.length)} />
       </div>
     </div>
   );
@@ -532,64 +837,6 @@ function CompletenessRow({ label, value, total }: { label: string; value: number
       <div className="mb-1 flex justify-between text-[9px]"><span className="text-white/35">{label}</span><span className="font-mono text-white/50">{value}/{total}</span></div>
       <div className="h-1.5 rounded-full bg-white/6"><div className="h-1.5 rounded-full bg-sky-400/60" style={{ width: `${percentage}%` }} /></div>
     </div>
-  );
-}
-
-function SlateExplorer({ rows }: { rows: ExplorerPlay[] }) {
-  const [query, setQuery] = useState("");
-  const [team, setTeam] = useState("all");
-  const [confirmedOnly, setConfirmedOnly] = useState(false);
-  const [sort, setSort] = useState<SortMode>("numerology");
-  const teams = useMemo(() => Array.from(new Set(rows.map((row) => row.team))).sort(), [rows]);
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return rows
-      .filter((row) => team === "all" || row.team === team)
-      .filter((row) => !confirmedOnly || row.lineupStatus === "confirmed")
-      .filter((row) => !normalized || `${row.playerName} ${row.team} ${row.opponent} ${row.recommendedMarket}`.toLowerCase().includes(normalized))
-      .sort((a, b) => {
-        if (sort === "numerology") return b.numerologyScore - a.numerologyScore;
-        if (sort === "baseball") return b.baseballScore - a.baseballScore;
-        if (sort === "battingOrder") return (a.battingOrder ?? 99) - (b.battingOrder ?? 99);
-        return b.finalScore - a.finalScore;
-      });
-  }, [confirmedOnly, query, rows, sort, team]);
-
-  if (rows.length === 0) return null;
-  return (
-    <section>
-      <SectionLabel>Slate Explorer</SectionLabel>
-      <div className="rounded-2xl border border-white/8 bg-[#0a1628] p-4">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <label className="relative">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-white/25" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search player, team or market"
-              className="w-full rounded-lg border border-white/8 bg-white/4 py-2 pl-9 pr-3 text-[10px] text-white/70 outline-none placeholder:text-white/20 focus:border-violet-400/40" />
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <select value={team} onChange={(event) => setTeam(event.target.value)} className="rounded-lg border border-white/8 bg-[#0d1728] px-2 py-2 text-[10px] text-white/60 outline-none">
-              <option value="all">All teams</option>{teams.map((value) => <option key={value} value={value}>{value}</option>)}
-            </select>
-            <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} className="rounded-lg border border-white/8 bg-[#0d1728] px-2 py-2 text-[10px] text-white/60 outline-none">
-              <option value="numerology">Numerology alignment</option><option value="baseball">Baseball context</option><option value="battingOrder">Batting order</option>
-            </select>
-          </div>
-        </div>
-        <label className="mt-3 inline-flex items-center gap-2 text-[9px] text-white/35"><input type="checkbox" checked={confirmedOnly} onChange={(event) => setConfirmedOnly(event.target.checked)} className="accent-violet-500" /><Filter className="h-3 w-3" />Confirmed lineups only</label>
-        <div className="mt-3 divide-y divide-white/6">
-          {filtered.map((row) => (
-            <div key={row.key} className="grid grid-cols-[1fr_auto] gap-3 py-3">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-1.5"><span className="text-[11px] font-bold text-white/75">{row.playerName}</span><span className="text-[9px] text-white/25">{row.team} vs {row.opponent}</span><LineupBadge status={row.lineupStatus} /></div>
-                <div className="mt-1 flex flex-wrap gap-2 text-[9px] text-white/30"><span>{row.recommendedMarket}</span><span>N:{row.numerologyScore}</span><span>B:{row.baseballScore}</span><span className="text-violet-300/50">{row.source}</span></div>
-              </div>
-              <span className={`font-mono text-base font-black ${scoreTier(row.finalScore).color}`}>{row.finalScore}</span>
-            </div>
-          ))}
-          {filtered.length === 0 && <p className="py-6 text-center text-[10px] text-white/25">No players match these filters.</p>}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -644,7 +891,22 @@ export default function MlbNumerologyPage() {
   const { data: rawData, loading, error, isStale } = useMLBNumerology();
   const data = rawData as ExtendedNumerologyData | null;
   const etDate = getEtDate();
-  const explorer = useMemo(() => data ? buildExplorer(data) : [], [data]);
+
+  const [hrBatters, setHrBatters] = useState<HrBatter[]>([]);
+  useEffect(() => {
+    fetch("/data/mlb/hr-props-raw.json", { cache: "no-store" })
+      .then(r => r.ok ? r.json() : { batters: [] })
+      .then(d => setHrBatters(d?.batters ?? []))
+      .catch(() => undefined);
+  }, []);
+
+  const hrByPlayer = useMemo(
+    () => new Map(hrBatters.map(b => [`${normalizePlayerKey(b.player)}|${b.team}`, b])),
+    [hrBatters],
+  );
+
+  const slateDate = data?.date ?? etDate;
+  const explorerRecords = useMemo(() => data ? buildExplorerRecords(data, hrByPlayer) : [], [data, hrByPlayer]);
 
   return (
     <SiteShell>
@@ -668,22 +930,26 @@ export default function MlbNumerologyPage() {
 
           {!loading && !error && data && (
             <div className="space-y-6">
-              <section><SectionLabel>Daily Slate Summary</SectionLabel><SlateSummary data={data} explorer={explorer} /></section>
+              <section><SectionLabel>Daily Slate Summary</SectionLabel><SlateSummary data={data} explorer={explorerRecords} /></section>
               <section><SectionLabel>Today's Key Numbers</SectionLabel><DailyKeys profile={data.dailyProfile} /></section>
               <section><SectionLabel>The Daily Code</SectionLabel><DailyCode profile={data.dailyProfile} date={data.date} /></section>
-              <section><SectionLabel>Slate Shape</SectionLabel><div className="grid gap-3 md:grid-cols-2"><ScoreDistribution data={data} explorer={explorer} /><DataCompleteness data={data} explorer={explorer} /></div></section>
+              <section><SectionLabel>Slate Shape</SectionLabel><div className="grid gap-3 md:grid-cols-2"><ScoreDistribution data={data} explorer={explorerRecords} /><DataCompleteness data={data} explorer={explorerRecords} /></div></section>
 
               <NumberMatchList
                 title={`Exact ${data.dailyProfile.universalDayRawSum} matches`}
-                subtitle={`Every hitter on the 40-man rosters of today's teams with a direct ${data.dailyProfile.universalDayRawSum} connection through jersey number, age, birth day, Personal Day, Life Path or Expression number. This list is complete and is not limited by the aggregate alignment score.`}
+                subtitle={`Hitters in today's HR model with a direct ${data.dailyProfile.universalDayRawSum} connection through jersey number, age, birth day, Personal Day, Life Path or Expression number.`}
                 players={data.exactNumberMatches ?? []}
                 accent="exact"
+                hrByPlayer={hrByPlayer}
+                slateDate={slateDate}
               />
               <NumberMatchList
                 title={`Root ${data.dailyProfile.universalDayRoot} matches`}
-                subtitle={`Every remaining hitter whose number reduces to today's root ${data.dailyProfile.universalDayRoot}, including batting-order matches. Exact ${data.dailyProfile.universalDayRawSum} matches stay separated above.`}
+                subtitle={`Remaining hitters whose number reduces to today's root ${data.dailyProfile.universalDayRoot}, including batting-order matches. Exact ${data.dailyProfile.universalDayRawSum} matches stay separated above.`}
                 players={data.rootNumberMatches ?? []}
                 accent="root"
+                hrByPlayer={hrByPlayer}
+                slateDate={slateDate}
               />
 
               {data.featuredPlays.length > 0 && <section><SectionLabel>Highest Aggregate Numerology Scores</SectionLabel><div className="space-y-3">{data.featuredPlays.map((play) => <PlayCard key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
@@ -693,7 +959,7 @@ export default function MlbNumerologyPage() {
               {(data.countercurrents?.length ?? 0) > 0 && <section><SectionLabel>Countercurrents</SectionLabel><p className="mb-3 text-[10px] text-white/30">Conflicting or opposing numerical patterns. These are not predicted failures. Baseball context is displayed separately and does not affect classification.</p><div className="rounded-2xl border border-rose-500/15 bg-[#0a1628] px-4 py-1">{data.countercurrents!.map((item, index) => <div key={`${item.playerName}-${index}`} className="flex items-center justify-between gap-3 border-b border-white/6 py-2.5 last:border-0"><div><span className="text-[11px] font-semibold text-white/60">{item.playerName}</span><span className="ml-2 text-[9px] text-white/25">{item.team}</span></div><div className="flex items-center gap-3 font-mono text-[9px]"><span className="text-violet-300/60">N:{item.numerologyScore}</span><span className="text-sky-300/60">B:{item.baseballScore}</span><span className="text-white/40">{item.finalScore}</span></div></div>)}</div></section>}
               {data.watchlist.length > 0 && <section><SectionLabel>Numerical Watchlist</SectionLabel><div className="rounded-2xl border border-white/8 bg-[#0a1628] px-4 py-1">{data.watchlist.map((play) => <WatchlistRow key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
 
-              <SlateExplorer rows={explorer} />
+              <PlayerExplorer records={explorerRecords} />
               <section><SectionLabel>Research and Calibration</SectionLabel><ResearchLog data={data} /></section>
               {data.narrative?.closingObservation && <p className="px-4 text-center text-[10px] italic text-white/25">{data.narrative.closingObservation}</p>}
               <section><MethodologyLedger version={data.methodologyVersion} weights={data.scoringConfiguration?.weights} /></section>

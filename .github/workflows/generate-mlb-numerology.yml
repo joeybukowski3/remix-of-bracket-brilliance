@@ -89,6 +89,15 @@ jobs:
 
           node scripts/generate-mlb-numerology.mjs $DATE_FLAG $DRY_FLAG $FIXTURE_FLAG
 
+      - name: Filter to likely active hitters
+        if: ${{ inputs.dry_run != 'true' && inputs.use_fixture != 'true' }}
+        run: |
+          DATE_FLAG=""
+          if [ -n "${{ inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ inputs.date }}"
+          fi
+          node scripts/filter-mlb-numerology-active.mjs $DATE_FLAG
+
       - name: Commit and push
         if: ${{ inputs.dry_run != 'true' }}
         shell: bash
