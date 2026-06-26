@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import MlbPlayerHeadshot from "@/components/mlb/MlbPlayerHeadshot";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useMLBNumerology } from "@/hooks/useMLBNumerology";
 import type {
@@ -363,11 +364,23 @@ function TileDetails({ player, batter, slateDate }: { player: NumberMatchPlayer;
     if (!statsOpen || !id) return;
     if (stats) return;
     setStatsLoading(true);
-    loadPlayerStats(id, slateDate).then(s => { setStats(s); setStatsLoading(false); }).catch(() => setStatsLoading(false));
+    loadPlayerStats(id, slateDate)
+      .then(s => { setStats(s); setStatsLoading(false); })
+      .catch(() => { setStatsLoading(false); });
   }, [statsOpen, id, slateDate, stats]);
 
-  const allMatches = [...(player.exactNumberMatches ?? []), ...(player.rootNumberMatches ?? []), ...(player.matches ?? [])];
-  const uniqueMatches = allMatches.filter((m, i, arr) => arr.findIndex(x => x.field === m.field && x.label === m.label) === i);
+  // Safely merge match arrays — handle undefined/null gracefully
+  const allMatches = useMemo(() => {
+    const raw = [
+      ...(Array.isArray(player.exactNumberMatches) ? player.exactNumberMatches : []),
+      ...(Array.isArray(player.rootNumberMatches) ? player.rootNumberMatches : []),
+      ...(Array.isArray(player.matches) ? player.matches : []),
+    ];
+    return raw.filter((m, i, arr) =>
+      m && m.field && m.label &&
+      arr.findIndex(x => x?.field === m.field && x?.label === m.label) === i
+    );
+  }, [player]);
 
   return (
     <div className="mt-2 space-y-1.5 border-t border-white/6 pt-2">
@@ -379,23 +392,32 @@ function TileDetails({ player, batter, slateDate }: { player: NumberMatchPlayer;
       {numerologyOpen && (
         <div className="rounded-lg bg-white/[0.03] p-2.5 space-y-1">
           <div className="flex flex-wrap gap-1">
-            {uniqueMatches.map(m => <span key={`${m.field}-${m.label}`} className="rounded bg-violet-400/15 px-2 py-0.5 text-[9px] font-bold text-violet-200">{m.label} ({m.field}: {m.value}{m.root != null ? ` → ${m.root}` : ""})</span>)}
+            {allMatches.map(m => (
+              <span key={`${m.field}-${m.label}`} className="rounded bg-violet-400/15 px-2 py-0.5 text-[9px] font-bold text-violet-200">
+                {m.label}{m.value != null ? ` (${m.field}: ${m.value}${m.root != null ? ` → ${m.root}` : ""})` : ""}
+              </span>
+            ))}
           </div>
           <div className="flex gap-3 text-[9px] text-white/30 mt-1">
             <span>Alignment: <strong className="text-violet-300">{player.numerologyScore}</strong></span>
-            <span>Baseball: <strong className="text-sky-300">{player.baseballScore ?? "N/A"}</strong></span>
+            <span>Model Rating: <strong className="text-sky-300">{player.baseballScore ?? "N/A"}</strong></span>
             {player.battingOrder != null && <span>Batting #{player.battingOrder}</span>}
           </div>
           <LineupBadge status={player.lineupStatus} />
         </div>
       )}
 
-      {/* Baseball model stats */}
+      {/* Model Rating (baseball context) */}
       <button type="button" onClick={() => setBaseballOpen(v => !v)} className="flex w-full items-center justify-between text-[9px] text-white/35 hover:text-white/60 transition">
-        <span className="font-semibold">Baseball Model Stats</span>
+        <span className="font-semibold">Model Rating</span>
         {baseballOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>
-      {baseballOpen && <div className="rounded-lg bg-white/[0.03] p-2.5"><HrModelRow batter={batter} /></div>}
+      {baseballOpen && (
+        <div className="rounded-lg bg-white/[0.03] p-2.5 space-y-1">
+          <p className="text-[9px] text-white/25 italic">Model Rating does not affect numerology eligibility or ranking.</p>
+          <HrModelRow batter={batter} />
+        </div>
+      )}
 
       {/* Season / Last 14 stats */}
       <button type="button" onClick={() => setStatsOpen(v => !v)} className="flex w-full items-center justify-between text-[9px] text-white/35 hover:text-white/60 transition">
@@ -601,32 +623,34 @@ function WatchlistRow({ play }: { play: WatchlistPlay }) {
 
 function buildExplorerRecords(data: ExtendedNumerologyData, hrByPlayer: Map<string, HrBatter>): ExplorerRecord[] {
   const map = new Map<string, ExplorerRecord>();
-  const add = (player: NumberMatchPlayer, kind?: "exact" | "root") => {
+  const add = (player: NumberMatchPlayer | NumerologyPlay | WatchlistPlay, kind?: "exact" | "root") => {
+    if (!player?.playerName || !player?.team) return; // guard missing required fields
     const key = `${normalizePlayerKey(player.playerName)}|${player.team}`;
     const current = map.get(key);
+    const p = player as NumberMatchPlayer;
     const merged: ExplorerRecord = {
       ...(current ?? {}),
       key: `${player.playerName}-${player.team}`,
       playerName: player.playerName,
       team: player.team,
-      opponent: player.opponent,
-      opposingPitcher: player.opposingPitcher,
+      opponent: player.opponent ?? "",
+      opposingPitcher: p.opposingPitcher ?? null,
       lineupStatus: player.lineupStatus,
-      battingOrder: player.battingOrder,
-      jerseyNumber: player.jerseyNumber,
-      numerologyScore: player.numerologyScore,
-      baseballScore: player.baseballScore,
+      battingOrder: player.battingOrder ?? null,
+      jerseyNumber: player.jerseyNumber ?? null,
+      numerologyScore: typeof player.numerologyScore === "number" ? player.numerologyScore : 0,
+      baseballScore: typeof player.baseballScore === "number" ? player.baseballScore : null,
       exact: current?.exact || kind === "exact",
       root: current?.root || kind === "root",
       hr: hrByPlayer.get(key) ?? null,
     };
     map.set(key, merged);
   };
-  (data.exactNumberMatches ?? []).forEach(p => add(p as NumberMatchPlayer, "exact"));
-  (data.rootNumberMatches ?? []).forEach(p => add(p as NumberMatchPlayer, "root"));
-  data.featuredPlays.forEach(p => add(p as unknown as NumberMatchPlayer));
-  data.bestAvailable?.forEach(p => add(p as unknown as NumberMatchPlayer));
-  data.watchlist.forEach(p => add(p as unknown as NumberMatchPlayer));
+  (Array.isArray(data.exactNumberMatches) ? data.exactNumberMatches : []).forEach(p => add(p, "exact"));
+  (Array.isArray(data.rootNumberMatches) ? data.rootNumberMatches : []).forEach(p => add(p, "root"));
+  (Array.isArray(data.featuredPlays) ? data.featuredPlays : []).forEach(p => add(p));
+  (Array.isArray(data.bestAvailable) ? data.bestAvailable : []).forEach(p => add(p));
+  (Array.isArray(data.watchlist) ? data.watchlist : []).forEach(p => add(p));
   return [...map.values()].sort((a, b) => b.numerologyScore - a.numerologyScore || a.playerName.localeCompare(b.playerName));
 }
 
@@ -952,12 +976,12 @@ export default function MlbNumerologyPage() {
                 slateDate={slateDate}
               />
 
-              {data.featuredPlays.length > 0 && <section><SectionLabel>Highest Aggregate Numerology Scores</SectionLabel><div className="space-y-3">{data.featuredPlays.map((play) => <PlayCard key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
-              {data.featuredPlays.length === 0 && (data.bestAvailable?.length ?? 0) > 0 && <section><SectionLabel>Highest Aggregate Numerology Scores</SectionLabel><div className="mb-3 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[10px] text-amber-300/70">These are the highest combined numerology-signal totals, not the complete list of players matching today's number. Exact and root matches are listed above.</div><div className="space-y-3">{data.bestAvailable!.map((play) => <PlayCard key={`ba-${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
-              {data.featuredPlays.length === 0 && !(data.bestAvailable?.length) && <div className="rounded-xl border border-white/8 bg-[#0a1628] px-4 py-8 text-center text-xs text-white/25">No featured plays available. Check back after the morning model run.</div>}
+              {(Array.isArray(data.featuredPlays) && data.featuredPlays.length > 0) && <section><SectionLabel>Highest Aggregate Numerology Scores</SectionLabel><div className="space-y-3">{data.featuredPlays.map((play) => <PlayCard key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
+              {(!data.featuredPlays?.length) && (data.bestAvailable?.length ?? 0) > 0 && <section><SectionLabel>Highest Aggregate Numerology Scores</SectionLabel><div className="mb-3 rounded-lg border border-amber-400/15 bg-amber-400/5 px-3 py-2 text-[10px] text-amber-300/70">These are the highest combined numerology-signal totals, not the complete list of players matching today's number. Exact and root matches are listed above.</div><div className="space-y-3">{data.bestAvailable!.map((play) => <PlayCard key={`ba-${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
+              {!data.featuredPlays?.length && !(data.bestAvailable?.length) && <div className="rounded-xl border border-white/8 bg-[#0a1628] px-4 py-8 text-center text-xs text-white/25">No featured plays available. Check back after the morning model run.</div>}
 
               {(data.countercurrents?.length ?? 0) > 0 && <section><SectionLabel>Countercurrents</SectionLabel><p className="mb-3 text-[10px] text-white/30">Conflicting or opposing numerical patterns. These are not predicted failures. Baseball context is displayed separately and does not affect classification.</p><div className="rounded-2xl border border-rose-500/15 bg-[#0a1628] px-4 py-1">{data.countercurrents!.map((item, index) => <div key={`${item.playerName}-${index}`} className="flex items-center justify-between gap-3 border-b border-white/6 py-2.5 last:border-0"><div><span className="text-[11px] font-semibold text-white/60">{item.playerName}</span><span className="ml-2 text-[9px] text-white/25">{item.team}</span></div><div className="flex items-center gap-3 font-mono text-[9px]"><span className="text-violet-300/60">N:{item.numerologyScore}</span><span className="text-sky-300/60">B:{item.baseballScore}</span><span className="text-white/40">{item.finalScore}</span></div></div>)}</div></section>}
-              {data.watchlist.length > 0 && <section><SectionLabel>Numerical Watchlist</SectionLabel><div className="rounded-2xl border border-white/8 bg-[#0a1628] px-4 py-1">{data.watchlist.map((play) => <WatchlistRow key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
+              {(Array.isArray(data.watchlist) && data.watchlist.length > 0) && <section><SectionLabel>Numerical Watchlist</SectionLabel><div className="rounded-2xl border border-white/8 bg-[#0a1628] px-4 py-1">{data.watchlist.map((play) => <WatchlistRow key={`${play.rank}-${play.playerName}`} play={play} />)}</div></section>}
 
               <PlayerExplorer records={explorerRecords} />
               <section><SectionLabel>Research and Calibration</SectionLabel><ResearchLog data={data} /></section>
