@@ -2149,6 +2149,302 @@ function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], ba
     .slice(0, 5);
 }
 
+// ── Value table: top 3 HR + top 3 K by value edge ────────────────────────────
+// HR value = hrValueEdge (model prob / implied prob). >1 = model sees more HR
+//            probability than the market does. Higher = more value.
+// K value  = projectedKs - kLine (model projects this many Ks OVER the posted line)
+// Only includes rows that actually have odds posted. Falls back gracefully if
+// lines haven't been released yet.
+
+function americanToImplied(ml: string | null | undefined): number | null {
+  if (!ml) return null;
+  const n = parseFloat(ml.replace(/[^0-9\-.]/g, ""));
+  if (!isFinite(n) || n === 0) return null;
+  return n < 0 ? (-n) / (-n + 100) : 100 / (n + 100);
+}
+
+function SocialTableValue({
+  batters,
+  kRows,
+}: {
+  batters: HrDashboardBatter[];
+  kRows: PitcherStrikeoutTeamRow[];
+}) {
+  const ACCENTS = ["#e05c2e","#f97316","#fb923c","#22c55e","#4ade80","#86efac"];
+
+  // Top 3 HR by value edge — only include batters with odds posted
+  const hrValue = batters
+    .filter((b) => b.hrOddsYes != null && (b.hrValueEdge ?? 0) > 0)
+    .sort((a, b) => (b.hrValueEdge ?? 0) - (a.hrValueEdge ?? 0))
+    .slice(0, 3)
+    .map((b) => ({
+      type: "hr" as const,
+      name: b.player,
+      team: b.team,
+      opponent: b.opposingPitcher,
+      score: b.hrScore,
+      line: b.hrOddsYes ?? null,
+      lineLabel: b.hrOddsYes ?? "—",
+      impliedPct: b.hrImplied != null ? b.hrImplied * 100 : null,
+      valueEdge: b.hrValueEdge ?? null,
+      // Delta: difference between model implied and market implied
+      modelPct: b.hrImplied != null && b.hrValueEdge != null ? b.hrImplied * b.hrValueEdge * 100 : null,
+      projLine: null as number | null,
+      projKs: null as number | null,
+      kDelta: null as number | null,
+    }));
+
+  // Top 3 K by value edge — only include pitchers with kLine posted
+  const kValue = kRows
+    .filter((r) => r.kLine != null && r.kLine > 0 && r.projectedKs != null)
+    .sort((a, b) => {
+      const edgeA = (a.projectedKs ?? 0) - (a.kLine ?? 0);
+      const edgeB = (b.projectedKs ?? 0) - (b.kLine ?? 0);
+      return edgeB - edgeA;
+    })
+    .slice(0, 3)
+    .map((r) => {
+      const delta = (r.projectedKs ?? 0) - (r.kLine ?? 0);
+      const implied = americanToImplied(r.kOddsOver);
+      return {
+        type: "k" as const,
+        name: r.pitcher,
+        team: r.team,
+        opponent: r.opponent,
+        score: r.strikeoutMatchupScore,
+        line: r.kLine != null ? `o${r.kLine}` : null,
+        lineLabel: r.kLine != null ? `o${r.kLine}` : "—",
+        impliedPct: implied != null ? implied * 100 : null,
+        valueEdge: null,
+        modelPct: null,
+        projLine: r.kLine ?? null,
+        projKs: r.projectedKs ?? null,
+        kDelta: delta,
+      };
+    });
+
+  const hasHR = hrValue.length > 0;
+  const hasK  = kValue.length > 0;
+
+  if (!hasHR && !hasK) {
+    return (
+      <div style={{ background: "#060d1a", borderRadius: 10, padding: "28px 14px", textAlign: "center" }}>
+        <div style={{ color: "#94a3b8", fontSize: 13, marginBottom: 8 }}>⏳ Odds Not Yet Posted</div>
+        <div style={{ color: "#475569", fontSize: 11 }}>
+          Lines typically release 2–3 hours before first pitch.<br/>
+          Check back after the 1 PM ET model refresh.
+        </div>
+      </div>
+    );
+  }
+
+  function sc(s: number) {
+    if (s >= 70) return { bg: "#22c55e", color: "#fff" };
+    if (s >= 65) return { bg: "#4ade80", color: "#000" };
+    if (s >= 62) return { bg: "#facc15", color: "#000" };
+    return { bg: "#fb923c", color: "#fff" };
+  }
+
+  const allRows = [...hrValue, ...kValue];
+
+  return (
+    <div data-x-export="mlb-value-social" style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}>
+      {/* Header */}
+      <div style={{ background: "#0a1628", borderBottom: "3px solid #a855f7", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>💎 MLB VALUE PROPS</div>
+          <div style={{ color: "#d8b4fe", fontSize: 11, marginTop: 2 }}>Top 3 HR + Top 3 K by Model vs Market Edge · Today's Slate</div>
+        </div>
+        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#fff" }}>joeknowsball.com</div>
+      </div>
+
+      {/* Section header: HR */}
+      {hasHR && (
+        <>
+          <div style={{ padding: "8px 14px 4px", background: "#0a1628", borderBottom: "1px solid #1e3a5f" }}>
+            <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".12em", color: "#e05c2e", textTransform: "uppercase" }}>🔥 HR Props — Model vs Market</span>
+          </div>
+          {/* Desktop HR table */}
+          <div className="hidden sm:block" style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead style={{ background: "#0d1f3c" }}>
+                <tr style={{ color: "#475569", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em" }}>
+                  <th style={{ padding: "6px 14px", textAlign: "left" }}>Player</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Score</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Line</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Mkt Implied</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Model Edge</th>
+                  <th style={{ padding: "6px 14px", textAlign: "center" }}>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hrValue.map((r, i) => {
+                  const pill = sc(r.score ?? 0);
+                  const edge = r.valueEdge ?? 0;
+                  const edgeColor = edge >= 1.25 ? "#22c55e" : edge >= 1.05 ? "#86efac" : "#94a3b8";
+                  return (
+                    <tr key={r.name + i} style={{ borderBottom: "1px solid #1e3a5f", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderLeft: `3px solid ${ACCENTS[i]}` }}>
+                      <td style={{ padding: "10px 14px" }}>
+                        <div style={{ fontWeight: 700, color: "#f1f5f9", marginBottom: 2 }}>{r.name}</div>
+                        <div style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</div>
+                      </td>
+                      <td style={{ padding: "10px 8px", textAlign: "center" }}>
+                        <span style={{ background: pill.bg, color: pill.color, borderRadius: 6, padding: "3px 8px", fontWeight: 900 }}>{(r.score ?? 0).toFixed(1)}</span>
+                      </td>
+                      <td style={{ padding: "10px 8px", textAlign: "center", color: "#fbbf24", fontWeight: 700 }}>{r.lineLabel}</td>
+                      <td style={{ padding: "10px 8px", textAlign: "center", color: "#94a3b8" }}>
+                        {r.impliedPct != null ? `${r.impliedPct.toFixed(1)}%` : "—"}
+                      </td>
+                      <td style={{ padding: "10px 8px", textAlign: "center", color: "#94a3b8" }}>
+                        {r.modelPct != null ? `${r.modelPct.toFixed(1)}%` : "—"}
+                      </td>
+                      <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                        {edge > 0 ? (
+                          <span style={{ background: "#1a2e1a", color: edgeColor, border: `1px solid ${edgeColor}`, borderRadius: 6, padding: "3px 8px", fontWeight: 900, fontSize: 11 }}>
+                            {edge >= 1.25 ? "🔥 " : ""}{edge.toFixed(2)}x
+                          </span>
+                        ) : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {/* Mobile HR cards */}
+          <div className="sm:hidden">
+            {hrValue.map((r, i) => {
+              const pill = sc(r.score ?? 0);
+              const edge = r.valueEdge ?? 0;
+              const edgeColor = edge >= 1.25 ? "#22c55e" : edge >= 1.05 ? "#86efac" : "#94a3b8";
+              return (
+                <div key={r.name + i} style={{ padding: "10px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `3px solid ${ACCENTS[i]}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13 }}>{r.name}</div>
+                      <div style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</div>
+                    </div>
+                    <span style={{ background: pill.bg, color: pill.color, borderRadius: 6, padding: "3px 8px", fontWeight: 900 }}>{(r.score ?? 0).toFixed(1)}</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                    <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
+                      <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>LINE</div>
+                      <div style={{ color: "#fbbf24", fontWeight: 700 }}>{r.lineLabel}</div>
+                    </div>
+                    <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
+                      <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>MKT%</div>
+                      <div style={{ color: "#94a3b8", fontWeight: 600 }}>{r.impliedPct != null ? `${r.impliedPct.toFixed(1)}%` : "—"}</div>
+                    </div>
+                    <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
+                      <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>EDGE</div>
+                      <div style={{ color: edgeColor, fontWeight: 900 }}>{edge > 0 ? `${edge.toFixed(2)}x` : "—"}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Section header: K */}
+      {hasK && (
+        <>
+          <div style={{ padding: "8px 14px 4px", background: "#0a1628", borderBottom: "1px solid #1e3a5f", borderTop: hasHR ? "2px solid #1e3a5f" : "none" }}>
+            <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".12em", color: "#22c55e", textTransform: "uppercase" }}>🎯 K Props — Model vs Line</span>
+          </div>
+          {/* Desktop K table */}
+          <div className="hidden sm:block" style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead style={{ background: "#0d1f3c" }}>
+                <tr style={{ color: "#475569", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em" }}>
+                  <th style={{ padding: "6px 14px", textAlign: "left" }}>Pitcher</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>K Score</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Line</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Proj Ks</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Over Odds</th>
+                  <th style={{ padding: "6px 14px", textAlign: "center" }}>+/- Line</th>
+                </tr>
+              </thead>
+              <tbody>
+                {kValue.map((r, i) => {
+                  const pill = sc(r.score ?? 0);
+                  const delta = r.kDelta ?? 0;
+                  const deltaColor = delta >= 1.5 ? "#22c55e" : delta >= 0.5 ? "#86efac" : "#94a3b8";
+                  const kIdx = i + (hasHR ? 3 : 0);
+                  return (
+                    <tr key={r.name + i} style={{ borderBottom: "1px solid #1e3a5f", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderLeft: `3px solid ${ACCENTS[kIdx]}` }}>
+                      <td style={{ padding: "10px 14px" }}>
+                        <div style={{ fontWeight: 700, color: "#f1f5f9", marginBottom: 2 }}>{r.name}</div>
+                        <div style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</div>
+                      </td>
+                      <td style={{ padding: "10px 8px", textAlign: "center" }}>
+                        <span style={{ background: pill.bg, color: pill.color, borderRadius: 6, padding: "3px 8px", fontWeight: 900 }}>{(r.score ?? 0).toFixed(1)}</span>
+                      </td>
+                      <td style={{ padding: "10px 8px", textAlign: "center", color: "#fbbf24", fontWeight: 700 }}>{r.lineLabel}</td>
+                      <td style={{ padding: "10px 8px", textAlign: "center", color: "#94a3b8" }}>
+                        {r.projKs != null ? r.projKs.toFixed(1) : "—"}
+                      </td>
+                      <td style={{ padding: "10px 8px", textAlign: "center", color: "#94a3b8" }}>
+                        {r.impliedPct != null ? `${r.impliedPct.toFixed(0)}% (${kValue[i] ? (kRows.find(k=>k.pitcher===r.name)?.kOddsOver ?? "—") : "—"})` : "—"}
+                      </td>
+                      <td style={{ padding: "10px 14px", textAlign: "center" }}>
+                        <span style={{ background: "#0d1f2a", color: deltaColor, border: `1px solid ${deltaColor}`, borderRadius: 6, padding: "3px 8px", fontWeight: 900, fontSize: 11 }}>
+                          {delta >= 0 ? "+" : ""}{delta.toFixed(1)} Ks
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {/* Mobile K cards */}
+          <div className="sm:hidden">
+            {kValue.map((r, i) => {
+              const pill = sc(r.score ?? 0);
+              const delta = r.kDelta ?? 0;
+              const deltaColor = delta >= 1.5 ? "#22c55e" : delta >= 0.5 ? "#86efac" : "#94a3b8";
+              const kIdx = i + (hasHR ? 3 : 0);
+              return (
+                <div key={r.name + i} style={{ padding: "10px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `3px solid ${ACCENTS[kIdx]}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13 }}>{r.name}</div>
+                      <div style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</div>
+                    </div>
+                    <span style={{ background: pill.bg, color: pill.color, borderRadius: 6, padding: "3px 8px", fontWeight: 900 }}>{(r.score ?? 0).toFixed(1)}</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                    <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
+                      <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>LINE</div>
+                      <div style={{ color: "#fbbf24", fontWeight: 700 }}>{r.lineLabel}</div>
+                    </div>
+                    <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
+                      <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>PROJ</div>
+                      <div style={{ color: "#94a3b8", fontWeight: 600 }}>{r.projKs != null ? r.projKs.toFixed(1) : "—"}</div>
+                    </div>
+                    <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
+                      <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>EDGE</div>
+                      <div style={{ color: deltaColor, fontWeight: 900 }}>{delta >= 0 ? "+" : ""}{delta.toFixed(1)}K</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Legend */}
+      <div style={{ padding: "8px 14px", background: "#0a1628", borderTop: "1px solid #1e3a5f", display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 10, color: "#64748b" }}>🔥 HR Edge = Model prob ÷ Market implied prob (≥1.25 = strong value)</span>
+        <span style={{ fontSize: 10, color: "#64748b" }}>🎯 K Edge = Projected Ks above posted line</span>
+      </div>
+    </div>
+  );
+}
+
 function SocialTableML({
   games,
   detailPreviews,
@@ -2456,16 +2752,17 @@ function SocialMediaTablesSection({
   mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
 }) {
   const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games: propsGames, loading } = useMlbPropsData();
-  const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits">("hr");
+  const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits" | "value">("hr");
   const { data: polymarketData } = usePolymarketMlbMoneylines();
 
   if (loading) return null;
 
-  const tabs: { key: "ml" | "hr" | "k" | "hits"; label: string; emoji: string }[] = [
-    { key: "ml",   label: "ML Edges",  emoji: "🏆" },
-    { key: "hr",   label: "HR Props",  emoji: "🔥" },
-    { key: "k",    label: "K Props",   emoji: "🎯" },
-    { key: "hits", label: "Hit Props", emoji: "⚔️" },
+  const tabs: { key: "ml" | "hr" | "k" | "hits" | "value"; label: string; emoji: string }[] = [
+    { key: "ml",    label: "ML Edges",  emoji: "🏆" },
+    { key: "hr",    label: "HR Props",  emoji: "🔥" },
+    { key: "k",     label: "K Props",   emoji: "🎯" },
+    { key: "hits",  label: "Hit Props", emoji: "⚔️" },
+    { key: "value", label: "Value",     emoji: "💎" },
   ];
 
   const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, propsGames);
@@ -2503,10 +2800,11 @@ function SocialMediaTablesSection({
 
         {/* Table content */}
         <div style={{ padding: 14 }}>
-          {activeTab === "ml"   && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
-          {activeTab === "hr"   && <SocialTableHR batters={batters} />}
-          {activeTab === "k"    && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
-          {activeTab === "hits" && <SocialTableHits rows={batterVsPitcherRows} />}
+          {activeTab === "ml"    && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
+          {activeTab === "hr"    && <SocialTableHR batters={batters} />}
+          {activeTab === "k"     && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
+          {activeTab === "hits"  && <SocialTableHits rows={batterVsPitcherRows} />}
+          {activeTab === "value" && <SocialTableValue batters={batters} kRows={kRows} />}
         </div>
 
         {/* Footer hint */}
