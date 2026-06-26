@@ -1572,26 +1572,26 @@ function MlbSlateAnalyzer({
                                             <span className="shrink-0 text-[9px] font-extrabold tabular-nums text-slate-700">{contributionLabel}</span>
                                           </div>
                                           <div className="grid grid-cols-[24px_minmax(0,1fr)_24px] items-center gap-1">
-                                            <span className="text-[8px] font-bold text-slate-400">{awayAbbr}</span>
+                                            <span className="text-[8px] font-bold text-slate-400">{homeAbbr}</span>
                                             <div className="relative h-2.5 overflow-hidden rounded-full bg-slate-200/80">
                                               <div className="absolute inset-y-0 left-1/2 z-10 w-px bg-slate-400/80" />
-                                              {factor.favoredSide === "away" && (
-                                                <div
-                                                  className="absolute inset-y-0 right-1/2 rounded-l-full"
-                                                  style={{ width: `${width}%`, backgroundColor: awayColor }}
-                                                />
-                                              )}
                                               {factor.favoredSide === "home" && (
                                                 <div
-                                                  className="absolute inset-y-0 left-1/2 rounded-r-full"
+                                                  className="absolute inset-y-0 right-1/2 rounded-l-full"
                                                   style={{ width: `${width}%`, backgroundColor: homeColor }}
+                                                />
+                                              )}
+                                              {factor.favoredSide === "away" && (
+                                                <div
+                                                  className="absolute inset-y-0 left-1/2 rounded-r-full"
+                                                  style={{ width: `${width}%`, backgroundColor: awayColor }}
                                                 />
                                               )}
                                               {factor.favoredSide === "push" && (
                                                 <div className="absolute left-1/2 top-1/2 z-20 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-500" />
                                               )}
                                             </div>
-                                            <span className="text-right text-[8px] font-bold text-slate-400">{homeAbbr}</span>
+                                            <span className="text-right text-[8px] font-bold text-slate-400">{awayAbbr}</span>
                                           </div>
                                         </div>
                                       );
