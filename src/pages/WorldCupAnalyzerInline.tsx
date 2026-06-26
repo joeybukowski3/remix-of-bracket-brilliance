@@ -283,14 +283,33 @@ function computeMatchupModel(teamA: WCTeam, teamB: WCTeam, sA: PerMatchStats, sB
   const liveFactor = (liveA-liveB)/5;
   const sosFactor = (sosA.sosScore-sosB.sosScore)/100;
   const compositeEdge = 0.40*preFactor + 0.35*liveFactor + 0.25*sosFactor;
-  const scaledDiff = compositeEdge*30;
-  const {win:winA,draw,loss:lossA} = expectedProbabilities(50+scaledDiff*50,50);
+
+  // Map composite edge to a rating-difference capped at ±25 so even the
+  // largest realistic gaps (e.g. Brazil vs Haiti) stay within ~75/10/15%.
+  // This prevents extreme teams from ever showing 100%/0%.
+  const ratingDiff = Math.max(-25, Math.min(25, compositeEdge * 60));
+  const {win:winA,draw,loss:lossA} = expectedProbabilities(50+ratingDiff, 50);
+
+  // Hard floor/ceiling: no team ever shows below 8% or above 82% win prob.
+  const winACapped  = Math.min(0.82, Math.max(0.08, winA));
+  const lossACapped = Math.min(0.82, Math.max(0.08, lossA));
+  // Re-normalise draw so all three sum to 1
+  const drawCapped  = Math.max(0.04, 1 - winACapped - lossACapped);
+  const total = winACapped + drawCapped + lossACapped;
+
   const avgGoals = 2.7;
-  const projA = parseFloat(((winA+draw*0.5)*avgGoals).toFixed(2));
-  const projB = parseFloat(((lossA+draw*0.5)*avgGoals).toFixed(2));
-  const edgeMag = Math.abs(winA-lossA);
-  const edgeLabel = edgeMag<0.08?"Toss-up":edgeMag<0.18?(winA>lossA?`Slight edge: ${teamA.name}`:`Slight edge: ${teamB.name}`):edgeMag<0.32?(winA>lossA?`Moderate edge: ${teamA.name}`:`Moderate edge: ${teamB.name}`):(winA>lossA?`Strong edge: ${teamA.name}`:`Strong edge: ${teamB.name}`);
-  return { winA:parseFloat((winA*100).toFixed(1)), draw:parseFloat((draw*100).toFixed(1)), lossA:parseFloat((lossA*100).toFixed(1)), projA, projB, edgeLabel, edgeMag, confidence:Math.min(90,Math.round(40+edgeMag*150)), compositeEdge };
+  const projA = parseFloat(((winACapped/total + drawCapped/total*0.5)*avgGoals).toFixed(2));
+  const projB = parseFloat(((lossACapped/total + drawCapped/total*0.5)*avgGoals).toFixed(2));
+  const edgeMag = Math.abs(winACapped - lossACapped);
+  const edgeLabel = edgeMag<0.08?"Toss-up":edgeMag<0.18?(winACapped>lossACapped?`Slight edge: ${teamA.name}`:`Slight edge: ${teamB.name}`):edgeMag<0.32?(winACapped>lossACapped?`Moderate edge: ${teamA.name}`:`Moderate edge: ${teamB.name}`):(winACapped>lossACapped?`Strong edge: ${teamA.name}`:`Strong edge: ${teamB.name}`);
+  return {
+    winA:  parseFloat(((winACapped/total)*100).toFixed(1)),
+    draw:  parseFloat(((drawCapped/total)*100).toFixed(1)),
+    lossA: parseFloat(((lossACapped/total)*100).toFixed(1)),
+    projA, projB, edgeLabel, edgeMag,
+    confidence: Math.min(85, Math.round(45 + edgeMag*120)),
+    compositeEdge,
+  };
 }
 
 // ─── UI primitives ─────────────────────────────────────────────────────────────
@@ -611,7 +630,16 @@ export default function WorldCupAnalyzerInline({
         <SectionHeader title="Tournament Results" subtitle="Group-stage results for each team"/>
         <div className="grid grid-cols-2 gap-3">
           {[{team:teamA},{team:teamB}].map(({team},side)=>{
-            const matches = teamMatches(team.name);
+            // Exclude any direct match between the two selected teams —
+            // those only appear in the H2H panel below if they actually played.
+            const matches = teamMatches(team.name).filter(m=>{
+              const opp = m.teamIsHome?m.awayTeam:m.homeTeam;
+              return opp!==teamA.name && opp!==teamB.name || team.name===opp;
+            }).filter(m=>{
+              const opp = m.teamIsHome?m.awayTeam:m.homeTeam;
+              const otherTeam = team.name===teamA.name?teamB.name:teamA.name;
+              return opp!==otherTeam;
+            });
             return (
               <div key={team.name}>
                 <div className="flex items-center gap-1.5 mb-2">
