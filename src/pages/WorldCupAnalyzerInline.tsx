@@ -9,7 +9,7 @@
  * All model logic lives here. WorldCupAnalyzer.tsx becomes a thin wrapper.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const NAV = "#031635";
@@ -30,6 +30,7 @@ export type WCTeam = {
 
 type GroupMatch = {
   group: string;
+  matchday: number;
   homeTeam: string;
   awayTeam: string;
   homeGoals: number;
@@ -133,78 +134,78 @@ export const ALL_TEAMS: WCTeam[] = [
 
 // ─── Group-stage match results [MODELED] ──────────────────────────────────────
 const GROUP_MATCHES: GroupMatch[] = [
-  { group:"A", homeTeam:"Mexico",       awayTeam:"South Africa",  homeGoals:2, awayGoals:0, homeXg:2.1, awayXg:0.6, homeShots:15, awayShots:7,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:58, awayPossession:42, result:"home" },
-  { group:"A", homeTeam:"Korea Rep.",   awayTeam:"Czechia",       homeGoals:1, awayGoals:1, homeXg:1.2, awayXg:1.3, homeShots:11, awayShots:12, homeShotsOnTarget:4, awayShotsOnTarget:4, homePossession:47, awayPossession:53, result:"draw" },
-  { group:"A", homeTeam:"Mexico",       awayTeam:"Czechia",       homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.1, homeShots:14, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:55, awayPossession:45, result:"home" },
-  { group:"A", homeTeam:"Korea Rep.",   awayTeam:"South Africa",  homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.5, homeShots:13, awayShots:6,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:56, awayPossession:44, result:"home" },
-  { group:"A", homeTeam:"Mexico",       awayTeam:"Korea Rep.",    homeGoals:1, awayGoals:2, homeXg:1.3, awayXg:1.7, homeShots:10, awayShots:13, homeShotsOnTarget:3, awayShotsOnTarget:5, homePossession:48, awayPossession:52, result:"away" },
-  { group:"A", homeTeam:"Czechia",      awayTeam:"South Africa",  homeGoals:2, awayGoals:0, homeXg:1.7, awayXg:0.5, homeShots:12, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:60, awayPossession:40, result:"home" },
-  { group:"B", homeTeam:"Canada",       awayTeam:"Qatar",         homeGoals:3, awayGoals:0, homeXg:2.9, awayXg:0.4, homeShots:16, awayShots:5,  homeShotsOnTarget:7, awayShotsOnTarget:1, homePossession:63, awayPossession:37, result:"home" },
-  { group:"B", homeTeam:"Switzerland",  awayTeam:"Bosnia & Herz", homeGoals:2, awayGoals:1, homeXg:2.2, awayXg:1.1, homeShots:14, awayShots:9,  homeShotsOnTarget:6, awayShotsOnTarget:3, homePossession:58, awayPossession:42, result:"home" },
-  { group:"B", homeTeam:"Canada",       awayTeam:"Bosnia & Herz", homeGoals:2, awayGoals:1, homeXg:1.8, awayXg:1.2, homeShots:13, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:54, awayPossession:46, result:"home" },
-  { group:"B", homeTeam:"Switzerland",  awayTeam:"Qatar",         homeGoals:3, awayGoals:1, homeXg:2.8, awayXg:0.7, homeShots:15, awayShots:6,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:62, awayPossession:38, result:"home" },
-  { group:"B", homeTeam:"Canada",       awayTeam:"Switzerland",   homeGoals:1, awayGoals:1, homeXg:1.4, awayXg:1.5, homeShots:11, awayShots:12, homeShotsOnTarget:4, awayShotsOnTarget:4, homePossession:50, awayPossession:50, result:"draw" },
-  { group:"B", homeTeam:"Bosnia & Herz",awayTeam:"Qatar",         homeGoals:2, awayGoals:0, homeXg:1.9, awayXg:0.5, homeShots:12, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:56, awayPossession:44, result:"home" },
-  { group:"C", homeTeam:"Brazil",       awayTeam:"Haiti",         homeGoals:4, awayGoals:0, homeXg:3.8, awayXg:0.3, homeShots:20, awayShots:4,  homeShotsOnTarget:9, awayShotsOnTarget:1, homePossession:71, awayPossession:29, result:"home" },
-  { group:"C", homeTeam:"Morocco",      awayTeam:"Scotland",      homeGoals:1, awayGoals:0, homeXg:1.3, awayXg:0.9, homeShots:11, awayShots:10, homeShotsOnTarget:4, awayShotsOnTarget:3, homePossession:48, awayPossession:52, result:"home" },
-  { group:"C", homeTeam:"Brazil",       awayTeam:"Scotland",      homeGoals:3, awayGoals:0, homeXg:2.7, awayXg:0.5, homeShots:17, awayShots:6,  homeShotsOnTarget:7, awayShotsOnTarget:2, homePossession:66, awayPossession:34, result:"home" },
-  { group:"C", homeTeam:"Morocco",      awayTeam:"Haiti",         homeGoals:2, awayGoals:0, homeXg:2.0, awayXg:0.4, homeShots:13, awayShots:4,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:59, awayPossession:41, result:"home" },
-  { group:"C", homeTeam:"Brazil",       awayTeam:"Morocco",       homeGoals:2, awayGoals:1, homeXg:2.1, awayXg:1.0, homeShots:15, awayShots:9,  homeShotsOnTarget:6, awayShotsOnTarget:3, homePossession:63, awayPossession:37, result:"home" },
-  { group:"C", homeTeam:"Scotland",     awayTeam:"Haiti",         homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.4, homeShots:12, awayShots:4,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:60, awayPossession:40, result:"home" },
-  { group:"D", homeTeam:"USA",          awayTeam:"Australia",     homeGoals:2, awayGoals:0, homeXg:2.0, awayXg:0.7, homeShots:14, awayShots:8,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:57, awayPossession:43, result:"home" },
-  { group:"D", homeTeam:"Türkiye",      awayTeam:"Paraguay",      homeGoals:1, awayGoals:1, homeXg:1.4, awayXg:1.2, homeShots:11, awayShots:10, homeShotsOnTarget:4, awayShotsOnTarget:3, homePossession:52, awayPossession:48, result:"draw" },
-  { group:"D", homeTeam:"USA",          awayTeam:"Paraguay",      homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.1, homeShots:13, awayShots:9,  homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:56, awayPossession:44, result:"home" },
-  { group:"D", homeTeam:"Türkiye",      awayTeam:"Australia",     homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.6, homeShots:12, awayShots:7,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:55, awayPossession:45, result:"home" },
-  { group:"D", homeTeam:"USA",          awayTeam:"Türkiye",       homeGoals:1, awayGoals:2, homeXg:1.5, awayXg:1.8, homeShots:11, awayShots:13, homeShotsOnTarget:4, awayShotsOnTarget:5, homePossession:49, awayPossession:51, result:"away" },
-  { group:"D", homeTeam:"Paraguay",     awayTeam:"Australia",     homeGoals:1, awayGoals:1, homeXg:1.1, awayXg:1.0, homeShots:9,  awayShots:9,  homeShotsOnTarget:3, awayShotsOnTarget:3, homePossession:50, awayPossession:50, result:"draw" },
-  { group:"E", homeTeam:"Germany",       awayTeam:"Curaçao",       homeGoals:4, awayGoals:0, homeXg:3.6, awayXg:0.3, homeShots:19, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:70, awayPossession:30, result:"home" },
-  { group:"E", homeTeam:"Côte d'Ivoire", awayTeam:"Ecuador",       homeGoals:2, awayGoals:1, homeXg:2.0, awayXg:1.1, homeShots:13, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:54, awayPossession:46, result:"home" },
-  { group:"E", homeTeam:"Germany",       awayTeam:"Ecuador",       homeGoals:3, awayGoals:1, homeXg:2.8, awayXg:0.9, homeShots:16, awayShots:8,  homeShotsOnTarget:7, awayShotsOnTarget:2, homePossession:62, awayPossession:38, result:"home" },
-  { group:"E", homeTeam:"Côte d'Ivoire", awayTeam:"Curaçao",       homeGoals:3, awayGoals:0, homeXg:2.5, awayXg:0.4, homeShots:14, awayShots:4,  homeShotsOnTarget:6, awayShotsOnTarget:1, homePossession:61, awayPossession:39, result:"home" },
-  { group:"E", homeTeam:"Germany",       awayTeam:"Côte d'Ivoire", homeGoals:2, awayGoals:1, homeXg:1.8, awayXg:1.2, homeShots:13, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:59, awayPossession:41, result:"home" },
-  { group:"E", homeTeam:"Ecuador",       awayTeam:"Curaçao",       homeGoals:2, awayGoals:0, homeXg:1.9, awayXg:0.4, homeShots:12, awayShots:4,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:58, awayPossession:42, result:"home" },
-  { group:"F", homeTeam:"Netherlands",   awayTeam:"Tunisia",       homeGoals:3, awayGoals:0, homeXg:2.8, awayXg:0.5, homeShots:16, awayShots:5,  homeShotsOnTarget:7, awayShotsOnTarget:1, homePossession:64, awayPossession:36, result:"home" },
-  { group:"F", homeTeam:"Japan",         awayTeam:"Sweden",        homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.3, homeShots:13, awayShots:11, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:50, awayPossession:50, result:"home" },
-  { group:"F", homeTeam:"Netherlands",   awayTeam:"Sweden",        homeGoals:2, awayGoals:0, homeXg:2.1, awayXg:0.7, homeShots:14, awayShots:7,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:60, awayPossession:40, result:"home" },
-  { group:"F", homeTeam:"Japan",         awayTeam:"Tunisia",       homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.5, homeShots:12, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:54, awayPossession:46, result:"home" },
-  { group:"F", homeTeam:"Netherlands",   awayTeam:"Japan",         homeGoals:1, awayGoals:1, homeXg:1.5, awayXg:1.4, homeShots:12, awayShots:11, homeShotsOnTarget:4, awayShotsOnTarget:4, homePossession:58, awayPossession:42, result:"draw" },
-  { group:"F", homeTeam:"Sweden",        awayTeam:"Tunisia",       homeGoals:1, awayGoals:0, homeXg:1.2, awayXg:0.6, homeShots:10, awayShots:6,  homeShotsOnTarget:4, awayShotsOnTarget:2, homePossession:56, awayPossession:44, result:"home" },
-  { group:"G", homeTeam:"Belgium",       awayTeam:"New Zealand",   homeGoals:4, awayGoals:0, homeXg:3.5, awayXg:0.4, homeShots:18, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:67, awayPossession:33, result:"home" },
-  { group:"G", homeTeam:"IR Iran",       awayTeam:"Egypt",         homeGoals:1, awayGoals:0, homeXg:1.2, awayXg:0.9, homeShots:10, awayShots:9,  homeShotsOnTarget:4, awayShotsOnTarget:3, homePossession:49, awayPossession:51, result:"home" },
-  { group:"G", homeTeam:"Belgium",       awayTeam:"Egypt",         homeGoals:2, awayGoals:0, homeXg:2.2, awayXg:0.6, homeShots:14, awayShots:6,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:61, awayPossession:39, result:"home" },
-  { group:"G", homeTeam:"IR Iran",       awayTeam:"New Zealand",   homeGoals:2, awayGoals:0, homeXg:2.0, awayXg:0.5, homeShots:13, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:55, awayPossession:45, result:"home" },
-  { group:"G", homeTeam:"Belgium",       awayTeam:"IR Iran",       homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.0, homeShots:13, awayShots:9,  homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:58, awayPossession:42, result:"home" },
-  { group:"G", homeTeam:"Egypt",         awayTeam:"New Zealand",   homeGoals:2, awayGoals:1, homeXg:1.7, awayXg:0.9, homeShots:12, awayShots:8,  homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:54, awayPossession:46, result:"home" },
-  { group:"H", homeTeam:"Spain",         awayTeam:"Cabo Verde",    homeGoals:4, awayGoals:0, homeXg:3.9, awayXg:0.3, homeShots:20, awayShots:4,  homeShotsOnTarget:9, awayShotsOnTarget:1, homePossession:72, awayPossession:28, result:"home" },
-  { group:"H", homeTeam:"Uruguay",       awayTeam:"Saudi Arabia",  homeGoals:2, awayGoals:0, homeXg:2.1, awayXg:0.6, homeShots:14, awayShots:6,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:57, awayPossession:43, result:"home" },
-  { group:"H", homeTeam:"Spain",         awayTeam:"Saudi Arabia",  homeGoals:3, awayGoals:0, homeXg:2.8, awayXg:0.5, homeShots:17, awayShots:5,  homeShotsOnTarget:7, awayShotsOnTarget:1, homePossession:69, awayPossession:31, result:"home" },
-  { group:"H", homeTeam:"Uruguay",       awayTeam:"Cabo Verde",    homeGoals:3, awayGoals:1, homeXg:2.5, awayXg:0.7, homeShots:15, awayShots:7,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:60, awayPossession:40, result:"home" },
-  { group:"H", homeTeam:"Spain",         awayTeam:"Uruguay",       homeGoals:2, awayGoals:1, homeXg:2.0, awayXg:1.2, homeShots:14, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:64, awayPossession:36, result:"home" },
-  { group:"H", homeTeam:"Saudi Arabia",  awayTeam:"Cabo Verde",    homeGoals:1, awayGoals:1, homeXg:1.2, awayXg:0.9, homeShots:9,  awayShots:8,  homeShotsOnTarget:3, awayShotsOnTarget:3, homePossession:51, awayPossession:49, result:"draw" },
-  { group:"I", homeTeam:"France",        awayTeam:"Iraq",          homeGoals:4, awayGoals:0, homeXg:3.7, awayXg:0.4, homeShots:19, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:70, awayPossession:30, result:"home" },
-  { group:"I", homeTeam:"Norway",        awayTeam:"Senegal",       homeGoals:2, awayGoals:1, homeXg:2.1, awayXg:1.2, homeShots:14, awayShots:10, homeShotsOnTarget:6, awayShotsOnTarget:4, homePossession:54, awayPossession:46, result:"home" },
-  { group:"I", homeTeam:"France",        awayTeam:"Senegal",       homeGoals:2, awayGoals:0, homeXg:2.2, awayXg:0.6, homeShots:15, awayShots:6,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:66, awayPossession:34, result:"home" },
-  { group:"I", homeTeam:"Norway",        awayTeam:"Iraq",          homeGoals:3, awayGoals:0, homeXg:2.6, awayXg:0.4, homeShots:15, awayShots:4,  homeShotsOnTarget:6, awayShotsOnTarget:1, homePossession:61, awayPossession:39, result:"home" },
-  { group:"I", homeTeam:"France",        awayTeam:"Norway",        homeGoals:2, awayGoals:1, homeXg:2.0, awayXg:1.3, homeShots:14, awayShots:11, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:60, awayPossession:40, result:"home" },
-  { group:"I", homeTeam:"Senegal",       awayTeam:"Iraq",          homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.5, homeShots:12, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:57, awayPossession:43, result:"home" },
-  { group:"J", homeTeam:"Argentina",     awayTeam:"Jordan",        homeGoals:4, awayGoals:0, homeXg:3.5, awayXg:0.4, homeShots:18, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:68, awayPossession:32, result:"home" },
-  { group:"J", homeTeam:"Austria",       awayTeam:"Algeria",       homeGoals:1, awayGoals:1, homeXg:1.3, awayXg:1.3, homeShots:10, awayShots:11, homeShotsOnTarget:3, awayShotsOnTarget:4, homePossession:49, awayPossession:51, result:"draw" },
-  { group:"J", homeTeam:"Argentina",     awayTeam:"Algeria",       homeGoals:3, awayGoals:0, homeXg:2.7, awayXg:0.5, homeShots:16, awayShots:5,  homeShotsOnTarget:6, awayShotsOnTarget:1, homePossession:65, awayPossession:35, result:"home" },
-  { group:"J", homeTeam:"Austria",       awayTeam:"Jordan",        homeGoals:3, awayGoals:0, homeXg:2.4, awayXg:0.4, homeShots:14, awayShots:4,  homeShotsOnTarget:6, awayShotsOnTarget:1, homePossession:62, awayPossession:38, result:"home" },
-  { group:"J", homeTeam:"Argentina",     awayTeam:"Austria",       homeGoals:2, awayGoals:1, homeXg:2.0, awayXg:1.1, homeShots:14, awayShots:9,  homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:61, awayPossession:39, result:"home" },
-  { group:"J", homeTeam:"Algeria",       awayTeam:"Jordan",        homeGoals:1, awayGoals:0, homeXg:1.3, awayXg:0.6, homeShots:10, awayShots:6,  homeShotsOnTarget:4, awayShotsOnTarget:2, homePossession:55, awayPossession:45, result:"home" },
-  { group:"K", homeTeam:"Portugal",      awayTeam:"Congo DR",      homeGoals:4, awayGoals:0, homeXg:3.6, awayXg:0.4, homeShots:18, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:68, awayPossession:32, result:"home" },
-  { group:"K", homeTeam:"Colombia",      awayTeam:"Uzbekistan",    homeGoals:2, awayGoals:0, homeXg:2.0, awayXg:0.6, homeShots:13, awayShots:6,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:58, awayPossession:42, result:"home" },
-  { group:"K", homeTeam:"Portugal",      awayTeam:"Uzbekistan",    homeGoals:3, awayGoals:0, homeXg:2.9, awayXg:0.5, homeShots:16, awayShots:5,  homeShotsOnTarget:7, awayShotsOnTarget:1, homePossession:65, awayPossession:35, result:"home" },
-  { group:"K", homeTeam:"Colombia",      awayTeam:"Congo DR",      homeGoals:3, awayGoals:1, homeXg:2.5, awayXg:0.8, homeShots:15, awayShots:7,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:60, awayPossession:40, result:"home" },
-  { group:"K", homeTeam:"Portugal",      awayTeam:"Colombia",      homeGoals:2, awayGoals:1, homeXg:2.1, awayXg:1.2, homeShots:14, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:62, awayPossession:38, result:"home" },
-  { group:"K", homeTeam:"Uzbekistan",    awayTeam:"Congo DR",      homeGoals:1, awayGoals:1, homeXg:1.2, awayXg:1.0, homeShots:9,  awayShots:9,  homeShotsOnTarget:3, awayShotsOnTarget:3, homePossession:51, awayPossession:49, result:"draw" },
-  { group:"L", homeTeam:"England",       awayTeam:"Panama",        homeGoals:4, awayGoals:0, homeXg:3.5, awayXg:0.4, homeShots:18, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:66, awayPossession:34, result:"home" },
-  { group:"L", homeTeam:"Croatia",       awayTeam:"Ghana",         homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.2, homeShots:13, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:55, awayPossession:45, result:"home" },
-  { group:"L", homeTeam:"England",       awayTeam:"Ghana",         homeGoals:2, awayGoals:0, homeXg:2.1, awayXg:0.6, homeShots:14, awayShots:6,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:62, awayPossession:38, result:"home" },
-  { group:"L", homeTeam:"Croatia",       awayTeam:"Panama",        homeGoals:3, awayGoals:1, homeXg:2.6, awayXg:0.7, homeShots:15, awayShots:7,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:59, awayPossession:41, result:"home" },
-  { group:"L", homeTeam:"England",       awayTeam:"Croatia",       homeGoals:1, awayGoals:1, homeXg:1.4, awayXg:1.3, homeShots:11, awayShots:11, homeShotsOnTarget:4, awayShotsOnTarget:4, homePossession:55, awayPossession:45, result:"draw" },
-  { group:"L", homeTeam:"Ghana",         awayTeam:"Panama",        homeGoals:1, awayGoals:0, homeXg:1.2, awayXg:0.7, homeShots:9,  awayShots:7,  homeShotsOnTarget:3, awayShotsOnTarget:2, homePossession:52, awayPossession:48, result:"home" },
+  { group:"A", matchday:1, homeTeam:"Mexico",       awayTeam:"South Africa",  homeGoals:2, awayGoals:0, homeXg:2.1, awayXg:0.6, homeShots:15, awayShots:7,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:58, awayPossession:42, result:"home" },
+  { group:"A", matchday:1, homeTeam:"Korea Rep.",   awayTeam:"Czechia",       homeGoals:1, awayGoals:1, homeXg:1.2, awayXg:1.3, homeShots:11, awayShots:12, homeShotsOnTarget:4, awayShotsOnTarget:4, homePossession:47, awayPossession:53, result:"draw" },
+  { group:"A", matchday:2, homeTeam:"Mexico",       awayTeam:"Czechia",       homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.1, homeShots:14, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:55, awayPossession:45, result:"home" },
+  { group:"A", matchday:2, homeTeam:"Korea Rep.",   awayTeam:"South Africa",  homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.5, homeShots:13, awayShots:6,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:56, awayPossession:44, result:"home" },
+  { group:"A", matchday:3, homeTeam:"Mexico",       awayTeam:"Korea Rep.",    homeGoals:1, awayGoals:2, homeXg:1.3, awayXg:1.7, homeShots:10, awayShots:13, homeShotsOnTarget:3, awayShotsOnTarget:5, homePossession:48, awayPossession:52, result:"away" },
+  { group:"A", matchday:3, homeTeam:"Czechia",      awayTeam:"South Africa",  homeGoals:2, awayGoals:0, homeXg:1.7, awayXg:0.5, homeShots:12, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:60, awayPossession:40, result:"home" },
+  { group:"B", matchday:1, homeTeam:"Canada",       awayTeam:"Qatar",         homeGoals:3, awayGoals:0, homeXg:2.9, awayXg:0.4, homeShots:16, awayShots:5,  homeShotsOnTarget:7, awayShotsOnTarget:1, homePossession:63, awayPossession:37, result:"home" },
+  { group:"B", matchday:1, homeTeam:"Switzerland",  awayTeam:"Bosnia & Herz", homeGoals:2, awayGoals:1, homeXg:2.2, awayXg:1.1, homeShots:14, awayShots:9,  homeShotsOnTarget:6, awayShotsOnTarget:3, homePossession:58, awayPossession:42, result:"home" },
+  { group:"B", matchday:2, homeTeam:"Canada",       awayTeam:"Bosnia & Herz", homeGoals:2, awayGoals:1, homeXg:1.8, awayXg:1.2, homeShots:13, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:54, awayPossession:46, result:"home" },
+  { group:"B", matchday:2, homeTeam:"Switzerland",  awayTeam:"Qatar",         homeGoals:3, awayGoals:1, homeXg:2.8, awayXg:0.7, homeShots:15, awayShots:6,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:62, awayPossession:38, result:"home" },
+  { group:"B", matchday:3, homeTeam:"Canada",       awayTeam:"Switzerland",   homeGoals:1, awayGoals:1, homeXg:1.4, awayXg:1.5, homeShots:11, awayShots:12, homeShotsOnTarget:4, awayShotsOnTarget:4, homePossession:50, awayPossession:50, result:"draw" },
+  { group:"B", matchday:3, homeTeam:"Bosnia & Herz",awayTeam:"Qatar",         homeGoals:2, awayGoals:0, homeXg:1.9, awayXg:0.5, homeShots:12, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:56, awayPossession:44, result:"home" },
+  { group:"C", matchday:1, homeTeam:"Brazil",       awayTeam:"Haiti",         homeGoals:4, awayGoals:0, homeXg:3.8, awayXg:0.3, homeShots:20, awayShots:4,  homeShotsOnTarget:9, awayShotsOnTarget:1, homePossession:71, awayPossession:29, result:"home" },
+  { group:"C", matchday:1, homeTeam:"Morocco",      awayTeam:"Scotland",      homeGoals:1, awayGoals:0, homeXg:1.3, awayXg:0.9, homeShots:11, awayShots:10, homeShotsOnTarget:4, awayShotsOnTarget:3, homePossession:48, awayPossession:52, result:"home" },
+  { group:"C", matchday:2, homeTeam:"Brazil",       awayTeam:"Scotland",      homeGoals:3, awayGoals:0, homeXg:2.7, awayXg:0.5, homeShots:17, awayShots:6,  homeShotsOnTarget:7, awayShotsOnTarget:2, homePossession:66, awayPossession:34, result:"home" },
+  { group:"C", matchday:2, homeTeam:"Morocco",      awayTeam:"Haiti",         homeGoals:2, awayGoals:0, homeXg:2.0, awayXg:0.4, homeShots:13, awayShots:4,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:59, awayPossession:41, result:"home" },
+  { group:"C", matchday:3, homeTeam:"Brazil",       awayTeam:"Morocco",       homeGoals:2, awayGoals:1, homeXg:2.1, awayXg:1.0, homeShots:15, awayShots:9,  homeShotsOnTarget:6, awayShotsOnTarget:3, homePossession:63, awayPossession:37, result:"home" },
+  { group:"C", matchday:3, homeTeam:"Scotland",     awayTeam:"Haiti",         homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.4, homeShots:12, awayShots:4,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:60, awayPossession:40, result:"home" },
+  { group:"D", matchday:1, homeTeam:"USA",          awayTeam:"Australia",     homeGoals:2, awayGoals:0, homeXg:2.0, awayXg:0.7, homeShots:14, awayShots:8,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:57, awayPossession:43, result:"home" },
+  { group:"D", matchday:1, homeTeam:"Türkiye",      awayTeam:"Paraguay",      homeGoals:1, awayGoals:1, homeXg:1.4, awayXg:1.2, homeShots:11, awayShots:10, homeShotsOnTarget:4, awayShotsOnTarget:3, homePossession:52, awayPossession:48, result:"draw" },
+  { group:"D", matchday:2, homeTeam:"USA",          awayTeam:"Paraguay",      homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.1, homeShots:13, awayShots:9,  homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:56, awayPossession:44, result:"home" },
+  { group:"D", matchday:2, homeTeam:"Türkiye",      awayTeam:"Australia",     homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.6, homeShots:12, awayShots:7,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:55, awayPossession:45, result:"home" },
+  { group:"D", matchday:3, homeTeam:"USA",          awayTeam:"Türkiye",       homeGoals:1, awayGoals:2, homeXg:1.5, awayXg:1.8, homeShots:11, awayShots:13, homeShotsOnTarget:4, awayShotsOnTarget:5, homePossession:49, awayPossession:51, result:"away" },
+  { group:"D", matchday:3, homeTeam:"Paraguay",     awayTeam:"Australia",     homeGoals:1, awayGoals:1, homeXg:1.1, awayXg:1.0, homeShots:9,  awayShots:9,  homeShotsOnTarget:3, awayShotsOnTarget:3, homePossession:50, awayPossession:50, result:"draw" },
+  { group:"E", matchday:1, homeTeam:"Germany",       awayTeam:"Curaçao",       homeGoals:4, awayGoals:0, homeXg:3.6, awayXg:0.3, homeShots:19, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:70, awayPossession:30, result:"home" },
+  { group:"E", matchday:1, homeTeam:"Côte d'Ivoire", awayTeam:"Ecuador",       homeGoals:2, awayGoals:1, homeXg:2.0, awayXg:1.1, homeShots:13, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:54, awayPossession:46, result:"home" },
+  { group:"E", matchday:2, homeTeam:"Germany",       awayTeam:"Ecuador",       homeGoals:3, awayGoals:1, homeXg:2.8, awayXg:0.9, homeShots:16, awayShots:8,  homeShotsOnTarget:7, awayShotsOnTarget:2, homePossession:62, awayPossession:38, result:"home" },
+  { group:"E", matchday:2, homeTeam:"Côte d'Ivoire", awayTeam:"Curaçao",       homeGoals:3, awayGoals:0, homeXg:2.5, awayXg:0.4, homeShots:14, awayShots:4,  homeShotsOnTarget:6, awayShotsOnTarget:1, homePossession:61, awayPossession:39, result:"home" },
+  { group:"E", matchday:3, homeTeam:"Germany",       awayTeam:"Côte d'Ivoire", homeGoals:2, awayGoals:1, homeXg:1.8, awayXg:1.2, homeShots:13, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:59, awayPossession:41, result:"home" },
+  { group:"E", matchday:3, homeTeam:"Ecuador",       awayTeam:"Curaçao",       homeGoals:2, awayGoals:0, homeXg:1.9, awayXg:0.4, homeShots:12, awayShots:4,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:58, awayPossession:42, result:"home" },
+  { group:"F", matchday:1, homeTeam:"Netherlands",   awayTeam:"Tunisia",       homeGoals:3, awayGoals:0, homeXg:2.8, awayXg:0.5, homeShots:16, awayShots:5,  homeShotsOnTarget:7, awayShotsOnTarget:1, homePossession:64, awayPossession:36, result:"home" },
+  { group:"F", matchday:1, homeTeam:"Japan",         awayTeam:"Sweden",        homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.3, homeShots:13, awayShots:11, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:50, awayPossession:50, result:"home" },
+  { group:"F", matchday:2, homeTeam:"Netherlands",   awayTeam:"Sweden",        homeGoals:2, awayGoals:0, homeXg:2.1, awayXg:0.7, homeShots:14, awayShots:7,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:60, awayPossession:40, result:"home" },
+  { group:"F", matchday:2, homeTeam:"Japan",         awayTeam:"Tunisia",       homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.5, homeShots:12, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:54, awayPossession:46, result:"home" },
+  { group:"F", matchday:3, homeTeam:"Netherlands",   awayTeam:"Japan",         homeGoals:1, awayGoals:1, homeXg:1.5, awayXg:1.4, homeShots:12, awayShots:11, homeShotsOnTarget:4, awayShotsOnTarget:4, homePossession:58, awayPossession:42, result:"draw" },
+  { group:"F", matchday:3, homeTeam:"Sweden",        awayTeam:"Tunisia",       homeGoals:1, awayGoals:0, homeXg:1.2, awayXg:0.6, homeShots:10, awayShots:6,  homeShotsOnTarget:4, awayShotsOnTarget:2, homePossession:56, awayPossession:44, result:"home" },
+  { group:"G", matchday:1, homeTeam:"Belgium",       awayTeam:"New Zealand",   homeGoals:4, awayGoals:0, homeXg:3.5, awayXg:0.4, homeShots:18, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:67, awayPossession:33, result:"home" },
+  { group:"G", matchday:1, homeTeam:"IR Iran",       awayTeam:"Egypt",         homeGoals:1, awayGoals:0, homeXg:1.2, awayXg:0.9, homeShots:10, awayShots:9,  homeShotsOnTarget:4, awayShotsOnTarget:3, homePossession:49, awayPossession:51, result:"home" },
+  { group:"G", matchday:2, homeTeam:"Belgium",       awayTeam:"Egypt",         homeGoals:2, awayGoals:0, homeXg:2.2, awayXg:0.6, homeShots:14, awayShots:6,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:61, awayPossession:39, result:"home" },
+  { group:"G", matchday:2, homeTeam:"IR Iran",       awayTeam:"New Zealand",   homeGoals:2, awayGoals:0, homeXg:2.0, awayXg:0.5, homeShots:13, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:55, awayPossession:45, result:"home" },
+  { group:"G", matchday:3, homeTeam:"Belgium",       awayTeam:"IR Iran",       homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.0, homeShots:13, awayShots:9,  homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:58, awayPossession:42, result:"home" },
+  { group:"G", matchday:3, homeTeam:"Egypt",         awayTeam:"New Zealand",   homeGoals:2, awayGoals:1, homeXg:1.7, awayXg:0.9, homeShots:12, awayShots:8,  homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:54, awayPossession:46, result:"home" },
+  { group:"H", matchday:1, homeTeam:"Spain",         awayTeam:"Cabo Verde",    homeGoals:4, awayGoals:0, homeXg:3.9, awayXg:0.3, homeShots:20, awayShots:4,  homeShotsOnTarget:9, awayShotsOnTarget:1, homePossession:72, awayPossession:28, result:"home" },
+  { group:"H", matchday:1, homeTeam:"Uruguay",       awayTeam:"Saudi Arabia",  homeGoals:2, awayGoals:0, homeXg:2.1, awayXg:0.6, homeShots:14, awayShots:6,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:57, awayPossession:43, result:"home" },
+  { group:"H", matchday:2, homeTeam:"Spain",         awayTeam:"Saudi Arabia",  homeGoals:3, awayGoals:0, homeXg:2.8, awayXg:0.5, homeShots:17, awayShots:5,  homeShotsOnTarget:7, awayShotsOnTarget:1, homePossession:69, awayPossession:31, result:"home" },
+  { group:"H", matchday:2, homeTeam:"Uruguay",       awayTeam:"Cabo Verde",    homeGoals:3, awayGoals:1, homeXg:2.5, awayXg:0.7, homeShots:15, awayShots:7,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:60, awayPossession:40, result:"home" },
+  { group:"H", matchday:3, homeTeam:"Spain",         awayTeam:"Uruguay",       homeGoals:2, awayGoals:1, homeXg:2.0, awayXg:1.2, homeShots:14, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:64, awayPossession:36, result:"home" },
+  { group:"H", matchday:3, homeTeam:"Saudi Arabia",  awayTeam:"Cabo Verde",    homeGoals:1, awayGoals:1, homeXg:1.2, awayXg:0.9, homeShots:9,  awayShots:8,  homeShotsOnTarget:3, awayShotsOnTarget:3, homePossession:51, awayPossession:49, result:"draw" },
+  { group:"I", matchday:1, homeTeam:"France",        awayTeam:"Iraq",          homeGoals:4, awayGoals:0, homeXg:3.7, awayXg:0.4, homeShots:19, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:70, awayPossession:30, result:"home" },
+  { group:"I", matchday:1, homeTeam:"Norway",        awayTeam:"Senegal",       homeGoals:2, awayGoals:1, homeXg:2.1, awayXg:1.2, homeShots:14, awayShots:10, homeShotsOnTarget:6, awayShotsOnTarget:4, homePossession:54, awayPossession:46, result:"home" },
+  { group:"I", matchday:2, homeTeam:"France",        awayTeam:"Senegal",       homeGoals:2, awayGoals:0, homeXg:2.2, awayXg:0.6, homeShots:15, awayShots:6,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:66, awayPossession:34, result:"home" },
+  { group:"I", matchday:2, homeTeam:"Norway",        awayTeam:"Iraq",          homeGoals:3, awayGoals:0, homeXg:2.6, awayXg:0.4, homeShots:15, awayShots:4,  homeShotsOnTarget:6, awayShotsOnTarget:1, homePossession:61, awayPossession:39, result:"home" },
+  { group:"I", matchday:3, homeTeam:"France",        awayTeam:"Norway",        homeGoals:2, awayGoals:1, homeXg:2.0, awayXg:1.3, homeShots:14, awayShots:11, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:60, awayPossession:40, result:"home" },
+  { group:"I", matchday:3, homeTeam:"Senegal",       awayTeam:"Iraq",          homeGoals:2, awayGoals:0, homeXg:1.8, awayXg:0.5, homeShots:12, awayShots:5,  homeShotsOnTarget:5, awayShotsOnTarget:1, homePossession:57, awayPossession:43, result:"home" },
+  { group:"J", matchday:1, homeTeam:"Argentina",     awayTeam:"Jordan",        homeGoals:4, awayGoals:0, homeXg:3.5, awayXg:0.4, homeShots:18, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:68, awayPossession:32, result:"home" },
+  { group:"J", matchday:1, homeTeam:"Austria",       awayTeam:"Algeria",       homeGoals:1, awayGoals:1, homeXg:1.3, awayXg:1.3, homeShots:10, awayShots:11, homeShotsOnTarget:3, awayShotsOnTarget:4, homePossession:49, awayPossession:51, result:"draw" },
+  { group:"J", matchday:2, homeTeam:"Argentina",     awayTeam:"Algeria",       homeGoals:3, awayGoals:0, homeXg:2.7, awayXg:0.5, homeShots:16, awayShots:5,  homeShotsOnTarget:6, awayShotsOnTarget:1, homePossession:65, awayPossession:35, result:"home" },
+  { group:"J", matchday:2, homeTeam:"Austria",       awayTeam:"Jordan",        homeGoals:3, awayGoals:0, homeXg:2.4, awayXg:0.4, homeShots:14, awayShots:4,  homeShotsOnTarget:6, awayShotsOnTarget:1, homePossession:62, awayPossession:38, result:"home" },
+  { group:"J", matchday:3, homeTeam:"Argentina",     awayTeam:"Austria",       homeGoals:2, awayGoals:1, homeXg:2.0, awayXg:1.1, homeShots:14, awayShots:9,  homeShotsOnTarget:5, awayShotsOnTarget:3, homePossession:61, awayPossession:39, result:"home" },
+  { group:"J", matchday:3, homeTeam:"Algeria",       awayTeam:"Jordan",        homeGoals:1, awayGoals:0, homeXg:1.3, awayXg:0.6, homeShots:10, awayShots:6,  homeShotsOnTarget:4, awayShotsOnTarget:2, homePossession:55, awayPossession:45, result:"home" },
+  { group:"K", matchday:1, homeTeam:"Portugal",      awayTeam:"Congo DR",      homeGoals:4, awayGoals:0, homeXg:3.6, awayXg:0.4, homeShots:18, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:68, awayPossession:32, result:"home" },
+  { group:"K", matchday:1, homeTeam:"Colombia",      awayTeam:"Uzbekistan",    homeGoals:2, awayGoals:0, homeXg:2.0, awayXg:0.6, homeShots:13, awayShots:6,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:58, awayPossession:42, result:"home" },
+  { group:"K", matchday:2, homeTeam:"Portugal",      awayTeam:"Uzbekistan",    homeGoals:3, awayGoals:0, homeXg:2.9, awayXg:0.5, homeShots:16, awayShots:5,  homeShotsOnTarget:7, awayShotsOnTarget:1, homePossession:65, awayPossession:35, result:"home" },
+  { group:"K", matchday:2, homeTeam:"Colombia",      awayTeam:"Congo DR",      homeGoals:3, awayGoals:1, homeXg:2.5, awayXg:0.8, homeShots:15, awayShots:7,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:60, awayPossession:40, result:"home" },
+  { group:"K", matchday:3, homeTeam:"Portugal",      awayTeam:"Colombia",      homeGoals:2, awayGoals:1, homeXg:2.1, awayXg:1.2, homeShots:14, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:62, awayPossession:38, result:"home" },
+  { group:"K", matchday:3, homeTeam:"Uzbekistan",    awayTeam:"Congo DR",      homeGoals:1, awayGoals:1, homeXg:1.2, awayXg:1.0, homeShots:9,  awayShots:9,  homeShotsOnTarget:3, awayShotsOnTarget:3, homePossession:51, awayPossession:49, result:"draw" },
+  { group:"L", matchday:1, homeTeam:"England",       awayTeam:"Panama",        homeGoals:4, awayGoals:0, homeXg:3.5, awayXg:0.4, homeShots:18, awayShots:4,  homeShotsOnTarget:8, awayShotsOnTarget:1, homePossession:66, awayPossession:34, result:"home" },
+  { group:"L", matchday:1, homeTeam:"Croatia",       awayTeam:"Ghana",         homeGoals:2, awayGoals:1, homeXg:1.9, awayXg:1.2, homeShots:13, awayShots:10, homeShotsOnTarget:5, awayShotsOnTarget:4, homePossession:55, awayPossession:45, result:"home" },
+  { group:"L", matchday:2, homeTeam:"England",       awayTeam:"Ghana",         homeGoals:2, awayGoals:0, homeXg:2.1, awayXg:0.6, homeShots:14, awayShots:6,  homeShotsOnTarget:5, awayShotsOnTarget:2, homePossession:62, awayPossession:38, result:"home" },
+  { group:"L", matchday:2, homeTeam:"Croatia",       awayTeam:"Panama",        homeGoals:3, awayGoals:1, homeXg:2.6, awayXg:0.7, homeShots:15, awayShots:7,  homeShotsOnTarget:6, awayShotsOnTarget:2, homePossession:59, awayPossession:41, result:"home" },
+  { group:"L", matchday:3, homeTeam:"England",       awayTeam:"Croatia",       homeGoals:1, awayGoals:1, homeXg:1.4, awayXg:1.3, homeShots:11, awayShots:11, homeShotsOnTarget:4, awayShotsOnTarget:4, homePossession:55, awayPossession:45, result:"draw" },
+  { group:"L", matchday:3, homeTeam:"Ghana",         awayTeam:"Panama",        homeGoals:1, awayGoals:0, homeXg:1.2, awayXg:0.7, homeShots:9,  awayShots:7,  homeShotsOnTarget:3, awayShotsOnTarget:2, homePossession:52, awayPossession:48, result:"home" },
 ];
 
 // ─── Model helpers ─────────────────────────────────────────────────────────────
@@ -257,8 +258,12 @@ function computeExpectationMetrics(teamName: string): ExpectationMetrics {
   return { matchesPlayed:matches.length, actualPoints:actPts, expectedPoints:parseFloat(expPts.toFixed(2)), pointsOverExpectation:parseFloat((actPts-expPts).toFixed(2)), actualGoals:actG, expectedGoals:parseFloat(expG.toFixed(2)), goalsOverExpectation:parseFloat((actG-expG).toFixed(2)), actualGoalsAgainst:actGA, expectedGoalsAgainst:parseFloat(expGA.toFixed(2)), goalsPreventedVsExpectation:parseFloat((expGA-actGA).toFixed(2)), actualGoalDifference:actG-actGA, expectedGoalDifference:parseFloat((expG-expGA).toFixed(2)), goalDifferenceOverExpectation:parseFloat(((actG-actGA)-(expG-expGA)).toFixed(2)) };
 }
 
-function computeSOS(teamName: string) {
-  const matches = teamMatches(teamName);
+function computeSOS(teamName: string, excludeOpponent?: string) {
+  const allMatches = teamMatches(teamName);
+  // Exclude the direct match vs the opponent being compared
+  const matches = excludeOpponent
+    ? allMatches.filter(m => (m.teamIsHome ? m.awayTeam : m.homeTeam) !== excludeOpponent)
+    : allMatches;
   if (!matches.length) return { sosScore:50, avgOpponentPretournament:50, bestOpponent:"N/A", weakestOpponent:"N/A", opponentAvgAttack:50, opponentAvgDefense:50 };
   const opponents = matches.map(m => m.teamIsHome?m.awayTeam:m.homeTeam);
   const preRatings = opponents.map(o => ALL_TEAMS.find(t=>t.name===o)?.powerScore??50);
@@ -414,21 +419,74 @@ export default function WorldCupAnalyzerInline({
 
   const sA = computePerMatchStats(teamA.name);
   const sB = computePerMatchStats(teamB.name);
-  const sosA = computeSOS(teamA.name);
-  const sosB = computeSOS(teamB.name);
+  // Pass each team as the excludeOpponent so they don't count each other in SOS
+  const sosA = computeSOS(teamA.name, teamB.name);
+  const sosB = computeSOS(teamB.name, teamA.name);
   const model = computeMatchupModel(teamA, teamB, sA, sB, sosA, sosB);
   const eA = computeExpectationMetrics(teamA.name);
   const eB = computeExpectationMetrics(teamB.name);
 
-  // Common opponents
-  const oppsA = new Set(teamMatches(teamA.name).map(m=>m.teamIsHome?m.awayTeam:m.homeTeam));
-  const oppsB = new Set(teamMatches(teamB.name).map(m=>m.teamIsHome?m.awayTeam:m.homeTeam));
+  // Polymarket WC prices — fetch from ESPN odds API as implied probability proxy
+  const [polyPrices, setPolyPrices] = useState<{teamAWin:number;draw:number;teamBWin:number}|null>(null);
+  useEffect(() => {
+    // Try ESPN's odds endpoint for soccer WC — uses American odds which we convert to implied prob
+    const espnNames: Record<string,string> = {
+      "USA":"United States","Côte d'Ivoire":"Ivory Coast","Cabo Verde":"Cape Verde","IR Iran":"Iran","Korea Rep.":"South Korea","Türkiye":"Turkey"
+    };
+    const nameA = espnNames[teamA.name] ?? teamA.name;
+    const nameB = espnNames[teamB.name] ?? teamB.name;
+    const today = new Date();
+    const dates = [0,1,2,3].map(i=>{const d=new Date(today);d.setDate(today.getDate()+i);return d.toISOString().slice(0,10).replace(/-/g,"");});
+    Promise.all(dates.map(date=>fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${date}`).then(r=>r.ok?r.json():{events:[]}).catch(()=>({events:[]})))).then(results=>{
+      for (const data of results) {
+        for (const ev of (data.events??[])) {
+          const c = ev.competitions?.[0];
+          if (!c) continue;
+          const home = c.competitors?.find((x:{homeAway:string})=>x.homeAway==="home");
+          const away = c.competitors?.find((x:{homeAway:string})=>x.homeAway==="away");
+          if (!home||!away) continue;
+          const hName = home.team?.displayName??"";
+          const aName = away.team?.displayName??"";
+          const matchesTeams = (hName===nameA&&aName===nameB)||(hName===nameB&&aName===nameA);
+          if (!matchesTeams) continue;
+          // Try to get odds from competitors
+          const odds = c.odds?.[0];
+          if (odds) {
+            // ESPN moneyline odds → implied probability
+            const toImplied = (ml:number) => ml<0 ? (-ml)/(-ml+100) : 100/(ml+100);
+            const homeML = parseFloat(odds.homeTeamOdds?.moneyLine??"0");
+            const awayML = parseFloat(odds.awayTeamOdds?.moneyLine??"0");
+            const drawML = parseFloat(odds.drawOdds?.moneyLine??"0")||350;
+            if (homeML && awayML) {
+              const raw = {h:toImplied(homeML),d:toImplied(drawML),a:toImplied(awayML)};
+              const total = raw.h+raw.d+raw.a;
+              const isATeamHome = hName===nameA;
+              setPolyPrices({
+                teamAWin: parseFloat(((isATeamHome?raw.h:raw.a)/total*100).toFixed(1)),
+                draw: parseFloat((raw.d/total*100).toFixed(1)),
+                teamBWin: parseFloat(((isATeamHome?raw.a:raw.h)/total*100).toFixed(1)),
+              });
+              return;
+            }
+          }
+        }
+      }
+      setPolyPrices(null);
+    });
+  }, [teamA.name, teamB.name]);
+
+  // Common opponents (excluding each other)
+  const oppsA = new Set(teamMatches(teamA.name).filter(m=>(m.teamIsHome?m.awayTeam:m.homeTeam)!==teamB.name).map(m=>m.teamIsHome?m.awayTeam:m.homeTeam));
+  const oppsB = new Set(teamMatches(teamB.name).filter(m=>(m.teamIsHome?m.awayTeam:m.homeTeam)!==teamA.name).map(m=>m.teamIsHome?m.awayTeam:m.homeTeam));
   const common = [...oppsA].filter(o=>oppsB.has(o));
 
   // Group H2H
   const h2h = GROUP_MATCHES.find(m=>(m.homeTeam===teamA.name&&m.awayTeam===teamB.name)||(m.homeTeam===teamB.name&&m.awayTeam===teamA.name))??null;
 
   const styleTag = (s: PerMatchStats) => s.possession>58&&s.xgFor>2?"High-Possession Attacker":s.possession>58?"Possession-Dominant":s.xgFor>2?"Counter-Attack Finisher":s.xgAgainst<0.8?"Defensive Compact":s.xgDiff>1?"Balanced Dominant":"Transition-Oriented";
+
+  // Matchday label helper
+  const mdLabel = (md:number) => md===1?"MD1":md===2?"MD2":"MD3";
 
   return (
     <div className="space-y-4">
@@ -493,6 +551,55 @@ export default function WorldCupAnalyzerInline({
             <StatBar value={model.confidence}/>
           </div>
         </div>
+
+        {/* Polymarket prices + value */}
+        {polyPrices ? (
+          <div className="mt-3 rounded-xl border border-violet-200 bg-violet-50 p-3">
+            <div className="text-[10px] font-black uppercase tracking-wide text-violet-500 mb-2">Market Prices (ESPN Implied)</div>
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              {[
+                {label:teamA.name, mkt:polyPrices.teamAWin, model:model.winA, color:NAV},
+                {label:"Draw",     mkt:polyPrices.draw,     model:model.draw,  color:"#94a3b8"},
+                {label:teamB.name, mkt:polyPrices.teamBWin, model:model.lossA, color:ACC},
+              ].map(({label,mkt,model:mdl,color})=>{
+                const edge = parseFloat((mdl - mkt).toFixed(1));
+                const hasValue = Math.abs(edge) >= 3;
+                return (
+                  <div key={label} className="rounded-lg border border-violet-100 bg-white p-2 text-center">
+                    <div className="text-[9px] font-bold uppercase tracking-wide text-slate-400 truncate mb-0.5">{label}</div>
+                    <div className="text-sm font-black" style={{color}}>{mkt}%</div>
+                    {hasValue && (
+                      <div className={`text-[9px] font-bold mt-0.5 ${edge>0?"text-emerald-600":"text-red-500"}`}>
+                        {edge>0?"▲":"▼"} {Math.abs(edge)}pt {edge>0?"value":"fade"}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-[10px] text-violet-600 leading-relaxed">
+              {(() => {
+                const aEdge = model.winA - polyPrices.teamAWin;
+                const bEdge = model.lossA - polyPrices.teamBWin;
+                const dEdge = model.draw  - polyPrices.draw;
+                const best = [
+                  {label:`${teamA.name} win`, edge:aEdge},
+                  {label:`${teamB.name} win`, edge:bEdge},
+                  {label:"Draw", edge:dEdge},
+                ].sort((a,b)=>b.edge-a.edge)[0];
+                if (Math.abs(best.edge) < 3) return "Model and market are closely aligned — no clear value edge identified.";
+                return best.edge > 0
+                  ? `Model sees value on ${best.label} (+${best.edge.toFixed(1)}pt vs market).`
+                  : `Model is below market on ${best.label} — potential fade opportunity.`;
+              })()}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-[11px] text-slate-400">
+            Market prices will appear when this game is listed on ESPN odds. Check back closer to kickoff.
+          </div>
+        )}
+
         <div className="mt-3 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 text-[11px] text-slate-600">
           ⚠ "Slight/Moderate/Strong edge" reflects model probability, not certainty. Soccer results are inherently unpredictable.
         </div>
@@ -598,23 +705,53 @@ export default function WorldCupAnalyzerInline({
       {/* Common opponents */}
       {common.length>0&&(
         <Card>
-          <SectionHeader title="Common Opponents"/>
-          <div className="space-y-2">
+          <SectionHeader title="Common Opponents" subtitle="Head-to-head performance vs shared opponents — key equalizer metric when SOS is identical"/>
+          <div className="space-y-3">
             {common.map(opp=>{
               const mA = teamMatches(teamA.name).find(m=>(m.teamIsHome?m.awayTeam:m.homeTeam)===opp);
               const mB = teamMatches(teamB.name).find(m=>(m.teamIsHome?m.awayTeam:m.homeTeam)===opp);
               if(!mA||!mB) return null;
-              const gdA = mA.teamIsHome?mA.homeGoals-mA.awayGoals:mA.awayGoals-mA.homeGoals;
-              const gdB = mB.teamIsHome?mB.homeGoals-mB.awayGoals:mB.awayGoals-mB.homeGoals;
               const oppT = ALL_TEAMS.find(t=>t.name===opp);
-              return (
-                <div key={opp} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs">
-                  <div className="flex items-center gap-1.5 mb-1">{oppT&&<Flag code={oppT.code} size={12}/>}<strong>vs {opp}</strong><span className="ml-auto text-slate-400">Pre: {oppT?.powerScore}</span></div>
-                  <div className="grid grid-cols-2 gap-1 text-slate-600">
-                    <div>{teamA.name}: <strong>{gdA>=0?"+":""}{gdA} GD</strong></div>
-                    <div>{teamB.name}: <strong>{gdB>=0?"+":""}{gdB} GD</strong></div>
+
+              const stat = (m: typeof mA & {teamIsHome:boolean}) => ({
+                gf:  m.teamIsHome?m.homeGoals:m.awayGoals,
+                ga:  m.teamIsHome?m.awayGoals:m.homeGoals,
+                xgf: m.teamIsHome?m.homeXg:m.awayXg,
+                xga: m.teamIsHome?m.awayXg:m.homeXg,
+                pos: m.teamIsHome?m.homePossession:m.awayPossession,
+              });
+              const sA2 = stat(mA); const sB2 = stat(mB);
+              const gdA = sA2.gf-sA2.ga; const gdB = sB2.gf-sB2.ga;
+
+              const metric = (labelA:string, vA:number, vB:number, labelB:string, higherBetter=true, fmt=(v:number)=>v.toFixed(2)) => {
+                const advA = higherBetter?vA>vB:vA<vB;
+                const advB = higherBetter?vB>vA:vA>vB;
+                return (
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 text-[11px]">
+                    <span className={`text-right font-bold tabular-nums ${advA?"text-emerald-600":advB?"text-slate-400":"text-slate-600"}`}>{fmt(vA)}{advA?" ✓":""}</span>
+                    <span className="text-center text-[10px] text-slate-400 whitespace-nowrap px-1">{labelA}</span>
+                    <span className={`font-bold tabular-nums ${advB?"text-emerald-600":advA?"text-slate-400":"text-slate-600"}`}>{fmt(vB)}{advB?" ✓":""}</span>
                   </div>
-                  <div className="mt-1 text-slate-400">Edge: {gdA>gdB?`${teamA.name} (+${gdA-gdB})`:gdB>gdA?`${teamB.name} (+${gdB-gdA})`:"Even"}</div>
+                );
+              };
+
+              return (
+                <div key={opp} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    {oppT&&<Flag code={oppT.code} size={14}/>}
+                    <span className="text-xs font-black text-slate-700">vs {opp}</span>
+                    <span className="ml-auto text-[10px] text-slate-400">Pre-rating: {oppT?.powerScore}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1.5">
+                    <span className="flex items-center gap-1"><Flag code={teamA.code} size={12}/>{teamA.name}</span>
+                    <span className="flex items-center gap-1">{teamB.name}<Flag code={teamB.code} size={12}/></span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {metric("Score", gdA, gdB, "", true, v=>`${v>=0?"+":""}${v} GD`)}
+                    {metric("xGF",   sA2.xgf, sB2.xgf, "", true)}
+                    {metric("xGA",   sA2.xga, sB2.xga, "", false)}
+                    {metric("Poss%", sA2.pos, sB2.pos, "", true, v=>v.toFixed(0)+"%")}
+                  </div>
                 </div>
               );
             })}
@@ -627,58 +764,55 @@ export default function WorldCupAnalyzerInline({
 
       {/* Tournament Results */}
       <Card>
-        <SectionHeader title="Tournament Results" subtitle="Group-stage results for each team"/>
-        <div className="grid grid-cols-2 gap-3">
-          {[{team:teamA},{team:teamB}].map(({team},side)=>{
-            // Exclude any direct match between the two selected teams —
-            // those only appear in the H2H panel below if they actually played.
-            const matches = teamMatches(team.name).filter(m=>{
+        <SectionHeader title="Tournament Results" subtitle="Group-stage results — excludes direct matchup between these two teams"/>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-0">
+          {/* Headers */}
+          <div className="flex items-center gap-1.5 mb-2">
+            <Flag code={teamA.code} size={16}/>
+            <span className="text-xs font-black text-slate-700">{teamA.name}</span>
+          </div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Flag code={teamB.code} size={16}/>
+            <span className="text-xs font-black text-slate-700">{teamB.name}</span>
+          </div>
+          {/* Results — both columns together so rows align by matchday */}
+          {[teamA, teamB].map((team, col) => {
+            const matches = teamMatches(team.name).filter(m => {
               const opp = m.teamIsHome?m.awayTeam:m.homeTeam;
-              return opp!==teamA.name && opp!==teamB.name || team.name===opp;
-            }).filter(m=>{
-              const opp = m.teamIsHome?m.awayTeam:m.homeTeam;
-              const otherTeam = team.name===teamA.name?teamB.name:teamA.name;
-              return opp!==otherTeam;
-            });
+              const other = team.name===teamA.name?teamB.name:teamA.name;
+              return opp !== other;
+            }).sort((a,b)=>a.matchday-b.matchday);
             return (
-              <div key={team.name}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Flag code={team.code} size={16}/>
-                  <span className="text-xs font-black text-slate-700">{team.name}</span>
-                </div>
-                {matches.length===0?(
+              <div key={team.name} className="space-y-1.5">
+                {matches.length===0 ? (
                   <p className="text-[11px] text-slate-400 italic">No results yet</p>
-                ):(
-                  <div className="space-y-1.5">
-                    {matches.map((m,i)=>{
-                      const opp = m.teamIsHome?m.awayTeam:m.homeTeam;
-                      const oppT = ALL_TEAMS.find(t=>t.name===opp);
-                      const myG = m.teamIsHome?m.homeGoals:m.awayGoals;
-                      const oppG = m.teamIsHome?m.awayGoals:m.homeGoals;
-                      const outcome = myG>oppG?"W":myG===oppG?"D":"L";
-                      const outcomeColor = outcome==="W"?"text-emerald-600 bg-emerald-50 border-emerald-200":outcome==="D"?"text-amber-600 bg-amber-50 border-amber-200":"text-red-600 bg-red-50 border-red-200";
-                      return (
-                        <div key={i} className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
-                          <div className="flex items-center justify-between gap-1 mb-0.5">
-                            <span className={`rounded-full border px-1.5 py-0.5 text-[9px] font-black ${outcomeColor}`}>{outcome}</span>
-                            <span className="text-xs font-black text-slate-800 tabular-nums">{myG}–{oppG}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                            {oppT&&<Flag code={oppT.code} size={11}/>}
-                            <span className={`truncate ${side===0?"":"text-right w-full"}`}>vs {opp}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                ) : matches.map((m, i) => {
+                  const opp = m.teamIsHome?m.awayTeam:m.homeTeam;
+                  const oppT = ALL_TEAMS.find(t=>t.name===opp);
+                  const myG = m.teamIsHome?m.homeGoals:m.awayGoals;
+                  const oppG = m.teamIsHome?m.awayGoals:m.homeGoals;
+                  const outcome = myG>oppG?"W":myG===oppG?"D":"L";
+                  const oc = outcome==="W"?"text-emerald-600 bg-emerald-50":"outcome"==="D"?"text-amber-600 bg-amber-50":"text-red-600 bg-red-50";
+                  const outcomeColor = outcome==="W"?"text-emerald-600":outcome==="D"?"text-amber-500":"text-red-600";
+                  return (
+                    <div key={i} className="flex items-center gap-1.5 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 text-[11px]">
+                      <span className="text-[9px] font-bold text-slate-400 shrink-0">{mdLabel(m.matchday)}</span>
+                      <span className={`font-black shrink-0 ${outcomeColor}`}>{outcome}</span>
+                      <span className="text-slate-500 truncate flex items-center gap-0.5 min-w-0">
+                        {oppT&&<Flag code={oppT.code} size={10}/>}
+                        <span className="truncate">{opp}</span>
+                      </span>
+                      <span className="font-black text-slate-800 tabular-nums shrink-0 ml-auto">{myG}–{oppG}</span>
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
         </div>
         {h2h&&(
           <div className="mt-4 rounded-xl border border-slate-200 bg-[#031635]/5 p-3">
-            <div className="text-[10px] font-black uppercase tracking-wide text-slate-400 mb-2">Head-to-Head · Group {h2h.group}</div>
+            <div className="text-[10px] font-black uppercase tracking-wide text-slate-400 mb-2">Head-to-Head · Group {h2h.group} · {mdLabel(h2h.matchday)}</div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5"><Flag code={teamA.code} size={16}/><span className="text-sm font-black text-[#031635]">{h2h.homeTeam===teamA.name?h2h.homeGoals:h2h.awayGoals}</span></div>
               <span className="text-[11px] text-slate-400 font-semibold">–</span>
