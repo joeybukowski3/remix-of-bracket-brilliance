@@ -1,0 +1,264 @@
+name: Props Value Refresh
+run-name: Props Value Refresh • ${{ github.event_name }}
+
+# Runs every 15 minutes from 10 AM – 4 PM ET daily.
+# Checks whether today's player prop lines are posted by ParlayAPI.
+# Strategy:
+#   • 4 hrs before first pitch → start trying
+#   • Every 15 min → fetch odds + check if lines are populated
+#   • First run that finds lines → inject odds, rebuild, push, then stop early
+#   • If lines never appear by 30 min before first pitch → give up gracefully
+#
+# Cron runs every 15 min 10:00–16:00 UTC = 6:00 AM – 12:00 PM ET.
+# First MLB games are typically 12:10 PM ET earliest; most slates start 6–7 PM ET.
+# 10:00 UTC (6 AM ET) start gives a 6-hour window for afternoon/evening games.
+# GitHub Actions cron is always UTC.
+
+on:
+  schedule:
+    - cron: "0,15,30,45 10,11,12,13,14,15,16 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  props-value-refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Gate: only proceed if we are within 4 hours of first pitch AND
+      #          lines are not already fully populated ──────────────────────────
+      - name: Check gate conditions
+        id: gate
+        shell: bash
+        run: |
+          node << 'NODE'
+          const { execFileSync } = require("child_process");
+          const fs = require("fs");
+          const path = require("path");
+
+          async function main() {
+            const nowMs = Date.now();
+
+            // ── 1. Get today's first pitch time from ESPN ──────────────────
+            let firstPitchMs = null;
+            try {
+              const resp = await fetch(
+                "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard"
+              );
+              const data = await resp.json();
+              const dates = (data.events || [])
+                .map((e) => new Date(e.date).getTime())
+                .filter((t) => !isNaN(t))
+                .sort((a, b) => a - b);
+              if (dates.length > 0) firstPitchMs = dates[0];
+            } catch (err) {
+              console.log("ESPN fetch failed:", err.message);
+            }
+
+            if (!firstPitchMs) {
+              console.log("::set-output name=run::false");
+              console.log("No games found — skipping.");
+              return;
+            }
+
+            const minsToFirstPitch = (firstPitchMs - nowMs) / 60000;
+            console.log(`First pitch in ${minsToFirstPitch.toFixed(0)} minutes.`);
+
+            // ── 2. Gate: only run 4 hrs (240 min) before first pitch ───────
+            if (minsToFirstPitch > 240) {
+              console.log("More than 4 hours away — skipping.");
+              console.log("run=false >> GITHUB_OUTPUT");
+              process.stdout.write("run=false\n");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
+              return;
+            }
+
+            // ── 3. Gate: stop 15 min before first pitch (too late) ─────────
+            if (minsToFirstPitch < 15) {
+              console.log("Within 15 min of first pitch — stopping polling.");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
+              return;
+            }
+
+            // ── 4. Check if lines are already populated in hr-props-raw ────
+            const rawPath = path.join(process.cwd(), "public/data/mlb/hr-props-raw.json");
+            let linesAlreadyPopulated = false;
+            if (fs.existsSync(rawPath)) {
+              try {
+                const raw = JSON.parse(fs.readFileSync(rawPath, "utf8"));
+                const hrFilled = (raw.batters || []).some((b) => b.hrOddsYes != null);
+                const kFilled  = (raw.pitchers || []).some((p) => p.kLine != null && p.kLine > 0);
+                linesAlreadyPopulated = hrFilled && kFilled;
+                console.log(`HR lines filled: ${hrFilled}, K lines filled: ${kFilled}`);
+              } catch (e) {
+                console.log("Could not read hr-props-raw.json:", e.message);
+              }
+            }
+
+            if (linesAlreadyPopulated) {
+              console.log("Lines already populated — skipping redundant rebuild.");
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
+              return;
+            }
+
+            console.log(`Within window (${minsToFirstPitch.toFixed(0)} min to first pitch) and lines not yet populated — proceeding.`);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=true\n");
+          }
+
+          main().catch((e) => {
+            console.error("Gate check error:", e.message);
+            // On error, default to skipping
+            const fs = require("fs");
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, "run=false\n");
+          });
+          NODE
+
+      # All subsequent steps only run if gate says run=true ──────────────────
+
+      - name: Fetch MLB odds (ParlayAPI + moneylines)
+        if: steps.gate.outputs.run == 'true'
+        run: node scripts/fetch-mlb-odds.mjs || true
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEY_BACKUP: ${{ secrets.ODDS_API_KEY_BACKUP }}
+          PARLAYAPI: ${{ secrets.PARLAYAPI }}
+          THERUNDOWNAPI: ${{ secrets.THERUNDOWNAPI }}
+
+      # ── Check whether this fetch actually returned any lines ───────────────
+      - name: Check if lines came back
+        id: lines
+        if: steps.gate.outputs.run == 'true'
+        shell: bash
+        run: |
+          node << 'NODE'
+          const fs = require("fs");
+          const path = require("path");
+          const oddsPath = path.join(process.cwd(), "public/data/mlb/mlb-odds.json");
+          let hasLines = false;
+          try {
+            const odds = JSON.parse(fs.readFileSync(oddsPath, "utf8"));
+            const hrCount = Object.keys(odds.hrOdds || {}).length;
+            const kCount  = Object.keys(odds.kOdds  || {}).length;
+            console.log(`HR lines from ParlayAPI: ${hrCount}, K lines: ${kCount}`);
+            hasLines = hrCount > 0 || kCount > 0;
+          } catch (e) {
+            console.log("Could not read mlb-odds.json:", e.message);
+          }
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `has_lines=${hasLines}\n`);
+          if (!hasLines) console.log("No lines returned — will skip rebuild.");
+          NODE
+
+      - name: Inject batter HR odds
+        if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
+        run: node scripts/inject-batter-hr-odds.mjs || true
+
+      - name: Inject pitcher K odds
+        if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
+        run: node scripts/inject-k-odds.mjs || true
+
+      - name: Remove timestamp-only data changes
+        if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const { execFileSync } = require("child_process");
+          const volatileKeys = new Set([
+            "generatedAt","fetchedAt","updatedAt","lastUpdated",
+            "scheduledFor","nextRunAt","lineupDataAsOf",
+            "generationStartedAt","generationCompletedAt","actualWorkflowStart"
+          ]);
+          function clean(v) {
+            if (Array.isArray(v)) return v.map(clean);
+            if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([k])=>!volatileKeys.has(k)).sort(([a],[b])=>a.localeCompare(b)).map(([k,c])=>[k,clean(c)]));
+            return v;
+          }
+          let changed = [];
+          try { changed = execFileSync("git",["diff","--name-only","--","public/data/mlb"],{encoding:"utf8"}).trim().split("\n").filter(Boolean); } catch {}
+          for (const f of changed) {
+            if (!f.endsWith(".json")||!fs.existsSync(f)) continue;
+            let prev;
+            try { prev = execFileSync("git",["show",`HEAD:${f}`],{encoding:"utf8",stdio:["ignore","pipe","ignore"]}); } catch { continue; }
+            try {
+              if (JSON.stringify(clean(JSON.parse(prev))) === JSON.stringify(clean(JSON.parse(fs.readFileSync(f,"utf8"))))) {
+                execFileSync("git",["restore","--worktree","--source=HEAD","--",f],{stdio:"inherit"});
+                console.log(`Restored timestamp-only: ${f}`);
+              }
+            } catch {}
+          }
+          NODE
+
+      - name: Detect meaningful changes
+        id: changes
+        if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- public/data/mlb)" ]; then
+            echo "No meaningful changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Meaningful changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build site
+        if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true' && steps.changes.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Commit and push prop lines
+        if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true' && steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/mlb/
+
+          if git diff --cached --quiet; then
+            echo "Nothing staged."
+            exit 0
+          fi
+
+          git commit -m "chore: inject prop lines $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed." >&2
+            exit 1
+          fi
+          echo "Prop lines pushed successfully."
