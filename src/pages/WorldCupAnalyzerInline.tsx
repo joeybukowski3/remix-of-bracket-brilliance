@@ -315,23 +315,31 @@ function Delta({ val }: { val: number }) {
   return <span className={`inline-flex items-center gap-0.5 text-xs font-bold ${val>0?"text-emerald-600":val<0?"text-red-500":"text-slate-400"}`}>{val>0?"▲":val<0?"▼":"–"} {Math.abs(val).toFixed(2)}</span>;
 }
 
-function CompBar({ valA, valB, label, higherIsBetter=true, tip, fmt }: { valA:number; valB:number; label:string; higherIsBetter?:boolean; tip?:string; fmt?:(v:number)=>string }) {
+function CompBar({ valA, valB, label, higherIsBetter=true, tip, fmt, codeA, codeB }: { valA:number; valB:number; label:string; higherIsBetter?:boolean; tip?:string; fmt?:(v:number)=>string; codeA?:string; codeB?:string }) {
   const f = fmt??(v=>v.toFixed(2));
   const total = valA+valB;
   const pctA = total>0?(valA/total)*100:50;
   const advA = higherIsBetter?valA>valB:valA<valB;
   const advB = higherIsBetter?valB>valA:valB<valA;
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-1.5 border-b border-slate-50 last:border-0">
-      <div className={`text-right text-xs font-bold tabular-nums ${advA?"text-emerald-600":advB?"text-slate-400":"text-slate-700"}`}>{f(valA)}</div>
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 cursor-help" title={tip}>{label}</span>
-        <div className="mt-1 h-1.5 w-20 rounded-full bg-slate-100 overflow-hidden flex">
-          <div className="h-full rounded-l-full" style={{width:`${pctA}%`,backgroundColor:NAV}} />
-          <div className="h-full rounded-r-full" style={{width:`${100-pctA}%`,backgroundColor:ACC}} />
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 py-2.5 border-b border-slate-100 last:border-0">
+      <div className={`flex items-center justify-end gap-1.5 ${advA?"text-emerald-600 font-extrabold":advB?"text-slate-400 font-semibold":"text-slate-700 font-bold"}`}>
+        {advA && <span className="text-emerald-500 text-xs">✓</span>}
+        {codeA && advA && <Flag code={codeA} size={14}/>}
+        <span className={`tabular-nums ${advA?"text-base":"text-sm"}`}>{f(valA)}</span>
+      </div>
+      <div className="flex flex-col items-center min-w-[72px]">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 cursor-help whitespace-nowrap" title={tip}>{label}</span>
+        <div className="mt-1 h-2 w-20 rounded-full bg-slate-100 overflow-hidden flex">
+          <div className="h-full rounded-l-full transition-all" style={{width:`${pctA}%`,backgroundColor:NAV}} />
+          <div className="h-full rounded-r-full transition-all" style={{width:`${100-pctA}%`,backgroundColor:ACC}} />
         </div>
       </div>
-      <div className={`text-left text-xs font-bold tabular-nums ${advB?"text-emerald-600":advA?"text-slate-400":"text-slate-700"}`}>{f(valB)}</div>
+      <div className={`flex items-center gap-1.5 ${advB?"text-emerald-600 font-extrabold":advA?"text-slate-400 font-semibold":"text-slate-700 font-bold"}`}>
+        <span className={`tabular-nums ${advB?"text-base":"text-sm"}`}>{f(valB)}</span>
+        {codeB && advB && <Flag code={codeB} size={14}/>}
+        {advB && <span className="text-emerald-500 text-xs">✓</span>}
+      </div>
     </div>
   );
 }
@@ -486,17 +494,20 @@ export default function WorldCupAnalyzerInline({
       {(sA.gamesPlayed>0||sB.gamesPlayed>0)&&(
         <Card>
           <SectionHeader title="Group-Stage Performance" subtitle="Per-match averages · ↓ lower is better for defensive metrics"/>
-          <div className="flex justify-between text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2"><span>{teamA.name} ({sA.gamesPlayed}GP)</span><span>{teamB.name} ({sB.gamesPlayed}GP)</span></div>
-          <CompBar valA={sA.points} valB={sB.points} label="Pts/Gm" tip="Points per match (3=W, 1=D, 0=L)."/>
-          <CompBar valA={sA.goalsFor} valB={sB.goalsFor} label="GF/Gm" tip="Goals scored per match."/>
-          <CompBar valA={sA.goalsAgainst} valB={sB.goalsAgainst} higherIsBetter={false} label="GA/Gm ↓" tip="Goals conceded per match. Lower is better."/>
-          <CompBar valA={sA.xgFor} valB={sB.xgFor} label="xGF/Gm" tip="Expected goals for per match. [MODELED]"/>
-          <CompBar valA={sA.xgAgainst} valB={sB.xgAgainst} higherIsBetter={false} label="xGA/Gm ↓" tip="Expected goals against per match. [MODELED]"/>
-          <CompBar valA={sA.xgDiff} valB={sB.xgDiff} label="xGD/Gm" tip="xG differential per match."/>
-          <CompBar valA={sA.shotsFor} valB={sB.shotsFor} label="Shots/Gm" tip="Shots attempted per match."/>
-          <CompBar valA={sA.possession} valB={sB.possession} label="Poss%" tip="Average possession percentage." fmt={v=>v.toFixed(1)+"%"}/>
-          <CompBar valA={sA.savePercent} valB={sB.savePercent} label="Save%" tip="Goalkeeper save percentage." fmt={v=>v.toFixed(1)+"%"}/>
-          <CompBar valA={sA.cleanSheetRate} valB={sB.cleanSheetRate} label="CS%" tip="Clean sheet rate." fmt={v=>v.toFixed(0)+"%"}/>
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-1.5"><Flag code={teamA.code} size={18}/><span className="text-xs font-bold text-slate-700">{teamA.name} <span className="text-slate-400 font-normal">({sA.gamesPlayed}GP)</span></span></div>
+            <div className="flex items-center gap-1.5"><span className="text-xs font-bold text-slate-700 text-right">{teamB.name} <span className="text-slate-400 font-normal">({sB.gamesPlayed}GP)</span></span><Flag code={teamB.code} size={18}/></div>
+          </div>
+          <CompBar valA={sA.points} valB={sB.points} label="Pts/Gm" tip="Points per match (3=W, 1=D, 0=L)." codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.goalsFor} valB={sB.goalsFor} label="GF/Gm" tip="Goals scored per match." codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.goalsAgainst} valB={sB.goalsAgainst} higherIsBetter={false} label="GA/Gm ↓" tip="Goals conceded per match. Lower is better." codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.xgFor} valB={sB.xgFor} label="xGF/Gm" tip="Expected goals for per match. [MODELED]" codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.xgAgainst} valB={sB.xgAgainst} higherIsBetter={false} label="xGA/Gm ↓" tip="Expected goals against per match. [MODELED]" codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.xgDiff} valB={sB.xgDiff} label="xGD/Gm" tip="xG differential per match." codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.shotsFor} valB={sB.shotsFor} label="Shots/Gm" tip="Shots attempted per match." codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.possession} valB={sB.possession} label="Poss%" tip="Average possession percentage." fmt={v=>v.toFixed(1)+"%"} codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.savePercent} valB={sB.savePercent} label="Save%" tip="Goalkeeper save percentage." fmt={v=>v.toFixed(1)+"%"} codeA={teamA.code} codeB={teamB.code}/>
+          <CompBar valA={sA.cleanSheetRate} valB={sB.cleanSheetRate} label="CS%" tip="Clean sheet rate." fmt={v=>v.toFixed(0)+"%"} codeA={teamA.code} codeB={teamB.code}/>
         </Card>
       )}
 
@@ -595,21 +606,61 @@ export default function WorldCupAnalyzerInline({
         <Card><SectionHeader title="Common Opponents"/><p className="text-xs text-slate-400 italic">Different groups — no shared group-stage opponents.</p></Card>
       )}
 
-      {/* H2H */}
+      {/* Tournament Results */}
       <Card>
-        <SectionHeader title="Head-to-Head (This Tournament)"/>
-        {h2h?(
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Group {h2h.group}</div>
-            <div className="flex items-center justify-between font-black text-[#031635]">
-              <span className="text-sm">{h2h.homeTeam}</span>
-              <span className="text-2xl">{h2h.homeGoals} – {h2h.awayGoals}</span>
-              <span className="text-sm">{h2h.awayTeam}</span>
+        <SectionHeader title="Tournament Results" subtitle="Group-stage results for each team"/>
+        <div className="grid grid-cols-2 gap-3">
+          {[{team:teamA},{team:teamB}].map(({team},side)=>{
+            const matches = teamMatches(team.name);
+            return (
+              <div key={team.name}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Flag code={team.code} size={16}/>
+                  <span className="text-xs font-black text-slate-700">{team.name}</span>
+                </div>
+                {matches.length===0?(
+                  <p className="text-[11px] text-slate-400 italic">No results yet</p>
+                ):(
+                  <div className="space-y-1.5">
+                    {matches.map((m,i)=>{
+                      const opp = m.teamIsHome?m.awayTeam:m.homeTeam;
+                      const oppT = ALL_TEAMS.find(t=>t.name===opp);
+                      const myG = m.teamIsHome?m.homeGoals:m.awayGoals;
+                      const oppG = m.teamIsHome?m.awayGoals:m.homeGoals;
+                      const outcome = myG>oppG?"W":myG===oppG?"D":"L";
+                      const outcomeColor = outcome==="W"?"text-emerald-600 bg-emerald-50 border-emerald-200":outcome==="D"?"text-amber-600 bg-amber-50 border-amber-200":"text-red-600 bg-red-50 border-red-200";
+                      return (
+                        <div key={i} className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className={`rounded-full border px-1.5 py-0.5 text-[9px] font-black ${outcomeColor}`}>{outcome}</span>
+                            <span className="text-xs font-black text-slate-800 tabular-nums">{myG}–{oppG}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                            {oppT&&<Flag code={oppT.code} size={11}/>}
+                            <span className={`truncate ${side===0?"":"text-right w-full"}`}>vs {opp}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {h2h&&(
+          <div className="mt-4 rounded-xl border border-slate-200 bg-[#031635]/5 p-3">
+            <div className="text-[10px] font-black uppercase tracking-wide text-slate-400 mb-2">Head-to-Head · Group {h2h.group}</div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5"><Flag code={teamA.code} size={16}/><span className="text-sm font-black text-[#031635]">{h2h.homeTeam===teamA.name?h2h.homeGoals:h2h.awayGoals}</span></div>
+              <span className="text-[11px] text-slate-400 font-semibold">–</span>
+              <div className="flex items-center gap-1.5"><span className="text-sm font-black text-[#031635]">{h2h.homeTeam===teamB.name?h2h.homeGoals:h2h.awayGoals}</span><Flag code={teamB.code} size={16}/></div>
             </div>
-            <div className="mt-2 grid grid-cols-3 text-[11px] text-slate-500"><div>xG: {h2h.homeXg}</div><div className="text-center">–</div><div className="text-right">xG: {h2h.awayXg}</div></div>
+            <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+              <span>xG: {h2h.homeTeam===teamA.name?h2h.homeXg:h2h.awayXg}</span>
+              <span>xG: {h2h.homeTeam===teamB.name?h2h.homeXg:h2h.awayXg}</span>
+            </div>
           </div>
-        ):(
-          <p className="text-xs text-slate-400 italic">Not in the same group — no tournament meeting yet. Full H2H history not available in this data source.</p>
         )}
       </Card>
 
