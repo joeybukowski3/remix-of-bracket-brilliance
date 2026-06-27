@@ -1,29 +1,8 @@
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 const MOBILE_QUERY = "(max-width: 767px)";
-
-function smallestTextElement(root: Element, pattern: RegExp) {
-  const matches = Array.from(root.querySelectorAll<HTMLElement>("*"))
-    .filter((element) => pattern.test((element.textContent ?? "").trim()))
-    .sort((a, b) => a.children.length - b.children.length || (a.textContent?.length ?? 0) - (b.textContent?.length ?? 0));
-  return matches[0] ?? null;
-}
-
-function extractPolymarketLabel(card: HTMLElement) {
-  const exact = smallestTextElement(card, /polymarket/i);
-  if (exact) {
-    const text = (exact.textContent ?? "").replace(/\s+/g, " ").trim();
-    const percent = text.match(/\b\d{1,3}(?:\.\d+)?%\b/);
-    const cents = text.match(/\b\d{1,3}(?:\.\d+)?¢\b/);
-    if (percent) return `Polymarket ${percent[0]}`;
-    if (cents) return `Polymarket ${cents[0]}`;
-    if (text.length <= 42) return text;
-  }
-
-  const fullText = (card.textContent ?? "").replace(/\s+/g, " ");
-  const nearby = fullText.match(/Polymarket[^%¢]{0,30}(\d{1,3}(?:\.\d+)?[%¢])/i);
-  return nearby ? `Polymarket ${nearby[1]}` : "Polymarket —";
-}
+type MarketSummary = { team: string; value: string };
 
 function cloneTeamLogo(source: HTMLImageElement | null, fallback: string) {
   if (!source) {
@@ -39,6 +18,53 @@ function cloneTeamLogo(source: HTMLImageElement | null, fallback: string) {
   return clone;
 }
 
+function getTeamLabels(card: HTMLElement) {
+  return Array.from(card.querySelectorAll<HTMLElement>("span"))
+    .map((element) => (element.textContent ?? "").trim())
+    .filter((text) => /^[A-Z]{2,4}$/.test(text))
+    .filter((text, index, all) => all.indexOf(text) === index)
+    .slice(0, 2);
+}
+
+function getPitcherNames(card: HTMLElement) {
+  const names = Array.from(card.querySelectorAll<HTMLElement>("span[title]"))
+    .map((element) => (element.getAttribute("title") ?? element.textContent ?? "").trim())
+    .filter((text) => text && text !== "TBD" && /^[A-Za-zÀ-ÖØ-öø-ÿ.'’-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ.'’-]+){1,3}$/.test(text))
+    .filter((text, index, all) => all.indexOf(text) === index)
+    .slice(0, 2);
+  return { away: names[1] ?? "TBD", home: names[0] ?? "TBD" };
+}
+
+function extractMarketSummary(card: HTMLElement, teams: string[]): MarketSummary {
+  const marketLabel = Array.from(card.querySelectorAll<HTMLElement>("*"))
+    .filter((element) => /^polymarket value$/i.test((element.textContent ?? "").trim()))
+    .sort((a, b) => a.children.length - b.children.length)[0];
+  if (marketLabel) {
+    let scope: HTMLElement | null = marketLabel.parentElement;
+    for (let depth = 0; scope && depth < 5; depth += 1, scope = scope.parentElement) {
+      const text = (scope.textContent ?? "").replace(/\s+/g, " ").trim();
+      const exact = text.match(/\b([A-Z]{2,4})\s*([+-]?\d{1,3}(?:\.\d+)?)%\b/);
+      if (exact) return { team: exact[1], value: `${exact[2]}%` };
+    }
+  }
+  const text = (card.textContent ?? "").replace(/\s+/g, " ").trim();
+  const fallback = text.match(/POLYMARKET VALUE\s*([A-Z]{2,4})\s*([+-]?\d{1,3}(?:\.\d+)?)%/i);
+  if (fallback) return { team: fallback[1].toUpperCase(), value: `${fallback[2]}%` };
+  return { team: teams[0] ?? "Edge", value: "—" };
+}
+
+function addTeamContent(container: HTMLDivElement, logo: Node, team: string, pitcher: string, reverse = false) {
+  const text = document.createElement("div");
+  text.className = "jkb-mobile-team-text";
+  const teamLabel = document.createElement("span");
+  teamLabel.textContent = team;
+  const pitcherLabel = document.createElement("small");
+  pitcherLabel.textContent = pitcher;
+  text.append(teamLabel, pitcherLabel);
+  if (reverse) container.append(text, logo);
+  else container.append(logo, text);
+}
+
 function setupMatchupCard(card: HTMLButtonElement) {
   if (card.dataset.mobileEnhancementReady === "true") return;
   card.dataset.mobileEnhancementReady = "true";
@@ -49,47 +75,39 @@ function setupMatchupCard(card: HTMLButtonElement) {
   summary.className = "jkb-mobile-matchup-summary";
   summary.setAttribute("role", "button");
   summary.setAttribute("aria-expanded", "false");
-  summary.setAttribute("aria-label", "Click to show matchup");
 
   const images = Array.from(card.querySelectorAll<HTMLImageElement>("img"));
-  const labels = Array.from(card.querySelectorAll<HTMLElement>("span"))
-    .map((element) => (element.textContent ?? "").trim())
-    .filter((text) => /^[A-Z]{2,4}$/.test(text));
+  const teams = getTeamLabels(card);
+  const pitchers = getPitcherNames(card);
+  const marketSummary = extractMarketSummary(card, teams);
 
   const left = document.createElement("div");
   left.className = "jkb-mobile-team-side";
-  left.appendChild(cloneTeamLogo(images[0] ?? null, labels[0] ?? "MLB"));
-  const leftLabel = document.createElement("span");
-  leftLabel.textContent = labels[0] ?? "";
-  left.appendChild(leftLabel);
+  addTeamContent(left, cloneTeamLogo(images[0] ?? null, teams[0] ?? "MLB"), teams[0] ?? "", pitchers.away);
 
   const middle = document.createElement("div");
   middle.className = "jkb-mobile-market-center";
+  const heading = document.createElement("small");
+  heading.textContent = "Model Edge";
   const market = document.createElement("strong");
-  market.textContent = extractPolymarketLabel(card);
+  market.textContent = `${marketSummary.team} ${marketSummary.value}`;
   const prompt = document.createElement("span");
   prompt.textContent = "Click to show matchup";
-  middle.append(market, prompt);
+  middle.append(heading, market, prompt);
 
   const right = document.createElement("div");
   right.className = "jkb-mobile-team-side jkb-mobile-team-side-right";
-  const rightLabel = document.createElement("span");
-  rightLabel.textContent = labels[1] ?? "";
-  right.appendChild(rightLabel);
-  right.appendChild(cloneTeamLogo(images[1] ?? null, labels[1] ?? "MLB"));
+  addTeamContent(right, cloneTeamLogo(images[1] ?? null, teams[1] ?? "MLB"), teams[1] ?? "", pitchers.home, true);
 
   summary.append(left, middle, right);
   card.prepend(summary);
-
   card.addEventListener("click", (event) => {
     if (!window.matchMedia(MOBILE_QUERY).matches) return;
     const target = event.target as Node;
     if (!summary.contains(target) && card.dataset.mobileExpanded === "true") return;
-
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
-
     const expanded = card.dataset.mobileExpanded !== "true";
     card.dataset.mobileExpanded = String(expanded);
     summary.setAttribute("aria-expanded", String(expanded));
@@ -97,155 +115,33 @@ function setupMatchupCard(card: HTMLButtonElement) {
   }, true);
 }
 
-function findSocialMediaContainer() {
-  const candidates = Array.from(document.querySelectorAll<HTMLElement>("h1,h2,h3,h4,div,span"))
-    .filter((element) => /^social media$/i.test((element.textContent ?? "").trim()));
-  const heading = candidates[0];
-  if (!heading) return null;
-  return heading.closest<HTMLElement>("section,article,[class*='rounded'],[class*='card']") ?? heading.parentElement;
-}
-
-function placeNumerologyLink() {
-  if (!window.matchMedia(MOBILE_QUERY).matches) return;
-  if (!location.pathname.startsWith("/mlb")) return;
-  if (document.querySelector("[data-mobile-numerology-link='true']")) return;
-
-  const socialContainer = findSocialMediaContainer();
-  if (!socialContainer?.parentElement) return;
-
-  const wrapper = document.createElement("div");
-  wrapper.dataset.mobileNumerologyLink = "true";
-  wrapper.className = "jkb-mobile-numerology-link";
-
-  const link = document.createElement("a");
-  link.href = "/mlb/numerology";
-  link.setAttribute("aria-label", "Open MLB numerology analysis");
-  link.textContent = "𓂀";
-  wrapper.appendChild(link);
-
-  socialContainer.insertAdjacentElement("afterend", wrapper);
-}
-
-function applyEnhancements() {
-  if (!location.pathname.startsWith("/mlb")) return;
+function applyEnhancements(pathname: string) {
+  if (pathname !== "/mlb") return;
   document.querySelectorAll<HTMLButtonElement>("button[id^='mlb-game-']").forEach(setupMatchupCard);
-  placeNumerologyLink();
 }
 
 export default function MlbMobileHubEnhancements() {
+  const { pathname } = useLocation();
   useEffect(() => {
-    applyEnhancements();
-    const observer = new MutationObserver(applyEnhancements);
+    applyEnhancements(pathname);
+    const observer = new MutationObserver(() => applyEnhancements(pathname));
     observer.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("resize", applyEnhancements);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", applyEnhancements);
-    };
-  }, []);
+    window.addEventListener("resize", () => applyEnhancements(pathname));
+    return () => observer.disconnect();
+  }, [pathname]);
 
-  return (
+  return <>
+    {pathname === "/mlb" && <a href="/mlb/numerology" className="jkb-mobile-numerology-link" aria-label="Open MLB Numerology"><span aria-hidden="true">🔮</span><span>Numerology</span></a>}
     <style>{`
-      .jkb-mobile-matchup-summary,
-      .jkb-mobile-numerology-link { display: none; }
-
-      @media (max-width: 767px) {
-        .jkb-mobile-matchup-card {
-          min-height: 0 !important;
-          overflow: hidden;
-        }
-
-        .jkb-mobile-matchup-card[data-mobile-expanded="false"] > :not(.jkb-mobile-matchup-summary) {
-          display: none !important;
-        }
-
-        .jkb-mobile-matchup-summary {
-          display: grid;
-          grid-template-columns: minmax(70px, 1fr) minmax(120px, 1.35fr) minmax(70px, 1fr);
-          align-items: center;
-          gap: 8px;
-          width: 100%;
-          padding: 12px;
-          background: #ffffff;
-        }
-
-        .jkb-mobile-team-side {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          min-width: 0;
-          font-size: 11px;
-          font-weight: 800;
-          color: #031635;
-        }
-
-        .jkb-mobile-team-side-right { justify-content: flex-end; }
-
-        .jkb-mobile-team-logo {
-          width: 34px !important;
-          height: 34px !important;
-          object-fit: contain;
-          flex: 0 0 auto;
-        }
-
-        .jkb-mobile-team-fallback {
-          display: grid;
-          place-items: center;
-          width: 34px;
-          height: 34px;
-          border-radius: 999px;
-          background: #eff4ff;
-          color: #031635;
-          font-size: 9px;
-          font-weight: 900;
-        }
-
-        .jkb-mobile-market-center {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-          text-align: center;
-          min-width: 0;
-        }
-
-        .jkb-mobile-market-center strong {
-          font-size: 12px;
-          line-height: 1.2;
-          color: #0f766e;
-        }
-
-        .jkb-mobile-market-center span {
-          display: inline-flex;
-          border-radius: 999px;
-          background: #031635;
-          padding: 4px 8px;
-          color: white;
-          font-size: 9px;
-          font-weight: 800;
-          line-height: 1;
-          white-space: nowrap;
-        }
-
-        .jkb-mobile-numerology-link {
-          display: flex;
-          justify-content: center;
-          padding: 8px 0 14px;
-        }
-
-        .jkb-mobile-numerology-link a {
-          display: grid;
-          place-items: center;
-          width: 34px;
-          height: 34px;
-          border-radius: 999px;
-          background: #17132a;
-          color: #c4b5fd;
-          font-size: 18px;
-          text-decoration: none;
-          box-shadow: 0 4px 14px rgba(23, 19, 42, 0.18);
-        }
+      .jkb-mobile-matchup-summary,.jkb-mobile-numerology-link{display:none}
+      @media (max-width:767px){
+        .jkb-mobile-numerology-link{display:flex;position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:80;align-items:center;gap:7px;border:1px solid rgba(160,120,255,.45);border-radius:999px;background:#171426;color:#eadfff;padding:10px 14px;font-size:12px;font-weight:800;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+        .jkb-mobile-numerology-link span:first-child{font-size:17px;line-height:1}
+        .jkb-mobile-matchup-card{min-height:0!important;overflow:hidden}
+        .jkb-mobile-matchup-card[data-mobile-expanded="false"]>:not(.jkb-mobile-matchup-summary){display:none!important}
+        .jkb-mobile-matchup-summary{display:grid;grid-template-columns:minmax(82px,1fr) minmax(132px,1.25fr) minmax(82px,1fr);align-items:center;gap:6px;width:100%;padding:12px 10px;background:#fff}
+        .jkb-mobile-team-side{display:flex;align-items:center;gap:6px;min-width:0;color:#031635}.jkb-mobile-team-side-right{justify-content:flex-end;text-align:right}.jkb-mobile-team-text{display:flex;min-width:0;flex-direction:column;gap:1px}.jkb-mobile-team-text span{font-size:11px;font-weight:900;line-height:1.1}.jkb-mobile-team-text small{max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;font-weight:700;line-height:1.15;color:#64748b}.jkb-mobile-team-logo{width:34px!important;height:34px!important;object-fit:contain;flex:0 0 auto}.jkb-mobile-team-fallback{display:grid;place-items:center;width:34px;height:34px;border-radius:999px;background:#eff4ff;color:#031635;font-size:9px;font-weight:900}.jkb-mobile-market-center{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;min-width:0}.jkb-mobile-market-center>small{font-size:10px;line-height:1;color:#0f766e;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.jkb-mobile-market-center strong{font-size:14px;line-height:1.1;color:#0f766e;white-space:nowrap}.jkb-mobile-market-center span{display:inline-flex;border-radius:999px;background:#031635;padding:4px 8px;color:white;font-size:9px;font-weight:800;line-height:1;white-space:nowrap}
       }
     `}</style>
-  );
+  </>;
 }

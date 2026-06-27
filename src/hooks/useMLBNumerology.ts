@@ -1,22 +1,6 @@
 import { useEffect, useState } from "react";
 import type { NumerologyDailyData } from "@/types/mlbNumerology";
 
-type Match = { field?: string; value?: number; root?: number; label?: string };
-type Player = Record<string, unknown> & {
-  playerName?: string;
-  team?: string;
-  numerologyScore?: number;
-  matches?: Match[];
-  exactNumberMatches?: Match[];
-  rootNumberMatches?: Match[];
-};
-
-type ExtendedData = NumerologyDailyData & {
-  exactNumberMatches?: Player[];
-  rootNumberMatches?: Player[];
-  bestAvailable?: Player[];
-};
-
 function getEtDate() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
@@ -26,120 +10,23 @@ function getEtDate() {
   }).format(new Date());
 }
 
-function normalizeName(value: unknown) {
-  return String(value ?? "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
-function allMatches(player: Player) {
-  return [
-    ...(Array.isArray(player.matches) ? player.matches : []),
-    ...(Array.isArray(player.exactNumberMatches) ? player.exactNumberMatches : []),
-    ...(Array.isArray(player.rootNumberMatches) ? player.rootNumberMatches : []),
-  ].filter((match, index, matches) =>
-    matches.findIndex((other) => other.field === match.field && other.label === match.label) === index,
-  );
-}
-
-function fieldPriority(field: unknown) {
-  const order = ["personalDay", "jersey", "birthDay", "lifePath", "age", "battingOrder", "expression"];
-  const index = order.indexOf(String(field ?? ""));
-  return index === -1 ? 99 : index;
-}
-
-function transformNumerologyData(input: NumerologyDailyData): NumerologyDailyData {
-  const data = input as ExtendedData;
-  const compound = Number(data.dailyProfile?.universalDayCompound ?? data.dailyProfile?.universalDayRawSum ?? 0);
-  const root = Number(data.dailyProfile?.universalDayRoot ?? 0);
-  const merged = new Map<string, Player>();
-
-  const add = (player: Player) => {
-    const key = `${normalizeName(player.playerName)}|${String(player.team ?? "")}`;
-    const existing = merged.get(key);
-    if (!existing) {
-      merged.set(key, { ...player });
-      return;
-    }
-    merged.set(key, {
-      ...existing,
-      ...player,
-      matches: [...(existing.matches ?? []), ...(player.matches ?? [])],
-      exactNumberMatches: [...(existing.exactNumberMatches ?? []), ...(player.exactNumberMatches ?? [])],
-      rootNumberMatches: [...(existing.rootNumberMatches ?? []), ...(player.rootNumberMatches ?? [])],
-    });
-  };
-
-  (data.exactNumberMatches ?? []).forEach(add);
-  (data.rootNumberMatches ?? []).forEach(add);
-
-  const classified = [...merged.values()].map((player) => {
-    const matches = allMatches(player);
-    const directCompound = matches.filter((match) => Number(match.value) === compound);
-    const directRoot = matches.filter((match) => Number(match.value) === root);
-    const strongFamily = matches.filter((match) =>
-      Number(match.root) === root &&
-      Number(match.value) !== compound &&
-      Number(match.value) !== root &&
-      ["personalDay", "jersey", "birthDay", "lifePath", "age"].includes(String(match.field ?? "")),
-    );
-    return { player, matches, directCompound, directRoot, strongFamily };
-  });
-
-  const sortDirect = (a: typeof classified[number], b: typeof classified[number]) => {
-    if (b.directCompound.length !== a.directCompound.length) return b.directCompound.length - a.directCompound.length;
-    if (b.directRoot.length !== a.directRoot.length) return b.directRoot.length - a.directRoot.length;
-    const aBest = Math.min(...a.matches.map((match) => fieldPriority(match.field)), 99);
-    const bBest = Math.min(...b.matches.map((match) => fieldPriority(match.field)), 99);
-    if (aBest !== bBest) return aBest - bBest;
-    if (b.strongFamily.length !== a.strongFamily.length) return b.strongFamily.length - a.strongFamily.length;
-    return Number(b.player.numerologyScore ?? 0) - Number(a.player.numerologyScore ?? 0);
-  };
-
-  const directCompound = classified.filter((entry) => entry.directCompound.length > 0).sort(sortDirect);
-  const directRoot = classified.filter((entry) => entry.directCompound.length === 0 && entry.directRoot.length > 0).sort(sortDirect);
-  const strongFamily = classified.filter((entry) => entry.directCompound.length === 0 && entry.directRoot.length === 0 && entry.strongFamily.length > 0).sort(sortDirect);
-  const used = new Set([...directCompound, ...directRoot, ...strongFamily].map((entry) => `${normalizeName(entry.player.playerName)}|${String(entry.player.team ?? "")}`));
-  const highScore = classified
-    .filter((entry) => !used.has(`${normalizeName(entry.player.playerName)}|${String(entry.player.team ?? "")}`))
-    .sort((a, b) => Number(b.player.numerologyScore ?? 0) - Number(a.player.numerologyScore ?? 0));
-
-  return {
-    ...data,
-    exactNumberMatches: directCompound.map((entry) => ({ ...entry.player, matches: entry.directCompound })),
-    rootNumberMatches: [...directRoot, ...strongFamily].map((entry) => ({ ...entry.player, matches: [...entry.directRoot, ...entry.strongFamily] })),
-    bestAvailable: [...strongFamily, ...highScore].slice(0, 20).map((entry) => entry.player),
-  } as NumerologyDailyData;
-}
-
-function replaceVisibleLabels() {
-  const replacements: Array<[string, string]> = [
-    ["Baseball Model Stats", "Model Rating"],
-    ["Baseball context", "Model Rating"],
-    ["Exact Number Matches", "Direct Compound / Master Matches"],
-    ["Reduced-Root Matches", "Direct Root & Strong Family Matches"],
-    ["Direct daily-number matches", "Exact daily compound/master matches"],
-    ["Reduced-root matches", "Exact root and strong root-family matches"],
-  ];
-
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-  let node = walker.nextNode();
-  while (node) {
-    const text = node.nodeValue ?? "";
-    let next = text;
-    for (const [from, to] of replacements) next = next.replaceAll(from, to);
-    if (next !== text) node.nodeValue = next;
-    node = walker.nextNode();
-  }
-}
-
 interface UseMLBNumerologyResult {
   data: NumerologyDailyData | null;
   loading: boolean;
   error: string | null;
   isStale: boolean;
+}
+
+function normalizeNumerologyData(value: unknown): NumerologyDailyData {
+  if (!value || typeof value !== "object") throw new Error("Invalid numerology payload.");
+  const raw = value as Record<string, unknown>;
+  if (typeof raw.date !== "string" || !raw.dailyProfile) throw new Error("Numerology payload is incomplete.");
+  return {
+    ...(raw as unknown as NumerologyDailyData),
+    featuredPlays: Array.isArray(raw.featuredPlays) ? raw.featuredPlays as NumerologyDailyData["featuredPlays"] : [],
+    watchlist: Array.isArray(raw.watchlist) ? raw.watchlist as NumerologyDailyData["watchlist"] : [],
+    countercurrents: Array.isArray(raw.countercurrents) ? raw.countercurrents as NonNullable<NumerologyDailyData["countercurrents"]> : [],
+  };
 }
 
 export function useMLBNumerology(): UseMLBNumerologyResult {
@@ -149,20 +36,25 @@ export function useMLBNumerology(): UseMLBNumerologyResult {
 
   useEffect(() => {
     let cancelled = false;
+    const base = import.meta.env.BASE_URL || "/";
+    const url = `${base.endsWith("/") ? base : `${base}/`}data/mlb/numerology-daily.json`;
 
-    fetch("/data/mlb/numerology-daily.json", { cache: "no-store" })
-      .then((response) => {
+    fetch(url, { cache: "no-store" })
+      .then(async (response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
+        return normalizeNumerologyData(await response.json());
       })
-      .then((json: NumerologyDailyData) => {
+      .then((payload) => {
         if (!cancelled) {
-          setData(transformNumerologyData(json));
+          setData(payload);
           setError(null);
         }
       })
-      .catch((reason) => {
-        if (!cancelled) setError(reason.message ?? "Failed to load numerology data.");
+      .catch((reason: unknown) => {
+        if (!cancelled) {
+          setData(null);
+          setError(reason instanceof Error ? reason.message : "Failed to load numerology data.");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -170,13 +62,6 @@ export function useMLBNumerology(): UseMLBNumerologyResult {
 
     return () => { cancelled = true; };
   }, []);
-
-  useEffect(() => {
-    replaceVisibleLabels();
-    const observer = new MutationObserver(replaceVisibleLabels);
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-    return () => observer.disconnect();
-  }, [data]);
 
   const isStale = data != null && data.date !== getEtDate();
   return { data, loading, error, isStale };

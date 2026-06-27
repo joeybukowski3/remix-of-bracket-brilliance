@@ -20,6 +20,38 @@ export interface NumerologySignal {
   description: string;
 }
 
+export interface NumerologyScoreBreakdown {
+  signals: NumerologySignal[];
+  positiveTotal: number;
+  countercurrentTotal: number;
+  convergenceBonus: number;
+  rawNumerology: number;
+  normCeiling: number;
+  calculatedScore: number;
+  reportedScore: number;
+  scoreVerified: boolean;
+  profile: {
+    personalDay: string | null;
+    jersey: string | null;
+    battingOrder: string | null;
+    lifePath: string | null;
+    birthDay: string | null;
+    age: string | null;
+    expression: string | null;
+  };
+  missingData: string[];
+}
+
+export interface RecentPlayerActivity {
+  source: string;
+  checkedAt: string;
+  lookbackDays: number;
+  latestGameDate: string | null;
+  gamesChecked: number;
+  plateAppearances: number;
+  atBats: number;
+}
+
 export interface NumerologyPlay {
   rank: number;
   playerId?: string | number | null;
@@ -39,7 +71,9 @@ export interface NumerologyPlay {
   confidence: "high" | "medium" | "low";
   positiveSignals: NumerologySignal[];
   counterSignals: NumerologySignal[];
+  scoreBreakdown?: NumerologyScoreBreakdown;
   missingData?: string[];
+  recentActivity?: RecentPlayerActivity;
   summary?: string | null;
   primaryPatternLabel?: string | null;
   countercurrentExplanation?: string | null;
@@ -59,7 +93,9 @@ export interface WatchlistPlay {
   baseballScore: number;
   finalScore: number;
   primarySignal?: string | null;
+  scoreBreakdown?: NumerologyScoreBreakdown;
   missingData?: string[];
+  recentActivity?: RecentPlayerActivity;
   summary?: string | null;
 }
 
@@ -100,10 +136,9 @@ export interface NumerologyDailyData {
   dailyProfile: DailyProfile;
   featuredPlays: NumerologyPlay[];
   watchlist: WatchlistPlay[];
-  countercurrents?: { playerName: string; team: string; numerologyScore: number; baseballScore: number; finalScore: number; countercurrentSignals: NumerologySignal[] }[];
+  countercurrents?: { playerName: string; team: string; numerologyScore: number; baseballScore: number; finalScore: number; countercurrentSignals: NumerologySignal[]; recentActivity?: RecentPlayerActivity }[];
   scoringConfiguration?: { weights: Record<string, number>; methodologyVersion: string };
   sources?: Record<string, string>;
   narrative?: { closingObservation?: string | null };
-  // Legacy demo support
   _note?: string;
 }
