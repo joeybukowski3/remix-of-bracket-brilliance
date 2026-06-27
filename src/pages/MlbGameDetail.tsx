@@ -805,7 +805,7 @@ const MLB_HUB_LINKS = [
   { label: "HR Props",              to: "/mlb/hr-props",                       icon: <Flame       className="h-4 w-4" /> },
   { label: "K Props",               to: "/mlb/strikeout-props",                icon: <Radar       className="h-4 w-4" /> },
   { label: "Game Matchups",         to: "/mlb#schedule",                       icon: <CalendarDays className="h-4 w-4" /> },
-  { label: "Moneyline Picks",       to: "/mlb#moneylines",                     icon: <TrendingUp  className="h-4 w-4" /> },
+  { label: "Moneyline Edges",       to: "/mlb#moneylines",                     icon: <TrendingUp  className="h-4 w-4" /> },
   { label: "Pitcher Regression",    to: "/mlb#pitcher-regression",             icon: <BarChart3   className="h-4 w-4" /> },
   { label: "Overdue Batters",       to: "/mlb/hr-props#overdue",               icon: <Flame       className="h-4 w-4" /> },
   { label: "Biggest Mismatches",    to: "/mlb/hr-props#mismatches",            icon: <Swords      className="h-4 w-4" /> },
@@ -864,7 +864,7 @@ function MlbHubSidebar() {
         <img src="/logos/mlb.svg" alt="MLB" className="h-9 w-auto" />
       </div>
       <nav className="flex flex-col gap-1">
-        {MLB_HUB_LINKS.slice(0, 4).map((item) => (
+        {MLB_HUB_LINKS.slice(0, 5).map((item) => (
           <Link
             key={item.label}
             to={item.to}
@@ -878,7 +878,7 @@ function MlbHubSidebar() {
         ))}
         <div className="mx-4 my-2 border-t border-slate-200" />
         <div className="px-5 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">Tables</div>
-        {MLB_HUB_LINKS.slice(4, 8).map((item) => (
+        {MLB_HUB_LINKS.slice(5, 9).map((item) => (
           <Link
             key={item.label}
             to={item.to}

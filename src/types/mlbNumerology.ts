@@ -20,6 +20,16 @@ export interface NumerologySignal {
   description: string;
 }
 
+export interface RecentPlayerActivity {
+  source: string;
+  checkedAt: string;
+  lookbackDays: number;
+  latestGameDate: string | null;
+  gamesChecked: number;
+  plateAppearances: number;
+  atBats: number;
+}
+
 export interface NumerologyPlay {
   rank: number;
   playerId?: string | number | null;
@@ -40,6 +50,7 @@ export interface NumerologyPlay {
   positiveSignals: NumerologySignal[];
   counterSignals: NumerologySignal[];
   missingData?: string[];
+  recentActivity?: RecentPlayerActivity;
   summary?: string | null;
   primaryPatternLabel?: string | null;
   countercurrentExplanation?: string | null;
@@ -60,6 +71,7 @@ export interface WatchlistPlay {
   finalScore: number;
   primarySignal?: string | null;
   missingData?: string[];
+  recentActivity?: RecentPlayerActivity;
   summary?: string | null;
 }
 
@@ -100,7 +112,7 @@ export interface NumerologyDailyData {
   dailyProfile: DailyProfile;
   featuredPlays: NumerologyPlay[];
   watchlist: WatchlistPlay[];
-  countercurrents?: { playerName: string; team: string; numerologyScore: number; baseballScore: number; finalScore: number; countercurrentSignals: NumerologySignal[] }[];
+  countercurrents?: { playerName: string; team: string; numerologyScore: number; baseballScore: number; finalScore: number; countercurrentSignals: NumerologySignal[]; recentActivity?: RecentPlayerActivity }[];
   scoringConfiguration?: { weights: Record<string, number>; methodologyVersion: string };
   sources?: Record<string, string>;
   narrative?: { closingObservation?: string | null };
