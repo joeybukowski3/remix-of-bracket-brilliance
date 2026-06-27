@@ -26,6 +26,20 @@ function getTeamLabels(card: HTMLElement) {
     .slice(0, 2);
 }
 
+function getPitcherNames(card: HTMLElement) {
+  const names = Array.from(card.querySelectorAll<HTMLElement>("span[title]"))
+    .map((element) => (element.getAttribute("title") ?? element.textContent ?? "").trim())
+    .filter((text) => text && text !== "TBD" && /^[A-Za-zÀ-ÖØ-öø-ÿ.'’-]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ.'’-]+){1,3}$/.test(text))
+    .filter((text, index, all) => all.indexOf(text) === index)
+    .slice(0, 2);
+
+  // The expanded card renders home pitcher first and away pitcher second.
+  return {
+    away: names[1] ?? "TBD",
+    home: names[0] ?? "TBD",
+  };
+}
+
 function extractMarketSummary(card: HTMLElement, teams: string[]): MarketSummary {
   const text = (card.textContent ?? "").replace(/\s+/g, " ").trim();
   const values = Array.from(text.matchAll(/(\d{1,3}(?:\.\d+)?)\s*(%|¢)/g))
@@ -38,11 +52,23 @@ function extractMarketSummary(card: HTMLElement, teams: string[]): MarketSummary
   }
 
   if (values.length === 1) {
-    const nearbyTeam = teams.find((team) => new RegExp(`${team}[^%¢]{0,24}${values[0].display.replace("%", "\\%").replace("¢", "\\¢")}`, "i").test(text));
-    return { team: nearbyTeam ?? teams[0] ?? "Favored", value: values[0].display };
+    const nearbyTeam = teams.find((team) => text.includes(team));
+    return { team: nearbyTeam ?? teams[0] ?? "Edge", value: values[0].display };
   }
 
-  return { team: teams[0] ?? "Favored", value: "—" };
+  return { team: teams[0] ?? "Edge", value: "—" };
+}
+
+function addTeamContent(container: HTMLDivElement, logo: Node, team: string, pitcher: string, reverse = false) {
+  const text = document.createElement("div");
+  text.className = "jkb-mobile-team-text";
+  const teamLabel = document.createElement("span");
+  teamLabel.textContent = team;
+  const pitcherLabel = document.createElement("small");
+  pitcherLabel.textContent = pitcher;
+  text.append(teamLabel, pitcherLabel);
+  if (reverse) container.append(text, logo);
+  else container.append(logo, text);
 }
 
 function setupMatchupCard(card: HTMLButtonElement) {
@@ -58,31 +84,26 @@ function setupMatchupCard(card: HTMLButtonElement) {
 
   const images = Array.from(card.querySelectorAll<HTMLImageElement>("img"));
   const teams = getTeamLabels(card);
+  const pitchers = getPitcherNames(card);
   const marketSummary = extractMarketSummary(card, teams);
 
   const left = document.createElement("div");
   left.className = "jkb-mobile-team-side";
-  left.appendChild(cloneTeamLogo(images[0] ?? null, teams[0] ?? "MLB"));
-  const leftLabel = document.createElement("span");
-  leftLabel.textContent = teams[0] ?? "";
-  left.appendChild(leftLabel);
+  addTeamContent(left, cloneTeamLogo(images[0] ?? null, teams[0] ?? "MLB"), teams[0] ?? "", pitchers.away);
 
   const middle = document.createElement("div");
   middle.className = "jkb-mobile-market-center";
+  const heading = document.createElement("small");
+  heading.textContent = "Model Edge";
   const market = document.createElement("strong");
   market.textContent = `${marketSummary.team} ${marketSummary.value}`;
-  const marketSub = document.createElement("small");
-  marketSub.textContent = "Polymarket favorite";
   const prompt = document.createElement("span");
   prompt.textContent = "Click to show matchup";
-  middle.append(market, marketSub, prompt);
+  middle.append(heading, market, prompt);
 
   const right = document.createElement("div");
   right.className = "jkb-mobile-team-side jkb-mobile-team-side-right";
-  const rightLabel = document.createElement("span");
-  rightLabel.textContent = teams[1] ?? "";
-  right.appendChild(rightLabel);
-  right.appendChild(cloneTeamLogo(images[1] ?? null, teams[1] ?? "MLB"));
+  addTeamContent(right, cloneTeamLogo(images[1] ?? null, teams[1] ?? "MLB"), teams[1] ?? "", pitchers.home, true);
 
   summary.append(left, middle, right);
   card.prepend(summary);
@@ -123,14 +144,17 @@ export default function MlbMobileHubEnhancements() {
     @media (max-width: 767px) {
       .jkb-mobile-matchup-card { min-height: 0 !important; overflow: hidden; }
       .jkb-mobile-matchup-card[data-mobile-expanded="false"] > :not(.jkb-mobile-matchup-summary) { display: none !important; }
-      .jkb-mobile-matchup-summary { display: grid; grid-template-columns: minmax(70px,1fr) minmax(135px,1.45fr) minmax(70px,1fr); align-items: center; gap: 8px; width: 100%; padding: 12px; background: #fff; }
-      .jkb-mobile-team-side { display:flex; align-items:center; gap:6px; min-width:0; font-size:11px; font-weight:800; color:#031635; }
-      .jkb-mobile-team-side-right { justify-content:flex-end; }
+      .jkb-mobile-matchup-summary { display: grid; grid-template-columns: minmax(82px,1fr) minmax(132px,1.25fr) minmax(82px,1fr); align-items:center; gap:6px; width:100%; padding:12px 10px; background:#fff; }
+      .jkb-mobile-team-side { display:flex; align-items:center; gap:6px; min-width:0; color:#031635; }
+      .jkb-mobile-team-side-right { justify-content:flex-end; text-align:right; }
+      .jkb-mobile-team-text { display:flex; min-width:0; flex-direction:column; gap:1px; }
+      .jkb-mobile-team-text span { font-size:11px; font-weight:900; line-height:1.1; }
+      .jkb-mobile-team-text small { max-width:76px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:8px; font-weight:700; line-height:1.15; color:#64748b; }
       .jkb-mobile-team-logo { width:34px !important; height:34px !important; object-fit:contain; flex:0 0 auto; }
       .jkb-mobile-team-fallback { display:grid; place-items:center; width:34px; height:34px; border-radius:999px; background:#eff4ff; color:#031635; font-size:9px; font-weight:900; }
       .jkb-mobile-market-center { display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; min-width:0; }
+      .jkb-mobile-market-center > small { font-size:10px; line-height:1; color:#0f766e; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
       .jkb-mobile-market-center strong { font-size:14px; line-height:1.1; color:#0f766e; white-space:nowrap; }
-      .jkb-mobile-market-center small { font-size:9px; line-height:1; color:#64748b; font-weight:700; }
       .jkb-mobile-market-center span { display:inline-flex; border-radius:999px; background:#031635; padding:4px 8px; color:white; font-size:9px; font-weight:800; line-height:1; white-space:nowrap; }
     }
   `}</style>;
