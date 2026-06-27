@@ -33,7 +33,6 @@ function getPitcherNames(card: HTMLElement) {
     .filter((text, index, all) => all.indexOf(text) === index)
     .slice(0, 2);
 
-  // The expanded card renders home pitcher first and away pitcher second.
   return {
     away: names[1] ?? "TBD",
     home: names[0] ?? "TBD",
@@ -41,20 +40,22 @@ function getPitcherNames(card: HTMLElement) {
 }
 
 function extractMarketSummary(card: HTMLElement, teams: string[]): MarketSummary {
+  const marketLabel = Array.from(card.querySelectorAll<HTMLElement>("*"))
+    .filter((element) => /^polymarket value$/i.test((element.textContent ?? "").trim()))
+    .sort((a, b) => a.children.length - b.children.length)[0];
+
+  if (marketLabel) {
+    let scope: HTMLElement | null = marketLabel.parentElement;
+    for (let depth = 0; scope && depth < 5; depth += 1, scope = scope.parentElement) {
+      const text = (scope.textContent ?? "").replace(/\s+/g, " ").trim();
+      const exact = text.match(/\b([A-Z]{2,4})\s*([+-]?\d{1,3}(?:\.\d+)?)%\b/);
+      if (exact) return { team: exact[1], value: `${exact[2]}%` };
+    }
+  }
+
   const text = (card.textContent ?? "").replace(/\s+/g, " ").trim();
-  const values = Array.from(text.matchAll(/(\d{1,3}(?:\.\d+)?)\s*(%|¢)/g))
-    .map((match) => ({ numeric: Number(match[1]), display: `${match[1]}${match[2]}` }))
-    .filter((item) => Number.isFinite(item.numeric) && item.numeric >= 0 && item.numeric <= 100);
-
-  if (values.length >= 2 && teams.length >= 2) {
-    const winnerIndex = values[1].numeric > values[0].numeric ? 1 : 0;
-    return { team: teams[winnerIndex], value: values[winnerIndex].display };
-  }
-
-  if (values.length === 1) {
-    const nearbyTeam = teams.find((team) => text.includes(team));
-    return { team: nearbyTeam ?? teams[0] ?? "Edge", value: values[0].display };
-  }
+  const fallback = text.match(/POLYMARKET VALUE\s*([A-Z]{2,4})\s*([+-]?\d{1,3}(?:\.\d+)?)%/i);
+  if (fallback) return { team: fallback[1].toUpperCase(), value: `${fallback[2]}%` };
 
   return { team: teams[0] ?? "Edge", value: "—" };
 }
