@@ -17,6 +17,18 @@ interface UseMLBNumerologyResult {
   isStale: boolean;
 }
 
+function normalizeNumerologyData(value: unknown): NumerologyDailyData {
+  if (!value || typeof value !== "object") throw new Error("Invalid numerology payload.");
+  const raw = value as Record<string, unknown>;
+  if (typeof raw.date !== "string" || !raw.dailyProfile) throw new Error("Numerology payload is incomplete.");
+  return {
+    ...(raw as unknown as NumerologyDailyData),
+    featuredPlays: Array.isArray(raw.featuredPlays) ? raw.featuredPlays as NumerologyDailyData["featuredPlays"] : [],
+    watchlist: Array.isArray(raw.watchlist) ? raw.watchlist as NumerologyDailyData["watchlist"] : [],
+    countercurrents: Array.isArray(raw.countercurrents) ? raw.countercurrents as NonNullable<NumerologyDailyData["countercurrents"]> : [],
+  };
+}
+
 export function useMLBNumerology(): UseMLBNumerologyResult {
   const [data, setData] = useState<NumerologyDailyData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,20 +36,25 @@ export function useMLBNumerology(): UseMLBNumerologyResult {
 
   useEffect(() => {
     let cancelled = false;
+    const base = import.meta.env.BASE_URL || "/";
+    const url = `${base.endsWith("/") ? base : `${base}/`}data/mlb/numerology-daily.json`;
 
-    fetch("/data/mlb/numerology-daily.json", { cache: "no-store" })
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
+    fetch(url, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return normalizeNumerologyData(await response.json());
       })
-      .then((json: NumerologyDailyData) => {
+      .then((payload) => {
         if (!cancelled) {
-          setData(json);
+          setData(payload);
           setError(null);
         }
       })
-      .catch((err) => {
-        if (!cancelled) setError(err.message ?? "Failed to load numerology data.");
+      .catch((reason: unknown) => {
+        if (!cancelled) {
+          setData(null);
+          setError(reason instanceof Error ? reason.message : "Failed to load numerology data.");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -47,6 +64,5 @@ export function useMLBNumerology(): UseMLBNumerologyResult {
   }, []);
 
   const isStale = data != null && data.date !== getEtDate();
-
   return { data, loading, error, isStale };
 }
