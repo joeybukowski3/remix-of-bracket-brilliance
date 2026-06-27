@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Calculator, Home, Search, Star } from "lucide-react";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { useMMBNumerology } from "@/hooks/useMMBNumerology";
+import { useMLBNumerology } from "@/hooks/useMLBNumerology";
 import { calculateNumerologyScoreBreakdown, type PlayerIdentity } from "@/lib/numerology/mlbScoreAudit";
 import { panel, type NumerologyCardPlayer } from "@/components/mlb/numerology/NumerologyAuditCard";
 import { NumerologyExplorer } from "@/components/mlb/numerology/NumerologyExplorer";
@@ -28,27 +28,46 @@ export default function MlbNumerologyPageEnhanced() {
   const [identities, setIdentities] = useState<Record<string, PlayerIdentity>>({});
 
   useEffect(() => {
+    let active = true;
     fetch("/data/mlb/player-identity-cache.json", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : {})
-      .then(setIdentities)
+      .then((value) => {
+        if (active && value && typeof value === "object" && !Array.isArray(value)) {
+          setIdentities(value as Record<string, PlayerIdentity>);
+        }
+      })
       .catch(() => {});
+    return () => { active = false; };
   }, []);
 
   const extended = data as Extended | null;
   const profile = data?.dailyProfile;
-  const enrich = (player: NumerologyCardPlayer) => profile && data ? {
-    ...player,
-    scoreBreakdown: calculateNumerologyScoreBreakdown(
-      player,
-      identities[`${player.playerName}|${player.team}`] ?? null,
-      profile,
-      data.date,
-      data.scoringConfiguration?.weights,
-    ),
-  } : player;
 
-  const exact = (extended?.exactNumberMatches ?? []).map(enrich);
-  const root = (extended?.rootNumberMatches ?? []).map(enrich);
+  const enrich = (player: NumerologyCardPlayer): NumerologyCardPlayer => {
+    if (!profile || !data) return player;
+    try {
+      return {
+        ...player,
+        scoreBreakdown: calculateNumerologyScoreBreakdown(
+          player,
+          identities[`${player.playerName}|${player.team}`] ?? null,
+          profile,
+          data.date,
+          data.scoringConfiguration?.weights,
+        ),
+      };
+    } catch (reason) {
+      console.error("[mlb-numerology] score breakdown failed", player.playerName, reason);
+      return player;
+    }
+  };
+
+  const exact = Array.isArray(extended?.exactNumberMatches)
+    ? extended.exactNumberMatches.filter(Boolean).map(enrich)
+    : [];
+  const root = Array.isArray(extended?.rootNumberMatches)
+    ? extended.rootNumberMatches.filter(Boolean).map(enrich)
+    : [];
 
   return (
     <SiteShell>
@@ -58,7 +77,7 @@ export default function MlbNumerologyPageEnhanced() {
             <h2 className="px-2 pt-6 font-serif text-3xl text-[#d0bcff]">MLB Numerology</h2>
             <p className="mb-10 px-2 text-sm text-[#cbc3d7]">The Enlightened Fan</p>
             <nav className="space-y-2">
-              <a className={`${desktopLink} bg-[#a078ff] font-bold text-[#340080]` } href="#overview"><Home />Overview</a>
+              <a className={`${desktopLink} bg-[#a078ff] font-bold text-[#340080]`} href="#overview"><Home />Overview</a>
               <a className={desktopLink} href="#exact-matches"><Star />Exact Matches</a>
               <a className={desktopLink} href="#root-matches"><Calculator />Root Matches</a>
               <a className={desktopLink} href="#explorer"><Search />Explorer</a>
@@ -92,20 +111,20 @@ export default function MlbNumerologyPageEnhanced() {
                     <div className="mt-6 text-4xl font-bold text-[#d0bcff] sm:text-5xl">
                       {profile.universalDayCompound}/{profile.universalDayRoot} <span className="text-lg text-[#cbc3d7] sm:text-xl">Universal Day</span>
                     </div>
-                    <div className="mt-8 rounded-lg bg-[#0c0e16] p-4">Primary Family: {profile.primaryFamily.join(" · ")}</div>
+                    <div className="mt-8 rounded-lg bg-[#0c0e16] p-4">Primary Family: {(profile.primaryFamily ?? []).join(" · ")}</div>
                   </div>
                   <div className={`${panel} p-5 sm:p-6`}>
                     <p className="text-xs font-bold uppercase text-[#e9c349]">Energy Balancing</p>
                     <div className="mt-6 grid grid-cols-2 gap-5 text-sm sm:gap-6 sm:text-base">
-                      <div>Secondary: {profile.secondaryFamily.join("-")}</div>
-                      <div>Countercurrent: {profile.countercurrent}</div>
-                      <div>Complement: {profile.balancingComplement}</div>
-                      <div>Repeated: {profile.repeatedDigits.map((item) => item.digit).join(", ")}</div>
+                      <div>Secondary: {(profile.secondaryFamily ?? []).join("-")}</div>
+                      <div>Countercurrent: {profile.countercurrent ?? "—"}</div>
+                      <div>Complement: {profile.balancingComplement ?? "—"}</div>
+                      <div>Repeated: {(profile.repeatedDigits ?? []).map((item) => item.digit).join(", ") || "—"}</div>
                     </div>
                   </div>
                 </section>
 
-                <section id="exact-matches" className="mb-12 scroll-it-24 lg:mb-16">
+                <section id="exact-matches" className="mb-12 scroll-mt-24 lg:mb-16">
                   <h2 className="mb-5 text-xl font-semibold">⭐ Exact Matches</h2>
                   <ResponsiveNumerologyPlayers players={exact} kind="exact" />
                 </section>
