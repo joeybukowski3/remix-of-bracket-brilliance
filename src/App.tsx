@@ -17,6 +17,7 @@ import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
 import MlbGameDetail from "./pages/MlbGameDetail";
 import MlbHrProps from "./pages/MlbHrProps";
+import MlbSinCity from "./pages/MlbSinCity";
 import MlbPropsHub from "./pages/MlbPropsHub";
 import MlbStrikeoutProps from "./pages/MlbStrikeoutProps";
 import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
@@ -110,6 +111,7 @@ const App = () => (
           <Route path="/mlb" element={<MlbGameDetail />} />
           <Route path="/mlb/props" element={<MlbPropsHub />} />
           <Route path="/mlb/hr-props" element={<MlbHrProps />} />
+          <Route path="/mlb/sin-city" element={<MlbSinCity />} />
           <Route path="/mlb/strikeout-props" element={<MlbStrikeoutProps />} />
           <Route path="/mlb/batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
           <Route path="/mlb/numerology" element={<MlbNumerologyPage />} />

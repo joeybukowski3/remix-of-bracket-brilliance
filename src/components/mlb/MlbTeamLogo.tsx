@@ -4,9 +4,11 @@ import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 export default function MlbTeamLogo({
   team,
   size = 28,
+  className = "",
 }: {
   team: string;
   size?: number;
+  className?: string;
 }) {
   const src = getMlbTeamLogoUrl(team);
   const colors = getMlbTeamColors(team);
@@ -14,7 +16,7 @@ export default function MlbTeamLogo({
   const fallback = (
     <div
       style={{ width: size, height: size, backgroundColor: colors.primary, fontSize: size * 0.32 }}
-      className="flex items-center justify-center rounded-full font-black text-white shrink-0"
+      className={`flex shrink-0 items-center justify-center rounded-full font-black text-white ${className}`}
     >
       {team.slice(0, 2)}
     </div>
@@ -27,7 +29,7 @@ export default function MlbTeamLogo({
       src={src}
       alt={`${team} logo`}
       style={{ width: size, height: size }}
-      className="object-contain shrink-0"
+      className={`shrink-0 object-contain ${className}`}
       loading="lazy"
       onError={(e) => {
         const el = e.currentTarget;
