@@ -1704,6 +1704,15 @@ function MlbToolsGrid() {
 }
 
 // ─── Social Media Tables ──────────────────────────────────────────────────────
+function socialOdds(value: string | null | undefined) {
+  return typeof value === "string" && /^[+-]\d+$/.test(value.trim()) ? value.trim() : null;
+}
+
+function socialLine(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(Number(value)) || Number(value) <= 0) return "";
+  return Number.isInteger(Number(value)) ? Number(value).toFixed(0) : String(Number(value));
+}
+
 function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
   const rows = batters
     .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
@@ -1737,15 +1746,29 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
         {rows.map((r, i) => {
           const score = r.hrScore;
           const pillStyle = sc(score);
+          const hrOdds = socialOdds(r.hrOddsYes);
           return (
-            <div key={`${r.player}-${i}`} style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}`, position: "relative" }}>
+            <div
+              key={`${r.player}-${i}`}
+              data-hr-row={i}
+              data-hr-player={r.player}
+              data-hr-team={r.team}
+              data-hr-opponent={r.opponent}
+              data-hr-score={score}
+              data-hr-odds={hrOdds ?? ""}
+              data-hr-bookmaker={r.hrOddsBook ?? ""}
+              style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}`, position: "relative" }}
+            >
               {/* Header: rank + player */}
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 18, fontWeight: 900, color: ACCENTS[i], minWidth: 24 }}>
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }}>{r.player}</div>
+                  <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 5, marginBottom: 2 }}>
+                    <span style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13 }}>{r.player}</span>
+                    <span style={{ color: hrOdds ? "#fbbf24" : "#64748b", fontWeight: 900, fontSize: 11, whiteSpace: "nowrap" }}>{hrOdds ?? "—"}</span>
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
                     <TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} />
                     <span style={{ color: "#64748b" }}>vs {r.opposingPitcher}</span>
@@ -1799,14 +1822,26 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
         {rows.map((r, i) => {
           const score = r.hrScore;
           const pillStyle = sc(score);
+          const hrOdds = socialOdds(r.hrOddsYes);
           return (
-            <div key={`${r.player}-${i}`} style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}>
+            <div
+              key={`${r.player}-${i}`}
+              data-hr-row={i}
+              data-hr-player={r.player}
+              data-hr-team={r.team}
+              data-hr-opponent={r.opponent}
+              data-hr-score={score}
+              data-hr-odds={hrOdds ?? ""}
+              data-hr-bookmaker={r.hrOddsBook ?? ""}
+              style={{ display: "grid", gridTemplateColumns: "36px 1fr 88px 84px 84px 50px 50px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 6, position: "relative" }}
+            >
                   <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
                   <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>
                     {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                   </span>
                   <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
                     <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.player}</span>
+                    <span style={{ color: hrOdds ? "#fbbf24" : "#64748b", fontWeight: 900, fontSize: 11, whiteSpace: "nowrap" }}>{hrOdds ?? "—"}</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
                       <TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} />
                       <span style={{ color: "#64748b", fontSize: 10, whiteSpace: "nowrap" }}>vs {r.opposingPitcher}</span>
@@ -1886,14 +1921,36 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
         {top.map((r, i) => {
           const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
           const pillStyle = sc(safeScore);
+          const kLineLabel = socialLine(r.kLine);
+          const kOver = socialOdds(r.kOddsOver);
+          const kUnder = socialOdds(r.kOddsUnder);
+          const kDisplay = kLineLabel && kOver ? `O ${kLineLabel} (${kOver})` : "—";
           return (
-            <div key={`${r.pitcher}-${i}`} style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}` }}>
+            <div
+              key={`${r.pitcher}-${i}`}
+              data-k-row={i}
+              data-k-pitcher={r.pitcher}
+              data-k-team={r.team}
+              data-k-opponent={r.opponent}
+              data-k-score={safeScore}
+              data-k-rate={r.pitcherKRate ?? ""}
+              data-k-whiff-rate={r.pitcherWhiffRate ?? ""}
+              data-k-opp-rate={r.opponentTeamKRate ?? ""}
+              data-k-line={kLineLabel}
+              data-k-odds-over={kOver ?? ""}
+              data-k-odds-under={kUnder ?? ""}
+              data-k-bookmaker={r.kOddsBook ?? ""}
+              style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}` }}
+            >
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
                 <span style={{ fontSize: 18, fontWeight: 900, color: ACCENTS[i], minWidth: 24 }}>
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13, marginBottom: 2 }}>{r.pitcher}</div>
+                  <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 5, marginBottom: 2 }}>
+                    <span style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13 }}>{r.pitcher}</span>
+                    <span style={{ color: kLineLabel && kOver ? "#86efac" : "#64748b", fontWeight: 900, fontSize: 11, whiteSpace: "nowrap" }}>{kDisplay}</span>
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
                     <TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} />
                     <span style={{ color: "#64748b" }}>vs {r.opponent}</span>
@@ -1941,6 +1998,10 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
         {top.map((r, i) => {
           const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
           const pillStyle = sc(safeScore);
+          const kLineLabel = socialLine(r.kLine);
+          const kOver = socialOdds(r.kOddsOver);
+          const kUnder = socialOdds(r.kOddsUnder);
+          const kDisplay = kLineLabel && kOver ? `O ${kLineLabel} (${kOver})` : "—";
           return (
             <div
               key={`${r.pitcher}-${i}`}
@@ -1952,12 +2013,17 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-rate={r.pitcherKRate ?? ""}
               data-k-whiff-rate={r.pitcherWhiffRate ?? ""}
               data-k-opp-rate={r.opponentTeamKRate ?? ""}
+              data-k-line={kLineLabel}
+              data-k-odds-over={kOver ?? ""}
+              data-k-odds-under={kUnder ?? ""}
+              data-k-bookmaker={r.kOddsBook ?? ""}
               style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
             >
               <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
               <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
               <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
                 <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.pitcher}</span>
+                <span style={{ color: kLineLabel && kOver ? "#86efac" : "#64748b", fontWeight: 900, fontSize: 11, whiteSpace: "nowrap" }}>{kDisplay}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 3 }}><TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} /><span style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</span></div>
               </div>
               <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 14 }}>{safeScore.toFixed(1)}</div>
