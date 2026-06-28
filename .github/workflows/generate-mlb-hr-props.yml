@@ -2,25 +2,20 @@ name: Generate MLB Data
 run-name: Generate MLB Data • ${{ github.event_name }} • ${{ github.ref_name }}
 
 on:
-  # Four strategic updates instead of eleven hourly attempts.
   schedule:
     - cron: "23 3 * * *"
-      timezone: "America/New_York" # 3:23 AM ET — initial daily slate
+      timezone: "America/New_York"
     - cron: "23 8 * * *"
-      timezone: "America/New_York" # 8:23 AM ET — morning refresh
+      timezone: "America/New_York"
     - cron: "23 10 * * *"
-      timezone: "America/New_York" # 10:23 AM ET — odds and lineup refresh
+      timezone: "America/New_York"
     - cron: "40 11 * * *"
-      timezone: "America/New_York" # 11:40 AM ET — final early-game refresh
+      timezone: "America/New_York"
   workflow_dispatch:
-  # Also validates the workflow immediately whenever this file itself changes.
   push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/generate-mlb-hr-props.yml
+    branches: [main]
+    paths: [.github/workflows/generate-mlb-hr-props.yml]
 
-# Share one lock with the other automated workflows that commit generated data to main.
 concurrency:
   group: main-data-writers-${{ github.repository }}
   cancel-in-progress: false
@@ -33,7 +28,6 @@ jobs:
     if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 35
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -41,18 +35,16 @@ jobs:
           ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Set up Node
         uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
+        with: { node-version: 20, cache: npm }
       - name: Install dependencies
         run: npm ci
 
       - name: Fetch MLB odds
-        run: node scripts/fetch-mlb-odds.mjs || true
+        id: fetch_odds
+        continue-on-error: true
+        run: node scripts/fetch-mlb-odds.mjs
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           ODDS_API_KEY_BACKUP: ${{ secrets.ODDS_API_KEY_BACKUP }}
@@ -69,9 +61,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             echo "HR props attempt ${attempt}/3"
-            if node scripts/generate-mlb-hr-props.mjs --force; then
-              exit 0
-            fi
+            if node scripts/generate-mlb-hr-props.mjs --force; then exit 0; fi
             sleep $((attempt * 10))
           done
           echo "HR props generation failed after 3 attempts." >&2
@@ -80,11 +70,31 @@ jobs:
       - name: Inject batter handedness
         run: node scripts/inject-batter-handedness.mjs || true
 
-      - name: Inject batter HR odds (lines + yes price)
-        run: node scripts/inject-batter-hr-odds.mjs || true
+      - name: Inject batter HR odds
+        id: inject_hr_odds
+        continue-on-error: true
+        run: node scripts/inject-batter-hr-odds.mjs
 
-      - name: Inject pitcher K odds (line + over/under price)
-        run: node scripts/inject-k-odds.mjs || true
+      - name: Inject pitcher K odds
+        id: inject_k_odds
+        continue-on-error: true
+        run: node scripts/inject-k-odds.mjs
+
+      - name: Validate MLB prop odds enrichment
+        id: validate_prop_odds
+        continue-on-error: true
+        run: node scripts/validate-mlb-prop-odds.mjs
+
+      - name: Report prop odds step status
+        shell: bash
+        run: |
+          echo "fetch_odds=${{ steps.fetch_odds.outcome }}"
+          echo "inject_hr_odds=${{ steps.inject_hr_odds.outcome }}"
+          echo "inject_k_odds=${{ steps.inject_k_odds.outcome }}"
+          echo "validate_prop_odds=${{ steps.validate_prop_odds.outcome }}"
+          if [ "${{ steps.validate_prop_odds.outcome }}" != "success" ]; then
+            echo "::warning::MLB model generation will continue, but HR/K social posts must wait for complete odds enrichment."
+          fi
 
       - name: Generate pitcher regression
         shell: bash
@@ -93,9 +103,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             echo "Pitcher regression attempt ${attempt}/3"
-            if node scripts/generate-mlb-pitcher-regression.mjs; then
-              exit 0
-            fi
+            if node scripts/generate-mlb-pitcher-regression.mjs; then exit 0; fi
             sleep $((attempt * 10))
           done
           echo "Pitcher regression generation failed after 3 attempts." >&2
@@ -107,44 +115,24 @@ jobs:
           node <<'NODE'
           const fs = require("fs");
           const { execFileSync } = require("child_process");
-          const volatileKeys = new Set([
-            "generatedAt", "fetchedAt", "updatedAt", "lastUpdated",
-            "scheduledFor", "nextRunAt", "lineupDataAsOf",
-            "generationStartedAt", "generationCompletedAt", "actualWorkflowStart"
-          ]);
+          const volatileKeys = new Set(["generatedAt", "fetchedAt", "updatedAt", "lastUpdated", "scheduledFor", "nextRunAt", "lineupDataAsOf", "generationStartedAt", "generationCompletedAt", "actualWorkflowStart"]);
           function clean(value) {
             if (Array.isArray(value)) return value.map(clean);
-            if (value && typeof value === "object") {
-              return Object.fromEntries(
-                Object.entries(value)
-                  .filter(([key]) => !volatileKeys.has(key))
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([key, child]) => [key, clean(child)])
-              );
-            }
+            if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).filter(([key]) => !volatileKeys.has(key)).sort(([a], [b]) => a.localeCompare(b)).map(([key, child]) => [key, clean(child)]));
             return value;
           }
           let changedFiles = [];
-          try {
-            changedFiles = execFileSync("git", ["diff", "--name-only", "--", "public/data/mlb", "public/data/betting-splits"], { encoding: "utf8" })
-              .trim().split("\n").filter(Boolean);
-          } catch {}
+          try { changedFiles = execFileSync("git", ["diff", "--name-only", "--", "public/data/mlb", "public/data/betting-splits"], { encoding: "utf8" }).trim().split("\n").filter(Boolean); } catch {}
           for (const file of changedFiles) {
             if (!file.endsWith(".json") || !fs.existsSync(file)) continue;
             let previousText;
+            try { previousText = execFileSync("git", ["show", `HEAD:${file}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }); } catch { continue; }
             try {
-              previousText = execFileSync("git", ["show", `HEAD:${file}`], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-            } catch { continue; }
-            try {
-              const previous = clean(JSON.parse(previousText));
-              const current = clean(JSON.parse(fs.readFileSync(file, "utf8")));
-              if (JSON.stringify(previous) === JSON.stringify(current)) {
+              if (JSON.stringify(clean(JSON.parse(previousText))) === JSON.stringify(clean(JSON.parse(fs.readFileSync(file, "utf8"))))) {
                 execFileSync("git", ["restore", "--worktree", "--source=HEAD", "--", file], { stdio: "inherit" });
                 console.log(`Restored timestamp-only file: ${file}`);
               }
-            } catch (error) {
-              console.warn(`Could not compare ${file}; keeping generated version.`, error.message);
-            }
+            } catch (error) { console.warn(`Could not compare ${file}; keeping generated version.`, error.message); }
           }
           NODE
 
@@ -179,20 +167,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/mlb/ public/data/betting-splits/ public/sitemap.xml
-
-          if git diff --cached --quiet; then
-            echo "No staged MLB data changes."
-            exit 0
-          fi
-
+          if git diff --cached --quiet; then echo "No staged MLB data changes."; exit 0; fi
           git commit -m "chore: refresh MLB data $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
-
           pushed=false
           for attempt in 1 2 3 4 5; do
             echo "Push attempt ${attempt}/5"
             git fetch origin main
             if ! git rebase origin/main; then
-              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
               git rebase --abort || true
             elif git push origin HEAD:main; then
               pushed=true
@@ -200,10 +181,5 @@ jobs:
             fi
             sleep $((attempt * 10))
           done
-
-          if [ "$pushed" != "true" ]; then
-            echo "ERROR: All push attempts failed — MLB data was not committed." >&2
-            exit 1
-          fi
-
+          if [ "$pushed" != "true" ]; then echo "ERROR: All push attempts failed — MLB data was not committed." >&2; exit 1; fi
           echo "MLB data pushed successfully."
