@@ -1,236 +1,47 @@
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import process from "node:process";
+import { pathToFileURL } from "node:url";
 import { chromium } from "@playwright/test";
-import { TwitterApi } from "twitter-api-v2";
+import {
+  assertLivePostAllowed, assertNotAlreadyPosted, createPostKey, formatDateLabel,
+  isAmericanOdds, logScreenshotSize, normalizeTeam, normalizeText, parseMode,
+  pollUntilReady, publishPost, publishTextOnlyPost, savePostReceipt,
+  toFiniteNumber, verifyExpectedXAccount,
+} from "./lib/x-social-post-utils.mjs";
 
+const PREFIX = "mlb-hr-props-x";
 const ROOT = process.cwd();
-const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
-const RAW_DATA_PATH = path.join(DATA_DIR, "hr-props-raw.json");
-const BEST_BETS_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
-const PITCHER_REGRESSION_PATH = path.join(DATA_DIR, "pitcher-regression.json");
-const PRODUCTION_BASE_URL = "https://www.joeknowsball.com/data/mlb";
-const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
-const HR_PROPS_URL = "https://www.joeknowsball.com/mlb";
+const DATA_DIR = path.join(ROOT, "public/data/mlb");
+const RAW_PATH = path.join(DATA_DIR, "hr-props-raw.json");
+const BEST_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
+const PROD = "https://www.joeknowsball.com/data/mlb";
+const GITHUB = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
+const PAGE_URL = process.env.SOCIAL_PAGE_URL || "https://www.joeknowsball.com/mlb";
 const EXPORT_SELECTOR = '[data-x-export="mlb-hr-social"]';
-const HR_TAB_LABEL = "HR Props";
-const SCREENSHOT_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x.png");
-const DEFAULT_DUPLICATE_STATE_DIR = path.join(ROOT, "artifacts", "x-post-state");
-const args = new Set(process.argv.slice(2));
+const SCREENSHOT_PATH = path.join(ROOT, "artifacts/mlb-hr-props-x.png");
+const STATE_DIR = path.join(ROOT, "artifacts/x-post-state");
 
 function usage() {
-  return [
-    "Usage: node scripts/post-mlb-hr-props-to-x.mjs --dry-run",
-    "       node scripts/post-mlb-hr-props-to-x.mjs --post",
-    "       node scripts/post-mlb-hr-props-to-x.mjs --post-text-only",
-    "       node scripts/post-mlb-hr-props-to-x.mjs --verify-account",
-    "       node scripts/post-mlb-hr-props-to-x.mjs --post-key-only",
-    "",
-    "--dry-run  Build the X caption, screenshot the HR Props table, and do not post.",
-    "--post     Manual GitHub Actions only: validate account, build the caption, screenshot the HR Props table, and publish to X.",
-    "--post-text-only  Manual GitHub Actions only: validate account, build the caption, and publish text only to X.",
-    "--verify-account  Verify configured X credentials and expected username without building a caption.",
-    "--post-key-only  Print the deterministic duplicate-protection key for the current slate/table.",
-    "",
-    "Set HR_PROPS_DATA_SOURCE to production, github, or local.",
-    "Default: production.",
-    "Set X_EXPECTED_USERNAME to the exact X username that is allowed to post.",
-    "Set JKB_X_API_KEY, JKB_X_API_SECRET, JKB_X_ACCESS_TOKEN, and JKB_X_ACCESS_SECRET for JoeKnowsBall posting.",
-  ].join("\n");
+  return "Usage: node scripts/post-mlb-hr-props-to-x.mjs --dry-run|--post|--post-text-only|--verify-account|--post-key-only";
 }
-
-function getMode() {
-  const dryRun = args.has("--dry-run");
-  const post = args.has("--post");
-  const postTextOnly = args.has("--post-text-only");
-  const verifyAccount = args.has("--verify-account");
-  const postKeyOnly = args.has("--post-key-only");
-  const modes = [dryRun, post, postTextOnly, verifyAccount, postKeyOnly].filter(Boolean).length;
-  if (modes > 1) throw new Error("Choose only one mode: --dry-run, --post, --post-text-only, --verify-account, or --post-key-only.");
-  if (!modes) return "dry-run";
-  if (verifyAccount) return "verify-account";
-  if (postKeyOnly) return "post-key-only";
-  if (postTextOnly) return "post-text-only";
-  return post ? "post" : "dry-run";
+function sourceName() {
+  const value = normalizeText(process.env.HR_PROPS_DATA_SOURCE).toLowerCase() || "production";
+  if (!["production", "github", "local"].includes(value)) throw new Error(`Invalid HR_PROPS_DATA_SOURCE=${value}`);
+  return value;
 }
-
-function normalizeText(value) {
-  return typeof value === "string" ? value.trim() : "";
+function locations(source) {
+  if (source === "local") return { raw: RAW_PATH, best: BEST_PATH };
+  const base = source === "github" ? GITHUB : PROD;
+  return { raw: `${base}/hr-props-raw.json`, best: `${base}/hr-props-best-bets.json` };
 }
-
-function getDataSource() {
-  const value = normalizeText(process.env.HR_PROPS_DATA_SOURCE).toLowerCase();
-  const source = value || "production";
-  if (!["production", "github", "local"].includes(source)) {
-    throw new Error(`Invalid HR_PROPS_DATA_SOURCE="${source}". Expected production, github, or local.`);
-  }
-  return source;
-}
-
-async function screenshotHrPropsTable(outputPath = SCREENSHOT_PATH) {
-  mkdirSync(path.dirname(outputPath), { recursive: true });
-
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const page = await browser.newPage({
-      viewport: { width: 1080, height: 1400 },
-      deviceScaleFactor: 1,
-    });
-    page.setDefaultTimeout(60000);
-    await page.goto(HR_PROPS_URL, { waitUntil: "networkidle", timeout: 60000 });
-
-    // Click the HR Props tab — use text selector with emoji for reliability
-    try {
-      await page.locator(`button:has-text("HR Props")`).first().click({ timeout: 8000 });
-      console.log("[mlb-hr-props-x] Clicked HR Props tab");
-    } catch (clickErr) {
-      console.warn(`[mlb-hr-props-x] Tab click failed (${clickErr.message}), trying fallback selector`);
-      await page.locator(`button:text-is("🔥 HR Props")`).first().click({ timeout: 5000 });
-    }
-
-    let exportTarget = page.locator(EXPORT_SELECTOR).first();
-    try {
-      await exportTarget.waitFor({ state: "visible", timeout: 10000 });
-    } catch {
-      exportTarget = page
-        .locator("table", { hasText: "HR Score" })
-        .first()
-        .locator("xpath=ancestor::div[contains(@class, 'overflow-x-auto')][1]");
-      await exportTarget.waitFor({ state: "visible" });
-      console.log(`[mlb-hr-props-x] ${EXPORT_SELECTOR} was not found; used HR Score table fallback.`);
-    }
-
-    await exportTarget.screenshot({
-      path: outputPath,
-      animations: "disabled",
-    });
-
-    // Log file size so we can catch future limit issues early
-    const { statSync } = await import("node:fs");
-    const { size } = statSync(outputPath);
-    const sizeMb = (size / 1_048_576).toFixed(2);
-    console.log(`[mlb-hr-props-x] screenshotSize=${sizeMb} MB`);
-    if (size > 4_900_000) {
-      console.warn(`[mlb-hr-props-x] WARNING: screenshot is ${sizeMb} MB — close to X's 5 MB limit`);
-    }
-
-    return outputPath;
-  } finally {
-    await browser.close();
-  }
-}
-
-function getDataLocations(source) {
-  if (source === "production") {
-    return {
-      raw: `${PRODUCTION_BASE_URL}/hr-props-raw.json`,
-      bestBets: `${PRODUCTION_BASE_URL}/hr-props-best-bets.json`,
-      pitcherRegression: `${PRODUCTION_BASE_URL}/pitcher-regression.json`,
-    };
-  }
-
-  if (source === "github") {
-    return {
-      raw: `${GITHUB_BASE_URL}/hr-props-raw.json`,
-      bestBets: `${GITHUB_BASE_URL}/hr-props-best-bets.json`,
-      pitcherRegression: `${GITHUB_BASE_URL}/pitcher-regression.json`,
-    };
-  }
-
-  return {
-    raw: RAW_DATA_PATH,
-    bestBets: BEST_BETS_PATH,
-    pitcherRegression: PITCHER_REGRESSION_PATH,
-  };
-}
-
-async function loadJson(location, source) {
+async function loadJson(location, source = "production") {
   if (source === "local") return JSON.parse(readFileSync(location, "utf8"));
-
-  const response = await fetch(location, { cache: "no-store" });
+  const response = await fetch(`${location}?t=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Failed to load ${location}: HTTP ${response.status}`);
   return response.json();
 }
-
-function normalizeTeam(value) {
-  return normalizeText(value).toUpperCase();
-}
-
-// Must match the xeraMult + regrAdj logic in MlbHrProps.tsx / MlbGameDetail.tsx exactly
-// so the tweet text always ranks players the same way the table does.
-function xeraMult(xera) {
-  if (xera == null) return 1.0;
-  if (xera <= 2.5) return 0.80;
-  if (xera <= 3.0) return 0.85;
-  if (xera <= 3.5) return 0.91;
-  if (xera <= 4.0) return 0.96;
-  if (xera <= 4.5) return 1.00;
-  if (xera <= 5.0) return 1.05;
-  if (xera <= 5.5) return 1.10;
-  return 1.15;
-}
-
-function computeAdjustedHrScore(batter, pitchers, regressionData) {
-  const hrPropsPitcher = pitchers.find(
-    p => p.pitcher === batter.opposingPitcher || (batter.opposingPitcherId && p.pitcherId === batter.opposingPitcherId)
-  );
-  const regrEntry = regressionData.find(p => p.name === batter.opposingPitcher);
-  const pitcherXera = hrPropsPitcher?.xera ?? regrEntry?.xera ?? regrEntry?.xfip ?? null;
-  const regressionScore = regrEntry?.regressionScore ?? null;
-  const regrAdj = regressionScore != null
-    ? Math.max(0.96, Math.min(1.04, 1.0 + regressionScore * 0.004))
-    : 1.0;
-  return Math.round(batter.hrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
-}
-
-function normalizeUsername(value) {
-  return normalizeText(value).replace(/^@/, "").toLowerCase();
-}
-
-function toFiniteNumber(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function getTodayEt() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-function getEtDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
-function isStarterPlaceholder(value) {
-  const normalized = normalizeText(value).toUpperCase();
-  return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "TO BE ANNOUNCED" || normalized === "TO BE DETERMINED";
-}
-
-function isPlaceholderText(value) {
-  const normalized = normalizeText(value).toUpperCase();
-  return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "N/A" || normalized === "NA" || normalized === "NULL" || normalized === "UNKNOWN";
-}
-
-function pickKey(value) {
-  return `${normalizeText(value?.player)}|${normalizeTeam(value?.team)}|${normalizeTeam(value?.opponent)}`;
-}
-
-function slugifyKey(value) {
-  return normalizeText(value).replace(/[^a-zA-Z0-9._-]+/g, "-");
-}
-
+function key(row) { return `${normalizeText(row?.player)}|${normalizeTeam(row?.team)}|${normalizeTeam(row?.opponent)}`; }
+function placeholder(value) { return ["", "TBD", "TBA", "TO BE ANNOUNCED", "TO BE DETERMINED"].includes(normalizeText(value).toUpperCase()); }
 function normalizeBatter(value) {
   const player = normalizeText(value?.player);
   const team = normalizeTeam(value?.team);
@@ -238,456 +49,88 @@ function normalizeBatter(value) {
   const hrScore = toFiniteNumber(value?.hrScore);
   const hrScoreRank = toFiniteNumber(value?.hrScoreRank);
   if (!player || !team || !opponent || hrScore == null || hrScoreRank == null) return null;
-  return {
-    player,
-    team,
-    opponent,
-    opposingPitcher: normalizeText(value?.opposingPitcher) || "TBD",
-    opposingPitcherId: value?.opposingPitcherId ?? null,
-    hrScore,
-    hrScoreRank,
-    hrOddsYes: normalizeText(value?.hrOddsYes) || null,
-  };
+  return { player, team, opponent, opposingPitcher: normalizeText(value?.opposingPitcher) || "TBD", hrScore, hrScoreRank,
+    hrOddsYes: isAmericanOdds(value?.hrOddsYes) ? normalizeText(value.hrOddsYes) : null,
+    hrOddsBook: normalizeText(value?.hrOddsBook) || null };
 }
-
-function getTopHrProps(rawPayload, bestBetsPayload, limit = 3) {
-  const batters = Array.isArray(rawPayload?.batters)
-    ? rawPayload.batters.map(normalizeBatter).filter(Boolean)
-    : [];
-
-  // hrScore is now pitcher-adjusted at generation time — sort directly
-  const batterLookup = new Map(batters.map((row) => [pickKey(row), row]));
-  const curatedPicks = Array.isArray(bestBetsPayload?.bestBets) ? bestBetsPayload.bestBets : [];
-  const visibleBestBets = curatedPicks
-    .map((pick) => batterLookup.get(pickKey(pick)))
-    .filter((row) => row && !isStarterPlaceholder(row.opposingPitcher));
-
-  if (visibleBestBets.length >= limit) return visibleBestBets.slice(0, limit);
-
-  return batters
-    .filter((row) => !isStarterPlaceholder(row.opposingPitcher))
-    .sort((left, right) => right.hrScore - left.hrScore || left.hrScoreRank - right.hrScoreRank)
-    .slice(0, limit);
+export function getTopHrProps(raw, best, limit = 3) {
+  const batters = Array.isArray(raw?.batters) ? raw.batters.map(normalizeBatter).filter(Boolean) : [];
+  const lookup = new Map(batters.map((row) => [key(row), row]));
+  const curated = Array.isArray(best?.bestBets) ? best.bestBets : [];
+  const selected = curated.map((row) => lookup.get(key(row))).filter((row) => row && !placeholder(row.opposingPitcher));
+  if (selected.length >= limit) return selected.slice(0, limit);
+  return batters.filter((row) => !placeholder(row.opposingPitcher)).sort((a, b) => b.hrScore - a.hrScore || a.hrScoreRank - b.hrScoreRank).slice(0, limit);
 }
-
-function validateFreshness(rawPayload, bestBetsPayload) {
-  const today = getTodayEt();
-  const rawDate = normalizeText(rawPayload?.date);
-  const bestBetsDate = normalizeText(bestBetsPayload?.date);
-  const rawGeneratedDate = getEtDate(rawPayload?.generatedAt);
-  const bestBetsGeneratedDate = getEtDate(bestBetsPayload?.generatedAt);
-
-  if (rawDate !== today) return `Skipping: raw HR props slate date is ${rawDate || "missing"}, expected ${today}.`;
-  if (bestBetsDate && bestBetsDate !== today) return `Skipping: best-bets slate date is ${bestBetsDate}, expected ${today}.`;
-  if (rawGeneratedDate && rawGeneratedDate < rawDate) return `Skipping: raw HR props generatedAt date ${rawGeneratedDate} is older than slate date ${rawDate}.`;
-  if (bestBetsGeneratedDate && bestBetsDate && bestBetsGeneratedDate < bestBetsDate) {
-    return `Skipping: best-bets generatedAt date ${bestBetsGeneratedDate} is older than slate date ${bestBetsDate}.`;
-  }
-  if (!rawGeneratedDate) return "Skipping: raw HR props generatedAt is missing or invalid.";
-  if (bestBetsDate && !bestBetsGeneratedDate) return "Skipping: best-bets generatedAt is missing or invalid.";
-
-  return "";
+function compact(row, index) { return `${index + 1}. ${row.player} ${row.team} — HR ${row.hrScore.toFixed(1)} | ${row.hrOddsYes || "N/A"}`; }
+export function buildCaption(raw, best) {
+  const topProps = getTopHrProps(raw, best);
+  if (topProps.length < 3) return { skipped: true, reason: `Only ${topProps.length} valid HR props are available.`, caption: "", topProps: [] };
+  const date = formatDateLabel(raw?.date || best?.date);
+  const full = topProps.map((row, i) => `${i + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)} (${row.hrOddsYes || "N/A"})`);
+  const candidates = [
+    [`JoeKnowsBall MLB HR Props - ${date}`, "", "Top model edges:", ...full, "", "Free Access to Full Table at Link in Bio", "", "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting"],
+    [`MLB HR Props - ${date}`, "", ...topProps.map(compact), "", "Full table: link in bio", "#MLB #HomeRun"],
+    [`MLB HR Props ${date}`, ...topProps.map(compact), "Full table: link in bio"],
+  ].map((lines) => lines.join("\n"));
+  const caption = candidates.find((value) => value.length <= 280);
+  return caption ? { skipped: false, reason: "", caption, topProps }
+    : { skipped: true, reason: "Unable to stay under 280 characters while retaining HR odds.", caption: "", topProps: [] };
 }
-
-function validateTopProps(topProps) {
-  if (topProps.length < 3) return `Skipping: only ${topProps.length} valid HR props are available; expected at least 3.`;
-
-  for (const [index, row] of topProps.slice(0, 3).entries()) {
-    const label = `top ${index + 1}`;
-    if (isPlaceholderText(row.player)) return `Skipping: ${label} player name is missing or a placeholder.`;
-    if (isPlaceholderText(row.team)) return `Skipping: ${label} team is missing or a placeholder.`;
-    if (row.hrScore == null || !Number.isFinite(row.hrScore)) return `Skipping: ${label} HR score is missing or invalid.`;
-  }
-
-  return "";
+async function waitForProduction(expected) {
+  return pollUntilReady({ label: PREFIX, expected: { date: expected.date, generatedAt: expected.generatedAt },
+    loadObserved: async () => { const [raw, best] = await Promise.all([loadJson(`${PROD}/hr-props-raw.json`), loadJson(`${PROD}/hr-props-best-bets.json`)]); return { ...raw, best }; },
+    validate: (observed) => { const top = getTopHrProps(observed, observed.best); return { ready: top.length >= 3 && top.every((row) => isAmericanOdds(row.hrOddsYes)), detail: `topOdds=${top.filter((row) => row.hrOddsYes).length}` }; } });
 }
-
-function getValidatedTopProps(rawPayload, bestBetsPayload) {
-  const freshnessError = validateFreshness(rawPayload, bestBetsPayload);
-  if (freshnessError) return { skipped: true, reason: freshnessError, topProps: [] };
-
-  const topProps = getTopHrProps(rawPayload, bestBetsPayload);
-  const topPropsError = validateTopProps(topProps);
-  if (topPropsError) return { skipped: true, reason: topPropsError, topProps: [] };
-
-  return { skipped: false, reason: "", topProps };
+async function renderedTable(page) {
+  await page.goto(PAGE_URL, { waitUntil: "networkidle", timeout: 60000 });
+  await page.waitForTimeout(1500);
+  const tab = page.getByRole("button", { name: /HR Props/i }).first();
+  await tab.scrollIntoViewIfNeeded(); await tab.click();
+  const target = page.locator(EXPORT_SELECTOR).first();
+  await target.waitFor({ state: "visible", timeout: 15000 }); await page.waitForTimeout(1000);
+  await target.locator("[data-hr-row]").first().waitFor({ state: "visible", timeout: 15000 });
+  const rows = await target.locator("[data-hr-row]").evaluateAll((els) => els.map((el) => ({ player: el.getAttribute("data-hr-player") || "", team: el.getAttribute("data-hr-team") || "", odds: el.getAttribute("data-hr-odds") || "" })));
+  return { target, rows };
 }
-
-function formatDateLabel(dateValue) {
-  const raw = normalizeText(dateValue);
-  if (!raw) return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-  const date = new Date(`${raw}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return raw;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function renderedMatches(rows, top) {
+  const unique = [];
+  for (const row of rows) if (row.player && !unique.some((item) => item.player === row.player && item.team === row.team)) unique.push(row);
+  const visible = unique.slice(0, 3);
+  return visible.length === 3 && visible.every((row, i) => row.player === top[i].player && row.team === top[i].team && isAmericanOdds(row.odds));
 }
-
-function buildCaption(rawPayload, bestBetsPayload) {
-  const topPropsResult = getValidatedTopProps(rawPayload, bestBetsPayload);
-  if (topPropsResult.skipped) return { skipped: true, reason: topPropsResult.reason, caption: "", topProps: [] };
-
-  const dateLabel = formatDateLabel(rawPayload?.date || bestBetsPayload?.date);
-  const lines = topPropsResult.topProps.map((row, index) => {
-    const oddsPart = row.hrOddsYes ? ` (${row.hrOddsYes})` : "";
-    return `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}${oddsPart}`;
-  });
-
-  const caption = [
-    `JoeKnowsBall MLB HR Props - ${dateLabel}`,
-    "",
-    "Top model edges:",
-    ...lines,
-    "",
-    "Free Access to Full Table at Link in Bio",
-    "",
-    "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting",
-  ].join("\n");
-
-  if (caption.length > 280) {
-    // Retry without odds before giving up
-    const shortLines = topPropsResult.topProps.map((row, index) =>
-      `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}`
-    );
-    const shortCaption = [
-      `JoeKnowsBall MLB HR Props - ${dateLabel}`,
-      "",
-      "Top model edges:",
-      ...shortLines,
-      "",
-      "Free Access to Full Table at Link in Bio",
-      "",
-      "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting",
-    ].join("\n");
-    if (shortCaption.length <= 280) {
-      return { skipped: false, reason: "", caption: shortCaption, topProps: topPropsResult.topProps };
-    }
-    return { skipped: true, reason: `Skipping: generated caption is ${caption.length} characters; expected 280 or fewer.`, caption: "", topProps: [] };
-  }
-
-  return { skipped: false, reason: "", caption, topProps: topPropsResult.topProps };
-}
-
-function buildPostKey(rawPayload, bestBetsPayload, topProps) {
-  const slateDate = normalizeText(rawPayload?.date || bestBetsPayload?.date);
-  const tableRows = Array.isArray(rawPayload?.batters)
-    ? rawPayload.batters.map(normalizeBatter).filter(Boolean)
-    : [];
-  const tableFingerprint = tableRows
-    .map((row) => ({
-      player: row.player,
-      team: row.team,
-      opponent: row.opponent,
-      opposingPitcher: row.opposingPitcher,
-      hrScore: Number(row.hrScore.toFixed(1)),
-      hrScoreRank: row.hrScoreRank,
-    }))
-    .sort((left, right) => pickKey(left).localeCompare(pickKey(right)));
-  const topFingerprint = topProps.map((row) => ({
-    player: row.player,
-    team: row.team,
-    opponent: row.opponent,
-    hrScore: Number(row.hrScore.toFixed(1)),
-    hrScoreRank: row.hrScoreRank,
-  }));
-  const hash = createHash("sha256")
-    .update(JSON.stringify({ slateDate, tableFingerprint, topFingerprint }))
-    .digest("hex")
-    .slice(0, 16);
-
-  return `mlb-hr-props-${slateDate}-${hash}`;
-}
-
-function getDuplicateStatePath(postKey) {
-  const stateDir = normalizeText(process.env.X_DUPLICATE_STATE_DIR) || DEFAULT_DUPLICATE_STATE_DIR;
-  return path.join(stateDir, `${slugifyKey(postKey)}.json`);
-}
-
-function assertNotAlreadyPosted(postKey) {
-  const statePath = getDuplicateStatePath(postKey);
-  if (existsSync(statePath)) {
-    throw new Error(`Duplicate protection blocked posting: ${postKey} already has a post receipt at ${statePath}.`);
-  }
-  return statePath;
-}
-
-function savePostReceipt(statePath, receipt) {
-  mkdirSync(path.dirname(statePath), { recursive: true });
-  writeFileSync(statePath, `${JSON.stringify(receipt, null, 2)}\n`);
-}
-
-function createXClientFromEnv() {
-  const appKey = process.env.JKB_X_API_KEY;
-  const appSecret = process.env.JKB_X_API_SECRET;
-  const accessToken = process.env.JKB_X_ACCESS_TOKEN;
-  const accessSecret = process.env.JKB_X_ACCESS_SECRET;
-
-  if (!appKey || !appSecret || !accessToken || !accessSecret) {
-    throw new Error("Missing JoeKnowsBall X credentials. Expected JKB_X_API_KEY, JKB_X_API_SECRET, JKB_X_ACCESS_TOKEN, and JKB_X_ACCESS_SECRET.");
-  }
-
-  return new TwitterApi({ appKey, appSecret, accessToken, accessSecret });
-}
-
-async function verifyExpectedXAccount() {
-  const expectedUsername = normalizeUsername(process.env.X_EXPECTED_USERNAME);
-  if (!expectedUsername) throw new Error("Missing X_EXPECTED_USERNAME. Expected X_EXPECTED_USERNAME=_joeknowsball_.");
-
-  const client = createXClientFromEnv();
-  const account = await client.v1.verifyCredentials();
-  const username = normalizeUsername(account?.screen_name);
-  const displayUsername = username ? `@${username}` : "@unknown";
-  const name = normalizeText(account?.name);
-  const id = normalizeText(account?.id_str ?? account?.id);
-
-  console.log(`[mlb-hr-props-x] Authenticated X account: ${displayUsername}${name ? ` (${name})` : ""}${id ? ` id=${id}` : ""}`);
-
-  if (!username) throw new Error("Authenticated X username was missing from verify_credentials response.");
-  if (username !== expectedUsername) {
-    throw new Error(`Authenticated X username @${username} does not match expected @${expectedUsername}.`);
-  }
-
-  console.log(`[mlb-hr-props-x] Authenticated X account matches expected @${expectedUsername}.`);
-  return { client, username, name, id };
-}
-
-function assertLivePostAllowed() {
-  const eventName = process.env.GITHUB_EVENT_NAME ?? "";
-  const allowed = eventName === "workflow_dispatch" || eventName === "schedule" || eventName === "workflow_run";
-  if (!allowed) {
-    throw new Error(`Live posting is blocked for event "${eventName}". Only workflow_dispatch, schedule, and workflow_run events may post.`);
-  }
-  if (process.env.X_ALLOW_LIVE_POST !== "true") {
-    throw new Error("Live posting is blocked unless X_ALLOW_LIVE_POST=true is set by the workflow.");
-  }
-}
-
-function getLiveDuplicateKey(postKey, mode) {
-  return mode === "post-text-only" ? `${postKey}-text-only` : postKey;
-}
-
-async function publishPost({ client, caption, screenshotPath }) {
-  const mediaId = await client.v1.uploadMedia(screenshotPath, { mimeType: "image/png" });
-  const mediaIdStr = String(mediaId);
-  console.log(`[mlb-hr-props-x] uploadedMediaId=${mediaIdStr}`);
-
-  // Brief wait to ensure media is fully processed before attaching to tweet
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  const response = await client.v2.tweet(caption, {
-    media: { media_ids: [mediaIdStr] },
-  });
-  const tweetId = normalizeText(response?.data?.id);
-  if (!tweetId) throw new Error("X post response did not include a tweet ID.");
-
-  const tweetUrl = `https://x.com/_joeknowsball_/status/${tweetId}`;
-  console.log(`[mlb-hr-props-x] postedTweetId=${tweetId}`);
-  console.log(`[mlb-hr-props-x] postedTweetUrl=${tweetUrl}`);
-  return { tweetId, tweetUrl, mediaId: mediaIdStr };
-}
-
-async function publishTextOnlyPost({ client, caption }) {
-  const response = await client.v2.tweet(caption);
-  const tweetId = normalizeText(response?.data?.id);
-  if (!tweetId) throw new Error("X text-only post response did not include a tweet ID.");
-
-  const tweetUrl = `https://x.com/_joeknowsball_/status/${tweetId}`;
-  console.log(`[mlb-hr-props-x] postedTweetId=${tweetId}`);
-  console.log(`[mlb-hr-props-x] postedTweetUrl=${tweetUrl}`);
-  return { tweetId, tweetUrl };
-}
-
-function getNestedValue(source, pathParts) {
-  let value = source;
-  for (const part of pathParts) {
-    if (!value || typeof value !== "object") return undefined;
-    value = value[part];
-  }
-  return value;
-}
-
-function getFirstDefined(source, paths) {
-  for (const pathParts of paths) {
-    const value = getNestedValue(source, pathParts);
-    if (value !== undefined && value !== null && value !== "") return value;
-  }
-  return undefined;
-}
-
-function sanitizeLogValue(value) {
-  let text = String(value);
-  for (const secret of [
-    process.env.JKB_X_API_KEY,
-    process.env.JKB_X_API_SECRET,
-    process.env.JKB_X_ACCESS_TOKEN,
-    process.env.JKB_X_ACCESS_SECRET,
-  ]) {
-    if (secret) text = text.split(secret).join("[redacted]");
-  }
-
-  return text
-    .replace(/authorization:\s*[^\n\r]+/gi, "authorization: [redacted]")
-    .replace(/(oauth_[a-z_]+=)"[^"]+"/gi, '$1"[redacted]"')
-    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer [redacted]");
-}
-
-function logXApiError(error) {
-  if (!error || typeof error !== "object") return;
-
-  const status = getFirstDefined(error, [
-    ["status"],
-    ["statusCode"],
-    ["code"],
-    ["data", "status"],
-    ["data", "statusCode"],
-    ["error", "status"],
-  ]);
-  const code = getFirstDefined(error, [
-    ["code"],
-    ["data", "code"],
-    ["data", "error", "code"],
-    ["error", "code"],
-  ]);
-  const title = getFirstDefined(error, [
-    ["data", "title"],
-    ["data", "error", "title"],
-    ["error", "title"],
-  ]);
-  const detail = getFirstDefined(error, [
-    ["data", "detail"],
-    ["data", "error", "detail"],
-    ["error", "detail"],
-  ]);
-  const errors = Array.isArray(error.data?.errors) ? error.data.errors : [];
-
-  if (status !== undefined || code !== undefined) {
-    console.error(`[mlb-hr-props-x] X API error status=${sanitizeLogValue(status ?? "unknown")} code=${sanitizeLogValue(code ?? "unknown")}`);
-  }
-  if (title !== undefined) console.error(`[mlb-hr-props-x] X API error title=${sanitizeLogValue(title)}`);
-  if (detail !== undefined) console.error(`[mlb-hr-props-x] X API error detail=${sanitizeLogValue(detail)}`);
-  for (const [index, item] of errors.entries()) {
-    const itemTitle = normalizeText(item?.title);
-    const itemDetail = normalizeText(item?.detail);
-    const itemCode = normalizeText(item?.code);
-    console.error(`[mlb-hr-props-x] X API error item ${index + 1}: code=${sanitizeLogValue(itemCode || "unknown")} title=${sanitizeLogValue(itemTitle || "unknown")} detail=${sanitizeLogValue(itemDetail || "unknown")}`);
-  }
-}
-
 async function main() {
-  if (args.has("--help") || args.has("-h")) {
-    console.log(usage());
-    return;
-  }
-
-  const mode = getMode();
-  if (mode === "verify-account") {
-    await verifyExpectedXAccount();
-    return;
-  }
-
-  let account = null;
-  if (mode === "post" || mode === "post-text-only") {
+  if (process.argv.includes("--help") || process.argv.includes("-h")) { console.log(usage()); return; }
+  const mode = parseMode(process.argv.slice(2));
+  if (mode === "verify-account") { await verifyExpectedXAccount(PREFIX); return; }
+  const source = sourceName();
+  if (["post", "post-text-only"].includes(mode) && source !== "production") throw new Error("Live posting requires production data.");
+  const localRaw = JSON.parse(readFileSync(RAW_PATH, "utf8"));
+  if (["post", "post-text-only"].includes(mode)) {
     assertLivePostAllowed();
-    account = await verifyExpectedXAccount();
+    const ready = await waitForProduction(localRaw);
+    if (!ready.ready) { console.warn(`[${PREFIX}] SAFE SKIP: production remained stale or lacked HR odds after ${ready.attempts} attempts.`); return; }
   }
-
-  const source = getDataSource();
-  if ((mode === "post" || mode === "post-text-only") && source !== "production") {
-    throw new Error("Live posting requires HR_PROPS_DATA_SOURCE=production.");
-  }
-
-  const locations = getDataLocations(source);
-  const rawPayload = await loadJson(locations.raw, source);
-  const bestBetsPayload = await loadJson(locations.bestBets, source);
-
-  const result = buildCaption(rawPayload, bestBetsPayload);
-
-  if (mode === "post-key-only") {
-    if (result.skipped) throw new Error(result.reason);
-    console.log(buildPostKey(rawPayload, bestBetsPayload, result.topProps));
-    return;
-  }
-
-  console.log(`[mlb-hr-props-x] mode=${mode}`);
-  console.log(`[mlb-hr-props-x] dataSource=${source}`);
-  console.log(`[mlb-hr-props-x] rawData=${locations.raw}`);
-  console.log(`[mlb-hr-props-x] bestBets=${locations.bestBets}`);
-  console.log(`[mlb-hr-props-x] todayEt=${getTodayEt()}`);
-  console.log(`[mlb-hr-props-x] rawSlateDate=${normalizeText(rawPayload?.date) || "missing"}`);
-  console.log(`[mlb-hr-props-x] bestBetsSlateDate=${normalizeText(bestBetsPayload?.date) || "missing"}`);
-
-  if (result.skipped) {
-    console.log(`[mlb-hr-props-x] ${result.reason}`);
-    return;
-  }
-
-  console.log(`[mlb-hr-props-x] captionLength=${result.caption.length}`);
-  const postKey = buildPostKey(rawPayload, bestBetsPayload, result.topProps);
-  console.log(`[mlb-hr-props-x] postKey=${postKey}`);
-  const liveDuplicateKey = mode === "post" || mode === "post-text-only" ? getLiveDuplicateKey(postKey, mode) : "";
-  const duplicateStatePath = liveDuplicateKey ? assertNotAlreadyPosted(liveDuplicateKey) : "";
-  console.log("");
+  const paths = locations(source);
+  const [raw, best] = await Promise.all([loadJson(paths.raw, source), loadJson(paths.best, source)]);
+  const result = buildCaption(raw, best);
+  if (result.skipped) { console.warn(`[${PREFIX}] SAFE SKIP: ${result.reason}`); return; }
+  const postKey = createPostKey("mlb-hr-props", { slateDate: raw.date, top: result.topProps.map((row) => ({ player: row.player, team: row.team, score: row.hrScore, odds: row.hrOddsYes })) });
+  if (mode === "post-key-only") { console.log(postKey); return; }
+  mkdirSync(path.dirname(SCREENSHOT_PATH), { recursive: true });
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1080, height: 1400 }, deviceScaleFactor: 1 });
+    const table = await renderedTable(page);
+    if (!renderedMatches(table.rows, result.topProps)) { console.warn(`[${PREFIX}] SAFE SKIP: screenshot rows, caption rows, or HR odds did not match.`); return; }
+    await table.target.screenshot({ path: SCREENSHOT_PATH, animations: "disabled" });
+    logScreenshotSize(SCREENSHOT_PATH, PREFIX);
+  } finally { await browser.close(); }
   console.log(result.caption);
-  console.log("");
-
-  let screenshotPath = "";
-  if (mode !== "post-text-only") {
-    try {
-      screenshotPath = await screenshotHrPropsTable();
-      console.log(`[mlb-hr-props-x] screenshotPath=${screenshotPath}`);
-    } catch (screenshotErr) {
-      console.warn(`[mlb-hr-props-x] Screenshot failed — will post text-only: ${screenshotErr instanceof Error ? screenshotErr.message : screenshotErr}`);
-    }
-  }
-
-  if (mode === "post") {
-    if (screenshotPath) {
-      const post = await publishPost({ client: account.client, caption: result.caption, screenshotPath });
-      savePostReceipt(duplicateStatePath, {
-        postKey: liveDuplicateKey,
-        slateDate: normalizeText(rawPayload?.date),
-        postedAt: new Date().toISOString(),
-        tweetId: post.tweetId,
-        tweetUrl: post.tweetUrl,
-        mediaId: post.mediaId,
-        screenshotPath,
-      });
-      console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
-    } else {
-      // Screenshot failed — fall back to text-only so the post always goes out
-      console.log("[mlb-hr-props-x] Falling back to text-only post");
-      const post = await publishTextOnlyPost({ client: account.client, caption: result.caption });
-      savePostReceipt(duplicateStatePath, {
-        postKey: liveDuplicateKey,
-        mode: "text-only-fallback",
-        slateDate: normalizeText(rawPayload?.date),
-        postedAt: new Date().toISOString(),
-        tweetId: post.tweetId,
-        tweetUrl: post.tweetUrl,
-      });
-      console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
-    }
-  }
-
-  if (mode === "post-text-only") {
-    const post = await publishTextOnlyPost({ client: account.client, caption: result.caption });
-    savePostReceipt(duplicateStatePath, {
-      postKey: liveDuplicateKey,
-      mode: "text-only",
-      slateDate: normalizeText(rawPayload?.date),
-      postedAt: new Date().toISOString(),
-      tweetId: post.tweetId,
-      tweetUrl: post.tweetUrl,
-    });
-    console.log(`[mlb-hr-props-x] duplicateReceipt=${duplicateStatePath}`);
-  }
+  if (mode === "dry-run") return;
+  const account = await verifyExpectedXAccount(PREFIX);
+  const duplicateKey = mode === "post-text-only" ? `${postKey}-text-only` : postKey;
+  const statePath = assertNotAlreadyPosted(duplicateKey, STATE_DIR);
+  const receipt = mode === "post-text-only" ? await publishTextOnlyPost(account.client, result.caption, PREFIX) : await publishPost(account.client, result.caption, SCREENSHOT_PATH, PREFIX);
+  savePostReceipt(statePath, { ...receipt, postKey: duplicateKey, postedAt: new Date().toISOString() });
 }
-
-try {
-  await main();
-} catch (error) {
-  console.error(`[mlb-hr-props-x] ${sanitizeLogValue(error instanceof Error ? error.message : error)}`);
-  logXApiError(error);
-  console.error("");
-  console.error(usage());
-  process.exitCode = 1;
-}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((error) => { console.error(`[${PREFIX}] ${error?.stack ?? error}`); process.exitCode = 1; });
