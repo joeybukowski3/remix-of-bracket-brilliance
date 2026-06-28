@@ -7,6 +7,7 @@ import {
   formatAmerican,
   getMlbMoneylinesWithFallbacks,
 } from "./lib/mlb-moneyline-providers.mjs";
+import { normalizeMlbPropName } from "./lib/mlb-prop-name-normalizer.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT = path.resolve(__dirname, "../public/data/mlb/mlb-odds.json");
@@ -45,18 +46,6 @@ async function fetchJson(url, { extraHeaders = {}, label = url } = {}) {
   }
 }
 
-function normalizeName(name) {
-  return (name ?? "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\./g, "")
-    .replace(/\b(jr|sr|ii|iii|iv)\b/gi, "")
-    .replace(/[^a-z0-9\s'-]/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
 function canonicalPropMarket(value) {
   const market = String(value ?? "").toLowerCase();
   if (market === PARLAY_HR_MARKET || market === "batter_home_runs") return PARLAY_HR_MARKET;
@@ -92,7 +81,7 @@ async function fetchParlayApiProps(parlayKey) {
   for (const row of props) {
     const market = canonicalPropMarket(row?.market_key);
     if (market !== PARLAY_HR_MARKET && market !== PARLAY_K_MARKET) continue;
-    const player = normalizeName(row?.player);
+    const player = normalizeMlbPropName(row?.player);
     if (!player) continue;
     const key = `${player}|${market}`;
     const bookmaker = String(row?.bookmaker ?? row?.source ?? "").toLowerCase();
@@ -102,7 +91,7 @@ async function fetchParlayApiProps(parlayKey) {
   }
 
   for (const { row, market } of Object.values(grouped)) {
-    const playerKey = normalizeName(row.player);
+    const playerKey = normalizeMlbPropName(row.player);
     if (market === PARLAY_HR_MARKET) {
       hrOdds[playerKey] = {
         yes: formatAmerican(row.over_price),
@@ -110,6 +99,7 @@ async function fetchParlayApiProps(parlayKey) {
         line: row.line ?? 0.5,
         impliedYes: americanToImplied(row.over_price),
         bookmaker: row.bookmaker ?? row.source ?? null,
+        providerPlayerName: row.player ?? null,
       };
     } else if (market === PARLAY_K_MARKET) {
       kOdds[playerKey] = {
@@ -118,6 +108,7 @@ async function fetchParlayApiProps(parlayKey) {
         under: formatAmerican(row.under_price),
         impliedOver: americanToImplied(row.over_price),
         bookmaker: row.bookmaker ?? row.source ?? null,
+        providerPlayerName: row.player ?? null,
       };
     }
   }

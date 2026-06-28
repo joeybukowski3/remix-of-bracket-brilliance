@@ -100,7 +100,10 @@ async function loadKPropsFromPage(page) {
       kRate: el.getAttribute("data-k-rate") || "",
       whiffRate: el.getAttribute("data-k-whiff-rate") || "",
       oppRate: el.getAttribute("data-k-opp-rate") || "",
+      line: el.getAttribute("data-k-line") || "",
       oddsOver: el.getAttribute("data-k-odds-over") || "",
+      oddsUnder: el.getAttribute("data-k-odds-under") || "",
+      bookmaker: el.getAttribute("data-k-bookmaker") || "",
     }));
     rows.push({
       pitcher: normalizeText(data.pitcher),
@@ -110,7 +113,10 @@ async function loadKPropsFromPage(page) {
       kRate: toFiniteNumber(data.kRate),
       whiffRate: toFiniteNumber(data.whiffRate),
       oppRate: toFiniteNumber(data.oppRate),
+      kLine: toFiniteNumber(data.line),
       oddsOver: normalizeText(data.oddsOver) || null,
+      oddsUnder: normalizeText(data.oddsUnder) || null,
+      bookmaker: normalizeText(data.bookmaker) || null,
     });
   }
 
@@ -142,6 +148,16 @@ function normalizeUsername(value) {
 function toFiniteNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isAmericanOdds(value) {
+  return /^[+-]\d+$/.test(normalizeText(value));
+}
+
+function formatPropLine(value) {
+  const number = toFiniteNumber(value);
+  if (number == null || number <= 0) return "";
+  return Number.isInteger(number) ? number.toFixed(0) : String(number);
 }
 
 function getTodayEt() {
@@ -199,6 +215,8 @@ function validateRows(rows) {
     if (isPlaceholderText(row.pitcher)) return `Skipping: ${label} pitcher name is missing or a placeholder.`;
     if (isPlaceholderText(row.team)) return `Skipping: ${label} team is missing or a placeholder.`;
     if (!Number.isFinite(row.strikeoutScore)) return `Skipping: ${label} K score is missing or invalid.`;
+    if (!formatPropLine(row.kLine)) return `Skipping: ${label} K line is missing.`;
+    if (!isAmericanOdds(row.oddsOver)) return `Skipping: ${label} over price is missing.`;
   }
 
   return "";
@@ -220,7 +238,7 @@ function buildCaption({ date, rows }) {
   const topProps = rows.slice(0, 3);
   const dateLabel = formatDateLabel(date);
   const lines = topProps.map((row, index) => {
-    const oddsPart = row.oddsOver ? ` · Over ${row.oddsOver}` : "";
+    const oddsPart = ` · Over ${formatPropLine(row.kLine)} Ks (${row.oddsOver})`;
     const kPart = row.kRate != null ? ` · K%: ${row.kRate.toFixed(1)}` : "";
     const whiffPart = row.whiffRate != null ? ` · Whiff%: ${row.whiffRate.toFixed(1)}` : "";
     return `${index + 1}. ${row.pitcher} (${row.team}) — ${row.strikeoutScore.toFixed(1)}${oddsPart}${kPart}${whiffPart}`;
@@ -238,17 +256,14 @@ function buildCaption({ date, rows }) {
   ].join("\n");
 
   if (caption.length > 280) {
-    // Retry with a shorter line format (drop K%/Whiff% detail) before giving up.
-    const shortLines = topProps.map((row, index) => `${index + 1}. ${row.pitcher} (${row.team}) — ${row.strikeoutScore.toFixed(1)}`);
+    const shortLines = topProps.map((row, index) => `${index + 1}. ${row.pitcher} ${row.team} — O ${formatPropLine(row.kLine)} (${row.oddsOver}) · ${row.strikeoutScore.toFixed(1)}`);
     const shortCaption = [
-      `JoeKnowsBall MLB K Props - ${dateLabel}`,
+      `MLB K Props - ${dateLabel}`,
       "",
-      "Top edges:",
       ...shortLines,
       "",
-      "Free Access to Full Table at Link in Bio",
-      "",
-      "#MLB #MLBPicks #Strikeouts",
+      "Full table: link in bio",
+      "#MLB #Strikeouts",
     ].join("\n");
 
     if (shortCaption.length > 280) {

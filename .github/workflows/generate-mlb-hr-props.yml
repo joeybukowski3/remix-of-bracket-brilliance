@@ -52,7 +52,9 @@ jobs:
         run: npm ci
 
       - name: Fetch MLB odds
-        run: node scripts/fetch-mlb-odds.mjs || true
+        id: fetch_odds
+        continue-on-error: true
+        run: node scripts/fetch-mlb-odds.mjs
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           ODDS_API_KEY_BACKUP: ${{ secrets.ODDS_API_KEY_BACKUP }}
@@ -81,10 +83,29 @@ jobs:
         run: node scripts/inject-batter-handedness.mjs || true
 
       - name: Inject batter HR odds (lines + yes price)
-        run: node scripts/inject-batter-hr-odds.mjs || true
+        id: inject_hr_odds
+        continue-on-error: true
+        run: node scripts/inject-batter-hr-odds.mjs
 
       - name: Inject pitcher K odds (line + over/under price)
-        run: node scripts/inject-k-odds.mjs || true
+        id: inject_k_odds
+        continue-on-error: true
+        run: node scripts/inject-k-odds.mjs
+
+      - name: Validate MLB prop odds enrichment
+        id: validate_prop_odds
+        continue-on-error: true
+        run: node scripts/validate-mlb-prop-odds.mjs
+
+      - name: Report MLB prop odds enrichment
+        run: |
+          echo "fetch_odds=${{ steps.fetch_odds.outcome }}"
+          echo "inject_hr_odds=${{ steps.inject_hr_odds.outcome }}"
+          echo "inject_k_odds=${{ steps.inject_k_odds.outcome }}"
+          echo "validate_prop_odds=${{ steps.validate_prop_odds.outcome }}"
+          if [ "${{ steps.validate_prop_odds.outcome }}" != "success" ]; then
+            echo "::warning::MLB model generation will continue, but HR/K social posts must wait for complete odds enrichment."
+          fi
 
       - name: Generate pitcher regression
         shell: bash

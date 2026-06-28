@@ -50,6 +50,7 @@ export type HrDashboardPitcher = {
   kLine?: number | null;
   kOddsOver?: string | null;
   kOddsUnder?: string | null;
+  kOddsBook?: string | null;
   projectedIP?: number | null;
   projectedK9?: number | null;
 };
@@ -88,8 +89,10 @@ export type HrDashboardBatter = {
   pitcherRegressionScore?: number | null;
   pitcherFlyBallRate?: number | null;
   bats?: "L" | "R" | "S" | null;
+  hrLine?: number | null;
   hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
   hrOddsNo?: string | null;      // sportsbook no HR odds e.g. "-450"
+  hrOddsBook?: string | null;
   hrValueEdge?: number | null;   // model prob / implied prob (>1 = value)
   angleTags: string[];
 };
@@ -238,6 +241,7 @@ export type PitcherStrikeoutTeamRow = {
   kAdjustment?: number;
   kOddsOver?: string | null;
   kOddsUnder?: string | null;
+  kOddsBook?: string | null;
 };
 
 export const DEFAULT_TAB: TabKey = "batters";
@@ -319,6 +323,7 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
     kLine: normalizeNumber(entry.kLine),
     kOddsOver: normalizeText(entry.kOddsOver) || null,
     kOddsUnder: normalizeText(entry.kOddsUnder) || null,
+    kOddsBook: normalizeText(entry.kOddsBook) || null,
     projectedIP: normalizeNumber(entry.projectedIP),
     projectedK9: normalizeNumber(entry.projectedK9),
   };
@@ -358,8 +363,10 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     hrScore: normalizeNumber(entry.hrScore),
     hrScoreRank: normalizeNumber(entry.hrScoreRank),
     angleTags: normalizeStringList(entry.angleTags).slice(0, 3),
+    hrLine: normalizeNumber(entry.hrLine),
     hrOddsYes: normalizeText(entry.hrOddsYes) || null,
     hrOddsNo: normalizeText(entry.hrOddsNo) || null,
+    hrOddsBook: normalizeText(entry.hrOddsBook) || null,
     hrValueEdge: normalizeNumber(entry.hrValueEdge),
     pitcherXera: normalizeNumber(entry.pitcherXera) ?? null,
     pitcherRegressionScore: normalizeNumber(entry.pitcherRegressionScore) ?? null,
@@ -1053,6 +1060,7 @@ export function buildPitcherStrikeoutRows(
         kLine: pitcher.kLine ?? null,
         kOddsOver: pitcher.kOddsOver ?? null,
         kOddsUnder: pitcher.kOddsUnder ?? null,
+        kOddsBook: pitcher.kOddsBook ?? null,
         projectedIP: pitcher.projectedIP ?? null,
         projectedK9: pitcher.projectedK9 ?? null,
       };

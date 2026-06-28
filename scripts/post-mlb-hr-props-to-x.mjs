@@ -193,6 +193,10 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function isAmericanOdds(value) {
+  return /^[+-]\d+$/.test(normalizeText(value));
+}
+
 function getTodayEt() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
@@ -297,6 +301,7 @@ function validateTopProps(topProps) {
     if (isPlaceholderText(row.player)) return `Skipping: ${label} player name is missing or a placeholder.`;
     if (isPlaceholderText(row.team)) return `Skipping: ${label} team is missing or a placeholder.`;
     if (row.hrScore == null || !Number.isFinite(row.hrScore)) return `Skipping: ${label} HR score is missing or invalid.`;
+    if (!isAmericanOdds(row.hrOddsYes)) return `Skipping: ${label} HR odds are missing.`;
   }
 
   return "";
@@ -328,8 +333,7 @@ function buildCaption(rawPayload, bestBetsPayload) {
 
   const dateLabel = formatDateLabel(rawPayload?.date || bestBetsPayload?.date);
   const lines = topPropsResult.topProps.map((row, index) => {
-    const oddsPart = row.hrOddsYes ? ` (${row.hrOddsYes})` : "";
-    return `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}${oddsPart}`;
+    return `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)} | ${row.hrOddsYes}`;
   });
 
   const caption = [
@@ -344,19 +348,16 @@ function buildCaption(rawPayload, bestBetsPayload) {
   ].join("\n");
 
   if (caption.length > 280) {
-    // Retry without odds before giving up
     const shortLines = topPropsResult.topProps.map((row, index) =>
-      `${index + 1}. ${row.player} (${row.team}) - HR Score ${row.hrScore.toFixed(1)}`
+      `${index + 1}. ${row.player} ${row.team} — HR ${row.hrScore.toFixed(1)} | ${row.hrOddsYes}`
     );
     const shortCaption = [
-      `JoeKnowsBall MLB HR Props - ${dateLabel}`,
+      `MLB HR Props - ${dateLabel}`,
       "",
-      "Top model edges:",
       ...shortLines,
       "",
-      "Free Access to Full Table at Link in Bio",
-      "",
-      "#MLB #MLBPicks #HomeRun #PropBets #MLBBetting",
+      "Full table: link in bio",
+      "#MLB #HomeRun",
     ].join("\n");
     if (shortCaption.length <= 280) {
       return { skipped: false, reason: "", caption: shortCaption, topProps: topPropsResult.topProps };
