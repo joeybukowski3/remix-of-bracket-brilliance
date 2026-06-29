@@ -25,6 +25,10 @@ export interface NumerologyScoreBreakdown {
   positiveTotal: number;
   countercurrentTotal: number;
   convergenceBonus: number;
+  /** Combo bonus for 2+ exact primary matches on high-value fields */
+  exactComboBonus: number;
+  /** Count of signals with type primary_exact_master or primary_exact_root */
+  exactPrimaryCount: number;
   rawNumerology: number;
   normCeiling: number;
   calculatedScore: number;
