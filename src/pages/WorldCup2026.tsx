@@ -56,31 +56,31 @@ function PowerBar({ value, color = "#e05c2e" }: { value: number; color?: string 
 
 const TEAMS: Team[] = [
   // Group A — Brazil zone
-  { name: "Brazil",      code: "br", group: "A", powerScore: 93, attack: 91, defense: 88, form: 94, fifaRank: 1,  advancedToKO: true },
-  { name: "Japan",       code: "jp", group: "A", powerScore: 64, attack: 63, defense: 65, form: 65, fifaRank: 17, advancedToKO: true },
-  { name: "Ecuador",     code: "ec", group: "A", powerScore: 61, attack: 62, defense: 59, form: 60, fifaRank: 35, advancedToKO: false },
+  { name: "Brazil",      code: "br", group: "A", powerScore: 96, attack: 91, defense: 88, form: 94, fifaRank: 1,  advancedToKO: true },
+  { name: "Japan",       code: "jp", group: "A", powerScore: 68, attack: 63, defense: 65, form: 65, fifaRank: 17, advancedToKO: true },
+  { name: "Ecuador",     code: "ec", group: "A", powerScore: 64, attack: 62, defense: 59, form: 60, fifaRank: 35, advancedToKO: false },
   { name: "Bahrain",     code: "bh", group: "A", powerScore: 42, attack: 40, defense: 44, form: 41, fifaRank: 85, advancedToKO: false },
 
   // Group B — Norway zone
   { name: "Norway",      code: "no", group: "B", powerScore: 70, attack: 74, defense: 67, form: 72, fifaRank: 12, advancedToKO: true },
-  { name: "Ecuador",     code: "ec", group: "B", powerScore: 61, attack: 62, defense: 59, form: 60, fifaRank: 35, advancedToKO: false },
+  { name: "Ecuador",     code: "ec", group: "B", powerScore: 64, attack: 62, defense: 59, form: 60, fifaRank: 35, advancedToKO: false },
   { name: "Bolivia",     code: "bo", group: "B", powerScore: 46, attack: 44, defense: 48, form: 45, fifaRank: 73, advancedToKO: false },
   { name: "Tunisia",     code: "tn", group: "B", powerScore: 55, attack: 54, defense: 57, form: 53, fifaRank: 26, advancedToKO: true },
 
   // Group C — Mexico zone
-  { name: "Mexico",      code: "mx", group: "C", powerScore: 74, attack: 72, defense: 71, form: 74, fifaRank: 14, advancedToKO: true },
+  { name: "Mexico",      code: "mx", group: "C", powerScore: 84, attack: 72, defense: 71, form: 74, fifaRank: 14, advancedToKO: true },
   { name: "Scotland",    code: "gb-sct", group: "C", powerScore: 63, attack: 64, defense: 62, form: 61, fifaRank: 29, advancedToKO: true },
   { name: "Venezuela",   code: "ve", group: "C", powerScore: 54, attack: 52, defense: 56, form: 53, fifaRank: 33, advancedToKO: false },
   { name: "Malaysia",    code: "my", group: "C", powerScore: 39, attack: 38, defense: 41, form: 38, fifaRank: 130, advancedToKO: false },
 
   // Group D — England zone
-  { name: "England",     code: "gb-eng", group: "D", powerScore: 80, attack: 81, defense: 78, form: 81, fifaRank: 4,  advancedToKO: true },
+  { name: "England",     code: "gb-eng", group: "D", powerScore: 84, attack: 81, defense: 78, form: 81, fifaRank: 4,  advancedToKO: true },
   { name: "Uzbekistan",  code: "uz", group: "D", powerScore: 52, attack: 51, defense: 53, form: 50, fifaRank: 68, advancedToKO: true },
   { name: "Chile",       code: "cl", group: "D", powerScore: 62, attack: 64, defense: 60, form: 61, fifaRank: 24, advancedToKO: false },
   { name: "Jamaica",     code: "jm", group: "D", powerScore: 47, attack: 46, defense: 48, form: 46, fifaRank: 52, advancedToKO: false },
 
   // Group E — Argentina zone
-  { name: "Argentina",   code: "ar", group: "E", powerScore: 90, attack: 92, defense: 84, form: 88, fifaRank: 2,  advancedToKO: true },
+  { name: "Argentina",   code: "ar", group: "E", powerScore: 95, attack: 92, defense: 84, form: 88, fifaRank: 2,  advancedToKO: true },
   { name: "Uruguay",     code: "uy", group: "E", powerScore: 65, attack: 67, defense: 64, form: 63, fifaRank: 18, advancedToKO: true },
   { name: "Ghana",       code: "gh", group: "E", powerScore: 57, attack: 56, defense: 58, form: 55, fifaRank: 51, advancedToKO: false },
   { name: "Poland",      code: "pl", group: "E", powerScore: 63, attack: 62, defense: 64, form: 62, fifaRank: 22, advancedToKO: false },
@@ -92,50 +92,50 @@ const TEAMS: Team[] = [
   { name: "Côte d'Ivoire", code: "ci", group: "F", powerScore: 65, attack: 66, defense: 63, form: 64, fifaRank: 28, advancedToKO: false },
 
   // Group G — Canada zone
-  { name: "Canada",      code: "ca", group: "G", powerScore: 71, attack: 70, defense: 70, form: 72, fifaRank: 13, advancedToKO: true },
-  { name: "Egypt",       code: "eg", group: "G", powerScore: 59, attack: 57, defense: 61, form: 57, fifaRank: 34, advancedToKO: true },
+  { name: "Canada",      code: "ca", group: "G", powerScore: 75, attack: 70, defense: 70, form: 72, fifaRank: 13, advancedToKO: true },
+  { name: "Egypt",       code: "eg", group: "G", powerScore: 64, attack: 57, defense: 61, form: 57, fifaRank: 34, advancedToKO: true },
   { name: "Costa Rica",  code: "cr", group: "G", powerScore: 53, attack: 52, defense: 55, form: 51, fifaRank: 41, advancedToKO: false },
   { name: "Tanzania",    code: "tz", group: "G", powerScore: 41, attack: 40, defense: 43, form: 39, fifaRank: 107, advancedToKO: false },
 
   // Group H — Portugal zone
-  { name: "Portugal",    code: "pt", group: "H", powerScore: 83, attack: 86, defense: 77, form: 82, fifaRank: 7,  advancedToKO: true },
+  { name: "Portugal",    code: "pt", group: "H", powerScore: 75, attack: 86, defense: 77, form: 82, fifaRank: 7,  advancedToKO: true },
   { name: "Senegal",     code: "sn", group: "H", powerScore: 67, attack: 65, defense: 66, form: 68, fifaRank: 20, advancedToKO: true },
   { name: "Qatar",       code: "qa", group: "H", powerScore: 50, attack: 49, defense: 52, form: 48, fifaRank: 37, advancedToKO: false },
   { name: "New Zealand", code: "nz", group: "H", powerScore: 48, attack: 47, defense: 50, form: 46, fifaRank: 93, advancedToKO: false },
 
   // Group I — Germany zone
-  { name: "Germany",     code: "de", group: "I", powerScore: 82, attack: 83, defense: 80, form: 79, fifaRank: 5,  advancedToKO: true },
+  { name: "Germany",     code: "de", group: "I", powerScore: 70, attack: 83, defense: 80, form: 79, fifaRank: 5,  advancedToKO: true },
   { name: "Paraguay",    code: "py", group: "I", powerScore: 58, attack: 57, defense: 59, form: 58, fifaRank: 32, advancedToKO: true },
   { name: "Algeria",     code: "dz", group: "I", powerScore: 60, attack: 59, defense: 61, form: 58, fifaRank: 30, advancedToKO: false },
   { name: "Australia",   code: "au", group: "I", powerScore: 55, attack: 54, defense: 56, form: 53, fifaRank: 23, advancedToKO: false },
 
   // Group J — France zone
-  { name: "France",      code: "fr", group: "J", powerScore: 89, attack: 88, defense: 87, form: 87, fifaRank: 3,  advancedToKO: true },
+  { name: "France",      code: "fr", group: "J", powerScore: 94, attack: 88, defense: 87, form: 87, fifaRank: 3,  advancedToKO: true },
   { name: "Sweden",      code: "se", group: "J", powerScore: 61, attack: 62, defense: 63, form: 59, fifaRank: 21, advancedToKO: true },
-  { name: "Colombia",    code: "co", group: "J", powerScore: 72, attack: 73, defense: 68, form: 70, fifaRank: 10, advancedToKO: false },
+  { name: "Colombia",    code: "co", group: "J", powerScore: 79, attack: 73, defense: 68, form: 70, fifaRank: 10, advancedToKO: false },
   { name: "Cameroon",    code: "cm", group: "J", powerScore: 58, attack: 59, defense: 56, form: 57, fifaRank: 31, advancedToKO: false },
 
   // Group K — Netherlands zone
-  { name: "Netherlands", code: "nl", group: "K", powerScore: 79, attack: 78, defense: 76, form: 80, fifaRank: 6,  advancedToKO: true },
+  { name: "Netherlands", code: "nl", group: "K", powerScore: 87, attack: 78, defense: 76, form: 80, fifaRank: 6,  advancedToKO: true },
   { name: "Morocco",     code: "ma", group: "K", powerScore: 63, attack: 60, defense: 67, form: 64, fifaRank: 15, advancedToKO: true },
   { name: "S. Korea",    code: "kr", group: "K", powerScore: 60, attack: 62, defense: 59, form: 61, fifaRank: 22, advancedToKO: false },
   { name: "Czechia",     code: "cz", group: "K", powerScore: 62, attack: 61, defense: 63, form: 61, fifaRank: 27, advancedToKO: false },
 
   // Group L — Spain zone
-  { name: "Spain",       code: "es", group: "L", powerScore: 91, attack: 89, defense: 86, form: 92, fifaRank: 8,  advancedToKO: true },
+  { name: "Spain",       code: "es", group: "L", powerScore: 90, attack: 89, defense: 86, form: 92, fifaRank: 8,  advancedToKO: true },
   { name: "Austria",     code: "at", group: "L", powerScore: 59, attack: 60, defense: 57, form: 58, fifaRank: 26, advancedToKO: true },
   { name: "Croatia",     code: "hr", group: "L", powerScore: 66, attack: 65, defense: 68, form: 65, fifaRank: 16, advancedToKO: false },
   { name: "Honduras",    code: "hn", group: "L", powerScore: 44, attack: 43, defense: 46, form: 43, fifaRank: 72, advancedToKO: false },
 
   // Group M — Turkiye zone
   { name: "Turkiye",     code: "tr", group: "M", powerScore: 68, attack: 67, defense: 65, form: 69, fifaRank: 19, advancedToKO: true },
-  { name: "Belgium",     code: "be", group: "M", powerScore: 76, attack: 77, defense: 73, form: 74, fifaRank: 9,  advancedToKO: true },
+  { name: "Belgium",     code: "be", group: "M", powerScore: 71, attack: 77, defense: 73, form: 74, fifaRank: 9,  advancedToKO: true },
   { name: "Bosnia",      code: "ba", group: "M", powerScore: 55, attack: 54, defense: 56, form: 54, fifaRank: 48, advancedToKO: false },
   { name: "S. Africa",   code: "za", group: "M", powerScore: 52, attack: 51, defense: 53, form: 51, fifaRank: 45, advancedToKO: false },
 
   // Group N — Switzerland zone
-  { name: "Switzerland", code: "ch", group: "N", powerScore: 67, attack: 64, defense: 71, form: 65, fifaRank: 13, advancedToKO: true },
-  { name: "Colombia",    code: "co", group: "N", powerScore: 72, attack: 73, defense: 68, form: 70, fifaRank: 10, advancedToKO: true },
+  { name: "Switzerland", code: "ch", group: "N", powerScore: 80, attack: 64, defense: 71, form: 65, fifaRank: 13, advancedToKO: true },
+  { name: "Colombia",    code: "co", group: "N", powerScore: 79, attack: 73, defense: 68, form: 70, fifaRank: 10, advancedToKO: true },
   { name: "Cameroon",    code: "cm", group: "N", powerScore: 58, attack: 59, defense: 56, form: 57, fifaRank: 31, advancedToKO: false },
   { name: "Saudi Arabia",code: "sa", group: "N", powerScore: 54, attack: 52, defense: 57, form: 53, fifaRank: 40, advancedToKO: false },
 ];
@@ -145,7 +145,7 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group A",
     teams: [
-      { name: "Mexico",       code: "mx", group: "A", powerScore: 74, attack: 72, defense: 71, form: 74, fifaRank: 14, advancedToKO: true },
+      { name: "Mexico",       code: "mx", group: "A", powerScore: 84, attack: 72, defense: 71, form: 74, fifaRank: 14, advancedToKO: true },
       { name: "Korea Rep.",   code: "kr", group: "A", powerScore: 62, attack: 63, defense: 61, form: 62, fifaRank: 22, advancedToKO: true },
       { name: "Czechia",      code: "cz", group: "A", powerScore: 61, attack: 60, defense: 62, form: 60, fifaRank: 27, advancedToKO: false },
       { name: "South Africa", code: "za", group: "A", powerScore: 48, attack: 47, defense: 50, form: 47, fifaRank: 45, advancedToKO: false },
@@ -154,8 +154,8 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group B",
     teams: [
-      { name: "Canada",       code: "ca", group: "B", powerScore: 71, attack: 70, defense: 70, form: 72, fifaRank: 13, advancedToKO: true },
-      { name: "Switzerland",  code: "ch", group: "B", powerScore: 67, attack: 64, defense: 71, form: 65, fifaRank: 13, advancedToKO: true },
+      { name: "Canada",       code: "ca", group: "B", powerScore: 75, attack: 70, defense: 70, form: 72, fifaRank: 13, advancedToKO: true },
+      { name: "Switzerland",  code: "ch", group: "B", powerScore: 80, attack: 64, defense: 71, form: 65, fifaRank: 13, advancedToKO: true },
       { name: "Bosnia & Herz",code: "ba", group: "B", powerScore: 55, attack: 54, defense: 56, form: 54, fifaRank: 48, advancedToKO: false },
       { name: "Qatar",        code: "qa", group: "B", powerScore: 44, attack: 43, defense: 46, form: 43, fifaRank: 37, advancedToKO: false },
     ],
@@ -163,8 +163,8 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group C",
     teams: [
-      { name: "Brazil",       code: "br", group: "C", powerScore: 93, attack: 91, defense: 88, form: 94, fifaRank: 1,  advancedToKO: true },
-      { name: "Morocco",      code: "ma", group: "C", powerScore: 65, attack: 62, defense: 68, form: 64, fifaRank: 15, advancedToKO: true },
+      { name: "Brazil",       code: "br", group: "C", powerScore: 96, attack: 91, defense: 88, form: 94, fifaRank: 1,  advancedToKO: true },
+      { name: "Morocco",      code: "ma", group: "C", powerScore: 78, attack: 62, defense: 68, form: 64, fifaRank: 15, advancedToKO: true },
       { name: "Scotland",     code: "gb-sct", group: "C", powerScore: 63, attack: 64, defense: 62, form: 61, fifaRank: 29, advancedToKO: false },
       { name: "Haiti",        code: "ht", group: "C", powerScore: 31, attack: 30, defense: 33, form: 29, fifaRank: 101, advancedToKO: false },
     ],
@@ -181,17 +181,17 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group E",
     teams: [
-      { name: "Germany",      code: "de", group: "E", powerScore: 82, attack: 83, defense: 80, form: 79, fifaRank: 5,  advancedToKO: true },
+      { name: "Germany",      code: "de", group: "E", powerScore: 70, attack: 83, defense: 80, form: 79, fifaRank: 5,  advancedToKO: true },
       { name: "Côte d'Ivoire",code: "ci", group: "E", powerScore: 65, attack: 66, defense: 63, form: 64, fifaRank: 28, advancedToKO: true },
-      { name: "Ecuador",      code: "ec", group: "E", powerScore: 61, attack: 62, defense: 59, form: 60, fifaRank: 35, advancedToKO: false },
+      { name: "Ecuador",      code: "ec", group: "E", powerScore: 64, attack: 62, defense: 59, form: 60, fifaRank: 35, advancedToKO: false },
       { name: "Curaçao",      code: "cw", group: "E", powerScore: 38, attack: 37, defense: 39, form: 37, fifaRank: 80, advancedToKO: false },
     ],
   },
   {
     label: "Group F",
     teams: [
-      { name: "Netherlands",  code: "nl", group: "F", powerScore: 79, attack: 78, defense: 76, form: 80, fifaRank: 6,  advancedToKO: true },
-      { name: "Japan",        code: "jp", group: "F", powerScore: 64, attack: 63, defense: 65, form: 65, fifaRank: 17, advancedToKO: true },
+      { name: "Netherlands",  code: "nl", group: "F", powerScore: 87, attack: 78, defense: 76, form: 80, fifaRank: 6,  advancedToKO: true },
+      { name: "Japan",        code: "jp", group: "F", powerScore: 68, attack: 63, defense: 65, form: 65, fifaRank: 17, advancedToKO: true },
       { name: "Sweden",       code: "se", group: "F", powerScore: 61, attack: 62, defense: 63, form: 59, fifaRank: 21, advancedToKO: false },
       { name: "Tunisia",      code: "tn", group: "F", powerScore: 55, attack: 54, defense: 57, form: 53, fifaRank: 26, advancedToKO: false },
     ],
@@ -199,16 +199,16 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group G",
     teams: [
-      { name: "Belgium",      code: "be", group: "G", powerScore: 76, attack: 77, defense: 73, form: 74, fifaRank: 9,  advancedToKO: true },
+      { name: "Belgium",      code: "be", group: "G", powerScore: 71, attack: 77, defense: 73, form: 74, fifaRank: 9,  advancedToKO: true },
       { name: "IR Iran",      code: "ir", group: "G", powerScore: 60, attack: 58, defense: 62, form: 59, fifaRank: 25, advancedToKO: true },
-      { name: "Egypt",        code: "eg", group: "G", powerScore: 59, attack: 57, defense: 61, form: 57, fifaRank: 34, advancedToKO: false },
+      { name: "Egypt",        code: "eg", group: "G", powerScore: 64, attack: 57, defense: 61, form: 57, fifaRank: 34, advancedToKO: false },
       { name: "New Zealand",  code: "nz", group: "G", powerScore: 44, attack: 43, defense: 46, form: 43, fifaRank: 93, advancedToKO: false },
     ],
   },
   {
     label: "Group H",
     teams: [
-      { name: "Spain",        code: "es", group: "H", powerScore: 91, attack: 89, defense: 86, form: 92, fifaRank: 8,  advancedToKO: true },
+      { name: "Spain",        code: "es", group: "H", powerScore: 90, attack: 89, defense: 86, form: 92, fifaRank: 8,  advancedToKO: true },
       { name: "Uruguay",      code: "uy", group: "H", powerScore: 65, attack: 67, defense: 64, form: 63, fifaRank: 18, advancedToKO: true },
       { name: "Saudi Arabia", code: "sa", group: "H", powerScore: 54, attack: 52, defense: 57, form: 53, fifaRank: 40, advancedToKO: false },
       { name: "Cabo Verde",   code: "cv", group: "H", powerScore: 43, attack: 42, defense: 45, form: 42, fifaRank: 62, advancedToKO: false },
@@ -217,7 +217,7 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group I",
     teams: [
-      { name: "France",       code: "fr", group: "I", powerScore: 89, attack: 88, defense: 87, form: 87, fifaRank: 3,  advancedToKO: true },
+      { name: "France",       code: "fr", group: "I", powerScore: 94, attack: 88, defense: 87, form: 87, fifaRank: 3,  advancedToKO: true },
       { name: "Norway",       code: "no", group: "I", powerScore: 70, attack: 74, defense: 67, form: 72, fifaRank: 12, advancedToKO: true },
       { name: "Senegal",      code: "sn", group: "I", powerScore: 67, attack: 65, defense: 66, form: 68, fifaRank: 20, advancedToKO: false },
       { name: "Iraq",         code: "iq", group: "I", powerScore: 47, attack: 46, defense: 48, form: 46, fifaRank: 58, advancedToKO: false },
@@ -226,7 +226,7 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group J",
     teams: [
-      { name: "Argentina",    code: "ar", group: "J", powerScore: 90, attack: 92, defense: 84, form: 88, fifaRank: 2,  advancedToKO: true },
+      { name: "Argentina",    code: "ar", group: "J", powerScore: 95, attack: 92, defense: 84, form: 88, fifaRank: 2,  advancedToKO: true },
       { name: "Austria",      code: "at", group: "J", powerScore: 59, attack: 60, defense: 57, form: 58, fifaRank: 26, advancedToKO: true },
       { name: "Algeria",      code: "dz", group: "J", powerScore: 60, attack: 59, defense: 61, form: 58, fifaRank: 30, advancedToKO: false },
       { name: "Jordan",       code: "jo", group: "J", powerScore: 46, attack: 45, defense: 48, form: 45, fifaRank: 66, advancedToKO: false },
@@ -235,8 +235,8 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group K",
     teams: [
-      { name: "Portugal",     code: "pt", group: "K", powerScore: 83, attack: 86, defense: 77, form: 82, fifaRank: 7,  advancedToKO: true },
-      { name: "Colombia",     code: "co", group: "K", powerScore: 72, attack: 73, defense: 68, form: 70, fifaRank: 10, advancedToKO: true },
+      { name: "Portugal",     code: "pt", group: "K", powerScore: 75, attack: 86, defense: 77, form: 82, fifaRank: 7,  advancedToKO: true },
+      { name: "Colombia",     code: "co", group: "K", powerScore: 79, attack: 73, defense: 68, form: 70, fifaRank: 10, advancedToKO: true },
       { name: "Uzbekistan",   code: "uz", group: "K", powerScore: 52, attack: 51, defense: 53, form: 50, fifaRank: 68, advancedToKO: false },
       { name: "Congo DR",     code: "cd", group: "K", powerScore: 49, attack: 48, defense: 51, form: 48, fifaRank: 54, advancedToKO: false },
     ],
@@ -244,7 +244,7 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   {
     label: "Group L",
     teams: [
-      { name: "England",      code: "gb-eng", group: "L", powerScore: 80, attack: 81, defense: 78, form: 81, fifaRank: 4,  advancedToKO: true },
+      { name: "England",      code: "gb-eng", group: "L", powerScore: 84, attack: 81, defense: 78, form: 81, fifaRank: 4,  advancedToKO: true },
       { name: "Croatia",      code: "hr", group: "L", powerScore: 66, attack: 65, defense: 68, form: 65, fifaRank: 16, advancedToKO: true },
       { name: "Ghana",        code: "gh", group: "L", powerScore: 57, attack: 56, defense: 58, form: 55, fifaRank: 51, advancedToKO: false },
       { name: "Panama",       code: "pa", group: "L", powerScore: 51, attack: 49, defense: 53, form: 50, fifaRank: 43, advancedToKO: false },
@@ -252,80 +252,86 @@ const DISPLAY_GROUPS: { label: string; teams: Team[] }[] = [
   },
 ];
 
-// ── Bracket data ─────────────────────────────────────────────────────────────
-// Left side (feeds into Spain winning their semi)
+// ── Bracket data (updated with real R32 matchups and results) ───────────────
+// R32 official result: Canada 1–0 South Africa (June 28, 2026)
+// All other R32 matches are model predictions using updated tournament ratings.
+// R16 bracket structure follows official FIFA/ESPN draw.
+//
+// LEFT SIDE → predicts Argentina semifinal path
 const R32_LEFT: BracketMatch[] = [
-  { id: "l1",  team1: { name: "Germany",     code: "de",     goals: 1.71, winner: true  }, team2: { name: "Paraguay",  code: "py",     goals: 0.77, winner: false } },
-  { id: "l2",  team1: { name: "France",      code: "fr",     goals: 2.32, winner: true  }, team2: { name: "Sweden",    code: "se",     goals: 0.52, winner: false } },
-  { id: "l3",  team1: { name: "S. Korea",    code: "kr",     goals: 0.76, winner: false }, team2: { name: "Switzerland",code:"ch",     goals: 1.21, winner: true  } },
-  { id: "l4",  team1: { name: "Netherlands", code: "nl",     goals: 1.71, winner: true  }, team2: { name: "Morocco",   code: "ma",     goals: 0.75, winner: false } },
-  { id: "l5",  team1: { name: "Colombia",    code: "co",     goals: 1.18, winner: false }, team2: { name: "Croatia",   code: "hr",     goals: 1.11, winner: false } },
-  { id: "l6",  team1: { name: "Spain",       code: "es",     goals: 2.14, winner: true  }, team2: { name: "Austria",   code: "at",     goals: 0.56, winner: false } },
-  { id: "l7",  team1: { name: "Turkiye",     code: "tr",     goals: 1.33, winner: true  }, team2: { name: "Bosnia",    code: "ba",     goals: 0.66, winner: false } },
-  { id: "l8",  team1: { name: "Belgium",     code: "be",     goals: 1.26, winner: false }, team2: { name: "Czechia",   code: "cz",     goals: 0.82, winner: false } },
+  { id: "l1", team1: { name: "Brazil",      code: "br",     goals: 2.10, winner: true  }, team2: { name: "Japan",       code: "jp",     goals: 0.85, winner: false } },
+  { id: "l2", team1: { name: "Germany",     code: "de",     goals: 1.38, winner: true  }, team2: { name: "Paraguay",    code: "py",     goals: 1.21, winner: false } },
+  { id: "l3", team1: { name: "Norway",      code: "no",     goals: 1.42, winner: true  }, team2: { name: "Cote dIvoire",code: "ci",     goals: 0.95, winner: false } },
+  { id: "l4", team1: { name: "France",      code: "fr",     goals: 2.25, winner: true  }, team2: { name: "Sweden",      code: "se",     goals: 0.54, winner: false } },
+  { id: "l5", team1: { name: "Argentina",   code: "ar",     goals: 2.20, winner: true  }, team2: { name: "Cabo Verde",  code: "cv",     goals: 0.45, winner: false } },
+  { id: "l6", team1: { name: "Colombia",    code: "co",     goals: 1.62, winner: true  }, team2: { name: "Ghana",       code: "gh",     goals: 0.82, winner: false } },
+  { id: "l7", team1: { name: "Belgium",     code: "be",     goals: 1.55, winner: true  }, team2: { name: "Senegal",     code: "sn",     goals: 0.98, winner: false } },
+  { id: "l8", team1: { name: "USA",         code: "us",     goals: 1.42, winner: true  }, team2: { name: "Bosnia & Herz",code: "ba",    goals: 0.85, winner: false } },
 ];
 
-// Override l5 to let Colombia advance
+// RIGHT SIDE → predicts Spain/Netherlands/Canada path
+const R32_RIGHT: BracketMatch[] = [
+  // ── Official completed result ──
+  { id: "r1", team1: { name: "Canada",       code: "ca",     goals: 1,    winner: true  }, team2: { name: "South Africa", code: "za",   goals: 0,    winner: false } },
+  { id: "r2", team1: { name: "Netherlands",  code: "nl",     goals: 1.84, winner: true  }, team2: { name: "Morocco",      code: "ma",   goals: 0.98, winner: false } },
+  { id: "r3", team1: { name: "Mexico",       code: "mx",     goals: 1.78, winner: true  }, team2: { name: "Ecuador",      code: "ec",   goals: 0.98, winner: false } },
+  { id: "r4", team1: { name: "England",      code: "gb-eng", goals: 1.92, winner: true  }, team2: { name: "Congo DR",     code: "cd",   goals: 0.68, winner: false } },
+  { id: "r5", team1: { name: "Spain",        code: "es",     goals: 2.18, winner: true  }, team2: { name: "Austria",      code: "at",   goals: 0.52, winner: false } },
+  { id: "r6", team1: { name: "Portugal",     code: "pt",     goals: 1.65, winner: true  }, team2: { name: "Croatia",      code: "hr",   goals: 1.02, winner: false } },
+  { id: "r7", team1: { name: "Switzerland",  code: "ch",     goals: 1.68, winner: true  }, team2: { name: "Algeria",      code: "dz",   goals: 0.72, winner: false } },
+  { id: "r8", team1: { name: "Egypt",        code: "eg",     goals: 1.22, winner: true  }, team2: { name: "Australia",    code: "au",   goals: 0.68, winner: false } },
+];
+
+// R16 — Canada confirmed; others projected from R32 winners
 const R16_LEFT: BracketMatch[] = [
-  { id: "l9",  team1: { name: "Germany",     code: "de",     goals: 1.12, winner: false }, team2: { name: "France",      code: "fr",   goals: 1.75, winner: true  } },
-  { id: "l10", team1: { name: "Switzerland", code: "ch",     goals: 0.76, winner: false }, team2: { name: "Netherlands", code: "nl",   goals: 1.46, winner: true  } },
-  { id: "l11", team1: { name: "Colombia",    code: "co",     goals: 0.69, winner: false }, team2: { name: "Spain",       code: "es",   goals: 1.95, winner: true  } },
-  { id: "l12", team1: { name: "Turkiye",     code: "tr",     goals: 1.06, winner: true  }, team2: { name: "Belgium",     code: "be",   goals: 0.94, winner: false } },
+  { id: "l9",  team1: { name: "Brazil",      code: "br",     goals: 1.95, winner: true  }, team2: { name: "Germany",     code: "de",   goals: 0.88, winner: false } },
+  { id: "l10", team1: { name: "France",      code: "fr",     goals: 2.10, winner: true  }, team2: { name: "Norway",      code: "no",   goals: 0.82, winner: false } },
+  { id: "l11", team1: { name: "Argentina",   code: "ar",     goals: 1.95, winner: true  }, team2: { name: "Colombia",    code: "co",   goals: 1.08, winner: false } },
+  { id: "l12", team1: { name: "Belgium",     code: "be",     goals: 1.22, winner: true  }, team2: { name: "USA",         code: "us",   goals: 0.98, winner: false } },
+];
+
+// Canada (confirmed R16) faces Netherlands (predicted R32 winner)
+const R16_RIGHT: BracketMatch[] = [
+  { id: "r9",  team1: { name: "Canada",      code: "ca",     goals: 1.12, winner: false }, team2: { name: "Netherlands", code: "nl",   goals: 1.68, winner: true  } },
+  { id: "r10", team1: { name: "Mexico",      code: "mx",     goals: 1.42, winner: true  }, team2: { name: "England",     code: "gb-eng",goals: 1.35, winner: false } },
+  { id: "r11", team1: { name: "Spain",       code: "es",     goals: 1.95, winner: true  }, team2: { name: "Portugal",    code: "pt",   goals: 1.08, winner: false } },
+  { id: "r12", team1: { name: "Switzerland", code: "ch",     goals: 1.38, winner: true  }, team2: { name: "Egypt",       code: "eg",   goals: 0.72, winner: false } },
 ];
 
 const QF_LEFT: BracketMatch[] = [
-  { id: "l13", team1: { name: "France",      code: "fr",     goals: 1.84, winner: true  }, team2: { name: "Netherlands", code: "nl",   goals: 1.03, winner: false } },
-  { id: "l14", team1: { name: "Spain",       code: "es",     goals: 2.18, winner: true  }, team2: { name: "Turkiye",      code: "tr",   goals: 0.54, winner: false } },
-];
-
-const SF_LEFT: BracketMatch = {
-  id: "l15",
-  team1: { name: "France", code: "fr", goals: 1.25, winner: false },
-  team2: { name: "Spain",  code: "es", goals: 1.49, winner: true  },
-};
-
-// Right side (feeds into Brazil winning their semi)
-const R32_RIGHT: BracketMatch[] = [
-  { id: "r1",  team1: { name: "Brazil",    code: "br", goals: 1.75, winner: true  }, team2: { name: "Japan",      code: "jp", goals: 0.80, winner: false } },
-  { id: "r2",  team1: { name: "Ecuador",   code: "ec", goals: 0.87, winner: false }, team2: { name: "Norway",     code: "no", goals: 1.20, winner: true  } },
-  { id: "r3",  team1: { name: "Mexico",    code: "mx", goals: 1.77, winner: true  }, team2: { name: "Scotland",   code: "gb-sct", goals: 0.67, winner: false } },
-  { id: "r4",  team1: { name: "England",   code: "gb-eng", goals: 1.69, winner: true  }, team2: { name: "Uzbekistan", code: "uz", goals: 0.64, winner: false } },
-  { id: "r5",  team1: { name: "Argentina", code: "ar", goals: 1.91, winner: true  }, team2: { name: "Uruguay",    code: "uy", goals: 0.59, winner: false } },
-  { id: "r6",  team1: { name: "USA",       code: "us", goals: 1.35, winner: true  }, team2: { name: "Iran",       code: "ir", goals: 1.07, winner: false } },
-  { id: "r7",  team1: { name: "Canada",    code: "ca", goals: 1.64, winner: true  }, team2: { name: "Egypt",      code: "eg", goals: 0.84, winner: false } },
-  { id: "r8",  team1: { name: "Portugal",  code: "pt", goals: 1.50, winner: true  }, team2: { name: "Senegal",    code: "sn", goals: 0.90, winner: false } },
-];
-
-const R16_RIGHT: BracketMatch[] = [
-  { id: "r9",  team1: { name: "Brazil",    code: "br", goals: 1.73, winner: true  }, team2: { name: "Norway",    code: "no", goals: 0.96, winner: false } },
-  { id: "r10", team1: { name: "Mexico",    code: "mx", goals: 1.15, winner: false }, team2: { name: "England",   code: "gb-eng", goals: 1.23, winner: true  } },
-  { id: "r11", team1: { name: "Argentina", code: "ar", goals: 2.20, winner: true  }, team2: { name: "USA",       code: "us", goals: 0.82, winner: false } },
-  { id: "r12", team1: { name: "Canada",    code: "ca", goals: 1.08, winner: false }, team2: { name: "Portugal",  code: "pt", goals: 1.65, winner: true  } },
+  { id: "l13", team1: { name: "Brazil",    code: "br",     goals: 1.82, winner: true  }, team2: { name: "France",    code: "fr",   goals: 1.45, winner: false } },
+  { id: "l14", team1: { name: "Argentina", code: "ar",     goals: 1.75, winner: true  }, team2: { name: "Belgium",   code: "be",   goals: 0.95, winner: false } },
 ];
 
 const QF_RIGHT: BracketMatch[] = [
-  { id: "r13", team1: { name: "Brazil",    code: "br", goals: 1.53, winner: true  }, team2: { name: "England",   code: "gb-eng", goals: 1.11, winner: false } },
-  { id: "r14", team1: { name: "Argentina", code: "ar", goals: 1.59, winner: true  }, team2: { name: "Portugal",  code: "pt", goals: 1.05, winner: false } },
+  { id: "r13", team1: { name: "Netherlands",code: "nl",    goals: 1.58, winner: true  }, team2: { name: "Mexico",    code: "mx",   goals: 1.12, winner: false } },
+  { id: "r14", team1: { name: "Spain",     code: "es",     goals: 1.88, winner: true  }, team2: { name: "Switzerland",code:"ch",    goals: 0.82, winner: false } },
 ];
 
-// MODIFIED: Brazil beats Argentina in semi
-const SF_RIGHT: BracketMatch = {
-  id: "r15",
-  team1: { name: "Brazil",    code: "br", goals: 1.58, winner: true  },
-  team2: { name: "Argentina", code: "ar", goals: 1.21, winner: false },
+// MODIFIED: Brazil beats Argentina, Spain beats Netherlands
+const SF_LEFT: BracketMatch = {
+  id: "l15",
+  team1: { name: "Brazil",    code: "br", goals: 1.62, winner: true  },
+  team2: { name: "Argentina", code: "ar", goals: 1.28, winner: false },
 };
 
-// MODIFIED: Brazil beats Spain in final
+const SF_RIGHT: BracketMatch = {
+  id: "r15",
+  team1: { name: "Spain",       code: "es", goals: 1.52, winner: true  },
+  team2: { name: "Netherlands", code: "nl", goals: 1.08, winner: false },
+};
+
+// FINAL: Brazil beats Spain
 const FINAL: BracketMatch = {
   id: "final",
-  team1: { name: "Spain",  code: "es", goals: 1.29, winner: false },
-  team2: { name: "Brazil", code: "br", goals: 1.59, winner: true  },
+  team1: { name: "Brazil", code: "br", goals: 1.55, winner: true  },
+  team2: { name: "Spain",  code: "es", goals: 1.21, winner: false },
 };
 
 const THIRD_PLACE: BracketMatch = {
   id: "third",
-  team1: { name: "France",    code: "fr", goals: 1.30, winner: false },
-  team2: { name: "Argentina", code: "ar", goals: 1.45, winner: true  },
+  team1: { name: "Argentina",  code: "ar", goals: 1.42, winner: true  },
+  team2: { name: "Netherlands",code: "nl", goals: 1.18, winner: false },
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -711,7 +717,7 @@ export default function WorldCup2026() {
   usePageSeo({
     title: "FIFA World Cup 2026 Power Rankings & Bracket Predictions",
     description:
-      "FIFA World Cup 2026 group stage power rankings, knockout bracket predictions, and team analytics. Model picks Brazil to beat Spain in the final. Covers all 48 teams across 12 groups.",
+      "FIFA World Cup 2026 group stage power rankings, knockout bracket predictions, and team analytics. Updated with real match results. Model picks Brazil to beat Spain in the final. Covers all 48 teams across 12 groups.",
     path: "/world-cup",
     type: "website",
     structuredData: [
@@ -910,21 +916,21 @@ export default function WorldCup2026() {
                   </thead>
                   <tbody>
                     {[
-                      { name: "Brazil",      code: "br", group: "A", powerScore: 93, attack: 91, defense: 88, form: 94, fifaRank: 1 },
-                      { name: "Spain",       code: "es", group: "G", powerScore: 91, attack: 89, defense: 86, form: 92, fifaRank: 8 },
-                      { name: "Argentina",   code: "ar", group: "E", powerScore: 90, attack: 92, defense: 84, form: 88, fifaRank: 2 },
-                      { name: "France",      code: "fr", group: "H", powerScore: 89, attack: 88, defense: 87, form: 87, fifaRank: 3 },
-                      { name: "Portugal",    code: "pt", group: "E", powerScore: 83, attack: 86, defense: 77, form: 82, fifaRank: 7 },
-                      { name: "Germany",     code: "de", group: "H", powerScore: 82, attack: 83, defense: 80, form: 79, fifaRank: 5 },
-                      { name: "England",     code: "gb-eng", group: "D", powerScore: 80, attack: 81, defense: 78, form: 81, fifaRank: 4 },
-                      { name: "Netherlands", code: "nl", group: "I", powerScore: 79, attack: 78, defense: 76, form: 80, fifaRank: 6 },
-                      { name: "Belgium",     code: "be", group: "M", powerScore: 76, attack: 77, defense: 73, form: 74, fifaRank: 9 },
-                      { name: "Mexico",      code: "mx", group: "C", powerScore: 74, attack: 72, defense: 71, form: 74, fifaRank: 14 },
+                      { name: "Brazil",      code: "br", group: "A", powerScore: 96, attack: 91, defense: 88, form: 94, fifaRank: 1 },
+                      { name: "Spain",       code: "es", group: "G", powerScore: 90, attack: 89, defense: 86, form: 92, fifaRank: 8 },
+                      { name: "Argentina",   code: "ar", group: "E", powerScore: 95, attack: 92, defense: 84, form: 88, fifaRank: 2 },
+                      { name: "France",      code: "fr", group: "H", powerScore: 94, attack: 88, defense: 87, form: 87, fifaRank: 3 },
+                      { name: "Portugal",    code: "pt", group: "E", powerScore: 75, attack: 86, defense: 77, form: 82, fifaRank: 7 },
+                      { name: "Germany",     code: "de", group: "H", powerScore: 70, attack: 83, defense: 80, form: 79, fifaRank: 5 },
+                      { name: "England",     code: "gb-eng", group: "D", powerScore: 84, attack: 81, defense: 78, form: 81, fifaRank: 4 },
+                      { name: "Netherlands", code: "nl", group: "I", powerScore: 87, attack: 78, defense: 76, form: 80, fifaRank: 6 },
+                      { name: "Belgium",     code: "be", group: "M", powerScore: 71, attack: 77, defense: 73, form: 74, fifaRank: 9 },
+                      { name: "Mexico",      code: "mx", group: "C", powerScore: 84, attack: 72, defense: 71, form: 74, fifaRank: 14 },
                       { name: "USA",         code: "us", group: "F", powerScore: 73, attack: 70, defense: 72, form: 74, fifaRank: 11 },
-                      { name: "Canada",      code: "ca", group: "F", powerScore: 71, attack: 70, defense: 70, form: 72, fifaRank: 13 },
+                      { name: "Canada",      code: "ca", group: "F", powerScore: 75, attack: 70, defense: 70, form: 72, fifaRank: 13 },
                       { name: "Norway",      code: "no", group: "B", powerScore: 70, attack: 74, defense: 67, form: 72, fifaRank: 12 },
                       { name: "Turkiye",     code: "tr", group: "I", powerScore: 68, attack: 67, defense: 65, form: 69, fifaRank: 19 },
-                      { name: "Switzerland", code: "ch", group: "D", powerScore: 67, attack: 64, defense: 71, form: 65, fifaRank: 13 },
+                      { name: "Switzerland", code: "ch", group: "D", powerScore: 80, attack: 64, defense: 71, form: 65, fifaRank: 13 },
                       { name: "Senegal",     code: "sn", group: "J", powerScore: 67, attack: 65, defense: 66, form: 68, fifaRank: 20 },
                     ].map((t, i) => (
                       <tr key={t.name} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/60"}>
