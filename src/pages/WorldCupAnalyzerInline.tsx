@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { buildMatchupValue, bestValueOutcome, formatEdge, teamsMatch, isMarketFresh, type MatchupMarketValue } from "@/lib/wc/wcThreeWayValue";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const NAV = "#031635";
@@ -424,54 +425,150 @@ export default function WorldCupAnalyzerInline({
   const eA = computeExpectationMetrics(teamA.name);
   const eB = computeExpectationMetrics(teamB.name);
 
-  // Polymarket WC prices — fetch from ESPN odds API as implied probability proxy
-  const [polyPrices, setPolyPrices] = useState<{teamAWin:number;draw:number;teamBWin:number}|null>(null);
+  // ── Market value: Polymarket primary, ESPN fallback ──────────────────────────
+  const [marketValue, setMarketValue] = useState<MatchupMarketValue | null>(null);
+
   useEffect(() => {
-    // Try ESPN's odds endpoint for soccer WC — uses American odds which we convert to implied prob
-    const espnNames: Record<string,string> = {
-      "USA":"United States","Côte d'Ivoire":"Ivory Coast","Cabo Verde":"Cape Verde","IR Iran":"Iran","Korea Rep.":"South Korea","Türkiye":"Turkey"
+    setMarketValue(null);
+    let cancelled = false;
+
+    const espnNames: Record<string, string> = {
+      "USA": "United States", "Côte d'Ivoire": "Ivory Coast", "Cote d'Ivoire": "Ivory Coast",
+      "Cabo Verde": "Cape Verde", "IR Iran": "Iran", "Korea Rep.": "South Korea",
+      "Türkiye": "Turkey", "Congo DR": "DR Congo", "Bosnia & Herz": "Bosnia and Herzegovina",
     };
-    const nameA = espnNames[teamA.name] ?? teamA.name;
-    const nameB = espnNames[teamB.name] ?? teamB.name;
+    const espnA = espnNames[teamA.name] ?? teamA.name;
+    const espnB = espnNames[teamB.name] ?? teamB.name;
+
     const today = new Date();
-    const dates = [0,1,2,3].map(i=>{const d=new Date(today);d.setDate(today.getDate()+i);return d.toISOString().slice(0,10).replace(/-/g,"");});
-    Promise.all(dates.map(date=>fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${date}`).then(r=>r.ok?r.json():{events:[]}).catch(()=>({events:[]})))).then(results=>{
-      for (const data of results) {
-        for (const ev of (data.events??[])) {
-          const c = ev.competitions?.[0];
-          if (!c) continue;
-          const home = c.competitors?.find((x:{homeAway:string})=>x.homeAway==="home");
-          const away = c.competitors?.find((x:{homeAway:string})=>x.homeAway==="away");
-          if (!home||!away) continue;
-          const hName = home.team?.displayName??"";
-          const aName = away.team?.displayName??"";
-          const matchesTeams = (hName===nameA&&aName===nameB)||(hName===nameB&&aName===nameA);
-          if (!matchesTeams) continue;
-          // Try to get odds from competitors
-          const odds = c.odds?.[0];
-          if (odds) {
-            // ESPN moneyline odds → implied probability
-            const toImplied = (ml:number) => ml<0 ? (-ml)/(-ml+100) : 100/(ml+100);
-            const homeML = parseFloat(odds.homeTeamOdds?.moneyLine??"0");
-            const awayML = parseFloat(odds.awayTeamOdds?.moneyLine??"0");
-            const drawML = parseFloat(odds.drawOdds?.moneyLine??"0")||350;
-            if (homeML && awayML) {
-              const raw = {h:toImplied(homeML),d:toImplied(drawML),a:toImplied(awayML)};
-              const total = raw.h+raw.d+raw.a;
-              const isATeamHome = hName===nameA;
-              setPolyPrices({
-                teamAWin: parseFloat(((isATeamHome?raw.h:raw.a)/total*100).toFixed(1)),
-                draw: parseFloat((raw.d/total*100).toFixed(1)),
-                teamBWin: parseFloat(((isATeamHome?raw.a:raw.h)/total*100).toFixed(1)),
-              });
-              return;
+    const dates = [0, 1, 2, 3].map(i => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      return d.toISOString().slice(0, 10).replace(/-/g, "");
+    });
+
+    async function tryPolymarket(): Promise<boolean> {
+      try {
+        const dateStr = today.toISOString().slice(0, 10);
+        const resp = await fetch(
+          `https://gamma-api.polymarket.com/events?active=true&closed=false&limit=100&event_date=${dateStr}`,
+          { headers: { Accept: "application/json" } }
+        );
+        if (!resp.ok) return false;
+        const events: unknown[] = await resp.json();
+        if (!Array.isArray(events)) return false;
+
+        for (const ev of events) {
+          if (typeof ev !== "object" || ev === null) continue;
+          const event = ev as Record<string, unknown>;
+          const markets = Array.isArray(event.markets) ? event.markets as Record<string, unknown>[] : [];
+
+          for (const mkt of markets) {
+            const rawOutcomes = mkt.outcomes;
+            const rawPrices = mkt.outcomePrices;
+            if (!rawOutcomes || !rawPrices) continue;
+
+            const outcomes: string[] = typeof rawOutcomes === "string"
+              ? JSON.parse(rawOutcomes) : Array.isArray(rawOutcomes) ? rawOutcomes : [];
+            const prices: string[] = typeof rawPrices === "string"
+              ? JSON.parse(rawPrices) : Array.isArray(rawPrices) ? rawPrices : [];
+
+            if (outcomes.length !== 3 || prices.length !== 3) continue;
+
+            let team1Idx = -1, drawIdx = -1, team2Idx = -1;
+            for (let i = 0; i < outcomes.length; i++) {
+              const o = outcomes[i].toLowerCase();
+              if (o === "draw" || o === "tie") { drawIdx = i; continue; }
+              if (teamsMatch(outcomes[i], teamA.name) || teamsMatch(outcomes[i], espnA)) { team1Idx = i; continue; }
+              if (teamsMatch(outcomes[i], teamB.name) || teamsMatch(outcomes[i], espnB)) { team2Idx = i; }
             }
+            if (drawIdx >= 0 && team1Idx < 0 && team2Idx < 0) {
+              const nonDraw = [0, 1, 2].filter(i => i !== drawIdx);
+              team1Idx = nonDraw[0]; team2Idx = nonDraw[1];
+            }
+            if (team1Idx < 0 || drawIdx < 0 || team2Idx < 0) continue;
+
+            const p1 = parseFloat(prices[team1Idx]);
+            const pD = parseFloat(prices[drawIdx]);
+            const p2 = parseFloat(prices[team2Idx]);
+            if (!Number.isFinite(p1) || !Number.isFinite(pD) || !Number.isFinite(p2)) continue;
+
+            const updatedAt = typeof mkt.updatedAt === "string" ? mkt.updatedAt : new Date().toISOString();
+            if (!isMarketFresh(updatedAt, 6)) continue;
+
+            const mv = buildMatchupValue(
+              { team1: p1, draw: pD, team2: p2, source: "polymarket", marketId: String(mkt.id ?? ""), updatedAt },
+              model.winA, model.draw, model.lossA,
+            );
+            if (!mv) continue;
+            if (!cancelled) setMarketValue(mv);
+            return true;
           }
         }
-      }
-      setPolyPrices(null);
-    });
-  }, [teamA.name, teamB.name]);
+      } catch { /* fall through */ }
+      return false;
+    }
+
+    async function tryEspn(): Promise<boolean> {
+      try {
+        const results = await Promise.all(
+          dates.map(date =>
+            fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=${date}`)
+              .then(r => r.ok ? r.json() : { events: [] })
+              .catch(() => ({ events: [] }))
+          )
+        );
+        const toImplied = (ml: number) => ml < 0 ? (-ml) / (-ml + 100) : 100 / (ml + 100);
+
+        for (const data of results) {
+          for (const ev of (data.events ?? [])) {
+            const c = ev.competitions?.[0];
+            if (!c) continue;
+            const home = c.competitors?.find((x: { homeAway: string }) => x.homeAway === "home");
+            const away = c.competitors?.find((x: { homeAway: string }) => x.homeAway === "away");
+            if (!home || !away) continue;
+            const hName: string = home.team?.displayName ?? "";
+            const aName: string = away.team?.displayName ?? "";
+            const matchesTeams =
+              (teamsMatch(hName, espnA) && teamsMatch(aName, espnB)) ||
+              (teamsMatch(hName, espnB) && teamsMatch(aName, espnA));
+            if (!matchesTeams) continue;
+
+            const odds = c.odds?.[0];
+            if (!odds) continue;
+            const homeML = parseFloat(odds.homeTeamOdds?.moneyLine ?? "0");
+            const awayML = parseFloat(odds.awayTeamOdds?.moneyLine ?? "0");
+            const drawML = parseFloat(odds.drawOdds?.moneyLine ?? "0") || 350;
+            if (!homeML || !awayML) continue;
+
+            const isAHome = teamsMatch(hName, espnA);
+            const mv = buildMatchupValue(
+              {
+                team1: isAHome ? toImplied(homeML) : toImplied(awayML),
+                draw: toImplied(drawML),
+                team2: isAHome ? toImplied(awayML) : toImplied(homeML),
+                source: "espn",
+                updatedAt: new Date().toISOString(),
+              },
+              model.winA, model.draw, model.lossA,
+            );
+            if (!mv) continue;
+            if (!cancelled) setMarketValue(mv);
+            return true;
+          }
+        }
+      } catch { /* unavailable */ }
+      return false;
+    }
+
+    (async () => {
+      const found = await tryPolymarket();
+      if (!found && !cancelled) await tryEspn();
+    })();
+
+    return () => { cancelled = true; };
+  }, [teamA.name, teamB.name, model.winA, model.draw, model.lossA]);
+
 
   // Common opponents (excluding each other)
   const oppsA = new Set(teamMatches(teamA.name).filter(m=>(m.teamIsHome?m.awayTeam:m.homeTeam)!==teamB.name).map(m=>m.teamIsHome?m.awayTeam:m.homeTeam));
@@ -550,51 +647,66 @@ export default function WorldCupAnalyzerInline({
           </div>
         </div>
 
-        {/* Polymarket prices + value */}
-        {polyPrices ? (
+        {/* Market Value Analysis — Polymarket primary, ESPN fallback */}
+        {marketValue ? (
           <div className="mt-3 rounded-xl border border-violet-200 bg-violet-50 p-3">
-            <div className="text-[10px] font-black uppercase tracking-wide text-violet-500 mb-2">Market Prices (ESPN Implied)</div>
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              {[
-                {label:teamA.name, mkt:polyPrices.teamAWin, model:model.winA, color:NAV},
-                {label:"Draw",     mkt:polyPrices.draw,     model:model.draw,  color:"#94a3b8"},
-                {label:teamB.name, mkt:polyPrices.teamBWin, model:model.lossA, color:ACC},
-              ].map(({label,mkt,model:mdl,color})=>{
-                const edge = parseFloat((mdl - mkt).toFixed(1));
-                const hasValue = Math.abs(edge) >= 3;
-                return (
-                  <div key={label} className="rounded-lg border border-violet-100 bg-white p-2 text-center">
-                    <div className="text-[9px] font-bold uppercase tracking-wide text-slate-400 truncate mb-0.5">{label}</div>
-                    <div className="text-sm font-black" style={{color}}>{mkt}%</div>
-                    {hasValue && (
-                      <div className={`text-[9px] font-bold mt-0.5 ${edge>0?"text-emerald-600":"text-red-500"}`}>
-                        {edge>0?"▲":"▼"} {Math.abs(edge)}pt {edge>0?"value":"fade"}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase tracking-wide text-violet-600">
+                Market Value
+              </span>
+              <span className="text-[9px] text-slate-400 font-medium">
+                {marketValue.source === "polymarket" ? "Polymarket" : "ESPN Odds"}
+              </span>
             </div>
-            <div className="text-[10px] text-violet-600 leading-relaxed">
-              {(() => {
-                const aEdge = model.winA - polyPrices.teamAWin;
-                const bEdge = model.lossA - polyPrices.teamBWin;
-                const dEdge = model.draw  - polyPrices.draw;
-                const best = [
-                  {label:`${teamA.name} win`, edge:aEdge},
-                  {label:`${teamB.name} win`, edge:bEdge},
-                  {label:"Draw", edge:dEdge},
-                ].sort((a,b)=>b.edge-a.edge)[0];
-                if (Math.abs(best.edge) < 3) return "Model and market are closely aligned — no clear value edge identified.";
-                return best.edge > 0
-                  ? `Model sees value on ${best.label} (+${best.edge.toFixed(1)}pt vs market).`
-                  : `Model is below market on ${best.label} — potential fade opportunity.`;
-              })()}
+            {/* Header row */}
+            <div className="grid grid-cols-[auto_1fr_1fr_1fr] gap-x-2 gap-y-1 text-[9px] font-bold uppercase tracking-wide text-slate-400 mb-1 px-1">
+              <span></span>
+              <span className="text-center truncate">{teamA.name}</span>
+              <span className="text-center">Draw</span>
+              <span className="text-center truncate">{teamB.name}</span>
+            </div>
+            {/* Model row */}
+            <div className="grid grid-cols-[auto_1fr_1fr_1fr] gap-x-2 gap-y-0.5 items-center mb-0.5 px-1">
+              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400 whitespace-nowrap">Model</span>
+              <span className="text-center text-[11px] font-black text-[#031635]">{model.winA}%</span>
+              <span className="text-center text-[11px] font-black text-slate-500">{model.draw}%</span>
+              <span className="text-center text-[11px] font-black" style={{color:ACC}}>{model.lossA}%</span>
+            </div>
+            {/* Market row */}
+            <div className="grid grid-cols-[auto_1fr_1fr_1fr] gap-x-2 gap-y-0.5 items-center mb-1 px-1">
+              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400 whitespace-nowrap">Market</span>
+              <span className="text-center text-[11px] font-semibold text-slate-600">{marketValue.team1.marketProbability}%</span>
+              <span className="text-center text-[11px] font-semibold text-slate-500">{marketValue.draw.marketProbability}%</span>
+              <span className="text-center text-[11px] font-semibold text-slate-600">{marketValue.team2.marketProbability}%</span>
+            </div>
+            {/* Divider */}
+            <div className="h-px bg-violet-100 mx-1 mb-1" />
+            {/* Value row */}
+            <div className="grid grid-cols-[auto_1fr_1fr_1fr] gap-x-2 gap-y-0.5 items-center px-1">
+              <span className="text-[9px] font-black uppercase tracking-wide text-violet-500 whitespace-nowrap">Value</span>
+              {([
+                { v: marketValue.team1, best: bestValueOutcome(marketValue) === "team1" },
+                { v: marketValue.draw,  best: bestValueOutcome(marketValue) === "draw" },
+                { v: marketValue.team2, best: bestValueOutcome(marketValue) === "team2" },
+              ] as const).map(({ v, best }, i) => (
+                <div key={i} className="flex flex-col items-center gap-0.5">
+                  <span className={`text-[11px] font-black ${
+                    v.valueEdge > 0 ? "text-emerald-600" : v.valueEdge < 0 ? "text-red-500" : "text-slate-400"
+                  }`}>
+                    {formatEdge(v.valueEdge)}
+                  </span>
+                  {best && v.valueEdge >= 2 && (
+                    <span className="rounded-full bg-emerald-100 px-1.5 py-px text-[8px] font-black text-emerald-700 leading-none whitespace-nowrap">
+                      Best
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         ) : (
           <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-[11px] text-slate-400">
-            Market prices will appear when this game is listed on ESPN odds. Check back closer to kickoff.
+            Polymarket prices are not available for this matchup yet. Check back closer to kickoff.
           </div>
         )}
 
