@@ -1505,8 +1505,8 @@ export default function MlbHrProps() {
   }, [allBatters, pitcherRegressionData, regressionByIdOrName]);
 
   const batters = useMemo(
-    () => allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher)),
-    [allBatters, tbdGameKeys],
+    () => enrichedBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher)),
+    [enrichedBatters, tbdGameKeys],
   );
   const tbdFootnotes = useMemo(() => buildTbdFootnotes(tbdGameKeys, allGames, allPitchers, allBatters), [allBatters, allGames, allPitchers, tbdGameKeys]);
   const parkRows = useMemo(() => buildParkSidebarRows(games), [games]);
@@ -1571,7 +1571,7 @@ export default function MlbHrProps() {
 
   const filteredBatters = useMemo(() => {
     const query = batterSearch.trim().toLowerCase();
-    const rows = enrichedBatters.filter((row) => {
+    const rows = batters.filter((row) => {
       if (batterGameFilter !== "all" && row.gameKey !== batterGameFilter) return false;
       // Minimum 50 AB when data is available
       if (row.atBats != null && row.atBats < 50) return false;
