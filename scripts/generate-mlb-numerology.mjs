@@ -32,7 +32,7 @@ const SYSTEM_PROMPT = readFileSync(path.join(ROOT, "prompts", "mlb-numerology-sy
 const METHODOLOGY_VERSION = METHODOLOGY.version;
 const GROK_API_URL = "https://api.x.ai/v1/chat/completions";
 const GROK_MODEL = "grok-4-1-fast-non-reasoning";
-const SCHEDULED_FOR = "09:36 America/New_York";
+const SCHEDULED_FOR = "04:44 America/New_York (morning) / lineup-confirmed before first game";
 const TIMEOUT_MS = 30000;
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
@@ -40,6 +40,13 @@ const args = process.argv.slice(2);
 const IS_DRY_RUN = args.includes("--dry-run");
 const USE_FIXTURE = args.includes("--fixture");
 const DATE_ARG = (() => { const i = args.indexOf("--date"); return i >= 0 ? args[i + 1] : null; })();
+const PHASE_ARG = (() => {
+  const i = args.indexOf("--phase");
+  const v = i >= 0 ? args[i + 1] : null;
+  const valid = ["morning", "lineup-confirmed", "force-refresh"];
+  if (v && !valid.includes(v)) throw new Error(`Invalid --phase "${v}". Valid: ${valid.join(", ")}`);
+  return v ?? "morning";
+})();
 
 if (USE_FIXTURE && !IS_DRY_RUN) {
   console.log("[numerology] FIXTURE mode — output goes to numerology-daily.fixture.json, NOT production");
@@ -643,8 +650,20 @@ async function main() {
   const calMonth = parseInt(monthStr, 10);
   const calDay = parseInt(dayStr, 10);
 
-  console.log(`[numerology] date=${slateDate} dry-run=${IS_DRY_RUN} fixture=${USE_FIXTURE}`);
+  console.log(`[numerology] date=${slateDate} dry-run=${IS_DRY_RUN} fixture=${USE_FIXTURE} phase=${PHASE_ARG}`);
   console.log(`[numerology] generationStartedAt=${generationStartedAt}`);
+
+  // Load existing daily output to preserve phase timestamps across runs
+  let existingOutput = null;
+  if (!IS_DRY_RUN && !USE_FIXTURE && existsSync(DAILY_OUTPUT)) {
+    try { existingOutput = JSON.parse(readFileSync(DAILY_OUTPUT, "utf8")); } catch { /* ignore */ }
+  }
+  const morningGeneratedAt = PHASE_ARG === "morning" || PHASE_ARG === "force-refresh"
+    ? generationStartedAt
+    : (existingOutput?.date === slateDate ? (existingOutput?.morningGeneratedAt ?? null) : null);
+  const lineupConfirmedGeneratedAt = PHASE_ARG === "lineup-confirmed"
+    ? generationStartedAt
+    : (existingOutput?.date === slateDate ? (existingOutput?.lineupConfirmedGeneratedAt ?? null) : null);
 
   // Step 1: Deterministic date profile
   const dailyProfile = buildDailyProfile(slateDate);
@@ -935,6 +954,9 @@ async function main() {
     generatedAt: generationCompletedAt,
     lineupDataAsOf,
     generationMode: IS_DRY_RUN ? "dry_run" : USE_FIXTURE ? "fixture" : "live",
+    updatePhase: PHASE_ARG,
+    morningGeneratedAt: IS_DRY_RUN || USE_FIXTURE ? null : morningGeneratedAt,
+    lineupConfirmedGeneratedAt: IS_DRY_RUN || USE_FIXTURE ? null : lineupConfirmedGeneratedAt,
     narrativeSource,
     rankingBasis: "numerology_only",
     baseballContextOnly: true,
@@ -1116,12 +1138,11 @@ async function main() {
     console.log(`[numerology] ✓ Written: ${targetPath}`);
 
     // Archive (only for live production, not fixture)
+    // Always overwrite so the history file reflects the most recent generation (morning or lineup-confirmed).
     if (!USE_FIXTURE) {
       const archivePath = path.join(ARCHIVE_DIR, `${slateDate}.json`);
-      if (!existsSync(archivePath)) {
-        writeFileSync(archivePath, JSON.stringify(output, null, 2) + "\n");
-        console.log(`[numerology] Archived: ${archivePath}`);
-      }
+      writeFileSync(archivePath, JSON.stringify(output, null, 2) + "\n");
+      console.log(`[numerology] Archived: ${archivePath}`);
     }
 
     console.log(`[numerology] Scored ${candidates.length} players | Featured: ${featured.length} | Narrative: ${narrativeSource} | Mode: ${output.generationMode}`);

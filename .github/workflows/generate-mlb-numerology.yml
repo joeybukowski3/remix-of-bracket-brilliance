@@ -1,13 +1,38 @@
 name: Generate MLB Numerology
 
+# Twice-daily generation:
+#   Phase 1 - Morning:          4:44 AM America/New_York
+#   Phase 2 - Lineup-confirmed: first active game - 2 hours (polls every 10 min)
+#
+# DST-aware design for the morning phase: two cron entries cover both offsets.
+#   EST (UTC-5): 4:44 AM ET = 09:44 UTC  -> "44 9 * * *"
+#   EDT (UTC-4): 4:44 AM ET = 08:44 UTC  -> "44 8 * * *"
+# A runtime ET time-gate inside numerology-gate-runner.mjs ensures only the
+# correct local window executes, and only once per Eastern calendar date.
+#
+# Polling entries run every 10 minutes from 11:00-23:59 UTC. The gate script
+# exits in seconds when conditions are not met - no generation is triggered.
+
 on:
   schedule:
-    # 9:36 AM America/New_York — timezone-aware, single schedule
-    # 9+3+6 = 18 → 9, reinforcing the 3-6-9 identity of the 369 entry symbol
-    - cron: "36 9 * * *"
-      timezone: "America/New_York"
+    # Morning phase - 4:44 AM ET (EST: 09:44 UTC, EDT: 08:44 UTC)
+    - cron: "44 9 * * *"
+    - cron: "44 8 * * *"
+    # Lineup-confirmed polling - every 10 min, 11:00-23:59 UTC
+    - cron: "0,10,20,30,40,50 11-23 * * *"
+
   workflow_dispatch:
     inputs:
+      phase:
+        description: "Numerology generation phase"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - morning
+          - lineup-confirmed
+          - force-refresh
       date:
         description: "Optional Eastern Time slate date (YYYY-MM-DD)"
         required: false
@@ -18,14 +43,14 @@ on:
         default: "false"
         type: string
       use_fixture:
-        description: "Write to fixture path only — never overwrites production"
+        description: "Write to fixture path only - never overwrites production"
         required: false
         default: "false"
         type: string
 
-# Serialize with the other workflows that commit generated data to main.
+# Serialize with other data-writing workflows.
 concurrency:
-  group: main-data-writers-${{ github.repository }}
+  group: mlb-numerology-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -33,7 +58,7 @@ permissions:
 
 jobs:
   generate-numerology:
-    name: Generate daily MLB Numerology
+    name: Generate MLB Numerology
     runs-on: ubuntu-latest
     env:
       TZ: America/New_York
@@ -55,19 +80,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Evaluate scheduling gate
+        id: gate
+        run: |
+          node scripts/lib/numerology-gate-runner.mjs \
+            --phase "${{ inputs.phase || 'auto' }}"
+
+      - name: Log gate result
+        run: |
+          echo "run=${{ steps.gate.outputs.run }}"
+          echo "phase=${{ steps.gate.outputs.phase }}"
+          echo "reason=${{ steps.gate.outputs.reason }}"
+
       - name: Run numerology unit tests
+        if: steps.gate.outputs.run == 'true'
         run: npx vitest run src/lib/numerology/numerology.test.ts
 
       - name: TypeScript check
+        if: steps.gate.outputs.run == 'true'
         run: npx tsc --noEmit
 
       - name: Production build
+        if: steps.gate.outputs.run == 'true'
         run: npm run build
 
       - name: Update player identity cache
+        if: steps.gate.outputs.run == 'true'
         run: node scripts/update-player-identity-cache.mjs
 
       - name: Generate numerology
+        if: steps.gate.outputs.run == 'true'
         id: generate
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
@@ -76,21 +118,22 @@ jobs:
           if [ -n "${{ inputs.date }}" ]; then
             DATE_FLAG="--date ${{ inputs.date }}"
           fi
-
           DRY_FLAG=""
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             DRY_FLAG="--dry-run"
           fi
-
           FIXTURE_FLAG=""
           if [ "${{ inputs.use_fixture }}" = "true" ]; then
             FIXTURE_FLAG="--fixture"
           fi
-
-          node scripts/generate-mlb-numerology.mjs $DATE_FLAG $DRY_FLAG $FIXTURE_FLAG
+          PHASE_FLAG="--phase ${{ steps.gate.outputs.phase }}"
+          node scripts/generate-mlb-numerology.mjs $DATE_FLAG $DRY_FLAG $FIXTURE_FLAG $PHASE_FLAG
 
       - name: Filter to likely active hitters
-        if: ${{ inputs.dry_run != 'true' && inputs.use_fixture != 'true' }}
+        if: >-
+          steps.gate.outputs.run == 'true' &&
+          inputs.dry_run != 'true' &&
+          inputs.use_fixture != 'true'
         run: |
           DATE_FLAG=""
           if [ -n "${{ inputs.date }}" ]; then
@@ -99,21 +142,28 @@ jobs:
           node scripts/filter-mlb-numerology-active.mjs $DATE_FLAG
 
       - name: Commit and push
-        if: ${{ inputs.dry_run != 'true' }}
+        if: >-
+          steps.gate.outputs.run == 'true' &&
+          inputs.dry_run != 'true'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add public/data/mlb/numerology-daily.json public/data/mlb/numerology/ public/data/mlb/player-identity-cache.json 2>/dev/null || true
+          git add \
+            public/data/mlb/numerology-daily.json \
+            public/data/mlb/numerology/ \
+            public/data/mlb/player-identity-cache.json \
+            2>/dev/null || true
 
           if git diff --cached --quiet; then
             echo "No numerology changes to commit."
             exit 0
           fi
 
-          git commit -m "chore: numerology $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+          PHASE_LABEL="${{ steps.gate.outputs.phase }}"
+          git commit -m "chore: numerology ${PHASE_LABEL} $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
 
           pushed=false
           for attempt in 1 2 3 4 5; do
@@ -130,6 +180,6 @@ jobs:
           done
 
           if [ "$pushed" != "true" ]; then
-            echo "ERROR: All push attempts failed — numerology data was not committed." >&2
+            echo "ERROR: All push attempts failed." >&2
             exit 1
           fi
