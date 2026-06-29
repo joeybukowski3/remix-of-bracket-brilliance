@@ -36,6 +36,14 @@ function getPitcherNames(card: HTMLElement) {
 }
 
 function extractMarketSummary(card: HTMLElement, teams: string[]): MarketSummary {
+  // Primary: read from data attributes written by React during render — reliable, no scraping needed
+  const dataTeam = (card as HTMLButtonElement).dataset.pmEdgeTeam;
+  const dataValue = (card as HTMLButtonElement).dataset.pmEdgeValue;
+  if (dataTeam !== undefined && dataValue !== undefined) {
+    return { team: dataTeam || (teams[0] ?? "Edge"), value: dataValue || "—" };
+  }
+
+  // Fallback: scrape Polymarket Value text from expanded card content (legacy path)
   const marketLabel = Array.from(card.querySelectorAll<HTMLElement>("*"))
     .filter((element) => /^polymarket value$/i.test((element.textContent ?? "").trim()))
     .sort((a, b) => a.children.length - b.children.length)[0];
@@ -47,9 +55,6 @@ function extractMarketSummary(card: HTMLElement, teams: string[]): MarketSummary
       if (exact) return { team: exact[1], value: `${exact[2]}%` };
     }
   }
-  const text = (card.textContent ?? "").replace(/\s+/g, " ").trim();
-  const fallback = text.match(/POLYMARKET VALUE\s*([A-Z]{2,4})\s*([+-]?\d{1,3}(?:\.\d+)?)%/i);
-  if (fallback) return { team: fallback[1].toUpperCase(), value: `${fallback[2]}%` };
   return { team: teams[0] ?? "Edge", value: "—" };
 }
 
@@ -90,7 +95,9 @@ function setupMatchupCard(card: HTMLButtonElement) {
   const heading = document.createElement("small");
   heading.textContent = "Model Edge";
   const market = document.createElement("strong");
-  market.textContent = `${marketSummary.team} ${marketSummary.value}`;
+  market.textContent = marketSummary.value === "—"
+    ? `${marketSummary.team} —`
+    : `${marketSummary.team} ${marketSummary.value}`;
   const prompt = document.createElement("span");
   prompt.textContent = "Click to show matchup";
   middle.append(heading, market, prompt);

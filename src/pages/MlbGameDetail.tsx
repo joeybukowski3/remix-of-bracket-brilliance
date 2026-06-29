@@ -671,6 +671,18 @@ function getSlateStatusCategory(status: string): Exclude<SlateFilter, "all"> {
   return "scheduled";
 }
 
+/** Formats the Polymarket edge for display on collapsed matchup cards.
+ * Returns "+X.X%", "-X.X%", "0.0%", or "—" (em dash) when data is unavailable. */
+export function formatCardPmEdgeLabel(
+  mlPickAbbr: string | null,
+  pmEdge: { edge: number; isEven: boolean } | null,
+): string {
+  if (!mlPickAbbr || !pmEdge) return "—";
+  if (pmEdge.isEven) return "0.0%";
+  const sign = pmEdge.edge >= 0 ? "+" : "";
+  return `${sign}${pmEdge.edge.toFixed(1)}%`;
+}
+
 function formatGameTime(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
@@ -1103,19 +1115,28 @@ function MlbSlateAnalyzer({
           const showScore = (statusCategory === "in-progress" || statusCategory === "final")
             && Number.isFinite(awayScore) && Number.isFinite(homeScore);
 
+          // Hoist edge calculations so they can be placed on data-* attributes for the mobile card summary
+          const cardMlEdge = detail ? computeModelEdge(detail) : null;
+          const cardMlPickAbbr = cardMlEdge && cardMlEdge.pick !== "push"
+            ? (cardMlEdge.pick === "away" ? cardMlEdge.awayAbbr : cardMlEdge.homeAbbr) : null;
+          const cardPmEdge = getPolymarketEdge(game.gamePk, cardMlEdge);
+          const cardPmEdgeLabel: string = formatCardPmEdgeLabel(cardMlPickAbbr, cardPmEdge);
+
           return (
             <button
               id={`mlb-game-${game.gamePk}`}
               key={game.gamePk}
               type="button"
               onClick={() => onOpenGame(game.gamePk)}
+              data-pm-edge-team={cardMlPickAbbr ?? ""}
+              data-pm-edge-value={cardPmEdgeLabel}
               className={cn(
                 "scroll-mt-28 flex w-full flex-col rounded-xl border text-left transition-all hover:shadow-md",
                 statusCategory === "in-progress"
-                  ? "border-green-200 bg-green-50/40 shadow-sm"
+                  ? "border-green-300 bg-green-50/40 shadow-sm"
                   : statusCategory === "final"
-                  ? "border-slate-200 bg-slate-50/60 shadow-sm"
-                  : "border-slate-200 bg-white shadow-sm hover:border-blue-200",
+                  ? "border-slate-400 bg-slate-50/60 shadow-sm"
+                  : "border-slate-400 bg-white shadow-sm hover:border-blue-300",
               )}>
 
               {/* Top bar */}
