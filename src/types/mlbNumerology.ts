@@ -29,6 +29,10 @@ export interface NumerologyScoreBreakdown {
   exactComboBonus: number;
   /** Count of signals with type primary_exact_master or primary_exact_root */
   exactPrimaryCount: number;
+  /** Whether the player has an exact target match on birthDay field */
+  hasBirthdayExact: boolean;
+  /** Whether the player has a strong (exact or root) match on birthDay field */
+  hasBirthdayStrong: boolean;
   rawNumerology: number;
   normCeiling: number;
   calculatedScore: number;
