@@ -7,6 +7,8 @@ import { useMlbLiveLineups } from "@/hooks/useMlbLiveLineups";
 import { calculateNumerologyScoreBreakdown, type PlayerIdentity } from "@/lib/numerology/mlbScoreAudit";
 import { panel, type NumerologyCardPlayer } from "@/components/mlb/numerology/NumerologyAuditCard";
 import { NumerologyExplorer } from "@/components/mlb/numerology/NumerologyExplorer";
+import { useMlbPropsData } from "@/hooks/useMlbPropsData";
+import type { HrDashboardBatter } from "@/pages/MlbHrProps";
 import { ResponsiveNumerologyPlayers } from "@/components/mlb/numerology/ResponsiveNumerologyPlayers";
 import type { NumerologyDailyData } from "@/types/mlbNumerology";
 
@@ -37,6 +39,7 @@ export default function MlbNumerologyPageEnhanced() {
   const { lineups, loading: lineupsLoading } = useMlbLiveLineups(data?.date);
   const [identities, setIdentities] = useState<Record<string, PlayerIdentity>>({});
   const [activityMode, setActivityMode] = useState<ActivityMode>("default");
+  const { batters: hrBatters } = useMlbPropsData();
 
   useEffect(() => {
     let active = true;
@@ -171,7 +174,7 @@ export default function MlbNumerologyPageEnhanced() {
               </section>
 
               {/* ── Player Explorer ──────────────────────────────────────────── */}
-              <NumerologyExplorer exact={exact} root={root} />
+              <NumerologyExplorer exact={exact} root={root} hrBatters={hrBatters} />
 
               {/* ── Exact & Root match sections ──────────────────────────────── */}
               <section id="exact-matches" className="mb-4 scroll-mt-20">
