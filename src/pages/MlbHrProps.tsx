@@ -6,6 +6,7 @@ import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
+import { evaluateSinCityHitter } from "@/lib/mlb/mlbHrFilter";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
@@ -1479,6 +1480,30 @@ export default function MlbHrProps() {
   );
   const { data: pitcherRegressionData } = usePitcherRegression();
 
+  // Build a live regression lookup: id->score and name->score
+  // This enriches batter rows when the generator wrote stale zero values
+  const regressionByIdOrName = useMemo(() => {
+    const byId = new Map<number, number>();
+    const byName = new Map<string, number>();
+    for (const p of pitcherRegressionData) {
+      if (p.pitcherId != null) byId.set(p.pitcherId, p.regressionScore);
+      byName.set(p.name.toLowerCase().trim(), p.regressionScore);
+    }
+    return { byId, byName };
+  }, [pitcherRegressionData]);
+
+  // Enrich batter rows with live regression scores
+  const enrichedBatters = useMemo(() => {
+    if (pitcherRegressionData.length === 0) return allBatters;
+    return allBatters.map((b) => {
+      const fromId = b.opposingPitcherId != null ? regressionByIdOrName.byId.get(b.opposingPitcherId) : undefined;
+      const fromName = regressionByIdOrName.byName.get((b.opposingPitcher ?? "").toLowerCase().trim());
+      const live = fromId ?? fromName;
+      if (live === undefined) return b;
+      return { ...b, pitcherRegressionScore: live };
+    });
+  }, [allBatters, pitcherRegressionData, regressionByIdOrName]);
+
   const batters = useMemo(
     () => allBatters.filter((batter) => !tbdGameKeys.has(batter.gameKey) && !isStarterPlaceholder(batter.opposingPitcher)),
     [allBatters, tbdGameKeys],
@@ -1524,52 +1549,29 @@ export default function MlbHrProps() {
 
   const gameByKey = useMemo(() => new Map(games.map((g) => [g.gameKey, g])), [games]);
 
-  // HR smart filter — applies all criteria from the screenshot
+  // Sin City filter — uses canonical evaluateSinCityHitter from mlbHrFilter
   const applyHrFilter = useCallback((
     row: { gameKey: string; barrelRate?: number | null; hardHitRate?: number | null; exitVelo?: number | null;
-           pullRate?: number | null; pitcherBarrelRate?: number | null; pitcherHardHitRate?: number | null;
-           pitcherFlyBallRate?: number | null; pitcherKRate?: number | null; parkFactor?: number | null;
-           bats?: "L" | "R" | "S" | null; pitcherHand?: string; windBlowingOut?: boolean;
-           temperature?: number | null; weatherBoost?: number | null; },
+           pullRate?: number | null; ballpark?: string; },
   ) => {
     if (!hrFilterActive) return true;
     const game = gameByKey.get(row.gameKey);
-    const temp = row.temperature ?? game?.temperature ?? null;
-    const windOut = row.windBlowingOut ??
-      isWindBlowingOut(game?.stadium ?? "", game?.roofType ?? "", game?.windDirection ?? "—", game?.windSpeed ?? null);
-    const pitcherFB   = row.pitcherFlyBallRate ?? null;
-    const pitcherBrl  = row.pitcherBarrelRate  ?? null;
-    const pitcherHH   = row.pitcherHardHitRate ?? null;
-    const pitcherK    = row.pitcherKRate       ?? null;
-
-    // Hitter criteria
-    if ((row.barrelRate ?? 0)  < 12)  return false;
-    if ((row.pullRate   ?? 0)  < 20)  return false;
-    if ((row.hardHitRate ?? 0) < 45)  return false;
-    if ((row.exitVelo   ?? 0)  < 92)  return false;
-    // Pitcher criteria (skip if data unavailable)
-    if (pitcherBrl  != null && pitcherBrl  < 10)  return false;
-    if (pitcherHH   != null && pitcherHH   < 42)  return false;
-    if (pitcherFB   != null && pitcherFB   < 40)  return false;
-    if (pitcherK    != null && pitcherK    > 22)  return false;
-    // Environment criteria
-    if (temp != null && temp < 75)  return false;
-    if (!windOut) return false;
-    if ((row.parkFactor ?? 1) < 1.0) return false;
-    // Handedness split — favorable = batter has platoon advantage
-    // L batter vs R pitcher OR R/S batter vs L pitcher
-    if (row.bats && row.pitcherHand) {
-      const favorable =
-        (row.bats === "L" && row.pitcherHand === "R") ||
-        (row.bats !== "L" && row.pitcherHand === "L");
-      if (!favorable) return false;
-    }
-    return true;
+    const evaluation = evaluateSinCityHitter({
+      barrelRate: row.barrelRate,
+      pullAirRate: row.pullRate,
+      hardHitRate: row.hardHitRate,
+      exitVelo: row.exitVelo,
+      stadium: row.ballpark ?? game?.stadium,
+      roofType: (row as any).roofType ?? game?.roofType,
+      windDirection: (row as any).windDirection ?? game?.windDirection,
+      windSpeed: (row as any).windSpeed ?? game?.windSpeed,
+    });
+    return evaluation.qualifies;
   }, [hrFilterActive, gameByKey]);
 
   const filteredBatters = useMemo(() => {
     const query = batterSearch.trim().toLowerCase();
-    const rows = batters.filter((row) => {
+    const rows = enrichedBatters.filter((row) => {
       if (batterGameFilter !== "all" && row.gameKey !== batterGameFilter) return false;
       // Minimum 50 AB when data is available
       if (row.atBats != null && row.atBats < 50) return false;
@@ -2132,7 +2134,7 @@ export default function MlbHrProps() {
                               }`}
                             >
                               <span>⚡</span>
-                              <span>HR Filter</span>
+                              <span>Sin City</span>
                               {hrFilterActive && <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-white">{filteredBatters.length}</span>}
                             </button>
                           </div>
@@ -2328,7 +2330,7 @@ export default function MlbHrProps() {
                               }) : (
                                 <tr>
                                   <td colSpan={9} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
-                                    No batters match the current search or game filter.
+                                    {hrFilterActive ? "No Sin City batters match the current filters." : "No batters match the current search or game filter."}
                                   </td>
                                 </tr>
                               )}
@@ -2365,7 +2367,7 @@ export default function MlbHrProps() {
                                 }`}
                               >
                                 <span>⚡</span>
-                                <span>HR Filter</span>
+                                <span>Sin City</span>
                                 {hrFilterActive && <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-white">{filteredMatchups.length}</span>}
                               </button>
                             )}

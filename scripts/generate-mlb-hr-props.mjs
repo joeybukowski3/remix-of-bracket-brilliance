@@ -1526,8 +1526,13 @@ async function main() {
   let pitcherRegressionData = [];
   try {
     if (existsSync(PITCHER_REGRESSION_PATH)) {
-      pitcherRegressionData = JSON.parse(readFileSync(PITCHER_REGRESSION_PATH, "utf8"));
-      if (!Array.isArray(pitcherRegressionData)) pitcherRegressionData = [];
+      const regrJson = JSON.parse(readFileSync(PITCHER_REGRESSION_PATH, "utf8"));
+      // The file is { pitchers: [...] } — extract the array
+      pitcherRegressionData = Array.isArray(regrJson)
+        ? regrJson
+        : Array.isArray(regrJson?.pitchers)
+          ? regrJson.pitchers
+          : [];
       console.log(`Loaded ${pitcherRegressionData.length} pitcher regression entries.`);
     }
   } catch (err) {
