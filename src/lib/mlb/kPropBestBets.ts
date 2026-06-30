@@ -33,8 +33,21 @@ function priceBonus(odds: string | null | undefined) {
   return -3;
 }
 
-function buildReason(row: PitcherStrikeoutTeamRow, side: KBestBetSide, edge: number) {
-  const projection = row.projectedKs?.toFixed(1) ?? "—";
+function resolveProjectedKs(row: PitcherStrikeoutTeamRow) {
+  if (row.projectedKs != null && Number.isFinite(row.projectedKs)) return row.projectedKs;
+  if (
+    row.projectedIP != null
+    && row.projectedK9 != null
+    && Number.isFinite(row.projectedIP)
+    && Number.isFinite(row.projectedK9)
+  ) {
+    return Number(((row.projectedIP * row.projectedK9) / 9).toFixed(1));
+  }
+  return null;
+}
+
+function buildReason(row: PitcherStrikeoutTeamRow, side: KBestBetSide, edge: number, projectedKs: number) {
+  const projection = projectedKs.toFixed(1);
   const line = row.kLine?.toFixed(1) ?? "—";
   const gap = Math.abs(edge).toFixed(1);
   if (side === "over") {
@@ -48,8 +61,9 @@ export function buildKPropBestBets(rows: PitcherStrikeoutTeamRow[], maxPerSide =
   const unders: KBestBet[] = [];
 
   for (const row of rows) {
-    if (row.kLine == null || row.projectedKs == null || !Number.isFinite(row.kLine) || !Number.isFinite(row.projectedKs)) continue;
-    const projectionEdge = Number((row.projectedKs - row.kLine).toFixed(1));
+    const projectedKs = resolveProjectedKs(row);
+    if (row.kLine == null || projectedKs == null || !Number.isFinite(row.kLine)) continue;
+    const projectionEdge = Number((projectedKs - row.kLine).toFixed(1));
 
     if (projectionEdge >= 0.4 && row.kOddsOver) {
       const valueScore = Number((
@@ -67,11 +81,11 @@ export function buildKPropBestBets(rows: PitcherStrikeoutTeamRow[], maxPerSide =
         line: row.kLine,
         odds: row.kOddsOver,
         book: row.kOddsBook ?? null,
-        projectedKs: row.projectedKs,
+        projectedKs,
         projectionEdge,
         matchupScore: row.strikeoutMatchupScore,
         valueScore,
-        reason: buildReason(row, "over", projectionEdge),
+        reason: buildReason(row, "over", projectionEdge, projectedKs),
       });
     }
 
@@ -91,11 +105,11 @@ export function buildKPropBestBets(rows: PitcherStrikeoutTeamRow[], maxPerSide =
         line: row.kLine,
         odds: row.kOddsUnder,
         book: row.kOddsBook ?? null,
-        projectedKs: row.projectedKs,
+        projectedKs,
         projectionEdge,
         matchupScore: row.strikeoutMatchupScore,
         valueScore,
-        reason: buildReason(row, "under", projectionEdge),
+        reason: buildReason(row, "under", projectionEdge, projectedKs),
       });
     }
   }
