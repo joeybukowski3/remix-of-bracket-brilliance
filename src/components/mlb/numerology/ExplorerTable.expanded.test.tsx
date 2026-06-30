@@ -107,7 +107,7 @@ describe("Row interaction", () => {
 
   it("18. keyboard Enter toggles expansion on mobile card", () => {
     renderTable([basePlayer], [vladHrBatter]);
-    const btn = screen.getAllByRole("button")[0];
+    const btn = screen.getByRole("button", { name: /Vladimir Guerrero/i });
     fireEvent.keyDown(btn, { key: "Enter" });
     fireEvent.click(btn);
     expect(screen.getAllByText("HR Model Stats").length).toBeGreaterThan(0);

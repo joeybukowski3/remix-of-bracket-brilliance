@@ -239,17 +239,143 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
   );
 }
 
+// ── Sorting ──────────────────────────────────────────────────────────────────
+
+export type SortField = "numerologyScore" | "baseballScore";
+export type SortDirection = "desc" | "asc";
+export type SortState = { field: SortField; direction: SortDirection } | null;
+
+/** Cycle order: unsorted -> descending -> ascending -> unsorted */
+export function nextSortState(current: SortState, field: SortField): SortState {
+  if (!current || current.field !== field) return { field, direction: "desc" };
+  if (current.direction === "desc") return { field, direction: "asc" };
+  return null;
+}
+
+/**
+ * Deterministic comparator: primary field (per direction) -> other score
+ * descending -> player name A-Z. Direction only flips the primary field;
+ * the secondary/tertiary tie-breakers always favor higher score / earlier
+ * alphabetically, matching the brief's example exactly.
+ */
+export function compareRowsBySort(a: ExplorerRow, b: ExplorerRow, sort: SortState): number {
+  if (!sort) return 0;
+  const { field, direction } = sort;
+  const otherField: SortField = field === "numerologyScore" ? "baseballScore" : "numerologyScore";
+
+  const aPrimary = a[field] ?? 0;
+  const bPrimary = b[field] ?? 0;
+  if (aPrimary !== bPrimary) {
+    return direction === "desc" ? bPrimary - aPrimary : aPrimary - bPrimary;
+  }
+
+  const aOther = a[otherField] ?? 0;
+  const bOther = b[otherField] ?? 0;
+  if (aOther !== bOther) return bOther - aOther;
+
+  return a.playerName.localeCompare(b.playerName);
+}
+
+function ariaSortFor(sort: SortState, field: SortField): "descending" | "ascending" | "none" {
+  if (!sort || sort.field !== field) return "none";
+  return sort.direction === "desc" ? "descending" : "ascending";
+}
+
+function SortIcon({ direction }: { direction: SortDirection | null }) {
+  if (direction === "desc") {
+    return (
+      <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0" fill="none" aria-hidden="true">
+        <path d="M8 3v9M4.5 9 8 12.5 11.5 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (direction === "asc") {
+    return (
+      <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0" fill="none" aria-hidden="true">
+        <path d="M8 13V4M4.5 7 8 3.5 11.5 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 16 16" className="h-3 w-3 shrink-0 opacity-50" fill="none" aria-hidden="true">
+      <path d="M5 6.5 8 3.5 11 6.5M5 9.5 8 12.5 11 9.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SortableHeader({
+  field,
+  label,
+  sort,
+  onSort,
+  className = "",
+}: {
+  field: SortField;
+  label: string;
+  sort: SortState;
+  onSort: (field: SortField) => void;
+  className?: string;
+}) {
+  const active = sort?.field === field;
+  const direction = active ? sort!.direction : null;
+  return (
+    <th
+      scope="col"
+      aria-sort={ariaSortFor(sort, field)}
+      className={`px-3 py-2 font-medium tabular-nums ${className}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        aria-label={`Sort by ${label}`}
+        className={`flex min-h-[28px] items-center gap-1 rounded px-1 -mx-1 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a078ff] ${active ? "text-[#d0bcff]" : "text-[#958ea0] hover:text-[#e2e1ee]"}`}
+      >
+        {label}
+        <SortIcon direction={direction} />
+      </button>
+    </th>
+  );
+}
+
 // ── ExplorerTable ─────────────────────────────────────────────────────────────
 
-export function ExplorerTable({ rows, hrBatters = [] }: { rows: ExplorerRow[]; hrBatters?: HrDashboardBatter[] }) {
+export function ExplorerTable({ rows, hrBatters = [], sort = null, onSort }: { rows: ExplorerRow[]; hrBatters?: HrDashboardBatter[]; sort?: SortState; onSort?: (field: SortField) => void }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const toggle = (key: string) => setOpenKey(prev => prev === key ? null : key);
+  const sortedRows = sort ? [...rows].sort((a, b) => compareRowsBySort(a, b, sort)) : rows;
+  const handleSort = (field: SortField) => onSort?.(field);
 
   return (
     <>
+      {/* Mobile sort controls — table headers aren't visible on small screens, so the */}
+      {/* sort affordance and current sort state need their own compact row here. */}
+      <div className="flex items-center gap-1.5 border-b border-[#494454]/40 px-3 py-2 md:hidden">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-[#958ea0]">Sort</span>
+        <button
+          type="button"
+          onClick={() => handleSort("numerologyScore")}
+          aria-label="Sort by Numerology Score"
+          aria-pressed={sort?.field === "numerologyScore"}
+          className={`flex min-h-[32px] items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a078ff] ${sort?.field === "numerologyScore" ? "border-[#d0bcff] bg-[#d0bcff]/15 text-[#d0bcff]" : "border-[#494454] text-[#cbc3d7]"}`}
+        >
+          Numerology
+          <SortIcon direction={sort?.field === "numerologyScore" ? sort.direction : null} />
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSort("baseballScore")}
+          aria-label="Sort by Model Rating"
+          aria-pressed={sort?.field === "baseballScore"}
+          className={`flex min-h-[32px] items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a078ff] ${sort?.field === "baseballScore" ? "border-[#89ceff] bg-[#89ceff]/15 text-[#89ceff]" : "border-[#494454] text-[#cbc3d7]"}`}
+        >
+          Model
+          <SortIcon direction={sort?.field === "baseballScore" ? sort.direction : null} />
+        </button>
+      </div>
+
       {/* Mobile cards */}
       <div className="space-y-1.5 px-3 pb-3 md:hidden">
-        {rows.map((player) => {
+        {sortedRows.map((player) => {
           const key = `${player.playerName}-${player.team}`;
           const open = openKey === key;
           const hrBatter = matchHrBatter(player, hrBatters);
@@ -288,7 +414,7 @@ export function ExplorerTable({ rows, hrBatters = [] }: { rows: ExplorerRow[]; h
             </article>
           );
         })}
-        {rows.length === 0 && <div className="p-6 text-center text-sm text-[#958ea0]">No players match the selected filters.</div>}
+        {sortedRows.length === 0 && <div className="p-6 text-center text-sm text-[#958ea0]">No players match the selected filters.</div>}
       </div>
 
       {/* Desktop table */}
@@ -299,13 +425,13 @@ export function ExplorerTable({ rows, hrBatters = [] }: { rows: ExplorerRow[]; h
               <th className="w-[260px] px-3 py-2 font-medium">Player</th>
               <th className="w-[110px] px-3 py-2 font-medium">Match Type</th>
               <th className="px-3 py-2 font-medium">Signals</th>
-              <th className="w-[90px] px-3 py-2 font-medium tabular-nums">Numerology</th>
-              <th className="w-[100px] px-3 py-2 font-medium tabular-nums">Model Rating</th>
+              <SortableHeader field="numerologyScore" label="Numerology Score" sort={sort} onSort={handleSort} className="w-[110px]" />
+              <SortableHeader field="baseballScore" label="Model Rating" sort={sort} onSort={handleSort} className="w-[110px]" />
               <th className="w-[40px] px-3 py-2"></th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((player) => {
+            {sortedRows.map((player) => {
               const key = `${player.playerName}-${player.team}`;
               const open = openKey === key;
               const hrBatter = matchHrBatter(player, hrBatters);
@@ -343,7 +469,7 @@ export function ExplorerTable({ rows, hrBatters = [] }: { rows: ExplorerRow[]; h
                 </Fragment>
               );
             })}
-            {rows.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-[#958ea0]">No players match the selected filters.</td></tr>}
+            {sortedRows.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-[#958ea0]">No players match the selected filters.</td></tr>}
           </tbody>
         </table>
       </div>

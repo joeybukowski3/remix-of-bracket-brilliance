@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calculator, Home, Search, Star } from "lucide-react";
+import { Calculator, Home, Search, Star, BookOpen } from "lucide-react";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useMLBNumerology } from "@/hooks/useMLBNumerology";
@@ -7,10 +7,12 @@ import { useMlbLiveLineups } from "@/hooks/useMlbLiveLineups";
 import { calculateNumerologyScoreBreakdown, type PlayerIdentity } from "@/lib/numerology/mlbScoreAudit";
 import { panel, type NumerologyCardPlayer } from "@/components/mlb/numerology/NumerologyAuditCard";
 import { NumerologyExplorer } from "@/components/mlb/numerology/NumerologyExplorer";
+import { NumerologyKey, NumerologyKeyContent } from "@/components/mlb/numerology/NumerologyKey";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import type { HrDashboardBatter } from "@/pages/MlbHrProps";
 import { ResponsiveNumerologyPlayers } from "@/components/mlb/numerology/ResponsiveNumerologyPlayers";
 import type { NumerologyDailyData } from "@/types/mlbNumerology";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type ActivityMode = "default" | "broad";
 type ActivityData = { atBats?: number; atBatsPrevious2?: number; atBatsPrevious5?: number; qualifiesDefault?: boolean; qualifiesBroad?: boolean };
@@ -39,6 +41,7 @@ export default function MlbNumerologyPageEnhanced() {
   const { lineups, loading: lineupsLoading } = useMlbLiveLineups(data?.date);
   const [identities, setIdentities] = useState<Record<string, PlayerIdentity>>({});
   const [activityMode, setActivityMode] = useState<ActivityMode>("default");
+  const [keySheetOpen, setKeySheetOpen] = useState(false);
   const { batters: hrBatters } = useMlbPropsData();
 
   useEffect(() => {
@@ -75,7 +78,7 @@ export default function MlbNumerologyPageEnhanced() {
       <div className="min-h-screen bg-[#0a0c14] text-[#e2e1ee]">
         <div className="flex">
           {/* ── Sidebar ─────────────────────────────────────────────────────── */}
-          <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r border-[#494454] bg-[#1d1f28] p-3 lg:block">
+          <aside className="sticky top-0 hidden h-screen w-56 shrink-0 overflow-y-auto border-r border-[#494454] bg-[#1d1f28] p-3 lg:block">
             {/* Compact sidebar title */}
             <div className="mb-3 px-2 pt-2">
               <h2 className="font-serif text-lg leading-tight text-[#d0bcff]">MLB Numerology</h2>
@@ -87,6 +90,7 @@ export default function MlbNumerologyPageEnhanced() {
               <a className={desktopLink} href="#exact-matches"><Star className="h-4 w-4" />Exact Matches</a>
               <a className={desktopLink} href="#root-matches"><Calculator className="h-4 w-4" />Root Matches</a>
             </nav>
+            <NumerologyKey />
           </aside>
 
           {/* ── Main content ─────────────────────────────────────────────────── */}
@@ -114,7 +118,22 @@ export default function MlbNumerologyPageEnhanced() {
               <a className={mobileLink} href="#root-matches">Root</a>
               <a className={mobileLink} href="#methodology">Method</a>
               <a className={mobileLink} href="/mlb">MLB Home</a>
+              <button type="button" onClick={() => setKeySheetOpen(true)} className={`${mobileLink} col-span-3 flex items-center justify-center gap-1.5`}>
+                <BookOpen className="h-3.5 w-3.5" />
+                Numerology Key
+              </button>
             </nav>
+
+            <Sheet open={keySheetOpen} onOpenChange={setKeySheetOpen}>
+              <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto border-[#494454] bg-[#1d1f28] text-[#e2e1ee]">
+                <SheetHeader>
+                  <SheetTitle className="font-serif text-lg text-[#d0bcff]">Numerology Key</SheetTitle>
+                </SheetHeader>
+                <div className="mt-3">
+                  <NumerologyKeyContent />
+                </div>
+              </SheetContent>
+            </Sheet>
 
             {/* ── Recent batting activity — compact single row ─────────────── */}
             <section className={`${panel} mb-2 px-3 py-2`} aria-label="Recent batting activity filter">
