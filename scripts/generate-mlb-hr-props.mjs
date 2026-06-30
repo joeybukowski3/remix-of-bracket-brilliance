@@ -1616,6 +1616,11 @@ async function main() {
     .map((player, index) => ({
       gameKey: player.gameKey,
       player: player.player,
+      playerId: player.playerId,
+      gameId: player.gameId,
+      lineupStatus: player.lineupStatus,
+      battingOrder: player.battingOrder,
+      starterConfirmed: player.starterConfirmed,
       position: player.position,
       team: player.team,
       opponent: player.opponent,

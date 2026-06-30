@@ -659,3 +659,26 @@ describe("Social selection integration: deterministic selection gates LLM wordin
     }
   });
 });
+
+// ── Regression guard: generator final-reconstruction field passthrough ────────
+
+describe("Generator final batter reconstruction includes identity fields (regression guard)", () => {
+  it("the final .map() reconstruction in generate-mlb-hr-props.mjs explicitly includes playerId, gameId, lineupStatus, battingOrder, starterConfirmed", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const source = fs.readFileSync(path.join(__dirname, "../generate-mlb-hr-props.mjs"), "utf8");
+
+    // Find the final reconstruction block (the one with hrScoreRank: index + 1,
+    // which is unique to that specific .map() call).
+    const idx = source.indexOf("hrScoreRank: index + 1");
+    assert.ok(idx > 0, "Could not locate the final batter reconstruction block");
+    const blockStart = source.lastIndexOf(".map((player, index) => ({", idx);
+    const block = source.slice(blockStart, idx + 100);
+
+    for (const field of ["playerId: player.playerId", "gameId: player.gameId", "lineupStatus: player.lineupStatus", "battingOrder: player.battingOrder", "starterConfirmed: player.starterConfirmed"]) {
+      assert.ok(block.includes(field), `Final reconstruction is missing: ${field} -- this was the exact bug that caused every archive record to collide on playerId=0/gameId=0`);
+    }
+  });
+});
