@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { BarChart3, CalendarDays, Dice5, Flame, Radar, Swords } from "lucide-react";
 import MlbHrBestBets from "@/components/mlb/MlbHrBestBets";
@@ -12,12 +13,70 @@ const NAV_TILES = [
   { label: "Power Rankings", to: "/mlb/power-rankings", bg: "bg-indigo-500 hover:bg-indigo-600", icon: <BarChart3 className="h-3 w-3" /> },
 ];
 
+const MLB_MAIN_DESKTOP_STYLES = `
+  @media (min-width: 1024px) {
+    body.mlb-main-readable .site-container {
+      width: min(96vw, 1600px) !important;
+      max-width: 1600px !important;
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+    }
+
+    body.mlb-main-readable main {
+      font-size: 15px;
+    }
+
+    body.mlb-main-readable main [class*="text-[9px]"] {
+      font-size: 11px !important;
+      line-height: 1.35 !important;
+    }
+
+    body.mlb-main-readable main [class*="text-[10px]"] {
+      font-size: 11.5px !important;
+      line-height: 1.4 !important;
+    }
+
+    body.mlb-main-readable main [class*="text-[11px]"] {
+      font-size: 12.5px !important;
+      line-height: 1.4 !important;
+    }
+
+    body.mlb-main-readable main [class*="text-xs"] {
+      font-size: 13px !important;
+      line-height: 1.45 !important;
+    }
+
+    body.mlb-main-readable main table th {
+      font-size: 11.5px !important;
+      padding: 10px 12px !important;
+    }
+
+    body.mlb-main-readable main table td {
+      font-size: 12.5px !important;
+      padding: 9px 12px !important;
+    }
+
+    body.mlb-main-readable main article,
+    body.mlb-main-readable main section {
+      letter-spacing: 0;
+    }
+  }
+`;
+
 export default function MlbNavHero() {
   const { pathname } = useLocation();
   const showHrBestBets = pathname === "/mlb/hr-props";
+  const isMainMlbHub = pathname === "/mlb";
+
+  useEffect(() => {
+    if (!isMainMlbHub) return;
+    document.body.classList.add("mlb-main-readable");
+    return () => document.body.classList.remove("mlb-main-readable");
+  }, [isMainMlbHub]);
 
   return (
     <div>
+      {isMainMlbHub && <style>{MLB_MAIN_DESKTOP_STYLES}</style>}
       <section className="flex items-center gap-3 rounded-xl bg-[#1a2b4b] px-4 py-3 shadow-sm">
         <img src="/logos/mlb.svg" alt="MLB" className="h-8 w-auto shrink-0" />
         <div className="min-w-0 flex-1">
