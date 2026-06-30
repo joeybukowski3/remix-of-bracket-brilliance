@@ -693,20 +693,32 @@ function formatGameTime(value: string) {
 
 type PropPreviewTheme = "hr" | "k" | "bvp";
 
-type PropPreviewRow = {
+export type PropPreviewRow = {
   key: string;
   player: string;
   position?: string;
   team: string;
   opponent: string;
   score: number | null | undefined;
+  /** HR rows: sportsbook anytime-HR odds, e.g. "+320". Canonical field: hrOddsYes. */
+  hrOdds?: string | null;
+  /** HR rows: sportsbook label, e.g. "DraftKings". Canonical field: hrOddsBook. */
+  hrBook?: string | null;
+  /** K rows: strikeout line, e.g. 6.5. Canonical field: kLine. */
+  kLine?: number | null;
+  /** K rows: Over-side odds for the line. Canonical field: kOddsOver. */
+  kOddsOver?: string | null;
+  /** K rows: Under-side odds for the line. Canonical field: kOddsUnder. */
+  kOddsUnder?: string | null;
+  /** K rows: sportsbook label. Canonical field: kOddsBook. */
+  kBook?: string | null;
 };
 
 function TeamAbbrBadge({ team }: { team: string }) {
   return <MlbTeamLogo team={team} size={20} />;
 }
 
-function PropPreviewCard({
+export function PropPreviewCard({
   title,
   rows,
   to,
@@ -769,44 +781,91 @@ function PropPreviewCard({
       </div>
 
       <div>
-        {rows.map((row, index) => (
-          <Link
-            key={row.key}
-            to={to}
-            className={cn(
-              "group grid items-center gap-x-1.5 border-b border-slate-200/80 px-3 transition last:border-b-0 2xl:gap-x-2 2xl:px-4",
-              theme === "hr"
-                ? "grid-cols-[20px_minmax(90px,1fr)_minmax(116px,1.08fr)_56px] py-2.5 2xl:grid-cols-[20px_minmax(120px,1fr)_minmax(150px,1.12fr)_64px] 2xl:py-3"
-                : "grid-cols-[20px_minmax(116px,1fr)_minmax(56px,0.45fr)_56px] py-2.5 2xl:grid-cols-[20px_minmax(140px,1fr)_minmax(72px,0.48fr)_64px]",
-              index % 2 === 1 && "bg-slate-50/50",
-              themeClasses.hover,
-            )}
-          >
-            <div className="flex items-center justify-center">
-              <TeamAbbrBadge team={row.team} />
-            </div>
-            <div className="min-w-0 overflow-hidden">
-              <div
-                className="overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold leading-5 text-slate-950 2xl:text-[13px]"
-                title={row.player}
-              >
-                {row.player}
+        {rows.map((row, index) => {
+          const hasHrOdds = theme === "hr" && row.hrOdds != null;
+          const hasKLine = theme === "k" && row.kLine != null;
+          return (
+            <Link
+              key={row.key}
+              to={to}
+              className={cn(
+                "group grid items-center gap-x-1.5 border-b border-slate-200/80 px-3 transition last:border-b-0 2xl:gap-x-2 2xl:px-4",
+                theme === "hr"
+                  ? "grid-cols-[20px_minmax(90px,1fr)_minmax(116px,1.08fr)_56px] py-2.5 2xl:grid-cols-[20px_minmax(120px,1fr)_minmax(150px,1.12fr)_64px] 2xl:py-3"
+                  : "grid-cols-[20px_minmax(116px,1fr)_minmax(56px,0.45fr)_56px] py-2.5 2xl:grid-cols-[20px_minmax(140px,1fr)_minmax(72px,0.48fr)_64px]",
+                index % 2 === 1 && "bg-slate-50/50",
+                themeClasses.hover,
+              )}
+            >
+              <div className="flex items-center justify-center">
+                <TeamAbbrBadge team={row.team} />
               </div>
-              {row.position && <div className="text-[9px] font-semibold uppercase text-slate-400">{row.position}</div>}
-            </div>
-            <div className="min-w-0 overflow-hidden text-[11px] font-medium text-slate-600 2xl:text-xs">
-              <div
-                className="overflow-hidden text-ellipsis whitespace-nowrap"
-                title={`vs ${row.opponent}`}
-              >
-                vs {row.opponent}
+              <div className="min-w-0 overflow-hidden">
+                <div
+                  className="overflow-hidden text-ellipsis whitespace-nowrap text-xs font-bold leading-5 text-slate-950 2xl:text-[13px]"
+                  title={row.player}
+                >
+                  {row.player}
+                </div>
+                {row.position && <div className="text-[9px] font-semibold uppercase text-slate-400">{row.position}</div>}
               </div>
-            </div>
-            <div className="flex justify-end">
-              <ScorePill value={row.score} />
-            </div>
-          </Link>
-        ))}
+              <div className="min-w-0 overflow-hidden text-[11px] font-medium text-slate-600 2xl:text-xs">
+                <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap" title={`vs ${row.opponent}`}>
+                    vs {row.opponent}
+                  </span>
+                  {hasHrOdds && (
+                    <>
+                      <span className="text-slate-300" aria-hidden="true">·</span>
+                      <span
+                        className="inline-flex items-center rounded-full bg-sky-50 px-1.5 py-px font-mono text-[10px] font-bold tabular-nums text-sky-700"
+                        aria-label={`HR odds ${row.hrOdds}`}
+                      >
+                        {row.hrOdds}
+                      </span>
+                      {row.hrBook && (
+                        <span className="hidden text-[9px] text-slate-400 sm:inline" title={row.hrBook}>
+                          {row.hrBook}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {theme === "hr" && row.hrOdds == null && (
+                    <span className="text-slate-300" aria-label="HR odds unavailable">—</span>
+                  )}
+                  {hasKLine && (
+                    <>
+                      <span className="text-slate-300" aria-hidden="true">·</span>
+                      <span
+                        className="inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-px font-mono text-[10px] font-bold tabular-nums text-emerald-700"
+                        aria-label={`Strikeout line ${row.kLine}`}
+                      >
+                        {row.kLine?.toFixed(1)} K
+                      </span>
+                      {(row.kOddsOver || row.kOddsUnder) && (
+                        <span className="inline-flex items-center gap-1 font-mono text-[10px] tabular-nums text-slate-500">
+                          {row.kOddsOver && <span aria-label={`Over odds ${row.kOddsOver}`}>O {row.kOddsOver}</span>}
+                          {row.kOddsUnder && <span aria-label={`Under odds ${row.kOddsUnder}`}>U {row.kOddsUnder}</span>}
+                        </span>
+                      )}
+                      {row.kBook && (
+                        <span className="hidden text-[9px] text-slate-400 sm:inline" title={row.kBook}>
+                          {row.kBook}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {theme === "k" && row.kLine == null && (
+                    <span className="text-slate-300" aria-label="Strikeout line unavailable">—</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <ScorePill value={row.score} />
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -2949,6 +3008,8 @@ function HomeSchedule({
       team: row.team,
       opponent: row.opposingPitcher,
       score: row.hrScore,
+      hrOdds: row.hrOddsYes ?? null,
+      hrBook: row.hrOddsBook ?? null,
     })),
     [topHrProps],
   );
@@ -2959,6 +3020,10 @@ function HomeSchedule({
       team: row.team,
       opponent: row.opponent,
       score: row.kMatchupScore,
+      kLine: row.kLine ?? null,
+      kOddsOver: row.kOddsOver ?? null,
+      kOddsUnder: row.kOddsUnder ?? null,
+      kBook: row.kOddsBook ?? null,
     })),
     [topStrikeoutProps],
   );

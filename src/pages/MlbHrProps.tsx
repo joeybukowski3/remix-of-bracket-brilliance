@@ -1154,6 +1154,7 @@ export function buildPitcherStrikeoutMatchupRows(
       kLine: row.kLine,
       kOddsOver: row.kOddsOver,
       kOddsUnder: row.kOddsUnder,
+      kOddsBook: row.kOddsBook,
     };
   });
 }
