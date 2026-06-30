@@ -64,10 +64,16 @@ export function isMorningRunAllowed(now, existingOutput, etDateToday) {
 
   const { hour, minute } = getEtHourMinute(now);
   const minuteOfDay = hour * 60 + minute;
-  // 4:44 ET = 284 minutes; tolerance window [4:39, 4:49] = [279, 289]
+  // Target 4:44 ET = 284 minutes. GitHub Actions scheduled crons can fire several
+  // minutes (occasionally much longer) after their nominal time under platform
+  // load, so the window opens at the target time and stays open for 90 minutes
+  // (until 6:14 ET) rather than a narrow +/-5 minute band that a delayed run can
+  // miss entirely. The once-per-day completion guard above still prevents any
+  // duplicate run once the morning phase has succeeded for today.
   const TARGET = 4 * 60 + 44;
-  const TOLERANCE = 5;
-  if (minuteOfDay < TARGET - TOLERANCE || minuteOfDay > TARGET + TOLERANCE) {
+  const EARLY_TOLERANCE = 5;   // can fire up to 5 min before 4:44 if cron is early
+  const LATE_TOLERANCE = 90;   // stays open up to 90 min after 4:44 if cron is delayed
+  if (minuteOfDay < TARGET - EARLY_TOLERANCE || minuteOfDay > TARGET + LATE_TOLERANCE) {
     return {
       allowed: false,
       reason: `Not in 4:44 ET morning window (current ET ${hour}:${String(minute).padStart(2, "0")})`,

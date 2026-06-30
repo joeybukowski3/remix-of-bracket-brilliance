@@ -54,8 +54,14 @@ describe("isMorningRunAllowed", () => {
     assert.equal(result.allowed, true);
   });
 
-  it("2. rejects run at 5:00 ET (outside window)", () => {
+  it("2. allows run at 5:00 ET — within the new wider late-tolerance window (was rejected under the old +/-5 min window; that narrowness was the June 30 2026 root cause)", () => {
     const now = etWallClock(TODAY, 5, 0);
+    const result = isMorningRunAllowed(now, noOutput, TODAY);
+    assert.equal(result.allowed, true);
+  });
+
+  it("rejects run at 6:30 ET (genuinely outside the new window)", () => {
+    const now = etWallClock(TODAY, 6, 30);
     const result = isMorningRunAllowed(now, noOutput, TODAY);
     assert.equal(result.allowed, false);
   });
@@ -89,19 +95,40 @@ describe("isMorningRunAllowed", () => {
     assert.equal(now.getUTCMinutes(), 44);
   });
 
-  it("allows at tolerance boundary 4:39 ET", () => {
+  it("allows at early tolerance boundary 4:39 ET", () => {
     const now = etWallClock(TODAY, 4, 39);
     assert.equal(isMorningRunAllowed(now, noOutput, TODAY).allowed, true);
   });
 
-  it("allows at tolerance boundary 4:49 ET", () => {
+  it("rejects at 4:38 ET (just outside early tolerance)", () => {
+    const now = etWallClock(TODAY, 4, 38);
+    assert.equal(isMorningRunAllowed(now, noOutput, TODAY).allowed, false);
+  });
+
+  it("allows at 4:49 ET (within the new wider late window, not just the old 5-min band)", () => {
     const now = etWallClock(TODAY, 4, 49);
     assert.equal(isMorningRunAllowed(now, noOutput, TODAY).allowed, true);
   });
 
-  it("rejects at 4:38 ET (just outside tolerance)", () => {
-    const now = etWallClock(TODAY, 4, 38);
+  it("regression: allows a cron delayed to 5:30 ET — this is the June 30 2026 failure mode where the 4:44 ET cron never fired and the old +/-5 min window had already closed by the time GitHub Actions delivered any run", () => {
+    const now = etWallClock(TODAY, 5, 30);
+    assert.equal(isMorningRunAllowed(now, noOutput, TODAY).allowed, true);
+  });
+
+  it("allows at the late tolerance boundary 6:14 ET", () => {
+    const now = etWallClock(TODAY, 6, 14);
+    assert.equal(isMorningRunAllowed(now, noOutput, TODAY).allowed, true);
+  });
+
+  it("rejects at 6:15 ET (just outside the late tolerance window)", () => {
+    const now = etWallClock(TODAY, 6, 15);
     assert.equal(isMorningRunAllowed(now, noOutput, TODAY).allowed, false);
+  });
+
+  it("still rejects if morning already completed today, even within the window", () => {
+    const now = etWallClock(TODAY, 5, 0);
+    const output = { date: TODAY, morningGeneratedAt: "2026-06-30T08:44:00.000Z" };
+    assert.equal(isMorningRunAllowed(now, output, TODAY).allowed, false);
   });
 });
 

@@ -1,14 +1,19 @@
 name: Generate MLB Numerology
 
 # Twice-daily generation:
-#   Phase 1 - Morning:          4:44 AM America/New_York
+#   Phase 1 - Morning:          4:44 AM America/New_York (with a 6:00 AM backstop retry)
 #   Phase 2 - Lineup-confirmed: first active game - 2 hours (polls every 10 min)
 #
 # DST-aware design for the morning phase: two cron entries cover both offsets.
 #   EST (UTC-5): 4:44 AM ET = 09:44 UTC  -> "44 9 * * *"
 #   EDT (UTC-4): 4:44 AM ET = 08:44 UTC  -> "44 8 * * *"
+# A backstop retry covers the case where GitHub Actions delivers the primary
+# scheduled run late (a documented platform behavior, not unique to this repo):
+#   EST (UTC-5): 6:00 AM ET = 11:00 UTC -> "0 11 * * *"
+#   EDT (UTC-4): 6:00 AM ET = 10:00 UTC -> "0 10 * * *"
 # A runtime ET time-gate inside numerology-gate-runner.mjs ensures only the
-# correct local window executes, and only once per Eastern calendar date.
+# correct local window executes, and only once per Eastern calendar date —
+# the backstop is a no-op if the primary run already succeeded.
 #
 # Polling entries run every 10 minutes from 11:00-23:59 UTC. The gate script
 # exits in seconds when conditions are not met - no generation is triggered.
@@ -18,6 +23,9 @@ on:
     # Morning phase - 4:44 AM ET (EST: 09:44 UTC, EDT: 08:44 UTC)
     - cron: "44 9 * * *"
     - cron: "44 8 * * *"
+    # Morning backstop retry - 6:00 AM ET (EST: 11:00 UTC, EDT: 10:00 UTC)
+    - cron: "0 11 * * *"
+    - cron: "0 10 * * *"
     # Lineup-confirmed polling - every 10 min, 11:00-23:59 UTC
     - cron: "0,10,20,30,40,50 11-23 * * *"
 
