@@ -18,6 +18,12 @@ export interface NumerologySignal {
   type: SignalType;
   points: number;
   description: string;
+  /** Raw points before diminishing-returns decay (v3 audit trail) */
+  rawPoints?: number;
+  /** Decay multiplier applied to indirect signals (v3 audit trail) */
+  indirectMultiplier?: number;
+  /** Field importance tier: 1=core personal, 2=player context, 3=situational */
+  fieldTier?: 1 | 2 | 3;
 }
 
 export interface NumerologyScoreBreakdown {
@@ -25,8 +31,12 @@ export interface NumerologyScoreBreakdown {
   positiveTotal: number;
   countercurrentTotal: number;
   convergenceBonus: number;
-  /** Combo bonus for 2+ exact primary matches on high-value fields */
+  /** Synergy bonus for 2+ independent Tier1 exact compound matches (v3) */
   exactComboBonus: number;
+  /** Alias for exactComboBonus — explicit name for v3 synergy system */
+  synergyBonus?: number;
+  /** Scoring model version (v3+) */
+  modelVersion?: string;
   /** Count of signals with type primary_exact_master or primary_exact_root */
   exactPrimaryCount: number;
   /** Whether the player has an exact target match on birthDay field */

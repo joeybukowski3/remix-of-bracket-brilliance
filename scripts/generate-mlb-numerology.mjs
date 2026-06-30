@@ -332,169 +332,200 @@ function ageOnDate(birthDate, slateDate) {
 // ── Scoring ───────────────────────────────────────────────────────────────────
 const W = METHODOLOGY.weights;
 
+// Tier classification for each field
+const TIER1_FIELDS = new Set(["personalDay", "lifePath", "birthDay", "expression"]);
+const TIER2_FIELDS = new Set(["age", "jersey"]);
+function getFieldTier(field) {
+  if (TIER1_FIELDS.has(field)) return 1;
+  if (TIER2_FIELDS.has(field)) return 2;
+  return 3;
+}
+
+// Diminishing returns schedule for indirect signals (1st→100%, 2nd→70%, 3rd→40%, 4th+→20%)
+const INDIRECT_DECAY = [1.0, 0.7, 0.4, 0.2];
+
 function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = []) {
-  const signals = [];
-  const awarded = new Set();
   const ud = dailyProfile.universalDay;
+  const rawSignals = [];
+  const awarded = new Set();
 
-  // Maximum achievable raw score — only count signals whose source data IS available
-  // This prevents penalizing players for missing disabled/unavailable data
-  let maxAchievable = 0;
-  maxAchievable += (W.jerseyExactMaster ?? 22); // jersey
-  maxAchievable += (W.expressionRoot ?? 5); // expression (always available)
-  if (!missingData.includes("birthDate")) {
-    maxAchievable += (W.personalDayExactMaster ?? 22); // personalDay
-    maxAchievable += (W.lifePathExactMaster ?? 18); // lifePath
-    maxAchievable += (W.birthDayExact ?? 20); // birthDay
-    maxAchievable += (W.ageExact ?? 7); // age
-  }
-  if (playerProfile.battingOrder != null) {
-    maxAchievable += (W.battingOrderExactRoot ?? 10);
-  }
-  maxAchievable += (W.convergenceMaxBonus ?? 10);
-  maxAchievable += (W.exactComboBonus ?? 12);
-  // Use a floor of 60 to preserve score scale when most data is available
-  const normCeiling = Math.max(60, maxAchievable);
-
-  function award(field, label, type, points, description, key) {
-    if (awarded.has(key) || points === 0) return;
+  // isDirect=true means exact compound match to UD (never decayed)
+  function awardRaw(field, label, type, rawPoints, description, key, isDirect) {
+    if (awarded.has(key) || rawPoints === 0) return;
     awarded.add(key);
-    signals.push({ field, label, type, points, description });
+    rawSignals.push({ field, label, type, rawPoints, description, isDirect, tier: getFieldTier(field) });
   }
 
-  // Personal Day
+  // ── Personal Day (Tier1) ──────────────────────────────────────────────────
   const pd = playerProfile.personalDay;
   if (pd) {
     if (ud.master != null && (pd.compound === ud.master || pd.master === ud.master)) {
-      award("personalDay", `Personal Day ${pd.compound}/${pd.root} — Master Match`, "primary_exact_master", W.personalDayExactMaster, `Personal Day matches Universal Day master ${ud.master}.`, "pd:master");
+      awardRaw("personalDay", `Personal Day ${pd.compound}/${pd.root} — Master Match`, "primary_exact_master", W.personalDayExactMaster, `Personal Day matches Universal Day master ${ud.master}.`, "pd:master", true);
     } else if (pd.original === ud.rawSum || pd.compound === ud.rawSum) {
-      award("personalDay", `Personal Day ${pd.original}/${pd.root} — Exact Target`, "primary_exact_root", W.personalDayExact ?? (W.personalDayExactMaster - 6), `Personal Day ${pd.original} matches Universal Day compound ${ud.rawSum}.`, "pd:exact");
+      awardRaw("personalDay", `Personal Day ${pd.original}/${pd.root} — Exact Target`, "primary_exact_root", W.personalDayExact, `Personal Day ${pd.original} matches Universal Day ${ud.rawSum}.`, "pd:exact", true);
     } else if (pd.root === ud.root) {
-      award("personalDay", `Personal Day root ${pd.root} — Root Match`, "personal_cycle", W.personalDayRoot, `Personal Day root ${pd.root} matches Universal Day root.`, "pd:root");
+      awardRaw("personalDay", `Personal Day ${pd.original}/${pd.root} — Root Match`, "personal_cycle", W.personalDayRoot, `Personal Day root ${pd.root} matches Universal Day root.`, "pd:root", false);
     } else if (pd.root === dailyProfile.countercurrent) {
-      award("personalDay", `Personal Day — Countercurrent`, "countercurrent", -W.countercurrentHighField, `Personal Day root ${pd.root} is the countercurrent.`, "pd:counter");
+      awardRaw("personalDay", `Personal Day — Countercurrent`, "countercurrent", -(W.countercurrentHighField ?? 7), `Personal Day root ${pd.root} is the countercurrent.`, "pd:counter", false);
     }
   }
 
-  // Jersey
-  const j = playerProfile.jerseyReduced;
-  if (j) {
-    if (ud.master != null && (j.compound === ud.master || j.original === ud.master)) {
-      award("jersey", `Jersey ${j.original} — Exact Master`, "primary_exact_master", W.jerseyExactMaster, `Jersey ${j.original} matches Universal Day master.`, "jersey:master");
-    } else if (j.original === dailyProfile.calendarDay.original) {
-      award("jersey", `Jersey ${j.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, `Jersey ${j.original} equals Calendar Day ${dailyProfile.calendarDay.original}.`, "jersey:calexact");
-    } else if (j.original === ud.rawSum) {
-      award("jersey", `Jersey ${j.original} — Exact Target`, "primary_exact_root", W.jerseyExact ?? (W.jerseyExactMaster - 4), `Jersey ${j.original} matches Universal Day compound ${ud.rawSum}.`, "jersey:udexact");
-    } else if (j.root === ud.root) {
-      award("jersey", `Jersey ${j.original}/${j.root} — Root Match`, "primary_root", W.jerseyRoot, `Jersey ${j.original} reduces to ${j.root}.`, "jersey:root");
-    } else if (j.root === dailyProfile.calendarDay.root && j.root !== ud.root) {
-      award("jersey", `Jersey ${j.original}/${j.root} — Secondary Root`, "secondary_root", W.calendarDayRoot, `Jersey root ${j.root} matches Calendar Day root.`, "jersey:secroot");
-    } else if (j.root === dailyProfile.countercurrent) {
-      award("jersey", `Jersey ${j.original} — Countercurrent`, "countercurrent", -W.countercurrentHighField, `Jersey root is countercurrent.`, "jersey:counter");
-    } else if (dailyProfile.primaryFamily.includes(j.root)) {
-      award("jersey", `Jersey root ${j.root} — Primary Family`, "family_support", W.primaryFamilyMatch, `Jersey root belongs to family [${dailyProfile.primaryFamily.join("–")}].`, "jersey:primfam");
-    } else if (dailyProfile.secondaryFamily.includes(j.root)) {
-      award("jersey", `Jersey root ${j.root} — Secondary Family`, "family_support", W.secondaryFamilyMatch, `Jersey root belongs to secondary family.`, "jersey:secfam");
-    }
-  }
-
-  // Batting order — only award when validated 1-9 (Issue #6)
-  const bo = playerProfile.battingOrder;
-  if (bo != null && bo >= 1 && bo <= 9) {
-    if (bo === ud.root) {
-      award("battingOrder", `Batting ${bo} — Exact Root Match`, "primary_exact_root", W.battingOrderExactRoot, `Batting ${bo} exactly matches Universal Day root.`, "bo:exact");
-    } else if (dailyProfile.primaryFamily.includes(bo)) {
-      award("battingOrder", `Batting ${bo} — Primary Family`, "family_support", W.primaryFamilyMatch, `Batting ${bo} belongs to primary family.`, "bo:primfam");
-    } else if (dailyProfile.secondaryFamily.includes(bo)) {
-      award("battingOrder", `Batting ${bo} — Secondary Family`, "family_support", W.secondaryFamilyMatch, `Batting ${bo} belongs to secondary family.`, "bo:secfam");
-    }
-  }
-
-  // Life Path
+  // ── Life Path (Tier1) — exact compound check added before root check ───────
   const lp = playerProfile.lifePath;
   if (lp) {
     if (ud.master != null && (lp.compound === ud.master || lp.master === ud.master)) {
-      award("lifePath", `Life Path ${lp.compound} — Master Match`, "primary_exact_master", W.lifePathExactMaster, `Life Path matches Universal Day master.`, "lp:master");
+      awardRaw("lifePath", `Life Path ${lp.compound} — Master Match`, "primary_exact_master", W.lifePathExactMaster, `Life Path matches Universal Day master.`, "lp:master", true);
+    } else if (lp.original === ud.rawSum || lp.compound === ud.rawSum) {
+      awardRaw("lifePath", `Life Path ${lp.original}/${lp.root} — Exact Target`, "primary_exact_root", W.lifePathExact, `Life Path ${lp.original} exactly matches Universal Day ${ud.rawSum}.`, "lp:exact", true);
     } else if (lp.root === ud.root) {
-      award("lifePath", `Life Path ${lp.compound}/${lp.root} — Root Match`, "primary_root", W.lifePathRoot, `Life Path ${lp.compound} root ${lp.root} matches Universal Day root.`, "lp:root");
+      awardRaw("lifePath", `Life Path ${lp.compound}/${lp.root} — Root Match`, "primary_root", W.lifePathRoot, `Life Path ${lp.compound} root ${lp.root} matches Universal Day root.`, "lp:root", false);
     } else if (lp.root === dailyProfile.countercurrent) {
-      award("lifePath", `Life Path — Countercurrent`, "countercurrent", -Math.round(W.countercurrentHighField / 2), `Life Path root ${lp.root} is countercurrent.`, "lp:counter");
+      awardRaw("lifePath", `Life Path — Countercurrent`, "countercurrent", -(W.countercurrentHighField ?? 7), `Life Path root ${lp.root} is countercurrent.`, "lp:counter", false);
     }
   }
 
-  // Birth Day — priority: master > exact target compound > calendar day > reduces to root > 3/6/9 family
+  // ── Birth Day (Tier1) ─────────────────────────────────────────────────────
   const bd = playerProfile.birthDayNum;
   if (bd) {
     if (ud.master != null && (bd.compound === ud.master || bd.original === ud.master)) {
-      award("birthDay", `Birth Day ${bd.original} — Master Match`, "primary_exact_master", W.birthDayExactMaster ?? 24, `Birth day matches Universal Day master.`, "bd:master");
+      awardRaw("birthDay", `Birth Day ${bd.original} — Master Match`, "primary_exact_master", W.birthDayExactMaster ?? 24, `Birth day matches Universal Day master.`, "bd:master", true);
     } else if (bd.original === ud.rawSum || bd.compound === ud.rawSum) {
-      award("birthDay", `Birth Day ${bd.original} — Exact Target`, "primary_exact_root", W.birthDayExact ?? 20, `Birth day exactly matches Universal Day ${ud.rawSum}.`, "bd:exactTarget");
+      awardRaw("birthDay", `Birth Day ${bd.original} — Exact Target`, "primary_exact_root", W.birthDayExact, `Birth day exactly matches Universal Day ${ud.rawSum}.`, "bd:exactTarget", true);
     } else if (bd.original === dailyProfile.calendarDay.original) {
-      award("birthDay", `Birth Day ${bd.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound ?? 8, `Birth day matches Calendar Day.`, "bd:calexact");
+      awardRaw("birthDay", `Birth Day ${bd.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, `Birth day matches Calendar Day ${dailyProfile.calendarDay.original}.`, "bd:calexact", false);
     } else if (bd.root === ud.root) {
-      award("birthDay", `Birth Day ${bd.original}/${bd.root} — Reduces to Target`, "primary_root", W.birthDayRoot ?? 12, `Birth day root ${bd.root} reduces to Universal Day root.`, "bd:root");
+      awardRaw("birthDay", `Birth Day ${bd.original}/${bd.root} — Reduces to Target`, "primary_root", W.birthDayRoot, `Birth day root ${bd.root} reduces to Universal Day root.`, "bd:root", false);
     } else if (dailyProfile.primaryFamily.includes(bd.root) && bd.root !== dailyProfile.countercurrent) {
-      award("birthDay", `Birth Day ${bd.original}/${bd.root} — 3/6/9 Family`, "family_support", W.primaryFamilyMatch ?? 3, `Birth day root ${bd.root} is in primary 3/6/9 family.`, "bd:family");
+      awardRaw("birthDay", `Birth Day ${bd.original}/${bd.root} — Primary Family`, "family_support", W.primaryFamilyMatchTier1 ?? W.primaryFamilyMatch, `Birth day root ${bd.root} is in primary family.`, "bd:family", false);
     }
   }
 
-  // Age — lower weight than birthday; exact target compound still counts but scores less
+  // ── Expression (Tier1) ────────────────────────────────────────────────────
+  const expr = playerProfile.expressionNum;
+  if (expr) {
+    if (ud.master != null && (expr.compound === ud.master || expr.original === ud.master)) {
+      awardRaw("expression", `Expression ${expr.compound}/${expr.root} — Master Match`, "primary_exact_master", W.jerseyExactMaster ?? 24, `Expression matches Universal Day master.`, "expr:master", true);
+    } else if (expr.original === ud.rawSum || expr.compound === ud.rawSum) {
+      awardRaw("expression", `Expression ${expr.compound} — Exact Target`, "primary_exact_root", W.expressionExact, `Expression ${expr.compound} matches Universal Day ${ud.rawSum}.`, "expr:exact", true);
+    } else if (expr.root === ud.root) {
+      awardRaw("expression", `Expression ${expr.compound}/${expr.root} — Reduces to Target`, "name_resonance", W.expressionRoot, `Name Expression root reduces to Universal Day root.`, "expr:root", false);
+    }
+  }
+
+  // ── Jersey (Tier2) ────────────────────────────────────────────────────────
+  const j = playerProfile.jerseyReduced;
+  if (j) {
+    if (ud.master != null && (j.compound === ud.master || j.original === ud.master)) {
+      awardRaw("jersey", `Jersey ${j.original} — Exact Master`, "primary_exact_master", W.jerseyExactMaster, `Jersey ${j.original} matches Universal Day master.`, "jersey:master", true);
+    } else if (j.original === dailyProfile.calendarDay.original) {
+      awardRaw("jersey", `Jersey ${j.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, `Jersey ${j.original} equals Calendar Day ${dailyProfile.calendarDay.original}.`, "jersey:calexact", false);
+    } else if (j.original === ud.rawSum) {
+      awardRaw("jersey", `Jersey ${j.original} — Exact Target`, "primary_exact_root", W.jerseyExact, `Jersey ${j.original} matches Universal Day ${ud.rawSum}.`, "jersey:udexact", true);
+    } else if (j.root === ud.root) {
+      awardRaw("jersey", `Jersey ${j.original}/${j.root} — Root Match`, "primary_root", W.jerseyRoot, `Jersey ${j.original} reduces to ${j.root}.`, "jersey:root", false);
+    } else if (j.root === dailyProfile.calendarDay.root && j.root !== ud.root) {
+      awardRaw("jersey", `Jersey ${j.original}/${j.root} — Secondary Root`, "secondary_root", W.calendarDayRoot, `Jersey root ${j.root} matches Calendar Day root.`, "jersey:secroot", false);
+    } else if (j.root === dailyProfile.countercurrent) {
+      awardRaw("jersey", `Jersey ${j.original} — Countercurrent`, "countercurrent", -(W.countercurrentTier2 ?? 5), `Jersey root is countercurrent.`, "jersey:counter", false);
+    } else if (dailyProfile.primaryFamily.includes(j.root)) {
+      awardRaw("jersey", `Jersey root ${j.root} — Primary Family`, "family_support", W.primaryFamilyMatch, `Jersey root belongs to family [${dailyProfile.primaryFamily.join("–")}].`, "jersey:primfam", false);
+    } else if (dailyProfile.secondaryFamily.includes(j.root)) {
+      awardRaw("jersey", `Jersey root ${j.root} — Secondary Family`, "family_support", W.secondaryFamilyMatch, `Jersey root belongs to secondary family.`, "jersey:secfam", false);
+    }
+  }
+
+  // ── Age (Tier2) ───────────────────────────────────────────────────────────
   const age = playerProfile.age;
   if (age != null) {
     const ageR = reduce(age);
     if (ud.master != null && (ageR.original === ud.master || ageR.compound === ud.master)) {
-      award("age", `Age ${age} — Master Match`, "primary_exact_master", W.ageExactMaster ?? 10, `Age ${age} matches Universal Day master.`, "age:master");
+      awardRaw("age", `Age ${age} — Master Match`, "primary_exact_master", W.ageExactMaster ?? 24, `Age ${age} matches Universal Day master.`, "age:master", true);
     } else if (ageR.original === ud.rawSum || ageR.compound === ud.rawSum) {
-      award("age", `Age ${age} — Exact Target`, "primary_exact_root", W.ageExact ?? 7, `Age ${age} matches Universal Day ${ud.rawSum}.`, "age:exact");
+      awardRaw("age", `Age ${age} — Exact Target`, "primary_exact_root", W.ageExact, `Age ${age} matches Universal Day ${ud.rawSum}.`, "age:exact", true);
     } else if (ageR.root === ud.root) {
-      award("age", `Age ${age} root ${ageR.root} — Reduces to Target`, "primary_root", W.ageRoot ?? 3, `Age ${age} reduces to root ${ageR.root}.`, "age:root");
+      awardRaw("age", `Age ${age} root ${ageR.root} — Reduces to Target`, "primary_root", W.ageRoot, `Age ${age} reduces to root ${ageR.root}.`, "age:root", false);
     }
   }
 
-  // Expression Number — check exact target compound before root match
-  const expr = playerProfile.expressionNum;
-  if (expr) {
-    if (ud.master != null && (expr.compound === ud.master || expr.original === ud.master)) {
-      award("expression", `Expression ${expr.compound}/${expr.root} — Master Match`, "primary_exact_master", W.jerseyExactMaster ?? 22, `Expression matches Universal Day master.`, "expr:master");
-    } else if (expr.original === ud.rawSum || expr.compound === ud.rawSum) {
-      award("expression", `Expression ${expr.compound} — Exact Target`, "primary_exact_root", W.expressionExact ?? 12, `Expression ${expr.compound} matches Universal Day ${ud.rawSum}.`, "expr:exact");
-    } else if (expr.root === ud.root) {
-      award("expression", `Expression ${expr.compound}/${expr.root} — Reduces to Target`, "name_resonance", W.expressionRoot ?? 5, `Name Expression root reduces to Universal Day root.`, "expr:root");
+  // ── Batting order (Tier3) ─────────────────────────────────────────────────
+  const bo = playerProfile.battingOrder;
+  if (bo != null && bo >= 1 && bo <= 9) {
+    if (bo === ud.root) {
+      awardRaw("battingOrder", `Batting ${bo} — Exact Root Match`, "primary_exact_root", W.battingOrderExactRoot, `Batting ${bo} exactly matches Universal Day root.`, "bo:exact", false);
+    } else if (dailyProfile.primaryFamily.includes(bo)) {
+      awardRaw("battingOrder", `Batting ${bo} — Primary Family`, "family_support", W.primaryFamilyMatch, `Batting ${bo} belongs to primary family.`, "bo:primfam", false);
+    } else if (dailyProfile.secondaryFamily.includes(bo)) {
+      awardRaw("battingOrder", `Batting ${bo} — Secondary Family`, "family_support", W.secondaryFamilyMatch, `Batting ${bo} belongs to secondary family.`, "bo:secfam", false);
     }
   }
 
-  // Repeated digits (contextual echo)
+  // ── Repeated digits (Tier3) ───────────────────────────────────────────────
   for (const rep of dailyProfile.repeatedDigits) {
     const jerseyMatch = j?.root === rep.digit || j?.original === rep.digit;
     const boMatch = bo === rep.digit;
     if ((jerseyMatch || boMatch) && rep.reinforces === "primary") {
-      award("repeatedDigit", `Date digit ${rep.digit} (×${rep.count}) — Contextual Echo`, "contextual_echo", W.repeatedDateDigit, `Digit ${rep.digit} repeats ${rep.count}× in today's date.`, `rep:${rep.digit}`);
+      awardRaw("repeatedDigit", `Date digit ${rep.digit} (×${rep.count}) — Contextual Echo`, "contextual_echo", W.repeatedDateDigit, `Digit ${rep.digit} repeats ${rep.count}× in today's date.`, `rep:${rep.digit}`, false);
     }
   }
 
-  // Multiple independent countercurrent penalty (Issue #8)
-  const counterFields = signals.filter(s => s.type === "countercurrent");
-  if (counterFields.length >= 2) {
-    const penalty = -(W.countercurrentMultiple * (counterFields.length - 1));
-    signals.push({ field: "multiCountercurrent", label: `${counterFields.length} independent countercurrents`, type: "countercurrent", points: penalty, description: `Multiple independent countercurrent signals compound: ${counterFields.map(s=>s.field).join(", ")}.` });
+  // ── Separate direct vs indirect vs countercurrent ─────────────────────────
+  const directPositive = rawSignals.filter(s => s.isDirect && s.rawPoints > 0);
+  const indirectPositive = rawSignals.filter(s => !s.isDirect && s.rawPoints > 0);
+  const negativeRaw = rawSignals.filter(s => s.rawPoints < 0);
+
+  // Sort indirect by tier asc → rawPoints desc → field alpha (deterministic decay order)
+  const sortedIndirect = [...indirectPositive].sort((a, b) =>
+    a.tier - b.tier || b.rawPoints - a.rawPoints || a.field.localeCompare(b.field)
+  );
+
+  const finalSignals = [];
+
+  // Direct signals: no decay, always full weight
+  for (const s of directPositive) {
+    finalSignals.push({ field: s.field, label: s.label, type: s.type, points: s.rawPoints, description: s.description, rawPoints: s.rawPoints, fieldTier: s.tier });
   }
 
-  const pos = signals.filter(s => s.points > 0);
-  const neg = signals.filter(s => s.points < 0);
-  const positiveTotal = pos.reduce((a,s) => a+s.points, 0);
-  const countercurrentTotal = Math.abs(neg.reduce((a,s) => a+s.points, 0));
-  const independentSources = new Set(pos.filter(s => !["family_support","contextual_echo"].includes(s.type)).map(s=>s.field));
-  const convergenceBonus = Math.min(independentSources.size >= 4 ? (W.convergenceMaxBonus??10) : independentSources.size >= 3 ? Math.round((W.convergenceMaxBonus??10)*0.5) : 0, W.convergenceMaxBonus??10);
-  // Exact combo bonus: awarded for multiple strong direct/exact matches on high-value fields
-  const EXACT_PRIMARY = new Set(["primary_exact_master","primary_exact_root"]);
-  const HIGH_VALUE = new Set(["jersey","personalDay","lifePath","birthDay","expression"]);
-  const exactHighValue = new Set(pos.filter(s => EXACT_PRIMARY.has(s.type) && HIGH_VALUE.has(s.field)).map(s=>s.field));
-  const hasBirthdayExact = pos.some(s => EXACT_PRIMARY.has(s.type) && s.field === "birthDay");
-  const exactComboBonus = exactHighValue.size >= 3 ? Math.round((W.exactComboBonus??12)*1.5) :
-    exactHighValue.size >= 2 ? (W.exactComboBonus??12) + (hasBirthdayExact ? (W.birthdayComboBonus??4) : 0) : 0;
-  const rawNumerology = Math.max(0, positiveTotal - countercurrentTotal + convergenceBonus + exactComboBonus);
+  // Indirect signals: apply diminishing returns schedule
+  for (let i = 0; i < sortedIndirect.length; i++) {
+    const s = sortedIndirect[i];
+    const multiplier = INDIRECT_DECAY[Math.min(i, INDIRECT_DECAY.length - 1)];
+    const adjusted = Math.max(1, Math.round(s.rawPoints * multiplier));
+    finalSignals.push({ field: s.field, label: s.label, type: s.type, points: adjusted, description: s.description, rawPoints: s.rawPoints, indirectMultiplier: multiplier, fieldTier: s.tier });
+  }
+
+  // Countercurrent signals: no decay
+  for (const s of negativeRaw) {
+    finalSignals.push({ field: s.field, label: s.label, type: s.type, points: s.rawPoints, description: s.description });
+  }
+
+  // Multiple independent countercurrent penalty (Issue #8)
+  if (negativeRaw.length >= 2) {
+    const penalty = -(W.countercurrentMultiple * (negativeRaw.length - 1));
+    finalSignals.push({ field: "multiCountercurrent", label: `${negativeRaw.length} independent countercurrents`, type: "countercurrent", points: penalty, description: `Multiple independent countercurrent signals compound: ${negativeRaw.map(s=>s.field).join(", ")}.` });
+  }
+
+  // ── Compute totals ─────────────────────────────────────────────────────────
+  const pos = finalSignals.filter(s => s.points > 0);
+  const neg = finalSignals.filter(s => s.points < 0);
+  const positiveTotal = pos.reduce((a, s) => a + s.points, 0);
+  const countercurrentTotal = Math.abs(neg.reduce((a, s) => a + s.points, 0));
+
+  // ── Synergy bonus — rewards true exact compound alignment ─────────────────
+  const tier1ExactFields = new Set(directPositive.filter(s => s.tier === 1).map(s => s.field));
+  const tier1IndirectFields = new Set(indirectPositive.filter(s => s.tier === 1).map(s => s.field));
+  let exactComboBonus = 0;
+  if (tier1ExactFields.size >= 2) {
+    exactComboBonus = W.synergyDoubleExactTier1 ?? 12;
+    if (tier1ExactFields.size >= 3) exactComboBonus += W.synergyTripleExactTier1 ?? 6;
+  } else if (tier1ExactFields.size === 1 && tier1IndirectFields.size >= 1) {
+    exactComboBonus = W.synergyExactPlusRootTier1 ?? 4;
+  }
+
+  const normCeiling = W.normCeiling ?? 76;
+  const convergenceBonus = 0;
+  const rawNumerology = Math.max(0, positiveTotal - countercurrentTotal + exactComboBonus);
   const numerologyScore = Math.min(100, Math.round((rawNumerology / normCeiling) * 100));
-  return { signals, positiveTotal, countercurrentTotal, convergenceBonus, exactComboBonus, numerologyScore, normCeiling };
+  return { signals: finalSignals, positiveTotal, countercurrentTotal, convergenceBonus, exactComboBonus, numerologyScore, normCeiling };
 }
 
 // ── Lineup status (Issue #7) ──────────────────────────────────────────────────

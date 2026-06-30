@@ -221,7 +221,7 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
               {[
                 ["Positive", `+${breakdown.positiveTotal}`],
                 ["Penalty", `-${breakdown.countercurrentTotal}`],
-                ["Combo", `+${breakdown.exactComboBonus ?? 0}`],
+                ["Synergy", `+${breakdown.exactComboBonus ?? 0}`],
                 ["Bonus", `+${breakdown.convergenceBonus}`],
                 ["Raw", String(breakdown.rawNumerology)],
                 ["Score", `${breakdown.calculatedScore}/100`],
