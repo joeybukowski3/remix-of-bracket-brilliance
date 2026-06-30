@@ -1,0 +1,119 @@
+name: Generate MLB Power Rankings
+run-name: Generate MLB Power Rankings • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    - cron: "15 4 * * *"
+      timezone: "America/New_York" # 4:15 AM ET — daily early-morning refresh after prior-day games complete
+    - cron: "15 23 * * *"
+      timezone: "America/New_York" # 11:15 PM ET — second refresh after most daily games finish
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/generate-mlb-power-rankings.yml
+
+# Share one lock with the other automated workflows that commit generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  generate-power-rankings:
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure team wRC+ data is current
+        run: node scripts/fetch-team-wrc-plus.mjs || true
+
+      - name: Generate MLB power rankings
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            echo "Power rankings attempt ${attempt}/3"
+            if node scripts/generate-mlb-power-rankings.mjs; then
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "Power rankings generation failed after 3 attempts." >&2
+          exit 1
+
+      - name: Detect meaningful power rankings changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- public/data/mlb/power-rankings.json)" ]; then
+            echo "No meaningful power rankings changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Meaningful power rankings changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate generated JSON
+        if: steps.changes.outputs.changed == 'true'
+        run: node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/power-rankings.json','utf8')); console.log('Valid JSON');"
+
+      - name: Build site
+        if: steps.changes.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Commit and push updated power rankings
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/mlb/power-rankings.json public/data/mlb/team-wrc-plus.json
+
+          if git diff --cached --quiet; then
+            echo "No staged power rankings changes."
+            exit 0
+          fi
+
+          git commit -m "chore: refresh MLB power rankings $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — power rankings were not committed." >&2
+            exit 1
+          fi
+
+          echo "Power rankings pushed successfully."

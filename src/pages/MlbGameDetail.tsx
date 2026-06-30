@@ -817,6 +817,7 @@ const MLB_HUB_LINKS = [
   { label: "HR Props",              to: "/mlb/hr-props",                       icon: <Flame       className="h-4 w-4" /> },
   { label: "K Props",               to: "/mlb/strikeout-props",                icon: <Radar       className="h-4 w-4" /> },
   { label: "Game Matchups",         to: "/mlb#schedule",                       icon: <CalendarDays className="h-4 w-4" /> },
+  { label: "Power Rankings",        to: "/mlb/power-rankings",                 icon: <BarChart3   className="h-4 w-4" /> },
   { label: "Moneyline Edges",       to: "/mlb#moneylines",                     icon: <TrendingUp  className="h-4 w-4" /> },
   { label: "Pitcher Regression",    to: "/mlb#pitcher-regression",             icon: <BarChart3   className="h-4 w-4" /> },
   { label: "Overdue Batters",       to: "/mlb/hr-props#overdue",               icon: <Flame       className="h-4 w-4" /> },

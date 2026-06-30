@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { CalendarDays, Dice5, Flame, Radar, Swords } from "lucide-react";
+import { BarChart3, CalendarDays, Dice5, Flame, Radar, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_TILES = [
@@ -8,6 +8,7 @@ const NAV_TILES = [
   { label: "K Props", to: "/mlb/strikeout-props", bg: "bg-emerald-500 hover:bg-emerald-600", icon: <Radar className="h-3 w-3" /> },
   { label: "Hit Props", to: "/mlb/batter-vs-pitcher", bg: "bg-violet-500 hover:bg-violet-600", icon: <Swords className="h-3 w-3" /> },
   { label: "Game Matchups", to: "/mlb#schedule", bg: "bg-amber-500 hover:bg-amber-600", icon: <CalendarDays className="h-3 w-3" /> },
+  { label: "Power Rankings", to: "/mlb/power-rankings", bg: "bg-indigo-500 hover:bg-indigo-600", icon: <BarChart3 className="h-3 w-3" /> },
 ];
 
 export default function MlbNavHero() {
