@@ -98,7 +98,7 @@ export default function MlbSinCity() {
             ))}
           </section>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600"><strong className="text-slate-900">Criteria:</strong> Barrel% ≥ {SIN_CITY_THRESHOLDS.barrelRate}, Pull Air% ≥ {SIN_CITY_THRESHOLDS.pullAirRate}, Hard Hit% ≥ {SIN_CITY_THRESHOLDS.hardHitRate}, Exit Velocity ≥ {SIN_CITY_THRESHOLDS.exitVelo} mph, and wind classified as blowing out at ≥ {SIN_CITY_THRESHOLDS.windSpeed} mph with the roof open.</section>
+          <section className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600"><strong className="text-slate-900">Criteria:</strong> Barrel% ≥ {SIN_CITY_THRESHOLDS.barrelRate}, Pull% ≥ {SIN_CITY_THRESHOLDS.pullRate}, Hard Hit% ≥ {SIN_CITY_THRESHOLDS.hardHitRate}, Exit Velocity ≥ {SIN_CITY_THRESHOLDS.exitVelo} mph, and wind classified as blowing out at ≥ {SIN_CITY_THRESHOLDS.windSpeed} mph with the roof open. <span className="text-slate-400">(Pull% reflects overall pull rate, not pulled-air contact specifically — true pulled-air data requires event-level Statcast not currently integrated.)</span></section>
 
           {loading ? <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-slate-500">Loading current MLB HR data…</div> : enrichedBatters.length === 0 ? <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-slate-500">No current MLB HR data is available.</div> : <>
             {result.isFallback && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">No players met at least three of five criteria today — showing the five closest matches.</div>}

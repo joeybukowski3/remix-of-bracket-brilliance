@@ -60,7 +60,14 @@ export function classifyWind(stadium: string, roofType: string, windDirection: s
 
 export const SIN_CITY_THRESHOLDS = {
   barrelRate: 12,
-  pullAirRate: 20,
+  // NOTE: this is overall pull rate (pull_percent from Baseball Savant's
+  // aggregate leaderboard), not pulled-air/pulled-fly-ball rate. True
+  // Pulled-Air% would require event-level Statcast data (per batted-ball
+  // launch angle + spray direction), which is not currently integrated.
+  // The threshold value (20) and qualification behavior are unchanged from
+  // the prior "Pull Air%" label — only the label and methodology copy were
+  // corrected to accurately describe the underlying data.
+  pullRate: 20,
   hardHitRate: 45,
   exitVelo: 92,
   windSpeed: 8,
@@ -71,7 +78,8 @@ export const SIN_CITY_FALLBACK_COUNT = 5;
 
 export type SinCityInput = {
   barrelRate: number | null | undefined;
-  pullAirRate: number | null | undefined;
+  /** Overall pull rate (all batted-ball types), not pulled-air specifically. See SIN_CITY_THRESHOLDS comment. */
+  pullRate: number | null | undefined;
   hardHitRate: number | null | undefined;
   exitVelo: number | null | undefined;
   stadium?: string | null;
@@ -81,7 +89,7 @@ export type SinCityInput = {
 };
 
 export type SinCityCriterionResult = {
-  name: "Barrel%" | "Pull Air%" | "Hard Hit%" | "Exit Velo" | "Wind Out";
+  name: "Barrel%" | "Pull%" | "Hard Hit%" | "Exit Velo" | "Wind Out";
   value: number | null;
   threshold: number;
   pass: boolean;
@@ -127,7 +135,7 @@ export function evaluateSinCityHitter(input: SinCityInput): SinCityEvaluation {
 
   const criteria: SinCityCriterionResult[] = [
     numericCriterion("Barrel%", input.barrelRate, SIN_CITY_THRESHOLDS.barrelRate),
-    numericCriterion("Pull Air%", input.pullAirRate, SIN_CITY_THRESHOLDS.pullAirRate),
+    numericCriterion("Pull%", input.pullRate, SIN_CITY_THRESHOLDS.pullRate),
     numericCriterion("Hard Hit%", input.hardHitRate, SIN_CITY_THRESHOLDS.hardHitRate),
     numericCriterion("Exit Velo", input.exitVelo, SIN_CITY_THRESHOLDS.exitVelo),
     {
@@ -170,7 +178,7 @@ export function getSinCityResults<T extends {
     batter,
     evaluation: evaluateSinCityHitter({
       barrelRate: batter.barrelRate,
-      pullAirRate: batter.pullRate,
+      pullRate: batter.pullRate,
       hardHitRate: batter.hardHitRate,
       exitVelo: batter.exitVelo,
       stadium: batter.stadium,

@@ -1,0 +1,133 @@
+name: Grade MLB HR Results
+run-name: Grade MLB HR Results • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    # 7:15 AM ET daily -- after the prior day's games are final, before the
+    # next day's HR props generation run (3:23 AM ET initial slate fetch has
+    # already happened by then, so this only grades yesterday's predictions).
+    - cron: "15 11 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional specific date to grade (YYYY-MM-DD). Leave blank to grade all pending records."
+        required: false
+        type: string
+      dry_run:
+        description: "Compute grades but do not write or commit"
+        required: false
+        default: "false"
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/grade-mlb-hr-results.yml
+
+# Shares the lock with the other automated workflows that commit generated
+# data to main, so a grading run never races a props-generation run.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  grade-hr-results:
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate archive schema before grading
+        run: node scripts/grade-mlb-hr-results.mjs --validate-only
+
+      - name: Grade pending HR predictions
+        shell: bash
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.date }}" ]; then
+            ARGS="$ARGS --date ${{ inputs.date }}"
+          fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          node scripts/grade-mlb-hr-results.mjs $ARGS
+
+      - name: Build HR model performance summary
+        if: inputs.dry_run != 'true'
+        run: node scripts/build-mlb-hr-performance-summary.mjs
+
+      - name: Detect meaningful grading changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json)" ]; then
+            echo "No meaningful grading changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Meaningful grading changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate generated JSON
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/hr-prediction-history.json','utf8')); console.log('Archive JSON valid');"
+          if [ -f public/data/mlb/hr-model-performance.json ]; then
+            node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/hr-model-performance.json','utf8')); console.log('Performance summary JSON valid');"
+          fi
+
+      - name: Commit and push grading results
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/mlb/hr-prediction-history.json public/data/mlb/hr-model-performance.json
+
+          if git diff --cached --quiet; then
+            echo "No staged grading changes."
+            exit 0
+          fi
+
+          git commit -m "chore: grade MLB HR results $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed -- grading results were not committed." >&2
+            exit 1
+          fi
+
+          echo "Grading results pushed successfully."

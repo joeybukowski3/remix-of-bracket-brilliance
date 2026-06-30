@@ -3,7 +3,7 @@ import { classifyWind, evaluateSinCityHitter, getSinCityResults, SIN_CITY_THRESH
 
 const PERFECT = {
   barrelRate: 14,
-  pullAirRate: 22,
+  pullRate: 22,
   hardHitRate: 48,
   exitVelo: 94,
   stadium: "Wrigley Field",
@@ -12,6 +12,29 @@ const PERFECT = {
   windSpeed: 12,
 };
 
+describe("Pull% label correctness (Part 1 audit fix)", () => {
+  it("1. criterion name is the accurate 'Pull%' label, not 'Pull Air%'", () => {
+    const result = evaluateSinCityHitter(PERFECT);
+    const pullCriterion = result.criteria.find((c) => c.name === "Pull%");
+    expect(pullCriterion).toBeDefined();
+    expect(result.criteria.some((c) => (c.name as string) === "Pull Air%")).toBe(false);
+  });
+
+  it("2. no 'Pull Air%' label remains anywhere in SinCityCriterionResult output", () => {
+    const result = evaluateSinCityHitter({ ...PERFECT, windDirection: "SW" });
+    for (const c of result.criteria) {
+      expect(c.name).not.toBe("Pull Air%");
+    }
+  });
+
+  it("3. Sin City qualification (threshold value, matchCount, qualifies) is unchanged after the rename", () => {
+    // Same numeric inputs as before the field/label rename must produce the same result.
+    const result = evaluateSinCityHitter(PERFECT);
+    expect(SIN_CITY_THRESHOLDS.pullRate).toBe(20); // threshold value itself never changed
+    expect(result.matchCount).toBe(5);
+    expect(result.qualifies).toBe(true);
+  });
+});
 describe("Sin City five-metric model", () => {
   it("classifies a qualifying wind-out condition", () => {
     expect(classifyWind("Wrigley Field", "Open", "NE", 12)).toBe("out");

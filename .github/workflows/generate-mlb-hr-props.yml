@@ -79,6 +79,10 @@ jobs:
           echo "HR props generation failed after 3 attempts." >&2
           exit 1
 
+      - name: Update HR prediction archive
+        continue-on-error: true
+        run: node scripts/build-mlb-hr-archive.mjs
+
       - name: Inject batter handedness
         run: node scripts/inject-batter-handedness.mjs || true
 

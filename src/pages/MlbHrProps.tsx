@@ -94,16 +94,45 @@ export type HrDashboardBatter = {
   hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
   hrOddsNo?: string | null;      // sportsbook no HR odds e.g. "-450"
   hrOddsBook?: string | null;
-  hrValueEdge?: number | null;   // model prob / implied prob (>1 = value)
+  /** Raw market-implied probability from sportsbook odds. NOT de-vigged unless both sides are present. NOT a model probability. */
+  marketImpliedProbability?: number | null;
+  qualityRank?: number | null;
+  marketRank?: number | null;
+  rankDifference?: number | null;
+  /** "unavailable" (no odds) | "uncalibrated" (odds exist, but no validated probability mapping exists yet) */
+  valueStatus?: "unavailable" | "uncalibrated" | null;
+  modelVersion?: string | null;
+  confidenceLevel?: "high" | "medium" | "low" | "incomplete" | null;
+  confidenceReasons?: string[];
+  dataCompletenessPercent?: number | null;
+  explanation?: string | null;
+  /** @deprecated Fabricated value-edge field removed per model audit. Always null. Do not use in UI, sorting, or filtering. */
+  hrValueEdge?: number | null;
+  /** @deprecated Alias for marketImpliedProbability, kept for backward compatibility only. */
+  hrImplied?: number | null;
   angleTags: string[];
+};
+
+export type HrGameEnvironment = {
+  gameKey: string;
+  matchup: string;
+  ballpark: string;
+  gameHrEnvironmentScore: number | null;
+  parkFactor: number | null;
+  weatherEffect: number | null;
+  starterVulnerability: number | null;
+  qualifyingHitterCount: number;
+  avgQualifyingHitterScore: number | null;
 };
 
 export type HrDashboardPayload = {
   date: string;
   generatedAt: string;
+  modelVersion?: string;
   games: HrDashboardGame[];
   pitchers: HrDashboardPitcher[];
   batters: HrDashboardBatter[];
+  gameEnvironments?: HrGameEnvironment[];
 };
 
 export type HrPropPick = {
@@ -368,7 +397,18 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     hrOddsYes: normalizeText(entry.hrOddsYes) || null,
     hrOddsNo: normalizeText(entry.hrOddsNo) || null,
     hrOddsBook: normalizeText(entry.hrOddsBook) || null,
-    hrValueEdge: normalizeNumber(entry.hrValueEdge),
+    marketImpliedProbability: normalizeNumber(entry.marketImpliedProbability) ?? null,
+    qualityRank: normalizeNumber(entry.qualityRank) ?? null,
+    marketRank: normalizeNumber(entry.marketRank) ?? null,
+    rankDifference: normalizeNumber(entry.rankDifference) ?? null,
+    valueStatus: (["unavailable", "uncalibrated"].includes(String(entry.valueStatus ?? "")) ? String(entry.valueStatus) as "unavailable" | "uncalibrated" : null),
+    modelVersion: normalizeText(entry.modelVersion) || null,
+    confidenceLevel: (["high", "medium", "low", "incomplete"].includes(String(entry.confidenceLevel ?? "")) ? String(entry.confidenceLevel) as "high" | "medium" | "low" | "incomplete" : null),
+    confidenceReasons: normalizeStringList(entry.confidenceReasons),
+    dataCompletenessPercent: normalizeNumber(entry.dataCompletenessPercent) ?? null,
+    explanation: normalizeText(entry.explanation) || null,
+    hrValueEdge: null, // deprecated -- never read from source, always null
+    hrImplied: normalizeNumber(entry.marketImpliedProbability) ?? null, // backward-compatible alias
     pitcherXera: normalizeNumber(entry.pitcherXera) ?? null,
     pitcherRegressionScore: normalizeNumber(entry.pitcherRegressionScore) ?? null,
     pitcherFlyBallRate: normalizeNumber(entry.pitcherFlyBallRate) ?? null,
@@ -386,12 +426,27 @@ export function normalizeHrDashboardPayload(value: unknown): HrDashboardPayload 
     };
   }
   if (!isRecord(value)) return null;
+  const gameEnvironments = Array.isArray(value.gameEnvironments)
+    ? value.gameEnvironments.filter(isRecord).map((g): HrGameEnvironment => ({
+        gameKey: normalizeText(g.gameKey),
+        matchup: normalizeText(g.matchup),
+        ballpark: normalizeText(g.ballpark),
+        gameHrEnvironmentScore: g.gameHrEnvironmentScore == null ? null : (normalizeNumber(g.gameHrEnvironmentScore) ?? null),
+        parkFactor: g.parkFactor == null ? null : (normalizeNumber(g.parkFactor) ?? null),
+        weatherEffect: g.weatherEffect == null ? null : (normalizeNumber(g.weatherEffect) ?? null),
+        starterVulnerability: g.starterVulnerability == null ? null : (normalizeNumber(g.starterVulnerability) ?? null),
+        qualifyingHitterCount: normalizeNumber(g.qualifyingHitterCount) ?? 0,
+        avgQualifyingHitterScore: g.avgQualifyingHitterScore == null ? null : (normalizeNumber(g.avgQualifyingHitterScore) ?? null),
+      }))
+    : [];
   return {
     date: normalizeText(value.date),
     generatedAt: normalizeText(value.generatedAt),
+    modelVersion: normalizeText(value.modelVersion) || undefined,
     games: Array.isArray(value.games) ? value.games.map(normalizeGame).filter((e): e is HrDashboardGame => Boolean(e)) : [],
     pitchers: Array.isArray(value.pitchers) ? value.pitchers.map(normalizePitcher).filter((e): e is HrDashboardPitcher => Boolean(e)) : [],
     batters: Array.isArray(value.batters) ? value.batters.map(normalizeBatter).filter((e): e is HrDashboardBatter => Boolean(e)) : [],
+    gameEnvironments,
   };
 }
 
@@ -1444,12 +1499,12 @@ export default function MlbHrProps() {
           {
             "@type": "Question",
             name: "How does the MLB HR prop model work?",
-            acceptedAnswer: { "@type": "Answer", text: "The HR prop model scores batters using barrel rate, hard hit rate, exit velocity, park factor, and opposing pitcher HR vulnerability. Higher scores indicate stronger edges for home run props." },
+            acceptedAnswer: { "@type": "Answer", text: "The HR Quality Score ranks batters using barrel rate, hard hit rate, exit velocity, park factor, and opposing pitcher HR vulnerability. It is a relative matchup-quality ranking, not a calibrated probability. Higher scores indicate a stronger HR-favorable matchup profile relative to other batters on the slate." },
           },
           {
             "@type": "Question",
-            name: "What is a good HR Score?",
-            acceptedAnswer: { "@type": "Answer", text: "Scores of 65 or higher represent strong model edges. Scores between 58 and 65 are positive edges. Scores below 50 indicate below-average matchup conditions for HR props." },
+            name: "What is a good HR Quality Score?",
+            acceptedAnswer: { "@type": "Answer", text: "Scores of 65 or higher represent strong matchup profiles relative to the rest of the slate. Scores between 58 and 65 are above-average. Scores below 50 indicate below-average matchup conditions for HR props. This is a ranking score, not a probability of hitting a home run." },
           },
         ],
       },
@@ -1474,6 +1529,10 @@ export default function MlbHrProps() {
   const allPitchers = dashboard?.pitchers ?? [];
   const allBatters = dashboard?.batters ?? [];
   const tbdGameKeys = useMemo(() => buildTbdGameKeySet(allPitchers, allBatters), [allBatters, allPitchers]);
+  const gameEnvironments = useMemo(
+    () => (dashboard?.gameEnvironments ?? []).filter((g) => !tbdGameKeys.has(g.gameKey)),
+    [dashboard, tbdGameKeys],
+  );
   const games = useMemo(() => allGames.filter((game) => !tbdGameKeys.has(game.gameKey)), [allGames, tbdGameKeys]);
   const pitchers = useMemo(
     () => allPitchers.filter((pitcher) => !tbdGameKeys.has(pitcher.gameKey) && !isStarterPlaceholder(pitcher.pitcher)),
@@ -1559,7 +1618,7 @@ export default function MlbHrProps() {
     const game = gameByKey.get(row.gameKey);
     const evaluation = evaluateSinCityHitter({
       barrelRate: row.barrelRate,
-      pullAirRate: row.pullRate,
+      pullRate: row.pullRate,
       hardHitRate: row.hardHitRate,
       exitVelo: row.exitVelo,
       stadium: row.ballpark ?? game?.stadium,
@@ -1782,6 +1841,9 @@ export default function MlbHrProps() {
                       <h1 className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB HR Prop Dashboard</h1>
                       <p className={cn("mt-2 max-w-3xl leading-6 text-sky-100", isMobile ? "text-[13px]" : "text-sm")}>
                         Starting pitcher vulnerability, park environment, and batter power/contact angles for today&apos;s slate.
+                      </p>
+                      <p className={cn("mt-1 max-w-3xl leading-5 text-sky-200/70", isMobile ? "text-[11px]" : "text-xs")}>
+                        HR Quality Score is a relative matchup-quality ranking, not a calibrated probability.
                       </p>
                     </div>
                     <div className={cn("flex flex-wrap gap-2", isMobile ? "items-center justify-between" : "")}>
@@ -2111,10 +2173,52 @@ export default function MlbHrProps() {
                             </div>
                           );
                         })()}
+
+                        {/* Top HR Environments — game-level, informational only, never affects player ranking */}
+                        {gameEnvironments.length > 0 && (
+                          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                            <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">🌡️ Top HR Environments</h2>
+                            <p className="mt-1 text-xs text-slate-500">Park, weather, and starter vulnerability combined into a game-level score. Does not affect individual player rankings.</p>
+                            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              {gameEnvironments.slice(0, 6).map((g) => (
+                                <div key={g.gameKey} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="truncate text-sm font-semibold text-slate-900" title={g.matchup}>{g.matchup}</span>
+                                    <span className={cn(
+                                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
+                                      (g.gameHrEnvironmentScore ?? 0) >= 70 ? "bg-emerald-100 text-emerald-800" :
+                                      (g.gameHrEnvironmentScore ?? 0) >= 50 ? "bg-amber-100 text-amber-800" :
+                                      "bg-slate-200 text-slate-600",
+                                    )}>
+                                      {g.gameHrEnvironmentScore != null ? g.gameHrEnvironmentScore.toFixed(0) : "—"}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 truncate text-[11px] text-slate-400">{g.ballpark}</div>
+                                  <div className="mt-2 grid grid-cols-3 gap-1 text-center text-[10px]">
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Park</div>
+                                      <div className="font-semibold text-slate-700">{g.parkFactor != null ? g.parkFactor.toFixed(2) : "—"}</div>
+                                    </div>
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Weather</div>
+                                      <div className="font-semibold text-slate-700">{g.weatherEffect != null ? (g.weatherEffect > 0 ? "+" : "") + g.weatherEffect.toFixed(1) : "—"}</div>
+                                    </div>
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Starter Vuln</div>
+                                      <div className="font-semibold text-slate-700">{g.starterVulnerability != null ? g.starterVulnerability.toFixed(0) : "—"}</div>
+                                    </div>
+                                  </div>
+                                  <div className="mt-1.5 text-[10px] text-slate-400">{g.qualifyingHitterCount} qualifying bat{g.qualifyingHitterCount === 1 ? "" : "s"}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
                             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">💥 Batter View</h2>
-                            <p className="mt-1 text-sm text-slate-500">HR Score drives the strongest cue. Supporting power and recent-HR stats only tint when the edge is clearly real.</p>
+                            <p className="mt-1 text-sm text-slate-500">HR Quality Score drives the primary ranking. Supporting power and recent-HR stats provide context, not a separate probability.</p>
                           </div>
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                             <input
@@ -2127,7 +2231,7 @@ export default function MlbHrProps() {
                             <button
                               type="button"
                               onClick={() => setHrFilterActive((v) => !v)}
-                              title="HR Smart Filter: Barrel 12%+, Pull Air 20%+, HH 45%+, EV 92+, Pitcher FB 40%+, Barrel Allowed 10%+, HH Allowed 42%+, K% under 22%, Temp 75°F+, Wind Out, HR-friendly park, Favorable handedness"
+                              title="HR Smart Filter: Barrel 12%+, Pull 20%+, HH 45%+, EV 92+, Pitcher FB 40%+, Barrel Allowed 10%+, HH Allowed 42%+, K% under 22%, Temp 75°F+, Wind Out, HR-friendly park, Favorable handedness"
                               className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition whitespace-nowrap ${
                                 hrFilterActive
                                   ? "border-amber-400 bg-amber-50 text-amber-700 shadow-sm"
@@ -2205,23 +2309,19 @@ export default function MlbHrProps() {
                                     {/* HR Odds */}
                                     {hasHrOdds && (
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
-                                      {row.hrOddsYes != null ? (() => {
-                                        const isValue = (row.hrValueEdge ?? 0) > 1.05;
-                                        const isGoodValue = (row.hrValueEdge ?? 0) > 1.25;
-                                        return (
-                                          <div className="flex flex-col items-start gap-0.5">
-                                            <div className="flex flex-col items-start gap-0">
-                                              <span className={`rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap ${isGoodValue ? "bg-emerald-600 text-white" : isValue ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"}`}>
-                                                Y {row.hrOddsYes}
-                                              </span>
-                                              {row.hrOddsNo && <div className="text-[9px] text-slate-500">N {row.hrOddsNo}</div>}
+                                      {row.hrOddsYes != null ? (
+                                        <div className="flex flex-col items-start gap-0">
+                                          <span className="rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap bg-slate-100 text-slate-600">
+                                            Y {row.hrOddsYes}
+                                          </span>
+                                          {row.hrOddsNo && <div className="text-[9px] text-slate-500">N {row.hrOddsNo}</div>}
+                                          {row.marketImpliedProbability != null && (
+                                            <div className="text-[8px] text-slate-400" title="Raw sportsbook-implied probability. Not a model probability.">
+                                              {(row.marketImpliedProbability * 100).toFixed(1)}% mkt
                                             </div>
-                                            {isValue && (
-                                              <span className="text-[8px] sm:text-[9px] font-bold text-emerald-600">VAL✓</span>
-                                            )}
-                                          </div>
-                                        );
-                                      })() : null}
+                                          )}
+                                        </div>
+                                      ) : null}
                                     </td>
                                     )}
                                     {/* HR Score */}
@@ -2360,7 +2460,7 @@ export default function MlbHrProps() {
                               <button
                                 type="button"
                                 onClick={() => setHrFilterActive((v) => !v)}
-                                title="HR Smart Filter: Barrel 12%+, Pull Air 20%+, HH 45%+, EV 92+, Pitcher FB 40%+, Barrel Allowed 10%+, HH Allowed 42%+, K% under 22%, Temp 75°F+, Wind Out, HR-friendly park, Favorable handedness"
+                                title="HR Smart Filter: Barrel 12%+, Pull 20%+, HH 45%+, EV 92+, Pitcher FB 40%+, Barrel Allowed 10%+, HH Allowed 42%+, K% under 22%, Temp 75°F+, Wind Out, HR-friendly park, Favorable handedness"
                                 className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition whitespace-nowrap ${
                                   hrFilterActive
                                     ? "border-amber-400 bg-amber-50 text-amber-700 shadow-sm"

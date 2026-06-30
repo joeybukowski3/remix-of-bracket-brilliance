@@ -2296,9 +2296,11 @@ function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], ba
     .slice(0, 5);
 }
 
-// ── Value table: top 3 HR + top 3 K by value edge ────────────────────────────
-// HR value = hrValueEdge (model prob / implied prob). >1 = model sees more HR
-//            probability than the market does. Higher = more value.
+// ── Value table: top 3 HR (by HR Quality Score, odds required) + top 3 K ────
+// HR ranking: HR Quality Score (relative matchup ranking, NOT a probability),
+// restricted to batters with posted odds so the displayed price is real.
+// This intentionally does NOT use the deprecated/removed hrValueEdge field
+// (a fabricated probability-vs-market formula) -- see model audit.
 // K value  = projectedKs - kLine (model projects this many Ks OVER the posted line)
 // Only includes rows that actually have odds posted. Falls back gracefully if
 // lines haven't been released yet.
@@ -2319,27 +2321,29 @@ function SocialTableValue({
 }) {
   const ACCENTS = ["#e05c2e","#f97316","#fb923c","#22c55e","#4ade80","#86efac"];
 
-  // Top 3 HR by value edge — only include batters with odds posted
+  // Top 3 HR by HR Quality Score — only include batters with odds posted
   const hrValue = batters
-    .filter((b) => b.hrOddsYes != null && (b.hrValueEdge ?? 0) > 0)
-    .sort((a, b) => (b.hrValueEdge ?? 0) - (a.hrValueEdge ?? 0))
+    .filter((b) => b.hrOddsYes != null)
+    .sort((a, b) => (b.hrScore ?? 0) - (a.hrScore ?? 0))
     .slice(0, 3)
-    .map((b) => ({
-      type: "hr" as const,
-      name: b.player,
-      team: b.team,
-      opponent: b.opposingPitcher,
-      score: b.hrScore,
-      line: b.hrOddsYes ?? null,
-      lineLabel: b.hrOddsYes ?? "—",
-      impliedPct: b.hrImplied != null ? b.hrImplied * 100 : null,
-      valueEdge: b.hrValueEdge ?? null,
-      // Delta: difference between model implied and market implied
-      modelPct: b.hrImplied != null && b.hrValueEdge != null ? b.hrImplied * b.hrValueEdge * 100 : null,
-      projLine: null as number | null,
-      projKs: null as number | null,
-      kDelta: null as number | null,
-    }));
+    .map((b) => {
+      const marketImplied = b.marketImpliedProbability ?? americanToImplied(b.hrOddsYes);
+      return {
+        type: "hr" as const,
+        name: b.player,
+        team: b.team,
+        opponent: b.opposingPitcher,
+        score: b.hrScore,
+        line: b.hrOddsYes ?? null,
+        lineLabel: b.hrOddsYes ?? "—",
+        impliedPct: marketImplied != null ? marketImplied * 100 : null,
+        valueEdge: null as number | null, // deprecated field removed, never populated
+        modelPct: null as number | null,  // no calibrated model probability exists yet
+        projLine: null as number | null,
+        projKs: null as number | null,
+        kDelta: null as number | null,
+      };
+    });
 
   // Top 3 K by value edge — only include pitchers with kLine posted
   const kValue = kRows
@@ -2409,7 +2413,7 @@ function SocialTableValue({
       {hasHR && (
         <>
           <div style={{ padding: "8px 14px 4px", background: "#0a1628", borderBottom: "1px solid #1e3a5f" }}>
-            <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".12em", color: "#e05c2e", textTransform: "uppercase" }}>🔥 HR Props — Model vs Market</span>
+            <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: ".12em", color: "#e05c2e", textTransform: "uppercase" }}>🔥 HR Props — Top Quality Score (with posted odds)</span>
           </div>
           {/* Desktop HR table */}
           <div className="hidden sm:block" style={{ overflowX: "auto" }}>
@@ -2417,18 +2421,14 @@ function SocialTableValue({
               <thead style={{ background: "#0d1f3c" }}>
                 <tr style={{ color: "#475569", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em" }}>
                   <th style={{ padding: "6px 14px", textAlign: "left" }}>Player</th>
-                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Score</th>
+                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Quality Score</th>
                   <th style={{ padding: "6px 8px", textAlign: "center" }}>Line</th>
                   <th style={{ padding: "6px 8px", textAlign: "center" }}>Mkt Implied</th>
-                  <th style={{ padding: "6px 8px", textAlign: "center" }}>Model Edge</th>
-                  <th style={{ padding: "6px 14px", textAlign: "center" }}>Value</th>
                 </tr>
               </thead>
               <tbody>
                 {hrValue.map((r, i) => {
                   const pill = sc(r.score ?? 0);
-                  const edge = r.valueEdge ?? 0;
-                  const edgeColor = edge >= 1.25 ? "#22c55e" : edge >= 1.05 ? "#86efac" : "#94a3b8";
                   return (
                     <tr key={r.name + i} style={{ borderBottom: "1px solid #1e3a5f", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderLeft: `3px solid ${ACCENTS[i]}` }}>
                       <td style={{ padding: "10px 14px" }}>
@@ -2442,16 +2442,6 @@ function SocialTableValue({
                       <td style={{ padding: "10px 8px", textAlign: "center", color: "#94a3b8" }}>
                         {r.impliedPct != null ? `${r.impliedPct.toFixed(1)}%` : "—"}
                       </td>
-                      <td style={{ padding: "10px 8px", textAlign: "center", color: "#94a3b8" }}>
-                        {r.modelPct != null ? `${r.modelPct.toFixed(1)}%` : "—"}
-                      </td>
-                      <td style={{ padding: "10px 14px", textAlign: "center" }}>
-                        {edge > 0 ? (
-                          <span style={{ background: "#1a2e1a", color: edgeColor, border: `1px solid ${edgeColor}`, borderRadius: 6, padding: "3px 8px", fontWeight: 900, fontSize: 11 }}>
-                            {edge >= 1.25 ? "🔥 " : ""}{edge.toFixed(2)}x
-                          </span>
-                        ) : "—"}
-                      </td>
                     </tr>
                   );
                 })}
@@ -2462,8 +2452,6 @@ function SocialTableValue({
           <div className="sm:hidden">
             {hrValue.map((r, i) => {
               const pill = sc(r.score ?? 0);
-              const edge = r.valueEdge ?? 0;
-              const edgeColor = edge >= 1.25 ? "#22c55e" : edge >= 1.05 ? "#86efac" : "#94a3b8";
               return (
                 <div key={r.name + i} style={{ padding: "10px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `3px solid ${ACCENTS[i]}` }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
@@ -2473,7 +2461,7 @@ function SocialTableValue({
                     </div>
                     <span style={{ background: pill.bg, color: pill.color, borderRadius: 6, padding: "3px 8px", fontWeight: 900 }}>{(r.score ?? 0).toFixed(1)}</span>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                     <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
                       <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>LINE</div>
                       <div style={{ color: "#fbbf24", fontWeight: 700 }}>{r.lineLabel}</div>
@@ -2481,10 +2469,6 @@ function SocialTableValue({
                     <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
                       <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>MKT%</div>
                       <div style={{ color: "#94a3b8", fontWeight: 600 }}>{r.impliedPct != null ? `${r.impliedPct.toFixed(1)}%` : "—"}</div>
-                    </div>
-                    <div style={{ background: "#0d1f3c", borderRadius: 6, padding: "5px 6px", textAlign: "center" }}>
-                      <div style={{ color: "#64748b", fontSize: 9, marginBottom: 2 }}>EDGE</div>
-                      <div style={{ color: edgeColor, fontWeight: 900 }}>{edge > 0 ? `${edge.toFixed(2)}x` : "—"}</div>
                     </div>
                   </div>
                 </div>

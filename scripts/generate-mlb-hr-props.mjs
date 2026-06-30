@@ -2,6 +2,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
+import { MLB_HR_MODEL_VERSION } from "./lib/mlb-hr-model-version.mjs";
+import { computeHrConfidence } from "./lib/mlb-hr-confidence.mjs";
+import { buildHrExplanation } from "./lib/mlb-hr-explanation.mjs";
+import { selectDeterministicHrPicks } from "./lib/mlb-hr-selection.mjs";
+import { computeCandidateHrScore, rankCandidateScores } from "./lib/mlb-hr-candidate-score.mjs";
+import { computeGameHrEnvironmentScore, QUALIFYING_HR_SCORE_THRESHOLD } from "./lib/mlb-hr-environment.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -841,6 +847,11 @@ function validateBatterRows(rows) {
 
     const normalized = {
       player: normalizeText(row.player),
+      playerId: toFiniteNumber(row.playerId) ?? null,
+      gameId: toFiniteNumber(row.gameId) ?? null,
+      lineupStatus: normalizeText(row.lineupStatus) || "unknown",
+      battingOrder: toFiniteNumber(row.battingOrder) ?? null,
+      starterConfirmed: row.starterConfirmed === true,
       position: normalizeText(row.position) || "UTIL",
       team: normalizeTeamCode(row.team),
       opponent: normalizeTeamCode(row.opponent),
@@ -878,6 +889,10 @@ function validateBatterRows(rows) {
       throw new Error(`Generated HR prop row is missing identity fields: ${JSON.stringify(row)}`);
     }
 
+    if (normalized.playerId == null || normalized.gameId == null) {
+      console.warn(`[hr-props] Stable ID missing for ${normalized.player} (${normalized.team}) — playerId=${normalized.playerId}, gameId=${normalized.gameId}. Archive will mark this record low-confidence rather than fabricate an ID.`);
+    }
+
     const requiredNumbers = [
       normalized.parkFactor,
       normalized.last7HR,
@@ -900,7 +915,7 @@ function validateBatterRows(rows) {
 }
 
 // Pitcher xERA multiplier — same scale used across all pipeline stages
-function xeraMult(xera) {
+export function xeraMult(xera) {
   if (xera == null) return 1.0;
   if (xera <= 2.5) return 0.80;
   if (xera <= 3.0) return 0.85;
@@ -987,9 +1002,15 @@ function validateRawPayload(payload) {
     throw new Error("Generated raw HR props payload is not an object.");
   }
 
+  const modelVersion = normalizeText(payload.modelVersion);
+  if (!modelVersion) {
+    throw new Error("Generated raw HR props payload is missing a non-empty modelVersion.");
+  }
+
   return {
     date: normalizeText(payload.date) || getTodayEt(),
     generatedAt: normalizeText(payload.generatedAt) || new Date().toISOString(),
+    modelVersion,
     nextRunAt: payload.nextRunAt ?? null,
     pendingGames: Array.isArray(payload.pendingGames) ? payload.pendingGames : [],
     games: validateGameRows(payload.games),
@@ -1125,12 +1146,23 @@ function normalizeSlatePreview(value, fallbackPreview) {
   return { slateOverview, modelNote };
 }
 
-function buildBestBetsPayload(rows, picksResult, previewResult) {
-  const fallbackSections = buildFallbackSections(rows);
+function buildBestBetsPayload(rows, picksResult, previewResult, deterministicPicks) {
+  // deterministicPicks (when provided) is the authoritative selection -- it
+  // replaces the old "top N straight slice" fallback entirely, so even when
+  // Grok is unavailable, selection still applies the TBD-exclusion and
+  // minimum-quality-score rules from selectDeterministicHrPicks().
+  const fallbackSections = deterministicPicks
+    ? {
+        bestBets: deterministicPicks.bestBets.map(buildFallbackPick),
+        valueBets: deterministicPicks.valueBets.map(buildFallbackPick),
+        longshots: deterministicPicks.longshots.map(buildFallbackPick),
+      }
+    : buildFallbackSections(rows);
   const lookups = createRowLookups(rows);
   return {
     date: getTodayEt(),
     generatedAt: new Date().toISOString(),
+    modelVersion: MLB_HR_MODEL_VERSION,
     slatePreview: normalizeSlatePreview(previewResult, buildFallbackSlatePreview(rows)),
     bestBets: mergePickSection("bestBets", picksResult?.bestBets, fallbackSections.bestBets, lookups),
     valueBets: mergePickSection("valueBets", picksResult?.valueBets, fallbackSections.valueBets, lookups),
@@ -1312,6 +1344,8 @@ async function main() {
     const boxscore = await fetchBoxscore(game.gamePk).catch(() => null);
     const currentAwayLineup = extractLineupFromTeamBox(boxscore?.teams?.away);
     const currentHomeLineup = extractLineupFromTeamBox(boxscore?.teams?.home);
+    const awayLineupConfirmed = currentAwayLineup.length > 0;
+    const homeLineupConfirmed = currentHomeLineup.length > 0;
     const awayLineup = currentAwayLineup.length ? currentAwayLineup : await fetchLastKnownLineup(game.away.id);
     const homeLineup = currentHomeLineup.length ? currentHomeLineup : await fetchLastKnownLineup(game.home.id);
 
@@ -1421,6 +1455,7 @@ async function main() {
     const pitcherContexts = [
       {
         lineup: awayLineup,
+        lineupConfirmed: awayLineupConfirmed,
         battingTeam: game.away,
         opponent: game.home,
         opposingPitcher: game.home.probablePitcher?.fullName ?? "TBD",
@@ -1429,9 +1464,11 @@ async function main() {
         pitcherHr9: computeHr9(homePitcherStats?.homeRuns, homePitcherStats?.inningsPitched),
         gameKey,
         gameContext,
+        gamePk: game.gamePk,
       },
       {
         lineup: homeLineup,
+        lineupConfirmed: homeLineupConfirmed,
         battingTeam: game.home,
         opponent: game.away,
         opposingPitcher: game.away.probablePitcher?.fullName ?? "TBD",
@@ -1440,11 +1477,14 @@ async function main() {
         pitcherHr9: computeHr9(awayPitcherStats?.homeRuns, awayPitcherStats?.inningsPitched),
         gameKey,
         gameContext,
+        gamePk: game.gamePk,
       },
     ];
 
     for (const context of pitcherContexts) {
-      for (const hitter of context.lineup.slice(0, 9)) {
+      const lineupSlice = context.lineup.slice(0, 9);
+      for (let battingOrderIndex = 0; battingOrderIndex < lineupSlice.length; battingOrderIndex++) {
+        const hitter = lineupSlice[battingOrderIndex];
         const person = await fetchPerson(hitter.id);
         const season = await fetchBatterSeasonStats(hitter.id);
         const gameLogs = await fetchBatterHrGameLog(hitter.id);
@@ -1465,6 +1505,11 @@ async function main() {
         batterPool.push({
           gameKey: context.gameKey,
           player: hitter.fullName || hitter.name || "Unknown Player",
+          playerId: hitter.id ?? null,
+          gameId: context.gamePk ?? null,
+          lineupStatus: context.lineupConfirmed ? "confirmed" : "projected",
+          battingOrder: battingOrderIndex + 1,
+          starterConfirmed: true, // pitcherContexts only contains games where both probable pitchers are known (TBD games are skipped earlier)
           position: person?.primaryPosition?.abbreviation ?? person?.primaryPosition?.code ?? "UTIL",
           team: context.battingTeam.abbreviation,
           opponent: context.opponent.abbreviation,
@@ -1666,6 +1711,7 @@ async function main() {
   const validatedPayload = validateRawPayload({
     date: getTodayEt(),
     generatedAt: new Date().toISOString(),
+    modelVersion: MLB_HR_MODEL_VERSION,
     nextRunAt: getNextRunAt(),
     pendingGames,
     games: gamePool,
@@ -1682,58 +1728,112 @@ async function main() {
       .replace(/[^a-z0-9\s'-]/gi, " ").replace(/\s+/g, " ").trim().toLowerCase();
   }
 
-  // Attach HR odds to each batter and compute value edge
+  // Attach HR odds and honest market-comparison fields to each batter.
+  // PER MODEL AUDIT: the prior version of this function converted hrScore into
+  // a fabricated "probability" via an arbitrary, never-validated linear formula
+  // (Math.max(0.03, Math.min(0.25, hrScore * 0.0022))) and divided it by the
+  // sportsbook implied probability to produce hrValueEdge. That fake probability
+  // and the resulting "value" claim have been removed entirely — they are not
+  // replaced with a different arbitrary mapping. Until a real calibration has
+  // been fit and validated against the prediction archive/grading pipeline,
+  // only legitimate sportsbook-derived values are exposed (American odds,
+  // raw market-implied probability), plus a transparent quality-rank vs
+  // market-rank comparison that is explicitly NOT labeled a probability edge.
   function attachOddsAndValue(batters) {
+    // Market rank: sort by market-implied probability (only among batters with odds)
+    const withOdds = batters.filter(b => {
+      const key = normName(b.player);
+      return mlbOdds.hrOdds?.[key]?.impliedYes != null;
+    });
+    const marketRanked = [...withOdds].sort((a, b) => {
+      const ia = mlbOdds.hrOdds?.[normName(a.player)]?.impliedYes ?? 0;
+      const ib = mlbOdds.hrOdds?.[normName(b.player)]?.impliedYes ?? 0;
+      return ib - ia;
+    });
+    const marketRankByKey = new Map(marketRanked.map((b, i) => [normName(b.player), i + 1]));
+
     return batters.map(b => {
       const key = normName(b.player);
       const hrOddsEntry = mlbOdds.hrOdds?.[key] ?? null;
       const hrOddsYes = hrOddsEntry?.yes ?? null;           // e.g. "+350"
       const hrOddsNo  = hrOddsEntry?.no  ?? null;           // e.g. "-450"
-      const hrImplied = hrOddsEntry?.impliedYes ?? null;    // e.g. 0.222
-      // Model HR probability proxy: hrScore maps roughly to 3-22% HR probability
-      const modelHrProb = hrOddsYes
-        ? Math.max(0.03, Math.min(0.25, b.hrScore * 0.0022))
-        : null;
-      const hrValueEdge = (modelHrProb && hrImplied && hrImplied > 0)
-        ? Math.round((modelHrProb / hrImplied) * 100) / 100
-        : null;
-      return { ...b, hrOddsYes, hrOddsNo, hrImplied, hrValueEdge };
+      const hrOddsBook = hrOddsEntry?.bookmaker ?? null;
+      const marketImpliedProbability = hrOddsEntry?.impliedYes ?? null; // raw market-implied prob, NOT de-vigged unless both sides present
+
+      const qualityRank = b.hrScoreRank ?? null;
+      const marketRank = marketRankByKey.get(key) ?? null;
+      const rankDifference = (qualityRank != null && marketRank != null) ? marketRank - qualityRank : null;
+
+      // valueStatus is explicitly NOT a probability edge — it only describes
+      // whether market data exists yet, pending a real calibration.
+      const valueStatus = hrOddsYes == null ? "unavailable" : "uncalibrated";
+
+      return {
+        ...b,
+        hrOddsYes,
+        hrOddsNo,
+        hrOddsBook,
+        marketImpliedProbability,
+        qualityRank,
+        marketRank,
+        rankDifference,
+        valueStatus,
+        // Deprecated field retained as null for backward compatibility only.
+        // Do NOT use in UI, sorting, filtering, or selection logic.
+        hrValueEdge: null,
+        hrImplied: marketImpliedProbability, // backward-compatible alias, same honest value
+      };
     });
   }
 
   const battersWithOdds = attachOddsAndValue(validatedPayload.batters);
 
-  // Build odds-enriched summary for the AI prompt
-  function buildOddsEnrichedSummary(batters, count) {
-    return batters.slice(0, count).map(b => {
-      const odds = b.hrOddsYes ? ` | HR Odds: ${b.hrOddsYes} (implied ${b.hrImplied ? (b.hrImplied * 100).toFixed(1) + "%" : "N/A"})${b.hrValueEdge ? ` | Model Edge: ${b.hrValueEdge > 1 ? "VALUE" : "fair"}` : ""}` : "";
-      return `#${b.hrScoreRank} ${b.player} (${b.team} vs ${b.opposingPitcher}): hrScore=${b.hrScore}${odds}, barrel=${b.barrelRate}%, HH=${b.hardHitRate}%, park=${b.parkFactor}`;
-    }).join("\n");
-  }
+  // -- Deterministic selection (authoritative) --------------------------------
+  // Per the model audit: the LLM must not decide WHICH players are selected.
+  // selectDeterministicHrPicks() is the sole source of truth for bestBets/
+  // valueBets/longshots membership. Grok (if available) is only used below
+  // to write topStats/bullets WORDING for these already-chosen players -- a
+  // validation step rejects any Grok output that adds, removes, or
+  // substitutes a player outside the deterministic selection.
+  const deterministicPicks = selectDeterministicHrPicks(battersWithOdds);
+  const deterministicPlayerKeys = new Set(
+    [...deterministicPicks.bestBets, ...deterministicPicks.valueBets, ...deterministicPicks.longshots]
+      .map(p => normName(p.player))
+  );
 
   const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
   let picksResult = null;
   let previewResult = null;
 
   if (apiKey && battersWithOdds.length) {
-    const hasOdds = battersWithOdds.some(b => b.hrOddsYes);
-    const top20Summary = hasOdds
-      ? buildOddsEnrichedSummary(battersWithOdds, 20)
-      : buildSummary(validatedPayload.batters, 20);
     const top10Summary = buildSummary(validatedPayload.batters, 10);
 
-    const picksPrompt = hasOdds
-      ? `You are a sharp MLB prop betting analyst. Based on today's HR prop model data with SPORTSBOOK ODDS:\n${top20Summary}\n\nReturn ONLY a raw JSON object with no markdown. The object has three keys:\nbestBets (array of 5 HR prop picks — prioritize players where hrValueEdge > 1.0, meaning the model sees MORE HR probability than the sportsbook implies. Mix high-score favorites with value plays).\nvalueBets (array of 3 players where hrScore is strong AND hrValueEdge shows model edge over the market — ranks 4-15 priced above +200).\nlongshots (array of 2 high-upside picks from ranks 8-25 with long odds but model signals like barrel rate ≥15% or park factor ≥1.1).\nEach pick: player (string), team (string), opponent (string), opposingPitcher (string), hrScoreRank (number), hrOddsYes (string, the sportsbook HR odds or null), topStats (array of exactly 2 strings), bullets (array of exactly 2 strings referencing specific numbers). Do not include text outside the JSON.`
-      : `You are a sharp MLB prop betting analyst. Based on today's HR prop model data:\n${top20Summary}\n\nReturn ONLY a raw JSON object with no markdown. The object has three keys: bestBets (array of 5 top HR prop picks - highest model score players with strong matchup context), valueBets (array of 3 players where HR score is high but they may be underpriced - ranks 4-12 in the model), longshots (array of 2 high upside lower probability picks from ranks 8-20). Each pick has: player (string), team (string), opponent (string), opposingPitcher (string), hrScoreRank (number), topStats (array of exactly 2 strings highlighting their strongest metrics with values), bullets (array of exactly 2 strings referencing specific numbers from the data - barrel rate, exit velo, park factor, pitcher HR/9, or recent form). Do not include any text outside the JSON.`;
+    // Only the deterministically selected players are given to Grok -- it has
+    // no way to see or choose from the rest of the pool.
+    const selectedSummary = [...deterministicPicks.bestBets, ...deterministicPicks.valueBets, ...deterministicPicks.longshots]
+      .map(b => {
+        const odds = b.hrOddsYes ? ` | HR Odds: ${b.hrOddsYes} (market-implied ${b.marketImpliedProbability ? (b.marketImpliedProbability * 100).toFixed(1) + "%" : "N/A"})` : "";
+        return `#${b.hrScoreRank} ${b.player} (${b.team} vs ${b.opposingPitcher}): hrScore=${b.hrScore}${odds}, barrel=${b.barrelRate}%, HH=${b.hardHitRate}%, park=${b.parkFactor}`;
+      }).join("\n");
+
+    const wordingPrompt = `You are a sharp MLB prop betting analyst. These players have ALREADY been selected by a deterministic model -- your only job is to write factual wording for each one. Do NOT add, remove, substitute, or reorder any player.\n\nSelected players:\n${selectedSummary}\n\nReturn ONLY a raw JSON object with no markdown. The object has three keys matching the selection groups in order given above: bestBets, valueBets, longshots (arrays, same player order and count as given). Each entry: player (string, must exactly match a name above), team (string), opponent (string), opposingPitcher (string), hrScoreRank (number), hrOddsYes (string, the sportsbook HR odds shown above or null), topStats (array of exactly 2 strings using only the numbers shown above), bullets (array of exactly 2 strings referencing specific numbers from the data shown above -- no invented numbers, no probability claims, no certainty language like "lock" or "guaranteed"). Do not include text outside the JSON.`;
 
     const previewPrompt = `Based on today's MLB HR prop model data:\n${top10Summary}\n\nWrite a short slate preview. Return JSON with two fields: slateOverview (2-3 sentences describing today's slate conditions - parks, pitcher matchups, weather angles that create HR opportunities), modelNote (1-2 sentences explaining how the model is weighting today's picks). Sound like a sharp analyst. No filler. No markdown.`;
 
     try {
-      picksResult = await callGrokWithRetry(picksPrompt, 3, (parsed) => {
+      const rawResult = await callGrokWithRetry(wordingPrompt, 3, (parsed) => {
         if (!parsed.bestBets || !parsed.valueBets || !parsed.longshots) throw new Error("Missing MLB HR prop sections.");
       });
+      const returnedNames = [...(rawResult.bestBets ?? []), ...(rawResult.valueBets ?? []), ...(rawResult.longshots ?? [])]
+        .map(p => normName(p.player));
+      const allMatch = returnedNames.length > 0 && returnedNames.every(name => deterministicPlayerKeys.has(name));
+      if (allMatch) {
+        picksResult = rawResult;
+      } else {
+        console.warn("Grok HR prop wording referenced players outside the deterministic selection. Falling back to deterministic picks with template wording.");
+      }
     } catch (error) {
-      console.warn(`Grok HR prop picks were invalid. Falling back to model-ranked picks. ${error instanceof Error ? error.message : error}`);
+      console.warn(`Grok HR prop wording was invalid. Falling back to deterministic picks with template wording. ${error instanceof Error ? error.message : error}`);
     }
 
     try {
@@ -1754,24 +1854,67 @@ async function main() {
       return {
         ...p,
         hrOddsYes: p.hrOddsYes ?? b?.hrOddsYes ?? null,
-        hrValueEdge: b?.hrValueEdge ?? null,
+        marketImpliedProbability: b?.marketImpliedProbability ?? null,
+        valueStatus: b?.valueStatus ?? "unavailable",
+        hrValueEdge: null,
       };
     });
   }
 
-  const bestBetsPayload = buildBestBetsPayload(battersWithOdds, picksResult, previewResult);
+  const bestBetsPayload = buildBestBetsPayload(battersWithOdds, picksResult, previewResult, deterministicPicks);
   // Enrich picks with odds data
   if (bestBetsPayload.bestBets) bestBetsPayload.bestBets = attachOddsToPick(bestBetsPayload.bestBets, battersWithOdds);
   if (bestBetsPayload.valueBets) bestBetsPayload.valueBets = attachOddsToPick(bestBetsPayload.valueBets, battersWithOdds);
   if (bestBetsPayload.longshots) bestBetsPayload.longshots = attachOddsToPick(bestBetsPayload.longshots, battersWithOdds);
 
-  // Also enrich raw batters with odds for the HR props table
-  validatedPayload.batters = battersWithOdds.map(b => ({
-    ...b,
-    hrOddsYes: b.hrOddsYes ?? null,
-    hrOddsNo: b.hrOddsNo ?? null,
-    hrValueEdge: b.hrValueEdge ?? null,
-  }));
+  // Also enrich raw batters with odds, confidence, explanation, candidate
+  // score, and model version for the HR props table. None of this touches
+  // hrScore/hrScoreRank -- those were already finalized before this point.
+  const weatherAvailableKeys = new Set(weatherByGameKey instanceof Map ? weatherByGameKey.keys() : Object.keys(weatherByGameKey ?? {}));
+  const candidateScoresArr = battersWithOdds.map(b => computeCandidateHrScore(b));
+  const candidateRankMap = rankCandidateScores(candidateScoresArr);
+
+  validatedPayload.batters = battersWithOdds.map((b, i) => {
+    const confidence = computeHrConfidence({
+      lineupConfirmed: b.lineupStatus === "confirmed",
+      starterConfirmed: b.starterConfirmed === true,
+      hrOddsAvailable: b.hrOddsYes != null,
+      weatherAvailable: weatherAvailableKeys.has(b.gameKey) || b.weatherBoost !== 0,
+      parkFactorAvailable: b.parkFactor != null,
+      batterSampleSize: b.atBats ?? 0,
+      opposingPitcherDataPresent: b.opposingPitcherHrVs != null,
+      requiredInputsPresent: [b.barrelRate, b.hardHitRate, b.xba, b.whiffRate, b.last7HR, b.last30HR].every(v => v != null),
+    });
+    const candidate = candidateScoresArr[i];
+    const candidateRank = candidateRankMap.get(i) ?? null;
+    const explanation = buildHrExplanation(b);
+
+    return {
+      ...b,
+      hrOddsYes: b.hrOddsYes ?? null,
+      hrOddsNo: b.hrOddsNo ?? null,
+      hrOddsBook: b.hrOddsBook ?? null,
+      marketImpliedProbability: b.marketImpliedProbability ?? null,
+      qualityRank: b.qualityRank ?? null,
+      marketRank: b.marketRank ?? null,
+      rankDifference: b.rankDifference ?? null,
+      valueStatus: b.valueStatus ?? "unavailable",
+      hrValueEdge: null, // deprecated, always null -- never used in UI/sort/selection
+      hrImplied: b.marketImpliedProbability ?? null, // backward-compatible alias
+
+      modelVersion: MLB_HR_MODEL_VERSION,
+      confidenceLevel: confidence.confidenceLevel,
+      confidenceReasons: confidence.confidenceReasons,
+      dataCompletenessPercent: confidence.dataCompletenessPercent,
+      explanation,
+
+      // Candidate/shadow score -- NEVER exposed publicly. Archived for
+      // research comparison only. The frontend must not read or render this.
+      candidateHrQualityScore: candidate.candidateHrQualityScore,
+      candidateRank,
+      candidateModelVersion: candidate.candidateModelVersion,
+    };
+  });
 
   // Attach moneyline odds to games
   validatedPayload.games = (validatedPayload.games ?? []).map(g => {
@@ -1780,7 +1923,43 @@ async function main() {
     return { ...g, moneylineOdds: ml };
   });
 
-  writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify(validatedPayload, null, 2)}\n`, "utf8");
+  // ── Game-level HR environment (informational only, never affects player ranking) ──
+  // Built strictly from already-available data: park factor, weather boost,
+  // starting-pitcher HR vulnerability, and qualifying-hitter count. No
+  // bullpen or team-total inputs per the task scope.
+  const gameEnvironments = validatedPayload.games.map(g => {
+    const gameBatters = validatedPayload.batters.filter(b => b.gameKey === g.gameKey);
+    const qualifyingHitterCount = gameBatters.filter(b => (b.hrScore ?? 0) >= QUALIFYING_HR_SCORE_THRESHOLD).length;
+    const gamePitchers = validatedPayload.pitchers.filter(p => p.gameKey === g.gameKey);
+    const pitcherHrVulnerabilities = gamePitchers.map(p => p.hrVs).filter(v => v != null);
+    const avgQualifyingScore = qualifyingHitterCount > 0
+      ? Math.round((gameBatters.filter(b => (b.hrScore ?? 0) >= QUALIFYING_HR_SCORE_THRESHOLD).reduce((sum, b) => sum + b.hrScore, 0) / qualifyingHitterCount) * 10) / 10
+      : null;
+
+    const { gameHrEnvironmentScore, components } = computeGameHrEnvironmentScore({
+      parkFactor: g.parkFactor,
+      weatherBoost: gameBatters[0]?.weatherBoost ?? null,
+      pitcherHrVulnerabilities,
+      qualifyingHitterCount,
+    });
+
+    return {
+      gameKey: g.gameKey,
+      matchup: g.matchup,
+      ballpark: g.stadium,
+      gameHrEnvironmentScore,
+      parkFactor: g.parkFactor ?? null,
+      weatherEffect: gameBatters[0]?.weatherBoost ?? null,
+      starterVulnerability: pitcherHrVulnerabilities.length > 0
+        ? Math.round((pitcherHrVulnerabilities.reduce((a, b) => a + b, 0) / pitcherHrVulnerabilities.length) * 10) / 10
+        : null,
+      qualifyingHitterCount,
+      avgQualifyingHitterScore: avgQualifyingScore,
+      components,
+    };
+  }).sort((a, b) => (b.gameHrEnvironmentScore ?? -1) - (a.gameHrEnvironmentScore ?? -1));
+
+  writeFileSync(RAW_OUTPUT_PATH, `${JSON.stringify({ ...validatedPayload, gameEnvironments }, null, 2)}\n`, "utf8");
   writeFileSync(BEST_BETS_OUTPUT_PATH, `${JSON.stringify(bestBetsPayload, null, 2)}\n`, "utf8");
   console.log(`Wrote ${RAW_OUTPUT_PATH}`);
   console.log(`Wrote ${BEST_BETS_OUTPUT_PATH}`);
