@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
+import MlbPageLayout from "@/components/mlb/MlbPageLayout";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
@@ -197,19 +197,19 @@ export default function MlbStrikeoutProps() {
   };
 
   if (loading) {
-    return <SiteShell><main className="site-page bg-[#edf2f7] py-8"><div className="site-container text-center text-sm text-slate-500">Loading strikeout prop model…</div></main></SiteShell>;
+    return <MlbPageLayout><main className="site-page bg-[#edf2f7] py-8"><div className="site-container text-center text-sm text-slate-500">Loading strikeout prop model…</div></main></MlbPageLayout>;
   }
 
   if (!strikeoutDetailRows.length) {
     return (
-      <SiteShell>
+      <MlbPageLayout>
         <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
           <div className="site-container space-y-4">
             <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={0} bestScore={null} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Data Not Available</div>
           </div>
         </main>
-      </SiteShell>
+      </MlbPageLayout>
     );
   }
 
@@ -220,7 +220,7 @@ export default function MlbStrikeoutProps() {
   );
 
   return (
-    <SiteShell>
+    <MlbPageLayout>
       <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
         <div className="site-container space-y-4">
           <MlbNavHero />
@@ -289,6 +289,6 @@ export default function MlbStrikeoutProps() {
           </div>
         </div>
       </main>
-    </SiteShell>
+    </MlbPageLayout>
   );
 }

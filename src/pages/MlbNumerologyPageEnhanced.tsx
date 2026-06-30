@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calculator, Home, Search, Star, BookOpen } from "lucide-react";
+import { ArrowLeft, Calculator, Home, Search, Star, BookOpen } from "lucide-react";
 import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useMLBNumerology } from "@/hooks/useMLBNumerology";
@@ -84,6 +84,13 @@ export default function MlbNumerologyPageEnhanced() {
               <h2 className="font-serif text-lg leading-tight text-[#d0bcff]">MLB Numerology</h2>
               <p className="text-[11px] text-[#cbc3d7]">The Enlightened Fan</p>
             </div>
+            <a
+              href="/mlb"
+              className="mb-2 flex items-center gap-2 rounded-lg border border-[#494454] px-3 py-1.5 text-xs font-semibold text-[#cbc3d7] transition hover:bg-[#282a32] hover:text-[#e2e1ee]"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              MLB Hub
+            </a>
             <nav className="space-y-0.5">
               <a className={`${desktopLink} bg-[#a078ff] font-bold text-[#340080]`} href="#overview"><Home className="h-4 w-4" />Overview</a>
               <a className={desktopLink} href="#explorer"><Search className="h-4 w-4" />Explorer</a>

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
+import MlbPageLayout from "@/components/mlb/MlbPageLayout";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
@@ -73,7 +73,7 @@ export default function MlbSinCity() {
   const threeOfFive = result.rows.filter((row) => !row.isFallback && row.evaluation.matchCount === 3).length;
 
   return (
-    <SiteShell>
+    <MlbPageLayout>
       <main className="min-h-screen bg-slate-50 py-6">
         <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6">
           <MlbNavHero />
@@ -106,6 +106,6 @@ export default function MlbSinCity() {
           </>}
         </div>
       </main>
-    </SiteShell>
+    </MlbPageLayout>
   );
 }

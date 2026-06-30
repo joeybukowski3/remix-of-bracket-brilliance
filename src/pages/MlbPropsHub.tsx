@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
+import MlbPageLayout from "@/components/mlb/MlbPageLayout";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { ScorePill, TeamLogoBadge } from "@/pages/MlbHrProps";
@@ -33,7 +33,7 @@ export default function MlbPropsHub() {
   });
 
   return (
-    <SiteShell>
+    <MlbPageLayout>
       <main className="site-page bg-[#edf2f7] py-5 text-slate-900">
         <div className="site-container space-y-5" style={{ maxWidth: "none" }}>
           <section className="rounded-[28px] bg-[#0f2748] px-5 py-5 text-white shadow-sm">
@@ -104,6 +104,6 @@ export default function MlbPropsHub() {
           </section>
         </div>
       </main>
-    </SiteShell>
+    </MlbPageLayout>
   );
 }
