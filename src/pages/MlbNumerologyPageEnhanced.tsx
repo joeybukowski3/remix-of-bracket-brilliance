@@ -6,6 +6,7 @@ import { useMLBNumerology } from "@/hooks/useMLBNumerology";
 import { useMlbLiveLineups } from "@/hooks/useMlbLiveLineups";
 import { calculateNumerologyScoreBreakdown, type PlayerIdentity } from "@/lib/numerology/mlbScoreAudit";
 import { panel, type NumerologyCardPlayer } from "@/components/mlb/numerology/NumerologyAuditCard";
+import METHODOLOGY from "../../config/mlb-numerology-methodology.json";
 import { NumerologyExplorer } from "@/components/mlb/numerology/NumerologyExplorer";
 import { NumerologyKey, NumerologyKeyContent } from "@/components/mlb/numerology/NumerologyKey";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
@@ -55,15 +56,24 @@ export default function MlbNumerologyPageEnhanced() {
 
   const extended = data as Extended | null;
   const profile = data?.dailyProfile;
+  const isCandidateMode = data != null && data.methodologyVersion !== METHODOLOGY.version;
   const enrich = (player: ActivityPlayer): ActivityPlayer => {
     const playerId = String(player.playerId ?? player.personId ?? "");
     const liveLineup = lineups[playerId] ?? lineups[`${player.playerName}|${player.team}`];
+    const legacyNumerologyScore = player.numerologyScore;
     let scoreBreakdown = player.scoreBreakdown;
     if (profile && data) {
       try { scoreBreakdown = calculateNumerologyScoreBreakdown(player, identities[`${player.playerName}|${player.team}`] ?? null, profile, data.date, data.scoringConfiguration?.weights); }
       catch (reason) { console.error("[mlb-numerology] score breakdown failed", player.playerName, reason); }
     }
-    return { ...player, battingOrder: liveLineup?.battingOrder ?? player.battingOrder ?? null, lineupStatus: liveLineup?.lineupStatus ?? player.lineupStatus ?? "unknown", scoreBreakdown };
+    return {
+      ...player,
+      legacyNumerologyScore,
+      numerologyScore: scoreBreakdown?.calculatedScore ?? player.numerologyScore,
+      battingOrder: liveLineup?.battingOrder ?? player.battingOrder ?? null,
+      lineupStatus: liveLineup?.lineupStatus ?? player.lineupStatus ?? "unknown",
+      scoreBreakdown,
+    };
   };
 
   const allExact = useMemo(() => Array.isArray(extended?.exactNumberMatches) ? extended.exactNumberMatches.filter(Boolean).map(enrich) : [], [extended?.exactNumberMatches, identities, lineups, profile]);
@@ -108,6 +118,11 @@ export default function MlbNumerologyPageEnhanced() {
                   {lineupsLoading ? "Checking live lineups…" : confirmedLineupCount > 0 ? `${confirmedLineupCount} players in confirmed lineups` : "Confirmed lineups not posted yet"}
                 </span>
               </div>
+              {isCandidateMode && (
+                <div role="status" aria-label="Candidate methodology banner" className="mt-1.5 rounded-lg border border-[#e9c349]/30 bg-[#e9c349]/10 px-3 py-1.5 text-[11px] text-[#f6dc71]">
+                  Previewing candidate Numerology methodology v{METHODOLOGY.version}. Scores may differ from production.
+                </div>
+              )}
             </header>
 
             {/* ── Mobile nav ──────────────────────────────────────────────────── */}

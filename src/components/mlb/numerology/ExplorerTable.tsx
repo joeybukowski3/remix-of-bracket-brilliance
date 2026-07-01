@@ -136,6 +136,17 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
             {(breakdown?.exactPrimaryCount ?? 0) > 0 && (
               <p className="text-[9px] text-[#e9c349]">{breakdown!.exactPrimaryCount} exact primary</p>
             )}
+            {player.legacyNumerologyScore != null && player.legacyNumerologyScore !== player.numerologyScore && (
+              <div className="mt-1 border-t border-[#d0bcff]/20 pt-1">
+                <p className="text-[9px] text-[#958ea0]">Previous v2 Score</p>
+                <p className="font-mono text-sm text-[#958ea0]">
+                  {safe(player.legacyNumerologyScore)}
+                  <span className={`ml-1 text-[10px] font-bold ${player.numerologyScore - player.legacyNumerologyScore >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                    {player.numerologyScore - player.legacyNumerologyScore >= 0 ? "+" : ""}{Math.round(player.numerologyScore - player.legacyNumerologyScore)}
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
           {/* Model Rating tile */}
           <div className={`rounded border px-2 py-1.5 ${TONE_CLASSES.blue}`}>
@@ -217,20 +228,25 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
 
           {/* Score summary */}
           {breakdown && (
-            <div className="grid grid-cols-6 gap-1 border-t border-[#494454]/40 pt-1.5">
-              {[
-                ["Positive", `+${breakdown.positiveTotal}`],
-                ["Penalty", `-${breakdown.countercurrentTotal}`],
-                ["Synergy", `+${breakdown.exactComboBonus ?? 0}`],
-                ["Bonus", `+${breakdown.convergenceBonus}`],
-                ["Raw", String(breakdown.rawNumerology)],
-                ["Score", `${breakdown.calculatedScore}/100`],
-              ].map(([label, val]) => (
-                <div key={label} className="rounded bg-[#191b24] px-1.5 py-1 text-center">
-                  <p className="text-[8px] uppercase tracking-wide text-[#958ea0]">{label}</p>
-                  <p className="font-mono text-[11px] font-bold">{val}</p>
-                </div>
-              ))}
+            <div className="border-t border-[#494454]/40 pt-1.5 space-y-1">
+              <div className="grid grid-cols-6 gap-1">
+                {[
+                  ["Positive", `+${breakdown.positiveTotal}`],
+                  ["Penalty", `-${breakdown.countercurrentTotal}`],
+                  ["Synergy", `+${breakdown.exactComboBonus ?? 0}`],
+                  ["Bonus", `+${breakdown.convergenceBonus}`],
+                  ["Raw", String(breakdown.rawNumerology)],
+                  ["Score", `${breakdown.calculatedScore}/100`],
+                ].map(([label, val]) => (
+                  <div key={label} className="rounded bg-[#191b24] px-1.5 py-1 text-center">
+                    <p className="text-[8px] uppercase tracking-wide text-[#958ea0]">{label}</p>
+                    <p className="font-mono text-[11px] font-bold">{val}</p>
+                  </div>
+                ))}
+              </div>
+              {breakdown.modelVersion && (
+                <p className="text-right text-[9px] text-[#494454]">Model {breakdown.modelVersion}</p>
+              )}
             </div>
           )}
         </div>

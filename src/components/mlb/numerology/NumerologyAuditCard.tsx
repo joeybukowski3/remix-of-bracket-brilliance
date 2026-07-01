@@ -14,6 +14,8 @@ export type NumerologyCardPlayer = {
   battingOrder?: number | null;
   jerseyNumber?: number | null;
   numerologyScore: number;
+  /** Original stored score from the daily JSON, preserved when v3 candidate overwrites numerologyScore */
+  legacyNumerologyScore?: number;
   baseballScore?: number | null;
   matches?: NumerologyMatch[];
   scoreBreakdown?: NumerologyScoreBreakdown;
