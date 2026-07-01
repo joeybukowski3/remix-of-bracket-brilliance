@@ -14,6 +14,8 @@ export type NumerologyCardPlayer = {
   battingOrder?: number | null;
   jerseyNumber?: number | null;
   numerologyScore: number;
+  /** Original stored score from the daily JSON, preserved when v3 candidate overwrites numerologyScore */
+  legacyNumerologyScore?: number;
   baseballScore?: number | null;
   matches?: NumerologyMatch[];
   scoreBreakdown?: NumerologyScoreBreakdown;
@@ -72,7 +74,7 @@ export function NumerologyAuditCard({ player, kind }: { player: NumerologyCardPl
           <div className="grid gap-2 sm:grid-cols-2">{Object.entries(breakdown?.profile ?? {}).map(([key, value]) => <div key={key} className="flex justify-between rounded bg-[#191b24] px-3 py-2 text-xs"><span className="capitalize text-[#958ea0]">{key.replace(/([A-Z])/g, " $1")}</span><span className="font-mono">{value ?? "Unavailable"}</span></div>)}</div>
           <div><p className={`${cap} mb-2 text-[#d0bcff]`}>Qualifying signals</p><div className="space-y-2">{signals.filter((signal) => signal.points > 0).map((signal, index) => <div key={`${signal.field}-${index}`} className={`rounded-lg border p-3 ${signalTone(signal)}`}><div className="flex justify-between gap-3"><div><p className="text-sm font-semibold">{signal.label}</p><p className="mt-1 text-xs opacity-75">{signal.description}</p></div><span className="font-mono font-bold">+{signal.points}</span></div></div>)}</div></div>
           {signals.some((signal) => signal.points < 0) && <div><p className={`${cap} mb-2 text-[#ffb4ab]`}>Countercurrent penalties</p>{signals.filter((signal) => signal.points < 0).map((signal, index) => <div key={`${signal.field}-${index}`} className={`mb-2 rounded-lg border p-3 ${signalTone(signal)}`}><div className="flex justify-between"><span>{signal.label}</span><span className="font-mono font-bold">{signal.points}</span></div><p className="mt-1 text-xs opacity-75">{signal.description}</p></div>)}</div>}
-          <div className="grid grid-cols-3 gap-2 border-t border-[#494454]/40 pt-3 text-xs"><div>Positive<br /><b>+{breakdown?.positiveTotal ?? 0}</b></div><div>Penalties<br /><b>-{breakdown?.countercurrentTotal ?? 0}</b></div><div>Bonus<br /><b>+{breakdown?.convergenceBonus ?? 0}</b></div><div>Raw<br /><b>{breakdown?.rawNumerology ?? 0}</b></div><div>Ceiling<br /><b>{breakdown?.normCeiling ?? 0}</b></div><div>Final<br /><b>{breakdown?.calculatedScore ?? player.numerologyScore}/100</b></div></div>
+          <div className="grid grid-cols-3 gap-2 border-t border-[#494454]/40 pt-3 text-xs"><div>Positive<br /><b>+{breakdown?.positiveTotal ?? 0}</b></div><div>Penalties<br /><b>-{breakdown?.countercurrentTotal ?? 0}</b></div><div>Bonus<br /><b>+{breakdown?.convergenceBonus ?? 0}</b></div><div>Raw<br /><b>{breakdown?.rawNumerology ?? 0}</b></div><div title="Normalization denominator — raw score is divided by this reference value and mapped to 0–100">÷Norm<br /><b>{breakdown?.normCeiling ?? 0}</b></div><div>Final<br /><b>{breakdown?.calculatedScore ?? player.numerologyScore}/100</b></div></div>
           <p className={`text-xs ${breakdown?.scoreVerified ? "text-emerald-300" : "text-amber-300"}`}>{breakdown?.scoreVerified ? "✓ Calculation verified against the published score." : `⚠ Calculated ${breakdown?.calculatedScore}, published ${player.numerologyScore}.`}</p>
         </div>
       )}

@@ -255,3 +255,89 @@ describe("Score integrity", () => {
     expect(screen.getAllByText("42").length).toBeGreaterThan(0);
   });
 });
+
+// ── A–F: UI presentation (readability pass) ───────────────────────────────────
+
+describe("UI presentation — readability pass", () => {
+  function expand() {
+    const result = renderTable([basePlayer], [vladHrBatter]);
+    const row = result.container.querySelector("tbody tr")!;
+    fireEvent.click(row);
+    return result;
+  }
+
+  it("A. headshot container uses rounded-full for circular frame", () => {
+    const { container } = renderTable([basePlayer], [vladHrBatter]);
+    fireEvent.click(container.querySelector("tbody tr")!);
+    expect(container.querySelector(".rounded-full")).toBeTruthy();
+  });
+
+  it("B. previous v2 score renders when legacyNumerologyScore differs from numerologyScore", () => {
+    const playerWithLegacy: ExplorerRow = { ...basePlayer, legacyNumerologyScore: 10, numerologyScore: 23 };
+    const { container } = renderTable([playerWithLegacy], []);
+    fireEvent.click(container.querySelector("tbody tr")!);
+    expect(screen.getAllByText(/Previous v2 Score/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("10").length).toBeGreaterThan(0);
+  });
+
+  it("C. score summary section renders Positive, Penalty, Synergy, Bonus, Raw, Score labels", () => {
+    expand();
+    expect(screen.getAllByText("Positive").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Penalty").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Synergy").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Bonus").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Raw").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Score").length).toBeGreaterThan(0);
+  });
+
+  it("D. all 6 player profile fields render in the expanded panel", () => {
+    expand();
+    expect(screen.getAllByText("Personal Day").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Jersey").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Life Path").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Birth Day").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Age").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Expression").length).toBeGreaterThan(0);
+  });
+
+  it("E. model version label renders when scoreBreakdown.modelVersion is set", () => {
+    const playerWithVersion: ExplorerRow = {
+      ...basePlayer,
+      scoreBreakdown: { ...basePlayer.scoreBreakdown!, modelVersion: "v3.0.0" },
+    };
+    const { container } = renderTable([playerWithVersion], [vladHrBatter]);
+    fireEvent.click(container.querySelector("tbody tr")!);
+    expect(screen.getAllByText(/v3\.0\.0/i).length).toBeGreaterThan(0);
+  });
+
+  it("F. score summary values reconcile with breakdown fixture data", () => {
+    // positiveTotal:19, countercurrentTotal:0, exactComboBonus:10, convergenceBonus:0, rawNumerology:29, calculatedScore:43
+    expand();
+    expect(screen.getAllByText("+19").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("+10").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("29").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("43/100").length).toBeGreaterThan(0);
+  });
+
+  it("G. Numerology and Model Rating scores remain unchanged through presentation update", () => {
+    expand();
+    // numerologyScore:23 in collapsed row; baseballScore:42
+    expect(screen.getAllByText("23").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("42").length).toBeGreaterThan(0);
+  });
+
+  it("H. no field is removed — HR stats, profile, signals, and summary all present when expanded", () => {
+    expand();
+    expect(screen.getAllByText("HR Model Stats").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Profile").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Signals").length).toBeGreaterThan(0);
+    // HR fields
+    expect(screen.getAllByText("HR Odds").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("HR Score").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Barrel%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Hard Hit%").length).toBeGreaterThan(0);
+    // Summary fields
+    expect(screen.getAllByText("Positive").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Score").length).toBeGreaterThan(0);
+  });
+});

@@ -41,10 +41,12 @@ export const NUMEROLOGY_KEY_GROUPS: KeyGroup[] = [
   {
     title: "Match types",
     terms: [
-      { term: "Exact Match", definition: "The player's number directly matches one of today's primary numbers." },
-      { term: "Root Match", definition: "The numbers are different on the surface but reduce to the same core digit. For example, 19 and 1 both reduce to 1." },
-      { term: "Family Support", definition: "The player's number is not an exact match, but it belongs to the same related number family used by the model." },
-      { term: "Contextual Echo", definition: "A weaker supporting connection created by a repeated date digit reinforcing an existing field, such as the jersey number or batting order." },
+      { term: "Exact Compound Match", definition: "The player's number matches the Universal Day raw sum exactly — for example, Life Path 19 or Jersey 19 on a day with UD compound 19. This is the strongest possible alignment and is never discounted." },
+      { term: "Root Match", definition: "The player's number reduces to the same single digit as the Universal Day root. For example, Life Path 46 reduces to 1, matching a root-1 day. Root matches receive diminishing returns when multiple indirect signals stack." },
+      { term: "Field Tiers", definition: "Fields are ranked by importance. Tier 1 (core personal): Personal Day, Life Path, Birthday, Expression. Tier 2 (player context): Jersey, Age. Tier 3 (situational): Batting Order, Calendar Day. Tier 1 exact matches carry the most weight." },
+      { term: "Synergy Bonus", definition: "Awarded when a player has two or more independent Tier 1 fields with exact compound matches on the same day. One exact match plus a root match on a different Tier 1 field earns a smaller synergy bonus." },
+      { term: "Family Support", definition: "The player's number is not an exact match, but it belongs to the same related number family used by the model. Family matches are indirect signals subject to diminishing returns." },
+      { term: "Contextual Echo", definition: "A weaker supporting connection created by a repeated date digit reinforcing an existing field, such as the jersey number or batting order. Contextual echoes receive the heaviest diminishing returns." },
     ],
   },
   {
