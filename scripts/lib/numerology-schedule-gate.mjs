@@ -1,9 +1,10 @@
+
 /**
  * numerology-schedule-gate.mjs
  *
  * Scheduling and duplicate-run gate logic for the twice-daily MLB Numerology workflow.
  *
- * Phase 1 — Morning:     4:44 AM America/New_York  (±5 min tolerance)
+ * Phase 1 — Morning:     4:44 AM America/New_York with delayed-delivery retry window
  * Phase 2 — Lineup:      First active game start − 2 hours, once lineups are confirmed
  *
  * All slate-date and time decisions use America/New_York.
@@ -48,32 +49,26 @@ export function getEtHourMinute(now = new Date()) {
 /**
  * Whether the morning run is allowed right now.
  *
- * Target: 4:44 AM ET.  Tolerance window: ±5 minutes → [4:39, 4:49].
- * The workflow runs two UTC crons to cover both EST and EDT; the runtime gate
- * ensures only the correct local-time window executes.
+ * Target: 4:44 AM ET. GitHub Actions scheduled crons are best-effort, so the
+ * gate remains open until 6:14 AM ET for delayed or retry deliveries. It never
+ * opens before 4:44 AM ET. The once-per-day completion guard prevents duplicate
+ * production generations after a successful run.
  *
  * @param {Date} now
- * @param {{ morningGeneratedAt?: string|null, date?: string }} existingOutput  — today's daily JSON
+ * @param {{ morningGeneratedAt?: string|null, date?: string }} existingOutput
  * @param {string} etDateToday
  */
 export function isMorningRunAllowed(now, existingOutput, etDateToday) {
-  // Already completed today?
   if (existingOutput?.date === etDateToday && existingOutput?.morningGeneratedAt) {
     return { allowed: false, reason: `Morning already completed for ${etDateToday}` };
   }
 
   const { hour, minute } = getEtHourMinute(now);
   const minuteOfDay = hour * 60 + minute;
-  // Target 4:44 ET = 284 minutes. GitHub Actions scheduled crons can fire several
-  // minutes (occasionally much longer) after their nominal time under platform
-  // load, so the window opens at the target time and stays open for 90 minutes
-  // (until 6:14 ET) rather than a narrow +/-5 minute band that a delayed run can
-  // miss entirely. The once-per-day completion guard above still prevents any
-  // duplicate run once the morning phase has succeeded for today.
   const TARGET = 4 * 60 + 44;
-  const EARLY_TOLERANCE = 5;   // can fire up to 5 min before 4:44 if cron is early
-  const LATE_TOLERANCE = 90;   // stays open up to 90 min after 4:44 if cron is delayed
-  if (minuteOfDay < TARGET - EARLY_TOLERANCE || minuteOfDay > TARGET + LATE_TOLERANCE) {
+  const LATE_TOLERANCE = 90;
+
+  if (minuteOfDay < TARGET || minuteOfDay > TARGET + LATE_TOLERANCE) {
     return {
       allowed: false,
       reason: `Not in 4:44 ET morning window (current ET ${hour}:${String(minute).padStart(2, "0")})`,
@@ -86,8 +81,8 @@ export function isMorningRunAllowed(now, existingOutput, etDateToday) {
 /**
  * Find the earliest active game start time from a raw MLB Stats API schedule response.
  *
- * @param {object} scheduleData  — result of /api/v1/schedule with gameDate populated
- * @param {string} etDateToday   — YYYY-MM-DD ET
+ * @param {object} scheduleData
+ * @param {string} etDateToday
  * @returns {{ firstGameStart: Date|null, targetTime: Date|null }}
  */
 export function computeLineupTargetTime(scheduleData, etDateToday) {
@@ -96,7 +91,6 @@ export function computeLineupTargetTime(scheduleData, etDateToday) {
   const activeTimes = games
     .filter(g => {
       const status = g?.status?.detailedState ?? g?.status?.abstractGameState ?? "";
-      // Accept any status that is not explicitly inactive
       const isInactive = ["Postponed", "Cancelled", "Suspended", "Final", "Game Over", "Completed Early"].includes(status);
       return !isInactive;
     })
@@ -111,18 +105,13 @@ export function computeLineupTargetTime(scheduleData, etDateToday) {
 
   activeTimes.sort((a, b) => a - b);
   const firstGameStart = activeTimes[0];
-  const targetTime = new Date(firstGameStart.getTime() - 2 * 60 * 60 * 1000); // −2 hours
+  const targetTime = new Date(firstGameStart.getTime() - 2 * 60 * 60 * 1000);
 
   return { firstGameStart, targetTime };
 }
 
 /**
  * Whether the lineup-confirmed run is allowed right now.
- *
- * Gates:
- *  1. Current time >= targetTime (first game − 2 hours)
- *  2. Lineups are confirmed (enough confirmed players in the schedule roster)
- *  3. Not already completed for today
  *
  * @param {Date} now
  * @param {Date|null} targetTime
@@ -152,13 +141,7 @@ export function isLineupRunAllowed(now, targetTime, lineupsConfirmed, existingOu
 }
 
 /**
- * Determine whether the schedule roster has enough confirmed lineups.
- * Mirrors the generator's existing per-player lineupStatus check.
- *
- * A "confirmed" player has a battingOrder present (non-null, non-zero).
- * Gate passes when at least 9 confirmed players exist across all games
- * (roughly one full lineup submitted).
- *
+ * Whether enough confirmed lineup players are present.
  * @param {Array<{battingOrder?: number|null}>} scheduleRoster
  */
 export function areLineupsConfirmed(scheduleRoster) {
@@ -169,12 +152,11 @@ export function areLineupsConfirmed(scheduleRoster) {
 
 /**
  * Evaluate the correct run mode given the dispatch input and current state.
- *
  * @param {"auto"|"morning"|"lineup-confirmed"|"force-refresh"} phase
  * @param {Date} now
- * @param {object|null} existingOutput   — current numerology-daily.json (null = not yet generated)
- * @param {object|null} scheduleData     — MLB API schedule response (null = not yet fetched)
- * @param {Array} scheduleRoster         — players with battingOrder fields
+ * @param {object|null} existingOutput
+ * @param {object|null} scheduleData
+ * @param {Array} scheduleRoster
  * @returns {{ run: boolean, updatePhase: string, reason: string }}
  */
 export function evaluateGate(phase, now, existingOutput, scheduleData, scheduleRoster) {
@@ -202,7 +184,6 @@ export function evaluateGate(phase, now, existingOutput, scheduleData, scheduleR
     return { run: true, updatePhase: "lineup-confirmed", reason: check.reason };
   }
 
-  // auto: try morning first, then lineup
   const morningCheck = isMorningRunAllowed(now, existingOutput, etDateToday);
   if (morningCheck.allowed) {
     return { run: true, updatePhase: "morning", reason: morningCheck.reason };
