@@ -1,5 +1,5 @@
 import { getMlbTeamColors, getReadableOnDark } from "@/lib/mlbTeamColors";
-import { computeModelEdge } from "@/lib/mlb/mlbModelEdge";
+import { computeModelEdge, getEdgeTierLabel, ML_EDGE_METHODOLOGY } from "@/lib/mlb/mlbModelEdge";
 import type { MlbGameDetail } from "@/lib/mlb/mlbTypes";
 
 const BG = "#0b1220"; // the dark card background
@@ -64,10 +64,7 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
   const pickAbbr   = result.pick === "away" ? result.awayAbbr : result.pick === "home" ? result.homeAbbr : "";
   const oppAbbr    = result.pick === "away" ? result.homeAbbr : result.pick === "home" ? result.awayAbbr : "";
 
-  const confidenceLabel =
-    result.confidence >= 72 ? "Strong lean" :
-    result.confidence >= 64 ? "Moderate lean" :
-    result.confidence >= 56 ? "Slight lean" : "Coin flip";
+  const confidenceLabel = getEdgeTierLabel(result.confidence);
 
   return (
     <div
@@ -110,7 +107,7 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
 
               {/* Confidence meter */}
               <div className="w-full space-y-1">
-                <div className="flex justify-between text-[9px] text-white/40">
+                <div className="flex justify-between text-[9px] text-white/40" title={ML_EDGE_METHODOLOGY}>
                   <span>50%</span>
                   <span className="font-bold" style={{ color: pickColor ?? "#fff" }}>{result.confidence}%</span>
                   <span>82%</span>
@@ -126,8 +123,8 @@ export default function MlbModelPickBadge({ detail }: { detail: MlbGameDetail })
                     }}
                   />
                 </div>
-                <div className="text-[10px] text-white/50 text-center">
-                  Model confidence · {result.topFactor}
+                <div className="text-[10px] text-white/50 text-center" title={ML_EDGE_METHODOLOGY}>
+                  Edge Strength · {result.topFactor}
                 </div>
               </div>
 

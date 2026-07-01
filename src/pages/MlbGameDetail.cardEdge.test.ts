@@ -1,33 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { formatCardPmEdgeLabel } from "@/pages/MlbGameDetail";
 
-describe("formatCardPmEdgeLabel — collapsed matchup card Polymarket edge", () => {
-  it("renders a positive edge with a leading +", () => {
-    expect(formatCardPmEdgeLabel("BAL", { edge: 4.2, isEven: false })).toBe("+4.2%");
+// PER MODEL AUDIT (Phase 1 correctness fix): formatCardPmEdgeLabel no longer
+// renders a fabricated "value edge" percentage derived from treating
+// edge.confidence/100 as a win probability. It now reports whether the
+// model's pick agrees with the side Polymarket currently favors.
+describe("formatCardPmEdgeLabel — collapsed matchup card Polymarket agreement", () => {
+  it("renders 'Aligned' when the model pick matches the market favorite", () => {
+    expect(formatCardPmEdgeLabel("BAL", { aligned: true })).toBe("Aligned");
   });
 
-  it("renders a negative edge with -", () => {
-    expect(formatCardPmEdgeLabel("NYM", { edge: -2.1, isEven: false })).toBe("-2.1%");
+  it("renders 'Contrarian' when the model pick differs from the market favorite", () => {
+    expect(formatCardPmEdgeLabel("NYM", { aligned: false })).toBe("Contrarian");
   });
 
-  it("renders exactly even as 0.0%", () => {
-    expect(formatCardPmEdgeLabel("PHI", { edge: 0, isEven: true })).toBe("0.0%");
-  });
-
-  it("renders an em dash when pmEdge is null (Polymarket data unavailable)", () => {
+  it("renders an em dash when pmAgreement is null (Polymarket data unavailable)", () => {
     expect(formatCardPmEdgeLabel("BAL", null)).toBe("—");
   });
 
   it("renders an em dash when mlPickAbbr is null (no model pick)", () => {
-    expect(formatCardPmEdgeLabel(null, { edge: 3.5, isEven: false })).toBe("—");
+    expect(formatCardPmEdgeLabel(null, { aligned: true })).toBe("—");
   });
 
-  it("the model-selected team receives the corresponding edge — no extra text appended", () => {
-    const result = formatCardPmEdgeLabel("CWS", { edge: 1.5, isEven: false });
-    expect(result).toBe("+1.5%");
-    expect(result).not.toContain("Polymarket");
-    expect(result).not.toContain("Value");
-    expect(result).not.toContain("Edge");
-    expect(result).not.toContain("CWS");
+  it("never returns a percentage or numeric edge value", () => {
+    const aligned = formatCardPmEdgeLabel("CWS", { aligned: true });
+    const contrarian = formatCardPmEdgeLabel("CWS", { aligned: false });
+    expect(aligned).not.toMatch(/%/);
+    expect(contrarian).not.toMatch(/%/);
+    expect(aligned).not.toMatch(/[+-]?\d/);
+    expect(contrarian).not.toMatch(/[+-]?\d/);
   });
 });

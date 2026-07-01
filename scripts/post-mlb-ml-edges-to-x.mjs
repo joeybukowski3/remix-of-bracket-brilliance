@@ -95,7 +95,12 @@ function slugifyKey(value) {
  * "ML Edges" tab, and reading structured row data straight off the
  * data-ml-* attributes the page already renders. This avoids re-implementing
  * computeModelEdge() in Node — the browser is the single source of truth for
- * the model pick/confidence/value-edge math, exactly as the user sees it.
+ * the model pick/confidence/differential math, exactly as the user sees it.
+ *
+ * PER MODEL AUDIT (Phase 1 correctness fix): this no longer reads a
+ * data-ml-value-edge attribute (a fabricated probability-vs-market
+ * percentage). It reads data-ml-differential — the model's own unmodified
+ * factor differential — and reports edge strength as a tier label.
  */
 async function loadMlEdgesFromPage(page) {
   await page.goto(ML_EDGES_URL, { waitUntil: "networkidle", timeout: 60000 });
@@ -141,7 +146,7 @@ async function loadMlEdgesFromPage(page) {
       home: el.getAttribute("data-ml-home") || "",
       pick: el.getAttribute("data-ml-pick") || "",
       confidence: el.getAttribute("data-ml-confidence") || "",
-      valueEdge: el.getAttribute("data-ml-value-edge") || "",
+      differential: el.getAttribute("data-ml-differential") || "",
       pickAmerican: el.getAttribute("data-ml-pick-american") || "",
       polyYes: el.getAttribute("data-ml-poly-yes") || "",
       polyNo: el.getAttribute("data-ml-poly-no") || "",
@@ -152,7 +157,7 @@ async function loadMlEdgesFromPage(page) {
       home: normalizeTeam(data.home),
       pick: normalizeTeam(data.pick),
       confidence: toFiniteNumber(data.confidence),
-      valueEdge: toFiniteNumber(data.valueEdge),
+      differential: toFiniteNumber(data.differential),
       pickAmerican: normalizeText(data.pickAmerican) || null,
       polyYes: toFiniteNumber(data.polyYes),
       polyNo: toFiniteNumber(data.polyNo),
@@ -194,16 +199,26 @@ function formatCents(price) {
   return `${Math.round(price * 100)}\u00a2`;
 }
 
+/**
+ * Mirrors getEdgeTierLabel in src/lib/mlb/mlbModelEdge.ts. Kept in sync
+ * manually since this script runs outside the Vite/TS build. PER MODEL
+ * AUDIT: confidence is an edge-strength index (50-82), not a win
+ * probability -- never present it as a percentage claim of "value".
+ */
+function getEdgeTierLabel(confidence) {
+  if (confidence >= 72) return "Strong lean";
+  if (confidence >= 64) return "Moderate lean";
+  if (confidence >= 56) return "Slight lean";
+  return "Coin flip";
+}
+
 /** Build one caption line for a pick, including Polymarket YES/NO when available. */
 function formatRowLine(row, index) {
   const matchup = `${row.away}@${row.home}`;
   const parts = [`${index + 1}. ${row.pick} ML (${matchup})`];
 
-  if (row.valueEdge != null) {
-    const sign = row.valueEdge > 0 ? "+" : "";
-    parts.push(`${sign}${row.valueEdge.toFixed(1)}% value`);
-  } else if (row.confidence != null) {
-    parts.push(`${row.confidence.toFixed(0)}% model confidence`);
+  if (row.confidence != null) {
+    parts.push(getEdgeTierLabel(row.confidence));
   }
 
   const yes = formatCents(row.polyYes);
@@ -241,10 +256,8 @@ function buildCaption({ date, rows }) {
     // Retry with a shorter line format (drop Polymarket detail) before giving up.
     const shortLines = topRows.map((row, index) => {
       const matchup = `${row.away}@${row.home}`;
-      const valueText = row.valueEdge != null
-        ? `${row.valueEdge > 0 ? "+" : ""}${row.valueEdge.toFixed(1)}%`
-        : `${row.confidence?.toFixed(0) ?? "--"}%`;
-      return `${index + 1}. ${row.pick} ML (${matchup}) - ${valueText}`;
+      const tierText = row.confidence != null ? getEdgeTierLabel(row.confidence) : "--";
+      return `${index + 1}. ${row.pick} ML (${matchup}) - ${tierText}`;
     });
     const shortCaption = [
       `JoeKnowsBall MLB ML Edges - ${dateLabel}`,
@@ -272,7 +285,7 @@ function buildPostKey(date, rows) {
     home: row.home,
     pick: row.pick,
     confidence: row.confidence != null ? Number(row.confidence.toFixed(1)) : null,
-    valueEdge: row.valueEdge != null ? Number(row.valueEdge.toFixed(1)) : null,
+    differential: row.differential != null ? Number(row.differential.toFixed(1)) : null,
     polyYes: row.polyYes != null ? Number(row.polyYes.toFixed(3)) : null,
     polyNo: row.polyNo != null ? Number(row.polyNo.toFixed(3)) : null,
   }));

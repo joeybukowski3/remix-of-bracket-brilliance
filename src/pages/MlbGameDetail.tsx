@@ -30,7 +30,7 @@ import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
-import { computeModelEdge } from "@/lib/mlb/mlbModelEdge";
+import { computeModelEdge, getEdgeTierKey, getEdgeTierLabel, ML_EDGE_METHODOLOGY } from "@/lib/mlb/mlbModelEdge";
 import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
@@ -671,16 +671,16 @@ function getSlateStatusCategory(status: string): Exclude<SlateFilter, "all"> {
   return "scheduled";
 }
 
-/** Formats the Polymarket edge for display on collapsed matchup cards.
- * Returns "+X.X%", "-X.X%", "0.0%", or "—" (em dash) when data is unavailable. */
+/** Formats the Polymarket agreement summary for display on collapsed matchup cards.
+ * Returns "Aligned", "Contrarian", or "—" (em dash) when data is unavailable.
+ * PER MODEL AUDIT: no longer returns a derived "value edge" percentage —
+ * see getPolymarketAgreement in the parent component. */
 export function formatCardPmEdgeLabel(
   mlPickAbbr: string | null,
-  pmEdge: { edge: number; isEven: boolean } | null,
+  pmAgreement: { aligned: boolean } | null,
 ): string {
-  if (!mlPickAbbr || !pmEdge) return "—";
-  if (pmEdge.isEven) return "0.0%";
-  const sign = pmEdge.edge >= 0 ? "+" : "";
-  return `${sign}${pmEdge.edge.toFixed(1)}%`;
+  if (!mlPickAbbr || !pmAgreement) return "—";
+  return pmAgreement.aligned ? "Aligned" : "Contrarian";
 }
 
 function formatGameTime(value: string) {
@@ -1095,39 +1095,31 @@ function MlbSlateAnalyzer({
     return pitchers.find((p) => p.pitcherId === pitcherId)?.xera ?? null;
   }
 
-  function getPolymarketEdge(gamePk: number, mlEdge: any) {
-    if (!polymarketData || !mlEdge) return null;
+  /**
+   * PER MODEL AUDIT (Phase 1 correctness fix): this NO LONGER computes a
+   * "value edge" percentage by treating edge.confidence/100 as a model win
+   * probability and diffing it against the Polymarket price. That
+   * arithmetic implied a calibration that does not exist. Instead, this
+   * reports whether the model's pick agrees with the side Polymarket
+   * currently favors, plus the raw Polymarket price for that side (real
+   * market data, not a derived probability comparison).
+   */
+  function getPolymarketAgreement(gamePk: number, mlEdge: any) {
+    if (!polymarketData || !mlEdge || mlEdge.pick === "push") return null;
 
     const game = polymarketData.games.find(g => g.gamePk === gamePk);
     if (!game || !game.matched) return null;
 
-    const confidence = mlEdge.confidence / 100;
-    const awayModelProb = mlEdge.pick === "away" ? confidence : mlEdge.pick === "home" ? 1 - confidence : 0.5;
-    const homeModelProb = 1 - awayModelProb;
-    const candidates: Array<{ team: string; edge: number; polyProb: number }> = [];
+    const pickIsAway = mlEdge.pick === "away";
+    const pickTeam = pickIsAway ? game.away : game.home;
+    const otherTeam = pickIsAway ? game.home : game.away;
+    if (pickTeam.yesPrice == null || otherTeam.yesPrice == null) return null;
 
-    if (game.away.yesPrice != null) {
-      candidates.push({
-        team: game.away.abbreviation,
-        edge: Math.round((awayModelProb - game.away.yesPrice) * 1000) / 10,
-        polyProb: game.away.yesPrice,
-      });
-    }
-    if (game.home.yesPrice != null) {
-      candidates.push({
-        team: game.home.abbreviation,
-        edge: Math.round((homeModelProb - game.home.yesPrice) * 1000) / 10,
-        polyProb: game.home.yesPrice,
-      });
-    }
-    if (!candidates.length) return null;
+    const pickAbbr = pickIsAway ? game.away.abbreviation : game.home.abbreviation;
+    const marketFavors = pickTeam.yesPrice >= otherTeam.yesPrice ? pickAbbr : (pickIsAway ? game.home.abbreviation : game.away.abbreviation);
+    const aligned = marketFavors === pickAbbr;
 
-    const best = candidates.sort((a, b) => b.edge - a.edge)[0];
-    if (best.edge <= 0) {
-      return { team: null, edge: 0, sign: "", polyProb: best.polyProb, isEven: true };
-    }
-
-    return { team: best.team, edge: best.edge, sign: "+", polyProb: best.polyProb, isEven: false };
+    return { aligned, marketPrice: pickTeam.yesPrice, pickAbbr };
   }
   const { getTeam } = useTeamWrc();
   return (
@@ -1179,8 +1171,8 @@ function MlbSlateAnalyzer({
           const cardMlEdge = detail ? computeModelEdge(detail) : null;
           const cardMlPickAbbr = cardMlEdge && cardMlEdge.pick !== "push"
             ? (cardMlEdge.pick === "away" ? cardMlEdge.awayAbbr : cardMlEdge.homeAbbr) : null;
-          const cardPmEdge = getPolymarketEdge(game.gamePk, cardMlEdge);
-          const cardPmEdgeLabel: string = formatCardPmEdgeLabel(cardMlPickAbbr, cardPmEdge);
+          const cardPmAgreement = getPolymarketAgreement(game.gamePk, cardMlEdge);
+          const cardPmEdgeLabel: string = formatCardPmEdgeLabel(cardMlPickAbbr, cardPmAgreement);
 
           return (
             <button
@@ -1228,7 +1220,7 @@ function MlbSlateAnalyzer({
                   const mlPickAbbr = mlEdge && mlEdge.pick !== "push"
                     ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr) : null;
                   const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
-                  const pmEdge = getPolymarketEdge(game.gamePk, mlEdge);
+                  const pmAgreement = getPolymarketAgreement(game.gamePk, mlEdge);
 
                   const awayWrc = getTeam(game.away.abbreviation);
                   const homeWrc = getTeam(game.home.abbreviation);
@@ -1690,11 +1682,11 @@ function MlbSlateAnalyzer({
                                     <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
                                     <span className="rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold text-white">{edges.total}</span>
                                   </div>
-                                  <div className="flex items-center justify-between gap-3" title="Model confidence index, not a guaranteed win probability.">
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">ML Edge</span>
+                                  <div className="flex items-center justify-between gap-3" title={ML_EDGE_METHODOLOGY}>
+                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Edge Strength</span>
                                     {mlPickAbbr && mlPickColor ? (
                                       <span className="rounded-full px-2.5 py-1 text-[9px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
-                                        {mlPickAbbr} {mlEdge!.confidence}
+                                        {mlPickAbbr} {getEdgeTierLabel(mlEdge!.confidence)}
                                       </span>
                                     ) : mlEdge ? (
                                       <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold text-slate-500">Even</span>
@@ -1703,17 +1695,15 @@ function MlbSlateAnalyzer({
                                     )}
                                   </div>
                                   <div className="flex items-center justify-between gap-3">
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket Value</span>
-                                    {pmEdge ? (
+                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket</span>
+                                    {pmAgreement ? (
                                       <span className={cn(
                                         "rounded-full px-2.5 py-1 text-[9px] font-extrabold",
-                                        pmEdge.isEven
-                                          ? "bg-slate-200 text-slate-600"
-                                          : pmEdge.edge >= 2
-                                            ? "bg-emerald-100 text-emerald-700"
-                                            : "bg-sky-100 text-sky-700",
+                                        pmAgreement.aligned
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : "bg-amber-100 text-amber-700",
                                       )}>
-                                        {pmEdge.isEven ? "Even" : `${pmEdge.team} +${pmEdge.edge.toFixed(1)}%`}
+                                        {pmAgreement.aligned ? "Aligned" : "Contrarian"} · {pmAgreement.pickAbbr} {(pmAgreement.marketPrice * 100).toFixed(0)}¢
                                       </span>
                                     ) : (
                                       <span className="text-[10px] font-semibold text-slate-400">—</span>
@@ -2622,13 +2612,13 @@ function SocialTableML({
       const pmYes = pmPickSide?.yesPrice ?? null;
       const pmNo = pmPickSide?.noPrice ?? null;
 
-      // Value edge: model win probability vs market implied probability
-      const modelProb = edge.confidence / 100;          // e.g. 0.57
-      const marketImplied = americanToImplied(pickAmerican); // e.g. 0.67 for -200
-      // Value = how much model beats the market. Positive = value, negative = market overprices pick
-      const valueEdge = marketImplied != null
-        ? Math.round((modelProb - marketImplied) * 100 * 10) / 10  // in percentage points
-        : null; // null = no odds available, rank by confidence alone
+      // PER MODEL AUDIT (Phase 1 correctness fix): no longer computes a
+      // "value edge" by treating edge.confidence/100 as a win probability
+      // and diffing it against the market-implied probability. That
+      // arithmetic claimed a calibration that does not exist.
+      // marketImplied (from the actual posted odds) is kept for display —
+      // it is real market data, not a model-derived comparison.
+      const marketImplied = americanToImplied(pickAmerican);
 
       // Pitcher context
       const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
@@ -2651,10 +2641,10 @@ function SocialTableML({
         fadeAbbr,
         pickColors,
         confidence: edge.confidence,
+        differential: edge.differential,
         pickAmerican,
         fadeAmerican,
         marketImplied,
-        valueEdge,
         pmYes,
         pmNo,
         context,
@@ -2662,40 +2652,26 @@ function SocialTableML({
       };
     })
     .filter(Boolean)
-    // Sort by value edge first (model beats market), then by confidence as tiebreaker
-    // If no odds, sort by confidence only
-    .sort((a, b) => {
-      const va = a!.valueEdge;
-      const vb = b!.valueEdge;
-      if (va != null && vb != null) return vb - va;
-      if (va != null) return -1; // odds-ranked rows above no-odds rows
-      if (vb != null) return 1;
-      return b!.confidence - a!.confidence;
-    })
-    // Only show picks where either:
-    // (a) model has a genuine positive edge vs market, OR
-    // (b) model is near-push (edge >= -1.5%) AND team is an underdog (+odds)
-    //     → underdog at near-even model odds = value even without a clear model edge
-    // Games with no odds available still show (sorted by confidence only)
-    .filter(r => {
-      if (r!.valueEdge == null) return true; // no odds — always include
-      if (r!.valueEdge > 0) return true;     // genuine positive edge
-      // Near-push underdog: model within 1.5% of market AND pick is +odds
-      const isUnderdog = r!.pickAmerican != null && r!.pickAmerican.startsWith("+");
-      return r!.valueEdge >= -1.5 && isUnderdog;
-    })
+    // Sort by the model's own (unmodified) differential descending -- the
+    // strongest-conviction picks first. PER MODEL AUDIT: previously sorted
+    // by a fabricated "value edge vs market"; differential is the model's
+    // own output, not a probability claim.
+    .sort((a, b) => b!.differential - a!.differential)
     .slice(0, 8) as NonNullable<ReturnType<typeof rows[0]>>[];
 
   const MEDALS = ["🥇", "🥈", "🥉"];
   const ACCENTS = ["#f97316", "#fb923c", "#fbbf24", "#facc15", "#a3e635", "#34d399", "#38bdf8", "#818cf8"];
 
-  function valueColor(ve: number | null): { bg: string; text: string; label: string } {
-    if (ve == null)  return { bg: "#475569", text: "#fff", label: "No line" };
-    if (ve >= 10)    return { bg: "#16a34a", text: "#fff", label: `+${ve.toFixed(1)}% edge` };
-    if (ve >= 4)     return { bg: "#22c55e", text: "#fff", label: `+${ve.toFixed(1)}% edge` };
-    if (ve >= 0)     return { bg: "#facc15", text: "#000", label: `+${ve.toFixed(1)}%` };
-    if (ve >= -5)    return { bg: "#f97316", text: "#fff", label: `${ve.toFixed(1)}%` };
-    return           { bg: "#dc2626", text: "#fff", label: `${ve.toFixed(1)}% no val` };
+  // PER MODEL AUDIT (Phase 1 correctness fix): colors/labels the model's
+  // own edge tier (Slight/Moderate/Strong lean), not a fabricated
+  // value-vs-market percentage.
+  function tierColor(confidence: number): { bg: string; text: string; label: string } {
+    const tier = getEdgeTierKey(confidence);
+    const label = getEdgeTierLabel(confidence);
+    if (tier === "strong")   return { bg: "#16a34a", text: "#fff", label };
+    if (tier === "moderate") return { bg: "#22c55e", text: "#fff", label };
+    if (tier === "slight")   return { bg: "#facc15", text: "#000", label };
+    return                   { bg: "#475569", text: "#fff", label };
   }
 
   if (rows.length === 0) {
@@ -2706,7 +2682,6 @@ function SocialTableML({
     );
   }
 
-  const hasOdds = rows.some(r => r.valueEdge != null);
   const todayEt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
     year: "numeric",
@@ -2727,7 +2702,7 @@ function SocialTableML({
         <div>
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🏆 MLB ML EDGES</div>
           <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>
-            {hasOdds ? "Sorted by Value vs. Market Line" : "Top Model Picks · Sorted by Confidence"}
+            Top Model Picks · Sorted by Edge Strength
           </div>
         </div>
         <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
@@ -2737,12 +2712,12 @@ function SocialTableML({
       <div style={{ display: "grid", gridTemplateColumns: "28px 1fr auto", gap: 8, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
         <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>#</div>
         <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>MATCHUP</div>
-        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "right" }}>PICK · LINE · VALUE</div>
+        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "right" }}>PICK · LINE · EDGE</div>
       </div>
 
       {/* Rows */}
       {rows.map((row, i) => {
-        const vc = valueColor(row.valueEdge);
+        const vc = tierColor(row.confidence);
         return (
           <div
             key={row.gamePk}
@@ -2751,7 +2726,7 @@ function SocialTableML({
             data-ml-home={row.homeAbbr}
             data-ml-pick={row.pickAbbr}
             data-ml-confidence={row.confidence}
-            data-ml-value-edge={row.valueEdge ?? ""}
+            data-ml-differential={row.differential}
             data-ml-pick-american={row.pickAmerican ?? ""}
             data-ml-poly-yes={row.pmYes ?? ""}
             data-ml-poly-no={row.pmNo ?? ""}
@@ -2808,8 +2783,7 @@ function SocialTableML({
                   </span>
                 )}
               </div>
-              {/* Value edge badge */}
-              {row.valueEdge != null && (
+              {/* Edge Strength tier badge */}
               <span style={{
                 background: vc.bg,
                 color: vc.text,
@@ -2821,7 +2795,6 @@ function SocialTableML({
               }}>
                 {vc.label}
               </span>
-              )}
               {/* Polymarket YES/NO reference */}
               {(row.pmYes != null || row.pmNo != null) && (
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -2862,7 +2835,7 @@ function SocialTableML({
       {/* Footer */}
       <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 10, color: "#475569" }}>
-          {hasOdds ? "Value = model win% minus market implied%" : "Model: ERA · xFIP · xERA · K-BB% · Regression"}
+          Edge = model factor differential, not a market-vs-model probability comparison
           {rows.some(r => r.pmYes != null) ? " · Poly = Polymarket YES/NO" : ""}
         </span>
         <span style={{ fontSize: 10, color: "#3b82f6", fontWeight: 700 }}>joeknowsball.com</span>
@@ -3026,6 +2999,12 @@ function HomeSchedule({
   // Build ML edge map (gamePk → PanelMlEdge) for the Polymarket panel.
   // Uses the same computeModelEdge logic as the Game Matchup Analyzer so
   // the panel's sorting and badges always match what the analyzer shows.
+  //
+  // PER MODEL AUDIT (Phase 1 correctness fix): this NO LONGER derives a
+  // "value edge" percentage from edge.confidence/100 treated as a win
+  // probability. It reports market agreement (does the model's pick match
+  // the side Polymarket currently favors) plus the raw market price, and
+  // sorts by the model's own differential -- not a fabricated edge number.
   const { data: polymarketData } = usePolymarketMlbMoneylines();
   const mlEdges = useMemo<Record<number, PanelMlEdge>>(() => {
     if (!polymarketData?.games?.length) return {};
@@ -3039,29 +3018,23 @@ function HomeSchedule({
 
       const pickIsAway = edge.pick === "away";
       const pickAbbr = pickIsAway ? pmGame.away.abbreviation : pmGame.home.abbreviation;
-      const confidence = edge.confidence / 100;
-      const awayModelProb = pickIsAway ? confidence : 1 - confidence;
-      const homeModelProb = 1 - awayModelProb;
-      const candidates: Array<{ valueAbbr: string; valueEdge: number }> = [];
+      const pickTeam = pickIsAway ? pmGame.away : pmGame.home;
+      const otherTeam = pickIsAway ? pmGame.home : pmGame.away;
 
-      if (pmGame.away.yesPrice != null) {
-        candidates.push({
-          valueAbbr: pmGame.away.abbreviation,
-          valueEdge: Math.round((awayModelProb - pmGame.away.yesPrice) * 1000) / 10,
-        });
-      }
-      if (pmGame.home.yesPrice != null) {
-        candidates.push({
-          valueAbbr: pmGame.home.abbreviation,
-          valueEdge: Math.round((homeModelProb - pmGame.home.yesPrice) * 1000) / 10,
-        });
+      let marketAligned: boolean | null = null;
+      let marketPrice: number | null = null;
+      if (pickTeam.yesPrice != null && otherTeam.yesPrice != null) {
+        marketAligned = pickTeam.yesPrice >= otherTeam.yesPrice;
+        marketPrice = pickTeam.yesPrice;
       }
 
-      const best = candidates.sort((a, b) => b.valueEdge - a.valueEdge)[0] ?? null;
-      const valueEdge = best && best.valueEdge > 0 ? best.valueEdge : best ? 0 : null;
-      const valueAbbr = valueEdge != null && valueEdge > 0 ? best!.valueAbbr : null;
-
-      map[pmGame.gamePk] = { pickAbbr, confidence: edge.confidence, valueAbbr, valueEdge };
+      map[pmGame.gamePk] = {
+        pickAbbr,
+        confidence: edge.confidence,
+        differential: edge.differential,
+        marketAligned,
+        marketPrice,
+      };
     }
     return map;
   }, [detailPreviews, polymarketData]);
