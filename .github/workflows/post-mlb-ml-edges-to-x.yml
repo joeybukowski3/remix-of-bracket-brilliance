@@ -55,10 +55,6 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .cache/mlb-ml-edges-x-posted
-          # Keyed by ET date: a fresh key each day, but multiple runs on the
-          # same day (e.g. the 9:23 AM and 10:23 AM Generate MLB Data crons
-          # both land inside the 9-11 AM ET post window) share the same key
-          # and see each other's post receipt, preventing a double-post.
           key: mlb-ml-edges-x-posted-${{ steps.et_date.outputs.date }}
 
       - name: Time gate (9-11 AM ET for workflow_run only)
@@ -75,6 +71,25 @@ jobs:
           else
             echo "should_run=false" >> "$GITHUB_OUTPUT"
             echo "Time gate blocked: ${ET_HOUR}:xx ET outside 9-11 AM window"
+          fi
+
+      - name: Wait for fresh production slate
+        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=false
+          for attempt in 1 2 3 4 5 6 7 8; do
+            echo "Production readiness check ${attempt}/8"
+            if node scripts/post-mlb-ml-edges-to-x.mjs --post-key-only; then
+              ready=true
+              break
+            fi
+            if [ "$attempt" -lt 8 ]; then sleep 45; fi
+          done
+          if [ "$ready" != "true" ]; then
+            echo "ERROR: Production ML edges did not become post-ready after the data workflow." >&2
+            exit 1
           fi
 
       - name: Post ML Edges
