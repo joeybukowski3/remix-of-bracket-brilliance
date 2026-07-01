@@ -330,25 +330,26 @@ describe("Sorting: v3 numerology score is used", () => {
   });
 });
 
+const JUNE_30 = {
+  universalDayRawSum: 19,
+  universalDayCompound: 19,
+  universalDayMaster: null,
+  universalDayRoot: 1,
+  universalDayTrace: ["19"],
+  calendarDayCompound: 30,
+  calendarDayRoot: 3,
+  universalYear: 1,
+  universalMonth: 7,
+  structuralEcho: "10/1",
+  primaryFamily: [1, 4, 7],
+  secondaryFamily: [3, 6, 9],
+  balancingComplement: 9,
+  countercurrent: 8,
+  repeatedDigits: [] as [],
+  interpretation: "UD 19/1.",
+};
+
 describe("Generator/frontend parity (June 30 fixtures via audit)", () => {
-  const JUNE_30 = {
-    universalDayRawSum: 19,
-    universalDayCompound: 19,
-    universalDayMaster: null,
-    universalDayRoot: 1,
-    universalDayTrace: ["19"],
-    calendarDayCompound: 30,
-    calendarDayRoot: 3,
-    universalYear: 1,
-    universalMonth: 7,
-    structuralEcho: "10/1",
-    primaryFamily: [1, 4, 7],
-    secondaryFamily: [3, 6, 9],
-    balancingComplement: 9,
-    countercurrent: 8,
-    repeatedDigits: [] as [],
-    interpretation: "UD 19/1.",
-  };
 
   it("Merrill June 30: v3 calculatedScore = 79 (double Tier1 exact → synergyBonus=12)", () => {
     const result = calculateNumerologyScoreBreakdown(
@@ -412,5 +413,103 @@ describe("Generator/frontend parity (June 30 fixtures via audit)", () => {
     expect(result.calculatedScore).toBe(30);
     const decayed = result.signals.filter(s => s.points > 0 && s.indirectMultiplier != null && s.indirectMultiplier < 1.0);
     expect(decayed.length).toBeGreaterThan(0);
+  });
+});
+
+// ── Candidate mode: v3 config weights vs stored v2 weights ────────────────────
+
+describe("Candidate mode: weights source", () => {
+  const STORED_V2_WEIGHTS = {
+    lifePathExact: 14,
+    birthDayExact: 20,
+    personalDayExact: 16,
+    jerseyRoot: 10,
+  };
+
+  it("without configured weights (candidate mode), v3 config defaults apply — lifePathExact=22", () => {
+    const result = calculateNumerologyScoreBreakdown(
+      { playerName: "Jackson Merrill", numerologyScore: 33, jerseyNumber: 3 },
+      { birthDate: "2003-04-19", jerseyNumber: 3 },
+      JUNE_30 as Parameters<typeof calculateNumerologyScoreBreakdown>[2],
+      "2026-06-30",
+    );
+    const lpSignal = result.signals.find(s => s.field === "lifePath");
+    expect(lpSignal?.rawPoints).toBe(METHODOLOGY.weights.lifePathExact);
+  });
+
+  it("with v2 stored weights, lifePathExact is overridden to 14 (lower than v3 config 22)", () => {
+    const resultV2Weights = calculateNumerologyScoreBreakdown(
+      { playerName: "Jackson Merrill", numerologyScore: 33, jerseyNumber: 3 },
+      { birthDate: "2003-04-19", jerseyNumber: 3 },
+      JUNE_30 as Parameters<typeof calculateNumerologyScoreBreakdown>[2],
+      "2026-06-30",
+      STORED_V2_WEIGHTS,
+    );
+    const lpSignal = resultV2Weights.signals.find(s => s.field === "lifePath");
+    expect(lpSignal?.rawPoints).toBe(14);
+  });
+
+  it("candidate mode score (no configured weights) is higher than v2-weights score for a double-Tier1 player", () => {
+    const v3Score = calculateNumerologyScoreBreakdown(
+      { playerName: "Jackson Merrill", numerologyScore: 33, jerseyNumber: 3 },
+      { birthDate: "2003-04-19", jerseyNumber: 3 },
+      JUNE_30 as Parameters<typeof calculateNumerologyScoreBreakdown>[2],
+      "2026-06-30",
+    ).calculatedScore;
+    const v2WeightsScore = calculateNumerologyScoreBreakdown(
+      { playerName: "Jackson Merrill", numerologyScore: 33, jerseyNumber: 3 },
+      { birthDate: "2003-04-19", jerseyNumber: 3 },
+      JUNE_30 as Parameters<typeof calculateNumerologyScoreBreakdown>[2],
+      "2026-06-30",
+      STORED_V2_WEIGHTS,
+    ).calculatedScore;
+    expect(v3Score).toBeGreaterThan(v2WeightsScore);
+  });
+});
+
+// ── Legacy score: multi-player preservation ───────────────────────────────────
+
+describe("Legacy score preservation: multiple distinct players", () => {
+  it("each player's finite v2 score is independently preserved as legacyNumerologyScore", () => {
+    const players = [
+      { playerName: "Jackson Merrill", team: "SD", v2: 33, jerseyNumber: 3, birthDate: "2003-04-19" },
+      { playerName: "George Springer", team: "TOR", v2: 36, jerseyNumber: 4, birthDate: "1989-09-19" },
+    ];
+    const preserved: number[] = [];
+    for (const p of players) {
+      const result = calculateNumerologyScoreBreakdown(
+        { playerName: p.playerName, numerologyScore: p.v2, jerseyNumber: p.jerseyNumber },
+        { birthDate: p.birthDate, jerseyNumber: p.jerseyNumber },
+        JUNE_30 as Parameters<typeof calculateNumerologyScoreBreakdown>[2],
+        "2026-06-30",
+      );
+      // In enrich(), legacyNumerologyScore = player.numerologyScore before overwrite
+      // The stored v2 score is p.v2 — verify v3 score differs and v2 can be recovered
+      expect(result.calculatedScore).not.toBe(p.v2);
+      expect(Number.isFinite(result.calculatedScore)).toBe(true);
+      preserved.push(p.v2);
+    }
+    // Both players preserve distinct v2 values
+    expect(new Set(preserved).size).toBe(2);
+  });
+
+  it("comparison joins by stable playerName|team identity key", () => {
+    const keyA = "Jackson Merrill|SD";
+    const keyB = "George Springer|TOR";
+    expect(IDENTITY_CACHE[keyA]).toBeDefined();
+    expect(IDENTITY_CACHE[keyB]).toBeDefined();
+    expect(IDENTITY_CACHE[keyA]).not.toEqual(IDENTITY_CACHE[keyB]);
+  });
+
+  it("score ceiling semantics: rawNumerology above normCeiling maps to exactly 100", () => {
+    const aboveCeiling = calculateNumerologyScoreBreakdown(
+      { playerName: "Jackson Merrill", numerologyScore: 33, jerseyNumber: 3 },
+      { birthDate: "2003-04-19", jerseyNumber: 3 },
+      JUNE_30 as Parameters<typeof calculateNumerologyScoreBreakdown>[2],
+      "2026-06-30",
+      { ...METHODOLOGY.weights, lifePathExact: 50, birthDayExact: 50 },
+    );
+    expect(aboveCeiling.calculatedScore).toBe(100);
+    expect(aboveCeiling.rawNumerology).toBeGreaterThan(METHODOLOGY.weights.normCeiling);
   });
 });

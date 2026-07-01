@@ -63,7 +63,7 @@ export default function MlbNumerologyPageEnhanced() {
     const legacyNumerologyScore = player.numerologyScore;
     let scoreBreakdown = player.scoreBreakdown;
     if (profile && data) {
-      try { scoreBreakdown = calculateNumerologyScoreBreakdown(player, identities[`${player.playerName}|${player.team}`] ?? null, profile, data.date, data.scoringConfiguration?.weights); }
+      try { scoreBreakdown = calculateNumerologyScoreBreakdown(player, identities[`${player.playerName}|${player.team}`] ?? null, profile, data.date, isCandidateMode ? undefined : data.scoringConfiguration?.weights); }
       catch (reason) { console.error("[mlb-numerology] score breakdown failed", player.playerName, reason); }
     }
     return {

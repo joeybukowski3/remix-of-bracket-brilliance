@@ -42,16 +42,20 @@ const identityMap: Record<string, { birthDate?: string; jerseyNumber?: number }>
 
 const dailyJson = JSON.parse(readFileSync(resolve(ROOT, "public/data/mlb/numerology-daily.json"), "utf8"));
 
-// Freeze v2 baseline — immutable; only populated for players already in production output
+// Freeze v2 baseline — immutable; all sections the page actually displays
 const v2BaselineMap = new Map<string, number>();
 for (const play of [
+  ...(dailyJson.exactNumberMatches ?? []),
+  ...(dailyJson.rootNumberMatches ?? []),
   ...(dailyJson.featuredPlays ?? []),
   ...(dailyJson.watchlist ?? []),
   ...(dailyJson.bestAvailable ?? []),
   ...(dailyJson.countercurrents ?? []),
 ]) {
   if (typeof play.playerName === "string" && typeof play.numerologyScore === "number") {
-    v2BaselineMap.set(play.playerName, play.numerologyScore);
+    if (!v2BaselineMap.has(play.playerName)) {
+      v2BaselineMap.set(play.playerName, play.numerologyScore);
+    }
   }
 }
 
