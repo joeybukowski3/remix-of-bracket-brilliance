@@ -1,4 +1,3 @@
-
 /**
  * numerology-schedule-gate.mjs
  *
@@ -6,21 +5,17 @@
  *
  * Phase 1 — Morning:     4:44 AM America/New_York with delayed-delivery retry window
  * Phase 2 — Lineup:      First active game start − 2 hours, once lineups are confirmed
+ * Catch-up — If the saved slate date is stale, auto mode advances it immediately.
  *
  * All slate-date and time decisions use America/New_York.
  * No external API calls; accepts injected schedule data and current timestamps.
  */
 
-/** Active game statuses — anything else is treated as postponed/cancelled */
 const ACTIVE_STATUSES = new Set([
   "Scheduled", "Pre-Game", "Warmup", "Delayed Start",
   "In Progress", "Manager Challenge", "Delayed", "Suspended",
 ]);
 
-/**
- * Return today's date string in ET (YYYY-MM-DD).
- * @param {Date} [now]
- */
 export function getEtDateString(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
@@ -30,10 +25,6 @@ export function getEtDateString(now = new Date()) {
   }).format(now);
 }
 
-/**
- * Return current ET hour and minute as { hour, minute }.
- * @param {Date} [now]
- */
 export function getEtHourMinute(now = new Date()) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
@@ -46,18 +37,6 @@ export function getEtHourMinute(now = new Date()) {
   return { hour: parseInt(h?.value ?? "0", 10), minute: parseInt(m?.value ?? "0", 10) };
 }
 
-/**
- * Whether the morning run is allowed right now.
- *
- * Target: 4:44 AM ET. GitHub Actions scheduled crons are best-effort, so the
- * gate remains open until 6:14 AM ET for delayed or retry deliveries. It never
- * opens before 4:44 AM ET. The once-per-day completion guard prevents duplicate
- * production generations after a successful run.
- *
- * @param {Date} now
- * @param {{ morningGeneratedAt?: string|null, date?: string }} existingOutput
- * @param {string} etDateToday
- */
 export function isMorningRunAllowed(now, existingOutput, etDateToday) {
   if (existingOutput?.date === etDateToday && existingOutput?.morningGeneratedAt) {
     return { allowed: false, reason: `Morning already completed for ${etDateToday}` };
@@ -78,13 +57,6 @@ export function isMorningRunAllowed(now, existingOutput, etDateToday) {
   return { allowed: true, reason: "Within 4:44 ET morning window" };
 }
 
-/**
- * Find the earliest active game start time from a raw MLB Stats API schedule response.
- *
- * @param {object} scheduleData
- * @param {string} etDateToday
- * @returns {{ firstGameStart: Date|null, targetTime: Date|null }}
- */
 export function computeLineupTargetTime(scheduleData, etDateToday) {
   const games = scheduleData?.dates?.[0]?.games ?? [];
 
@@ -110,15 +82,6 @@ export function computeLineupTargetTime(scheduleData, etDateToday) {
   return { firstGameStart, targetTime };
 }
 
-/**
- * Whether the lineup-confirmed run is allowed right now.
- *
- * @param {Date} now
- * @param {Date|null} targetTime
- * @param {boolean} lineupsConfirmed
- * @param {{ lineupConfirmedGeneratedAt?: string|null, date?: string }} existingOutput
- * @param {string} etDateToday
- */
 export function isLineupRunAllowed(now, targetTime, lineupsConfirmed, existingOutput, etDateToday) {
   if (!targetTime) {
     return { allowed: false, reason: "No active MLB games for current ET date" };
@@ -140,25 +103,12 @@ export function isLineupRunAllowed(now, targetTime, lineupsConfirmed, existingOu
   return { allowed: true, reason: "At/past target time and lineups confirmed" };
 }
 
-/**
- * Whether enough confirmed lineup players are present.
- * @param {Array<{battingOrder?: number|null}>} scheduleRoster
- */
 export function areLineupsConfirmed(scheduleRoster) {
   if (!Array.isArray(scheduleRoster) || scheduleRoster.length === 0) return false;
   const confirmed = scheduleRoster.filter(r => r.battingOrder != null && r.battingOrder > 0);
   return confirmed.length >= 9;
 }
 
-/**
- * Evaluate the correct run mode given the dispatch input and current state.
- * @param {"auto"|"morning"|"lineup-confirmed"|"force-refresh"} phase
- * @param {Date} now
- * @param {object|null} existingOutput
- * @param {object|null} scheduleData
- * @param {Array} scheduleRoster
- * @returns {{ run: boolean, updatePhase: string, reason: string }}
- */
 export function evaluateGate(phase, now, existingOutput, scheduleData, scheduleRoster) {
   const etDateToday = getEtDateString(now);
 
@@ -182,6 +132,18 @@ export function evaluateGate(phase, now, existingOutput, scheduleData, scheduleR
     const check = isLineupRunAllowed(now, targetTime, lineupsConfirmed, existingOutput, etDateToday);
     if (!check.allowed) return { run: false, updatePhase: "lineup-confirmed", reason: check.reason };
     return { run: true, updatePhase: "lineup-confirmed", reason: check.reason };
+  }
+
+  // Auto mode must never leave yesterday's slate published just because GitHub
+  // missed the nominal 4:44 delivery window. A stale or missing date is allowed
+  // to run immediately as a morning catch-up. Once the date advances, the normal
+  // once-per-day guards prevent duplicate work.
+  if (!existingOutput?.date || existingOutput.date !== etDateToday) {
+    return {
+      run: true,
+      updatePhase: "morning",
+      reason: `Catch-up required: existing slate ${existingOutput?.date ?? "missing"}, current ET date ${etDateToday}`,
+    };
   }
 
   const morningCheck = isMorningRunAllowed(now, existingOutput, etDateToday);
