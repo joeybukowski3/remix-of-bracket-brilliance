@@ -1,31 +1,26 @@
 name: Generate MLB Numerology
 
 # Twice-daily generation:
-#   Phase 1 - Morning:          4:44 AM America/New_York with gated 10-minute retries
-#   Phase 2 - Lineup-confirmed: first active game - 2 hours (polls every 10 min)
+#   Phase 1 - Morning:          4:44 AM America/New_York with gated retries
+#   Phase 2 - Lineup-confirmed: first active game - 2 hours
 #
-# GitHub Actions schedule delivery is best-effort and can be delayed or skipped.
-# The exact 4:44 ET crons remain, while retry crons run every 10 minutes across
-# the full EST/EDT morning window. A runtime ET gate ensures only the correct
-# local window executes and only once per Eastern calendar date.
-#
-# EDT (UTC-4): 4:44 AM ET = 08:44 UTC
-# EST (UTC-5): 4:44 AM ET = 09:44 UTC
-# Retry coverage runs every 10 minutes from 08:00-11:59 UTC. Attempts before
-# 4:44 ET and after the morning window are fast no-ops.
-#
-# Lineup polling runs every 10 minutes from 12:00-23:59 UTC. The 11:00 UTC hour
-# is already covered by the morning retry schedule and the same auto gate can
-# transition to lineup-confirmed when appropriate.
+# Scheduled delivery is best-effort. The runtime gate also advances a stale
+# slate immediately in auto mode, so a missed morning cron cannot leave the
+# previous day's page published indefinitely.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/generate-mlb-numerology.yml"
+      - "scripts/lib/numerology-schedule-gate.mjs"
+      - "scripts/lib/numerology-gate-runner.mjs"
+      - "scripts/generate-mlb-numerology.mjs"
+
   schedule:
-    # Exact morning targets for both DST offsets.
     - cron: "44 8 * * *"
     - cron: "44 9 * * *"
-    # Resilient morning retries covering both EST and EDT windows.
     - cron: "0,10,20,30,40,50 8-11 * * *"
-    # Lineup-confirmed polling for the remainder of the MLB day.
     - cron: "0,10,20,30,40,50 12-23 * * *"
 
   workflow_dispatch:
@@ -55,7 +50,6 @@ on:
         default: "false"
         type: string
 
-# Serialize with other data-writing workflows.
 concurrency:
   group: mlb-numerology-${{ github.ref }}
   cancel-in-progress: false
