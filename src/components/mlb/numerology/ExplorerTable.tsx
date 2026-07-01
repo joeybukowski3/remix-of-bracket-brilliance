@@ -23,7 +23,7 @@ export type ExplorerRow = NumerologyCardPlayer & {
 function normName(s: string): string {
   return s
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/\s+(jr\.?|sr\.?|ii|iii|iv)$/i, "")
     .replace(/[^a-z0-9 ]/g, "")
@@ -69,7 +69,7 @@ function Tile({
   label,
   value,
   tone = "default",
-  wide = false,
+  wide: _wide = false,
 }: {
   label: string;
   value: React.ReactNode;
@@ -77,9 +77,9 @@ function Tile({
   wide?: boolean;
 }) {
   return (
-    <div className={`rounded border px-2 py-1.5 ${TONE_CLASSES[tone]} ${wide ? "" : ""}`}>
-      <p className="text-[9px] font-bold uppercase tracking-wide opacity-70">{label}</p>
-      <p className="mt-0.5 font-mono text-[13px] font-bold tabular-nums">{value ?? em}</p>
+    <div className={`rounded border px-2 py-2 text-center ${TONE_CLASSES[tone]}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wide opacity-70 sm:text-[11px]">{label}</p>
+      <p className="mt-0.5 font-mono text-[13px] font-bold tabular-nums sm:text-[14px]">{value ?? em}</p>
     </div>
   );
 }
@@ -115,30 +115,33 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
     ? hrBatter.angleTags.join(", ")
     : em;
 
+  const sectionHead = "text-[10px] font-bold uppercase tracking-wide sm:text-xs";
+
   return (
     <div className="border-t border-[#2a304d] bg-[#0c0e16] p-3">
-      {/* ── Top zone: 3 columns ── */}
+      {/* ── Top zone ── */}
       <div className="flex gap-3">
 
         {/* LEFT — headshot + score tiles */}
-        <div className="flex w-[120px] shrink-0 flex-col gap-1.5">
-          {/* Headshot */}
-          <div className="relative h-[72px] w-[72px] overflow-hidden rounded-xl border border-[#494454] bg-[#1d1f28] self-center">
+        <div className="flex w-[130px] shrink-0 flex-col gap-2">
+          {/* Circular headshot */}
+          <div className="relative h-[76px] w-[76px] self-center overflow-hidden rounded-full border border-[#494454] bg-[#1d1f28]">
             {hasHeadshot
-              ? <MlbPlayerHeadshot playerId={id} playerName={player.playerName} className="absolute inset-0 h-full w-full object-cover object-top" />
+              ? <MlbPlayerHeadshot playerId={id} playerName={player.playerName} className="absolute inset-0 h-full w-full object-cover" />
               : <div className="grid h-full place-items-center font-bold text-xl text-[#d0bcff]">{player.team?.slice(0, 2)}</div>
             }
           </div>
+
           {/* Numerology tile */}
-          <div className={`rounded border px-2 py-1.5 ${TONE_CLASSES.purple}`}>
-            <p className="text-[9px] font-bold uppercase tracking-wide opacity-70">Numerology</p>
-            <p className="mt-0.5 font-mono text-lg font-bold tabular-nums">{safe(player.numerologyScore)}</p>
+          <div className={`rounded border px-2.5 py-2 text-center ${TONE_CLASSES.purple}`}>
+            <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Numerology</p>
+            <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(player.numerologyScore)}</p>
             {(breakdown?.exactPrimaryCount ?? 0) > 0 && (
-              <p className="text-[9px] text-[#e9c349]">{breakdown!.exactPrimaryCount} exact primary</p>
+              <p className="mt-0.5 text-[10px] text-[#e9c349]">{breakdown!.exactPrimaryCount} exact primary</p>
             )}
             {player.legacyNumerologyScore != null && player.legacyNumerologyScore !== player.numerologyScore && (
-              <div className="mt-1 border-t border-[#d0bcff]/20 pt-1">
-                <p className="text-[9px] text-[#958ea0]">Previous v2 Score</p>
+              <div className="mt-1.5 border-t border-[#d0bcff]/20 pt-1.5 text-center">
+                <p className="text-[10px] text-[#958ea0]">Previous v2 Score</p>
                 <p className="font-mono text-sm text-[#958ea0]">
                   {safe(player.legacyNumerologyScore)}
                   <span className={`ml-1 text-[10px] font-bold ${player.numerologyScore - player.legacyNumerologyScore >= 0 ? "text-emerald-300" : "text-red-300"}`}>
@@ -148,20 +151,22 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
               </div>
             )}
           </div>
+
           {/* Model Rating tile */}
-          <div className={`rounded border px-2 py-1.5 ${TONE_CLASSES.blue}`}>
-            <p className="text-[9px] font-bold uppercase tracking-wide opacity-70">Model Rating</p>
-            <p className="mt-0.5 font-mono text-lg font-bold tabular-nums">{safe(player.baseballScore)}</p>
+          <div className={`rounded border px-2.5 py-2 text-center ${TONE_CLASSES.blue}`}>
+            <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">Model Rating</p>
+            <p className="mt-1 font-mono text-xl font-bold tabular-nums">{safe(player.baseballScore)}</p>
           </div>
         </div>
 
-        {/* CENTER + RIGHT — profile + stats */}
-        <div className="min-w-0 flex-1 space-y-2">
+        {/* RIGHT — profile + stats + signals + summary */}
+        <div className="min-w-0 flex-1 space-y-3">
+
           {/* Player profile tiles */}
           {profile && (
             <div>
-              <p className="mb-1 text-[9px] font-bold uppercase tracking-wide text-[#e9c349]">Profile</p>
-              <div className="grid grid-cols-3 gap-1 sm:grid-cols-6">
+              <p className={`mb-2 ${sectionHead} text-[#e9c349]`}>Profile</p>
+              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
                 {[
                   ["Personal Day", profile.personalDay],
                   ["Jersey", profile.jersey],
@@ -170,7 +175,7 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
                   ["Age", profile.age],
                   ["Expression", profile.expression],
                 ].map(([label, value]) => (
-                  <Tile key={label as string} label={label as string} value={value ?? em} />
+                  <Tile key={label as string} label={label as string} value={value ?? em} tone="purple" />
                 ))}
               </div>
             </div>
@@ -178,29 +183,29 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
 
           {/* HR Model stats */}
           <div>
-            <p className="mb-1 text-[9px] font-bold uppercase tracking-wide text-[#89ceff]">HR Model Stats</p>
-            <div className="grid grid-cols-3 gap-1 sm:grid-cols-6">
+            <p className={`mb-2 ${sectionHead} text-[#89ceff]`}>HR Model Stats</p>
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
               <Tile label="HR Odds" value={hrBatter?.hrOddsYes ?? em} tone="gold" />
               <Tile label="HR Score" value={hrBatter ? num(hrBatter.hrScore, 1) : em} tone="blue" />
-              <Tile label="Barrel%" value={hrBatter ? pct(hrBatter.barrelRate) : em} />
-              <Tile label="Hard Hit%" value={hrBatter ? pct(hrBatter.hardHitRate) : em} />
-              <Tile label="L7 HR" value={hrBatter?.last7HR != null ? String(hrBatter.last7HR) : em} />
-              <Tile label="L30 HR" value={hrBatter?.last30HR != null ? String(hrBatter.last30HR) : em} />
+              <Tile label="Barrel%" value={hrBatter ? pct(hrBatter.barrelRate) : em} tone="green" />
+              <Tile label="Hard Hit%" value={hrBatter ? pct(hrBatter.hardHitRate) : em} tone="green" />
+              <Tile label="L7 HR" value={hrBatter?.last7HR != null ? String(hrBatter.last7HR) : em} tone="green" />
+              <Tile label="L30 HR" value={hrBatter?.last30HR != null ? String(hrBatter.last30HR) : em} tone="green" />
             </div>
-            <div className="mt-1 grid grid-cols-3 gap-1 sm:grid-cols-6">
-              <Tile label="Ptch HR VS" value={hrBatter ? num(hrBatter.opposingPitcherHrVs, 1) : em} />
-              <Tile label="xERA" value={hrBatter ? num(hrBatter.pitcherXera, 2) : em} />
-              <Tile label="FB%" value={hrBatter ? pct(hrBatter.pitcherFlyBallRate) : em} />
+            <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+              <Tile label="Ptch HR VS" value={hrBatter ? num(hrBatter.opposingPitcherHrVs, 1) : em} tone="red" />
+              <Tile label="xERA" value={hrBatter ? num(hrBatter.pitcherXera, 2) : em} tone="red" />
+              <Tile label="FB%" value={hrBatter ? pct(hrBatter.pitcherFlyBallRate) : em} tone="red" />
               <Tile label="Regr" value={hrBatter ? num(hrBatter.pitcherRegressionScore, 1) : em} />
-              <Tile label="Angle" value={angleText} wide />
-              <Tile label="Park" value={hrBatter ? num(hrBatter.parkFactor, 0) : em} />
+              <Tile label="Angle" value={angleText} />
+              <Tile label="Park" value={hrBatter ? num(hrBatter.parkFactor, 0) : em} tone="green" />
             </div>
           </div>
 
-          {/* Signals */}
+          {/* Positive signals */}
           {posSignals.length > 0 && (
             <div>
-              <p className="mb-1 text-[9px] font-bold uppercase tracking-wide text-[#d0bcff]">Signals</p>
+              <p className={`mb-2 ${sectionHead} text-[#d0bcff]`}>Signals</p>
               <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
                 {posSignals.map((s, i) => (
                   <div key={`${s.field}-${i}`} className={`flex items-center justify-between rounded border px-2 py-1 text-[11px] ${signalTone(s)}`}>
@@ -212,9 +217,10 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
             </div>
           )}
 
+          {/* Countercurrent penalties */}
           {negSignals.length > 0 && (
             <div>
-              <p className="mb-1 text-[9px] font-bold uppercase tracking-wide text-[#ffb4ab]">Penalties</p>
+              <p className={`mb-2 ${sectionHead} text-[#ffb4ab]`}>Penalties</p>
               <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
                 {negSignals.map((s, i) => (
                   <div key={`${s.field}-${i}`} className={`flex items-center justify-between rounded border px-2 py-1 text-[11px] ${signalTone(s)}`}>
@@ -228,19 +234,19 @@ function ExpandedDetail({ player, hrBatter }: { player: ExplorerRow; hrBatter: H
 
           {/* Score summary */}
           {breakdown && (
-            <div className="border-t border-[#494454]/40 pt-1.5 space-y-1">
-              <div className="grid grid-cols-6 gap-1">
+            <div className="border-t border-[#494454]/40 pt-2 space-y-1.5">
+              <div className="grid grid-cols-6 gap-1.5">
                 {[
-                  ["Positive", `+${breakdown.positiveTotal}`],
-                  ["Penalty", `-${breakdown.countercurrentTotal}`],
-                  ["Synergy", `+${breakdown.exactComboBonus ?? 0}`],
-                  ["Bonus", `+${breakdown.convergenceBonus}`],
-                  ["Raw", String(breakdown.rawNumerology)],
-                  ["Score", `${breakdown.calculatedScore}/100`],
-                ].map(([label, val]) => (
-                  <div key={label} className="rounded bg-[#191b24] px-1.5 py-1 text-center">
-                    <p className="text-[8px] uppercase tracking-wide text-[#958ea0]">{label}</p>
-                    <p className="font-mono text-[11px] font-bold">{val}</p>
+                  { label: "Positive", val: `+${breakdown.positiveTotal}`, cls: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300" },
+                  { label: "Penalty", val: `-${breakdown.countercurrentTotal}`, cls: "border-red-400/20 bg-red-400/10 text-red-300" },
+                  { label: "Synergy", val: `+${breakdown.exactComboBonus ?? 0}`, cls: "border-[#d0bcff]/25 bg-[#d0bcff]/10 text-[#d0bcff]" },
+                  { label: "Bonus", val: `+${breakdown.convergenceBonus}`, cls: "border-[#e9c349]/25 bg-[#e9c349]/10 text-[#f6dc71]" },
+                  { label: "Raw", val: String(breakdown.rawNumerology), cls: "border-[#89ceff]/25 bg-[#89ceff]/10 text-[#89ceff]" },
+                  { label: "Score", val: `${breakdown.calculatedScore}/100`, cls: "border-[#e9c349]/40 bg-[#e9c349]/15 text-[#f6dc71]" },
+                ].map(({ label, val, cls }) => (
+                  <div key={label} className={`rounded border px-1.5 py-1.5 text-center ${cls}`}>
+                    <p className="text-[9px] font-bold uppercase tracking-wide opacity-70 sm:text-[10px]">{label}</p>
+                    <p className="font-mono text-[12px] font-bold tabular-nums sm:text-[13px]">{val}</p>
                   </div>
                 ))}
               </div>
@@ -363,8 +369,7 @@ export function ExplorerTable({ rows, hrBatters = [], sort = null, onSort }: { r
 
   return (
     <>
-      {/* Mobile sort controls — table headers aren't visible on small screens, so the */}
-      {/* sort affordance and current sort state need their own compact row here. */}
+      {/* Mobile sort controls */}
       <div className="flex items-center gap-1.5 border-b border-[#494454]/40 px-3 py-2 md:hidden">
         <span className="text-[10px] font-bold uppercase tracking-wide text-[#958ea0]">Sort</span>
         <button
