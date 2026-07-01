@@ -254,3 +254,168 @@ describe("Model version", () => {
     expect(result.modelVersion).toBe("3.0.0");
   });
 });
+
+// ── Helper for custom daily profiles ─────────────────────────────────────────
+function runOn(
+  playerName: string,
+  birthDate: string | null,
+  jerseyNumber: number | null,
+  daily: DailyProfile,
+  date: string,
+) {
+  return calculateNumerologyScoreBreakdown(
+    { playerName, numerologyScore: 0, jerseyNumber },
+    birthDate ? { birthDate, jerseyNumber } : null,
+    daily,
+    date,
+  );
+}
+
+// ── Synergy qualification: family_support does NOT qualify as a root match ────
+// Born 2001-09-07 → LP sum=2+0+0+1+0+9+0+7=19 → LP.original=19 → Tier1 exact match
+// BD day=7 → bd.root=7, in primaryFamily[1,4,7] but 7≠udRoot(1) and 7≠calDay(30) → family_support
+// family_support type is not in ROOT_MATCH_TYPES → synergyBonus must be 0
+describe("Synergy: Tier1 exact + Tier1 family_support → no synergy", () => {
+  const result = run("Test Player", "2001-09-07", null);
+
+  it("lifePath earns an exact compound signal", () => {
+    const lp = result.signals.find(s => s.field === "lifePath");
+    expect(lp?.type).toBe("primary_exact_root");
+  });
+
+  it("birthDay earns a family_support signal (not root match)", () => {
+    const bd = result.signals.find(s => s.field === "birthDay");
+    expect(bd?.type).toBe("family_support");
+  });
+
+  it("synergyBonus is 0 — family_support does not qualify as a root match", () => {
+    expect(result.synergyBonus).toBe(0);
+  });
+});
+
+// ── Synergy qualification: calDay secondary_exact does NOT qualify as a root match ──
+// Profile with calDay=7. Born 2001-09-07 → LP exact (19→1). BD day=7 → bd.original=7===calDay(7) → secondary_exact.
+// secondary_exact type is not in ROOT_MATCH_TYPES → synergyBonus must be 0
+const CALDAY_7: DailyProfile = {
+  universalDayRawSum: 19,
+  universalDayCompound: 19,
+  universalDayMaster: null,
+  universalDayRoot: 1,
+  universalDayTrace: ["2 + 0 + 2 + 6 + 0 + 6 + 3 + 0 = 19"],
+  calendarDayCompound: 7,
+  calendarDayRoot: 7,
+  universalYear: 1,
+  universalMonth: 7,
+  structuralEcho: "9/9",
+  primaryFamily: [1, 4, 7],
+  secondaryFamily: [3, 6, 9],
+  balancingComplement: 9,
+  countercurrent: 8,
+  repeatedDigits: [],
+  interpretation: "Test profile — calendarDay 7.",
+};
+
+describe("Synergy: Tier1 exact + Tier1 calDay secondary_exact → no synergy", () => {
+  const result = runOn("Test Player", "2001-09-07", null, CALDAY_7, "2026-06-30");
+
+  it("lifePath earns an exact compound signal", () => {
+    const lp = result.signals.find(s => s.field === "lifePath");
+    expect(lp?.type).toBe("primary_exact_root");
+  });
+
+  it("birthDay earns a secondary_exact signal (calDay match, not root match)", () => {
+    const bd = result.signals.find(s => s.field === "birthDay");
+    expect(bd?.type).toBe("secondary_exact");
+  });
+
+  it("synergyBonus is 0 — secondary_exact does not qualify as a root match", () => {
+    expect(result.synergyBonus).toBe(0);
+  });
+});
+
+// ── Signal precedence: Jersey UD exact beats calDay exact when jersey matches both ──
+// Profile where udRawSum===calDayCompound===30.
+// Jersey #30 matches both UD exact (18pts, direct) and calDay exact (8pts, indirect).
+// With correct precedence, UD exact wins.
+const JERSEY_COLLISION: DailyProfile = {
+  universalDayRawSum: 30,
+  universalDayCompound: 30,
+  universalDayMaster: null,
+  universalDayRoot: 3,
+  universalDayTrace: ["30"],
+  calendarDayCompound: 30,
+  calendarDayRoot: 3,
+  universalYear: 3,
+  universalMonth: 9,
+  structuralEcho: "3/3",
+  primaryFamily: [3, 6, 9],
+  secondaryFamily: [1, 4, 7],
+  balancingComplement: 7,
+  countercurrent: 6,
+  repeatedDigits: [],
+  interpretation: "Test profile — udRawSum=calDay=30.",
+};
+
+describe("Signal precedence: Jersey UD exact wins over calDay exact when both match", () => {
+  const result = runOn("Test Player", null, 30, JERSEY_COLLISION, "2026-06-30");
+
+  it("jersey signal type is primary_exact_root (UD exact, not calDay secondary_exact)", () => {
+    const jerseySignal = result.signals.find(s => s.field === "jersey");
+    expect(jerseySignal?.type).toBe("primary_exact_root");
+  });
+
+  it("jersey signal is awarded at full direct weight (18pts)", () => {
+    const jerseySignal = result.signals.find(s => s.field === "jersey");
+    expect(jerseySignal?.points).toBe(18);
+    expect(jerseySignal?.rawPoints).toBe(18);
+  });
+
+  it("jersey signal is direct (never decayed)", () => {
+    const jerseySignal = result.signals.find(s => s.field === "jersey");
+    expect(jerseySignal?.indirectMultiplier == null || jerseySignal.indirectMultiplier === 1.0).toBe(true);
+  });
+});
+
+// ── Signal precedence: BirthDay root match beats calDay exact when bd qualifies for both ──
+// Profile: udRawSum=19, udRoot=1, calDay=10 (10/1 — root equals udRoot but compound≠udRawSum).
+// BirthDay on the 10th: bd.original=10, bd.compound=1, bd.root=1=udRoot → root match.
+//   bd.original(10) === calDay(10) → would also qualify for calDay exact.
+//   bd.compound(1) ≠ udRawSum(19) → exact compound check does not fire.
+// With correct precedence, root match (stronger UD signal) wins.
+const BIRTHDAY_COLLISION: DailyProfile = {
+  universalDayRawSum: 19,
+  universalDayCompound: 19,
+  universalDayMaster: null,
+  universalDayRoot: 1,
+  universalDayTrace: ["19"],
+  calendarDayCompound: 10,
+  calendarDayRoot: 1,
+  universalYear: 1,
+  universalMonth: 7,
+  structuralEcho: "1/1",
+  primaryFamily: [1, 4, 7],
+  secondaryFamily: [3, 6, 9],
+  balancingComplement: 9,
+  countercurrent: 8,
+  repeatedDigits: [],
+  interpretation: "Test profile — udRoot=1, calDay=10/1.",
+};
+
+describe("Signal precedence: BirthDay root match wins over calDay exact when bd qualifies for both", () => {
+  // Born 1990-05-10: bd.original=10, bd.compound=1, bd.root=1=udRoot(1).
+  //   bd.original(10) !== udRawSum(19) — not exact target.
+  //   bd.compound(1) !== udRawSum(19) — not exact compound.
+  //   bd.root(1) === udRoot(1) — root match fires (with fix).
+  //   bd.original(10) === calDay(10) — would have fired calDay exact (without fix).
+  const result = runOn("Test Player", "1990-05-10", null, BIRTHDAY_COLLISION, "2026-06-30");
+
+  it("birthDay signal type is primary_root (root match, not secondary_exact)", () => {
+    const bd = result.signals.find(s => s.field === "birthDay");
+    expect(bd?.type).toBe("primary_root");
+  });
+
+  it("birthDay rawPoints reflects root match weight (11pts), not calDay weight (8pts)", () => {
+    const bd = result.signals.find(s => s.field === "birthDay");
+    expect(bd?.rawPoints).toBe(11);
+  });
+});

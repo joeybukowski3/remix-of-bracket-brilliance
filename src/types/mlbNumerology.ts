@@ -45,6 +45,7 @@ export interface NumerologyScoreBreakdown {
   hasBirthdayStrong: boolean;
   rawNumerology: number;
   normCeiling: number;
+  normalizationDenominator?: number;
   calculatedScore: number;
   reportedScore: number;
   scoreVerified: boolean;

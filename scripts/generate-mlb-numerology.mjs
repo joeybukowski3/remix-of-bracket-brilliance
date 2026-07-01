@@ -2,7 +2,7 @@
 /**
  * generate-mlb-numerology.mjs
  * JoeKnowsBall MLB Numerical Alignment — Daily Generation Script
- * Methodology v2.1.0
+ * Methodology v3.0.0
  *
  * Three-layer architecture:
  *   Layer 1: Deterministic numerology engine (this script)
@@ -332,17 +332,17 @@ function ageOnDate(birthDate, slateDate) {
 // ── Scoring ───────────────────────────────────────────────────────────────────
 const W = METHODOLOGY.weights;
 
-// Tier classification for each field
-const TIER1_FIELDS = new Set(["personalDay", "lifePath", "birthDay", "expression"]);
-const TIER2_FIELDS = new Set(["age", "jersey"]);
+// Tier classification and decay schedule derived from config (single source of truth)
+const TIER1_FIELDS = new Set(METHODOLOGY.fieldTiers.tier1);
+const TIER2_FIELDS = new Set(METHODOLOGY.fieldTiers.tier2);
+const INDIRECT_DECAY = METHODOLOGY.indirectDecaySchedule;
+const ROOT_MATCH_TYPES = new Set(METHODOLOGY.synergyQualifyingRootTypes);
+const MODEL_VERSION = METHODOLOGY.version;
 function getFieldTier(field) {
   if (TIER1_FIELDS.has(field)) return 1;
   if (TIER2_FIELDS.has(field)) return 2;
   return 3;
 }
-
-// Diminishing returns schedule for indirect signals (1st→100%, 2nd→70%, 3rd→40%, 4th+→20%)
-const INDIRECT_DECAY = [1.0, 0.7, 0.4, 0.2];
 
 function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = []) {
   const ud = dailyProfile.universalDay;
@@ -391,10 +391,11 @@ function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = [])
       awardRaw("birthDay", `Birth Day ${bd.original} — Master Match`, "primary_exact_master", W.birthDayExactMaster ?? 24, `Birth day matches Universal Day master.`, "bd:master", true);
     } else if (bd.original === ud.rawSum || bd.compound === ud.rawSum) {
       awardRaw("birthDay", `Birth Day ${bd.original} — Exact Target`, "primary_exact_root", W.birthDayExact, `Birth day exactly matches Universal Day ${ud.rawSum}.`, "bd:exactTarget", true);
+    } else if (bd.root === ud.root) {
+      // Root match evaluated before Calendar Day exact — stronger UD signal wins
+      awardRaw("birthDay", `Birth Day ${bd.original}/${bd.root} — Reduces to Target`, "primary_root", W.birthDayRoot, `Birth day root ${bd.root} reduces to Universal Day root.`, "bd:root", false);
     } else if (bd.original === dailyProfile.calendarDay.original) {
       awardRaw("birthDay", `Birth Day ${bd.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, `Birth day matches Calendar Day ${dailyProfile.calendarDay.original}.`, "bd:calexact", false);
-    } else if (bd.root === ud.root) {
-      awardRaw("birthDay", `Birth Day ${bd.original}/${bd.root} — Reduces to Target`, "primary_root", W.birthDayRoot, `Birth day root ${bd.root} reduces to Universal Day root.`, "bd:root", false);
     } else if (dailyProfile.primaryFamily.includes(bd.root) && bd.root !== dailyProfile.countercurrent) {
       awardRaw("birthDay", `Birth Day ${bd.original}/${bd.root} — Primary Family`, "family_support", W.primaryFamilyMatchTier1 ?? W.primaryFamilyMatch, `Birth day root ${bd.root} is in primary family.`, "bd:family", false);
     }
@@ -417,10 +418,11 @@ function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = [])
   if (j) {
     if (ud.master != null && (j.compound === ud.master || j.original === ud.master)) {
       awardRaw("jersey", `Jersey ${j.original} — Exact Master`, "primary_exact_master", W.jerseyExactMaster, `Jersey ${j.original} matches Universal Day master.`, "jersey:master", true);
+    } else if (j.original === ud.rawSum) {
+      // UD exact evaluated before Calendar Day exact — stronger signal wins
+      awardRaw("jersey", `Jersey ${j.original} — Exact Target`, "primary_exact_root", W.jerseyExact, `Jersey ${j.original} matches Universal Day ${ud.rawSum}.`, "jersey:udexact", true);
     } else if (j.original === dailyProfile.calendarDay.original) {
       awardRaw("jersey", `Jersey ${j.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, `Jersey ${j.original} equals Calendar Day ${dailyProfile.calendarDay.original}.`, "jersey:calexact", false);
-    } else if (j.original === ud.rawSum) {
-      awardRaw("jersey", `Jersey ${j.original} — Exact Target`, "primary_exact_root", W.jerseyExact, `Jersey ${j.original} matches Universal Day ${ud.rawSum}.`, "jersey:udexact", true);
     } else if (j.root === ud.root) {
       awardRaw("jersey", `Jersey ${j.original}/${j.root} — Root Match`, "primary_root", W.jerseyRoot, `Jersey ${j.original} reduces to ${j.root}.`, "jersey:root", false);
     } else if (j.root === dailyProfile.calendarDay.root && j.root !== ud.root) {
@@ -512,20 +514,22 @@ function scorePlayerForNumerology(playerProfile, dailyProfile, missingData = [])
 
   // ── Synergy bonus — rewards true exact compound alignment ─────────────────
   const tier1ExactFields = new Set(directPositive.filter(s => s.tier === 1).map(s => s.field));
-  const tier1IndirectFields = new Set(indirectPositive.filter(s => s.tier === 1).map(s => s.field));
+  // Only primary_root / personal_cycle / name_resonance qualify as root matches for synergy
+  const tier1RootFields = new Set(indirectPositive.filter(s => s.tier === 1 && ROOT_MATCH_TYPES.has(s.type)).map(s => s.field));
   let exactComboBonus = 0;
   if (tier1ExactFields.size >= 2) {
     exactComboBonus = W.synergyDoubleExactTier1 ?? 12;
     if (tier1ExactFields.size >= 3) exactComboBonus += W.synergyTripleExactTier1 ?? 6;
-  } else if (tier1ExactFields.size === 1 && tier1IndirectFields.size >= 1) {
+  } else if (tier1ExactFields.size === 1 && tier1RootFields.size >= 1) {
     exactComboBonus = W.synergyExactPlusRootTier1 ?? 4;
   }
 
   const normCeiling = W.normCeiling ?? 76;
   const convergenceBonus = 0;
+  const synergyBonus = exactComboBonus;
   const rawNumerology = Math.max(0, positiveTotal - countercurrentTotal + exactComboBonus);
   const numerologyScore = Math.min(100, Math.round((rawNumerology / normCeiling) * 100));
-  return { signals: finalSignals, positiveTotal, countercurrentTotal, convergenceBonus, exactComboBonus, numerologyScore, normCeiling };
+  return { signals: finalSignals, positiveTotal, countercurrentTotal, convergenceBonus, exactComboBonus, synergyBonus, rawNumerology, normCeiling, numerologyScore, modelVersion: MODEL_VERSION };
 }
 
 // ── Lineup status (Issue #7) ──────────────────────────────────────────────────
@@ -918,7 +922,7 @@ async function main() {
     };
     const numberMatches = collectNumberMatches(playerNumerology);
 
-    const { signals, positiveTotal, countercurrentTotal, convergenceBonus, numerologyScore } = scorePlayerForNumerology(playerNumerology, dailyProfile, missingData);
+    const { signals, positiveTotal, countercurrentTotal, convergenceBonus, synergyBonus, rawNumerology, normCeiling, numerologyScore, modelVersion } = scorePlayerForNumerology(playerNumerology, dailyProfile, missingData);
     const bbScore = baseballScore(batter);
     // Alignment is determined only by numerology. Baseball opportunity is
     // retained as context but cannot affect selection, rank, or qualification.
@@ -945,6 +949,10 @@ async function main() {
       positiveTotal,
       countercurrentTotal,
       convergenceBonus,
+      synergyBonus,
+      rawNumerology,
+      normCeiling,
+      modelVersion,
       exactNumberMatches: numberMatches.exact,
       rootNumberMatches: numberMatches.root,
       candidateSource: batter.candidateSource ?? "jkb_hr_props",

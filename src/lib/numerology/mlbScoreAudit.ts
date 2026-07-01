@@ -1,3 +1,4 @@
+import METHODOLOGY from "../../../config/mlb-numerology-methodology.json";
 import type { DailyProfile, NumerologyScoreBreakdown, NumerologySignal } from "@/types/mlbNumerology";
 
 export type PlayerIdentity = { birthDate?: string | null; jerseyNumber?: number | null };
@@ -9,30 +10,12 @@ const MASTER = new Set([11, 22, 33]);
 const FAMILY = [[1, 4, 7], [2, 5, 8], [3, 6, 9]];
 const PYTH: Record<string, number> = { a:1,j:1,s:1,b:2,k:2,t:2,c:3,l:3,u:3,d:4,m:4,v:4,e:5,n:5,w:5,f:6,o:6,x:6,g:7,p:7,y:7,h:8,q:8,z:8,i:9,r:9 };
 
-// Default weights (mirrors config/mlb-numerology-methodology.json v3.0.0)
-const DEFAULT_WEIGHTS: Record<string, number> = {
-  personalDayExactMaster: 24, personalDayExact: 22, personalDayRoot: 11,
-  jerseyExactMaster: 24, jerseyExact: 18, jerseyRoot: 9,
-  battingOrderExactRoot: 8, battingOrderRoot: 5,
-  lifePathExactMaster: 24, lifePathExact: 22, lifePathRoot: 11,
-  birthDayExactMaster: 24, birthDayExact: 22, birthDayRoot: 11,
-  ageExactMaster: 24, ageExact: 15, ageRoot: 8,
-  expressionExact: 22, expressionRoot: 11,
-  primaryFamilyMatchTier1: 5, primaryFamilyMatch: 3,
-  calendarDayExactCompound: 8, calendarDayRoot: 4,
-  secondaryFamilyMatch: 1, repeatedDateDigit: 2,
-  countercurrentHighField: 7, countercurrentTier2: 5, countercurrentTier3: 3,
-  countercurrentMultiple: 3,
-  synergyDoubleExactTier1: 12, synergyTripleExactTier1: 6, synergyExactPlusRootTier1: 4,
-  normCeiling: 76,
-  convergenceMaxBonus: 0, exactComboBonus: 0, birthdayComboBonus: 0,
-};
-
-// Diminishing returns schedule: 1st→100%, 2nd→70%, 3rd→40%, 4th+→20%
-const INDIRECT_DECAY = [1.0, 0.7, 0.4, 0.2];
-
-const TIER1_FIELDS = new Set(["personalDay", "lifePath", "birthDay", "expression"]);
-const TIER2_FIELDS = new Set(["age", "jersey"]);
+// Weights, tiers, decay, and synergy rules — all from the single config source
+const DEFAULT_WEIGHTS: Record<string, number> = METHODOLOGY.weights as Record<string, number>;
+const INDIRECT_DECAY: number[] = METHODOLOGY.indirectDecaySchedule as number[];
+const TIER1_FIELDS = new Set<string>(METHODOLOGY.fieldTiers.tier1);
+const TIER2_FIELDS = new Set<string>(METHODOLOGY.fieldTiers.tier2);
+const ROOT_MATCH_TYPES = new Set<string>(METHODOLOGY.synergyQualifyingRootTypes as string[]);
 function getFieldTier(field: string): 1 | 2 | 3 {
   if (TIER1_FIELDS.has(field)) return 1;
   if (TIER2_FIELDS.has(field)) return 2;
@@ -159,10 +142,11 @@ export function calculateNumerologyScoreBreakdown(
       awardRaw("birthDay", `Birth Day ${fmt(birthDay)} — Master Match`, "primary_exact_master", W.birthDayExactMaster, "Birth day matches Universal Day master.", "birth:master", true);
     } else if (birthDay.original === target || birthDay.compound === target) {
       awardRaw("birthDay", `Birth Day ${fmt(birthDay)} — Exact Target`, "primary_exact_root", W.birthDayExact, `Birth day exactly matches Universal Day ${target}.`, "birth:exactTarget", true);
+    } else if (birthDay.root === udRoot) {
+      // Root match evaluated before Calendar Day exact — stronger UD signal wins
+      awardRaw("birthDay", `Birth Day ${fmt(birthDay)} — Reduces to Target`, "primary_root", W.birthDayRoot, `Birth day reduces to today's root ${udRoot}.`, "birth:root", false);
     } else if (birthDay.original === daily.calendarDayCompound) {
       awardRaw("birthDay", `Birth Day ${birthDay.original} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, "Birth day equals the calendar day.", "birth:calendar", false);
-    } else if (birthDay.root === udRoot) {
-      awardRaw("birthDay", `Birth Day ${fmt(birthDay)} — Reduces to Target`, "primary_root", W.birthDayRoot, `Birth day reduces to today's root ${udRoot}.`, "birth:root", false);
     } else if (primary.includes(birthDay.root) && birthDay.root !== counter) {
       awardRaw("birthDay", `Birth Day ${fmt(birthDay)} — Primary Family`, "family_support", W.primaryFamilyMatchTier1 ?? W.primaryFamilyMatch, `Birth day root ${birthDay.root} is in primary family.`, "birth:family", false);
     }
@@ -181,10 +165,11 @@ export function calculateNumerologyScoreBreakdown(
   if (jersey) {
     if (udMaster != null && (jersey.compound === udMaster || jersey.original === udMaster)) {
       awardRaw("jersey", `Jersey ${jerseyNo} — Exact Master`, "primary_exact_master", W.jerseyExactMaster, "Jersey matches Universal Day master.", "jersey:master", true);
+    } else if (jersey.original === target) {
+      // UD exact evaluated before Calendar Day exact — stronger signal wins
+      awardRaw("jersey", `Jersey ${jerseyNo} — Exact Target`, "primary_exact_root", W.jerseyExact, `Jersey ${jerseyNo} matches Universal Day ${target}.`, "jersey:udexact", true);
     } else if (jersey.original === daily.calendarDayCompound) {
       awardRaw("jersey", `Jersey ${jerseyNo} — Calendar Day Exact`, "secondary_exact", W.calendarDayExactCompound, "Jersey equals the calendar day.", "jersey:calendar", false);
-    } else if (jersey.original === target) {
-      awardRaw("jersey", `Jersey ${jerseyNo} — Exact Target`, "primary_exact_root", W.jerseyExact, `Jersey ${jerseyNo} matches Universal Day ${target}.`, "jersey:udexact", true);
     } else if (jersey.root === udRoot) {
       awardRaw("jersey", `Jersey ${jerseyNo}/${jersey.root} — Root Match`, "primary_root", W.jerseyRoot, `Jersey reduces to ${jersey.root}.`, "jersey:root", false);
     } else if (jersey.root === daily.calendarDayRoot && jersey.root !== udRoot) {
@@ -265,12 +250,13 @@ export function calculateNumerologyScoreBreakdown(
 
   // ── Synergy bonus ──────────────────────────────────────────────────────────
   const tier1ExactFields = new Set(directPositive.filter(s => s.tier === 1).map(s => s.field));
-  const tier1IndirectFields = new Set(indirectPositive.filter(s => s.tier === 1).map(s => s.field));
+  // Only primary_root / personal_cycle / name_resonance qualify as root matches for synergy
+  const tier1RootFields = new Set(indirectPositive.filter(s => s.tier === 1 && ROOT_MATCH_TYPES.has(s.type)).map(s => s.field));
   let synergyBonus = 0;
   if (tier1ExactFields.size >= 2) {
     synergyBonus = W.synergyDoubleExactTier1 ?? 12;
     if (tier1ExactFields.size >= 3) synergyBonus += W.synergyTripleExactTier1 ?? 6;
-  } else if (tier1ExactFields.size === 1 && tier1IndirectFields.size >= 1) {
+  } else if (tier1ExactFields.size === 1 && tier1RootFields.size >= 1) {
     synergyBonus = W.synergyExactPlusRootTier1 ?? 4;
   }
 
@@ -300,10 +286,11 @@ export function calculateNumerologyScoreBreakdown(
     hasBirthdayStrong,
     rawNumerology,
     normCeiling,
+    normalizationDenominator: normCeiling,
     calculatedScore,
     reportedScore: player.numerologyScore,
     scoreVerified: calculatedScore === Number(player.numerologyScore),
-    modelVersion: "3.0.0",
+    modelVersion: METHODOLOGY.version,
     profile: {
       personalDay: fmt(personal),
       jersey: jersey ? `#${jerseyNo} (${fmt(jersey)})` : null,
