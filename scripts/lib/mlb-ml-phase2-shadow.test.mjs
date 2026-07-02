@@ -111,6 +111,70 @@ describe("computeMlPhase2Shadow: both components chained", () => {
   });
 });
 
+function bullpenEntry(overrides = {}) {
+  return {
+    teamId: 1,
+    teamAbbr: "NYY",
+    season: { seasonBullpenEra: 3.5, seasonBullpenHr9: 1.0, seasonBullpenKbb: 2.5, seasonBullpenWhip: 1.2, dataQuality: "high" },
+    workload: { bullpenFatigueTier: "fresh" },
+    freshnessStatus: "fresh",
+    ...overrides,
+  };
+}
+
+describe("computeMlPhase2Shadow: bullpen shadow gating", () => {
+  it("bullpen flag off: bullpen data is never read even if supplied, and behaves as before", () => {
+    const detail = baseDetail();
+    const result = computeMlPhase2Shadow(detail, {
+      bullpen: { away: bullpenEntry(), home: bullpenEntry() },
+      flags: { ENABLE_ML_PROJECTED_IP_SHADOW: true },
+    });
+    assert.equal(result.enabledComponents.bullpen, false);
+    assert.equal(result.projectedIpShadow.awayBullpenShadow.available, false);
+  });
+
+  it("bullpen flag on but projected-IP flag off: bullpen never runs (no weight set to attach to)", () => {
+    const detail = baseDetail();
+    const result = computeMlPhase2Shadow(detail, {
+      bullpen: { away: bullpenEntry(), home: bullpenEntry() },
+      flags: { ENABLE_ML_BULLPEN_SHADOW: true },
+    });
+    assert.equal(result.enabledComponents.bullpen, false);
+    assert.equal(result.projectedIpShadow, null);
+  });
+
+  it("both flags on: bullpen data flows into the projected-IP shadow", () => {
+    const detail = baseDetail();
+    const result = computeMlPhase2Shadow(detail, {
+      bullpen: { away: bullpenEntry(), home: bullpenEntry() },
+      flags: { ENABLE_ML_PROJECTED_IP_SHADOW: true, ENABLE_ML_BULLPEN_SHADOW: true },
+    });
+    assert.equal(result.enabledComponents.bullpen, true);
+    assert.equal(result.projectedIpShadow.awayBullpenShadow.available, true);
+    assert.equal(result.projectedIpShadow.homeBullpenShadow.available, true);
+  });
+
+  it("both flags on but bullpen option omitted: treated as missing data for both teams (no throw)", () => {
+    const detail = baseDetail();
+    const result = computeMlPhase2Shadow(detail, {
+      flags: { ENABLE_ML_PROJECTED_IP_SHADOW: true, ENABLE_ML_BULLPEN_SHADOW: true },
+    });
+    assert.equal(result.projectedIpShadow.awayBullpenShadow.available, false);
+    assert.equal(result.projectedIpShadow.homeBullpenShadow.available, false);
+  });
+
+  it("live output is never mutated when bullpen shadow is enabled", () => {
+    const detail = baseDetail();
+    const before = computeModelEdgeCore(detail);
+    computeMlPhase2Shadow(detail, {
+      bullpen: { away: bullpenEntry(), home: bullpenEntry() },
+      flags: { ENABLE_ML_PROJECTED_IP_SHADOW: true, ENABLE_ML_BULLPEN_SHADOW: true, ENABLE_ML_PARK_SHADOW: true },
+    });
+    const after = computeModelEdgeCore(detail);
+    assert.deepEqual(before, after);
+  });
+});
+
 describe("computeMlPhase2Shadow: identification and structure", () => {
   it("carries version identifiers and a deterministic shape with no timestamps", () => {
     const detail = baseDetail();

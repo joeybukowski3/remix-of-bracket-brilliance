@@ -21,6 +21,17 @@ export const MLB_HR_MODEL_VERSION = "mlb-hr-quality-v1.1";
 export const MLB_HR_CANDIDATE_MODEL_VERSION = "mlb-hr-candidate-v0.1";
 
 /**
+ * Phase 2 opposing-bullpen HR-vulnerability shadow version. Identifies
+ * ONLY the bounded, shadow-only bullpen-vulnerability component
+ * (mlb-hr-bullpen-shadow.mjs) -- NEVER the live HR Quality Score
+ * (computeBatterHrScore in generate-mlb-hr-props.mjs), which remains
+ * versioned solely by MLB_HR_MODEL_VERSION above. A shadow record must
+ * never be mistaken for a production model version; always store this
+ * alongside, not in place of, MLB_HR_MODEL_VERSION.
+ */
+export const MLB_HR_BULLPEN_SHADOW_VERSION = "mlb-hr-bullpen-shadow-v1";
+
+/**
  * HR Quality Score methodology copy, reused anywhere the score is shown
  * publicly so the language stays consistent (UI, social, docs).
  */

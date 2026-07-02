@@ -18,16 +18,25 @@
  * of this module is for shadow archiving / comparison only (later
  * commits), gated behind ENABLE_ML_PROJECTED_IP_SHADOW.
  *
- * Weight-transfer design (approved 2026-07-02):
- *   - Bullpen shadow scoring does not exist yet (Phase 2.3, later
- *     commit), so the weight freed by a short-outing starter is
- *     temporarily redistributed proportionally across this team's other
- *     four EXISTING live components, not sent to bullpen. Once the
- *     bullpen shadow signal lands, a later commit will route freed
- *     weight there instead -- that change is isolated to this file.
+ * Weight-transfer design (approved 2026-07-02; bullpen routing added in
+ * the Phase 2.4 bullpen-shadow-integration commit):
+ *   - Weight freed by a short-outing starter (ipFactor < 1.0) now routes
+ *     to bullpen FIRST (see mlb-ml-bullpen-shadow.mjs), not to the other
+ *     four live components -- this is what this file's own prior header
+ *     note anticipated ("a later commit will route freed weight there
+ *     instead -- that change is isolated to this file"). A team's
+ *     bullpen also gets a small conservative BASE weight
+ *     (BULLPEN_BASE_WEIGHT, ~8%) even when its starter goes deep,
+ *     carved proportionally from the other four components.
+ *   - If a team's bullpen data is missing, stale, or low-quality
+ *     (see classifyBullpenAvailability()), bullpen weight is exactly 0
+ *     for that team and behavior falls back EXACTLY to the pre-bullpen
+ *     formula: freed pitcher weight redistributes proportionally across
+ *     the other four live components, unchanged from before this commit.
  *   - Weight scaling is computed INDEPENDENTLY per team (away and home
- *     each normalize to 1.0 on their own), so one team's opener does not
- *     affect the other team's weighting.
+ *     each normalize to 1.0 on their own), so one team's opener -- or one
+ *     team's missing bullpen data -- does not affect the other team's
+ *     weighting.
  */
 
 import { computeModelEdgeComponents, LIVE_EDGE_WEIGHTS, getEdgeTierKeyCore } from "./mlb-ml-edge-core.mjs";
@@ -37,6 +46,7 @@ import {
   hasRealProjectedInningsData,
   parseInningsPitchedString,
 } from "./mlb-projected-innings.mjs";
+import { computeBullpenQualityScore, buildBullpenAwareShadowWeights } from "./mlb-ml-bullpen-shadow.mjs";
 import { MLB_ML_MODEL_VERSION, MLB_ML_PHASE2_SHADOW_VERSION } from "./mlb-ml-model-version.mjs";
 
 /**
@@ -99,22 +109,29 @@ function analyzeStarter(starter) {
 }
 
 /**
- * Builds one team's independently-normalized shadow weight set from its
- * ipFactor. Always sums to exactly 1.0 (pitcher weight + redistributed
- * remainder across the other four live weights).
+ * Builds one team's independently-normalized, bullpen-aware shadow weight
+ * set from its ipFactor and bullpen availability/quality. Always sums to
+ * exactly 1.0. Thin wrapper around buildBullpenAwareShadowWeights() (see
+ * mlb-ml-bullpen-shadow.mjs) that supplies this file's own live-weight
+ * constants -- the actual carving/capping math lives there so it can be
+ * unit-tested independently of this file's starter-analysis plumbing.
  *
  * @param {number} ipFactor
- * @returns {{ pitcher: number, matchup: number, offense: number, form: number, season: number }}
+ * @param {{ available: boolean, qualityScore: number|null }} bullpenAnalysis
+ * @returns {{
+ *   weights: { pitcher: number, matchup: number, offense: number, form: number, season: number, bullpen: number },
+ *   bullpenBaseWeight: number, bullpenTransferredWeight: number, bullpenEffectiveWeight: number,
+ * }}
  */
-function buildShadowWeights(ipFactor) {
-  const pitcher = LIVE_EDGE_WEIGHTS.pitcher * ipFactor;
-  const freed = LIVE_EDGE_WEIGHTS.pitcher - pitcher;
-
-  const weights = { pitcher };
-  for (const key of OTHER_LIVE_WEIGHT_KEYS) {
-    weights[key] = LIVE_EDGE_WEIGHTS[key] + freed * (LIVE_EDGE_WEIGHTS[key] / OTHER_LIVE_WEIGHT_SUM);
-  }
-  return weights;
+function buildShadowWeights(ipFactor, bullpenAnalysis) {
+  return buildBullpenAwareShadowWeights({
+    pitcherWeight: LIVE_EDGE_WEIGHTS.pitcher * ipFactor,
+    livePitcherWeight: LIVE_EDGE_WEIGHTS.pitcher,
+    bullpenAnalysis,
+    liveWeights: LIVE_EDGE_WEIGHTS,
+    otherKeys: OTHER_LIVE_WEIGHT_KEYS,
+    otherSum: OTHER_LIVE_WEIGHT_SUM,
+  });
 }
 
 function weightedTotal(components, weights) {
@@ -123,7 +140,11 @@ function weightedTotal(components, weights) {
     components.match * weights.matchup +
     components.off * weights.offense +
     components.form * weights.form +
-    components.szn * weights.season
+    components.szn * weights.season +
+    // qualityScore is null when bullpen is unavailable, but weights.bullpen
+    // is exactly 0 in that case, so the null-guard below never affects the
+    // total -- it only avoids `null * 0` producing 0 via coercion surprises.
+    (components.bp ?? 0) * (weights.bullpen ?? 0)
   );
 }
 
@@ -134,26 +155,57 @@ function weightedTotal(components, weights) {
  *   gamesStarted is absent, this degrades gracefully to the missing-data
  *   fallback (ipFactor = 1.0, i.e. identical to live weighting) for that
  *   side -- it does not throw.
+ * @param {object} [options]
+ * @param {{ away?: object|null, home?: object|null }} [options.bullpen]
+ *   Optional per-team bullpen-stats cache entries (see
+ *   mlb-bullpen-stats.mjs schema). Omitted entirely (the default) is
+ *   IDENTICAL in every output byte to calling this function before the
+ *   Phase 2.4 bullpen-shadow-integration commit -- bullpen is treated as
+ *   unavailable for both teams and freed pitcher weight redistributes to
+ *   the other four live components exactly as before. A caller only
+ *   opts in to bullpen weighting by explicitly passing bullpen data (the
+ *   Phase 2 composition layer gates this behind ENABLE_ML_BULLPEN_SHADOW,
+ *   see mlb-ml-phase2-shadow.mjs).
  * @returns {object} shadow result, structurally similar to
  *   computeModelEdgeCore()'s return shape but under shadow-specific field
  *   names so it can never be confused with a live pick.
  */
-export function computeMlProjectedIpShadow(detail) {
+export function computeMlProjectedIpShadow(detail, options = {}) {
   const { game, starters } = detail;
+  const { bullpen = {} } = options;
   const components = computeModelEdgeComponents(detail);
 
   const away = analyzeStarter(starters.away);
   const home = analyzeStarter(starters.home);
 
-  const awayWeights = buildShadowWeights(away.ipFactor);
-  const homeWeights = buildShadowWeights(home.ipFactor);
+  const awayBullpenAnalysis = computeBullpenQualityScore(bullpen.away ?? null);
+  const homeBullpenAnalysis = computeBullpenQualityScore(bullpen.home ?? null);
+
+  const awayBullpenWeighting = buildShadowWeights(away.ipFactor, awayBullpenAnalysis);
+  const homeBullpenWeighting = buildShadowWeights(home.ipFactor, homeBullpenAnalysis);
+  const awayWeights = awayBullpenWeighting.weights;
+  const homeWeights = homeBullpenWeighting.weights;
 
   const awayTotalShadow = weightedTotal(
-    { pit: components.awayPit, match: components.awayMatch, off: components.awayOff, form: components.awayForm, szn: components.awaySzn },
+    {
+      pit: components.awayPit,
+      match: components.awayMatch,
+      off: components.awayOff,
+      form: components.awayForm,
+      szn: components.awaySzn,
+      bp: awayBullpenAnalysis.qualityScore,
+    },
     awayWeights,
   );
   const homeTotalShadow = weightedTotal(
-    { pit: components.homePit, match: components.homeMatch, off: components.homeOff, form: components.homeForm, szn: components.homeSzn },
+    {
+      pit: components.homePit,
+      match: components.homeMatch,
+      off: components.homeOff,
+      form: components.homeForm,
+      szn: components.homeSzn,
+      bp: homeBullpenAnalysis.qualityScore,
+    },
     homeWeights,
   );
 
@@ -163,6 +215,11 @@ export function computeMlProjectedIpShadow(detail) {
   // so shadow and live picks are directly comparable.
   const pick = absDiff < 2.5 ? "push" : diff > 0 ? "away" : "home";
   const confidence = pick === "push" ? 50 : Math.round(Math.min(82, 52 + (absDiff / 5) * 4));
+
+  const awayBullpenContribution =
+    Math.round((awayBullpenAnalysis.qualityScore ?? 0) * awayBullpenWeighting.bullpenEffectiveWeight * 100) / 100;
+  const homeBullpenContribution =
+    Math.round((homeBullpenAnalysis.qualityScore ?? 0) * homeBullpenWeighting.bullpenEffectiveWeight * 100) / 100;
 
   return {
     // -- identification / versioning (never confused with a live pick) --
@@ -188,6 +245,37 @@ export function computeMlProjectedIpShadow(detail) {
     homePitcherEffectiveWeightShadow: homeWeights.pitcher,
     awayWeightsShadow: awayWeights,
     homeWeightsShadow: homeWeights,
+
+    // -- bullpen shadow component (availability, freshness, data quality, contribution) --
+    awayBullpenShadow: {
+      available: awayBullpenAnalysis.available,
+      reason: awayBullpenAnalysis.reason,
+      dataQuality: awayBullpenAnalysis.dataQuality,
+      freshnessStatus: awayBullpenAnalysis.freshnessStatus,
+      fatigueTier: awayBullpenAnalysis.fatigueTier,
+      qualityScore: awayBullpenAnalysis.qualityScore,
+      baseWeight: awayBullpenWeighting.bullpenBaseWeight,
+      transferredWeight: awayBullpenWeighting.bullpenTransferredWeight,
+      effectiveWeight: awayBullpenWeighting.bullpenEffectiveWeight,
+      contribution: awayBullpenContribution,
+    },
+    homeBullpenShadow: {
+      available: homeBullpenAnalysis.available,
+      reason: homeBullpenAnalysis.reason,
+      dataQuality: homeBullpenAnalysis.dataQuality,
+      freshnessStatus: homeBullpenAnalysis.freshnessStatus,
+      fatigueTier: homeBullpenAnalysis.fatigueTier,
+      qualityScore: homeBullpenAnalysis.qualityScore,
+      baseWeight: homeBullpenWeighting.bullpenBaseWeight,
+      transferredWeight: homeBullpenWeighting.bullpenTransferredWeight,
+      effectiveWeight: homeBullpenWeighting.bullpenEffectiveWeight,
+      contribution: homeBullpenContribution,
+    },
+    bullpenShadowDataQuality: {
+      away: awayBullpenAnalysis.dataQuality,
+      home: homeBullpenAnalysis.dataQuality,
+      bothAvailable: awayBullpenAnalysis.available && homeBullpenAnalysis.available,
+    },
 
     // -- shadow result --
     projectedIpShadowPick: pick,

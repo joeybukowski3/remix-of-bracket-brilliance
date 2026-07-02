@@ -10,6 +10,7 @@ import {
   FULL_START_IP,
   MIN_IP_WEIGHT_FACTOR,
 } from "./mlb-ml-projected-ip-shadow.mjs";
+import { BULLPEN_BASE_WEIGHT, BULLPEN_MAX_WEIGHT } from "./mlb-ml-bullpen-shadow.mjs";
 
 // Same base fixture as mlb-ml-edge-core.test.mjs, with starters.*.gamesStarted
 // added (the Phase 2 addition to mlb-ml-detail-fetch.mjs).
@@ -87,7 +88,11 @@ describe("computeMlProjectedIpShadow: opener scenario", () => {
     detail.starters.home.inningsPitched = "12.0"; // home is the opener
     const result = computeMlProjectedIpShadow(detail);
     assert.equal(result.awayPitcherEffectiveWeightShadow, 0.30);
-    assert.deepEqual(result.awayWeightsShadow, { pitcher: 0.30, matchup: 0.25, offense: 0.20, form: 0.15, season: 0.10 });
+    // bullpen: 0 because no bullpen option was passed to
+    // computeMlProjectedIpShadow() -- bullpen is unavailable by default
+    // (see the Phase 2.4 bullpen-shadow-integration commit), so weights
+    // fall back byte-for-byte to the pre-bullpen formula.
+    assert.deepEqual(result.awayWeightsShadow, { pitcher: 0.30, matchup: 0.25, offense: 0.20, form: 0.15, season: 0.10, bullpen: 0 });
   });
 });
 
@@ -209,5 +214,151 @@ describe("computeMlProjectedIpShadow: live-output parity", () => {
     assert.equal(result.liveModelVersion, "mlb-ml-edge-v1.0");
     assert.equal(result.shadowExperimentVersion, "mlb-ml-phase2-shadow-v1");
     assert.notEqual(result.liveModelVersion, result.shadowExperimentVersion);
+  });
+});
+
+// -- Phase 2.4: bullpen shadow integration ---------------------------------
+
+function bullpenEntry({
+  era = 3.5,
+  hr9 = 1.0,
+  kbb = 2.5,
+  whip = 1.2,
+  dataQuality = "high",
+  fatigueTier = "fresh",
+  freshnessStatus = "fresh",
+} = {}) {
+  return {
+    teamId: 1,
+    teamAbbr: "NYY",
+    season: { seasonBullpenEra: era, seasonBullpenHr9: hr9, seasonBullpenKbb: kbb, seasonBullpenWhip: whip, dataQuality },
+    workload: { bullpenFatigueTier: fatigueTier },
+    freshnessStatus,
+  };
+}
+
+describe("computeMlProjectedIpShadow: bullpen integration -- backward compatibility", () => {
+  it("omitting the bullpen option entirely is byte-for-byte identical to not passing options at all", () => {
+    const detail = baseDetail();
+    const withoutOptions = computeMlProjectedIpShadow(detail);
+    const withEmptyOptions = computeMlProjectedIpShadow(detail, {});
+    assert.deepEqual(withoutOptions, withEmptyOptions);
+  });
+
+  it("live Moneyline output is still byte-for-byte unchanged when bullpen data is supplied", () => {
+    const detail = baseDetail();
+    const liveBefore = computeModelEdgeCore(detail);
+    computeMlProjectedIpShadow(detail, { bullpen: { away: bullpenEntry(), home: bullpenEntry() } });
+    const liveAfter = computeModelEdgeCore(detail);
+    assert.deepEqual(liveBefore, liveAfter);
+  });
+});
+
+describe("computeMlProjectedIpShadow: bullpen integration -- availability scenarios", () => {
+  it("missing bullpen data falls back to the pre-bullpen projected-IP shadow result", () => {
+    const detail = baseDetail();
+    const withoutBullpen = computeMlProjectedIpShadow(detail);
+    const withMissingBullpen = computeMlProjectedIpShadow(detail, { bullpen: { away: null, home: null } });
+    assert.equal(withMissingBullpen.awayBullpenShadow.available, false);
+    assert.equal(withMissingBullpen.homeBullpenShadow.available, false);
+    assert.equal(withMissingBullpen.projectedIpShadowDifferential, withoutBullpen.projectedIpShadowDifferential);
+    assert.equal(withMissingBullpen.projectedIpShadowPick, withoutBullpen.projectedIpShadowPick);
+    assert.deepEqual(withMissingBullpen.awayWeightsShadow, withoutBullpen.awayWeightsShadow);
+  });
+
+  it("low-coverage bullpen data falls back the same way as missing data", () => {
+    const detail = baseDetail();
+    const withoutBullpen = computeMlProjectedIpShadow(detail);
+    const withLowCoverage = computeMlProjectedIpShadow(detail, {
+      bullpen: { away: bullpenEntry({ dataQuality: "low" }), home: bullpenEntry({ dataQuality: "insufficient" }) },
+    });
+    assert.equal(withLowCoverage.awayBullpenShadow.available, false);
+    assert.equal(withLowCoverage.awayBullpenShadow.reason, "low_coverage");
+    assert.equal(withLowCoverage.homeBullpenShadow.reason, "low_coverage");
+    assert.deepEqual(withLowCoverage.homeWeightsShadow, withoutBullpen.homeWeightsShadow);
+  });
+
+  it("one team's missing bullpen data does not affect the other team's weighting", () => {
+    const detail = baseDetail();
+    const result = computeMlProjectedIpShadow(detail, {
+      bullpen: { away: bullpenEntry(), home: null },
+    });
+    assert.equal(result.awayBullpenShadow.available, true);
+    assert.equal(result.homeBullpenShadow.available, false);
+    assert.equal(result.homeWeightsShadow.bullpen, 0);
+    assert.ok(result.awayWeightsShadow.bullpen > 0);
+  });
+
+  it("fresh, normal, and tired fatigue scenarios all remain available and bounded", () => {
+    for (const fatigueTier of ["fresh", "normal", "tired"]) {
+      const detail = baseDetail();
+      const result = computeMlProjectedIpShadow(detail, {
+        bullpen: { away: bullpenEntry({ fatigueTier }), home: bullpenEntry({ fatigueTier }) },
+      });
+      assert.equal(result.awayBullpenShadow.available, true);
+      assert.equal(result.awayBullpenShadow.fatigueTier, fatigueTier);
+      assert.ok(result.awayBullpenShadow.qualityScore >= 15 && result.awayBullpenShadow.qualityScore <= 88);
+    }
+  });
+});
+
+describe("computeMlProjectedIpShadow: bullpen integration -- weight transfer and normalization", () => {
+  it("weights normalize to exactly 1.0 with bullpen available, for both a deep starter and an opener", () => {
+    const deepDetail = baseDetail();
+    const deepResult = computeMlProjectedIpShadow(deepDetail, { bullpen: { away: bullpenEntry(), home: bullpenEntry() } });
+    for (const weights of [deepResult.awayWeightsShadow, deepResult.homeWeightsShadow]) {
+      const sum = Object.values(weights).reduce((a, b) => a + b, 0);
+      assert.ok(Math.abs(sum - 1.0) < 1e-9);
+    }
+
+    const openerDetail = baseDetail();
+    openerDetail.starters.home.inningsPitched = "12.0"; // opener
+    const openerResult = computeMlProjectedIpShadow(openerDetail, { bullpen: { away: bullpenEntry(), home: bullpenEntry() } });
+    for (const weights of [openerResult.awayWeightsShadow, openerResult.homeWeightsShadow]) {
+      const sum = Object.values(weights).reduce((a, b) => a + b, 0);
+      assert.ok(Math.abs(sum - 1.0) < 1e-9);
+    }
+  });
+
+  it("a deep starter leaves bullpen near the base weight; an opener increases it meaningfully", () => {
+    const deepDetail = baseDetail(); // both starters at FULL_START_IP by default
+    const deepResult = computeMlProjectedIpShadow(deepDetail, { bullpen: { away: bullpenEntry(), home: bullpenEntry() } });
+    assert.equal(deepResult.homeBullpenShadow.effectiveWeight, BULLPEN_BASE_WEIGHT);
+
+    const openerDetail = baseDetail();
+    openerDetail.starters.home.inningsPitched = "12.0"; // opener
+    const openerResult = computeMlProjectedIpShadow(openerDetail, { bullpen: { away: bullpenEntry(), home: bullpenEntry() } });
+    assert.ok(openerResult.homeBullpenShadow.effectiveWeight > BULLPEN_BASE_WEIGHT);
+    assert.ok(openerResult.homeBullpenShadow.transferredWeight > 0);
+  });
+
+  it("effective bullpen weight is capped at BULLPEN_MAX_WEIGHT even for the most extreme opener", () => {
+    const detail = baseDetail();
+    detail.starters.home.inningsPitched = "8.0"; // 1.0 IP/start, extreme opener
+    const result = computeMlProjectedIpShadow(detail, { bullpen: { away: bullpenEntry(), home: bullpenEntry() } });
+    assert.ok(result.homeBullpenShadow.effectiveWeight <= BULLPEN_MAX_WEIGHT + 1e-9);
+  });
+
+  it("bullpen contribution is exposed and is 0 for unavailable bullpens", () => {
+    const detail = baseDetail();
+    const result = computeMlProjectedIpShadow(detail, { bullpen: { away: bullpenEntry(), home: null } });
+    assert.ok(Number.isFinite(result.awayBullpenShadow.contribution));
+    assert.equal(result.homeBullpenShadow.contribution, 0);
+  });
+
+  it("bullpenShadowDataQuality summarizes both teams' availability", () => {
+    const detail = baseDetail();
+    const result = computeMlProjectedIpShadow(detail, { bullpen: { away: bullpenEntry(), home: bullpenEntry() } });
+    assert.equal(result.bullpenShadowDataQuality.bothAvailable, true);
+    assert.equal(result.bullpenShadowDataQuality.away, "high");
+    assert.equal(result.bullpenShadowDataQuality.home, "high");
+  });
+
+  it("is deterministic: same input always produces the same output with bullpen data supplied", () => {
+    const detail = baseDetail();
+    const options = { bullpen: { away: bullpenEntry(), home: bullpenEntry({ fatigueTier: "tired" }) } };
+    const r1 = computeMlProjectedIpShadow(detail, options);
+    const r2 = computeMlProjectedIpShadow(detail, options);
+    assert.deepEqual(r1, r2);
   });
 });
