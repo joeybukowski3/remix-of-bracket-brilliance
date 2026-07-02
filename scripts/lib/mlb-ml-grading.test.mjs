@@ -10,6 +10,8 @@ import {
   classifyGameState,
   extractFinalScore,
   computeSportsbookClv,
+  evaluateSportsbookClvEligibility,
+  SPORTSBOOK_CLV_SKIP_REASONS,
   findFinalPregameSnapshot,
   computePolymarketClv,
   gradePrediction,
@@ -194,7 +196,112 @@ describe("computePolymarketClv", () => {
   function round4(n) { return Math.round(n * 10000) / 10000; }
 });
 
-// ── gradePrediction ──────────────────────────────────────────────────────────
+// ── evaluateSportsbookClvEligibility ────────────────────────────────────────
+
+describe("evaluateSportsbookClvEligibility", () => {
+  const GAME_DATE = "2026-06-30T23:05:00Z"; // first pitch
+
+  it("is eligible when capturedAt is strictly before first pitch", () => {
+    const result = evaluateSportsbookClvEligibility("2026-06-30T22:00:00.000Z", GAME_DATE);
+    assert.equal(result.eligible, true);
+    assert.equal(result.reason, null);
+  });
+
+  it("is eligible when capturedAt is exactly at first pitch", () => {
+    const result = evaluateSportsbookClvEligibility(GAME_DATE, GAME_DATE);
+    assert.equal(result.eligible, true);
+    assert.equal(result.reason, null);
+  });
+
+  it("is NOT eligible when capturedAt is after first pitch", () => {
+    const result = evaluateSportsbookClvEligibility("2026-07-01T00:05:00.000Z", GAME_DATE);
+    assert.equal(result.eligible, false);
+    assert.equal(result.reason, SPORTSBOOK_CLV_SKIP_REASONS.CAPTURED_AFTER_FIRST_PITCH);
+  });
+
+  it("is NOT eligible when capturedAt is missing (null)", () => {
+    const result = evaluateSportsbookClvEligibility(null, GAME_DATE);
+    assert.equal(result.eligible, false);
+    assert.equal(result.reason, SPORTSBOOK_CLV_SKIP_REASONS.MISSING_CAPTURE_TIME);
+  });
+
+  it("is NOT eligible when capturedAt is missing (undefined)", () => {
+    const result = evaluateSportsbookClvEligibility(undefined, GAME_DATE);
+    assert.equal(result.eligible, false);
+    assert.equal(result.reason, SPORTSBOOK_CLV_SKIP_REASONS.MISSING_CAPTURE_TIME);
+  });
+
+  it("is NOT eligible when capturedAt is an empty string", () => {
+    const result = evaluateSportsbookClvEligibility("", GAME_DATE);
+    assert.equal(result.eligible, false);
+    assert.equal(result.reason, SPORTSBOOK_CLV_SKIP_REASONS.MISSING_CAPTURE_TIME);
+  });
+
+  it("is NOT eligible when capturedAt is an invalid/unparseable timestamp", () => {
+    const result = evaluateSportsbookClvEligibility("not-a-real-date", GAME_DATE);
+    assert.equal(result.eligible, false);
+    assert.equal(result.reason, SPORTSBOOK_CLV_SKIP_REASONS.INVALID_CAPTURE_TIME);
+  });
+
+  it("is NOT eligible when the reference gameDate itself is invalid/missing (fails closed)", () => {
+    const result = evaluateSportsbookClvEligibility("2026-06-30T22:00:00.000Z", null);
+    assert.equal(result.eligible, false);
+    assert.equal(result.reason, SPORTSBOOK_CLV_SKIP_REASONS.INVALID_CAPTURE_TIME);
+  });
+});
+
+// ── gradePrediction: sportsbook CLV pregame guard ───────────────────────────
+
+describe("gradePrediction: sportsbook CLV pregame timestamp guard", () => {
+  it("calculates sportsbook CLV when latestPriceSeen was captured before first pitch", () => {
+    const record = makeRecord({ latestPriceSeen: { implied: 0.6, capturedAt: "2026-06-30T22:00:00.000Z" } });
+    const result = gradePrediction(record, { gameState: "final", game: makeGame(), pmGame: makePmGame() });
+    assert.ok(result.clv.sportsbook);
+    assert.equal(result.clv.sportsbookClvSkipReason, null);
+  });
+
+  it("calculates sportsbook CLV when latestPriceSeen was captured exactly at first pitch", () => {
+    const game = makeGame(); // gameDate: 2026-06-30T23:05:00Z
+    const record = makeRecord({ latestPriceSeen: { implied: 0.6, capturedAt: game.gameDate } });
+    const result = gradePrediction(record, { gameState: "final", game, pmGame: makePmGame() });
+    assert.ok(result.clv.sportsbook);
+    assert.equal(result.clv.sportsbookClvSkipReason, null);
+  });
+
+  it("nulls sportsbook CLV with captured_after_first_pitch when latestPriceSeen was captured post-first-pitch", () => {
+    const record = makeRecord({ latestPriceSeen: { implied: 0.6, capturedAt: "2026-07-01T00:05:00.000Z" } });
+    const result = gradePrediction(record, { gameState: "final", game: makeGame(), pmGame: makePmGame() });
+    assert.equal(result.clv.sportsbook, null);
+    assert.equal(result.clv.sportsbookClvSkipReason, "captured_after_first_pitch");
+    // No substitute price is used -- Polymarket CLV is unaffected.
+    assert.ok(result.clv.polymarket);
+  });
+
+  it("nulls sportsbook CLV with missing_capture_time when latestPriceSeen.capturedAt is missing", () => {
+    const record = makeRecord({ latestPriceSeen: { implied: 0.6, capturedAt: null } });
+    const result = gradePrediction(record, { gameState: "final", game: makeGame(), pmGame: makePmGame() });
+    assert.equal(result.clv.sportsbook, null);
+    assert.equal(result.clv.sportsbookClvSkipReason, "missing_capture_time");
+  });
+
+  it("nulls sportsbook CLV with invalid_capture_time when latestPriceSeen.capturedAt is unparseable", () => {
+    const record = makeRecord({ latestPriceSeen: { implied: 0.6, capturedAt: "not-a-date" } });
+    const result = gradePrediction(record, { gameState: "final", game: makeGame(), pmGame: makePmGame() });
+    assert.equal(result.clv.sportsbook, null);
+    assert.equal(result.clv.sportsbookClvSkipReason, "invalid_capture_time");
+  });
+
+  it("never substitutes another price when sportsbook CLV is disqualified -- priceAtPick/latestPriceSeen values are untouched elsewhere in the result", () => {
+    const record = makeRecord({ latestPriceSeen: { implied: 0.6, capturedAt: "2026-07-01T00:05:00.000Z" } });
+    const result = gradePrediction(record, { gameState: "final", game: makeGame(), pmGame: makePmGame() });
+    // closingLine.sportsbook still surfaces the raw (disqualified) latestPriceSeen for
+    // visibility/debugging -- but the CLV *calculation* itself is null, not substituted.
+    assert.equal(result.closingLine.sportsbook.implied, 0.6);
+    assert.equal(result.clv.sportsbook, null);
+  });
+});
+
+
 
 describe("gradePrediction", () => {
   it("grades pending for a scheduled game", () => {

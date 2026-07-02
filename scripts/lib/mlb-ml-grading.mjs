@@ -93,6 +93,49 @@ export function computeSportsbookClv(priceAtPick, latestPriceSeen) {
   };
 }
 
+export const SPORTSBOOK_CLV_SKIP_REASONS = {
+  MISSING_CAPTURE_TIME: "missing_capture_time",
+  INVALID_CAPTURE_TIME: "invalid_capture_time",
+  CAPTURED_AFTER_FIRST_PITCH: "captured_after_first_pitch",
+};
+
+/**
+ * Structural pregame guard for the sportsbook CLV proxy. `latestPriceSeen`
+ * is whatever price this pipeline last happened to capture -- there is no
+ * guarantee that capture happened before first pitch (see file header).
+ * This function is the enforcement point: sportsbook CLV is only computed
+ * when `capturedAt` is present, parseable, and at or before the game's
+ * official `gameDate` (first pitch). No substitute price is ever used in
+ * place of a disqualified one -- CLV is simply withheld with a
+ * machine-readable reason.
+ *
+ * @param {string|null|undefined} capturedAtIso  record.latestPriceSeen?.capturedAt
+ * @param {string|null|undefined} gameDateIso     the game's official first-pitch time
+ * @returns {{eligible: boolean, reason: string|null}}
+ */
+export function evaluateSportsbookClvEligibility(capturedAtIso, gameDateIso) {
+  if (!capturedAtIso) {
+    return { eligible: false, reason: SPORTSBOOK_CLV_SKIP_REASONS.MISSING_CAPTURE_TIME };
+  }
+  const capturedAt = new Date(capturedAtIso).getTime();
+  if (!Number.isFinite(capturedAt)) {
+    return { eligible: false, reason: SPORTSBOOK_CLV_SKIP_REASONS.INVALID_CAPTURE_TIME };
+  }
+  const gameDate = gameDateIso ? new Date(gameDateIso).getTime() : NaN;
+  if (!Number.isFinite(gameDate)) {
+    // Cannot verify the pregame cutoff without a valid reference gameDate --
+    // fail closed. Reuses invalid_capture_time since the spec defines no
+    // separate reason code for an invalid/missing gameDate, and the root
+    // cause (the comparison timestamp can't be validated) is the same shape
+    // of problem.
+    return { eligible: false, reason: SPORTSBOOK_CLV_SKIP_REASONS.INVALID_CAPTURE_TIME };
+  }
+  if (capturedAt > gameDate) {
+    return { eligible: false, reason: SPORTSBOOK_CLV_SKIP_REASONS.CAPTURED_AFTER_FIRST_PITCH };
+  }
+  return { eligible: true, reason: null };
+}
+
 /**
  * Finds the last Polymarket snapshot entry at or before a cutoff time
  * (first pitch) from a single game's snapshot time-series.
@@ -172,7 +215,11 @@ export function gradePrediction(record, gameSummary) {
     return { status: "unresolved", actualWinnerAbbr: null, finalScore: null, gameFinalStatus: "Final", closingLine: null, clv: null, gradedAt };
   }
 
-  const sportsbookClv = computeSportsbookClv(record.priceAtPick, record.latestPriceSeen);
+  const sportsbookClvEligibility = evaluateSportsbookClvEligibility(record.latestPriceSeen?.capturedAt, game?.gameDate);
+  const sportsbookClv = sportsbookClvEligibility.eligible
+    ? computeSportsbookClv(record.priceAtPick, record.latestPriceSeen)
+    : null;
+  const sportsbookClvSkipReason = sportsbookClvEligibility.eligible ? null : sportsbookClvEligibility.reason;
   const pickIsAway = record.pick === "away";
   const finalPregameSnapshot = pmGame ? findFinalPregameSnapshot(pmGame, game?.gameDate) : null;
   const polymarketClv = computePolymarketClv(pickIsAway, record.polymarketAtPick, finalPregameSnapshot);
@@ -183,7 +230,7 @@ export function gradePrediction(record, gameSummary) {
       ? { awayPrice: finalPregameSnapshot.awayPrice ?? null, homePrice: finalPregameSnapshot.homePrice ?? null, time: finalPregameSnapshot.time ?? null }
       : null,
   };
-  const clv = { sportsbook: sportsbookClv, polymarket: polymarketClv };
+  const clv = { sportsbook: sportsbookClv, sportsbookClvSkipReason, polymarket: polymarketClv };
 
   if (finalScore.awayScore === finalScore.homeScore) {
     return { status: "push", actualWinnerAbbr: null, finalScore, gameFinalStatus: "Final", closingLine, clv, gradedAt };
