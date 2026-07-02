@@ -42,8 +42,21 @@ export function buildArchiveRecord({ pick, date, generatedAt, modelVersion }) {
     topFactor: pick.topFactor ?? null,
     factors: pick.factors ?? [],
 
+    // priceAtPick / polymarketAtPick: captured ONLY at first archiving of
+    // this key (see upsertArchiveRecord) -- the price when we FIRST made
+    // this pick. Never overwritten by same-day reruns.
     priceAtPick: pick.priceAtPick ?? null,
     polymarketAtPick: pick.polymarketAtPick ?? null,
+
+    // latestPriceSeen / latestPolymarketSeen: refreshed on EVERY same-day
+    // rerun. At grading time, latestPriceSeen becomes the sportsbook
+    // "closing line" PROXY (see mlb-ml-grading.mjs) -- the last sportsbook
+    // price observed before first pitch, not a continuous closing-line
+    // feed. Polymarket CLV instead uses the exact snapshot time-series
+    // (see grading), so latestPolymarketSeen is kept only for visibility/
+    // debugging, not as the CLV source.
+    latestPriceSeen: pick.priceAtPick ?? null,
+    latestPolymarketSeen: pick.polymarketAtPick ?? null,
 
     result: {
       status: "pending",
