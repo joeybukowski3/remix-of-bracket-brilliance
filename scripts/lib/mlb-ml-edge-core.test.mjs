@@ -11,7 +11,7 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { computeModelEdgeCore, getEdgeTierKeyCore } from "./mlb-ml-edge-core.mjs";
+import { computeModelEdgeCore, computeModelEdgeComponents, getEdgeTierKeyCore } from "./mlb-ml-edge-core.mjs";
 
 // Copied from src/data/mlb/devMatchupFixture.ts (`detail` object).
 const FIXTURE_DETAIL = {
@@ -82,6 +82,40 @@ describe("computeModelEdgeCore parity with mlbModelEdge.ts", () => {
     assert.equal(result.probability, undefined);
     assert.equal(result.modelProb, undefined);
     assert.equal(result.valueEdge, undefined);
+  });
+});
+
+describe("Phase 2 refactor safety: computeModelEdgeComponents extraction", () => {
+  it("computeModelEdgeCore output is byte-for-byte unchanged after the Phase 2 componentization refactor", () => {
+    // Locked snapshot captured from computeModelEdgeCore's output on this
+    // exact fixture BEFORE computeModelEdgeComponents() was factored out
+    // (Phase 2, commit 1). If this test ever fails, the live Moneyline
+    // formula has drifted -- which Phase 2 is explicitly not allowed to do.
+    const result = computeModelEdgeCore(FIXTURE_DETAIL);
+    assert.deepEqual(result, {
+      pick: "away",
+      awayAbbr: "NYY",
+      homeAbbr: "BOS",
+      confidence: 59,
+      differential: 8,
+      factors: [
+        { label: "Pitcher Quality", awayScore: 66, homeScore: 55, weight: 0.30, weightedDifference: 3.212899943463165, description: "ERA, K/9, BB%, HR/9" },
+        { label: "Matchup Edge", awayScore: 58, homeScore: 52, weight: 0.25, weightedDifference: 1.3357635050580665, description: "Lineup OPS vs pitcher hand · lineup K%" },
+        { label: "Lineup Offense", awayScore: 59, homeScore: 53, weight: 0.20, weightedDifference: 1.21343144571661, description: "OPS, SLG, OBP" },
+        { label: "Recent Form", awayScore: 74, homeScore: 61, weight: 0.15, weightedDifference: 1.886842105263158, description: "Last 5 games · home/away split" },
+        { label: "Season Quality", awayScore: 61, homeScore: 54, weight: 0.10, weightedDifference: 0.6680161943319839, description: "Season win %" },
+      ],
+      topFactor: "Pitcher Quality",
+      summary: "NYY model lean driven by pitcher quality.",
+    });
+  });
+
+  it("computeModelEdgeComponents returns the same raw pairs computeModelEdgeCore weights internally", () => {
+    const components = computeModelEdgeComponents(FIXTURE_DETAIL);
+    for (const key of ["awayPit", "homePit", "awayMatch", "homeMatch", "awayOff", "homeOff", "awayForm", "homeForm", "awaySzn", "homeSzn"]) {
+      assert.equal(typeof components[key], "number", `${key} should be a number`);
+      assert.ok(Number.isFinite(components[key]), `${key} should be finite`);
+    }
   });
 });
 

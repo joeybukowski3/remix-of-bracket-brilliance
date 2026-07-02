@@ -111,14 +111,28 @@ function kPctScore(kPct) {
 }
 
 /**
- * @param {object} detail  Same shape as MlbGameDetail (see mlbTypes.ts):
- *   { starters: { away, home }, lineupSummaries: { away, home },
- *     opponentSplits: { awayBattingVsHomeStarter, homeBattingVsAwayStarter },
- *     awayContext, homeContext, game: { away: { abbreviation, record }, home: {...} } }
- * @returns {object} ModelEdgeResult-shaped object, identical to
- *   computeModelEdge() in mlbModelEdge.ts
+ * Computes the five unweighted component score pairs (Pitcher Quality,
+ * Matchup Edge, Lineup Offense, Recent Form, Season Quality) that
+ * computeModelEdgeCore() below weights and combines. Factored out
+ * (Phase 2) so the Phase 2.1 projected-IP shadow model (and any future
+ * shadow experiment) can reuse the SAME component-scoring math with
+ * DIFFERENT weights, instead of re-deriving a second, driftable copy of
+ * eraScore/k9Score/opsScore/etc. This function does not decide a pick,
+ * apply weights, or read/return anything computeModelEdgeCore doesn't
+ * already compute internally -- it is a pure extraction, not a new
+ * formula. computeModelEdgeCore()'s own output is unchanged (verified by
+ * the parity test in mlb-ml-edge-core.test.mjs).
+ *
+ * @param {object} detail  Same shape as MlbGameDetail (see mlbTypes.ts).
+ * @returns {{
+ *   awayPit: number, homePit: number,
+ *   awayMatch: number, homeMatch: number,
+ *   awayOff: number, homeOff: number,
+ *   awayForm: number, homeForm: number,
+ *   awaySzn: number, homeSzn: number,
+ * }}
  */
-export function computeModelEdgeCore(detail) {
+export function computeModelEdgeComponents(detail) {
   const { starters, lineupSummaries, opponentSplits, awayContext, homeContext, game } = detail;
   const aw = starters.away;
   const hw = starters.home;
@@ -174,9 +188,38 @@ export function computeModelEdgeCore(detail) {
   const awaySzn = parseWinPct(game.away.record) * 100;
   const homeSzn = parseWinPct(game.home.record) * 100;
 
+  return { awayPit, homePit, awayMatch, homeMatch, awayOff, homeOff, awayForm, homeForm, awaySzn, homeSzn };
+}
+
+/** Live-formula component weights. Exported so shadow models can reference
+ *  the SAME baseline weights they are adjusting away from, instead of
+ *  hardcoding a second copy of these five numbers. */
+export const LIVE_EDGE_WEIGHTS = {
+  pitcher: 0.30,
+  matchup: 0.25,
+  offense: 0.20,
+  form: 0.15,
+  season: 0.10,
+};
+
+/**
+ * @param {object} detail  Same shape as MlbGameDetail (see mlbTypes.ts):
+ *   { starters: { away, home }, lineupSummaries: { away, home },
+ *     opponentSplits: { awayBattingVsHomeStarter, homeBattingVsAwayStarter },
+ *     awayContext, homeContext, game: { away: { abbreviation, record }, home: {...} } }
+ * @returns {object} ModelEdgeResult-shaped object, identical to
+ *   computeModelEdge() in mlbModelEdge.ts
+ */
+export function computeModelEdgeCore(detail) {
+  const { game } = detail;
+  const {
+    awayPit, homePit, awayMatch, homeMatch,
+    awayOff, homeOff, awayForm, homeForm, awaySzn, homeSzn,
+  } = computeModelEdgeComponents(detail);
+
   // Weighted aggregate
-  const awayTotal = awayPit * 0.30 + awayMatch * 0.25 + awayOff * 0.20 + awayForm * 0.15 + awaySzn * 0.10;
-  const homeTotal = homePit * 0.30 + homeMatch * 0.25 + homeOff * 0.20 + homeForm * 0.15 + homeSzn * 0.10;
+  const awayTotal = awayPit * LIVE_EDGE_WEIGHTS.pitcher + awayMatch * LIVE_EDGE_WEIGHTS.matchup + awayOff * LIVE_EDGE_WEIGHTS.offense + awayForm * LIVE_EDGE_WEIGHTS.form + awaySzn * LIVE_EDGE_WEIGHTS.season;
+  const homeTotal = homePit * LIVE_EDGE_WEIGHTS.pitcher + homeMatch * LIVE_EDGE_WEIGHTS.matchup + homeOff * LIVE_EDGE_WEIGHTS.offense + homeForm * LIVE_EDGE_WEIGHTS.form + homeSzn * LIVE_EDGE_WEIGHTS.season;
 
   const diff = awayTotal - homeTotal;
   const absDiff = Math.abs(diff);

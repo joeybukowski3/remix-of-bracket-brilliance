@@ -8,6 +8,7 @@ import { buildHrExplanation } from "./lib/mlb-hr-explanation.mjs";
 import { selectDeterministicHrPicks } from "./lib/mlb-hr-selection.mjs";
 import { computeCandidateHrScore, rankCandidateScores } from "./lib/mlb-hr-candidate-score.mjs";
 import { computeGameHrEnvironmentScore, QUALIFYING_HR_SCORE_THRESHOLD } from "./lib/mlb-hr-environment.mjs";
+import { classifyPitcherRole, calculateProjectedInnings } from "./lib/mlb-projected-innings.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -723,31 +724,9 @@ export function computePitcherMatchupRatings(pitcher, contexts) {
   };
 }
 
-// Classify pitcher as starter or reliever based on typical IP patterns
-function classifyPitcherRole(pitcher) {
-  // All probable pitchers are starters; only flag reliever if no GS on record
-  if (pitcher.seasonGS != null && pitcher.seasonGS === 0) return "reliever";
-  return "starter";
-}
-
-// Get average IP for pitcher role
-function getAverageIPForRole(role) {
-  return role === "starter" ? 5.5 : 1.5;
-}
-
-// Calculate average IP per game started from real season stats
-function calculateProjectedInnings(pitcher) {
-  const role = classifyPitcherRole(pitcher);
-  // Use real season IP / GS if available
-  if (pitcher.seasonIP != null && pitcher.seasonGS != null && pitcher.seasonGS > 0) {
-    const avgIP = pitcher.seasonIP / pitcher.seasonGS;
-    const minIP = role === "starter" ? 3.0 : 0.5;
-    const maxIP = role === "starter" ? 8.0 : 3.0;
-    return Math.max(minIP, Math.min(maxIP, roundNumber(avgIP, 1)));
-  }
-  // Fallback: role-based default
-  return getAverageIPForRole(role);
-}
+// classifyPitcherRole / calculateProjectedInnings: moved to
+// ./lib/mlb-projected-innings.mjs (Phase 2, shared with the Moneyline
+// projected-IP shadow model) -- unchanged formula, imported above.
 
 // Calculate real K/9 from season strikeouts and innings pitched
 function calculateProjectedK9(pitcher) {
