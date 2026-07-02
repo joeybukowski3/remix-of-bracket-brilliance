@@ -3,6 +3,7 @@ import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { formatCents } from "@/lib/mlb/polymarketMoneylines";
+import { getEdgeTierLabel } from "@/lib/mlb/mlbModelEdge";
 import type { MoneylineGame } from "@/lib/mlb/polymarketMoneylines";
 import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 
@@ -13,12 +14,18 @@ import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 // Only the pitcher-information column is allowed to flex/truncate.
 const TEAM_ROW_GRID = "grid-cols-[20px_34px_minmax(0,1fr)_50px_50px]";
 
-// ML edge data keyed by gamePk, computed in the parent from detailPreviews
+// ML edge data keyed by gamePk, computed in the parent from detailPreviews.
+// PER MODEL AUDIT (Phase 1 correctness fix): this no longer carries a
+// "value edge" percentage derived from treating `confidence` as a win
+// probability. `marketAligned` reports whether the model's pick matches
+// the side Polymarket currently favors; `marketPrice` is the raw
+// Polymarket YES price for the model's pick (real market data).
 export type PanelMlEdge = {
   pickAbbr: string;          // model lean, e.g. "NYY"
-  confidence: number;        // 50–82 confidence index
-  valueAbbr: string | null;  // side with positive Polymarket value; null means Even
-  valueEdge: number | null;  // always non-negative; 0 means Even
+  confidence: number;        // 50–82 edge strength index, NOT a probability
+  differential: number;      // raw factor differential the model computed
+  marketAligned: boolean | null;  // null = no market price to compare against
+  marketPrice: number | null;     // Polymarket YES price (0–1) for pickAbbr
 };
 
 // ---------------------------------------------------------------------------
@@ -107,18 +114,17 @@ function GameCard({
   const status = statusLabel(game.status);
   const hasVenue = Boolean(game.venue && game.venue !== "Unknown");
 
-  // Edge badge styling — always show positive value on the correct side, or Even.
-  const edgeBadge = mlEdge && mlEdge.valueEdge != null ? (() => {
-    const v = mlEdge.valueEdge;
-    if (v <= 0 || !mlEdge.valueAbbr) return { bg: "bg-slate-100 text-slate-600", label: "Even" };
-    if (v >= 8) return { bg: "bg-emerald-600 text-white", label: `${mlEdge.valueAbbr} +${v.toFixed(1)}%` };
-    if (v >= 4) return { bg: "bg-emerald-100 text-emerald-800", label: `${mlEdge.valueAbbr} +${v.toFixed(1)}%` };
-    return { bg: "bg-sky-100 text-sky-800", label: `${mlEdge.valueAbbr} +${v.toFixed(1)}%` };
-  })() : mlEdge ? {
-    // confidence only, no Polymarket price to compare against
-    bg: "bg-slate-100 text-slate-600",
-    label: `${mlEdge.pickAbbr} model ${mlEdge.confidence}`,
-  } : null;
+  // Edge badge styling — shows the model's own tier label plus market
+  // agreement (aligned / contrarian), never a derived probability edge.
+  const edgeBadge = mlEdge ? (() => {
+    const tierLabel = getEdgeTierLabel(mlEdge.confidence);
+    if (mlEdge.marketAligned == null) {
+      return { bg: "bg-slate-100 text-slate-600", label: `${mlEdge.pickAbbr} ${tierLabel}` };
+    }
+    return mlEdge.marketAligned
+      ? { bg: "bg-emerald-100 text-emerald-800", label: `${mlEdge.pickAbbr} ${tierLabel} · Aligned` }
+      : { bg: "bg-amber-100 text-amber-800", label: `${mlEdge.pickAbbr} ${tierLabel} · Contrarian` };
+  })() : null;
 
   const handleClick = () => {
     if (onOpenGame) {
@@ -299,15 +305,18 @@ export default function MlbPolymarketMoneylinePanel({
     return match?.xera ?? null;
   };
 
-  // Sort games by ML value edge descending — best edges first, unmatched last
+  // Sort games by the model's own differential descending — strongest
+  // convictions first, unmatched last. PER MODEL AUDIT: previously sorted
+  // by a fabricated "value edge" derived from treating confidence as a
+  // probability; differential is the model's own (unmodified) output.
   const sortedGames = data?.games ? [...data.games].sort((a, b) => {
-    const edgeA = mlEdges[a.gamePk]?.valueEdge ?? null;
-    const edgeB = mlEdges[b.gamePk]?.valueEdge ?? null;
+    const diffA = mlEdges[a.gamePk]?.differential ?? null;
+    const diffB = mlEdges[b.gamePk]?.differential ?? null;
     // Games with no edge data go to the bottom
-    if (edgeA == null && edgeB == null) return 0;
-    if (edgeA == null) return 1;
-    if (edgeB == null) return -1;
-    return edgeB - edgeA;
+    if (diffA == null && diffB == null) return 0;
+    if (diffA == null) return 1;
+    if (diffB == null) return -1;
+    return diffB - diffA;
   }) : [];
 
   const hasEdges = Object.keys(mlEdges).length > 0;
@@ -320,7 +329,7 @@ export default function MlbPolymarketMoneylinePanel({
           Polymarket Moneylines
         </div>
         <div className="mt-0.5 text-[10px] leading-tight text-sky-300/80">
-          {hasEdges ? "Sorted by model value edge" : "Live YES / NO prices for today's games"}
+          {hasEdges ? "Sorted by model edge strength" : "Live YES / NO prices for today's games"}
         </div>
         {data && (
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[9px] tabular-nums text-slate-400">

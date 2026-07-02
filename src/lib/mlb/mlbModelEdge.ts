@@ -2,6 +2,46 @@ import { computeHr9, computeK9, computePercent } from "@/lib/mlb/mlbFormatters";
 import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
 import type { MlbGameDetail } from "@/lib/mlb/mlbTypes";
 
+/**
+ * Methodology copy reused anywhere the Moneyline Edge model's output is
+ * shown publicly, so the language stays consistent (UI, social, docs).
+ *
+ * PER MODEL AUDIT (Phase 1 correctness fix): `confidence` is a linear
+ * function of a bounded factor differential (52–82). It has never been
+ * calibrated against outcomes and must never be treated as, or presented
+ * as, a win probability. Do not compute `confidence / 100` and diff it
+ * against a market-implied probability anywhere in this codebase — that
+ * arithmetic silently claims a calibration that does not exist.
+ */
+export const ML_EDGE_METHODOLOGY =
+  "Edge Strength reflects how strongly our factor model favors one side over the other. It is not a calibrated win probability.";
+
+/**
+ * Tier labels for `confidence`, shared by every surface that displays the
+ * Moneyline Edge model's output (game cards, Polymarket panel, social
+ * export). Thresholds match the labeling already used in
+ * MlbModelPickBadge.tsx — centralized here so all surfaces agree.
+ */
+export type EdgeTierKey = "strong" | "moderate" | "slight" | "coin-flip";
+
+export function getEdgeTierKey(confidence: number): EdgeTierKey {
+  if (confidence >= 72) return "strong";
+  if (confidence >= 64) return "moderate";
+  if (confidence >= 56) return "slight";
+  return "coin-flip";
+}
+
+const EDGE_TIER_LABELS: Record<EdgeTierKey, string> = {
+  "strong": "Strong lean",
+  "moderate": "Moderate lean",
+  "slight": "Slight lean",
+  "coin-flip": "Coin flip",
+};
+
+export function getEdgeTierLabel(confidence: number): string {
+  return EDGE_TIER_LABELS[getEdgeTierKey(confidence)];
+}
+
 export type ModelFactor = {
   label: string;
   awayScore: number;   // 0–100
@@ -15,6 +55,13 @@ export type ModelEdgeResult = {
   pick: "away" | "home" | "push";
   awayAbbr: string;
   homeAbbr: string;
+  /**
+   * Edge Strength index, 50–82. Derived from a bounded factor differential
+   * (see computeModelEdge). This is NOT a calibrated win probability —
+   * never divide by 100 and treat the result as P(win). See
+   * ML_EDGE_METHODOLOGY. Field name kept as `confidence` for backward
+   * compatibility with existing sorting/scoring call sites.
+   */
   confidence: number;  // 50–82
   differential: number;
   factors: ModelFactor[];

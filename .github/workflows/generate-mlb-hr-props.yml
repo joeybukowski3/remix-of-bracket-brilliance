@@ -83,6 +83,14 @@ jobs:
         continue-on-error: true
         run: node scripts/build-mlb-hr-archive.mjs
 
+      - name: Generate Moneyline Edge picks
+        continue-on-error: true
+        run: node scripts/generate-mlb-ml-picks.mjs
+
+      - name: Update Moneyline prediction archive
+        continue-on-error: true
+        run: node scripts/build-mlb-ml-archive.mjs
+
       - name: Inject batter handedness
         run: node scripts/inject-batter-handedness.mjs || true
 
