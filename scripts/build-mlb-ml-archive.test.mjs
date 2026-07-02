@@ -85,6 +85,31 @@ describe("build-mlb-ml-archive.mjs I/O", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  it("preserves priceAtPick/polymarketAtPick as first-captured while refreshing latestPriceSeen/latestPolymarketSeen across reruns", () => {
+    const dir = freshDir("ml-archive-price-refresh-");
+    writeRaw(dir, [makeFixturePick({
+      priceAtPick: { american: "-135", implied: 0.574, capturedAt: "2026-06-30T09:00:00.000Z" },
+      polymarketAtPick: { yesPrice: 0.56, capturedAt: "2026-06-30T09:00:00.000Z" },
+    })], { generatedAt: "2026-06-30T09:00:00.000Z" });
+    runScript(dir);
+
+    writeRaw(dir, [makeFixturePick({
+      priceAtPick: { american: "-150", implied: 0.6, capturedAt: "2026-06-30T15:00:00.000Z" },
+      polymarketAtPick: { yesPrice: 0.61, capturedAt: "2026-06-30T15:00:00.000Z" },
+    })], { generatedAt: "2026-06-30T15:00:00.000Z" });
+    runScript(dir);
+
+    const archive = readArchive(dir);
+    const record = archive.records[0];
+    assert.equal(record.priceAtPick.implied, 0.574);
+    assert.equal(record.priceAtPick.capturedAt, "2026-06-30T09:00:00.000Z");
+    assert.equal(record.polymarketAtPick.yesPrice, 0.56);
+    assert.equal(record.latestPriceSeen.implied, 0.6);
+    assert.equal(record.latestPriceSeen.capturedAt, "2026-06-30T15:00:00.000Z");
+    assert.equal(record.latestPolymarketSeen.yesPrice, 0.61);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
   it("does not overwrite a graded record on a fresh-data rerun", () => {
     const dir = freshDir("ml-archive-graded-");
     writeRaw(dir, [makeFixturePick({ confidence: 59 })]);

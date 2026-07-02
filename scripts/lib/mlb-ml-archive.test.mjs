@@ -81,6 +81,53 @@ describe("upsertArchiveRecord", () => {
     assert.deepEqual(afterSecond.records[0].runHistory, ["2026-06-30T09:00:00.000Z", "2026-06-30T11:00:00.000Z"]);
   });
 
+  it("preserves priceAtPick/polymarketAtPick as first-captured, but refreshes latestPriceSeen/latestPolymarketSeen, on same-day rerun", () => {
+    const first = buildArchiveRecord({
+      pick: makeFixturePick({
+        priceAtPick: { american: "-135", implied: 0.574, capturedAt: "2026-06-30T09:00:00.000Z" },
+        polymarketAtPick: { yesPrice: 0.56, capturedAt: "2026-06-30T09:00:00.000Z" },
+      }),
+      date: "2026-06-30", generatedAt: "2026-06-30T09:00:00.000Z", modelVersion: "test-v1",
+    });
+    const second = buildArchiveRecord({
+      pick: makeFixturePick({
+        priceAtPick: { american: "-150", implied: 0.6, capturedAt: "2026-06-30T13:00:00.000Z" },
+        polymarketAtPick: { yesPrice: 0.61, capturedAt: "2026-06-30T13:00:00.000Z" },
+      }),
+      date: "2026-06-30", generatedAt: "2026-06-30T13:00:00.000Z", modelVersion: "test-v1",
+    });
+    const afterFirst = upsertArchiveRecord([], first).records;
+    const afterSecond = upsertArchiveRecord(afterFirst, second).records[0];
+
+    // priceAtPick / polymarketAtPick pinned to the FIRST capture
+    assert.equal(afterSecond.priceAtPick.implied, 0.574);
+    assert.equal(afterSecond.priceAtPick.capturedAt, "2026-06-30T09:00:00.000Z");
+    assert.equal(afterSecond.polymarketAtPick.yesPrice, 0.56);
+
+    // latestPriceSeen / latestPolymarketSeen refreshed to the SECOND run's capture
+    assert.equal(afterSecond.latestPriceSeen.implied, 0.6);
+    assert.equal(afterSecond.latestPriceSeen.capturedAt, "2026-06-30T13:00:00.000Z");
+    assert.equal(afterSecond.latestPolymarketSeen.yesPrice, 0.61);
+  });
+
+  it("a THIRD same-day rerun still preserves the original first-captured price, not the second rerun's price", () => {
+    const runs = [
+      { at: "2026-06-30T09:00:00.000Z", implied: 0.574 },
+      { at: "2026-06-30T13:00:00.000Z", implied: 0.6 },
+      { at: "2026-06-30T17:00:00.000Z", implied: 0.55 },
+    ];
+    let records = [];
+    for (const run of runs) {
+      const record = buildArchiveRecord({
+        pick: makeFixturePick({ priceAtPick: { american: "-135", implied: run.implied, capturedAt: run.at } }),
+        date: "2026-06-30", generatedAt: run.at, modelVersion: "test-v1",
+      });
+      records = upsertArchiveRecord(records, record).records;
+    }
+    assert.equal(records[0].priceAtPick.implied, 0.574); // first run, never overwritten
+    assert.equal(records[0].latestPriceSeen.implied, 0.55); // most recent run
+  });
+
   it("never overwrites a graded record", () => {
     const graded = buildArchiveRecord({ pick: makeFixturePick(), date: "2026-06-30", generatedAt: "2026-06-30T09:00:00.000Z", modelVersion: "test-v1" });
     graded.result = { status: "win", actualWinnerAbbr: "NYY", finalScore: { away: 5, home: 3 }, gameFinalStatus: "Final", closingLine: null, clv: null, gradedAt: "2026-07-01T05:00:00.000Z" };

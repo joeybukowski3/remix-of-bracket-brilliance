@@ -94,6 +94,14 @@ export function upsertArchiveRecord(existingRecords, newRecord) {
 
   const updated = {
     ...newRecord,
+    // priceAtPick / polymarketAtPick must stay pinned to the FIRST time this
+    // key was ever archived -- never replaced by a same-day rerun's fresh
+    // capture. latestPriceSeen / latestPolymarketSeen (from ...newRecord
+    // above) are intentionally NOT overridden here -- they refresh on every
+    // rerun, which is how build-mlb-ml-archive.mjs keeps the CLV proxy
+    // current as sportsbook/Polymarket prices move pregame.
+    priceAtPick: existing.priceAtPick ?? newRecord.priceAtPick,
+    polymarketAtPick: existing.polymarketAtPick ?? newRecord.polymarketAtPick,
     firstGeneratedAt: existing.firstGeneratedAt ?? newRecord.firstGeneratedAt,
     runHistory: [...(existing.runHistory ?? []), newRecord.generatedAt],
     result: existing.result,
