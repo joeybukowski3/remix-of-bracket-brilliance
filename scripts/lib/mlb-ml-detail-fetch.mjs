@@ -232,6 +232,13 @@ export async function fetchMlGameDetail(game) {
         battersFaced: homePitcherStat?.battersFaced ?? null,
         baseOnBalls: homePitcherStat?.baseOnBalls ?? null,
         // regressionScore intentionally omitted -- see file header note.
+        // gamesStarted: Phase 2 addition -- already present in the raw
+        // StatsAPI response (homePitcherStat), just not previously passed
+        // through. Used ONLY by the Phase 2.1 projected-IP shadow model
+        // (mlb-ml-projected-ip-shadow.mjs). computeModelEdgeCore() does
+        // not read this field, so this is additive and does not change
+        // any live output.
+        gamesStarted: homePitcherStat?.gamesStarted ?? null,
       },
       away: {
         era: awayPitcherStat?.era ?? null,
@@ -240,6 +247,7 @@ export async function fetchMlGameDetail(game) {
         homeRuns: awayPitcherStat?.homeRuns ?? null,
         battersFaced: awayPitcherStat?.battersFaced ?? null,
         baseOnBalls: awayPitcherStat?.baseOnBalls ?? null,
+        gamesStarted: awayPitcherStat?.gamesStarted ?? null,
       },
     },
     opponentSplits: {
