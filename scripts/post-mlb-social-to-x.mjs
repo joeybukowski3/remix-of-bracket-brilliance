@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -78,29 +77,44 @@ function createXClientFromEnv() {
   return new TwitterApi({ appKey, appSecret, accessToken, accessSecret });
 }
 
+async function fetchAuthenticatedAccount(client) {
+  try {
+    const response = await client.v2.me({ "user.fields": ["id", "name", "username"] });
+    const account = response?.data ?? response;
+    return {
+      username: normalizeUsername(account?.username),
+      name: normalizeText(account?.name),
+      id: normalizeText(account?.id),
+      verificationApi: "v2-users-me",
+    };
+  } catch (v2Error) {
+    console.warn(`[x-post] X API v2 account verification failed; trying the legacy verification endpoint. ${sanitizeLogValue(v2Error instanceof Error ? v2Error.message : v2Error)}`);
+    const account = await client.v1.verifyCredentials();
+    return {
+      username: normalizeUsername(account?.screen_name),
+      name: normalizeText(account?.name),
+      id: normalizeText(account?.id_str ?? account?.id),
+      verificationApi: "v1.1-verify-credentials",
+    };
+  }
+}
+
 async function verifyExpectedXAccount(client = createXClientFromEnv()) {
   const expectedUsername = normalizeUsername(process.env.X_EXPECTED_USERNAME);
   if (!expectedUsername) {
     throw new Error("Missing X_EXPECTED_USERNAME. Expected X_EXPECTED_USERNAME=_joeknowsball_.");
   }
 
-  // Use X API v2 /users/me. The previous scripts used v1.1 verify_credentials,
-  // which is unavailable on some current X API access tiers even when v2 posting works.
-  const response = await client.v2.me({ "user.fields": ["id", "name", "username"] });
-  const account = response?.data ?? response;
-  const username = normalizeUsername(account?.username);
-  const name = normalizeText(account?.name);
-  const id = normalizeText(account?.id);
+  const account = await fetchAuthenticatedAccount(client);
+  console.log(`[x-post] Authenticated X account: @${account.username || "unknown"}${account.name ? ` (${account.name})` : ""}${account.id ? ` id=${account.id}` : ""} via ${account.verificationApi}`);
 
-  console.log(`[x-post] Authenticated X account: @${username || "unknown"}${name ? ` (${name})` : ""}${id ? ` id=${id}` : ""}`);
-
-  if (!username) throw new Error("Authenticated X username was missing from the X API v2 /users/me response.");
-  if (username !== expectedUsername) {
-    throw new Error(`Authenticated X username @${username} does not match expected @${expectedUsername}.`);
+  if (!account.username) throw new Error("Authenticated X username was missing from the account-verification response.");
+  if (account.username !== expectedUsername) {
+    throw new Error(`Authenticated X username @${account.username} does not match expected @${expectedUsername}.`);
   }
 
   console.log(`[x-post] Authenticated X account matches expected @${expectedUsername}.`);
-  return { client, username, name, id };
+  return { client, ...account };
 }
 
 function assertLivePostAllowed() {
@@ -235,16 +249,18 @@ async function publishText(client, caption) {
 async function publishPreparedPost({ client, caption, screenshotPath }) {
   if (!screenshotPath) return publishText(client, caption);
 
+  let upload;
   try {
-    const upload = await uploadMediaResilient(client, screenshotPath);
-    const response = await client.v2.tweet(caption, { media: { media_ids: [upload.mediaId] } });
-    const tweetId = normalizeText(response?.data?.id);
-    if (!tweetId) throw new Error("X post response did not include a tweet ID.");
-    return { tweetId, mediaId: upload.mediaId, mode: `media-${upload.apiVersion}` };
+    upload = await uploadMediaResilient(client, screenshotPath);
   } catch (error) {
-    console.warn(`[x-post] Media posting failed; retrying once as text-only. ${sanitizeLogValue(error instanceof Error ? error.message : error)}`);
+    console.warn(`[x-post] Media upload failed; retrying once as text-only. ${sanitizeLogValue(error instanceof Error ? error.message : error)}`);
     return publishText(client, caption);
   }
+
+  const response = await client.v2.tweet(caption, { media: { media_ids: [upload.mediaId] } });
+  const tweetId = normalizeText(response?.data?.id);
+  if (!tweetId) throw new Error("X post response did not include a tweet ID.");
+  return { tweetId, mediaId: upload.mediaId, mode: `media-${upload.apiVersion}` };
 }
 
 function buildReceiptKey(postKey, mode) {
@@ -283,6 +299,7 @@ async function main() {
     mediaId: published.mediaId,
     screenshotPath: prepared.screenshotPath || null,
     authenticatedUsername: account.username,
+    verificationApi: account.verificationApi,
   });
 
   console.log(`[x-post] postedTweetId=${published.tweetId}`);
@@ -304,6 +321,7 @@ export {
   TARGETS,
   buildReceiptKey,
   extractPreparedPost,
+  fetchAuthenticatedAccount,
   normalizeMediaId,
   parseCli,
   publishPreparedPost,
