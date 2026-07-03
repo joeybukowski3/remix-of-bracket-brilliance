@@ -9,6 +9,8 @@ import { selectDeterministicHrPicks } from "./lib/mlb-hr-selection.mjs";
 import { computeCandidateHrScore, rankCandidateScores } from "./lib/mlb-hr-candidate-score.mjs";
 import { computeGameHrEnvironmentScore, QUALIFYING_HR_SCORE_THRESHOLD } from "./lib/mlb-hr-environment.mjs";
 import { classifyPitcherRole, calculateProjectedInnings } from "./lib/mlb-projected-innings.mjs";
+import { getPhase2Flags } from "./lib/mlb-phase2-flags.mjs";
+import { computeHrPhase2Shadow } from "./lib/mlb-hr-phase2-shadow.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -16,6 +18,8 @@ const RAW_OUTPUT_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const BEST_BETS_OUTPUT_PATH = path.join(DATA_DIR, "hr-props-best-bets.json");
 const MLB_ODDS_PATH = path.join(DATA_DIR, "mlb-odds.json");
 const PITCHER_REGRESSION_PATH = path.join(DATA_DIR, "pitcher-regression.json");
+const BULLPEN_CACHE_PATH = path.join(DATA_DIR, "team-bullpen-stats.json");
+const HAND_SPLIT_CACHE_PATH = path.join(DATA_DIR, "batter-hand-splits-cache.json");
 const FORCE = process.argv.includes("--force");
 const MIN_GENERATION_HOUR_ET = 10;
 const GROK_API_URL = "https://api.x.ai/v1/chat/completions";
@@ -83,6 +87,53 @@ function ensureDataDir() {
   if (!existsSync(DATA_DIR)) {
     mkdirSync(DATA_DIR, { recursive: true });
   }
+}
+
+/** Mirrors generate-mlb-ml-picks.mjs's loadJsonSafe: missing file -> fallback; malformed JSON -> bounded warning + fallback. */
+function loadJsonSafe(filePath, fallback) {
+  if (!existsSync(filePath)) return fallback;
+  try {
+    return JSON.parse(readFileSync(filePath, "utf8"));
+  } catch (err) {
+    console.warn(`[hr-props] Failed to parse ${filePath}: ${err.message}. Using fallback.`);
+    return fallback;
+  }
+}
+
+/** Which Phase 2 flags are relevant to the HR shadow -- if neither is enabled, phase2Shadow is never computed (and the field is omitted entirely, not written as null). */
+function anyHrShadowFlagEnabled(flags) {
+  return flags?.ENABLE_HR_BULLPEN_SHADOW === true || flags?.ENABLE_HR_HAND_SPLIT_SHADOW === true;
+}
+
+/**
+ * Pure wiring helper (exported for deterministic unit testing without a
+ * live slate): resolves the opposing team's bullpen cache entry and the
+ * batter's hand-split cache entry by id, then calls the Phase 2 HR
+ * shadow composition layer. Returns undefined (never null) when neither
+ * relevant flag is enabled, so callers can omit the field entirely with
+ * `...(phase2Shadow !== undefined ? { phase2Shadow } : {})`. Throws on
+ * unexpected failure -- the caller is responsible for catching this
+ * per-batter so a shadow failure never blocks the live HR score/rank.
+ *
+ * @param {object} params
+ * @param {number} params.hrScore  The batter's already-computed live HR Quality Score.
+ * @param {number|null} params.opponentTeamId  Opposing team's MLB team id.
+ * @param {object|null} params.opposingPitcherSeasonStats  Opposing starter's raw season stat block ({inningsPitched, gamesStarted, ...}).
+ * @param {string|null} params.opposingPitcherHand  Opposing starter's pitchHand.code.
+ * @param {number|null} params.playerId  Batter's MLB player id.
+ * @param {object} params.bullpenCache  Loaded team-bullpen-stats.json (or the safe empty fallback).
+ * @param {object} params.handSplitCache  Loaded batter-hand-splits-cache.json (or the safe empty fallback).
+ * @param {object} params.flags  getPhase2Flags() result.
+ */
+export function buildHrPhase2Shadow({ hrScore, opponentTeamId, opposingPitcherSeasonStats, opposingPitcherHand, playerId, bullpenCache, handSplitCache, flags }) {
+  if (!anyHrShadowFlagEnabled(flags)) return undefined;
+  return computeHrPhase2Shadow(hrScore, {
+    opposingBullpen: bullpenCache?.teams?.[String(opponentTeamId)] ?? null,
+    opposingStarter: opposingPitcherSeasonStats ?? null,
+    batterHandSplits: handSplitCache?.players?.[String(playerId)] ?? null,
+    opposingPitcherHand: opposingPitcherHand ?? null,
+    flags,
+  });
 }
 
 function getTodayEt() {
@@ -862,6 +913,11 @@ function validateBatterRows(rows) {
       pitcherXera: toFiniteNumber(row.pitcherXera) ?? null,
       pitcherRegressionScore: toFiniteNumber(row.pitcherRegressionScore) ?? null,
       pitcherFlyBallRate: toFiniteNumber(row.pitcherFlyBallRate) ?? null,
+      // Phase 2 shadow: passed through only when present (omitted entirely
+      // otherwise, never written as null) -- this whitelist-style rebuild
+      // would silently drop it like every other unlisted field without
+      // this explicit line.
+      ...(row.phase2Shadow !== undefined ? { phase2Shadow: row.phase2Shadow } : {}),
     };
 
     if (!normalized.player || !normalized.team || !normalized.opponent) {
@@ -1441,6 +1497,9 @@ async function main() {
         opposingPitcherId: game.home.probablePitcher?.id ?? null,
         pitcherHand: homePitcherPerson?.pitchHand?.code ?? "R",
         pitcherHr9: computeHr9(homePitcherStats?.homeRuns, homePitcherStats?.inningsPitched),
+        // Phase 2 additions -- shadow-only, unread by any live scoring path.
+        opponentTeamId: game.home.id ?? null,
+        opposingPitcherSeasonStats: homePitcherStats,
         gameKey,
         gameContext,
         gamePk: game.gamePk,
@@ -1454,6 +1513,9 @@ async function main() {
         opposingPitcherId: game.away.probablePitcher?.id ?? null,
         pitcherHand: awayPitcherPerson?.pitchHand?.code ?? "R",
         pitcherHr9: computeHr9(awayPitcherStats?.homeRuns, awayPitcherStats?.inningsPitched),
+        // Phase 2 additions -- shadow-only, unread by any live scoring path.
+        opponentTeamId: game.away.id ?? null,
+        opposingPitcherSeasonStats: awayPitcherStats,
         gameKey,
         gameContext,
         gamePk: game.gamePk,
@@ -1495,6 +1557,11 @@ async function main() {
           opposingPitcher: context.opposingPitcher,
           pitcherHand: context.pitcherHand,
           opposingPitcherId: context.opposingPitcherId,
+          // Phase 2 additions -- shadow-only inputs, dropped by the
+          // explicit-whitelist rebuilds later in this file (the `scored`
+          // map and validateBatterRows) unless a Phase 2 HR flag is on.
+          opponentTeamId: context.opponentTeamId,
+          opposingPitcherSeasonStats: context.opposingPitcherSeasonStats,
           ballpark: game.venue,
           parkFactor,
           atBats: safeNumber(season?.atBats, null),
@@ -1563,6 +1630,14 @@ async function main() {
     console.warn("Could not load pitcher-regression.json — skipping pitcher adjustment:", err.message);
   }
 
+  // Loaded ONCE per run (not per batter) -- Phase 2 shadow inputs only.
+  // Missing/malformed cache safely falls back to an empty structure; the
+  // shadow calculators themselves treat a missing per-team/per-player
+  // entry as "unavailable" and fail neutral.
+  const phase2Flags = getPhase2Flags();
+  const bullpenCache = loadJsonSafe(BULLPEN_CACHE_PATH, { teams: {} });
+  const handSplitCache = loadJsonSafe(HAND_SPLIT_CACHE_PATH, { players: {} });
+
   const scored = dedupedPool.map((player) => {
     const opposingPitcher = pitcherLookup.get(String(player.opposingPitcherId ?? ""));
     const enriched = {
@@ -1583,6 +1658,28 @@ async function main() {
       : 1.0;
     const hrScore = Math.round(baseHrScore * xeraMult(pitcherXera) * regrAdj * 10) / 10;
 
+    // Phase 2 shadow: isolated in its own try/catch so a shadow failure
+    // never blocks the live hrScore above -- on failure, phase2Shadow
+    // stays undefined and the field is omitted entirely from this record.
+    // Computed AFTER hrScore and never fed back into it, so it can never
+    // affect live sorting/rank below.
+    let phase2Shadow;
+    try {
+      phase2Shadow = buildHrPhase2Shadow({
+        hrScore,
+        opponentTeamId: enriched.opponentTeamId,
+        opposingPitcherSeasonStats: enriched.opposingPitcherSeasonStats,
+        opposingPitcherHand: enriched.pitcherHand,
+        playerId: enriched.playerId,
+        bullpenCache,
+        handSplitCache,
+        flags: phase2Flags,
+      });
+    } catch (shadowErr) {
+      console.warn(`[hr-props] phase2Shadow failed for ${enriched.player}: ${shadowErr instanceof Error ? shadowErr.message : shadowErr}`);
+      phase2Shadow = undefined;
+    }
+
     return {
       ...enriched,
       hrScore,
@@ -1590,6 +1687,7 @@ async function main() {
       pitcherRegressionScore: pitcherRegressionScore != null ? roundNumber(pitcherRegressionScore, 1) : null,
       pitcherFlyBallRate: pitcherFlyBallRate != null ? roundNumber(pitcherFlyBallRate, 1) : null,
       angleTags: deriveAngleTags({ ...enriched, hrScore }, gamePool.find((game) => game.gameKey === enriched.gameKey)),
+      ...(phase2Shadow !== undefined ? { phase2Shadow } : {}),
     };
   }).sort((left, right) => right.hrScore - left.hrScore || left.player.localeCompare(right.player))
     .map((player, index) => ({
@@ -1630,6 +1728,7 @@ async function main() {
       pitcherXera: player.pitcherXera ?? null,
       pitcherRegressionScore: player.pitcherRegressionScore ?? null,
       pitcherFlyBallRate: player.pitcherFlyBallRate ?? null,
+      ...(player.phase2Shadow !== undefined ? { phase2Shadow: player.phase2Shadow } : {}),
     }));
 
   // ── Load MLB odds (written by fetch-mlb-odds.mjs before this script) ────────

@@ -23,13 +23,47 @@ import { pathToFileURL } from "node:url";
 import { computeModelEdgeCore } from "./lib/mlb-ml-edge-core.mjs";
 import { fetchMlGameDetail } from "./lib/mlb-ml-detail-fetch.mjs";
 import { MLB_ML_MODEL_VERSION } from "./lib/mlb-ml-model-version.mjs";
+import { getPhase2Flags } from "./lib/mlb-phase2-flags.mjs";
+import { computeMlPhase2Shadow } from "./lib/mlb-ml-phase2-shadow.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const OUTPUT_PATH = path.join(DATA_DIR, "ml-picks-raw.json");
 const MLB_ODDS_PATH = path.join(DATA_DIR, "mlb-odds.json");
+const BULLPEN_CACHE_PATH = path.join(DATA_DIR, "team-bullpen-stats.json");
 const POLYMARKET_DIR = path.join(ROOT, "public", "data", "polymarket");
 const DRY_RUN = process.argv.includes("--dry-run");
+
+/** Which Phase 2 flags are relevant to the Moneyline shadow -- if none are enabled, phase2Shadow is never computed (and the field is omitted entirely, not written as null). */
+const RELEVANT_ML_SHADOW_FLAGS = ["ENABLE_ML_PROJECTED_IP_SHADOW", "ENABLE_ML_PARK_SHADOW", "ENABLE_ML_BULLPEN_SHADOW"];
+
+function anyMlShadowFlagEnabled(flags) {
+  return RELEVANT_ML_SHADOW_FLAGS.some((name) => flags?.[name] === true);
+}
+
+/**
+ * Pure wiring helper (exported for deterministic unit testing without a
+ * live slate): resolves each team's bullpen cache entry by id and calls
+ * the Phase 2 Moneyline shadow composition layer. Returns undefined
+ * (never null) when no relevant flag is enabled, so callers can omit the
+ * field entirely with `...(phase2Shadow !== undefined ? { phase2Shadow } : {})`.
+ * Throws on unexpected failure -- the caller is responsible for catching
+ * this per-game so a shadow failure never blocks the live pick.
+ *
+ * @param {object} params
+ * @param {object} params.detail  Same detail passed to computeModelEdgeCore.
+ * @param {{ away: {id:number}, home: {id:number}, venue?: string|null }} params.game
+ * @param {object} params.bullpenCache  Loaded team-bullpen-stats.json (or the safe empty fallback).
+ * @param {object} params.flags  getPhase2Flags() result.
+ */
+export function buildMlPhase2Shadow({ detail, game, bullpenCache, flags }) {
+  if (!anyMlShadowFlagEnabled(flags)) return undefined;
+  const bullpen = {
+    away: bullpenCache?.teams?.[String(game.away.id)] ?? null,
+    home: bullpenCache?.teams?.[String(game.home.id)] ?? null,
+  };
+  return computeMlPhase2Shadow(detail, { venue: game.venue ?? null, bullpen, flags });
+}
 
 const FETCH_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -65,6 +99,11 @@ async function loadSchedule() {
   return games.map((game) => ({
     gamePk: game.gamePk,
     gameDate: game.gameDate,
+    // Phase 2 addition -- already present in the raw schedule response,
+    // just not previously passed through. Used ONLY by the Phase 2.2
+    // Moneyline park-context shadow (mlb-ml-park-shadow.mjs). Live pick
+    // computation (computeModelEdgeCore) does not read this field.
+    venue: game.venue?.name ?? "Unknown Venue",
     away: {
       id: game?.teams?.away?.team?.id ?? null,
       abbreviation: game?.teams?.away?.team?.abbreviation ?? "AWY",
@@ -135,6 +174,13 @@ async function main() {
   const mlbOdds = loadJsonSafe(MLB_ODDS_PATH, null);
   const pmSnapshot = loadJsonSafe(path.join(POLYMARKET_DIR, `snapshots-${date}.json`), null);
 
+  // Loaded ONCE per run (not per game) -- Phase 2 shadow inputs only.
+  // Missing/malformed cache safely falls back to an empty structure; the
+  // shadow calculators themselves treat missing per-team entries as
+  // "unavailable" and fail neutral (see mlb-ml-bullpen-shadow.mjs).
+  const phase2Flags = getPhase2Flags();
+  const bullpenCache = loadJsonSafe(BULLPEN_CACHE_PATH, { teams: {} });
+
   const picks = [];
   let errorCount = 0;
 
@@ -154,6 +200,17 @@ async function main() {
       const gameKey = `${game.away.abbreviation}@${game.home.abbreviation}`;
       const pickIsAway = edge.pick === "away";
 
+      // Phase 2 shadow: isolated in its own try/catch so a shadow failure
+      // never blocks the live pick above -- on failure, phase2Shadow stays
+      // undefined and the field is omitted entirely from this record.
+      let phase2Shadow;
+      try {
+        phase2Shadow = buildMlPhase2Shadow({ detail, game, bullpenCache, flags: phase2Flags });
+      } catch (shadowErr) {
+        console.warn(`[ml-picks] phase2Shadow failed for ${gameKey}: ${shadowErr instanceof Error ? shadowErr.message : shadowErr}`);
+        phase2Shadow = undefined;
+      }
+
       picks.push({
         gameId: game.gamePk,
         gameKey,
@@ -165,6 +222,7 @@ async function main() {
         topFactor: edge.topFactor,
         priceAtPick: getSportsbookPriceAtPick(mlbOdds, gameKey, pickIsAway),
         polymarketAtPick: getPolymarketPriceAtPick(pmSnapshot, game.away.abbreviation, game.home.abbreviation, pickIsAway),
+        ...(phase2Shadow !== undefined ? { phase2Shadow } : {}),
       });
     } catch (err) {
       console.warn(`[ml-picks] Failed to compute edge for ${game.away.abbreviation}@${game.home.abbreviation}: ${err.message}`);
