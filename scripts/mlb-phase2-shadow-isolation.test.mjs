@@ -130,3 +130,51 @@ describe("Static isolation: no workflow references phase2Shadow (activation is a
     assert.deepEqual(offenders, []);
   });
 });
+
+describe("Static isolation: the comparison artifact (ml-phase2-shadow-comparison.json) has no public/production consumers", () => {
+  const needles = ["ml-phase2-shadow-comparison.json", "mlb-phase2-shadow-comparison"];
+  const guardedScripts = [
+    "grade-mlb-hr-results.mjs",
+    "grade-mlb-ml-results.mjs",
+    "grade-polymarket-results.mjs",
+    "build-mlb-hr-performance-summary.mjs",
+    "build-mlb-ml-performance-summary.mjs",
+    "post-mlb-hr-props-to-x.mjs",
+    "post-mlb-ml-edges-to-x.mjs",
+    "post-mlb-strikeout-props-to-x.mjs",
+    "build-mlb-hr-archive.mjs",
+    "build-mlb-ml-archive.mjs",
+  ].map((name) => path.join(ROOT, "scripts", name));
+  const archiveLibs = [path.join(ROOT, "scripts", "lib", "mlb-ml-archive.mjs"), path.join(ROOT, "scripts", "lib", "mlb-hr-archive.mjs")];
+
+  it("no grader, performance-summary, social-post, or archive-builder script references the comparison artifact or its build module", () => {
+    for (const needle of needles) {
+      const offenders = filesReferencing([...guardedScripts, ...archiveLibs], needle);
+      assert.deepEqual(offenders, [], `unexpected "${needle}" reference in: ${offenders.join(", ")}`);
+    }
+  });
+
+  it("zero src/ (public UI) references to the comparison artifact or its build module", () => {
+    const srcFiles = walkFiles(path.join(ROOT, "src"), [".ts", ".tsx", ".js", ".jsx"]);
+    for (const needle of needles) {
+      const offenders = filesReferencing(srcFiles, needle);
+      assert.deepEqual(offenders, [], `unexpected "${needle}" reference in: ${offenders.join(", ")}`);
+    }
+  });
+
+  it("zero workflow references to the comparison artifact or its build module (activation is a separate, later commit)", () => {
+    const workflowFiles = walkFiles(path.join(ROOT, ".github", "workflows"), [".yml", ".yaml"]);
+    for (const needle of needles) {
+      const offenders = filesReferencing(workflowFiles, needle);
+      assert.deepEqual(offenders, [], `unexpected "${needle}" reference in: ${offenders.join(", ")}`);
+    }
+  });
+
+  it("neither generator (ML or HR) reads or references the comparison artifact or its build module", () => {
+    const generatorFiles = [path.join(ROOT, "scripts", "generate-mlb-ml-picks.mjs"), path.join(ROOT, "scripts", "generate-mlb-hr-props.mjs")];
+    for (const needle of needles) {
+      const offenders = filesReferencing(generatorFiles, needle);
+      assert.deepEqual(offenders, [], `unexpected "${needle}" reference in: ${offenders.join(", ")}`);
+    }
+  });
+});
