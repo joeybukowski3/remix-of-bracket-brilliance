@@ -19,7 +19,7 @@ import MlbGameDetail from "./pages/MlbGameDetail";
 import MlbHrProps from "./pages/MlbHrProps";
 import MlbSinCity from "./pages/MlbSinCity";
 import MlbPropsHub from "./pages/MlbPropsHub";
-import MlbStrikeoutProps from "./pages/MlbStrikeoutProps";
+import MlbStrikeoutProps from "./pages/MlbStrikeoutPropsWithDebug";
 import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import MlbNumerologyPage from "./pages/MlbNumerologyPage";
