@@ -12,8 +12,9 @@ function fixtureResponse(payload, status = 200) {
 }
 
 function buildGameLog(pitcherId, season) {
-  const base = pitcherId % 2 === 0
-    ? [91, 88, 94, 86, 90, 92]
+  const reliever = pitcherId % 2 === 0;
+  const base = reliever
+    ? [17, 20, 15, 22, 18, 19]
     : [84, 87, 89, 82, 90, 85];
   return {
     stats: [{
@@ -21,15 +22,15 @@ function buildGameLog(pitcherId, season) {
         date: `${season}-06-${String(10 + index * 4).padStart(2, "0")}`,
         opponent: { name: index % 2 ? "Fixture B" : "Fixture A" },
         stat: {
-          gamesStarted: 1,
+          gamesStarted: reliever ? 0 : 1,
           numberOfPitches: pitches,
-          battersFaced: 20 + (index % 3),
-          strikeOuts: pitcherId % 2 === 0 ? 6 + (index % 3) : 4 + (index % 3),
-          baseOnBalls: 2,
-          inningsPitched: index % 2 ? "6.0" : "5.2",
-          earnedRuns: 2,
-          hits: 5,
-          homeRuns: 1,
+          battersFaced: reliever ? 4 + (index % 3) : 20 + (index % 3),
+          strikeOuts: reliever ? 1 + (index % 2) : 4 + (index % 3),
+          baseOnBalls: reliever ? index % 2 : 2,
+          inningsPitched: reliever ? (index % 2 ? "1.0" : "0.2") : (index % 2 ? "6.0" : "5.2"),
+          earnedRuns: reliever ? index % 2 : 2,
+          hits: reliever ? 1 : 5,
+          homeRuns: reliever ? 0 : 1,
         },
       })),
     }],
@@ -51,11 +52,11 @@ function createFixtureFetch(targetDate) {
             teams: {
               away: {
                 team: { id: 101, abbreviation: "AAA" },
-                probablePitcher: { id: 700001, fullName: "Away Fixture" },
+                probablePitcher: { id: 700001, fullName: "Starter Fixture" },
               },
               home: {
                 team: { id: 102, abbreviation: "BBB" },
-                probablePitcher: { id: 700002, fullName: "Home Fixture" },
+                probablePitcher: { id: 700002, fullName: "Reliever Fixture" },
               },
             },
           }],
@@ -95,6 +96,7 @@ function createFixtureFetch(targetDate) {
 function validateRow(row) {
   const issues = [];
   const expectedBF = toFiniteNumber(row.projection?.expectedBF);
+  const expectedInnings = toFiniteNumber(row.projection?.expectedInnings);
   const adjustedRate = toFiniteNumber(row.projection?.teamAdjustedKRate);
   const fullKs = toFiniteNumber(row.projection?.fullShadowProjectedKs);
   const workloadKs = toFiniteNumber(row.projection?.workloadOnlyProjectedKs);
@@ -108,6 +110,12 @@ function validateRow(row) {
   }
   if (!row.teamKAdjustment?.components || !row.teamKAdjustment?.diagnostics) {
     issues.push("team K diagnostics missing");
+  }
+  if (row.role === "reliever") {
+    if (expectedBF != null && expectedBF > 10) issues.push(`reliever expectedBF exceeded cap: ${expectedBF}`);
+    if (expectedInnings != null && expectedInnings > 3) issues.push(`reliever expected innings exceeded cap: ${expectedInnings}`);
+    if (fullKs != null && fullKs > 5) issues.push(`reliever projected Ks exceeded cap: ${fullKs}`);
+    if (!row.flags?.includes("RELIEVER_WORKLOAD_CAP")) issues.push("reliever cap flag missing");
   }
   return issues;
 }
@@ -127,8 +135,10 @@ export async function runValidation(argv = process.argv.slice(2)) {
 
   console.table(rows.map((row) => ({
     pitcher: row.pitcher,
+    role: row.role,
     matchup: `${row.team} ${row.isHome ? "vs" : "@"} ${row.opponent}`,
     expectedBF: row.projection?.expectedBF,
+    expectedIP: row.projection?.expectedInnings,
     workloadKs: row.projection?.workloadOnlyProjectedKs,
     teamAdjustedKRate: row.projection?.teamAdjustedKRate,
     fullKs: row.projection?.fullShadowProjectedKs,
@@ -138,6 +148,9 @@ export async function runValidation(argv = process.argv.slice(2)) {
 
   if (!rows.length) errors.push({ pitcher: "slate", issue: "no pitcher rows generated" });
   if (fixtureMode && rows.length !== 2) errors.push({ pitcher: "fixture", issue: `expected 2 pitchers, received ${rows.length}` });
+  if (fixtureMode && rows.filter((row) => row.role === "reliever").length !== 1) {
+    errors.push({ pitcher: "fixture", issue: "expected exactly one reliever fixture" });
+  }
 
   if (errors.length) {
     console.error(`[test-k-workload] ${errors.length} validation error(s)`);

@@ -57,6 +57,7 @@ function findShadowRow(shadow, pitcher) {
 
 function candidateFromShadow(row) {
   if (!row) return null;
+  const role = ["starter", "opener", "reliever"].includes(row.role) ? row.role : "starter";
   const expectedBF = number(row.projection?.expectedBF);
   const expectedIP = number(row.projection?.expectedInnings);
   const workloadKs = number(row.projection?.workloadOnlyProjectedKs);
@@ -67,12 +68,19 @@ function candidateFromShadow(row) {
   const confidenceScore = number(row.confidence?.score);
   const confidenceEligible = row.confidence?.publicEligible === true
     || (row.confidence?.publicEligible == null && ["A", "B"].includes(confidenceGrade));
+
+  const roleBounds = role === "reliever"
+    ? { bfMin: 2, bfMax: 10, ipMin: 0.1, ipMax: 3, ksMax: 5 }
+    : role === "opener"
+      ? { bfMin: 4, bfMax: 14, ipMin: 0.7, ipMax: 4, ksMax: 7 }
+      : { bfMin: 10, bfMax: 30, ipMin: 3, ipMax: 9, ksMax: 15 };
+
   const eligible = row.workloadFetchOk !== false
     && confidenceEligible
-    && expectedBF != null && expectedBF >= 10 && expectedBF <= 30
-    && expectedIP != null && expectedIP > 0 && expectedIP <= 9
+    && expectedBF != null && expectedBF >= roleBounds.bfMin && expectedBF <= roleBounds.bfMax
+    && expectedIP != null && expectedIP >= roleBounds.ipMin && expectedIP <= roleBounds.ipMax
     && adjustedRate != null && adjustedRate >= 0.12 && adjustedRate <= 0.38
-    && fullKs != null && fullKs >= 0 && fullKs <= 15;
+    && fullKs != null && fullKs >= 0 && fullKs <= roleBounds.ksMax;
   const projectedIP = expectedIP == null ? null : round(expectedIP, 1);
   const projectedKs = fullKs == null ? null : round(fullKs, 1);
   const projectedK9 = projectedIP != null && projectedIP > 0 && projectedKs != null
@@ -80,6 +88,7 @@ function candidateFromShadow(row) {
     : null;
   return {
     eligible,
+    role,
     projectedIP,
     projectedK9,
     projectedKs,
@@ -125,6 +134,7 @@ export function applyKProjectionMode(payload, shadow, mode = getKProjectionMode(
       projectionSource: useCandidate ? "workload-team" : "legacy",
       projectionFallbackReason: fallbackReason,
       kProjectionMode: mode,
+      workloadRole: candidate?.role ?? null,
       legacyProjectedIP,
       legacyProjectedK9,
       legacyProjectedKs,
@@ -144,7 +154,7 @@ export function applyKProjectionMode(payload, shadow, mode = getKProjectionMode(
   return {
     ...payload,
     kProjectionMode: mode,
-    kProjectionModelVersion: "workload-team-k-v1",
+    kProjectionModelVersion: "workload-team-k-v2",
     pitchers: updated,
   };
 }
