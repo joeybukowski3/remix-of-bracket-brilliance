@@ -31,7 +31,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "mlb:pitcher-regression": "node scripts/generate-mlb-pitcher-regression.mjs",
-    "mlb:bullpen-stats": "node scripts/build-mlb-team-bullpen-stats.mjs"
+    "mlb:bullpen-stats": "node scripts/build-mlb-team-bullpen-stats.mjs",
+    "mlb:hand-splits": "node scripts/build-mlb-batter-hand-splits.mjs",
+    "mlb:phase2-comparison": "node scripts/build-mlb-phase2-shadow-comparison.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -102,6 +104,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
+    "js-yaml": "^4.1.1",
     "jsdom": "^28.1.0",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
