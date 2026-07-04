@@ -1,0 +1,70 @@
+name: Test MLB K Shadow
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/mlb-k/**"
+      - "scripts/generate-mlb-k-workload-shadow.mjs"
+      - "scripts/test-k-workload.mjs"
+      - "scripts/generate-mlb-hr-props-with-k-shadow.mjs"
+      - "src/App.tsx"
+      - "src/pages/MlbStrikeoutPropsWithDebug.tsx"
+      - ".github/workflows/generate-mlb-hr-props.yml"
+      - ".github/workflows/test-mlb-k-shadow.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MLB_K_PROJECTION_MODE: shadow
+      MLB_K_TEST_FIXTURE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Syntax check K pipeline
+        run: |
+          node --check scripts/mlb-k/fetch-workload-data.mjs
+          node --check scripts/mlb-k/compute-workload-projection.mjs
+          node --check scripts/mlb-k/compute-team-k-adjustment.mjs
+          node --check scripts/generate-mlb-k-workload-shadow.mjs
+          node --check scripts/test-k-workload.mjs
+          node --check scripts/generate-mlb-hr-props-with-k-shadow.mjs
+      - name: Run deterministic workload + team K pipeline
+        run: node scripts/test-k-workload.mjs --fixture
+      - name: Verify rollout modes and shadow fallback
+        run: |
+          node --input-type=module <<'NODE'
+          import { getKProjectionMode, applyKProjectionMode } from './scripts/generate-mlb-hr-props-with-k-shadow.mjs';
+          if (getKProjectionMode({ MLB_K_PROJECTION_MODE: 'shadow' }) !== 'shadow') process.exit(1);
+          if (getKProjectionMode({ MLB_K_PROJECTION_MODE: 'legacy' }) !== 'legacy') process.exit(1);
+          if (getKProjectionMode({ MLB_K_PROJECTION_MODE: 'official' }) !== 'official') process.exit(1);
+          if (getKProjectionMode({ MLB_K_PROJECTION_MODE: 'invalid' }) !== 'legacy') process.exit(1);
+
+          const payload = { pitchers: [{ pitcherId: 1, gameKey: 'AAA@BBB', team: 'AAA', projectedIP: 5.2, projectedK9: 9, projectedKs: 5.2, kLine: 5.5 }] };
+          const row = {
+            pitcherId: 1,
+            gameKey: 'AAA@BBB',
+            team: 'AAA',
+            workloadFetchOk: true,
+            confidence: { grade: 'A', publicEligible: true, score: 0.9 },
+            projection: { expectedBF: 22, expectedInnings: 6, workloadOnlyProjectedKs: 5.5, teamAdjustedKRate: 0.27, fullShadowProjectedKs: 5.94 },
+            flags: [],
+          };
+          const shadow = { available: true, reason: null, byPitcherId: new Map([['1', row]]), byGameTeam: new Map() };
+          const compared = applyKProjectionMode(payload, shadow, 'shadow').pitchers[0];
+          if (compared.projectedKs !== 5.2 || compared.candidateProjectedKs !== 5.9 || compared.projectionSource !== 'legacy') process.exit(1);
+          const official = applyKProjectionMode(payload, shadow, 'official').pitchers[0];
+          if (official.projectedKs !== 5.9 || official.projectionSource !== 'workload-team') process.exit(1);
+          NODE
+      - name: Build site
+        run: npm run build

@@ -64,14 +64,23 @@ jobs:
       - name: Fetch team wRC+ data
         run: node scripts/fetch-team-wrc-plus.mjs || true
 
+      - name: Generate K workload shadow
+        run: node scripts/generate-mlb-k-workload-shadow.mjs
+
+      - name: Validate K workload shadow
+        env:
+          MLB_K_PROJECTION_MODE: shadow
+        run: node scripts/test-k-workload.mjs --fixture
+
       - name: Generate HR props and best bets
         shell: bash
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+          MLB_K_PROJECTION_MODE: shadow
         run: |
           for attempt in 1 2 3; do
             echo "HR props attempt ${attempt}/3"
-            if node scripts/generate-mlb-hr-props.mjs --force; then
+            if node scripts/generate-mlb-hr-props-with-k-shadow.mjs --force; then
               exit 0
             fi
             sleep $((attempt * 10))
