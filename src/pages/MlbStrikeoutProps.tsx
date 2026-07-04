@@ -72,28 +72,40 @@ function StatScorePill({ value }: { value: number | null | undefined }) {
 
 function BestBetCard({ bet, compact = false }: { bet: KBestBet; compact?: boolean }) {
   const over = bet.side === "over";
+  const logoSize = compact ? 54 : 64;
+
   return (
     <article className={cn(
       "rounded-2xl border bg-white shadow-sm",
       over ? "border-emerald-200" : "border-blue-200",
       compact ? "p-3" : "p-4",
     )}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider", over ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800")}>
-              {over ? "Top Over" : "Top Under"}
-            </span>
-            <span className="text-[10px] font-bold text-slate-400">vs {bet.opponent}</span>
-          </div>
-          <div className="mt-1 truncate text-sm font-black text-slate-950">{bet.pitcher}</div>
-          <div className="mt-1 text-xs text-slate-600">
-            {over ? "Over" : "Under"} {bet.line.toFixed(1)} Ks <span className="font-black text-slate-900">{bet.odds}</span>
-          </div>
+      <div className="flex items-start gap-3">
+        <div className={cn(
+          "flex shrink-0 items-center justify-center rounded-2xl border bg-slate-50 shadow-inner",
+          over ? "border-emerald-100" : "border-blue-100",
+          compact ? "h-16 w-16" : "h-[72px] w-[72px]",
+        )}>
+          <MlbTeamLogo team={bet.team} size={logoSize} className="drop-shadow-sm" />
         </div>
-        <div className="shrink-0 text-right">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Projection</div>
-          <div className="text-lg font-black tabular-nums text-slate-950">{bet.projectedKs.toFixed(1)}</div>
+
+        <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider", over ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800")}>
+                {over ? "Top Over" : "Top Under"}
+              </span>
+              <span className="text-[10px] font-bold text-slate-400">{bet.team} vs {bet.opponent}</span>
+            </div>
+            <div className={cn("mt-1 truncate font-black text-slate-950", compact ? "text-base" : "text-lg")}>{bet.pitcher}</div>
+            <div className="mt-1 text-xs text-slate-600">
+              {over ? "Over" : "Under"} {bet.line.toFixed(1)} Ks <span className="font-black text-slate-900">{bet.odds}</span>
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Projection</div>
+            <div className="text-xl font-black tabular-nums text-slate-950">{bet.projectedKs.toFixed(1)}</div>
+          </div>
         </div>
       </div>
       {!compact && (
