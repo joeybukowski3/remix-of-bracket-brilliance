@@ -13,6 +13,17 @@ on:
     - cron: "40 11 * * *"
       timezone: "America/New_York" # 11:40 AM ET — final early-game refresh
   workflow_dispatch:
+    inputs:
+      enable_phase2_shadow:
+        description: "Enable Phase 2 shadow generation and comparison"
+        type: boolean
+        required: true
+        default: false
+      refresh_phase2_caches:
+        description: "Refresh Phase 2 bullpen and batter hand-split caches"
+        type: boolean
+        required: true
+        default: false
   # Also validates the workflow immediately whenever this file itself changes.
   push:
     branches:
@@ -51,6 +62,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Single source of truth for Phase 2 shadow activation. Manual-
+      # dispatch-first: scheduled/push runs never satisfy the
+      # event_name check, so both effective values are unconditionally
+      # "false" for every non-workflow_dispatch trigger, regardless of
+      # what the (unset) inputs would otherwise contain. Scheduled
+      # activation is a separate, later decision.
+      - name: Resolve Phase 2 flags
+        id: phase2
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.enable_phase2_shadow }}" = "true" ]; then
+            ENABLE_SHADOW="true"
+          else
+            ENABLE_SHADOW="false"
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.refresh_phase2_caches }}" = "true" ]; then
+            REFRESH_CACHES="true"
+          else
+            REFRESH_CACHES="false"
+          fi
+          echo "enable_shadow=${ENABLE_SHADOW}" >> "$GITHUB_OUTPUT"
+          echo "refresh_caches=${REFRESH_CACHES}" >> "$GITHUB_OUTPUT"
+          echo "[phase2] event=${{ github.event_name }} enable_phase2_shadow(input)=${{ inputs.enable_phase2_shadow }} refresh_phase2_caches(input)=${{ inputs.refresh_phase2_caches }}"
+          echo "[phase2] effective enable_shadow=${ENABLE_SHADOW} effective refresh_caches=${REFRESH_CACHES}"
+
       - name: Fetch MLB odds
         id: fetch_odds
         continue-on-error: true
@@ -72,11 +108,146 @@ jobs:
           MLB_K_PROJECTION_MODE: shadow
         run: node scripts/test-k-workload.mjs --fixture
 
-      - name: Generate HR props and best bets
+      # Manual-dispatch-only, and only when refresh is explicitly
+      # requested. Refreshes ALL teams' bullpen data before HR/ML
+      # generation so both generators (and, when applicable, the
+      # preliminary HR pass below) can benefit from a fresh cache in
+      # this same run. Bullpen data is keyed by team id (known from the
+      # schedule), so unlike the batter hand-split cache it has no
+      # slate-derivation ordering problem. continue-on-error (not
+      # `|| true`) so the real outcome is still visible to the summary
+      # step below; on failure the CLI's own merge logic preserves each
+      # team's last-valid cached data (see mlb-bullpen-cache.mjs).
+      - name: Refresh Phase 2 bullpen cache
+        id: refresh_bullpen_cache
+        if: github.event_name == 'workflow_dispatch' && steps.phase2.outputs.refresh_caches == 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          node scripts/build-mlb-team-bullpen-stats.mjs
+          node -e "
+            const fs = require('fs');
+            const path = 'public/data/mlb/team-bullpen-stats.json';
+            if (!fs.existsSync(path)) { console.log('[phase2] bullpen cache file not present after refresh.'); process.exit(0); }
+            const cache = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const teams = Object.values(cache.teams || {});
+            const counts = { fresh: 0, 'stale-fallback': 0, missing: 0 };
+            for (const t of teams) { if (counts[t.freshnessStatus] != null) counts[t.freshnessStatus] += 1; }
+            console.log('[phase2] bullpen cache: total=' + teams.length + ' fresh=' + counts.fresh + ' stale-fallback=' + counts['stale-fallback'] + ' missing=' + counts.missing);
+          "
+        env:
+          ENABLE_BULLPEN_DATA_PIPELINE: "true"
+          MLB_BULLPEN_ALLOW_TRACKED_WRITE: "true"
+
+      # Controlled two-pass sequence -- ONLY when both enable_phase2_shadow
+      # AND refresh_phase2_caches are true. Purpose: the batter hand-split
+      # cache can only be refreshed for the CURRENT slate's player ids,
+      # and those ids are only known from HR generation's own output --
+      # but we want the FINAL, archived/committed HR generation (below)
+      # to actually consume a freshly refreshed cache, not just prime it
+      # for next time. This preliminary pass exists solely to discover
+      # today's batter pool; every Phase 2 shadow flag is forced false
+      # (never inherited from steps.phase2.outputs) so it produces a
+      # plain, un-shadowed hr-props-raw.json. Its output is intentionally
+      # NOT archived and NOT fed into the comparison build -- both of
+      # those only ever run after the FINAL generation further below.
+      # Uses the K-shadow-aware wrapper (not the legacy generator
+      # directly), matching main's HR entrypoint. The wrapper only
+      # rewrites `pitchers[]` (K-projection fields) after spawning the
+      # legacy generator as a child process with `env: process.env` --
+      # it never touches `batters[]`, so extracting Phase 2 batter ids
+      # from this preliminary pass's output below is unaffected. It is
+      # also safe to invoke the wrapper twice in the same run (here and
+      # in the final pass below): the expensive K-workload-shadow
+      # computation lives entirely in the separate "Generate K workload
+      # shadow" step above, which runs once per workflow run -- the
+      # wrapper itself only ever reads that already-written shadow file.
+      - name: Preliminary HR generation for Phase 2 cache IDs
+        id: preliminary_hr_props
+        if: github.event_name == 'workflow_dispatch' && steps.phase2.outputs.enable_shadow == 'true' && steps.phase2.outputs.refresh_caches == 'true'
+        continue-on-error: true
         shell: bash
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
           MLB_K_PROJECTION_MODE: shadow
+          ENABLE_ML_PROJECTED_IP_SHADOW: "false"
+          ENABLE_ML_PARK_SHADOW: "false"
+          ENABLE_BULLPEN_DATA_PIPELINE: "false"
+          ENABLE_ML_BULLPEN_SHADOW: "false"
+          ENABLE_HR_BULLPEN_SHADOW: "false"
+          ENABLE_HR_HAND_SPLIT_SHADOW: "false"
+          ENABLE_PHASE2_SHADOW_COMPARISON: "false"
+        run: node scripts/generate-mlb-hr-props-with-k-shadow.mjs --force
+
+      - name: Extract Phase 2 batter IDs (preliminary pass)
+        id: extract_ids_preliminary
+        if: github.event_name == 'workflow_dispatch' && steps.phase2.outputs.enable_shadow == 'true' && steps.phase2.outputs.refresh_caches == 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          PLAYER_IDS="$(node -e "
+            const fs = require('fs');
+            const path = 'public/data/mlb/hr-props-raw.json';
+            if (!fs.existsSync(path)) { console.log(''); process.exit(0); }
+            let data;
+            try { data = JSON.parse(fs.readFileSync(path, 'utf8')); } catch { console.log(''); process.exit(0); }
+            const ids = Array.from(new Set((data.batters || [])
+              .map((b) => Number(b.playerId))
+              .filter((id) => Number.isFinite(id) && id > 0)));
+            console.log(ids.join(','));
+          ")"
+          PLAYER_COUNT=0
+          if [ -n "$PLAYER_IDS" ]; then
+            PLAYER_COUNT=$(echo "$PLAYER_IDS" | tr ',' '\n' | wc -l)
+          fi
+          echo "player_ids=${PLAYER_IDS}" >> "$GITHUB_OUTPUT"
+          echo "count=${PLAYER_COUNT}" >> "$GITHUB_OUTPUT"
+          echo "[phase2] Extracted ${PLAYER_COUNT} current-slate player id(s) from the preliminary HR pass."
+
+      # Refreshes the hand-split cache for the CURRENT slate BEFORE the
+      # final HR generation below, so that generation actually consumes
+      # fresh data this run (not just primes the cache for later).
+      - name: Refresh batter hand-split cache
+        id: refresh_handsplit_preliminary
+        if: github.event_name == 'workflow_dispatch' && steps.phase2.outputs.enable_shadow == 'true' && steps.phase2.outputs.refresh_caches == 'true' && steps.extract_ids_preliminary.outputs.count != '0'
+        continue-on-error: true
+        shell: bash
+        run: |
+          node scripts/build-mlb-batter-hand-splits.mjs --player="${{ steps.extract_ids_preliminary.outputs.player_ids }}"
+          node -e "
+            const fs = require('fs');
+            const path = 'public/data/mlb/batter-hand-splits-cache.json';
+            if (!fs.existsSync(path)) { console.log('[phase2] hand-split cache file not present after refresh.'); process.exit(0); }
+            const cache = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const players = Object.values(cache.players || {});
+            const counts = { fresh: 0, 'stale-fallback': 0, missing: 0 };
+            for (const p of players) { if (counts[p.freshnessStatus] != null) counts[p.freshnessStatus] += 1; }
+            console.log('[phase2] hand-split cache: requested=${{ steps.extract_ids_preliminary.outputs.count }} total=' + players.length + ' fresh=' + counts.fresh + ' stale-fallback=' + counts['stale-fallback'] + ' missing=' + counts.missing);
+          "
+        env:
+          ENABLE_HAND_SPLIT_DATA_PIPELINE: "true"
+          MLB_HAND_SPLIT_ALLOW_TRACKED_WRITE: "true"
+
+      # The standard, ALWAYS-runs HR generation -- never skipped for any
+      # input combination. This is the sole generation whose output is
+      # archived, compared, and ultimately committed. When the
+      # preliminary pass above ran (enable_shadow=true AND
+      # refresh_caches=true), the hand-split cache has already been
+      # refreshed by this point, so this pass's shadow computation
+      # actually benefits from fresh data instead of showing unavailable.
+      - name: Generate final HR props and best bets
+        id: generate_hr_props
+        shell: bash
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+          MLB_K_PROJECTION_MODE: shadow
+          ENABLE_ML_PROJECTED_IP_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_ML_PARK_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_BULLPEN_DATA_PIPELINE: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_ML_BULLPEN_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_HR_BULLPEN_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_HR_HAND_SPLIT_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_PHASE2_SHADOW_COMPARISON: ${{ steps.phase2.outputs.enable_shadow }}
         run: |
           for attempt in 1 2 3; do
             echo "HR props attempt ${attempt}/3"
@@ -88,17 +259,98 @@ jobs:
           echo "HR props generation failed after 3 attempts." >&2
           exit 1
 
+      # Refresh-only path: refresh_phase2_caches=true but
+      # enable_phase2_shadow=false. Mutually exclusive with the
+      # preliminary-pass path above (that one only runs when BOTH are
+      # true) -- avoids ever generating HR twice unless both inputs are
+      # true, per the two-pass sequence being reserved for that case
+      # only. Since shadow computation is disabled this run regardless
+      # of cache freshness, there is no benefit to refreshing BEFORE
+      # generation here -- this simply primes the cache for a future run
+      # using the (only) generation that already happened above.
+      - name: Extract Phase 2 batter IDs (post-generation)
+        id: extract_ids_post_generation
+        if: github.event_name == 'workflow_dispatch' && steps.phase2.outputs.refresh_caches == 'true' && steps.phase2.outputs.enable_shadow != 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          PLAYER_IDS="$(node -e "
+            const fs = require('fs');
+            const path = 'public/data/mlb/hr-props-raw.json';
+            if (!fs.existsSync(path)) { console.log(''); process.exit(0); }
+            let data;
+            try { data = JSON.parse(fs.readFileSync(path, 'utf8')); } catch { console.log(''); process.exit(0); }
+            const ids = Array.from(new Set((data.batters || [])
+              .map((b) => Number(b.playerId))
+              .filter((id) => Number.isFinite(id) && id > 0)));
+            console.log(ids.join(','));
+          ")"
+          PLAYER_COUNT=0
+          if [ -n "$PLAYER_IDS" ]; then
+            PLAYER_COUNT=$(echo "$PLAYER_IDS" | tr ',' '\n' | wc -l)
+          fi
+          echo "player_ids=${PLAYER_IDS}" >> "$GITHUB_OUTPUT"
+          echo "count=${PLAYER_COUNT}" >> "$GITHUB_OUTPUT"
+          echo "[phase2] Extracted ${PLAYER_COUNT} current-slate player id(s) from the (only) HR generation."
+
+      - name: Refresh batter hand-split cache (post-generation)
+        id: refresh_handsplit_post_generation
+        if: github.event_name == 'workflow_dispatch' && steps.phase2.outputs.refresh_caches == 'true' && steps.phase2.outputs.enable_shadow != 'true' && steps.extract_ids_post_generation.outputs.count != '0'
+        continue-on-error: true
+        shell: bash
+        run: |
+          node scripts/build-mlb-batter-hand-splits.mjs --player="${{ steps.extract_ids_post_generation.outputs.player_ids }}"
+          node -e "
+            const fs = require('fs');
+            const path = 'public/data/mlb/batter-hand-splits-cache.json';
+            if (!fs.existsSync(path)) { console.log('[phase2] hand-split cache file not present after refresh.'); process.exit(0); }
+            const cache = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const players = Object.values(cache.players || {});
+            const counts = { fresh: 0, 'stale-fallback': 0, missing: 0 };
+            for (const p of players) { if (counts[p.freshnessStatus] != null) counts[p.freshnessStatus] += 1; }
+            console.log('[phase2] hand-split cache: requested=${{ steps.extract_ids_post_generation.outputs.count }} total=' + players.length + ' fresh=' + counts.fresh + ' stale-fallback=' + counts['stale-fallback'] + ' missing=' + counts.missing);
+          "
+        env:
+          ENABLE_HAND_SPLIT_DATA_PIPELINE: "true"
+          MLB_HAND_SPLIT_ALLOW_TRACKED_WRITE: "true"
+
       - name: Update HR prediction archive
         continue-on-error: true
         run: node scripts/build-mlb-hr-archive.mjs
 
       - name: Generate Moneyline Edge picks
+        id: generate_ml_picks
         continue-on-error: true
         run: node scripts/generate-mlb-ml-picks.mjs
+        env:
+          ENABLE_ML_PROJECTED_IP_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_ML_PARK_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_BULLPEN_DATA_PIPELINE: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_ML_BULLPEN_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_HR_BULLPEN_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_HR_HAND_SPLIT_SHADOW: ${{ steps.phase2.outputs.enable_shadow }}
+          ENABLE_PHASE2_SHADOW_COMPARISON: ${{ steps.phase2.outputs.enable_shadow }}
 
       - name: Update Moneyline prediction archive
         continue-on-error: true
         run: node scripts/build-mlb-ml-archive.mjs
+
+      # Manual-dispatch-only, and only when shadow generation is
+      # explicitly enabled. Runs after both the final HR generation and
+      # ML generation (and their archive updates). Reads today's
+      # already-written raw files; never mutates them. continue-on-error
+      # so a comparison failure can never block the archive/commit steps
+      # that already ran or will run after this one. The CLI's own
+      # logging already reports ML/HR records-with-shadow, pick flips,
+      # and the HR Spearman correlation -- no extra logging needed here.
+      - name: Build Phase 2 shadow comparison
+        id: phase2_comparison
+        if: github.event_name == 'workflow_dispatch' && steps.phase2.outputs.enable_shadow == 'true'
+        continue-on-error: true
+        run: node scripts/build-mlb-phase2-shadow-comparison.mjs
+        env:
+          ENABLE_PHASE2_SHADOW_COMPARISON: "true"
+          MLB_PHASE2_COMPARISON_ALLOW_TRACKED_WRITE: "true"
 
       - name: Inject batter handedness
         run: node scripts/inject-batter-handedness.mjs || true
@@ -220,7 +472,31 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Legacy generated files (HR/ML raw + best-bets, archives, odds,
+          # power rankings, numerology, pitcher regression, etc.) have no
+          # individual per-file staging step today -- this directory-level
+          # add remains required for them; narrowing it to an explicit
+          # allowlist would be a much larger, unrelated change than this
+          # Phase 2 activation commit.
           git add public/data/mlb/ public/data/betting-splits/ public/sitemap.xml
+
+          # Phase 2 files are explicitly (re-)staged by exact name, not
+          # relied upon solely via the directory recursion above. Each is
+          # staged only if it actually exists -- the corresponding step
+          # may never have run at all this run (scheduled/push runs,
+          # refresh_phase2_caches=false, or a failed refresh step).
+          for f in \
+            public/data/mlb/team-bullpen-stats.json \
+            public/data/mlb/batter-hand-splits-cache.json \
+            public/data/mlb/ml-phase2-shadow-comparison.json; do
+            if [ -f "$f" ]; then
+              git add "$f"
+              echo "Staged Phase 2 file: $f"
+            else
+              echo "Phase 2 file not present, skipping: $f"
+            fi
+          done
 
           if git diff --cached --quiet; then
             echo "No staged MLB data changes."
@@ -249,3 +525,53 @@ jobs:
           fi
 
           echo "MLB data pushed successfully."
+
+      # Always runs, regardless of any earlier step's outcome, so this
+      # summary is available even if a Phase 2 step failed or was
+      # skipped. Never prints secrets or full JSON contents -- only
+      # booleans, step outcomes, file existence, and git status codes.
+      - name: Report Phase 2 activation summary
+        if: always()
+        shell: bash
+        run: |
+          echo "== Phase 2 activation summary =="
+          echo "event: ${{ github.event_name }}"
+          echo "enable_phase2_shadow (input): ${{ inputs.enable_phase2_shadow }}"
+          echo "enable_phase2_shadow (effective): ${{ steps.phase2.outputs.enable_shadow }}"
+          echo "refresh_phase2_caches (input): ${{ inputs.refresh_phase2_caches }}"
+          echo "refresh_phase2_caches (effective): ${{ steps.phase2.outputs.refresh_caches }}"
+          echo ""
+          echo "-- Step outcomes --"
+          echo "bullpen cache refresh: ${{ steps.refresh_bullpen_cache.outcome || 'skipped' }}"
+          echo "preliminary HR generation: ${{ steps.preliminary_hr_props.outcome || 'skipped' }}"
+          echo "batter-id extraction (preliminary pass): ${{ steps.extract_ids_preliminary.outcome || 'skipped' }} (count: ${{ steps.extract_ids_preliminary.outputs.count || 'n/a' }})"
+          echo "hand-split cache refresh (pre-final): ${{ steps.refresh_handsplit_preliminary.outcome || 'skipped' }}"
+          echo "final HR generation: ${{ steps.generate_hr_props.outcome }}"
+          echo "batter-id extraction (post-generation): ${{ steps.extract_ids_post_generation.outcome || 'skipped' }} (count: ${{ steps.extract_ids_post_generation.outputs.count || 'n/a' }})"
+          echo "hand-split cache refresh (post-generation): ${{ steps.refresh_handsplit_post_generation.outcome || 'skipped' }}"
+          echo "ML generation: ${{ steps.generate_ml_picks.outcome }}"
+          echo "comparison: ${{ steps.phase2_comparison.outcome || 'skipped' }}"
+          echo ""
+          echo "-- Final HR raw output content (counts only, never dumped) --"
+          node -e "
+            const fs = require('fs');
+            const path = 'public/data/mlb/hr-props-raw.json';
+            if (!fs.existsSync(path)) { console.log('final HR raw: file not found'); process.exit(0); }
+            let data;
+            try { data = JSON.parse(fs.readFileSync(path, 'utf8')); } catch { console.log('final HR raw: could not parse'); process.exit(0); }
+            const batters = Array.isArray(data.batters) ? data.batters : [];
+            const withShadowField = batters.filter((b) => b.phase2Shadow !== undefined).length;
+            const handSplitAvailable = batters.filter((b) => b.phase2Shadow?.handSplitShadow?.available === true).length;
+            const handSplitUnavailable = batters.filter((b) => b.phase2Shadow?.handSplitShadow?.available === false).length;
+            console.log('final HR raw contains phase2Shadow: ' + (withShadowField > 0) + ' (' + withShadowField + '/' + batters.length + ' records)');
+            console.log('HR records with available hand-split shadow: ' + handSplitAvailable);
+            console.log('HR records with unavailable hand-split shadow: ' + handSplitUnavailable);
+          "
+          echo ""
+          echo "-- Phase 2 file presence --"
+          for f in public/data/mlb/team-bullpen-stats.json public/data/mlb/batter-hand-splits-cache.json public/data/mlb/ml-phase2-shadow-comparison.json; do
+            if [ -f "$f" ]; then echo "${f}: exists"; else echo "${f}: missing"; fi
+          done
+          echo ""
+          echo "-- Phase 2 file git status --"
+          git status --porcelain -- public/data/mlb/team-bullpen-stats.json public/data/mlb/batter-hand-splits-cache.json public/data/mlb/ml-phase2-shadow-comparison.json || true

@@ -12,6 +12,13 @@
  *   2. Static isolation: grep-equivalent source scan confirming no
  *      grader, performance-summary, social-post, or src/** file
  *      references phase2Shadow at all.
+ *
+ * As of the Phase 2 workflow-activation commit, the shared "Generate MLB
+ * Data" workflow (.github/workflows/generate-mlb-hr-props.yml) is an
+ * intentional, explicitly gated consumer of the comparison BUILD SCRIPT
+ * (not the `phase2Shadow` field itself, and not the artifact's contents)
+ * -- see the dedicated assertions below and the fuller gating coverage
+ * in scripts/mlb-phase2-workflow.test.mjs.
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
@@ -123,11 +130,30 @@ describe("Static isolation: no src/ (public UI) file references phase2Shadow", (
   });
 });
 
-describe("Static isolation: no workflow references phase2Shadow (activation is a separate, later commit)", () => {
-  it("zero references across .github/workflows/", () => {
-    const workflowFiles = walkFiles(path.join(ROOT, ".github", "workflows"), [".yml", ".yaml"]);
-    const offenders = filesReferencing(workflowFiles, "phase2Shadow");
+// As of the Phase 2 workflow-activation commit, the "Generate MLB Data"
+// workflow's final reporting step DOES intentionally read the
+// phase2Shadow field name -- but only to report a boolean/count (whether
+// it's present, and how many records have it) for observability, never
+// to expose its contents, feed it to another consumer, or use it in any
+// gating/business logic. This is a legitimate, narrow, explicitly
+// requested reference, not a leak.
+describe("Static isolation: the workflow's only phase2Shadow reference is a read-only presence/count check in its own reporting step", () => {
+  it("every workflow OTHER than the shared MLB writer has zero references", () => {
+    const otherWorkflowFiles = walkFiles(path.join(ROOT, ".github", "workflows"), [".yml", ".yaml"]).filter(
+      (f) => path.basename(f) !== "generate-mlb-hr-props.yml"
+    );
+    const offenders = filesReferencing(otherWorkflowFiles, "phase2Shadow");
     assert.deepEqual(offenders, []);
+  });
+
+  it("the shared MLB writer references phase2Shadow only inside its own reporting step's read-only count/boolean check", () => {
+    const generateMlbDataWorkflow = path.join(ROOT, ".github", "workflows", "generate-mlb-hr-props.yml");
+    const text = readFileSync(generateMlbDataWorkflow, "utf8");
+    const occurrences = (text.match(/phase2Shadow/g) ?? []).length;
+    // b.phase2Shadow !== undefined, b.phase2Shadow?.handSplitShadow?.available (x2), and the
+    // log label "contains phase2Shadow" -- presence/count checks and their log text only.
+    assert.equal(occurrences, 4, "phase2Shadow should appear only in the reporting step's boolean/count checks");
+    assert.doesNotMatch(text, /JSON\.stringify\(.*phase2Shadow/);
   });
 });
 
@@ -162,10 +188,31 @@ describe("Static isolation: the comparison artifact (ml-phase2-shadow-comparison
     }
   });
 
-  it("zero workflow references to the comparison artifact or its build module (activation is a separate, later commit)", () => {
-    const workflowFiles = walkFiles(path.join(ROOT, ".github", "workflows"), [".yml", ".yaml"]);
+  // As of the Phase 2 workflow-activation commit, the shared "Generate MLB
+  // Data" workflow IS an intentional, explicitly gated consumer of the
+  // comparison build module (node scripts/build-mlb-phase2-shadow-
+  // comparison.mjs), invoked only on workflow_dispatch with
+  // enable_phase2_shadow=true. That gating (manual-dispatch-only, correct
+  // env vars, tracked-write guard, ordering after both raw generators) is
+  // covered by scripts/mlb-phase2-workflow.test.mjs, not here. This file
+  // still confirms the workflow references NOTHING beyond the one
+  // intended build-script invocation -- e.g. it must never read the
+  // comparison JSON's contents back in, and no OTHER workflow may
+  // reference it at all.
+  it("the workflow's only reference to the comparison module is invoking its own build script, gated behind workflow_dispatch + enable_phase2_shadow", () => {
+    const generateMlbDataWorkflow = path.join(ROOT, ".github", "workflows", "generate-mlb-hr-props.yml");
+    const text = readFileSync(generateMlbDataWorkflow, "utf8");
+    const occurrences = (text.match(/build-mlb-phase2-shadow-comparison\.mjs/g) ?? []).length;
+    assert.equal(occurrences, 1, "the build script should be invoked exactly once");
+    assert.doesNotMatch(text, /ml-phase2-shadow-comparison\.json['"`]?\s*,?\s*['"`]?utf8|readFileSync.*ml-phase2-shadow-comparison/, "the workflow must never read the comparison artifact's contents back in");
+  });
+
+  it("no OTHER workflow file references the comparison artifact or its build module", () => {
+    const otherWorkflowFiles = walkFiles(path.join(ROOT, ".github", "workflows"), [".yml", ".yaml"]).filter(
+      (f) => path.basename(f) !== "generate-mlb-hr-props.yml"
+    );
     for (const needle of needles) {
-      const offenders = filesReferencing(workflowFiles, needle);
+      const offenders = filesReferencing(otherWorkflowFiles, needle);
       assert.deepEqual(offenders, [], `unexpected "${needle}" reference in: ${offenders.join(", ")}`);
     }
   });
