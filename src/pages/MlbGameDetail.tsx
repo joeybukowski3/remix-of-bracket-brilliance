@@ -35,6 +35,7 @@ import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
+import { evaluateKPropOverRecommendation } from "@/lib/mlb/kPropRecommendationEligibility";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame, MlbTeamWrcData } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
@@ -2302,21 +2303,37 @@ function americanToImplied(ml: string | null | undefined): number | null {
   return n < 0 ? (-n) / (-n + 100) : 100 / (n + 100);
 }
 
-// Top N K props by model-vs-line value edge, for the social "value" widget.
-// Excludes relievers/openers whose workload-role safety override has no
-// eligible bounded candidate (publicRecommendationEligible === false) --
-// see kPropBestBets.ts for the same rule applied to the main page's Top
-// Over/Under selection.
+// Top N K "Over" props by workload-adjusted value edge, for the social
+// "value" widget (this table always labels its line as an Over -- see the
+// "o{line}" formatting below -- so it must apply the same Top Over
+// eligibility rules as buildKPropBestBets in kPropBestBets.ts: a reliever/
+// opener whose low workload only "clears" a very low sportsbook line is
+// excluded rather than displayed as a value pick. Ranking uses
+// adjustedRecommendationEdge (workload-reliability-scaled), not the raw
+// edge, matching the main page's Top Over ranking exactly.
 export function selectTopKValuePlays(kRows: PitcherStrikeoutTeamRow[], max = 3) {
   return kRows
-    .filter((r) => r.publicRecommendationEligible !== false)
-    .filter((r) => r.kLine != null && r.kLine > 0 && r.projectedKs != null)
-    .sort((a, b) => {
-      const edgeA = (a.projectedKs ?? 0) - (a.kLine ?? 0);
-      const edgeB = (b.projectedKs ?? 0) - (b.kLine ?? 0);
-      return edgeB - edgeA;
-    })
-    .slice(0, max);
+    .map((r) => ({
+      row: r,
+      evaluation: evaluateKPropOverRecommendation({
+        workloadRole: r.workloadRole ?? r.role ?? null,
+        expectedIP: r.effectiveProjectedIP ?? r.projectedIP ?? null,
+        expectedBF: r.workloadExpectedBF ?? null,
+        projectedKs: r.projectedKs ?? null,
+        kLine: r.kLine ?? null,
+        publicRecommendationEligible: r.publicRecommendationEligible,
+        workloadConfidenceGrade: r.workloadConfidenceGrade ?? null,
+        workloadConfidenceScore: r.workloadConfidenceScore ?? null,
+        teamAdjustedKRate: r.teamAdjustedKRate ?? null,
+        workloadFlags: r.workloadFlags ?? null,
+        strikeoutMatchupScore: r.strikeoutMatchupScore,
+        opponentTeamKRate: r.opponentTeamKRate ?? null,
+      }),
+    }))
+    .filter(({ row, evaluation }) => row.kLine != null && row.kLine > 0 && evaluation.eligible)
+    .sort((a, b) => (b.evaluation.adjustedRecommendationEdge ?? 0) - (a.evaluation.adjustedRecommendationEdge ?? 0))
+    .slice(0, max)
+    .map(({ row }) => row);
 }
 
 function SocialTableValue({

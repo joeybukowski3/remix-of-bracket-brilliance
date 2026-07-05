@@ -70,9 +70,13 @@ function StatScorePill({ value }: { value: number | null | undefined }) {
   return <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums", tone)}>{number.toFixed(1)}</span>;
 }
 
-function BestBetCard({ bet, compact = false }: { bet: KBestBet; compact?: boolean }) {
+export function BestBetCard({ bet, compact = false }: { bet: KBestBet; compact?: boolean }) {
   const over = bet.side === "over";
   const logoSize = compact ? 54 : 64;
+  // Keep normal starters' cards exactly as before -- only a low-workload
+  // role or a non-standard tier earns the extra workload-context line, so
+  // the common case never gets more crowded than it already was.
+  const showWorkloadContext = bet.recommendationTier !== "standard" || (bet.workloadRole != null && bet.workloadRole !== "starter");
 
   return (
     <article className={cn(
@@ -95,16 +99,27 @@ function BestBetCard({ bet, compact = false }: { bet: KBestBet; compact?: boolea
               <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider", over ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800")}>
                 {over ? "Top Over" : "Top Under"}
               </span>
+              {bet.isExceptionalLowWorkload && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-800">
+                  High-Variance Edge
+                </span>
+              )}
               <span className="text-[10px] font-bold text-slate-400">{bet.team} vs {bet.opponent}</span>
             </div>
             <div className={cn("mt-1 truncate font-black text-slate-950", compact ? "text-base" : "text-lg")}>{bet.pitcher}</div>
             <div className="mt-1 text-xs text-slate-600">
               {over ? "Over" : "Under"} {bet.line.toFixed(1)} Ks <span className="font-black text-slate-900">{bet.odds}</span>
             </div>
+            {showWorkloadContext && (
+              <div className="mt-1 text-[10px] font-semibold text-slate-500">
+                Exp IP: {bet.expectedIP != null ? bet.expectedIP.toFixed(1) : "—"} · Exp BF: {bet.expectedBF != null ? bet.expectedBF.toFixed(1) : "—"}
+                {bet.workloadRole ? ` · Role: ${bet.workloadRole.charAt(0).toUpperCase()}${bet.workloadRole.slice(1)}` : ""}
+              </div>
+            )}
           </div>
           <div className="shrink-0 text-right">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Projection</div>
-            <div className="text-xl font-black tabular-nums text-slate-950">{bet.projectedKs.toFixed(1)}</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Proj</div>
+            <div className="text-xl font-black tabular-nums text-slate-950">{bet.projectedKs.toFixed(1)} K</div>
           </div>
         </div>
       </div>

@@ -65,6 +65,11 @@ export type HrDashboardPitcher = {
   candidateProjectedKs?: number | null;
   effectiveProjectedIP?: number | null;
   effectiveProjectedKs?: number | null;
+  workloadExpectedBF?: number | null;
+  workloadConfidenceGrade?: string | null;
+  workloadConfidenceScore?: number | null;
+  teamAdjustedKRate?: number | null;
+  workloadFlags?: string[] | null;
 };
 
 export type HrDashboardBatter = {
@@ -293,6 +298,11 @@ export type PitcherStrikeoutTeamRow = {
   candidateProjectedKs?: number | null;
   effectiveProjectedIP?: number | null;
   effectiveProjectedKs?: number | null;
+  workloadExpectedBF?: number | null;
+  workloadConfidenceGrade?: string | null;
+  workloadConfidenceScore?: number | null;
+  teamAdjustedKRate?: number | null;
+  workloadFlags?: string[] | null;
 };
 
 export const DEFAULT_TAB: TabKey = "batters";
@@ -393,6 +403,11 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
     candidateProjectedKs: normalizeNumber(entry.candidateProjectedKs),
     effectiveProjectedIP: normalizeNumber(entry.effectiveProjectedIP),
     effectiveProjectedKs: normalizeNumber(entry.effectiveProjectedKs),
+    workloadExpectedBF: normalizeNumber(entry.workloadExpectedBF),
+    workloadConfidenceGrade: normalizeText(entry.workloadConfidenceGrade) || null,
+    workloadConfidenceScore: normalizeNumber(entry.workloadConfidenceScore),
+    teamAdjustedKRate: normalizeNumber(entry.teamAdjustedKRate),
+    workloadFlags: normalizeStringList(entry.workloadFlags),
   };
   if (!p.pitcher || !p.team || !p.opponent || p.hrVs == null || p.hitsVs == null || p.kVs == null) return null;
   return p as HrDashboardPitcher;
@@ -1167,6 +1182,11 @@ export function buildPitcherStrikeoutRows(
         candidateProjectedKs: pitcher.candidateProjectedKs ?? null,
         effectiveProjectedIP: pitcher.effectiveProjectedIP ?? null,
         effectiveProjectedKs: pitcher.effectiveProjectedKs ?? null,
+        workloadExpectedBF: pitcher.workloadExpectedBF ?? null,
+        workloadConfidenceGrade: pitcher.workloadConfidenceGrade ?? null,
+        workloadConfidenceScore: pitcher.workloadConfidenceScore ?? null,
+        teamAdjustedKRate: pitcher.teamAdjustedKRate ?? null,
+        workloadFlags: pitcher.workloadFlags ?? null,
       };
     })
     .sort((left, right) =>
