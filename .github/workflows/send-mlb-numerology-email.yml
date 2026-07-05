@@ -1,0 +1,115 @@
+name: Send MLB Numerology Email
+run-name: MLB Numerology Email • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    - cron: "11 11 * * *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and grade the report without sending email"
+        required: false
+        type: boolean
+        default: false
+      force_send:
+        description: "Send again even if today's report is already marked sent"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  email-numerology-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh numerology rankings
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: node scripts/generate-mlb-numerology.mjs --phase lineup-confirmed
+
+      - name: Grade results, update tracker, and send report
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NUMEROLOGY_EMAIL_TO: ${{ secrets.NUMEROLOGY_EMAIL_TO }}
+          NUMEROLOGY_EMAIL_FROM: ${{ secrets.NUMEROLOGY_EMAIL_FROM }}
+        shell: bash
+        run: |
+          args=()
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            args+=("--no-send")
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_send }}" = "true" ]; then
+            args+=("--force-send")
+          fi
+          node scripts/run-mlb-numerology-email.mjs "${args[@]}"
+
+      - name: Upload email preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: numerology-email-preview
+          path: artifacts/numerology-email-preview.html
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Commit numerology history and tracker
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            public/data/mlb/numerology-daily.json \
+            public/data/mlb/numerology/history/ \
+            public/data/mlb/numerology-pick-history.json \
+            public/data/mlb/numerology-tracker.json
+
+          if git diff --cached --quiet; then
+            echo "No numerology tracker changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: update MLB numerology email tracker $(TZ=America/New_York date '+%Y-%m-%d')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: tracker email completed, but generated data could not be pushed." >&2
+            exit 1
+          fi
