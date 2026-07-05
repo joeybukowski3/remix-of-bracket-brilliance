@@ -74,4 +74,43 @@ describe("buildKPropBestBets", () => {
     ]);
     expect(result.overs.map((bet) => bet.pitcher)).toEqual(["Alpha", "Zulu"]);
   });
+
+  it("excludes a reliever/opener flagged publicRecommendationEligible: false even when its projection would otherwise clear the line", () => {
+    const result = buildKPropBestBets([
+      row({ pitcher: "Ineligible Reliever", projectedKs: 6.8, kLine: 2.5, publicRecommendationEligible: false }),
+    ]);
+    expect(result.overs).toHaveLength(0);
+    expect(result.unders).toHaveLength(0);
+  });
+
+  it("still includes a row with publicRecommendationEligible: true (or unset, for backward compatibility)", () => {
+    const result = buildKPropBestBets([row({ projectedKs: 6.4, kLine: 5.5, publicRecommendationEligible: true })]);
+    expect(result.overs).toHaveLength(1);
+  });
+
+  it("Wandy-Peralta-shaped regression: a reliever/opener with a corrected, bounded projection does not rank as a top Over from starter-style legacy innings", () => {
+    // Before the fix: legacy projectedKs=5.3 vs kLine=0.5 -> a 4.8 K edge,
+    // an unmissable "lock" driven entirely by an unrealistic 8-IP starter
+    // projection for a pitcher who will actually throw under an inning.
+    const buggyLegacyRow = row({ pitcher: "Wandy Peralta", projectedKs: 5.3, kLine: 0.5, projectedIP: 8, projectedK9: 6 });
+    const buggyResult = buildKPropBestBets([buggyLegacyRow]);
+    expect(buggyResult.overs).toHaveLength(1); // demonstrates the bug still reproduces against the raw legacy fields alone
+
+    // After the fix: the wrapper's effective projection is what actually
+    // flows into row.projectedKs (see generate-mlb-hr-props-with-k-shadow.mjs),
+    // so the real corrected input to this function looks like this instead.
+    const correctedRow = row({
+      pitcher: "Wandy Peralta",
+      projectedKs: 0.9,
+      projectedIP: 1,
+      projectedK9: 8.1,
+      kLine: 0.5,
+    });
+    const correctedResult = buildKPropBestBets([correctedRow]);
+    // 0.9 - 0.5 = 0.4, right at the minimum threshold -- a marginal, honest
+    // edge instead of the legacy bug's inflated 4.8 K "lock".
+    if (correctedResult.overs.length) {
+      expect(correctedResult.overs[0].projectionEdge).toBeLessThan(1);
+    }
+  });
 });

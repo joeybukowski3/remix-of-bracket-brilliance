@@ -69,7 +69,7 @@ export async function fetchJsonWithRetry(url, {
   };
 }
 
-function parseInnings(value) {
+export function parseInnings(value) {
   if (value === null || value === undefined || value === "") return null;
   const [wholeText, partialText = "0"] = String(value).split(".");
   const whole = Number(wholeText);

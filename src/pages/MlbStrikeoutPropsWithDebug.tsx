@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import MlbStrikeoutProps from "./MlbStrikeoutProps";
+import { cn } from "@/lib/utils";
 
 type WorkloadDebugRow = {
   pitcher: string;
   team: string;
   opponent: string;
-  projection?: {
-    expectedBF?: number | null;
-    workloadOnlyProjectedKs?: number | null;
-    teamAdjustedKRate?: number | null;
-    fullShadowProjectedKs?: number | null;
-    teamAdjustmentKsDelta?: number | null;
-  };
-  confidence?: { grade?: string | null };
+  workloadRole?: string | null;
+  legacyProjectedIP?: number | null;
+  candidateProjectedIP?: number | null;
+  effectiveProjectedIP?: number | null;
+  legacyProjectedKs?: number | null;
+  candidateProjectedKs?: number | null;
+  effectiveProjectedKs?: number | null;
+  projectionSource?: string | null;
+  projectionFallbackReason?: string | null;
+  publicRecommendationEligible?: boolean;
 };
 
 type WorkloadDebugPayload = {
@@ -29,7 +32,10 @@ function WorkloadDebugPanel() {
   useEffect(() => {
     if (!enabled) return;
     let active = true;
-    fetch("/data/mlb/k-workload-shadow.json", { cache: "no-store" })
+    // hr-props-raw.json (not k-workload-shadow.json) is the source here --
+    // it carries the already-blended legacy/candidate/effective fields the
+    // wrapper writes per pitcher, which is what the live site actually uses.
+    fetch("/data/mlb/hr-props-raw.json", { cache: "no-store" })
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
@@ -49,40 +55,48 @@ function WorkloadDebugPanel() {
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-200 px-4 py-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">Workload Debug</p>
-          <h2 className="text-base font-black text-slate-950">Workload + Team K Shadow</h2>
+          <h2 className="text-base font-black text-slate-950">Workload Role Safety + Effective Projection</h2>
         </div>
         <p className="text-xs text-slate-600">{payload?.date ?? "Loading"} · {rows.length} pitchers</p>
       </div>
       {error ? (
-        <p className="px-4 py-4 text-sm font-semibold text-red-700">Unable to load shadow data: {error}</p>
+        <p className="px-4 py-4 text-sm font-semibold text-red-700">Unable to load raw data: {error}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-white text-xs uppercase tracking-wide text-slate-600">
               <tr>
                 <th className="px-3 py-2 text-left">Pitcher</th>
-                <th className="px-3 py-2 text-center">Expected BF</th>
-                <th className="px-3 py-2 text-center">Workload Ks</th>
-                <th className="px-3 py-2 text-center">Team K%</th>
-                <th className="px-3 py-2 text-center">Full Ks</th>
-                <th className="px-3 py-2 text-center">Δ Ks</th>
-                <th className="px-3 py-2 text-center">Confidence</th>
+                <th className="px-3 py-2 text-center">Role</th>
+                <th className="px-3 py-2 text-center">Legacy IP</th>
+                <th className="px-3 py-2 text-center">Candidate IP</th>
+                <th className="px-3 py-2 text-center">Effective IP</th>
+                <th className="px-3 py-2 text-center">Legacy Ks</th>
+                <th className="px-3 py-2 text-center">Candidate Ks</th>
+                <th className="px-3 py-2 text-center">Effective Ks</th>
+                <th className="px-3 py-2 text-center">Source</th>
+                <th className="px-3 py-2 text-center">Fallback Reason</th>
+                <th className="px-3 py-2 text-center">Eligible</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={`${row.pitcher}|${row.team}`} className="border-t border-sky-100 bg-white/70">
+                <tr key={`${row.pitcher}|${row.team}`} className={cn("border-t border-sky-100", row.publicRecommendationEligible === false ? "bg-red-50" : "bg-white/70")}>
                   <td className="px-3 py-2 font-semibold text-slate-900">{row.pitcher} <span className="text-xs font-normal text-slate-500">{row.team} vs {row.opponent}</span></td>
-                  <td className="px-3 py-2 text-center">{format(row.projection?.expectedBF, 1)}</td>
-                  <td className="px-3 py-2 text-center">{format(row.projection?.workloadOnlyProjectedKs)}</td>
-                  <td className="px-3 py-2 text-center">{Number.isFinite(row.projection?.teamAdjustedKRate) ? `${(Number(row.projection?.teamAdjustedKRate) * 100).toFixed(1)}%` : "—"}</td>
-                  <td className="px-3 py-2 text-center font-bold text-sky-900">{format(row.projection?.fullShadowProjectedKs)}</td>
-                  <td className="px-3 py-2 text-center">{Number.isFinite(row.projection?.teamAdjustmentKsDelta) ? `${Number(row.projection?.teamAdjustmentKsDelta) >= 0 ? "+" : ""}${Number(row.projection?.teamAdjustmentKsDelta).toFixed(2)}` : "—"}</td>
-                  <td className="px-3 py-2 text-center">{row.confidence?.grade ?? "—"}</td>
+                  <td className="px-3 py-2 text-center">{row.workloadRole ?? "—"}</td>
+                  <td className="px-3 py-2 text-center">{format(row.legacyProjectedIP, 1)}</td>
+                  <td className="px-3 py-2 text-center">{format(row.candidateProjectedIP, 1)}</td>
+                  <td className="px-3 py-2 text-center font-bold text-sky-900">{format(row.effectiveProjectedIP, 1)}</td>
+                  <td className="px-3 py-2 text-center">{format(row.legacyProjectedKs, 1)}</td>
+                  <td className="px-3 py-2 text-center">{format(row.candidateProjectedKs, 1)}</td>
+                  <td className="px-3 py-2 text-center font-bold text-sky-900">{format(row.effectiveProjectedKs, 1)}</td>
+                  <td className="px-3 py-2 text-center">{row.projectionSource ?? "—"}</td>
+                  <td className="px-3 py-2 text-center text-[11px]">{row.projectionFallbackReason ?? "—"}</td>
+                  <td className="px-3 py-2 text-center">{row.publicRecommendationEligible === false ? "❌" : "✅"}</td>
                 </tr>
               ))}
               {!rows.length && !error ? (
-                <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-500">Loading workload shadow data…</td></tr>
+                <tr><td colSpan={11} className="px-4 py-6 text-center text-slate-500">Loading raw pitcher data…</td></tr>
               ) : null}
             </tbody>
           </table>

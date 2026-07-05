@@ -24,6 +24,16 @@ function team(value) {
   return String(value ?? "").trim().toUpperCase();
 }
 
+// Same bounds as scripts/mlb-k/compute-workload-projection.mjs's ROLE_LIMITS
+// (ipMin/ipMax/bfMin/bfMax) plus the candidate's own ksMax ceiling -- shared
+// here so both candidate eligibility (below) and legacy-incompatibility
+// detection (in applyKProjectionMode) use one definition of "realistic".
+const ROLE_BOUNDS = Object.freeze({
+  reliever: { bfMin: 2, bfMax: 10, ipMin: 0.1, ipMax: 3, ksMax: 5 },
+  opener: { bfMin: 4, bfMax: 14, ipMin: 0.7, ipMax: 4, ksMax: 7 },
+  starter: { bfMin: 10, bfMax: 30, ipMin: 3, ipMax: 9, ksMax: 15 },
+});
+
 export function getKProjectionMode(env = process.env) {
   const requested = String(env.MLB_K_PROJECTION_MODE ?? "legacy").trim().toLowerCase();
   return ["legacy", "shadow", "official"].includes(requested) ? requested : "legacy";
@@ -69,11 +79,7 @@ function candidateFromShadow(row) {
   const confidenceEligible = row.confidence?.publicEligible === true
     || (row.confidence?.publicEligible == null && ["A", "B"].includes(confidenceGrade));
 
-  const roleBounds = role === "reliever"
-    ? { bfMin: 2, bfMax: 10, ipMin: 0.1, ipMax: 3, ksMax: 5 }
-    : role === "opener"
-      ? { bfMin: 4, bfMax: 14, ipMin: 0.7, ipMax: 4, ksMax: 7 }
-      : { bfMin: 10, bfMax: 30, ipMin: 3, ipMax: 9, ksMax: 15 };
+  const roleBounds = ROLE_BOUNDS[role] ?? ROLE_BOUNDS.starter;
 
   const eligible = row.workloadFetchOk !== false
     && confidenceEligible
@@ -109,17 +115,58 @@ export function applyKProjectionMode(payload, shadow, mode = getKProjectionMode(
     const legacyProjectedKs = number(pitcher.projectedKs);
     const shadowRow = shadow.available ? findShadowRow(shadow, pitcher) : null;
     const candidate = candidateFromShadow(shadowRow);
-    const useCandidate = mode === "official" && candidate?.eligible === true;
-    const finalProjectedIP = useCandidate ? candidate.projectedIP : legacyProjectedIP;
-    const finalProjectedK9 = useCandidate ? candidate.projectedK9 : legacyProjectedK9;
-    const finalProjectedKs = useCandidate ? candidate.projectedKs : legacyProjectedKs;
+    const role = candidate?.role ?? null;
+    const useOfficialCandidate = mode === "official" && candidate?.eligible === true;
+
+    // Reliever/opener safety override (shadow mode only -- never legacy,
+    // and moot in official mode since useOfficialCandidate already covers
+    // it there). The legacy projection is computed by a starter-oriented
+    // pipeline that has no concept of relief roles, so it can produce an
+    // unrealistic full-game workload (e.g. 8 projected IP) for a pitcher
+    // who will actually throw well under an inning. When that happens,
+    // substitute the bounded workload candidate for PUBLIC eligibility/
+    // ranking only -- never promote the pitcher to official mode, and
+    // never invent a number when the candidate itself isn't trustworthy.
+    const roleBounds = ROLE_BOUNDS[role] ?? null;
+    const isReliefRole = role === "reliever" || role === "opener";
+    const legacyIncompatibleWithRole = isReliefRole && roleBounds != null && (
+      (legacyProjectedIP != null && legacyProjectedIP > roleBounds.ipMax)
+      || (legacyProjectedKs != null && legacyProjectedKs > roleBounds.ksMax)
+    );
+    const applyReliefSafety = mode === "shadow" && !useOfficialCandidate && legacyIncompatibleWithRole;
+    const reliefSafetyEligible = applyReliefSafety && candidate?.eligible === true;
+    const useCandidateProjection = useOfficialCandidate || reliefSafetyEligible;
+
+    const finalProjectedIP = useCandidateProjection ? candidate.projectedIP : legacyProjectedIP;
+    const finalProjectedK9 = useCandidateProjection ? candidate.projectedK9 : legacyProjectedK9;
+    const finalProjectedKs = useCandidateProjection ? candidate.projectedKs : legacyProjectedKs;
+
+    const projectionSource = useOfficialCandidate
+      ? "workload-team"
+      : reliefSafetyEligible
+        ? "workload-role-safety"
+        : "legacy";
+
     const fallbackReason = mode === "legacy"
       ? "MODE_LEGACY"
-      : mode === "shadow"
-        ? "MODE_SHADOW_COMPARISON"
-        : candidate?.eligible
-          ? null
-          : shadow.reason ?? (shadowRow ? "SHADOW_PROJECTION_INELIGIBLE" : "SHADOW_ROW_MISSING");
+      : useOfficialCandidate
+        ? null
+        : applyReliefSafety
+          ? (reliefSafetyEligible
+            ? "LEGACY_WORKLOAD_INCOMPATIBLE_WITH_RELIEVER_ROLE"
+            : (role === "reliever" ? "RELIEVER_WORKLOAD_CANDIDATE_INELIGIBLE" : "OPENER_WORKLOAD_CANDIDATE_INELIGIBLE"))
+          : mode === "shadow"
+            ? "MODE_SHADOW_COMPARISON"
+            : candidate?.eligible
+              ? null
+              : shadow.reason ?? (shadowRow ? "SHADOW_PROJECTION_INELIGIBLE" : "SHADOW_ROW_MISSING");
+
+    // Excluded only in the one case where a relief role's legacy projection
+    // is known-incompatible AND there is no eligible candidate to safely
+    // substitute -- every other case (including plain shadow-mode starters,
+    // whose ranking/output must stay byte-identical) remains eligible.
+    const publicRecommendationEligible = !(applyReliefSafety && !reliefSafetyEligible);
+
     const kLine = number(pitcher.kLine);
     const kAdjustment = kLine != null && finalProjectedKs != null
       ? round((finalProjectedKs - kLine) * 5, 0)
@@ -131,16 +178,20 @@ export function applyKProjectionMode(payload, shadow, mode = getKProjectionMode(
       projectedK9: finalProjectedK9,
       projectedKs: finalProjectedKs,
       kAdjustment,
-      projectionSource: useCandidate ? "workload-team" : "legacy",
+      projectionSource,
       projectionFallbackReason: fallbackReason,
+      publicRecommendationEligible,
       kProjectionMode: mode,
-      workloadRole: candidate?.role ?? null,
+      workloadRole: role,
       legacyProjectedIP,
       legacyProjectedK9,
       legacyProjectedKs,
       candidateProjectedIP: candidate?.projectedIP ?? null,
       candidateProjectedK9: candidate?.projectedK9 ?? null,
       candidateProjectedKs: candidate?.projectedKs ?? null,
+      effectiveProjectedIP: finalProjectedIP,
+      effectiveProjectedK9: finalProjectedK9,
+      effectiveProjectedKs: finalProjectedKs,
       workloadExpectedBF: candidate?.expectedBF ?? null,
       workloadOnlyProjectedKs: candidate?.workloadOnlyProjectedKs ?? null,
       teamAdjustedKRate: candidate?.teamAdjustedKRate ?? null,
@@ -154,7 +205,7 @@ export function applyKProjectionMode(payload, shadow, mode = getKProjectionMode(
   return {
     ...payload,
     kProjectionMode: mode,
-    kProjectionModelVersion: "workload-team-k-v2",
+    kProjectionModelVersion: "workload-team-k-v3",
     pitchers: updated,
   };
 }
