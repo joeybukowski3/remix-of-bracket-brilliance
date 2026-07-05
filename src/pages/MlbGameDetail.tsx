@@ -2302,6 +2302,23 @@ function americanToImplied(ml: string | null | undefined): number | null {
   return n < 0 ? (-n) / (-n + 100) : 100 / (n + 100);
 }
 
+// Top N K props by model-vs-line value edge, for the social "value" widget.
+// Excludes relievers/openers whose workload-role safety override has no
+// eligible bounded candidate (publicRecommendationEligible === false) --
+// see kPropBestBets.ts for the same rule applied to the main page's Top
+// Over/Under selection.
+export function selectTopKValuePlays(kRows: PitcherStrikeoutTeamRow[], max = 3) {
+  return kRows
+    .filter((r) => r.publicRecommendationEligible !== false)
+    .filter((r) => r.kLine != null && r.kLine > 0 && r.projectedKs != null)
+    .sort((a, b) => {
+      const edgeA = (a.projectedKs ?? 0) - (a.kLine ?? 0);
+      const edgeB = (b.projectedKs ?? 0) - (b.kLine ?? 0);
+      return edgeB - edgeA;
+    })
+    .slice(0, max);
+}
+
 function SocialTableValue({
   batters,
   kRows,
@@ -2335,15 +2352,8 @@ function SocialTableValue({
       };
     });
 
-  // Top 3 K by value edge — only include pitchers with kLine posted
-  const kValue = kRows
-    .filter((r) => r.kLine != null && r.kLine > 0 && r.projectedKs != null)
-    .sort((a, b) => {
-      const edgeA = (a.projectedKs ?? 0) - (a.kLine ?? 0);
-      const edgeB = (b.projectedKs ?? 0) - (b.kLine ?? 0);
-      return edgeB - edgeA;
-    })
-    .slice(0, 3)
+  // Top 3 K by value edge — only include pitchers with kLine posted.
+  const kValue = selectTopKValuePlays(kRows, 3)
     .map((r) => {
       const delta = (r.projectedKs ?? 0) - (r.kLine ?? 0);
       const implied = americanToImplied(r.kOddsOver);

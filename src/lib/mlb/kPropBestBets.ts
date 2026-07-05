@@ -61,6 +61,13 @@ export function buildKPropBestBets(rows: PitcherStrikeoutTeamRow[], maxPerSide =
   const unders: KBestBet[] = [];
 
   for (const row of rows) {
+    // A reliever/opener whose live projection required a workload-role
+    // safety override but had no eligible bounded candidate to substitute
+    // is excluded from public recommendations entirely -- surfacing a
+    // number here (even a correctly-labeled one) would still imply a
+    // confidence the model doesn't have. See generate-mlb-hr-props-with-
+    // k-shadow.mjs's applyKProjectionMode for where this flag is set.
+    if (row.publicRecommendationEligible === false) continue;
     const projectedKs = resolveProjectedKs(row);
     if (row.kLine == null || projectedKs == null || !Number.isFinite(row.kLine)) continue;
     const projectionEdge = Number((projectedKs - row.kLine).toFixed(1));

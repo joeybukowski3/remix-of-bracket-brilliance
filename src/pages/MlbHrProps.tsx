@@ -54,6 +54,17 @@ export type HrDashboardPitcher = {
   kOddsBook?: string | null;
   projectedIP?: number | null;
   projectedK9?: number | null;
+  projectedKs?: number | null;
+  workloadRole?: string | null;
+  projectionSource?: string | null;
+  projectionFallbackReason?: string | null;
+  publicRecommendationEligible?: boolean;
+  legacyProjectedIP?: number | null;
+  legacyProjectedKs?: number | null;
+  candidateProjectedIP?: number | null;
+  candidateProjectedKs?: number | null;
+  effectiveProjectedIP?: number | null;
+  effectiveProjectedKs?: number | null;
 };
 
 export type HrDashboardBatter = {
@@ -272,6 +283,16 @@ export type PitcherStrikeoutTeamRow = {
   kOddsOver?: string | null;
   kOddsUnder?: string | null;
   kOddsBook?: string | null;
+  workloadRole?: string | null;
+  projectionSource?: string | null;
+  projectionFallbackReason?: string | null;
+  publicRecommendationEligible?: boolean;
+  legacyProjectedIP?: number | null;
+  legacyProjectedKs?: number | null;
+  candidateProjectedIP?: number | null;
+  candidateProjectedKs?: number | null;
+  effectiveProjectedIP?: number | null;
+  effectiveProjectedKs?: number | null;
 };
 
 export const DEFAULT_TAB: TabKey = "batters";
@@ -356,6 +377,22 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
     kOddsBook: normalizeText(entry.kOddsBook) || null,
     projectedIP: normalizeNumber(entry.projectedIP),
     projectedK9: normalizeNumber(entry.projectedK9),
+    projectedKs: normalizeNumber(entry.projectedKs),
+    workloadRole: normalizeText(entry.workloadRole) || null,
+    projectionSource: normalizeText(entry.projectionSource) || null,
+    projectionFallbackReason: normalizeText(entry.projectionFallbackReason) || null,
+    // Missing/older cached payloads predate this field -- treat as eligible
+    // (matches the pre-existing, unfiltered behavior) rather than silently
+    // hiding every pitcher the moment this field is absent.
+    publicRecommendationEligible: isRecord(entry) && "publicRecommendationEligible" in entry
+      ? entry.publicRecommendationEligible !== false
+      : true,
+    legacyProjectedIP: normalizeNumber(entry.legacyProjectedIP),
+    legacyProjectedKs: normalizeNumber(entry.legacyProjectedKs),
+    candidateProjectedIP: normalizeNumber(entry.candidateProjectedIP),
+    candidateProjectedKs: normalizeNumber(entry.candidateProjectedKs),
+    effectiveProjectedIP: normalizeNumber(entry.effectiveProjectedIP),
+    effectiveProjectedKs: normalizeNumber(entry.effectiveProjectedKs),
   };
   if (!p.pitcher || !p.team || !p.opponent || p.hrVs == null || p.hitsVs == null || p.kVs == null) return null;
   return p as HrDashboardPitcher;
@@ -1119,6 +1156,17 @@ export function buildPitcherStrikeoutRows(
         kOddsBook: pitcher.kOddsBook ?? null,
         projectedIP: pitcher.projectedIP ?? null,
         projectedK9: pitcher.projectedK9 ?? null,
+        projectedKs: pitcher.projectedKs ?? null,
+        workloadRole: pitcher.workloadRole ?? null,
+        projectionSource: pitcher.projectionSource ?? null,
+        projectionFallbackReason: pitcher.projectionFallbackReason ?? null,
+        publicRecommendationEligible: pitcher.publicRecommendationEligible ?? true,
+        legacyProjectedIP: pitcher.legacyProjectedIP ?? null,
+        legacyProjectedKs: pitcher.legacyProjectedKs ?? null,
+        candidateProjectedIP: pitcher.candidateProjectedIP ?? null,
+        candidateProjectedKs: pitcher.candidateProjectedKs ?? null,
+        effectiveProjectedIP: pitcher.effectiveProjectedIP ?? null,
+        effectiveProjectedKs: pitcher.effectiveProjectedKs ?? null,
       };
     })
     .sort((left, right) =>
