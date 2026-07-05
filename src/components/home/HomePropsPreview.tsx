@@ -183,7 +183,7 @@ function KPreview({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
       <div style={{ background: "#0a1628", borderBottom: "3px solid #22c55e", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontWeight: 900, fontSize: 15, color: "#fff", letterSpacing: "-.3px" }}>🎯 MLB K PROPS</div>
-          <div style={{ color: "#86efac", fontSize: 10, marginTop: 2 }}>Top 5 Strikeout Edges · Today's Slate</div>
+          <div style={{ color: "#86efac", fontSize: 10, marginTop: 2 }}>Top 5 Strikeout Matchups · Today's Slate</div>
         </div>
         <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 10, color: "#ffffff" }}>joeknowsball.com</div>
       </div>
