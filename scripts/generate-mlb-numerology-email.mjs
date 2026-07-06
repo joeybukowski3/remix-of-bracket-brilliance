@@ -39,7 +39,7 @@ const sendGateEnabled = process.env.NUMEROLOGY_EMAIL_LIVE === "true";
 async function main() {
   const numerologyPayload = loadJsonSafe(NUMEROLOGY_DAILY_PATH, null);
   if (!numerologyPayload) {
-    throw new Error(`Missing live numerology board payload at ${NUMEROLOGY_DAILY_PATH}. Run npm run mlb:numerology first.`);
+    throw new Error(`Missing live numerology board payload at ${NUMEROLOGY_DAILY_PATH}. Ensure public/data/mlb/numerology-daily.json exists or run the MLB numerology data generation workflow first.`);
   }
   const hrPayload = loadJsonSafe(HR_RAW_PATH, null);
 
