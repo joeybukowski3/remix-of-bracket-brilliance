@@ -16,6 +16,7 @@ import {
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb", "numerology");
+const NUMEROLOGY_DAILY_PATH = path.join(ROOT, "public", "data", "mlb", "numerology-daily.json");
 const HR_RAW_PATH = path.join(ROOT, "public", "data", "mlb", "hr-props-raw.json");
 const DAILY_CARD_PATH = path.join(DATA_DIR, "daily-card.json");
 const ARCHIVE_DIR = path.join(DATA_DIR, "archive");
@@ -36,12 +37,13 @@ const shouldDraft = process.argv.includes("--draft") || process.argv.includes("-
 const sendGateEnabled = process.env.NUMEROLOGY_EMAIL_LIVE === "true";
 
 async function main() {
-  const rawPayload = loadJsonSafe(HR_RAW_PATH, null);
-  if (!rawPayload) {
-    throw new Error(`Missing HR props source payload at ${HR_RAW_PATH}. Run npm run mlb:hr-props first.`);
+  const numerologyPayload = loadJsonSafe(NUMEROLOGY_DAILY_PATH, null);
+  if (!numerologyPayload) {
+    throw new Error(`Missing live numerology board payload at ${NUMEROLOGY_DAILY_PATH}. Ensure public/data/mlb/numerology-daily.json exists or run the MLB numerology data generation workflow first.`);
   }
+  const hrPayload = loadJsonSafe(HR_RAW_PATH, null);
 
-  const card = buildDailyNumerologyCard(rawPayload, { date: requestedDate });
+  const card = buildDailyNumerologyCard(numerologyPayload, { date: requestedDate, hrPayload });
   const archivePath = path.join(ARCHIVE_DIR, `${card.date}.json`);
   writeJson(DAILY_CARD_PATH, card);
   writeJson(archivePath, card);

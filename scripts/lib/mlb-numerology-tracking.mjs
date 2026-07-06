@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 export const NUMEROLOGY_SCORE_THRESHOLD = 50;
-export const NUMEROLOGY_MODEL_VERSION = "mlb-numerology-v0.1";
+export const NUMEROLOGY_MODEL_VERSION = "mlb-numerology-live-board-v0.2";
+export const MLB_NUMEROLOGY_LIVE_URL = "https://www.joeknowsball.com/mlb/numerology";
 
 export function getTodayEt(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -40,6 +41,7 @@ export function writeJson(filePath, value) {
 }
 
 export function toFiniteNumber(value, fallback = null) {
+  if (value == null || value === "") return fallback;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
@@ -205,19 +207,235 @@ export function buildPlayFromRow(row, { date, isTopPlay = false } = {}) {
   };
 }
 
+function qualifiesDefaultActivity(row) {
+  const activity = row?.recentActivity;
+  if (!activity) return true;
+  if (typeof activity.qualifiesDefault === "boolean") return activity.qualifiesDefault;
+  if (activity.atBatsPrevious2 != null) return toFiniteNumber(activity.atBatsPrevious2, 0) >= 3;
+  if (activity.atBats != null) return toFiniteNumber(activity.atBats, 0) >= 3;
+  return true;
+}
+
+function getLiveBoardRows(payload) {
+  const exact = Array.isArray(payload?.exactNumberMatches) ? payload.exactNumberMatches : [];
+  const root = Array.isArray(payload?.rootNumberMatches) ? payload.rootNumberMatches : [];
+  if (exact.length || root.length) {
+    return [
+      ...exact.map((row) => ({ row, matchType: "Exact Match", matchPriority: 0 })),
+      ...root.map((row) => ({ row, matchType: "Root Match", matchPriority: 1 })),
+    ];
+  }
+
+  const featured = Array.isArray(payload?.featuredPlays) ? payload.featuredPlays : [];
+  const watchlist = Array.isArray(payload?.watchlist) ? payload.watchlist : [];
+  return [
+    ...featured.map((row) => ({ row, matchType: "Featured", matchPriority: 2 })),
+    ...watchlist.map((row) => ({ row, matchType: "Watchlist", matchPriority: 3 })),
+  ];
+}
+
+function normalizeMatchKey(value) {
+  return normalizeName(value).replace(/\s+/g, "");
+}
+
+function buildHrEnrichmentIndex(hrPayload) {
+  const batters = Array.isArray(hrPayload?.batters) ? hrPayload.batters : [];
+  const idTeam = new Map();
+  const nameTeam = new Map();
+  const nameOnly = new Map();
+
+  for (const row of batters) {
+    const team = normalizeTeamCode(row?.team);
+    const playerId = normalizeText(row?.playerId);
+    const name = normalizeMatchKey(row?.player);
+    if (playerId && team) idTeam.set(`${playerId}|${team}`, row);
+    if (name && team) nameTeam.set(`${name}|${team}`, row);
+    if (name && !nameOnly.has(name)) nameOnly.set(name, row);
+  }
+
+  return {
+    available: Boolean(hrPayload),
+    sourceDate: normalizeText(hrPayload?.date),
+    generatedAt: normalizeText(hrPayload?.generatedAt),
+    modelVersion: normalizeText(hrPayload?.modelVersion),
+    batterCount: batters.length,
+    find(row) {
+      if (!hrPayload) return { status: "missing-hr-source", row: null };
+      const team = normalizeTeamCode(row?.team);
+      const playerId = normalizeText(row?.playerId ?? row?.personId);
+      const name = normalizeMatchKey(row?.playerName ?? row?.player);
+      const match = (playerId && team ? idTeam.get(`${playerId}|${team}`) : null)
+        ?? (name && team ? nameTeam.get(`${name}|${team}`) : null)
+        ?? (name ? nameOnly.get(name) : null)
+        ?? null;
+      return { status: match ? "enriched" : "no-hr-match", row: match };
+    },
+  };
+}
+
+function extractLiveSignals(row) {
+  const signals = Array.isArray(row?.scoreBreakdown?.signals)
+    ? row.scoreBreakdown.signals
+    : Array.isArray(row?.positiveSignals)
+      ? row.positiveSignals
+      : [];
+  if (signals.length) {
+    return signals
+      .filter((signal) => toFiniteNumber(signal?.points, 0) > 0)
+      .map((signal) => ({
+        label: normalizeText(signal.label || signal.field),
+        matched: true,
+        points: toFiniteNumber(signal.points, 0),
+        weight: toFiniteNumber(signal.rawPoints, toFiniteNumber(signal.points, 0)),
+        detail: normalizeText(signal.description),
+        field: normalizeText(signal.field),
+        type: normalizeText(signal.type),
+      }));
+  }
+  if (Array.isArray(row?.matches)) {
+    return row.matches.map((match) => ({
+      label: normalizeText(match.label || match.field),
+      matched: true,
+      points: null,
+      weight: null,
+      detail: normalizeText(match.field),
+      field: normalizeText(match.field),
+      type: "live-board-match",
+    }));
+  }
+  if (row?.primarySignal) {
+    return [{
+      label: normalizeText(row.primarySignal),
+      matched: true,
+      points: null,
+      weight: null,
+      detail: "Primary live-board signal",
+      field: "primarySignal",
+      type: "live-board-match",
+    }];
+  }
+  return [];
+}
+
+function buildHrContext(hrRow, status) {
+  if (!hrRow) return { enrichmentStatus: status };
+  return {
+    enrichmentStatus: status,
+    gameId: toFiniteNumber(hrRow.gameId, null),
+    gameKey: normalizeText(hrRow.gameKey),
+    opposingPitcher: normalizeText(hrRow.opposingPitcher),
+    opposingPitcherId: toFiniteNumber(hrRow.opposingPitcherId, null),
+    pitcherHand: normalizeText(hrRow.pitcherHand),
+    ballpark: normalizeText(hrRow.ballpark),
+    hrScore: roundNumber(toFiniteNumber(hrRow.hrScore, null), 1),
+    hrScoreRank: toFiniteNumber(hrRow.hrScoreRank ?? hrRow.qualityRank, null),
+    hrOddsYes: normalizeText(hrRow.hrOddsYes),
+    hrOddsBook: normalizeText(hrRow.hrOddsBook),
+    marketImpliedProbability: toFiniteNumber(hrRow.marketImpliedProbability ?? hrRow.hrImplied, null),
+    barrelRate: roundNumber(toFiniteNumber(hrRow.barrelRate, null), 1),
+    hardHitRate: roundNumber(toFiniteNumber(hrRow.hardHitRate, null), 1),
+    iso: roundNumber(toFiniteNumber(hrRow.iso, null), 3),
+    last7HR: toFiniteNumber(hrRow.last7HR, null),
+    last30HR: toFiniteNumber(hrRow.last30HR, null),
+    opposingPitcherHrVs: roundNumber(toFiniteNumber(hrRow.opposingPitcherHrVs, null), 1),
+    explanation: normalizeText(hrRow.explanation),
+    angleTags: Array.isArray(hrRow.angleTags) ? hrRow.angleTags.map(normalizeText).filter(Boolean) : [],
+  };
+}
+
+function buildPlayFromLiveBoard(row, { date, matchType, matchPriority, hrIndex }) {
+  const { status, row: hrRow } = hrIndex.find(row);
+  const hrContext = buildHrContext(hrRow, status);
+  const numerologyScore = toFiniteNumber(row?.numerologyScore, 0);
+  const baseballScore = toFiniteNumber(row?.baseballScore ?? row?.modelRating, null);
+  const player = normalizeText(row?.playerName ?? row?.player);
+  const team = normalizeTeamCode(row?.team);
+  const opponent = normalizeTeamCode(row?.opponent);
+
+  return {
+    date,
+    player,
+    playerId: toFiniteNumber(row?.playerId ?? row?.personId, null),
+    personId: toFiniteNumber(row?.personId ?? row?.playerId, null),
+    team,
+    opponent,
+    gameId: hrContext.gameId ?? toFiniteNumber(row?.gameId, null),
+    gameKey: hrContext.gameKey || normalizeText(row?.gameKey),
+    matchup: team && opponent ? `${team} vs ${opponent}` : "",
+    matchType,
+    matchPriority,
+    opposingPitcher: hrContext.opposingPitcher || normalizeText(row?.opposingPitcher),
+    opposingPitcherId: hrContext.opposingPitcherId ?? toFiniteNumber(row?.opposingPitcherId, null),
+    pitcherHand: hrContext.pitcherHand || normalizeText(row?.pitcherHand),
+    ballpark: hrContext.ballpark || normalizeText(row?.ballpark),
+    lineupStatus: normalizeText(row?.lineupStatus),
+    battingOrder: toFiniteNumber(row?.battingOrder, null),
+    jerseyNumber: toFiniteNumber(row?.jerseyNumber, null),
+    recommendedMarket: normalizeText(row?.recommendedMarket),
+    numerologyScore,
+    dailyNumber: digitalRoot(date),
+    baseballScore,
+    modelRating: baseballScore,
+    finalScore: toFiniteNumber(row?.finalScore, numerologyScore),
+    marketScore: roundNumber(toFiniteNumber(row?.marketScore ?? row?.hrScore, null), 1),
+    hrScore: hrContext.hrScore ?? roundNumber(toFiniteNumber(row?.hrScore, null), 1),
+    hrScoreRank: hrContext.hrScoreRank,
+    hrOddsYes: hrContext.hrOddsYes,
+    hrOddsBook: hrContext.hrOddsBook,
+    marketImpliedProbability: hrContext.marketImpliedProbability,
+    barrelRate: hrContext.barrelRate,
+    hardHitRate: hrContext.hardHitRate,
+    iso: hrContext.iso,
+    last7HR: hrContext.last7HR,
+    last30HR: hrContext.last30HR,
+    opposingPitcherHrVs: hrContext.opposingPitcherHrVs,
+    explanation: hrContext.explanation || normalizeText(row?.summary || row?.marketExplanation),
+    angleTags: hrContext.angleTags ?? [],
+    hrEnrichmentStatus: hrContext.enrichmentStatus,
+    recentActivity: row?.recentActivity ?? null,
+    matches: Array.isArray(row?.matches) ? row.matches : [],
+    scoreBreakdown: row?.scoreBreakdown ?? null,
+    primarySignal: normalizeText(row?.primarySignal ?? row?.primaryPatternLabel),
+    numerologySignals: extractLiveSignals(row),
+    allNumerologySignals: extractLiveSignals(row),
+    isTopPlay: false,
+    qualifiesOver50: numerologyScore > NUMEROLOGY_SCORE_THRESHOLD,
+  };
+}
+
+function livePlayDedupKey(play) {
+  if (play.playerId && play.team) return `id|${play.playerId}|${play.team}`;
+  return `name|${normalizeMatchKey(play.player)}|${play.team}`;
+}
+
+function compareLivePlays(left, right) {
+  if (right.numerologyScore !== left.numerologyScore) return right.numerologyScore - left.numerologyScore;
+  if ((right.modelRating ?? 0) !== (left.modelRating ?? 0)) return (right.modelRating ?? 0) - (left.modelRating ?? 0);
+  if (left.matchPriority !== right.matchPriority) return left.matchPriority - right.matchPriority;
+  if ((right.hrScore ?? 0) !== (left.hrScore ?? 0)) return (right.hrScore ?? 0) - (left.hrScore ?? 0);
+  return left.player.localeCompare(right.player);
+}
+
 export function buildDailyNumerologyCard(rawPayload, options = {}) {
   const date = normalizeText(options.date) || normalizeText(rawPayload?.date) || getTodayEt();
   const threshold = toFiniteNumber(options.threshold, NUMEROLOGY_SCORE_THRESHOLD);
-  const batters = Array.isArray(rawPayload?.batters) ? rawPayload.batters : [];
   const generatedAt = options.generatedAt || new Date().toISOString();
+  const hrIndex = buildHrEnrichmentIndex(options.hrPayload ?? null);
+  const exactCount = Array.isArray(rawPayload?.exactNumberMatches) ? rawPayload.exactNumberMatches.length : 0;
+  const rootCount = Array.isArray(rawPayload?.rootNumberMatches) ? rawPayload.rootNumberMatches.length : 0;
+  const sourceRows = getLiveBoardRows(rawPayload);
+  const deduped = new Map();
 
-  const plays = batters
-    .map((row) => buildPlayFromRow(row, { date }))
-    .filter((play) => play.player && play.team && play.opponent)
-    .sort((left, right) => {
-      if (right.numerologyScore !== left.numerologyScore) return right.numerologyScore - left.numerologyScore;
-      return (right.hrScore ?? 0) - (left.hrScore ?? 0);
-    });
+  for (const { row, matchType, matchPriority } of sourceRows) {
+    if (!qualifiesDefaultActivity(row)) continue;
+    const play = buildPlayFromLiveBoard(row, { date, matchType, matchPriority, hrIndex });
+    if (!play.player || !play.team || !play.opponent) continue;
+    const key = livePlayDedupKey(play);
+    const current = deduped.get(key);
+    if (!current || compareLivePlays(play, current) < 0) deduped.set(key, play);
+  }
+
+  const plays = Array.from(deduped.values()).sort(compareLivePlays);
 
   const topPlayKey = plays[0] ? playKey(plays[0]) : null;
   const allQualifiedPlaysOver50 = plays
@@ -230,14 +448,31 @@ export function buildDailyNumerologyCard(rawPayload, options = {}) {
     date,
     generatedAt,
     modelVersion: NUMEROLOGY_MODEL_VERSION,
+    methodologyVersion: normalizeText(rawPayload?.methodologyVersion) || NUMEROLOGY_MODEL_VERSION,
+    livePageUrl: MLB_NUMEROLOGY_LIVE_URL,
     source: {
-      hrPropsDate: normalizeText(rawPayload?.date),
-      hrPropsGeneratedAt: normalizeText(rawPayload?.generatedAt),
-      hrPropsModelVersion: normalizeText(rawPayload?.modelVersion),
-      batterCount: batters.length,
+      primary: "numerology-daily.json",
+      sourceDate: normalizeText(rawPayload?.date),
+      sourceGeneratedAt: normalizeText(rawPayload?.generatedAt),
+      methodologyVersion: normalizeText(rawPayload?.methodologyVersion),
+      exactCount,
+      rootCount,
+      boardCount: sourceRows.length,
+      filteredBoardCount: plays.length,
+      hrEnrichment: {
+        status: hrIndex.available ? "loaded" : "missing-hr-source",
+        sourceDate: hrIndex.sourceDate,
+        generatedAt: hrIndex.generatedAt,
+        modelVersion: hrIndex.modelVersion,
+        batterCount: hrIndex.batterCount,
+        enriched: plays.filter((play) => play.hrEnrichmentStatus === "enriched").length,
+        noHrMatch: plays.filter((play) => play.hrEnrichmentStatus === "no-hr-match").length,
+        missingHrSource: plays.filter((play) => play.hrEnrichmentStatus === "missing-hr-source").length,
+      },
     },
     scoreThreshold: threshold,
-    dailyNumber: digitalRoot(date),
+    dailyNumber: rawPayload?.dailyProfile?.universalDayRoot ?? digitalRoot(date),
+    dailyProfile: rawPayload?.dailyProfile ?? null,
     topPlay,
     allQualifiedPlaysOver50,
     plays,
@@ -246,13 +481,17 @@ export function buildDailyNumerologyCard(rawPayload, options = {}) {
 }
 
 function buildSlateContext(rawPayload, plays) {
-  const games = Array.isArray(rawPayload?.games) ? rawPayload.games : [];
+  const scheduledTeams = Array.isArray(rawPayload?.activityFilter?.scheduledTeams) ? rawPayload.activityFilter.scheduledTeams : [];
   const qualifiedCount = plays.filter((play) => play.qualifiesOver50).length;
   return {
-    games: games.length,
+    games: scheduledTeams.length ? Math.round(scheduledTeams.length / 2) : null,
+    scheduledTeams,
     battersRanked: plays.length,
     qualifiedOver50: qualifiedCount,
     topParks: Array.from(new Set(plays.slice(0, 8).map((play) => play.ballpark).filter(Boolean))).slice(0, 3),
+    dataStatus: normalizeText(rawPayload?.dataStatus),
+    generationMode: normalizeText(rawPayload?.generationMode),
+    updatePhase: normalizeText(rawPayload?.updatePhase),
   };
 }
 
@@ -295,19 +534,24 @@ export function buildTrackingRecordsFromCard(card) {
       opponent: play.opponent,
       gameId: play.gameId,
       gameKey: play.gameKey,
+      matchType: play.matchType,
       battingOrder: play.battingOrder,
+      lineupStatus: play.lineupStatus,
+      jerseyNumber: play.jerseyNumber,
       numerologyScore: play.numerologyScore,
       dailyNumber: play.dailyNumber,
+      baseballScore: play.baseballScore,
       hrScore: play.hrScore,
       hrScoreRank: play.hrScoreRank,
       hrOddsYes: play.hrOddsYes,
       hrOddsBook: play.hrOddsBook,
+      hrEnrichmentStatus: play.hrEnrichmentStatus,
       numerologySignals: play.numerologySignals,
-      resultStatus: "pending",
+      resultStatus: play.gameId ? "pending" : "missing-data",
       hitHomeRun: null,
       stats: null,
       finalizedAt: null,
-      source: "pending",
+      source: play.gameId ? "pending" : "missing-game-id",
     }));
 }
 
@@ -422,27 +666,35 @@ export function applyStatLineToRecord(record, statLine, { status = "final", sour
 export function renderEmailText(card, summary) {
   const lines = [];
   lines.push(`MLB Numerology Plays — ${card.date}`);
-  lines.push(`Daily number: ${card.dailyNumber} | Threshold: >${card.scoreThreshold}`);
+  lines.push(`Daily number: ${card.dailyProfile?.universalDayCompound ?? "?"}/${card.dailyNumber} | Threshold: >${card.scoreThreshold}`);
+  lines.push(`View the full MLB Numerology board: ${card.livePageUrl ?? MLB_NUMEROLOGY_LIVE_URL}`);
   lines.push("");
   if (card.topPlay) {
     lines.push("TOP PLAY");
     lines.push(formatPlayLine(card.topPlay));
+    lines.push(`Match type: ${card.topPlay.matchType || "Live board"}`);
+    lines.push(`Lineup: ${formatLineup(card.topPlay)} | Activity: ${formatActivity(card.topPlay)}`);
     lines.push(`Signals: ${formatSignals(card.topPlay)}`);
-    if (card.topPlay.explanation) lines.push(`HR note: ${card.topPlay.explanation}`);
+    lines.push(`HR context: ${formatHrContext(card.topPlay)}`);
+    if (card.topPlay.explanation) lines.push(`Note: ${card.topPlay.explanation}`);
     lines.push("");
   }
   lines.push(`ALL PLAYS OVER ${card.scoreThreshold}`);
   if (!card.allQualifiedPlaysOver50.length) {
     lines.push("No plays cleared the threshold today.");
   } else {
-    for (const play of card.allQualifiedPlaysOver50) lines.push(formatPlayLine(play));
+    for (const play of card.allQualifiedPlaysOver50) {
+      lines.push(formatPlayLine(play));
+      lines.push(`  ${play.matchType || "Live board"} | ${formatLineup(play)} | ${formatActivity(play)} | ${formatSignals(play)} | ${formatHrContext(play)}`);
+    }
   }
   lines.push("");
   lines.push("TRACKING SNAPSHOT");
   lines.push(`Top Play: ${formatBucket(summary?.topPlay)}`);
   lines.push(`All >50 Plays: ${formatBucket(summary?.over50)}`);
   lines.push("");
-  lines.push("Experimental numerology/model signals only. These are not guaranteed, validated betting edges, or locks.");
+  lines.push(`View the full MLB Numerology board: ${card.livePageUrl ?? MLB_NUMEROLOGY_LIVE_URL}`);
+  lines.push("Experimental numerology/model signals only. Not guaranteed. Not validated betting edges. Not locks.");
   return lines.join("\n");
 }
 
@@ -452,8 +704,10 @@ export function renderEmailHtml(card, summary) {
       <td>${escapeHtml(play.player)}</td>
       <td>${escapeHtml(`${play.team} vs ${play.opponent}`)}</td>
       <td>${play.numerologyScore}</td>
+      <td>${escapeHtml(play.matchType || "Live board")}</td>
+      <td>${escapeHtml(formatLineup(play))}</td>
       <td>${escapeHtml(formatSignals(play))}</td>
-      <td>${escapeHtml(play.hrOddsYes || "—")}</td>
+      <td>${escapeHtml(formatHrContext(play))}</td>
     </tr>`).join("");
 
   return `<!doctype html>
@@ -461,17 +715,20 @@ export function renderEmailHtml(card, summary) {
   <head><meta charset="utf-8"><title>MLB Numerology Plays — ${escapeHtml(card.date)}</title></head>
   <body style="font-family:Arial,sans-serif;line-height:1.45;color:#111827;">
     <h1>MLB Numerology Plays — ${escapeHtml(card.date)}</h1>
-    <p><strong>Daily number:</strong> ${card.dailyNumber} · <strong>Threshold:</strong> &gt;${card.scoreThreshold}</p>
+    <p><strong>Daily number:</strong> ${escapeHtml(card.dailyProfile?.universalDayCompound ?? "?")}/${card.dailyNumber} · <strong>Threshold:</strong> &gt;${card.scoreThreshold}</p>
+    <p><a href="${MLB_NUMEROLOGY_LIVE_URL}">View the full MLB Numerology board</a></p>
     ${card.topPlay ? `
       <h2>Top Play</h2>
-      <p><strong>${escapeHtml(card.topPlay.player)}</strong> — ${escapeHtml(card.topPlay.team)} vs ${escapeHtml(card.topPlay.opponent)} · Numerology ${card.topPlay.numerologyScore} · HR score ${card.topPlay.hrScore ?? "—"}</p>
+      <p><strong>${escapeHtml(card.topPlay.player)}</strong> — ${escapeHtml(card.topPlay.team)} vs ${escapeHtml(card.topPlay.opponent)} · ${escapeHtml(card.topPlay.matchType || "Live board")} · Numerology ${card.topPlay.numerologyScore} · Model ${card.topPlay.modelRating ?? "—"}</p>
+      <p><strong>Lineup:</strong> ${escapeHtml(formatLineup(card.topPlay))} · <strong>Activity:</strong> ${escapeHtml(formatActivity(card.topPlay))}</p>
       <p><strong>Signals:</strong> ${escapeHtml(formatSignals(card.topPlay))}</p>
-      <p>${escapeHtml(card.topPlay.explanation || "No HR note available.")}</p>
+      <p><strong>HR context:</strong> ${escapeHtml(formatHrContext(card.topPlay))}</p>
+      <p>${escapeHtml(card.topPlay.explanation || "No note available.")}</p>
     ` : "<p>No top play available.</p>"}
     <h2>All Plays Over ${card.scoreThreshold}</h2>
     ${card.allQualifiedPlaysOver50.length ? `
       <table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;">
-        <thead><tr><th>Player</th><th>Matchup</th><th>Score</th><th>Signals</th><th>HR odds</th></tr></thead>
+        <thead><tr><th>Player</th><th>Matchup</th><th>Score</th><th>Match</th><th>Lineup</th><th>Signals</th><th>HR context</th></tr></thead>
         <tbody>${playRows}</tbody>
       </table>
     ` : `<p>No plays cleared the threshold today.</p>`}
@@ -480,25 +737,59 @@ export function renderEmailHtml(card, summary) {
       <li><strong>Top Play:</strong> ${escapeHtml(formatBucket(summary?.topPlay))}</li>
       <li><strong>All &gt;50 Plays:</strong> ${escapeHtml(formatBucket(summary?.over50))}</li>
     </ul>
-    <p><em>Experimental numerology/model signals only. These are not guaranteed, validated betting edges, or locks.</em></p>
+    <p><a href="${MLB_NUMEROLOGY_LIVE_URL}">View the full MLB Numerology board</a></p>
+    <p><em>Experimental numerology/model signals only. Not guaranteed. Not validated betting edges. Not locks.</em></p>
   </body>
 </html>`;
 }
 
 function formatPlayLine(play) {
-  return `${play.player} (${play.team} vs ${play.opponent}) — Numerology ${play.numerologyScore}, HR score ${play.hrScore ?? "—"}, odds ${play.hrOddsYes || "—"}`;
+  return `${play.player} (${play.team} vs ${play.opponent}) — Numerology ${play.numerologyScore}, Model ${play.modelRating ?? play.baseballScore ?? "—"}, HR score ${play.hrScore ?? "—"}, odds ${play.hrOddsYes || "—"}`;
 }
 
 function formatSignals(play) {
   const signals = Array.isArray(play?.numerologySignals) ? play.numerologySignals : [];
   if (!signals.length) return "No matched numerology signals listed.";
-  return signals.slice(0, 4).map((signal) => `${signal.label} (+${signal.points})`).join("; ");
+  return signals.slice(0, 4).map((signal) => signal.points == null ? signal.label : `${signal.label} (+${signal.points})`).join("; ");
 }
 
 function formatBucket(bucket) {
   if (!bucket) return "no tracking data yet";
   const rate = bucket.hrHitRate == null ? "pending" : `${Math.round(bucket.hrHitRate * 100)}% HR hit rate`;
   return `${bucket.finalized}/${bucket.totalRecords} finalized, ${bucket.hrHits} HR hits, ${rate}, avg TB ${bucket.averageTotalBases ?? "—"}`;
+}
+
+function formatLineup(play) {
+  const pieces = [];
+  if (play.battingOrder != null) pieces.push(`batting ${play.battingOrder}`);
+  if (play.lineupStatus) pieces.push(play.lineupStatus);
+  return pieces.length ? pieces.join(", ") : "lineup unavailable";
+}
+
+function formatActivity(play) {
+  const activity = play?.recentActivity;
+  if (!activity) return "activity unavailable";
+  const previous2 = activity.atBatsPrevious2 ?? activity.atBats;
+  const previous5 = activity.atBatsPrevious5;
+  const parts = [];
+  if (previous2 != null) parts.push(`${previous2} AB previous 2 games`);
+  if (previous5 != null) parts.push(`${previous5} AB previous 5 games`);
+  return parts.length ? parts.join(", ") : "activity checked";
+}
+
+function formatHrContext(play) {
+  if (play.hrEnrichmentStatus === "missing-hr-source") return "HR props source missing; numerology ranking unchanged.";
+  if (play.hrEnrichmentStatus === "no-hr-match") return "No HR props match; numerology ranking unchanged.";
+  const parts = [];
+  if (play.hrScore != null) parts.push(`HR score ${play.hrScore}`);
+  if (play.hrOddsYes) parts.push(`odds ${play.hrOddsYes}${play.hrOddsBook ? ` at ${play.hrOddsBook}` : ""}`);
+  if (play.marketImpliedProbability != null) parts.push(`market implied probability ${roundNumber(play.marketImpliedProbability * 100, 1)}%`);
+  if (play.barrelRate != null) parts.push(`barrel ${play.barrelRate}%`);
+  if (play.hardHitRate != null) parts.push(`hard-hit ${play.hardHitRate}%`);
+  if (play.iso != null) parts.push(`ISO ${play.iso}`);
+  if (play.last7HR != null || play.last30HR != null) parts.push(`HR form L7/L30 ${play.last7HR ?? "—"}/${play.last30HR ?? "—"}`);
+  if (play.opposingPitcherHrVs != null) parts.push(`pitcher HR vulnerability ${play.opposingPitcherHrVs}`);
+  return parts.length ? parts.join("; ") : "HR context unavailable; numerology ranking unchanged.";
 }
 
 function escapeHtml(value) {
