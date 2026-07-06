@@ -33,7 +33,11 @@
     "mlb:pitcher-regression": "node scripts/generate-mlb-pitcher-regression.mjs",
     "mlb:bullpen-stats": "node scripts/build-mlb-team-bullpen-stats.mjs",
     "mlb:hand-splits": "node scripts/build-mlb-batter-hand-splits.mjs",
-    "mlb:phase2-comparison": "node scripts/build-mlb-phase2-shadow-comparison.mjs"
+    "mlb:phase2-comparison": "node scripts/build-mlb-phase2-shadow-comparison.mjs",
+    "mlb:numerology:email:preview": "node scripts/generate-mlb-numerology-email.mjs --preview",
+    "mlb:numerology:email:draft": "node scripts/generate-mlb-numerology-email.mjs --draft",
+    "mlb:numerology:email:send": "node scripts/generate-mlb-numerology-email.mjs --send",
+    "mlb:numerology:grade": "node scripts/grade-mlb-numerology-plays.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
