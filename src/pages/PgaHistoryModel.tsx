@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import PgaFreshnessStatusPanel, { type PgaFreshnessStatusPanelItem } from "@/components/pga/PgaFreshnessStatusPanel";
 import PgaHistoryModelTable from "@/components/pga/PgaHistoryModelTable";
 import {
   findCourseWeightEntry,
@@ -115,6 +116,25 @@ export default function PgaHistoryModel() {
     () => assessPgaFreshness(playerStatsMeta, { payloadType: "player-stats-meta" }),
     [playerStatsMeta],
   );
+  const freshnessItems = useMemo(() => {
+    const items: PgaFreshnessStatusPanelItem[] = [];
+    if (fieldLoaded) {
+      items.push({
+        label: "Current field",
+        freshness: fieldFreshness,
+        impactText: "Current field filtering may be disabled or unreliable.",
+        actualLabel: "Current field",
+      });
+    }
+    if (playerStatsMetaLoaded) {
+      items.push({
+        label: "Player stats metadata",
+        freshness: playerStatsFreshness,
+        impactText: "Displayed model inputs may be stale or unverified.",
+      });
+    }
+    return items;
+  }, [fieldLoaded, fieldFreshness, playerStatsMetaLoaded, playerStatsFreshness]);
 
   const currentField = isCurrentFieldPayload(field) ? field : null;
 
@@ -231,12 +251,11 @@ export default function PgaHistoryModel() {
         <aside className="hidden w-60 shrink-0 lg:block"><div className="sticky top-4 overflow-hidden rounded-xl border bg-white shadow-sm"><div className="bg-slate-900 px-4 py-3 text-sm font-black text-white">2026 PGA Tour</div><div className="max-h-[72vh] divide-y overflow-y-auto">{schedule.filter((entry) => entry.startDate >= new Date().toISOString().slice(0, 10)).slice(0, 12).map((entry) => <div key={entry.id} className={`px-3 py-2 ${entry.id === event?.id ? "bg-emerald-50" : ""}`}><div className="text-xs font-bold">{entry.shortName || entry.name}</div><div className="text-[10px] text-slate-400">{entry.dateLabel}</div>{entry.dataFile && <Link to={`/pga/${entry.slug}/model`} className="mt-1 inline-block text-[10px] font-bold text-emerald-700">View model →</Link>}</div>)}</div></div></aside>
         <main className="min-w-0 flex-1">
           <div className="mb-4 flex flex-wrap gap-2"><Link to="/pga/best-bets" className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">Best Bets</Link><Link to="/pga/dfs" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">DFS Upload</Link></div>
-          <PgaModelFreshnessStatus
-            eventName={eventName}
-            fieldLoaded={fieldLoaded}
-            fieldFreshness={fieldFreshness}
-            playerStatsMetaLoaded={playerStatsMetaLoaded}
-            playerStatsFreshness={playerStatsFreshness}
+          <PgaFreshnessStatusPanel
+            items={freshnessItems}
+            cleanTitle="PGA data status:"
+            warningTitle="PGA data freshness warning"
+            cleanMessage={`Field and player-stat metadata are within freshness checks for ${eventName}.`}
           />
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border bg-white p-3 shadow-sm">
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search player..." className="min-w-52 flex-1 rounded-lg border px-3 py-2 text-sm" />
@@ -270,71 +289,6 @@ export default function PgaHistoryModel() {
       </div>
     </SiteShell>
   );
-}
-
-function PgaModelFreshnessStatus({
-  eventName,
-  fieldLoaded,
-  fieldFreshness,
-  playerStatsMetaLoaded,
-  playerStatsFreshness,
-}: {
-  eventName: string;
-  fieldLoaded: boolean;
-  fieldFreshness: PgaFreshnessResult;
-  playerStatsMetaLoaded: boolean;
-  playerStatsFreshness: PgaFreshnessResult;
-}) {
-  const warnings = [
-    fieldLoaded && !fieldFreshness.isUsable
-      ? buildFreshnessWarning("Current field", fieldFreshness, "Current field filtering may be disabled or unreliable.")
-      : null,
-    playerStatsMetaLoaded && !playerStatsFreshness.isUsable
-      ? buildFreshnessWarning("Player stats metadata", playerStatsFreshness, "Displayed model inputs may be stale or unverified.")
-      : null,
-  ].filter((warning): warning is string => Boolean(warning));
-
-  if (warnings.length === 0) {
-    if (!fieldLoaded || !playerStatsMetaLoaded) return null;
-
-    return (
-      <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-        <strong>PGA data status:</strong> Field and player-stat metadata are within freshness checks for {eventName}.
-      </div>
-    );
-  }
-
-  return (
-    <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-      <div className="font-black">PGA data freshness warning</div>
-      <ul className="mt-1 space-y-1">
-        {warnings.map((warning) => (
-          <li key={warning}>{warning}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function buildFreshnessWarning(label: string, freshness: PgaFreshnessResult, impact: string) {
-  const details = [
-    freshness.expectedTournament ? `expected ${freshness.expectedTournament}` : null,
-    freshness.actualTournament ? `loaded ${freshness.actualTournament}` : null,
-    freshness.generatedAt ? `generated ${formatStatusDate(freshness.generatedAt)}` : null,
-    freshness.fetchedAt ? `fetched ${formatStatusDate(freshness.fetchedAt)}` : null,
-    freshness.daysOld != null ? `${freshness.daysOld} days old` : null,
-  ].filter(Boolean).join("; ");
-
-  return `${label}: ${freshness.reason}${details ? ` (${details})` : ""} ${impact}`;
-}
-
-function formatStatusDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeZone: "America/New_York",
-  }).format(date);
 }
 
 function isCurrentFieldPayload(value: unknown): value is CurrentField {

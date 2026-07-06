@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
+import PgaFreshnessStatusPanel from "@/components/pga/PgaFreshnessStatusPanel";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
-import { assessPgaFreshness, type PgaFreshnessResult } from "@/lib/pga/pgaFreshness";
+import { assessPgaFreshness } from "@/lib/pga/pgaFreshness";
 import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 
@@ -91,10 +92,6 @@ function formatGeneratedAt(value: string) {
   }).format(date);
 }
 
-function formatFreshnessDate(value: string | null) {
-  return value ? formatGeneratedAt(value) : "Missing";
-}
-
 function isEmpty(payload: BestBetsPayload | null) {
   if (!payload) return true;
   return SECTIONS.every(({ key }) => !payload[key]?.length);
@@ -130,42 +127,6 @@ function PreviewCard({ label, text }: { label: string; text: string }) {
       <div className="text-sm font-bold text-[#166534]">{label}</div>
       <p className="mt-3 text-sm leading-7 text-gray-700">{stripMarkdown(text)}</p>
     </article>
-  );
-}
-
-function FreshnessStatusPanel({ freshness }: { freshness: PgaFreshnessResult }) {
-  const isWarning = freshness.severity === "warning" || freshness.severity === "error";
-  const title = isWarning ? "Best bets card needs review" : "Best bets card status";
-
-  return (
-    <section
-      className={
-        isWarning
-          ? "rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 text-sm text-amber-950 shadow-sm"
-          : "rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-950 shadow-sm"
-      }
-    >
-      <div className="font-semibold">{title}</div>
-      <p className="mt-1 leading-6">{freshness.reason}</p>
-      <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <span className="font-semibold">Expected tournament:</span>{" "}
-          {freshness.expectedTournament ?? "Unknown"}
-        </div>
-        <div>
-          <span className="font-semibold">Current card:</span>{" "}
-          {freshness.actualTournament ?? "Unavailable"}
-        </div>
-        <div>
-          <span className="font-semibold">Generated:</span>{" "}
-          {formatFreshnessDate(freshness.generatedAt)}
-        </div>
-        <div>
-          <span className="font-semibold">Rows:</span>{" "}
-          {freshness.rowCount ?? "Unknown"}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -397,7 +358,12 @@ export default function PgaBestBets() {
             </div>
           ) : !hasCurrentCard ? (
             <>
-              <FreshnessStatusPanel freshness={freshness} />
+              <PgaFreshnessStatusPanel
+                freshness={freshness}
+                cleanTitle="Best bets card status"
+                warningTitle="Best bets card needs review"
+                actualLabel="Current card"
+              />
               <div className="rounded-xl border border-gray-200 bg-white px-4 py-8 text-sm text-gray-500 shadow-sm">
                 <div className="font-semibold text-gray-800">{EMPTY_MESSAGE}</div>
                 <p className="mt-2">{EMPTY_DETAIL}</p>
@@ -405,7 +371,12 @@ export default function PgaBestBets() {
             </>
           ) : (
             <>
-              <FreshnessStatusPanel freshness={freshness} />
+              <PgaFreshnessStatusPanel
+                freshness={freshness}
+                cleanTitle="Best bets card status"
+                warningTitle="Best bets card needs review"
+                actualLabel="Current card"
+              />
 
               {data?.preview && payloadMatchesTournament ? (
                 <section className="space-y-4">
