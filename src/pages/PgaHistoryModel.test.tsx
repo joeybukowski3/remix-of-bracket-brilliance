@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PgaHistoryModel from "./PgaHistoryModel";
 
 const schedule = [
@@ -97,8 +97,14 @@ function renderPage({
   );
 }
 
+beforeEach(() => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  vi.setSystemTime(new Date("2026-07-06T12:00:00Z"));
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("PgaHistoryModel freshness warnings", () => {
