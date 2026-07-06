@@ -8,14 +8,14 @@ import { buildArticleSchema, buildBreadcrumbSchema, buildFaqSchema, CURRENT_TOUR
 
 const top40Rows = [
   ["Collin Morikawa", "Elite SG: Approach plus a stable cut-making profile keeps his floor among the strongest on the board."],
-  ["Patrick Cantlay", "Course history, consistency, and all-around control make him one of the safest golf bets today."],
+  ["Patrick Cantlay", "Course history, consistency, and all-around control make him one of the stronger high-floor placement profiles today."],
   ["Matt Fitzpatrick", "Accuracy, short game, and a dependable scoring floor fit Top 40 markets better than outright-only structures."],
   ["Xander Schauffele", "Balanced metrics and a very low missed-cut rate keep him near the top of the high-floor pool."],
   ["Tommy Fleetwood", "Low-volatility ball-striking and clean course-fit signals make him a natural parlay anchor."],
   ["Corey Conners", "One of the most repeatable ball-strikers on TOUR, which matters more than volatility for Top 40 bets."],
   ["Russell Henley", "Accuracy and approach create the kind of profile that survives tougher scoring weeks."],
   ["Shane Lowry", "Strong tee-to-green floor and enough short-game support to avoid blow-up rounds."],
-  ["Si Woo Kim", "Reliable iron play and enough event-specific fit to project as a safer mid-board option."],
+  ["Si Woo Kim", "Reliable iron play and enough event-specific fit to grade as a higher-floor mid-board option."],
   ["Daniel Berger", "Steady recent form and strong course-history signals keep him viable for parlays."],
   ["Sepp Straka", "Controlled driving and solid approach numbers keep his floor more stable than the market implies."],
   ["Sungjae Im", "Balanced skill set and a dependable made-cut baseline make him useful in conservative betting structures."],
@@ -25,9 +25,9 @@ const featuredModelPath = getTournamentModelPath(FEATURED_PGA_TOURNAMENT);
 
 const faqEntries = [
   {
-    question: "What are the safest golf bets today?",
+    question: "What are the higher-floor golf markets today?",
     answer:
-      "Top 40 golf bets are usually the safest PGA betting structure because they rely more on consistency and cut-making than true contention.",
+      "Top 40 golf bets are usually lower-variance than outrights because they rely more on consistency and cut-making than true contention.",
   },
   {
     question: "What makes a golfer good for Top 40 parlays?",
@@ -44,7 +44,7 @@ const faqEntries = [
 export default function PGATop40Picks() {
   usePageSeo({
     title: "Top 40 Golf Picks Today (PGA Model)",
-    description: "Top 40 golf picks today, safe golf bets, and golf parlay targets built from a data-driven PGA model focused on consistency and course fit.",
+    description: "Top 40 golf picks today, placement shortlists, and golf parlay targets built from a heuristic PGA model focused on consistency and course fit.",
     path: "/pga/top-40-golf-picks",
     type: "article",
   });
@@ -58,7 +58,7 @@ export default function PGATop40Picks() {
         data={[
           buildArticleSchema({
             headline: "Top 40 Golf Picks Today (PGA Model)",
-            description: "Top 40 golf picks today, safe golf bets, and golf parlay targets built from a data-driven PGA model.",
+            description: "Top 40 golf picks today, placement shortlists, and golf parlay targets built from a heuristic PGA model.",
             path: "/pga/top-40-golf-picks",
             dateModified,
           }),
@@ -77,7 +77,7 @@ export default function PGATop40Picks() {
             <div className="eyebrow-label">Evergreen PGA SEO</div>
             <h1 className="page-title mt-4">Top 40 Golf Picks Today (PGA Model)</h1>
             <p className="page-copy mt-5 max-w-3xl">
-              Looking for the safest golf bets today? These Top 40 picks are generated from a data-driven PGA model focusing on consistency, course fit, and long-term performance.
+              Looking for higher-floor golf placement ideas today? These Top 40 picks come from a heuristic PGA model focused on consistency, course fit, and long-term performance.
             </p>
             <div className="mt-7 flex flex-wrap gap-4">
               <Link to={CURRENT_TOURNAMENT_PATH} className="inline-flex items-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90">
@@ -99,7 +99,7 @@ export default function PGATop40Picks() {
                 <thead className="bg-secondary/65">
                   <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     <th className="px-4 py-3">Player</th>
-                    <th className="px-4 py-3">Why They're Safe</th>
+                    <th className="px-4 py-3">Why They Grade High-Floor</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,7 +122,7 @@ export default function PGATop40Picks() {
                 "Combine high-floor players instead of stacking only volatile top-end outrights.",
                 "Avoid volatile players whose missed-cut risk is too high for multi-leg tickets.",
                 "Focus on course history, accuracy, and approach play when choosing parlay anchors.",
-                "Use model rankings instead of public perception when narrowing the safest golf bets.",
+                "Use model rankings instead of public perception when narrowing the placement shortlist.",
               ].map((item) => (
                 <div key={item} className="surface-card-muted text-sm leading-7 text-muted-foreground">{item}</div>
               ))}

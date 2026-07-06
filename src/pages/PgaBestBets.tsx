@@ -59,13 +59,13 @@ const SECTIONS: Array<{
   {
     key: "outrights",
     title: "Outright Winners",
-    description: "High upside plays - model value against the field price.",
-    tierNote: "Outright: High upside, lower probability - use small unit.",
+    description: "High-upside leans using model rank and odds context.",
+    tierNote: "Outright: High upside, higher variance - use small unit.",
   },
   {
     key: "top5",
     title: "Top 5 Finishes",
-    description: "Mixed exposure - one anchor and a pair of high-end value names.",
+    description: "Mixed exposure - one anchor and a pair of high-end model signals.",
     tierNote: "Top 5: Elevated floor with win equity.",
   },
   {
@@ -77,8 +77,8 @@ const SECTIONS: Array<{
   {
     key: "top20",
     title: "Top 20 Finishes",
-    description: "Safer placement targets built around consistency, not volatility.",
-    tierNote: "Top 20: Consistency play - high probability placement.",
+    description: "Higher-floor placement targets built around consistency, not volatility.",
+    tierNote: "Top 20: Consistency lean - placement shortlist.",
   },
 ];
 
@@ -168,9 +168,9 @@ function ValueBetCard({
         >
           {bet.americanOdds}
         </div>
-        <div className="mt-1 text-sm text-amber-900/72">Implied probability: {bet.impliedProbability}</div>
+        <div className="mt-1 text-sm text-amber-900/72">Market implied probability: {bet.impliedProbability}</div>
       </div>
-      <p className="mt-3 text-sm leading-6 text-amber-950/84">{bet.modelEdge}</p>
+      <p className="mt-3 text-sm leading-6 text-amber-950/84">Unvalidated model note: {bet.modelEdge}</p>
     </article>
   );
 }
@@ -331,8 +331,8 @@ export default function PgaBestBets() {
                   : `${visibleCourseName} | Course-weighted picks generated from the tournament model.`}
               </div>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600">
-                These {visibleTournamentName} best bets use the active tournament model to organize outrights,
-                placement markets, and value angles into a cleaner betting card for the week.
+                This {visibleTournamentName} betting card uses the active tournament model to organize outrights,
+                placement markets, and odds-context leans into a cleaner betting card for the week.
               </p>
               <div className="mt-3 flex flex-wrap gap-4 text-sm">
                 <Link to="/pga/model" className="font-semibold text-[#166534] hover:underline">
@@ -395,8 +395,8 @@ export default function PgaBestBets() {
               {Array.isArray(data?.valueBets) && data.valueBets.length ? (
                 <section id="value" className="space-y-4 scroll-mt-24">
                   <div>
-                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-amber-950">Value Bets</h2>
-                    <p className="mt-1 text-sm text-amber-900/70">Best model-versus-market mismatches from the current board.</p>
+                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-amber-950">Odds Context</h2>
+                    <p className="mt-1 text-sm text-amber-900/70">Model-ranked price context from the current board; not a validated edge calculation.</p>
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

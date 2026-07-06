@@ -62,25 +62,25 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
   pga: {
     title: "PGA Tour Power Rankings & Golf Tournament Models | Joe Knows Ball",
     description:
-      "Custom-weighted PGA Tour player rankings updated weekly. Advanced golf analytics, course-fit models, strokes gained breakdowns, DFS salary tools, and tournament projections.",
+      "Custom-weighted PGA Tour player rankings updated weekly. Golf analytics, course-fit models, strokes gained breakdowns, DFS salary tools, and tournament model views.",
     path: "/pga",
   },
   "pga-custom": {
     title: "Custom PGA Golf Model Builder | Joe Knows Ball",
     description:
-      "Build your own PGA Tour ranking model by adjusting strokes gained weights and course-specific stats. Personalized golf analytics and tournament predictions.",
+      "Build your own PGA Tour ranking model by adjusting strokes gained weights and course-specific stats. Personalized golf analytics and tournament ranking views.",
     path: "/pga/custom",
   },
   "pga-dfs": {
-    title: "PGA DFS Salary Upload & Value Finder | Joe Knows Ball",
+    title: "PGA DFS Salary Upload & Price Context | Joe Knows Ball",
     description:
-      "Upload DraftKings or FanDuel PGA salary files and compare DFS pricing against Joe Knows Ball golf model rankings to find value plays.",
+      "Upload DraftKings or FanDuel PGA salary files and compare DFS pricing against Joe Knows Ball golf model rankings for price-context research.",
     path: "/pga/dfs",
   },
   "pga-best-bets": {
-    title: "PGA Tour Best Bets — Golf Tournament Picks & Model Edges",
+    title: "PGA Tour Best Bets — Golf Tournament Picks & Model Signals",
     description:
-      "Top PGA Tour betting picks based on strokes gained models, course history, and matchup analytics. Find the best value plays for this week's golf tournament.",
+      "PGA Tour betting-card research based on strokes gained models, course history, and matchup analytics. Review model ranks and odds context for this week's golf tournament.",
     path: "/pga/best-bets",
   },
   "pga-model": {

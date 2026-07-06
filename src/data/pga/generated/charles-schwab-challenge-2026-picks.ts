@@ -22,7 +22,7 @@ const basecharlesSchwabChallenge2026PicksTournament = {
       "Lean into the most stable ball-striking and scoring stats first.",
       "Add manual weighting tweaks once the first version of the board is live."
     ],
-    "modelFocus": "This week's model starts from the site's standard power-ranking framework, then leans into the stats most likely to translate to this venue. Use the override layer to make sharper tournament-specific adjustments once the first baseline package is live."
+    "modelFocus": "This week's model starts from the site's standard power-ranking framework, then leans into the stats most likely to translate to this venue. Use the override layer to make more specific tournament adjustments once the first baseline package is live."
   },
   "homepageFeature": {
     "eyebrow": "Featured PGA model",
@@ -43,7 +43,7 @@ const basecharlesSchwabChallenge2026PicksTournament = {
     "badge": "PGA tournament model",
     "title": "Charles Schwab Challenge 2026 Picks & Best Bets",
     "intro": "The Charles Schwab Challenge page is live with the active model, rankings table, and tournament routing already wired into the weekly PGA workflow.",
-    "support": "Use the override file to sharpen the writeup, weekly emphasis, player boosts, and market-specific angles without rebuilding the page shell.",
+    "support": "Use the override file to refine the writeup, weekly emphasis, player boosts, and market-specific angles without rebuilding the page shell.",
     "primaryCtaLabel": "Open Full Model",
     "secondaryCtaLabel": "Read written picks"
   },
@@ -153,7 +153,7 @@ const basecharlesSchwabChallenge2026PicksTournament = {
     "weightShiftNotes": [
       {
         "title": "Balanced starting point",
-        "body": "The default preset gives you a safe baseline before you add your weekly tournament-specific emphasis."
+        "body": "The default preset gives you a neutral baseline before you add your weekly tournament-specific emphasis."
       },
       {
         "title": "Course-fit tweak lane",
@@ -175,7 +175,7 @@ const basecharlesSchwabChallenge2026PicksTournament = {
       },
       {
         "title": "Model Notes",
-        "body": "The Balanced preset favors iron players who avoid bogeys. Switch to Outright for more weight on ceiling stats and recent form. Top 20 preset leans safer with course-fit emphasis."
+        "body": "The Balanced preset favors iron players who avoid bogeys. Switch to Outright for more weight on ceiling stats and recent form. Top 20 preset leans lower-variance with course-fit emphasis."
       }
     ],
     "statColumns": [
@@ -341,7 +341,7 @@ const basecharlesSchwabChallenge2026PicksTournament = {
       {
         "key": "top40",
         "label": "Top 40",
-        "description": "Floor-first weighting for safer parlay and placement builds.",
+        "description": "Floor-first weighting for lower-variance parlay and placement builds.",
         "weights": {
           "sgApproach": 16,
           "par4": 13,
@@ -379,7 +379,7 @@ const basecharlesSchwabChallenge2026PicksTournament = {
     ],
     "tierTwoBets": [
       {
-        "player": "Secondary model value",
+        "player": "Secondary model signal",
         "odds": "Model lean",
         "analysis": "Use this slot for the next-best fit once you review the initial ranking table and market board."
       }
@@ -388,7 +388,7 @@ const basecharlesSchwabChallenge2026PicksTournament = {
       {
         "player": "Upside model play",
         "odds": "Model lean",
-        "analysis": "This section can be sharpened later with manual outrights or placement targets after weekly tuning."
+        "analysis": "This section can be refined later with manual outrights or placement targets after weekly tuning."
       }
     ],
     "fades": [
@@ -397,7 +397,7 @@ const basecharlesSchwabChallenge2026PicksTournament = {
     "top40Rows": [
       [
         "Top-40 model anchor",
-        "Use the first model pass to identify the safest floor-first golfers before adding manual placement-market edits."
+        "Use the first model pass to identify higher-floor golfers before adding manual placement-market edits."
       ]
     ],
     "summaryRows": [
