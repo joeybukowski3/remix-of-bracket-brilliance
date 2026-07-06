@@ -273,35 +273,50 @@ function buildHrEnrichmentIndex(hrPayload) {
   };
 }
 
+function mapScoredSignal(signal) {
+  return {
+    label: normalizeText(signal.label || signal.field),
+    matched: true,
+    points: toFiniteNumber(signal.points, 0),
+    weight: toFiniteNumber(signal.rawPoints, toFiniteNumber(signal.points, 0)),
+    detail: normalizeText(signal.description),
+    field: normalizeText(signal.field),
+    type: normalizeText(signal.type),
+    value: signal.value ?? null,
+  };
+}
+
+function mapMatchSignal(match) {
+  return {
+    label: normalizeText(match.label || match.field),
+    matched: true,
+    points: toFiniteNumber(match.points, null),
+    weight: null,
+    detail: normalizeText(match.description),
+    field: normalizeText(match.field),
+    type: normalizeText(match.type) || "live-board-match",
+    value: match.value ?? null,
+    root: match.root ?? null,
+  };
+}
+
+// Priority order for surfacing what actually drove a live-board player's
+// score: scoreBreakdown.signals (richest — points/type/description) takes
+// precedence over the simpler `matches` array, which in turn beats
+// positiveSignals and the single-string primarySignal fallback. Every
+// matched signal is returned (no arbitrary cap) so the email can show every
+// score-driving match, not just the first few.
 function extractLiveSignals(row) {
-  const signals = Array.isArray(row?.scoreBreakdown?.signals)
-    ? row.scoreBreakdown.signals
-    : Array.isArray(row?.positiveSignals)
-      ? row.positiveSignals
-      : [];
-  if (signals.length) {
-    return signals
-      .filter((signal) => toFiniteNumber(signal?.points, 0) > 0)
-      .map((signal) => ({
-        label: normalizeText(signal.label || signal.field),
-        matched: true,
-        points: toFiniteNumber(signal.points, 0),
-        weight: toFiniteNumber(signal.rawPoints, toFiniteNumber(signal.points, 0)),
-        detail: normalizeText(signal.description),
-        field: normalizeText(signal.field),
-        type: normalizeText(signal.type),
-      }));
+  const scoreBreakdownSignals = Array.isArray(row?.scoreBreakdown?.signals) ? row.scoreBreakdown.signals : [];
+  if (scoreBreakdownSignals.length) {
+    return scoreBreakdownSignals.filter((signal) => toFiniteNumber(signal?.points, 0) > 0).map(mapScoredSignal);
   }
-  if (Array.isArray(row?.matches)) {
-    return row.matches.map((match) => ({
-      label: normalizeText(match.label || match.field),
-      matched: true,
-      points: null,
-      weight: null,
-      detail: normalizeText(match.field),
-      field: normalizeText(match.field),
-      type: "live-board-match",
-    }));
+  if (Array.isArray(row?.matches) && row.matches.length) {
+    return row.matches.map(mapMatchSignal);
+  }
+  const positiveSignals = Array.isArray(row?.positiveSignals) ? row.positiveSignals : [];
+  if (positiveSignals.length) {
+    return positiveSignals.filter((signal) => toFiniteNumber(signal?.points, 0) > 0).map(mapScoredSignal);
   }
   if (row?.primarySignal) {
     return [{
@@ -312,6 +327,7 @@ function extractLiveSignals(row) {
       detail: "Primary live-board signal",
       field: "primarySignal",
       type: "live-board-match",
+      value: null,
     }];
   }
   return [];
@@ -674,7 +690,8 @@ export function renderEmailText(card, summary) {
     lines.push(formatPlayLine(card.topPlay));
     lines.push(`Match type: ${card.topPlay.matchType || "Live board"}`);
     lines.push(`Lineup: ${formatLineup(card.topPlay)} | Activity: ${formatActivity(card.topPlay)}`);
-    lines.push(`Signals: ${formatSignals(card.topPlay)}`);
+    lines.push("Numerology matches:");
+    for (const line of formatNumerologyMatchLines(card.topPlay)) lines.push(`  - ${line}`);
     lines.push(`HR context: ${formatHrContext(card.topPlay)}`);
     if (card.topPlay.explanation) lines.push(`Note: ${card.topPlay.explanation}`);
     lines.push("");
@@ -683,10 +700,13 @@ export function renderEmailText(card, summary) {
   if (!card.allQualifiedPlaysOver50.length) {
     lines.push("No plays cleared the threshold today.");
   } else {
-    for (const play of card.allQualifiedPlaysOver50) {
-      lines.push(formatPlayLine(play));
-      lines.push(`  ${play.matchType || "Live board"} | ${formatLineup(play)} | ${formatActivity(play)} | ${formatSignals(play)} | ${formatHrContext(play)}`);
-    }
+    card.allQualifiedPlaysOver50.forEach((play, index) => {
+      lines.push(`${index + 1}. ${formatPlayLine(play)}`);
+      lines.push(`   ${play.matchType || "Live board"} | ${formatLineup(play)} | ${formatActivity(play)}`);
+      lines.push("   Numerology matches:");
+      for (const line of formatNumerologyMatchLines(play)) lines.push(`     - ${line}`);
+      lines.push(`   HR context: ${formatHrContext(play)}`);
+    });
   }
   lines.push("");
   lines.push("TRACKING SNAPSHOT");
@@ -698,6 +718,10 @@ export function renderEmailText(card, summary) {
   return lines.join("\n");
 }
 
+function renderMatchListHtml(play) {
+  return `<ul style="margin:0;padding-left:18px;">${formatNumerologyMatchLines(play).map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`;
+}
+
 export function renderEmailHtml(card, summary) {
   const playRows = card.allQualifiedPlaysOver50.map((play) => `
     <tr>
@@ -706,7 +730,7 @@ export function renderEmailHtml(card, summary) {
       <td>${play.numerologyScore}</td>
       <td>${escapeHtml(play.matchType || "Live board")}</td>
       <td>${escapeHtml(formatLineup(play))}</td>
-      <td>${escapeHtml(formatSignals(play))}</td>
+      <td>${renderMatchListHtml(play)}</td>
       <td>${escapeHtml(formatHrContext(play))}</td>
     </tr>`).join("");
 
@@ -721,14 +745,15 @@ export function renderEmailHtml(card, summary) {
       <h2>Top Play</h2>
       <p><strong>${escapeHtml(card.topPlay.player)}</strong> — ${escapeHtml(card.topPlay.team)} vs ${escapeHtml(card.topPlay.opponent)} · ${escapeHtml(card.topPlay.matchType || "Live board")} · Numerology ${card.topPlay.numerologyScore} · Model ${card.topPlay.modelRating ?? "—"}</p>
       <p><strong>Lineup:</strong> ${escapeHtml(formatLineup(card.topPlay))} · <strong>Activity:</strong> ${escapeHtml(formatActivity(card.topPlay))}</p>
-      <p><strong>Signals:</strong> ${escapeHtml(formatSignals(card.topPlay))}</p>
+      <p><strong>Numerology matches:</strong></p>
+      ${renderMatchListHtml(card.topPlay)}
       <p><strong>HR context:</strong> ${escapeHtml(formatHrContext(card.topPlay))}</p>
       <p>${escapeHtml(card.topPlay.explanation || "No note available.")}</p>
     ` : "<p>No top play available.</p>"}
     <h2>All Plays Over ${card.scoreThreshold}</h2>
     ${card.allQualifiedPlaysOver50.length ? `
       <table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;">
-        <thead><tr><th>Player</th><th>Matchup</th><th>Score</th><th>Match</th><th>Lineup</th><th>Signals</th><th>HR context</th></tr></thead>
+        <thead><tr><th>Player</th><th>Matchup</th><th>Score</th><th>Match</th><th>Lineup</th><th>Numerology matches</th><th>HR context</th></tr></thead>
         <tbody>${playRows}</tbody>
       </table>
     ` : `<p>No plays cleared the threshold today.</p>`}
@@ -747,10 +772,29 @@ function formatPlayLine(play) {
   return `${play.player} (${play.team} vs ${play.opponent}) — Numerology ${play.numerologyScore}, Model ${play.modelRating ?? play.baseballScore ?? "—"}, HR score ${play.hrScore ?? "—"}, odds ${play.hrOddsYes || "—"}`;
 }
 
-function formatSignals(play) {
+// Renders every available field for one matched signal — label, field,
+// value, points, type, and description — so the email shows the actual
+// numerology match, not just its label. Omits any field the source data
+// didn't provide rather than printing a placeholder.
+function describeNumerologyMatch(signal) {
+  const meta = [];
+  if (signal.field) meta.push(`field: ${signal.field}`);
+  if (signal.value != null) meta.push(`value: ${signal.value}`);
+  if (signal.root != null) meta.push(`root: ${signal.root}`);
+  if (signal.points != null) meta.push(`points: +${signal.points}`);
+  if (signal.type) meta.push(`type: ${signal.type}`);
+  const base = signal.label || "Signal";
+  const metaText = meta.length ? ` (${meta.join(", ")})` : "";
+  const detailText = signal.detail && signal.detail !== signal.label ? ` — ${signal.detail}` : "";
+  return `${base}${metaText}${detailText}`;
+}
+
+// Every score-driving match is included — no 4-item cap — since the
+// number of matches that contributed to a score is itself meaningful.
+function formatNumerologyMatchLines(play) {
   const signals = Array.isArray(play?.numerologySignals) ? play.numerologySignals : [];
-  if (!signals.length) return "No matched numerology signals listed.";
-  return signals.slice(0, 4).map((signal) => signal.points == null ? signal.label : `${signal.label} (+${signal.points})`).join("; ");
+  if (!signals.length) return ["No matched numerology signals listed."];
+  return signals.map(describeNumerologyMatch);
 }
 
 function formatBucket(bucket) {

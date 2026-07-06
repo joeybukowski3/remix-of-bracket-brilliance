@@ -1,0 +1,223 @@
+name: MLB Numerology Email
+run-name: MLB Numerology Email • ${{ github.event_name }} • ${{ inputs.mode || 'preview' }}
+
+# Manual-dispatch-first. A live send always requires BOTH the
+# NUMEROLOGY_EMAIL_LIVE=true repo/environment variable AND the
+# NUMEROLOGY_EMAIL_WEBHOOK_URL secret to be configured -- this workflow
+# never sends "silently" just because mode=send was selected.
+#
+# The daily schedule always runs in preview mode only (hardcoded, not
+# derived from any input) so that daily-card.json, the archive, and the
+# performance tracking files stay persisted in the repo even on days no
+# one manually triggers a send. It never sends live email.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "preview (generate + persist data, no email) or send (live send, still gated by secrets)"
+        required: true
+        default: "preview"
+        type: choice
+        options:
+          - preview
+          - send
+      date:
+        description: "Optional Eastern Time slate date (YYYY-MM-DD). Defaults to today ET."
+        required: false
+        type: string
+
+  schedule:
+    # 6:15 PM ET -- after the lineup-confirmed numerology phase has had a
+    # chance to run, and well before most games start. Preview-only: never
+    # sends live email regardless of secret configuration.
+    - cron: "15 22 * * *"
+
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/mlb-numerology-email.yml"
+      - "scripts/generate-mlb-numerology-email.mjs"
+      - "scripts/lib/mlb-numerology-tracking.mjs"
+
+# Shares the lock with the other automated workflows that commit generated
+# data to main, so this never races a props/numerology-generation run.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  numerology-email:
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Scheduled/push runs never accept a mode input, so they always
+      # resolve to "preview" -- only an explicit workflow_dispatch with
+      # mode=send can ever attempt a live send.
+      - name: Resolve requested mode
+        id: mode
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.mode }}" = "send" ]; then
+            echo "resolved=send" >> "$GITHUB_OUTPUT"
+          else
+            echo "resolved=preview" >> "$GITHUB_OUTPUT"
+          fi
+          echo "[mlb-numerology-email] event=${{ github.event_name }} requested_mode_input=${{ inputs.mode || 'n/a' }} resolved_mode=$([ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.mode }}" = "send" ] && echo send || echo preview)"
+
+      # Fails clearly (does not silently continue) when the live board
+      # payload the email is built from does not exist yet. HR props are
+      # optional enrichment and are allowed to be missing.
+      - name: Check data dependencies
+        shell: bash
+        run: |
+          if [ ! -f public/data/mlb/numerology-daily.json ]; then
+            echo "::error::Missing public/data/mlb/numerology-daily.json. Run the 'Generate MLB Numerology' workflow (scripts/generate-mlb-numerology.mjs) first -- it is the required upstream data source for this email."
+            exit 1
+          fi
+          if [ ! -f public/data/mlb/hr-props-raw.json ]; then
+            echo "::warning::public/data/mlb/hr-props-raw.json is missing. HR enrichment context will show as unavailable; numerology ranking is unaffected."
+          fi
+
+      - name: Run numerology tracking unit tests
+        run: npx vitest run src/lib/mlb/mlbNumerologyTracking.test.ts
+
+      - name: Generate email preview (always runs first)
+        shell: bash
+        run: |
+          DATE_FLAG=""
+          if [ -n "${{ inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ inputs.date }}"
+          fi
+          node scripts/generate-mlb-numerology-email.mjs --preview $DATE_FLAG
+
+      - name: Log resolved mode
+        shell: bash
+        run: |
+          echo "[mlb-numerology-email] Resolved mode: ${{ steps.mode.outputs.resolved }}"
+          if [ "${{ steps.mode.outputs.resolved }}" = "preview" ]; then
+            echo "[mlb-numerology-email] Preview/draft only -- no live email will be sent."
+          else
+            echo "[mlb-numerology-email] Send mode requested -- live send still requires NUMEROLOGY_EMAIL_LIVE=true and NUMEROLOGY_EMAIL_WEBHOOK_URL to be configured."
+          fi
+
+      # Only reached when mode resolved to "send". The script itself
+      # re-checks NUMEROLOGY_EMAIL_LIVE and NUMEROLOGY_EMAIL_WEBHOOK_URL and
+      # throws (failing the step) rather than sending silently if either is
+      # missing -- this step does not attempt to duplicate or soften that
+      # gate, it just also fails clearly beforehand if the secret is unset
+      # so the log is unambiguous about why nothing was sent.
+      - name: Send live email (gated)
+        if: steps.mode.outputs.resolved == 'send'
+        env:
+          # NUMEROLOGY_EMAIL_LIVE isn't sensitive -- accept it as either a
+          # repository/environment Variable or a Secret so either setup works.
+          NUMEROLOGY_EMAIL_LIVE: ${{ vars.NUMEROLOGY_EMAIL_LIVE || secrets.NUMEROLOGY_EMAIL_LIVE }}
+          NUMEROLOGY_EMAIL_WEBHOOK_URL: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_URL }}
+          NUMEROLOGY_EMAIL_WEBHOOK_TOKEN: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN }}
+        shell: bash
+        run: |
+          if [ "${NUMEROLOGY_EMAIL_LIVE}" != "true" ]; then
+            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_LIVE is not 'true'. Set it as a repository/environment variable to enable live sending. No email was sent."
+            exit 1
+          fi
+          if [ -z "${NUMEROLOGY_EMAIL_WEBHOOK_URL}" ]; then
+            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_WEBHOOK_URL secret is not configured. No email was sent."
+            exit 1
+          fi
+          DATE_FLAG=""
+          if [ -n "${{ inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ inputs.date }}"
+          fi
+          node scripts/generate-mlb-numerology-email.mjs --send $DATE_FLAG
+
+      - name: Detect meaningful tracking data changes
+        id: changes
+        shell: bash
+        run: |
+          FILES="public/data/mlb/numerology/daily-card.json public/data/mlb/numerology/archive public/data/mlb/numerology/performance.json public/data/mlb/numerology/performance-summary.json"
+          if [ -z "$(git status --porcelain -- $FILES)" ]; then
+            echo "No meaningful numerology tracking changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Meaningful numerology tracking changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Persists only the generated tracking/data files. email-preview.html
+      # and email-preview.txt are intentionally never staged -- they are
+      # regenerated on every run and are not meant to be version-controlled.
+      - name: Commit and push tracking data
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            public/data/mlb/numerology/daily-card.json \
+            public/data/mlb/numerology/performance.json \
+            public/data/mlb/numerology/performance-summary.json
+          if [ -d public/data/mlb/numerology/archive ]; then
+            git add public/data/mlb/numerology/archive
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No staged numerology tracking changes."
+            exit 0
+          fi
+
+          git commit -m "chore: numerology email tracking $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed -- numerology tracking data was not committed." >&2
+            exit 1
+          fi
+
+          echo "Numerology tracking data pushed successfully."
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "== MLB Numerology Email summary =="
+          echo "event: ${{ github.event_name }}"
+          echo "requested mode (input): ${{ inputs.mode || 'n/a' }}"
+          echo "resolved mode: ${{ steps.mode.outputs.resolved }}"
+          echo "tracking data changed: ${{ steps.changes.outputs.changed || 'n/a' }}"

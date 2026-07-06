@@ -1,0 +1,151 @@
+name: Grade MLB Numerology Plays
+run-name: Grade MLB Numerology Plays • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    # 7:20 AM ET daily -- after the prior day's MLB games are almost
+    # certainly final. grade-mlb-numerology-plays.mjs itself never fails
+    # when a game isn't final yet (it just leaves that record "pending"),
+    # so an early or missed run cannot break this workflow.
+    - cron: "20 11 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional Eastern Time date to grade (YYYY-MM-DD). Defaults to yesterday ET."
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/mlb-numerology-grade.yml"
+      - "scripts/grade-mlb-numerology-plays.mjs"
+      - "scripts/lib/mlb-numerology-tracking.mjs"
+
+# Shares the lock with the other automated workflows that commit generated
+# data to main, so grading never races an email/props-generation run.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  grade-numerology:
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # No performance.json means there is nothing to grade yet (e.g. the
+      # email has never been generated). That is a valid, non-error state --
+      # log it and exit successfully rather than failing the workflow.
+      - name: Check tracking data exists
+        id: precheck
+        shell: bash
+        run: |
+          if [ ! -f public/data/mlb/numerology/performance.json ]; then
+            echo "::warning::public/data/mlb/numerology/performance.json does not exist yet -- nothing to grade. Run the MLB Numerology Email workflow at least once first."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Grade pending numerology plays
+        if: steps.precheck.outputs.skip != 'true'
+        shell: bash
+        run: |
+          DATE_FLAG=""
+          if [ -n "${{ inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ inputs.date }}"
+          fi
+          node scripts/grade-mlb-numerology-plays.mjs $DATE_FLAG
+
+      - name: Detect meaningful grading changes
+        id: changes
+        if: steps.precheck.outputs.skip != 'true'
+        shell: bash
+        run: |
+          FILES="public/data/mlb/numerology/performance.json public/data/mlb/numerology/performance-summary.json public/data/mlb/numerology/archive"
+          if [ -z "$(git status --porcelain -- $FILES)" ]; then
+            echo "No meaningful grading changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Meaningful grading changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate generated JSON
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/numerology/performance.json','utf8')); console.log('performance.json valid');"
+          node -e "JSON.parse(require('fs').readFileSync('public/data/mlb/numerology/performance-summary.json','utf8')); console.log('performance-summary.json valid');"
+
+      - name: Commit and push grading results
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            public/data/mlb/numerology/performance.json \
+            public/data/mlb/numerology/performance-summary.json
+          if [ -d public/data/mlb/numerology/archive ]; then
+            git add public/data/mlb/numerology/archive
+          fi
+
+          if git diff --cached --quiet; then
+            echo "No staged grading changes."
+            exit 0
+          fi
+
+          git commit -m "chore: grade MLB numerology plays $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed -- numerology grading results were not committed." >&2
+            exit 1
+          fi
+
+          echo "Numerology grading results pushed successfully."
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "== Grade MLB Numerology Plays summary =="
+          echo "event: ${{ github.event_name }}"
+          echo "skipped (no tracking data yet): ${{ steps.precheck.outputs.skip }}"
+          echo "changed: ${{ steps.changes.outputs.changed || 'n/a' }}"
