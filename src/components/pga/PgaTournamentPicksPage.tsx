@@ -32,22 +32,26 @@ function SectionCard({
   );
 }
 
-function parseEdgeScore(edge?: string) {
+function parseSignalScore(edge?: string) {
   if (!edge) return null;
   const match = edge.match(/(\d+)/);
   return match ? Number(match[1]) : null;
 }
 
-function getEdgePercent(edge?: string, maxEdge = 16) {
-  const score = parseEdgeScore(edge);
+function getSignalPercent(edge?: string, maxEdge = 16) {
+  const score = parseSignalScore(edge);
   if (!score) return 0;
   return Math.min(100, Math.round((score / maxEdge) * 100));
 }
 
-function getSummaryEdgeTone(edgeText: string) {
+function getSummarySignalTone(edgeText: string) {
   const score = Number(edgeText);
   if (score >= 14) return "pga-edge-chip-high";
   return "pga-edge-chip-mid";
+}
+
+function formatSignalLabel(edge: string) {
+  return edge.replace(/edge/gi, "Signal");
 }
 
 function BetList({
@@ -67,12 +71,12 @@ function BetList({
             <h3 className="text-[14px] font-medium text-foreground">{bet.player}</h3>
             <div className="flex flex-wrap items-center gap-2">
               <span className="pga-odds-badge">{bet.odds}</span>
-              {bet.edge ? <span className="pga-edge-badge">{bet.edge}</span> : null}
+              {bet.edge ? <span className="pga-edge-badge">{formatSignalLabel(bet.edge)}</span> : null}
             </div>
           </div>
           {bet.edge ? (
             <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-secondary/80">
-              <div className={`h-full rounded-full ${barClass}`} style={{ width: `${getEdgePercent(bet.edge)}%` }} />
+              <div className={`h-full rounded-full ${barClass}`} style={{ width: `${getSignalPercent(bet.edge)}%` }} />
             </div>
           ) : null}
           <p className="mt-3 text-[12px] leading-6 text-muted-foreground">{bet.analysis}</p>
@@ -142,7 +146,7 @@ function ScatterIcon(props: SVGProps<SVGSVGElement>) {
 
 const PARLAY_CARD_META = [
   { title: "Target Top 40 markets", icon: BarChartIcon },
-  { title: "Avoid missed-cut risk", icon: ClockIcon },
+  { title: "Watch missed-cut risk", icon: ClockIcon },
   { title: "Focus on course consistency", icon: LineChartIcon },
   { title: "Model over public perception", icon: ScatterIcon },
 ] as const;
@@ -157,6 +161,7 @@ function isPlaceholderText(value?: string | null) {
     || normalized.includes("baseline generated output")
     || normalized.includes("baseline model leader")
     || normalized.includes("secondary model value")
+    || normalized.includes("secondary model signal")
     || normalized.includes("upside model play")
     || normalized.includes("top-40 model anchor")
     || normalized.includes("current model board")
@@ -203,7 +208,7 @@ function buildRankingDeltaEntries(
   const fallbackNote =
     direction === "elevated"
       ? `The current ${tournament.shortName} board is staying close to the baseline power ranking, so the biggest lifts this week are modest rather than dramatic.`
-      : `The current ${tournament.shortName} board is not showing many sharp downgrades versus the broader power ranking, which keeps the fade list tighter this week.`;
+      : `The current ${tournament.shortName} board is not showing many major downgrades versus the broader power ranking, which keeps the fade list tighter this week.`;
 
   return [{ player: "Neutral model adjustments", note: fallbackNote }];
 }
@@ -218,7 +223,7 @@ function buildGeneratedBetRows(rows: ReturnType<typeof rankPlayersByScore>, tour
 
   return {
     tierOneBets: topRows.slice(0, 2).map((row) => buildBet(row, "Model anchor", `This golfer is surfacing near the top of the live ${tournament.courseHistoryDisplay} board.`)),
-    tierTwoBets: topRows.slice(2, 4).map((row) => buildBet(row, "Model value", "This profile is grading well enough to stay on the shortlist while the market card is still being finalized.")),
+    tierTwoBets: topRows.slice(2, 4).map((row) => buildBet(row, "Model signal", "This profile is grading well enough to stay on the shortlist while the market card is still being finalized.")),
     tierThreeBets: topRows.slice(4, 6).map((row) => buildBet(row, "Upside lean", "This golfer is not at the top of the board, but the weighted model still sees enough venue fit to keep in consideration.")),
   };
 }
@@ -322,7 +327,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
     ? `The live ${tournament.shortName} board is active now. Start with the top of the current model, then narrow the card to the outrights and placement angles that best fit this week's setup.`
     : tournament.picksPage.top10Intro;
   const top40Intro = isPlaceholderText(tournament.picksPage.top40Intro)
-    ? `The placement-market view starts with the safest profiles on the current weighted board. Use this list to identify steadier floor plays before you branch into riskier outright exposure.`
+    ? `The placement-market view starts with the higher-floor profiles on the current weighted board. Use this list to identify steadier floor plays before you branch into riskier outright exposure.`
     : tournament.picksPage.top40Intro;
 
   return (
@@ -511,7 +516,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                 This model is built to stay fast and explainable. Move the weights, re-rank the field, and use the written picks after you know which {tournament.model.courseHistoryDisplay} profile you want to bet. The preview above is a front door to the full slider room on <code>{modelPath}</code>.
               </p>
               <div className="pga-flow">
-                {["Adjust weights", "Re-rank the field", `Compare ${tournament.model.courseHistoryDisplay} fits`, "Open full model room", "Bet the board"].map((node, index, all) => (
+                {["Adjust weights", "Re-rank the field", `Compare ${tournament.model.courseHistoryDisplay} fits`, "Open full model room", "Build a card"].map((node, index, all) => (
                   <div key={node} className="contents">
                     <div className="pga-flow-node">{node}</div>
                     {index < all.length - 1 ? <div className="pga-flow-arrow" aria-hidden="true">&rarr;</div> : null}
@@ -535,7 +540,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
               <div className="grid gap-4 lg:grid-cols-2">
                 <div className="overflow-hidden rounded-xl border border-[color:var(--pga-border)] bg-card">
                   <div className="bg-[var(--pga-green-dark)] px-4 py-3 text-[13px] font-medium text-[var(--pga-tier-header-text)]">
-                    Tier 1 &mdash; Strong model + sweet spot odds
+                    Tier 1 &mdash; Strong model signal + odds context
                   </div>
                   <div className="p-4">
                     <BetList bets={tierOneBets} tier="tier1" />
@@ -545,7 +550,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                 <div className="grid gap-4 sm:gap-6">
                   <div className="overflow-hidden rounded-xl border border-[color:var(--pga-border)] bg-card">
                     <div className="bg-secondary/70 px-4 py-3 text-[13px] font-medium text-muted-foreground">
-                      Tier 2 &mdash; Solid value
+                      Tier 2 &mdash; Solid model signal
                     </div>
                     <div className="p-4">
                       <BetList bets={tierTwoBets} tier="tier2" />
@@ -565,7 +570,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
             </div>
           </SectionCard>
 
-          <SectionCard title="Top 40 Parlay Golfers" eyebrow="Safe Plays">
+          <SectionCard title="Top 40 Parlay Golfers" eyebrow="High-Floor Plays">
             <div className="space-y-4 sm:space-y-6">
               <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <p className="max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base sm:leading-8">{top40Intro}</p>
@@ -636,7 +641,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                     <tr className="border-b border-[color:var(--pga-border)] text-left text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                       <th className="px-3 py-3">Player</th>
                       <th className="px-3 py-3">Odds</th>
-                      <th className="px-3 py-3">Edge</th>
+                      <th className="px-3 py-3">Signal</th>
                       <th className="px-3 py-3">Key Reason</th>
                     </tr>
                   </thead>
@@ -646,7 +651,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
                         <td className="px-3 py-3 font-medium text-foreground sm:py-4">{row[0]}</td>
                         <td className="px-3 py-3 text-muted-foreground sm:py-4">{row[1]}</td>
                         <td className="px-3 py-3 sm:py-4">
-                          <span className={`pga-edge-chip ${getSummaryEdgeTone(row[2])}`}>{row[2]}</span>
+                          <span className={`pga-edge-chip ${getSummarySignalTone(row[2])}`}>{row[2]}</span>
                         </td>
                         <td className="px-3 py-3 text-muted-foreground sm:py-4">{row[3]}</td>
                       </tr>
@@ -733,7 +738,7 @@ export default function PgaTournamentPicksPage({ tournament }: { tournament: Pga
           <section className="pga-card p-4 text-center md:p-10">
             <div className="pga-label">Golf betting model</div>
             <h2 className="pga-section-title mt-2">
-              Use the full model room to tune the {tournament.model.courseHistoryDisplay} board before you lock in the bets below.
+              Use the full model room to tune the {tournament.model.courseHistoryDisplay} board before you build a card from the leans below.
             </h2>
             <p className="mx-auto mt-3 max-w-3xl text-sm leading-7 text-muted-foreground sm:mt-4 sm:text-base sm:leading-8">
               Open the interactive board, adjust the real sliders, and compare the full-field rankings against the written outrights, Top 40 plays, and fades on this page.

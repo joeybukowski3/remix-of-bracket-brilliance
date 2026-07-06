@@ -21,7 +21,7 @@ const baseTheMemorialTournament2026PicksTournament = {
       "No-cut Signature Event — the elite field means course-fit matters more than usual.",
       "Bogey avoidance and course management separate the field here."
     ],
-    "modelFocus": "Lean heavily on SG: Approach and overall tee-to-green quality. Bogey avoidance is a strong differentiator at Muirfield Village. The no-cut Signature format amplifies course-fit edges."
+    "modelFocus": "Lean heavily on SG: Approach and overall tee-to-green quality. Bogey avoidance is a strong differentiator at Muirfield Village. The no-cut Signature format amplifies course-fit signals."
   },
   "homepageFeature": {
     "eyebrow": "Featured PGA model",
@@ -42,7 +42,7 @@ const baseTheMemorialTournament2026PicksTournament = {
   "hero": {
     "badge": "Signature Event",
     "title": "Memorial Tournament 2026 Picks & Best Bets",
-    "intro": "Muirfield Village rewards the most complete tee-to-green players in the game. Use the model to find course-fit edges in an elite Signature Event field.",
+    "intro": "Muirfield Village rewards the most complete tee-to-green players in the game. Use the model to find course-fit signals in an elite Signature Event field.",
     "support": "No cut means field concentration is at its highest — approach and bogey avoidance weights are especially relevant this week.",
     "primaryCtaLabel": "Open Full Model",
     "secondaryCtaLabel": "Read written picks"
@@ -53,7 +53,7 @@ const baseTheMemorialTournament2026PicksTournament = {
     "faqs": [
       {
         "question": "What matters most at the Memorial Tournament 2026?",
-        "answer": "Muirfield Village heavily rewards SG: Approach, tee-to-green precision, and bogey avoidance. Course history is a meaningful edge in a no-cut Signature field."
+        "answer": "Muirfield Village heavily rewards SG: Approach, tee-to-green precision, and bogey avoidance. Course history is a meaningful signal in a no-cut Signature field."
       },
       {
         "question": "Who won the Memorial Tournament last year?",
@@ -95,7 +95,7 @@ const baseTheMemorialTournament2026PicksTournament = {
     "heroSteps": [
       {
         "title": "Approach play dominates",
-        "body": "Muirfield Village sets up as an iron-play test. SG: Approach is the strongest predictor of success here."
+        "body": "Muirfield Village sets up as an iron-play test. SG: Approach is the strongest model input here."
       },
       {
         "title": "Bogey avoidance is key",
@@ -103,7 +103,7 @@ const baseTheMemorialTournament2026PicksTournament = {
       },
       {
         "title": "Course history matters",
-        "body": "Muirfield Village has consistent setup tendencies. Past finishes at this venue are a meaningful edge in a no-cut field."
+        "body": "Muirfield Village has consistent setup tendencies. Past finishes at this venue are a meaningful signal in a no-cut field."
       },
       {
         "title": "Signature field concentration",
@@ -138,7 +138,7 @@ const baseTheMemorialTournament2026PicksTournament = {
         "body": "Muirfield Village's Nicklaus design rewards iron precision above all else. The default preset weights SG: Approach at 26% to reflect this."
       },
       {
-        "title": "Bogey avoidance edge",
+        "title": "Bogey avoidance signal",
         "body": "The course is designed to punish errant shots. Bogey avoidance carries 14% weight in the balanced preset — higher than most regular-field events."
       },
       {
@@ -157,7 +157,7 @@ const baseTheMemorialTournament2026PicksTournament = {
       },
       {
         "title": "Course-history overlay",
-        "body": "Manual player adjustments for Muirfield Village history can sharpen outright picks. Past finishes here are not random."
+        "body": "Manual player adjustments for Muirfield Village history can refine outright leans. Past finishes here are not random."
       }
     ],
     "courseInsights": [
@@ -171,7 +171,7 @@ const baseTheMemorialTournament2026PicksTournament = {
       },
       {
         "title": "Model Notes",
-        "body": "The Balanced preset favors complete tee-to-green players. Switch to Ball Striking for heavier approach emphasis. Accuracy preset helps identify safer placement-market floors."
+        "body": "The Balanced preset favors complete tee-to-green players. Switch to Ball Striking for heavier approach emphasis. Accuracy preset helps identify lower-variance placement-market floors."
       }
     ],
     "statColumns": [
@@ -358,7 +358,7 @@ const baseTheMemorialTournament2026PicksTournament = {
     ],
     "tierTwoBets": [
       {
-        "player": "Secondary model value",
+        "player": "Secondary model signal",
         "odds": "Model lean",
         "analysis": "Use this slot for the next-best course-fit once you review the initial ranking table and market board."
       }
@@ -367,7 +367,7 @@ const baseTheMemorialTournament2026PicksTournament = {
       {
         "player": "Upside model play",
         "odds": "Model lean",
-        "analysis": "This section can be sharpened with manual outrights or placement targets after weekly tuning."
+        "analysis": "This section can be refined with manual outrights or placement targets after weekly tuning."
       }
     ],
     "fades": [
@@ -376,7 +376,7 @@ const baseTheMemorialTournament2026PicksTournament = {
     "top40Rows": [
       [
         "Top-40 model anchor",
-        "Use the first model pass to identify the safest floor-first golfers before adding manual placement-market edits."
+        "Use the first model pass to identify higher-floor golfers before adding manual placement-market edits."
       ]
     ],
     "summaryRows": [

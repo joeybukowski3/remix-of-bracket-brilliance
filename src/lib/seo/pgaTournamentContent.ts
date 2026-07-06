@@ -44,16 +44,16 @@ export const rbcHeritage2026Content: PgaTournamentContent = {
   heroCtaLabel: "Open Free Model",
   heroSecondaryLabel: "Top 40 golf picks",
   heroIntro:
-    "Looking for the best RBC Heritage 2026 picks? This page breaks down top golf bets, top 40 parlay plays, and model-driven insights using course history at Harbour Town, recent form, and key PGA Tour statistics. The goal is to identify high-value players based on how they fit this course - not just market odds.",
+    "Looking for RBC Heritage 2026 picks? This page breaks down golf betting-card research, top 40 parlay plays, and model-driven insights using course history at Harbour Town, recent form, and key PGA Tour statistics. The goal is to identify course-fit signals based on how players fit this course - not just market odds.",
   heroSupport:
-    "These are the RBC Heritage best bets and Harbour Town course history picks the model likes most, with added context for PGA best bets today, golf betting picks today, and safer RBC Heritage parlays.",
+    "These are RBC Heritage best-bets leans and Harbour Town course history picks from the current model view, with added context for PGA best bets today, golf betting picks today, and higher-floor RBC Heritage parlays.",
   presetsHeading: "Four Preset Models - Built for Every Bet Type",
   presetsIntro:
-    "Most golf betting models are locked behind paywalls. This one is completely free and fully interactive. Choose a preset below to instantly load a weight profile built for that market, then fine-tune any stat to match your own read. The table re-ranks all 83 players in real time.",
+    "Most golf betting models sit behind paywalls. This one is completely free and fully interactive. Choose a preset below to instantly load a weight profile built for that market, then fine-tune any stat to match your own read. The table re-ranks all 83 players in real time.",
   top10Intro:
-    "These top 10 golf bets are the strongest value plays from the board, balancing price, Harbour Town fit, and recent form.",
+    "These top 10 golf leans are the strongest model signals from the board, balancing price context, Harbour Town fit, and recent form.",
   top40Intro:
-    "High-floor players identified by the model based on course history, consistency, and Harbour Town fit. Ideal for RBC Heritage top 40 picks, RBC Heritage parlays, and safer betting structures.",
+    "High-floor players identified by the model based on course history, consistency, and Harbour Town fit. Useful for RBC Heritage top 40 picks, RBC Heritage parlays, and lower-variance betting structures.",
   overviewBullets: [
     "Recent Form via DG Rank and TrendRank.",
     "Course History at Harbour Town through Course True SG and rounds played.",
@@ -61,7 +61,7 @@ export const rbcHeritage2026Content: PgaTournamentContent = {
     "Every category is normalized across the field and reweighted to match Harbour Town's course profile.",
     "The weighting leans into SG: Approach, Driving Accuracy, Par 4 Scoring, Bogey Avoidance, and short-iron or wedge ranges.",
     "The model also accounts for post-Masters performance trends and Harbour Town experience before producing a composite score.",
-    "That output ranks expected performance and highlights betting value versus market odds.",
+    "That output ranks heuristic model fit and highlights odds context versus market prices.",
   ],
   strategyBullets: [
     "Harbour Town rewards accuracy over distance.",
@@ -81,28 +81,28 @@ export const rbcHeritage2026Content: PgaTournamentContent = {
     {
       player: "Collin Morikawa",
       odds: "+176 T10",
-      edge: "Edge 16",
+      edge: "Signal 16",
       analysis:
-        "One of the strongest RBC Heritage 2026 picks on the board. Elite Harbour Town course history, the best SG: Approach profile in the field, and an ideal post-Masters momentum bucket create the clearest value gap.",
+        "One of the strongest RBC Heritage 2026 model leans on the board. Elite Harbour Town course history, the best SG: Approach profile in the field, and an ideal post-Masters momentum bucket create a clear course-fit signal.",
     },
     {
       player: "Patrick Cantlay",
       odds: "+188 T10",
-      edge: "Edge 14",
+      edge: "Signal 14",
       analysis:
-        "A top-tier RBC Heritage best bet with 30 rounds of Harbour Town experience and the No. 2 Course SG profile in the field. The approach weakness is offset by short-game strength and elite course fit.",
+        "A top-tier RBC Heritage model lean with 30 rounds of Harbour Town experience and the No. 2 Course SG profile in the field. The approach weakness is offset by short-game strength and elite course fit.",
     },
     {
       player: "Jordan Spieth",
       odds: "+230 T10",
-      edge: "Edge 12",
+      edge: "Signal 12",
       analysis:
         "Harbour Town course history picks rarely get cleaner than Spieth. He owns a win here, 36 rounds of experience, and the scrambling profile that keeps his floor intact on this layout.",
     },
     {
       player: "Sam Burns",
       odds: "+230 T10",
-      edge: "Edge 12",
+      edge: "Signal 12",
       analysis:
         "Burns grades as one of the better golf betting model picks this week thanks to strong Harbour Town history, DG Rank No. 15, and a stable momentum profile at a still-reasonable price.",
     },
@@ -112,13 +112,13 @@ export const rbcHeritage2026Content: PgaTournamentContent = {
       player: "Daniel Berger",
       odds: "+500",
       analysis:
-        "Best long-shot value in the model. Elite Harbour Town history keeps him firmly in the RBC Heritage 2026 picks mix.",
+        "Long-shot model signal in the current board. Elite Harbour Town history keeps him firmly in the RBC Heritage 2026 picks mix.",
     },
     {
       player: "Xander Schauffele",
       odds: "+126",
       analysis:
-        "Expensive, but still one of the steadier PGA golf best bets today because the profile is balanced across every key stat bucket.",
+        "Expensive, but still one of the steadier PGA golf best-bets leans today because the profile is balanced across every key stat bucket.",
     },
     {
       player: "Tommy Fleetwood",
@@ -130,7 +130,7 @@ export const rbcHeritage2026Content: PgaTournamentContent = {
       player: "Si Woo Kim",
       odds: "+196",
       analysis:
-        "Elite approach play plus real Harbour Town experience make him one of the better value names for RBC Heritage best bets.",
+        "Elite approach play plus real Harbour Town experience make him one of the better course-fit names for RBC Heritage best-bets leans.",
     },
   ],
   tierThreeBets: [
@@ -144,7 +144,7 @@ export const rbcHeritage2026Content: PgaTournamentContent = {
       player: "Matt Fitzpatrick",
       odds: "+138",
       analysis:
-        "Elite Harbour Town history and a reliable skill set make him a safer upside play, even if the number is fairly efficient.",
+        "Elite Harbour Town history and a reliable skill set make him a higher-floor upside lean, even if the number is fairly efficient.",
     },
   ],
   fades: [
@@ -169,10 +169,10 @@ export const rbcHeritage2026Content: PgaTournamentContent = {
     ["Morikawa", "+176", "16", "Elite approach + HT history"],
     ["Cantlay", "+188", "14", "Best HT profile"],
     ["Schauffele", "+126", "13", "Balanced elite metrics"],
-    ["Fitzpatrick", "+138", "13", "Proven winner here"],
+    ["Fitzpatrick", "+138", "13", "Past winner here"],
     ["Spieth", "+230", "12", "Course specialist"],
-    ["Burns", "+230", "12", "Undervalued HT fit"],
-    ["Berger", "+500", "11", "Best long-shot value"],
+    ["Burns", "+230", "12", "Course-fit signal"],
+    ["Berger", "+500", "11", "Long-shot model signal"],
     ["Si Woo Kim", "+196", "11", "Elite approach + experience"],
   ],
 };
@@ -181,21 +181,21 @@ export const wellsFargoChampionship2026Content: PgaTournamentContent = {
   slug: "wells-fargo-championship-2026-picks",
   title: "Wells Fargo Championship 2026 Picks, Best Bets & Top 40 Parlays | PGA Model",
   description:
-    "Wells Fargo Championship 2026 picks, best bets, and top 40 parlay golfers. Data-driven PGA model using course fit, form, and key stats to find betting value.",
+    "Wells Fargo Championship 2026 picks, best bets, and top 40 parlay golfers. Heuristic PGA model using course fit, form, and key stats to frame model signals and odds context.",
   path: "/pga/wells-fargo-championship-2026-picks",
   heroTitle: "Wells Fargo Championship 2026 Picks & Best Bets",
   heroBadge: "PGA best bets today",
   heroCtaLabel: "Open PGA model",
   heroSecondaryLabel: "Top 40 golf picks",
   heroIntro:
-    "Looking for the best Wells Fargo Championship 2026 picks? This page breaks down top golf bets, top 40 parlay plays, and model-driven predictions based on course history, recent form, and key PGA Tour statistics.",
+    "Looking for Wells Fargo Championship 2026 picks? This page breaks down golf betting-card research, top 40 parlay plays, and model-driven leans based on course history, recent form, and key PGA Tour statistics.",
   heroSupport:
     "This board leans on long-iron quality, scoring on demanding par 4s, and players whose form profile can hold up on a tougher ball-striking test.",
   presetsHeading: "Four Preset Models - Built for Every Bet Type",
   presetsIntro:
     "The same free PGA model can be used for outrights, top 10s, top 20s, and top 40 parlays. Use the presets to load a betting-specific weighting profile, then fine-tune the model around your own view of the week.",
   top10Intro:
-    "These Wells Fargo Championship best bets emphasize players with enough upside to contend while still carrying a strong tee-to-green profile for this setup.",
+    "These Wells Fargo Championship best-bets leans emphasize players with enough upside to contend while still carrying a strong tee-to-green profile for this setup.",
   top40Intro:
     "These Wells Fargo Championship top 40 picks focus on golfers with repeatable ball-striking, a reliable cut-making profile, and enough course fit to anchor parlays.",
   overviewBullets: [
@@ -218,13 +218,13 @@ export const wellsFargoChampionship2026Content: PgaTournamentContent = {
     "Combine high-floor players in Top 40 markets instead of stacking only high-variance top-10 tickets.",
     "Avoid volatile bomb-or-bust golfers whose missed-cut rate is too high for parlays.",
     "Prioritize course-fit ball-strikers and players with strong bogey-avoidance trends.",
-    "Use model rankings and consistency signals instead of public-name value alone.",
+    "Use model rankings and consistency signals instead of public-name recognition alone.",
   ],
   faqs: [
     {
       question: "What are the best bets for the Wells Fargo Championship 2026?",
       answer:
-        "The model leans most heavily toward Rory McIlroy, Xander Schauffele, Collin Morikawa, and Tommy Fleetwood as the strongest Wells Fargo Championship 2026 best bets.",
+        "The model leans most heavily toward Rory McIlroy, Xander Schauffele, Collin Morikawa, and Tommy Fleetwood as the strongest Wells Fargo Championship 2026 shortlist names.",
     },
     {
       question: "What stats matter most for the Wells Fargo Championship?",
@@ -232,44 +232,44 @@ export const wellsFargoChampionship2026Content: PgaTournamentContent = {
         "This setup rewards SG: Approach, par-4 scoring, controlled driving, bogey avoidance, and the ability to gain tee to green over a demanding layout.",
     },
     {
-      question: "What are the safest golf bets this week?",
+      question: "What are the higher-floor golf markets this week?",
       answer:
-        "Top 40 bets remain the safest structure because they emphasize consistent cut-makers and reduce the need for a true contending finish.",
+        "Top 40 bets remain lower-variance than outrights because they emphasize consistent cut-makers and reduce the need for a true contending finish.",
     },
     {
       question: "How do Top 40 golf bets work?",
       answer:
-        "A Top 40 bet cashes if a golfer finishes 40th or better, which makes it a popular market for parlays and safer multi-leg betting slips.",
+        "A Top 40 bet cashes if a golfer finishes 40th or better, which makes it a popular market for parlays and lower-variance multi-leg betting slips.",
     },
   ],
   tierOneBets: [
     {
       player: "Rory McIlroy",
       odds: "+150 T10",
-      edge: "Edge 15",
+      edge: "Signal 15",
       analysis:
         "The cleanest fit for this board. Elite long-iron ceiling, strong scoring upside on hard par 4s, and enough course comfort to justify a top-tier Wells Fargo Championship 2026 pick.",
     },
     {
       player: "Xander Schauffele",
       odds: "+155 T10",
-      edge: "Edge 14",
+      edge: "Signal 14",
       analysis:
         "A premium all-around option whose tee-to-green consistency translates well to a tougher setup. The model likes his balanced profile enough to keep him in the top tier despite shorter odds.",
     },
     {
       player: "Collin Morikawa",
       odds: "+170 T10",
-      edge: "Edge 13",
+      edge: "Signal 13",
       analysis:
         "Any week where elite approach play is the primary driver, Morikawa lands near the top. His ball-striking gives him one of the strongest top-10 floors in the field.",
     },
     {
       player: "Tommy Fleetwood",
       odds: "+215 T10",
-      edge: "Edge 12",
+      edge: "Signal 12",
       analysis:
-        "Fleetwood fits the best-bets board because the model values control, approach quality, and par-4 scoring more than pure distance this week.",
+        "Fleetwood fits the best-bets board because the model weights control, approach quality, and par-4 scoring more than pure distance this week.",
     },
   ],
   tierTwoBets: [
@@ -277,7 +277,7 @@ export const wellsFargoChampionship2026Content: PgaTournamentContent = {
       player: "Corey Conners",
       odds: "+240",
       analysis:
-        "One of the stronger value names for golf betting model picks this week thanks to reliable ball-striking and a naturally high-floor profile.",
+        "One of the stronger model-signal names for golf betting research this week thanks to reliable ball-striking and a naturally high-floor profile.",
     },
     {
       player: "Shane Lowry",
@@ -295,7 +295,7 @@ export const wellsFargoChampionship2026Content: PgaTournamentContent = {
       player: "Sepp Straka",
       odds: "+300",
       analysis:
-        "Approach and fairway control keep him relevant as a model-backed mid-tier value bet.",
+        "Approach and fairway control keep him relevant as a model-backed mid-tier lean.",
     },
   ],
   tierThreeBets: [
@@ -319,14 +319,14 @@ export const wellsFargoChampionship2026Content: PgaTournamentContent = {
     "Min Woo Lee -> Public upside is real, but the consistency profile is still weaker than the price implies.",
   ],
   top40Rows: [
-    ["Xander Schauffele", "Elite consistency, very low missed-cut risk, and a complete tee-to-green profile make him one of the safest golf bets on the card."],
+    ["Xander Schauffele", "Elite consistency, very low missed-cut risk, and a complete tee-to-green profile make him one of the higher-floor names on the card."],
     ["Collin Morikawa", "Approach-driven profile and reliable ball-striking keep the floor high even when the putter runs neutral."],
     ["Tommy Fleetwood", "Low-volatility ball-striking and a controlled scoring profile fit well for Wells Fargo Championship parlays."],
     ["Corey Conners", "One of the best high-floor ball-strikers in the field and a natural Top 40 anchor."],
     ["Patrick Cantlay", "Balanced skill set, fewer mistakes, and strong cut equity make him a clean parlay leg."],
-    ["Russell Henley", "Accuracy and iron play create a safer floor than many of the more explosive names."],
+    ["Russell Henley", "Accuracy and iron play create a steadier floor than many of the more explosive names."],
     ["Shane Lowry", "Handles difficult scoring conditions well and brings enough short-game support to protect the floor."],
-    ["Sepp Straka", "Reliable iron play and a repeatable fairway-first approach work well in safer markets."],
+    ["Sepp Straka", "Reliable iron play and a repeatable fairway-first approach work well in lower-variance placement markets."],
     ["Matt Fitzpatrick", "A more conservative Top 40 profile than outright play thanks to accuracy and short-game recovery."],
     ["Keegan Bradley", "The tee-to-green profile is strong enough to keep him inside the high-floor pool despite some volatility."],
     ["Sungjae Im", "Balanced consistency and enough fairway control to stay relevant in conservative bet structures."],
@@ -340,6 +340,6 @@ export const wellsFargoChampionship2026Content: PgaTournamentContent = {
     ["Conners", "+240", "11", "High-floor tee-to-green fit"],
     ["Lowry", "+275", "11", "Tough scoring profile"],
     ["Cantlay", "+190", "10", "Reliable all-around build"],
-    ["Straka", "+300", "10", "Fairway + approach value"],
+    ["Straka", "+300", "10", "Fairway + approach signal"],
   ],
 };
