@@ -9,6 +9,7 @@ import {
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
 import { usePgaPlayerHistory } from "@/hooks/usePgaPlayerHistory";
+import { assessPgaFreshness, type PgaFreshnessResult } from "@/lib/pga/pgaFreshness";
 import {
   buildCourseFitWeights,
   buildMetricPercentiles,
@@ -43,19 +44,57 @@ type CurrentField = {
   players: string[];
 };
 
+type PlayerStatsMeta = Record<string, unknown>;
+
 export default function PgaHistoryModel() {
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const { playerHistoryMap, majorHistoryMap, loading: historyLoading, error: historyError } = usePgaPlayerHistory();
-  const [field, setField] = useState<CurrentField | null>(null);
+  const [field, setField] = useState<unknown>(null);
+  const [fieldLoaded, setFieldLoaded] = useState(false);
+  const [playerStatsMeta, setPlayerStatsMeta] = useState<PlayerStatsMeta | null>(null);
+  const [playerStatsMetaLoaded, setPlayerStatsMetaLoaded] = useState(false);
   const [fieldOnly, setFieldOnly] = useState(true);
   const [search, setSearch] = useState("");
   const [statView, setStatView] = useState<"percentile" | "raw">("percentile");
 
   useEffect(() => {
+    let cancelled = false;
+
     fetch("/data/pga/current-field.json", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then(setField)
-      .catch(() => setField(null));
+      .then((json) => {
+        if (!cancelled) setField(json);
+      })
+      .catch(() => {
+        if (!cancelled) setField(null);
+      })
+      .finally(() => {
+        if (!cancelled) setFieldLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/data/pga/player-stats-meta.json", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((json) => {
+        if (!cancelled) setPlayerStatsMeta(json);
+      })
+      .catch(() => {
+        if (!cancelled) setPlayerStatsMeta(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPlayerStatsMetaLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const { active, current } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
@@ -68,32 +107,42 @@ export default function PgaHistoryModel() {
     () => event ? findCourseWeightEntry(courseWeights, event.name, event.courseName)?.weights : null,
     [courseWeights, event],
   );
+  const fieldFreshness = useMemo(
+    () => assessPgaFreshness(field, { payloadType: "current-field", expectedEvent: event }),
+    [field, event],
+  );
+  const playerStatsFreshness = useMemo(
+    () => assessPgaFreshness(playerStatsMeta, { payloadType: "player-stats-meta" }),
+    [playerStatsMeta],
+  );
+
+  const currentField = isCurrentFieldPayload(field) ? field : null;
 
   const fieldMatchesEvent = useMemo(() => {
-    if (!field || !event) return false;
+    if (!currentField || !event) return false;
     const expected = new Set([
       event.id,
       event.slug,
       event.name,
       event.shortName,
     ].filter(Boolean).map(normalizeEventIdentity));
-    return [field.localScheduleId, field.tournamentSlug, field.tournament]
+    return [currentField.localScheduleId, currentField.tournamentSlug, currentField.tournament]
       .filter(Boolean)
       .map(normalizeEventIdentity)
       .some((value) => expected.has(value));
-  }, [field, event]);
+  }, [currentField, event]);
 
   const fieldUsable = Boolean(
-    field
+    currentField
     && fieldMatchesEvent
-    && field.validated !== false
-    && Array.isArray(field.players)
-    && field.players.length > 0,
+    && currentField.validated !== false
+    && Array.isArray(currentField.players)
+    && currentField.players.length > 0,
   );
 
   const fieldSet = useMemo(
-    () => new Set(fieldUsable ? field?.players.map(normalizePlayerKey) ?? [] : []),
-    [field, fieldUsable],
+    () => new Set(fieldUsable ? currentField?.players.map(normalizePlayerKey) ?? [] : []),
+    [currentField, fieldUsable],
   );
 
   const modelRows = useMemo(() => {
@@ -182,6 +231,13 @@ export default function PgaHistoryModel() {
         <aside className="hidden w-60 shrink-0 lg:block"><div className="sticky top-4 overflow-hidden rounded-xl border bg-white shadow-sm"><div className="bg-slate-900 px-4 py-3 text-sm font-black text-white">2026 PGA Tour</div><div className="max-h-[72vh] divide-y overflow-y-auto">{schedule.filter((entry) => entry.startDate >= new Date().toISOString().slice(0, 10)).slice(0, 12).map((entry) => <div key={entry.id} className={`px-3 py-2 ${entry.id === event?.id ? "bg-emerald-50" : ""}`}><div className="text-xs font-bold">{entry.shortName || entry.name}</div><div className="text-[10px] text-slate-400">{entry.dateLabel}</div>{entry.dataFile && <Link to={`/pga/${entry.slug}/model`} className="mt-1 inline-block text-[10px] font-bold text-emerald-700">View model →</Link>}</div>)}</div></div></aside>
         <main className="min-w-0 flex-1">
           <div className="mb-4 flex flex-wrap gap-2"><Link to="/pga/best-bets" className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">Best Bets</Link><Link to="/pga/dfs" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">DFS Upload</Link></div>
+          <PgaModelFreshnessStatus
+            eventName={eventName}
+            fieldLoaded={fieldLoaded}
+            fieldFreshness={fieldFreshness}
+            playerStatsMetaLoaded={playerStatsMetaLoaded}
+            playerStatsFreshness={playerStatsFreshness}
+          />
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border bg-white p-3 shadow-sm">
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search player..." className="min-w-52 flex-1 rounded-lg border px-3 py-2 text-sm" />
             <button
@@ -195,14 +251,14 @@ export default function PgaHistoryModel() {
             <div className="inline-flex rounded-full border p-0.5 text-xs font-bold"><button onClick={() => setStatView("percentile")} className={`rounded-full px-3 py-1 ${statView === "percentile" ? "bg-emerald-600 text-white" : ""}`}>Percentile</button><button onClick={() => setStatView("raw")} className={`rounded-full px-3 py-1 ${statView === "raw" ? "bg-emerald-600 text-white" : ""}`}>Raw</button></div>
           </div>
 
-          {fieldUsable ? (
+          {fieldUsable && currentField ? (
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-              <span><strong>Official PGA TOUR field:</strong> {field.fieldCount ?? field.players.length} players for {field.tournament}{field.alternatesExcluded ? " · alternates excluded" : ""}</span>
-              {field.sourceUrl ? <a href={field.sourceUrl} target="_blank" rel="noreferrer" className="font-black text-emerald-800 underline">View source</a> : null}
+              <span><strong>Official PGA TOUR field:</strong> {currentField.fieldCount ?? currentField.players.length} players for {currentField.tournament}{currentField.alternatesExcluded ? " · alternates excluded" : ""}</span>
+              {currentField.sourceUrl ? <a href={currentField.sourceUrl} target="_blank" rel="noreferrer" className="font-black text-emerald-800 underline">View source</a> : null}
             </div>
-          ) : field ? (
+          ) : currentField ? (
             <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              The saved field is for <strong>{field.tournament}</strong>, not {eventName}. Field filtering is disabled until the official PGA TOUR field sync runs.
+              The saved field is for <strong>{currentField.tournament}</strong>, not {eventName}. Current field filtering may be disabled or unreliable until the official PGA TOUR field sync runs.
             </div>
           ) : null}
 
@@ -214,6 +270,79 @@ export default function PgaHistoryModel() {
       </div>
     </SiteShell>
   );
+}
+
+function PgaModelFreshnessStatus({
+  eventName,
+  fieldLoaded,
+  fieldFreshness,
+  playerStatsMetaLoaded,
+  playerStatsFreshness,
+}: {
+  eventName: string;
+  fieldLoaded: boolean;
+  fieldFreshness: PgaFreshnessResult;
+  playerStatsMetaLoaded: boolean;
+  playerStatsFreshness: PgaFreshnessResult;
+}) {
+  const warnings = [
+    fieldLoaded && !fieldFreshness.isUsable
+      ? buildFreshnessWarning("Current field", fieldFreshness, "Current field filtering may be disabled or unreliable.")
+      : null,
+    playerStatsMetaLoaded && !playerStatsFreshness.isUsable
+      ? buildFreshnessWarning("Player stats metadata", playerStatsFreshness, "Displayed model inputs may be stale or unverified.")
+      : null,
+  ].filter((warning): warning is string => Boolean(warning));
+
+  if (warnings.length === 0) {
+    if (!fieldLoaded || !playerStatsMetaLoaded) return null;
+
+    return (
+      <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+        <strong>PGA data status:</strong> Field and player-stat metadata are within freshness checks for {eventName}.
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+      <div className="font-black">PGA data freshness warning</div>
+      <ul className="mt-1 space-y-1">
+        {warnings.map((warning) => (
+          <li key={warning}>{warning}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function buildFreshnessWarning(label: string, freshness: PgaFreshnessResult, impact: string) {
+  const details = [
+    freshness.expectedTournament ? `expected ${freshness.expectedTournament}` : null,
+    freshness.actualTournament ? `loaded ${freshness.actualTournament}` : null,
+    freshness.generatedAt ? `generated ${formatStatusDate(freshness.generatedAt)}` : null,
+    freshness.fetchedAt ? `fetched ${formatStatusDate(freshness.fetchedAt)}` : null,
+    freshness.daysOld != null ? `${freshness.daysOld} days old` : null,
+  ].filter(Boolean).join("; ");
+
+  return `${label}: ${freshness.reason}${details ? ` (${details})` : ""} ${impact}`;
+}
+
+function formatStatusDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeZone: "America/New_York",
+  }).format(date);
+}
+
+function isCurrentFieldPayload(value: unknown): value is CurrentField {
+  return typeof value === "object"
+    && value !== null
+    && !Array.isArray(value)
+    && typeof (value as CurrentField).tournament === "string"
+    && Array.isArray((value as CurrentField).players);
 }
 
 function normalizeEventIdentity(value: unknown) {
