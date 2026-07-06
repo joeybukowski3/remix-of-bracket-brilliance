@@ -29,6 +29,8 @@ export default function PgaFreshnessStatusPanel({
   const panelItems = items ?? (freshness ? [{ label: "", freshness, actualLabel }] : []);
   const warnings = panelItems.filter((item) => !item.freshness.isUsable);
 
+  if (items && panelItems.length === 0) return null;
+
   if (warnings.length === 0 && !cleanMessage && panelItems.length !== 1) return null;
 
   if (warnings.length > 0) {

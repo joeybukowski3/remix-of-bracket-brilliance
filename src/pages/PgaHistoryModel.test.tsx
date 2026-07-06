@@ -97,6 +97,29 @@ function renderPage({
   );
 }
 
+function renderPageWithPendingFreshnessChecks() {
+  vi.stubGlobal("fetch", vi.fn((url: string) => {
+    if (url.includes("schedule.json")) return Promise.resolve(jsonResponse(schedule));
+    if (url.includes("course-weights.json")) return Promise.resolve(jsonResponse([]));
+    if (url.includes("player-stats-raw.json")) return Promise.resolve(jsonResponse(playerStats));
+    if (url.includes("current-field.json")) return new Promise(() => {});
+    if (url.includes("player-stats-meta.json")) return new Promise(() => {});
+    if (url.includes("player-history.json")) {
+      return Promise.resolve(jsonResponse({ version: 1, source: "test", generatedAt: "2026-07-06", players: [] }));
+    }
+    if (url.includes("major-history.json")) {
+      return Promise.resolve(jsonResponse({ version: 1, source: "test", generatedAt: "2026-07-06", years: [], players: [] }));
+    }
+    return Promise.resolve(jsonResponse({}, false));
+  }));
+
+  return render(
+    <MemoryRouter initialEntries={["/pga"]}>
+      <PgaHistoryModel />
+    </MemoryRouter>,
+  );
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(new Date("2026-07-06T12:00:00Z"));
@@ -108,6 +131,14 @@ afterEach(() => {
 });
 
 describe("PgaHistoryModel freshness warnings", () => {
+  it("does not show a clean freshness status before field and metadata checks load", async () => {
+    renderPageWithPendingFreshnessChecks();
+
+    await waitFor(() => expect(screen.getByText("PGA Tournament Model")).toBeInTheDocument());
+    expect(screen.queryByText("PGA data status:")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Field and player-stat metadata are within freshness checks/)).not.toBeInTheDocument();
+  });
+
   it("shows a clean PGA data status when field and metadata are current", async () => {
     renderPage();
 
