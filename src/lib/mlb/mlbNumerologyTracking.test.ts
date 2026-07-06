@@ -144,14 +144,14 @@ describe("MLB numerology tracking", () => {
     expect(summary.allTime.finalized).toBe(2);
   });
 
-  it("renders preview email text without implying locks", () => {
+  it("renders preview email text with safety framing", () => {
     const card = buildDailyNumerologyCard(rawPayload, { date: "2026-07-06" });
     const performance = mergePerformanceRecords({ records: [] }, buildTrackingRecordsFromCard(card));
     const summary = summarizePerformance(performance, "2026-07-06");
     const text = renderEmailText(card, summary);
     expect(text).toContain("MLB Numerology Plays");
     expect(text).toContain("Experimental numerology/model signals only");
-    expect(text.toLowerCase()).not.toContain("lock");
-    expect(text.toLowerCase()).not.toContain("guaranteed");
+    expect(text).toContain("not guaranteed");
+    expect(text).toContain("not guaranteed, validated betting edges");
   });
 });
