@@ -22,6 +22,13 @@ export const NFL_SECTION_NAV_ITEMS: NflSectionNavItem[] = [
     marker: "ST",
   },
   {
+    to: "/nfl/schedule",
+    label: "Schedule by Week",
+    shortLabel: "Schedule",
+    description: "Full season schedule with kickoff times, stadiums and final scores.",
+    marker: "SC",
+  },
+  {
     to: "/nfl/super-bowl",
     label: "Super Bowl Odds",
     shortLabel: "Super Bowl Odds",
