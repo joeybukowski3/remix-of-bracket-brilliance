@@ -69,6 +69,28 @@ Static/curated inputs that predate the pipeline and stay untouched:
 | `src/lib/nfl/guide2026.ts` | 2026 team guide composite (projections, schedule ranks, slugs) |
 | `src/lib/nfl/guideLabels.ts` | Centralized Over/Under/Pass + confidence + regression label thresholds (PR-5) |
 | `src/lib/nfl/guideData.ts` | Season-keyed normalized guide schema (`nfl-guide-2026-v1`), migrated from guide2026 with parity tests; does not consume power-ratings.json |
+
+### Guide data flow (after PR-6)
+
+`nflPreseason2026.ts` (raw composite numbers) → `guide2026.ts` (computation +
+template-generated editorial) → `guideData.ts` (normalized season-keyed
+consumer interface). Consumers:
+
+- **Migrated to `guideData.ts` (PR-6):** `NFLGuide2026`, `NFLTeamGuide2026`
+  (own rendering), `NFLRegression2026`.
+- **Intentional legacy (compatibility path, follow-up candidates):**
+  - Team-dashboard children (`NflTeamDashboardExtras`, `NflCoachOfYearCase`,
+    VSiN panels, Warren Sharp components) take the legacy `NflGuideTeam`
+    shape via `getLegacyGuideTeamBySlug` — they join Warren Sharp/VSiN data
+    onto it and were deemed too high-churn to convert in PR-6.
+  - `coachOfYear2026.ts` derives from `guide2026.ts` directly.
+  - `NFL.tsx` / `NFLSuperBowlOdds.tsx` consume `NFL_POWER_RATINGS` raw
+    (preseason power board, not guide data).
+  - `nflLogoUrl` remains the shared logo helper in `nflPreseason2026.ts`.
+- Team identity (name/abbr/color/division) still exists in both
+  `nflPreseason2026.ts` and canonical `teams.json`; parity is test-enforced
+  (`teamsCanonical.test.ts`), and collapsing the duplication is deferred
+  until the dashboard components migrate.
 | `src/lib/nfl/vsinGuide2026.ts` | VSiN 2026 guide extracts (internal/model input) |
 | `src/lib/nfl/warrenSharpTeams2026.ts`, `warrenSharpSchedule2026.ts` | Warren Sharp 2026 team/schedule extracts (internal/model input) |
 | `src/lib/nfl/superBowlMarkets.ts` | Super Bowl futures snapshot page data |

@@ -10,26 +10,31 @@ import {
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
-  NFL_GUIDE_DIVISIONS,
-  NFL_GUIDE_TEAM_BY_SLUG,
   formatSigned,
+  getLegacyGuideTeamBySlug,
+  getNflSeasonGuide,
   getScheduleDescription,
-  type NflGuideTeam,
-} from "@/lib/nfl/guide2026";
+  type NflGuideTeamNormalized,
+} from "@/lib/nfl/guideData";
+
+const GUIDE = getNflSeasonGuide(2026)!;
 
 export default function NFLTeamGuide2026() {
   const { teamSlug = "" } = useParams();
-  const team = NFL_GUIDE_TEAM_BY_SLUG.get(teamSlug);
+  const team = GUIDE.teamBySlug.get(teamSlug);
+  // Dashboard extras / Coach of the Year / VSiN panels still take the legacy
+  // guide-team shape (they join Warren Sharp + VSiN data onto it).
+  const legacyTeam = getLegacyGuideTeamBySlug(teamSlug);
 
   usePageSeo({
-    title: team ? `${team.team} 2026 Schedule, Stats, Odds & Roster Changes | Joe Knows Ball` : "2026 NFL Team Dashboard | Joe Knows Ball",
-    description: team ? `${team.team} 2026 schedule, power rating, 2025 statistics, futures odds, value, coaching changes and notable player movement.` : "2026 NFL team schedule, ratings, odds and roster changes.",
+    title: team ? `${team.teamName} 2026 Schedule, Stats, Odds & Roster Changes | Joe Knows Ball` : "2026 NFL Team Dashboard | Joe Knows Ball",
+    description: team ? `${team.teamName} 2026 schedule, power rating, 2025 statistics, futures odds, value, coaching changes and notable player movement.` : "2026 NFL team schedule, ratings, odds and roster changes.",
     path: `/nfl/guide/team/${teamSlug}`,
     noindex: !team,
   });
 
-  if (!team) return <Navigate to="/nfl/guide" replace />;
-  const divisionTeams = NFL_GUIDE_DIVISIONS.find((entry) => entry.division === team.division)?.teams ?? [];
+  if (!team || !legacyTeam) return <Navigate to="/nfl/guide" replace />;
+  const divisionTeams = GUIDE.divisions.find((entry) => entry.division === team.division)?.teams ?? [];
 
   return (
     <SiteShell>
@@ -41,16 +46,16 @@ export default function NFLTeamGuide2026() {
             <div className="mt-4 flex flex-col gap-5 sm:mt-5 lg:flex-row lg:items-end lg:justify-between lg:gap-7">
               <div className="flex min-w-0 items-center gap-4 sm:gap-5">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 p-2 sm:h-24 sm:w-24 sm:rounded-2xl sm:p-3">
-                  <img src={nflLogoUrl(team.abbr)} alt={`${team.team} logo`} className="h-full w-full object-contain" />
+                  <img src={nflLogoUrl(team.abbr)} alt={`${team.teamName} logo`} className="h-full w-full object-contain" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200 sm:text-xs">{team.division} · 2026 Team Dashboard</div>
-                  <h1 className="mt-0.5 text-3xl font-black tracking-tight sm:mt-1 sm:text-5xl">{team.team}</h1>
+                  <h1 className="mt-0.5 text-3xl font-black tracking-tight sm:mt-1 sm:text-5xl">{team.teamName}</h1>
                   <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-200 sm:mt-2 sm:text-sm sm:leading-6">{team.headline}</p>
                 </div>
               </div>
 
-              <NflTeamHeaderOdds team={team} />
+              <NflTeamHeaderOdds team={legacyTeam} />
             </div>
 
             <div className="mt-5 sm:mt-7"><NflGuideNav /></div>
@@ -61,18 +66,18 @@ export default function NFLTeamGuide2026() {
           <section className="grid grid-cols-4 gap-2 sm:gap-4 lg:grid-cols-8">
             <Metric label="2025 record" value={team.record2025} />
             <Metric label="Model wins" value={team.projectedWins.toFixed(1)} emphasis />
-            <Metric label="Win total" value={team.winTotal?.toFixed(1) ?? "—"} />
-            <Metric label="Model edge" value={team.modelEdge == null ? "—" : formatSigned(team.modelEdge)} tone={team.modelEdge == null ? "neutral" : team.modelEdge > 0 ? "good" : team.modelEdge < 0 ? "bad" : "neutral"} />
+            <Metric label="Win total" value={team.marketWinTotal?.toFixed(1) ?? "—"} />
+            <Metric label="Model edge" value={team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)} tone={team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral"} />
             <Metric label="Power rank" value={`#${team.powerRank}`} />
-            <Metric label="Offense" value={`#${team.offRank}`} tone={team.offRank <= 10 ? "good" : team.offRank >= 24 ? "bad" : "neutral"} />
-            <Metric label="Defense" value={`#${team.defRank}`} tone={team.defRank <= 10 ? "good" : team.defRank >= 24 ? "bad" : "neutral"} />
+            <Metric label="Offense" value={`#${team.offenseRank}`} tone={team.offenseRank <= 10 ? "good" : team.offenseRank >= 24 ? "bad" : "neutral"} />
+            <Metric label="Defense" value={`#${team.defenseRank}`} tone={team.defenseRank <= 10 ? "good" : team.defenseRank >= 24 ? "bad" : "neutral"} />
             <Metric label="Schedule" value={team.scheduleRank == null ? "—" : `#${team.scheduleRank}`} />
           </section>
 
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
             <div className="min-w-0 space-y-8">
-              <NflTeamDashboardExtras team={team} />
-              <NflCoachOfYearCase team={team} />
+              <NflTeamDashboardExtras team={legacyTeam} />
+              <NflCoachOfYearCase team={legacyTeam} />
 
               <section className="space-y-6">
                 <div>
@@ -86,11 +91,11 @@ export default function NFLTeamGuide2026() {
                     <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge label={team.regressionSignal} tone={team.regressionSignal === "Bounce Back" ? "green" : team.regressionSignal === "Regression" ? "red" : "gray"} />
-                        <Badge label={`${team.marketLean} lean`} tone={team.marketLean === "Over" ? "green" : team.marketLean === "Under" ? "red" : "gray"} />
-                        <Badge label={`${team.marketConfidence} confidence`} tone="blue" />
+                        <Badge label={`${team.recommendationLabel} lean`} tone={team.recommendationLabel === "Over" ? "green" : team.recommendationLabel === "Under" ? "red" : "gray"} />
+                        <Badge label={`${team.confidenceLabel} confidence`} tone="blue" />
                       </div>
                       <h3 className="mt-4 text-2xl font-black text-slate-900">Model overview</h3>
-                      <p className="mt-3 text-sm leading-7 text-slate-600">{team.summary}</p>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">{team.editorialSummary}</p>
                       <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Projection formula</div>
                         <p className="mt-1 text-xs leading-5 text-slate-600">8.5 league-average wins + composite strength adjustment + schedule adjustment. Schedule rank uses #1 as hardest and #32 as easiest. The model is a baseline for comparison, not a replacement for injury, quarterback or price analysis.</p>
@@ -100,7 +105,7 @@ export default function NFLTeamGuide2026() {
                     <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                       <div className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">Three burning questions</div>
                       <div className="mt-4 divide-y divide-slate-100">
-                        {team.questions.map((question, index) => (
+                        {team.keyQuestions.map((question, index) => (
                           <div key={question.title} className="py-5 first:pt-0 last:pb-0">
                             <div className="flex gap-3">
                               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">{index + 1}</span>
@@ -151,7 +156,7 @@ export default function NFLTeamGuide2026() {
               </section>
             </div>
 
-            <NflTeamStatsSidebar team={team} />
+            <NflTeamStatsSidebar team={legacyTeam} />
           </div>
         </div>
       </main>
@@ -173,6 +178,6 @@ function ListCard({ title, items, tone }: { title: string; items: string[]; tone
   return <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 className={`font-black ${tone === "green" ? "text-emerald-800" : "text-red-700"}`}>{title}</h3><div className="mt-3 space-y-3">{items.map((item) => <div key={item} className="flex gap-2 text-sm leading-6 text-slate-600"><span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${tone === "green" ? "bg-emerald-500" : "bg-red-500"}`} />{item}</div>)}</div></article>;
 }
 
-function DivisionRow({ team, active }: { team: NflGuideTeam; active: boolean }) {
-  return <tr className={`border-b border-slate-100 last:border-0 ${active ? "bg-blue-50" : "bg-white"}`}><td className={`sticky left-0 z-10 px-3 py-2 sm:px-4 sm:py-3 ${active ? "bg-blue-50" : "bg-white"}`}><Link to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-2 font-black text-slate-900 sm:gap-3"><img src={nflLogoUrl(team.abbr)} alt="" className="h-6 w-6 object-contain sm:h-8 sm:w-8" /><span className="text-xs sm:text-sm">{team.team}</span>{active && <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[9px] text-white">You</span>}</Link></td><td className="px-2 py-2 text-center font-black sm:px-3 sm:py-3">{team.projectedWins.toFixed(1)}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">{team.winTotal?.toFixed(1) ?? "—"}</td><td className="px-2 py-2 text-center font-black sm:px-3 sm:py-3">{team.modelEdge == null ? "—" : formatSigned(team.modelEdge)}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.powerRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.offRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.defRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.scheduleRank ?? "—"}</td></tr>;
+function DivisionRow({ team, active }: { team: NflGuideTeamNormalized; active: boolean }) {
+  return <tr className={`border-b border-slate-100 last:border-0 ${active ? "bg-blue-50" : "bg-white"}`}><td className={`sticky left-0 z-10 px-3 py-2 sm:px-4 sm:py-3 ${active ? "bg-blue-50" : "bg-white"}`}><Link to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-2 font-black text-slate-900 sm:gap-3"><img src={nflLogoUrl(team.abbr)} alt="" className="h-6 w-6 object-contain sm:h-8 sm:w-8" /><span className="text-xs sm:text-sm">{team.teamName}</span>{active && <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[9px] text-white">You</span>}</Link></td><td className="px-2 py-2 text-center font-black sm:px-3 sm:py-3">{team.projectedWins.toFixed(1)}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">{team.marketWinTotal?.toFixed(1) ?? "—"}</td><td className="px-2 py-2 text-center font-black sm:px-3 sm:py-3">{team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.powerRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.offenseRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.defenseRank}</td><td className="px-2 py-2 text-center sm:px-3 sm:py-3">#{team.scheduleRank ?? "—"}</td></tr>;
 }
