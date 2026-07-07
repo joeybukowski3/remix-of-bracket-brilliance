@@ -1,24 +1,46 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-07-07T14:44:45.805Z",
-    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline, regular season only)",
+    "generatedAt": "2026-07-07T18:23:03.409Z",
+    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline) + nflverse stats_team weekly release, regular season only",
     "season": 2025,
     "week": null,
-    "modelVersion": "nfl-power-v0.1",
+    "modelVersion": "nfl-power-v0.2",
     "notes": [
       "Stats and ratings derive from final regular-season results only; postseason games are excluded.",
-      "Advanced efficiency metrics (yards, turnovers, EPA, success rate, pace) are null: they require heavier nflverse play-by-play/team-week downloads and are deferred to a future model version.",
-      "Rating formula (nfl-power-v0.1, fallback tier): 60% point differential per game + 25% points per game + 15% win percentage, each min-max normalized to 0-100 within the season.",
-      "Defense context uses points allowed per game inverted, so better defense scores higher.",
+      "Sources: repo results.json (PR-2 nflverse pipeline) + nflverse (stats_team weekly release) (https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_2025.csv).",
+      "Advanced metrics (EPA/play, yards/play, turnovers) computed from the nflverse stats_team weekly file; defensive values derived from opponents' offensive production.",
+      "Success rates require full play-by-play (too heavy for the default workflow) and remain null.",
+      "Rating formula (nfl-power-v0.2, tier v0.2-epa): 35% pointDifferentialPerGame + 20% offensiveEpaPerPlay + 20% defensiveEpaPerPlay + 15% scheduleAdjustment + 10% winPercentage, each min-max normalized to 0-100 within the season.",
+      "Defensive components are inverted so better defense increases the rating.",
+      "Schedule adjustment: one-pass average of opponents' raw point differential per game (final scores only — no spreads, moneylines or market data), normalized 0-100 within the season.",
       "Experimental model output for internal review only; not validated and not betting guidance.",
       "No betting-line columns are read anywhere in this pipeline."
     ]
   },
+  "model": {
+    "modelVersion": "nfl-power-v0.2",
+    "formula": "v0.2-epa",
+    "weights": {
+      "pointDifferentialPerGame": 0.35,
+      "offensiveEpaPerPlay": 0.2,
+      "defensiveEpaPerPlay": 0.2,
+      "scheduleAdjustment": 0.15,
+      "winPercentage": 0.1
+    },
+    "sources": [
+      "public/data/nfl/<season>/results.json (repo, PR-2 pipeline)",
+      "nflverse (stats_team weekly release): https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_2025.csv"
+    ],
+    "advancedMetricsAvailable": true,
+    "scheduleAdjustmentMethod": "one-pass average of opponents' point differential per game (final scores only), min-max normalized 0-100 within season"
+  },
   "weights": {
-    "pointDifferentialPerGame": 0.6,
-    "pointsPerGame": 0.25,
-    "winPercentage": 0.15
+    "pointDifferentialPerGame": 0.35,
+    "offensiveEpaPerPlay": 0.2,
+    "defensiveEpaPerPlay": 0.2,
+    "scheduleAdjustment": 0.15,
+    "winPercentage": 0.1
   },
   "ratings": [
     {
@@ -27,26 +49,36 @@
       "abbr": "sea",
       "name": "Seattle Seahawks",
       "season": 2025,
-      "rating": 96.84,
+      "rating": 87.51,
       "rank": 1,
-      "offenseRating": 87.36,
+      "offenseRating": 68.98,
       "defenseRating": 100,
-      "scheduleAdjustment": null,
+      "scheduleAdjustment": 58.09,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 11.235,
           "normalized": 100,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 28.412,
-          "normalized": 87.36,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.031,
+          "normalized": 68.98,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.114,
+          "normalized": 100,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 58.09,
+          "normalized": 58.09,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.824,
           "normalized": 100,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 17.176,
@@ -54,8 +86,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-lar",
@@ -63,26 +95,36 @@
       "abbr": "lar",
       "name": "LA Rams",
       "season": 2025,
-      "rating": 94.38,
+      "rating": 86.04,
       "rank": 2,
-      "offenseRating": 100,
-      "defenseRating": 75.34,
-      "scheduleAdjustment": null,
+      "offenseRating": 98.01,
+      "defenseRating": 71.38,
+      "scheduleAdjustment": 71.16,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 10.118,
           "normalized": 95.18,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 30.471,
-          "normalized": 100,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.135,
+          "normalized": 98.01,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.034,
+          "normalized": 71.38,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 71.16,
+          "normalized": 71.16,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.706,
           "normalized": 81.79,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 20.353,
@@ -90,44 +132,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-ne",
-      "slug": "new-england-patriots",
-      "abbr": "ne",
-      "name": "New England Patriots",
-      "season": 2025,
-      "rating": 94.27,
-      "rank": 3,
-      "offenseRating": 89.89,
-      "defenseRating": 87.21,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 10,
-          "normalized": 94.67,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 28.824,
-          "normalized": 89.89,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.824,
-          "normalized": 100,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 18.824,
-          "normalizedInverted": 87.21,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-jax",
@@ -135,26 +141,36 @@
       "abbr": "jax",
       "name": "Jacksonville Jaguars",
       "season": 2025,
-      "rating": 86.59,
-      "rank": 4,
-      "offenseRating": 84.11,
-      "defenseRating": 79.9,
-      "scheduleAdjustment": null,
+      "rating": 79.35,
+      "rank": 3,
+      "offenseRating": 68.76,
+      "defenseRating": 94.03,
+      "scheduleAdjustment": 49.4,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 8.118,
           "normalized": 86.55,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 27.882,
-          "normalized": 84.11,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.03,
+          "normalized": 68.76,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.097,
+          "normalized": 94.03,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 49.4,
+          "normalized": 49.4,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.765,
           "normalized": 90.9,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 19.765,
@@ -162,44 +178,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-buf",
-      "slug": "buffalo-bills",
-      "abbr": "buf",
-      "name": "Buffalo Bills",
-      "season": 2025,
-      "rating": 82.5,
-      "rank": 5,
-      "offenseRating": 86.64,
-      "defenseRating": 66.66,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 6.824,
-          "normalized": 80.96,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 28.294,
-          "normalized": 86.64,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.706,
-          "normalized": 81.79,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 21.471,
-          "normalizedInverted": 66.66,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-hou",
@@ -207,26 +187,36 @@
       "abbr": "hou",
       "name": "Houston Texans",
       "season": 2025,
-      "rating": 74.49,
-      "rank": 6,
-      "offenseRating": 58.85,
-      "defenseRating": 98.63,
-      "scheduleAdjustment": null,
+      "rating": 78.46,
+      "rank": 4,
+      "offenseRating": 56.7,
+      "defenseRating": 99.5,
+      "scheduleAdjustment": 75.49,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 6.412,
           "normalized": 79.19,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 23.765,
-          "normalized": 58.85,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.013,
+          "normalized": 56.7,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.112,
+          "normalized": 99.5,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 75.49,
+          "normalized": 75.49,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.706,
           "normalized": 81.79,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 17.353,
@@ -234,8 +224,100 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-ne",
+      "slug": "new-england-patriots",
+      "abbr": "ne",
+      "name": "New England Patriots",
+      "season": 2025,
+      "rating": 77.64,
+      "rank": 5,
+      "offenseRating": 100,
+      "defenseRating": 72.52,
+      "scheduleAdjustment": 0,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 10,
+          "normalized": 94.67,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.142,
+          "normalized": 100,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.037,
+          "normalized": 72.52,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 0,
+          "normalized": 0,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.824,
+          "normalized": 100,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 18.824,
+          "normalizedInverted": 87.21,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-buf",
+      "slug": "buffalo-bills",
+      "abbr": "buf",
+      "name": "Buffalo Bills",
+      "season": 2025,
+      "rating": 74.04,
+      "rank": 6,
+      "offenseRating": 96.08,
+      "defenseRating": 63.36,
+      "scheduleAdjustment": 37.6,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 6.824,
+          "normalized": 80.96,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.128,
+          "normalized": 96.08,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.011,
+          "normalized": 63.36,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 37.6,
+          "normalized": 37.6,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.706,
+          "normalized": 81.79,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.471,
+          "normalizedInverted": 66.66,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-den",
@@ -243,26 +325,36 @@
       "abbr": "den",
       "name": "Denver Broncos",
       "season": 2025,
-      "rating": 74.06,
+      "rating": 73.36,
       "rank": 7,
-      "offenseRating": 57.76,
-      "defenseRating": 91.32,
-      "scheduleAdjustment": null,
+      "offenseRating": 73.01,
+      "defenseRating": 91.09,
+      "scheduleAdjustment": 30.05,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 5.294,
           "normalized": 74.37,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 23.588,
-          "normalized": 57.76,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.045,
+          "normalized": 73.01,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.089,
+          "normalized": 91.09,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 30.05,
+          "normalized": 30.05,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.824,
           "normalized": 100,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 18.294,
@@ -270,152 +362,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-det",
-      "slug": "detroit-lions",
-      "abbr": "det",
-      "name": "Detroit Lions",
-      "season": 2025,
-      "rating": 71.1,
-      "rank": 8,
-      "offenseRating": 86.64,
-      "defenseRating": 44.75,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 4,
-          "normalized": 68.78,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 28.294,
-          "normalized": 86.64,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 54.48,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 24.294,
-          "normalizedInverted": 44.75,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-sf",
-      "slug": "san-francisco-49ers",
-      "abbr": "sf",
-      "name": "San Francisco 49ers",
-      "season": 2025,
-      "rating": 70.92,
-      "rank": 9,
-      "offenseRating": 70.76,
-      "defenseRating": 63.92,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 3.882,
-          "normalized": 68.27,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 25.706,
-          "normalized": 70.76,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.706,
-          "normalized": 81.79,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 21.824,
-          "normalizedInverted": 63.92,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-ind",
-      "slug": "indianapolis-colts",
-      "abbr": "ind",
-      "name": "Indianapolis Colts",
-      "season": 2025,
-      "rating": 66.27,
-      "rank": 10,
-      "offenseRating": 81.23,
-      "defenseRating": 45.21,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 3.176,
-          "normalized": 65.23,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 27.412,
-          "normalized": 81.23,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.471,
-          "normalized": 45.52,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 24.235,
-          "normalizedInverted": 45.21,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-chi",
-      "slug": "chicago-bears",
-      "abbr": "chi",
-      "name": "Chicago Bears",
-      "season": 2025,
-      "rating": 63.83,
-      "rank": 11,
-      "offenseRating": 72.2,
-      "defenseRating": 43.83,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 1.529,
-          "normalized": 58.12,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 25.941,
-          "normalized": 72.2,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.647,
-          "normalized": 72.69,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 24.412,
-          "normalizedInverted": 43.83,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-phi",
@@ -423,26 +371,36 @@
       "abbr": "phi",
       "name": "Philadelphia Eagles",
       "season": 2025,
-      "rating": 62.5,
-      "rank": 12,
-      "offenseRating": 49.82,
-      "defenseRating": 84.93,
-      "scheduleAdjustment": null,
+      "rating": 69.51,
+      "rank": 8,
+      "offenseRating": 66.15,
+      "defenseRating": 89.23,
+      "scheduleAdjustment": 55.58,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 3.176,
           "normalized": 65.23,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 22.294,
-          "normalized": 49.82,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.021,
+          "normalized": 66.15,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.083,
+          "normalized": 89.23,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 55.58,
+          "normalized": 55.58,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.647,
           "normalized": 72.69,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 19.118,
@@ -450,80 +408,146 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-bal",
-      "slug": "baltimore-ravens",
-      "abbr": "bal",
-      "name": "Baltimore Ravens",
+      "teamId": "nfl-det",
+      "slug": "detroit-lions",
+      "abbr": "det",
+      "name": "Detroit Lions",
       "season": 2025,
-      "rating": 58.22,
-      "rank": 13,
-      "offenseRating": 66.06,
-      "defenseRating": 51.6,
-      "scheduleAdjustment": null,
+      "rating": 66.78,
+      "rank": 9,
+      "offenseRating": 81.03,
+      "defenseRating": 61.25,
+      "scheduleAdjustment": 58.7,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 1.529,
-          "normalized": 58.12,
-          "weight": 0.6
+          "raw": 4,
+          "normalized": 68.78,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 24.941,
-          "normalized": 66.06,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.074,
+          "normalized": 81.03,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.005,
+          "normalized": 61.25,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 58.7,
+          "normalized": 58.7,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 54.48,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.294,
+          "normalizedInverted": 44.75,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-ind",
+      "slug": "indianapolis-colts",
+      "abbr": "ind",
+      "name": "Indianapolis Colts",
+      "season": 2025,
+      "rating": 65.73,
+      "rank": 10,
+      "offenseRating": 82.74,
+      "defenseRating": 56.78,
+      "scheduleAdjustment": 69.65,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 3.176,
+          "normalized": 65.23,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.08,
+          "normalized": 82.74,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.007,
+          "normalized": 56.78,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 69.65,
+          "normalized": 69.65,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.471,
           "normalized": 45.52,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 23.412,
-          "normalizedInverted": 51.6,
+          "raw": 24.235,
+          "normalizedInverted": 45.21,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-gb",
-      "slug": "green-bay-packers",
-      "abbr": "gb",
-      "name": "Green Bay Packers",
+      "teamId": "nfl-sf",
+      "slug": "san-francisco-49ers",
+      "abbr": "sf",
+      "name": "San Francisco 49ers",
       "season": 2025,
-      "rating": 58.04,
-      "rank": 14,
-      "offenseRating": 54.15,
-      "defenseRating": 68.95,
-      "scheduleAdjustment": null,
+      "rating": 65.65,
+      "rank": 11,
+      "offenseRating": 83.19,
+      "defenseRating": 33.88,
+      "scheduleAdjustment": 67.75,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 1.824,
-          "normalized": 59.39,
-          "weight": 0.6
+          "raw": 3.882,
+          "normalized": 68.27,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 23,
-          "normalized": 54.15,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.082,
+          "normalized": 83.19,
+          "weight": 0.2
         },
-        "winPercentage": {
-          "raw": 0.559,
-          "normalized": 59.1,
+        "defensiveEpaPerPlay": {
+          "raw": 0.071,
+          "normalized": 33.88,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 67.75,
+          "normalized": 67.75,
           "weight": 0.15
         },
+        "winPercentage": {
+          "raw": 0.706,
+          "normalized": 81.79,
+          "weight": 0.1
+        },
         "pointsAllowedPerGame": {
-          "raw": 21.176,
-          "normalizedInverted": 68.95,
+          "raw": 21.824,
+          "normalizedInverted": 63.92,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-lac",
@@ -531,26 +555,36 @@
       "abbr": "lac",
       "name": "LA Chargers",
       "season": 2025,
-      "rating": 57.54,
-      "rank": 15,
-      "offenseRating": 45.85,
-      "defenseRating": 78.08,
-      "scheduleAdjustment": null,
+      "rating": 63.27,
+      "rank": 12,
+      "offenseRating": 52.73,
+      "defenseRating": 90.16,
+      "scheduleAdjustment": 46.04,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 1.647,
           "normalized": 58.63,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 21.647,
-          "normalized": 45.85,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.027,
+          "normalized": 52.73,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.086,
+          "normalized": 90.16,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 46.04,
+          "normalized": 46.04,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.647,
           "normalized": 72.69,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 20,
@@ -558,80 +592,100 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-pit",
-      "slug": "pittsburgh-steelers",
-      "abbr": "pit",
-      "name": "Pittsburgh Steelers",
+      "teamId": "nfl-gb",
+      "slug": "green-bay-packers",
+      "abbr": "gb",
+      "name": "Green Bay Packers",
       "season": 2025,
-      "rating": 56.05,
-      "rank": 16,
-      "offenseRating": 56.32,
-      "defenseRating": 56.62,
-      "scheduleAdjustment": null,
+      "rating": 61.13,
+      "rank": 13,
+      "offenseRating": 88.98,
+      "defenseRating": 47.19,
+      "scheduleAdjustment": 48,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 0.588,
-          "normalized": 54.06,
-          "weight": 0.6
+          "raw": 1.824,
+          "normalized": 59.39,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 23.353,
-          "normalized": 56.32,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.102,
+          "normalized": 88.98,
+          "weight": 0.2
         },
-        "winPercentage": {
-          "raw": 0.588,
-          "normalized": 63.58,
+        "defensiveEpaPerPlay": {
+          "raw": 0.034,
+          "normalized": 47.19,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 48,
+          "normalized": 48,
           "weight": 0.15
         },
+        "winPercentage": {
+          "raw": 0.559,
+          "normalized": 59.1,
+          "weight": 0.1
+        },
         "pointsAllowedPerGame": {
-          "raw": 22.765,
-          "normalizedInverted": 56.62,
+          "raw": 21.176,
+          "normalizedInverted": 68.95,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-dal",
-      "slug": "dallas-cowboys",
-      "abbr": "dal",
-      "name": "Dallas Cowboys",
+      "teamId": "nfl-chi",
+      "slug": "chicago-bears",
+      "abbr": "chi",
+      "name": "Chicago Bears",
       "season": 2025,
-      "rating": 51.71,
-      "rank": 17,
-      "offenseRating": 83.03,
-      "defenseRating": 0,
-      "scheduleAdjustment": null,
+      "rating": 60.98,
+      "rank": 14,
+      "offenseRating": 80.81,
+      "defenseRating": 53.06,
+      "scheduleAdjustment": 43.97,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -2.353,
-          "normalized": 41.37,
-          "weight": 0.6
+          "raw": 1.529,
+          "normalized": 58.12,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 27.706,
-          "normalized": 83.03,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.073,
+          "normalized": 80.81,
+          "weight": 0.2
         },
-        "winPercentage": {
-          "raw": 0.441,
-          "normalized": 40.9,
+        "defensiveEpaPerPlay": {
+          "raw": 0.018,
+          "normalized": 53.06,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 43.97,
+          "normalized": 43.97,
           "weight": 0.15
         },
+        "winPercentage": {
+          "raw": 0.647,
+          "normalized": 72.69,
+          "weight": 0.1
+        },
         "pointsAllowedPerGame": {
-          "raw": 30.059,
-          "normalizedInverted": 0,
+          "raw": 24.412,
+          "normalizedInverted": 43.83,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-kc",
@@ -639,26 +693,36 @@
       "abbr": "kc",
       "name": "Kansas City Chiefs",
       "season": 2025,
-      "rating": 51.11,
-      "rank": 18,
-      "offenseRating": 43.68,
-      "defenseRating": 83.56,
-      "scheduleAdjustment": null,
+      "rating": 60.31,
+      "rank": 15,
+      "offenseRating": 69.09,
+      "defenseRating": 69.45,
+      "scheduleAdjustment": 58.8,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 2,
           "normalized": 60.15,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 21.294,
-          "normalized": 43.68,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.031,
+          "normalized": 69.09,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.028,
+          "normalized": 69.45,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 58.8,
+          "normalized": 58.8,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.353,
           "normalized": 27.31,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 19.294,
@@ -666,8 +730,100 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-bal",
+      "slug": "baltimore-ravens",
+      "abbr": "bal",
+      "name": "Baltimore Ravens",
+      "season": 2025,
+      "rating": 59.8,
+      "rank": 16,
+      "offenseRating": 73.73,
+      "defenseRating": 53.35,
+      "scheduleAdjustment": 63.27,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 1.529,
+          "normalized": 58.12,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.048,
+          "normalized": 73.73,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.017,
+          "normalized": 53.35,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 63.27,
+          "normalized": 63.27,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 45.52,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 23.412,
+          "normalizedInverted": 51.6,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-pit",
+      "slug": "pittsburgh-steelers",
+      "abbr": "pit",
+      "name": "Pittsburgh Steelers",
+      "season": 2025,
+      "rating": 59.11,
+      "rank": 17,
+      "offenseRating": 69.62,
+      "defenseRating": 52.45,
+      "scheduleAdjustment": 62.77,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 0.588,
+          "normalized": 54.06,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.033,
+          "normalized": 69.62,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.019,
+          "normalized": 52.45,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 62.77,
+          "normalized": 62.77,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 63.58,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.765,
+          "normalizedInverted": 56.62,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-min",
@@ -675,26 +831,36 @@
       "abbr": "min",
       "name": "Minnesota Vikings",
       "season": 2025,
-      "rating": 50.05,
-      "rank": 19,
-      "offenseRating": 37.18,
-      "defenseRating": 81.28,
-      "scheduleAdjustment": null,
+      "rating": 57.57,
+      "rank": 18,
+      "offenseRating": 26.85,
+      "defenseRating": 90.55,
+      "scheduleAdjustment": 64.22,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 0.647,
           "normalized": 54.31,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 20.235,
-          "normalized": 37.18,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.12,
+          "normalized": 26.85,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.087,
+          "normalized": 90.55,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 64.22,
+          "normalized": 64.22,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.529,
           "normalized": 54.48,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 19.588,
@@ -702,8 +868,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-tb",
@@ -711,26 +877,36 @@
       "abbr": "tb",
       "name": "Tampa Bay Buccaneers",
       "season": 2025,
-      "rating": 45.56,
-      "rank": 20,
-      "offenseRating": 50.18,
-      "defenseRating": 45.66,
-      "scheduleAdjustment": null,
+      "rating": 51.52,
+      "rank": 19,
+      "offenseRating": 57.43,
+      "defenseRating": 52.67,
+      "scheduleAdjustment": 64.48,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -1.824,
           "normalized": 43.65,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 22.353,
-          "normalized": 50.18,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.01,
+          "normalized": 57.43,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.019,
+          "normalized": 52.67,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 64.48,
+          "normalized": 64.48,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.471,
           "normalized": 45.52,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 24.176,
@@ -738,8 +914,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-atl",
@@ -747,26 +923,36 @@
       "abbr": "atl",
       "name": "Atlanta Falcons",
       "season": 2025,
-      "rating": 40.54,
-      "rank": 21,
-      "offenseRating": 40.44,
-      "defenseRating": 50.23,
-      "scheduleAdjustment": null,
+      "rating": 49.58,
+      "rank": 20,
+      "offenseRating": 56.31,
+      "defenseRating": 60.18,
+      "scheduleAdjustment": 53.06,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -2.824,
           "normalized": 39.34,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 20.765,
-          "normalized": 40.44,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.014,
+          "normalized": 56.31,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.002,
+          "normalized": 60.18,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 53.06,
+          "normalized": 53.06,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.471,
           "normalized": 45.52,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 23.588,
@@ -774,188 +960,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-cin",
-      "slug": "cincinnati-bengals",
-      "abbr": "cin",
-      "name": "Cincinnati Bengals",
-      "season": 2025,
-      "rating": 38.75,
-      "rank": 22,
-      "offenseRating": 62.45,
-      "defenseRating": 8.68,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -4.588,
-          "normalized": 31.73,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 24.353,
-          "normalized": 62.45,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.353,
-          "normalized": 27.31,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 28.941,
-          "normalizedInverted": 8.68,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-nyg",
-      "slug": "ny-giants",
-      "abbr": "nyg",
-      "name": "NY Giants",
-      "season": 2025,
-      "rating": 36.08,
-      "rank": 23,
-      "offenseRating": 50.54,
-      "defenseRating": 32.87,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -3.412,
-          "normalized": 36.8,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 22.412,
-          "normalized": 50.54,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.235,
-          "normalized": 9.1,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 25.824,
-          "normalizedInverted": 32.87,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-mia",
-      "slug": "miami-dolphins",
-      "abbr": "mia",
-      "name": "Miami Dolphins",
-      "season": 2025,
-      "rating": 34.22,
-      "rank": 24,
-      "offenseRating": 38.27,
-      "defenseRating": 39.73,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -4.529,
-          "normalized": 31.98,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 20.412,
-          "normalized": 38.27,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.412,
-          "normalized": 36.42,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 24.941,
-          "normalizedInverted": 39.73,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-car",
-      "slug": "carolina-panthers",
-      "abbr": "car",
-      "name": "Carolina Panthers",
-      "season": 2025,
-      "rating": 33.55,
-      "rank": 25,
-      "offenseRating": 25.27,
-      "defenseRating": 59.82,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -4.059,
-          "normalized": 34.01,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 18.294,
-          "normalized": 25.27,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.471,
-          "normalized": 45.52,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 22.353,
-          "normalizedInverted": 59.82,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-wsh",
-      "slug": "washington-commanders",
-      "abbr": "wsh",
-      "name": "Washington Commanders",
-      "season": 2025,
-      "rating": 29.56,
-      "rank": 26,
-      "offenseRating": 41.52,
-      "defenseRating": 27.4,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -5.588,
-          "normalized": 27.41,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 20.941,
-          "normalized": 41.52,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.294,
-          "normalized": 18.21,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 26.529,
-          "normalizedInverted": 27.4,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-no",
@@ -963,26 +969,36 @@
       "abbr": "no",
       "name": "New Orleans Saints",
       "season": 2025,
-      "rating": 29.15,
-      "rank": 27,
-      "offenseRating": 23.47,
-      "defenseRating": 58.45,
-      "scheduleAdjustment": null,
+      "rating": 45.66,
+      "rank": 21,
+      "offenseRating": 40.98,
+      "defenseRating": 83.08,
+      "scheduleAdjustment": 46.14,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -4.529,
           "normalized": 31.98,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 18,
-          "normalized": 23.47,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.069,
+          "normalized": 40.98,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.066,
+          "normalized": 83.08,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 46.14,
+          "normalized": 46.14,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.353,
           "normalized": 27.31,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 22.529,
@@ -990,8 +1006,238 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-car",
+      "slug": "carolina-panthers",
+      "abbr": "car",
+      "name": "Carolina Panthers",
+      "season": 2025,
+      "rating": 43.35,
+      "rank": 22,
+      "offenseRating": 47.3,
+      "defenseRating": 39.82,
+      "scheduleAdjustment": 63.17,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -4.059,
+          "normalized": 34.01,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.046,
+          "normalized": 47.3,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.055,
+          "normalized": 39.82,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 63.17,
+          "normalized": 63.17,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 45.52,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.353,
+          "normalizedInverted": 59.82,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-nyg",
+      "slug": "ny-giants",
+      "abbr": "nyg",
+      "name": "NY Giants",
+      "season": 2025,
+      "rating": 42.56,
+      "rank": 23,
+      "offenseRating": 65.79,
+      "defenseRating": 31.63,
+      "scheduleAdjustment": 61.91,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -3.412,
+          "normalized": 36.8,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.02,
+          "normalized": 65.79,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.078,
+          "normalized": 31.63,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 61.91,
+          "normalized": 61.91,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.235,
+          "normalized": 9.1,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.824,
+          "normalizedInverted": 32.87,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-dal",
+      "slug": "dallas-cowboys",
+      "abbr": "dal",
+      "name": "Dallas Cowboys",
+      "season": 2025,
+      "rating": 40.62,
+      "rank": 24,
+      "offenseRating": 86.43,
+      "defenseRating": 0,
+      "scheduleAdjustment": 31.76,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -2.353,
+          "normalized": 41.37,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.093,
+          "normalized": 86.43,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.166,
+          "normalized": 0,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 31.76,
+          "normalized": 31.76,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.441,
+          "normalized": 40.9,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 30.059,
+          "normalizedInverted": 0,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-mia",
+      "slug": "miami-dolphins",
+      "abbr": "mia",
+      "name": "Miami Dolphins",
+      "season": 2025,
+      "rating": 39.2,
+      "rank": 25,
+      "offenseRating": 58.1,
+      "defenseRating": 28.91,
+      "scheduleAdjustment": 46.44,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -4.529,
+          "normalized": 31.98,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.008,
+          "normalized": 58.1,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.085,
+          "normalized": 28.91,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 46.44,
+          "normalized": 46.44,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.412,
+          "normalized": 36.42,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.941,
+          "normalizedInverted": 39.73,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-cin",
+      "slug": "cincinnati-bengals",
+      "abbr": "cin",
+      "name": "Cincinnati Bengals",
+      "season": 2025,
+      "rating": 38.65,
+      "rank": 26,
+      "offenseRating": 65.71,
+      "defenseRating": 11.38,
+      "scheduleAdjustment": 62.66,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -4.588,
+          "normalized": 31.73,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.019,
+          "normalized": 65.71,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.134,
+          "normalized": 11.38,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 62.66,
+          "normalized": 62.66,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.353,
+          "normalized": 27.31,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 28.941,
+          "normalizedInverted": 8.68,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-cle",
@@ -999,26 +1245,36 @@
       "abbr": "cle",
       "name": "Cleveland Browns",
       "season": 2025,
-      "rating": 21.85,
-      "rank": 28,
-      "offenseRating": 13.72,
-      "defenseRating": 60.27,
-      "scheduleAdjustment": null,
+      "rating": 38.06,
+      "rank": 27,
+      "offenseRating": 9.71,
+      "defenseRating": 92.67,
+      "scheduleAdjustment": 44.07,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -5.882,
           "normalized": 26.14,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 16.412,
-          "normalized": 13.72,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.181,
+          "normalized": 9.71,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.093,
+          "normalized": 92.67,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 44.07,
+          "normalized": 44.07,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.294,
           "normalized": 18.21,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 22.294,
@@ -1026,8 +1282,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-ari",
@@ -1035,26 +1291,36 @@
       "abbr": "ari",
       "name": "Arizona Cardinals",
       "season": 2025,
-      "rating": 20.95,
-      "rank": 29,
-      "offenseRating": 41.15,
-      "defenseRating": 10.5,
-      "scheduleAdjustment": null,
+      "rating": 36.95,
+      "rank": 28,
+      "offenseRating": 55.94,
+      "defenseRating": 30.2,
+      "scheduleAdjustment": 90.01,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -7.824,
           "normalized": 17.77,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 20.882,
-          "normalized": 41.15,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.016,
+          "normalized": 55.94,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.082,
+          "normalized": 30.2,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 90.01,
+          "normalized": 90.01,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.176,
           "normalized": 0,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 28.706,
@@ -1062,44 +1328,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-nyj",
-      "slug": "ny-jets",
-      "abbr": "nyj",
-      "name": "NY Jets",
+      "teamId": "nfl-wsh",
+      "slug": "washington-commanders",
+      "abbr": "wsh",
+      "name": "Washington Commanders",
       "season": 2025,
-      "rating": 5.33,
-      "rank": 30,
-      "offenseRating": 21.3,
-      "defenseRating": 3.66,
-      "scheduleAdjustment": null,
+      "rating": 34.66,
+      "rank": 29,
+      "offenseRating": 59.83,
+      "defenseRating": 10.66,
+      "scheduleAdjustment": 60.96,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -11.941,
-          "normalized": 0,
-          "weight": 0.6
+          "raw": -5.588,
+          "normalized": 27.41,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 17.647,
-          "normalized": 21.3,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.002,
+          "normalized": 59.83,
+          "weight": 0.2
         },
-        "winPercentage": {
-          "raw": 0.176,
-          "normalized": 0,
+        "defensiveEpaPerPlay": {
+          "raw": 0.136,
+          "normalized": 10.66,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 60.96,
+          "normalized": 60.96,
           "weight": 0.15
         },
+        "winPercentage": {
+          "raw": 0.294,
+          "normalized": 18.21,
+          "weight": 0.1
+        },
         "pointsAllowedPerGame": {
-          "raw": 29.588,
-          "normalizedInverted": 3.66,
+          "raw": 26.529,
+          "normalizedInverted": 27.4,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-ten",
@@ -1107,26 +1383,36 @@
       "abbr": "ten",
       "name": "Tennessee Titans",
       "season": 2025,
-      "rating": 5.25,
-      "rank": 31,
-      "offenseRating": 15.53,
-      "defenseRating": 15.07,
-      "scheduleAdjustment": null,
+      "rating": 24.28,
+      "rank": 30,
+      "offenseRating": 16.22,
+      "defenseRating": 26.19,
+      "scheduleAdjustment": 100,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -11.412,
           "normalized": 2.28,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 16.706,
-          "normalized": 15.53,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.158,
+          "normalized": 16.22,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.093,
+          "normalized": 26.19,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 100,
+          "normalized": 100,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.176,
           "normalized": 0,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 28.118,
@@ -1134,8 +1420,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-lv",
@@ -1143,26 +1429,36 @@
       "abbr": "lv",
       "name": "Las Vegas Raiders",
       "season": 2025,
-      "rating": 1.83,
-      "rank": 32,
+      "rating": 23.6,
+      "rank": 31,
       "offenseRating": 0,
-      "defenseRating": 36.07,
-      "scheduleAdjustment": null,
+      "defenseRating": 55.92,
+      "scheduleAdjustment": 75.68,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -11.235,
           "normalized": 3.05,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 14.176,
+        "offensiveEpaPerPlay": {
+          "raw": -0.216,
           "normalized": 0,
-          "weight": 0.25
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.01,
+          "normalized": 55.92,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 75.68,
+          "normalized": 75.68,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.176,
           "normalized": 0,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 25.412,
@@ -1170,8 +1466,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-nyj",
+      "slug": "ny-jets",
+      "abbr": "nyj",
+      "name": "NY Jets",
+      "season": 2025,
+      "rating": 17.39,
+      "rank": 32,
+      "offenseRating": 23.8,
+      "defenseRating": 11.23,
+      "scheduleAdjustment": 69.2,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -11.941,
+          "normalized": 0,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.131,
+          "normalized": 23.8,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.135,
+          "normalized": 11.23,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 69.2,
+          "normalized": 69.2,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.176,
+          "normalized": 0,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 29.588,
+          "normalizedInverted": 3.66,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     }
   ]
 }

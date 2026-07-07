@@ -1,25 +1,47 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-07-07T14:44:45.807Z",
-    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline, regular season only)",
+    "generatedAt": "2026-07-07T18:23:03.513Z",
+    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline) + nflverse stats_team weekly release, regular season only",
     "season": 2026,
     "week": null,
-    "modelVersion": "nfl-power-v0.1",
+    "modelVersion": "nfl-power-v0.2",
     "notes": [
       "Stats and ratings derive from final regular-season results only; postseason games are excluded.",
-      "Advanced efficiency metrics (yards, turnovers, EPA, success rate, pace) are null: they require heavier nflverse play-by-play/team-week downloads and are deferred to a future model version.",
-      "Rating formula (nfl-power-v0.1, fallback tier): 60% point differential per game + 25% points per game + 15% win percentage, each min-max normalized to 0-100 within the season.",
-      "Defense context uses points allowed per game inverted, so better defense scores higher.",
+      "Sources: repo results.json (PR-2 nflverse pipeline) + nflverse (stats_team weekly release) (https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_2026.csv).",
+      "Advanced metrics unavailable for this season (source file missing or no games played); EPA/yards/turnover fields are null.",
+      "Success rates require full play-by-play (too heavy for the default workflow) and remain null.",
+      "Rating formula (nfl-power-v0.2, tier v0.2-epa): 35% pointDifferentialPerGame + 20% offensiveEpaPerPlay + 20% defensiveEpaPerPlay + 15% scheduleAdjustment + 10% winPercentage, each min-max normalized to 0-100 within the season.",
+      "Defensive components are inverted so better defense increases the rating.",
+      "Schedule adjustment: one-pass average of opponents' raw point differential per game (final scores only — no spreads, moneylines or market data), normalized 0-100 within the season.",
       "Experimental model output for internal review only; not validated and not betting guidance.",
       "No betting-line columns are read anywhere in this pipeline.",
       "No final 2026 games exist yet, so performance stats are zero/null placeholders and ratings are unavailable (empty). Nothing is seeded or invented."
     ]
   },
+  "model": {
+    "modelVersion": "nfl-power-v0.2",
+    "formula": "v0.2-epa",
+    "weights": {
+      "pointDifferentialPerGame": 0.35,
+      "offensiveEpaPerPlay": 0.2,
+      "defensiveEpaPerPlay": 0.2,
+      "scheduleAdjustment": 0.15,
+      "winPercentage": 0.1
+    },
+    "sources": [
+      "public/data/nfl/<season>/results.json (repo, PR-2 pipeline)",
+      "nflverse (stats_team weekly release): https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_2026.csv"
+    ],
+    "advancedMetricsAvailable": false,
+    "scheduleAdjustmentMethod": "one-pass average of opponents' point differential per game (final scores only), min-max normalized 0-100 within season"
+  },
   "weights": {
-    "pointDifferentialPerGame": 0.6,
-    "pointsPerGame": 0.25,
-    "winPercentage": 0.15
+    "pointDifferentialPerGame": 0.35,
+    "offensiveEpaPerPlay": 0.2,
+    "defensiveEpaPerPlay": 0.2,
+    "scheduleAdjustment": 0.15,
+    "winPercentage": 0.1
   },
   "ratings": []
 }
