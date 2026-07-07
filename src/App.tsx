@@ -26,6 +26,7 @@ import MlbNumerologyPage from "./pages/MlbNumerologyPage";
 import MlbPowerRankings from "./pages/MlbPowerRankings";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
+import NFLSchedule from "./pages/NFLSchedule";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import NFLGuide2026 from "./pages/NFLGuide2026";
 import NFLRegression2026 from "./pages/NFLRegression2026";
@@ -98,6 +99,7 @@ const App = () => (
           <Route path="/donate" element={<Donate />} />
           <Route path="/nfl" element={<NFL />} />
           <Route path="/nfl/standings" element={<NFLStandings />} />
+          <Route path="/nfl/schedule" element={<NFLSchedule />} />
           <Route path="/nfl/super-bowl" element={<NFLSuperBowlOdds />} />
           <Route path="/nfl/coach-of-year" element={<NFLCoachOfYear2026 />} />
           <Route path="/nfl/guide" element={<NFLGuide2026 />} />
