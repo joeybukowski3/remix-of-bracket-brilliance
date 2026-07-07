@@ -4,7 +4,10 @@ import SiteShell from "@/components/layout/SiteShell";
 import NflGuideNav from "@/components/nfl/NflGuideNav";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
-import { NFL_GUIDE_TEAMS, formatSigned, type NflRegressionSignal } from "@/lib/nfl/guide2026";
+import { formatSigned, getNflSeasonGuide } from "@/lib/nfl/guideData";
+import type { NflRegressionSignal } from "@/lib/nfl/guideLabels";
+
+const GUIDE_TEAMS = getNflSeasonGuide(2026)!.teams;
 
 const filters: Array<"All" | NflRegressionSignal> = ["All", "Bounce Back", "Regression", "Stable"];
 
@@ -18,9 +21,9 @@ export default function NFLRegression2026() {
   const [sort, setSort] = useState<"gap" | "edge" | "power">("gap");
 
   const rows = useMemo(() => {
-    const selected = filter === "All" ? NFL_GUIDE_TEAMS : NFL_GUIDE_TEAMS.filter((team) => team.regressionSignal === filter);
+    const selected = filter === "All" ? GUIDE_TEAMS : GUIDE_TEAMS.filter((team) => team.regressionSignal === filter);
     return [...selected].sort((a, b) => {
-      if (sort === "edge") return Math.abs(b.modelEdge ?? 0) - Math.abs(a.modelEdge ?? 0);
+      if (sort === "edge") return Math.abs(b.modelVsMarketGap ?? 0) - Math.abs(a.modelVsMarketGap ?? 0);
       if (sort === "power") return a.powerRank - b.powerRank;
       return Math.abs(b.regressionGap) - Math.abs(a.regressionGap);
     });
@@ -48,7 +51,7 @@ export default function NFLRegression2026() {
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-[980px] text-sm">
                 <thead><tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500"><th className="px-3 py-3 text-left">Team</th><th>2025</th><th>2026 model</th><th>Record gap</th><th>Signal</th><th>Power</th><th>Off</th><th>Def</th><th>Schedule</th><th>Market</th><th>Edge</th><th>Lean</th></tr></thead>
-                <tbody>{rows.map((team) => <tr key={team.abbr} className="border-b border-slate-100 last:border-0 hover:bg-slate-50"><td className="px-3 py-3"><Link to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-3 font-black text-slate-900"><img src={nflLogoUrl(team.abbr)} alt="" className="h-8 w-8 object-contain" />{team.team}</Link></td><td className="text-center font-bold">{team.record2025}</td><td className="text-center font-black">{team.projectedWins.toFixed(1)}</td><td className={`text-center font-black ${team.regressionGap > 0 ? "text-emerald-700" : team.regressionGap < 0 ? "text-red-600" : "text-slate-500"}`}>{formatSigned(team.regressionGap)}</td><td className="text-center"><SignalBadge signal={team.regressionSignal} /></td><td className="text-center">#{team.powerRank}</td><td className="text-center">#{team.offRank}</td><td className="text-center">#{team.defRank}</td><td className="text-center">#{team.scheduleRank ?? "—"}</td><td className="text-center">{team.winTotal?.toFixed(1) ?? "—"}</td><td className="text-center font-black">{team.modelEdge == null ? "—" : formatSigned(team.modelEdge)}</td><td className={`text-center font-black ${team.marketLean === "Over" ? "text-emerald-700" : team.marketLean === "Under" ? "text-red-600" : "text-slate-500"}`}>{team.marketLean}</td></tr>)}</tbody>
+                <tbody>{rows.map((team) => <tr key={team.abbr} className="border-b border-slate-100 last:border-0 hover:bg-slate-50"><td className="px-3 py-3"><Link to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-3 font-black text-slate-900"><img src={nflLogoUrl(team.abbr)} alt="" className="h-8 w-8 object-contain" />{team.teamName}</Link></td><td className="text-center font-bold">{team.record2025}</td><td className="text-center font-black">{team.projectedWins.toFixed(1)}</td><td className={`text-center font-black ${team.regressionGap > 0 ? "text-emerald-700" : team.regressionGap < 0 ? "text-red-600" : "text-slate-500"}`}>{formatSigned(team.regressionGap)}</td><td className="text-center"><SignalBadge signal={team.regressionSignal} /></td><td className="text-center">#{team.powerRank}</td><td className="text-center">#{team.offenseRank}</td><td className="text-center">#{team.defenseRank}</td><td className="text-center">#{team.scheduleRank ?? "—"}</td><td className="text-center">{team.marketWinTotal?.toFixed(1) ?? "—"}</td><td className="text-center font-black">{team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)}</td><td className={`text-center font-black ${team.recommendationLabel === "Over" ? "text-emerald-700" : team.recommendationLabel === "Under" ? "text-red-600" : "text-slate-500"}`}>{team.recommendationLabel}</td></tr>)}</tbody>
               </table>
             </div>
           </section>

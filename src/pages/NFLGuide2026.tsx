@@ -5,15 +5,12 @@ import NflGuideNav from "@/components/nfl/NflGuideNav";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
-  NFL_GUIDE_BOUNCE_BACKS,
-  NFL_GUIDE_DIVISIONS,
-  NFL_GUIDE_PLAYOFFS,
-  NFL_GUIDE_REGRESSION_CANDIDATES,
-  NFL_GUIDE_SUPER_BOWL_PICK,
-  NFL_GUIDE_TOP_MARKET_EDGES,
   formatSigned,
-  type NflGuideTeam,
-} from "@/lib/nfl/guide2026";
+  getNflSeasonGuide,
+  type NflGuideTeamNormalized,
+} from "@/lib/nfl/guideData";
+
+const GUIDE = getNflSeasonGuide(2026)!;
 
 export default function NFLGuide2026() {
   usePageSeo({
@@ -38,10 +35,10 @@ export default function NFLGuide2026() {
               <div className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur">
                 <div className="text-[10px] font-black uppercase tracking-widest text-sky-200">Current model Super Bowl pick</div>
                 <div className="mt-3 flex items-center gap-3">
-                  <img src={nflLogoUrl(NFL_GUIDE_SUPER_BOWL_PICK.abbr)} alt="" className="h-12 w-12 object-contain" />
+                  <img src={nflLogoUrl(GUIDE.superBowlPick.abbr)} alt="" className="h-12 w-12 object-contain" />
                   <div>
-                    <div className="text-xl font-black">{NFL_GUIDE_SUPER_BOWL_PICK.team}</div>
-                    <div className="text-sm text-slate-300">{NFL_GUIDE_SUPER_BOWL_PICK.projectedWins.toFixed(1)} projected wins · Power #{NFL_GUIDE_SUPER_BOWL_PICK.powerRank}</div>
+                    <div className="text-xl font-black">{GUIDE.superBowlPick.teamName}</div>
+                    <div className="text-sm text-slate-300">{GUIDE.superBowlPick.projectedWins.toFixed(1)} projected wins · Power #{GUIDE.superBowlPick.powerRank}</div>
                   </div>
                 </div>
               </div>
@@ -63,15 +60,15 @@ export default function NFLGuide2026() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[680px] text-sm">
                   <thead><tr className="border-b text-[10px] font-black uppercase tracking-wider text-slate-400"><th className="px-2 py-2 text-left">Team</th><th>Model wins</th><th>Market</th><th>Gap</th><th>Lean</th><th></th></tr></thead>
-                  <tbody>{NFL_GUIDE_TOP_MARKET_EDGES.slice(0, 8).map((team) => <EdgeRow key={team.abbr} team={team} />)}</tbody>
+                  <tbody>{GUIDE.topMarketEdges.slice(0, 8).map((team) => <EdgeRow key={team.abbr} team={team} />)}</tbody>
                 </table>
               </div>
             </Panel>
 
             <Panel title="Fluke or real?" subtitle="The biggest differences between last year's record and this year's model baseline.">
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                <SignalList title="Bounce-back candidates" tone="green" teams={NFL_GUIDE_BOUNCE_BACKS.slice(0, 4)} />
-                <SignalList title="Regression candidates" tone="red" teams={NFL_GUIDE_REGRESSION_CANDIDATES.slice(0, 4)} />
+                <SignalList title="Bounce-back candidates" tone="green" teams={GUIDE.bounceBacks.slice(0, 4)} />
+                <SignalList title="Regression candidates" tone="red" teams={GUIDE.regressionCandidates.slice(0, 4)} />
               </div>
               <Link to="/nfl/guide/regression" className="mt-5 inline-flex rounded-lg bg-slate-900 px-4 py-2 text-xs font-black text-white">View all 32 teams →</Link>
             </Panel>
@@ -88,7 +85,7 @@ export default function NFLGuide2026() {
           <section>
             <SectionHeading title="All 32 team previews" subtitle="Each team page includes model vs market, regression profile, schedule context, unit strengths, concerns, and three burning questions written from our own data." />
             <div className="mt-5 grid gap-6 xl:grid-cols-2">
-              {NFL_GUIDE_DIVISIONS.map(({ division, teams }) => (
+              {GUIDE.divisions.map(({ division, teams }) => (
                 <div key={division} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                   <div className={`px-4 py-3 text-sm font-black text-white ${division.startsWith("AFC") ? "bg-slate-900" : "bg-blue-900"}`}>{division}</div>
                   <div className="divide-y divide-slate-100">
@@ -96,10 +93,10 @@ export default function NFLGuide2026() {
                       <Link key={team.abbr} to={`/nfl/guide/team/${team.slug}`} className="grid grid-cols-[minmax(0,1fr)_70px_70px] items-center gap-2 px-4 py-3 transition hover:bg-slate-50">
                         <div className="flex min-w-0 items-center gap-3">
                           <img src={nflLogoUrl(team.abbr)} alt="" className="h-8 w-8 shrink-0 object-contain" />
-                          <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{team.team}</div><div className="truncate text-[11px] text-slate-500">{team.headline}</div></div>
+                          <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{team.teamName}</div><div className="truncate text-[11px] text-slate-500">{team.headline}</div></div>
                         </div>
                         <div className="text-center"><div className="text-[9px] font-black uppercase text-slate-400">Model</div><div className="font-black text-slate-900">{team.projectedWins.toFixed(1)}</div></div>
-                        <div className="text-center"><div className="text-[9px] font-black uppercase text-slate-400">Lean</div><div className={`font-black ${team.marketLean === "Over" ? "text-emerald-700" : team.marketLean === "Under" ? "text-red-600" : "text-slate-500"}`}>{team.marketLean}</div></div>
+                        <div className="text-center"><div className="text-[9px] font-black uppercase text-slate-400">Lean</div><div className={`font-black ${team.recommendationLabel === "Over" ? "text-emerald-700" : team.recommendationLabel === "Under" ? "text-red-600" : "text-slate-500"}`}>{team.recommendationLabel}</div></div>
                       </Link>
                     ))}
                   </div>
@@ -123,6 +120,6 @@ function Panel({ title, subtitle, children }: { title: string; subtitle: string;
 }
 function StatCard({ label, value, detail }: { label: string; value: string; detail: string }) { return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-3xl font-black text-slate-900">{value}</div><div className="mt-1 text-xs text-slate-500">{detail}</div></div>; }
 function SectionHeading({ title, subtitle }: { title: string; subtitle: string }) { return <div><h2 className="text-2xl font-black text-slate-900">{title}</h2><p className="mt-1 max-w-3xl text-sm text-slate-500">{subtitle}</p></div>; }
-function EdgeRow({ team }: { team: NflGuideTeam }) { return <tr className="border-b border-slate-100 last:border-0"><td className="px-2 py-3"><div className="flex items-center gap-2"><img src={nflLogoUrl(team.abbr)} alt="" className="h-7 w-7 object-contain" /><span className="font-bold">{team.team}</span></div></td><td className="text-center font-black">{team.projectedWins.toFixed(1)}</td><td className="text-center">{team.winTotal?.toFixed(1) ?? "—"}</td><td className="text-center font-black">{team.modelEdge == null ? "—" : formatSigned(team.modelEdge)}</td><td className={`text-center font-black ${team.marketLean === "Over" ? "text-emerald-700" : team.marketLean === "Under" ? "text-red-600" : "text-slate-500"}`}>{team.marketLean}</td><td className="text-right"><Link to={`/nfl/guide/team/${team.slug}`} className="text-xs font-black text-blue-700">Preview →</Link></td></tr>; }
-function SignalList({ title, tone, teams }: { title: string; tone: "green" | "red"; teams: NflGuideTeam[] }) { return <div><div className={`mb-2 text-xs font-black uppercase tracking-wider ${tone === "green" ? "text-emerald-700" : "text-red-600"}`}>{title}</div><div className="space-y-2">{teams.map((team) => <Link key={team.abbr} to={`/nfl/guide/team/${team.slug}`} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50"><span className="text-xs font-bold text-slate-800">{team.team}</span><span className={`text-xs font-black ${tone === "green" ? "text-emerald-700" : "text-red-600"}`}>{formatSigned(team.regressionGap)}</span></Link>)}</div></div>; }
-function PlayoffCard({ conference }: { conference: "AFC" | "NFC" }) { const projection = NFL_GUIDE_PLAYOFFS[conference]; const teams = [...projection.divisionWinners, ...projection.wildCards]; return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-end justify-between"><div><div className="text-[10px] font-black uppercase tracking-widest text-blue-600">{conference}</div><h3 className="text-xl font-black">Projected field</h3></div><div className="text-right text-xs text-slate-500">Champion<br/><span className="font-black text-slate-900">{projection.conferenceChampion.team}</span></div></div><div className="mt-4 grid gap-2 sm:grid-cols-2">{teams.map((team, index) => <Link key={team.abbr} to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 hover:bg-slate-50"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">{index + 1}</span><img src={nflLogoUrl(team.abbr)} alt="" className="h-7 w-7 object-contain"/><div><div className="text-xs font-black">{team.team}</div><div className="text-[10px] text-slate-500">{index < 4 ? "Division winner" : "Wild card"} · {team.projectedWins.toFixed(1)} wins</div></div></Link>)}</div></div>; }
+function EdgeRow({ team }: { team: NflGuideTeamNormalized }) { return <tr className="border-b border-slate-100 last:border-0"><td className="px-2 py-3"><div className="flex items-center gap-2"><img src={nflLogoUrl(team.abbr)} alt="" className="h-7 w-7 object-contain" /><span className="font-bold">{team.teamName}</span></div></td><td className="text-center font-black">{team.projectedWins.toFixed(1)}</td><td className="text-center">{team.marketWinTotal?.toFixed(1) ?? "—"}</td><td className="text-center font-black">{team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)}</td><td className={`text-center font-black ${team.recommendationLabel === "Over" ? "text-emerald-700" : team.recommendationLabel === "Under" ? "text-red-600" : "text-slate-500"}`}>{team.recommendationLabel}</td><td className="text-right"><Link to={`/nfl/guide/team/${team.slug}`} className="text-xs font-black text-blue-700">Preview →</Link></td></tr>; }
+function SignalList({ title, tone, teams }: { title: string; tone: "green" | "red"; teams: NflGuideTeamNormalized[] }) { return <div><div className={`mb-2 text-xs font-black uppercase tracking-wider ${tone === "green" ? "text-emerald-700" : "text-red-600"}`}>{title}</div><div className="space-y-2">{teams.map((team) => <Link key={team.abbr} to={`/nfl/guide/team/${team.slug}`} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50"><span className="text-xs font-bold text-slate-800">{team.teamName}</span><span className={`text-xs font-black ${tone === "green" ? "text-emerald-700" : "text-red-600"}`}>{formatSigned(team.regressionGap)}</span></Link>)}</div></div>; }
+function PlayoffCard({ conference }: { conference: "AFC" | "NFC" }) { const projection = GUIDE.playoffProjection[conference]; const teams = [...projection.divisionWinners, ...projection.wildCards]; return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-end justify-between"><div><div className="text-[10px] font-black uppercase tracking-widest text-blue-600">{conference}</div><h3 className="text-xl font-black">Projected field</h3></div><div className="text-right text-xs text-slate-500">Champion<br/><span className="font-black text-slate-900">{projection.conferenceChampion.teamName}</span></div></div><div className="mt-4 grid gap-2 sm:grid-cols-2">{teams.map((team, index) => <Link key={team.abbr} to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2 hover:bg-slate-50"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">{index + 1}</span><img src={nflLogoUrl(team.abbr)} alt="" className="h-7 w-7 object-contain"/><div><div className="text-xs font-black">{team.teamName}</div><div className="text-[10px] text-slate-500">{index < 4 ? "Division winner" : "Wild card"} · {team.projectedWins.toFixed(1)} wins</div></div></Link>)}</div></div>; }

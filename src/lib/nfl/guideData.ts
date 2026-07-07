@@ -11,13 +11,21 @@
 
 import {
   NFL_GUIDE_BOUNCE_BACKS,
+  NFL_GUIDE_DIVISIONS,
   NFL_GUIDE_PLAYOFFS,
   NFL_GUIDE_REGRESSION_CANDIDATES,
   NFL_GUIDE_SUPER_BOWL_PICK,
   NFL_GUIDE_TEAMS,
+  NFL_GUIDE_TEAM_BY_SLUG,
+  NFL_GUIDE_TOP_MARKET_EDGES,
   type NflGuideQuestion,
+  type NflGuideTeam,
 } from "@/lib/nfl/guide2026";
 import type { NflConfidenceLabel, NflMarketLean, NflRegressionSignal } from "@/lib/nfl/guideLabels";
+
+// Formatting/description helpers used by guide pages; re-exported so pages
+// can import everything guide-related from this module.
+export { formatSigned, getScheduleDescription } from "@/lib/nfl/guide2026";
 
 export type NflGuideTeamNormalized = {
   slug: string;
@@ -25,6 +33,8 @@ export type NflGuideTeamNormalized = {
   teamName: string;
   division: string;
   conference: "AFC" | "NFC";
+  /** Team primary color (matches canonical teams.json primaryColor). */
+  color: string;
   /** Computed model fields */
   projectedWins: number;
   marketWinTotal: number | null;
@@ -53,6 +63,12 @@ export type NflConferencePicks = {
   conferenceChampion: string;
 };
 
+export type NflConferenceProjectionNormalized = {
+  divisionWinners: NflGuideTeamNormalized[];
+  wildCards: NflGuideTeamNormalized[];
+  conferenceChampion: NflGuideTeamNormalized;
+};
+
 export type NflSeasonGuide = {
   season: number;
   methodologyVersion: string;
@@ -60,6 +76,17 @@ export type NflSeasonGuide = {
   teams: NflGuideTeamNormalized[];
   teamBySlug: Map<string, NflGuideTeamNormalized>;
   teamByAbbr: Map<string, NflGuideTeamNormalized>;
+  /** Division cards in display order (teams pre-sorted by projection, as on /nfl/guide). */
+  divisions: { division: string; teams: NflGuideTeamNormalized[] }[];
+  /** Teams sorted by absolute model-vs-market gap (largest first). */
+  topMarketEdges: NflGuideTeamNormalized[];
+  superBowlPick: NflGuideTeamNormalized;
+  bounceBacks: NflGuideTeamNormalized[];
+  regressionCandidates: NflGuideTeamNormalized[];
+  playoffProjection: {
+    AFC: NflConferenceProjectionNormalized;
+    NFC: NflConferenceProjectionNormalized;
+  };
   picks: {
     AFC: NflConferencePicks;
     NFC: NflConferencePicks;
@@ -76,6 +103,7 @@ function normalizeTeams(): NflGuideTeamNormalized[] {
     teamName: team.team,
     division: team.division,
     conference: team.conference,
+    color: team.color,
     projectedWins: team.projectedWins,
     marketWinTotal: team.winTotal,
     modelVsMarketGap: team.modelEdge,
@@ -99,14 +127,38 @@ function normalizeTeams(): NflGuideTeamNormalized[] {
 
 function buildGuide2026(): NflSeasonGuide {
   const teams = normalizeTeams();
+  const teamBySlug = new Map(teams.map((team) => [team.slug, team]));
+  // Derived collections mirror guide2026's ordering exactly (migration, not
+  // re-sorting) so page output cannot drift from the legacy behavior.
+  const toNormalized = (legacy: NflGuideTeam) => teamBySlug.get(legacy.slug)!;
   return {
     season: 2026,
     methodologyVersion: "nfl-guide-2026-v1",
     disclaimer:
       "Preseason guide baseline computed from the 2025 performance composite and schedule ranks. Informational only.",
     teams,
-    teamBySlug: new Map(teams.map((team) => [team.slug, team])),
+    teamBySlug,
     teamByAbbr: new Map(teams.map((team) => [team.abbr, team])),
+    divisions: NFL_GUIDE_DIVISIONS.map(({ division, teams: divisionTeams }) => ({
+      division,
+      teams: divisionTeams.map(toNormalized),
+    })),
+    topMarketEdges: NFL_GUIDE_TOP_MARKET_EDGES.map(toNormalized),
+    superBowlPick: toNormalized(NFL_GUIDE_SUPER_BOWL_PICK),
+    bounceBacks: NFL_GUIDE_BOUNCE_BACKS.map(toNormalized),
+    regressionCandidates: NFL_GUIDE_REGRESSION_CANDIDATES.map(toNormalized),
+    playoffProjection: {
+      AFC: {
+        divisionWinners: NFL_GUIDE_PLAYOFFS.AFC.divisionWinners.map(toNormalized),
+        wildCards: NFL_GUIDE_PLAYOFFS.AFC.wildCards.map(toNormalized),
+        conferenceChampion: toNormalized(NFL_GUIDE_PLAYOFFS.AFC.conferenceChampion),
+      },
+      NFC: {
+        divisionWinners: NFL_GUIDE_PLAYOFFS.NFC.divisionWinners.map(toNormalized),
+        wildCards: NFL_GUIDE_PLAYOFFS.NFC.wildCards.map(toNormalized),
+        conferenceChampion: toNormalized(NFL_GUIDE_PLAYOFFS.NFC.conferenceChampion),
+      },
+    },
     picks: {
       AFC: {
         divisionWinners: NFL_GUIDE_PLAYOFFS.AFC.divisionWinners.map((team) => team.slug),
@@ -131,4 +183,15 @@ export const NFL_SEASON_GUIDES: Record<number, NflSeasonGuide> = {
 
 export function getNflSeasonGuide(season: number): NflSeasonGuide | null {
   return NFL_SEASON_GUIDES[season] ?? null;
+}
+
+/**
+ * Compatibility adapter: the legacy full guide-team shape for consumers that
+ * still need it (team-dashboard extras, Coach of the Year case, VSiN panels
+ * — they join Warren Sharp/VSiN data onto the legacy NflGuideTeam type).
+ * Returns the exact same object guide2026.ts exposes; new code should prefer
+ * the normalized fields on NflSeasonGuide.
+ */
+export function getLegacyGuideTeamBySlug(slug: string): NflGuideTeam | undefined {
+  return NFL_GUIDE_TEAM_BY_SLUG.get(slug);
 }
