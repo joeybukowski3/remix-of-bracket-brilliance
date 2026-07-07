@@ -67,6 +67,8 @@ Static/curated inputs that predate the pipeline and stay untouched:
 | --- | --- |
 | `src/data/nflPreseason2026.ts` | 2026 preseason power ratings + division cards (based on 2025 results) |
 | `src/lib/nfl/guide2026.ts` | 2026 team guide composite (projections, schedule ranks, slugs) |
+| `src/lib/nfl/guideLabels.ts` | Centralized Over/Under/Pass + confidence + regression label thresholds (PR-5) |
+| `src/lib/nfl/guideData.ts` | Season-keyed normalized guide schema (`nfl-guide-2026-v1`), migrated from guide2026 with parity tests; does not consume power-ratings.json |
 | `src/lib/nfl/vsinGuide2026.ts` | VSiN 2026 guide extracts (internal/model input) |
 | `src/lib/nfl/warrenSharpTeams2026.ts`, `warrenSharpSchedule2026.ts` | Warren Sharp 2026 team/schedule extracts (internal/model input) |
 | `src/lib/nfl/superBowlMarkets.ts` | Super Bowl futures snapshot page data |
