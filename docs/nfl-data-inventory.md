@@ -98,8 +98,16 @@ Written by pipeline scripts into `public/data/nfl/<season>/`:
 | `teams.json` (season-agnostic, repo root of `public/data/nfl/`) | hand-curated (PR-1) | current |
 | `<season>/games.json` | `scripts/generate-nfl-schedules-results.mjs` (PR-2, `npm run nfl:schedules`) | current |
 | `<season>/results.json` | same script (PR-2) | current |
-| `<season>/team-stats.json` | PR-4 | planned |
-| `<season>/power-ratings.json` | PR-4 | planned |
+| `<season>/team-stats.json` | `scripts/generate-nfl-team-stats-power-ratings.mjs` (PR-4, `npm run nfl:team-ratings`) | current |
+| `<season>/power-ratings.json` | same script (PR-4, model `nfl-power-v0.1`) | current |
+
+Power ratings (`nfl-power-v0.1`) are experimental and derived from results
+data only: 60% point differential per game + 25% points per game + 15% win
+percentage, min-max normalized to 0-100 within each season, defense inverted
+via points allowed. Advanced efficiency metrics (EPA/success rate/yards) are
+emitted as null until a future version adopts a heavier nflverse source.
+Sanity review: `npm run nfl:team-ratings -- --sanity`. Not validated; not
+betting guidance; no public page consumes these files yet.
 
 Seasons covered: 2022–2026. 2026 files are generated in a safe preseason/empty
 state until games complete.

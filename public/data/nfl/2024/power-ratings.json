@@ -1,0 +1,1177 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.1",
+    "generatedAt": "2026-07-07T14:44:45.802Z",
+    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline, regular season only)",
+    "season": 2024,
+    "week": null,
+    "modelVersion": "nfl-power-v0.1",
+    "notes": [
+      "Stats and ratings derive from final regular-season results only; postseason games are excluded.",
+      "Advanced efficiency metrics (yards, turnovers, EPA, success rate, pace) are null: they require heavier nflverse play-by-play/team-week downloads and are deferred to a future model version.",
+      "Rating formula (nfl-power-v0.1, fallback tier): 60% point differential per game + 25% points per game + 15% win percentage, each min-max normalized to 0-100 within the season.",
+      "Defense context uses points allowed per game inverted, so better defense scores higher.",
+      "Experimental model output for internal review only; not validated and not betting guidance.",
+      "No betting-line columns are read anywhere in this pipeline."
+    ]
+  },
+  "weights": {
+    "pointDifferentialPerGame": 0.6,
+    "pointsPerGame": 0.25,
+    "winPercentage": 0.15
+  },
+  "ratings": [
+    {
+      "teamId": "nfl-det",
+      "slug": "detroit-lions",
+      "abbr": "det",
+      "name": "Detroit Lions",
+      "season": 2024,
+      "rating": 100,
+      "rank": 1,
+      "offenseRating": 100,
+      "defenseRating": 82.4,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 13.059,
+          "normalized": 100,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 33.176,
+          "normalized": 100,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.882,
+          "normalized": 100,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 20.118,
+          "normalizedInverted": 82.4,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-buf",
+      "slug": "buffalo-bills",
+      "abbr": "buf",
+      "name": "Buffalo Bills",
+      "season": 2024,
+      "rating": 84.93,
+      "rank": 2,
+      "offenseRating": 87.26,
+      "defenseRating": 71.25,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 9.235,
+          "normalized": 84.34,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 30.882,
+          "normalized": 87.26,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.765,
+          "normalized": 83.43,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.647,
+          "normalizedInverted": 71.25,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-bal",
+      "slug": "baltimore-ravens",
+      "abbr": "bal",
+      "name": "Baltimore Ravens",
+      "season": 2024,
+      "rating": 83.11,
+      "rank": 3,
+      "offenseRating": 84.97,
+      "defenseRating": 74.25,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 9.235,
+          "normalized": 84.34,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 30.471,
+          "normalized": 84.97,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.706,
+          "normalized": 75.07,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.235,
+          "normalizedInverted": 74.25,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-phi",
+      "slug": "philadelphia-eagles",
+      "abbr": "phi",
+      "name": "Philadelphia Eagles",
+      "season": 2024,
+      "rating": 81.55,
+      "rank": 4,
+      "offenseRating": 66.99,
+      "defenseRating": 99.14,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 9.412,
+          "normalized": 85.06,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 27.235,
+          "normalized": 66.99,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.824,
+          "normalized": 91.78,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 17.824,
+          "normalizedInverted": 99.14,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-tb",
+      "slug": "tampa-bay-buccaneers",
+      "abbr": "tb",
+      "name": "Tampa Bay Buccaneers",
+      "season": 2024,
+      "rating": 73.51,
+      "rank": 5,
+      "offenseRating": 79.74,
+      "defenseRating": 63.95,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 6.882,
+          "normalized": 74.7,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 29.529,
+          "normalized": 79.74,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 58.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.647,
+          "normalizedInverted": 63.95,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-gb",
+      "slug": "green-bay-packers",
+      "abbr": "gb",
+      "name": "Green Bay Packers",
+      "season": 2024,
+      "rating": 72.05,
+      "rank": 6,
+      "offenseRating": 66.02,
+      "defenseRating": 84.12,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 7.176,
+          "normalized": 75.9,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 27.059,
+          "normalized": 66.02,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.647,
+          "normalized": 66.71,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 19.882,
+          "normalizedInverted": 84.12,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-wsh",
+      "slug": "washington-commanders",
+      "abbr": "wsh",
+      "name": "Washington Commanders",
+      "season": 2024,
+      "rating": 71.3,
+      "rank": 7,
+      "offenseRating": 74.18,
+      "defenseRating": 61.37,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 5.529,
+          "normalized": 69.16,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 28.529,
+          "normalized": 74.18,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.706,
+          "normalized": 75.07,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 23,
+          "normalizedInverted": 61.37,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-min",
+      "slug": "minnesota-vikings",
+      "abbr": "min",
+      "name": "Minnesota Vikings",
+      "season": 2024,
+      "rating": 70.34,
+      "rank": 8,
+      "offenseRating": 56.87,
+      "defenseRating": 86.7,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 5.882,
+          "normalized": 70.6,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 25.412,
+          "normalized": 56.87,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.824,
+          "normalized": 91.78,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 19.529,
+          "normalizedInverted": 86.7,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-den",
+      "slug": "denver-broncos",
+      "abbr": "den",
+      "name": "Denver Broncos",
+      "season": 2024,
+      "rating": 66.79,
+      "rank": 9,
+      "offenseRating": 54.58,
+      "defenseRating": 95.71,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 6.706,
+          "normalized": 73.98,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 25,
+          "normalized": 54.58,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 58.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 18.294,
+          "normalizedInverted": 95.71,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-lac",
+      "slug": "la-chargers",
+      "abbr": "lac",
+      "name": "LA Chargers",
+      "season": 2024,
+      "rating": 64.28,
+      "rank": 10,
+      "offenseRating": 47.06,
+      "defenseRating": 100,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 5.941,
+          "normalized": 70.84,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 23.647,
+          "normalized": 47.06,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.647,
+          "normalized": 66.71,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 17.706,
+          "normalizedInverted": 100,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-kc",
+      "slug": "kansas-city-chiefs",
+      "abbr": "kc",
+      "name": "Kansas City Chiefs",
+      "season": 2024,
+      "rating": 61.81,
+      "rank": 11,
+      "offenseRating": 41.51,
+      "defenseRating": 89.27,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 3.471,
+          "normalized": 60.72,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 22.647,
+          "normalized": 41.51,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.882,
+          "normalized": 100,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 19.176,
+          "normalizedInverted": 89.27,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-cin",
+      "slug": "cincinnati-bengals",
+      "abbr": "cin",
+      "name": "Cincinnati Bengals",
+      "season": 2024,
+      "rating": 58.38,
+      "rank": 12,
+      "offenseRating": 69.94,
+      "defenseRating": 42.92,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 2.235,
+          "normalized": 55.66,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 27.765,
+          "normalized": 69.94,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 50,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.529,
+          "normalizedInverted": 42.92,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-pit",
+      "slug": "pittsburgh-steelers",
+      "abbr": "pit",
+      "name": "Pittsburgh Steelers",
+      "season": 2024,
+      "rating": 51.4,
+      "rank": 13,
+      "offenseRating": 39.87,
+      "defenseRating": 80.26,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 1.941,
+          "normalized": 54.46,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 22.353,
+          "normalized": 39.87,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 58.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 20.412,
+          "normalizedInverted": 80.26,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-ari",
+      "slug": "arizona-cardinals",
+      "abbr": "ari",
+      "name": "Arizona Cardinals",
+      "season": 2024,
+      "rating": 48.81,
+      "rank": 14,
+      "offenseRating": 46.41,
+      "defenseRating": 66.53,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 1.235,
+          "normalized": 51.57,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 23.529,
+          "normalized": 46.41,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 41.78,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.294,
+          "normalizedInverted": 66.53,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-sea",
+      "slug": "seattle-seahawks",
+      "abbr": "sea",
+      "name": "Seattle Seahawks",
+      "season": 2024,
+      "rating": 47.23,
+      "rank": 15,
+      "offenseRating": 38.24,
+      "defenseRating": 71.25,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 0.412,
+          "normalized": 48.19,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 22.059,
+          "normalized": 38.24,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 58.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.647,
+          "normalizedInverted": 71.25,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-hou",
+      "slug": "houston-texans",
+      "abbr": "hou",
+      "name": "Houston Texans",
+      "season": 2024,
+      "rating": 45.97,
+      "rank": 16,
+      "offenseRating": 37.26,
+      "defenseRating": 69.53,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 0,
+          "normalized": 46.51,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 21.882,
+          "normalized": 37.26,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 58.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.882,
+          "normalizedInverted": 69.53,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-lar",
+      "slug": "la-rams",
+      "abbr": "lar",
+      "name": "LA Rams",
+      "season": 2024,
+      "rating": 42.82,
+      "rank": 17,
+      "offenseRating": 35.62,
+      "defenseRating": 63.52,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.118,
+          "normalized": 41.93,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 21.588,
+          "normalized": 35.62,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 58.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.706,
+          "normalizedInverted": 63.52,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-atl",
+      "slug": "atlanta-falcons",
+      "abbr": "atl",
+      "name": "Atlanta Falcons",
+      "season": 2024,
+      "rating": 39.96,
+      "rank": 18,
+      "offenseRating": 42.81,
+      "defenseRating": 47.64,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -2,
+          "normalized": 38.31,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 22.882,
+          "normalized": 42.81,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 41.78,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.882,
+          "normalizedInverted": 47.64,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-mia",
+      "slug": "miami-dolphins",
+      "abbr": "mia",
+      "name": "Miami Dolphins",
+      "season": 2024,
+      "rating": 38.53,
+      "rank": 19,
+      "offenseRating": 28.43,
+      "defenseRating": 72.96,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.118,
+          "normalized": 41.93,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 20.294,
+          "normalized": 28.43,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 41.78,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.412,
+          "normalizedInverted": 72.96,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-ind",
+      "slug": "indianapolis-colts",
+      "abbr": "ind",
+      "name": "Indianapolis Colts",
+      "season": 2024,
+      "rating": 36.67,
+      "rank": 20,
+      "offenseRating": 38.89,
+      "defenseRating": 45.92,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -2.941,
+          "normalized": 34.46,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 22.176,
+          "normalized": 38.89,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 41.78,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.118,
+          "normalizedInverted": 45.92,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-sf",
+      "slug": "san-francisco-49ers",
+      "abbr": "sf",
+      "name": "San Francisco 49ers",
+      "season": 2024,
+      "rating": 35.57,
+      "rank": 21,
+      "offenseRating": 42.81,
+      "defenseRating": 42.06,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -2.765,
+          "normalized": 35.18,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 22.882,
+          "normalized": 42.81,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.353,
+          "normalized": 25.07,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.647,
+          "normalizedInverted": 42.06,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-no",
+      "slug": "new-orleans-saints",
+      "abbr": "no",
+      "name": "New Orleans Saints",
+      "season": 2024,
+      "rating": 28.27,
+      "rank": 22,
+      "offenseRating": 26.14,
+      "defenseRating": 58.37,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -3.529,
+          "normalized": 32.05,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 19.882,
+          "normalized": 26.14,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.294,
+          "normalized": 16.71,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 23.412,
+          "normalizedInverted": 58.37,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-nyj",
+      "slug": "ny-jets",
+      "abbr": "nyj",
+      "name": "NY Jets",
+      "season": 2024,
+      "rating": 27.4,
+      "rank": 23,
+      "offenseRating": 26.14,
+      "defenseRating": 55.79,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -3.882,
+          "normalized": 30.6,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 19.882,
+          "normalized": 26.14,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.294,
+          "normalized": 16.71,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 23.765,
+          "normalizedInverted": 55.79,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-chi",
+      "slug": "chicago-bears",
+      "abbr": "chi",
+      "name": "Chicago Bears",
+      "season": 2024,
+      "rating": 25.98,
+      "rank": 24,
+      "offenseRating": 16.99,
+      "defenseRating": 70.39,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -3.529,
+          "normalized": 32.05,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 18.235,
+          "normalized": 16.99,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.294,
+          "normalized": 16.71,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.765,
+          "normalizedInverted": 70.39,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-dal",
+      "slug": "dallas-cowboys",
+      "abbr": "dal",
+      "name": "Dallas Cowboys",
+      "season": 2024,
+      "rating": 23.37,
+      "rank": 25,
+      "offenseRating": 30.07,
+      "defenseRating": 28.33,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -6.941,
+          "normalized": 18.07,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 20.588,
+          "normalized": 30.07,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.412,
+          "normalized": 33.43,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 27.529,
+          "normalizedInverted": 28.33,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-jax",
+      "slug": "jacksonville-jaguars",
+      "abbr": "jax",
+      "name": "Jacksonville Jaguars",
+      "season": 2024,
+      "rating": 17.6,
+      "rank": 26,
+      "offenseRating": 20.27,
+      "defenseRating": 42.49,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -6.765,
+          "normalized": 18.8,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 18.824,
+          "normalized": 20.27,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.235,
+          "normalized": 8.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.588,
+          "normalizedInverted": 42.49,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-lv",
+      "slug": "las-vegas-raiders",
+      "abbr": "lv",
+      "name": "Las Vegas Raiders",
+      "season": 2024,
+      "rating": 15.26,
+      "rank": 27,
+      "offenseRating": 16.67,
+      "defenseRating": 42.92,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -7.353,
+          "normalized": 16.39,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 18.176,
+          "normalized": 16.67,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.235,
+          "normalized": 8.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.529,
+          "normalizedInverted": 42.92,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-ne",
+      "slug": "new-england-patriots",
+      "abbr": "ne",
+      "name": "New England Patriots",
+      "season": 2024,
+      "rating": 13.18,
+      "rank": 28,
+      "offenseRating": 10.13,
+      "defenseRating": 50.22,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -7.529,
+          "normalized": 15.66,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 17,
+          "normalized": 10.13,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.235,
+          "normalized": 8.36,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.529,
+          "normalizedInverted": 50.22,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-ten",
+      "slug": "tennessee-titans",
+      "abbr": "ten",
+      "name": "Tennessee Titans",
+      "season": 2024,
+      "rating": 10.69,
+      "rank": 29,
+      "offenseRating": 17.32,
+      "defenseRating": 31.76,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -8.765,
+          "normalized": 10.6,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 18.294,
+          "normalized": 17.32,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.176,
+          "normalized": 0,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 27.059,
+          "normalizedInverted": 31.76,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-car",
+      "slug": "carolina-panthers",
+      "abbr": "car",
+      "name": "Carolina Panthers",
+      "season": 2024,
+      "rating": 9.29,
+      "rank": 30,
+      "offenseRating": 27.13,
+      "defenseRating": 0,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -11.353,
+          "normalized": 0,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 20.059,
+          "normalized": 27.13,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.294,
+          "normalized": 16.71,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 31.412,
+          "normalizedInverted": 0,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-nyg",
+      "slug": "ny-giants",
+      "abbr": "nyg",
+      "name": "NY Giants",
+      "season": 2024,
+      "rating": 8.6,
+      "rank": 31,
+      "offenseRating": 4.91,
+      "defenseRating": 51.07,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -8.353,
+          "normalized": 12.29,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 16.059,
+          "normalized": 4.91,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.176,
+          "normalized": 0,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.412,
+          "normalizedInverted": 51.07,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    },
+    {
+      "teamId": "nfl-cle",
+      "slug": "cleveland-browns",
+      "abbr": "cle",
+      "name": "Cleveland Browns",
+      "season": 2024,
+      "rating": 2.32,
+      "rank": 32,
+      "offenseRating": 0,
+      "defenseRating": 42.49,
+      "scheduleAdjustment": null,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -10.412,
+          "normalized": 3.86,
+          "weight": 0.6
+        },
+        "pointsPerGame": {
+          "raw": 15.176,
+          "normalized": 0,
+          "weight": 0.25
+        },
+        "winPercentage": {
+          "raw": 0.176,
+          "normalized": 0,
+          "weight": 0.15
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.588,
+          "normalizedInverted": 42.49,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.1",
+      "notes": "Experimental points-based rating (fallback formula); not validated."
+    }
+  ]
+}
