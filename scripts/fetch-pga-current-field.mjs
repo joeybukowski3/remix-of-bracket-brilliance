@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { selectLocalTarget } from "./lib/pga-field-selection.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT = path.resolve(__dirname, "../public/data/pga/current-field.json");
@@ -90,20 +91,8 @@ async function readLocalSchedule() {
   return schedule;
 }
 
-function selectLocalTarget(schedule) {
-  const asOfDate = AS_OF.toISOString().slice(0, 10);
-  const eligible = schedule
-    .filter((event) => !String(event.eventType ?? "").toLowerCase().includes("alternate field"))
-    .filter((event) => event.startDate && event.endDate)
-    .sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
-
-  const active = eligible.find((event) => event.startDate <= asOfDate && event.endDate >= asOfDate);
-  if (active) return active;
-
-  const upcoming = eligible.find((event) => event.startDate >= asOfDate);
-  if (upcoming) return upcoming;
-
-  throw new Error(`No current or future non-alternate PGA event found for ${asOfDate}.`);
+function selectLocalTargetAsOfNow(schedule) {
+  return selectLocalTarget(schedule, AS_OF.toISOString().slice(0, 10));
 }
 
 async function fetchOfficialSchedule(year) {
@@ -224,7 +213,7 @@ function updateScheduleMetadata(schedule, localEvent, officialEvent, sourceUrl) 
 
 async function main() {
   const schedule = await readLocalSchedule();
-  const localTarget = selectLocalTarget(schedule);
+  const localTarget = selectLocalTargetAsOfNow(schedule);
   const year = Number(String(localTarget.startDate).slice(0, 4)) || AS_OF.getUTCFullYear();
   const officialSchedule = await fetchOfficialSchedule(year);
   const officialTarget = matchOfficialTournament(localTarget, officialSchedule);

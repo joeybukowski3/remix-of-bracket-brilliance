@@ -2,7 +2,15 @@ name: Sync PGA Data
 
 on:
   schedule:
-    - cron: "0 12,13 * * 1"
+    # Mon/Tue/Wed 12:00 UTC (8 AM EDT / 7 AM EST). Multiple days cover the
+    # weekly tournament rollover (fields for Thursday starts publish early in
+    # the week) and retry naturally after a failed day.
+    #
+    # IMPORTANT: no runtime hour gate. The previous design skipped every step
+    # unless the run started in the 8 AM ET hour — GitHub regularly delays
+    # cron runs by hours, so scheduled runs silently no-opped (all steps
+    # skipped, run reported success) and PGA data went stale for weeks.
+    - cron: "0 12 * * 1,2,3"
   workflow_dispatch:
   push:
     branches:
@@ -12,7 +20,14 @@ on:
       - "scripts/sync-pga-sheet.mjs"
       - "scripts/generate-pga-best-bets.mjs"
       - "scripts/fetch-pga-current-field.mjs"
+      - "scripts/lib/pga-field-selection.mjs"
+      - "scripts/check-pga-field-sync.mjs"
       - "public/data/pga/schedule.json"
+
+# Share one lock with the other automated workflows that commit generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -23,62 +38,40 @@ jobs:
     env:
       TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
     steps:
-      - name: Check Eastern runtime window
-        id: gate
-        run: |
-          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [ "$(TZ=America/New_York date +%H)" != "08" ]; then
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-            echo "Not 8 AM in America/New_York. Skipping this UTC slot."
-          else
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Check out repository
-        if: steps.gate.outputs.should_run == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_BRANCH }}
           fetch-depth: 0
 
       - name: Set up Node
-        if: steps.gate.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
 
       - name: Install dependencies
-        if: steps.gate.outputs.should_run == 'true'
         run: npm ci
 
       - name: Fetch current tournament field
-        if: steps.gate.outputs.should_run == 'true'
         run: node scripts/fetch-pga-current-field.mjs
 
       - name: Sync PGA JSON from Google Sheet
-        if: steps.gate.outputs.should_run == 'true'
         env:
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: node scripts/sync-pga-sheet.mjs
 
       - name: Generate tournament rankings from player stats
-        if: steps.gate.outputs.should_run == 'true'
         run: node scripts/generate-pga-tournament-rankings.mjs
 
       - name: Check player stats freshness
-        if: steps.gate.outputs.should_run == 'true'
         id: freshness
         continue-on-error: true
         run: node scripts/check-pga-stats-freshness.mjs
 
       - name: Fallback - fetch player stats directly from PGA Tour API
-        if: steps.gate.outputs.should_run == 'true' && steps.freshness.outcome == 'failure'
+        if: steps.freshness.outcome == 'failure'
         continue-on-error: true
         env:
           PGA_API_KEY: ${{ secrets.PGA_API_KEY }}
@@ -86,8 +79,10 @@ jobs:
           echo "Sheet data is stale or missing — falling back to direct PGA Tour API pull."
           node scripts/fetch-pga-player-stats.mjs
 
+      - name: Verify field matches the scheduled current tournament
+        run: node scripts/check-pga-field-sync.mjs
+
       - name: Commit and push updates
-        if: steps.gate.outputs.should_run == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
