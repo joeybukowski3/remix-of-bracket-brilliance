@@ -5,8 +5,19 @@ import {
   type NflPowerTeam,
 } from "@/data/nflPreseason2026";
 
-export type NflMarketLean = "Over" | "Under" | "Pass";
-export type NflRegressionSignal = "Bounce Back" | "Regression" | "Stable";
+import {
+  computeMarketConfidence,
+  computeMarketLean,
+  computeModelVsMarketGap,
+  computeRegressionSignal,
+  computeScheduleLabel,
+  computeUnitIdentity,
+  type NflConfidenceLabel,
+  type NflMarketLean,
+  type NflRegressionSignal,
+} from "@/lib/nfl/guideLabels";
+
+export type { NflMarketLean, NflRegressionSignal };
 export type NflGuideQuestion = { title: string; answer: string };
 
 export type NflGuideTeam = NflPowerTeam & {
@@ -21,7 +32,7 @@ export type NflGuideTeam = NflPowerTeam & {
   projectedWins: number;
   modelEdge: number | null;
   marketLean: NflMarketLean;
-  marketConfidence: "Low" | "Medium" | "High";
+  marketConfidence: NflConfidenceLabel;
   regressionGap: number;
   regressionSignal: NflRegressionSignal;
   unitIdentity: string;
@@ -93,13 +104,12 @@ function buildGuideTeam(team: NflPowerTeam): NflGuideTeam {
   const [wins2025, losses2025] = parseRecord(team.record2025);
   const scheduleAdjustment = scheduleRank == null ? 0 : (scheduleRank - 16.5) * 0.04;
   const projectedWins = roundOne(clamp(8.5 + team.ovrPct * 0.35 + scheduleAdjustment, 3, 13));
-  const modelEdge = team.winTotal == null ? null : roundOne(projectedWins - team.winTotal);
-  const marketLean: NflMarketLean = modelEdge == null ? "Pass" : modelEdge >= 0.75 ? "Over" : modelEdge <= -0.75 ? "Under" : "Pass";
-  const marketConfidence = modelEdge == null || Math.abs(modelEdge) < 0.75 ? "Low" : Math.abs(modelEdge) >= 1.75 ? "High" : "Medium";
+  const modelEdge = computeModelVsMarketGap(projectedWins, team.winTotal);
+  const marketLean = computeMarketLean(modelEdge);
+  const marketConfidence = computeMarketConfidence(modelEdge);
   const regressionGap = roundOne(projectedWins - wins2025);
-  const regressionSignal: NflRegressionSignal = regressionGap >= 1.5 ? "Bounce Back" : regressionGap <= -1.5 ? "Regression" : "Stable";
-  const unitGap = team.offRank - team.defRank;
-  const unitIdentity = Math.abs(unitGap) < 6 ? "balanced profile" : unitGap < 0 ? "offense-led profile" : "defense-led profile";
+  const regressionSignal = computeRegressionSignal(regressionGap);
+  const unitIdentity = computeUnitIdentity(team.offRank, team.defRank);
 
   return {
     ...team,
@@ -110,7 +120,7 @@ function buildGuideTeam(team: NflPowerTeam): NflGuideTeam {
     wins2025,
     losses2025,
     scheduleRank,
-    scheduleLabel: scheduleRank == null ? "Not available" : scheduleRank <= 8 ? "Hard" : scheduleRank >= 25 ? "Soft" : "Average",
+    scheduleLabel: computeScheduleLabel(scheduleRank),
     projectedWins,
     modelEdge,
     marketLean,
