@@ -96,8 +96,8 @@ Written by pipeline scripts into `public/data/nfl/<season>/`:
 | File | Producer | Status |
 | --- | --- | --- |
 | `teams.json` (season-agnostic, repo root of `public/data/nfl/`) | hand-curated (PR-1) | current |
-| `<season>/games.json` | `scripts/generate-nfl-schedules-results.mjs` (PR-2) | planned |
-| `<season>/results.json` | same script (PR-2) | planned |
+| `<season>/games.json` | `scripts/generate-nfl-schedules-results.mjs` (PR-2, `npm run nfl:schedules`) | current |
+| `<season>/results.json` | same script (PR-2) | current |
 | `<season>/team-stats.json` | PR-4 | planned |
 | `<season>/power-ratings.json` | PR-4 | planned |
 
