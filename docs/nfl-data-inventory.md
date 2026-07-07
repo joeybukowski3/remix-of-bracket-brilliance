@@ -130,13 +130,26 @@ Written by pipeline scripts into `public/data/nfl/<season>/`:
 | `<season>/team-stats.json` | `scripts/generate-nfl-team-stats-power-ratings.mjs` (PR-4, `npm run nfl:team-ratings`) | current |
 | `<season>/power-ratings.json` | same script (PR-4, model `nfl-power-v0.1`) | current |
 
-Power ratings (`nfl-power-v0.1`) are experimental and derived from results
-data only: 60% point differential per game + 25% points per game + 15% win
-percentage, min-max normalized to 0-100 within each season, defense inverted
-via points allowed. Advanced efficiency metrics (EPA/success rate/yards) are
-emitted as null until a future version adopts a heavier nflverse source.
-Sanity review: `npm run nfl:team-ratings -- --sanity`. Not validated; not
-betting guidance; no public page consumes these files yet.
+Power ratings (`nfl-power-v0.2`, PR-8) are experimental. Advanced metrics
+come from the free nflverse `stats_team` weekly release (~185 KB/season,
+`https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_<season>.csv`):
+offensive EPA/play, defensive EPA/play (derived from opponents' offensive
+production via the `opponent_team` join), yards/play both ways, turnovers/
+takeaways. Success rates need full play-by-play (too heavy for CI) and stay
+null. Formula tiers (all components min-max normalized 0-100 within season,
+defense inverted):
+
+- `v0.2-epa` (default): 35% point diff/gm + 20% off EPA/play + 20% def
+  EPA/play + 15% schedule adjustment + 10% win%
+- `v0.2-schedule` (advanced source unavailable): 50% diff/gm + 20% PPG +
+  15% schedule adjustment + 15% win%
+- `v0.1-fallback` (schedule also unavailable): 60% diff/gm + 25% PPG + 15% win%
+
+Schedule adjustment is a one-pass average of opponents' point differential
+per game from final scores only — never from spreads/moneylines/market data.
+Sanity review: `npm run nfl:team-ratings -- --sanity` (adds v0.1 rank
+comparison and hardest/easiest schedules). Not validated; not betting
+guidance; no public page consumes these files yet.
 
 Seasons covered: 2022–2026. 2026 files are generated in a safe preseason/empty
 state until games complete.

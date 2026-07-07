@@ -1,24 +1,46 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-07-07T14:44:45.798Z",
-    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline, regular season only)",
+    "generatedAt": "2026-07-07T18:23:03.060Z",
+    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline) + nflverse stats_team weekly release, regular season only",
     "season": 2023,
     "week": null,
-    "modelVersion": "nfl-power-v0.1",
+    "modelVersion": "nfl-power-v0.2",
     "notes": [
       "Stats and ratings derive from final regular-season results only; postseason games are excluded.",
-      "Advanced efficiency metrics (yards, turnovers, EPA, success rate, pace) are null: they require heavier nflverse play-by-play/team-week downloads and are deferred to a future model version.",
-      "Rating formula (nfl-power-v0.1, fallback tier): 60% point differential per game + 25% points per game + 15% win percentage, each min-max normalized to 0-100 within the season.",
-      "Defense context uses points allowed per game inverted, so better defense scores higher.",
+      "Sources: repo results.json (PR-2 nflverse pipeline) + nflverse (stats_team weekly release) (https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_2023.csv).",
+      "Advanced metrics (EPA/play, yards/play, turnovers) computed from the nflverse stats_team weekly file; defensive values derived from opponents' offensive production.",
+      "Success rates require full play-by-play (too heavy for the default workflow) and remain null.",
+      "Rating formula (nfl-power-v0.2, tier v0.2-epa): 35% pointDifferentialPerGame + 20% offensiveEpaPerPlay + 20% defensiveEpaPerPlay + 15% scheduleAdjustment + 10% winPercentage, each min-max normalized to 0-100 within the season.",
+      "Defensive components are inverted so better defense increases the rating.",
+      "Schedule adjustment: one-pass average of opponents' raw point differential per game (final scores only — no spreads, moneylines or market data), normalized 0-100 within the season.",
       "Experimental model output for internal review only; not validated and not betting guidance.",
       "No betting-line columns are read anywhere in this pipeline."
     ]
   },
+  "model": {
+    "modelVersion": "nfl-power-v0.2",
+    "formula": "v0.2-epa",
+    "weights": {
+      "pointDifferentialPerGame": 0.35,
+      "offensiveEpaPerPlay": 0.2,
+      "defensiveEpaPerPlay": 0.2,
+      "scheduleAdjustment": 0.15,
+      "winPercentage": 0.1
+    },
+    "sources": [
+      "public/data/nfl/<season>/results.json (repo, PR-2 pipeline)",
+      "nflverse (stats_team weekly release): https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_2023.csv"
+    ],
+    "advancedMetricsAvailable": true,
+    "scheduleAdjustmentMethod": "one-pass average of opponents' point differential per game (final scores only), min-max normalized 0-100 within season"
+  },
   "weights": {
-    "pointDifferentialPerGame": 0.6,
-    "pointsPerGame": 0.25,
-    "winPercentage": 0.15
+    "pointDifferentialPerGame": 0.35,
+    "offensiveEpaPerPlay": 0.2,
+    "defensiveEpaPerPlay": 0.2,
+    "scheduleAdjustment": 0.15,
+    "winPercentage": 0.1
   },
   "ratings": [
     {
@@ -27,26 +49,36 @@
       "abbr": "bal",
       "name": "Baltimore Ravens",
       "season": 2023,
-      "rating": 97.62,
+      "rating": 86.75,
       "rank": 1,
-      "offenseRating": 90.48,
-      "defenseRating": 100,
-      "scheduleAdjustment": null,
+      "offenseRating": 76.74,
+      "defenseRating": 85.56,
+      "scheduleAdjustment": 61.9,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 11.941,
           "normalized": 100,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 28.412,
-          "normalized": 90.48,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.065,
+          "normalized": 76.74,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.143,
+          "normalized": 85.56,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 61.9,
+          "normalized": 61.9,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.765,
           "normalized": 100,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 16.471,
@@ -54,44 +86,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-dal",
-      "slug": "dallas-cowboys",
-      "abbr": "dal",
-      "name": "Dallas Cowboys",
-      "season": 2023,
-      "rating": 97.25,
-      "rank": 2,
-      "offenseRating": 100,
-      "defenseRating": 85.3,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 11.412,
-          "normalized": 97.7,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 29.941,
-          "normalized": 100,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.706,
-          "normalized": 90.88,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 18.529,
-          "normalizedInverted": 85.3,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-sf",
@@ -99,26 +95,36 @@
       "abbr": "sf",
       "name": "San Francisco 49ers",
       "season": 2023,
-      "rating": 95.45,
-      "rank": 3,
-      "offenseRating": 93.41,
-      "defenseRating": 92.44,
-      "scheduleAdjustment": null,
+      "rating": 81.15,
+      "rank": 2,
+      "offenseRating": 100,
+      "defenseRating": 60.33,
+      "scheduleAdjustment": 39.26,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 11.353,
           "normalized": 97.45,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 28.882,
-          "normalized": 93.41,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.158,
+          "normalized": 100,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.076,
+          "normalized": 60.33,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 39.26,
+          "normalized": 39.26,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.706,
           "normalized": 90.88,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 17.529,
@@ -126,8 +132,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-dal",
+      "slug": "dallas-cowboys",
+      "abbr": "dal",
+      "name": "Dallas Cowboys",
+      "season": 2023,
+      "rating": 74.53,
+      "rank": 3,
+      "offenseRating": 85.25,
+      "defenseRating": 70.97,
+      "scheduleAdjustment": 0,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 11.412,
+          "normalized": 97.7,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.099,
+          "normalized": 85.25,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.104,
+          "normalized": 70.97,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 0,
+          "normalized": 0,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.706,
+          "normalized": 90.88,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 18.529,
+          "normalizedInverted": 85.3,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-buf",
@@ -135,26 +187,36 @@
       "abbr": "buf",
       "name": "Buffalo Bills",
       "season": 2023,
-      "rating": 82.31,
+      "rating": 69.74,
       "rank": 4,
-      "offenseRating": 78.75,
-      "defenseRating": 86.98,
-      "scheduleAdjustment": null,
+      "offenseRating": 88.71,
+      "defenseRating": 52.68,
+      "scheduleAdjustment": 26.05,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 8.235,
           "normalized": 83.93,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 26.529,
-          "normalized": 78.75,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.113,
+          "normalized": 88.71,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.055,
+          "normalized": 52.68,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 26.05,
+          "normalized": 26.05,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.647,
           "normalized": 81.76,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 18.294,
@@ -162,44 +224,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-mia",
-      "slug": "miami-dolphins",
-      "abbr": "mia",
-      "name": "Miami Dolphins",
-      "season": 2023,
-      "rating": 81.07,
-      "rank": 5,
-      "offenseRating": 95.24,
-      "defenseRating": 53.36,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 6.176,
-          "normalized": 75,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 29.176,
-          "normalized": 95.24,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.647,
-          "normalized": 81.76,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 23,
-          "normalizedInverted": 53.36,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-det",
@@ -207,26 +233,36 @@
       "abbr": "det",
       "name": "Detroit Lions",
       "season": 2023,
-      "rating": 73.27,
-      "rank": 6,
-      "offenseRating": 82.42,
-      "defenseRating": 51.69,
-      "scheduleAdjustment": null,
+      "rating": 64.84,
+      "rank": 5,
+      "offenseRating": 74.2,
+      "defenseRating": 40.46,
+      "scheduleAdjustment": 67,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 3.882,
           "normalized": 65.05,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 27.118,
-          "normalized": 82.42,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.055,
+          "normalized": 74.2,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.023,
+          "normalized": 40.46,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 67,
+          "normalized": 67,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.706,
           "normalized": 90.88,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 23.235,
@@ -234,80 +270,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-kc",
-      "slug": "kansas-city-chiefs",
-      "abbr": "kc",
-      "name": "Kansas City Chiefs",
+      "teamId": "nfl-mia",
+      "slug": "miami-dolphins",
+      "abbr": "mia",
+      "name": "Miami Dolphins",
       "season": 2023,
-      "rating": 65.34,
-      "rank": 7,
-      "offenseRating": 49.46,
-      "defenseRating": 94.12,
-      "scheduleAdjustment": null,
+      "rating": 63.98,
+      "rank": 6,
+      "offenseRating": 84.2,
+      "defenseRating": 42.95,
+      "scheduleAdjustment": 27.51,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 4.529,
-          "normalized": 67.86,
-          "weight": 0.6
+          "raw": 6.176,
+          "normalized": 75,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 21.824,
-          "normalized": 49.46,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.095,
+          "normalized": 84.2,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.03,
+          "normalized": 42.95,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 27.51,
+          "normalized": 27.51,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.647,
           "normalized": 81.76,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 17.294,
-          "normalizedInverted": 94.12,
+          "raw": 23,
+          "normalizedInverted": 53.36,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-no",
-      "slug": "new-orleans-saints",
-      "abbr": "no",
-      "name": "New Orleans Saints",
-      "season": 2023,
-      "rating": 65.14,
-      "rank": 8,
-      "offenseRating": 60.81,
-      "defenseRating": 80.26,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 4.412,
-          "normalized": 67.35,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 23.647,
-          "normalized": 60.81,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 63.52,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 19.235,
-          "normalizedInverted": 80.26,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-cle",
@@ -315,26 +325,36 @@
       "abbr": "cle",
       "name": "Cleveland Browns",
       "season": 2023,
-      "rating": 61.05,
-      "rank": 9,
-      "offenseRating": 58.61,
-      "defenseRating": 65.55,
-      "scheduleAdjustment": null,
+      "rating": 63.72,
+      "rank": 7,
+      "offenseRating": 28.61,
+      "defenseRating": 100,
+      "scheduleAdjustment": 66.05,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 2,
           "normalized": 56.89,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 23.294,
-          "normalized": 58.61,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.129,
+          "normalized": 28.61,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.181,
+          "normalized": 100,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 66.05,
+          "normalized": 66.05,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.647,
           "normalized": 81.76,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 21.294,
@@ -342,44 +362,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-phi",
-      "slug": "philadelphia-eagles",
-      "abbr": "phi",
-      "name": "Philadelphia Eagles",
+      "teamId": "nfl-kc",
+      "slug": "kansas-city-chiefs",
+      "abbr": "kc",
+      "name": "Kansas City Chiefs",
       "season": 2023,
-      "rating": 60,
-      "rank": 10,
-      "offenseRating": 72.17,
-      "defenseRating": 37.82,
-      "scheduleAdjustment": null,
+      "rating": 63.32,
+      "rank": 8,
+      "offenseRating": 65.17,
+      "defenseRating": 58.97,
+      "scheduleAdjustment": 43.8,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 0.294,
-          "normalized": 49.49,
-          "weight": 0.6
+          "raw": 4.529,
+          "normalized": 67.86,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 25.471,
-          "normalized": 72.17,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.018,
+          "normalized": 65.17,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.072,
+          "normalized": 58.97,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 43.8,
+          "normalized": 43.8,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.647,
           "normalized": 81.76,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 25.176,
-          "normalizedInverted": 37.82,
+          "raw": 17.294,
+          "normalizedInverted": 94.12,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-lar",
@@ -387,26 +417,36 @@
       "abbr": "lar",
       "name": "LA Rams",
       "season": 2023,
-      "rating": 59.34,
-      "rank": 11,
-      "offenseRating": 61.54,
-      "defenseRating": 59.25,
-      "scheduleAdjustment": null,
+      "rating": 58.54,
+      "rank": 9,
+      "offenseRating": 71.29,
+      "defenseRating": 36.76,
+      "scheduleAdjustment": 69.2,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 1.588,
           "normalized": 55.1,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 23.765,
-          "normalized": 61.54,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.043,
+          "normalized": 71.29,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.013,
+          "normalized": 36.76,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 69.2,
+          "normalized": 69.2,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.588,
           "normalized": 72.64,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 22.176,
@@ -414,80 +454,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-gb",
-      "slug": "green-bay-packers",
-      "abbr": "gb",
-      "name": "Green Bay Packers",
+      "teamId": "nfl-no",
+      "slug": "new-orleans-saints",
+      "abbr": "no",
+      "name": "New Orleans Saints",
       "season": 2023,
-      "rating": 56.97,
-      "rank": 12,
-      "offenseRating": 53.85,
-      "defenseRating": 70.59,
-      "scheduleAdjustment": null,
+      "rating": 54.57,
+      "rank": 10,
+      "offenseRating": 53.41,
+      "defenseRating": 65.46,
+      "scheduleAdjustment": 5.82,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 1.941,
-          "normalized": 56.63,
-          "weight": 0.6
+          "raw": 4.412,
+          "normalized": 67.35,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 22.529,
-          "normalized": 53.85,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.029,
+          "normalized": 53.41,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.089,
+          "normalized": 65.46,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 5.82,
+          "normalized": 5.82,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.529,
           "normalized": 63.52,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 20.588,
-          "normalizedInverted": 70.59,
+          "raw": 19.235,
+          "normalizedInverted": 80.26,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-hou",
-      "slug": "houston-texans",
-      "abbr": "hou",
-      "name": "Houston Texans",
-      "season": 2023,
-      "rating": 56.41,
-      "rank": 13,
-      "offenseRating": 51.65,
-      "defenseRating": 69.33,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 1.412,
-          "normalized": 54.34,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 22.176,
-          "normalized": 51.65,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.588,
-          "normalized": 72.64,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 20.765,
-          "normalizedInverted": 69.33,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-jax",
@@ -495,26 +509,36 @@
       "abbr": "jax",
       "name": "Jacksonville Jaguars",
       "season": 2023,
-      "rating": 52.28,
-      "rank": 14,
-      "offenseRating": 51.65,
-      "defenseRating": 61.76,
-      "scheduleAdjustment": null,
+      "rating": 53.82,
+      "rank": 11,
+      "offenseRating": 47.26,
+      "defenseRating": 43.25,
+      "scheduleAdjustment": 79.7,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 0.353,
           "normalized": 49.74,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 22.176,
-          "normalized": 51.65,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.054,
+          "normalized": 47.26,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.03,
+          "normalized": 43.25,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 79.7,
+          "normalized": 79.7,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.529,
           "normalized": 63.52,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 21.824,
@@ -522,224 +546,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-tb",
-      "slug": "tampa-bay-buccaneers",
-      "abbr": "tb",
-      "name": "Tampa Bay Buccaneers",
+      "teamId": "nfl-gb",
+      "slug": "green-bay-packers",
+      "abbr": "gb",
+      "name": "Green Bay Packers",
       "season": 2023,
-      "rating": 52.23,
-      "rank": 15,
-      "offenseRating": 41.03,
-      "defenseRating": 81.09,
-      "scheduleAdjustment": null,
+      "rating": 53.03,
+      "rank": 12,
+      "offenseRating": 74.6,
+      "defenseRating": 32.81,
+      "scheduleAdjustment": 35.84,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 1.353,
-          "normalized": 54.08,
-          "weight": 0.6
+          "raw": 1.941,
+          "normalized": 56.63,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 20.471,
-          "normalized": 41.03,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.056,
+          "normalized": 74.6,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.003,
+          "normalized": 32.81,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 35.84,
+          "normalized": 35.84,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.529,
           "normalized": 63.52,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 19.118,
-          "normalizedInverted": 81.09,
+          "raw": 20.588,
+          "normalizedInverted": 70.59,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-ind",
-      "slug": "indianapolis-colts",
-      "abbr": "ind",
-      "name": "Indianapolis Colts",
-      "season": 2023,
-      "rating": 50.2,
-      "rank": 16,
-      "offenseRating": 58.61,
-      "defenseRating": 43.28,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -1.118,
-          "normalized": 43.37,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 23.294,
-          "normalized": 58.61,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 63.52,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 24.412,
-          "normalizedInverted": 43.28,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-cin",
-      "slug": "cincinnati-bengals",
-      "abbr": "cin",
-      "name": "Cincinnati Bengals",
-      "season": 2023,
-      "rating": 47.6,
-      "rank": 17,
-      "offenseRating": 47.62,
-      "defenseRating": 56.31,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -1.059,
-          "normalized": 43.62,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 21.529,
-          "normalized": 47.62,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 63.52,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 22.588,
-          "normalizedInverted": 56.31,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-lv",
-      "slug": "las-vegas-raiders",
-      "abbr": "lv",
-      "name": "Las Vegas Raiders",
-      "season": 2023,
-      "rating": 46.06,
-      "rank": 18,
-      "offenseRating": 35.16,
-      "defenseRating": 78.57,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 0.059,
-          "normalized": 48.47,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 19.529,
-          "normalized": 35.16,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.471,
-          "normalized": 54.56,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 19.471,
-          "normalizedInverted": 78.57,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-sea",
-      "slug": "seattle-seahawks",
-      "abbr": "sea",
-      "name": "Seattle Seahawks",
-      "season": 2023,
-      "rating": 44.36,
-      "rank": 19,
-      "offenseRating": 46.89,
-      "defenseRating": 48.74,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -2.235,
-          "normalized": 38.52,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 21.412,
-          "normalized": 46.89,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 63.52,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 23.647,
-          "normalizedInverted": 48.74,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-chi",
-      "slug": "chicago-bears",
-      "abbr": "chi",
-      "name": "Chicago Bears",
-      "season": 2023,
-      "rating": 44.19,
-      "rank": 20,
-      "offenseRating": 45.42,
-      "defenseRating": 58.41,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -1.118,
-          "normalized": 43.37,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 21.176,
-          "normalized": 45.42,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.412,
-          "normalized": 45.44,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 22.294,
-          "normalizedInverted": 58.41,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-pit",
@@ -747,26 +601,36 @@
       "abbr": "pit",
       "name": "Pittsburgh Steelers",
       "season": 2023,
-      "rating": 42.99,
-      "rank": 21,
-      "offenseRating": 24.91,
-      "defenseRating": 81.51,
-      "scheduleAdjustment": null,
+      "rating": 52.68,
+      "rank": 13,
+      "offenseRating": 40.65,
+      "defenseRating": 51.92,
+      "scheduleAdjustment": 78.76,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -1.176,
           "normalized": 43.11,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 17.882,
-          "normalized": 24.91,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.08,
+          "normalized": 40.65,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.053,
+          "normalized": 51.92,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 78.76,
+          "normalized": 78.76,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.588,
           "normalized": 72.64,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 19.059,
@@ -774,8 +638,192 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-cin",
+      "slug": "cincinnati-bengals",
+      "abbr": "cin",
+      "name": "Cincinnati Bengals",
+      "season": 2023,
+      "rating": 52.27,
+      "rank": 14,
+      "offenseRating": 57.91,
+      "defenseRating": 20.32,
+      "scheduleAdjustment": 100,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.059,
+          "normalized": 43.62,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.011,
+          "normalized": 57.91,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.03,
+          "normalized": 20.32,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 100,
+          "normalized": 100,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 63.52,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.588,
+          "normalizedInverted": 56.31,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-tb",
+      "slug": "tampa-bay-buccaneers",
+      "abbr": "tb",
+      "name": "Tampa Bay Buccaneers",
+      "season": 2023,
+      "rating": 51.81,
+      "rank": 15,
+      "offenseRating": 53.53,
+      "defenseRating": 37.18,
+      "scheduleAdjustment": 55.91,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 1.353,
+          "normalized": 54.08,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.029,
+          "normalized": 53.53,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.014,
+          "normalized": 37.18,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 55.91,
+          "normalized": 55.91,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 63.52,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 19.118,
+          "normalizedInverted": 81.09,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-hou",
+      "slug": "houston-texans",
+      "abbr": "hou",
+      "name": "Houston Texans",
+      "season": 2023,
+      "rating": 50.45,
+      "rank": 16,
+      "offenseRating": 55.57,
+      "defenseRating": 44.57,
+      "scheduleAdjustment": 27.59,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 1.412,
+          "normalized": 54.34,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.02,
+          "normalized": 55.57,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.034,
+          "normalized": 44.57,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 27.59,
+          "normalized": 27.59,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 72.64,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 20.765,
+          "normalizedInverted": 69.33,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-phi",
+      "slug": "philadelphia-eagles",
+      "abbr": "phi",
+      "name": "Philadelphia Eagles",
+      "season": 2023,
+      "rating": 49.17,
+      "rank": 17,
+      "offenseRating": 76.97,
+      "defenseRating": 7.13,
+      "scheduleAdjustment": 45.7,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 0.294,
+          "normalized": 49.49,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.066,
+          "normalized": 76.97,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.065,
+          "normalized": 7.13,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 45.7,
+          "normalized": 45.7,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.647,
+          "normalized": 81.76,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.176,
+          "normalizedInverted": 37.82,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-min",
@@ -783,26 +831,36 @@
       "abbr": "min",
       "name": "Minnesota Vikings",
       "season": 2023,
-      "rating": 42.88,
-      "rank": 22,
-      "offenseRating": 39.56,
-      "defenseRating": 65.55,
-      "scheduleAdjustment": null,
+      "rating": 48.58,
+      "rank": 18,
+      "offenseRating": 54.63,
+      "defenseRating": 39.56,
+      "scheduleAdjustment": 66.2,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -1.059,
           "normalized": 43.62,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 20.235,
+        "offensiveEpaPerPlay": {
+          "raw": -0.024,
+          "normalized": 54.63,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.021,
           "normalized": 39.56,
-          "weight": 0.25
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 66.2,
+          "normalized": 66.2,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.412,
           "normalized": 45.44,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 21.294,
@@ -810,80 +868,192 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-den",
-      "slug": "denver-broncos",
-      "abbr": "den",
-      "name": "Denver Broncos",
+      "teamId": "nfl-lv",
+      "slug": "las-vegas-raiders",
+      "abbr": "lv",
+      "name": "Las Vegas Raiders",
       "season": 2023,
-      "rating": 39.62,
-      "rank": 23,
-      "offenseRating": 44.32,
-      "defenseRating": 44.12,
-      "scheduleAdjustment": null,
+      "rating": 46.87,
+      "rank": 19,
+      "offenseRating": 35.75,
+      "defenseRating": 54.79,
+      "scheduleAdjustment": 42.26,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -3.294,
-          "normalized": 33.93,
-          "weight": 0.6
+          "raw": 0.059,
+          "normalized": 48.47,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 21,
-          "normalized": 44.32,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.1,
+          "normalized": 35.75,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.061,
+          "normalized": 54.79,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 42.26,
+          "normalized": 42.26,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.471,
           "normalized": 54.56,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 24.294,
-          "normalizedInverted": 44.12,
+          "raw": 19.471,
+          "normalizedInverted": 78.57,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-atl",
-      "slug": "atlanta-falcons",
-      "abbr": "atl",
-      "name": "Atlanta Falcons",
+      "teamId": "nfl-ind",
+      "slug": "indianapolis-colts",
+      "abbr": "ind",
+      "name": "Indianapolis Colts",
       "season": 2023,
-      "rating": 35.57,
-      "rank": 24,
-      "offenseRating": 31.14,
-      "defenseRating": 60.93,
-      "scheduleAdjustment": null,
+      "rating": 46.16,
+      "rank": 20,
+      "offenseRating": 51.29,
+      "defenseRating": 37.37,
+      "scheduleAdjustment": 45.99,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -3.059,
-          "normalized": 34.95,
-          "weight": 0.6
+          "raw": -1.118,
+          "normalized": 43.37,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 18.882,
-          "normalized": 31.14,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.037,
+          "normalized": 51.29,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.015,
+          "normalized": 37.37,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 45.99,
+          "normalized": 45.99,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 63.52,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.412,
+          "normalizedInverted": 43.28,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-chi",
+      "slug": "chicago-bears",
+      "abbr": "chi",
+      "name": "Chicago Bears",
+      "season": 2023,
+      "rating": 44.59,
+      "rank": 21,
+      "offenseRating": 50.6,
+      "defenseRating": 49.17,
+      "scheduleAdjustment": 32.76,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.118,
+          "normalized": 43.37,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.04,
+          "normalized": 50.6,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.046,
+          "normalized": 49.17,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 32.76,
+          "normalized": 32.76,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.412,
           "normalized": 45.44,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 21.941,
-          "normalizedInverted": 60.93,
+          "raw": 22.294,
+          "normalizedInverted": 58.41,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-sea",
+      "slug": "seattle-seahawks",
+      "abbr": "sea",
+      "name": "Seattle Seahawks",
+      "season": 2023,
+      "rating": 44.33,
+      "rank": 22,
+      "offenseRating": 63.36,
+      "defenseRating": 14.59,
+      "scheduleAdjustment": 59.35,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -2.235,
+          "normalized": 38.52,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.011,
+          "normalized": 63.36,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.046,
+          "normalized": 14.59,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 59.35,
+          "normalized": 59.35,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 63.52,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 23.647,
+          "normalizedInverted": 48.74,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-lac",
@@ -891,26 +1061,36 @@
       "abbr": "lac",
       "name": "LA Chargers",
       "season": 2023,
-      "rating": 35.13,
-      "rank": 25,
-      "offenseRating": 40.3,
-      "defenseRating": 50.42,
-      "scheduleAdjustment": null,
+      "rating": 42.39,
+      "rank": 23,
+      "offenseRating": 44.15,
+      "defenseRating": 27.34,
+      "scheduleAdjustment": 87.59,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -3.059,
           "normalized": 34.95,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 20.353,
-          "normalized": 40.3,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.066,
+          "normalized": 44.15,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.012,
+          "normalized": 27.34,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 87.59,
+          "normalized": 87.59,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.294,
           "normalized": 27.2,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 23.412,
@@ -918,8 +1098,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-den",
+      "slug": "denver-broncos",
+      "abbr": "den",
+      "name": "Denver Broncos",
+      "season": 2023,
+      "rating": 40.26,
+      "rank": 24,
+      "offenseRating": 49.6,
+      "defenseRating": 24.4,
+      "scheduleAdjustment": 54.16,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -3.294,
+          "normalized": 33.93,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.044,
+          "normalized": 49.6,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.02,
+          "normalized": 24.4,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 54.16,
+          "normalized": 54.16,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 54.56,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.294,
+          "normalizedInverted": 44.12,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-ten",
@@ -927,26 +1153,36 @@
       "abbr": "ten",
       "name": "Tennessee Titans",
       "season": 2023,
-      "rating": 31.21,
-      "rank": 26,
-      "offenseRating": 25.28,
-      "defenseRating": 63.45,
-      "scheduleAdjustment": null,
+      "rating": 39.33,
+      "rank": 25,
+      "offenseRating": 46.09,
+      "defenseRating": 30.09,
+      "scheduleAdjustment": 60.8,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -3.647,
           "normalized": 32.4,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 17.941,
-          "normalized": 25.28,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.058,
+          "normalized": 46.09,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.004,
+          "normalized": 30.09,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 60.8,
+          "normalized": 60.8,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.353,
           "normalized": 36.32,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 21.588,
@@ -954,8 +1190,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-nyj",
@@ -963,26 +1199,36 @@
       "abbr": "nyj",
       "name": "NY Jets",
       "season": 2023,
-      "rating": 25.36,
-      "rank": 27,
-      "offenseRating": 11.73,
-      "defenseRating": 68.49,
-      "scheduleAdjustment": null,
+      "rating": 38.12,
+      "rank": 26,
+      "offenseRating": 0,
+      "defenseRating": 78.21,
+      "scheduleAdjustment": 58.84,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -5.118,
           "normalized": 26.02,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 15.765,
-          "normalized": 11.73,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.244,
+          "normalized": 0,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.123,
+          "normalized": 78.21,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 58.84,
+          "normalized": 58.84,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.412,
           "normalized": 45.44,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 20.882,
@@ -990,80 +1236,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-ari",
-      "slug": "arizona-cardinals",
-      "abbr": "ari",
-      "name": "Arizona Cardinals",
+      "teamId": "nfl-atl",
+      "slug": "atlanta-falcons",
+      "abbr": "atl",
+      "name": "Atlanta Falcons",
       "season": 2023,
-      "rating": 21.12,
-      "rank": 28,
-      "offenseRating": 34.44,
-      "defenseRating": 26.47,
-      "scheduleAdjustment": null,
+      "rating": 37.17,
+      "rank": 27,
+      "offenseRating": 36.19,
+      "defenseRating": 56.11,
+      "scheduleAdjustment": 12.91,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -7.353,
-          "normalized": 16.33,
-          "weight": 0.6
+          "raw": -3.059,
+          "normalized": 34.95,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 19.412,
-          "normalized": 34.44,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.098,
+          "normalized": 36.19,
+          "weight": 0.2
         },
-        "winPercentage": {
-          "raw": 0.235,
-          "normalized": 18.08,
+        "defensiveEpaPerPlay": {
+          "raw": -0.065,
+          "normalized": 56.11,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 12.91,
+          "normalized": 12.91,
           "weight": 0.15
         },
+        "winPercentage": {
+          "raw": 0.412,
+          "normalized": 45.44,
+          "weight": 0.1
+        },
         "pointsAllowedPerGame": {
-          "raw": 26.765,
-          "normalizedInverted": 26.47,
+          "raw": 21.941,
+          "normalizedInverted": 60.93,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-nyg",
-      "slug": "ny-giants",
-      "abbr": "nyg",
-      "name": "NY Giants",
-      "season": 2023,
-      "rating": 15.54,
-      "rank": 29,
-      "offenseRating": 10.99,
-      "defenseRating": 46.64,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -8.294,
-          "normalized": 12.24,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 15.647,
-          "normalized": 10.99,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.353,
-          "normalized": 36.32,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 23.941,
-          "normalizedInverted": 46.64,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-ne",
@@ -1071,26 +1291,36 @@
       "abbr": "ne",
       "name": "New England Patriots",
       "season": 2023,
-      "rating": 11.74,
-      "rank": 30,
-      "offenseRating": 0,
-      "defenseRating": 63.87,
-      "scheduleAdjustment": null,
+      "rating": 32.61,
+      "rank": 28,
+      "offenseRating": 17.86,
+      "defenseRating": 59.35,
+      "scheduleAdjustment": 67.3,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -7.647,
           "normalized": 15.05,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 13.882,
-          "normalized": 0,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.172,
+          "normalized": 17.86,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.073,
+          "normalized": 59.35,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 67.3,
+          "normalized": 67.3,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.235,
           "normalized": 18.08,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 21.529,
@@ -1098,44 +1328,100 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-wsh",
-      "slug": "washington-commanders",
-      "abbr": "wsh",
-      "name": "Washington Commanders",
+      "teamId": "nfl-ari",
+      "slug": "arizona-cardinals",
+      "abbr": "ari",
+      "name": "Arizona Cardinals",
       "season": 2023,
-      "rating": 11.23,
-      "rank": 31,
-      "offenseRating": 34.07,
-      "defenseRating": 0,
-      "scheduleAdjustment": null,
+      "rating": 28.41,
+      "rank": 29,
+      "offenseRating": 41.47,
+      "defenseRating": 1.89,
+      "scheduleAdjustment": 81.46,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -11.118,
-          "normalized": 0,
-          "weight": 0.6
+          "raw": -7.353,
+          "normalized": 16.33,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 19.353,
-          "normalized": 34.07,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.077,
+          "normalized": 41.47,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.079,
+          "normalized": 1.89,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 81.46,
+          "normalized": 81.46,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.235,
           "normalized": 18.08,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 30.471,
-          "normalizedInverted": 0,
+          "raw": 26.765,
+          "normalizedInverted": 26.47,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-nyg",
+      "slug": "ny-giants",
+      "abbr": "nyg",
+      "name": "NY Giants",
+      "season": 2023,
+      "rating": 28.38,
+      "rank": 30,
+      "offenseRating": 18.68,
+      "defenseRating": 31.9,
+      "scheduleAdjustment": 68.97,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -8.294,
+          "normalized": 12.24,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.169,
+          "normalized": 18.68,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0,
+          "normalized": 31.9,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 68.97,
+          "normalized": 68.97,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.353,
+          "normalized": 36.32,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 23.941,
+          "normalizedInverted": 46.64,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-car",
@@ -1143,26 +1429,36 @@
       "abbr": "car",
       "name": "Carolina Panthers",
       "season": 2023,
-      "rating": 1.38,
-      "rank": 32,
-      "offenseRating": 0,
-      "defenseRating": 42.86,
-      "scheduleAdjustment": null,
+      "rating": 22.46,
+      "rank": 31,
+      "offenseRating": 17.51,
+      "defenseRating": 30.81,
+      "scheduleAdjustment": 79.94,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -10.588,
           "normalized": 2.3,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 13.882,
-          "normalized": 0,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.173,
+          "normalized": 17.51,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.003,
+          "normalized": 30.81,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 79.94,
+          "normalized": 79.94,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.118,
           "normalized": 0,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 24.471,
@@ -1170,8 +1466,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-wsh",
+      "slug": "washington-commanders",
+      "abbr": "wsh",
+      "name": "Washington Commanders",
+      "season": 2023,
+      "rating": 18.24,
+      "rank": 32,
+      "offenseRating": 38.08,
+      "defenseRating": 0,
+      "scheduleAdjustment": 58.76,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -11.118,
+          "normalized": 0,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.091,
+          "normalized": 38.08,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.084,
+          "normalized": 0,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 58.76,
+          "normalized": 58.76,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.235,
+          "normalized": 18.08,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 30.471,
+          "normalizedInverted": 0,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     }
   ]
 }

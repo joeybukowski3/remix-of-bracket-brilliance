@@ -1,25 +1,47 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-07-07T14:44:45.791Z",
-    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline, regular season only)",
+    "generatedAt": "2026-07-07T18:23:02.875Z",
+    "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline) + nflverse stats_team weekly release, regular season only",
     "season": 2022,
     "week": null,
-    "modelVersion": "nfl-power-v0.1",
+    "modelVersion": "nfl-power-v0.2",
     "notes": [
       "Stats and ratings derive from final regular-season results only; postseason games are excluded.",
-      "Advanced efficiency metrics (yards, turnovers, EPA, success rate, pace) are null: they require heavier nflverse play-by-play/team-week downloads and are deferred to a future model version.",
-      "Rating formula (nfl-power-v0.1, fallback tier): 60% point differential per game + 25% points per game + 15% win percentage, each min-max normalized to 0-100 within the season.",
-      "Defense context uses points allowed per game inverted, so better defense scores higher.",
+      "Sources: repo results.json (PR-2 nflverse pipeline) + nflverse (stats_team weekly release) (https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_2022.csv).",
+      "Advanced metrics (EPA/play, yards/play, turnovers) computed from the nflverse stats_team weekly file; defensive values derived from opponents' offensive production.",
+      "Success rates require full play-by-play (too heavy for the default workflow) and remain null.",
+      "Rating formula (nfl-power-v0.2, tier v0.2-epa): 35% pointDifferentialPerGame + 20% offensiveEpaPerPlay + 20% defensiveEpaPerPlay + 15% scheduleAdjustment + 10% winPercentage, each min-max normalized to 0-100 within the season.",
+      "Defensive components are inverted so better defense increases the rating.",
+      "Schedule adjustment: one-pass average of opponents' raw point differential per game (final scores only — no spreads, moneylines or market data), normalized 0-100 within the season.",
       "Experimental model output for internal review only; not validated and not betting guidance.",
       "No betting-line columns are read anywhere in this pipeline.",
       "2022: the cancelled Week 17 BUF-CIN game is absent upstream, so Buffalo and Cincinnati have 16-game regular seasons."
     ]
   },
+  "model": {
+    "modelVersion": "nfl-power-v0.2",
+    "formula": "v0.2-epa",
+    "weights": {
+      "pointDifferentialPerGame": 0.35,
+      "offensiveEpaPerPlay": 0.2,
+      "defensiveEpaPerPlay": 0.2,
+      "scheduleAdjustment": 0.15,
+      "winPercentage": 0.1
+    },
+    "sources": [
+      "public/data/nfl/<season>/results.json (repo, PR-2 pipeline)",
+      "nflverse (stats_team weekly release): https://github.com/nflverse/nflverse-data/releases/download/stats_team/stats_team_week_2022.csv"
+    ],
+    "advancedMetricsAvailable": true,
+    "scheduleAdjustmentMethod": "one-pass average of opponents' point differential per game (final scores only), min-max normalized 0-100 within season"
+  },
   "weights": {
-    "pointDifferentialPerGame": 0.6,
-    "pointsPerGame": 0.25,
-    "winPercentage": 0.15
+    "pointDifferentialPerGame": 0.35,
+    "offensiveEpaPerPlay": 0.2,
+    "defensiveEpaPerPlay": 0.2,
+    "scheduleAdjustment": 0.15,
+    "winPercentage": 0.1
   },
   "ratings": [
     {
@@ -28,26 +50,36 @@
       "abbr": "buf",
       "name": "Buffalo Bills",
       "season": 2022,
-      "rating": 98.25,
+      "rating": 80.87,
       "rank": 1,
-      "offenseRating": 94,
-      "defenseRating": 85.55,
-      "scheduleAdjustment": null,
+      "offenseRating": 78,
+      "defenseRating": 72.4,
+      "scheduleAdjustment": 39.73,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 10.563,
           "normalized": 100,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 28.438,
-          "normalized": 94,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.104,
+          "normalized": 78,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.056,
+          "normalized": 72.4,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 39.73,
+          "normalized": 39.73,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.813,
           "normalized": 98.3,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 17.875,
@@ -55,8 +87,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-sf",
@@ -64,26 +96,36 @@
       "abbr": "sf",
       "name": "San Francisco 49ers",
       "season": 2022,
-      "rating": 91.89,
+      "rating": 77.63,
       "rank": 2,
-      "offenseRating": 78,
+      "offenseRating": 71.32,
       "defenseRating": 100,
-      "scheduleAdjustment": null,
+      "scheduleAdjustment": 0,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 10.176,
           "normalized": 97.93,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 26.471,
-          "normalized": 78,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.08,
+          "normalized": 71.32,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.119,
+          "normalized": 100,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 0,
+          "normalized": 0,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.765,
           "normalized": 90.9,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 16.294,
@@ -91,8 +133,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-kc",
@@ -100,26 +142,36 @@
       "abbr": "kc",
       "name": "Kansas City Chiefs",
       "season": 2022,
-      "rating": 90.07,
+      "rating": 75.83,
       "rank": 3,
       "offenseRating": 100,
-      "defenseRating": 50.53,
-      "scheduleAdjustment": null,
+      "defenseRating": 57.07,
+      "scheduleAdjustment": 34.69,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 7.471,
           "normalized": 83.45,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 29.176,
+        "offensiveEpaPerPlay": {
+          "raw": 0.186,
           "normalized": 100,
-          "weight": 0.25
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.021,
+          "normalized": 57.07,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 34.69,
+          "normalized": 34.69,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.824,
           "normalized": 100,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 21.706,
@@ -127,8 +179,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-phi",
@@ -136,26 +188,36 @@
       "abbr": "phi",
       "name": "Philadelphia Eagles",
       "season": 2022,
-      "rating": 88.93,
+      "rating": 75.01,
       "rank": 4,
-      "offenseRating": 90.91,
-      "defenseRating": 63.98,
-      "scheduleAdjustment": null,
+      "offenseRating": 81.28,
+      "defenseRating": 78.08,
+      "scheduleAdjustment": 21.82,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 7.824,
           "normalized": 85.34,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 28.059,
-          "normalized": 90.91,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.117,
+          "normalized": 81.28,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.069,
+          "normalized": 78.08,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 21.82,
+          "normalized": 21.82,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.824,
           "normalized": 100,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 20.235,
@@ -163,8 +225,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-dal",
@@ -172,26 +234,36 @@
       "abbr": "dal",
       "name": "Dallas Cowboys",
       "season": 2022,
-      "rating": 83.49,
+      "rating": 71.18,
       "rank": 5,
-      "offenseRating": 86.13,
-      "defenseRating": 65.05,
-      "scheduleAdjustment": null,
+      "offenseRating": 54.42,
+      "defenseRating": 88.12,
+      "scheduleAdjustment": 36.71,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 7.353,
           "normalized": 82.82,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 27.471,
-          "normalized": 86.13,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.018,
+          "normalized": 54.42,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.092,
+          "normalized": 88.12,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 36.71,
+          "normalized": 36.71,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.706,
           "normalized": 81.79,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 20.118,
@@ -199,8 +271,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-cin",
@@ -208,26 +280,36 @@
       "abbr": "cin",
       "name": "Cincinnati Bengals",
       "season": 2022,
-      "rating": 77.43,
+      "rating": 70.39,
       "rank": 6,
-      "offenseRating": 75.18,
-      "defenseRating": 64.98,
-      "scheduleAdjustment": null,
+      "offenseRating": 66.93,
+      "defenseRating": 64.28,
+      "scheduleAdjustment": 58.9,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 6,
           "normalized": 75.58,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 26.125,
-          "normalized": 75.18,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.064,
+          "normalized": 66.93,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.037,
+          "normalized": 64.28,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 58.9,
+          "normalized": 58.9,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.75,
           "normalized": 88.58,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 20.125,
@@ -235,116 +317,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-det",
-      "slug": "detroit-lions",
-      "abbr": "det",
-      "name": "Detroit Lions",
-      "season": 2022,
-      "rating": 59.01,
-      "rank": 7,
-      "offenseRating": 79.43,
-      "defenseRating": 19.35,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 1.529,
-          "normalized": 51.64,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 26.647,
-          "normalized": 79.43,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 54.48,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 25.118,
-          "normalizedInverted": 19.35,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-jax",
-      "slug": "jacksonville-jaguars",
-      "abbr": "jax",
-      "name": "Jacksonville Jaguars",
-      "season": 2022,
-      "rating": 58.45,
-      "rank": 8,
-      "offenseRating": 55.99,
-      "defenseRating": 60.75,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 3.176,
-          "normalized": 60.46,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 23.765,
-          "normalized": 55.99,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 54.48,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 20.588,
-          "normalizedInverted": 60.75,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-min",
-      "slug": "minnesota-vikings",
-      "abbr": "min",
-      "name": "Minnesota Vikings",
-      "season": 2022,
-      "rating": 55.53,
-      "rank": 9,
-      "offenseRating": 65.55,
-      "defenseRating": 19.35,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -0.176,
-          "normalized": 42.51,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 24.941,
-          "normalized": 65.55,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.765,
-          "normalized": 90.9,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 25.118,
-          "normalizedInverted": 19.35,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-bal",
@@ -352,26 +326,36 @@
       "abbr": "bal",
       "name": "Baltimore Ravens",
       "season": 2022,
-      "rating": 49.76,
-      "rank": 10,
-      "offenseRating": 30.14,
-      "defenseRating": 79.57,
-      "scheduleAdjustment": null,
+      "rating": 56.72,
+      "rank": 7,
+      "offenseRating": 53.64,
+      "defenseRating": 51.83,
+      "scheduleAdjustment": 68.01,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 2.059,
           "normalized": 54.48,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 20.588,
-          "normalized": 30.14,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.015,
+          "normalized": 53.64,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.009,
+          "normalized": 51.83,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 68.01,
+          "normalized": 68.01,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.588,
           "normalized": 63.58,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 18.529,
@@ -379,80 +363,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-sea",
-      "slug": "seattle-seahawks",
-      "abbr": "sea",
-      "name": "Seattle Seahawks",
-      "season": 2022,
-      "rating": 49.74,
-      "rank": 11,
-      "offenseRating": 57.42,
-      "defenseRating": 33.33,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 0.353,
-          "normalized": 45.35,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 23.941,
-          "normalized": 57.42,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 54.48,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 23.588,
-          "normalizedInverted": 33.33,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-lac",
-      "slug": "la-chargers",
-      "abbr": "lac",
-      "name": "LA Chargers",
-      "season": 2022,
-      "rating": 49.37,
-      "rank": 12,
-      "offenseRating": 49.76,
-      "defenseRating": 42.47,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 0.412,
-          "normalized": 45.66,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 23,
-          "normalized": 49.76,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.588,
-          "normalized": 63.58,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 22.588,
-          "normalizedInverted": 42.47,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-mia",
@@ -460,26 +372,36 @@
       "abbr": "mia",
       "name": "Miami Dolphins",
       "season": 2022,
-      "rating": 47.03,
-      "rank": 13,
-      "offenseRating": 52.64,
-      "defenseRating": 34.4,
-      "scheduleAdjustment": null,
+      "rating": 55.28,
+      "rank": 8,
+      "offenseRating": 62.1,
+      "defenseRating": 44.41,
+      "scheduleAdjustment": 90.24,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -0.118,
           "normalized": 42.83,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 23.353,
-          "normalized": 52.64,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.046,
+          "normalized": 62.1,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.009,
+          "normalized": 44.41,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 90.24,
+          "normalized": 90.24,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.529,
           "normalized": 54.48,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 23.471,
@@ -487,8 +409,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-ne",
@@ -496,26 +418,36 @@
       "abbr": "ne",
       "name": "New England Patriots",
       "season": 2022,
-      "rating": 45.33,
-      "rank": 14,
-      "offenseRating": 36.85,
-      "defenseRating": 62.36,
-      "scheduleAdjustment": null,
+      "rating": 54.08,
+      "rank": 9,
+      "offenseRating": 35.57,
+      "defenseRating": 84.24,
+      "scheduleAdjustment": 56.56,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 1,
           "normalized": 48.81,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 21.412,
-          "normalized": 36.85,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.052,
+          "normalized": 35.57,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.083,
+          "normalized": 84.24,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 56.56,
+          "normalized": 56.56,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.471,
           "normalized": 45.52,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 20.412,
@@ -523,260 +455,54 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-nyg",
-      "slug": "ny-giants",
-      "abbr": "nyg",
-      "name": "NY Giants",
+      "teamId": "nfl-jax",
+      "slug": "jacksonville-jaguars",
+      "abbr": "jax",
+      "name": "Jacksonville Jaguars",
       "season": 2022,
-      "rating": 43.14,
-      "rank": 15,
-      "offenseRating": 37.33,
-      "defenseRating": 49.46,
-      "scheduleAdjustment": null,
+      "rating": 53.71,
+      "rank": 10,
+      "offenseRating": 61.61,
+      "defenseRating": 56.9,
+      "scheduleAdjustment": 22.66,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -0.353,
-          "normalized": 41.57,
-          "weight": 0.6
+          "raw": 3.176,
+          "normalized": 60.46,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 21.471,
-          "normalized": 37.33,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.044,
+          "normalized": 61.61,
+          "weight": 0.2
         },
-        "winPercentage": {
-          "raw": 0.559,
-          "normalized": 59.1,
+        "defensiveEpaPerPlay": {
+          "raw": -0.02,
+          "normalized": 56.9,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 22.66,
+          "normalized": 22.66,
           "weight": 0.15
         },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 54.48,
+          "weight": 0.1
+        },
         "pointsAllowedPerGame": {
-          "raw": 21.824,
-          "normalizedInverted": 49.46,
+          "raw": 20.588,
+          "normalizedInverted": 60.75,
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-gb",
-      "slug": "green-bay-packers",
-      "abbr": "gb",
-      "name": "Green Bay Packers",
-      "season": 2022,
-      "rating": 42.64,
-      "rank": 16,
-      "offenseRating": 39.72,
-      "defenseRating": 49.46,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -0.059,
-          "normalized": 43.14,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 21.765,
-          "normalized": 39.72,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.471,
-          "normalized": 45.52,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 21.824,
-          "normalizedInverted": 49.46,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-lv",
-      "slug": "las-vegas-raiders",
-      "abbr": "lv",
-      "name": "Las Vegas Raiders",
-      "season": 2022,
-      "rating": 38.74,
-      "rank": 17,
-      "offenseRating": 51.68,
-      "defenseRating": 24.19,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -1.353,
-          "normalized": 36.21,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 23.235,
-          "normalized": 51.68,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.353,
-          "normalized": 27.31,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 24.588,
-          "normalizedInverted": 24.19,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-atl",
-      "slug": "atlanta-falcons",
-      "abbr": "atl",
-      "name": "Atlanta Falcons",
-      "season": 2022,
-      "rating": 36.9,
-      "rank": 18,
-      "offenseRating": 37.33,
-      "defenseRating": 41.39,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -1.235,
-          "normalized": 36.84,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 21.471,
-          "normalized": 37.33,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.412,
-          "normalized": 36.42,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 22.706,
-          "normalizedInverted": 41.39,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-cle",
-      "slug": "cleveland-browns",
-      "abbr": "cle",
-      "name": "Cleveland Browns",
-      "season": 2022,
-      "rating": 36.61,
-      "rank": 19,
-      "offenseRating": 35.41,
-      "defenseRating": 44.08,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -1.176,
-          "normalized": 37.16,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 21.235,
-          "normalized": 35.41,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.412,
-          "normalized": 36.42,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 22.412,
-          "normalizedInverted": 44.08,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-no",
-      "slug": "new-orleans-saints",
-      "abbr": "no",
-      "name": "New Orleans Saints",
-      "season": 2022,
-      "rating": 33.85,
-      "rank": 20,
-      "offenseRating": 20.58,
-      "defenseRating": 63.44,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -0.882,
-          "normalized": 38.73,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 19.412,
-          "normalized": 20.58,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.412,
-          "normalized": 36.42,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 20.294,
-          "normalizedInverted": 63.44,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-car",
-      "slug": "carolina-panthers",
-      "abbr": "car",
-      "name": "Carolina Panthers",
-      "season": 2022,
-      "rating": 33.61,
-      "rank": 21,
-      "offenseRating": 28.71,
-      "defenseRating": 47.85,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -1.588,
-          "normalized": 34.95,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 20.412,
-          "normalized": 28.71,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.412,
-          "normalized": 36.42,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 22,
-          "normalizedInverted": 47.85,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-wsh",
@@ -784,26 +510,36 @@
       "abbr": "wsh",
       "name": "Washington Commanders",
       "season": 2022,
-      "rating": 33.49,
-      "rank": 22,
-      "offenseRating": 16.27,
-      "defenseRating": 64.52,
-      "scheduleAdjustment": null,
+      "rating": 50.31,
+      "rank": 11,
+      "offenseRating": 28.43,
+      "defenseRating": 75.11,
+      "scheduleAdjustment": 78.81,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -1.294,
           "normalized": 36.53,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 18.882,
-          "normalized": 16.27,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.078,
+          "normalized": 28.43,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.062,
+          "normalized": 75.11,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 78.81,
+          "normalized": 78.81,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.5,
           "normalized": 50,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 20.176,
@@ -811,44 +547,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-pit",
-      "slug": "pittsburgh-steelers",
-      "abbr": "pit",
-      "name": "Pittsburgh Steelers",
-      "season": 2022,
-      "rating": 29.58,
-      "rank": 23,
-      "offenseRating": 10.05,
-      "defenseRating": 62.9,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -2.235,
-          "normalized": 31.49,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 18.118,
-          "normalized": 10.05,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.529,
-          "normalized": 54.48,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 20.353,
-          "normalizedInverted": 62.9,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-nyj",
@@ -856,26 +556,36 @@
       "abbr": "nyj",
       "name": "NY Jets",
       "season": 2022,
-      "rating": 28.84,
-      "rank": 24,
-      "offenseRating": 4.31,
-      "defenseRating": 79.03,
-      "scheduleAdjustment": null,
+      "rating": 49.55,
+      "rank": 12,
+      "offenseRating": 27.4,
+      "defenseRating": 71.22,
+      "scheduleAdjustment": 87.86,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -1.176,
           "normalized": 37.16,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 17.412,
-          "normalized": 4.31,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.082,
+          "normalized": 27.4,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.053,
+          "normalized": 71.22,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 87.86,
+          "normalized": 87.86,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.412,
           "normalized": 36.42,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 18.588,
@@ -883,251 +593,45 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-tb",
-      "slug": "tampa-bay-buccaneers",
-      "abbr": "tb",
-      "name": "Tampa Bay Buccaneers",
+      "teamId": "nfl-det",
+      "slug": "detroit-lions",
+      "abbr": "det",
+      "name": "Detroit Lions",
       "season": 2022,
-      "rating": 27.51,
-      "rank": 25,
-      "offenseRating": 12.45,
-      "defenseRating": 56.45,
-      "scheduleAdjustment": null,
+      "rating": 49.51,
+      "rank": 13,
+      "offenseRating": 66.36,
+      "defenseRating": 10.79,
+      "scheduleAdjustment": 70.36,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -2.647,
-          "normalized": 29.29,
-          "weight": 0.6
+          "raw": 1.529,
+          "normalized": 51.64,
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 18.412,
-          "normalized": 12.45,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": 0.062,
+          "normalized": 66.36,
+          "weight": 0.2
         },
-        "winPercentage": {
-          "raw": 0.471,
-          "normalized": 45.52,
+        "defensiveEpaPerPlay": {
+          "raw": 0.086,
+          "normalized": 10.79,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 70.36,
+          "normalized": 70.36,
           "weight": 0.15
         },
-        "pointsAllowedPerGame": {
-          "raw": 21.059,
-          "normalizedInverted": 56.45,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-ten",
-      "slug": "tennessee-titans",
-      "abbr": "ten",
-      "name": "Tennessee Titans",
-      "season": 2022,
-      "rating": 21.33,
-      "rank": 26,
-      "offenseRating": 5.26,
-      "defenseRating": 55.91,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -3.588,
-          "normalized": 24.25,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 17.529,
-          "normalized": 5.26,
-          "weight": 0.25
-        },
         "winPercentage": {
-          "raw": 0.412,
-          "normalized": 36.42,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 21.118,
-          "normalizedInverted": 55.91,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-lar",
-      "slug": "la-rams",
-      "abbr": "lar",
-      "name": "LA Rams",
-      "season": 2022,
-      "rating": 16.65,
-      "rank": 27,
-      "offenseRating": 9.57,
-      "defenseRating": 42.47,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -4.529,
-          "normalized": 19.21,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 18.059,
-          "normalized": 9.57,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.294,
-          "normalized": 18.21,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 22.588,
-          "normalizedInverted": 42.47,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-den",
-      "slug": "denver-broncos",
-      "abbr": "den",
-      "name": "Denver Broncos",
-      "season": 2022,
-      "rating": 15.2,
-      "rank": 28,
-      "offenseRating": 0,
-      "defenseRating": 55.91,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -4.235,
-          "normalized": 20.78,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 16.882,
-          "normalized": 0,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.294,
-          "normalized": 18.21,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 21.118,
-          "normalizedInverted": 55.91,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-ari",
-      "slug": "arizona-cardinals",
-      "abbr": "ari",
-      "name": "Arizona Cardinals",
-      "season": 2022,
-      "rating": 13.18,
-      "rank": 29,
-      "offenseRating": 25.36,
-      "defenseRating": 7.52,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -6.412,
-          "normalized": 9.13,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 20,
-          "normalized": 25.36,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.235,
-          "normalized": 9.1,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 26.412,
-          "normalizedInverted": 7.52,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-chi",
-      "slug": "chicago-bears",
-      "abbr": "chi",
-      "name": "Chicago Bears",
-      "season": 2022,
-      "rating": 4.85,
-      "rank": 30,
-      "offenseRating": 18.66,
-      "defenseRating": 0,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -8.059,
-          "normalized": 0.31,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 19.176,
-          "normalized": 18.66,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.176,
-          "normalized": 0,
-          "weight": 0.15
-        },
-        "pointsAllowedPerGame": {
-          "raw": 27.235,
-          "normalizedInverted": 0,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
-    },
-    {
-      "teamId": "nfl-ind",
-      "slug": "indianapolis-colts",
-      "abbr": "ind",
-      "name": "Indianapolis Colts",
-      "season": 2022,
-      "rating": 2.3,
-      "rank": 31,
-      "offenseRating": 0.96,
-      "defenseRating": 19.35,
-      "scheduleAdjustment": null,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -8.118,
-          "normalized": 0,
-          "weight": 0.6
-        },
-        "pointsPerGame": {
-          "raw": 17,
-          "normalized": 0.96,
-          "weight": 0.25
-        },
-        "winPercentage": {
-          "raw": 0.265,
-          "normalized": 13.73,
-          "weight": 0.15
+          "raw": 0.529,
+          "normalized": 54.48,
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 25.118,
@@ -1135,8 +639,836 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-nyg",
+      "slug": "ny-giants",
+      "abbr": "nyg",
+      "name": "NY Giants",
+      "season": 2022,
+      "rating": 47.62,
+      "rank": 14,
+      "offenseRating": 59.88,
+      "defenseRating": 27.42,
+      "scheduleAdjustment": 64.66,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -0.353,
+          "normalized": 41.57,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.038,
+          "normalized": 59.88,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.047,
+          "normalized": 27.42,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 64.66,
+          "normalized": 64.66,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.559,
+          "normalized": 59.1,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.824,
+          "normalizedInverted": 49.46,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-min",
+      "slug": "minnesota-vikings",
+      "abbr": "min",
+      "name": "Minnesota Vikings",
+      "season": 2022,
+      "rating": 47.61,
+      "rank": 15,
+      "offenseRating": 45.98,
+      "defenseRating": 36.24,
+      "scheduleAdjustment": 48,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -0.176,
+          "normalized": 42.51,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.013,
+          "normalized": 45.98,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.027,
+          "normalized": 36.24,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 48,
+          "normalized": 48,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.765,
+          "normalized": 90.9,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.118,
+          "normalizedInverted": 19.35,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-no",
+      "slug": "new-orleans-saints",
+      "abbr": "no",
+      "name": "New Orleans Saints",
+      "season": 2022,
+      "rating": 47.5,
+      "rank": 16,
+      "offenseRating": 42.62,
+      "defenseRating": 67.64,
+      "scheduleAdjustment": 55.03,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -0.882,
+          "normalized": 38.73,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.026,
+          "normalized": 42.62,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.045,
+          "normalized": 67.64,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 55.03,
+          "normalized": 55.03,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.412,
+          "normalized": 36.42,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 20.294,
+          "normalizedInverted": 63.44,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-sea",
+      "slug": "seattle-seahawks",
+      "abbr": "sea",
+      "name": "Seattle Seahawks",
+      "season": 2022,
+      "rating": 46.85,
+      "rank": 17,
+      "offenseRating": 52.06,
+      "defenseRating": 40.57,
+      "scheduleAdjustment": 46.71,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 0.353,
+          "normalized": 45.35,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.009,
+          "normalized": 52.06,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.017,
+          "normalized": 40.57,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 46.71,
+          "normalized": 46.71,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 54.48,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 23.588,
+          "normalizedInverted": 33.33,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-pit",
+      "slug": "pittsburgh-steelers",
+      "abbr": "pit",
+      "name": "Pittsburgh Steelers",
+      "season": 2022,
+      "rating": 46.66,
+      "rank": 18,
+      "offenseRating": 51.57,
+      "defenseRating": 38.34,
+      "scheduleAdjustment": 81.4,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -2.235,
+          "normalized": 31.49,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.007,
+          "normalized": 51.57,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.022,
+          "normalized": 38.34,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 81.4,
+          "normalized": 81.4,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.529,
+          "normalized": 54.48,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 20.353,
+          "normalizedInverted": 62.9,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-tb",
+      "slug": "tampa-bay-buccaneers",
+      "abbr": "tb",
+      "name": "Tampa Bay Buccaneers",
+      "season": 2022,
+      "rating": 46.21,
+      "rank": 19,
+      "offenseRating": 41.48,
+      "defenseRating": 59.83,
+      "scheduleAdjustment": 74.28,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -2.647,
+          "normalized": 29.29,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.03,
+          "normalized": 41.48,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.027,
+          "normalized": 59.83,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 74.28,
+          "normalized": 74.28,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 45.52,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.059,
+          "normalizedInverted": 56.45,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-lac",
+      "slug": "la-chargers",
+      "abbr": "lac",
+      "name": "LA Chargers",
+      "season": 2022,
+      "rating": 45.49,
+      "rank": 20,
+      "offenseRating": 53.64,
+      "defenseRating": 38.91,
+      "scheduleAdjustment": 30.95,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 0.412,
+          "normalized": 45.66,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.015,
+          "normalized": 53.64,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.021,
+          "normalized": 38.91,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 30.95,
+          "normalized": 30.95,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.588,
+          "normalized": 63.58,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.588,
+          "normalizedInverted": 42.47,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-cle",
+      "slug": "cleveland-browns",
+      "abbr": "cle",
+      "name": "Cleveland Browns",
+      "season": 2022,
+      "rating": 45.12,
+      "rank": 21,
+      "offenseRating": 53.15,
+      "defenseRating": 39.04,
+      "scheduleAdjustment": 66.87,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.176,
+          "normalized": 37.16,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.013,
+          "normalized": 53.15,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.021,
+          "normalized": 39.04,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 66.87,
+          "normalized": 66.87,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.412,
+          "normalized": 36.42,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.412,
+          "normalizedInverted": 44.08,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-gb",
+      "slug": "green-bay-packers",
+      "abbr": "gb",
+      "name": "Green Bay Packers",
+      "season": 2022,
+      "rating": 43.92,
+      "rank": 22,
+      "offenseRating": 50.54,
+      "defenseRating": 29.48,
+      "scheduleAdjustment": 55.09,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -0.059,
+          "normalized": 43.14,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.003,
+          "normalized": 50.54,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.043,
+          "normalized": 29.48,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 55.09,
+          "normalized": 55.09,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.471,
+          "normalized": 45.52,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.824,
+          "normalizedInverted": 49.46,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-car",
+      "slug": "carolina-panthers",
+      "abbr": "car",
+      "name": "Carolina Panthers",
+      "season": 2022,
+      "rating": 38.95,
+      "rank": 23,
+      "offenseRating": 40.23,
+      "defenseRating": 43.41,
+      "scheduleAdjustment": 42.3,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.588,
+          "normalized": 34.95,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.035,
+          "normalized": 40.23,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.011,
+          "normalized": 43.41,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 42.3,
+          "normalized": 42.3,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.412,
+          "normalized": 36.42,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22,
+          "normalizedInverted": 47.85,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-ten",
+      "slug": "tennessee-titans",
+      "abbr": "ten",
+      "name": "Tennessee Titans",
+      "season": 2022,
+      "rating": 38.26,
+      "rank": 24,
+      "offenseRating": 31.85,
+      "defenseRating": 48.56,
+      "scheduleAdjustment": 66.98,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -3.588,
+          "normalized": 24.25,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.066,
+          "normalized": 31.85,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.001,
+          "normalized": 48.56,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 66.98,
+          "normalized": 66.98,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.412,
+          "normalized": 36.42,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.118,
+          "normalizedInverted": 55.91,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-lar",
+      "slug": "la-rams",
+      "abbr": "lar",
+      "name": "LA Rams",
+      "season": 2022,
+      "rating": 36.45,
+      "rank": 25,
+      "offenseRating": 26.64,
+      "defenseRating": 44.63,
+      "scheduleAdjustment": 91.03,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -4.529,
+          "normalized": 19.21,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.085,
+          "normalized": 26.64,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.008,
+          "normalized": 44.63,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 91.03,
+          "normalized": 91.03,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.294,
+          "normalized": 18.21,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.588,
+          "normalizedInverted": 42.47,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-lv",
+      "slug": "las-vegas-raiders",
+      "abbr": "lv",
+      "name": "Las Vegas Raiders",
+      "season": 2022,
+      "rating": 36.03,
+      "rank": 26,
+      "offenseRating": 52.44,
+      "defenseRating": 22.71,
+      "scheduleAdjustment": 37.28,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.353,
+          "normalized": 36.21,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.01,
+          "normalized": 52.44,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.058,
+          "normalized": 22.71,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 37.28,
+          "normalized": 37.28,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.353,
+          "normalized": 27.31,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.588,
+          "normalizedInverted": 24.19,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-atl",
+      "slug": "atlanta-falcons",
+      "abbr": "atl",
+      "name": "Atlanta Falcons",
+      "season": 2022,
+      "rating": 35.01,
+      "rank": 27,
+      "offenseRating": 55.91,
+      "defenseRating": 12.66,
+      "scheduleAdjustment": 31.72,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.235,
+          "normalized": 36.84,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.023,
+          "normalized": 55.91,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.081,
+          "normalized": 12.66,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 31.72,
+          "normalized": 31.72,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.412,
+          "normalized": 36.42,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22.706,
+          "normalizedInverted": 41.39,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-den",
+      "slug": "denver-broncos",
+      "abbr": "den",
+      "name": "Denver Broncos",
+      "season": 2022,
+      "rating": 33.73,
+      "rank": 28,
+      "offenseRating": 18.58,
+      "defenseRating": 68.03,
+      "scheduleAdjustment": 48.79,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -4.235,
+          "normalized": 20.78,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.115,
+          "normalized": 18.58,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.046,
+          "normalized": 68.03,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 48.79,
+          "normalized": 48.79,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.294,
+          "normalized": 18.21,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.118,
+          "normalizedInverted": 55.91,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-ari",
+      "slug": "arizona-cardinals",
+      "abbr": "ari",
+      "name": "Arizona Cardinals",
+      "season": 2022,
+      "rating": 30.18,
+      "rank": 29,
+      "offenseRating": 26.48,
+      "defenseRating": 42.18,
+      "scheduleAdjustment": 82.3,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -6.412,
+          "normalized": 9.13,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.085,
+          "normalized": 26.48,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.014,
+          "normalized": 42.18,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 82.3,
+          "normalized": 82.3,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.235,
+          "normalized": 9.1,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 26.412,
+          "normalizedInverted": 7.52,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-chi",
+      "slug": "chicago-bears",
+      "abbr": "chi",
+      "name": "Chicago Bears",
+      "season": 2022,
+      "rating": 23.13,
+      "rank": 30,
+      "offenseRating": 40.12,
+      "defenseRating": 0,
+      "scheduleAdjustment": 100,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -8.059,
+          "normalized": 0.31,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.035,
+          "normalized": 40.12,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.11,
+          "normalized": 0,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 100,
+          "normalized": 100,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.176,
+          "normalized": 0,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 27.235,
+          "normalizedInverted": 0,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-ind",
+      "slug": "indianapolis-colts",
+      "abbr": "ind",
+      "name": "Indianapolis Colts",
+      "season": 2022,
+      "rating": 22.12,
+      "rank": 31,
+      "offenseRating": 7.95,
+      "defenseRating": 56.2,
+      "scheduleAdjustment": 52.77,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -8.118,
+          "normalized": 0,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.154,
+          "normalized": 7.95,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.018,
+          "normalized": 56.2,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 52.77,
+          "normalized": 52.77,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.265,
+          "normalized": 13.73,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 25.118,
+          "normalizedInverted": 19.35,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
       "teamId": "nfl-hou",
@@ -1144,26 +1476,36 @@
       "abbr": "hou",
       "name": "Houston Texans",
       "season": 2022,
-      "rating": 2.25,
+      "rating": 16.3,
       "rank": 32,
-      "offenseRating": 0.96,
-      "defenseRating": 23.11,
-      "scheduleAdjustment": null,
+      "offenseRating": 0,
+      "defenseRating": 46.33,
+      "scheduleAdjustment": 38.7,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -7.706,
           "normalized": 2.2,
-          "weight": 0.6
+          "weight": 0.35
         },
-        "pointsPerGame": {
-          "raw": 17,
-          "normalized": 0.96,
-          "weight": 0.25
+        "offensiveEpaPerPlay": {
+          "raw": -0.183,
+          "normalized": 0,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.004,
+          "normalized": 46.33,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 38.7,
+          "normalized": 38.7,
+          "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.206,
           "normalized": 4.63,
-          "weight": 0.15
+          "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 24.706,
@@ -1171,8 +1513,8 @@
           "weight": 0
         }
       },
-      "modelVersion": "nfl-power-v0.1",
-      "notes": "Experimental points-based rating (fallback formula); not validated."
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
     }
   ]
 }
