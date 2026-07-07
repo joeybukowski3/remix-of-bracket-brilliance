@@ -1,11 +1,11 @@
-import type { NflGuideTeam } from "@/lib/nfl/guide2026";
+import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import {
   NFL_VSIN_GUIDE_SOURCE,
   getNflVsinGuideTeam,
   type NflVsinGuideStat,
 } from "@/lib/nfl/vsinGuide2026";
 
-export function NflTeamHeaderOdds({ team }: { team: NflGuideTeam }) {
+export function NflTeamHeaderOdds({ team }: { team: NflGuideTeamNormalized }) {
   const guideTeam = getNflVsinGuideTeam(team.abbr);
   if (!guideTeam) return null;
 
@@ -16,7 +16,7 @@ export function NflTeamHeaderOdds({ team }: { team: NflGuideTeam }) {
   ];
 
   return (
-    <section className="w-full lg:max-w-[520px]" aria-label={`${team.team} futures odds from the VSiN guide`}>
+    <section className="w-full lg:max-w-[520px]" aria-label={`${team.teamName} futures odds from the VSiN guide`}>
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200">Odds to win</div>
         <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">VSiN guide · page {guideTeam.sourcePage}</div>
@@ -40,12 +40,12 @@ export function NflTeamHeaderOdds({ team }: { team: NflGuideTeam }) {
   );
 }
 
-export function NflTeamStatsSidebar({ team }: { team: NflGuideTeam }) {
+export function NflTeamStatsSidebar({ team }: { team: NflGuideTeamNormalized }) {
   const guideTeam = getNflVsinGuideTeam(team.abbr);
   if (!guideTeam) return null;
 
   return (
-    <aside className="xl:sticky xl:top-24 xl:self-start" aria-label={`${team.team} 2025 statistics`}>
+    <aside className="xl:sticky xl:top-24 xl:self-start" aria-label={`${team.teamName} 2025 statistics`}>
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm xl:max-h-[calc(100vh-7rem)] xl:overflow-y-auto">
         <div className="sticky top-0 z-10 border-b border-slate-200 bg-slate-950 px-5 py-4 text-white">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-300">Last season</div>

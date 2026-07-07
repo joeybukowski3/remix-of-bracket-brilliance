@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { NflGuideTeam } from "@/lib/nfl/guide2026";
+import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import type { NflTeamScheduleResponse } from "@/lib/nfl/teamSchedule";
 import {
   WARREN_SHARP_SCHEDULE_SOURCE,
@@ -12,7 +12,7 @@ import NflWarrenSharpScheduleSummary from "./NflWarrenSharpScheduleSummary";
 
 type LoadStatus = "loading" | "success" | "error";
 
-export default function NflScheduleSection({ team }: { team: NflGuideTeam }) {
+export default function NflScheduleSection({ team }: { team: NflGuideTeamNormalized }) {
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [data, setData] = useState<NflTeamScheduleResponse | null>(null);
   const [error, setError] = useState("");

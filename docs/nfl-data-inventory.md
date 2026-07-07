@@ -76,21 +76,26 @@ Static/curated inputs that predate the pipeline and stay untouched:
 template-generated editorial) → `guideData.ts` (normalized season-keyed
 consumer interface). Consumers:
 
-- **Migrated to `guideData.ts` (PR-6):** `NFLGuide2026`, `NFLTeamGuide2026`
-  (own rendering), `NFLRegression2026`.
-- **Intentional legacy (compatibility path, follow-up candidates):**
-  - Team-dashboard children (`NflTeamDashboardExtras`, `NflCoachOfYearCase`,
-    VSiN panels, Warren Sharp components) take the legacy `NflGuideTeam`
-    shape via `getLegacyGuideTeamBySlug` — they join Warren Sharp/VSiN data
-    onto it and were deemed too high-churn to convert in PR-6.
-  - `coachOfYear2026.ts` derives from `guide2026.ts` directly.
+- **Migrated to `guideData.ts` (PR-6):** `NFLGuide2026`, `NFLTeamGuide2026`,
+  `NFLRegression2026`.
+- **Migrated to `guideData.ts` (PR-7):** all team-dashboard children
+  (`NflTeamDashboardExtras`, `NflCoachOfYearCase`, VSiN header/sidebar
+  panels, `NflScheduleGameCard`, `NflScheduleSection`, `NflOffseasonSection`,
+  `NflMarketValueSection`, Warren Sharp profile/metrics) now take
+  `NflGuideTeamNormalized`; `getLegacyGuideTeamBySlug` has been removed.
+  The normalized type gained `overallPct`/`offensePct`/`defensePct` so the
+  matchup cards keep their composite edges.
+- **Intentional legacy (computation layer + raw board, not consumer debt):**
+  - `guide2026.ts` remains the computation layer feeding `guideData.ts`.
+  - `coachOfYear2026.ts` derives from `guide2026.ts` directly — it is an
+    internal derivation module like `guideData.ts` itself, not a UI consumer.
   - `NFL.tsx` / `NFLSuperBowlOdds.tsx` consume `NFL_POWER_RATINGS` raw
     (preseason power board, not guide data).
   - `nflLogoUrl` remains the shared logo helper in `nflPreseason2026.ts`.
 - Team identity (name/abbr/color/division) still exists in both
   `nflPreseason2026.ts` and canonical `teams.json`; parity is test-enforced
-  (`teamsCanonical.test.ts`), and collapsing the duplication is deferred
-  until the dashboard components migrate.
+  (`teamsCanonical.test.ts`). Collapsing it means editing the raw data file
+  itself and is deliberately out of scope for the consumer-migration arc.
 | `src/lib/nfl/vsinGuide2026.ts` | VSiN 2026 guide extracts (internal/model input) |
 | `src/lib/nfl/warrenSharpTeams2026.ts`, `warrenSharpSchedule2026.ts` | Warren Sharp 2026 team/schedule extracts (internal/model input) |
 | `src/lib/nfl/superBowlMarkets.ts` | Super Bowl futures snapshot page data |

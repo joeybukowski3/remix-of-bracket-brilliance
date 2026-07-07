@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { NflGuideTeam } from "@/lib/nfl/guide2026";
-import { formatSigned } from "@/lib/nfl/guide2026";
+import { formatSigned, type NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import {
   calculateRankGap,
   getRankGapSignal,
@@ -16,7 +15,7 @@ type SuperBowlOddsResponse = {
   teams: SuperBowlMarketTeam[];
 };
 
-export default function NflMarketValueSection({ team }: { team: NflGuideTeam }) {
+export default function NflMarketValueSection({ team }: { team: NflGuideTeamNormalized }) {
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [response, setResponse] = useState<SuperBowlOddsResponse | null>(null);
 
@@ -59,12 +58,12 @@ export default function NflMarketValueSection({ team }: { team: NflGuideTeam }) 
         description="Win-total value comes from the preseason model. Super Bowl value compares the live prediction-market rank with the Joe Knows Ball power rank."
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <ValueCard label="Win total" value={team.winTotal?.toFixed(1) ?? "—"} />
+        <ValueCard label="Win total" value={team.marketWinTotal?.toFixed(1) ?? "—"} />
         <ValueCard label="Projected wins" value={team.projectedWins.toFixed(1)} tone="blue" />
         <ValueCard
           label="Win-total edge"
-          value={team.modelEdge == null ? "—" : formatSigned(team.modelEdge)}
-          tone={team.modelEdge == null ? "neutral" : team.modelEdge > 0 ? "good" : team.modelEdge < 0 ? "bad" : "neutral"}
+          value={team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)}
+          tone={team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral"}
         />
         <ValueCard
           label="Super Bowl probability"

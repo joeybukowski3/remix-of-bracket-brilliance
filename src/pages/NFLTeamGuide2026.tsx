@@ -11,7 +11,6 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
   formatSigned,
-  getLegacyGuideTeamBySlug,
   getNflSeasonGuide,
   getScheduleDescription,
   type NflGuideTeamNormalized,
@@ -22,9 +21,6 @@ const GUIDE = getNflSeasonGuide(2026)!;
 export default function NFLTeamGuide2026() {
   const { teamSlug = "" } = useParams();
   const team = GUIDE.teamBySlug.get(teamSlug);
-  // Dashboard extras / Coach of the Year / VSiN panels still take the legacy
-  // guide-team shape (they join Warren Sharp + VSiN data onto it).
-  const legacyTeam = getLegacyGuideTeamBySlug(teamSlug);
 
   usePageSeo({
     title: team ? `${team.teamName} 2026 Schedule, Stats, Odds & Roster Changes | Joe Knows Ball` : "2026 NFL Team Dashboard | Joe Knows Ball",
@@ -33,7 +29,7 @@ export default function NFLTeamGuide2026() {
     noindex: !team,
   });
 
-  if (!team || !legacyTeam) return <Navigate to="/nfl/guide" replace />;
+  if (!team) return <Navigate to="/nfl/guide" replace />;
   const divisionTeams = GUIDE.divisions.find((entry) => entry.division === team.division)?.teams ?? [];
 
   return (
@@ -55,7 +51,7 @@ export default function NFLTeamGuide2026() {
                 </div>
               </div>
 
-              <NflTeamHeaderOdds team={legacyTeam} />
+              <NflTeamHeaderOdds team={team} />
             </div>
 
             <div className="mt-5 sm:mt-7"><NflGuideNav /></div>
@@ -76,8 +72,8 @@ export default function NFLTeamGuide2026() {
 
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
             <div className="min-w-0 space-y-8">
-              <NflTeamDashboardExtras team={legacyTeam} />
-              <NflCoachOfYearCase team={legacyTeam} />
+              <NflTeamDashboardExtras team={team} />
+              <NflCoachOfYearCase team={team} />
 
               <section className="space-y-6">
                 <div>
@@ -156,7 +152,7 @@ export default function NFLTeamGuide2026() {
               </section>
             </div>
 
-            <NflTeamStatsSidebar team={legacyTeam} />
+            <NflTeamStatsSidebar team={team} />
           </div>
         </div>
       </main>

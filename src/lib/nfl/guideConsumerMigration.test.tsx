@@ -12,7 +12,7 @@ import {
   NFL_GUIDE_TEAM_BY_SLUG,
   NFL_GUIDE_TOP_MARKET_EDGES,
 } from "@/lib/nfl/guide2026";
-import { getLegacyGuideTeamBySlug, getNflSeasonGuide } from "@/lib/nfl/guideData";
+import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import NFLGuide2026 from "@/pages/NFLGuide2026";
 import NFLTeamGuide2026 from "@/pages/NFLTeamGuide2026";
 import NFLRegression2026 from "@/pages/NFLRegression2026";
@@ -125,12 +125,13 @@ describe("normalized derived collections match legacy ordering exactly", () => {
   });
 });
 
-describe("compatibility adapter", () => {
-  it("returns the exact same object guide2026 exposes for every slug", () => {
-    for (const [slug, legacy] of NFL_GUIDE_TEAM_BY_SLUG) {
-      expect(getLegacyGuideTeamBySlug(slug)).toBe(legacy);
-    }
-    expect(getLegacyGuideTeamBySlug("not-a-team")).toBeUndefined();
+describe("legacy adapter retirement (PR-7)", () => {
+  it("getLegacyGuideTeamBySlug no longer exists or is used by any consumer", () => {
+    const guideDataSource = readFileSync(join(ROOT, "src/lib/nfl/guideData.ts"), "utf-8");
+    expect(guideDataSource).not.toContain("getLegacyGuideTeamBySlug");
+    const teamPageSource = readFileSync(join(ROOT, "src/pages/NFLTeamGuide2026.tsx"), "utf-8");
+    expect(teamPageSource).not.toContain("getLegacyGuideTeamBySlug");
+    expect(teamPageSource).not.toContain("legacyTeam");
   });
 });
 
