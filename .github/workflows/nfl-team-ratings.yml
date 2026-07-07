@@ -1,0 +1,111 @@
+name: NFL Team Stats and Power Ratings
+
+run-name: NFL Team Stats and Power Ratings • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    # 7:40 AM ET Tuesdays during the NFL season window (Sep-Feb) — after the
+    # daily 6:10 AM schedules/results refresh has ingested the week's finals.
+    - cron: "40 7 * 1,2,9,10,11,12 2"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+# Share one lock with the other automated workflows that commit generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-team-ratings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate NFL team stats and power ratings
+        run: npm run nfl:team-ratings
+
+      - name: Detect meaningful data changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- 'public/data/nfl/*/team-stats.json' 'public/data/nfl/*/power-ratings.json')" ]; then
+            echo "No NFL team stats/ratings changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "NFL team stats/ratings changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate generated JSON
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          node -e "
+            const { readFileSync } = require('fs');
+            for (let season = 2022; season <= 2026; season += 1) {
+              for (const name of ['team-stats.json', 'power-ratings.json']) {
+                const file = \`public/data/nfl/\${season}/\${name}\`;
+                const parsed = JSON.parse(readFileSync(file, 'utf8'));
+                if (!parsed._meta || parsed._meta.schemaVersion !== 'nfl-v0.1') {
+                  throw new Error(\`\${file} is missing a valid _meta block\`);
+                }
+              }
+            }
+            console.log('All generated NFL team stats/ratings files are valid.');
+          "
+
+      - name: Commit and push refreshed data
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nfl/*/team-stats.json public/data/nfl/*/power-ratings.json
+
+          if git diff --cached --quiet; then
+            echo "No staged NFL team stats/ratings changes."
+            exit 0
+          fi
+
+          git commit -m "data(nfl): refresh team stats and power ratings"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — NFL team ratings were not committed." >&2
+            exit 1
+          fi
+
+          echo "NFL team stats and power ratings pushed successfully."
