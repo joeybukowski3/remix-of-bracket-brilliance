@@ -11,7 +11,7 @@ import {
   type WsHealthByUnit,
   type WsQbMetrics,
 } from "@/data/nflWarrenSharpAdvanced2026";
-import type { NflGuideTeam } from "@/lib/nfl/guide2026";
+import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 
 // ── Shared rank display helpers ───────────────────────────────────────────────
 
@@ -226,7 +226,7 @@ function HealthPanel({ data }: { data: WsHealthByUnit }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function NflWarrenSharpAdvancedMetrics({ team }: { team: NflGuideTeam }) {
+export default function NflWarrenSharpAdvancedMetrics({ team }: { team: NflGuideTeamNormalized }) {
   const [open, setOpen] = useState(false);
 
   const offEff = getWsOffensiveEfficiency(team.abbr);

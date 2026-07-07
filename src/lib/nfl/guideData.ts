@@ -16,7 +16,6 @@ import {
   NFL_GUIDE_REGRESSION_CANDIDATES,
   NFL_GUIDE_SUPER_BOWL_PICK,
   NFL_GUIDE_TEAMS,
-  NFL_GUIDE_TEAM_BY_SLUG,
   NFL_GUIDE_TOP_MARKET_EDGES,
   type NflGuideQuestion,
   type NflGuideTeam,
@@ -49,6 +48,10 @@ export type NflGuideTeamNormalized = {
   scheduleRank: number | null;
   scheduleLabel: string;
   record2025: string;
+  /** 2025 composite model percentages (used by dashboard matchup cards). */
+  overallPct: number;
+  offensePct: number;
+  defensePct: number;
   /** Editorial (template-generated from the numbers above in guide2026.ts) */
   headline: string;
   editorialSummary: string;
@@ -117,6 +120,9 @@ function normalizeTeams(): NflGuideTeamNormalized[] {
     scheduleRank: team.scheduleRank,
     scheduleLabel: team.scheduleLabel,
     record2025: team.record2025,
+    overallPct: team.ovrPct,
+    offensePct: team.offPct,
+    defensePct: team.defPct,
     headline: team.headline,
     editorialSummary: team.summary,
     strengths: team.strengths,
@@ -183,15 +189,4 @@ export const NFL_SEASON_GUIDES: Record<number, NflSeasonGuide> = {
 
 export function getNflSeasonGuide(season: number): NflSeasonGuide | null {
   return NFL_SEASON_GUIDES[season] ?? null;
-}
-
-/**
- * Compatibility adapter: the legacy full guide-team shape for consumers that
- * still need it (team-dashboard extras, Coach of the Year case, VSiN panels
- * — they join Warren Sharp/VSiN data onto the legacy NflGuideTeam type).
- * Returns the exact same object guide2026.ts exposes; new code should prefer
- * the normalized fields on NflSeasonGuide.
- */
-export function getLegacyGuideTeamBySlug(slug: string): NflGuideTeam | undefined {
-  return NFL_GUIDE_TEAM_BY_SLUG.get(slug);
 }

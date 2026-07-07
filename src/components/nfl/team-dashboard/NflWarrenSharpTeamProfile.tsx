@@ -6,7 +6,7 @@ import {
   POSITIONAL_RATING_LABELS,
   type WsPositionalRatings,
 } from "@/data/nflWarrenSharpTeams2026";
-import type { NflGuideTeam } from "@/lib/nfl/guide2026";
+import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import { POSITIONAL_ORDER } from "@/lib/nfl/warrenSharpTeams2026";
 
 // ── Positional rank card ──────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ function MoveLine({
 export default function NflWarrenSharpTeamProfile({
   team,
 }: {
-  team: NflGuideTeam;
+  team: NflGuideTeamNormalized;
 }) {
   const profile = getWarrenSharpProfile(team.abbr);
   const [showDraft, setShowDraft] = useState(false);

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import type { NflGuideTeam } from "@/lib/nfl/guide2026";
+import type { NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 
 const COY_CASES: Record<string, {
   odds: string;
@@ -78,7 +78,7 @@ export function getCoachOfYearOdds(abbr: string) {
   return COY_CASES[abbr.toLowerCase()]?.odds ?? null;
 }
 
-export default function NflCoachOfYearCase({ team }: { team: NflGuideTeam }) {
+export default function NflCoachOfYearCase({ team }: { team: NflGuideTeamNormalized }) {
   const profile = COY_CASES[team.abbr];
   if (!profile) return null;
 

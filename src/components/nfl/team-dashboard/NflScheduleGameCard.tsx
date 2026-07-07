@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
-import { NFL_GUIDE_TEAM_BY_ABBR, type NflGuideTeam } from "@/lib/nfl/guide2026";
+import { getNflSeasonGuide, type NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import type { NflScheduleGame } from "@/lib/nfl/teamSchedule";
 import type { WarrenSharpWeeklyRestEdge } from "@/lib/nfl/warrenSharpSchedule2026";
 
 type MatchupTone = "advantage" | "disadvantage" | "even" | "neutral";
+
+const GUIDE_TEAM_BY_ABBR = getNflSeasonGuide(2026)!.teamByAbbr;
 
 export default function NflScheduleGameCard({
   team,
@@ -12,13 +14,13 @@ export default function NflScheduleGameCard({
   fallbackWeek,
   restEdge,
 }: {
-  team: NflGuideTeam;
+  team: NflGuideTeamNormalized;
   game: NflScheduleGame;
   fallbackWeek: number;
   restEdge: WarrenSharpWeeklyRestEdge | null;
 }) {
-  const opponent = NFL_GUIDE_TEAM_BY_ABBR.get(game.opponentAbbr);
-  const opponentName = opponent?.team ?? game.opponentName;
+  const opponent = GUIDE_TEAM_BY_ABBR.get(game.opponentAbbr);
+  const opponentName = opponent?.teamName ?? game.opponentName;
   const date = game.date ? new Date(game.date) : null;
   const dateText = date && !Number.isNaN(date.getTime())
     ? new Intl.DateTimeFormat("en-US", {
@@ -29,8 +31,8 @@ export default function NflScheduleGameCard({
       }).format(date)
     : game.status;
   const isAway = game.homeAway === "away";
-  const offenseEdge = opponent ? team.offPct - opponent.defPct : null;
-  const defenseEdge = opponent ? team.defPct - opponent.offPct : null;
+  const offenseEdge = opponent ? team.offensePct - opponent.defensePct : null;
+  const defenseEdge = opponent ? team.defensePct - opponent.offensePct : null;
 
   return (
     <article className={`border-b border-r p-5 transition-colors ${isAway ? "border-blue-100 bg-blue-50/80" : "border-slate-100 bg-white"}`}>
@@ -77,7 +79,7 @@ export default function NflScheduleGameCard({
           <MatchupMetric
             label="Opponent power"
             value={`#${opponent.powerRank}`}
-            detail={`${formatModelRating(opponent.ovrPct)} overall`}
+            detail={`${formatModelRating(opponent.overallPct)} overall`}
             tone="neutral"
           />
           <MatchupMetric

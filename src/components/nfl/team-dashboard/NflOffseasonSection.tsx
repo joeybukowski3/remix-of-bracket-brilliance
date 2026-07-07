@@ -1,8 +1,10 @@
 import { getNflOffseasonProfile, type NflPlayerMove } from "@/data/nflOffseason2026";
-import { NFL_GUIDE_TEAM_BY_ABBR, type NflGuideTeam } from "@/lib/nfl/guide2026";
+import { getNflSeasonGuide, type NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import { SectionHeading } from "./NflDashboardUi";
 
-export default function NflOffseasonSection({ team }: { team: NflGuideTeam }) {
+const GUIDE_TEAM_BY_ABBR = getNflSeasonGuide(2026)!.teamByAbbr;
+
+export default function NflOffseasonSection({ team }: { team: NflGuideTeamNormalized }) {
   const offseason = getNflOffseasonProfile(team.abbr);
 
   return (
@@ -76,7 +78,7 @@ function MoveCard({
           </p>
         ) : moves.slice(0, 8).map((move) => {
           const otherAbbr = direction === "in" ? move.from : move.to;
-          const otherTeam = NFL_GUIDE_TEAM_BY_ABBR.get(otherAbbr)?.team ?? otherAbbr.toUpperCase();
+          const otherTeam = GUIDE_TEAM_BY_ABBR.get(otherAbbr)?.teamName ?? otherAbbr.toUpperCase();
           return (
             <div key={`${move.player}-${move.from}-${move.to}`} className="flex items-start justify-between gap-3 py-3">
               <div>
