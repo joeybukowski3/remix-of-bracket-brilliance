@@ -2,9 +2,8 @@ name: Sync PGA Data
 
 on:
   schedule:
-    # Mon/Tue/Wed 12:00 UTC (8 AM EDT / 7 AM EST). Multiple days cover the
-    # weekly tournament rollover (fields for Thursday starts publish early in
-    # the week) and retry naturally after a failed day.
+    # Monday is the primary weekly PGA model refresh. Tuesday/Wednesday are
+    # retained as natural retries when official fields or stats publish late.
     #
     # IMPORTANT: no runtime hour gate. The previous design skipped every step
     # unless the run started in the 8 AM ET hour — GitHub regularly delays
@@ -20,8 +19,11 @@ on:
       - "scripts/sync-pga-sheet.mjs"
       - "scripts/generate-pga-best-bets.mjs"
       - "scripts/fetch-pga-current-field.mjs"
-      - "scripts/lib/pga-field-selection.mjs"
+      - "scripts/fetch-pga-player-stats.mjs"
+      - "scripts/generate-pga-tournament-rankings.mjs"
       - "scripts/check-pga-field-sync.mjs"
+      - "scripts/check-pga-model-sync.mjs"
+      - "scripts/lib/pga-field-selection.mjs"
       - "public/data/pga/schedule.json"
 
 # Share one lock with the other automated workflows that commit generated data to main.
@@ -56,42 +58,46 @@ jobs:
       - name: Fetch current tournament field
         run: node scripts/fetch-pga-current-field.mjs
 
-      - name: Sync PGA JSON from Google Sheet
+      - name: Sync PGA JSON from Google Sheet optional enrichment
+        id: sheet_sync
+        continue-on-error: true
         env:
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: node scripts/sync-pga-sheet.mjs
-
-      - name: Generate tournament rankings from player stats
-        run: node scripts/generate-pga-tournament-rankings.mjs
 
       - name: Check player stats freshness
         id: freshness
         continue-on-error: true
         run: node scripts/check-pga-stats-freshness.mjs
 
-      - name: Fallback - fetch player stats directly from PGA Tour API
-        if: steps.freshness.outcome == 'failure'
-        continue-on-error: true
+      - name: Fetch fresh player stats from PGA Tour API when needed
+        if: steps.sheet_sync.outcome == 'failure' || steps.freshness.outcome == 'failure'
         env:
           PGA_API_KEY: ${{ secrets.PGA_API_KEY }}
         run: |
-          echo "Sheet data is stale or missing — falling back to direct PGA Tour API pull."
+          echo "Google Sheet stats are stale, missing, or unavailable — using direct PGA Tour API stats for this run."
           node scripts/fetch-pga-player-stats.mjs
+
+      - name: Generate tournament rankings and model data
+        run: node scripts/generate-pga-tournament-rankings.mjs
 
       - name: Verify field matches the scheduled current tournament
         run: node scripts/check-pga-field-sync.mjs
+
+      - name: Verify model, field, and source freshness
+        run: node scripts/check-pga-model-sync.mjs
 
       - name: Commit and push updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/pga/current-field.json public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json public/data/pga/player-stats-meta.json
+          git add public/data/pga
           if git diff --cached --quiet; then
             echo "No PGA data changes to commit."
             exit 0
           fi
-          git commit -m "chore: sync PGA sheet data"
+          git commit -m "chore: sync PGA Monday model data"
           git push origin HEAD:${TARGET_BRANCH}
 
   generate-best-bets:
