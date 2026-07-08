@@ -192,6 +192,7 @@ describe("MLB numerology email receiver", () => {
       Authorization: "Token buttondown-secret",
       "Content-Type": "application/json",
     });
+    expect(init.headers).not.toHaveProperty("X-Buttondown-Live-Dangerously");
     expect(JSON.parse(String(init.body))).toMatchObject({
       subject: validPayload.subject,
       body: `<!-- buttondown-editor-mode: fancy -->${validPayload.html}`,
@@ -235,7 +236,7 @@ describe("MLB numerology email receiver", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("about_to_send status is accepted only with explicit test-send gate", async () => {
+  it("about_to_send status is accepted only with explicit test-send gate and confirmation header", async () => {
     process.env.BUTTONDOWN_EMAIL_STATUS = "about_to_send";
     process.env.BUTTONDOWN_ALLOW_TEST_SEND = "true";
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ id: "email_123", url: "https://buttondown.com/emails/email_123" }), {
@@ -254,6 +255,7 @@ describe("MLB numerology email receiver", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(init.headers).toMatchObject({ "X-Buttondown-Live-Dangerously": "true" });
     expect(JSON.parse(String(init.body))).toMatchObject({ status: "about_to_send" });
   });
 
