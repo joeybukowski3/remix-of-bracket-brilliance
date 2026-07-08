@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getEmailTeamColors, getEmailTeamLogoUrl, hexToRgbTriplet } from "./mlb-team-email-assets.mjs";
 
 export const NUMEROLOGY_SCORE_THRESHOLD = 50;
 export const NUMEROLOGY_MODEL_VERSION = "mlb-numerology-live-board-v0.2";
@@ -681,12 +682,15 @@ export function applyStatLineToRecord(record, statLine, { status = "final", sour
 
 export function renderEmailText(card, summary) {
   const lines = [];
-  lines.push(`MLB Numerology Plays — ${card.date}`);
+  lines.push(`MLB NUMEROLOGY PLAYS — ${card.date}`);
   lines.push(`Daily number: ${card.dailyProfile?.universalDayCompound ?? "?"}/${card.dailyNumber} | Threshold: >${card.scoreThreshold}`);
-  lines.push(`View the full MLB Numerology board: ${card.livePageUrl ?? MLB_NUMEROLOGY_LIVE_URL}`);
+  lines.push("Experimental numerology/model signals for MLB batters. Not guaranteed. Not validated betting edges. Not locks.");
+  lines.push(`Full board: ${card.livePageUrl ?? MLB_NUMEROLOGY_LIVE_URL}`);
   lines.push("");
   if (card.topPlay) {
+    lines.push("===================");
     lines.push("TOP PLAY");
+    lines.push("===================");
     lines.push(formatPlayLine(card.topPlay));
     lines.push(`Match type: ${card.topPlay.matchType || "Live board"}`);
     lines.push(`Lineup: ${formatLineup(card.topPlay)} | Activity: ${formatActivity(card.topPlay)}`);
@@ -696,20 +700,30 @@ export function renderEmailText(card, summary) {
     if (card.topPlay.explanation) lines.push(`Note: ${card.topPlay.explanation}`);
     lines.push("");
   }
+  lines.push("===================");
   lines.push(`ALL PLAYS OVER ${card.scoreThreshold}`);
+  lines.push("===================");
   if (!card.allQualifiedPlaysOver50.length) {
     lines.push("No plays cleared the threshold today.");
   } else {
+    lines.push(
+      card.allQualifiedPlaysOver50
+        .map((play, index) => `${index + 1}. ${play.player} (${play.team} vs ${play.opponent}) — ${play.numerologyScore}`)
+        .join("\n")
+    );
+    lines.push("");
     card.allQualifiedPlaysOver50.forEach((play, index) => {
-      lines.push(`${index + 1}. ${formatPlayLine(play)}`);
+      lines.push(`--- ${index + 1}. ${formatPlayLine(play)} ---`);
       lines.push(`   ${play.matchType || "Live board"} | ${formatLineup(play)} | ${formatActivity(play)}`);
       lines.push("   Numerology matches:");
       for (const line of formatNumerologyMatchLines(play)) lines.push(`     - ${line}`);
       lines.push(`   HR context: ${formatHrContext(play)}`);
+      lines.push("");
     });
   }
-  lines.push("");
+  lines.push("===================");
   lines.push("TRACKING SNAPSHOT");
+  lines.push("===================");
   lines.push(`Top Play: ${formatBucket(summary?.topPlay)}`);
   lines.push(`All >50 Plays: ${formatBucket(summary?.over50)}`);
   lines.push("");
@@ -718,52 +732,248 @@ export function renderEmailText(card, summary) {
   return lines.join("\n");
 }
 
+// ─── Email HTML (table-based layout, inline styles only) ──────────────────
+//
+// Built for real email clients (Gmail, Outlook, Apple Mail), not a browser:
+//   - every layout element is a <table>; no CSS grid/flexbox anywhere
+//   - every style is inline; no <style> block, no external stylesheet
+//   - every image uses an absolute URL with alt text
+//   - the whole email is wrapped in a full-width outer table with a single
+//     centered ~680px inner table, the standard technique for centering
+//     reliably in Outlook's Word rendering engine
+
+const EMAIL_FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+const EMAIL_MAX_WIDTH = 680;
+const EMAIL_INK = "#0f172a";
+const EMAIL_MUTED = "#64748b";
+const EMAIL_BORDER = "#e2e8f0";
+const EMAIL_PAGE_BG = "#f1f5f9";
+
 function renderMatchListHtml(play) {
-  return `<ul style="margin:0;padding-left:18px;">${formatNumerologyMatchLines(play).map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`;
+  const lines = formatNumerologyMatchLines(play);
+  return `<ul style="margin:0;padding-left:18px;color:${EMAIL_INK};font-size:13px;line-height:1.6;">${lines
+    .map((line) => `<li style="margin:0 0 4px;">${escapeHtml(line)}</li>`)
+    .join("")}</ul>`;
+}
+
+/** Colored, rounded numerology-score badge. Falls back to a plain rectangle where border-radius isn't honored. */
+function renderScoreBadgeHtml(score, { large = false } = {}) {
+  const size = large ? "font-size:22px;padding:8px 16px;" : "font-size:14px;padding:4px 10px;";
+  return `<span style="display:inline-block;${size}font-weight:700;font-family:${EMAIL_FONT};color:#ffffff;background-color:#0f172a;border-radius:999px;line-height:1.2;">${escapeHtml(String(score))}</span>`;
+}
+
+function renderTeamLogoImgHtml(team, { size = 40 } = {}) {
+  const url = getEmailTeamLogoUrl(team);
+  const label = escapeHtml(team || "MLB team logo");
+  return `<img src="${url}" width="${size}" height="${size}" alt="${label} logo" style="display:block;width:${size}px;height:${size}px;border:0;outline:none;text-decoration:none;" />`;
+}
+
+function renderSectionHeadingHtml(title, subtitle) {
+  return `
+  <tr>
+    <td style="padding:28px 24px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td style="border-bottom:2px solid ${EMAIL_INK};padding-bottom:8px;">
+          <span style="font-family:${EMAIL_FONT};font-size:18px;font-weight:800;color:${EMAIL_INK};">${escapeHtml(title)}</span>
+        </td></tr>
+      </table>
+      ${subtitle ? `<div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};margin-top:6px;">${escapeHtml(subtitle)}</div>` : ""}
+    </td>
+  </tr>`;
+}
+
+function renderHeaderHtml(card) {
+  return `
+  <tr>
+    <td style="background-color:${EMAIL_INK};padding:28px 24px;">
+      <div style="font-family:${EMAIL_FONT};font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#7dd3fc;">Joe Knows Ball</div>
+      <div style="font-family:${EMAIL_FONT};font-size:26px;font-weight:800;color:#ffffff;margin-top:6px;">MLB Numerology Plays</div>
+      <div style="font-family:${EMAIL_FONT};font-size:13px;color:#cbd5e1;margin-top:6px;">${escapeHtml(card.date)} · Daily number ${escapeHtml(card.dailyProfile?.universalDayCompound ?? "?")}/${escapeHtml(String(card.dailyNumber ?? "?"))} · Plays shown score over ${card.scoreThreshold}</div>
+      <div style="font-family:${EMAIL_FONT};font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.5;">Experimental numerology/model signals for today's MLB batters. Not guaranteed. Not validated betting edges. Not locks.</div>
+    </td>
+  </tr>`;
+}
+
+function renderTopPlayHeroHtml(topPlay) {
+  if (!topPlay) {
+    return `
+    <tr><td style="padding:24px 24px 0;">
+      <div style="font-family:${EMAIL_FONT};font-size:13px;color:${EMAIL_MUTED};">No top play available today.</div>
+    </td></tr>`;
+  }
+  const colors = getEmailTeamColors(topPlay.team);
+  const tintRgb = hexToRgbTriplet(colors.primary);
+  return `
+  <tr>
+    <td style="padding:24px 24px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${EMAIL_BORDER};border-left:6px solid ${colors.primary};border-radius:10px;background-color:rgba(${tintRgb},0.06);">
+        <tr>
+          <td style="padding:18px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="52" valign="top" style="padding-right:14px;">${renderTeamLogoImgHtml(topPlay.team, { size: 44 })}</td>
+                <td valign="top">
+                  <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:${colors.primary};">Top Play</div>
+                  <div style="font-family:${EMAIL_FONT};font-size:19px;font-weight:800;color:${EMAIL_INK};margin-top:2px;">${escapeHtml(topPlay.player)}</div>
+                  <div style="font-family:${EMAIL_FONT};font-size:13px;color:${EMAIL_MUTED};margin-top:2px;">${escapeHtml(topPlay.team)} vs ${escapeHtml(topPlay.opponent)} · ${escapeHtml(topPlay.matchType || "Live board")}</div>
+                </td>
+                <td width="70" valign="top" align="right">${renderScoreBadgeHtml(topPlay.numerologyScore, { large: true })}</td>
+              </tr>
+            </table>
+            <div style="font-family:${EMAIL_FONT};font-size:13px;color:${EMAIL_INK};line-height:1.6;margin-top:14px;">${escapeHtml(topPlay.explanation || "No note available.")}</div>
+            <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};margin-top:10px;">Lineup: ${escapeHtml(formatLineup(topPlay))} · Activity: ${escapeHtml(formatActivity(topPlay))}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>`;
+}
+
+/** Compact summary table above the detailed cards -- short fields only. */
+function renderSummaryTableHtml(plays) {
+  if (!plays.length) return "";
+  const rows = plays.map((play) => `
+        <tr>
+          <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BORDER};font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_INK};vertical-align:top;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="20" style="padding-right:6px;">${renderTeamLogoImgHtml(play.team, { size: 18 })}</td>
+              <td style="font-weight:700;">${escapeHtml(play.player)}</td>
+            </tr></table>
+          </td>
+          <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BORDER};font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};vertical-align:top;white-space:nowrap;">${escapeHtml(play.team)} vs ${escapeHtml(play.opponent)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BORDER};vertical-align:top;text-align:center;">${renderScoreBadgeHtml(play.numerologyScore)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BORDER};font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};vertical-align:top;white-space:nowrap;">${escapeHtml(formatLineup(play))}</td>
+        </tr>`).join("");
+
+  return `
+  <tr>
+    <td style="padding:12px 24px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${EMAIL_BORDER};border-radius:8px;overflow:hidden;">
+        <tr style="background-color:#f8fafc;">
+          <th align="left" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Player</th>
+          <th align="left" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Matchup</th>
+          <th align="center" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Score</th>
+          <th align="left" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Lineup</th>
+        </tr>
+        ${rows}
+      </table>
+    </td>
+  </tr>`;
+}
+
+/** One bordered, team-accented card per play — the primary detailed layout (stacked, not a wide table). */
+function renderPlayCardHtml(play, index) {
+  const colors = getEmailTeamColors(play.team);
+  const oddsLine = play.hrOddsYes
+    ? `${escapeHtml(play.hrOddsYes)}${play.hrOddsBook ? ` at ${escapeHtml(play.hrOddsBook)}` : ""}`
+    : null;
+
+  return `
+  <tr>
+    <td style="padding:12px 24px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${EMAIL_BORDER};border-top:4px solid ${colors.primary};border-radius:10px;">
+        <tr>
+          <td style="padding:16px 18px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="40" valign="top" style="padding-right:12px;">${renderTeamLogoImgHtml(play.team, { size: 32 })}</td>
+                <td valign="top">
+                  <div style="font-family:${EMAIL_FONT};font-size:15px;font-weight:800;color:${EMAIL_INK};">${index}. ${escapeHtml(play.player)}</div>
+                  <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};margin-top:2px;">${escapeHtml(play.team)} vs ${escapeHtml(play.opponent)} · ${escapeHtml(play.matchType || "Live board")}</div>
+                </td>
+                <td width="60" valign="top" align="right">${renderScoreBadgeHtml(play.numerologyScore)}</td>
+              </tr>
+            </table>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
+              <tr>
+                <td width="50%" valign="top" style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};padding-right:8px;">
+                  <span style="font-weight:700;color:${EMAIL_INK};">Lineup spot:</span> ${escapeHtml(formatLineup(play))}
+                </td>
+                <td width="50%" valign="top" style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};">
+                  <span style="font-weight:700;color:${EMAIL_INK};">Recent activity:</span> ${escapeHtml(formatActivity(play))}
+                </td>
+              </tr>
+            </table>
+
+            <div style="font-family:${EMAIL_FONT};font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:14px;">Numerology matches</div>
+            <div style="margin-top:4px;">${renderMatchListHtml(play)}</div>
+
+            <div style="font-family:${EMAIL_FONT};font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:14px;">HR context</div>
+            <div style="font-family:${EMAIL_FONT};font-size:12.5px;color:${EMAIL_INK};line-height:1.6;margin-top:4px;">${escapeHtml(formatHrContext(play))}</div>
+
+            ${oddsLine ? `<div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};margin-top:10px;"><span style="font-weight:700;color:${EMAIL_INK};">Odds:</span> ${oddsLine}</div>` : ""}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>`;
+}
+
+function renderTrackingSnapshotHtml(summary, threshold) {
+  return `
+  <tr>
+    <td style="padding:12px 24px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${EMAIL_BORDER};border-radius:8px;">
+        <tr>
+          <td width="50%" style="padding:14px 16px;border-right:1px solid ${EMAIL_BORDER};vertical-align:top;">
+            <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Top Play (tracking)</div>
+            <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_INK};margin-top:4px;line-height:1.5;">${escapeHtml(formatBucket(summary?.topPlay))}</div>
+          </td>
+          <td width="50%" style="padding:14px 16px;vertical-align:top;">
+            <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">All &gt;${escapeHtml(String(threshold))} Plays</div>
+            <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_INK};margin-top:4px;line-height:1.5;">${escapeHtml(formatBucket(summary?.over50))}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>`;
+}
+
+function renderFooterHtml(card) {
+  return `
+  <tr>
+    <td style="padding:24px 24px 28px;text-align:center;">
+      <a href="${MLB_NUMEROLOGY_LIVE_URL}" style="display:inline-block;font-family:${EMAIL_FONT};font-size:13px;font-weight:700;color:#ffffff;background-color:${EMAIL_INK};padding:10px 20px;border-radius:999px;text-decoration:none;">View the full MLB Numerology board</a>
+      <div style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};line-height:1.6;margin-top:16px;">Experimental numerology/model signals only. Not guaranteed. Not validated betting edges. Not locks.</div>
+      <div style="font-family:${EMAIL_FONT};font-size:10px;color:#94a3b8;margin-top:6px;">Joe Knows Ball · ${escapeHtml(card.date)}</div>
+    </td>
+  </tr>`;
 }
 
 export function renderEmailHtml(card, summary) {
-  const playRows = card.allQualifiedPlaysOver50.map((play) => `
-    <tr>
-      <td>${escapeHtml(play.player)}</td>
-      <td>${escapeHtml(`${play.team} vs ${play.opponent}`)}</td>
-      <td>${play.numerologyScore}</td>
-      <td>${escapeHtml(play.matchType || "Live board")}</td>
-      <td>${escapeHtml(formatLineup(play))}</td>
-      <td>${renderMatchListHtml(play)}</td>
-      <td>${escapeHtml(formatHrContext(play))}</td>
-    </tr>`).join("");
+  const plays = card.allQualifiedPlaysOver50 ?? [];
+  const bodyRows = [
+    renderHeaderHtml(card),
+    renderTopPlayHeroHtml(card.topPlay),
+    renderSectionHeadingHtml(`All Plays Over ${card.scoreThreshold}`, plays.length ? `${plays.length} qualifying play${plays.length === 1 ? "" : "s"} today` : null),
+    plays.length
+      ? renderSummaryTableHtml(plays)
+      : `<tr><td style="padding:12px 24px 0;"><div style="font-family:${EMAIL_FONT};font-size:13px;color:${EMAIL_MUTED};">No plays cleared the threshold today.</div></td></tr>`,
+    plays.length ? plays.map((play, index) => renderPlayCardHtml(play, index + 1)).join("") : "",
+    renderSectionHeadingHtml("Tracking Snapshot"),
+    renderTrackingSnapshotHtml(summary, card.scoreThreshold),
+    renderFooterHtml(card),
+  ].join("");
 
   return `<!doctype html>
-<html>
-  <head><meta charset="utf-8"><title>MLB Numerology Plays — ${escapeHtml(card.date)}</title></head>
-  <body style="font-family:Arial,sans-serif;line-height:1.45;color:#111827;">
-    <h1>MLB Numerology Plays — ${escapeHtml(card.date)}</h1>
-    <p><strong>Daily number:</strong> ${escapeHtml(card.dailyProfile?.universalDayCompound ?? "?")}/${card.dailyNumber} · <strong>Threshold:</strong> &gt;${card.scoreThreshold}</p>
-    <p><a href="${MLB_NUMEROLOGY_LIVE_URL}">View the full MLB Numerology board</a></p>
-    ${card.topPlay ? `
-      <h2>Top Play</h2>
-      <p><strong>${escapeHtml(card.topPlay.player)}</strong> — ${escapeHtml(card.topPlay.team)} vs ${escapeHtml(card.topPlay.opponent)} · ${escapeHtml(card.topPlay.matchType || "Live board")} · Numerology ${card.topPlay.numerologyScore} · Model ${card.topPlay.modelRating ?? "—"}</p>
-      <p><strong>Lineup:</strong> ${escapeHtml(formatLineup(card.topPlay))} · <strong>Activity:</strong> ${escapeHtml(formatActivity(card.topPlay))}</p>
-      <p><strong>Numerology matches:</strong></p>
-      ${renderMatchListHtml(card.topPlay)}
-      <p><strong>HR context:</strong> ${escapeHtml(formatHrContext(card.topPlay))}</p>
-      <p>${escapeHtml(card.topPlay.explanation || "No note available.")}</p>
-    ` : "<p>No top play available.</p>"}
-    <h2>All Plays Over ${card.scoreThreshold}</h2>
-    ${card.allQualifiedPlaysOver50.length ? `
-      <table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;">
-        <thead><tr><th>Player</th><th>Matchup</th><th>Score</th><th>Match</th><th>Lineup</th><th>Numerology matches</th><th>HR context</th></tr></thead>
-        <tbody>${playRows}</tbody>
-      </table>
-    ` : `<p>No plays cleared the threshold today.</p>`}
-    <h2>Tracking Snapshot</h2>
-    <ul>
-      <li><strong>Top Play:</strong> ${escapeHtml(formatBucket(summary?.topPlay))}</li>
-      <li><strong>All &gt;50 Plays:</strong> ${escapeHtml(formatBucket(summary?.over50))}</li>
-    </ul>
-    <p><a href="${MLB_NUMEROLOGY_LIVE_URL}">View the full MLB Numerology board</a></p>
-    <p><em>Experimental numerology/model signals only. Not guaranteed. Not validated betting edges. Not locks.</em></p>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>MLB Numerology Plays — ${escapeHtml(card.date)}</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:${EMAIL_PAGE_BG};font-family:${EMAIL_FONT};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${EMAIL_PAGE_BG};">
+      <tr>
+        <td align="center" style="padding:20px 10px;">
+          <table role="presentation" width="${EMAIL_MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${EMAIL_MAX_WIDTH}px;background-color:#ffffff;border-radius:14px;overflow:hidden;border:1px solid ${EMAIL_BORDER};">
+            ${bodyRows}
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>`;
 }
