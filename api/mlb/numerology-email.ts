@@ -243,6 +243,7 @@ export async function POST(request: Request) {
   };
   const buttondownContext = process.env.BUTTONDOWN_CONTEXT;
   if (buttondownContext) headers["Buttondown-Context"] = buttondownContext;
+  if (buttondownStatus === BUTTONDOWN_TEST_SEND_STATUS) headers["X-Buttondown-Live-Dangerously"] = "true";
 
   const buttondownPayload = {
     subject: payload.subject,
