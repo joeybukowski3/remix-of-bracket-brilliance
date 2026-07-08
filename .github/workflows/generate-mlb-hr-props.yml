@@ -370,6 +370,14 @@ jobs:
         continue-on-error: true
         run: node scripts/validate-mlb-prop-odds.mjs
 
+      # test/mlb-strikeout-prop-row-details: generates the pitcher/opponent
+      # last-5-games detail data for the /mlb/strikeout-props expandable
+      # rows. Reads the now-finalized hr-props-raw.json; fails softly per
+      # pitcher (never blocks the core HR/K props pipeline above).
+      - name: Generate strikeout prop row details
+        continue-on-error: true
+        run: node scripts/generate-mlb-strikeout-prop-details.mjs
+
       - name: Report MLB prop odds enrichment
         run: |
           echo "fetch_odds=${{ steps.fetch_odds.outcome }}"
