@@ -13,6 +13,7 @@ import {
   summarizePerformance,
   writeJson,
 } from "./lib/mlb-numerology-tracking.mjs";
+import { enrichCardPlaysWithContext } from "./lib/mlb-numerology-player-context.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb", "numerology");
@@ -55,8 +56,13 @@ async function main() {
   writeJson(PERFORMANCE_PATH, performance);
   writeJson(PERFORMANCE_SUMMARY_PATH, summary);
 
-  const html = renderEmailHtml(card, summary);
-  const text = renderEmailText(card, summary);
+  // Last-5-games and season-stats context is fetched fresh for email
+  // rendering only -- it's not part of the tracking-record schema and
+  // isn't written to daily-card.json/archive, so other consumers of that
+  // card (the live numerology page/tracking) are unaffected.
+  const emailCard = await enrichCardPlaysWithContext(card);
+  const html = renderEmailHtml(emailCard, summary);
+  const text = renderEmailText(emailCard, summary);
   ensureDirForFile(EMAIL_HTML_PATH);
   fs.writeFileSync(EMAIL_HTML_PATH, html);
   fs.writeFileSync(EMAIL_TEXT_PATH, `${text}\n`);
