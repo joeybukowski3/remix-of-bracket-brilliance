@@ -956,16 +956,11 @@ export function renderEmailHtml(card, summary) {
     renderFooterHtml(card),
   ].join("");
 
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>MLB Numerology Plays — ${escapeHtml(card.date)}</title>
-  </head>
-  <body style="margin:0;padding:0;background-color:${EMAIL_PAGE_BG};font-family:${EMAIL_FONT};">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${EMAIL_PAGE_BG};">
+  // Buttondown wraps this in its own <html>/<head>/<body> template, so this
+  // returns only the email-body fragment: a full-width outer table (sets
+  // the page background) containing a single centered ~680px inner table
+  // (the actual email content) -- no doctype/html/head/meta/title/body.
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${EMAIL_PAGE_BG};">
       <tr>
         <td align="center" style="padding:20px 10px;">
           <table role="presentation" width="${EMAIL_MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${EMAIL_MAX_WIDTH}px;background-color:#ffffff;border-radius:14px;overflow:hidden;border:1px solid ${EMAIL_BORDER};">
@@ -973,9 +968,7 @@ export function renderEmailHtml(card, summary) {
           </table>
         </td>
       </tr>
-    </table>
-  </body>
-</html>`;
+    </table>`;
 }
 
 function formatPlayLine(play) {
