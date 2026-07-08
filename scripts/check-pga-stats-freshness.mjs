@@ -1,14 +1,13 @@
 /**
  * check-pga-stats-freshness.mjs
  *
- * Validates that public/data/pga/player-stats-meta.json (written by
- * sync-pga-sheet.mjs) reports an export date within the acceptable window.
+ * Validates that public/data/pga/player-stats-meta.json reports a source date
+ * within the acceptable window. The source may be Google Sheet data or the
+ * direct PGA Tour API fallback; both are safe only when the metadata is fresh.
  *
- * Exits 0 (success) if fresh, exits 1 (failure) if stale or missing —
- * the GitHub Actions workflow uses this exit code to decide whether to
- * trigger the fetch-pga-player-stats.mjs fallback.
- *
- * "Stale" = export date is more than MAX_STALE_DAYS old, or missing entirely.
+ * Exits 0 (success) if fresh, exits 1 (failure) if stale or missing — the
+ * GitHub Actions workflow uses this exit code to decide whether to trigger the
+ * fetch-pga-player-stats.mjs fallback.
  */
 
 import { readFileSync } from "node:fs";
@@ -19,8 +18,8 @@ const ROOT = process.cwd();
 const META_PATH = path.join(ROOT, "public", "data", "pga", "player-stats-meta.json");
 const MAX_STALE_DAYS = parseInt(process.env.PGA_STATS_MAX_STALE_DAYS || "10", 10);
 
-function daysBetween(a, b) {
-  return Math.abs(a - b) / (1000 * 60 * 60 * 24);
+function daysBetween(left, right) {
+  return Math.abs(left - right) / (1000 * 60 * 60 * 24);
 }
 
 function main() {
@@ -29,40 +28,41 @@ function main() {
     meta = JSON.parse(readFileSync(META_PATH, "utf8"));
   } catch (err) {
     console.error(`[freshness] Could not read ${META_PATH}: ${err.message}`);
-    console.error(`[freshness] Treating as STALE — no metadata means we can't trust the data.`);
+    console.error("[freshness] Treating as STALE — no metadata means we cannot trust the model input.");
     process.exitCode = 1;
     return;
   }
 
-  if (!meta.exportDate) {
-    console.error(`[freshness] No exportDate found in metadata. Treating as STALE.`);
+  const source = meta.source ?? "unknown";
+  const exportDateValue = meta.exportDate ?? meta.fetchedAt ?? meta.syncedAt;
+  if (!exportDateValue) {
+    console.error(`[freshness] No exportDate/fetchedAt/syncedAt found in metadata. Source=${source}. Treating as STALE.`);
     process.exitCode = 1;
     return;
   }
 
-  const exportDate = new Date(meta.exportDate);
+  const exportDate = new Date(exportDateValue);
   if (Number.isNaN(exportDate.getTime())) {
-    console.error(`[freshness] exportDate "${meta.exportDate}" is not a valid date. Treating as STALE.`);
+    console.error(`[freshness] Source date "${exportDateValue}" is not valid. Source=${source}. Treating as STALE.`);
     process.exitCode = 1;
     return;
   }
 
-  const now = new Date();
-  const age = daysBetween(now, exportDate);
+  const age = daysBetween(new Date(), exportDate);
 
-  console.log(`[freshness] Sheet export date: ${meta.exportDate}`);
+  console.log(`[freshness] Player stats source: ${source}`);
+  console.log(`[freshness] Source date: ${exportDateValue}`);
   console.log(`[freshness] Age: ${age.toFixed(1)} days (max allowed: ${MAX_STALE_DAYS} days)`);
-  console.log(`[freshness] Player count: ${meta.playerCount}`);
+  console.log(`[freshness] Player count: ${meta.playerCount ?? "unknown"}`);
 
   if (age > MAX_STALE_DAYS) {
-    console.error(`[freshness] STALE — sheet data is ${age.toFixed(1)} days old, exceeds ${MAX_STALE_DAYS} day limit.`);
-    console.error(`[freshness] The "PGA Stats Master" Google Sheet needs a manual refresh.`);
-    console.error(`[freshness] Falling back to direct PGA Tour API pull for this run.`);
+    console.error(`[freshness] STALE — player stats are ${age.toFixed(1)} days old, exceeding the ${MAX_STALE_DAYS} day limit.`);
+    console.error("[freshness] The Monday workflow will use the direct PGA Tour API fallback before generating model rankings.");
     process.exitCode = 1;
     return;
   }
 
-  console.log(`[freshness] OK — sheet data is fresh.`);
+  console.log("[freshness] OK — player stats metadata is fresh.");
 }
 
 main();
