@@ -22,7 +22,7 @@
     "pga:trend:refresh": "npm run pga:fetch-liv && npm run pga:fetch-dpwt && npm run pga:trend",
     "pga:rankings": "node scripts/generate-pga-tournament-rankings.mjs",
     "pga:check-model-sync": "node scripts/check-pga-model-sync.mjs",
-    "pga:monday-refresh": "npm run pga:sync-field && (npm run pga:sync-sheet || true) && (npm run pga:check-freshness || npm run pga:fetch-stats-fallback) && npm run pga:rankings && npm run pga:check-model-sync",
+    "pga:monday-refresh": "npm run pga:sync-field && node scripts/generate-pga-tournament-package.mjs --feature && (npm run pga:sync-sheet || true) && (npm run pga:check-freshness || npm run pga:fetch-stats-fallback) && npm run pga:rankings && npm run pga:check-model-sync",
     "pga:best-bets": "node scripts/generate-pga-best-bets.mjs",
     "mlb:hr-props": "node scripts/generate-mlb-hr-props.mjs",
     "mlb:hr-props:x": "node scripts/post-mlb-hr-props-to-x.mjs",
