@@ -150,15 +150,15 @@ describe("MLB numerology email receiver", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("dry-run reports sent when gated test-send status is configured", async () => {
-    process.env.BUTTONDOWN_EMAIL_STATUS = "sent";
+  it("dry-run reports about_to_send when gated test-send status is configured", async () => {
+    process.env.BUTTONDOWN_EMAIL_STATUS = "about_to_send";
     process.env.BUTTONDOWN_ALLOW_TEST_SEND = "true";
     delete process.env.BUTTONDOWN_API_KEY;
 
     const response = await POST(request({ ...validPayload, dryRun: true }));
 
     expect(response.status).toBe(200);
-    expect(await json(response)).toMatchObject({ ok: true, dryRun: true, status: "sent" });
+    expect(await json(response)).toMatchObject({ ok: true, dryRun: true, status: "about_to_send" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -219,7 +219,7 @@ describe("MLB numerology email receiver", () => {
   });
 
   it("non-draft BUTTONDOWN_EMAIL_STATUS is rejected without test-send gate", async () => {
-    process.env.BUTTONDOWN_EMAIL_STATUS = "sent";
+    process.env.BUTTONDOWN_EMAIL_STATUS = "about_to_send";
     const response = await POST(request(validPayload));
     expect(response.status).toBe(500);
     expect(await json(response)).toMatchObject({ ok: false, error: "server_misconfigured" });
@@ -235,8 +235,8 @@ describe("MLB numerology email receiver", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("sent status is accepted only with explicit test-send gate", async () => {
-    process.env.BUTTONDOWN_EMAIL_STATUS = "sent";
+  it("about_to_send status is accepted only with explicit test-send gate", async () => {
+    process.env.BUTTONDOWN_EMAIL_STATUS = "about_to_send";
     process.env.BUTTONDOWN_ALLOW_TEST_SEND = "true";
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ id: "email_123", url: "https://buttondown.com/emails/email_123" }), {
       status: 201,
@@ -249,16 +249,16 @@ describe("MLB numerology email receiver", () => {
     expect(await json(response)).toMatchObject({
       ok: true,
       dryRun: false,
-      status: "sent",
+      status: "about_to_send",
       buttondown: { id: "email_123", url: "https://buttondown.com/emails/email_123" },
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const init = fetchMock.mock.calls[0][1] as RequestInit;
-    expect(JSON.parse(String(init.body))).toMatchObject({ status: "sent" });
+    expect(JSON.parse(String(init.body))).toMatchObject({ status: "about_to_send" });
   });
 
   it("Buttondown failure returns sanitized 502 details", async () => {
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ detail: "Unsupported status sent", body: "<h1>secret html</h1>" }), {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ detail: "Unsupported status about_to_send", body: "<h1>secret html</h1>" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     }));
@@ -268,7 +268,7 @@ describe("MLB numerology email receiver", () => {
 
     expect(response.status).toBe(502);
     expect(payload).toMatchObject({ ok: false, error: "buttondown_failed", status: 400 });
-    expect(payload.buttondownError).toBe(JSON.stringify({ detail: "Unsupported status sent", body: "[redacted]" }));
+    expect(payload.buttondownError).toBe(JSON.stringify({ detail: "Unsupported status about_to_send", body: "[redacted]" }));
   });
 
   it("sanitized Buttondown failure details do not expose secret-like fields", async () => {
