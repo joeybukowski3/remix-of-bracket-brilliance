@@ -3,7 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 const BUTTONDOWN_EMAILS_URL = "https://api.buttondown.com/v1/emails";
 const BUTTONDOWN_EDITOR_PREFIX = "<!-- buttondown-editor-mode: fancy -->";
 const BUTTONDOWN_DRAFT_STATUS = "draft";
-const BUTTONDOWN_TEST_SEND_STATUS = "sent";
+const BUTTONDOWN_TEST_SEND_STATUS = "about_to_send";
 const MAX_SUBJECT_LENGTH = 200;
 const MAX_HTML_LENGTH = 1_000_000;
 const MAX_TEXT_LENGTH = 250_000;
