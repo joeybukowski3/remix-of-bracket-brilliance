@@ -7,7 +7,9 @@ const BUTTONDOWN_TEST_SEND_STATUS = "sent";
 const MAX_SUBJECT_LENGTH = 200;
 const MAX_HTML_LENGTH = 1_000_000;
 const MAX_TEXT_LENGTH = 250_000;
+const MAX_BUTTONDOWN_ERROR_LENGTH = 1_000;
 const SOURCE = "joeknowsball-mlb-numerology";
+const SENSITIVE_RESPONSE_KEY = /(authorization|token|secret|api[-_ ]?key|password|html|body|content)/i;
 
 type ButtondownEmailStatus = typeof BUTTONDOWN_DRAFT_STATUS | typeof BUTTONDOWN_TEST_SEND_STATUS;
 
@@ -146,6 +148,33 @@ function getButtondownStatus(): { status: ButtondownEmailStatus | null; error: s
   return { status: BUTTONDOWN_TEST_SEND_STATUS, error: null };
 }
 
+function redactButtondownErrorValue(value: unknown, depth = 0): unknown {
+  if (depth > 4) return "[truncated]";
+  if (typeof value === "string") return value.slice(0, 500);
+  if (typeof value === "number" || typeof value === "boolean" || value === null) return value;
+  if (Array.isArray(value)) return value.slice(0, 10).map((item) => redactButtondownErrorValue(item, depth + 1));
+  if (!value || typeof value !== "object") return String(value).slice(0, 500);
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .slice(0, 20)
+      .map(([key, entry]) => [
+        key,
+        SENSITIVE_RESPONSE_KEY.test(key) ? "[redacted]" : redactButtondownErrorValue(entry, depth + 1),
+      ]),
+  );
+}
+
+function sanitizeButtondownError(value: unknown) {
+  if (value === null || value === undefined) return null;
+
+  try {
+    return JSON.stringify(redactButtondownErrorValue(value)).slice(0, MAX_BUTTONDOWN_ERROR_LENGTH);
+  } catch {
+    return String(value).slice(0, MAX_BUTTONDOWN_ERROR_LENGTH);
+  }
+}
+
 function getRequestId() {
   return `numerology-email-${Date.now().toString(36)}`;
 }
@@ -242,13 +271,17 @@ export async function POST(request: Request) {
     }
 
     if (!response.ok) {
-      console.error(`[api/mlb/numerology-email] ${requestId} Buttondown failed status=${response.status}`);
+      const buttondownError = sanitizeButtondownError(responseBody);
+      console.error(
+        `[api/mlb/numerology-email] ${requestId} Buttondown failed status=${response.status} error=${buttondownError ?? "unavailable"}`,
+      );
       return Response.json(
         {
           ok: false,
           error: "buttondown_failed",
           status: response.status,
           message: "Buttondown email creation failed.",
+          buttondownError,
         },
         { status: 502 },
       );

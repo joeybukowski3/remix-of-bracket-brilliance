@@ -257,16 +257,47 @@ describe("MLB numerology email receiver", () => {
     expect(JSON.parse(String(init.body))).toMatchObject({ status: "sent" });
   });
 
-  it("Buttondown failure returns 502", async () => {
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ detail: "nope" }), {
+  it("Buttondown failure returns sanitized 502 details", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ detail: "Unsupported status sent", body: "<h1>secret html</h1>" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     }));
 
     const response = await POST(request(validPayload));
+    const payload = await json(response);
 
     expect(response.status).toBe(502);
-    expect(await json(response)).toMatchObject({ ok: false, error: "buttondown_failed", status: 400 });
+    expect(payload).toMatchObject({ ok: false, error: "buttondown_failed", status: 400 });
+    expect(payload.buttondownError).toBe(JSON.stringify({ detail: "Unsupported status sent", body: "[redacted]" }));
+  });
+
+  it("sanitized Buttondown failure details do not expose secret-like fields", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      detail: "bad request",
+      token: "buttondown-secret",
+      authorization: "Token buttondown-secret",
+      body: validPayload.html,
+      nested: { apiKey: "buttondown-secret", message: "safe detail" },
+    }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    }));
+
+    const response = await POST(request(validPayload));
+    const responseText = JSON.stringify(await json(response));
+    const logs = [
+      ...logSpy.mock.calls,
+      ...warnSpy.mock.calls,
+      ...errorSpy.mock.calls,
+    ].flat().join(" ");
+
+    expect(response.status).toBe(502);
+    expect(responseText).toContain("safe detail");
+    expect(logs).toContain("safe detail");
+    expect(responseText).not.toContain("buttondown-secret");
+    expect(responseText).not.toContain(validPayload.html);
+    expect(logs).not.toContain("buttondown-secret");
+    expect(logs).not.toContain(validPayload.html);
   });
 
   it("response and logs do not include secrets", async () => {
