@@ -12,10 +12,11 @@
  * - course-weights.json (weights per tournament/course)
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { selectLocalTarget } from "./lib/pga-field-selection.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "pga");
@@ -68,29 +69,6 @@ function getTodayEt() {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
-}
-
-function getMondayOfWeekEt() {
-  const now = new Date();
-  const etDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-  const day = etDate.getDay();
-  const diff = etDate.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(etDate.setDate(diff));
-  return monday.toISOString().split("T")[0];
-}
-
-function getThursdayOfWeekEt() {
-  const mondayStr = getMondayOfWeekEt();
-  const monday = new Date(mondayStr + "T00:00:00Z");
-  const thursday = new Date(monday.getTime() + 3 * 24 * 60 * 60 * 1000);
-  return thursday.toISOString().split("T")[0];
-}
-
-function getSundayOfWeekEt() {
-  const mondayStr = getMondayOfWeekEt();
-  const monday = new Date(mondayStr + "T00:00:00Z");
-  const sunday = new Date(monday.getTime() + 6 * 24 * 60 * 60 * 1000);
-  return sunday.toISOString().split("T")[0];
 }
 
 function normalizeEventKey(value) {
@@ -194,13 +172,27 @@ function rankPlayers(players, weights) {
 /**
  * Generate a tournament JSON output with ranked players
  */
-function generateTournamentOutput(tournament, rankedPlayers, isCurrentWeek) {
+function generateTournamentOutput(tournament, rankedPlayers, isCurrentWeek, sourceInfo = {}) {
   const output = {
     section: isCurrentWeek ? "current-tournament" : "next-tournament",
     title: isCurrentWeek ? "CURRENT TOURNAMENT MODEL" : "NEXT WEEK TOURNAMENT MODEL",
     tournamentName: tournament.name,
     courseName: tournament.courseName,
+    tournamentId: tournament.id ?? null,
+    startDate: tournament.startDate ?? null,
+    endDate: tournament.endDate ?? null,
     generatedAt: new Date().toISOString(),
+    // Data-source transparency: this model is generated from online API
+    // player stats, not the Google Sheet. pgaFreshness surfaces modelSource
+    // in the page's status panel.
+    modelAvailable: rankedPlayers.length > 0,
+    modelSource: "online-api",
+    statsSource: sourceInfo.statsSource ?? null,
+    statsSyncedAt: sourceInfo.statsSyncedAt ?? null,
+    weightsTournament: sourceInfo.weightsTournament ?? null,
+    usedDefaultWeights: sourceInfo.usedDefaultWeights ?? null,
+    modelNote:
+      "Rankings generated from PGA Tour API player stats with course-specific weights. The Google Sheet is optional enrichment and is not required for weekly updates.",
     rows: rankedPlayers.map((player) => ({
       rank: player.rank,
       player: player.player,
@@ -225,6 +217,7 @@ function generatePowerRankings(players) {
     section: "power-rankings",
     title: "POWER RANKINGS",
     generatedAt: new Date().toISOString(),
+    modelSource: "online-api",
     rows: ranked.map((player) => ({
       rank: player.rank,
       player: player.player,
@@ -254,33 +247,23 @@ async function main() {
   console.log(`   ✓ Player stats: ${playerStats.length} players`);
   console.log(`   ✓ Course weights: ${courseWeights.length} entries`);
 
-  // Calculate week boundaries
-  const thursday = getThursdayOfWeekEt();
-  const sunday = getSundayOfWeekEt();
+  // Current tournament: same canonical selection the field sync uses
+  // (scripts/lib/pga-field-selection.mjs) so the model and the field can
+  // never disagree about which event is current. The previous Thu-Sun
+  // window silently soft-exited on off-weeks and missed non-Thursday
+  // starts, leaving stale model files behind.
+  const asOfDate = getTodayEt();
+  console.log(`\n📅 As of (ET): ${asOfDate}`);
 
-  console.log(`\n📅 Week: ${thursday} to ${sunday}`);
-
-  // Find this week's tournament
   console.log("\n🔍 Finding tournaments...");
-  const thisWeekTournament = schedule.find(
-    (e) => e.startDate >= thursday && e.startDate <= sunday,
-  );
-  const nextWeekMonday = new Date(
-    new Date(thursday + "T00:00:00Z").getTime() + 7 * 24 * 60 * 60 * 1000,
-  );
-  const nextThursday = new Date(nextWeekMonday.getTime() + 3 * 24 * 60 * 60 * 1000);
-  const nextSunday = new Date(nextWeekMonday.getTime() + 6 * 24 * 60 * 60 * 1000);
-  const nextThursdayStr = nextThursday.toISOString().split("T")[0];
-  const nextSundayStr = nextSunday.toISOString().split("T")[0];
+  const thisWeekTournament = selectLocalTarget(schedule, asOfDate); // throws loudly when nothing qualifies
 
-  const nextWeekTournament = schedule.find(
-    (e) => e.startDate >= nextThursdayStr && e.startDate <= nextSundayStr,
-  );
-
-  if (!thisWeekTournament) {
-    console.log("⚠️  No tournament found for this week. Exiting.");
-    return;
-  }
+  const eligible = schedule
+    .filter((e) => !String(e.eventType ?? "").toLowerCase().includes("alternate field"))
+    .filter((e) => e.startDate && e.endDate)
+    .sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
+  const nextWeekTournament =
+    eligible.find((e) => e.startDate > thisWeekTournament.endDate) ?? null;
 
   console.log(`   ✓ This week: ${thisWeekTournament.name} (${thisWeekTournament.startDate})`);
   if (nextWeekTournament) {
@@ -332,8 +315,17 @@ async function main() {
     (e) => normalizeEventKey(e.tournament) === "default",
   ).weights;
 
+  const statsMetaPath = path.join(DATA_DIR, "player-stats-meta.json");
+  const statsMeta = existsSync(statsMetaPath) ? JSON.parse(readFileSync(statsMetaPath, "utf8")) : {};
+  const sourceInfo = {
+    statsSource: statsMeta.source ?? null,
+    statsSyncedAt: statsMeta.syncedAt ?? null,
+    weightsTournament: thisWeekWeights?.tournament ?? "default",
+    usedDefaultWeights: thisWeekUsedDefault,
+  };
+
   const thisWeekRanked = rankPlayers(playerStats, thisWeekWeightSet);
-  const thisWeekOutput = generateTournamentOutput(thisWeekTournament, thisWeekRanked, true);
+  const thisWeekOutput = generateTournamentOutput(thisWeekTournament, thisWeekRanked, true, sourceInfo);
 
   console.log(
     `   ✓ This week: ${thisWeekRanked.length} players ranked for ${thisWeekTournament.name}`,
@@ -350,11 +342,26 @@ async function main() {
       .weights;
 
     const nextWeekRanked = rankPlayers(playerStats, nextWeekWeightSet);
-    nextWeekOutput = generateTournamentOutput(nextWeekTournament, nextWeekRanked, false);
+    nextWeekOutput = generateTournamentOutput(nextWeekTournament, nextWeekRanked, false, sourceInfo);
 
     console.log(
       `   ✓ Next week: ${nextWeekRanked.length} players ranked for ${nextWeekTournament.name}`,
     );
+  } else {
+    // Always write next-tournament.json so a previous run's (or a stale
+    // sheet's) artifact can never linger as if it were current.
+    nextWeekOutput = {
+      section: "next-tournament",
+      title: "NEXT WEEK TOURNAMENT MODEL",
+      tournamentName: null,
+      courseName: null,
+      generatedAt: new Date().toISOString(),
+      modelAvailable: false,
+      modelSource: "online-api",
+      modelNote: "No upcoming tournament found on the schedule after the current event.",
+      rows: [],
+    };
+    console.log("   ⚠️  No next-week tournament; writing explicit placeholder.");
   }
 
   // Generate power rankings
@@ -371,13 +378,11 @@ async function main() {
   );
   console.log(`   ✓ current-tournament.json`);
 
-  if (nextWeekOutput) {
-    writeFileSync(
-      path.join(DATA_DIR, "next-tournament.json"),
-      JSON.stringify(nextWeekOutput, null, 2),
-    );
-    console.log(`   ✓ next-tournament.json`);
-  }
+  writeFileSync(
+    path.join(DATA_DIR, "next-tournament.json"),
+    JSON.stringify(nextWeekOutput, null, 2),
+  );
+  console.log(`   ✓ next-tournament.json`);
 
   writeFileSync(
     path.join(DATA_DIR, "power-rankings.json"),

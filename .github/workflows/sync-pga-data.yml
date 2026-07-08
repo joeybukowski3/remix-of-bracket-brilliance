@@ -56,15 +56,19 @@ jobs:
       - name: Fetch current tournament field
         run: node scripts/fetch-pga-current-field.mjs
 
-      - name: Sync PGA JSON from Google Sheet
+      # The Google Sheet is OPTIONAL enrichment (course weights + legacy
+      # model sections). A stale or unreachable sheet must never block the
+      # weekly field/model refresh — the rankings generator below runs after
+      # it and overwrites the model files from online API player stats.
+      - name: Sync PGA JSON from Google Sheet (optional enrichment)
+        continue-on-error: true
         env:
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: node scripts/sync-pga-sheet.mjs
 
-      - name: Generate tournament rankings from player stats
-        run: node scripts/generate-pga-tournament-rankings.mjs
-
+      # Stats freshness + fallback MUST run before rankings generation so
+      # the model is never built from stale stats when fresh ones exist.
       - name: Check player stats freshness
         id: freshness
         continue-on-error: true
@@ -79,7 +83,10 @@ jobs:
           echo "Sheet data is stale or missing — falling back to direct PGA Tour API pull."
           node scripts/fetch-pga-player-stats.mjs
 
-      - name: Verify field matches the scheduled current tournament
+      - name: Generate tournament rankings and model from player stats (primary model source)
+        run: node scripts/generate-pga-tournament-rankings.mjs
+
+      - name: Verify field, model and stats match the scheduled current tournament
         run: node scripts/check-pga-field-sync.mjs
 
       - name: Commit and push updates
