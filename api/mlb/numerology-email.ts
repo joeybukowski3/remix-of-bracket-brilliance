@@ -2,10 +2,14 @@ import { timingSafeEqual } from "node:crypto";
 
 const BUTTONDOWN_EMAILS_URL = "https://api.buttondown.com/v1/emails";
 const BUTTONDOWN_EDITOR_PREFIX = "<!-- buttondown-editor-mode: fancy -->";
+const BUTTONDOWN_DRAFT_STATUS = "draft";
+const BUTTONDOWN_TEST_SEND_STATUS = "sent";
 const MAX_SUBJECT_LENGTH = 200;
 const MAX_HTML_LENGTH = 1_000_000;
 const MAX_TEXT_LENGTH = 250_000;
 const SOURCE = "joeknowsball-mlb-numerology";
+
+type ButtondownEmailStatus = typeof BUTTONDOWN_DRAFT_STATUS | typeof BUTTONDOWN_TEST_SEND_STATUS;
 
 type NumerologyEmailPayload = {
   subject: string;
@@ -118,6 +122,30 @@ function getDryRun(request: Request, payload: NumerologyEmailPayload) {
   return request.headers.get("x-jkb-email-dry-run")?.toLowerCase() === "true" || payload.dryRun === true;
 }
 
+function getButtondownStatus(): { status: ButtondownEmailStatus | null; error: string | null } {
+  const configuredStatus = (process.env.BUTTONDOWN_EMAIL_STATUS || BUTTONDOWN_DRAFT_STATUS).trim().toLowerCase();
+  if (configuredStatus === BUTTONDOWN_DRAFT_STATUS) {
+    return { status: BUTTONDOWN_DRAFT_STATUS, error: null };
+  }
+
+  const allowTestSend = process.env.BUTTONDOWN_ALLOW_TEST_SEND === "true";
+  if (!allowTestSend) {
+    return {
+      status: null,
+      error: "Only Buttondown draft mode is supported unless BUTTONDOWN_ALLOW_TEST_SEND=true.",
+    };
+  }
+
+  if (configuredStatus !== BUTTONDOWN_TEST_SEND_STATUS) {
+    return {
+      status: null,
+      error: `Unsupported Buttondown status. Use ${BUTTONDOWN_DRAFT_STATUS} or ${BUTTONDOWN_TEST_SEND_STATUS}.`,
+    };
+  }
+
+  return { status: BUTTONDOWN_TEST_SEND_STATUS, error: null };
+}
+
 function getRequestId() {
   return `numerology-email-${Date.now().toString(36)}`;
 }
@@ -152,23 +180,23 @@ export async function POST(request: Request) {
     return jsonError("invalid_payload", error ?? "Invalid payload.", 400);
   }
 
-  const configuredStatus = process.env.BUTTONDOWN_EMAIL_STATUS || "draft";
-  if (configuredStatus !== "draft") {
+  const { status: buttondownStatus, error: statusError } = getButtondownStatus();
+  if (!buttondownStatus) {
     console.error(`[api/mlb/numerology-email] ${requestId} unsupported Buttondown status configured`);
-    return jsonError("server_misconfigured", "Only Buttondown draft mode is supported.", 500);
+    return jsonError("server_misconfigured", statusError ?? "Unsupported Buttondown status.", 500);
   }
 
   const dryRun = getDryRun(request, payload);
   const topPlaySummary = summarizeTopPlay(payload.topPlay);
   console.log(
-    `[api/mlb/numerology-email] ${requestId} accepted date=${payload.date} qualifiedCount=${payload.qualifiedCount} dryRun=${dryRun}`,
+    `[api/mlb/numerology-email] ${requestId} accepted date=${payload.date} qualifiedCount=${payload.qualifiedCount} dryRun=${dryRun} status=${buttondownStatus}`,
   );
 
   if (dryRun) {
     return Response.json({
       ok: true,
       dryRun: true,
-      status: "draft",
+      status: buttondownStatus,
       date: payload.date,
       qualifiedCount: payload.qualifiedCount,
     });
@@ -190,7 +218,7 @@ export async function POST(request: Request) {
   const buttondownPayload = {
     subject: payload.subject,
     body: `${BUTTONDOWN_EDITOR_PREFIX}${payload.html}`,
-    status: "draft",
+    status: buttondownStatus,
     metadata: {
       source: SOURCE,
       date: payload.date,
@@ -220,7 +248,7 @@ export async function POST(request: Request) {
           ok: false,
           error: "buttondown_failed",
           status: response.status,
-          message: "Buttondown draft creation failed.",
+          message: "Buttondown email creation failed.",
         },
         { status: 502 },
       );
@@ -234,11 +262,11 @@ export async function POST(request: Request) {
         ? result.absolute_url
         : null;
 
-    console.log(`[api/mlb/numerology-email] ${requestId} Buttondown draft created`);
+    console.log(`[api/mlb/numerology-email] ${requestId} Buttondown email created status=${buttondownStatus}`);
     return Response.json({
       ok: true,
       dryRun: false,
-      status: "draft",
+      status: buttondownStatus,
       buttondown: { id, url },
     });
   } catch {
@@ -247,7 +275,7 @@ export async function POST(request: Request) {
       {
         ok: false,
         error: "buttondown_failed",
-        message: "Buttondown draft creation failed.",
+        message: "Buttondown email creation failed.",
       },
       { status: 502 },
     );
