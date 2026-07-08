@@ -23,6 +23,7 @@ function resetEnv() {
   process.env.BUTTONDOWN_API_KEY = "buttondown-secret";
   delete process.env.BUTTONDOWN_CONTEXT;
   delete process.env.BUTTONDOWN_EMAIL_STATUS;
+  delete process.env.BUTTONDOWN_ALLOW_TEST_SEND;
 }
 
 function request(payload: unknown, init: RequestInit = {}) {
@@ -149,6 +150,18 @@ describe("MLB numerology email receiver", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("dry-run reports sent when gated test-send status is configured", async () => {
+    process.env.BUTTONDOWN_EMAIL_STATUS = "sent";
+    process.env.BUTTONDOWN_ALLOW_TEST_SEND = "true";
+    delete process.env.BUTTONDOWN_API_KEY;
+
+    const response = await POST(request({ ...validPayload, dryRun: true }));
+
+    expect(response.status).toBe(200);
+    expect(await json(response)).toMatchObject({ ok: true, dryRun: true, status: "sent" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("non-dry-run fails without BUTTONDOWN_API_KEY", async () => {
     delete process.env.BUTTONDOWN_API_KEY;
     const response = await POST(request(validPayload));
@@ -205,12 +218,43 @@ describe("MLB numerology email receiver", () => {
     expect(init.headers).toMatchObject({ "Buttondown-Context": "joeknowsball" });
   });
 
-  it("non-draft BUTTONDOWN_EMAIL_STATUS is rejected", async () => {
+  it("non-draft BUTTONDOWN_EMAIL_STATUS is rejected without test-send gate", async () => {
     process.env.BUTTONDOWN_EMAIL_STATUS = "sent";
     const response = await POST(request(validPayload));
     expect(response.status).toBe(500);
     expect(await json(response)).toMatchObject({ ok: false, error: "server_misconfigured" });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("unsupported non-draft status is rejected even with test-send gate", async () => {
+    process.env.BUTTONDOWN_EMAIL_STATUS = "published";
+    process.env.BUTTONDOWN_ALLOW_TEST_SEND = "true";
+    const response = await POST(request(validPayload));
+    expect(response.status).toBe(500);
+    expect(await json(response)).toMatchObject({ ok: false, error: "server_misconfigured" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sent status is accepted only with explicit test-send gate", async () => {
+    process.env.BUTTONDOWN_EMAIL_STATUS = "sent";
+    process.env.BUTTONDOWN_ALLOW_TEST_SEND = "true";
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ id: "email_123", url: "https://buttondown.com/emails/email_123" }), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    }));
+
+    const response = await POST(request(validPayload));
+
+    expect(response.status).toBe(200);
+    expect(await json(response)).toMatchObject({
+      ok: true,
+      dryRun: false,
+      status: "sent",
+      buttondown: { id: "email_123", url: "https://buttondown.com/emails/email_123" },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toMatchObject({ status: "sent" });
   });
 
   it("Buttondown failure returns 502", async () => {
