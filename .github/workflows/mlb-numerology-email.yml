@@ -1,20 +1,19 @@
 name: MLB Numerology Email
 run-name: MLB Numerology Email • ${{ github.event_name }} • ${{ inputs.mode || 'preview' }}
 
-# Manual-dispatch-first. A live send always requires BOTH the
-# NUMEROLOGY_EMAIL_LIVE=true repo/environment variable AND the
-# NUMEROLOGY_EMAIL_WEBHOOK_URL secret to be configured -- this workflow
-# never sends "silently" just because mode=send was selected.
+# Manual-dispatch-first. Draft creation always requires an explicit
+# workflow_dispatch with mode=send, plus the verified Vercel receiver URL
+# and bearer token. The receiver creates Buttondown drafts only.
 #
 # The daily schedule always runs in preview mode only (hardcoded, not
 # derived from any input) so that daily-card.json, the archive, and the
 # performance tracking files stay persisted in the repo even on days no
-# one manually triggers a send. It never sends live email.
+# one manually triggers a send. It never creates a Buttondown draft.
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "preview (generate + persist data, no email) or send (live send, still gated by secrets)"
+        description: "preview (generate + persist data, no draft) or send (create Buttondown draft via receiver)"
         required: true
         default: "preview"
         type: choice
@@ -29,7 +28,7 @@ on:
   schedule:
     # 6:15 PM ET -- after the lineup-confirmed numerology phase has had a
     # chance to run, and well before most games start. Preview-only: never
-    # sends live email regardless of secret configuration.
+    # creates a Buttondown draft regardless of secret configuration.
     - cron: "15 22 * * *"
 
   push:
@@ -110,47 +109,43 @@ jobs:
           if [ -n "${{ inputs.date }}" ]; then
             DATE_FLAG="--date ${{ inputs.date }}"
           fi
-          node scripts/generate-mlb-numerology-email.mjs --preview $DATE_FLAG
+          npm run mlb:numerology:email:preview -- $DATE_FLAG
 
       - name: Log resolved mode
         shell: bash
         run: |
           echo "[mlb-numerology-email] Resolved mode: ${{ steps.mode.outputs.resolved }}"
           if [ "${{ steps.mode.outputs.resolved }}" = "preview" ]; then
-            echo "[mlb-numerology-email] Preview/draft only -- no live email will be sent."
+            echo "[mlb-numerology-email] Preview only -- no Buttondown draft will be created."
           else
-            echo "[mlb-numerology-email] Send mode requested -- live send still requires NUMEROLOGY_EMAIL_LIVE=true and NUMEROLOGY_EMAIL_WEBHOOK_URL to be configured."
+            echo "[mlb-numerology-email] Send mode requested -- receiver creates a Buttondown draft only."
           fi
 
       # Only reached when mode resolved to "send". The script itself
       # re-checks NUMEROLOGY_EMAIL_LIVE and NUMEROLOGY_EMAIL_WEBHOOK_URL and
-      # throws (failing the step) rather than sending silently if either is
-      # missing -- this step does not attempt to duplicate or soften that
-      # gate, it just also fails clearly beforehand if the secret is unset
-      # so the log is unambiguous about why nothing was sent.
-      - name: Send live email (gated)
+      # throws (failing the step) rather than posting silently if either is
+      # missing. The verified receiver creates Buttondown drafts only.
+      - name: Create Buttondown draft (manual, gated)
         if: steps.mode.outputs.resolved == 'send'
         env:
-          # NUMEROLOGY_EMAIL_LIVE isn't sensitive -- accept it as either a
-          # repository/environment Variable or a Secret so either setup works.
-          NUMEROLOGY_EMAIL_LIVE: ${{ vars.NUMEROLOGY_EMAIL_LIVE || secrets.NUMEROLOGY_EMAIL_LIVE }}
-          NUMEROLOGY_EMAIL_WEBHOOK_URL: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_URL }}
+          NUMEROLOGY_EMAIL_LIVE: true
+          NUMEROLOGY_EMAIL_WEBHOOK_URL: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_URL || vars.NUMEROLOGY_EMAIL_WEBHOOK_URL }}
           NUMEROLOGY_EMAIL_WEBHOOK_TOKEN: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN }}
         shell: bash
         run: |
-          if [ "${NUMEROLOGY_EMAIL_LIVE}" != "true" ]; then
-            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_LIVE is not 'true'. Set it as a repository/environment variable to enable live sending. No email was sent."
+          if [ -z "${NUMEROLOGY_EMAIL_WEBHOOK_URL}" ]; then
+            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_WEBHOOK_URL is not configured as a secret or variable. No draft was created."
             exit 1
           fi
-          if [ -z "${NUMEROLOGY_EMAIL_WEBHOOK_URL}" ]; then
-            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_WEBHOOK_URL secret is not configured. No email was sent."
+          if [ -z "${NUMEROLOGY_EMAIL_WEBHOOK_TOKEN}" ]; then
+            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_WEBHOOK_TOKEN secret is not configured. No draft was created."
             exit 1
           fi
           DATE_FLAG=""
           if [ -n "${{ inputs.date }}" ]; then
             DATE_FLAG="--date ${{ inputs.date }}"
           fi
-          node scripts/generate-mlb-numerology-email.mjs --send $DATE_FLAG
+          npm run mlb:numerology:email:send -- $DATE_FLAG
 
       - name: Detect meaningful tracking data changes
         id: changes
