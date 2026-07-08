@@ -3,6 +3,7 @@ import {
   applyStatLineToRecord,
   buildDailyNumerologyCard,
   buildTrackingRecordsFromCard,
+  buildTrackingResultBuckets,
   computeNumerologyScore,
   extractBattingStatLine,
   mergePerformanceRecords,
@@ -274,9 +275,40 @@ describe("MLB numerology tracking", () => {
     expect(text).toContain("ALL PLAYS OVER 50");
     expect(text).toContain("No HR Match Qualifier");
     expect(text).toContain("Jersey 23");
+    expect(text).toContain("Last 5 game logs unavailable");
     expect(text).toContain("4 AB previous 2 games");
+    expect(text).toContain("Season stats unavailable");
+    expect(text).toContain("Previous Day");
+    expect(text).toContain("Overall");
     expect(text).toContain("Experimental numerology/model signals only");
     expect(text).toContain("Not guaranteed");
     expect(text).toContain("Not validated betting edges");
+  });
+
+  it("aggregates real batting stat lines for the previous day, split by selection type", () => {
+    const records = [
+      { date: "2026-07-06", selectionType: "top-play", resultStatus: "final", stats: { atBats: 3, hits: 1, homeRuns: 1, totalBases: 4, rbi: 1, runs: 1, baseOnBalls: 0, strikeOuts: 1 } },
+      { date: "2026-07-06", selectionType: "over-50", resultStatus: "final", stats: { atBats: 4, hits: 0, homeRuns: 0, totalBases: 0, rbi: 0, runs: 0, baseOnBalls: 1, strikeOuts: 2 } },
+      { date: "2026-07-06", selectionType: "over-50", resultStatus: "final", stats: { atBats: 3, hits: 2, homeRuns: 0, totalBases: 3, rbi: 2, runs: 1, baseOnBalls: 0, strikeOuts: 0 } },
+      // A different date must not leak into the previous-day bucket.
+      { date: "2026-07-05", selectionType: "over-50", resultStatus: "final", stats: { atBats: 5, hits: 5, homeRuns: 5, totalBases: 20, rbi: 5, runs: 5, baseOnBalls: 5, strikeOuts: 5 } },
+    ];
+
+    const buckets = buildTrackingResultBuckets(records, "2026-07-07");
+
+    expect(buckets.previousDay.date).toBe("2026-07-06");
+    expect(buckets.previousDay.topPlay).toMatchObject({ total: 1, finalized: 1, hasStats: true, avg: 0.333, hits: 1, atBats: 3, homeRuns: 1 });
+    expect(buckets.previousDay.over50).toMatchObject({ total: 2, finalized: 2, hasStats: true, hits: 2, atBats: 7, homeRuns: 0, totalBases: 3, rbi: 2 });
+
+    // Overall must include the 2026-07-05 record too.
+    expect(buckets.overall.over50.total).toBe(3);
+    expect(buckets.overall.over50.atBats).toBe(12);
+    expect(buckets.overall.over50.homeRuns).toBe(5);
+  });
+
+  it("does not fabricate a stat line when a bucket has no finalized records", () => {
+    const buckets = buildTrackingResultBuckets([{ date: "2026-07-06", selectionType: "top-play", resultStatus: "pending", stats: null }], "2026-07-07");
+    expect(buckets.previousDay.topPlay).toMatchObject({ total: 1, finalized: 0, hasStats: false });
+    expect(buckets.previousDay.over50).toMatchObject({ total: 0, finalized: 0, hasStats: false });
   });
 });

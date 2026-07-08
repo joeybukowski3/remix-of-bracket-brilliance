@@ -355,6 +355,7 @@ function buildHrContext(hrRow, status) {
     last7HR: toFiniteNumber(hrRow.last7HR, null),
     last30HR: toFiniteNumber(hrRow.last30HR, null),
     opposingPitcherHrVs: roundNumber(toFiniteNumber(hrRow.opposingPitcherHrVs, null), 1),
+    pitcherXera: roundNumber(toFiniteNumber(hrRow.pitcherXera, null), 2),
     explanation: normalizeText(hrRow.explanation),
     angleTags: Array.isArray(hrRow.angleTags) ? hrRow.angleTags.map(normalizeText).filter(Boolean) : [],
   };
@@ -406,6 +407,7 @@ function buildPlayFromLiveBoard(row, { date, matchType, matchPriority, hrIndex }
     last7HR: hrContext.last7HR,
     last30HR: hrContext.last30HR,
     opposingPitcherHrVs: hrContext.opposingPitcherHrVs,
+    pitcherXera: hrContext.pitcherXera,
     explanation: hrContext.explanation || normalizeText(row?.summary || row?.marketExplanation),
     angleTags: hrContext.angleTags ?? [],
     hrEnrichmentStatus: hrContext.enrichmentStatus,
@@ -600,7 +602,74 @@ export function summarizePerformance(performancePayload, asOfDate = getTodayEt()
     last14Days: buildSummaryBucket(filterSince(records, asOfDate, 14)),
     topPlay: buildSummaryBucket(records.filter((record) => record.selectionType === "top-play")),
     over50: buildSummaryBucket(records.filter((record) => record.selectionType === "over-50")),
+    resultBuckets: buildTrackingResultBuckets(records, asOfDate),
   };
+}
+
+function shiftDateString(dateStr, deltaDays) {
+  const [year, month, day] = String(dateStr).split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + deltaDays);
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Sums real batting stat lines (not averages-of-averages) across a group
+ * of finalized tracking records, plus the finalized/total record count so
+ * "no result yet" is distinguishable from "went 0-for-everything". Never
+ * fabricates a stat line for a group with zero finalized records.
+ */
+function aggregateStatLines(records) {
+  const total = records.length;
+  const finalized = records.filter((record) => record.resultStatus === "final" && record.stats);
+  if (!finalized.length) {
+    return { total, finalized: 0, hasStats: false };
+  }
+  const sums = { atBats: 0, hits: 0, homeRuns: 0, totalBases: 0, rbi: 0, runs: 0, baseOnBalls: 0, strikeOuts: 0 };
+  for (const record of finalized) {
+    const stats = record.stats;
+    sums.atBats += toFiniteNumber(stats.atBats, 0);
+    sums.hits += toFiniteNumber(stats.hits, 0);
+    sums.homeRuns += toFiniteNumber(stats.homeRuns, 0);
+    sums.totalBases += toFiniteNumber(stats.totalBases, 0);
+    sums.rbi += toFiniteNumber(stats.rbi, 0);
+    sums.runs += toFiniteNumber(stats.runs, 0);
+    sums.baseOnBalls += toFiniteNumber(stats.baseOnBalls, 0);
+    sums.strikeOuts += toFiniteNumber(stats.strikeOuts, 0);
+  }
+  const avg = sums.atBats > 0 ? roundNumber(sums.hits / sums.atBats, 3) : null;
+  return { total, finalized: finalized.length, hasStats: true, avg, ...sums };
+}
+
+/**
+ * Previous Day (the calendar day before asOfDate) and Overall (every
+ * tracking record) result buckets, each split into Top Play / All >50
+ * Plays, with real aggregated batting lines from the existing tracking
+ * records -- no new fetches, no schema change to the records themselves.
+ */
+export function buildTrackingResultBuckets(records, asOfDate) {
+  const previousDate = shiftDateString(asOfDate, -1);
+  const bySelection = (list, type) => list.filter((record) => record.selectionType === type);
+  const previousRecords = records.filter((record) => record.date === previousDate);
+  return {
+    previousDay: {
+      date: previousDate,
+      topPlay: aggregateStatLines(bySelection(previousRecords, "top-play")),
+      over50: aggregateStatLines(bySelection(previousRecords, "over-50")),
+    },
+    overall: {
+      topPlay: aggregateStatLines(bySelection(records, "top-play")),
+      over50: aggregateStatLines(bySelection(records, "over-50")),
+    },
+  };
+}
+
+/** Renders one aggregated bucket as a single readable line for both HTML and plain text. */
+function formatAggregateStatLine(aggregate) {
+  if (!aggregate || aggregate.total === 0) return "no plays recorded";
+  if (!aggregate.hasStats) return `${aggregate.finalized}/${aggregate.total} finalized — results pending`;
+  const avgText = aggregate.avg != null ? aggregate.avg.toFixed(3).replace(/^0/, "") : "—";
+  return `${avgText} AVG, ${aggregate.hits}-for-${aggregate.atBats}, ${aggregate.homeRuns} HR, ${aggregate.totalBases} TB, ${aggregate.rbi} RBI, ${aggregate.runs} R, ${aggregate.baseOnBalls} BB, ${aggregate.strikeOuts} K (${aggregate.finalized}/${aggregate.total} finalized)`;
 }
 
 function filterSince(records, asOfDate, days) {
@@ -680,6 +749,41 @@ export function applyStatLineToRecord(record, statLine, { status = "final", sour
   };
 }
 
+function formatSeasonStatsLine(play) {
+  const stats = play?.seasonStats;
+  if (!stats) return "Season stats unavailable.";
+  return `AVG ${stats.avg ?? "—"}, OBP ${stats.obp ?? "—"}, SLG ${stats.slg ?? "—"}, OPS ${stats.ops ?? "—"}, HR ${stats.homeRuns ?? "—"}, RBI ${stats.rbi ?? "—"}, AB ${stats.atBats ?? "—"}`;
+}
+
+function formatLastFiveGamesLines(play) {
+  const games = play?.lastFiveGames?.games ?? [];
+  if (!games.length) return [`Last 5 game logs unavailable. ${formatActivity(play)}`];
+  return games.map(
+    (game) => `${game.opponent ?? "—"}: ${game.atBats ?? "—"} AB, ${game.hits ?? "—"} H, ${game.homeRuns ?? "—"} HR, ${game.totalBases ?? "—"} TB, ${game.rbi ?? "—"} RBI`
+  );
+}
+
+function formatHrContextLines(play) {
+  return buildHrContextEntries(play).map((entry) => `${entry.label}: ${entry.value}`);
+}
+
+function pushPlayDetailLines(lines, play, indent) {
+  lines.push(`${indent}Match type: ${play.matchType || "Live board"}`);
+  lines.push(`${indent}Season Stats: ${formatSeasonStatsLine(play)}`);
+  lines.push(`${indent}Last 5 Games:`);
+  for (const line of formatLastFiveGamesLines(play)) lines.push(`${indent}  - ${line}`);
+  lines.push(`${indent}Numerology matches:`);
+  for (const line of formatNumerologyMatchLines(play)) lines.push(`${indent}  - ${line}`);
+  lines.push(`${indent}HR Context:`);
+  for (const line of formatHrContextLines(play)) lines.push(`${indent}  - ${line}`);
+}
+
+function pushResultBucketLines(lines, title, subtitle, bucket, threshold) {
+  lines.push(`${title}${subtitle ? ` (${subtitle})` : ""}`);
+  lines.push(`  Top Play: ${formatAggregateStatLine(bucket.topPlay)}`);
+  lines.push(`  All >${threshold} Plays: ${formatAggregateStatLine(bucket.over50)}`);
+}
+
 export function renderEmailText(card, summary) {
   const lines = [];
   lines.push(`MLB NUMEROLOGY PLAYS — ${card.date}`);
@@ -692,11 +796,7 @@ export function renderEmailText(card, summary) {
     lines.push("TOP PLAY");
     lines.push("===================");
     lines.push(formatPlayLine(card.topPlay));
-    lines.push(`Match type: ${card.topPlay.matchType || "Live board"}`);
-    lines.push(`Lineup: ${formatLineup(card.topPlay)} | Activity: ${formatActivity(card.topPlay)}`);
-    lines.push("Numerology matches:");
-    for (const line of formatNumerologyMatchLines(card.topPlay)) lines.push(`  - ${line}`);
-    lines.push(`HR context: ${formatHrContext(card.topPlay)}`);
+    pushPlayDetailLines(lines, card.topPlay, "");
     if (card.topPlay.explanation) lines.push(`Note: ${card.topPlay.explanation}`);
     lines.push("");
   }
@@ -714,18 +814,21 @@ export function renderEmailText(card, summary) {
     lines.push("");
     card.allQualifiedPlaysOver50.forEach((play, index) => {
       lines.push(`--- ${index + 1}. ${formatPlayLine(play)} ---`);
-      lines.push(`   ${play.matchType || "Live board"} | ${formatLineup(play)} | ${formatActivity(play)}`);
-      lines.push("   Numerology matches:");
-      for (const line of formatNumerologyMatchLines(play)) lines.push(`     - ${line}`);
-      lines.push(`   HR context: ${formatHrContext(play)}`);
+      pushPlayDetailLines(lines, play, "   ");
       lines.push("");
     });
   }
   lines.push("===================");
   lines.push("TRACKING SNAPSHOT");
   lines.push("===================");
-  lines.push(`Top Play: ${formatBucket(summary?.topPlay)}`);
-  lines.push(`All >50 Plays: ${formatBucket(summary?.over50)}`);
+  const buckets = summary?.resultBuckets;
+  if (!buckets) {
+    lines.push("No tracking data yet.");
+  } else {
+    pushResultBucketLines(lines, "Previous Day", buckets.previousDay.date, buckets.previousDay, card.scoreThreshold);
+    lines.push("");
+    pushResultBucketLines(lines, "Overall", "all tracked slates", buckets.overall, card.scoreThreshold);
+  }
   lines.push("");
   lines.push(`View the full MLB Numerology board: ${card.livePageUrl ?? MLB_NUMEROLOGY_LIVE_URL}`);
   lines.push("Experimental numerology/model signals only. Not guaranteed. Not validated betting edges. Not locks.");
@@ -756,16 +859,132 @@ function renderMatchListHtml(play) {
     .join("")}</ul>`;
 }
 
+/**
+ * Score tiers matching the site's model-score system: 75+ elite, 65-74
+ * strong, 55-64 solid, 51-54 watchlist, everything else muted. Each pair
+ * keeps at least WCAG AA contrast for bold/large badge text.
+ */
+function getScoreTierColors(score) {
+  const value = Number(score);
+  if (!Number.isFinite(value)) return { background: "#e2e8f0", color: "#334155" };
+  if (value >= 75) return { background: "#065f46", color: "#ffffff" }; // elite
+  if (value >= 65) return { background: "#0d9488", color: "#ffffff" }; // strong
+  if (value >= 55) return { background: "#b45309", color: "#ffffff" }; // solid
+  if (value >= 51) return { background: "#334155", color: "#ffffff" }; // watchlist
+  return { background: "#e2e8f0", color: "#334155" }; // below threshold / muted
+}
+
 /** Colored, rounded numerology-score badge. Falls back to a plain rectangle where border-radius isn't honored. */
 function renderScoreBadgeHtml(score, { large = false } = {}) {
   const size = large ? "font-size:22px;padding:8px 16px;" : "font-size:14px;padding:4px 10px;";
-  return `<span style="display:inline-block;${size}font-weight:700;font-family:${EMAIL_FONT};color:#ffffff;background-color:#0f172a;border-radius:999px;line-height:1.2;">${escapeHtml(String(score))}</span>`;
+  const tier = getScoreTierColors(score);
+  return `<span style="display:inline-block;${size}font-weight:700;font-family:${EMAIL_FONT};color:${tier.color};background-color:${tier.background};border-radius:999px;line-height:1.2;">${escapeHtml(String(score))}</span>`;
 }
 
 function renderTeamLogoImgHtml(team, { size = 40 } = {}) {
   const url = getEmailTeamLogoUrl(team);
   const label = escapeHtml(team || "MLB team logo");
   return `<img src="${url}" width="${size}" height="${size}" alt="${label} logo" style="display:block;width:${size}px;height:${size}px;border:0;outline:none;text-decoration:none;" />`;
+}
+
+const CONTEXT_TH_STYLE = `padding:4px 6px;font-family:${EMAIL_FONT};font-size:9px;font-weight:800;letter-spacing:0.3px;text-transform:uppercase;color:${EMAIL_MUTED};`;
+const CONTEXT_TD_STYLE = `padding:4px 6px;border-top:1px solid ${EMAIL_BORDER};font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_INK};`;
+
+/** Compact "Last 5 Games" table (Opp/AB/H/HR/TB/RBI), or a graceful unavailable line with the existing AB summary. */
+function renderLastFiveGamesHtml(play) {
+  const games = play?.lastFiveGames?.games ?? [];
+  if (!games.length) {
+    return `<div style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};">Last 5 game logs unavailable. ${escapeHtml(formatActivity(play))}</div>`;
+  }
+  const rows = games
+    .map(
+      (game) => `
+        <tr>
+          <td style="${CONTEXT_TD_STYLE}">${escapeHtml(game.opponent ?? "—")}</td>
+          <td style="${CONTEXT_TD_STYLE}text-align:center;">${game.atBats ?? "—"}</td>
+          <td style="${CONTEXT_TD_STYLE}text-align:center;">${game.hits ?? "—"}</td>
+          <td style="${CONTEXT_TD_STYLE}text-align:center;">${game.homeRuns ?? "—"}</td>
+          <td style="${CONTEXT_TD_STYLE}text-align:center;">${game.totalBases ?? "—"}</td>
+          <td style="${CONTEXT_TD_STYLE}text-align:center;">${game.rbi ?? "—"}</td>
+        </tr>`
+    )
+    .join("");
+  return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${EMAIL_BORDER};border-radius:6px;overflow:hidden;">
+        <tr style="background-color:#f8fafc;">
+          <th align="left" style="${CONTEXT_TH_STYLE}">Opp</th>
+          <th align="center" style="${CONTEXT_TH_STYLE}">AB</th>
+          <th align="center" style="${CONTEXT_TH_STYLE}">H</th>
+          <th align="center" style="${CONTEXT_TH_STYLE}">HR</th>
+          <th align="center" style="${CONTEXT_TH_STYLE}">TB</th>
+          <th align="center" style="${CONTEXT_TH_STYLE}">RBI</th>
+        </tr>
+        ${rows}
+      </table>`;
+}
+
+/** Compact "Season Stats" row (AVG/OBP/SLG/OPS/HR/RBI/AB), or a graceful unavailable line. */
+function renderSeasonStatsHtml(play) {
+  const stats = play?.seasonStats;
+  if (!stats) {
+    return `<div style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};">Season stats unavailable.</div>`;
+  }
+  const cell = (label, value) => `
+        <td style="padding:2px 12px 2px 0;font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};white-space:nowrap;">
+          <span style="font-weight:700;color:${EMAIL_INK};">${label}</span> ${escapeHtml(value ?? "—")}
+        </td>`;
+  return `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;">
+        <tr>${cell("AVG", stats.avg)}${cell("OBP", stats.obp)}${cell("SLG", stats.slg)}${cell("OPS", stats.ops)}</tr>
+        <tr>${cell("HR", stats.homeRuns)}${cell("RBI", stats.rbi)}${cell("AB", stats.atBats)}</tr>
+      </table>`;
+}
+
+/** Every available HR-context field as its own label/value entry -- never a fabricated placeholder for a missing one. */
+function buildHrContextEntries(play) {
+  if (play.hrEnrichmentStatus === "missing-hr-source") {
+    return [{ label: "Status", value: "HR props source missing; numerology ranking unchanged." }];
+  }
+  if (play.hrEnrichmentStatus === "no-hr-match") {
+    return [{ label: "Status", value: "No HR props match; numerology ranking unchanged." }];
+  }
+  const entries = [];
+  if (play.hrScore != null) entries.push({ label: "HR Score", value: String(play.hrScore) });
+  if (play.hrOddsYes) entries.push({ label: "Odds", value: `${play.hrOddsYes}${play.hrOddsBook ? ` at ${play.hrOddsBook}` : ""}` });
+  if (play.marketImpliedProbability != null) entries.push({ label: "Implied", value: `${roundNumber(play.marketImpliedProbability * 100, 1)}%` });
+  if (play.barrelRate != null) entries.push({ label: "Barrel", value: `${play.barrelRate}%` });
+  if (play.hardHitRate != null) entries.push({ label: "Hard Hit", value: `${play.hardHitRate}%` });
+  if (play.iso != null) entries.push({ label: "ISO", value: String(play.iso) });
+  if (play.last7HR != null || play.last30HR != null) entries.push({ label: "HR Form", value: `${play.last7HR ?? "—"} last 7 / ${play.last30HR ?? "—"} last 30` });
+  if (play.opposingPitcherHrVs != null) entries.push({ label: "Pitcher HR Vulnerability", value: String(play.opposingPitcherHrVs) });
+  return entries.length ? entries : [{ label: "Status", value: "HR context unavailable; numerology ranking unchanged." }];
+}
+
+/** Compact two-column (label/value) HR-context table -- deliberately not a wide multi-column table, so it stays readable on mobile. */
+function renderHrContextHtml(play) {
+  const entries = buildHrContextEntries(play);
+  const rows = entries
+    .map(
+      (entry, index) => `
+        <tr>
+          <td style="padding:5px 8px;${index > 0 ? `border-top:1px solid ${EMAIL_BORDER};` : ""}font-family:${EMAIL_FONT};font-size:11px;font-weight:700;color:${EMAIL_MUTED};width:42%;">${escapeHtml(entry.label)}</td>
+          <td style="padding:5px 8px;${index > 0 ? `border-top:1px solid ${EMAIL_BORDER};` : ""}font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_INK};">${escapeHtml(entry.value)}</td>
+        </tr>`
+    )
+    .join("");
+  return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${EMAIL_BORDER};border-radius:6px;overflow:hidden;">
+        ${rows}
+      </table>`;
+}
+
+/** Opposing pitcher name + xERA for the compact summary table, or a graceful unavailable line. */
+function renderOpposingPitcherCellHtml(play) {
+  if (!play.opposingPitcher) {
+    return `<span style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};">Opposing pitcher unavailable</span>`;
+  }
+  const xeraText = play.pitcherXera != null ? `xERA ${play.pitcherXera}` : "xERA unavailable";
+  return `<div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_INK};font-weight:700;white-space:nowrap;">${escapeHtml(play.opposingPitcher)}</div><div style="font-family:${EMAIL_FONT};font-size:10px;color:${EMAIL_MUTED};margin-top:1px;">${escapeHtml(xeraText)}</div>`;
 }
 
 function renderSectionHeadingHtml(title, subtitle) {
@@ -821,7 +1040,12 @@ function renderTopPlayHeroHtml(topPlay) {
               </tr>
             </table>
             <div style="font-family:${EMAIL_FONT};font-size:13px;color:${EMAIL_INK};line-height:1.6;margin-top:14px;">${escapeHtml(topPlay.explanation || "No note available.")}</div>
-            <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};margin-top:10px;">Lineup: ${escapeHtml(formatLineup(topPlay))} · Activity: ${escapeHtml(formatActivity(topPlay))}</div>
+
+            <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:14px;">Season Stats</div>
+            <div style="margin-top:4px;">${renderSeasonStatsHtml(topPlay)}</div>
+
+            <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:12px;">Last 5 Games</div>
+            <div style="margin-top:4px;">${renderLastFiveGamesHtml(topPlay)}</div>
           </td>
         </tr>
       </table>
@@ -842,7 +1066,7 @@ function renderSummaryTableHtml(plays) {
           </td>
           <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BORDER};font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};vertical-align:top;white-space:nowrap;">${escapeHtml(play.team)} vs ${escapeHtml(play.opponent)}</td>
           <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BORDER};vertical-align:top;text-align:center;">${renderScoreBadgeHtml(play.numerologyScore)}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BORDER};font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};vertical-align:top;white-space:nowrap;">${escapeHtml(formatLineup(play))}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid ${EMAIL_BORDER};vertical-align:top;">${renderOpposingPitcherCellHtml(play)}</td>
         </tr>`).join("");
 
   return `
@@ -853,7 +1077,7 @@ function renderSummaryTableHtml(plays) {
           <th align="left" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Player</th>
           <th align="left" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Matchup</th>
           <th align="center" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Score</th>
-          <th align="left" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Lineup</th>
+          <th align="left" style="padding:8px 10px;font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Opposing Pitcher</th>
         </tr>
         ${rows}
       </table>
@@ -864,9 +1088,6 @@ function renderSummaryTableHtml(plays) {
 /** One bordered, team-accented card per play — the primary detailed layout (stacked, not a wide table). */
 function renderPlayCardHtml(play, index) {
   const colors = getEmailTeamColors(play.team);
-  const oddsLine = play.hrOddsYes
-    ? `${escapeHtml(play.hrOddsYes)}${play.hrOddsBook ? ` at ${escapeHtml(play.hrOddsBook)}` : ""}`
-    : null;
 
   return `
   <tr>
@@ -885,24 +1106,42 @@ function renderPlayCardHtml(play, index) {
               </tr>
             </table>
 
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;">
-              <tr>
-                <td width="50%" valign="top" style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};padding-right:8px;">
-                  <span style="font-weight:700;color:${EMAIL_INK};">Lineup spot:</span> ${escapeHtml(formatLineup(play))}
-                </td>
-                <td width="50%" valign="top" style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};">
-                  <span style="font-weight:700;color:${EMAIL_INK};">Recent activity:</span> ${escapeHtml(formatActivity(play))}
-                </td>
-              </tr>
-            </table>
+            <div style="font-family:${EMAIL_FONT};font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:14px;">Season Stats</div>
+            <div style="margin-top:4px;">${renderSeasonStatsHtml(play)}</div>
+
+            <div style="font-family:${EMAIL_FONT};font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:14px;">Last 5 Games</div>
+            <div style="margin-top:4px;">${renderLastFiveGamesHtml(play)}</div>
 
             <div style="font-family:${EMAIL_FONT};font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:14px;">Numerology matches</div>
             <div style="margin-top:4px;">${renderMatchListHtml(play)}</div>
 
-            <div style="font-family:${EMAIL_FONT};font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:14px;">HR context</div>
-            <div style="font-family:${EMAIL_FONT};font-size:12.5px;color:${EMAIL_INK};line-height:1.6;margin-top:4px;">${escapeHtml(formatHrContext(play))}</div>
+            <div style="font-family:${EMAIL_FONT};font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${colors.primary};margin-top:14px;">HR Context</div>
+            <div style="margin-top:4px;">${renderHrContextHtml(play)}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>`;
+}
 
-            ${oddsLine ? `<div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_MUTED};margin-top:10px;"><span style="font-weight:700;color:${EMAIL_INK};">Odds:</span> ${oddsLine}</div>` : ""}
+/** One "Previous Day" / "Overall" block: a label row plus Top Play / All >50 Plays aggregated stat lines. */
+function renderResultBucketBlockHtml(title, subtitle, bucket, threshold) {
+  return `
+  <tr>
+    <td style="padding:12px 24px 0;">
+      <div style="font-family:${EMAIL_FONT};font-size:13px;font-weight:800;color:${EMAIL_INK};">${escapeHtml(title)}</div>
+      ${subtitle ? `<div style="font-family:${EMAIL_FONT};font-size:11px;color:${EMAIL_MUTED};margin-top:2px;">${escapeHtml(subtitle)}</div>` : ""}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${EMAIL_BORDER};border-radius:8px;margin-top:8px;">
+        <tr>
+          <td style="padding:12px 16px;border-bottom:1px solid ${EMAIL_BORDER};vertical-align:top;">
+            <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Top Play</div>
+            <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_INK};margin-top:4px;line-height:1.5;">${escapeHtml(formatAggregateStatLine(bucket.topPlay))}</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:12px 16px;vertical-align:top;">
+            <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">All &gt;${escapeHtml(String(threshold))} Plays</div>
+            <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_INK};margin-top:4px;line-height:1.5;">${escapeHtml(formatAggregateStatLine(bucket.over50))}</div>
           </td>
         </tr>
       </table>
@@ -911,23 +1150,15 @@ function renderPlayCardHtml(play, index) {
 }
 
 function renderTrackingSnapshotHtml(summary, threshold) {
-  return `
-  <tr>
-    <td style="padding:12px 24px 0;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${EMAIL_BORDER};border-radius:8px;">
-        <tr>
-          <td width="50%" style="padding:14px 16px;border-right:1px solid ${EMAIL_BORDER};vertical-align:top;">
-            <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">Top Play (tracking)</div>
-            <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_INK};margin-top:4px;line-height:1.5;">${escapeHtml(formatBucket(summary?.topPlay))}</div>
-          </td>
-          <td width="50%" style="padding:14px 16px;vertical-align:top;">
-            <div style="font-family:${EMAIL_FONT};font-size:10px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;color:${EMAIL_MUTED};">All &gt;${escapeHtml(String(threshold))} Plays</div>
-            <div style="font-family:${EMAIL_FONT};font-size:12px;color:${EMAIL_INK};margin-top:4px;line-height:1.5;">${escapeHtml(formatBucket(summary?.over50))}</div>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>`;
+  const buckets = summary?.resultBuckets;
+  if (!buckets) {
+    return `
+  <tr><td style="padding:12px 24px 0;"><div style="font-family:${EMAIL_FONT};font-size:13px;color:${EMAIL_MUTED};">No tracking data yet.</div></td></tr>`;
+  }
+  return [
+    renderResultBucketBlockHtml("Previous Day", buckets.previousDay.date, buckets.previousDay, threshold),
+    renderResultBucketBlockHtml("Overall", "All tracked slates", buckets.overall, threshold),
+  ].join("");
 }
 
 function renderFooterHtml(card) {
@@ -1000,19 +1231,6 @@ function formatNumerologyMatchLines(play) {
   return signals.map(describeNumerologyMatch);
 }
 
-function formatBucket(bucket) {
-  if (!bucket) return "no tracking data yet";
-  const rate = bucket.hrHitRate == null ? "pending" : `${Math.round(bucket.hrHitRate * 100)}% HR hit rate`;
-  return `${bucket.finalized}/${bucket.totalRecords} finalized, ${bucket.hrHits} HR hits, ${rate}, avg TB ${bucket.averageTotalBases ?? "—"}`;
-}
-
-function formatLineup(play) {
-  const pieces = [];
-  if (play.battingOrder != null) pieces.push(`batting ${play.battingOrder}`);
-  if (play.lineupStatus) pieces.push(play.lineupStatus);
-  return pieces.length ? pieces.join(", ") : "lineup unavailable";
-}
-
 function formatActivity(play) {
   const activity = play?.recentActivity;
   if (!activity) return "activity unavailable";
@@ -1022,21 +1240,6 @@ function formatActivity(play) {
   if (previous2 != null) parts.push(`${previous2} AB previous 2 games`);
   if (previous5 != null) parts.push(`${previous5} AB previous 5 games`);
   return parts.length ? parts.join(", ") : "activity checked";
-}
-
-function formatHrContext(play) {
-  if (play.hrEnrichmentStatus === "missing-hr-source") return "HR props source missing; numerology ranking unchanged.";
-  if (play.hrEnrichmentStatus === "no-hr-match") return "No HR props match; numerology ranking unchanged.";
-  const parts = [];
-  if (play.hrScore != null) parts.push(`HR score ${play.hrScore}`);
-  if (play.hrOddsYes) parts.push(`odds ${play.hrOddsYes}${play.hrOddsBook ? ` at ${play.hrOddsBook}` : ""}`);
-  if (play.marketImpliedProbability != null) parts.push(`market implied probability ${roundNumber(play.marketImpliedProbability * 100, 1)}%`);
-  if (play.barrelRate != null) parts.push(`barrel ${play.barrelRate}%`);
-  if (play.hardHitRate != null) parts.push(`hard-hit ${play.hardHitRate}%`);
-  if (play.iso != null) parts.push(`ISO ${play.iso}`);
-  if (play.last7HR != null || play.last30HR != null) parts.push(`HR form L7/L30 ${play.last7HR ?? "—"}/${play.last30HR ?? "—"}`);
-  if (play.opposingPitcherHrVs != null) parts.push(`pitcher HR vulnerability ${play.opposingPitcherHrVs}`);
-  return parts.length ? parts.join("; ") : "HR context unavailable; numerology ranking unchanged.";
 }
 
 function escapeHtml(value) {
