@@ -23,6 +23,7 @@ import MlbStrikeoutProps from "./pages/MlbStrikeoutPropsWithDebug";
 import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import MlbNumerologyPage from "./pages/MlbNumerologyPage";
+import MlbNumerologyXExport from "./pages/MlbNumerologyXExport";
 import MlbPowerRankings from "./pages/MlbPowerRankings";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
@@ -118,6 +119,8 @@ const App = () => (
           <Route path="/mlb/strikeout-props" element={<MlbStrikeoutProps />} />
           <Route path="/mlb/batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
           <Route path="/mlb/numerology" element={<MlbNumerologyPage />} />
+          {/* Unlinked, dedicated route for the X-post screenshot generator (scripts/post-mlb-numerology-to-x.mjs) -- not part of site navigation. */}
+          <Route path="/mlb/numerology/x-export" element={<MlbNumerologyXExport />} />
           <Route path="/mlb/power-rankings" element={<MlbPowerRankings />} />
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<PgaHistoryModel />} />
