@@ -87,7 +87,13 @@ function mockPropsData(rows: PitcherStrikeoutTeamRow[]) {
   }));
 }
 
-function mockDetails(options: { detailsByKey?: Map<string, StrikeoutPropDetail>; loading?: boolean; fileUnavailable?: boolean }) {
+function mockDetails(options: {
+  detailsByKey?: Map<string, StrikeoutPropDetail>;
+  loading?: boolean;
+  fileUnavailable?: boolean;
+  /** Defaults to the dashboard fixture's own date so existing tests are unaffected; pass a different date to simulate a stale details file. */
+  detailsDate?: string | null;
+}) {
   vi.doMock("@/hooks/useMlbStrikeoutPropDetails", async () => {
     const actual = await vi.importActual<typeof import("@/hooks/useMlbStrikeoutPropDetails")>("@/hooks/useMlbStrikeoutPropDetails");
     return {
@@ -96,6 +102,7 @@ function mockDetails(options: { detailsByKey?: Map<string, StrikeoutPropDetail>;
         loading: options.loading ?? false,
         fileUnavailable: options.fileUnavailable ?? false,
         detailsByKey: options.detailsByKey ?? new Map(),
+        detailsDate: options.detailsDate === undefined ? dashboardFixture.date : options.detailsDate,
       }),
     };
   });
@@ -201,6 +208,46 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
 
     fireEvent.click(firstTrigger("Hide recent strikeout details for Dean Kremer"));
     await waitFor(() => expect(screen.queryAllByTestId("strikeout-prop-detail").length).toBe(0));
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("shows a global stale-data warning (not a per-pitcher unavailable message) when the details file's date doesn't match the current slate", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow]);
+    // The details file loaded successfully and has real data for Kremer,
+    // but it was generated for 2026-07-07 while the live slate (dashboardFixture)
+    // is 2026-07-08 -- every row key will fail to match by date alone. This is
+    // the exact bug reported from the Vercel preview: a stale committed file
+    // masquerading as "no details for this pitcher" instead of a global staleness issue.
+    mockDetails({ detailsByKey: new Map([[availableDetail.key, availableDetail]]), detailsDate: "2026-07-07" });
+    await renderPage();
+
+    // Global banner is visible immediately, before any row is expanded.
+    expect(screen.getAllByTestId("strikeout-prop-details-stale-warning").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/out of date/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/2026-07-07/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/2026-07-08/).length).toBeGreaterThan(0);
+
+    fireEvent.click(firstTrigger("Show recent strikeout details for Dean Kremer"));
+
+    await waitFor(() => expect(screen.getAllByTestId("strikeout-prop-detail-stale").length).toBeGreaterThan(0));
+    // Must NOT show the misleading per-pitcher "not available for Dean Kremer" message.
+    expect(screen.queryAllByTestId("strikeout-prop-detail-unavailable").length).toBe(0);
+    expect(screen.queryAllByText(/not available for Dean Kremer/i).length).toBe(0);
+    // Must NOT render the real (mismatched-date) detail data either.
+    expect(screen.queryAllByTestId("strikeout-prop-detail").length).toBe(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("does not show the stale warning when the details file's date matches the current slate", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow]);
+    mockDetails({ detailsByKey: new Map([[availableDetail.key, availableDetail]]) }); // detailsDate defaults to dashboardFixture.date
+    await renderPage();
+
+    expect(screen.queryAllByTestId("strikeout-prop-details-stale-warning").length).toBe(0);
+
+    fireEvent.click(firstTrigger("Show recent strikeout details for Dean Kremer"));
+    await waitFor(() => expect(screen.getAllByTestId("strikeout-prop-detail").length).toBeGreaterThan(0));
+    expect(screen.queryAllByTestId("strikeout-prop-detail-stale").length).toBe(0);
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("preserves the base table layout and ranking columns", async () => {

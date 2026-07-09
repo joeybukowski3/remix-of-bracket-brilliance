@@ -42,6 +42,8 @@ type State = {
   /** true only when the file itself could not be loaded at all (missing/malformed) */
   fileUnavailable: boolean;
   detailsByKey: Map<string, StrikeoutPropDetail>;
+  /** the slate date the details file itself was generated for (its top-level `date`), independent of any row's gameDate */
+  detailsDate: string | null;
 };
 
 const POLL_INTERVAL_MS = 10 * 60 * 1000;
@@ -52,7 +54,7 @@ export function keyForStrikeoutPropRow(row: { pitcher: string; team: string; opp
 }
 
 export function useMlbStrikeoutPropDetails() {
-  const [state, setState] = useState<State>({ loading: true, fileUnavailable: false, detailsByKey: new Map() });
+  const [state, setState] = useState<State>({ loading: true, fileUnavailable: false, detailsByKey: new Map(), detailsDate: null });
   const lastGeneratedAt = useRef<string | null>(null);
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export function useMlbStrikeoutPropDetails() {
         const response = await fetch("/data/mlb/strikeout-prop-details.json", { cache: "no-store" });
         if (!active) return;
         if (!response.ok) {
-          setState({ loading: false, fileUnavailable: true, detailsByKey: new Map() });
+          setState({ loading: false, fileUnavailable: true, detailsByKey: new Map(), detailsDate: null });
           return;
         }
         const payload = (await response.json()) as DetailsPayload;
@@ -76,10 +78,11 @@ export function useMlbStrikeoutPropDetails() {
           loading: false,
           fileUnavailable: false,
           detailsByKey: new Map(details.map((detail) => [detail.key, detail])),
+          detailsDate: payload?.date ?? null,
         });
       } catch {
         if (!active) return;
-        setState({ loading: false, fileUnavailable: true, detailsByKey: new Map() });
+        setState({ loading: false, fileUnavailable: true, detailsByKey: new Map(), detailsDate: null });
       }
     }
 

@@ -23,7 +23,9 @@ import { buildKPropBestBets, type KBestBet } from "@/lib/mlb/kPropBestBets";
 import { cn } from "@/lib/utils";
 import { keyForStrikeoutPropRow, useMlbStrikeoutPropDetails } from "@/hooks/useMlbStrikeoutPropDetails";
 import MlbStrikeoutPropRowDetail, {
+  MlbStrikeoutPropDetailsStaleBanner,
   MlbStrikeoutPropRowDetailLoading,
+  MlbStrikeoutPropRowDetailStale,
   MlbStrikeoutPropRowDetailUnavailable,
 } from "@/components/mlb/MlbStrikeoutPropRowDetail";
 
@@ -183,7 +185,7 @@ function KBestBetsSection({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
 export default function MlbStrikeoutProps() {
   usePageSeo(getSeoMeta("mlb-strikeout-props"));
   const { dashboard, games, loading, strikeoutDetailRows } = useMlbPropsData();
-  const { loading: detailsLoading, fileUnavailable: detailsUnavailable, detailsByKey } = useMlbStrikeoutPropDetails();
+  const { loading: detailsLoading, fileUnavailable: detailsUnavailable, detailsByKey, detailsDate } = useMlbStrikeoutPropDetails();
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("all");
@@ -192,6 +194,12 @@ export default function MlbStrikeoutProps() {
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
   const slateDate = dashboard?.date ?? null;
+  // A details file loaded successfully but generated for a different slate
+  // than the page is currently showing (e.g. yesterday's committed data
+  // still deployed on today's slate). Every row key will fail to match in
+  // this state -- that's expected, not a per-pitcher data gap, so it gets
+  // its own global banner + row message instead of the generic "unavailable".
+  const isDetailsStale = Boolean(detailsDate && slateDate && detailsDate !== slateDate);
 
   const toggleRow = (row: PitcherStrikeoutTeamRow) => {
     const key = keyForStrikeoutPropRow(row, slateDate);
@@ -202,6 +210,7 @@ export default function MlbStrikeoutProps() {
     const key = keyForStrikeoutPropRow(row, slateDate);
     if (detailsLoading) return <MlbStrikeoutPropRowDetailLoading />;
     if (detailsUnavailable) return <MlbStrikeoutPropRowDetailUnavailable pitcher={row.pitcher} />;
+    if (isDetailsStale) return <MlbStrikeoutPropRowDetailStale />;
     const detail = detailsByKey.get(key);
     if (!detail) return <MlbStrikeoutPropRowDetailUnavailable pitcher={row.pitcher} />;
     return <MlbStrikeoutPropRowDetail detail={detail} />;
@@ -259,6 +268,7 @@ export default function MlbStrikeoutProps() {
         <div className="site-container space-y-4">
           <MlbNavHero />
           <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={strikeoutDetailRows.length} bestScore={bestScore} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
+          {isDetailsStale && <MlbStrikeoutPropDetailsStaleBanner detailsDate={detailsDate} slateDate={slateDate} />}
           <KBestBetsSection rows={strikeoutDetailRows} />
 
           <div className="grid gap-3 xl:grid-cols-[260px_minmax(0,1fr)]">

@@ -101,6 +101,38 @@ export function MlbStrikeoutPropRowDetailUnavailable({ pitcher }: { pitcher: str
   );
 }
 
+/**
+ * Shown per-row instead of MlbStrikeoutPropRowDetailUnavailable when the
+ * details file's own slate date doesn't match the page's current slate
+ * date. Deliberately does not say "not available for {pitcher}" -- that
+ * phrasing reads as a per-pitcher data gap when the real cause is a global
+ * stale file, which the banner above the table already explains.
+ */
+export function MlbStrikeoutPropRowDetailStale() {
+  return (
+    <div
+      data-testid="strikeout-prop-detail-stale"
+      className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-3 text-center text-xs text-amber-700"
+    >
+      Detail data is out of date for the current slate — see the notice above.
+    </div>
+  );
+}
+
+/** Global banner shown once above the table when the details file's slate date doesn't match the page's current slate date. */
+export function MlbStrikeoutPropDetailsStaleBanner({ detailsDate, slateDate }: { detailsDate: string | null; slateDate: string | null }) {
+  return (
+    <div
+      data-testid="strikeout-prop-details-stale-warning"
+      role="alert"
+      className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800"
+    >
+      Strikeout detail data is out of date (showing {detailsDate ?? "an earlier slate"}, current slate is {slateDate ?? "today"}). Row
+      detail panels are temporarily unavailable until the data refreshes. Base rankings above are unaffected.
+    </div>
+  );
+}
+
 export default function MlbStrikeoutPropRowDetail({ detail }: { detail: StrikeoutPropDetail }) {
   const startRows: ReactNode[][] = detail.pitcherLastFiveStarts.map((start, index) => [
     fmtDate(start.date),
