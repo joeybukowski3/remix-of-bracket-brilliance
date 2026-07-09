@@ -89,7 +89,7 @@ jobs:
           ready=false
           for attempt in 1 2 3 4 5 6 7 8; do
             echo "Production readiness check ${attempt}/8"
-            if node scripts/post-mlb-strikeout-props-to-x.mjs --post-key-only; then
+            if node scripts/post-mlb-social-to-x.mjs --target k --post-key-only; then
               ready=true
               break
             fi
@@ -110,9 +110,9 @@ jobs:
             MODE="${{ inputs.mode || 'post' }}"
           fi
           echo "Mode: $MODE"
-          node scripts/post-mlb-strikeout-props-to-x.mjs "--${MODE}"
+          node scripts/post-mlb-social-to-x.mjs --target k "--${MODE}"
         env:
-          K_PROPS_DATA_SOURCE: production
+          K_PROPS_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.data_source || 'production' }}
           X_ALLOW_LIVE_POST: "true"
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
