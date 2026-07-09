@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
@@ -21,6 +21,13 @@ import {
 } from "@/pages/MlbHrProps";
 import { buildKPropBestBets, type KBestBet } from "@/lib/mlb/kPropBestBets";
 import { cn } from "@/lib/utils";
+import { keyForStrikeoutPropRow, useMlbStrikeoutPropDetails } from "@/hooks/useMlbStrikeoutPropDetails";
+import MlbStrikeoutPropRowDetail, {
+  MlbStrikeoutPropDetailsStaleBanner,
+  MlbStrikeoutPropRowDetailLoading,
+  MlbStrikeoutPropRowDetailStale,
+  MlbStrikeoutPropRowDetailUnavailable,
+} from "@/components/mlb/MlbStrikeoutPropRowDetail";
 
 const DASH = "—";
 
@@ -178,12 +185,36 @@ function KBestBetsSection({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
 export default function MlbStrikeoutProps() {
   usePageSeo(getSeoMeta("mlb-strikeout-props"));
   const { dashboard, games, loading, strikeoutDetailRows } = useMlbPropsData();
+  const { loading: detailsLoading, fileUnavailable: detailsUnavailable, detailsByKey, detailsDate } = useMlbStrikeoutPropDetails();
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("all");
   const [confidenceFilter, setConfidenceFilter] = useState("All tiers");
   const [sortKey, setSortKey] = useState<SortKey>("strikeoutMatchupScore");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
+  const slateDate = dashboard?.date ?? null;
+  // A details file loaded successfully but generated for a different slate
+  // than the page is currently showing (e.g. yesterday's committed data
+  // still deployed on today's slate). Every row key will fail to match in
+  // this state -- that's expected, not a per-pitcher data gap, so it gets
+  // its own global banner + row message instead of the generic "unavailable".
+  const isDetailsStale = Boolean(detailsDate && slateDate && detailsDate !== slateDate);
+
+  const toggleRow = (row: PitcherStrikeoutTeamRow) => {
+    const key = keyForStrikeoutPropRow(row, slateDate);
+    setExpandedRowKey((current) => (current === key ? null : key));
+  };
+
+  function RowDetailPanel({ row }: { row: PitcherStrikeoutTeamRow }) {
+    const key = keyForStrikeoutPropRow(row, slateDate);
+    if (detailsLoading) return <MlbStrikeoutPropRowDetailLoading />;
+    if (detailsUnavailable) return <MlbStrikeoutPropRowDetailUnavailable pitcher={row.pitcher} />;
+    if (isDetailsStale) return <MlbStrikeoutPropRowDetailStale />;
+    const detail = detailsByKey.get(key);
+    if (!detail) return <MlbStrikeoutPropRowDetailUnavailable pitcher={row.pitcher} />;
+    return <MlbStrikeoutPropRowDetail detail={detail} />;
+  }
 
   const parkRows = useMemo(() => [...buildParkSidebarRows(games)].sort((a, b) => a.parkFactor - b.parkFactor), [games]);
   const teams = useMemo(() => Array.from(new Set(strikeoutDetailRows.flatMap((row) => [row.team, row.opponent]))).sort(), [strikeoutDetailRows]);
@@ -237,6 +268,7 @@ export default function MlbStrikeoutProps() {
         <div className="site-container space-y-4">
           <MlbNavHero />
           <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={strikeoutDetailRows.length} bestScore={bestScore} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
+          {isDetailsStale && <MlbStrikeoutPropDetailsStaleBanner detailsDate={detailsDate} slateDate={slateDate} />}
           <KBestBetsSection rows={strikeoutDetailRows} />
 
           <div className="grid gap-3 xl:grid-cols-[260px_minmax(0,1fr)]">
@@ -281,20 +313,66 @@ export default function MlbStrikeoutProps() {
                     <thead className="sticky top-0 z-20"><tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
                       <SortTh k="rank" label="#" /><SortTh k="pitcher" label="Pitcher" />{hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K/9</th><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Avg IP</th>
                     </tr></thead>
-                    <tbody>{filteredRows.length ? filteredRows.map((row, index) => <tr key={`${row.rank}-${row.pitcher}-${row.team}`} className={index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
-                      <td className="border-b border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400">{row.rank}</td><td className="border-b border-slate-100 px-2 py-1"><div className="flex items-center gap-1"><MlbTeamLogo team={row.team} size={16} /><span className="whitespace-nowrap text-[11px] font-semibold text-slate-900">{row.pitcher}</span><span className="text-[9px] text-slate-400">vs {row.opponent}</span></div></td>
+                    <tbody>{filteredRows.length ? filteredRows.map((row, index) => {
+                      const rowKey = keyForStrikeoutPropRow(row, slateDate);
+                      const isExpanded = expandedRowKey === rowKey;
+                      const desktopColumnCount = hasKOdds ? 13 : 12;
+                      return (
+                      <Fragment key={`${row.rank}-${row.pitcher}-${row.team}`}>
+                      <tr className={index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                      <td className="border-b border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400">{row.rank}</td><td className="border-b border-slate-100 px-2 py-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleRow(row)}
+                          aria-expanded={isExpanded}
+                          aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
+                          className="flex items-center gap-1 text-left hover:opacity-80"
+                        >
+                          <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                          <MlbTeamLogo team={row.team} size={16} /><span className="whitespace-nowrap text-[11px] font-semibold text-slate-900">{row.pitcher}</span><span className="text-[9px] text-slate-400">vs {row.opponent}</span>
+                        </button>
+                      </td>
                       {hasKOdds && <td className="border-b border-slate-100 px-2 py-1"><div className="font-semibold text-slate-900">{fmt(row.kLine)}</div><div className="text-[9px] text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</div></td>}
                       <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKVs} /></td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKSkillScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.opponentTeamStrikeoutScore} /></td><td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(row.projectedK9)}</td><td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(row.projectedIP)}</td>
-                    </tr>) : <tr><td colSpan={13} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>}</tbody>
+                      </tr>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={desktopColumnCount} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
+                            <RowDetailPanel row={row} />
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
+                      );
+                    }) : <tr><td colSpan={13} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>}</tbody>
                   </table>
                 </div>
 
                 <div className="grid gap-2 p-3 md:hidden">
-                  {filteredRows.slice(0, 50).map((row) => <article key={`mobile-${row.rank}-${row.pitcher}`} className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2"><div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.pitcher}</div><div className="text-[10px] text-slate-500">{row.team} vs {row.opponent}</div></div><PropScoreBadge score={row.strikeoutMatchupScore} /></div>
+                  {filteredRows.slice(0, 50).map((row) => {
+                    const rowKey = keyForStrikeoutPropRow(row, slateDate);
+                    const isExpanded = expandedRowKey === rowKey;
+                    return (
+                    <article key={`mobile-${row.rank}-${row.pitcher}`} className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => toggleRow(row)}
+                      aria-expanded={isExpanded}
+                      aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
+                      className="flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 text-left hover:bg-slate-100"
+                    >
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                        <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.pitcher}</div><div className="text-[10px] text-slate-500">{row.team} vs {row.opponent}</div></div>
+                      </div>
+                      <PropScoreBadge score={row.strikeoutMatchupScore} />
+                    </button>
                     {hasKOdds && <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2 text-xs"><span className="font-bold">Line {fmt(row.kLine)} K</span><span className="text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span></div>}
                     <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]"><div className="px-1 py-2"><div className="text-slate-400">K%</div><div className="font-black">{fmt(row.pitcherKRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Whiff%</div><div className="font-black">{fmt(row.pitcherWhiffRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Opp K%</div><div className="font-black">{fmt(row.opponentTeamKRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Proj K</div><div className="font-black">{fmt(row.projectedKs)}</div></div></div>
-                  </article>)}
+                    {isExpanded && <div className="border-t border-slate-100 p-2"><RowDetailPanel row={row} /></div>}
+                  </article>
+                    );
+                  })}
                 </div>
               </section>
             </div>
