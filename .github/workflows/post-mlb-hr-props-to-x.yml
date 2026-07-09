@@ -1,5 +1,21 @@
 name: Post MLB HR Props to X
 
+# Why this workflow may not post on a given day, and how to read the logs:
+#   1. workflow_run (primary trigger) only fires after "Generate MLB Data"
+#      completes, and only proceeds past the job-level `if` when that
+#      completion was itself a `schedule` run on `main` that succeeded.
+#   2. The time gate below then requires the run to land inside the
+#      9 AM-2 PM ET window (see "Time gate" step for why this window is
+#      wide, not the original 9-11 AM).
+#   3. "Wait for fresh production slate" then retries for up to ~9 minutes
+#      for the live site's HR props data to actually be post-ready
+#      (correct slate date, enough valid props, real odds) before giving
+#      up and failing the run rather than posting stale/incomplete data.
+#   4. The script itself (post-mlb-hr-props-to-x.mjs) can still skip
+#      silently-but-loudly (logs a reason, exits 0) if the freshness/odds/
+#      top-props checks fail even after that wait, or if duplicate
+#      protection finds this exact table was already posted today.
+# The "Summary" step at the end of every run logs which of these applied.
 on:
   workflow_dispatch:
     inputs:
@@ -10,7 +26,7 @@ on:
         type: choice
         options: [dry-run, post, post-text-only, verify-account]
       data_source:
-        description: "Data source"
+        description: "Data source (only applies to workflow_dispatch; automated runs always use production)"
         required: true
         default: "production"
         type: choice
@@ -19,6 +35,20 @@ on:
     workflows: ["Generate MLB Data"]
     types: [completed]
     branches: [main]
+  schedule:
+    # Backstop trigger. GitHub Actions' scheduled-trigger delivery for
+    # this repo has been observed (via Actions run history) to fire
+    # "Generate MLB Data"'s cron entries 1.5-3+ hours behind their nominal
+    # time -- the 10:23 AM ET slot routinely doesn't complete until
+    # 11:20 AM-1:35 PM ET, well past what a workflow_run relay can catch
+    # in a narrow morning window. This direct schedule guarantees at
+    # least one attempt lands inside the (now widened) window even on a
+    # day workflow_run never does. It reuses the exact same time gate,
+    # freshness checks, and duplicate protection as workflow_run, so it
+    # safely no-ops if a workflow_run attempt already posted successfully
+    # earlier that day.
+    - cron: "30 13 * * *"
+      timezone: "America/New_York" # 1:30 PM ET
 
 concurrency:
   group: post-mlb-hr-props-to-x
@@ -32,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
       (
         github.event_name == 'workflow_run' &&
         github.event.workflow_run.conclusion == 'success' &&
@@ -63,56 +94,75 @@ jobs:
           path: .cache/mlb-hr-props-x-posted
           key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}
 
-      - name: Time gate (9-11 AM ET for workflow_run only)
+      # Widened from the original 9-11 AM ET window: Actions run history for
+      # this repo shows "Generate MLB Data"'s scheduled completions routinely
+      # land 1.5-3+ hours after their nominal cron time (the 10:23 AM ET slot
+      # has been observed completing anywhere from 11:20 AM to 1:35 PM ET),
+      # so a 2-hour window was missing most real completions entirely. 9 AM
+      # to 2 PM ET covers every completion time observed in that history.
+      # Applies uniformly to workflow_run and the direct backstop schedule;
+      # workflow_dispatch always bypasses it.
+      - name: Time gate (9 AM-2 PM ET for automated triggers only)
         id: time_gate
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"; exit 0
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "Time gate bypassed: manual workflow_dispatch."
+            exit 0
           fi
           ET_HOUR="$(TZ=America/New_York date +%H)"
-          if [ "$ET_HOUR" -ge 9 ] && [ "$ET_HOUR" -lt 11 ]; then
+          if [ "$ET_HOUR" -ge 9 ] && [ "$ET_HOUR" -lt 14 ]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "Time gate passed: ${ET_HOUR}:xx ET"
+            echo "Time gate passed: ${ET_HOUR}:xx ET is within the 9 AM-2 PM window (trigger: ${{ github.event_name }})."
           else
             echo "should_run=false" >> "$GITHUB_OUTPUT"
-            echo "Time gate blocked: ${ET_HOUR}:xx ET outside 9-11 AM window"
+            echo "Time gate blocked: ${ET_HOUR}:xx ET is outside the 9 AM-2 PM window (trigger: ${{ github.event_name }}). No post will be attempted this run."
           fi
 
+      # Increased from 8 attempts x 45s (~6 min) to 12 x 45s (~9 min): the
+      # one automated run that has reached this step (2026-07-04, 10:06 AM
+      # ET) exhausted the old 6-minute budget and failed, which is itself
+      # evidence the old window was too tight for Vercel's production
+      # deploy to reliably catch up after "Generate MLB Data" pushes.
       - name: Wait for fresh production slate
-        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_run'
+        if: steps.time_gate.outputs.should_run == 'true' && (github.event_name == 'workflow_run' || github.event_name == 'schedule')
         shell: bash
         env:
           HR_PROPS_DATA_SOURCE: production
         run: |
           set -euo pipefail
           ready=false
-          for attempt in 1 2 3 4 5 6 7 8; do
-            echo "Production readiness check ${attempt}/8"
+          for attempt in $(seq 1 12); do
+            echo "Production readiness check ${attempt}/12"
             if node scripts/post-mlb-hr-props-to-x.mjs --post-key-only; then
               ready=true
               break
             fi
-            if [ "$attempt" -lt 8 ]; then sleep 45; fi
+            if [ "$attempt" -lt 12 ]; then sleep 45; fi
           done
           if [ "$ready" != "true" ]; then
-            echo "ERROR: Production HR props did not become post-ready after the data workflow." >&2
+            echo "ERROR: Production HR props did not become post-ready within ~9 minutes after the data workflow. See the readiness check output above for the specific reason (stale date, too few valid props, missing odds, etc.)." >&2
             exit 1
           fi
 
       - name: Post HR Props
+        id: post
         if: steps.time_gate.outputs.should_run == 'true'
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+          if [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "schedule" ]; then
             MODE="post"
+            DATA_SOURCE="production"
           else
             MODE="${{ inputs.mode || 'post' }}"
+            DATA_SOURCE="${{ inputs.data_source || 'production' }}"
           fi
           echo "Mode: $MODE"
-          node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
+          echo "Data source: $DATA_SOURCE"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          HR_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
-          HR_PROPS_DATA_SOURCE: production
           X_ALLOW_LIVE_POST: "true"
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
@@ -126,3 +176,15 @@ jobs:
           name: mlb-hr-props-x-screenshot
           path: artifacts/mlb-hr-props-x.png
           if-no-files-found: error
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "== Post MLB HR Props to X summary =="
+          echo "trigger event: ${{ github.event_name }}"
+          echo "workflow_run conclusion (if applicable): ${{ github.event.workflow_run.conclusion || 'n/a' }}"
+          echo "workflow_run event (if applicable): ${{ github.event.workflow_run.event || 'n/a' }}"
+          echo "time gate should_run: ${{ steps.time_gate.outputs.should_run || 'n/a' }}"
+          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (time gate blocked before mode was resolved)' }}"
+          echo "See the 'Post HR Props' step output above for the exact skip/post/error reason from the script itself."
