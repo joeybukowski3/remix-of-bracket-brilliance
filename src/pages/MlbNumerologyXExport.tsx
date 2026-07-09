@@ -147,6 +147,14 @@ export default function MlbNumerologyXExport() {
           </div>
         </div>
 
+        {/* How-to-read explainer, for a first-time viewer unfamiliar with numerology. */}
+        <div className="border-b bg-sky-50 px-8 py-3" style={{ borderColor: BORDER }}>
+          <p className="text-sm leading-snug" style={{ color: INK }}>
+            <span className="font-black">How to read this:</span> we compare today's key numbers against player traits like
+            birth day, age, jersey number, and life path. More matches = a stronger numerology score.
+          </p>
+        </div>
+
         {/* B. Top Play Hero Section */}
         <div className="px-8 py-6" style={{ backgroundColor: `${heroColors.primary}0d` }}>
           <div className="text-xs font-black uppercase tracking-wider" style={{ color: heroColors.primary }}>
@@ -166,11 +174,18 @@ export default function MlbNumerologyXExport() {
             <ScoreBadge score={topPlay.numerologyScore} size="lg" />
           </div>
           {topPlay.chips.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {topPlay.chips.map((chip) => (
-                <AlignmentChip key={chip} text={chip} accent={heroColors.primary} />
-              ))}
-            </div>
+            <>
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {topPlay.chips.slice(0, 4).map((chip) => (
+                  <AlignmentChip key={chip} text={chip} accent={heroColors.primary} />
+                ))}
+              </div>
+              <p className="mt-3 text-sm" style={{ color: MUTED }}>
+                {topPlay.chips.length === 1
+                  ? `${topPlay.player}'s numbers line up with today's key numbers in 1 way — that alignment is driving the ${topPlay.numerologyScore} score.`
+                  : `${topPlay.player}'s numbers line up with today's key numbers in ${Math.min(topPlay.chips.length, 4)} ways — more matches like these push the score higher.`}
+              </p>
+            </>
           )}
         </div>
 
@@ -221,7 +236,10 @@ export default function MlbNumerologyXExport() {
         {/* E. Footer */}
         <div className="border-t px-8 py-4 text-center" style={{ borderColor: BORDER }}>
           <div className="text-sm font-black" style={{ color: INK }}>
-            JoeKnowsBall · joeknowsball.com
+            JoeKnowsBall
+          </div>
+          <div className="mt-0.5 text-sm font-semibold" style={{ color: heroColors.primary }}>
+            Full board: joeknowsball.com/mlb/numerology
           </div>
           <div className="mt-1 text-xs" style={{ color: MUTED }}>
             For entertainment / trend analysis only. Not betting advice.
