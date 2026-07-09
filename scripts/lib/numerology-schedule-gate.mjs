@@ -3,7 +3,7 @@
  *
  * Scheduling and duplicate-run gate logic for the twice-daily MLB Numerology workflow.
  *
- * Phase 1 — Morning:     4:44 AM America/New_York with delayed-delivery retry window
+ * Phase 1 — Morning:     4:00 AM America/New_York with delayed-delivery retry window
  * Phase 2 — Lineup:      First active game start − 2 hours, once lineups are confirmed
  * Catch-up — If the saved slate date is stale, auto mode advances it immediately.
  *
@@ -44,17 +44,17 @@ export function isMorningRunAllowed(now, existingOutput, etDateToday) {
 
   const { hour, minute } = getEtHourMinute(now);
   const minuteOfDay = hour * 60 + minute;
-  const TARGET = 4 * 60 + 44;
+  const TARGET = 4 * 60;
   const LATE_TOLERANCE = 90;
 
   if (minuteOfDay < TARGET || minuteOfDay > TARGET + LATE_TOLERANCE) {
     return {
       allowed: false,
-      reason: `Not in 4:44 ET morning window (current ET ${hour}:${String(minute).padStart(2, "0")})`,
+      reason: `Not in 4:00 ET morning window (current ET ${hour}:${String(minute).padStart(2, "0")})`,
     };
   }
 
-  return { allowed: true, reason: "Within 4:44 ET morning window" };
+  return { allowed: true, reason: "Within 4:00 ET morning window" };
 }
 
 export function computeLineupTargetTime(scheduleData, etDateToday) {
@@ -135,7 +135,7 @@ export function evaluateGate(phase, now, existingOutput, scheduleData, scheduleR
   }
 
   // Auto mode must never leave yesterday's slate published just because GitHub
-  // missed the nominal 4:44 delivery window. A stale or missing date is allowed
+  // missed the nominal 4:00 delivery window. A stale or missing date is allowed
   // to run immediately as a morning catch-up. Once the date advances, the normal
   // once-per-day guards prevent duplicate work.
   if (!existingOutput?.date || existingOutput.date !== etDateToday) {

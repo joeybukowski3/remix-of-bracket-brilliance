@@ -1,19 +1,14 @@
 name: MLB Numerology Email
-run-name: MLB Numerology Email • ${{ github.event_name }} • ${{ inputs.mode || 'preview' }}
+run-name: MLB Numerology Email • ${{ github.event_name }} • ${{ inputs.mode || 'auto' }}
 
-# Manual-dispatch-first. Draft creation always requires an explicit
-# workflow_dispatch with mode=send, plus the verified Vercel receiver URL
-# and bearer token. The receiver creates Buttondown drafts only.
-#
-# The daily schedule always runs in preview mode only (hardcoded, not
-# derived from any input) so that daily-card.json, the archive, and the
-# performance tracking files stay persisted in the repo even on days no
-# one manually triggers a send. It never creates a Buttondown draft.
+# Manual dispatch still supports preview/send. Scheduled runs are now allowed
+# to send automatically only inside the 4:15-4:45 AM America/New_York window,
+# with a stale-data guard that refuses to send yesterday's slate.
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "preview (generate + persist data, no draft) or send (create Buttondown draft via receiver)"
+        description: "preview (generate + persist data, no email) or send (send through the gated Buttondown receiver)"
         required: true
         default: "preview"
         type: choice
@@ -26,10 +21,10 @@ on:
         type: string
 
   schedule:
-    # 6:15 PM ET -- after the lineup-confirmed numerology phase has had a
-    # chance to run, and well before most games start. Preview-only: never
-    # creates a Buttondown draft regardless of secret configuration.
-    - cron: "15 22 * * *"
+    # 4:15 AM ET scheduled email, DST-safe. The workflow's ET guard allows
+    # only the run that actually lands between 4:15 and 4:45 New York time.
+    - cron: "15 8 * * *"
+    - cron: "15 9 * * *"
 
   push:
     branches:
@@ -38,9 +33,11 @@ on:
       - ".github/workflows/mlb-numerology-email.yml"
       - "scripts/generate-mlb-numerology-email.mjs"
       - "scripts/lib/mlb-numerology-tracking.mjs"
+      - "scripts/lib/mlb-numerology-player-context.mjs"
 
-# Shares the lock with the other automated workflows that commit generated
-# data to main, so this never races a props/numerology-generation run.
+# Shares the lock with other workflows that commit generated data to main,
+# including the 4:00 AM numerology generation workflow. This keeps the email
+# tracking commit from racing the upstream page/data update.
 concurrency:
   group: main-data-writers-${{ github.repository }}
   cancel-in-progress: false
@@ -52,7 +49,7 @@ jobs:
   numerology-email:
     if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -62,33 +59,95 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Resolve requested mode
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          resolved="preview"
+          reason="default preview"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.mode }}" = "send" ]; then
+            resolved="send"
+            reason="manual send requested"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            et_time="$(TZ=America/New_York date '+%H:%M')"
+            et_hour="${et_time%:*}"
+            et_minute="${et_time#*:}"
+            minute_of_day=$((10#$et_hour * 60 + 10#$et_minute))
+            window_start=$((4 * 60 + 15))
+            window_end=$((4 * 60 + 45))
+            if [ "$minute_of_day" -ge "$window_start" ] && [ "$minute_of_day" -le "$window_end" ]; then
+              resolved="send"
+              reason="scheduled 4:15 ET send window (${et_time} ET)"
+            else
+              resolved="skip"
+              reason="scheduled run outside 4:15-4:45 ET send window (${et_time} ET)"
+            fi
+          fi
+
+          echo "resolved=${resolved}" >> "$GITHUB_OUTPUT"
+          echo "reason=${reason}" >> "$GITHUB_OUTPUT"
+          echo "[mlb-numerology-email] event=${{ github.event_name }} requested_mode_input=${{ inputs.mode || 'n/a' }} resolved_mode=${resolved} reason=${reason}"
+
+      - name: Wait for fresh 4 AM numerology data before scheduled send
+        if: github.event_name == 'schedule' && steps.mode.outputs.resolved == 'send'
+        shell: bash
+        run: |
+          set -euo pipefail
+          today_et="$(TZ=America/New_York date '+%Y-%m-%d')"
+          echo "[mlb-numerology-email] Waiting for numerology-daily.json date=${today_et} before sending."
+
+          for attempt in $(seq 1 13); do
+            echo "[mlb-numerology-email] Freshness check attempt ${attempt}/13"
+            git fetch origin main
+            git reset --hard origin/main
+
+            if [ ! -f public/data/mlb/numerology-daily.json ]; then
+              file_date="missing"
+            else
+              file_date="$(python3 - <<'PY'
+import json
+from pathlib import Path
+path = Path('public/data/mlb/numerology-daily.json')
+try:
+    print(json.loads(path.read_text()).get('date') or 'missing')
+except Exception:
+    print('invalid-json')
+PY
+)"
+            fi
+
+            echo "[mlb-numerology-email] numerology-daily.json date=${file_date}; expected=${today_et}"
+            if [ "${file_date}" = "${today_et}" ]; then
+              echo "[mlb-numerology-email] Fresh numerology data found. Continuing to scheduled send."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 13 ]; then
+              sleep 60
+            fi
+          done
+
+          echo "::error::Scheduled send blocked: numerology-daily.json did not update to ${today_et}. No email was sent."
+          exit 1
+
       - name: Set up Node
+        if: steps.mode.outputs.resolved != 'skip'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
+        if: steps.mode.outputs.resolved != 'skip'
         run: npm ci
-
-      # Scheduled/push runs never accept a mode input, so they always
-      # resolve to "preview" -- only an explicit workflow_dispatch with
-      # mode=send can ever attempt a live send.
-      - name: Resolve requested mode
-        id: mode
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.mode }}" = "send" ]; then
-            echo "resolved=send" >> "$GITHUB_OUTPUT"
-          else
-            echo "resolved=preview" >> "$GITHUB_OUTPUT"
-          fi
-          echo "[mlb-numerology-email] event=${{ github.event_name }} requested_mode_input=${{ inputs.mode || 'n/a' }} resolved_mode=$([ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.mode }}" = "send" ] && echo send || echo preview)"
 
       # Fails clearly (does not silently continue) when the live board
       # payload the email is built from does not exist yet. HR props are
       # optional enrichment and are allowed to be missing.
       - name: Check data dependencies
+        if: steps.mode.outputs.resolved != 'skip'
         shell: bash
         run: |
           if [ ! -f public/data/mlb/numerology-daily.json ]; then
@@ -100,9 +159,11 @@ jobs:
           fi
 
       - name: Run numerology tracking unit tests
+        if: steps.mode.outputs.resolved != 'skip'
         run: npx vitest run src/lib/mlb/mlbNumerologyTracking.test.ts
 
-      - name: Generate email preview (always runs first)
+      - name: Generate email preview
+        if: steps.mode.outputs.resolved != 'skip'
         shell: bash
         run: |
           DATE_FLAG=""
@@ -112,33 +173,38 @@ jobs:
           npm run mlb:numerology:email:preview -- $DATE_FLAG
 
       - name: Log resolved mode
+        if: always()
         shell: bash
         run: |
           echo "[mlb-numerology-email] Resolved mode: ${{ steps.mode.outputs.resolved }}"
-          if [ "${{ steps.mode.outputs.resolved }}" = "preview" ]; then
-            echo "[mlb-numerology-email] Preview only -- no Buttondown draft will be created."
+          echo "[mlb-numerology-email] Reason: ${{ steps.mode.outputs.reason }}"
+          if [ "${{ steps.mode.outputs.resolved }}" = "skip" ]; then
+            echo "[mlb-numerology-email] Skipped safely -- outside scheduled send window."
+          elif [ "${{ steps.mode.outputs.resolved }}" = "preview" ]; then
+            echo "[mlb-numerology-email] Preview only -- no Buttondown email will be created."
           else
-            echo "[mlb-numerology-email] Send mode requested -- receiver creates a Buttondown draft only."
+            echo "[mlb-numerology-email] Send mode -- posting to gated Buttondown receiver."
           fi
 
       # Only reached when mode resolved to "send". The script itself
       # re-checks NUMEROLOGY_EMAIL_LIVE and NUMEROLOGY_EMAIL_WEBHOOK_URL and
       # throws (failing the step) rather than posting silently if either is
-      # missing. The verified receiver creates Buttondown drafts only.
-      - name: Create Buttondown draft (manual, gated)
+      # missing. The receiver controls whether Buttondown creates a draft or
+      # sends immediately based on Vercel env.
+      - name: Send Buttondown email (gated)
         if: steps.mode.outputs.resolved == 'send'
         env:
-          NUMEROLOGY_EMAIL_LIVE: true
+          NUMEROLOGY_EMAIL_LIVE: "true"
           NUMEROLOGY_EMAIL_WEBHOOK_URL: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_URL || vars.NUMEROLOGY_EMAIL_WEBHOOK_URL }}
           NUMEROLOGY_EMAIL_WEBHOOK_TOKEN: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN }}
         shell: bash
         run: |
           if [ -z "${NUMEROLOGY_EMAIL_WEBHOOK_URL}" ]; then
-            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_WEBHOOK_URL is not configured as a secret or variable. No draft was created."
+            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_WEBHOOK_URL is not configured as a secret or variable. No email was created."
             exit 1
           fi
           if [ -z "${NUMEROLOGY_EMAIL_WEBHOOK_TOKEN}" ]; then
-            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_WEBHOOK_TOKEN secret is not configured. No draft was created."
+            echo "::error::mode=send requested but NUMEROLOGY_EMAIL_WEBHOOK_TOKEN secret is not configured. No email was created."
             exit 1
           fi
           DATE_FLAG=""
@@ -149,6 +215,7 @@ jobs:
 
       - name: Detect meaningful tracking data changes
         id: changes
+        if: steps.mode.outputs.resolved != 'skip'
         shell: bash
         run: |
           FILES="public/data/mlb/numerology/daily-card.json public/data/mlb/numerology/archive public/data/mlb/numerology/performance.json public/data/mlb/numerology/performance-summary.json"
@@ -164,7 +231,7 @@ jobs:
       # and email-preview.txt are intentionally never staged -- they are
       # regenerated on every run and are not meant to be version-controlled.
       - name: Commit and push tracking data
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.mode.outputs.resolved != 'skip' && steps.changes.outputs.changed == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -215,4 +282,5 @@ jobs:
           echo "event: ${{ github.event_name }}"
           echo "requested mode (input): ${{ inputs.mode || 'n/a' }}"
           echo "resolved mode: ${{ steps.mode.outputs.resolved }}"
+          echo "reason: ${{ steps.mode.outputs.reason }}"
           echo "tracking data changed: ${{ steps.changes.outputs.changed || 'n/a' }}"
