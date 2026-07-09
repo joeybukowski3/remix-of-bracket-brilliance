@@ -1,7 +1,7 @@
 name: Generate MLB Numerology
 
 # Twice-daily generation:
-#   Phase 1 - Morning:          4:44 AM America/New_York with gated retries
+#   Phase 1 - Morning:          4:00 AM America/New_York with gated retries
 #   Phase 2 - Lineup-confirmed: first active game - 2 hours
 #
 # Scheduled delivery is best-effort. The runtime gate also advances a stale
@@ -18,9 +18,10 @@ on:
       - "scripts/generate-mlb-numerology.mjs"
 
   schedule:
-    - cron: "44 8 * * *"
-    - cron: "44 9 * * *"
-    - cron: "0,10,20,30,40,50 8-11 * * *"
+    # 4:00 AM ET morning generation with retry coverage for both EDT and EST.
+    # The runtime gate in numerology-schedule-gate.mjs decides the true ET window.
+    - cron: "0,10,20,30,40,50 8-10 * * *"
+    # Lineup-confirmed polling window, still gated at runtime by first-game-minus-2h and lineup confirmation.
     - cron: "0,10,20,30,40,50 12-23 * * *"
 
   workflow_dispatch:
@@ -51,7 +52,7 @@ on:
         type: string
 
 concurrency:
-  group: mlb-numerology-${{ github.ref }}
+  group: main-data-writers-${{ github.repository }}
   cancel-in-progress: false
 
 permissions:
