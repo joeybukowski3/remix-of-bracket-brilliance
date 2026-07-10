@@ -11,6 +11,7 @@ import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
+import { resolveKPropStatus, type KPropStatus } from "@/lib/mlb/kPropStatus";
 
 export type HrDashboardGame = {
   gameKey: string;
@@ -65,6 +66,9 @@ export type HrDashboardPitcher = {
   candidateProjectedKs?: number | null;
   effectiveProjectedIP?: number | null;
   effectiveProjectedKs?: number | null;
+  workloadConfidenceGrade?: string | null;
+  workloadConfidenceScore?: number | null;
+  workloadFlags?: string[];
 };
 
 export type HrDashboardBatter = {
@@ -293,6 +297,21 @@ export type PitcherStrikeoutTeamRow = {
   candidateProjectedKs?: number | null;
   effectiveProjectedIP?: number | null;
   effectiveProjectedKs?: number | null;
+  workloadConfidenceGrade?: string | null;
+  workloadConfidenceScore?: number | null;
+  workloadFlags?: string[];
+  /**
+   * Precomputed by buildPitcherStrikeoutRows for display/debugging (e.g.
+   * the Low Confidence table's exclusion badge). Optional and NOT the
+   * source of truth for eligibility gating -- kPropBestBets.ts,
+   * selectTopSocialKRows, and selectTopKValuePlays all call
+   * resolveKPropStatus(row) fresh instead of trusting this field, so a
+   * row built by a path that doesn't set it (e.g. an ad-hoc fixture, or
+   * MlbGameDetail.tsx's no-data social fallback) is still classified
+   * correctly rather than silently defaulting to eligible.
+   */
+  kProjectionStatus?: KPropStatus;
+  kProjectionStatusReasons?: string[];
 };
 
 export const DEFAULT_TAB: TabKey = "batters";
@@ -393,6 +412,9 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
     candidateProjectedKs: normalizeNumber(entry.candidateProjectedKs),
     effectiveProjectedIP: normalizeNumber(entry.effectiveProjectedIP),
     effectiveProjectedKs: normalizeNumber(entry.effectiveProjectedKs),
+    workloadConfidenceGrade: normalizeText(entry.workloadConfidenceGrade) || null,
+    workloadConfidenceScore: normalizeNumber(entry.workloadConfidenceScore),
+    workloadFlags: normalizeStringList(entry.workloadFlags),
   };
   if (!p.pitcher || !p.team || !p.opponent || p.hrVs == null || p.hitsVs == null || p.kVs == null) return null;
   return p as HrDashboardPitcher;
@@ -1167,6 +1189,9 @@ export function buildPitcherStrikeoutRows(
         candidateProjectedKs: pitcher.candidateProjectedKs ?? null,
         effectiveProjectedIP: pitcher.effectiveProjectedIP ?? null,
         effectiveProjectedKs: pitcher.effectiveProjectedKs ?? null,
+        workloadConfidenceGrade: pitcher.workloadConfidenceGrade ?? null,
+        workloadConfidenceScore: pitcher.workloadConfidenceScore ?? null,
+        workloadFlags: pitcher.workloadFlags ?? [],
       };
     })
     .sort((left, right) =>
@@ -1177,6 +1202,7 @@ export function buildPitcherStrikeoutRows(
 
   return rows.map((row, index) => {
     const rank = index + 1;
+    const { status, reasons } = resolveKPropStatus(row);
     return {
       ...row,
       rank,
@@ -1191,6 +1217,8 @@ export function buildPitcherStrikeoutRows(
         opponentTeamWhiffRate: row.opponentTeamWhiffRate,
         opponentTeamXba: row.opponentTeamXba,
       }),
+      kProjectionStatus: status,
+      kProjectionStatusReasons: reasons,
     };
   });
 }

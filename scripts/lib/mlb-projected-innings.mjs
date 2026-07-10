@@ -67,20 +67,62 @@ export function hasRealProjectedInningsData(pitcher) {
   return pitcher?.seasonIP != null && pitcher?.seasonGS != null && pitcher.seasonGS > 0;
 }
 
+const MIN_RECENT_STARTS_SAMPLE = 3;
+const MAX_RECENT_STARTS_SAMPLE = 5;
+
 /**
- * Calculate a pitcher's projected innings for their next appearance from
- * real season IP / games-started, clamped to role-appropriate bounds.
- * Falls back to a role-based default when season data isn't available.
+ * Average innings-pitched over a pitcher's most recent STARTS-ONLY
+ * appearances (already filtered upstream to games with gamesStarted >= 1
+ * -- see fetchPitcherGameLog in generate-mlb-hr-props.mjs). Unlike
+ * seasonIP/seasonGS, this never mixes relief innings into the average: a
+ * swingman who logged relief innings earlier in the season but has
+ * started his last several appearances gets an IP figure based only on
+ * those starts, not on a season total that a handful of relief outings
+ * would otherwise inflate toward the starter max.
+ *
+ * Requires at least MIN_RECENT_STARTS_SAMPLE real innings-pitched values
+ * before trusting the average -- with fewer, calculateProjectedInnings()
+ * falls back to the season-aggregate or role-default path instead.
+ *
+ * @param {Array<{ inningsPitched?: number|null }>} starts most-recent-last or unordered; only the most recent MAX_RECENT_STARTS_SAMPLE are used
+ * @returns {number|null}
+ */
+export function calculateRecentStartsAverageIP(starts) {
+  if (!Array.isArray(starts) || !starts.length) return null;
+  const recent = starts.slice(-MAX_RECENT_STARTS_SAMPLE);
+  const values = recent
+    .map((start) => start?.inningsPitched)
+    .filter((value) => typeof value === "number" && Number.isFinite(value) && value > 0);
+  if (values.length < MIN_RECENT_STARTS_SAMPLE) return null;
+  const total = values.reduce((sum, value) => sum + value, 0);
+  return total / values.length;
+}
+
+/**
+ * Calculate a pitcher's projected innings for their next appearance.
+ * Priority order:
+ *   1. Real recent-starts-only average IP (pitcher.recentStarts), when at
+ *      least MIN_RECENT_STARTS_SAMPLE starts are available -- immune to
+ *      the season-mix issue below since these are already starts-only.
+ *   2. Real season IP / games-started, clamped to role-appropriate
+ *      bounds (kept as a fallback for early-season slates where recent-
+ *      starts data isn't available yet).
+ *   3. A role-based default.
  * Openers and short-stint relievers are bounded to the "reliever" range
  * (0.5-3.0 IP) via classifyPitcherRole(), so they are never treated like a
  * full-workload starter.
  *
- * @param {{ seasonIP?: number|null, seasonGS?: number|null }} pitcher
+ * @param {{ seasonIP?: number|null, seasonGS?: number|null, recentStarts?: Array<{ inningsPitched?: number|null }> }} pitcher
  * @returns {number} projected innings pitched
  */
 export function calculateProjectedInnings(pitcher) {
   const role = classifyPitcherRole(pitcher);
   const bounds = PROJECTED_INNINGS_BOUNDS[role];
+
+  const recentStartsAvgIP = calculateRecentStartsAverageIP(pitcher?.recentStarts);
+  if (recentStartsAvgIP != null) {
+    return Math.max(bounds.min, Math.min(bounds.max, roundNumber(recentStartsAvgIP, 1)));
+  }
 
   if (hasRealProjectedInningsData(pitcher)) {
     const avgIP = pitcher.seasonIP / pitcher.seasonGS;

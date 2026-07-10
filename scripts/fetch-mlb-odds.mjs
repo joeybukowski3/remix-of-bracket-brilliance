@@ -76,6 +76,16 @@ async function fetchParlayApiProps(parlayKey) {
   if (detectedMarkets.length) console.log(`  ParlayAPI markets=${detectedMarkets.join(",")}`);
 
   const preferred = ["draftkings", "fanduel", "betmgm", "caesars", "pinnacle", "bovada"];
+  // K props only: bet365 is a real sportsbook that was missing from the
+  // shared `preferred` list above, so it was ranked identically to an
+  // unranked/DFS source and could lose a book-preference tie by iteration
+  // order alone. Kept separate from `preferred` (used for HR) so this
+  // change never affects HR book ranking. DFS pick'em products (Underdog,
+  // PrizePicks, Sleeper) have different market structure/limits than a
+  // real two-sided sportsbook line and are excluded entirely from sourcing
+  // a strikeout prop line, rather than merely deprioritized.
+  const K_PREFERRED_BOOKS = [...preferred, "bet365"];
+  const K_DISALLOWED_BOOKS = new Set(["underdog", "prizepicks", "sleeper"]);
   const grouped = {};
 
   for (const row of props) {
@@ -83,10 +93,12 @@ async function fetchParlayApiProps(parlayKey) {
     if (market !== PARLAY_HR_MARKET && market !== PARLAY_K_MARKET) continue;
     const player = normalizeMlbPropName(row?.player);
     if (!player) continue;
-    const key = `${player}|${market}`;
     const bookmaker = String(row?.bookmaker ?? row?.source ?? "").toLowerCase();
-    const bookRank = preferred.indexOf(bookmaker);
-    const rank = bookRank === -1 ? preferred.length : bookRank;
+    if (market === PARLAY_K_MARKET && K_DISALLOWED_BOOKS.has(bookmaker)) continue;
+    const key = `${player}|${market}`;
+    const bookList = market === PARLAY_K_MARKET ? K_PREFERRED_BOOKS : preferred;
+    const bookRank = bookList.indexOf(bookmaker);
+    const rank = bookRank === -1 ? bookList.length : bookRank;
     if (!grouped[key] || rank < grouped[key].rank) grouped[key] = { row, market, rank };
   }
 

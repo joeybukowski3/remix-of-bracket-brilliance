@@ -612,6 +612,12 @@ async function fetchPitcherGameLog(id) {
         homeRuns: s.stat?.homeRuns ?? 0,
         airOuts: s.stat?.airOuts ?? 0,
         groundOuts: s.stat?.groundOuts ?? 0,
+        // Starts-only innings pitched/strikeouts, used to project workload
+        // from real recent-start data instead of a season IP/GS average
+        // that would otherwise mix in relief innings for a swingman (see
+        // calculateRecentStartsAverageIP in mlb-projected-innings.mjs).
+        inningsPitched: parseInningsPitched(s.stat?.inningsPitched),
+        strikeouts: s.stat?.strikeOuts ?? 0,
       }));
     // Season aggregate for flyball% (airOuts / (airOuts + groundOuts))
     const seasonAirOuts = starts.reduce((sum, g) => sum + g.airOuts, 0);
@@ -780,20 +786,36 @@ export function computePitcherMatchupRatings(pitcher, contexts) {
 // projected-IP shadow model) -- unchanged formula, imported above.
 
 // Calculate real K/9 from season strikeouts and innings pitched
-function calculateProjectedK9(pitcher) {
+export function calculateProjectedK9(pitcher) {
   // Use real season SO and IP if available
   if (pitcher.seasonStrikeOuts != null && pitcher.seasonIP != null && pitcher.seasonIP > 0) {
     const k9 = (pitcher.seasonStrikeOuts / pitcher.seasonIP) * 9;
     return roundNumber(Math.max(1, Math.min(15, k9)), 1);
   }
-  // Fallback: estimate from kRate%
-  const baseK9 = (pitcher.kRate ?? 20) / 100 * 27;
-  const skillMult = (pitcher.whiffRate ?? 25) / 25;
+  // Fallback: estimate from kRate%/whiffRate%. A literal 0 for either is
+  // not a real signal -- no qualified MLB starter has an exact 0.0%
+  // strikeout or whiff rate, so a 0 here means the upstream source had no
+  // data for this pitcher (see the PITCHER_SEASON_K_RATE_MISSING/PITCHER_
+  // RECENT_K_RATE_MISSING workload flags computed independently in
+  // compute-workload-projection.mjs). Treat it the same as missing rather
+  // than letting it flow into the formula and silently floor the
+  // projection at a fabricated 3.0 K/9. When both are unavailable, return
+  // null so calculateProjectedKs() also returns null -- never a fake floor.
+  const kRate = pitcher.kRate != null && pitcher.kRate > 0 ? pitcher.kRate : null;
+  const whiffRate = pitcher.whiffRate != null && pitcher.whiffRate > 0 ? pitcher.whiffRate : null;
+  if (kRate == null && whiffRate == null) return null;
+  const baseK9 = (kRate ?? 20) / 100 * 27;
+  const skillMult = (whiffRate ?? 25) / 25;
   return roundNumber(Math.max(3, Math.min(15, baseK9 * skillMult)), 1);
 }
 
 // Calculate projected Ks for the game
-function calculateProjectedKs(projectedIP, projectedK9) {
+export function calculateProjectedKs(projectedIP, projectedK9) {
+  // `null * x` coerces to 0 in JS rather than NaN, so a missing IP/K9
+  // input must be checked explicitly here -- otherwise a null projectedK9
+  // (see calculateProjectedK9 above) would silently become a fabricated
+  // projectedKs of 0 instead of propagating as "no projection available".
+  if (projectedIP == null || projectedK9 == null || !Number.isFinite(projectedIP) || !Number.isFinite(projectedK9)) return null;
   return roundNumber((projectedIP * projectedK9) / 9, 1);
 }
 
@@ -1477,6 +1499,11 @@ async function main() {
         seasonStrikeOuts: toFiniteNumber(starter.seasonStats?.strikeOuts) ?? null,
         seasonIP: parseInningsPitched(starter.seasonStats?.inningsPitched) ?? null,
         seasonGS: toFiniteNumber(starter.seasonStats?.gamesStarted) ?? null,
+        // Starts-only recent workload (see fetchPitcherGameLog above) --
+        // lets calculateProjectedInnings/calculateProjectedK9 prefer real
+        // recent-start IP/K data over the season IP/GS average, which can
+        // be inflated by relief innings for a swingman.
+        recentStarts: starter.gameLog.starts.slice(-5),
         last7HR: starter.gameLog.starts.slice(-7).reduce((sum, g) => sum + g.homeRuns, 0),
         hrPerStart: starter.fangraphs?.hrPerStart
           ?? (() => {

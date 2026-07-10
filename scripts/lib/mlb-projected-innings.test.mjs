@@ -10,6 +10,7 @@ import {
   getAverageIPForRole,
   hasRealProjectedInningsData,
   calculateProjectedInnings,
+  calculateRecentStartsAverageIP,
   parseInningsPitchedString,
 } from "./mlb-projected-innings.mjs";
 
@@ -103,6 +104,92 @@ describe("calculateProjectedInnings", () => {
       assert.ok(result >= PROJECTED_INNINGS_BOUNDS.reliever.min);
       assert.ok(result <= PROJECTED_INNINGS_BOUNDS.starter.max);
     }
+  });
+});
+
+describe("calculateRecentStartsAverageIP", () => {
+  it("returns null with fewer than 3 valid starts", () => {
+    assert.equal(calculateRecentStartsAverageIP([]), null);
+    assert.equal(calculateRecentStartsAverageIP([{ inningsPitched: 5 }, { inningsPitched: 6 }]), null);
+  });
+
+  it("averages the most recent up to 5 starts", () => {
+    const starts = [
+      { inningsPitched: 4.0 },
+      { inningsPitched: 5.0 },
+      { inningsPitched: 5.0 },
+      { inningsPitched: 5.0 },
+      { inningsPitched: 3.667 },
+    ];
+    const result = calculateRecentStartsAverageIP(starts);
+    assert.ok(Math.abs(result - 4.5334) < 0.01);
+  });
+
+  it("only uses the last 5 entries when more are provided", () => {
+    const starts = [
+      { inningsPitched: 0.1 }, // should be excluded (older than the last 5)
+      { inningsPitched: 5 },
+      { inningsPitched: 5 },
+      { inningsPitched: 5 },
+      { inningsPitched: 5 },
+      { inningsPitched: 5 },
+    ];
+    assert.equal(calculateRecentStartsAverageIP(starts), 5);
+  });
+
+  it("ignores non-finite or non-positive entries", () => {
+    const starts = [{ inningsPitched: null }, { inningsPitched: 5 }, { inningsPitched: 5 }, { inningsPitched: 5 }, { inningsPitched: 0 }];
+    assert.equal(calculateRecentStartsAverageIP(starts), 5);
+  });
+
+  it("returns null for non-array input", () => {
+    assert.equal(calculateRecentStartsAverageIP(null), null);
+    assert.equal(calculateRecentStartsAverageIP(undefined), null);
+  });
+});
+
+describe("calculateProjectedInnings with recentStarts (swingman regression)", () => {
+  it("prefers a real recent-starts average over a season-mixed IP/GS average", () => {
+    // Regression case: a pitcher who logged relief innings earlier this
+    // season (mixed into seasonIP) but has started his last 5 appearances
+    // for 3.667/5.0/5.0/5.0/4.0 IP -- season IP/GS alone would average
+    // 8.0+ and clamp to the starter max, wrongly implying a full-workload
+    // starter. The recent-starts-only average must be used instead.
+    const pitcher = {
+      seasonIP: 60, // includes early-season relief innings
+      seasonGS: 5,
+      recentStarts: [
+        { inningsPitched: 3.667 },
+        { inningsPitched: 5.0 },
+        { inningsPitched: 5.0 },
+        { inningsPitched: 5.0 },
+        { inningsPitched: 4.0 },
+      ],
+    };
+    const result = calculateProjectedInnings(pitcher);
+    assert.ok(result < 5, `expected a recent-starts-based IP under 5, got ${result}`);
+    assert.ok(result > 4, `expected a recent-starts-based IP over 4, got ${result}`);
+  });
+
+  it("falls back to the season IP/GS average when fewer than 3 recent starts are available", () => {
+    const pitcher = { seasonIP: 180, seasonGS: 30, recentStarts: [{ inningsPitched: 5 }] };
+    assert.equal(calculateProjectedInnings(pitcher), 6.0);
+  });
+
+  it("falls back to the season IP/GS average when recentStarts is absent", () => {
+    const pitcher = { seasonIP: 180, seasonGS: 30 };
+    assert.equal(calculateProjectedInnings(pitcher), 6.0);
+  });
+
+  it("still clamps a recent-starts average to role bounds", () => {
+    const pitcher = {
+      recentStarts: [
+        { inningsPitched: 9 },
+        { inningsPitched: 9 },
+        { inningsPitched: 9 },
+      ],
+    };
+    assert.equal(calculateProjectedInnings(pitcher), PROJECTED_INNINGS_BOUNDS.starter.max);
   });
 });
 
