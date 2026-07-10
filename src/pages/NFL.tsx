@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
-import NflSectionSidebar from "@/components/nfl/NflSectionSidebar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { NFL_POWER_RATINGS, nflLogoUrl, type NflPowerTeam } from "@/data/nflPreseason2026";
@@ -46,7 +44,7 @@ export default function NFL() {
   const rows = useMemo(() => [...NFL_POWER_RATINGS].sort((a, b) => a.rank - b.rank), []);
 
   return (
-    <SiteShell>
+    <>
       <style>{STYLES}</style>
       <main className="site-page pb-16 pt-8">
         <div className="site-container site-stack">
@@ -93,12 +91,10 @@ export default function NFL() {
               </div>
               <p className="nfl-pr-foot">Composite weighting: EPA ×2 · Success% ×2 · YPP ×2 · 1st Down ×1 · 3rd Down ×1 · Blocking ×1.5, normalized over 9.5. Win totals are preseason market lines.</p>
             </section>
-
-            <NflSectionSidebar />
           </div>
         </div>
       </main>
-    </SiteShell>
+    </>
   );
 }
 
@@ -108,6 +104,5 @@ const STYLES = `
   .nfl-pr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.nfl-pr-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}.nfl-pr-col-rank{width:48px}.nfl-pr-col-team{width:220px}.nfl-pr-col-rating{width:170px}.nfl-pr-col-record{width:70px}.nfl-pr-col-win{width:85px}.nfl-pr-table thead th{background:#0c1f3a;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:11px 10px;text-align:center;white-space:nowrap}.nfl-pr-th-team{text-align:left!important}.nfl-pr-table tbody tr{border-bottom:1px solid #eef2f7}.nfl-pr-table tbody tr:hover{background:#f7faff}.nfl-pr-rank{text-align:center;font-weight:800;font-size:15px;color:#0c1f3a}
   .nfl-pr-team{padding:0}.nfl-pr-team-link{display:flex;align-items:center;gap:8px;width:100%;padding:8px;color:inherit;text-decoration:none}.nfl-pr-team-link:focus-visible{outline:2px solid #1a6fc4;outline-offset:-2px}.nfl-pr-team-link:hover .nfl-pr-name{text-decoration:underline}.nfl-pr-accent{width:4px;height:28px;border-radius:2px;flex-shrink:0}.nfl-pr-logo{width:28px;height:28px;object-fit:contain;flex-shrink:0}.nfl-pr-badge{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0}.nfl-pr-name{font-weight:700;font-size:13px;color:#1a2a3f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .nfl-pr-heat{text-align:center;padding:7px 6px}.nfl-pr-heatval{display:block;font-weight:800;font-size:13px}.nfl-pr-heatrank{display:block;font-size:9.5px;color:#8a96a4;font-weight:600;margin-top:1px}.nfl-pr-rec,.nfl-pr-win{text-align:center;font-weight:700;color:#0c1f3a}.nfl-pr-foot{font-size:11px;color:#9aa6b4;line-height:1.5;padding:14px 20px}
-  @media(min-width:1280px){.nfl-pr-layout{grid-template-columns:minmax(0,1fr) 270px}}
   @media(max-width:640px){.nfl-pr-title{font-size:1.5rem}.nfl-pr-table{min-width:560px;font-size:11px}.nfl-pr-col-rank{width:38px}.nfl-pr-col-team{width:60px}.nfl-pr-col-rating{width:115px}.nfl-pr-col-record{width:55px}.nfl-pr-col-win{width:60px}.nfl-pr-table thead th{font-size:9px;padding:8px 4px}.nfl-pr-team-link{padding:6px 4px;gap:0;justify-content:center}.nfl-pr-accent,.nfl-pr-name{display:none}.nfl-pr-logo,.nfl-pr-badge{width:26px;height:26px}.nfl-pr-heat{padding:6px 3px}.nfl-pr-heatval{font-size:11px}.nfl-pr-heatrank{font-size:8.5px}}
 `;

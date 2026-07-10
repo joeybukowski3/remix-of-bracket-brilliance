@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
-import NflGuideNav from "@/components/nfl/NflGuideNav";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import {
@@ -20,8 +18,7 @@ export default function NFLGuide2026() {
   });
 
   return (
-    <SiteShell>
-      <main className="min-h-screen bg-slate-50 pb-16">
+    <main className="min-h-screen bg-slate-50 pb-16">
         <section className="border-b border-slate-800 bg-[radial-gradient(circle_at_top_right,_#1d4ed8_0,_#0f172a_42%,_#020617_100%)] text-white">
           <div className="mx-auto max-w-[1500px] px-4 py-10 sm:px-6 lg:px-8">
             <div className="text-xs font-black uppercase tracking-[0.22em] text-sky-300">Joe Knows Ball · 2026 NFL Guide</div>
@@ -43,7 +40,6 @@ export default function NFLGuide2026() {
                 </div>
               </div>
             </div>
-            <div className="mt-7"><NflGuideNav /></div>
           </div>
         </section>
 
@@ -110,13 +106,12 @@ export default function NFLGuide2026() {
             <p className="mt-1">These pages use Joe Knows Ball's existing preseason ratings and an original projection formula. They do not reproduce third-party written analysis. The guide structure inspired the idea of combining predictions, regression indicators, market comparisons and team questions, but all copy and calculations on these pages are independently generated.</p>
           </section>
         </div>
-      </main>
-    </SiteShell>
+    </main>
   );
 }
 
 function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
-  return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-black text-slate-900">{title}</h2><p className="mt-1 text-xs text-slate-500">{subtitle}</p><div className="mt-4">{children}</div></div>;
+  return <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-black text-slate-900">{title}</h2><p className="mt-1 text-xs text-slate-500">{subtitle}</p><div className="mt-4">{children}</div></div>;
 }
 function StatCard({ label, value, detail }: { label: string; value: string; detail: string }) { return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-3xl font-black text-slate-900">{value}</div><div className="mt-1 text-xs text-slate-500">{detail}</div></div>; }
 function SectionHeading({ title, subtitle }: { title: string; subtitle: string }) { return <div><h2 className="text-2xl font-black text-slate-900">{title}</h2><p className="mt-1 max-w-3xl text-sm text-slate-500">{subtitle}</p></div>; }

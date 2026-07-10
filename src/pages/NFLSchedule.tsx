@@ -1,10 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
-import NflGuideNav from "@/components/nfl/NflGuideNav";
 import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
@@ -95,14 +93,12 @@ export default function NFLSchedule() {
   const activeGames = weeks.find(([label]) => label === activeWeek)?.[1] ?? [];
 
   return (
-    <SiteShell>
-      <main className="site-page pb-16 pt-8">
-        <div className="site-container site-stack">
+    <main className="site-page pb-16 pt-8">
+      <div className="site-container site-stack">
           <section>
             <div className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">NFL · Schedule</div>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">{season} NFL Schedule</h1>
             <p className="mt-2 text-sm text-slate-500">Kickoff times shown in Eastern Time · Refreshed automatically from free public data</p>
-            <div className="mt-5"><NflGuideNav /></div>
             <div className="mt-4 flex flex-wrap gap-2">
               {SEASONS.map((y) => (
                 <button
@@ -159,8 +155,7 @@ export default function NFLSchedule() {
           )}
 
           <LastUpdated meta={data?.gamesMeta} className="mt-4" />
-        </div>
-      </main>
-    </SiteShell>
+      </div>
+    </main>
   );
 }

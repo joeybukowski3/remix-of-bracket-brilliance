@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
-import NflGuideNav from "@/components/nfl/NflGuideNav";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { formatSigned, getNflSeasonGuide } from "@/lib/nfl/guideData";
@@ -30,14 +28,12 @@ export default function NFLRegression2026() {
   }, [filter, sort]);
 
   return (
-    <SiteShell>
-      <main className="min-h-screen bg-slate-50 pb-16">
+    <main className="min-h-screen bg-slate-50 pb-16">
         <section className="border-b border-slate-800 bg-slate-950 text-white">
           <div className="mx-auto max-w-[1500px] px-4 py-9 sm:px-6 lg:px-8">
             <div className="text-xs font-black uppercase tracking-[0.22em] text-sky-300">2026 NFL Guide</div>
             <h1 className="mt-2 text-4xl font-black tracking-tight">Fluke or for real?</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">This dashboard compares each team's 2025 wins with a fresh 2026 baseline built from underlying strength and schedule. Large positive gaps flag bounce-back potential; large negative gaps flag teams that may have won above their current profile.</p>
-            <div className="mt-6"><NflGuideNav /></div>
           </div>
         </section>
 
@@ -67,8 +63,7 @@ export default function NFLRegression2026() {
             <p className="mt-2">Instead of importing historical betting systems as fixed rules, this page uses a repeatable team-level comparison: 2025 wins versus a transparent 2026 projection. The projection starts at 8.5 wins, adjusts for composite team strength, then applies a smaller schedule adjustment where #1 is hardest and #32 is easiest. It is intended as a screening tool, not a final bet.</p>
           </section>
         </div>
-      </main>
-    </SiteShell>
+    </main>
   );
 }
 

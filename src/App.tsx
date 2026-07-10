@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MlbMobileHubEnhancements from "@/components/mlb/MlbMobileHubEnhancements";
+import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
 import Home from "./pages/Home";
 import Rankings from "./pages/Rankings";
 import Schedule from "./pages/Schedule";
@@ -98,15 +99,17 @@ const App = () => (
           <Route path="/bracket" element={<Navigate to={NCAA_BRACKET_PATH} replace />} />
           <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
-          <Route path="/nfl" element={<NFL />} />
-          <Route path="/nfl/standings" element={<NFLStandings />} />
-          <Route path="/nfl/schedule" element={<NFLSchedule />} />
-          <Route path="/nfl/super-bowl" element={<NFLSuperBowlOdds />} />
-          <Route path="/nfl/coach-of-year" element={<NFLCoachOfYear2026 />} />
-          <Route path="/nfl/guide" element={<NFLGuide2026 />} />
-          <Route path="/nfl/guide/regression" element={<NFLRegression2026 />} />
-          <Route path="/nfl/guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
-          <Route path="/nfl/2026-guide" element={<Navigate to="/nfl/guide" replace />} />
+          <Route path="/nfl" element={<NflPlatformLayout />}>
+            <Route index element={<NFL />} />
+            <Route path="standings" element={<NFLStandings />} />
+            <Route path="schedule" element={<NFLSchedule />} />
+            <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
+            <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />
+            <Route path="guide" element={<NFLGuide2026 />} />
+            <Route path="guide/regression" element={<NFLRegression2026 />} />
+            <Route path="guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
+            <Route path="2026-guide" element={<Navigate to="/nfl/guide" replace />} />
+          </Route>
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/world-cup" element={<WorldCup2026 />} />
           <Route path="/world-cup/analyzer" element={<WorldCupAnalyzer />} />

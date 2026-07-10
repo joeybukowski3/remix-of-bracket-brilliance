@@ -1,6 +1,4 @@
 import { Link, Navigate, useParams } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
-import NflGuideNav from "@/components/nfl/NflGuideNav";
 import NflTeamDashboardExtras from "@/components/nfl/NflTeamDashboardExtras";
 import NflCoachOfYearCase from "@/components/nfl/NflCoachOfYearCase";
 import {
@@ -33,8 +31,7 @@ export default function NFLTeamGuide2026() {
   const divisionTeams = GUIDE.divisions.find((entry) => entry.division === team.division)?.teams ?? [];
 
   return (
-    <SiteShell>
-      <main id="top" className="min-h-screen bg-slate-50 pb-16">
+    <main id="top" className="min-h-screen bg-slate-50 pb-16">
         <section className="border-b border-slate-800 text-white" style={{ background: `linear-gradient(125deg, #020617 0%, ${team.color} 135%)` }}>
           <div className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-9 lg:px-8">
             <Link to="/nfl/guide" className="text-xs font-black text-sky-200 hover:text-white">← Back to 2026 guide</Link>
@@ -53,8 +50,6 @@ export default function NFLTeamGuide2026() {
 
               <NflTeamHeaderOdds team={team} />
             </div>
-
-            <div className="mt-5 sm:mt-7"><NflGuideNav /></div>
           </div>
         </section>
 
@@ -155,8 +150,7 @@ export default function NFLTeamGuide2026() {
             <NflTeamStatsSidebar team={team} />
           </div>
         </div>
-      </main>
-    </SiteShell>
+    </main>
   );
 }
 
