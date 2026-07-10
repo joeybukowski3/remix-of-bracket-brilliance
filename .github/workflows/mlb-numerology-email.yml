@@ -238,8 +238,10 @@ jobs:
           git add \
             public/data/mlb/numerology/daily-card.json \
             public/data/mlb/numerology/performance.json \
-            public/data/mlb/numerology/performance-summary.json \
-            public/data/mlb/numerology/email-send-state.json
+            public/data/mlb/numerology/performance-summary.json
+          if [ -f public/data/mlb/numerology/email-send-state.json ]; then
+            git add public/data/mlb/numerology/email-send-state.json
+          fi
           if [ -d public/data/mlb/numerology/archive ]; then
             git add public/data/mlb/numerology/archive
           fi
