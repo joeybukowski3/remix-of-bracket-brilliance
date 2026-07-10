@@ -142,7 +142,7 @@ export function KPropsTable({ picks }: { picks: KPropRow[] }) {
       <div className="min-w-full">
         <div className="px-6 py-4 border-b border-slate-800">
           <h3 className="text-lg font-bold text-white">🎯 MLB K PROPS</h3>
-          <p className="text-xs text-slate-400 mt-1">Top 8 Strikeout Edges • Today's Slate</p>
+          <p className="text-xs text-slate-400 mt-1">Top 8 Strikeout Matchups • Today's Slate</p>
         </div>
         <table className="w-full text-xs">
           <thead className="bg-slate-900 border-b border-slate-800 sticky top-0">

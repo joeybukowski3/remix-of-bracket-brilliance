@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { selectTopKValuePlays } from "@/pages/MlbGameDetail";
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 
+// Defaults represent a solid, standard-workload starter (see
+// kPropRecommendationEligibility.ts's MIN_STANDARD_* constants), matching
+// kPropBestBets.test.ts's fixture convention.
 function row(overrides: Partial<PitcherStrikeoutTeamRow> = {}): PitcherStrikeoutTeamRow {
   return {
     rank: 1,
@@ -29,6 +32,14 @@ function row(overrides: Partial<PitcherStrikeoutTeamRow> = {}): PitcherStrikeout
     kOddsOver: "+110",
     kOddsUnder: "-140",
     kOddsBook: "draftkings",
+    workloadRole: "starter",
+    effectiveProjectedIP: 6,
+    workloadExpectedBF: 22,
+    workloadConfidenceGrade: "A",
+    workloadConfidenceScore: 0.9,
+    teamAdjustedKRate: 0.25,
+    workloadFlags: [],
+    publicRecommendationEligible: true,
     ...overrides,
   };
 }
@@ -70,5 +81,24 @@ describe("selectTopKValuePlays (social value-widget K selection)", () => {
       row({ pitcher: "Four", projectedKs: 6, kLine: 5.5 }),
     ];
     expect(selectTopKValuePlays(rows, 2)).toHaveLength(2);
+  });
+
+  it("does not select a Chris-Murphy-shaped low-workload reliever, even against an extremely low line", () => {
+    const result = selectTopKValuePlays([
+      row({
+        pitcher: "Low Workload Reliever",
+        projectedIP: 1,
+        projectedKs: 0.9,
+        kLine: 0.5,
+        workloadRole: "reliever",
+        effectiveProjectedIP: 1,
+        workloadExpectedBF: 3.8,
+        workloadConfidenceGrade: "A",
+        workloadConfidenceScore: 1,
+        teamAdjustedKRate: 0.236,
+        workloadFlags: ["RELIEVER_PROFILE", "RELIEVER_WORKLOAD_CAP", "LOW_PITCHER_SAMPLE"],
+      }),
+    ]);
+    expect(result).toHaveLength(0);
   });
 });

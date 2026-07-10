@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import MlbStrikeoutProps from "./MlbStrikeoutProps";
 import { cn } from "@/lib/utils";
+import { evaluateKPropOverRecommendation } from "@/lib/mlb/kPropRecommendationEligibility";
 
 type WorkloadDebugRow = {
   pitcher: string;
@@ -16,6 +17,12 @@ type WorkloadDebugRow = {
   projectionSource?: string | null;
   projectionFallbackReason?: string | null;
   publicRecommendationEligible?: boolean;
+  kLine?: number | null;
+  workloadExpectedBF?: number | null;
+  workloadConfidenceGrade?: string | null;
+  workloadConfidenceScore?: number | null;
+  teamAdjustedKRate?: number | null;
+  workloadFlags?: string[] | null;
 };
 
 type WorkloadDebugPayload = {
@@ -77,26 +84,61 @@ function WorkloadDebugPanel() {
                 <th className="px-3 py-2 text-center">Source</th>
                 <th className="px-3 py-2 text-center">Fallback Reason</th>
                 <th className="px-3 py-2 text-center">Eligible</th>
+                <th className="px-3 py-2 text-center">Raw Edge</th>
+                <th className="px-3 py-2 text-center">Adj Edge</th>
+                <th className="px-3 py-2 text-center">Workload Rel.</th>
+                <th className="px-3 py-2 text-center">Rec. Eligible</th>
+                <th className="px-3 py-2 text-center">Rec. Tier</th>
+                <th className="px-3 py-2 text-center">Exclusion Reason</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={`${row.pitcher}|${row.team}`} className={cn("border-t border-sky-100", row.publicRecommendationEligible === false ? "bg-red-50" : "bg-white/70")}>
-                  <td className="px-3 py-2 font-semibold text-slate-900">{row.pitcher} <span className="text-xs font-normal text-slate-500">{row.team} vs {row.opponent}</span></td>
-                  <td className="px-3 py-2 text-center">{row.workloadRole ?? "—"}</td>
-                  <td className="px-3 py-2 text-center">{format(row.legacyProjectedIP, 1)}</td>
-                  <td className="px-3 py-2 text-center">{format(row.candidateProjectedIP, 1)}</td>
-                  <td className="px-3 py-2 text-center font-bold text-sky-900">{format(row.effectiveProjectedIP, 1)}</td>
-                  <td className="px-3 py-2 text-center">{format(row.legacyProjectedKs, 1)}</td>
-                  <td className="px-3 py-2 text-center">{format(row.candidateProjectedKs, 1)}</td>
-                  <td className="px-3 py-2 text-center font-bold text-sky-900">{format(row.effectiveProjectedKs, 1)}</td>
-                  <td className="px-3 py-2 text-center">{row.projectionSource ?? "—"}</td>
-                  <td className="px-3 py-2 text-center text-[11px]">{row.projectionFallbackReason ?? "—"}</td>
-                  <td className="px-3 py-2 text-center">{row.publicRecommendationEligible === false ? "❌" : "✅"}</td>
-                </tr>
-              ))}
+              {rows.map((row) => {
+                // Recommendation-quality evaluation for Top Over eligibility.
+                // Matchup-signal inputs (strikeoutMatchupScore/opponentTeamKRate)
+                // aren't present on the raw pitcher record itself -- they're
+                // computed client-side against batters data -- so the
+                // exceptional-low-workload tier is conservatively approximated
+                // here (it may show "excluded" in this table even when the
+                // live page, which has that context, grants the exception).
+                const evaluation = evaluateKPropOverRecommendation({
+                  workloadRole: row.workloadRole ?? null,
+                  expectedIP: row.effectiveProjectedIP ?? null,
+                  expectedBF: row.workloadExpectedBF ?? null,
+                  projectedKs: row.effectiveProjectedKs ?? null,
+                  kLine: row.kLine ?? null,
+                  publicRecommendationEligible: row.publicRecommendationEligible,
+                  workloadConfidenceGrade: row.workloadConfidenceGrade ?? null,
+                  workloadConfidenceScore: row.workloadConfidenceScore ?? null,
+                  teamAdjustedKRate: row.teamAdjustedKRate ?? null,
+                  workloadFlags: row.workloadFlags ?? null,
+                  strikeoutMatchupScore: null,
+                  opponentTeamKRate: null,
+                });
+                return (
+                  <tr key={`${row.pitcher}|${row.team}`} className={cn("border-t border-sky-100", row.publicRecommendationEligible === false ? "bg-red-50" : "bg-white/70")}>
+                    <td className="px-3 py-2 font-semibold text-slate-900">{row.pitcher} <span className="text-xs font-normal text-slate-500">{row.team} vs {row.opponent}</span></td>
+                    <td className="px-3 py-2 text-center">{row.workloadRole ?? "—"}</td>
+                    <td className="px-3 py-2 text-center">{format(row.legacyProjectedIP, 1)}</td>
+                    <td className="px-3 py-2 text-center">{format(row.candidateProjectedIP, 1)}</td>
+                    <td className="px-3 py-2 text-center font-bold text-sky-900">{format(row.effectiveProjectedIP, 1)}</td>
+                    <td className="px-3 py-2 text-center">{format(row.legacyProjectedKs, 1)}</td>
+                    <td className="px-3 py-2 text-center">{format(row.candidateProjectedKs, 1)}</td>
+                    <td className="px-3 py-2 text-center font-bold text-sky-900">{format(row.effectiveProjectedKs, 1)}</td>
+                    <td className="px-3 py-2 text-center">{row.projectionSource ?? "—"}</td>
+                    <td className="px-3 py-2 text-center text-[11px]">{row.projectionFallbackReason ?? "—"}</td>
+                    <td className="px-3 py-2 text-center">{row.publicRecommendationEligible === false ? "❌" : "✅"}</td>
+                    <td className="px-3 py-2 text-center">{format(evaluation.rawEdge, 2)}</td>
+                    <td className="px-3 py-2 text-center font-bold text-sky-900">{format(evaluation.adjustedRecommendationEdge, 2)}</td>
+                    <td className="px-3 py-2 text-center">{format(evaluation.workloadScore, 2)}</td>
+                    <td className="px-3 py-2 text-center">{evaluation.eligible ? "✅" : "❌"}</td>
+                    <td className="px-3 py-2 text-center">{evaluation.tier}</td>
+                    <td className="px-3 py-2 text-center text-[11px]">{evaluation.reason ?? "—"}</td>
+                  </tr>
+                );
+              })}
               {!rows.length && !error ? (
-                <tr><td colSpan={11} className="px-4 py-6 text-center text-slate-500">Loading raw pitcher data…</td></tr>
+                <tr><td colSpan={17} className="px-4 py-6 text-center text-slate-500">Loading raw pitcher data…</td></tr>
               ) : null}
             </tbody>
           </table>
