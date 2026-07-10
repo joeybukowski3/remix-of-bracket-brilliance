@@ -114,6 +114,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         description: "Full season schedule with kickoff times, stadiums and final scores.",
         icon: "🗓️",
       },
+      {
+        to: "/nfl/matchups",
+        label: "Weekly Matchups",
+        shortLabel: "Matchups",
+        description: "Week-by-week game comparisons, advantages and matchup angles.",
+        icon: "⚔️",
+        match: "prefix",
+      },
     ],
   },
   {
@@ -168,6 +176,13 @@ export const NFL_SECTION_NAV_ITEMS: NflSectionNavItem[] = NFL_SECTION_NAV_CATEGO
 export function isNflSectionPathActive(pathname: string, to: string) {
   if (to === "/nfl/guide") {
     return pathname === to || pathname.startsWith("/nfl/guide/team/");
+  }
+  // Prefix-matched items (e.g. Weekly Matchups) stay active on their detail
+  // routes. Guard with a trailing slash so "/nfl/matchups" never bleeds into a
+  // sibling like "/nfl/schedule".
+  const prefixItem = NFL_SECTION_NAV_ITEMS.find((item) => item.to === to && item.match === "prefix");
+  if (prefixItem) {
+    return pathname === to || pathname.startsWith(`${to}/`);
   }
   return pathname === to;
 }

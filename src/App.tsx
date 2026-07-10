@@ -29,6 +29,8 @@ import MlbPowerRankings from "./pages/MlbPowerRankings";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
 import NFLSchedule from "./pages/NFLSchedule";
+import NFLMatchups from "./pages/NFLMatchups";
+import NFLMatchupDetail from "./pages/NFLMatchupDetail";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import NFLGuide2026 from "./pages/NFLGuide2026";
 import NFLRegression2026 from "./pages/NFLRegression2026";
@@ -103,6 +105,8 @@ const App = () => (
             <Route index element={<NFL />} />
             <Route path="standings" element={<NFLStandings />} />
             <Route path="schedule" element={<NFLSchedule />} />
+            <Route path="matchups" element={<NFLMatchups />} />
+            <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
             <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />
             <Route path="guide" element={<NFLGuide2026 />} />

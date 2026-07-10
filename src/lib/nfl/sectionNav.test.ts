@@ -12,6 +12,7 @@ const LIVE_NFL_ROUTES = new Set([
   "/nfl",
   "/nfl/standings",
   "/nfl/schedule",
+  "/nfl/matchups",
   "/nfl/super-bowl",
   "/nfl/coach-of-year",
   "/nfl/guide",
@@ -19,16 +20,26 @@ const LIVE_NFL_ROUTES = new Set([
 ]);
 
 describe("NFL section navigation", () => {
-  it("contains the seven major NFL destinations", () => {
+  it("contains the major NFL destinations in order", () => {
     expect(NFL_SECTION_NAV_ITEMS.map((item) => item.to)).toEqual([
       "/nfl",
       "/nfl/standings",
       "/nfl/schedule",
+      "/nfl/matchups",
       "/nfl/super-bowl",
       "/nfl/coach-of-year",
       "/nfl/guide",
       "/nfl/guide/regression",
     ]);
+  });
+
+  it("keeps Weekly Matchups in the Season category and active on detail routes", () => {
+    expect(getActiveNflSectionCategoryId("/nfl/matchups")).toBe("season");
+    expect(getActiveNflSectionCategoryId("/nfl/matchups/dallas-cowboys-at-ny-giants")).toBe("season");
+    expect(isNflSectionPathActive("/nfl/matchups/dallas-cowboys-at-ny-giants", "/nfl/matchups")).toBe(true);
+    // Prefix matching must not bleed into the sibling schedule route.
+    expect(isNflSectionPathActive("/nfl/schedule", "/nfl/matchups")).toBe(false);
+    expect(isNflSectionPathActive("/nfl/matchups", "/nfl/schedule")).toBe(false);
   });
 
   it("keeps team dashboards grouped under the 2026 guide", () => {
