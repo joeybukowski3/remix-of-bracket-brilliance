@@ -25,6 +25,7 @@ const PERFORMANCE_PATH = path.join(DATA_DIR, "performance.json");
 const PERFORMANCE_SUMMARY_PATH = path.join(DATA_DIR, "performance-summary.json");
 const EMAIL_HTML_PATH = path.join(DATA_DIR, "email-preview.html");
 const EMAIL_TEXT_PATH = path.join(DATA_DIR, "email-preview.txt");
+const EMAIL_SEND_STATE_PATH = path.join(DATA_DIR, "email-send-state.json");
 
 function getArgValue(name) {
   const prefix = `${name}=`;
@@ -56,10 +57,6 @@ async function main() {
   writeJson(PERFORMANCE_PATH, performance);
   writeJson(PERFORMANCE_SUMMARY_PATH, summary);
 
-  // Last-5-games and season-stats context is fetched fresh for email
-  // rendering only -- it's not part of the tracking-record schema and
-  // isn't written to daily-card.json/archive, so other consumers of that
-  // card (the live numerology page/tracking) are unaffected.
   const emailCard = await enrichCardPlaysWithContext(card);
   const html = renderEmailHtml(emailCard, summary);
   const text = renderEmailText(emailCard, summary);
@@ -114,7 +111,12 @@ async function sendEmail({ card, html, text }) {
     throw new Error(`Email webhook failed ${response.status}: ${body.slice(0, 500)}`);
   }
 
-  console.log("[mlb-numerology] Live email webhook sent.");
+  writeJson(EMAIL_SEND_STATE_PATH, {
+    date: card.date,
+    sentAt: new Date().toISOString(),
+    source: "github-actions",
+  });
+  console.log(`[mlb-numerology] Live email webhook sent and receipt recorded for ${card.date}.`);
 }
 
 main().catch((error) => {

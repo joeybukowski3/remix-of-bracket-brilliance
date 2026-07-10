@@ -1,12 +1,12 @@
 name: Generate MLB Numerology
 
 # Twice-daily generation:
-#   Phase 1 - Morning:          4:00 AM America/New_York with gated retries
+#   Phase 1 - Morning:          4:00 AM America/New_York with backup checks
 #   Phase 2 - Lineup-confirmed: first active game - 2 hours
 #
-# Scheduled delivery is best-effort. The runtime gate also advances a stale
-# slate immediately in auto mode, so a missed morning cron cannot leave the
-# previous day's page published indefinitely.
+# The 4:00 AM run is the primary daily refresh. Backup candidates at 6:45 AM
+# and 9:45 AM ET allow the 7:00 AM and 10:00 AM email retries to recover when
+# GitHub Actions delays or misses the primary run.
 
 on:
   push:
@@ -18,10 +18,16 @@ on:
       - "scripts/generate-mlb-numerology.mjs"
 
   schedule:
-    # 4:00 AM ET morning generation with retry coverage for both EDT and EST.
-    # The runtime gate in numerology-schedule-gate.mjs decides the true ET window.
-    - cron: "0,10,20,30,40,50 8-10 * * *"
-    # Lineup-confirmed polling window, still gated at runtime by first-game-minus-2h and lineup confirmation.
+    # Primary 4:00 AM ET refresh, DST-safe.
+    - cron: "0 8 * * *"
+    - cron: "0 9 * * *"
+    # Backup refresh before the 7:00 AM email retry, DST-safe.
+    - cron: "45 10 * * *"
+    - cron: "45 11 * * *"
+    # Backup refresh before the 10:00 AM email retry, DST-safe.
+    - cron: "45 13 * * *"
+    - cron: "45 14 * * *"
+    # Lineup-confirmed polling window.
     - cron: "0,10,20,30,40,50 12-23 * * *"
 
   workflow_dispatch:
@@ -52,7 +58,9 @@ on:
         type: string
 
 concurrency:
-  group: main-data-writers-${{ github.repository }}
+  # Keep numerology retries from queueing behind every other main-data writer.
+  # The push step already rebases/retries against current main.
+  group: mlb-numerology-generation-${{ github.repository }}
   cancel-in-progress: false
 
 permissions:
