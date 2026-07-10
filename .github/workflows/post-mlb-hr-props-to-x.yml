@@ -13,9 +13,13 @@ name: Post MLB HR Props to X
 #      up and failing the run rather than posting stale/incomplete data.
 #   4. The script itself (post-mlb-hr-props-to-x.mjs) can still skip
 #      silently-but-loudly (logs a reason, exits 0) if the freshness/odds/
-#      top-props checks fail even after that wait, or if duplicate
-#      protection finds this exact table was already posted today.
-# The "Summary" step at the end of every run logs which of these applied.
+#      top-props checks fail even after that wait, or if the daily
+#      posting lock (one key per slate date -- see buildDailyPostingKey
+#      in the script) finds today already has a post receipt.
+# The "Summary" step at the end of every run logs which of these applied,
+# and the script itself logs a final `finalStatus=` line: POSTED,
+# SKIPPED_ALREADY_POSTED_TODAY, SKIPPED_PREVIEW_MODE,
+# SKIPPED_NO_ELIGIBLE_ROWS, or FAILED.
 on:
   workflow_dispatch:
     inputs:
@@ -31,24 +35,34 @@ on:
         default: "production"
         type: choice
         options: [production, github, local]
+      force_repost:
+        description: "Bypass the daily posting lock and post again even if today's slate already has a receipt. Only for an intentional, reviewed re-post -- never set true routinely."
+        required: true
+        default: false
+        type: boolean
   workflow_run:
     workflows: ["Generate MLB Data"]
     types: [completed]
     branches: [main]
   schedule:
-    # Backstop trigger. GitHub Actions' scheduled-trigger delivery for
-    # this repo has been observed (via Actions run history) to fire
-    # "Generate MLB Data"'s cron entries 1.5-3+ hours behind their nominal
-    # time -- the 10:23 AM ET slot routinely doesn't complete until
-    # 11:20 AM-1:35 PM ET, well past what a workflow_run relay can catch
-    # in a narrow morning window. This direct schedule guarantees at
-    # least one attempt lands inside the (now widened) window even on a
-    # day workflow_run never does. It reuses the exact same time gate,
-    # freshness checks, and duplicate protection as workflow_run, so it
-    # safely no-ops if a workflow_run attempt already posted successfully
-    # earlier that day.
-    - cron: "30 13 * * *"
-      timezone: "America/New_York" # 1:30 PM ET
+    # Backstop trigger, in case workflow_run never fires or fires too
+    # late in the window to see fresh data. GitHub Actions `schedule`
+    # cron is UTC-only -- a `timezone:` sub-key here was previously
+    # assumed to shift this to America/New_York, but that is NOT
+    # confirmed GitHub Actions behavior (see PR description). Written in
+    # explicit UTC with a DST-safe pair of cron entries instead: one
+    # fires for real during EDT, one during EST, and only the one that
+    # matches the current wall-clock does anything useful -- the other's
+    # firing is a harmless no-op caught by the time gate/daily lock.
+    #   - "45 17 * * *" = 17:45 UTC = 1:45 PM ET during EDT (Mar-Nov)
+    #   - "45 18 * * *" = 18:45 UTC = 1:45 PM ET during EST (Nov-Mar)
+    # 1:45 PM ET sits inside the 9 AM-2 PM ET time gate below, late
+    # enough to give workflow_run every chance to post first (today's
+    # observed workflow_run completions ranged 5:03 AM-1:24 PM ET), while
+    # the daily posting lock guarantees this never double-posts if
+    # workflow_run already succeeded earlier.
+    - cron: "45 17 * * *"
+    - cron: "45 18 * * *"
 
 concurrency:
   group: post-mlb-hr-props-to-x
@@ -88,11 +102,27 @@ jobs:
         shell: bash
         run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
+      # actions/cache write-once bug fix: a single fixed key
+      # (mlb-hr-props-x-posted-<date>) can only ever be *saved* once per
+      # day -- GitHub Actions cache keys are immutable, so every run after
+      # the first one that day silently fails to persist its updated
+      # receipt back to the cache (logged as a warning, not an error).
+      # Confirmed via Actions run history 2026-07-10: two separate runs
+      # (16:36 and 17:24 UTC) computed the identical daily posting key and
+      # BOTH posted, because the second run's restore only ever saw the
+      # cache state from the *first* successful save of the day. Fixed by
+      # giving every run's save a unique key (run_id) and using
+      # restore-keys to pick up the most recent prior save by prefix --
+      # this lets the cache accumulate across multiple runs in one day
+      # instead of freezing after the first.
       - name: Restore duplicate-post state
-        uses: actions/cache@v4
+        id: restore_cache
+        uses: actions/cache/restore@v4
         with:
           path: .cache/mlb-hr-props-x-posted
-          key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}
+          key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
+          restore-keys: |
+            mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-
 
       # Widened from the original 9-11 AM ET window: Actions run history for
       # this repo shows "Generate MLB Data"'s scheduled completions routinely
@@ -164,10 +194,25 @@ jobs:
           HR_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
           X_ALLOW_LIVE_POST: "true"
+          # Only ever meaningful for workflow_dispatch (inputs.* is empty
+          # for workflow_run/schedule); the script also independently
+          # re-checks GITHUB_EVENT_NAME before honoring this.
+          HR_X_FORCE_REPOST: ${{ inputs.force_repost || 'false' }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
           JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+      # Explicit save under a run-unique key -- see the "Restore
+      # duplicate-post state" step above for why a single fixed key
+      # cannot be used. always() so a receipt written just before a later
+      # failure (e.g. the screenshot-upload step) still persists.
+      - name: Save duplicate-post state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/mlb-hr-props-x-posted
+          key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
 
       - name: Upload screenshot (dry-run)
         if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
@@ -187,4 +232,5 @@ jobs:
           echo "workflow_run event (if applicable): ${{ github.event.workflow_run.event || 'n/a' }}"
           echo "time gate should_run: ${{ steps.time_gate.outputs.should_run || 'n/a' }}"
           echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (time gate blocked before mode was resolved)' }}"
-          echo "See the 'Post HR Props' step output above for the exact skip/post/error reason from the script itself."
+          echo "force repost override: ${{ inputs.force_repost || 'false' }}"
+          echo "See the 'Post HR Props' step output above for the exact finalStatus= line (POSTED / SKIPPED_ALREADY_POSTED_TODAY / SKIPPED_PREVIEW_MODE / SKIPPED_NO_ELIGIBLE_ROWS / FAILED) and skip/post/error reason from the script itself."

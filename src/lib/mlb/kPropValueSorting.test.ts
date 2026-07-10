@@ -126,6 +126,55 @@ describe("sortByAbsoluteProjectionEdge (Best Value)", () => {
     expect(sorted).toHaveLength(3); // still visible, not dropped
     expect(sorted.map((r) => r.pitcher)).toEqual(["ValidBig", "ValidSmall", "Invalid"]);
   });
+
+  it("ranks a strong OVER above a weaker UNDER", () => {
+    const rows = [
+      makeRow({ pitcher: "SmallUnder", projectedKs: 5.8, kLine: 6.0 }), // -0.2
+      makeRow({ pitcher: "BigOver", projectedKs: 9.5, kLine: 6.0 }), // +3.5
+    ];
+    const sorted = sortByAbsoluteProjectionEdge(rows);
+    expect(sorted.map((r) => r.pitcher)).toEqual(["BigOver", "SmallUnder"]);
+  });
+
+  describe("deterministic tie-breaking on equal absolute edge", () => {
+    it("breaks a tie by higher strikeoutMatchupScore first", () => {
+      const rows = [
+        makeRow({ pitcher: "LowerScore", projectedKs: 7.5, kLine: 6.5, strikeoutMatchupScore: 50 }), // edge +1.0
+        makeRow({ pitcher: "HigherScore", projectedKs: 7.5, kLine: 6.5, strikeoutMatchupScore: 80 }), // edge +1.0, tied
+      ];
+      const sorted = sortByAbsoluteProjectionEdge(rows);
+      expect(sorted.map((r) => r.pitcher)).toEqual(["HigherScore", "LowerScore"]);
+    });
+
+    it("falls through to workloadConfidenceScore when edge and matchup score are both tied", () => {
+      const rows = [
+        makeRow({ pitcher: "LowerConfidence", projectedKs: 7.5, kLine: 6.5, strikeoutMatchupScore: 60, workloadConfidenceScore: 0.4 }),
+        makeRow({ pitcher: "HigherConfidence", projectedKs: 7.5, kLine: 6.5, strikeoutMatchupScore: 60, workloadConfidenceScore: 0.9 }),
+      ];
+      const sorted = sortByAbsoluteProjectionEdge(rows);
+      expect(sorted.map((r) => r.pitcher)).toEqual(["HigherConfidence", "LowerConfidence"]);
+    });
+
+    it("falls through to alphabetical pitcher name as the final, stable tie-breaker", () => {
+      const rows = [
+        makeRow({ pitcher: "Zulu Pitcher", projectedKs: 7.5, kLine: 6.5, strikeoutMatchupScore: 60, workloadConfidenceScore: 0.7 }),
+        makeRow({ pitcher: "Alpha Pitcher", projectedKs: 7.5, kLine: 6.5, strikeoutMatchupScore: 60, workloadConfidenceScore: 0.7 }),
+      ];
+      const sorted = sortByAbsoluteProjectionEdge(rows);
+      expect(sorted.map((r) => r.pitcher)).toEqual(["Alpha Pitcher", "Zulu Pitcher"]);
+    });
+
+    it("tie-break output is deterministic across repeated calls with the same input", () => {
+      const rows = [
+        makeRow({ pitcher: "B", projectedKs: 7.5, kLine: 6.5, strikeoutMatchupScore: 60 }),
+        makeRow({ pitcher: "A", projectedKs: 7.5, kLine: 6.5, strikeoutMatchupScore: 60 }),
+      ];
+      const first = sortByAbsoluteProjectionEdge(rows).map((r) => r.pitcher);
+      const second = sortByAbsoluteProjectionEdge(rows).map((r) => r.pitcher);
+      expect(first).toEqual(second);
+      expect(first).toEqual(["A", "B"]);
+    });
+  });
 });
 
 describe("selectTopSocialKRows (social/export ranking)", () => {

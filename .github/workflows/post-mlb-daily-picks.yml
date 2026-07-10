@@ -1,7 +1,31 @@
 name: Post MLB Daily Picks
 
+# DEPRECATED LEGACY X-POSTING PATH -- kept temporarily for history/review,
+# not deleted yet. This predates the modern content-specific X posters
+# (post-mlb-hr-props-to-x.yml, post-mlb-strikeout-props-to-x.yml,
+# post-mlb-numerology-to-x.yml, post-mlb-ml-edges-to-x.yml) and has none
+# of their safeguards: no duplicate protection, no account verification,
+# no freshness/row validation, and it posts via a third-party marketplace
+# action (snow-actions/post-tweet) using a DIFFERENT, inconsistent secret
+# naming convention (X_API_KEY/X_API_SECRET/X_ACCESS_TOKEN/X_ACCESS_SECRET
+# vs. the JKB_X_* secrets every modern poster uses). Its own tweet builder
+# also independently sources HR props content from the same
+# hr-props-best-bets.json the modern HR poster reads, with zero
+# coordination between the two -- a live run of this workflow could post
+# HR-adjacent content with no relationship to the modern HR poster's own
+# duplicate protection.
+#
+# The live-posting step has been removed entirely (not just disabled) so
+# no workflow_dispatch of this file can ever make a real X API call,
+# regardless of which secrets are or aren't configured. Generation only
+# -- this workflow now prints the preview tweet text to the log for
+# review and stops there.
+#
+# Candidate for full deletion (this file + scripts/generate-mlb-daily-
+# picks.mjs) in a later cleanup PR, once confirmed nothing still depends
+# on it.
 on:
-  workflow_dispatch:         # Manual only while X posting is paused
+  workflow_dispatch:
 
 jobs:
   post-picks:
@@ -14,21 +38,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Generate Daily Picks
+      - name: Generate Daily Picks (preview only)
         run: node scripts/generate-mlb-daily-picks.mjs
 
-      - name: Read Tweet
-        id: read_tweet
+      - name: Summary
+        if: always()
+        shell: bash
         run: |
-          echo "TWEET<<EOF" >> $GITHUB_ENV
-          cat /tmp/mlb-daily-picks.txt >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Post to X
-        uses: snow-actions/post-tweet@v1.0.0
-        with:
-          status: ${{ env.TWEET }}
-          consumer-key: ${{ secrets.X_API_KEY }}
-          consumer-secret: ${{ secrets.X_API_SECRET }}
-          access-token: ${{ secrets.X_ACCESS_TOKEN }}
-          access-token-secret: ${{ secrets.X_ACCESS_SECRET }}
+          echo "== Post MLB Daily Picks summary =="
+          echo "*** THIS IS A DEPRECATED, PREVIEW-ONLY LEGACY WORKFLOW ***"
+          echo "The live tweet-posting step has been removed. See the 'Generate Daily Picks (preview only)' step output above for the generated preview text -- no X API call is made by this workflow."

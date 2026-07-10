@@ -4,6 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
+import { isMlPostingEnabled } from "./lib/mlb-ml-posting-gate.mjs";
 
 const ROOT = process.cwd();
 const ML_EDGES_URL = "https://www.joeknowsball.com/mlb";
@@ -486,6 +487,10 @@ async function screenshotExportTarget(exportTarget, outputPath = SCREENSHOT_PATH
   return outputPath;
 }
 
+function logFinalStatus(status) {
+  console.log(`[mlb-ml-edges-x] finalStatus=${status}`);
+}
+
 async function main() {
   if (args.has("--help") || args.has("-h")) {
     console.log(usage());
@@ -495,6 +500,12 @@ async function main() {
   const mode = getMode();
   if (mode === "verify-account") {
     await verifyExpectedXAccount();
+    return;
+  }
+
+  if ((mode === "post" || mode === "post-text-only") && !isMlPostingEnabled(process.env.ML_X_POSTING_ENABLED)) {
+    console.log("[mlb-ml-edges-x] ML X posting is paused by configuration (ML_X_POSTING_ENABLED is not \"true\"). The ML model/table is under revision. No X API call was made.");
+    logFinalStatus("SKIPPED_DISABLED");
     return;
   }
 
@@ -525,6 +536,7 @@ async function main() {
     if (freshnessError) {
       if (mode === "post-key-only") throw new Error(freshnessError);
       console.log(`[mlb-ml-edges-x] ${freshnessError}`);
+      logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
       return;
     }
 
@@ -532,6 +544,7 @@ async function main() {
     if (rowsError) {
       if (mode === "post-key-only") throw new Error(rowsError);
       console.log(`[mlb-ml-edges-x] ${rowsError}`);
+      logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
       return;
     }
 
@@ -545,6 +558,21 @@ async function main() {
 
     if (result.skipped) {
       console.log(`[mlb-ml-edges-x] ${result.reason}`);
+      logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
+      return;
+    }
+
+    if (mode === "dry-run") {
+      console.log("");
+      console.log(result.caption);
+      console.log("");
+      try {
+        screenshotPath = await screenshotExportTarget(pageData.exportTarget);
+        console.log(`[mlb-ml-edges-x] screenshotPath=${screenshotPath}`);
+      } catch (screenshotErr) {
+        console.warn(`[mlb-ml-edges-x] Screenshot failed: ${screenshotErr instanceof Error ? screenshotErr.message : screenshotErr}`);
+      }
+      logFinalStatus("SKIPPED_PREVIEW_MODE");
       return;
     }
 
@@ -606,6 +634,8 @@ async function main() {
       });
       console.log(`[mlb-ml-edges-x] duplicateReceipt=${duplicateStatePath}`);
     }
+
+    logFinalStatus("POSTED");
   } finally {
     await browser.close();
   }
@@ -616,6 +646,7 @@ try {
 } catch (error) {
   console.error(`[mlb-ml-edges-x] ${sanitizeLogValue(error instanceof Error ? error.message : error)}`);
   logXApiError(error);
+  console.log("[mlb-ml-edges-x] finalStatus=FAILED");
   console.error("");
   console.error(usage());
   process.exitCode = 1;
