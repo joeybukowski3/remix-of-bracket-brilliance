@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, Search } from "lucide-react";
-import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -287,8 +286,7 @@ export default function MlbPowerRankings() {
   }, [data, league, query, sortKey]);
 
   return (
-    <SiteShell>
-      <div className="mx-auto max-w-6xl space-y-4 px-4 py-4 sm:px-6">
+      <div className="mx-auto max-w-6xl space-y-4 py-4">
         <MlbNavHero />
 
         <header>
@@ -357,6 +355,5 @@ export default function MlbPowerRankings() {
           </>
         )}
       </div>
-    </SiteShell>
   );
 }

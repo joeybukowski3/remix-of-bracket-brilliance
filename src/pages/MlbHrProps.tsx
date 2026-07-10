@@ -1,6 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -1796,9 +1795,8 @@ export default function MlbHrProps() {
   };
 
   return (
-    <SiteShell>
       <main className={cn("site-page bg-[#edf2f7] pb-12 pt-3 text-slate-900", isMobile ? "text-[14px]" : "")}>
-        <div className="site-container" style={{ maxWidth: "none", width: "100%" }}>
+        <div>
           <div className="mb-3"><MlbNavHero /></div>
           {!hasData ? (
             <div className="rounded-[28px] border border-slate-200 bg-white p-3 text-sm text-slate-500 shadow-sm">
@@ -2860,6 +2858,5 @@ export default function MlbHrProps() {
           )}
         </div>
       </main>
-    </SiteShell>
   );
 }

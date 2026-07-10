@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
@@ -155,9 +154,8 @@ export default function MlbBatterVsPitcher() {
   );
 
   return (
-    <SiteShell>
       <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
-        <div className="site-container space-y-4">
+        <div className="space-y-4">
           <MlbNavHero />
           <ModelSummaryHeader
             eyebrow="Batter matchup model"
@@ -372,6 +370,5 @@ export default function MlbBatterVsPitcher() {
           </div>
         </div>
       </main>
-    </SiteShell>
   );
 }

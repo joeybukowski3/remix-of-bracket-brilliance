@@ -16,6 +16,7 @@ import Bracket from "./pages/Bracket";
 import BettingEdge from "./pages/BettingEdge";
 import Donate from "./pages/Donate";
 import TeamPage from "./pages/TeamPage";
+import MlbLayout from "@/components/mlb/MlbLayout";
 import MlbGameDetail from "./pages/MlbGameDetail";
 import MlbHrProps from "./pages/MlbHrProps";
 import MlbSinCity from "./pages/MlbSinCity";
@@ -119,16 +120,18 @@ const App = () => (
           <Route path="/world-cup/analyzer" element={<WorldCupAnalyzer />} />
           <Route path="/odds-tracker" element={<PublicBetting />} />
           <Route path="/public-betting" element={<Navigate to="/odds-tracker" replace />} />
-          <Route path="/mlb" element={<MlbGameDetail />} />
-          <Route path="/mlb/props" element={<MlbPropsHub />} />
-          <Route path="/mlb/hr-props" element={<MlbHrProps />} />
-          <Route path="/mlb/sin-city" element={<MlbSinCity />} />
-          <Route path="/mlb/strikeout-props" element={<MlbStrikeoutProps />} />
-          <Route path="/mlb/batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
-          <Route path="/mlb/numerology" element={<MlbNumerologyPage />} />
-          {/* Unlinked, dedicated route for the X-post screenshot generator (scripts/post-mlb-numerology-to-x.mjs) -- not part of site navigation. */}
+          {/* Unlinked, dedicated route for the X-post screenshot generator (scripts/post-mlb-numerology-to-x.mjs) -- not part of site navigation. Deliberately kept OUTSIDE MlbLayout: the automated screenshot capture needs a bare page with no header/sidebar chrome. */}
           <Route path="/mlb/numerology/x-export" element={<MlbNumerologyXExport />} />
-          <Route path="/mlb/power-rankings" element={<MlbPowerRankings />} />
+          <Route path="/mlb" element={<MlbLayout />}>
+            <Route index element={<MlbGameDetail />} />
+            <Route path="props" element={<MlbPropsHub />} />
+            <Route path="hr-props" element={<MlbHrProps />} />
+            <Route path="sin-city" element={<MlbSinCity />} />
+            <Route path="strikeout-props" element={<MlbStrikeoutProps />} />
+            <Route path="batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
+            <Route path="numerology" element={<MlbNumerologyPage />} />
+            <Route path="power-rankings" element={<MlbPowerRankings />} />
+          </Route>
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<PgaHistoryModel />} />
           <Route path="/pga/legacy" element={<PgaHub />} />
