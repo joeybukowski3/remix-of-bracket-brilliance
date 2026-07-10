@@ -4,6 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
+import { filterEligibleKRows } from "./lib/mlb-k-social-eligibility.mjs";
 
 const ROOT = process.cwd();
 const STRIKEOUT_PROPS_URL = "https://www.joeknowsball.com/mlb";
@@ -104,6 +105,7 @@ async function loadKPropsFromPage(page) {
       oddsOver: el.getAttribute("data-k-odds-over") || "",
       oddsUnder: el.getAttribute("data-k-odds-under") || "",
       bookmaker: el.getAttribute("data-k-bookmaker") || "",
+      status: el.getAttribute("data-k-status") || "",
     }));
     rows.push({
       pitcher: normalizeText(data.pitcher),
@@ -117,10 +119,16 @@ async function loadKPropsFromPage(page) {
       oddsOver: normalizeText(data.oddsOver) || null,
       oddsUnder: normalizeText(data.oddsUnder) || null,
       bookmaker: normalizeText(data.bookmaker) || null,
+      status: normalizeText(data.status) || null,
     });
   }
 
-  return { date: meta.date, generatedAt: meta.generatedAt, rows, exportTarget };
+  const { eligibleRows, excludedCount, excludedStatuses } = filterEligibleKRows(rows);
+  if (excludedCount > 0) {
+    console.log(`[mlb-strikeout-props-x] excludedNonValidRows=${excludedCount} (statuses: ${excludedStatuses.join(",") || "none"})`);
+  }
+
+  return { date: meta.date, generatedAt: meta.generatedAt, rows: eligibleRows, exportTarget };
 }
 
 async function screenshotExportTarget(exportTarget, outputPath = SCREENSHOT_PATH) {

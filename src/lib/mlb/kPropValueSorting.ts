@@ -1,4 +1,5 @@
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
+import { resolveKPropStatus, type KPropStatusInput } from "@/lib/mlb/kPropStatus";
 
 export type KPropDirection = "over" | "under" | "neutral";
 
@@ -83,13 +84,16 @@ export function sortByAbsoluteProjectionEdge<T extends Pick<PitcherStrikeoutTeam
 
 /**
  * Selects rows for a social/export K props graphic: only rows with a real
- * projection and line (never fabricated), ranked by absolute
- * projection-vs-line edge (not projected Ks or matchup score), highest
- * first. Returns an empty array when there are no valid rows at all --
- * callers should render an explicit unavailable/empty state in that case
- * rather than falling back to an unrelated ranking.
+ * projection and line (never fabricated) AND an explicit VALID status
+ * (recomputed fresh here, never trusted from a cached field) -- a row
+ * with a low-confidence or invalid-odds projection is excluded even
+ * though it technically has finite projectedKs/kLine numbers. Ranked by
+ * absolute projection-vs-line edge (not projected Ks or matchup score),
+ * highest first. Returns an empty array when there are no valid rows at
+ * all -- callers should render an explicit unavailable/empty state in
+ * that case rather than falling back to an unrelated ranking.
  */
-export function selectTopSocialKRows<T extends Pick<PitcherStrikeoutTeamRow, "projectedKs" | "kLine">>(rows: T[], limit = 5): T[] {
-  const valid = rows.filter((row) => getProjectionEdgeInfo(row).isValid);
+export function selectTopSocialKRows<T extends Pick<PitcherStrikeoutTeamRow, "projectedKs" | "kLine"> & KPropStatusInput>(rows: T[], limit = 5): T[] {
+  const valid = rows.filter((row) => getProjectionEdgeInfo(row).isValid && resolveKPropStatus(row).status === "VALID");
   return sortByAbsoluteProjectionEdge(valid).slice(0, limit);
 }

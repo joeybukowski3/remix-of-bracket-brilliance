@@ -49,6 +49,37 @@ test("K odds report zero matches", () => {
   assert.equal(result.status.pitchersMatched, 0);
 });
 
+test("K odds reject an incoherent two-sided market (Jack Perkins audit regression)", () => {
+  // +881 over / -100 under implies ~10.2% + 50% = ~60.2% combined -- a real
+  // two-sided sportsbook market is never below ~100% combined (the vig).
+  // This shaped exactly the Jack Perkins case: a mismatched/wrong-source
+  // price attached a 2.5 K line instead of the real ~5.5 market line.
+  const result = injectKOdds(raw, { date: "2026-06-28", kOdds: {
+    "jose berrios": { line: 2.5, over: "+881", under: "-100", bookmaker: "underdog" },
+  }});
+  // The incoherent entry is filtered out of usefulEntries entirely (never
+  // considered a real market to match against), same as an empty provider response.
+  assert.equal(result.status.status, "no_useful_provider_records");
+  assert.equal(result.data.pitchers[0].kLine, 5.5); // stale same-slate line preserved, not overwritten by the incoherent one
+});
+
+test("K odds accept a coherent two-sided market from the same book", () => {
+  const result = injectKOdds(raw, { date: "2026-06-28", kOdds: {
+    "jose berrios": { line: 5.5, over: "-115", under: "-115", bookmaker: "draftkings" },
+  }});
+  assert.equal(result.status.status, "partial_success");
+  assert.equal(result.data.pitchers[0].kLine, 5.5);
+  assert.equal(result.data.pitchers[0].kOddsBook, "draftkings");
+});
+
+test("K odds allow a one-sided market through unchecked for coherence", () => {
+  const result = injectKOdds(raw, { date: "2026-06-28", kOdds: {
+    "jose berrios": { line: 6.5, over: "+105", under: null, bookmaker: "draftkings" },
+  }});
+  assert.equal(result.status.status, "partial_success");
+  assert.equal(result.data.pitchers[0].kLine, 6.5);
+});
+
 test("HR odds update matches and preserve public fields", () => {
   const result = injectHrOdds(raw, { date: "2026-06-28", hrOdds: {
     "jose ramirez": { line: 0.5, yes: "+245", no: "-350", bookmaker: "draftkings" },

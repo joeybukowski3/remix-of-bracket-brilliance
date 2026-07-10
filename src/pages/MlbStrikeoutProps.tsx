@@ -21,6 +21,7 @@ import {
 } from "@/pages/MlbHrProps";
 import { buildKPropBestBets, type KBestBet } from "@/lib/mlb/kPropBestBets";
 import { getProjectionEdgeInfo, sortByAbsoluteProjectionEdge, sortByProjectedKs } from "@/lib/mlb/kPropValueSorting";
+import { describeKPropStatusReasons, resolveKPropStatus } from "@/lib/mlb/kPropStatus";
 import { cn } from "@/lib/utils";
 import { keyForStrikeoutPropRow, useMlbStrikeoutPropDetails } from "@/hooks/useMlbStrikeoutPropDetails";
 import MlbStrikeoutPropRowDetail, {
@@ -103,6 +104,50 @@ function StatScorePill({ value }: { value: number | null | undefined }) {
   const number = Number(value);
   const tone = number >= 65 ? "bg-emerald-600 text-white" : number >= 58 ? "bg-emerald-100 text-emerald-800" : number < 50 ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-700";
   return <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums", tone)}>{number.toFixed(1)}</span>;
+}
+
+/**
+ * Pastel gradient per mobile stat-cell position (K%, Whiff%, Opp K%, 4th
+ * column) -- shared by both the main and Low Confidence mobile card grids
+ * so the two sections stay visually consistent. Kept as one small class
+ * map instead of repeating gradient strings inline at each call site.
+ */
+const MOBILE_STAT_CELL_GRADIENTS = [
+  "bg-gradient-to-br from-sky-50 to-sky-100",
+  "bg-gradient-to-br from-emerald-50 to-emerald-100",
+  "bg-gradient-to-br from-amber-50 to-amber-100",
+  "bg-gradient-to-br from-violet-50 to-violet-100",
+] as const;
+
+function MobileStatCell({ label, value, position }: { label: string; value: string; position: 0 | 1 | 2 | 3 }) {
+  return (
+    <div className={cn("px-1 py-2", MOBILE_STAT_CELL_GRADIENTS[position])}>
+      <div className="text-slate-500">{label}</div>
+      <div className="font-black text-slate-900">{value}</div>
+    </div>
+  );
+}
+
+const LOW_CONFIDENCE_STATUS_LABELS: Record<string, string> = {
+  LOW_CONFIDENCE: "Low confidence",
+  INSUFFICIENT_DATA: "Insufficient data",
+  INVALID_ODDS: "Invalid odds",
+  INVALID_WORKLOAD: "Projection mismatch",
+};
+
+/** Exclusion badge + reason chips for a Low Confidence table row -- see kPropStatus.ts. */
+function LowConfidenceStatusBadge({ row }: { row: PitcherStrikeoutTeamRow }) {
+  const { status, reasons } = resolveKPropStatus(row);
+  const label = LOW_CONFIDENCE_STATUS_LABELS[status] ?? status;
+  const reasonLabels = describeKPropStatusReasons(reasons);
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="inline-block w-fit rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-800">{label}</span>
+      {reasonLabels.length > 0 && (
+        <span className="text-[10px] leading-tight text-slate-500">{reasonLabels.join(" · ")}</span>
+      )}
+    </div>
+  );
 }
 
 function BestBetCard({ bet, compact = false }: { bet: KBestBet; compact?: boolean }) {
@@ -244,15 +289,31 @@ export default function MlbStrikeoutProps() {
     return <MlbStrikeoutPropRowDetail detail={detail} />;
   }
 
+  // Rows whose projection status disqualifies them from ranking/
+  // recommendation move to the Low Confidence table below instead of the
+  // main table -- see kPropStatus.ts. A row with simply no market posted
+  // (NO_MARKET) is not a data-quality problem and stays in the main table
+  // exactly as before this fix.
+  const { mainRows, lowConfidenceRows } = useMemo(() => {
+    const main: PitcherStrikeoutTeamRow[] = [];
+    const lowConfidence: PitcherStrikeoutTeamRow[] = [];
+    for (const row of strikeoutDetailRows) {
+      const { status } = resolveKPropStatus(row);
+      if (status === "VALID" || status === "NO_MARKET") main.push(row);
+      else lowConfidence.push(row);
+    }
+    return { mainRows: main, lowConfidenceRows: lowConfidence };
+  }, [strikeoutDetailRows]);
+
   const parkRows = useMemo(() => [...buildParkSidebarRows(games)].sort((a, b) => a.parkFactor - b.parkFactor), [games]);
   const teams = useMemo(() => Array.from(new Set(strikeoutDetailRows.flatMap((row) => [row.team, row.opponent]))).sort(), [strikeoutDetailRows]);
   const gameOptions = useMemo(() => games.map((game) => ({ value: game.gameKey, label: game.matchup })), [games]);
-  const bestScore = strikeoutDetailRows[0]?.strikeoutMatchupScore ?? null;
-  const hasKOdds = useMemo(() => strikeoutDetailRows.some((row) => (row.kLine != null && row.kLine > 0) || Boolean(row.kOddsOver) || Boolean(row.kOddsUnder)), [strikeoutDetailRows]);
+  const bestScore = mainRows[0]?.strikeoutMatchupScore ?? null;
+  const hasKOdds = useMemo(() => mainRows.some((row) => (row.kLine != null && row.kLine > 0) || Boolean(row.kOddsOver) || Boolean(row.kOddsUnder)), [mainRows]);
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const rows = strikeoutDetailRows.filter((row) => {
+    const rows = mainRows.filter((row) => {
       if (teamFilter !== "all" && row.team !== teamFilter && row.opponent !== teamFilter) return false;
       if (gameFilter !== "all" && row.gameKey !== gameFilter) return false;
       if (confidenceFilter !== "All tiers" && getPropEdgeTier(row.strikeoutMatchupScore).label !== confidenceFilter) return false;
@@ -260,7 +321,7 @@ export default function MlbStrikeoutProps() {
       return [row.pitcher, row.team, row.opponent, row.park, row.whyItRanksWell].some((value) => value.toLowerCase().includes(query));
     });
     return sortRows(rows, sortKey, sortDir);
-  }, [strikeoutDetailRows, confidenceFilter, gameFilter, search, sortDir, sortKey, teamFilter]);
+  }, [mainRows, confidenceFilter, gameFilter, search, sortDir, sortKey, teamFilter]);
 
   const handleSort = (key: SortKey) => {
     setSortDir((current) => sortKey === key ? (current === "asc" ? "desc" : "asc") : ["pitcher", "team", "opponent"].includes(key) ? "asc" : "desc");
@@ -437,8 +498,9 @@ export default function MlbStrikeoutProps() {
                       aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
                       className="flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/60 px-3 py-2 text-left hover:bg-slate-100"
                     >
-                      <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="flex min-w-0 items-center gap-2">
                         <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                        <MlbTeamLogo team={row.team} size={40} />
                         <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.pitcher}</div><div className="text-[10px] text-slate-500">{row.team} vs {row.opponent}</div></div>
                       </div>
                       <PropScoreBadge score={row.strikeoutMatchupScore} />
@@ -455,13 +517,128 @@ export default function MlbStrikeoutProps() {
                         </span>
                       </div>
                     )}
-                    <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]"><div className="px-1 py-2"><div className="text-slate-400">K%</div><div className="font-black">{fmt(row.pitcherKRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Whiff%</div><div className="font-black">{fmt(row.pitcherWhiffRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Opp K%</div><div className="font-black">{fmt(row.opponentTeamKRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Proj K</div><div className="font-black">{fmt(row.projectedKs)}</div></div></div>
+                    <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]">
+                      <MobileStatCell label="K%" value={`${fmt(row.pitcherKRate)}%`} position={0} />
+                      <MobileStatCell label="Whiff%" value={`${fmt(row.pitcherWhiffRate)}%`} position={1} />
+                      <MobileStatCell label="Opp K%" value={`${fmt(row.opponentTeamKRate)}%`} position={2} />
+                      <MobileStatCell label="Proj K" value={fmt(row.projectedKs)} position={3} />
+                    </div>
                     {isExpanded && <div className="border-t border-slate-100 p-2"><RowDetailPanel row={row} /></div>}
                   </article>
                     );
                   })}
                 </div>
               </section>
+
+              {lowConfidenceRows.length > 0 && (
+                <section className="overflow-hidden rounded-[20px] border border-amber-200 bg-white shadow-sm">
+                  <div className="border-b border-amber-100 bg-amber-50/60 px-3 py-2.5">
+                    <div className="text-sm font-black text-amber-900">Low Confidence</div>
+                    <p className="mt-0.5 text-[11px] text-amber-800">
+                      These pitchers are excluded from Best Value, Best Bets, and social picks because of a data or odds quality issue -- not because the model is confident in an UNDER. All currently available data is shown; unavailable metrics show as {DASH} instead of a fabricated number.
+                    </p>
+                  </div>
+                  <div className="hidden overflow-x-auto md:block" style={{ WebkitOverflowScrolling: "touch" }}>
+                    <table className="min-w-full border-separate border-spacing-0 text-xs">
+                      <thead className="sticky top-0 z-20"><tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">#</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Pitcher</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">Status</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K Score</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K%</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Whiff%</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K VS</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Pitcher K</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Opp K%</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Opp Whiff%</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K/9</th>
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Avg IP</th>
+                      </tr></thead>
+                      <tbody>{lowConfidenceRows.map((row, index) => {
+                        const rowKey = keyForStrikeoutPropRow(row, slateDate);
+                        const isExpanded = expandedRowKey === rowKey;
+                        const rowLabel = `${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`;
+                        const onRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            toggleRow(row);
+                          }
+                        };
+                        return (
+                        <Fragment key={`low-confidence-${row.rank}-${row.pitcher}-${row.team}`}>
+                        <tr
+                          onClick={() => toggleRow(row)}
+                          onKeyDown={onRowKeyDown}
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={isExpanded}
+                          aria-label={rowLabel}
+                          className={cn("cursor-pointer transition-colors hover:brightness-[0.98]", index % 2 === 0 ? "bg-white" : "bg-amber-50/30")}
+                        >
+                        <td className="border-b border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400">{index + 1}</td>
+                        <td className="border-b border-slate-100 px-2 py-1">
+                          <span className="flex items-center gap-1">
+                            <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                            <MlbTeamLogo team={row.team} size={16} /><span className="whitespace-nowrap text-[11px] font-semibold text-slate-900">{row.pitcher}</span><span className="text-[9px] text-slate-400">vs {row.opponent}</span>
+                          </span>
+                        </td>
+                        <td className="border-b border-slate-100 px-2 py-1"><LowConfidenceStatusBadge row={row} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherKRate)}%</td>
+                        <td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherWhiffRate)}%</td>
+                        <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKVs} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKSkillScore} /></td>
+                        <td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamKRate)}%</td>
+                        <td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamWhiffRate)}%</td>
+                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(row.projectedK9)}</td>
+                        <td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(row.projectedIP)}</td>
+                        </tr>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={11} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
+                              <RowDetailPanel row={row} />
+                            </td>
+                          </tr>
+                        )}
+                        </Fragment>
+                        );
+                      })}</tbody>
+                    </table>
+                  </div>
+
+                  <div className="grid gap-2 p-3 md:hidden">
+                    {lowConfidenceRows.map((row) => {
+                      const rowKey = keyForStrikeoutPropRow(row, slateDate);
+                      const isExpanded = expandedRowKey === rowKey;
+                      return (
+                      <article key={`mobile-low-confidence-${row.rank}-${row.pitcher}`} className="overflow-hidden rounded-xl border border-amber-100 bg-amber-50/20 shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => toggleRow(row)}
+                        aria-expanded={isExpanded}
+                        aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
+                        className="flex w-full items-center justify-between gap-2 border-b border-amber-100 bg-amber-50/40 px-3 py-2 text-left hover:bg-amber-50"
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                          <MlbTeamLogo team={row.team} size={40} />
+                          <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.pitcher}</div><div className="text-[10px] text-slate-500">{row.team} vs {row.opponent}</div></div>
+                        </div>
+                        <LowConfidenceStatusBadge row={row} />
+                      </button>
+                      <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]">
+                        <MobileStatCell label="K%" value={`${fmt(row.pitcherKRate)}%`} position={0} />
+                        <MobileStatCell label="Whiff%" value={`${fmt(row.pitcherWhiffRate)}%`} position={1} />
+                        <MobileStatCell label="Opp K%" value={`${fmt(row.opponentTeamKRate)}%`} position={2} />
+                        <MobileStatCell label="K Score" value={fmt(row.strikeoutMatchupScore)} position={3} />
+                      </div>
+                      {isExpanded && <div className="border-t border-slate-100 p-2"><RowDetailPanel row={row} /></div>}
+                    </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
         </div>

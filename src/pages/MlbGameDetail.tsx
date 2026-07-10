@@ -33,6 +33,7 @@ import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSu
 import { computeModelEdge, getEdgeTierKey, getEdgeTierLabel, ML_EDGE_METHODOLOGY } from "@/lib/mlb/mlbModelEdge";
 import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { getProjectionEdgeInfo, selectTopSocialKRows } from "@/lib/mlb/kPropValueSorting";
+import { resolveKPropStatus } from "@/lib/mlb/kPropStatus";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
@@ -2012,6 +2013,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
           const kDisplay = kLineLabel && favoredOdds && sideLabel ? `${sideLabel} ${kLineLabel} (${favoredOdds})` : "—";
           const edgeLabel = edgeInfo.projectionEdge != null ? `${edgeInfo.projectionEdge > 0 ? "+" : ""}${edgeInfo.projectionEdge.toFixed(1)} K edge` : "";
           const accent = directionAccent(edgeInfo.direction);
+          const kStatus = resolveKPropStatus(r).status;
           return (
             <div
               key={`${r.pitcher}-${i}`}
@@ -2030,6 +2032,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-projected-ks={edgeInfo.projectedKs ?? ""}
               data-k-projection-edge={edgeInfo.projectionEdge ?? ""}
               data-k-side={edgeInfo.direction}
+              data-k-status={kStatus}
               style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${accent}` }}
             >
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
@@ -2098,6 +2101,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
           const kDisplay = kLineLabel && favoredOdds && sideLabel ? `${sideLabel} ${kLineLabel} (${favoredOdds})` : "—";
           const edgeLabel = edgeInfo.projectionEdge != null ? `${edgeInfo.projectionEdge > 0 ? "+" : ""}${edgeInfo.projectionEdge.toFixed(1)} K` : "";
           const accent = directionAccent(edgeInfo.direction);
+          const kStatus = resolveKPropStatus(r).status;
           return (
             <div
               key={`${r.pitcher}-${i}`}
@@ -2116,6 +2120,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-projected-ks={edgeInfo.projectedKs ?? ""}
               data-k-projection-edge={edgeInfo.projectionEdge ?? ""}
               data-k-side={edgeInfo.direction}
+              data-k-status={kStatus}
               style={{ display: "grid", gridTemplateColumns: "28px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
             >
               <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: accent }} />
@@ -2336,13 +2341,14 @@ function americanToImplied(ml: string | null | undefined): number | null {
 }
 
 // Top N K props by model-vs-line value edge, for the social "value" widget.
-// Excludes relievers/openers whose workload-role safety override has no
-// eligible bounded candidate (publicRecommendationEligible === false) --
-// see kPropBestBets.ts for the same rule applied to the main page's Top
-// Over/Under selection.
+// Only VALID rows (recomputed fresh via resolveKPropStatus, never trusted
+// from a cached field) are eligible -- see kPropStatus.ts. This subsumes
+// the narrower publicRecommendationEligible/reliever-safety check that
+// used to be the only gate here; see kPropBestBets.ts for the same rule
+// applied to the main page's Top Over/Under selection.
 export function selectTopKValuePlays(kRows: PitcherStrikeoutTeamRow[], max = 3) {
   return kRows
-    .filter((r) => r.publicRecommendationEligible !== false)
+    .filter((r) => resolveKPropStatus(r).status === "VALID")
     .filter((r) => r.kLine != null && r.kLine > 0 && r.projectedKs != null)
     .sort((a, b) => {
       const edgeA = (a.projectedKs ?? 0) - (a.kLine ?? 0);
