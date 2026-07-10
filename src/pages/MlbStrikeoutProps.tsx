@@ -106,6 +106,28 @@ function StatScorePill({ value }: { value: number | null | undefined }) {
   return <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums", tone)}>{number.toFixed(1)}</span>;
 }
 
+/**
+ * Pastel gradient per mobile stat-cell position (K%, Whiff%, Opp K%, 4th
+ * column) -- shared by both the main and Low Confidence mobile card grids
+ * so the two sections stay visually consistent. Kept as one small class
+ * map instead of repeating gradient strings inline at each call site.
+ */
+const MOBILE_STAT_CELL_GRADIENTS = [
+  "bg-gradient-to-br from-sky-50 to-sky-100",
+  "bg-gradient-to-br from-emerald-50 to-emerald-100",
+  "bg-gradient-to-br from-amber-50 to-amber-100",
+  "bg-gradient-to-br from-violet-50 to-violet-100",
+] as const;
+
+function MobileStatCell({ label, value, position }: { label: string; value: string; position: 0 | 1 | 2 | 3 }) {
+  return (
+    <div className={cn("px-1 py-2", MOBILE_STAT_CELL_GRADIENTS[position])}>
+      <div className="text-slate-500">{label}</div>
+      <div className="font-black text-slate-900">{value}</div>
+    </div>
+  );
+}
+
 const LOW_CONFIDENCE_STATUS_LABELS: Record<string, string> = {
   LOW_CONFIDENCE: "Low confidence",
   INSUFFICIENT_DATA: "Insufficient data",
@@ -476,8 +498,9 @@ export default function MlbStrikeoutProps() {
                       aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
                       className="flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/60 px-3 py-2 text-left hover:bg-slate-100"
                     >
-                      <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="flex min-w-0 items-center gap-2">
                         <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                        <MlbTeamLogo team={row.team} size={40} />
                         <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.pitcher}</div><div className="text-[10px] text-slate-500">{row.team} vs {row.opponent}</div></div>
                       </div>
                       <PropScoreBadge score={row.strikeoutMatchupScore} />
@@ -494,7 +517,12 @@ export default function MlbStrikeoutProps() {
                         </span>
                       </div>
                     )}
-                    <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]"><div className="px-1 py-2"><div className="text-slate-400">K%</div><div className="font-black">{fmt(row.pitcherKRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Whiff%</div><div className="font-black">{fmt(row.pitcherWhiffRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Opp K%</div><div className="font-black">{fmt(row.opponentTeamKRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Proj K</div><div className="font-black">{fmt(row.projectedKs)}</div></div></div>
+                    <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]">
+                      <MobileStatCell label="K%" value={`${fmt(row.pitcherKRate)}%`} position={0} />
+                      <MobileStatCell label="Whiff%" value={`${fmt(row.pitcherWhiffRate)}%`} position={1} />
+                      <MobileStatCell label="Opp K%" value={`${fmt(row.opponentTeamKRate)}%`} position={2} />
+                      <MobileStatCell label="Proj K" value={fmt(row.projectedKs)} position={3} />
+                    </div>
                     {isExpanded && <div className="border-t border-slate-100 p-2"><RowDetailPanel row={row} /></div>}
                   </article>
                     );
@@ -591,13 +619,19 @@ export default function MlbStrikeoutProps() {
                         aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
                         className="flex w-full items-center justify-between gap-2 border-b border-amber-100 bg-amber-50/40 px-3 py-2 text-left hover:bg-amber-50"
                       >
-                        <div className="flex min-w-0 items-center gap-1.5">
+                        <div className="flex min-w-0 items-center gap-2">
                           <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                          <MlbTeamLogo team={row.team} size={40} />
                           <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.pitcher}</div><div className="text-[10px] text-slate-500">{row.team} vs {row.opponent}</div></div>
                         </div>
                         <LowConfidenceStatusBadge row={row} />
                       </button>
-                      <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]"><div className="px-1 py-2"><div className="text-slate-400">K%</div><div className="font-black">{fmt(row.pitcherKRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Whiff%</div><div className="font-black">{fmt(row.pitcherWhiffRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">Opp K%</div><div className="font-black">{fmt(row.opponentTeamKRate)}%</div></div><div className="px-1 py-2"><div className="text-slate-400">K Score</div><div className="font-black">{fmt(row.strikeoutMatchupScore)}</div></div></div>
+                      <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]">
+                        <MobileStatCell label="K%" value={`${fmt(row.pitcherKRate)}%`} position={0} />
+                        <MobileStatCell label="Whiff%" value={`${fmt(row.pitcherWhiffRate)}%`} position={1} />
+                        <MobileStatCell label="Opp K%" value={`${fmt(row.opponentTeamKRate)}%`} position={2} />
+                        <MobileStatCell label="K Score" value={fmt(row.strikeoutMatchupScore)} position={3} />
+                      </div>
                       {isExpanded && <div className="border-t border-slate-100 p-2"><RowDetailPanel row={row} /></div>}
                     </article>
                       );
