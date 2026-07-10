@@ -4,14 +4,20 @@ name: Post MLB HR Props to X
 #   1. workflow_run (primary trigger) only fires after "Generate MLB Data"
 #      completes, and only proceeds past the job-level `if` when that
 #      completion was itself a `schedule` run on `main` that succeeded.
-#   2. The time gate below then requires the run to land inside the
-#      9 AM-2 PM ET window (see "Time gate" step for why this window is
-#      wide, not the original 9-11 AM).
-#   3. "Wait for fresh production slate" then retries for up to ~9 minutes
+#   2. For the direct backstop schedule only: the "DST match gate" step
+#      must confirm this firing's actual Eastern time is close to the
+#      single intended 1:45 PM ET target -- see the `schedule:` block
+#      comment below for why this is needed (both DST-paired cron entries
+#      fire every day, year-round; the non-matching season's firing exits
+#      as SKIPPED_DST_MISMATCH here, before any further work).
+#   3. The time gate then requires the run to land inside the 9 AM-2 PM ET
+#      window (see "Time gate" step for why this window is wide, not the
+#      original 9-11 AM).
+#   4. "Wait for fresh production slate" then retries for up to ~9 minutes
 #      for the live site's HR props data to actually be post-ready
 #      (correct slate date, enough valid props, real odds) before giving
 #      up and failing the run rather than posting stale/incomplete data.
-#   4. The script itself (post-mlb-hr-props-to-x.mjs) can still skip
+#   5. The script itself (post-mlb-hr-props-to-x.mjs) can still skip
 #      silently-but-loudly (logs a reason, exits 0) if the freshness/odds/
 #      top-props checks fail even after that wait, or if the daily
 #      posting lock (one key per slate date -- see buildDailyPostingKey
@@ -50,17 +56,21 @@ on:
     # cron is UTC-only -- a `timezone:` sub-key here was previously
     # assumed to shift this to America/New_York, but that is NOT
     # confirmed GitHub Actions behavior (see PR description). Written in
-    # explicit UTC with a DST-safe pair of cron entries instead: one
-    # fires for real during EDT, one during EST, and only the one that
-    # matches the current wall-clock does anything useful -- the other's
-    # firing is a harmless no-op caught by the time gate/daily lock.
+    # explicit UTC with a DST-safe pair of cron entries instead: one is
+    # correct during EDT, one during EST -- BOTH fire every day,
+    # year-round, regardless of season (GitHub Actions has no seasonal
+    # cron concept). The "DST match gate" step below is what actually
+    # filters out the non-matching season's firing (as
+    # SKIPPED_DST_MISMATCH) before any screenshot/duplicate-lock/cache/X
+    # setup work -- the wide 9 AM-2 PM time gate alone is NOT sufficient
+    # for this (during EST, the EDT-targeted 17:45 UTC entry lands at
+    # 12:45 PM EST, which is still inside that wide window).
     #   - "45 17 * * *" = 17:45 UTC = 1:45 PM ET during EDT (Mar-Nov)
     #   - "45 18 * * *" = 18:45 UTC = 1:45 PM ET during EST (Nov-Mar)
-    # 1:45 PM ET sits inside the 9 AM-2 PM ET time gate below, late
-    # enough to give workflow_run every chance to post first (today's
-    # observed workflow_run completions ranged 5:03 AM-1:24 PM ET), while
-    # the daily posting lock guarantees this never double-posts if
-    # workflow_run already succeeded earlier.
+    # 1:45 PM ET is late enough to give workflow_run every chance to post
+    # first (today's observed workflow_run completions ranged 5:03 AM-
+    # 1:24 PM ET), while the daily posting lock guarantees this never
+    # double-posts if workflow_run already succeeded earlier.
     - cron: "45 17 * * *"
     - cron: "45 18 * * *"
 
@@ -95,10 +105,40 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
+
+      # DST-paired cron protection: the two schedule entries above both
+      # fire every day, year-round -- GitHub Actions schedule cron has no
+      # concept of a timezone-aware seasonal switch. Without this gate,
+      # the non-matching season's entry would still reach screenshot
+      # generation, duplicate-lock consumption, cache writes, and X API
+      # setup. Bypassed entirely for workflow_dispatch/workflow_run
+      # (only the schedule trigger has paired DST crons to disambiguate).
+      # See scripts/lib/mlb-x-dst-gate.mjs for the unit-tested decision
+      # logic proving both seasonal cases.
+      - name: DST match gate (schedule backstop only)
+        id: dst_gate
+        shell: bash
+        env:
+          DST_GATE_TARGET_ET_HOUR: "13"
+          DST_GATE_TARGET_ET_MINUTE: "45"
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "DST gate bypassed: trigger is ${{ github.event_name }}, not a paired-cron schedule firing."
+            exit 0
+          fi
+          if node scripts/check-dst-gate.mjs; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - run: npx playwright install --with-deps chromium
+        if: steps.dst_gate.outputs.should_run == 'true'
 
       - name: Compute ET date for cache key
         id: et_date
+        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
@@ -117,6 +157,7 @@ jobs:
       # instead of freezing after the first.
       - name: Restore duplicate-post state
         id: restore_cache
+        if: steps.dst_gate.outputs.should_run == 'true'
         uses: actions/cache/restore@v4
         with:
           path: .cache/mlb-hr-props-x-posted
@@ -134,6 +175,7 @@ jobs:
       # workflow_dispatch always bypasses it.
       - name: Time gate (9 AM-2 PM ET for automated triggers only)
         id: time_gate
+        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -206,9 +248,11 @@ jobs:
       # Explicit save under a run-unique key -- see the "Restore
       # duplicate-post state" step above for why a single fixed key
       # cannot be used. always() so a receipt written just before a later
-      # failure (e.g. the screenshot-upload step) still persists.
+      # failure (e.g. the screenshot-upload step) still persists -- but
+      # only when the DST gate actually passed, so a non-matching-season
+      # firing never performs a cache write at all.
       - name: Save duplicate-post state
-        if: always()
+        if: always() && steps.dst_gate.outputs.should_run == 'true'
         uses: actions/cache/save@v4
         with:
           path: .cache/mlb-hr-props-x-posted
@@ -230,7 +274,8 @@ jobs:
           echo "trigger event: ${{ github.event_name }}"
           echo "workflow_run conclusion (if applicable): ${{ github.event.workflow_run.conclusion || 'n/a' }}"
           echo "workflow_run event (if applicable): ${{ github.event.workflow_run.event || 'n/a' }}"
+          echo "DST gate should_run: ${{ steps.dst_gate.outputs.should_run || 'n/a' }} (SKIPPED_DST_MISMATCH if false on a schedule trigger -- see the 'DST match gate' step output above)"
           echo "time gate should_run: ${{ steps.time_gate.outputs.should_run || 'n/a' }}"
-          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (time gate blocked before mode was resolved)' }}"
+          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (DST gate or time gate blocked before mode was resolved)' }}"
           echo "force repost override: ${{ inputs.force_repost || 'false' }}"
           echo "See the 'Post HR Props' step output above for the exact finalStatus= line (POSTED / SKIPPED_ALREADY_POSTED_TODAY / SKIPPED_PREVIEW_MODE / SKIPPED_NO_ELIGIBLE_ROWS / FAILED) and skip/post/error reason from the script itself."

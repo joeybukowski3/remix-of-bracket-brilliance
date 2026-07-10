@@ -8,9 +8,18 @@ name: Post MLB Strikeout Props to X
 # gate computed hours as late as 13:xx ET, five different times). Fixed
 # by widening the gate to match HR's (9 AM-2 PM ET, same evidence base)
 # and adding a direct UTC backstop schedule so a day workflow_run never
-# fires still gets one attempt. The script itself logs a final
-# `finalStatus=` line: POSTED, SKIPPED_ALREADY_POSTED_TODAY,
-# SKIPPED_PREVIEW_MODE, SKIPPED_NO_ELIGIBLE_ROWS, or FAILED.
+# fires still gets one attempt.
+#
+# The backstop schedule uses a DST-safe pair of UTC cron entries (one
+# for EDT, one for EST), and both fire every day year-round. A "DST
+# match gate" step compares the actual current ET time against the
+# single intended 1:50 PM ET target and exits cleanly as
+# SKIPPED_DST_MISMATCH for the non-matching season's firing, before any
+# screenshot/duplicate-lock/cache/X setup work.
+#
+# The script itself logs a final `finalStatus=` line: POSTED,
+# SKIPPED_ALREADY_POSTED_TODAY, SKIPPED_PREVIEW_MODE,
+# SKIPPED_NO_ELIGIBLE_ROWS, or FAILED.
 on:
   workflow_dispatch:
     inputs:
@@ -39,8 +48,12 @@ on:
     # Backstop trigger, in case workflow_run never fires or fires too
     # late in the window. GitHub Actions `schedule` cron is UTC-only --
     # written in explicit UTC with a DST-safe pair of entries (one real
-    # for EDT, one real for EST; the other is a harmless no-op caught by
-    # the time gate/daily lock).
+    # for EDT, one real for EST). BOTH fire every day, year-round --
+    # GitHub Actions has no seasonal cron concept -- so the "DST match
+    # gate" step below (not the wide time gate alone) is what actually
+    # filters out the non-matching season's firing as
+    # SKIPPED_DST_MISMATCH before any screenshot/duplicate-lock/cache/X
+    # setup work.
     #   - "50 17 * * *" = 17:50 UTC = 1:50 PM ET during EDT (Mar-Nov)
     #   - "50 18 * * *" = 18:50 UTC = 1:50 PM ET during EST (Nov-Mar)
     # 1:50 PM ET sits inside the 9 AM-2 PM ET gate, 5 minutes after HR's
@@ -79,10 +92,31 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
+
+      - name: DST match gate (schedule backstop only)
+        id: dst_gate
+        shell: bash
+        env:
+          DST_GATE_TARGET_ET_HOUR: "13"
+          DST_GATE_TARGET_ET_MINUTE: "50"
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "DST gate bypassed: trigger is ${{ github.event_name }}, not a paired-cron schedule firing."
+            exit 0
+          fi
+          if node scripts/check-dst-gate.mjs; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - run: npx playwright install --with-deps chromium
+        if: steps.dst_gate.outputs.should_run == 'true'
 
       - name: Compute ET date for cache key
         id: et_date
+        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
@@ -95,6 +129,7 @@ jobs:
       # most recent prior save that day.
       - name: Restore duplicate-post state
         id: restore_cache
+        if: steps.dst_gate.outputs.should_run == 'true'
         uses: actions/cache/restore@v4
         with:
           path: .cache/mlb-strikeout-props-x-posted
@@ -106,6 +141,7 @@ jobs:
       # the top-of-file comment for the run-history evidence.
       - name: Time gate (9 AM-2 PM ET for automated triggers only)
         id: time_gate
+        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -170,7 +206,7 @@ jobs:
           JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
 
       - name: Save duplicate-post state
-        if: always()
+        if: always() && steps.dst_gate.outputs.should_run == 'true'
         uses: actions/cache/save@v4
         with:
           path: .cache/mlb-strikeout-props-x-posted
@@ -192,7 +228,8 @@ jobs:
           echo "trigger event: ${{ github.event_name }}"
           echo "workflow_run conclusion (if applicable): ${{ github.event.workflow_run.conclusion || 'n/a' }}"
           echo "workflow_run event (if applicable): ${{ github.event.workflow_run.event || 'n/a' }}"
+          echo "DST gate should_run: ${{ steps.dst_gate.outputs.should_run || 'n/a' }} (SKIPPED_DST_MISMATCH if false on a schedule trigger -- see the 'DST match gate' step output above)"
           echo "time gate should_run: ${{ steps.time_gate.outputs.should_run || 'n/a' }}"
-          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (time gate blocked before mode was resolved)' }}"
+          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (DST gate or time gate blocked before mode was resolved)' }}"
           echo "force repost override: ${{ inputs.force_repost || 'false' }}"
           echo "See the 'Post Strikeout Props' step output above for the exact finalStatus= line and skip/post/error reason from the script itself."
