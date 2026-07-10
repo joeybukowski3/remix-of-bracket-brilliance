@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   NFL_SECTION_NAV_CATEGORIES,
   NFL_SECTION_NAV_ITEMS,
+  NFL_SECTION_THEMES,
   getActiveNflSectionCategoryId,
   getUniqueNflSectionNavPaths,
   isNflSectionPathActive,
@@ -57,5 +58,22 @@ describe("NFL section navigation", () => {
   it("keeps future status support in the typed category shape", () => {
     expect(NFL_SECTION_NAV_CATEGORIES.every((category) => category.items.length > 0)).toBe(true);
     expect(NFL_SECTION_NAV_ITEMS.every((item) => item.status == null || ["live", "planned", "beta", "new"].includes(item.status))).toBe(true);
+  });
+
+  it("gives every navigation item a meaningful icon instead of an abbreviation marker", () => {
+    const abbreviationMarkers = new Set(["PR", "ST", "SC", "SB", "CY", "TG", "FR"]);
+    for (const item of NFL_SECTION_NAV_ITEMS) {
+      expect(item.icon, item.to).toBeTruthy();
+      expect(abbreviationMarkers.has(item.icon), item.to).toBe(false);
+      expect(item as Record<string, unknown>).not.toHaveProperty("marker");
+    }
+  });
+
+  it("gives each category a distinct, resolvable theme identifier", () => {
+    const themeIds = NFL_SECTION_NAV_CATEGORIES.map((category) => category.themeId);
+    expect(new Set(themeIds).size).toBe(themeIds.length);
+    for (const themeId of themeIds) {
+      expect(NFL_SECTION_THEMES[themeId]).toBeTruthy();
+    }
   });
 });

@@ -72,4 +72,20 @@ describe("NflPlatformLayout", () => {
     expect(screen.getByRole("heading", { name: "MLB Page" })).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "NFL sitemap" })).toBeNull();
   });
+
+  it("renders the reused NFL logo in the sidebar header", () => {
+    renderNflRoute("/nfl");
+    const logos = screen.getAllByRole("img", { name: "NFL" });
+    expect(logos.length).toBeGreaterThan(0);
+    for (const logo of logos) {
+      expect(logo.getAttribute("src")).toBe("/logos/nfl.svg");
+    }
+  });
+
+  it("no longer renders abbreviation badge markers for navigation items", () => {
+    renderNflRoute("/nfl/guide");
+    for (const marker of ["PR", "ST", "SC", "SB", "CY", "TG", "FR"]) {
+      expect(screen.queryByText(marker, { selector: "span" })).toBeNull();
+    }
+  });
 });

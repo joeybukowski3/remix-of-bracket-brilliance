@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   NFL_SECTION_NAV_CATEGORIES,
+  NFL_SECTION_THEMES,
   getActiveNflSectionCategoryId,
   isNflSectionPathActive,
   type NflSectionNavCategory,
@@ -44,8 +45,8 @@ export default function NflSectionSidebar({ mobile = false, onNavigate }: NflSec
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="bg-slate-950 px-5 py-4 text-white">
             <Link to="/nfl" onClick={onNavigate} className="flex items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-300 focus:ring-offset-2 focus:ring-offset-slate-950">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-xs font-black tracking-wide">
-                NFL
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10">
+                <img src="/logos/nfl.svg" alt="NFL" className="h-12 w-auto object-contain" loading="eager" />
               </span>
               <span>
                 <span className="block text-lg font-black leading-none">NFL</span>
@@ -55,7 +56,7 @@ export default function NflSectionSidebar({ mobile = false, onNavigate }: NflSec
             <p className="mt-3 text-xs leading-5 text-slate-300">Power ratings, season context, markets and team dashboards in one NFL workspace.</p>
           </div>
 
-          <nav className="space-y-2 p-3" aria-label="NFL sitemap">
+          <nav className="space-y-3 p-3" aria-label="NFL sitemap">
             {NFL_SECTION_NAV_CATEGORIES.map((category) => (
               <CategorySection
                 key={category.id}
@@ -70,7 +71,7 @@ export default function NflSectionSidebar({ mobile = false, onNavigate }: NflSec
           </nav>
 
           <div className="border-t border-slate-100 bg-slate-50 px-4 py-3 text-[11px] leading-5 text-slate-500">
-            More NFL intelligence tools will plug into this navigation as they go live.
+            More NFL intelligence tools will plug into this navigation as they go live. 🚀
           </div>
         </div>
       </div>
@@ -126,9 +127,12 @@ function CategorySection({
   onNavigate?: () => void;
 }) {
   const panelId = useMemo(() => `nfl-nav-${category.id}`, [category.id]);
+  const theme = NFL_SECTION_THEMES[category.themeId];
 
   return (
-    <section className={`rounded-xl border ${active ? "border-blue-200 bg-blue-50/70" : "border-slate-100 bg-white"}`}>
+    <section
+      className={`rounded-xl border transition-shadow ${active ? `${theme.activeBorder} ${theme.activeBackground} shadow-sm` : `${theme.border} ${theme.background}`}`}
+    >
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-3 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -137,7 +141,7 @@ function CategorySection({
         onClick={onToggle}
       >
         <span className="min-w-0">
-          <span className={`block text-xs font-black uppercase tracking-[0.14em] ${active ? "text-blue-800" : "text-slate-700"}`}>{category.label}</span>
+          <span className={`block text-xs font-black uppercase tracking-[0.14em] ${theme.heading}`}>{category.label}</span>
           <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">{category.description}</span>
         </span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
@@ -154,14 +158,21 @@ function CategorySection({
                 onClick={onNavigate}
                 aria-current={activeItem ? "page" : undefined}
                 className={`group flex items-start gap-3 rounded-lg border p-2.5 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  activeItem ? "border-blue-200 bg-white text-blue-950 shadow-sm" : "border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-50"
+                  activeItem
+                    ? `${theme.linkActiveBorder} ${theme.linkActiveBackground} ${theme.linkActiveText} shadow-sm`
+                    : "border-transparent text-slate-700 hover:border-white hover:bg-white/60"
                 }`}
               >
-                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[9px] font-black ${activeItem ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"}`}>
-                  {item.marker}
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg leading-none ${
+                    activeItem ? theme.iconBackground : "bg-white/70 group-hover:bg-white"
+                  }`}
+                  aria-hidden
+                >
+                  {item.icon}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-sm font-black leading-5">{item.label}</span>
+                  <span className={`block text-sm leading-5 ${activeItem ? "font-black" : "font-bold"}`}>{item.label}</span>
                   <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">{item.description}</span>
                 </span>
               </Link>
