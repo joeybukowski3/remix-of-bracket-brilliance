@@ -32,6 +32,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
 import { computeModelEdge, getEdgeTierKey, getEdgeTierLabel, ML_EDGE_METHODOLOGY } from "@/lib/mlb/mlbModelEdge";
 import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
+import { getProjectionEdgeInfo, selectTopSocialKRows } from "@/lib/mlb/kPropValueSorting";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
@@ -1948,22 +1949,32 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
   );
 }
 
+// Ranked by absolute projection-vs-line edge (see kPropValueSorting.ts),
+// not projected Ks or matchup score -- a strong UNDER edge and a strong
+// OVER edge both rank highly here, matching how the main K props table's
+// "Best Value" sort mode works. Rows without a real projection/line are
+// excluded rather than shown with a fabricated edge.
 function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
-  if (!rows || rows.length === 0) {
+  const top = rows?.length ? selectTopSocialKRows(rows, 5) : [];
+  if (top.length === 0) {
     return (
       <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>
         Data Not Available
       </div>
     );
   }
-  const top = rows.slice(0, 5);
   function sc(s: number) {
     if (s >= 70) return { bg: "#22c55e", color: "#fff" };
     if (s >= 65) return { bg: "#4ade80", color: "#000" };
     if (s >= 62) return { bg: "#facc15", color: "#000" };
     return { bg: "#fb923c", color: "#fff" };
   }
-  const ACCENTS = ["#e05c2e","#f97316","#fb923c","#fbbf24","#eab308"];
+  // Accent by favored side, not row rank -- orange for OVER, blue for UNDER.
+  function directionAccent(direction: "over" | "under" | "neutral") {
+    if (direction === "under") return "#3b82f6";
+    if (direction === "over") return "#f97316";
+    return "#64748b";
+  }
   const todayEt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
     year: "numeric",
@@ -1992,10 +2003,15 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
         {top.map((r, i) => {
           const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
           const pillStyle = sc(safeScore);
+          const edgeInfo = getProjectionEdgeInfo(r);
           const kLineLabel = socialLine(r.kLine);
           const kOver = socialOdds(r.kOddsOver);
           const kUnder = socialOdds(r.kOddsUnder);
-          const kDisplay = kLineLabel && kOver ? `O ${kLineLabel} (${kOver})` : "—";
+          const favoredOdds = edgeInfo.direction === "under" ? kUnder : kOver;
+          const sideLabel = edgeInfo.direction === "under" ? "UNDER" : edgeInfo.direction === "over" ? "OVER" : "";
+          const kDisplay = kLineLabel && favoredOdds && sideLabel ? `${sideLabel} ${kLineLabel} (${favoredOdds})` : "—";
+          const edgeLabel = edgeInfo.projectionEdge != null ? `${edgeInfo.projectionEdge > 0 ? "+" : ""}${edgeInfo.projectionEdge.toFixed(1)} K edge` : "";
+          const accent = directionAccent(edgeInfo.direction);
           return (
             <div
               key={`${r.pitcher}-${i}`}
@@ -2011,20 +2027,24 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-odds-over={kOver ?? ""}
               data-k-odds-under={kUnder ?? ""}
               data-k-bookmaker={r.kOddsBook ?? ""}
-              style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${ACCENTS[i]}` }}
+              data-k-projected-ks={edgeInfo.projectedKs ?? ""}
+              data-k-projection-edge={edgeInfo.projectionEdge ?? ""}
+              data-k-side={edgeInfo.direction}
+              style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${accent}` }}
             >
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 18, fontWeight: 900, color: ACCENTS[i], minWidth: 24 }}>
-                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                <span style={{ fontSize: 15, fontWeight: 900, color: accent, minWidth: 24 }}>
+                  {i + 1}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 5, marginBottom: 2 }}>
                     <span style={{ fontWeight: 700, color: "#f1f5f9", fontSize: 13 }}>{r.pitcher}</span>
-                    <span style={{ color: kLineLabel && kOver ? "#86efac" : "#64748b", fontWeight: 900, fontSize: 11, whiteSpace: "nowrap" }}>{kDisplay}</span>
+                    <span style={{ color: accent, fontWeight: 900, fontSize: 11, whiteSpace: "nowrap" }}>{kDisplay}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10 }}>
                     <TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} />
                     <span style={{ color: "#64748b" }}>vs {r.opponent}</span>
+                    {edgeLabel && <span style={{ color: "#94a3b8" }}>· Proj {edgeInfo.projectedKs?.toFixed(1)} K · {edgeLabel}</span>}
                   </div>
                 </div>
                 <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 8px", fontWeight: 900, fontSize: 15, whiteSpace: "nowrap" }}>
@@ -2061,18 +2081,23 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
 
       {/* Desktop */}
       <div className="hidden sm:block">
-        <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
-          {["","PITCHER","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
+        <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 84px 72px 72px 68px", padding: "5px 10px", background: "#0d1f3c", gap: 4 }}>
+          {["","PITCHER / EDGE","K SCORE","K%","WHIFF%","OPP K%"].map((h, i) => (
             <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: ".07em", textAlign: i > 1 ? "center" : "left" }}>{h}</span>
           ))}
         </div>
         {top.map((r, i) => {
           const safeScore = typeof r.strikeoutMatchupScore === 'number' && isFinite(r.strikeoutMatchupScore) ? r.strikeoutMatchupScore : 0;
           const pillStyle = sc(safeScore);
+          const edgeInfo = getProjectionEdgeInfo(r);
           const kLineLabel = socialLine(r.kLine);
           const kOver = socialOdds(r.kOddsOver);
           const kUnder = socialOdds(r.kOddsUnder);
-          const kDisplay = kLineLabel && kOver ? `O ${kLineLabel} (${kOver})` : "—";
+          const favoredOdds = edgeInfo.direction === "under" ? kUnder : kOver;
+          const sideLabel = edgeInfo.direction === "under" ? "UNDER" : edgeInfo.direction === "over" ? "OVER" : "";
+          const kDisplay = kLineLabel && favoredOdds && sideLabel ? `${sideLabel} ${kLineLabel} (${favoredOdds})` : "—";
+          const edgeLabel = edgeInfo.projectionEdge != null ? `${edgeInfo.projectionEdge > 0 ? "+" : ""}${edgeInfo.projectionEdge.toFixed(1)} K` : "";
+          const accent = directionAccent(edgeInfo.direction);
           return (
             <div
               key={`${r.pitcher}-${i}`}
@@ -2088,13 +2113,21 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-odds-over={kOver ?? ""}
               data-k-odds-under={kUnder ?? ""}
               data-k-bookmaker={r.kOddsBook ?? ""}
-              style={{ display: "grid", gridTemplateColumns: "36px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
+              data-k-projected-ks={edgeInfo.projectedKs ?? ""}
+              data-k-projection-edge={edgeInfo.projectionEdge ?? ""}
+              data-k-side={edgeInfo.direction}
+              style={{ display: "grid", gridTemplateColumns: "28px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}
             >
-              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: ACCENTS[i] }} />
-              <span style={{ fontSize: i < 3 ? 18 : 15, fontWeight: 900, color: ACCENTS[i], paddingLeft: 6 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}</span>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: accent }} />
+              <span style={{ fontSize: 14, fontWeight: 900, color: accent, paddingLeft: 6 }}>{i + 1}</span>
               <div style={{ minWidth: 0, display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 1 }}>
                 <span style={{ fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", fontSize: 13 }}>{r.pitcher}</span>
-                <span style={{ color: kLineLabel && kOver ? "#86efac" : "#64748b", fontWeight: 900, fontSize: 11, whiteSpace: "nowrap" }}>{kDisplay}</span>
+                <span style={{ color: accent, fontWeight: 900, fontSize: 11, whiteSpace: "nowrap" }}>{kDisplay}</span>
+                {edgeLabel && (
+                  <span style={{ background: `${accent}26`, color: accent, borderRadius: 999, padding: "1px 6px", fontWeight: 800, fontSize: 10, whiteSpace: "nowrap" }}>
+                    Proj {edgeInfo.projectedKs?.toFixed(1)} · {edgeLabel}
+                  </span>
+                )}
                 <div style={{ display: "flex", alignItems: "center", gap: 3 }}><TeamLogoBadge team={r.team} size={13} showLabel={false} dark={true} /><span style={{ color: "#64748b", fontSize: 10 }}>vs {r.opponent}</span></div>
               </div>
               <div style={{ background: pillStyle.bg, color: pillStyle.color, borderRadius: 8, padding: "4px 0", fontWeight: 900, textAlign: "center", fontSize: 14 }}>{safeScore.toFixed(1)}</div>
