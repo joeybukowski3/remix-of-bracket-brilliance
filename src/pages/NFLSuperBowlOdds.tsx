@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { NFL_POWER_RATINGS, nflLogoUrl, type NflPowerTeam } from "@/data/nflPreseason2026";
 import { slugifyNflTeam } from "@/lib/nfl/guide2026";
 import { calculateRankGap, getRankGapSignal, type SuperBowlMarketTeam } from "@/lib/nfl/superBowlMarkets";
-import NflGuideNav from "@/components/nfl/NflGuideNav";
 
 type SuperBowlOddsResponse = {
   source: "polymarket";
@@ -90,14 +88,12 @@ export default function NFLSuperBowlOdds() {
   const updatedAt = data?.updatedAt ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(data.updatedAt)) : "—";
 
   return (
-    <SiteShell>
-      <main className="site-page pb-16 pt-8">
-        <div className="site-container site-stack">
+    <main className="site-page pb-16 pt-8">
+      <div className="site-container site-stack">
           <section>
             <div className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">NFL · Prediction Markets</div>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">Super Bowl Odds Tracker</h1>
             <p className="mt-2 text-sm text-slate-500">Live Super Bowl market prices compared with the Joe Knows Ball power rankings · Select a team for its complete dashboard</p>
-            <div className="mt-5"><NflGuideNav /></div>
           </section>
 
           <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Super Bowl market summary">
@@ -138,8 +134,7 @@ export default function NFLSuperBowlOdds() {
               <p className="border-t border-slate-100 px-5 py-4 text-[11px] leading-5 text-slate-400">Rank Gap compares prediction-market rank with Joe Knows Ball power rank. A positive number means the model rates the team higher than the market does; it is a rank comparison, not a guaranteed betting edge.</p>
             </section>
           )}
-        </div>
-      </main>
-    </SiteShell>
+      </div>
+    </main>
   );
 }

@@ -1,10 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { NFL_DIVISIONS, NFL_DIVISION_ORDER, nflLogoUrl, type NflDivisionTeam } from "@/data/nflPreseason2026";
-import NflGuideNav from "@/components/nfl/NflGuideNav";
 import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
@@ -125,14 +123,12 @@ export default function NFLStandings() {
   const isCurrent = season === CURRENT_SEASON;
 
   return (
-    <SiteShell>
-      <main className="site-page pb-16 pt-8">
-        <div className="site-container site-stack">
+    <main className="site-page pb-16 pt-8">
+      <div className="site-container site-stack">
           <section>
             <div className="text-[11px] font-bold uppercase tracking-[.16em] text-blue-600">NFL · Standings</div>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">{season} NFL Standings by Division</h1>
             <p className="mt-2 text-sm text-slate-500">Derived automatically from final game results · Select a team for its full dashboard</p>
-            <div className="mt-5"><NflGuideNav /></div>
             <div className="mt-4 flex flex-wrap gap-2">
               {SEASONS.map((y) => (
                 <button
@@ -171,8 +167,7 @@ export default function NFLStandings() {
             Standings are sorted by a simplified regular-season ranking formula (win% → wins → point differential → points for) and do not yet apply the full NFL playoff tiebreaker sequence.
           </p>
           <LastUpdated meta={data?.resultsMeta} />
-        </div>
-      </main>
-    </SiteShell>
+      </div>
+    </main>
   );
 }
