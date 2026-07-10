@@ -314,7 +314,15 @@ describe("sanity report (v0.2)", () => {
 });
 
 describe("public isolation", () => {
-  it("power-ratings.json is not imported/read by any page, component or hook", () => {
+  // The ONLY sanctioned consumers are the internal/admin review surface
+  // added in PR-9 (hidden route, noindexed, not in public nav). Every other
+  // page/component/hook must not touch power-ratings.json.
+  const SANCTIONED_INTERNAL_CONSUMERS = new Set([
+    "src/pages/AdminNflPowerRatings.tsx",
+    "src/hooks/useNflRatingsReview.ts",
+  ]);
+
+  it("power-ratings.json is not read outside the sanctioned internal review surface", () => {
     const dirs = ["src/pages", "src/components", "src/hooks"];
     const offenders: string[] = [];
     const walk = (dir: string) => {
@@ -323,7 +331,7 @@ describe("public isolation", () => {
         if (entry.isDirectory()) walk(rel);
         else if (/\.(ts|tsx)$/.test(entry.name)) {
           const source = readFileSync(join(ROOT, rel), "utf-8");
-          if (/power-ratings/.test(source)) offenders.push(rel);
+          if (/power-ratings/.test(source) && !SANCTIONED_INTERNAL_CONSUMERS.has(rel)) offenders.push(rel);
         }
       }
     };

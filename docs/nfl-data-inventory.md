@@ -149,7 +149,13 @@ Schedule adjustment is a one-pass average of opponents' point differential
 per game from final scores only — never from spreads/moneylines/market data.
 Sanity review: `npm run nfl:team-ratings -- --sanity` (adds v0.1 rank
 comparison and hardest/easiest schedules). Not validated; not betting
-guidance; no public page consumes these files yet.
+guidance; no public page consumes these files.
+
+Internal review surface (PR-9): `/admin/nfl/power-ratings` — hidden route,
+noindexed, not linked from any public navigation or the sitemap. Renders the
+generated model files with neutral review flags (record disagreement,
+efficiency signal, schedule context). The app has no auth system; the route
+is hidden/internal only and real access control is a documented follow-up.
 
 Seasons covered: 2022–2026. 2026 files are generated in a safe preseason/empty
 state until games complete.
