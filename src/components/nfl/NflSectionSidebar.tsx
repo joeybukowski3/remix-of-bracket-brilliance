@@ -26,7 +26,11 @@ type NflSectionSidebarProps = {
 export default function NflSectionSidebar({ mobile = false, onNavigate }: NflSectionSidebarProps) {
   const location = useLocation();
   const activeCategoryId = getActiveNflSectionCategoryId(location.pathname);
-  const [openCategories, setOpenCategories] = useState<string[]>(() => [activeCategoryId].filter(Boolean) as string[]);
+  // All categories start expanded so every destination is immediately visible;
+  // users may still collapse individual categories from there.
+  const [openCategories, setOpenCategories] = useState<string[]>(() =>
+    NFL_SECTION_NAV_CATEGORIES.map((category) => category.id)
+  );
 
   useEffect(() => {
     if (!activeCategoryId) return;
