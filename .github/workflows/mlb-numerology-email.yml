@@ -31,15 +31,6 @@ on:
     - cron: "0 14 * * *"
     - cron: "0 15 * * *"
 
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/mlb-numerology-email.yml"
-      - "scripts/generate-mlb-numerology-email.mjs"
-      - "scripts/lib/mlb-numerology-tracking.mjs"
-      - "scripts/lib/mlb-numerology-player-context.mjs"
-
 concurrency:
   group: main-data-writers-${{ github.repository }}
   cancel-in-progress: false
@@ -49,7 +40,6 @@ permissions:
 
 jobs:
   numerology-email:
-    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 70
 
@@ -74,16 +64,7 @@ jobs:
             reason="manual send requested"
           elif [ "${{ github.event_name }}" = "schedule" ]; then
             today_et="$(TZ=America/New_York date '+%Y-%m-%d')"
-            sent_date="$(python3 - <<'PY'
-import json
-from pathlib import Path
-path = Path('public/data/mlb/numerology/email-send-state.json')
-try:
-    print(json.loads(path.read_text()).get('date') or '')
-except Exception:
-    print('')
-PY
-)"
+            sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null)" || sent_date=""
 
             if [ "$sent_date" = "$today_et" ]; then
               resolved="skip"
@@ -133,26 +114,8 @@ PY
             git fetch origin main
             git reset --hard origin/main
 
-            file_date="$(python3 - <<'PY'
-import json
-from pathlib import Path
-path = Path('public/data/mlb/numerology-daily.json')
-try:
-    print(json.loads(path.read_text()).get('date') or 'missing')
-except Exception:
-    print('missing')
-PY
-)"
-            sent_date="$(python3 - <<'PY'
-import json
-from pathlib import Path
-path = Path('public/data/mlb/numerology/email-send-state.json')
-try:
-    print(json.loads(path.read_text()).get('date') or '')
-except Exception:
-    print('')
-PY
-)"
+            file_date="$(jq -r '.date // "missing"' public/data/mlb/numerology-daily.json 2>/dev/null)" || file_date="missing"
+            sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null)" || sent_date=""
 
             if [ "$sent_date" = "$today_et" ]; then
               echo "[mlb-numerology-email] Another attempt already sent today's email. Exiting successfully."
@@ -177,16 +140,7 @@ PY
         shell: bash
         run: |
           today_et="$(TZ=America/New_York date '+%Y-%m-%d')"
-          sent_date="$(python3 - <<'PY'
-import json
-from pathlib import Path
-path = Path('public/data/mlb/numerology/email-send-state.json')
-try:
-    print(json.loads(path.read_text()).get('date') or '')
-except Exception:
-    print('')
-PY
-)"
+          sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null)" || sent_date=""
           if [ "${{ github.event_name }}" = "schedule" ] && [ "$sent_date" = "$today_et" ]; then
             echo "already_sent=true" >> "$GITHUB_OUTPUT"
             echo "Today's email was already sent; this retry will stop."
