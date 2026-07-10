@@ -5,7 +5,7 @@
  *
  * Phase 1 — Morning:     4:00 AM America/New_York with delayed-delivery retry window
  * Phase 2 — Lineup:      First active game start − 2 hours, once lineups are confirmed
- * Catch-up — If the saved slate date is stale, auto mode advances it immediately.
+ * Catch-up — If the saved slate date is stale, auto mode advances it after 4:00 AM ET.
  *
  * All slate-date and time decisions use America/New_York.
  * No external API calls; accepts injected schedule data and current timestamps.
@@ -134,11 +134,16 @@ export function evaluateGate(phase, now, existingOutput, scheduleData, scheduleR
     return { run: true, updatePhase: "lineup-confirmed", reason: check.reason };
   }
 
-  // Auto mode must never leave yesterday's slate published just because GitHub
-  // missed the nominal 4:00 delivery window. A stale or missing date is allowed
-  // to run immediately as a morning catch-up. Once the date advances, the normal
-  // once-per-day guards prevent duplicate work.
   if (!existingOutput?.date || existingOutput.date !== etDateToday) {
+    const { hour, minute } = getEtHourMinute(now);
+    const minuteOfDay = hour * 60 + minute;
+    if (minuteOfDay < 4 * 60) {
+      return {
+        run: false,
+        updatePhase: "morning",
+        reason: `Stale slate catch-up blocked before 4:00 ET (current ET ${hour}:${String(minute).padStart(2, "0")})`,
+      };
+    }
     return {
       run: true,
       updatePhase: "morning",
