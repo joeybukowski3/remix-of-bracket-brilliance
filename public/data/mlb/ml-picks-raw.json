@@ -1,414 +1,471 @@
 {
-  "date": "2026-07-09",
-  "generatedAt": "2026-07-09T17:32:01.314Z",
+  "date": "2026-07-10",
+  "generatedAt": "2026-07-10T09:02:21.061Z",
   "modelVersion": "mlb-ml-edge-v1.0",
   "picks": [
     {
-      "gameId": 823359,
-      "gameKey": "ATL@PIT",
+      "gameId": 824252,
+      "gameKey": "PHI@DET",
+      "pick": "home",
+      "pickAbbr": "DET",
+      "confidence": 63,
+      "differential": 14,
+      "factors": [
+        {
+          "label": "Pitcher Quality",
+          "awayScore": 41,
+          "homeScore": 54,
+          "weight": 0.3,
+          "weightedDifference": -3.69303322508428,
+          "description": "ERA, K/9, BB%, HR/9"
+        },
+        {
+          "label": "Matchup Edge",
+          "awayScore": 50,
+          "homeScore": 49,
+          "weight": 0.25,
+          "weightedDifference": 0.3300835842599916,
+          "description": "Lineup OPS vs pitcher hand · lineup K%"
+        },
+        {
+          "label": "Lineup Offense",
+          "awayScore": 53,
+          "homeScore": 83,
+          "weight": 0.2,
+          "weightedDifference": -5.965491902742574,
+          "description": "OPS, SLG, OBP"
+        },
+        {
+          "label": "Recent Form",
+          "awayScore": 43,
+          "homeScore": 78,
+          "weight": 0.15,
+          "weightedDifference": -5.167741935483871,
+          "description": "Last 5 games · home/away split"
+        },
+        {
+          "label": "Season Quality",
+          "awayScore": 55,
+          "homeScore": 46,
+          "weight": 0.1,
+          "weightedDifference": 0.9082589796385272,
+          "description": "Season win %"
+        }
+      ],
+      "topFactor": "Lineup Offense",
+      "priceAtPick": {
+        "american": "-125",
+        "implied": 0.5555555555555556,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
+      },
+      "polymarketAtPick": {
+        "yesPrice": 0.465,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
+      }
+    },
+    {
+      "gameId": 823357,
+      "gameKey": "MIL@PIT",
       "pick": "home",
       "pickAbbr": "PIT",
-      "confidence": 56,
-      "differential": 5,
-      "factors": [
-        {
-          "label": "Pitcher Quality",
-          "awayScore": 50,
-          "homeScore": 40,
-          "weight": 0.3,
-          "weightedDifference": 2.973259502280412,
-          "description": "ERA, K/9, BB%, HR/9"
-        },
-        {
-          "label": "Matchup Edge",
-          "awayScore": 55,
-          "homeScore": 61,
-          "weight": 0.25,
-          "weightedDifference": -1.5921759731945837,
-          "description": "Lineup OPS vs pitcher hand · lineup K%"
-        },
-        {
-          "label": "Lineup Offense",
-          "awayScore": 51,
-          "homeScore": 78,
-          "weight": 0.2,
-          "weightedDifference": -5.3501050491039015,
-          "description": "OPS, SLG, OBP"
-        },
-        {
-          "label": "Recent Form",
-          "awayScore": 47,
-          "homeScore": 57,
-          "weight": 0.15,
-          "weightedDifference": -1.53056206088993,
-          "description": "Last 5 games · home/away split"
-        },
-        {
-          "label": "Season Quality",
-          "awayScore": 58,
-          "homeScore": 51,
-          "weight": 0.1,
-          "weightedDifference": 0.7704123833156097,
-          "description": "Season win %"
-        }
-      ],
-      "topFactor": "Lineup Offense",
-      "priceAtPick": {
-        "american": "+264",
-        "implied": 0.27472527472527475,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
-      },
-      "polymarketAtPick": {
-        "yesPrice": 0.515,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
-      }
-    },
-    {
-      "gameId": 823606,
-      "gameKey": "KC@NYM",
-      "pick": "away",
-      "pickAbbr": "KC",
-      "confidence": 56,
-      "differential": 5,
-      "factors": [
-        {
-          "label": "Pitcher Quality",
-          "awayScore": 54,
-          "homeScore": 50,
-          "weight": 0.3,
-          "weightedDifference": 1.1875376334354768,
-          "description": "ERA, K/9, BB%, HR/9"
-        },
-        {
-          "label": "Matchup Edge",
-          "awayScore": 52,
-          "homeScore": 46,
-          "weight": 0.25,
-          "weightedDifference": 1.4628339593350415,
-          "description": "Lineup OPS vs pitcher hand · lineup K%"
-        },
-        {
-          "label": "Lineup Offense",
-          "awayScore": 67,
-          "homeScore": 51,
-          "weight": 0.2,
-          "weightedDifference": 3.2159320852733275,
-          "description": "OPS, SLG, OBP"
-        },
-        {
-          "label": "Recent Form",
-          "awayScore": 48,
-          "homeScore": 53,
-          "weight": 0.15,
-          "weightedDifference": -0.7875,
-          "description": "Last 5 games · home/away split"
-        },
-        {
-          "label": "Season Quality",
-          "awayScore": 41,
-          "homeScore": 42,
-          "weight": 0.1,
-          "weightedDifference": -0.10752688172043037,
-          "description": "Season win %"
-        }
-      ],
-      "topFactor": "Lineup Offense",
-      "priceAtPick": {
-        "american": "-117",
-        "implied": 0.5391705069124424,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
-      },
-      "polymarketAtPick": {
-        "yesPrice": 0.575,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
-      }
-    },
-    {
-      "gameId": 822954,
-      "gameKey": "NYY@TB",
-      "pick": "home",
-      "pickAbbr": "TB",
       "confidence": 59,
       "differential": 9,
       "factors": [
         {
           "label": "Pitcher Quality",
-          "awayScore": 59,
-          "homeScore": 69,
+          "awayScore": 41,
+          "homeScore": 68,
           "weight": 0.3,
-          "weightedDifference": -2.9776707009548082,
+          "weightedDifference": -8.178610488302393,
           "description": "ERA, K/9, BB%, HR/9"
         },
         {
           "label": "Matchup Edge",
-          "awayScore": 50,
-          "homeScore": 60,
+          "awayScore": 58,
+          "homeScore": 62,
           "weight": 0.25,
-          "weightedDifference": -2.5867930599781808,
+          "weightedDifference": -0.862751108807581,
           "description": "Lineup OPS vs pitcher hand · lineup K%"
         },
         {
           "label": "Lineup Offense",
-          "awayScore": 50,
-          "homeScore": 53,
+          "awayScore": 59,
+          "homeScore": 75,
           "weight": 0.2,
-          "weightedDifference": -0.629569246373896,
+          "weightedDifference": -3.3328452840075244,
           "description": "OPS, SLG, OBP"
         },
         {
           "label": "Recent Form",
-          "awayScore": 36,
-          "homeScore": 53,
+          "awayScore": 70,
+          "homeScore": 57,
           "weight": 0.15,
-          "weightedDifference": -2.524038461538462,
+          "weightedDifference": 2.0015625,
           "description": "Last 5 games · home/away split"
         },
         {
           "label": "Season Quality",
-          "awayScore": 54,
-          "homeScore": 60,
+          "awayScore": 63,
+          "homeScore": 50,
           "weight": 0.1,
-          "weightedDifference": -0.5652173913043484,
+          "weightedDifference": 1.344086021505376,
           "description": "Season win %"
         }
       ],
       "topFactor": "Pitcher Quality",
       "priceAtPick": {
-        "american": "-283",
-        "implied": 0.7389033942558747,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
+        "american": "-131",
+        "implied": 0.5670995670995671,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
       },
       "polymarketAtPick": {
-        "yesPrice": 0.425,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
+        "yesPrice": 0.455,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
       }
     },
     {
-      "gameId": 824816,
-      "gameKey": "CHC@BAL",
-      "pick": "away",
-      "pickAbbr": "CHC",
-      "confidence": 57,
-      "differential": 6,
+      "gameId": 824817,
+      "gameKey": "KC@BAL",
+      "pick": "home",
+      "pickAbbr": "BAL",
+      "confidence": 55,
+      "differential": 4,
       "factors": [
         {
           "label": "Pitcher Quality",
-          "awayScore": 36,
-          "homeScore": 44,
+          "awayScore": 39,
+          "homeScore": 52,
           "weight": 0.3,
-          "weightedDifference": -2.4492558629797867,
+          "weightedDifference": -3.894811190072845,
           "description": "ERA, K/9, BB%, HR/9"
         },
         {
           "label": "Matchup Edge",
-          "awayScore": 61,
-          "homeScore": 41,
+          "awayScore": 51,
+          "homeScore": 52,
           "weight": 0.25,
-          "weightedDifference": 4.974408128302288,
+          "weightedDifference": -0.02774149927263636,
           "description": "Lineup OPS vs pitcher hand · lineup K%"
         },
         {
           "label": "Lineup Offense",
-          "awayScore": 56,
-          "homeScore": 52,
+          "awayScore": 51,
+          "homeScore": 48,
           "weight": 0.2,
-          "weightedDifference": 0.8692046294727576,
+          "weightedDifference": 0.4335217752715721,
           "description": "OPS, SLG, OBP"
         },
         {
           "label": "Recent Form",
-          "awayScore": 56,
+          "awayScore": 48,
           "homeScore": 45,
+          "weight": 0.15,
+          "weightedDifference": 0.437920673076923,
+          "description": "Last 5 games · home/away split"
+        },
+        {
+          "label": "Season Quality",
+          "awayScore": 40,
+          "homeScore": 46,
+          "weight": 0.1,
+          "weightedDifference": -0.5319148936170216,
+          "description": "Season win %"
+        }
+      ],
+      "topFactor": "Pitcher Quality",
+      "priceAtPick": {
+        "american": "-156",
+        "implied": 0.609375,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
+      },
+      "polymarketAtPick": {
+        "yesPrice": 0.415,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
+      }
+    },
+    {
+      "gameId": 824493,
+      "gameKey": "CHC@CIN",
+      "pick": "away",
+      "pickAbbr": "CHC",
+      "confidence": 61,
+      "differential": 11,
+      "factors": [
+        {
+          "label": "Pitcher Quality",
+          "awayScore": 49,
+          "homeScore": 33,
+          "weight": 0.3,
+          "weightedDifference": 4.683291855083132,
+          "description": "ERA, K/9, BB%, HR/9"
+        },
+        {
+          "label": "Matchup Edge",
+          "awayScore": 55,
+          "homeScore": 54,
+          "weight": 0.25,
+          "weightedDifference": 0.24429399985201528,
+          "description": "Lineup OPS vs pitcher hand · lineup K%"
+        },
+        {
+          "label": "Lineup Offense",
+          "awayScore": 67,
+          "homeScore": 48,
+          "weight": 0.2,
+          "weightedDifference": 3.760064747527895,
+          "description": "OPS, SLG, OBP"
+        },
+        {
+          "label": "Recent Form",
+          "awayScore": 55,
+          "homeScore": 44,
           "weight": 0.15,
           "weightedDifference": 1.65,
           "description": "Last 5 games · home/away split"
         },
         {
           "label": "Season Quality",
-          "awayScore": 57,
-          "homeScore": 45,
+          "awayScore": 56,
+          "homeScore": 46,
           "weight": 0.1,
-          "weightedDifference": 1.1360448807854142,
+          "weightedDifference": 1.0261804581580172,
           "description": "Season win %"
         }
       ],
-      "topFactor": "Matchup Edge",
+      "topFactor": "Pitcher Quality",
       "priceAtPick": {
-        "american": "+108",
-        "implied": 0.4807692307692308,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
+        "american": "-112",
+        "implied": 0.5283018867924528,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
       },
       "polymarketAtPick": {
-        "yesPrice": 0.535,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
+        "yesPrice": 0.495,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
       }
     },
     {
-      "gameId": 823683,
-      "gameKey": "CLE@MIN",
+      "gameId": 822955,
+      "gameKey": "SEA@TB",
       "pick": "home",
-      "pickAbbr": "MIN",
-      "confidence": 57,
-      "differential": 6,
+      "pickAbbr": "TB",
+      "confidence": 60,
+      "differential": 10,
       "factors": [
         {
           "label": "Pitcher Quality",
-          "awayScore": 57,
-          "homeScore": 41,
+          "awayScore": 49,
+          "homeScore": 61,
           "weight": 0.3,
-          "weightedDifference": 5.051645719650924,
+          "weightedDifference": -3.350645731224804,
           "description": "ERA, K/9, BB%, HR/9"
         },
         {
           "label": "Matchup Edge",
-          "awayScore": 47,
+          "awayScore": 49,
           "homeScore": 60,
           "weight": 0.25,
-          "weightedDifference": -3.2289362177353844,
-          "description": "Lineup OPS vs pitcher hand · lineup K%"
-        },
-        {
-          "label": "Lineup Offense",
-          "awayScore": 42,
-          "homeScore": 54,
-          "weight": 0.2,
-          "weightedDifference": -2.497227376789512,
-          "description": "OPS, SLG, OBP"
-        },
-        {
-          "label": "Recent Form",
-          "awayScore": 32,
-          "homeScore": 67,
-          "weight": 0.15,
-          "weightedDifference": -5.110714285714285,
-          "description": "Last 5 games · home/away split"
-        },
-        {
-          "label": "Season Quality",
-          "awayScore": 51,
-          "homeScore": 49,
-          "weight": 0.1,
-          "weightedDifference": 0.10752688172043037,
-          "description": "Season win %"
-        }
-      ],
-      "topFactor": "Recent Form",
-      "priceAtPick": {
-        "american": "-105",
-        "implied": 0.5121951219512195,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
-      },
-      "polymarketAtPick": {
-        "yesPrice": 0.535,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
-      }
-    },
-    {
-      "gameId": 824577,
-      "gameKey": "BOS@CWS",
-      "pick": "away",
-      "pickAbbr": "BOS",
-      "confidence": 59,
-      "differential": 8,
-      "factors": [
-        {
-          "label": "Pitcher Quality",
-          "awayScore": 50,
-          "homeScore": 44,
-          "weight": 0.3,
-          "weightedDifference": 1.7981828407705855,
-          "description": "ERA, K/9, BB%, HR/9"
-        },
-        {
-          "label": "Matchup Edge",
-          "awayScore": 62,
-          "homeScore": 49,
-          "weight": 0.25,
-          "weightedDifference": 3.1461377304707447,
+          "weightedDifference": -2.6362881587815146,
           "description": "Lineup OPS vs pitcher hand · lineup K%"
         },
         {
           "label": "Lineup Offense",
           "awayScore": 48,
-          "homeScore": 49,
+          "homeScore": 56,
           "weight": 0.2,
-          "weightedDifference": -0.0783557422665183,
+          "weightedDifference": -1.5658457777308472,
           "description": "OPS, SLG, OBP"
         },
         {
           "label": "Recent Form",
-          "awayScore": 77,
-          "homeScore": 50,
+          "awayScore": 41,
+          "homeScore": 52,
           "weight": 0.15,
-          "weightedDifference": 3.9794491525423723,
+          "weightedDifference": -1.706240084611316,
           "description": "Last 5 games · home/away split"
         },
         {
           "label": "Season Quality",
-          "awayScore": 47,
-          "homeScore": 52,
+          "awayScore": 50,
+          "homeScore": 59,
           "weight": 0.1,
-          "weightedDifference": -0.4981684981684993,
+          "weightedDifference": -0.9340659340659343,
+          "description": "Season win %"
+        }
+      ],
+      "topFactor": "Pitcher Quality",
+      "priceAtPick": {
+        "american": "-123",
+        "implied": 0.5515695067264574,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
+      },
+      "polymarketAtPick": {
+        "yesPrice": 0.485,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
+      }
+    },
+    {
+      "gameId": 823845,
+      "gameKey": "CLE@MIA",
+      "pick": "home",
+      "pickAbbr": "MIA",
+      "confidence": 58,
+      "differential": 8,
+      "factors": [
+        {
+          "label": "Pitcher Quality",
+          "awayScore": 66,
+          "homeScore": 51,
+          "weight": 0.3,
+          "weightedDifference": 4.548642428875533,
+          "description": "ERA, K/9, BB%, HR/9"
+        },
+        {
+          "label": "Matchup Edge",
+          "awayScore": 47,
+          "homeScore": 51,
+          "weight": 0.25,
+          "weightedDifference": -1.1225618019228634,
+          "description": "Lineup OPS vs pitcher hand · lineup K%"
+        },
+        {
+          "label": "Lineup Offense",
+          "awayScore": 42,
+          "homeScore": 60,
+          "weight": 0.2,
+          "weightedDifference": -3.7124620289648065,
+          "description": "OPS, SLG, OBP"
+        },
+        {
+          "label": "Recent Form",
+          "awayScore": 33,
+          "homeScore": 81,
+          "weight": 0.15,
+          "weightedDifference": -7.187611607142858,
+          "description": "Last 5 games · home/away split"
+        },
+        {
+          "label": "Season Quality",
+          "awayScore": 51,
+          "homeScore": 55,
+          "weight": 0.1,
+          "weightedDifference": -0.4255319148936174,
           "description": "Season win %"
         }
       ],
       "topFactor": "Recent Form",
       "priceAtPick": {
-        "american": "-105",
-        "implied": 0.5121951219512195,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
+        "american": "-119",
+        "implied": 0.54337899543379,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
       },
       "polymarketAtPick": {
-        "yesPrice": 0.515,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
+        "yesPrice": 0.48,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
       }
     },
     {
-      "gameId": 824251,
-      "gameKey": "ATH@DET",
+      "gameId": 824575,
+      "gameKey": "ATH@CWS",
       "pick": "home",
-      "pickAbbr": "DET",
-      "confidence": 55,
-      "differential": 3,
+      "pickAbbr": "CWS",
+      "confidence": 64,
+      "differential": 15,
       "factors": [
         {
           "label": "Pitcher Quality",
-          "awayScore": 46,
-          "homeScore": 46,
+          "awayScore": 20,
+          "homeScore": 59,
           "weight": 0.3,
-          "weightedDifference": 0.11886132898290355,
+          "weightedDifference": -11.631566336187051,
           "description": "ERA, K/9, BB%, HR/9"
         },
         {
           "label": "Matchup Edge",
           "awayScore": 52,
-          "homeScore": 49,
+          "homeScore": 48,
           "weight": 0.25,
-          "weightedDifference": 0.8661208747061657,
+          "weightedDifference": 0.952422803756356,
           "description": "Lineup OPS vs pitcher hand · lineup K%"
         },
         {
           "label": "Lineup Offense",
-          "awayScore": 62,
-          "homeScore": 49,
+          "awayScore": 60,
+          "homeScore": 55,
           "weight": 0.2,
-          "weightedDifference": 2.6192325957971168,
+          "weightedDifference": 1.1614596455395911,
           "description": "OPS, SLG, OBP"
         },
         {
           "label": "Recent Form",
-          "awayScore": 21,
-          "homeScore": 66,
+          "awayScore": 20,
+          "homeScore": 50,
           "weight": 0.15,
-          "weightedDifference": -6.830689080300083,
+          "weightedDifference": -4.425,
           "description": "Last 5 games · home/away split"
         },
         {
           "label": "Season Quality",
-          "awayScore": 45,
-          "homeScore": 46,
+          "awayScore": 44,
+          "homeScore": 51,
           "weight": 0.1,
-          "weightedDifference": -0.10869565217391326,
+          "weightedDifference": -0.7000935016362789,
+          "description": "Season win %"
+        }
+      ],
+      "topFactor": "Pitcher Quality",
+      "priceAtPick": {
+        "american": "-175",
+        "implied": 0.6363636363636364,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
+      },
+      "polymarketAtPick": null
+    },
+    {
+      "gameId": 823685,
+      "gameKey": "LAA@MIN",
+      "pick": "home",
+      "pickAbbr": "MIN",
+      "confidence": 64,
+      "differential": 14,
+      "factors": [
+        {
+          "label": "Pitcher Quality",
+          "awayScore": 28,
+          "homeScore": 43,
+          "weight": 0.3,
+          "weightedDifference": -4.619698451171112,
+          "description": "ERA, K/9, BB%, HR/9"
+        },
+        {
+          "label": "Matchup Edge",
+          "awayScore": 45,
+          "homeScore": 58,
+          "weight": 0.25,
+          "weightedDifference": -3.3044518924701123,
+          "description": "Lineup OPS vs pitcher hand · lineup K%"
+        },
+        {
+          "label": "Lineup Offense",
+          "awayScore": 50,
+          "homeScore": 50,
+          "weight": 0.2,
+          "weightedDifference": 0.00018214077590812395,
+          "description": "OPS, SLG, OBP"
+        },
+        {
+          "label": "Recent Form",
+          "awayScore": 29,
+          "homeScore": 66,
+          "weight": 0.15,
+          "weightedDifference": -5.613986013986015,
+          "description": "Last 5 games · home/away split"
+        },
+        {
+          "label": "Season Quality",
+          "awayScore": 39,
+          "homeScore": 49,
+          "weight": 0.1,
+          "weightedDifference": -0.9574468085106382,
           "description": "Season win %"
         }
       ],
@@ -416,242 +473,245 @@
       "priceAtPick": {
         "american": "-131",
         "implied": 0.5670995670995671,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
+        "capturedAt": "2026-07-10T09:00:57.114Z"
       },
-      "polymarketAtPick": null
+      "polymarketAtPick": {
+        "yesPrice": 0.455,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
+      }
     },
     {
-      "gameId": 824494,
-      "gameKey": "PHI@CIN",
+      "gameId": 823033,
+      "gameKey": "ATL@STL",
       "pick": "away",
-      "pickAbbr": "PHI",
-      "confidence": 58,
-      "differential": 7,
+      "pickAbbr": "ATL",
+      "confidence": 61,
+      "differential": 11,
       "factors": [
         {
           "label": "Pitcher Quality",
-          "awayScore": 66,
-          "homeScore": 37,
+          "awayScore": 77,
+          "homeScore": 50,
           "weight": 0.3,
-          "weightedDifference": 8.542161947238547,
+          "weightedDifference": 8.353475302080565,
           "description": "ERA, K/9, BB%, HR/9"
         },
         {
           "label": "Matchup Edge",
-          "awayScore": 51,
-          "homeScore": 58,
+          "awayScore": 56,
+          "homeScore": 57,
           "weight": 0.25,
-          "weightedDifference": -1.7023347525995618,
+          "weightedDifference": -0.23460444330651065,
           "description": "Lineup OPS vs pitcher hand · lineup K%"
         },
         {
           "label": "Lineup Offense",
-          "awayScore": 47,
-          "homeScore": 48,
+          "awayScore": 57,
+          "homeScore": 56,
           "weight": 0.2,
-          "weightedDifference": -0.05874539875121485,
+          "weightedDifference": 0.2649357666204253,
           "description": "OPS, SLG, OBP"
         },
         {
           "label": "Recent Form",
-          "awayScore": 43,
-          "homeScore": 45,
+          "awayScore": 47,
+          "homeScore": 35,
           "weight": 0.15,
-          "weightedDifference": -0.27663934426229525,
+          "weightedDifference": 1.8745463709677423,
           "description": "Last 5 games · home/away split"
         },
         {
           "label": "Season Quality",
-          "awayScore": 55,
-          "homeScore": 46,
+          "awayScore": 59,
+          "homeScore": 52,
           "weight": 0.1,
-          "weightedDifference": 0.86848635235732,
+          "weightedDifference": 0.6521739130434789,
           "description": "Season win %"
         }
       ],
       "topFactor": "Pitcher Quality",
       "priceAtPick": {
-        "american": "-163",
-        "implied": 0.6197718631178707,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
+        "american": "-168",
+        "implied": 0.6268656716417911,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
       },
       "polymarketAtPick": {
         "yesPrice": 0.395,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
+        "capturedAt": "2026-07-10T04:44:52.623Z"
       }
     },
     {
-      "gameId": 823034,
-      "gameKey": "MIL@STL",
-      "pick": "away",
-      "pickAbbr": "MIL",
-      "confidence": 63,
-      "differential": 13,
+      "gameId": 823278,
+      "gameKey": "TOR@SD",
+      "pick": "home",
+      "pickAbbr": "SD",
+      "confidence": 58,
+      "differential": 8,
       "factors": [
         {
           "label": "Pitcher Quality",
-          "awayScore": 75,
-          "homeScore": 52,
+          "awayScore": 19,
+          "homeScore": 36,
           "weight": 0.3,
-          "weightedDifference": 6.648918592051345,
+          "weightedDifference": -5.050853816622705,
           "description": "ERA, K/9, BB%, HR/9"
         },
         {
           "label": "Matchup Edge",
-          "awayScore": 58,
-          "homeScore": 51,
+          "awayScore": 43,
+          "homeScore": 44,
           "weight": 0.25,
-          "weightedDifference": 1.7467315967030572,
+          "weightedDifference": -0.12213311145350758,
           "description": "Lineup OPS vs pitcher hand · lineup K%"
         },
         {
           "label": "Lineup Offense",
           "awayScore": 50,
-          "homeScore": 56,
+          "homeScore": 49,
           "weight": 0.2,
-          "weightedDifference": -1.194405264626613,
+          "weightedDifference": 0.20871104752582,
           "description": "OPS, SLG, OBP"
         },
         {
           "label": "Recent Form",
-          "awayScore": 70,
-          "homeScore": 35,
+          "awayScore": 41,
+          "homeScore": 57,
           "weight": 0.15,
-          "weightedDifference": 5.196973365617433,
+          "weightedDifference": -2.442834051724138,
           "description": "Last 5 games · home/away split"
         },
         {
           "label": "Season Quality",
-          "awayScore": 63,
-          "homeScore": 53,
+          "awayScore": 47,
+          "homeScore": 49,
           "weight": 0.1,
-          "weightedDifference": 1.029622551361682,
+          "weightedDifference": -0.21505376344086002,
           "description": "Season win %"
         }
       ],
       "topFactor": "Pitcher Quality",
       "priceAtPick": {
-        "american": "-136",
-        "implied": 0.576271186440678,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
+        "american": "-119",
+        "implied": 0.54337899543379,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
       },
       "polymarketAtPick": {
-        "yesPrice": 0.455,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
+        "yesPrice": 0.485,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
       }
     },
     {
-      "gameId": 822877,
-      "gameKey": "LAA@TEX",
+      "gameId": 823927,
+      "gameKey": "AZ@LAD",
       "pick": "home",
-      "pickAbbr": "TEX",
-      "confidence": 55,
-      "differential": 3,
+      "pickAbbr": "LAD",
+      "confidence": 66,
+      "differential": 17,
       "factors": [
         {
           "label": "Pitcher Quality",
-          "awayScore": 60,
-          "homeScore": 56,
+          "awayScore": 56,
+          "homeScore": 76,
           "weight": 0.3,
-          "weightedDifference": 1.115682568257376,
+          "weightedDifference": -5.758112947810435,
           "description": "ERA, K/9, BB%, HR/9"
         },
         {
           "label": "Matchup Edge",
           "awayScore": 45,
-          "homeScore": 48,
+          "homeScore": 60,
           "weight": 0.25,
-          "weightedDifference": -0.6408094944219727,
+          "weightedDifference": -3.7531138012060445,
           "description": "Lineup OPS vs pitcher hand · lineup K%"
         },
         {
           "label": "Lineup Offense",
-          "awayScore": 51,
-          "homeScore": 50,
+          "awayScore": 48,
+          "homeScore": 65,
           "weight": 0.2,
-          "weightedDifference": 0.14254678058684364,
-          "description": "OPS, SLG, OBP"
-        },
-        {
-          "label": "Recent Form",
-          "awayScore": 29,
-          "homeScore": 47,
-          "weight": 0.15,
-          "weightedDifference": -2.7254237288135585,
-          "description": "Last 5 games · home/away split"
-        },
-        {
-          "label": "Season Quality",
-          "awayScore": 40,
-          "homeScore": 50,
-          "weight": 0.1,
-          "weightedDifference": -1.0215053763440864,
-          "description": "Season win %"
-        }
-      ],
-      "topFactor": "Recent Form",
-      "priceAtPick": {
-        "american": "-136",
-        "implied": 0.576271186440678,
-        "capturedAt": "2026-07-09T17:31:23.466Z"
-      },
-      "polymarketAtPick": {
-        "yesPrice": 0.435,
-        "capturedAt": "2026-07-09T04:45:01.076Z"
-      }
-    },
-    {
-      "gameId": 823277,
-      "gameKey": "AZ@SD",
-      "pick": "home",
-      "pickAbbr": "SD",
-      "confidence": 54,
-      "differential": 3,
-      "factors": [
-        {
-          "label": "Pitcher Quality",
-          "awayScore": 27,
-          "homeScore": 30,
-          "weight": 0.3,
-          "weightedDifference": -0.8527637965891856,
-          "description": "ERA, K/9, BB%, HR/9"
-        },
-        {
-          "label": "Matchup Edge",
-          "awayScore": 45,
-          "homeScore": 44,
-          "weight": 0.25,
-          "weightedDifference": 0.13953365978461285,
-          "description": "Lineup OPS vs pitcher hand · lineup K%"
-        },
-        {
-          "label": "Lineup Offense",
-          "awayScore": 45,
-          "homeScore": 44,
-          "weight": 0.2,
-          "weightedDifference": 0.2873689637615726,
+          "weightedDifference": -3.3926601513356034,
           "description": "OPS, SLG, OBP"
         },
         {
           "label": "Recent Form",
           "awayScore": 42,
-          "homeScore": 57,
+          "homeScore": 63,
           "weight": 0.15,
-          "weightedDifference": -2.318280871670702,
+          "weightedDifference": -3.0421875,
           "description": "Last 5 games · home/away split"
         },
         {
           "label": "Season Quality",
           "awayScore": 49,
-          "homeScore": 50,
+          "homeScore": 65,
           "weight": 0.1,
-          "weightedDifference": -0.10869565217391326,
+          "weightedDifference": -1.543125142987875,
           "description": "Season win %"
         }
       ],
-      "topFactor": "Recent Form",
+      "topFactor": "Pitcher Quality",
       "priceAtPick": null,
       "polymarketAtPick": null
+    },
+    {
+      "gameId": 823200,
+      "gameKey": "COL@SF",
+      "pick": "home",
+      "pickAbbr": "SF",
+      "confidence": 57,
+      "differential": 6,
+      "factors": [
+        {
+          "label": "Pitcher Quality",
+          "awayScore": 40,
+          "homeScore": 45,
+          "weight": 0.3,
+          "weightedDifference": -1.5217931245279246,
+          "description": "ERA, K/9, BB%, HR/9"
+        },
+        {
+          "label": "Matchup Edge",
+          "awayScore": 44,
+          "homeScore": 57,
+          "weight": 0.25,
+          "weightedDifference": -3.1936098545399823,
+          "description": "Lineup OPS vs pitcher hand · lineup K%"
+        },
+        {
+          "label": "Lineup Offense",
+          "awayScore": 59,
+          "homeScore": 62,
+          "weight": 0.2,
+          "weightedDifference": -0.5680201906488435,
+          "description": "OPS, SLG, OBP"
+        },
+        {
+          "label": "Recent Form",
+          "awayScore": 40,
+          "homeScore": 45,
+          "weight": 0.15,
+          "weightedDifference": -0.8052995391705063,
+          "description": "Last 5 games · home/away split"
+        },
+        {
+          "label": "Season Quality",
+          "awayScore": 40,
+          "homeScore": 42,
+          "weight": 0.1,
+          "weightedDifference": -0.19354838709677438,
+          "description": "Season win %"
+        }
+      ],
+      "topFactor": "Matchup Edge",
+      "priceAtPick": {
+        "american": "-167",
+        "implied": 0.6254681647940075,
+        "capturedAt": "2026-07-10T09:00:57.114Z"
+      },
+      "polymarketAtPick": {
+        "yesPrice": 0.405,
+        "capturedAt": "2026-07-10T04:44:52.623Z"
+      }
     }
   ]
 }
