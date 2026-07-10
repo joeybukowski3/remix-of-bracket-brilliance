@@ -92,9 +92,13 @@ describe("buildKPropBestBets", () => {
     // Before the fix: legacy projectedKs=5.3 vs kLine=0.5 -> a 4.8 K edge,
     // an unmissable "lock" driven entirely by an unrealistic 8-IP starter
     // projection for a pitcher who will actually throw under an inning.
+    // MIN_ELIGIBLE_K_LINE (see kPropStatus.ts) now also independently
+    // excludes this row -- a 0.5 K line is well below the starter
+    // threshold regardless of the legacy-innings bug -- so this raw
+    // legacy-fields case is caught before it ever reaches Best Bets.
     const buggyLegacyRow = row({ pitcher: "Wandy Peralta", projectedKs: 5.3, kLine: 0.5, projectedIP: 8, projectedK9: 6 });
     const buggyResult = buildKPropBestBets([buggyLegacyRow]);
-    expect(buggyResult.overs).toHaveLength(1); // demonstrates the bug still reproduces against the raw legacy fields alone
+    expect(buggyResult.overs).toHaveLength(0); // excluded by the line-minimum rule, independent of the legacy-innings bug this fixture was built to illustrate
 
     // After the fix: the wrapper's effective projection is what actually
     // flows into row.projectedKs (see generate-mlb-hr-props-with-k-shadow.mjs),

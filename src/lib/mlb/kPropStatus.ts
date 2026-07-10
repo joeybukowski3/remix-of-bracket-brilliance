@@ -8,7 +8,9 @@ import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
  * MlbGameDetail.tsx's selectTopKValuePlays.
  *
  * - VALID: a real market line + a workload-confident projection agree closely enough to recommend.
- * - LOW_CONFIDENCE: has a line and a projection, but workload confidence is weak (grade C/D or critical flags).
+ * - LOW_CONFIDENCE: has a line and a projection, but either workload confidence is weak (grade C/D or
+ *   critical flags) or the line itself is below MIN_ELIGIBLE_K_LINE (a reliever/opener/nonstandard-role
+ *   line, not a primary starting-pitcher line -- see the LOW_K_LINE reason).
  * - INSUFFICIENT_DATA: missing the core inputs (K%/Whiff%, workload) needed to produce any real projection.
  * - INVALID_ODDS: has a line, but the odds themselves fail a sanity check (incoherent market, disallowed book, implausible line for the role).
  * - INVALID_WORKLOAD: the legacy projection diverges sharply from an eligible workload candidate, with no safe number to show.
@@ -59,7 +61,18 @@ const REASON_LABELS: Record<string, string> = {
   PITCHER_SEASON_K_RATE_MISSING: "Missing K%",
   RECENT_PITCH_COUNTS_MISSING: "Missing pitch count history",
   LEGACY_CANDIDATE_DIVERGENCE: "Projection/workload mismatch",
+  LOW_K_LINE: "K line below starter threshold",
 };
+
+// Below this line, a K prop is presumed to belong to a reliever, opener,
+// bulk-relief, or other nonstandard-role pitcher rather than the primary
+// starting-pitcher model this page is built around -- even when the line,
+// odds, and projection are all otherwise perfectly valid. Checked last, so
+// it only ever downgrades a row that would otherwise have been VALID; a
+// more specific existing status (NO_MARKET, INVALID_ODDS, INSUFFICIENT_DATA,
+// etc.) always takes precedence over this one. Exactly at the threshold
+// remains eligible (kLine < MIN_ELIGIBLE_K_LINE, not <=).
+export const MIN_ELIGIBLE_K_LINE = 3.5;
 
 /** Human-readable label for a single reason code, for the Low Confidence table's badge/tooltip. */
 export function describeKPropStatusReason(reason: string): string {
@@ -206,6 +219,10 @@ export function resolveKPropStatus(row: KPropStatusInput): KPropStatusResult {
   const candidateKs = toFiniteOrNull(row.candidateProjectedKs);
   if (candidateKs != null && row.projectionSource === "legacy" && Math.abs(projectedKs - candidateKs) > INVALID_WORKLOAD_DIVERGENCE_KS) {
     return { status: "INVALID_WORKLOAD", reasons: ["LEGACY_CANDIDATE_DIVERGENCE"] };
+  }
+
+  if (kLine < MIN_ELIGIBLE_K_LINE) {
+    return { status: "LOW_CONFIDENCE", reasons: ["LOW_K_LINE"] };
   }
 
   return { status: "VALID", reasons: [] };
