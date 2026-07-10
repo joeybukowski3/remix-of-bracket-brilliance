@@ -128,7 +128,7 @@ describe("resolveKPropStatus", () => {
     expect(result.status).toBe("VALID");
   });
 
-  it("does not misclassify a legitimate low K line for a known reliever as implausible", () => {
+  it("does not flag a legitimate low K line for a known reliever as implausible odds, but the line-minimum rule still excludes it from the starter model", () => {
     const result = resolveKPropStatus(makeRow({
       kLine: 0.5,
       workloadRole: "reliever",
@@ -136,12 +136,56 @@ describe("resolveKPropStatus", () => {
       projectedK9: 8,
       projectedKs: 0.9,
     }));
-    expect(result.status).toBe("VALID");
+    expect(result.status).not.toBe("INVALID_ODDS");
+    expect(result.status).toBe("LOW_CONFIDENCE");
+    expect(result.reasons).toContain("LOW_K_LINE");
   });
 
-  it("skips the K-line plausibility band entirely when role is unknown, rather than defaulting to starter bounds", () => {
+  it("skips the K-line plausibility band entirely when role is unknown, rather than defaulting to starter bounds -- the line-minimum rule still applies independently", () => {
     const result = resolveKPropStatus(makeRow({ kLine: 0.5, workloadRole: null }));
-    expect(result.status).toBe("VALID");
+    expect(result.status).not.toBe("INVALID_ODDS");
+    expect(result.status).toBe("LOW_CONFIDENCE");
+    expect(result.reasons).toContain("LOW_K_LINE");
+  });
+
+  describe("MIN_ELIGIBLE_K_LINE (starter-threshold exclusion)", () => {
+    it("1.5 line: a fully valid row is downgraded to LOW_CONFIDENCE with LOW_K_LINE, not VALID", () => {
+      const result = resolveKPropStatus(makeRow({ kLine: 1.5, projectedKs: 4.0 }));
+      expect(result.status).not.toBe("VALID");
+      expect(result.status).toBe("LOW_CONFIDENCE");
+      expect(result.reasons).toContain("LOW_K_LINE");
+    });
+
+    it("2.5 line: same as 1.5, downgraded to LOW_CONFIDENCE with LOW_K_LINE", () => {
+      const result = resolveKPropStatus(makeRow({ kLine: 2.5, projectedKs: 4.0 }));
+      expect(result.status).not.toBe("VALID");
+      expect(result.status).toBe("LOW_CONFIDENCE");
+      expect(result.reasons).toContain("LOW_K_LINE");
+    });
+
+    it("3.5 boundary: is not excluded solely by the new threshold and remains VALID when every other input is valid", () => {
+      const result = resolveKPropStatus(makeRow({ kLine: 3.5, projectedKs: 4.0 }));
+      expect(result.status).toBe("VALID");
+      expect(result.reasons).not.toContain("LOW_K_LINE");
+    });
+
+    it("preserves the more specific INVALID_ODDS classification for a 1.5 line with already-incoherent odds", () => {
+      const result = resolveKPropStatus(makeRow({
+        kLine: 1.5,
+        kOddsOver: "+881",
+        kOddsUnder: "-100",
+        kOddsBook: "underdog",
+        projectedKs: 4.0,
+      }));
+      expect(result.status).toBe("INVALID_ODDS");
+      expect(result.reasons).not.toContain("LOW_K_LINE");
+    });
+
+    it("a missing/null K line remains NO_MARKET, never LOW_K_LINE", () => {
+      const result = resolveKPropStatus(makeRow({ kLine: null }));
+      expect(result.status).toBe("NO_MARKET");
+      expect(result.reasons).not.toContain("LOW_K_LINE");
+    });
   });
 });
 
