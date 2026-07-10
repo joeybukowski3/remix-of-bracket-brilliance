@@ -12,27 +12,8 @@ on:
           - snapshot
           - grade
           - both
-  schedule:
-    # Hourly snapshots 11am–11pm UTC (7am–7pm ET) — covers full MLB day
-    - cron: "0 11 * * *"
-    - cron: "0 12 * * *"
-    - cron: "0 13 * * *"
-    - cron: "0 14 * * *"
-    - cron: "0 15 * * *"
-    - cron: "0 16 * * *"
-    - cron: "0 17 * * *"
-    - cron: "0 18 * * *"
-    - cron: "0 19 * * *"
-    - cron: "0 20 * * *"
-    - cron: "0 21 * * *"
-    - cron: "0 22 * * *"
-    - cron: "0 23 * * *"
-    # Late coverage for West Coast games (through midnight ET)
-    - cron: "0 0 * * *"
-    - cron: "0 1 * * *"
-    - cron: "0 2 * * *"
-    # Daily grader (7am UTC)
-    - cron: "0 7 * * *"
+  # Scheduled Polymarket tracker runs are intentionally paused.
+  # This workflow is now manual-only until the Odds Tracker page is fixed.
 
 permissions:
   contents: write
