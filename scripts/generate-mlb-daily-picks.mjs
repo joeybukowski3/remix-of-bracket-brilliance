@@ -1,3 +1,11 @@
+/**
+ * DEPRECATED LEGACY X-POSTING PATH -- see the top-of-file comment in
+ * .github/workflows/post-mlb-daily-picks.yml for the full context. This
+ * script itself only ever built tweet text (it never called the X API
+ * directly -- that happened in a since-removed workflow step via a
+ * third-party action); it's kept as a preview-text generator only. A
+ * candidate for full deletion in a later cleanup PR.
+ */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";

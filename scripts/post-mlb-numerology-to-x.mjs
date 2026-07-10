@@ -1,10 +1,12 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
 import { buildCaption, validatePreviewReady } from "./lib/mlb-numerology-x-post-core.mjs";
+import { checkDailyPostingLock, getForceRepostOverride, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
+import { assertScheduledLiveGateEnabled } from "./lib/mlb-numerology-scheduled-gate.mjs";
 
 const ROOT = process.cwd();
 const LOCAL_PREVIEW_PATH = path.join(ROOT, "public", "data", "mlb", "numerology", "x-post-preview.json");
@@ -118,11 +120,11 @@ function normalizeUsername(value) {
   return normalizeText(value).replace(/^@/, "").toLowerCase();
 }
 
-function slugifyKey(value) {
-  return normalizeText(value).replace(/[^a-zA-Z0-9._-]+/g, "-");
-}
-
-function buildPostKey(preview) {
+// Content fingerprint: audit/debugging only, retained in the receipt --
+// NOT the duplicate-post gate. See buildDailyPostingKey, and HR's
+// identical split (post-mlb-hr-props-to-x.mjs) for why a fingerprint-
+// keyed gate is unsafe.
+function buildContentFingerprint(preview) {
   const fingerprint = {
     date: preview?.date,
     topPlay: preview?.topPlay,
@@ -134,22 +136,13 @@ function buildPostKey(preview) {
   return `mlb-numerology-${normalizeText(preview?.date)}-${hash}`;
 }
 
-function getDuplicateStatePath(postKey) {
-  const stateDir = normalizeText(process.env.X_DUPLICATE_STATE_DIR) || DEFAULT_DUPLICATE_STATE_DIR;
-  return path.join(stateDir, `${slugifyKey(postKey)}.json`);
+// The actual duplicate-post gate: one key per slate date.
+function buildDailyPostingKey(preview) {
+  return `mlb-numerology:${normalizeText(preview?.date)}`;
 }
 
-function assertNotAlreadyPosted(postKey) {
-  const statePath = getDuplicateStatePath(postKey);
-  if (existsSync(statePath)) {
-    throw new Error(`Duplicate protection blocked posting: ${postKey} already has a post receipt at ${statePath}.`);
-  }
-  return statePath;
-}
-
-function savePostReceipt(statePath, receipt) {
-  mkdirSync(path.dirname(statePath), { recursive: true });
-  writeFileSync(statePath, `${JSON.stringify(receipt, null, 2)}\n`);
+function getStateDir() {
+  return normalizeText(process.env.X_DUPLICATE_STATE_DIR) || DEFAULT_DUPLICATE_STATE_DIR;
 }
 
 function createXClientFromEnv() {
@@ -196,10 +189,6 @@ function assertLivePostAllowed() {
   if (process.env.X_ALLOW_LIVE_POST !== "true") {
     throw new Error("Live posting is blocked unless X_ALLOW_LIVE_POST=true is set by the workflow.");
   }
-}
-
-function getLiveDuplicateKey(postKey, mode) {
-  return mode === "post-text-only" ? `${postKey}-text-only` : postKey;
 }
 
 async function publishPost({ client, caption, screenshotPath }) {
@@ -279,6 +268,10 @@ function logXApiError(error) {
   }
 }
 
+function logFinalStatus(status) {
+  console.log(`[mlb-numerology-x] finalStatus=${status}`);
+}
+
 async function main() {
   if (args.has("--help") || args.has("-h")) {
     console.log(usage());
@@ -294,6 +287,7 @@ async function main() {
   let account = null;
   if (mode === "post" || mode === "post-text-only") {
     assertLivePostAllowed();
+    assertScheduledLiveGateEnabled(process.env.GITHUB_EVENT_NAME ?? "", process.env.NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED);
     account = await verifyExpectedXAccount();
   }
 
@@ -307,7 +301,7 @@ async function main() {
 
   if (mode === "post-key-only") {
     if (freshnessError) throw new Error(freshnessError);
-    console.log(buildPostKey(preview));
+    console.log(buildDailyPostingKey(preview));
     return;
   }
 
@@ -319,20 +313,53 @@ async function main() {
 
   if (freshnessError) {
     console.log(`[mlb-numerology-x] ${freshnessError}`);
+    logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
     return;
   }
 
   const result = buildCaption(preview);
   if (result.skipped) {
     console.log(`[mlb-numerology-x] ${result.reason}`);
+    logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
     return;
   }
 
   console.log(`[mlb-numerology-x] captionLength=${result.caption.length}`);
-  const postKey = buildPostKey(preview);
-  console.log(`[mlb-numerology-x] postKey=${postKey}`);
-  const liveDuplicateKey = mode === "post" || mode === "post-text-only" ? getLiveDuplicateKey(postKey, mode) : "";
-  const duplicateStatePath = liveDuplicateKey ? assertNotAlreadyPosted(liveDuplicateKey) : "";
+  const contentFingerprint = buildContentFingerprint(preview);
+  const dailyPostingKey = buildDailyPostingKey(preview);
+  console.log(`[mlb-numerology-x] contentFingerprint=${contentFingerprint}`);
+  console.log(`[mlb-numerology-x] dailyPostingKey=${dailyPostingKey}`);
+
+  if (mode !== "post" && mode !== "post-text-only") {
+    // dry-run (including a schedule event resolved down to dry-run by the
+    // workflow's scheduled-live gate): preview only, never consumes or
+    // checks the daily lock.
+    console.log("");
+    console.log(result.caption);
+    console.log("");
+    if (mode === "dry-run") {
+      try {
+        const screenshotPath = await screenshotNumerologyExport();
+        console.log(`[mlb-numerology-x] screenshotPath=${screenshotPath}`);
+      } catch (screenshotErr) {
+        console.warn(`[mlb-numerology-x] Screenshot failed: ${screenshotErr instanceof Error ? screenshotErr.message : screenshotErr}`);
+      }
+    }
+    logFinalStatus("SKIPPED_PREVIEW_MODE");
+    return;
+  }
+
+  const forceRepost = getForceRepostOverride(process.env.GITHUB_EVENT_NAME ?? "", process.env.NUMEROLOGY_X_FORCE_REPOST);
+  const lock = checkDailyPostingLock(dailyPostingKey, getStateDir(), { allowOverride: forceRepost });
+  if (lock.blocked) {
+    console.log(`[mlb-numerology-x] Duplicate protection: ${dailyPostingKey} already has a post receipt at ${lock.statePath}. No live post will be attempted.`);
+    logFinalStatus("SKIPPED_ALREADY_POSTED_TODAY");
+    return;
+  }
+  if (lock.overrodeExistingLock) {
+    console.log(`[mlb-numerology-x] Daily posting lock for ${dailyPostingKey} is already set, but an explicit force-repost override was provided -- proceeding.`);
+  }
+  const duplicateStatePath = lock.statePath;
   console.log("");
   console.log(result.caption);
   console.log("");
@@ -347,46 +374,34 @@ async function main() {
     }
   }
 
+  const baseReceipt = {
+    dailyPostingKey,
+    contentFingerprint,
+    slateDate: normalizeText(preview?.date),
+    postedAt: new Date().toISOString(),
+    forcedOverride: forceRepost,
+  };
+
   if (mode === "post") {
     if (screenshotPath) {
       const post = await publishPost({ client: account.client, caption: result.caption, screenshotPath });
-      savePostReceipt(duplicateStatePath, {
-        postKey: liveDuplicateKey,
-        slateDate: normalizeText(preview?.date),
-        postedAt: new Date().toISOString(),
-        tweetId: post.tweetId,
-        tweetUrl: post.tweetUrl,
-        mediaId: post.mediaId,
-        screenshotPath,
-      });
+      savePostReceipt(duplicateStatePath, { ...baseReceipt, tweetId: post.tweetId, tweetUrl: post.tweetUrl, mediaId: post.mediaId, screenshotPath });
       console.log(`[mlb-numerology-x] duplicateReceipt=${duplicateStatePath}`);
     } else {
       console.log("[mlb-numerology-x] Falling back to text-only post");
       const post = await publishTextOnlyPost({ client: account.client, caption: result.caption });
-      savePostReceipt(duplicateStatePath, {
-        postKey: liveDuplicateKey,
-        mode: "text-only-fallback",
-        slateDate: normalizeText(preview?.date),
-        postedAt: new Date().toISOString(),
-        tweetId: post.tweetId,
-        tweetUrl: post.tweetUrl,
-      });
+      savePostReceipt(duplicateStatePath, { ...baseReceipt, mode: "text-only-fallback", tweetId: post.tweetId, tweetUrl: post.tweetUrl });
       console.log(`[mlb-numerology-x] duplicateReceipt=${duplicateStatePath}`);
     }
   }
 
   if (mode === "post-text-only") {
     const post = await publishTextOnlyPost({ client: account.client, caption: result.caption });
-    savePostReceipt(duplicateStatePath, {
-      postKey: liveDuplicateKey,
-      mode: "text-only",
-      slateDate: normalizeText(preview?.date),
-      postedAt: new Date().toISOString(),
-      tweetId: post.tweetId,
-      tweetUrl: post.tweetUrl,
-    });
+    savePostReceipt(duplicateStatePath, { ...baseReceipt, mode: "text-only", tweetId: post.tweetId, tweetUrl: post.tweetUrl });
     console.log(`[mlb-numerology-x] duplicateReceipt=${duplicateStatePath}`);
   }
+
+  logFinalStatus("POSTED");
 }
 
 try {
@@ -394,6 +409,7 @@ try {
 } catch (error) {
   console.error(`[mlb-numerology-x] ${sanitizeLogValue(error instanceof Error ? error.message : error)}`);
   logXApiError(error);
+  console.log("[mlb-numerology-x] finalStatus=FAILED");
   console.error("");
   console.error(usage());
   process.exitCode = 1;

@@ -1,10 +1,12 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
 import { filterEligibleKRows } from "./lib/mlb-k-social-eligibility.mjs";
+import { checkDailyPostingLock, getForceRepostOverride, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
+import { buildCaption, validateRows } from "./lib/mlb-k-caption-core.mjs";
 
 const ROOT = process.cwd();
 const STRIKEOUT_PROPS_URL = "https://www.joeknowsball.com/mlb";
@@ -106,6 +108,14 @@ async function loadKPropsFromPage(page) {
       oddsUnder: el.getAttribute("data-k-odds-under") || "",
       bookmaker: el.getAttribute("data-k-bookmaker") || "",
       status: el.getAttribute("data-k-status") || "",
+      // The page (SocialTableK in MlbGameDetail.tsx) already computes and
+      // renders the favored direction/projection/edge via
+      // getProjectionEdgeInfo -- scrape those directly instead of
+      // recomputing them here, so this script can never silently drift
+      // out of sync with the page's own value logic.
+      side: el.getAttribute("data-k-side") || "",
+      projectedKs: el.getAttribute("data-k-projected-ks") || "",
+      projectionEdge: el.getAttribute("data-k-projection-edge") || "",
     }));
     rows.push({
       pitcher: normalizeText(data.pitcher),
@@ -120,6 +130,9 @@ async function loadKPropsFromPage(page) {
       oddsUnder: normalizeText(data.oddsUnder) || null,
       bookmaker: normalizeText(data.bookmaker) || null,
       status: normalizeText(data.status) || null,
+      direction: normalizeText(data.side) || null,
+      projectedKs: toFiniteNumber(data.projectedKs),
+      projectionEdge: toFiniteNumber(data.projectionEdge),
     });
   }
 
@@ -158,16 +171,6 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function isAmericanOdds(value) {
-  return /^[+-]\d+$/.test(normalizeText(value));
-}
-
-function formatPropLine(value) {
-  const number = toFiniteNumber(value);
-  if (number == null || number <= 0) return "";
-  return Number.isInteger(number) ? number.toFixed(0) : String(number);
-}
-
 function getTodayEt() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
@@ -193,17 +196,8 @@ function isStarterPlaceholder(value) {
   return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "TO BE ANNOUNCED" || normalized === "TO BE DETERMINED";
 }
 
-function isPlaceholderText(value) {
-  const normalized = normalizeText(value).toUpperCase();
-  return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "N/A" || normalized === "NA" || normalized === "NULL" || normalized === "UNKNOWN";
-}
-
 function pickKey(value) {
   return `${normalizeText(value?.pitcher)}|${normalizeTeam(value?.team)}|${normalizeTeam(value?.opponent)}`;
-}
-
-function slugifyKey(value) {
-  return normalizeText(value).replace(/[^a-zA-Z0-9._-]+/g, "-");
 }
 
 function validateFreshness(date, generatedAt) {
@@ -215,75 +209,13 @@ function validateFreshness(date, generatedAt) {
   return "";
 }
 
-function validateRows(rows) {
-  if (rows.length < 3) return `Skipping: only ${rows.length} valid K prop rows are available; expected at least 3.`;
-
-  for (const [index, row] of rows.slice(0, 3).entries()) {
-    const label = `top ${index + 1}`;
-    if (isPlaceholderText(row.pitcher)) return `Skipping: ${label} pitcher name is missing or a placeholder.`;
-    if (isPlaceholderText(row.team)) return `Skipping: ${label} team is missing or a placeholder.`;
-    if (!Number.isFinite(row.strikeoutScore)) return `Skipping: ${label} K score is missing or invalid.`;
-    if (!formatPropLine(row.kLine)) return `Skipping: ${label} K line is missing.`;
-    if (!isAmericanOdds(row.oddsOver)) return `Skipping: ${label} over price is missing.`;
-  }
-
-  return "";
-}
-
-function formatDateLabel(dateValue) {
-  const raw = normalizeText(dateValue);
-  if (!raw) return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-  const date = new Date(`${raw}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return raw;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function buildCaption({ date, rows }) {
-  const rowsError = validateRows(rows);
-  if (rowsError) return { skipped: true, reason: rowsError, caption: "", topProps: [] };
-
-  const topProps = rows.slice(0, 3);
-  const dateLabel = formatDateLabel(date);
-  const lines = topProps.map((row, index) => {
-    const oddsPart = ` · Over ${formatPropLine(row.kLine)} Ks (${row.oddsOver})`;
-    const kPart = row.kRate != null ? ` · K%: ${row.kRate.toFixed(1)}` : "";
-    const whiffPart = row.whiffRate != null ? ` · Whiff%: ${row.whiffRate.toFixed(1)}` : "";
-    return `${index + 1}. ${row.pitcher} (${row.team}) — ${row.strikeoutScore.toFixed(1)}${oddsPart}${kPart}${whiffPart}`;
-  });
-
-  const caption = [
-    `JoeKnowsBall MLB K Props - ${dateLabel}`,
-    "",
-    "Top edges:",
-    ...lines,
-    "",
-    "Free Access to Full Table at Link in Bio",
-    "",
-    "#MLB #MLBPicks #Strikeouts #MLBBetting",
-  ].join("\n");
-
-  if (caption.length > 280) {
-    const shortLines = topProps.map((row, index) => `${index + 1}. ${row.pitcher} ${row.team} — O ${formatPropLine(row.kLine)} (${row.oddsOver}) · ${row.strikeoutScore.toFixed(1)}`);
-    const shortCaption = [
-      `MLB K Props - ${dateLabel}`,
-      "",
-      ...shortLines,
-      "",
-      "Full table: link in bio",
-      "#MLB #Strikeouts",
-    ].join("\n");
-
-    if (shortCaption.length > 280) {
-      return { skipped: true, reason: `Skipping: generated caption is ${caption.length} characters (and ${shortCaption.length} shortened); expected 280 or fewer.`, caption: "", topProps: [] };
-    }
-    return { skipped: false, reason: "", caption: shortCaption, topProps };
-  }
-
-  return { skipped: false, reason: "", caption, topProps };
-}
-
-function buildPostKey(date, rows) {
+// Content fingerprint: audit/debugging only, retained in the receipt --
+// NOT the duplicate-post gate. See buildDailyPostingKey, and HR's
+// identical split (post-mlb-hr-props-to-x.mjs) for why a fingerprint-
+// keyed gate is unsafe: any legitimate intraday data refresh changes the
+// fingerprint, which a fingerprint-keyed check would then treat as an
+// entirely new, never-before-seen post.
+function buildContentFingerprint(date, rows) {
   const fingerprint = rows
     .map((row) => ({
       pitcher: row.pitcher,
@@ -292,6 +224,7 @@ function buildPostKey(date, rows) {
       strikeoutScore: Number(row.strikeoutScore.toFixed(1)),
       kRate: row.kRate != null ? Number(row.kRate.toFixed(1)) : null,
       whiffRate: row.whiffRate != null ? Number(row.whiffRate.toFixed(1)) : null,
+      direction: row.direction,
     }))
     .sort((left, right) => pickKey(left).localeCompare(pickKey(right)));
   const hash = createHash("sha256")
@@ -302,22 +235,13 @@ function buildPostKey(date, rows) {
   return `mlb-k-props-${date}-${hash}`;
 }
 
-function getDuplicateStatePath(postKey) {
-  const stateDir = normalizeText(process.env.X_DUPLICATE_STATE_DIR) || DEFAULT_DUPLICATE_STATE_DIR;
-  return path.join(stateDir, `${slugifyKey(postKey)}.json`);
+// The actual duplicate-post gate: one key per slate date.
+function buildDailyPostingKey(date) {
+  return `mlb-k-props:${date}`;
 }
 
-function assertNotAlreadyPosted(postKey) {
-  const statePath = getDuplicateStatePath(postKey);
-  if (existsSync(statePath)) {
-    throw new Error(`Duplicate protection blocked posting: ${postKey} already has a post receipt at ${statePath}.`);
-  }
-  return statePath;
-}
-
-function savePostReceipt(statePath, receipt) {
-  mkdirSync(path.dirname(statePath), { recursive: true });
-  writeFileSync(statePath, `${JSON.stringify(receipt, null, 2)}\n`);
+function getStateDir() {
+  return normalizeText(process.env.X_DUPLICATE_STATE_DIR) || DEFAULT_DUPLICATE_STATE_DIR;
 }
 
 function createXClientFromEnv() {
@@ -366,9 +290,6 @@ function assertLivePostAllowed() {
   }
 }
 
-function getLiveDuplicateKey(postKey, mode) {
-  return mode === "post-text-only" ? `${postKey}-text-only` : postKey;
-}
 
 async function publishPost({ client, caption, screenshotPath }) {
   const mediaId = await client.v1.uploadMedia(screenshotPath, { mimeType: "image/png" });
@@ -477,6 +398,10 @@ function logXApiError(error) {
   }
 }
 
+function logFinalStatus(status) {
+  console.log(`[mlb-strikeout-props-x] finalStatus=${status}`);
+}
+
 async function main() {
   if (args.has("--help") || args.has("-h")) {
     console.log(usage());
@@ -516,6 +441,7 @@ async function main() {
     if (freshnessError) {
       if (mode === "post-key-only") throw new Error(freshnessError);
       console.log(`[mlb-strikeout-props-x] ${freshnessError}`);
+      logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
       return;
     }
 
@@ -523,6 +449,7 @@ async function main() {
     if (rowsError) {
       if (mode === "post-key-only") throw new Error(rowsError);
       console.log(`[mlb-strikeout-props-x] ${rowsError}`);
+      logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
       return;
     }
 
@@ -530,20 +457,48 @@ async function main() {
 
     if (mode === "post-key-only") {
       if (result.skipped) throw new Error(result.reason);
-      console.log(buildPostKey(pageData.date, pageData.rows));
+      console.log(buildDailyPostingKey(pageData.date));
       return;
     }
 
     if (result.skipped) {
       console.log(`[mlb-strikeout-props-x] ${result.reason}`);
+      logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
       return;
     }
 
     console.log(`[mlb-strikeout-props-x] captionLength=${result.caption.length}`);
-    const postKey = buildPostKey(pageData.date, pageData.rows);
-    console.log(`[mlb-strikeout-props-x] postKey=${postKey}`);
-    const liveDuplicateKey = mode === "post" || mode === "post-text-only" ? getLiveDuplicateKey(postKey, mode) : "";
-    const duplicateStatePath = liveDuplicateKey ? assertNotAlreadyPosted(liveDuplicateKey) : "";
+    const contentFingerprint = buildContentFingerprint(pageData.date, pageData.rows);
+    const dailyPostingKey = buildDailyPostingKey(pageData.date);
+    console.log(`[mlb-strikeout-props-x] contentFingerprint=${contentFingerprint}`);
+    console.log(`[mlb-strikeout-props-x] dailyPostingKey=${dailyPostingKey}`);
+
+    if (mode !== "post" && mode !== "post-text-only") {
+      // dry-run: preview only, never consumes or checks the daily lock.
+      console.log("");
+      console.log(result.caption);
+      console.log("");
+      try {
+        screenshotPath = await screenshotExportTarget(pageData.exportTarget);
+        console.log(`[mlb-strikeout-props-x] screenshotPath=${screenshotPath}`);
+      } catch (screenshotErr) {
+        console.warn(`[mlb-strikeout-props-x] Screenshot failed: ${screenshotErr instanceof Error ? screenshotErr.message : screenshotErr}`);
+      }
+      logFinalStatus("SKIPPED_PREVIEW_MODE");
+      return;
+    }
+
+    const forceRepost = getForceRepostOverride(process.env.GITHUB_EVENT_NAME ?? "", process.env.K_X_FORCE_REPOST);
+    const lock = checkDailyPostingLock(dailyPostingKey, getStateDir(), { allowOverride: forceRepost });
+    if (lock.blocked) {
+      console.log(`[mlb-strikeout-props-x] Duplicate protection: ${dailyPostingKey} already has a post receipt at ${lock.statePath}. No live post will be attempted.`);
+      logFinalStatus("SKIPPED_ALREADY_POSTED_TODAY");
+      return;
+    }
+    if (lock.overrodeExistingLock) {
+      console.log(`[mlb-strikeout-props-x] Daily posting lock for ${dailyPostingKey} is already set, but an explicit force-repost override was provided -- proceeding.`);
+    }
+    const duplicateStatePath = lock.statePath;
     console.log("");
     console.log(result.caption);
     console.log("");
@@ -557,47 +512,35 @@ async function main() {
       }
     }
 
+    const baseReceipt = {
+      dailyPostingKey,
+      contentFingerprint,
+      slateDate: pageData.date,
+      postedAt: new Date().toISOString(),
+      forcedOverride: forceRepost,
+    };
+
     if (mode === "post") {
       if (screenshotPath) {
         const post = await publishPost({ client: account.client, caption: result.caption, screenshotPath });
-        savePostReceipt(duplicateStatePath, {
-          postKey: liveDuplicateKey,
-          slateDate: pageData.date,
-          postedAt: new Date().toISOString(),
-          tweetId: post.tweetId,
-          tweetUrl: post.tweetUrl,
-          mediaId: post.mediaId,
-          screenshotPath,
-        });
+        savePostReceipt(duplicateStatePath, { ...baseReceipt, tweetId: post.tweetId, tweetUrl: post.tweetUrl, mediaId: post.mediaId, screenshotPath });
         console.log(`[mlb-strikeout-props-x] duplicateReceipt=${duplicateStatePath}`);
       } else {
         // Screenshot failed — fall back to text-only so the post always goes out
         console.log("[mlb-strikeout-props-x] Falling back to text-only post");
         const post = await publishTextOnlyPost({ client: account.client, caption: result.caption });
-        savePostReceipt(duplicateStatePath, {
-          postKey: liveDuplicateKey,
-          mode: "text-only-fallback",
-          slateDate: pageData.date,
-          postedAt: new Date().toISOString(),
-          tweetId: post.tweetId,
-          tweetUrl: post.tweetUrl,
-        });
+        savePostReceipt(duplicateStatePath, { ...baseReceipt, mode: "text-only-fallback", tweetId: post.tweetId, tweetUrl: post.tweetUrl });
         console.log(`[mlb-strikeout-props-x] duplicateReceipt=${duplicateStatePath}`);
       }
     }
 
     if (mode === "post-text-only") {
       const post = await publishTextOnlyPost({ client: account.client, caption: result.caption });
-      savePostReceipt(duplicateStatePath, {
-        postKey: liveDuplicateKey,
-        mode: "text-only",
-        slateDate: pageData.date,
-        postedAt: new Date().toISOString(),
-        tweetId: post.tweetId,
-        tweetUrl: post.tweetUrl,
-      });
+      savePostReceipt(duplicateStatePath, { ...baseReceipt, mode: "text-only", tweetId: post.tweetId, tweetUrl: post.tweetUrl });
       console.log(`[mlb-strikeout-props-x] duplicateReceipt=${duplicateStatePath}`);
     }
+
+    logFinalStatus("POSTED");
   } finally {
     await browser.close();
   }
@@ -608,6 +551,7 @@ try {
 } catch (error) {
   console.error(`[mlb-strikeout-props-x] ${sanitizeLogValue(error instanceof Error ? error.message : error)}`);
   logXApiError(error);
+  console.log("[mlb-strikeout-props-x] finalStatus=FAILED");
   console.error("");
   console.error(usage());
   process.exitCode = 1;

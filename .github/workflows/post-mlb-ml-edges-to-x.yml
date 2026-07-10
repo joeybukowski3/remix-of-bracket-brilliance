@@ -1,5 +1,15 @@
 name: Post MLB ML Edges to X
 
+# PAUSED: live ML posting is disabled while the ML model/table content is
+# under revision (see ML_X_POSTING_ENABLED below, checked centrally in
+# scripts/post-mlb-ml-edges-to-x.mjs's isMlPostingEnabled -- every live
+# path, scheduled/workflow_run and manual workflow_dispatch mode=post/
+# post-text-only alike, passes through that one gate before any X API
+# call is made). Generation/preview (--dry-run) and account verification
+# remain available. The "Summary" step below always states the paused
+# status explicitly so a green run is never mistaken for "nothing to
+# post today" -- re-enable by setting ML_X_POSTING_ENABLED to "true" once
+# the model is ready.
 on:
   workflow_dispatch:
     inputs:
@@ -105,6 +115,10 @@ jobs:
           node scripts/post-mlb-ml-edges-to-x.mjs "--${MODE}"
         env:
           X_ALLOW_LIVE_POST: "true"
+          # Central pause switch -- see the top-of-file comment. Explicitly
+          # "false" here (rather than just omitted) so the pause is visible
+          # directly in this workflow file, not just inferred from absence.
+          ML_X_POSTING_ENABLED: "false"
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
@@ -117,3 +131,13 @@ jobs:
           name: mlb-ml-edges-x-screenshot
           path: artifacts/mlb-ml-edges-x.png
           if-no-files-found: error
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          echo "== Post MLB ML Edges to X summary =="
+          echo "trigger event: ${{ github.event_name }}"
+          echo "time gate should_run: ${{ steps.time_gate.outputs.should_run || 'n/a' }}"
+          echo "*** ML LIVE X POSTING IS PAUSED BY CONFIGURATION (ML_X_POSTING_ENABLED=false) *** -- the ML model/table is under revision. No X API call is made for mode=post/post-text-only regardless of trigger."
+          echo "See the 'Post ML Edges' step output above for the finalStatus= line and skip/post/error reason from the script itself."
