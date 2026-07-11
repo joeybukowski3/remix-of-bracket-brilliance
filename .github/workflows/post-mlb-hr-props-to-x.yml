@@ -1,31 +1,23 @@
 name: Post MLB HR Props to X
 
-# Why this workflow may not post on a given day, and how to read the logs:
-#   1. workflow_run (primary trigger) only fires after "Generate MLB Data"
-#      completes, and only proceeds past the job-level `if` when that
-#      completion was itself a `schedule` run on `main` that succeeded.
-#   2. For the direct backstop schedule only: the "DST match gate" step
-#      must confirm this firing's actual Eastern time is close to the
-#      single intended 1:45 PM ET target -- see the `schedule:` block
-#      comment below for why this is needed (both DST-paired cron entries
-#      fire every day, year-round; the non-matching season's firing exits
-#      as SKIPPED_DST_MISMATCH here, before any further work).
-#   3. The time gate then requires the run to land inside the 9 AM-2 PM ET
-#      window (see "Time gate" step for why this window is wide, not the
-#      original 9-11 AM).
-#   4. "Wait for fresh production slate" then retries for up to ~9 minutes
-#      for the live site's HR props data to actually be post-ready
-#      (correct slate date, enough valid props, real odds) before giving
-#      up and failing the run rather than posting stale/incomplete data.
-#   5. The script itself (post-mlb-hr-props-to-x.mjs) can still skip
-#      silently-but-loudly (logs a reason, exits 0) if the freshness/odds/
-#      top-props checks fail even after that wait, or if the daily
-#      posting lock (one key per slate date -- see buildDailyPostingKey
-#      in the script) finds today already has a post receipt.
-# The "Summary" step at the end of every run logs which of these applied,
-# and the script itself logs a final `finalStatus=` line: POSTED,
-# SKIPPED_ALREADY_POSTED_TODAY, SKIPPED_PREVIEW_MODE,
-# SKIPPED_NO_ELIGIBLE_ROWS, or FAILED.
+# Posting cadence is driven by the day's EARLIEST scheduled first pitch, not a
+# fixed clock time. This workflow polls on a broad, DST-safe UTC window every
+# 15 minutes; the runtime readiness gate
+# (scripts/check-mlb-x-posting-readiness.mjs) is the single source of truth for
+# timing and confirmation:
+#   1. It fetches the live MLB schedule (earliest first pitch, current
+#      starters, game status) + boxscores (official batting orders) and decides
+#      one of: post now, keep waiting, or skip cleanly -- printing finalStatus=.
+#   2. It only reports READY inside the posting window (~3h before first pitch,
+#      preferring 60-90 min out, hard cutoff ~40 min out) AND when enough
+#      hitters are confirmed in today's official batting order (projected-lineup
+#      hitters are never eligible for a live post; the website still shows them).
+#   3. Outside the window / on stale data / when confirmation can't be verified
+#      it fails closed (no post). The daily posting lock (one key per slate
+#      date) still guarantees at most one live post per day.
+# The gate runs WITHOUT `npm ci`/Playwright (it uses only Node built-ins), so
+# the ~60 daily poll attempts are cheap; the heavy post path (deps + Playwright
+# + screenshot + X API) runs only when the gate reports READY.
 on:
   workflow_dispatch:
     inputs:
@@ -51,28 +43,18 @@ on:
     types: [completed]
     branches: [main]
   schedule:
-    # Backstop trigger, in case workflow_run never fires or fires too
-    # late in the window to see fresh data. GitHub Actions `schedule`
-    # cron is UTC-only -- a `timezone:` sub-key here was previously
-    # assumed to shift this to America/New_York, but that is NOT
-    # confirmed GitHub Actions behavior (see PR description). Written in
-    # explicit UTC with a DST-safe pair of cron entries instead: one is
-    # correct during EDT, one during EST -- BOTH fire every day,
-    # year-round, regardless of season (GitHub Actions has no seasonal
-    # cron concept). The "DST match gate" step below is what actually
-    # filters out the non-matching season's firing (as
-    # SKIPPED_DST_MISMATCH) before any screenshot/duplicate-lock/cache/X
-    # setup work -- the wide 9 AM-2 PM time gate alone is NOT sufficient
-    # for this (during EST, the EDT-targeted 17:45 UTC entry lands at
-    # 12:45 PM EST, which is still inside that wide window).
-    #   - "45 17 * * *" = 17:45 UTC = 1:45 PM ET during EDT (Mar-Nov)
-    #   - "45 18 * * *" = 18:45 UTC = 1:45 PM ET during EST (Nov-Mar)
-    # 1:45 PM ET is late enough to give workflow_run every chance to post
-    # first (today's observed workflow_run completions ranged 5:03 AM-
-    # 1:24 PM ET), while the daily posting lock guarantees this never
-    # double-posts if workflow_run already succeeded earlier.
-    - cron: "45 17 * * *"
-    - cron: "45 18 * * *"
+    # 15-minute polling across a broad, DST-safe UTC window. GitHub Actions
+    # cron is UTC-only and has no seasonal/timezone concept, so this window is
+    # written wide enough to cover the real MLB range in BOTH EST and EDT:
+    # 12:00-03:00 UTC spans ~7-8 AM ET (earliest a ~3h-before-first-pitch poll
+    # can matter for an ~11 AM ET day game) through ~9-10 PM ET (latest a poll
+    # can matter for a West-Coast-only ~10 PM ET first pitch). It is NOT a
+    # 24-hour schedule. The runtime readiness gate -- not this cron -- decides
+    # whether any given firing actually posts; every firing outside the real
+    # per-day window exits cheaply as WAITING_FOR_POLLING_WINDOW / EXPIRED /
+    # SKIPPED_NO_GAMES.
+    - cron: "*/15 12-23 * * *"
+    - cron: "*/15 0-2 * * *"
 
 concurrency:
   group: post-mlb-hr-props-to-x
@@ -104,60 +86,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
-      - run: npm ci
-
-      # DST-paired cron protection: the two schedule entries above both
-      # fire every day, year-round -- GitHub Actions schedule cron has no
-      # concept of a timezone-aware seasonal switch. Without this gate,
-      # the non-matching season's entry would still reach screenshot
-      # generation, duplicate-lock consumption, cache writes, and X API
-      # setup. Bypassed entirely for workflow_dispatch/workflow_run
-      # (only the schedule trigger has paired DST crons to disambiguate).
-      # See scripts/lib/mlb-x-dst-gate.mjs for the unit-tested decision
-      # logic proving both seasonal cases.
-      - name: DST match gate (schedule backstop only)
-        id: dst_gate
-        shell: bash
-        env:
-          DST_GATE_TARGET_ET_HOUR: "13"
-          DST_GATE_TARGET_ET_MINUTE: "45"
-        run: |
-          if [ "${{ github.event_name }}" != "schedule" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "DST gate bypassed: trigger is ${{ github.event_name }}, not a paired-cron schedule firing."
-            exit 0
-          fi
-          if node scripts/check-dst-gate.mjs; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - run: npx playwright install --with-deps chromium
-        if: steps.dst_gate.outputs.should_run == 'true'
 
       - name: Compute ET date for cache key
         id: et_date
-        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
-      # actions/cache write-once bug fix: a single fixed key
-      # (mlb-hr-props-x-posted-<date>) can only ever be *saved* once per
-      # day -- GitHub Actions cache keys are immutable, so every run after
-      # the first one that day silently fails to persist its updated
-      # receipt back to the cache (logged as a warning, not an error).
-      # Confirmed via Actions run history 2026-07-10: two separate runs
-      # (16:36 and 17:24 UTC) computed the identical daily posting key and
-      # BOTH posted, because the second run's restore only ever saw the
-      # cache state from the *first* successful save of the day. Fixed by
-      # giving every run's save a unique key (run_id) and using
-      # restore-keys to pick up the most recent prior save by prefix --
-      # this lets the cache accumulate across multiple runs in one day
-      # instead of freezing after the first.
+      # Restore the day-scoped duplicate-post receipt so a poll after a
+      # successful post short-circuits without doing any heavy work. Run-unique
+      # save keys + restore-keys let the cache accumulate across the day's many
+      # polls (a single fixed key can only be saved once per day).
       - name: Restore duplicate-post state
         id: restore_cache
-        if: steps.dst_gate.outputs.should_run == 'true'
         uses: actions/cache/restore@v4
         with:
           path: .cache/mlb-hr-props-x-posted
@@ -165,62 +105,59 @@ jobs:
           restore-keys: |
             mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-
 
-      # Widened from the original 9-11 AM ET window: Actions run history for
-      # this repo shows "Generate MLB Data"'s scheduled completions routinely
-      # land 1.5-3+ hours after their nominal cron time (the 10:23 AM ET slot
-      # has been observed completing anywhere from 11:20 AM to 1:35 PM ET),
-      # so a 2-hour window was missing most real completions entirely. 9 AM
-      # to 2 PM ET covers every completion time observed in that history.
-      # Applies uniformly to workflow_run and the direct backstop schedule;
-      # workflow_dispatch always bypasses it.
-      - name: Time gate (9 AM-2 PM ET for automated triggers only)
-        id: time_gate
-        if: steps.dst_gate.outputs.should_run == 'true'
+      - name: Already posted today?
+        id: already
+        shell: bash
+        run: |
+          KEY="mlb-hr-props:${{ steps.et_date.outputs.date }}"
+          SLUG="$(echo "$KEY" | sed 's/[^a-zA-Z0-9._-]\+/-/g')"
+          if [ -f ".cache/mlb-hr-props-x-posted/${SLUG}.json" ] && [ "${{ inputs.force_repost || 'false' }}" != "true" ]; then
+            echo "posted=true" >> "$GITHUB_OUTPUT"
+            echo "Today's slate already has a post receipt -- skipping (finalStatus=SKIPPED_ALREADY_POSTED_TODAY)."
+          else
+            echo "posted=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Lightweight readiness gate: NO npm ci / Playwright. Manual
+      # workflow_dispatch bypasses it (the operator chose the mode explicitly);
+      # automated schedule/workflow_run firings must earn a READY here.
+      - name: Readiness gate
+        id: gate
+        if: steps.already.outputs.posted != 'true'
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "Time gate bypassed: manual workflow_dispatch."
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Readiness gate bypassed: manual workflow_dispatch (mode=${{ inputs.mode || 'post' }})."
             exit 0
           fi
-          ET_HOUR="$(TZ=America/New_York date +%H)"
-          if [ "$ET_HOUR" -ge 9 ] && [ "$ET_HOUR" -lt 14 ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "Time gate passed: ${ET_HOUR}:xx ET is within the 9 AM-2 PM window (trigger: ${{ github.event_name }})."
+          set +e
+          node scripts/check-mlb-x-posting-readiness.mjs --content=hr --data-source=production
+          CODE=$?
+          set -e
+          if [ "$CODE" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Readiness gate: READY -- proceeding to post."
+          elif [ "$CODE" -eq 20 ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Readiness gate: clean wait/skip -- no post this attempt."
           else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-            echo "Time gate blocked: ${ET_HOUR}:xx ET is outside the 9 AM-2 PM window (trigger: ${{ github.event_name }}). No post will be attempted this run."
-          fi
-
-      # Increased from 8 attempts x 45s (~6 min) to 12 x 45s (~9 min): the
-      # one automated run that has reached this step (2026-07-04, 10:06 AM
-      # ET) exhausted the old 6-minute budget and failed, which is itself
-      # evidence the old window was too tight for Vercel's production
-      # deploy to reliably catch up after "Generate MLB Data" pushes.
-      - name: Wait for fresh production slate
-        if: steps.time_gate.outputs.should_run == 'true' && (github.event_name == 'workflow_run' || github.event_name == 'schedule')
-        shell: bash
-        env:
-          HR_PROPS_DATA_SOURCE: production
-        run: |
-          set -euo pipefail
-          ready=false
-          for attempt in $(seq 1 12); do
-            echo "Production readiness check ${attempt}/12"
-            if node scripts/post-mlb-hr-props-to-x.mjs --post-key-only; then
-              ready=true
-              break
-            fi
-            if [ "$attempt" -lt 12 ]; then sleep 45; fi
-          done
-          if [ "$ready" != "true" ]; then
-            echo "ERROR: Production HR props did not become post-ready within ~9 minutes after the data workflow. See the readiness check output above for the specific reason (stale date, too few valid props, missing odds, etc.)." >&2
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Readiness gate: confirmation source failed -- failing closed." >&2
             exit 1
           fi
 
+      - name: Install dependencies
+        if: steps.gate.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Install Playwright
+        if: steps.gate.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
+
       - name: Post HR Props
         id: post
-        if: steps.time_gate.outputs.should_run == 'true'
+        if: steps.gate.outputs.ready == 'true'
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "schedule" ]; then
@@ -236,30 +173,23 @@ jobs:
           HR_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-hr-props-to-x.mjs "--${MODE}"
         env:
           X_ALLOW_LIVE_POST: "true"
-          # Only ever meaningful for workflow_dispatch (inputs.* is empty
-          # for workflow_run/schedule); the script also independently
-          # re-checks GITHUB_EVENT_NAME before honoring this.
           HR_X_FORCE_REPOST: ${{ inputs.force_repost || 'false' }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
           JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
 
-      # Explicit save under a run-unique key -- see the "Restore
-      # duplicate-post state" step above for why a single fixed key
-      # cannot be used. always() so a receipt written just before a later
-      # failure (e.g. the screenshot-upload step) still persists -- but
-      # only when the DST gate actually passed, so a non-matching-season
-      # firing never performs a cache write at all.
+      # always() so a receipt written just before a later failure still
+      # persists; only when we actually reached the post path (gate READY).
       - name: Save duplicate-post state
-        if: always() && steps.dst_gate.outputs.should_run == 'true'
+        if: always() && steps.gate.outputs.ready == 'true'
         uses: actions/cache/save@v4
         with:
           path: .cache/mlb-hr-props-x-posted
           key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
 
       - name: Upload screenshot (dry-run)
-        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        if: steps.gate.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
         uses: actions/upload-artifact@v4
         with:
           name: mlb-hr-props-x-screenshot
@@ -272,10 +202,8 @@ jobs:
         run: |
           echo "== Post MLB HR Props to X summary =="
           echo "trigger event: ${{ github.event_name }}"
-          echo "workflow_run conclusion (if applicable): ${{ github.event.workflow_run.conclusion || 'n/a' }}"
-          echo "workflow_run event (if applicable): ${{ github.event.workflow_run.event || 'n/a' }}"
-          echo "DST gate should_run: ${{ steps.dst_gate.outputs.should_run || 'n/a' }} (SKIPPED_DST_MISMATCH if false on a schedule trigger -- see the 'DST match gate' step output above)"
-          echo "time gate should_run: ${{ steps.time_gate.outputs.should_run || 'n/a' }}"
-          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (DST gate or time gate blocked before mode was resolved)' }}"
+          echo "already posted today: ${{ steps.already.outputs.posted || 'n/a' }}"
+          echo "readiness gate ready: ${{ steps.gate.outputs.ready || 'n/a (skipped: already posted)' }}"
+          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (gate not ready)' }}"
           echo "force repost override: ${{ inputs.force_repost || 'false' }}"
-          echo "See the 'Post HR Props' step output above for the exact finalStatus= line (POSTED / SKIPPED_ALREADY_POSTED_TODAY / SKIPPED_PREVIEW_MODE / SKIPPED_NO_ELIGIBLE_ROWS / FAILED) and skip/post/error reason from the script itself."
+          echo "See the 'Readiness gate' step for the finalStatus= line (READY_CONFIRMED_SELECTIONS / WAITING_FOR_* / SKIPPED_* / FAILED_CONFIRMATION_SOURCE) and the 'Post HR Props' step for the script's own finalStatus= (POSTED / SKIPPED_ALREADY_POSTED_TODAY / SKIPPED_NO_ELIGIBLE_ROWS / FAILED)."

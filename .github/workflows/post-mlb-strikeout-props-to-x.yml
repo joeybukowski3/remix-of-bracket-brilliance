@@ -1,25 +1,21 @@
 name: Post MLB Strikeout Props to X
 
-# Why this workflow was not posting: the 9-11 AM ET time gate below was
-# far too narrow for when workflow_run actually fires. Actions run
-# history for 2026-07-10 shows "Generate MLB Data" completions landing
-# anywhere from 5:03 AM to 1:24 PM ET, and every single K workflow_run
-# attempt that day was blocked by this gate (confirmed via job logs: the
-# gate computed hours as late as 13:xx ET, five different times). Fixed
-# by widening the gate to match HR's (9 AM-2 PM ET, same evidence base)
-# and adding a direct UTC backstop schedule so a day workflow_run never
-# fires still gets one attempt.
+# Posting cadence is driven by the day's EARLIEST scheduled first pitch, not a
+# fixed clock time. This workflow polls on a broad, DST-safe UTC window every
+# 15 minutes; the runtime timing gate (scripts/check-mlb-x-posting-readiness.mjs
+# --content=k) is the single source of truth for the window:
+#   - It fetches the live MLB schedule and reports READY only inside the posting
+#     window (~3h before first pitch, hard cutoff ~40 min out), and WAITING /
+#     SKIPPED / FAILED otherwise (fail closed on schedule errors).
+#   - It replaces the old fixed 1:50 PM ET DST-paired backstop + 9 AM-2 PM ET
+#     time gate: the window now follows the actual first pitch.
+# The gate runs WITHOUT `npm ci`/Playwright (Node built-ins only), so the daily
+# poll attempts are cheap; the heavy path (deps + Playwright + freshness wait +
+# X API) runs only when the gate reports READY.
 #
-# The backstop schedule uses a DST-safe pair of UTC cron entries (one
-# for EDT, one for EST), and both fire every day year-round. A "DST
-# match gate" step compares the actual current ET time against the
-# single intended 1:50 PM ET target and exits cleanly as
-# SKIPPED_DST_MISMATCH for the non-matching season's firing, before any
-# screenshot/duplicate-lock/cache/X setup work.
-#
-# The script itself logs a final `finalStatus=` line: POSTED,
-# SKIPPED_ALREADY_POSTED_TODAY, SKIPPED_PREVIEW_MODE,
-# SKIPPED_NO_ELIGIBLE_ROWS, or FAILED.
+# The K poster reads the live rendered K table and posts only VALID rows; the
+# script logs a final `finalStatus=` line: POSTED, SKIPPED_ALREADY_POSTED_TODAY,
+# SKIPPED_PREVIEW_MODE, SKIPPED_NO_ELIGIBLE_ROWS, or FAILED.
 on:
   workflow_dispatch:
     inputs:
@@ -45,21 +41,12 @@ on:
     types: [completed]
     branches: [main]
   schedule:
-    # Backstop trigger, in case workflow_run never fires or fires too
-    # late in the window. GitHub Actions `schedule` cron is UTC-only --
-    # written in explicit UTC with a DST-safe pair of entries (one real
-    # for EDT, one real for EST). BOTH fire every day, year-round --
-    # GitHub Actions has no seasonal cron concept -- so the "DST match
-    # gate" step below (not the wide time gate alone) is what actually
-    # filters out the non-matching season's firing as
-    # SKIPPED_DST_MISMATCH before any screenshot/duplicate-lock/cache/X
-    # setup work.
-    #   - "50 17 * * *" = 17:50 UTC = 1:50 PM ET during EDT (Mar-Nov)
-    #   - "50 18 * * *" = 18:50 UTC = 1:50 PM ET during EST (Nov-Mar)
-    # 1:50 PM ET sits inside the 9 AM-2 PM ET gate, 5 minutes after HR's
-    # own backstop so the two don't contend for the same runner minute.
-    - cron: "50 17 * * *"
-    - cron: "50 18 * * *"
+    # 15-minute polling across a broad, DST-safe UTC window (12:00-03:00 UTC --
+    # covers the real MLB range in both EST and EDT; NOT a 24h schedule). The
+    # runtime timing gate, not this cron, decides whether any firing posts. See
+    # post-mlb-hr-props-to-x.yml for the full rationale.
+    - cron: "*/15 12-23 * * *"
+    - cron: "*/15 0-2 * * *"
 
 concurrency:
   group: post-mlb-strikeout-props-to-x
@@ -91,45 +78,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
-      - run: npm ci
-
-      - name: DST match gate (schedule backstop only)
-        id: dst_gate
-        shell: bash
-        env:
-          DST_GATE_TARGET_ET_HOUR: "13"
-          DST_GATE_TARGET_ET_MINUTE: "50"
-        run: |
-          if [ "${{ github.event_name }}" != "schedule" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "DST gate bypassed: trigger is ${{ github.event_name }}, not a paired-cron schedule firing."
-            exit 0
-          fi
-          if node scripts/check-dst-gate.mjs; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - run: npx playwright install --with-deps chromium
-        if: steps.dst_gate.outputs.should_run == 'true'
 
       - name: Compute ET date for cache key
         id: et_date
-        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
-      # actions/cache write-once-per-key fix: see the identical fix (and
-      # the production incident it addresses) in
-      # post-mlb-hr-props-to-x.yml. A single fixed key can only ever be
-      # *saved* once per day, so every run after the first silently fails
-      # to persist its receipt. Every run now saves under its own
-      # run_id-suffixed key and restores via prefix match against the
-      # most recent prior save that day.
       - name: Restore duplicate-post state
         id: restore_cache
-        if: steps.dst_gate.outputs.should_run == 'true'
         uses: actions/cache/restore@v4
         with:
           path: .cache/mlb-strikeout-props-x-posted
@@ -137,29 +93,58 @@ jobs:
           restore-keys: |
             mlb-strikeout-props-x-posted-${{ steps.et_date.outputs.date }}-
 
-      # Widened from 9-11 AM ET to match HR's 9 AM-2 PM ET window -- see
-      # the top-of-file comment for the run-history evidence.
-      - name: Time gate (9 AM-2 PM ET for automated triggers only)
-        id: time_gate
-        if: steps.dst_gate.outputs.should_run == 'true'
+      - name: Already posted today?
+        id: already
+        shell: bash
+        run: |
+          KEY="mlb-k-props:${{ steps.et_date.outputs.date }}"
+          SLUG="$(echo "$KEY" | sed 's/[^a-zA-Z0-9._-]\+/-/g')"
+          if [ -f ".cache/mlb-strikeout-props-x-posted/${SLUG}.json" ] && [ "${{ inputs.force_repost || 'false' }}" != "true" ]; then
+            echo "posted=true" >> "$GITHUB_OUTPUT"
+            echo "Today's slate already has a post receipt -- skipping (finalStatus=SKIPPED_ALREADY_POSTED_TODAY)."
+          else
+            echo "posted=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Lightweight timing gate: NO npm ci / Playwright. Manual workflow_dispatch
+      # bypasses it; automated firings must earn a READY (inside the earliest-
+      # first-pitch posting window) here.
+      - name: Readiness gate
+        id: gate
+        if: steps.already.outputs.posted != 'true'
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "Time gate bypassed: manual workflow_dispatch."
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Readiness gate bypassed: manual workflow_dispatch (mode=${{ inputs.mode || 'post' }})."
             exit 0
           fi
-          ET_HOUR="$(TZ=America/New_York date +%H)"
-          if [ "$ET_HOUR" -ge 9 ] && [ "$ET_HOUR" -lt 14 ]; then
-            echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "Time gate passed: ${ET_HOUR}:xx ET is within the 9 AM-2 PM window (trigger: ${{ github.event_name }})."
+          set +e
+          node scripts/check-mlb-x-posting-readiness.mjs --content=k
+          CODE=$?
+          set -e
+          if [ "$CODE" -eq 0 ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Readiness gate: READY -- proceeding to post."
+          elif [ "$CODE" -eq 20 ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Readiness gate: clean wait/skip -- no post this attempt."
           else
-            echo "should_run=false" >> "$GITHUB_OUTPUT"
-            echo "Time gate blocked: ${ET_HOUR}:xx ET is outside the 9 AM-2 PM window (trigger: ${{ github.event_name }}). No post will be attempted this run."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Readiness gate: schedule source failed -- failing closed." >&2
+            exit 1
           fi
 
+      - name: Install dependencies
+        if: steps.gate.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Install Playwright
+        if: steps.gate.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
+
       - name: Wait for fresh production slate
-        if: steps.time_gate.outputs.should_run == 'true' && (github.event_name == 'workflow_run' || github.event_name == 'schedule')
+        if: steps.gate.outputs.ready == 'true' && (github.event_name == 'workflow_run' || github.event_name == 'schedule')
         shell: bash
         env:
           K_PROPS_DATA_SOURCE: production
@@ -175,13 +160,13 @@ jobs:
             if [ "$attempt" -lt 12 ]; then sleep 45; fi
           done
           if [ "$ready" != "true" ]; then
-            echo "ERROR: Production strikeout props did not become post-ready within ~9 minutes after the data workflow. See the readiness check output above for the specific reason." >&2
+            echo "ERROR: Production strikeout props did not become post-ready within ~9 minutes. See the readiness check output above for the specific reason." >&2
             exit 1
           fi
 
       - name: Post Strikeout Props
         id: post
-        if: steps.time_gate.outputs.should_run == 'true'
+        if: steps.gate.outputs.ready == 'true'
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "schedule" ]; then
@@ -197,8 +182,6 @@ jobs:
           K_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-strikeout-props-to-x.mjs "--${MODE}"
         env:
           X_ALLOW_LIVE_POST: "true"
-          # Only ever meaningful for workflow_dispatch; the script also
-          # independently re-checks GITHUB_EVENT_NAME before honoring it.
           K_X_FORCE_REPOST: ${{ inputs.force_repost || 'false' }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
@@ -206,14 +189,14 @@ jobs:
           JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
 
       - name: Save duplicate-post state
-        if: always() && steps.dst_gate.outputs.should_run == 'true'
+        if: always() && steps.gate.outputs.ready == 'true'
         uses: actions/cache/save@v4
         with:
           path: .cache/mlb-strikeout-props-x-posted
           key: mlb-strikeout-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
 
       - name: Upload screenshot (dry-run)
-        if: steps.time_gate.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+        if: steps.gate.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
         uses: actions/upload-artifact@v4
         with:
           name: mlb-strikeout-props-x-screenshot
@@ -226,10 +209,8 @@ jobs:
         run: |
           echo "== Post MLB Strikeout Props to X summary =="
           echo "trigger event: ${{ github.event_name }}"
-          echo "workflow_run conclusion (if applicable): ${{ github.event.workflow_run.conclusion || 'n/a' }}"
-          echo "workflow_run event (if applicable): ${{ github.event.workflow_run.event || 'n/a' }}"
-          echo "DST gate should_run: ${{ steps.dst_gate.outputs.should_run || 'n/a' }} (SKIPPED_DST_MISMATCH if false on a schedule trigger -- see the 'DST match gate' step output above)"
-          echo "time gate should_run: ${{ steps.time_gate.outputs.should_run || 'n/a' }}"
-          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (DST gate or time gate blocked before mode was resolved)' }}"
+          echo "already posted today: ${{ steps.already.outputs.posted || 'n/a' }}"
+          echo "readiness gate ready: ${{ steps.gate.outputs.ready || 'n/a (skipped: already posted)' }}"
+          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (gate not ready)' }}"
           echo "force repost override: ${{ inputs.force_repost || 'false' }}"
-          echo "See the 'Post Strikeout Props' step output above for the exact finalStatus= line and skip/post/error reason from the script itself."
+          echo "See the 'Readiness gate' step for the finalStatus= window decision and the 'Post Strikeout Props' step for the script's own finalStatus=."
