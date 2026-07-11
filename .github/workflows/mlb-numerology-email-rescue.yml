@@ -1,0 +1,99 @@
+name: MLB Numerology Email Rescue
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mlb-numerology-email-rescue.yml
+
+concurrency:
+  group: numerology-email-rescue-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  send-missed-email:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Confirm today's email is still missing
+        id: receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          today_et="$(TZ=America/New_York date '+%Y-%m-%d')"
+          data_date="$(jq -r '.date // empty' public/data/mlb/numerology-daily.json 2>/dev/null || true)"
+          sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
+          echo "today_et=${today_et} data_date=${data_date} sent_date=${sent_date}"
+          if [ "$sent_date" = "$today_et" ]; then
+            echo "send=false" >> "$GITHUB_OUTPUT"
+            echo "Today's email is already recorded as sent."
+            exit 0
+          fi
+          if [ "$data_date" != "$today_et" ]; then
+            echo "::error::Fresh numerology data is not available for ${today_et}."
+            exit 1
+          fi
+          echo "send=true" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node
+        if: steps.receipt.outputs.send == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.receipt.outputs.send == 'true'
+        run: npm ci
+
+      - name: Generate today's email payload
+        if: steps.receipt.outputs.send == 'true'
+        run: npm run mlb:numerology:email:preview
+
+      - name: Send today's Buttondown email
+        if: steps.receipt.outputs.send == 'true'
+        env:
+          NUMEROLOGY_EMAIL_LIVE: "true"
+          NUMEROLOGY_EMAIL_WEBHOOK_URL: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_URL || vars.NUMEROLOGY_EMAIL_WEBHOOK_URL }}
+          NUMEROLOGY_EMAIL_WEBHOOK_TOKEN: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$NUMEROLOGY_EMAIL_WEBHOOK_URL" || { echo "::error::NUMEROLOGY_EMAIL_WEBHOOK_URL is not configured."; exit 1; }
+          test -n "$NUMEROLOGY_EMAIL_WEBHOOK_TOKEN" || { echo "::error::NUMEROLOGY_EMAIL_WEBHOOK_TOKEN is not configured."; exit 1; }
+          npm run mlb:numerology:email:send
+
+      - name: Persist send receipt
+        if: steps.receipt.outputs.send == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f public/data/mlb/numerology/email-send-state.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/mlb/numerology/email-send-state.json
+          if git diff --cached --quiet; then
+            echo "::error::Send command completed without updating the send receipt."
+            exit 1
+          fi
+          git commit -m "chore: numerology email tracking $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if git rebase origin/main && git push origin HEAD:main; then
+              exit 0
+            fi
+            git rebase --abort || true
+            sleep $((attempt * 10))
+          done
+          echo "::error::Email sent, but send receipt could not be pushed after five attempts."
+          exit 1
