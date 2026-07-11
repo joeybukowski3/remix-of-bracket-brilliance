@@ -16,13 +16,13 @@ const NAV_TILES = [
 
 const MLB_MAIN_DESKTOP_STYLES = `
   @media (min-width: 1024px) {
-    body.mlb-main-readable .site-container {
-      width: min(96vw, 1600px) !important;
-      max-width: 1600px !important;
-      padding-left: 16px !important;
-      padding-right: 16px !important;
-    }
-
+    /* The .site-container width-forcing rule that used to live here has
+       been removed: /mlb now sits inside MlbLayout's shared sidebar grid,
+       which already controls outer width via its own "wide" content
+       variant. Forcing .site-container to 96vw fought that and pushed
+       content past the sidebar's content column, causing horizontal
+       overflow. The readability text-size bumps below are unrelated and
+       still apply. */
     body.mlb-main-readable main {
       font-size: 15px;
     }

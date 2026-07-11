@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Calculator, Home, Search, Star, BookOpen } from "lucide-react";
-import SiteShell from "@/components/layout/SiteShell";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useMLBNumerology } from "@/hooks/useMLBNumerology";
 import { useMlbLiveLineups } from "@/hooks/useMlbLiveLineups";
@@ -84,7 +83,6 @@ export default function MlbNumerologyPageEnhanced() {
   const visibleCount = new Set([...exact, ...root].map((player) => `${player.playerName}|${player.team}`)).size;
 
   return (
-    <SiteShell>
       <div className="min-h-screen bg-[#0a0c14] text-[#e2e1ee]">
         <div className="flex">
           {/* ── Sidebar ─────────────────────────────────────────────────────── */}
@@ -237,6 +235,5 @@ export default function MlbNumerologyPageEnhanced() {
           <a href="#root-matches" aria-label="Root matches"><Calculator className="h-5 w-5" /></a>
         </nav>
       </div>
-    </SiteShell>
   );
 }

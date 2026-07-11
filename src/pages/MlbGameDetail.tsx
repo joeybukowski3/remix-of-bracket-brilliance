@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Rocket, Shield, Sparkles, Swords, Target, TrendingUp, Wind } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Shield, Sparkles, Swords, Target, TrendingUp, Wind } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
@@ -10,7 +10,6 @@ import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
 import { usePitcherPercentiles } from "@/hooks/usePitcherPercentiles";
 import { useTeamWrc } from "@/hooks/useTeamWrc";
 import SportsbookBar from "@/components/SportsbookBar";
-import SiteShell from "@/components/layout/SiteShell";
 import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
 import MlbMatchupLayout from "@/components/mlb/MlbMatchupLayout";
 import MlbMatchupSummaryRow from "@/components/mlb/MlbMatchupSummaryRow";
@@ -40,7 +39,6 @@ import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame, MlbTeamWrcData } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import { SPORTSBOOKS } from "@/lib/sportsbooks";
 import { ScorePill, HrDashboardPitcher, TeamLogoBadge, type HrDashboardBatter, type PitcherStrikeoutTeamRow, type PitcherVsBatterRow } from "@/pages/MlbHrProps";
 
 const SEASON = new Date().getFullYear();
@@ -873,19 +871,6 @@ export function PropPreviewCard({
   );
 }
 
-const MLB_HUB_LINKS = [
-  { label: "Hit Props",             to: "/mlb/batter-vs-pitcher",             icon: <Swords      className="h-4 w-4" /> },
-  { label: "HR Props",              to: "/mlb/hr-props",                       icon: <Flame       className="h-4 w-4" /> },
-  { label: "K Props",               to: "/mlb/strikeout-props",                icon: <Radar       className="h-4 w-4" /> },
-  { label: "Game Matchups",         to: "/mlb#schedule",                       icon: <CalendarDays className="h-4 w-4" /> },
-  { label: "Power Rankings",        to: "/mlb/power-rankings",                 icon: <BarChart3   className="h-4 w-4" /> },
-  { label: "Moneyline Edges",       to: "/mlb#moneylines",                     icon: <TrendingUp  className="h-4 w-4" /> },
-  { label: "Pitcher Regression",    to: "/mlb#pitcher-regression",             icon: <BarChart3   className="h-4 w-4" /> },
-  { label: "Overdue Batters",       to: "/mlb/hr-props#overdue",               icon: <Flame       className="h-4 w-4" /> },
-  { label: "Biggest Mismatches",    to: "/mlb/hr-props#mismatches",            icon: <Swords      className="h-4 w-4" /> },
-  { label: "Schedule",              to: "/mlb#schedule",                       icon: <CalendarDays className="h-4 w-4" /> },
-];
-
 const MLB_TOOL_CARDS = [
   {
     title: "MLB Props Hub",
@@ -930,126 +915,6 @@ const MLB_TOOL_CARDS = [
     accent: "border-t-[#006399]",
   },
 ];
-
-function MlbHubSidebar() {
-  return (
-    <aside className="hidden w-56 shrink-0 self-start border-r border-slate-200 bg-[#eff4ff] py-4 lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-      <div className="mb-5 px-5">
-        <img src="/logos/mlb.svg" alt="MLB" className="h-9 w-auto" />
-      </div>
-      <nav className="flex flex-col gap-1">
-        {MLB_HUB_LINKS.slice(0, 5).map((item) => (
-          <Link
-            key={item.label}
-            to={item.to}
-            className={cn(
-              "mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:translate-x-1 hover:bg-[#dce9ff] hover:text-[#031635]",
-            )}
-          >
-            {item.icon}
-            {item.label}
-          </Link>
-        ))}
-        <div className="mx-4 my-2 border-t border-slate-200" />
-        <div className="px-5 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">Tables</div>
-        {MLB_HUB_LINKS.slice(5, 9).map((item) => (
-          <Link
-            key={item.label}
-            to={item.to}
-            className="mx-2 flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:translate-x-1 hover:bg-[#dce9ff] hover:text-[#031635]"
-          >
-            {item.icon}
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      <div className="mt-6 px-4">
-        <Link
-          to="/mlb/props"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-4 py-3 text-xs font-extrabold text-white transition hover:bg-[#1a2b4b]"
-        >
-          <Rocket className="h-4 w-4" />
-          Prop Optimizer
-        </Link>
-      </div>
-
-      {/* Vertical "Bet with our partners" section card (stacked, no horizontal scroll) */}
-      <div className="mt-4 border-t border-slate-200 pt-3 px-3">
-        <div className="px-1 mb-1.5 text-[10px] font-semibold tracking-wide text-slate-500">
-          Bet with our partners
-        </div>
-        <div className="flex flex-col gap-1">
-          {SPORTSBOOKS.map((sb) => (
-            <a
-              key={sb.name}
-              href={sb.referralUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-md px-3 py-[5px] text-[11px] font-bold transition hover:opacity-95 active:opacity-90"
-              style={{ backgroundColor: sb.bgColor, color: sb.textColor }}
-            >
-              <img
-                src={sb.logoUrl}
-                alt={sb.name}
-                className="h-4 w-4 rounded object-contain shrink-0"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
-              {sb.name}
-            </a>
-          ))}
-        </div>
-        <div className="mt-2 px-1 text-[9px] text-slate-400">21+ • Call 1-800-GAMBLER</div>
-      </div>
-
-      {/* Stat Glossary */}
-      <div className="mt-6 border-t border-slate-200 px-4 pt-4">
-        <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Stat Glossary</div>
-        <dl className="space-y-2">
-          {([
-            ["xERA", "Expected ERA from Statcast exit velocity & launch angle. Strips luck from actual results."],
-            ["xFIP", "Expected FIP — normalises HR/FB% to league average. Best predictor of future ERA."],
-            ["K-BB%", "Strikeout rate minus walk rate. Pure skill indicator — higher = better command."],
-            ["LOB%", "Left-on-base (strand) rate. League avg ~73%. >80% is unsustainable luck."],
-            ["HR/FB%", "Home runs per fly ball. League avg ~10.5%. <8% = likely lucky, >13% = unlucky."],
-            ["BABIP", "Batting avg on balls in play. Pitcher norm ~.300. <.270 = likely lucky."],
-            ["Regr ↓", "Blue pill — pitcher is overperforming ERA vs metrics. Regression toward higher ERA likely."],
-            ["Regr ↑", "Green pill — pitcher is underperforming ERA vs metrics. ERA improvement likely."],
-          ] as [string, string][]).map(([term, def]) => (
-            <div key={term}>
-              <dt className="text-[10px] font-extrabold text-slate-700">{term}</dt>
-              <dd className="text-[9px] leading-tight text-slate-500">{def}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className="mt-3 rounded-md bg-slate-100 p-2">
-          <div className="mb-1 text-[9px] font-bold uppercase tracking-wide text-slate-500">Regression Scale</div>
-          <div className="flex items-center gap-1">
-            <span className="rounded px-1 py-0.5 text-[8px] font-bold" style={{ backgroundColor: "#1e3a8a", color: "#93c5fd" }}>-10</span>
-            <div className="h-1.5 flex-1 rounded-full bg-gradient-to-r from-[#1e3a8a] via-[#dbeafe] to-white to-[#dcfce7] via-white via-[50%]" style={{ background: "linear-gradient(to right, #1e3a8a, #93c5fd, #dbeafe, #f1f5f9, #dcfce7, #22c55e, #15803d)" }} />
-            <span className="rounded px-1 py-0.5 text-[8px] font-bold" style={{ backgroundColor: "#14532d", color: "#bbf7d0" }}>+10</span>
-          </div>
-          <div className="mt-0.5 flex justify-between text-[8px] text-slate-400">
-            <span>Blue = regress ↓</span>
-            <span>0 = neutral</span>
-            <span>Green = improve ↑</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Easter egg — text invisible unless selected, fully clickable */}
-      <div className="px-5 pb-3 pt-1">
-        <Link
-          to="/mlb/numerology"
-          aria-label="Open MLB numerical alignment analysis"
-          className="block select-text text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400 focus-visible:rounded"
-          style={{ color: "transparent", userSelect: "text" }}
-        >
-          369
-        </Link>
-      </div>
-    </aside>
-  );
-}
 
 function HubSportsbookStrip() {
   return (
@@ -3090,9 +2955,7 @@ function HomeSchedule({
 
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
-      <div className="mx-auto flex max-w-[1360px] gap-5 px-4 py-6 sm:px-5 lg:px-6 xl:max-w-[1560px] 2xl:max-w-[1800px] 2xl:gap-5 3xl:max-w-[1920px] 3xl:px-6 4xl:max-w-[2048px] 4xl:px-8">
-        <MlbHubSidebar />
-
+      <div className="flex flex-col gap-5 px-4 py-6 sm:px-5 lg:px-6 2xl:flex-row">
         <div className="min-w-0 flex-1 space-y-3">
 
           <MlbNavHero />
@@ -3380,7 +3243,6 @@ export default function MlbGameDetail() {
   ] : [];
 
   return (
-    <SiteShell>
       <MlbMatchupLayout>
         {scheduleLoading ? (
           <div className="rounded-[32px] bg-card p-8 text-sm text-muted-foreground shadow-[0_16px_36px_hsl(var(--foreground)/0.06)] ring-1 ring-border/60">
@@ -3565,7 +3427,6 @@ export default function MlbGameDetail() {
           </>
         )}
       </MlbMatchupLayout>
-    </SiteShell>
   );
 }
 
