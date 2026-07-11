@@ -1,0 +1,231 @@
+name: Poll MLB X Posts
+
+# One DST-safe automatic poll owner for HR and K. The cheap plan job restores
+# both daily receipts first and exits without StatsAPI work when both posted.
+# Otherwise it fetches the schedule once, each relevant boxscore once, and
+# shares the resulting confirmation snapshot with independent conditional
+# heavy jobs. The poster performs one final live revalidation to fail closed
+# on a starter/lineup scratch between poll and post.
+on:
+  schedule:
+    - cron: "*/15 12-23 * * *"
+    - cron: "*/15 0-2 * * *"
+
+concurrency:
+  group: poll-mlb-x-posts
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      slate_date: ${{ steps.poll.outputs.slate_date }}
+      both_posted: ${{ steps.poll.outputs.both_posted }}
+      hr_should_run: ${{ steps.poll.outputs.hr_should_run }}
+      k_should_run: ${{ steps.poll.outputs.k_should_run }}
+      hr_status: ${{ steps.poll.outputs.hr_status }}
+      k_status: ${{ steps.poll.outputs.k_status }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # GitHub's Ubuntu runner includes a supported Node runtime. Deliberately
+      # no setup-node/npm cache here: the gate uses only Node built-ins and repo
+      # modules, and dependency setup belongs exclusively to ready heavy jobs.
+      - name: Compute ET slate date
+        id: et_date
+        shell: bash
+        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore HR posting receipt
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/mlb-hr-props-x-posted
+          key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}-plan
+          restore-keys: |
+            mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-
+
+      - name: Restore K posting receipt
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/mlb-strikeout-props-x-posted
+          key: mlb-strikeout-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}-plan
+          restore-keys: |
+            mlb-strikeout-props-x-posted-${{ steps.et_date.outputs.date }}-
+
+      - name: Build shared poll plan
+        id: poll
+        run: node scripts/plan-mlb-x-posts.mjs
+
+      - name: Upload shared plan and confirmation snapshot
+        if: steps.poll.outputs.both_posted != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-x-poll-${{ github.run_id }}
+          path: |
+            artifacts/mlb-x-poll-plan.json
+            artifacts/mlb-x-poll-snapshot.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "slate date: ${{ steps.poll.outputs.slate_date || steps.et_date.outputs.date }}"
+          echo "both already posted: ${{ steps.poll.outputs.both_posted || 'unknown' }}"
+          echo "HR: ${{ steps.poll.outputs.hr_status || 'unknown' }}"
+          echo "K: ${{ steps.poll.outputs.k_status || 'unknown' }}"
+
+  post-hr:
+    needs: plan
+    if: needs.plan.outputs.hr_should_run == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: post-mlb-hr-props-to-x
+      cancel-in-progress: false
+    env:
+      X_EXPECTED_USERNAME: _joeknowsball_
+      X_DUPLICATE_STATE_DIR: .cache/mlb-hr-props-x-posted
+      MLB_X_POLL_SNAPSHOT_PATH: artifacts/mlb-x-poll-snapshot.json
+      JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+      JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+      JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+      JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-x-poll-${{ github.run_id }}
+          path: artifacts
+
+      - name: Validate shared snapshot handoff
+        run: node --input-type=module -e "import{readFileSync}from'node:fs';const p=JSON.parse(readFileSync('artifacts/mlb-x-poll-plan.json'));const s=JSON.parse(readFileSync(process.env.MLB_X_POLL_SNAPSHOT_PATH));if(p.slateDate!==s.slateDate||p.hr.shouldRun!==true)throw new Error('Invalid HR poll snapshot handoff');"
+
+      # Re-check after acquiring the manual workflow's concurrency group. A
+      # manual run may have posted while this run was waiting after planning.
+      - name: Restore latest HR posting receipt
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/mlb-hr-props-x-posted
+          key: mlb-hr-props-x-posted-${{ needs.plan.outputs.slate_date }}-${{ github.run_id }}-hr
+          restore-keys: |
+            mlb-hr-props-x-posted-${{ needs.plan.outputs.slate_date }}-
+
+      - name: Re-check HR receipt
+        id: already
+        shell: bash
+        run: |
+          FILE=".cache/mlb-hr-props-x-posted/mlb-hr-props-${{ needs.plan.outputs.slate_date }}.json"
+          if [ -f "$FILE" ]; then echo "posted=true" >> "$GITHUB_OUTPUT"; else echo "posted=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/setup-node@v4
+        if: steps.already.outputs.posted != 'true'
+        with: { node-version: 20, cache: npm }
+      - name: Install dependencies
+        if: steps.already.outputs.posted != 'true'
+        run: npm ci
+      - name: Install Playwright
+        if: steps.already.outputs.posted != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Build site for local export render
+        if: steps.already.outputs.posted != 'true'
+        run: npm run build
+
+      - name: Post HR Props
+        id: post
+        if: steps.already.outputs.posted != 'true'
+        run: HR_PROPS_DATA_SOURCE=production node scripts/post-mlb-hr-props-to-x.mjs --post
+        env:
+          X_ALLOW_LIVE_POST: "true"
+          HR_X_FORCE_REPOST: "false"
+
+      - name: Check for HR posting receipt
+        id: receipt
+        if: always() && steps.post.outcome != 'skipped'
+        shell: bash
+        run: |
+          FILE=".cache/mlb-hr-props-x-posted/mlb-hr-props-${{ needs.plan.outputs.slate_date }}.json"
+          if [ -f "$FILE" ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Persist HR posting receipt immediately
+        if: always() && steps.receipt.outputs.exists == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/mlb-hr-props-x-posted
+          key: mlb-hr-props-x-posted-${{ needs.plan.outputs.slate_date }}-${{ github.run_id }}-hr
+
+  post-k:
+    needs: plan
+    if: needs.plan.outputs.k_should_run == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: post-mlb-strikeout-props-to-x
+      cancel-in-progress: false
+    env:
+      X_EXPECTED_USERNAME: _joeknowsball_
+      X_DUPLICATE_STATE_DIR: .cache/mlb-strikeout-props-x-posted
+      MLB_X_POLL_SNAPSHOT_PATH: artifacts/mlb-x-poll-snapshot.json
+      JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+      JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+      JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+      JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-x-poll-${{ github.run_id }}
+          path: artifacts
+
+      - name: Validate shared snapshot handoff
+        run: node --input-type=module -e "import{readFileSync}from'node:fs';const p=JSON.parse(readFileSync('artifacts/mlb-x-poll-plan.json'));const s=JSON.parse(readFileSync(process.env.MLB_X_POLL_SNAPSHOT_PATH));if(p.slateDate!==s.slateDate||p.k.shouldRun!==true)throw new Error('Invalid K poll snapshot handoff');"
+
+      - name: Restore latest K posting receipt
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/mlb-strikeout-props-x-posted
+          key: mlb-strikeout-props-x-posted-${{ needs.plan.outputs.slate_date }}-${{ github.run_id }}-k
+          restore-keys: |
+            mlb-strikeout-props-x-posted-${{ needs.plan.outputs.slate_date }}-
+
+      - name: Re-check K receipt
+        id: already
+        shell: bash
+        run: |
+          FILE=".cache/mlb-strikeout-props-x-posted/mlb-k-props-${{ needs.plan.outputs.slate_date }}.json"
+          if [ -f "$FILE" ]; then echo "posted=true" >> "$GITHUB_OUTPUT"; else echo "posted=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/setup-node@v4
+        if: steps.already.outputs.posted != 'true'
+        with: { node-version: 20, cache: npm }
+      - name: Install dependencies
+        if: steps.already.outputs.posted != 'true'
+        run: npm ci
+      - name: Install Playwright
+        if: steps.already.outputs.posted != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Build site for local export render
+        if: steps.already.outputs.posted != 'true'
+        run: npm run build
+
+      - name: Post Strikeout Props
+        id: post
+        if: steps.already.outputs.posted != 'true'
+        run: K_PROPS_DATA_SOURCE=production node scripts/post-mlb-strikeout-props-to-x.mjs --post
+        env:
+          X_ALLOW_LIVE_POST: "true"
+          K_X_FORCE_REPOST: "false"
+
+      - name: Check for K posting receipt
+        id: receipt
+        if: always() && steps.post.outcome != 'skipped'
+        shell: bash
+        run: |
+          FILE=".cache/mlb-strikeout-props-x-posted/mlb-k-props-${{ needs.plan.outputs.slate_date }}.json"
+          if [ -f "$FILE" ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Persist K posting receipt immediately
+        if: always() && steps.receipt.outputs.exists == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/mlb-strikeout-props-x-posted
+          key: mlb-strikeout-props-x-posted-${{ needs.plan.outputs.slate_date }}-${{ github.run_id }}-k
