@@ -1,17 +1,14 @@
 name: Post MLB Strikeout Props to X
 
-# Posting cadence is driven by the day's EARLIEST scheduled first pitch, not a
-# fixed clock time. This workflow polls on a broad, DST-safe UTC window every
-# 15 minutes; the runtime timing gate (scripts/check-mlb-x-posting-readiness.mjs
-# --content=k) is the single source of truth for the window:
+# Manual K posting workflow. Automatic earliest-first-pitch polling is owned
+# exclusively by poll-mlb-x-posts.yml, which uses the same timing,
+# confirmation, poster, artifact, and daily-lock modules:
 #   - It fetches the live MLB schedule and reports READY only inside the posting
 #     window (~3h before first pitch, hard cutoff ~40 min out), and WAITING /
 #     SKIPPED / FAILED otherwise (fail closed on schedule errors).
 #   - It replaces the old fixed 1:50 PM ET DST-paired backstop + 9 AM-2 PM ET
 #     time gate: the window now follows the actual first pitch.
-# The gate runs WITHOUT `npm ci`/Playwright (Node built-ins only), so the daily
-# poll attempts are cheap; the heavy path (deps + Playwright + freshness wait +
-# X API) runs only when the gate reports READY.
+# Manual dispatch intentionally keeps the complete guarded poster path.
 #
 # The K poster reads the live rendered K table and posts only VALID rows; the
 # script logs a final `finalStatus=` line: POSTED, SKIPPED_ALREADY_POSTED_TODAY,
@@ -36,17 +33,6 @@ on:
         required: true
         default: false
         type: boolean
-  workflow_run:
-    workflows: ["Generate MLB Data"]
-    types: [completed]
-    branches: [main]
-  schedule:
-    # 15-minute polling across a broad, DST-safe UTC window (12:00-03:00 UTC --
-    # covers the real MLB range in both EST and EDT; NOT a 24h schedule). The
-    # runtime timing gate, not this cron, decides whether any firing posts. See
-    # post-mlb-hr-props-to-x.yml for the full rationale.
-    - cron: "*/15 12-23 * * *"
-    - cron: "*/15 0-2 * * *"
 
 concurrency:
   group: post-mlb-strikeout-props-to-x
@@ -58,15 +44,7 @@ permissions:
 jobs:
   post-strikeout-props-to-x:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'schedule' ||
-      (
-        github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.event == 'schedule' &&
-        github.event.workflow_run.head_branch == 'main'
-      )
+    if: github.event_name == 'workflow_dispatch'
     env:
       X_EXPECTED_USERNAME: _joeknowsball_
       X_DUPLICATE_STATE_DIR: .cache/mlb-strikeout-props-x-posted

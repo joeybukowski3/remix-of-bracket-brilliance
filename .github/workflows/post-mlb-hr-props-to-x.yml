@@ -1,10 +1,8 @@
 name: Post MLB HR Props to X
 
-# Posting cadence is driven by the day's EARLIEST scheduled first pitch, not a
-# fixed clock time. This workflow polls on a broad, DST-safe UTC window every
-# 15 minutes; the runtime readiness gate
-# (scripts/check-mlb-x-posting-readiness.mjs) is the single source of truth for
-# timing and confirmation:
+# Manual HR posting workflow. Automatic earliest-first-pitch polling is owned
+# exclusively by poll-mlb-x-posts.yml, which uses the same timing,
+# confirmation, poster, artifact, and daily-lock modules:
 #   1. It fetches the live MLB schedule (earliest first pitch, current
 #      starters, game status) + boxscores (official batting orders) and decides
 #      one of: post now, keep waiting, or skip cleanly -- printing finalStatus=.
@@ -15,9 +13,7 @@ name: Post MLB HR Props to X
 #   3. Outside the window / on stale data / when confirmation can't be verified
 #      it fails closed (no post). The daily posting lock (one key per slate
 #      date) still guarantees at most one live post per day.
-# The gate runs WITHOUT `npm ci`/Playwright (it uses only Node built-ins), so
-# the ~60 daily poll attempts are cheap; the heavy post path (deps + Playwright
-# + screenshot + X API) runs only when the gate reports READY.
+# Manual dispatch intentionally keeps the complete guarded poster path.
 on:
   workflow_dispatch:
     inputs:
@@ -38,23 +34,6 @@ on:
         required: true
         default: false
         type: boolean
-  workflow_run:
-    workflows: ["Generate MLB Data"]
-    types: [completed]
-    branches: [main]
-  schedule:
-    # 15-minute polling across a broad, DST-safe UTC window. GitHub Actions
-    # cron is UTC-only and has no seasonal/timezone concept, so this window is
-    # written wide enough to cover the real MLB range in BOTH EST and EDT:
-    # 12:00-03:00 UTC spans ~7-8 AM ET (earliest a ~3h-before-first-pitch poll
-    # can matter for an ~11 AM ET day game) through ~9-10 PM ET (latest a poll
-    # can matter for a West-Coast-only ~10 PM ET first pitch). It is NOT a
-    # 24-hour schedule. The runtime readiness gate -- not this cron -- decides
-    # whether any given firing actually posts; every firing outside the real
-    # per-day window exits cheaply as WAITING_FOR_POLLING_WINDOW / EXPIRED /
-    # SKIPPED_NO_GAMES.
-    - cron: "*/15 12-23 * * *"
-    - cron: "*/15 0-2 * * *"
 
 concurrency:
   group: post-mlb-hr-props-to-x
@@ -66,15 +45,7 @@ permissions:
 jobs:
   post-hr-props-to-x:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'schedule' ||
-      (
-        github.event_name == 'workflow_run' &&
-        github.event.workflow_run.conclusion == 'success' &&
-        github.event.workflow_run.event == 'schedule' &&
-        github.event.workflow_run.head_branch == 'main'
-      )
+    if: github.event_name == 'workflow_dispatch'
     env:
       X_EXPECTED_USERNAME: _joeknowsball_
       X_DUPLICATE_STATE_DIR: .cache/mlb-hr-props-x-posted
