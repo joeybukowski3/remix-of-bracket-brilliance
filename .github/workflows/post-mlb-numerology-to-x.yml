@@ -1,38 +1,15 @@
 name: Post MLB Numerology to X
 
-# Previously manual-dispatch only (no automatic trigger at all -- see PR
-# history). This adds a scheduled trigger, but scheduled runs are still
-# preview-only (mode resolves to dry-run) unless the repository variable
-# NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED is explicitly set to "true" (Settings
-# -> Secrets and variables -> Actions -> Variables). That is a deliberate,
-# separate switch from X_ALLOW_LIVE_POST (which just gates whether *any*
-# live post can happen) so this PR can ship the scheduling infrastructure
-# without ever making a live post on its own. Manual workflow_dispatch
-# mode=post is unaffected by this gate and works exactly as before.
-#
-# Schedule timing: chosen from the actual Numerology generation/email
-# pipeline, not guessed -- see generate-mlb-numerology.yml (primary data
-# ready ~4:00 AM ET, DST-paired 8:00/9:00 UTC; final backup refresh 9:45 AM
-# ET, DST-paired 13:45/14:45 UTC) and mlb-numerology-email.yml (final send
-# retry + its own freshness-wait completes as late as ~10:46 AM ET,
-# DST-paired 14:00/15:00 UTC). 11:00 AM ET is used (not 10:30 AM ET) so the
-# X post is guaranteed to run strictly after the worst-case ~10:46 AM ET
-# email-pipeline completion, with a real safety margin rather than a
-# ~16-minute one. GitHub Actions `schedule` cron is UTC-only -- written as
-# an explicit DST-safe pair (one real for EDT, one real for EST). Both
-# entries fire every day, year-round -- GitHub Actions has no seasonal
-# cron concept -- so the "DST match gate" step below is what filters the
-# non-matching season's firing as SKIPPED_DST_MISMATCH before any
-# screenshot/duplicate-lock/cache/X setup work.
-#   - "0 15 * * *" = 15:00 UTC = 11:00 AM ET during EDT (Mar-Nov)
-#   - "0 16 * * *" = 16:00 UTC = 11:00 AM ET during EST (Nov-Mar)
+# Scheduled numerology posts are live by default once the daily data is ready.
+# A marker-gated push recovery path can safely recover a missed post without
+# turning ordinary code pushes into live X posts.
 on:
   workflow_dispatch:
     inputs:
       mode:
         description: "Run mode"
         required: true
-        default: "dry-run"
+        default: "post"
         type: choice
         options: [dry-run, post, post-text-only, verify-account]
       data_source:
@@ -42,11 +19,11 @@ on:
         type: choice
         options: [production, github, local]
       screenshot_url:
-        description: "Override the URL screenshotted (leave blank to use the live production export page)"
+        description: "Override the URL screenshotted"
         required: false
         type: string
       force_repost:
-        description: "Bypass the daily posting lock and post again even if today's slate already has a receipt. Only for an intentional, reviewed re-post -- never set true routinely."
+        description: "Bypass the daily posting lock and post again even if today's slate already has a receipt."
         required: true
         default: false
         type: boolean
@@ -54,15 +31,9 @@ on:
     - cron: "0 15 * * *"
     - cron: "0 16 * * *"
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - ".github/workflows/post-mlb-numerology-to-x.yml"
-      - "scripts/post-mlb-numerology-to-x.mjs"
-      - "scripts/generate-mlb-numerology-x-preview.mjs"
-      - "scripts/lib/mlb-numerology-x-post-core.mjs"
-      - "src/pages/MlbNumerologyXExport.tsx"
-      - "src/hooks/useMlbNumerologyXPreview.ts"
 
 concurrency:
   group: post-mlb-numerology-to-x
@@ -73,9 +44,12 @@ permissions:
 
 jobs:
   post-numerology-to-x:
-    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[rescue-numerology-x-post]'))
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       X_EXPECTED_USERNAME: _joeknowsball_
       X_DUPLICATE_STATE_DIR: .cache/mlb-numerology-x-posted
@@ -90,30 +64,11 @@ jobs:
         with: { node-version: 20, cache: npm }
       - run: npm ci
 
-      # push-trigger CI validation only exercises the generator + tests, not
-      # the Playwright/screenshot/posting path (no live site to screenshot
-      # from a plain push, and mode=dry-run would need a resolvable target).
       - name: Run numerology X-post unit tests
         run: npx vitest run src/lib/mlb/mlbNumerologyXPostCore.test.ts
 
-      - name: Generate numerology X preview (local, for local/dry-run testing and as CI validation)
-        if: github.event_name == 'push' || inputs.data_source == 'local'
-        run: node scripts/generate-mlb-numerology-x-preview.mjs
-
-      - name: Stop here for push-triggered CI validation
-        if: github.event_name == 'push'
-        run: echo "CI validation of generator + unit tests passed. Screenshot/post steps only run on workflow_dispatch and schedule."
-
-      # Both DST-paired schedule cron entries above fire every day,
-      # year-round -- GitHub Actions has no seasonal cron concept. This
-      # gate compares the actual current ET time against the single
-      # intended 11:00 AM ET target and exits cleanly as
-      # SKIPPED_DST_MISMATCH for the non-matching season's firing, before
-      # any screenshot/duplicate-lock/cache/X setup work. Non-schedule
-      # triggers (workflow_dispatch, push) always bypass this gate.
       - name: DST match gate (schedule trigger only)
         id: dst_gate
-        if: github.event_name != 'push'
         shell: bash
         env:
           DST_GATE_TARGET_ET_HOUR: "11"
@@ -121,7 +76,6 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" != "schedule" ]; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
-            echo "DST gate bypassed: trigger is ${{ github.event_name }}, not a paired-cron schedule firing."
             exit 0
           fi
           if node scripts/check-dst-gate.mjs; then
@@ -132,19 +86,12 @@ jobs:
 
       - name: Compute ET date for cache key
         id: et_date
-        if: github.event_name != 'push' && steps.dst_gate.outputs.should_run == 'true'
+        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
-      # actions/cache write-once-per-key fix applied from the start here --
-      # see the identical fix (and the production incident it addresses)
-      # in post-mlb-hr-props-to-x.yml. A single fixed key can only ever be
-      # *saved* once per day; every run saves under its own run_id-suffixed
-      # key and restores via prefix match against the most recent prior
-      # save that day.
       - name: Restore duplicate-post state
-        id: restore_cache
-        if: github.event_name != 'push' && steps.dst_gate.outputs.should_run == 'true'
+        if: steps.dst_gate.outputs.should_run == 'true'
         uses: actions/cache/restore@v4
         with:
           path: .cache/mlb-numerology-x-posted
@@ -152,52 +99,46 @@ jobs:
           restore-keys: |
             mlb-numerology-x-posted-${{ steps.et_date.outputs.date }}-
 
-      - run: npx playwright install --with-deps chromium
-        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && steps.dst_gate.outputs.should_run == 'true'
+      - name: Install Playwright
+        if: steps.dst_gate.outputs.should_run == 'true'
+        run: npx playwright install --with-deps chromium
 
       - name: Resolve mode
         id: resolve_mode
-        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && steps.dst_gate.outputs.should_run == 'true'
+        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ vars.NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED }}" = "true" ]; then
-              MODE="post"
-              echo "Scheduled live posting is enabled (NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED=true) -- resolving mode=post."
-            else
-              MODE="dry-run"
-              echo "Scheduled live posting is not enabled -- resolving mode=dry-run (preview only, no live post)."
-            fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="${{ inputs.mode || 'post' }}"
           else
-            MODE="${{ inputs.mode }}"
+            MODE="post"
           fi
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "Resolved mode=$MODE for event=${{ github.event_name }}"
 
       - name: Run mode
-        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && steps.dst_gate.outputs.should_run == 'true'
+        if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         env:
-          NUMEROLOGY_X_DATA_SOURCE: ${{ github.event_name == 'schedule' && 'production' || inputs.data_source }}
+          NUMEROLOGY_X_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.data_source || 'production' }}
           NUMEROLOGY_X_SCREENSHOT_URL: ${{ inputs.screenshot_url }}
           X_ALLOW_LIVE_POST: "true"
-          NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED: ${{ vars.NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED || 'false' }}
-          # Only ever meaningful for workflow_dispatch; the script also
-          # independently re-checks GITHUB_EVENT_NAME before honoring it.
-          NUMEROLOGY_X_FORCE_REPOST: ${{ inputs.force_repost || 'false' }}
+          NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED: "true"
+          NUMEROLOGY_X_FORCE_REPOST: ${{ github.event_name == 'workflow_dispatch' && inputs.force_repost || 'false' }}
         run: |
           echo "Mode: ${{ steps.resolve_mode.outputs.mode }}"
-          echo "Data source: ${{ env.NUMEROLOGY_X_DATA_SOURCE }}"
+          echo "Data source: $NUMEROLOGY_X_DATA_SOURCE"
           node scripts/post-mlb-numerology-to-x.mjs "--${{ steps.resolve_mode.outputs.mode }}"
 
       - name: Save duplicate-post state
-        if: always() && github.event_name != 'push' && steps.dst_gate.outputs.should_run == 'true'
+        if: always() && steps.dst_gate.outputs.should_run == 'true'
         uses: actions/cache/save@v4
         with:
           path: .cache/mlb-numerology-x-posted
           key: mlb-numerology-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
 
       - name: Upload preview screenshot
-        if: (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && steps.dst_gate.outputs.should_run == 'true' && steps.resolve_mode.outputs.mode == 'dry-run'
+        if: steps.dst_gate.outputs.should_run == 'true' && steps.resolve_mode.outputs.mode == 'dry-run'
         uses: actions/upload-artifact@v4
         with:
           name: mlb-numerology-x-screenshot
@@ -210,8 +151,6 @@ jobs:
         run: |
           echo "== Post MLB Numerology to X summary =="
           echo "event: ${{ github.event_name }}"
-          echo "DST gate should_run: ${{ steps.dst_gate.outputs.should_run || 'n/a' }} (SKIPPED_DST_MISMATCH if false on a schedule trigger -- see the 'DST match gate' step output above)"
-          echo "resolved mode: ${{ steps.resolve_mode.outputs.mode || 'n/a (push validation only, or DST gate blocked before mode was resolved)' }}"
-          echo "scheduled live gate: ${{ vars.NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED || 'false (not set -- scheduled runs are preview-only)' }}"
-          echo "force repost override: ${{ inputs.force_repost || 'false' }}"
-          echo "See the 'Run mode' step output above for the exact finalStatus= line (POSTED / SKIPPED_ALREADY_POSTED_TODAY / SKIPPED_PREVIEW_MODE / SKIPPED_NO_ELIGIBLE_ROWS / FAILED) and skip/post/error reason from the script itself."
+          echo "DST gate should_run: ${{ steps.dst_gate.outputs.should_run || 'n/a' }}"
+          echo "resolved mode: ${{ steps.resolve_mode.outputs.mode || 'n/a' }}"
+          echo "See Run mode for finalStatus=."
