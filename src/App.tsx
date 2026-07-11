@@ -26,6 +26,8 @@ import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import MlbNumerologyPage from "./pages/MlbNumerologyPage";
 import MlbNumerologyXExport from "./pages/MlbNumerologyXExport";
+import MlbHrPropsXExport from "./pages/MlbHrPropsXExport";
+import MlbStrikeoutPropsXExport from "./pages/MlbStrikeoutPropsXExport";
 import MlbPowerRankings from "./pages/MlbPowerRankings";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
@@ -120,8 +122,16 @@ const App = () => (
           <Route path="/world-cup/analyzer" element={<WorldCupAnalyzer />} />
           <Route path="/odds-tracker" element={<PublicBetting />} />
           <Route path="/public-betting" element={<Navigate to="/odds-tracker" replace />} />
-          {/* Unlinked, dedicated route for the X-post screenshot generator (scripts/post-mlb-numerology-to-x.mjs) -- not part of site navigation. Deliberately kept OUTSIDE MlbLayout: the automated screenshot capture needs a bare page with no header/sidebar chrome. */}
+          {/* Unlinked, dedicated routes for the X-post screenshot generators
+              (scripts/post-mlb-*-to-x.mjs) -- not part of site navigation.
+              Deliberately kept OUTSIDE MlbLayout: the automated screenshot
+              capture needs a bare page with no header/sidebar chrome. The HR
+              and K routes render ONLY the rows in the immutable per-attempt
+              selection artifact passed via `?d=` (base64), so the screenshot
+              can never show players the readiness gate did not confirm. */}
           <Route path="/mlb/numerology/x-export" element={<MlbNumerologyXExport />} />
+          <Route path="/mlb/hr-props/x-export" element={<MlbHrPropsXExport />} />
+          <Route path="/mlb/strikeout-props/x-export" element={<MlbStrikeoutPropsXExport />} />
           <Route path="/mlb" element={<MlbLayout />}>
             <Route index element={<MlbGameDetail />} />
             <Route path="props" element={<MlbPropsHub />} />

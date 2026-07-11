@@ -155,6 +155,15 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: npx playwright install --with-deps chromium
 
+      # The confirmed-only screenshot is rendered from the immutable selection
+      # artifact against the bare /mlb/hr-props/x-export route served LOCALLY
+      # (scripts/lib/mlb-x-local-preview-server.mjs), so it never depends on a
+      # production deploy and can never drift from the selected rows. That
+      # needs the built SPA in dist/.
+      - name: Build site for local export render
+        if: steps.gate.outputs.ready == 'true'
+        run: npm run build
+
       - name: Post HR Props
         id: post
         if: steps.gate.outputs.ready == 'true'
@@ -188,12 +197,14 @@ jobs:
           path: .cache/mlb-hr-props-x-posted
           key: mlb-hr-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
 
-      - name: Upload screenshot (dry-run)
+      - name: Upload dry-run selection + screenshot
         if: steps.gate.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
         uses: actions/upload-artifact@v4
         with:
-          name: mlb-hr-props-x-screenshot
-          path: artifacts/mlb-hr-props-x.png
+          name: mlb-hr-props-x-dry-run
+          path: |
+            artifacts/mlb-hr-props-x.png
+            artifacts/mlb-hr-props-x-selection.json
           if-no-files-found: error
 
       - name: Summary

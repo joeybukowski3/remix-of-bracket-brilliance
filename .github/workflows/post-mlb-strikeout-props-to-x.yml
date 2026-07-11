@@ -143,27 +143,18 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Wait for fresh production slate
-        if: steps.gate.outputs.ready == 'true' && (github.event_name == 'workflow_run' || github.event_name == 'schedule')
-        shell: bash
-        env:
-          K_PROPS_DATA_SOURCE: production
-        run: |
-          set -euo pipefail
-          ready=false
-          for attempt in $(seq 1 12); do
-            echo "Production readiness check ${attempt}/12"
-            if node scripts/post-mlb-strikeout-props-to-x.mjs --post-key-only; then
-              ready=true
-              break
-            fi
-            if [ "$attempt" -lt 12 ]; then sleep 45; fi
-          done
-          if [ "$ready" != "true" ]; then
-            echo "ERROR: Production strikeout props did not become post-ready within ~9 minutes. See the readiness check output above for the specific reason." >&2
-            exit 1
-          fi
+      # The confirmed-only screenshot renders the immutable selection artifact
+      # against the bare /mlb/strikeout-props/x-export route served LOCALLY, so
+      # it needs the built SPA in dist/. (The poster still scrapes the live K
+      # table for market/projection data, but the SCREENSHOT is the local
+      # confirmed-only artifact route, never the live page.)
+      - name: Build site for local export render
+        if: steps.gate.outputs.ready == 'true'
+        run: npm run build
 
+      # No fixed "wait for fresh slate" retry loop: if production K data isn't
+      # fresh yet, the poster's own readiness recheck skips cleanly and the next
+      # 15-minute poll retries -- no long in-run sleep.
       - name: Post Strikeout Props
         id: post
         if: steps.gate.outputs.ready == 'true'
@@ -195,12 +186,14 @@ jobs:
           path: .cache/mlb-strikeout-props-x-posted
           key: mlb-strikeout-props-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}
 
-      - name: Upload screenshot (dry-run)
+      - name: Upload dry-run selection + screenshot
         if: steps.gate.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
         uses: actions/upload-artifact@v4
         with:
-          name: mlb-strikeout-props-x-screenshot
-          path: artifacts/mlb-strikeout-props-x.png
+          name: mlb-strikeout-props-x-dry-run
+          path: |
+            artifacts/mlb-strikeout-props-x.png
+            artifacts/mlb-strikeout-props-x-selection.json
           if-no-files-found: error
 
       - name: Summary

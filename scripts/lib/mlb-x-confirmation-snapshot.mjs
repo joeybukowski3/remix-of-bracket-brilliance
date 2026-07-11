@@ -85,7 +85,9 @@ export function resolveHrRowFacts(snapshot, row) {
  */
 export function resolveKRowFacts(snapshot, row) {
   const located = findGameForTeam(snapshot, row?.team);
-  if (!located) return { isCurrentStarter: false, gameStarted: false, opposingLineupConfirmed: false };
+  if (!located) {
+    return { isCurrentStarter: false, gameStarted: false, opposingLineupConfirmed: false, gamePk: null, starterId: null };
+  }
   const { game, side } = located;
   const starter = game[`${side}Starter`];
   const isCurrentStarter = matchesCurrentStarter({
@@ -99,6 +101,8 @@ export function resolveKRowFacts(snapshot, row) {
     isCurrentStarter,
     gameStarted: game.started,
     opposingLineupConfirmed: Boolean(opposingLineup?.confirmed),
+    gamePk: game.gamePk ?? null,
+    starterId: starter?.id ?? null,
   };
 }
 
