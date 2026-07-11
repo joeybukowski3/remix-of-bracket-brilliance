@@ -1,22 +1,32 @@
-name: MLB Numerology Email Rescue
+name: MLB Numerology Email Reliable Delivery
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - .github/workflows/mlb-numerology-email-rescue.yml
+  schedule:
+    # DST-paired primary and retry attempts. Every candidate is allowed to run;
+    # the fresh-data check and persisted receipt are the source of truth.
+    - cron: "15 8 * * *"
+    - cron: "15 9 * * *"
+    - cron: "0 11 * * *"
+    - cron: "0 12 * * *"
+    - cron: "0 14 * * *"
+    - cron: "0 15 * * *"
 
 concurrency:
-  group: numerology-email-rescue-${{ github.repository }}
+  group: main-data-writers-${{ github.repository }}
   cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
-  send-missed-email:
+  deliver-email:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 70
     steps:
       - name: Check out main
         uses: actions/checkout@v4
@@ -25,25 +35,40 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Confirm today's email is still missing
+      - name: Wait for fresh data and confirm email is missing
         id: receipt
         shell: bash
         run: |
           set -euo pipefail
           today_et="$(TZ=America/New_York date '+%Y-%m-%d')"
-          data_date="$(jq -r '.date // empty' public/data/mlb/numerology-daily.json 2>/dev/null || true)"
-          sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
-          echo "today_et=${today_et} data_date=${data_date} sent_date=${sent_date}"
-          if [ "$sent_date" = "$today_et" ]; then
-            echo "send=false" >> "$GITHUB_OUTPUT"
-            echo "Today's email is already recorded as sent."
-            exit 0
-          fi
-          if [ "$data_date" != "$today_et" ]; then
-            echo "::error::Fresh numerology data is not available for ${today_et}."
-            exit 1
-          fi
-          echo "send=true" >> "$GITHUB_OUTPUT"
+
+          for attempt in $(seq 1 46); do
+            git fetch origin main
+            git reset --hard origin/main
+
+            data_date="$(jq -r '.date // empty' public/data/mlb/numerology-daily.json 2>/dev/null || true)"
+            sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
+            echo "attempt=${attempt}/46 today_et=${today_et} data_date=${data_date} sent_date=${sent_date}"
+
+            if [ "$sent_date" = "$today_et" ]; then
+              echo "send=false" >> "$GITHUB_OUTPUT"
+              echo "Today's email is already recorded as sent."
+              exit 0
+            fi
+
+            if [ "$data_date" = "$today_et" ]; then
+              echo "send=true" >> "$GITHUB_OUTPUT"
+              echo "Fresh data is available and today's receipt is absent."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 46 ]; then
+              sleep 60
+            fi
+          done
+
+          echo "::error::Fresh numerology data did not become available for ${today_et}."
+          exit 1
 
       - name: Set up Node
         if: steps.receipt.outputs.send == 'true'
@@ -55,6 +80,10 @@ jobs:
       - name: Install dependencies
         if: steps.receipt.outputs.send == 'true'
         run: npm ci
+
+      - name: Run numerology tracking unit tests
+        if: steps.receipt.outputs.send == 'true'
+        run: npx vitest run src/lib/mlb/mlbNumerologyTracking.test.ts
 
       - name: Generate today's email payload
         if: steps.receipt.outputs.send == 'true'
@@ -82,10 +111,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/mlb/numerology/email-send-state.json
+
           if git diff --cached --quiet; then
-            echo "::error::Send command completed without updating the send receipt."
+            echo "::error::Send completed without updating the send receipt."
             exit 1
           fi
+
           git commit -m "chore: numerology email tracking $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
           for attempt in 1 2 3 4 5; do
             git fetch origin main
@@ -95,5 +126,6 @@ jobs:
             git rebase --abort || true
             sleep $((attempt * 10))
           done
-          echo "::error::Email sent, but send receipt could not be pushed after five attempts."
+
+          echo "::error::Email sent, but its receipt could not be pushed after five attempts."
           exit 1
