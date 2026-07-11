@@ -1,18 +1,9 @@
 name: Post MLB Strikeout Props to X
 
 # Manual K posting workflow. Automatic earliest-first-pitch polling is owned
-# exclusively by poll-mlb-x-posts.yml, which uses the same timing,
-# confirmation, poster, artifact, and daily-lock modules:
-#   - It fetches the live MLB schedule and reports READY only inside the posting
-#     window (~3h before first pitch, hard cutoff ~40 min out), and WAITING /
-#     SKIPPED / FAILED otherwise (fail closed on schedule errors).
-#   - It replaces the old fixed 1:50 PM ET DST-paired backstop + 9 AM-2 PM ET
-#     time gate: the window now follows the actual first pitch.
-# Manual dispatch intentionally keeps the complete guarded poster path.
-#
-# The K poster reads the live rendered K table and posts only VALID rows; the
-# script logs a final `finalStatus=` line: POSTED, SKIPPED_ALREADY_POSTED_TODAY,
-# SKIPPED_PREVIEW_MODE, SKIPPED_NO_ELIGIBLE_ROWS, or FAILED.
+# by poll-mlb-x-posts.yml. A tightly marker-gated push recovery path exists so
+# an authorized repair commit can recover a missed daily post without making
+# normal code pushes post to X.
 on:
   workflow_dispatch:
     inputs:
@@ -29,10 +20,14 @@ on:
         type: choice
         options: [production, github, local]
       force_repost:
-        description: "Bypass the daily posting lock and post again even if today's slate already has a receipt. Only for an intentional, reviewed re-post -- never set true routinely."
+        description: "Bypass the daily posting lock and post again even if today's slate already has a receipt."
         required: true
         default: false
         type: boolean
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/post-mlb-strikeout-props-to-x.yml"
 
 concurrency:
   group: post-mlb-strikeout-props-to-x
@@ -44,7 +39,9 @@ permissions:
 jobs:
   post-strikeout-props-to-x:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[rescue-k-x-post]'))
     env:
       X_EXPECTED_USERNAME: _joeknowsball_
       X_DUPLICATE_STATE_DIR: .cache/mlb-strikeout-props-x-posted
@@ -63,7 +60,6 @@ jobs:
         run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
       - name: Restore duplicate-post state
-        id: restore_cache
         uses: actions/cache/restore@v4
         with:
           path: .cache/mlb-strikeout-props-x-posted
@@ -77,24 +73,22 @@ jobs:
         run: |
           KEY="mlb-k-props:${{ steps.et_date.outputs.date }}"
           SLUG="$(echo "$KEY" | sed 's/[^a-zA-Z0-9._-]\+/-/g')"
-          if [ -f ".cache/mlb-strikeout-props-x-posted/${SLUG}.json" ] && [ "${{ inputs.force_repost || 'false' }}" != "true" ]; then
+          FORCE="${{ github.event_name == 'workflow_dispatch' && inputs.force_repost || 'false' }}"
+          if [ -f ".cache/mlb-strikeout-props-x-posted/${SLUG}.json" ] && [ "$FORCE" != "true" ]; then
             echo "posted=true" >> "$GITHUB_OUTPUT"
             echo "Today's slate already has a post receipt -- skipping (finalStatus=SKIPPED_ALREADY_POSTED_TODAY)."
           else
             echo "posted=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # Lightweight timing gate: NO npm ci / Playwright. Manual workflow_dispatch
-      # bypasses it; automated firings must earn a READY (inside the earliest-
-      # first-pitch posting window) here.
       - name: Readiness gate
         id: gate
         if: steps.already.outputs.posted != 'true'
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "push" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Readiness gate bypassed: manual workflow_dispatch (mode=${{ inputs.mode || 'post' }})."
+            echo "Readiness timing gate bypassed for explicit guarded recovery/manual run; poster still performs live fail-closed validation."
             exit 0
           fi
           set +e
@@ -103,13 +97,10 @@ jobs:
           set -e
           if [ "$CODE" -eq 0 ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Readiness gate: READY -- proceeding to post."
           elif [ "$CODE" -eq 20 ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Readiness gate: clean wait/skip -- no post this attempt."
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Readiness gate: schedule source failed -- failing closed." >&2
             exit 1
           fi
 
@@ -121,41 +112,27 @@ jobs:
         if: steps.gate.outputs.ready == 'true'
         run: npx playwright install --with-deps chromium
 
-      # The confirmed-only screenshot renders the immutable selection artifact
-      # against the bare /mlb/strikeout-props/x-export route served LOCALLY, so
-      # it needs the built SPA in dist/. (The poster still scrapes the live K
-      # table for market/projection data, but the SCREENSHOT is the local
-      # confirmed-only artifact route, never the live page.)
       - name: Build site for local export render
         if: steps.gate.outputs.ready == 'true'
         run: npm run build
 
-      # No fixed "wait for fresh slate" retry loop: if production K data isn't
-      # fresh yet, the poster's own readiness recheck skips cleanly and the next
-      # 15-minute poll retries -- no long in-run sleep.
       - name: Post Strikeout Props
         id: post
         if: steps.gate.outputs.ready == 'true'
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_run" ] || [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "${{ github.event_name }}" = "push" ]; then
             MODE="post"
             DATA_SOURCE="production"
           else
             MODE="${{ inputs.mode || 'post' }}"
             DATA_SOURCE="${{ inputs.data_source || 'production' }}"
           fi
-          echo "Mode: $MODE"
-          echo "Data source: $DATA_SOURCE"
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           K_PROPS_DATA_SOURCE="$DATA_SOURCE" node scripts/post-mlb-strikeout-props-to-x.mjs "--${MODE}"
         env:
           X_ALLOW_LIVE_POST: "true"
-          K_X_FORCE_REPOST: ${{ inputs.force_repost || 'false' }}
-          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
-          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
-          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
-          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+          K_X_FORCE_REPOST: ${{ github.event_name == 'workflow_dispatch' && inputs.force_repost || 'false' }}
 
       - name: Save duplicate-post state
         if: always() && steps.gate.outputs.ready == 'true'
@@ -181,7 +158,6 @@ jobs:
           echo "== Post MLB Strikeout Props to X summary =="
           echo "trigger event: ${{ github.event_name }}"
           echo "already posted today: ${{ steps.already.outputs.posted || 'n/a' }}"
-          echo "readiness gate ready: ${{ steps.gate.outputs.ready || 'n/a (skipped: already posted)' }}"
-          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a (gate not ready)' }}"
-          echo "force repost override: ${{ inputs.force_repost || 'false' }}"
-          echo "See the 'Readiness gate' step for the finalStatus= window decision and the 'Post Strikeout Props' step for the script's own finalStatus=."
+          echo "readiness gate ready: ${{ steps.gate.outputs.ready || 'n/a' }}"
+          echo "resolved mode: ${{ steps.post.outputs.mode || 'n/a' }}"
+          echo "See Post Strikeout Props for finalStatus=."
