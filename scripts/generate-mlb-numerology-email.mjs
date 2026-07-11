@@ -14,6 +14,7 @@ import {
   writeJson,
 } from "./lib/mlb-numerology-tracking.mjs";
 import { makeNumerologyEmailMobileSafe } from "./lib/mlb-numerology-email-mobile.mjs";
+import { selectNumerologyEmailPlays } from "./lib/mlb-numerology-email-selection.mjs";
 import { enrichCardPlaysWithContext } from "./lib/mlb-numerology-player-context.mjs";
 
 const ROOT = process.cwd();
@@ -58,7 +59,11 @@ async function main() {
   writeJson(PERFORMANCE_PATH, performance);
   writeJson(PERFORMANCE_SUMMARY_PATH, summary);
 
-  const emailCard = await enrichCardPlaysWithContext(card);
+  // Keep the full board and tracking archives unchanged. The stricter rule is
+  // applied only to the subscriber email: all scores >65, with a top-three
+  // minimum when fewer than three players clear the threshold.
+  const selectedEmailCard = selectNumerologyEmailPlays(card);
+  const emailCard = await enrichCardPlaysWithContext(selectedEmailCard);
   const html = makeNumerologyEmailMobileSafe(renderEmailHtml(emailCard, summary));
   const text = renderEmailText(emailCard, summary);
   ensureDirForFile(EMAIL_HTML_PATH);
@@ -66,12 +71,12 @@ async function main() {
   fs.writeFileSync(EMAIL_TEXT_PATH, `${text}\n`);
 
   console.log(`[mlb-numerology] Generated card for ${card.date}`);
-  console.log(`[mlb-numerology] Top play: ${card.topPlay ? `${card.topPlay.player} (${card.topPlay.numerologyScore})` : "none"}`);
-  console.log(`[mlb-numerology] Plays over ${card.scoreThreshold}: ${card.allQualifiedPlaysOver50.length}`);
+  console.log(`[mlb-numerology] Top play: ${emailCard.topPlay ? `${emailCard.topPlay.player} (${emailCard.topPlay.numerologyScore})` : "none"}`);
+  console.log(`[mlb-numerology] Email selection: ${emailCard.emailSelectionPolicy?.mode ?? "unknown"}; selected=${emailCard.allQualifiedPlaysOver50.length}; above65=${emailCard.emailSelectionPolicy?.aboveThresholdCount ?? 0}`);
   console.log(`[mlb-numerology] Email preview written to ${EMAIL_TEXT_PATH}`);
 
   if (shouldSend) {
-    await sendEmail({ card, html, text });
+    await sendEmail({ card: emailCard, html, text });
   } else if (shouldDraft) {
     console.log("[mlb-numerology] Draft/preview mode only. No live email sent.");
   }
