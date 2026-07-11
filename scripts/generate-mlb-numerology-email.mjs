@@ -13,6 +13,7 @@ import {
   summarizePerformance,
   writeJson,
 } from "./lib/mlb-numerology-tracking.mjs";
+import { makeNumerologyEmailMobileSafe } from "./lib/mlb-numerology-email-mobile.mjs";
 import { enrichCardPlaysWithContext } from "./lib/mlb-numerology-player-context.mjs";
 
 const ROOT = process.cwd();
@@ -58,7 +59,7 @@ async function main() {
   writeJson(PERFORMANCE_SUMMARY_PATH, summary);
 
   const emailCard = await enrichCardPlaysWithContext(card);
-  const html = renderEmailHtml(emailCard, summary);
+  const html = makeNumerologyEmailMobileSafe(renderEmailHtml(emailCard, summary));
   const text = renderEmailText(emailCard, summary);
   ensureDirForFile(EMAIL_HTML_PATH);
   fs.writeFileSync(EMAIL_HTML_PATH, html);
