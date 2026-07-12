@@ -34,11 +34,18 @@ import {
   americanToImpliedProbability,
   buildPrimaryReason,
   compareMlSocialRows,
+  computeCompleteness,
+  DEFAULT_FORM_WINDOW,
   formatEdgePoints,
+  formatMarketPct,
+  FORM_WINDOW_LABELS,
+  FORM_WINDOW_SOURCES,
   getComponentBand,
   getComponentEdges,
   getEdgeGrade,
+  getFormEdge,
   noVigProbability,
+  type FormWindow,
   type MlSocialRow,
 } from "@/lib/mlb/mlbSocialEdge";
 import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
@@ -2504,6 +2511,12 @@ function SocialTableML({
   mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
   polymarketGames?: import("@/lib/mlb/polymarketMoneylines").MoneylineGame[];
 }) {
+  // Recent-form window. Default 2W → deterministic social screenshot (the X
+  // export captures this default). The selector affects ONLY Form Edge and the
+  // recent-form reason text — not pitching, batting, season, or market data.
+  const [formWindow, setFormWindow] = useState<FormWindow>(DEFAULT_FORM_WINDOW);
+  const { getTeam: getTeamWrc } = useTeamWrc();
+
   const rows: MlSocialRow[] = games
     .map((game): MlSocialRow | null => {
       const detail = detailPreviews[game.gamePk];
@@ -2515,10 +2528,23 @@ function SocialTableML({
       const pickAbbr = pickIsAway ? game.away.abbreviation : game.home.abbreviation;
       const fadeAbbr = pickIsAway ? game.home.abbreviation : game.away.abbreviation;
 
-      // Regroup the model's five factors into three additive component edges
-      // (Pitching / Batting / Form), oriented toward the picked team. Their
-      // sum IS the overall model edge — see mlbSocialEdge.ts.
+      // Pitching = Pitcher Quality; Batting = Matchup + Lineup Offense;
+      // Other = residual (model's internal recent form + season quality), so
+      // Pitching + Batting + Other = Model Edge. See mlbSocialEdge.ts.
       const components = getComponentEdges(edge);
+
+      // Form Edge = genuine, season-FREE recent-record differential for the
+      // active window (2W = last 5 games from game context; 4W = last 14 games
+      // from the wRC+ dataset). Null → N/A, never fabricated.
+      const pickCtx = pickIsAway ? detail.awayContext : detail.homeContext;
+      const oppCtx = pickIsAway ? detail.homeContext : detail.awayContext;
+      const pickRecord = formWindow === "2w"
+        ? pickCtx?.lastFiveRecord ?? null
+        : getTeamWrc(pickAbbr)?.last14Record ?? null;
+      const oppRecord = formWindow === "2w"
+        ? oppCtx?.lastFiveRecord ?? null
+        : getTeamWrc(fadeAbbr)?.last14Record ?? null;
+      const formEdge = getFormEdge(pickRecord, oppRecord);
 
       // Actual posted moneylines (both sides) for the picked game.
       const gameKey = `${game.away.abbreviation}@${game.home.abbreviation}`;
@@ -2533,15 +2559,25 @@ function SocialTableML({
       const pmYes = pmPickSide?.yesPrice ?? null;
       const pmNo = pmPickSide?.noPrice ?? null;
 
-      // Real market data only. PER MODEL AUDIT: the model has no calibrated
-      // win probability, so we never diff it against the market. We surface a
-      // genuine two-sided NO-VIG implied probability for the pick (from the
-      // posted moneyline, else Polymarket) as separate market context.
+      // Real market data only. Two-sided NO-VIG implied probability for the
+      // pick (posted moneyline, else Polymarket). Fails safe to null.
       const marketImplied = americanToImpliedProbability(pickAmerican);
       const fadeImplied = americanToImpliedProbability(fadeAmerican);
       const noVig =
         noVigProbability(marketImplied, fadeImplied) ??
         noVigProbability(pmYes, pmFadeSide?.yesPrice ?? null);
+
+      // Display-level completeness gate. The canonical model neutral-fills
+      // internally; here we render Model Edge = N/A when the underlying detail
+      // is too sparse to trust (see computeCompleteness).
+      const hasPitching = detail.starters?.away?.era != null || detail.starters?.home?.era != null ||
+        detail.starters?.away?.strikeOuts != null || detail.starters?.home?.strikeOuts != null;
+      const hasBatting = detail.lineupSummaries?.away?.ops != null || detail.lineupSummaries?.home?.ops != null;
+      const hasSeasonForm = !!(pickCtx?.lastFiveRecord && oppCtx?.lastFiveRecord);
+      const hasSeason = !!(game.away.record && game.home.record);
+      const completeness = computeCompleteness({
+        hasIdentity: true, hasPitching, hasBatting, hasForm: hasSeasonForm, hasSeason,
+      });
 
       // Pitcher names + regression context for the primary-reason note.
       const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name || null;
@@ -2554,6 +2590,9 @@ function SocialTableML({
       if (fadePitcherReg && fadePitcherReg.regressionScore < -2) context = `${fadeAbbr} starter overperforming`;
       else if (pickPitcherReg && pickPitcherReg.regressionScore > 2) context = `${pickAbbr} starter undervalued`;
 
+      const pitchingEdge = hasPitching ? components.pitching : null;
+      const battingEdge = hasBatting ? components.batting : null;
+
       return {
         gamePk: game.gamePk,
         awayAbbr: game.away.abbreviation,
@@ -2564,22 +2603,27 @@ function SocialTableML({
         selectedTeam: pickAbbr,
         fadeTeam: fadeAbbr,
         selectedAmerican: pickAmerican,
-        modelEdgePoints: components.overall,
+        modelEdgePoints: completeness.ok ? components.overall : null,
         confidence: edge.confidence,
-        pitchingEdge: components.pitching,
-        battingEdge: components.batting,
-        formEdge: components.form,
+        completeness: completeness.weightAvailable,
+        pitchingEdge,
+        battingEdge,
+        formEdge,
+        formWindow,
+        otherEdge: completeness.ok ? components.other : null,
         marketImpliedProbability: marketImplied,
         noVigMarketProbability: noVig,
         polymarketYes: pmYes,
         polymarketNo: pmNo,
-        grade: getEdgeGrade(edge.confidence).label,
-        primaryReason: buildPrimaryReason(components, context),
+        grade: completeness.ok ? getEdgeGrade(edge.confidence).label : null,
+        primaryReason: buildPrimaryReason({
+          pitching: pitchingEdge, batting: battingEdge, form: formEdge, formWindow, pickTeam: pickAbbr, context,
+        }),
       };
     })
     .filter((r): r is MlSocialRow => r !== null)
-    // Deterministic: Model Edge desc → confidence → team → gamePk. See
-    // compareMlSocialRows. Sorted by the model's own factor advantage.
+    // Deterministic: valid rows first, then Model Edge desc → confidence →
+    // team → gamePk; N/A rows sort last. See compareMlSocialRows.
     .sort(compareMlSocialRows)
     .slice(0, 8);
 
@@ -2587,29 +2631,57 @@ function SocialTableML({
   const ACCENTS = ["#f97316", "#fb923c", "#fbbf24", "#facc15", "#a3e635", "#34d399", "#38bdf8", "#818cf8"];
   const DESKTOP_COLUMNS = "22px minmax(132px,1fr) 50px 50px 50px 62px minmax(94px,auto)";
 
-  // Model Edge value color, derived from the SAME confidence tier that drives
-  // the grade label, so the headline number and the grade can never disagree.
-  function edgeValueColor(confidence: number): string {
-    const tier = getEdgeTierKey(confidence);
+  // Model Edge value color. When the edge is present it follows the SAME
+  // confidence tier that drives the grade (so number and grade never disagree);
+  // an N/A edge renders muted.
+  function edgeValueColor(row: MlSocialRow): string {
+    if (row.modelEdgePoints == null) return "#64748b";
+    const tier = getEdgeTierKey(row.confidence);
     if (tier === "strong") return "#34d399";
     if (tier === "moderate") return "#4ade80";
     if (tier === "slight") return "#fbbf24";
     return "#94a3b8";
   }
 
-  function formatNoVig(prob: number | null): string | null {
-    if (prob == null || !Number.isFinite(prob)) return null;
-    return `${Math.round(prob * 100)}%`;
-  }
-
   // One compact component cell (desktop): LABEL / signed value / band note.
-  function ComponentCell({ label, value }: { label: string; value: number }) {
-    const band = getComponentBand(value);
+  // A null value renders "N/A" with no band — never a fabricated 0 or "Even".
+  function ComponentCell({ label, value }: { label: string; value: number | null }) {
+    const band = value != null ? getComponentBand(value) : null;
     return (
       <div style={{ textAlign: "center", minWidth: 0 }}>
         <div style={{ color: "#64748b", fontSize: 8, fontWeight: 800, letterSpacing: ".04em" }}>{label}</div>
-        <div style={{ color: band.color, fontSize: 13, fontWeight: 900, lineHeight: 1.1 }}>{formatEdgePoints(value)}</div>
-        <div style={{ color: "#475569", fontSize: 7.5, fontWeight: 700, whiteSpace: "nowrap" }}>{band.label}</div>
+        <div style={{ color: band?.color ?? "#64748b", fontSize: 13, fontWeight: 900, lineHeight: 1.1 }}>{formatEdgePoints(value)}</div>
+        <div style={{ color: "#475569", fontSize: 7.5, fontWeight: 700, whiteSpace: "nowrap" }}>{band?.label ?? " "}</div>
+      </div>
+    );
+  }
+
+  const formLabel = FORM_WINDOW_LABELS[formWindow];
+
+  // Recent-form window toggle. Affects ONLY Form Edge + recent-form reasons.
+  function WindowToggle() {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <span style={{ color: "#64748b", fontSize: 9, fontWeight: 700 }}>FORM</span>
+        {(["2w", "4w"] as FormWindow[]).map((w) => (
+          <button
+            key={w}
+            type="button"
+            onClick={() => setFormWindow(w)}
+            style={{
+              border: "1px solid #1e3a5f",
+              background: formWindow === w ? "#3b82f6" : "transparent",
+              color: formWindow === w ? "#fff" : "#94a3b8",
+              borderRadius: 4,
+              padding: "2px 7px",
+              fontSize: 10,
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            {FORM_WINDOW_LABELS[w]}
+          </button>
+        ))}
       </div>
     );
   }
@@ -2652,14 +2724,17 @@ function SocialTableML({
       `}</style>
 
       {/* Header */}
-      <div style={{ background: "#0a1628", borderBottom: "3px solid #3b82f6", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🏆 MLB ML EDGES</div>
+      <div style={{ background: "#0a1628", borderBottom: "3px solid #3b82f6", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px", whiteSpace: "nowrap" }}>🏆 MLB ML EDGES</div>
           <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>
-            Pitching · Batting · Form drivers — sorted by Model Edge
+            Pitching · Batting · Recent Form drivers — sorted by Model Edge
           </div>
         </div>
-        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: "auto" }}>
+          <WindowToggle />
+          <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
+        </div>
       </div>
 
       {/* ── Desktop / wide table ──────────────────────────────────────── */}
@@ -2670,15 +2745,14 @@ function SocialTableML({
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700 }}>MATCHUP</div>
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>PITCH</div>
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>BAT</div>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>FORM</div>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>FORM {formLabel}</div>
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL EDGE</div>
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "right" }}>PICK · GRADE</div>
         </div>
 
         {/* Rows */}
         {rows.map((row, i) => {
-          const grade = getEdgeGrade(row.confidence);
-          const noVig = formatNoVig(row.noVigMarketProbability);
+          const noVig = formatMarketPct(row.noVigMarketProbability);
           return (
             <div
               key={row.gamePk}
@@ -2687,12 +2761,14 @@ function SocialTableML({
               data-ml-home={row.homeAbbr}
               data-ml-pick={row.selectedTeam}
               data-ml-confidence={row.confidence}
-              data-ml-differential={Math.round(row.modelEdgePoints)}
-              data-ml-model-edge={row.modelEdgePoints.toFixed(2)}
-              data-ml-pitching={row.pitchingEdge.toFixed(2)}
-              data-ml-batting={row.battingEdge.toFixed(2)}
-              data-ml-form={row.formEdge.toFixed(2)}
-              data-ml-grade={row.grade}
+              data-ml-differential={row.modelEdgePoints != null ? Math.round(row.modelEdgePoints) : ""}
+              data-ml-model-edge={row.modelEdgePoints != null ? row.modelEdgePoints.toFixed(2) : ""}
+              data-ml-pitching={row.pitchingEdge != null ? row.pitchingEdge.toFixed(2) : ""}
+              data-ml-batting={row.battingEdge != null ? row.battingEdge.toFixed(2) : ""}
+              data-ml-form={row.formEdge != null ? row.formEdge.toFixed(2) : ""}
+              data-ml-form-window={row.formWindow}
+              data-ml-other={row.otherEdge != null ? row.otherEdge.toFixed(2) : ""}
+              data-ml-grade={row.grade ?? ""}
               data-ml-novig={row.noVigMarketProbability ?? ""}
               data-ml-pick-american={row.selectedAmerican ?? ""}
               data-ml-poly-yes={row.polymarketYes ?? ""}
@@ -2733,14 +2809,16 @@ function SocialTableML({
               {/* Component edges */}
               <ComponentCell label="PITCH" value={row.pitchingEdge} />
               <ComponentCell label="BAT" value={row.battingEdge} />
-              <ComponentCell label="FORM" value={row.formEdge} />
+              <ComponentCell label={`FORM ${formLabel}`} value={row.formEdge} />
 
-              {/* Model Edge (points) + grade color */}
+              {/* Model Edge (points) + Other residual */}
               <div style={{ textAlign: "center", minWidth: 0 }}>
-                <div style={{ color: edgeValueColor(row.confidence), fontSize: 16, fontWeight: 900, lineHeight: 1.05 }}>
+                <div style={{ color: edgeValueColor(row), fontSize: 16, fontWeight: 900, lineHeight: 1.05 }}>
                   {formatEdgePoints(row.modelEdgePoints)}
                 </div>
-                <div style={{ color: "#475569", fontSize: 7.5, fontWeight: 700 }}>pts</div>
+                <div style={{ color: "#475569", fontSize: 7.5, fontWeight: 700 }}>
+                  {row.otherEdge != null ? `pts · ${formatEdgePoints(row.otherEdge)} other` : "pts"}
+                </div>
               </div>
 
               {/* Pick · price · grade · market */}
@@ -2762,27 +2840,27 @@ function SocialTableML({
                     </span>
                   )}
                 </div>
-                <span style={{
-                  background: grade.bg,
-                  color: grade.text,
-                  borderRadius: 4,
-                  padding: "2px 7px",
-                  fontWeight: 700,
-                  fontSize: 10,
-                  whiteSpace: "nowrap",
-                }}>
-                  {grade.label}
-                </span>
-                {(noVig || row.polymarketYes != null) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    {noVig && <span style={{ color: "#94a3b8", fontSize: 9, fontWeight: 700, whiteSpace: "nowrap" }}>Mkt {noVig}</span>}
-                    {row.polymarketYes != null && (
-                      <span style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", borderRadius: 3, padding: "1px 4px", fontWeight: 700, fontSize: 9, whiteSpace: "nowrap" }}>
-                        Poly {Math.round(row.polymarketYes * 100)}¢
-                      </span>
-                    )}
-                  </div>
+                {row.grade && (
+                  <span style={{
+                    background: getEdgeGrade(row.confidence).bg,
+                    color: getEdgeGrade(row.confidence).text,
+                    borderRadius: 4,
+                    padding: "2px 7px",
+                    fontWeight: 700,
+                    fontSize: 10,
+                    whiteSpace: "nowrap",
+                  }}>
+                    {row.grade}
+                  </span>
                 )}
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ color: "#94a3b8", fontSize: 9, fontWeight: 700, whiteSpace: "nowrap" }}>Mkt {noVig}</span>
+                  {row.polymarketYes != null && (
+                    <span style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", borderRadius: 3, padding: "1px 4px", fontWeight: 700, fontSize: 9, whiteSpace: "nowrap" }}>
+                      Poly {Math.round(row.polymarketYes * 100)}¢
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -2791,15 +2869,18 @@ function SocialTableML({
 
       {/* ── Mobile / stacked cards ────────────────────────────────────── */}
       <div className="jkb-mle-mobile">
+        {/* Recent-form window toggle (mobile) — affects Form only */}
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "6px 14px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
+          <WindowToggle />
+        </div>
         {rows.map((row, i) => {
-          const grade = getEdgeGrade(row.confidence);
-          const noVig = formatNoVig(row.noVigMarketProbability);
-          const compRow = (label: string, value: number) => {
-            const band = getComponentBand(value);
+          const noVig = formatMarketPct(row.noVigMarketProbability);
+          const compRow = (label: string, value: number | null) => {
+            const band = value != null ? getComponentBand(value) : null;
             return (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
                 <span style={{ color: "#94a3b8", fontSize: 12, fontWeight: 700 }}>{label}</span>
-                <span style={{ color: band.color, fontSize: 13, fontWeight: 800 }}>{formatEdgePoints(value)}</span>
+                <span style={{ color: band?.color ?? "#64748b", fontSize: 13, fontWeight: 800 }}>{formatEdgePoints(value)}</span>
               </div>
             );
           };
@@ -2842,8 +2923,10 @@ function SocialTableML({
                   )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ color: edgeValueColor(row.confidence), fontSize: 16, fontWeight: 900 }}>{formatEdgePoints(row.modelEdgePoints)}</span>
-                  <span style={{ background: grade.bg, color: grade.text, borderRadius: 4, padding: "2px 7px", fontWeight: 700, fontSize: 10, whiteSpace: "nowrap" }}>{grade.label}</span>
+                  <span style={{ color: edgeValueColor(row), fontSize: 16, fontWeight: 900 }}>{formatEdgePoints(row.modelEdgePoints)}</span>
+                  {row.grade && (
+                    <span style={{ background: getEdgeGrade(row.confidence).bg, color: getEdgeGrade(row.confidence).text, borderRadius: 4, padding: "2px 7px", fontWeight: 700, fontSize: 10, whiteSpace: "nowrap" }}>{row.grade}</span>
+                  )}
                 </div>
               </div>
 
@@ -2851,25 +2934,24 @@ function SocialTableML({
               <div style={{ marginTop: 8, background: "#060d1a", borderRadius: 6, padding: "4px 10px" }}>
                 {compRow("Pitching", row.pitchingEdge)}
                 {compRow("Batting", row.battingEdge)}
-                {compRow("Form", row.formEdge)}
+                {compRow(`Form (${formLabel})`, row.formEdge)}
+                {row.otherEdge != null && compRow("Other (season + form)", row.otherEdge)}
               </div>
 
               {/* Secondary: reason + market */}
-              {(row.primaryReason || noVig || row.polymarketYes != null) && (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, gap: 8 }}>
-                  <span style={{ color: "#38bdf8", fontSize: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {row.primaryReason ?? ""}
-                  </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-                    {noVig && <span style={{ color: "#94a3b8", fontSize: 10, fontWeight: 700 }}>Mkt {noVig}</span>}
-                    {row.polymarketYes != null && (
-                      <span style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", borderRadius: 3, padding: "1px 5px", fontWeight: 700, fontSize: 10 }}>
-                        Poly {Math.round(row.polymarketYes * 100)}¢
-                      </span>
-                    )}
-                  </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, gap: 8 }}>
+                <span style={{ color: "#38bdf8", fontSize: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {row.primaryReason ?? ""}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                  <span style={{ color: "#94a3b8", fontSize: 10, fontWeight: 700 }}>Mkt {noVig}</span>
+                  {row.polymarketYes != null && (
+                    <span style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", borderRadius: 3, padding: "1px 5px", fontWeight: 700, fontSize: 10 }}>
+                      Poly {Math.round(row.polymarketYes * 100)}¢
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           );
         })}
@@ -2878,7 +2960,7 @@ function SocialTableML({
       {/* Footer */}
       <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 9.5, color: "#475569", lineHeight: 1.35 }}>
-          Model Edge = selected team's weighted factor advantage (pts), not a win-probability edge · Pitch+Bat+Form sum to it
+          Model Edge (pts) = full factor model, not a win-probability edge · Pitch + Bat + Other = Model Edge (Other = season quality + internal recent form) · Form {formLabel} = {FORM_WINDOW_SOURCES[formWindow]} record, a recent-only diagnostic not summed into Model Edge
           {hasPoly ? " · Mkt = no-vig implied · Poly = Polymarket" : " · Mkt = no-vig implied"}
         </span>
         <span style={{ fontSize: 10, color: "#3b82f6", fontWeight: 700, flexShrink: 0 }}>joeknowsball.com</span>
