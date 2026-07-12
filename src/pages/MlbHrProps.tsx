@@ -135,6 +135,17 @@ export type HrDashboardBatter = {
   /** @deprecated Alias for marketImpliedProbability, kept for backward compatibility only. */
   hrImplied?: number | null;
   angleTags: string[];
+  // ── Phase 1 shadow-only fields (computed client-side by the analytics
+  //    bridge engine; never used for sorting, best bets, Sin City, or any
+  //    public recommendation; NOT probabilities) ──────────────────────────
+  shadowAbsoluteScore?: number | null;
+  shadowScoreStatus?: "ok" | "suppressed";
+  shadowSlateRank?: number | null;
+  shadowCompleteness?: number;
+  shadowConfidence?: number;
+  shadowContributions?: import("@/lib/mlb/analytics/types").MetricContribution[];
+  shadowNormalizedMetrics?: Record<string, number>;
+  shadowMissingMetrics?: string[];
 };
 
 export type HrGameEnvironment = {
@@ -157,6 +168,8 @@ export type HrDashboardPayload = {
   pitchers: HrDashboardPitcher[];
   batters: HrDashboardBatter[];
   gameEnvironments?: HrGameEnvironment[];
+  /** Phase 1 shadow bridge-score version metadata. Additive; UI ignores it. */
+  shadowMeta?: import("@/lib/mlb/analytics/shadow").HrShadowMeta;
 };
 
 export type HrPropPick = {
