@@ -1,0 +1,83 @@
+{
+  "artifactVersion": "hr-bridge-v1",
+  "scoreVersion": "hr-bridge-abs@1",
+  "generatedAt": "2026-07-12T00:00:00Z",
+  "sourceSeasons": null,
+  "sourceDescription": "Bridge ranges inherited from verified constants already in production. NOT empirically derived from multi-season league data. Sources: scripts/generate-mlb-hr-props.mjs computeBatterHrScore fixed ranges (barrel, hard-hit, xBA, whiff, weather), the raw 0-100 pitcher hrVs composite scale, the generator DEFAULT_PARK_FACTORS table min/max (park), and src/pages/MlbHrProps.tsx buildHeatStatRanges display constants (last-7/last-30 HR, which production scores with same-slate min-max and therefore have no production fixed range).",
+  "populationDefinition": "Current production fixed-range constants and checked-in tables; not a sampled league population. A future derivation script should replace this artifact with an empirical multi-season version under a new artifactVersion.",
+  "sampleCount": null,
+  "ranges": [
+    {
+      "metricKey": "batter-barrel-pct",
+      "min": 3,
+      "max": 20,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "generate-mlb-hr-props.mjs computeBatterHrScore blendRawAndPercentile(barrelRate, ..., 3, 20)"
+    },
+    {
+      "metricKey": "batter-hard-hit-pct",
+      "min": 25,
+      "max": 60,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "generate-mlb-hr-props.mjs computeBatterHrScore blendRawAndPercentile(hardHitRate, ..., 25, 60)"
+    },
+    {
+      "metricKey": "batter-xba",
+      "min": 0.18,
+      "max": 0.34,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "generate-mlb-hr-props.mjs computeBatterHrScore blendRawAndPercentile(xba, ..., 0.18, 0.34)"
+    },
+    {
+      "metricKey": "batter-whiff-pct",
+      "min": 15,
+      "max": 38,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "generate-mlb-hr-props.mjs computeBatterHrScore blendRawAndPercentile(whiffRate, ..., 15, 38, { invert: true })"
+    },
+    {
+      "metricKey": "batter-last-7-hr",
+      "min": 0,
+      "max": 5,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "src/pages/MlbHrProps.tsx buildHeatStatRanges display constant { low: 0, high: 5 }. Production score uses same-slate min-max (normalizeMetric) — no production fixed range exists for this metric."
+    },
+    {
+      "metricKey": "batter-last-30-hr",
+      "min": 0,
+      "max": 10,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "src/pages/MlbHrProps.tsx buildHeatStatRanges display constant { low: 0, high: 10 }. Production score uses same-slate min-max (normalizeMetric) — no production fixed range exists for this metric."
+    },
+    {
+      "metricKey": "pitcher-hr-vulnerability",
+      "min": 0,
+      "max": 100,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "opposingPitcherHrVs is the hrVs composite from computePitcherMatchupRatings, already on a 0-100 scale and used raw (weight 0.15) in computeBatterHrScore."
+    },
+    {
+      "metricKey": "park-hr-factor",
+      "min": 0.85,
+      "max": 1.4,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "Min/max of the checked-in DEFAULT_PARK_FACTORS table in generate-mlb-hr-props.mjs (0.85–1.40 across 30 venues). Production score uses same-slate min-max (normalizeMetric) — no production fixed range exists for this metric."
+    },
+    {
+      "metricKey": "weather-hr-boost",
+      "min": -10,
+      "max": 10,
+      "rawPercentileBounds": null,
+      "winsorization": null,
+      "provenance": "generate-mlb-hr-props.mjs computeBatterHrScore scaleToRange((weatherBoost ?? 0) + 10, 0, 20), i.e. a fixed [-10, +10] boost range; computeWeatherBoost clamps to that interval."
+    }
+  ]
+}
