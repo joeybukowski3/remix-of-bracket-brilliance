@@ -30,6 +30,26 @@ import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
 import { computeModelEdge, getEdgeTierKey, getEdgeTierLabel, ML_EDGE_METHODOLOGY } from "@/lib/mlb/mlbModelEdge";
+import {
+  americanToImpliedProbability,
+  buildPrimaryReason,
+  compareMlSocialRows,
+  computeDisplayedEdge,
+  confidenceForEdgePoints,
+  DEFAULT_FORM_WINDOW,
+  formatEdgePoints,
+  formatMarketPct,
+  FORM_WINDOW_LABELS,
+  FORM_WINDOW_LONG,
+  FORM_WINDOW_SOURCES,
+  getComponentBand,
+  getEdgeGrade,
+  getFactorAvailability,
+  getFormEdge,
+  noVigProbability,
+  type FormWindow,
+  type MlSocialRow,
+} from "@/lib/mlb/mlbSocialEdge";
 import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { getProjectionEdgeInfo, selectTopSocialKRows } from "@/lib/mlb/kPropValueSorting";
 import { resolveKPropStatus } from "@/lib/mlb/kPropStatus";
@@ -2493,57 +2513,86 @@ function SocialTableML({
   mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
   polymarketGames?: import("@/lib/mlb/polymarketMoneylines").MoneylineGame[];
 }) {
-  function americanToImplied(american: string | null | undefined): number | null {
-    if (!american) return null;
-    const n = parseFloat(american);
-    if (!isFinite(n)) return null;
-    return n > 0 ? 100 / (n + 100) : Math.abs(n) / (Math.abs(n) + 100);
-  }
+  // Recent-record window. Default L5 → deterministic social screenshot (the X
+  // export captures this default). The selector affects ONLY the recent-record
+  // diagnostic and its reason text — never pitching, batting, model form,
+  // season, market odds, or the Model Edge.
+  const [formWindow, setFormWindow] = useState<FormWindow>(DEFAULT_FORM_WINDOW);
+  const { getTeam: getTeamWrc } = useTeamWrc();
 
-  const rows = games
-    .map((game) => {
+  const rows: MlSocialRow[] = games
+    .map((game): MlSocialRow | null => {
       const detail = detailPreviews[game.gamePk];
       if (!detail) return null;
       const edge = computeModelEdge(detail);
       if (edge.pick === "push") return null;
 
-      const pickAbbr = edge.pick === "away" ? game.away.abbreviation : game.home.abbreviation;
-      const fadeAbbr = edge.pick === "away" ? game.home.abbreviation : game.away.abbreviation;
-      const pickColors = getMlbTeamColors(pickAbbr);
+      const pickIsAway = edge.pick === "away";
+      const pickAbbr = pickIsAway ? game.away.abbreviation : game.home.abbreviation;
+      const fadeAbbr = pickIsAway ? game.home.abbreviation : game.away.abbreviation;
 
-      // Look up actual ML odds for this game
+      // Factor availability from SOURCE fields (not the neutral-filled result),
+      // then the displayed edge: canonical when complete, Adjusted Model Edge
+      // when some factors are genuinely unavailable, N/A below the gate.
+      const availability = getFactorAvailability(detail);
+      const display = computeDisplayedEdge(edge, availability);
+      const pitchingEdge = display.components.pitching;
+      const battingEdge = display.components.batting;
+      const modelFormEdge = display.components.modelForm;
+      const seasonEdge = display.components.season;
+
+      // Recent-record diagnostic (season-free). L5 = last 5 completed games
+      // (game context); L14 = last 14 completed games (wRC+ dataset). These are
+      // game-count windows, NOT calendar weeks. Null → N/A, never fabricated.
+      const pickCtx = pickIsAway ? detail.awayContext : detail.homeContext;
+      const oppCtx = pickIsAway ? detail.homeContext : detail.awayContext;
+      const pickRecord = formWindow === "l5"
+        ? pickCtx?.lastFiveRecord ?? null
+        : getTeamWrc(pickAbbr)?.last14Record ?? null;
+      const oppRecord = formWindow === "l5"
+        ? oppCtx?.lastFiveRecord ?? null
+        : getTeamWrc(fadeAbbr)?.last14Record ?? null;
+      const formEdge = getFormEdge(pickRecord, oppRecord);
+
+      // Actual posted moneylines (both sides) for the picked game.
       const gameKey = `${game.away.abbreviation}@${game.home.abbreviation}`;
       const ml = mlbOdds?.moneylines?.[gameKey];
-      const pickIsAway = edge.pick === "away";
-      const pickOddsEntry = pickIsAway ? ml?.away : ml?.home;
-      const fadeOddsEntry = pickIsAway ? ml?.home : ml?.away;
-      const pickAmerican = pickOddsEntry?.american ?? null;
-      const fadeAmerican = fadeOddsEntry?.american ?? null;
+      const pickAmerican = (pickIsAway ? ml?.away : ml?.home)?.american ?? null;
+      const fadeAmerican = (pickIsAway ? ml?.home : ml?.away)?.american ?? null;
 
-      // Polymarket YES/NO reference prices for the picked team
+      // Polymarket YES/NO reference prices for both sides.
       const pmGame = polymarketGames?.find((g) => g.gamePk === game.gamePk);
       const pmPickSide = pmGame ? (pickIsAway ? pmGame.away : pmGame.home) : null;
+      const pmFadeSide = pmGame ? (pickIsAway ? pmGame.home : pmGame.away) : null;
       const pmYes = pmPickSide?.yesPrice ?? null;
       const pmNo = pmPickSide?.noPrice ?? null;
 
-      // PER MODEL AUDIT (Phase 1 correctness fix): no longer computes a
-      // "value edge" by treating edge.confidence/100 as a win probability
-      // and diffing it against the market-implied probability. That
-      // arithmetic claimed a calibration that does not exist.
-      // marketImplied (from the actual posted odds) is kept for display —
-      // it is real market data, not a model-derived comparison.
-      const marketImplied = americanToImplied(pickAmerican);
+      // Real market data only. Two-sided NO-VIG implied probability for the
+      // pick (posted moneyline, else Polymarket). Fails safe to null.
+      const marketImplied = americanToImpliedProbability(pickAmerican);
+      const fadeImplied = americanToImpliedProbability(fadeAmerican);
+      const noVig =
+        noVigProbability(marketImplied, fadeImplied) ??
+        noVigProbability(pmYes, pmFadeSide?.yesPrice ?? null);
 
-      // Pitcher context
-      const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name;
-      const homePitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name;
-      const awayReg = pitcherRegressionData.find(p => p.name === awayPitcherName);
-      const homeReg = pitcherRegressionData.find(p => p.name === homePitcherName);
+      // Grade + color follow the DISPLAYED edge (canonical or adjusted), so a
+      // row's grade always matches the number shown. N/A rows carry no grade.
+      const displayedEdge = display.displayed;
+      const confidence = displayedEdge != null
+        ? confidenceForEdgePoints(displayedEdge)
+        : edge.confidence;
+      const grade = displayedEdge != null ? getEdgeGrade(confidence).label : null;
+
+      // Pitcher names + regression context for the reason fallback only.
+      const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name || null;
+      const homePitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name || null;
+      const awayReg = pitcherRegressionData.find((p) => p.name === awayPitcherName);
+      const homeReg = pitcherRegressionData.find((p) => p.name === homePitcherName);
       const pickPitcherReg = pickIsAway ? awayReg : homeReg;
       const fadePitcherReg = pickIsAway ? homeReg : awayReg;
-      let context = "";
-      if (fadePitcherReg && fadePitcherReg.regressionScore < -2) context = `${fadeAbbr} pitcher overperforming`;
-      else if (pickPitcherReg && pickPitcherReg.regressionScore > 2) context = `${pickAbbr} pitcher undervalued`;
+      let context: string | null = null;
+      if (fadePitcherReg && fadePitcherReg.regressionScore < -2) context = `${fadeAbbr} starter overperforming`;
+      else if (pickPitcherReg && pickPitcherReg.regressionScore > 2) context = `${pickAbbr} starter undervalued`;
 
       return {
         gamePk: game.gamePk,
@@ -2551,41 +2600,126 @@ function SocialTableML({
         homeAbbr: game.home.abbreviation,
         awayPitcher: awayPitcherName,
         homePitcher: homePitcherName,
-        pickAbbr,
-        fadeAbbr,
-        pickColors,
-        confidence: edge.confidence,
-        differential: edge.differential,
-        pickAmerican,
-        fadeAmerican,
-        marketImplied,
-        pmYes,
-        pmNo,
-        context,
         gameTime: formatGameTime(game.gameDate),
+        selectedTeam: pickAbbr,
+        fadeTeam: fadeAbbr,
+        selectedAmerican: pickAmerican,
+        modelEdgePoints: displayedEdge,
+        canonicalEdgePoints: display.canonical,
+        isAdjusted: display.adjusted,
+        confidence,
+        completeness: display.weightAvailable,
+        pitchingEdge,
+        battingEdge,
+        modelFormEdge,
+        seasonEdge,
+        formEdge,
+        formWindow,
+        marketImpliedProbability: marketImplied,
+        noVigMarketProbability: noVig,
+        polymarketYes: pmYes,
+        polymarketNo: pmNo,
+        grade,
+        primaryReason: display.ok
+          ? buildPrimaryReason({
+              pitching: pitchingEdge, batting: battingEdge, modelForm: modelFormEdge,
+              season: seasonEdge, formEdge, formWindow, pickTeam: pickAbbr, context,
+            })
+          : null,
       };
     })
-    .filter(Boolean)
-    // Sort by the model's own (unmodified) differential descending -- the
-    // strongest-conviction picks first. PER MODEL AUDIT: previously sorted
-    // by a fabricated "value edge vs market"; differential is the model's
-    // own output, not a probability claim.
-    .sort((a, b) => b!.differential - a!.differential)
-    .slice(0, 8) as NonNullable<ReturnType<typeof rows[0]>>[];
+    .filter((r): r is MlSocialRow => r !== null)
+    // Deterministic: valid rows first, then displayed edge desc → confidence →
+    // team → gamePk; N/A rows sort last. See compareMlSocialRows.
+    .sort(compareMlSocialRows)
+    .slice(0, 8);
 
   const MEDALS = ["🥇", "🥈", "🥉"];
   const ACCENTS = ["#f97316", "#fb923c", "#fbbf24", "#facc15", "#a3e635", "#34d399", "#38bdf8", "#818cf8"];
+  // # | matchup | pitch | bat | recent-form | model-context(form+season) | model-edge | pick
+  const DESKTOP_COLUMNS = "20px minmax(116px,1fr) 44px 44px 56px 70px 64px minmax(92px,auto)";
 
-  // PER MODEL AUDIT (Phase 1 correctness fix): colors/labels the model's
-  // own edge tier (Slight/Moderate/Strong lean), not a fabricated
-  // value-vs-market percentage.
-  function tierColor(confidence: number): { bg: string; text: string; label: string } {
-    const tier = getEdgeTierKey(confidence);
-    const label = getEdgeTierLabel(confidence);
-    if (tier === "strong")   return { bg: "#16a34a", text: "#fff", label };
-    if (tier === "moderate") return { bg: "#22c55e", text: "#fff", label };
-    if (tier === "slight")   return { bg: "#facc15", text: "#000", label };
-    return                   { bg: "#475569", text: "#fff", label };
+  // Model Edge value color. When the edge is present it follows the SAME
+  // confidence tier that drives the grade (so number and grade never disagree);
+  // an N/A edge renders muted.
+  function edgeValueColor(row: MlSocialRow): string {
+    if (row.modelEdgePoints == null) return "#64748b";
+    const tier = getEdgeTierKey(row.confidence);
+    if (tier === "strong") return "#34d399";
+    if (tier === "moderate") return "#4ade80";
+    if (tier === "slight") return "#fbbf24";
+    return "#94a3b8";
+  }
+
+  // One compact component cell (desktop): LABEL / signed value / band note.
+  // A null value renders "N/A" with no band — never a fabricated 0 or "Even".
+  function ComponentCell({ label, value }: { label: string; value: number | null }) {
+    const band = value != null ? getComponentBand(value) : null;
+    return (
+      <div style={{ textAlign: "center", minWidth: 0 }}>
+        <div style={{ color: "#64748b", fontSize: 8, fontWeight: 800, letterSpacing: ".04em" }}>{label}</div>
+        <div style={{ color: band?.color ?? "#64748b", fontSize: 13, fontWeight: 900, lineHeight: 1.1 }}>{formatEdgePoints(value)}</div>
+        <div style={{ color: "#475569", fontSize: 7.5, fontWeight: 700, whiteSpace: "nowrap" }}>{band?.label ?? " "}</div>
+      </div>
+    );
+  }
+
+  const formLabel = FORM_WINDOW_LABELS[formWindow];
+
+  // Grouped "Model Context" cell: the two lower-weight canonical drivers
+  // (internal Model Form + Season). Part of the additive identity; kept
+  // visually distinct from the separate recent-record diagnostic.
+  function ModelContextCell({ modelForm, season }: { modelForm: number | null; season: number | null }) {
+    const line = (label: string, value: number | null) => {
+      const color = value != null ? getComponentBand(value).color : "#64748b";
+      return (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 4, lineHeight: 1.2 }}>
+          <span style={{ color: "#64748b", fontSize: 8, fontWeight: 700 }}>{label}</span>
+          <span style={{ color, fontSize: 10, fontWeight: 800 }}>{formatEdgePoints(value)}</span>
+        </div>
+      );
+    };
+    return (
+      <div
+        style={{ minWidth: 0, borderLeft: "1px solid #14243d", borderRight: "1px solid #14243d", padding: "0 5px" }}
+        title="Model Form = JKB model internal recent-form factor; Season = season-long quality factor"
+      >
+        {line("Form", modelForm)}
+        {line("Seas", season)}
+      </div>
+    );
+  }
+
+  // Recent-record window toggle (L5 = last 5 completed games; L14 = last 14).
+  // Affects ONLY the recent-record diagnostic + its reason text.
+  function WindowToggle() {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }} role="group" aria-label="Recent record window">
+        <span style={{ color: "#64748b", fontSize: 9, fontWeight: 700 }}>RECENT</span>
+        {(["l5", "l14"] as FormWindow[]).map((w) => (
+          <button
+            key={w}
+            type="button"
+            onClick={() => setFormWindow(w)}
+            aria-pressed={formWindow === w}
+            aria-label={FORM_WINDOW_LONG[w]}
+            title={FORM_WINDOW_LONG[w]}
+            style={{
+              border: "1px solid #1e3a5f",
+              background: formWindow === w ? "#3b82f6" : "transparent",
+              color: formWindow === w ? "#fff" : "#94a3b8",
+              borderRadius: 4,
+              padding: "2px 7px",
+              fontSize: 10,
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            {FORM_WINDOW_LABELS[w]}
+          </button>
+        ))}
+      </div>
+    );
   }
 
   if (rows.length === 0) {
@@ -2603,6 +2737,8 @@ function SocialTableML({
     day: "2-digit",
   }).format(new Date());
 
+  const hasPoly = rows.some((r) => r.polymarketYes != null || r.polymarketNo != null);
+
   return (
     <div
       data-x-export="mlb-ml-social"
@@ -2611,148 +2747,285 @@ function SocialTableML({
       data-ml-row-count={rows.length}
       style={{ background: "#060d1a", borderRadius: 10, overflow: "hidden", fontSize: 12 }}
     >
+      {/* Responsive toggle: full table on wide screens, stacked cards on phones.
+          Media query keys off viewport width so the X screenshot (1080px)
+          always captures the desktop layout deterministically. */}
+      <style>{`
+        .jkb-mle-desktop { display: block; }
+        .jkb-mle-mobile { display: none; }
+        @media (max-width: 640px) {
+          .jkb-mle-desktop { display: none; }
+          .jkb-mle-mobile { display: block; }
+        }
+      `}</style>
+
       {/* Header */}
-      <div style={{ background: "#0a1628", borderBottom: "3px solid #3b82f6", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px" }}>🏆 MLB ML EDGES</div>
+      <div style={{ background: "#0a1628", borderBottom: "3px solid #3b82f6", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px", whiteSpace: "nowrap" }}>🏆 MLB ML EDGES</div>
           <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>
-            Top Model Picks · Sorted by Edge Strength
+            Model drivers + recent record — sorted by Model Edge
           </div>
         </div>
-        <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: "auto" }}>
+          <WindowToggle />
+          <div style={{ background: "#0d1e38", borderRadius: 8, padding: "4px 8px", fontSize: 11, color: "#ffffff" }}>joeknowsball.com</div>
+        </div>
       </div>
 
-      {/* Column headers */}
-      <div style={{ display: "grid", gridTemplateColumns: "28px 1fr auto", gap: 8, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
-        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>#</div>
-        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700 }}>MATCHUP</div>
-        <div style={{ color: "#475569", fontSize: 10, fontWeight: 700, textAlign: "right" }}>PICK · LINE · EDGE</div>
-      </div>
+      {/* ── Desktop / wide table ──────────────────────────────────────── */}
+      <div className="jkb-mle-desktop">
+        {/* Column headers */}
+        <div style={{ display: "grid", gridTemplateColumns: DESKTOP_COLUMNS, gap: 6, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center" }}>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700 }}>#</div>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700 }}>MATCHUP</div>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>PITCH</div>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>BAT</div>
+          <div style={{ color: "#38bdf8", fontSize: 9, fontWeight: 700, textAlign: "center" }}>RECENT {formLabel}</div>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL CTX</div>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL EDGE</div>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "right" }}>PICK · GRADE</div>
+        </div>
 
-      {/* Rows */}
-      {rows.map((row, i) => {
-        const vc = tierColor(row.confidence);
-        return (
-          <div
-            key={row.gamePk}
-            data-ml-row={i}
-            data-ml-away={row.awayAbbr}
-            data-ml-home={row.homeAbbr}
-            data-ml-pick={row.pickAbbr}
-            data-ml-confidence={row.confidence}
-            data-ml-differential={row.differential}
-            data-ml-pick-american={row.pickAmerican ?? ""}
-            data-ml-poly-yes={row.pmYes ?? ""}
-            data-ml-poly-no={row.pmNo ?? ""}
-            data-ml-game-time={row.gameTime}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "28px 1fr auto",
-              gap: 8,
-              padding: "8px 12px",
-              background: i % 2 === 0 ? "#0d1e38" : "#091629",
-              borderBottom: "1px solid #1e3a5f",
-              borderLeft: `3px solid ${ACCENTS[i] ?? "#475569"}`,
-              alignItems: "center",
-            }}
-          >
-            {/* Rank */}
-            <div style={{ fontWeight: 900, color: ACCENTS[i] ?? "#475569", fontSize: i < 3 ? 16 : 13, textAlign: "center" }}>
-              {i < 3 ? MEDALS[i] : i + 1}
-            </div>
+        {/* Rows */}
+        {rows.map((row, i) => {
+          const noVig = formatMarketPct(row.noVigMarketProbability);
+          return (
+            <div
+              key={row.gamePk}
+              data-ml-row={i}
+              data-ml-away={row.awayAbbr}
+              data-ml-home={row.homeAbbr}
+              data-ml-pick={row.selectedTeam}
+              data-ml-confidence={row.confidence}
+              data-ml-differential={row.modelEdgePoints != null ? Math.round(row.modelEdgePoints) : ""}
+              data-ml-model-edge={row.modelEdgePoints != null ? row.modelEdgePoints.toFixed(2) : ""}
+              data-ml-canonical={row.canonicalEdgePoints != null ? row.canonicalEdgePoints.toFixed(2) : ""}
+              data-ml-adjusted={row.isAdjusted ? "1" : "0"}
+              data-ml-pitching={row.pitchingEdge != null ? row.pitchingEdge.toFixed(2) : ""}
+              data-ml-batting={row.battingEdge != null ? row.battingEdge.toFixed(2) : ""}
+              data-ml-model-form={row.modelFormEdge != null ? row.modelFormEdge.toFixed(2) : ""}
+              data-ml-season={row.seasonEdge != null ? row.seasonEdge.toFixed(2) : ""}
+              data-ml-form={row.formEdge != null ? row.formEdge.toFixed(2) : ""}
+              data-ml-form-window={row.formWindow}
+              data-ml-grade={row.grade ?? ""}
+              data-ml-novig={row.noVigMarketProbability ?? ""}
+              data-ml-pick-american={row.selectedAmerican ?? ""}
+              data-ml-poly-yes={row.polymarketYes ?? ""}
+              data-ml-poly-no={row.polymarketNo ?? ""}
+              data-ml-game-time={row.gameTime}
+              style={{
+                display: "grid",
+                gridTemplateColumns: DESKTOP_COLUMNS,
+                gap: 6,
+                padding: "8px 12px",
+                background: i % 2 === 0 ? "#0d1e38" : "#091629",
+                borderBottom: "1px solid #1e3a5f",
+                borderLeft: `3px solid ${ACCENTS[i] ?? "#475569"}`,
+                alignItems: "center",
+              }}
+            >
+              {/* Rank */}
+              <div style={{ fontWeight: 900, color: ACCENTS[i] ?? "#475569", fontSize: i < 3 ? 15 : 12, textAlign: "center" }}>
+                {i < 3 ? MEDALS[i] : i + 1}
+              </div>
 
-            {/* Matchup */}
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                <TeamLogoBadge team={row.awayAbbr} size={22} showLabel={false} dark={true} />
-                <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.awayAbbr}</span>
-                <span style={{ color: "#475569", fontSize: 10 }}>@</span>
-                <TeamLogoBadge team={row.homeAbbr} size={22} showLabel={false} dark={true} />
-                <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.homeAbbr}</span>
-                <span style={{ color: "#64748b", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
+              {/* Matchup */}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
+                  <TeamLogoBadge team={row.awayAbbr} size={20} showLabel={false} dark={true} />
+                  <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.awayAbbr}</span>
+                  <span style={{ color: "#475569", fontSize: 10 }}>@</span>
+                  <TeamLogoBadge team={row.homeAbbr} size={20} showLabel={false} dark={true} />
+                  <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.homeAbbr}</span>
+                  <span style={{ color: "#64748b", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
+                </div>
+                <div style={{ fontSize: 10, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {row.awayPitcher?.split(" ").pop() ?? "TBD"} vs {row.homePitcher?.split(" ").pop() ?? "TBD"}
+                  {row.primaryReason ? <span style={{ color: "#38bdf8", marginLeft: 4 }}>· {row.primaryReason}</span> : null}
+                </div>
               </div>
-              <div style={{ fontSize: 11, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {row.awayPitcher?.split(" ").pop()} vs {row.homePitcher?.split(" ").pop()}
-                {row.context ? <span style={{ color: "#38bdf8", marginLeft: 4 }}>· {row.context}</span> : null}
-              </div>
-            </div>
 
-            {/* Pick · ML price · Value edge */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-              {/* Team logo + actual ML price */}
-              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <TeamLogoBadge team={row.pickAbbr} size={22} showLabel={false} dark={true} />
-                <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>{row.pickAbbr}</span>
-                {row.pickAmerican && (
-                  <span style={{
-                    background: "#0d1e38",
-                    border: "1px solid #1e3a5f",
-                    borderRadius: 4,
-                    padding: "2px 6px",
-                    fontWeight: 800,
-                    fontSize: 11,
-                    color: row.pickAmerican.startsWith("+") ? "#34d399" : row.pickAmerican.endsWith("%") ? "#60a5fa" : "#94a3b8",
-                  }}>
-                    {row.pickAmerican}
-                  </span>
-                )}
+              {/* Canonical additive drivers */}
+              <ComponentCell label="PITCH" value={row.pitchingEdge} />
+              <ComponentCell label="BAT" value={row.battingEdge} />
+
+              {/* Recent-record diagnostic (separate from the additive identity) */}
+              <ComponentCell label={`REC ${formLabel}`} value={row.formEdge} />
+
+              {/* Model Context: internal Model Form + Season (additive) */}
+              <ModelContextCell modelForm={row.modelFormEdge} season={row.seasonEdge} />
+
+              {/* Model Edge (points) — canonical or Adjusted */}
+              <div style={{ textAlign: "center", minWidth: 0 }}>
+                <div style={{ color: edgeValueColor(row), fontSize: 16, fontWeight: 900, lineHeight: 1.05 }}>
+                  {formatEdgePoints(row.modelEdgePoints)}
+                </div>
+                <div style={{ color: row.isAdjusted ? "#fbbf24" : "#475569", fontSize: 7.5, fontWeight: 700, whiteSpace: "nowrap" }}>
+                  {row.modelEdgePoints == null ? "N/A" : row.isAdjusted ? "adj pts" : "pts"}
+                </div>
               </div>
-              {/* Edge Strength tier badge */}
-              <span style={{
-                background: vc.bg,
-                color: vc.text,
-                borderRadius: 4,
-                padding: "2px 7px",
-                fontWeight: 700,
-                fontSize: 10,
-                whiteSpace: "nowrap",
-              }}>
-                {vc.label}
-              </span>
-              {/* Polymarket YES/NO reference */}
-              {(row.pmYes != null || row.pmNo != null) && (
+
+              {/* Pick · price · grade · market */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <span style={{ color: "#64748b", fontSize: 9, fontWeight: 700 }}>Poly</span>
-                  {row.pmYes != null && (
+                  <TeamLogoBadge team={row.selectedTeam} size={20} showLabel={false} dark={true} />
+                  <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>{row.selectedTeam}</span>
+                  {row.selectedAmerican && (
                     <span style={{
-                      background: "rgba(34,197,94,0.12)",
-                      color: "#4ade80",
-                      borderRadius: 3,
+                      background: "#0d1e38",
+                      border: "1px solid #1e3a5f",
+                      borderRadius: 4,
                       padding: "1px 5px",
-                      fontWeight: 700,
-                      fontSize: 9,
-                      whiteSpace: "nowrap",
+                      fontWeight: 800,
+                      fontSize: 11,
+                      color: row.selectedAmerican.startsWith("+") ? "#34d399" : "#94a3b8",
                     }}>
-                      Y {Math.round(row.pmYes * 100)}¢
-                    </span>
-                  )}
-                  {row.pmNo != null && (
-                    <span style={{
-                      background: "rgba(248,113,113,0.12)",
-                      color: "#f87171",
-                      borderRadius: 3,
-                      padding: "1px 5px",
-                      fontWeight: 700,
-                      fontSize: 9,
-                      whiteSpace: "nowrap",
-                    }}>
-                      N {Math.round(row.pmNo * 100)}¢
+                      {row.selectedAmerican}
                     </span>
                   )}
                 </div>
-              )}
+                {row.grade ? (
+                  <span style={{
+                    background: getEdgeGrade(row.confidence).bg,
+                    color: getEdgeGrade(row.confidence).text,
+                    borderRadius: 4,
+                    padding: "2px 7px",
+                    fontWeight: 700,
+                    fontSize: 10,
+                    whiteSpace: "nowrap",
+                  }}>
+                    {row.grade}
+                  </span>
+                ) : (
+                  <span style={{ color: "#64748b", fontSize: 10, fontWeight: 700 }}>No grade (N/A)</span>
+                )}
+                {row.isAdjusted && (
+                  <span style={{ color: "#fbbf24", fontSize: 8, fontWeight: 700, whiteSpace: "nowrap" }} title="Adjusted for partial data">Adjusted · partial data</span>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ color: "#94a3b8", fontSize: 9, fontWeight: 700, whiteSpace: "nowrap" }}>Mkt {noVig}</span>
+                  {row.polymarketYes != null && (
+                    <span style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", borderRadius: 3, padding: "1px 4px", fontWeight: 700, fontSize: 9, whiteSpace: "nowrap" }}>
+                      Poly {Math.round(row.polymarketYes * 100)}¢
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+
+      {/* ── Mobile / stacked cards ────────────────────────────────────── */}
+      <div className="jkb-mle-mobile">
+        {/* Recent-form window toggle (mobile) — affects Form only */}
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "6px 14px", background: "#091629", borderBottom: "1px solid #1e3a5f" }}>
+          <WindowToggle />
+        </div>
+        {rows.map((row, i) => {
+          const noVig = formatMarketPct(row.noVigMarketProbability);
+          const compRow = (label: string, value: number | null) => {
+            const band = value != null ? getComponentBand(value) : null;
+            return (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
+                <span style={{ color: "#94a3b8", fontSize: 12, fontWeight: 700 }}>{label}</span>
+                <span style={{ color: band?.color ?? "#64748b", fontSize: 13, fontWeight: 800 }}>{formatEdgePoints(value)}</span>
+              </div>
+            );
+          };
+          return (
+            <div
+              key={row.gamePk}
+              style={{
+                padding: "10px 14px",
+                background: i % 2 === 0 ? "#0d1e38" : "#091629",
+                borderBottom: "1px solid #1e3a5f",
+                borderLeft: `3px solid ${ACCENTS[i] ?? "#475569"}`,
+              }}
+            >
+              {/* Matchup + time */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ color: ACCENTS[i] ?? "#475569", fontWeight: 900, fontSize: 13 }}>{i < 3 ? MEDALS[i] : i + 1}</span>
+                  <TeamLogoBadge team={row.awayAbbr} size={20} showLabel={false} dark={true} />
+                  <span style={{ color: "#fff", fontSize: 13, fontWeight: 800 }}>{row.awayAbbr}</span>
+                  <span style={{ color: "#475569", fontSize: 11 }}>@</span>
+                  <TeamLogoBadge team={row.homeAbbr} size={20} showLabel={false} dark={true} />
+                  <span style={{ color: "#fff", fontSize: 13, fontWeight: 800 }}>{row.homeAbbr}</span>
+                </div>
+                <span style={{ color: "#64748b", fontSize: 11 }}>{row.gameTime}</span>
+              </div>
+              <div style={{ fontSize: 11, color: "#cbd5e1", marginTop: 3 }}>
+                {row.awayPitcher?.split(" ").pop() ?? "TBD"} vs {row.homePitcher?.split(" ").pop() ?? "TBD"}
+              </div>
+
+              {/* Pick + Model Edge headline */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>Pick</span>
+                  <TeamLogoBadge team={row.selectedTeam} size={20} showLabel={false} dark={true} />
+                  <span style={{ color: "#fff", fontWeight: 900, fontSize: 14 }}>{row.selectedTeam}</span>
+                  {row.selectedAmerican && (
+                    <span style={{ background: "#0d1e38", border: "1px solid #1e3a5f", borderRadius: 4, padding: "1px 6px", fontWeight: 800, fontSize: 12, color: row.selectedAmerican.startsWith("+") ? "#34d399" : "#94a3b8" }}>
+                      {row.selectedAmerican}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: edgeValueColor(row), fontSize: 16, fontWeight: 900 }}>{formatEdgePoints(row.modelEdgePoints)}</span>
+                    {row.grade ? (
+                      <span style={{ background: getEdgeGrade(row.confidence).bg, color: getEdgeGrade(row.confidence).text, borderRadius: 4, padding: "2px 7px", fontWeight: 700, fontSize: 10, whiteSpace: "nowrap" }}>{row.grade}</span>
+                    ) : (
+                      <span style={{ color: "#64748b", fontSize: 10, fontWeight: 700 }}>No grade (N/A)</span>
+                    )}
+                  </div>
+                  {row.isAdjusted && <span style={{ color: "#fbbf24", fontSize: 9, fontWeight: 700 }}>Adjusted · partial data</span>}
+                </div>
+              </div>
+
+              {/* Model Drivers (canonical, additive) */}
+              <div style={{ marginTop: 8, background: "#060d1a", borderRadius: 6, padding: "4px 10px" }}>
+                <div style={{ color: "#475569", fontSize: 9, fontWeight: 800, letterSpacing: ".05em", marginBottom: 1 }}>MODEL DRIVERS</div>
+                {compRow("Pitching", row.pitchingEdge)}
+                {compRow("Batting", row.battingEdge)}
+                {compRow("Model Form", row.modelFormEdge)}
+                {compRow("Season", row.seasonEdge)}
+              </div>
+
+              {/* Recent Record (separate diagnostic) */}
+              <div style={{ marginTop: 6, background: "#060d1a", borderRadius: 6, padding: "4px 10px" }}>
+                <div style={{ color: "#38bdf8", fontSize: 9, fontWeight: 800, letterSpacing: ".05em", marginBottom: 1 }}>RECENT RECORD</div>
+                {compRow(`${formLabel} form`, row.formEdge)}
+              </div>
+
+              {/* Secondary: reason + market */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, gap: 8 }}>
+                <span style={{ color: "#38bdf8", fontSize: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {row.primaryReason ?? ""}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                  <span style={{ color: "#94a3b8", fontSize: 10, fontWeight: 700 }}>Mkt {noVig}</span>
+                  {row.polymarketYes != null && (
+                    <span style={{ background: "rgba(34,197,94,0.12)", color: "#4ade80", borderRadius: 3, padding: "1px 5px", fontWeight: 700, fontSize: 10 }}>
+                      Poly {Math.round(row.polymarketYes * 100)}¢
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Footer */}
-      <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 10, color: "#475569" }}>
-          Edge = model factor differential, not a market-vs-model probability comparison
-          {rows.some(r => r.pmYes != null) ? " · Poly = Polymarket YES/NO" : ""}
+      <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 9.5, color: "#475569", lineHeight: 1.35 }}>
+          Model Edge (pts) = full factor model, not a win-probability edge · Pitch + Bat + Model Ctx (Model Form + Season) = Model Edge · Recent {formLabel} = {FORM_WINDOW_SOURCES[formWindow]} record, a season-free diagnostic NOT summed into Model Edge · Adjusted = one or more factors missing, valid weights renormalized · N/A = data unavailable
+          {hasPoly ? " · Mkt = no-vig implied · Poly = Polymarket" : " · Mkt = no-vig implied"}
         </span>
-        <span style={{ fontSize: 10, color: "#3b82f6", fontWeight: 700 }}>joeknowsball.com</span>
+        <span style={{ fontSize: 10, color: "#3b82f6", fontWeight: 700, flexShrink: 0 }}>joeknowsball.com</span>
       </div>
     </div>
   );
