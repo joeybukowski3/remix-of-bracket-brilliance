@@ -178,7 +178,10 @@ export async function fetchPlayerSeasonStats(playerId, season, options = {}) {
 }
 
 function uniquePlaysByPlayer(card) {
-  const plays = [card.topPlay, ...(card.allQualifiedPlaysOver50 ?? [])].filter(Boolean);
+  const selectedPlays = Array.isArray(card.emailSelectedPlays)
+    ? card.emailSelectedPlays
+    : (card.allQualifiedPlaysOver50 ?? []);
+  const plays = [card.topPlay, ...selectedPlays].filter(Boolean);
   const byPlayerId = new Map();
   for (const play of plays) {
     const key = play.playerId ?? play.player;
@@ -189,12 +192,11 @@ function uniquePlaysByPlayer(card) {
 }
 
 /**
- * Fetches lastFiveGames + seasonStats for every distinct player appearing
- * in the card (topPlay and/or allQualifiedPlaysOver50 -- these can be
- * separate copies of the same underlying play, so lookups are deduped and
- * cached by playerId before being applied to both). Returns a new card
- * object; never mutates the input. A lookup failure for one player never
- * blocks the others or the overall card.
+ * Fetches lastFiveGames + seasonStats for every distinct player in the
+ * emailSelectedPlays list. Legacy callers without that explicit list still
+ * use allQualifiedPlaysOver50. Copies are deduped and cached by playerId
+ * before context is applied. Returns a new card object and never mutates the
+ * input; one lookup failure never blocks the other players.
  */
 export async function enrichCardPlaysWithContext(card, options = {}) {
   const season = options.season ?? String(card.date).slice(0, 4);
@@ -242,6 +244,8 @@ export async function enrichCardPlaysWithContext(card, options = {}) {
   return {
     ...card,
     topPlay: applyContext(card.topPlay),
-    allQualifiedPlaysOver50: (card.allQualifiedPlaysOver50 ?? []).map(applyContext),
+    ...(Array.isArray(card.emailSelectedPlays)
+      ? { emailSelectedPlays: card.emailSelectedPlays.map(applyContext) }
+      : { allQualifiedPlaysOver50: (card.allQualifiedPlaysOver50 ?? []).map(applyContext) }),
   };
 }

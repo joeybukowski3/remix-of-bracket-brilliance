@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import "./mlbNumerologyEmailSelection.test.js";
+import "../../../scripts/lib/mlb-numerology-email-rendering.test.mjs";
 import {
   applyStatLineToRecord,
   buildDailyNumerologyCard,
@@ -10,6 +12,7 @@ import {
   renderEmailText,
   summarizePerformance,
 } from "../../../scripts/lib/mlb-numerology-tracking.mjs";
+import { selectNumerologyEmailPlays } from "../../../scripts/lib/mlb-numerology-email-selection.mjs";
 
 const liveBoardPayload = {
   date: "2026-07-06",
@@ -268,11 +271,11 @@ describe("MLB numerology tracking", () => {
     const card = buildDailyNumerologyCard(liveBoardPayload, { date: "2026-07-06", hrPayload: hrPropsPayload });
     const performance = mergePerformanceRecords({ records: [] }, buildTrackingRecordsFromCard(card));
     const summary = summarizePerformance(performance, "2026-07-06");
-    const text = renderEmailText(card, summary);
+    const text = renderEmailText(selectNumerologyEmailPlays(card), summary);
     expect(text).toContain("https://www.joeknowsball.com/mlb/numerology");
     expect(text).toContain("TOP PLAY");
     expect(text).toContain("Live Board Leader");
-    expect(text).toContain("ALL PLAYS OVER 50");
+    expect(text).toContain("QUALIFYING PLAYS");
     expect(text).toContain("No HR Match Qualifier");
     expect(text).toContain("Jersey 23");
     expect(text).toContain("Last 5 game logs unavailable");
@@ -280,9 +283,7 @@ describe("MLB numerology tracking", () => {
     expect(text).toContain("Season stats unavailable");
     expect(text).toContain("Previous Day");
     expect(text).toContain("Overall");
-    expect(text).toContain("Experimental numerology/model signals only");
-    expect(text).toContain("Not guaranteed");
-    expect(text).toContain("Not validated betting edges");
+    expect(text).toContain("Experimental numerology signals for research and entertainment");
   });
 
   it("aggregates real batting stat lines for the previous day, split by selection type", () => {

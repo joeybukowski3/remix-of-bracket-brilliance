@@ -13,8 +13,8 @@ import {
   summarizePerformance,
   writeJson,
 } from "./lib/mlb-numerology-tracking.mjs";
-import { makeNumerologyEmailMobileSafe } from "./lib/mlb-numerology-email-mobile.mjs";
 import { selectNumerologyEmailPlays } from "./lib/mlb-numerology-email-selection.mjs";
+import { assertValidNumerologyEmailHtml } from "./lib/mlb-numerology-email-validation.mjs";
 import { enrichCardPlaysWithContext } from "./lib/mlb-numerology-player-context.mjs";
 
 const ROOT = process.cwd();
@@ -64,15 +64,17 @@ async function main() {
   // minimum when fewer than three players clear the threshold.
   const selectedEmailCard = selectNumerologyEmailPlays(card);
   const emailCard = await enrichCardPlaysWithContext(selectedEmailCard);
-  const html = makeNumerologyEmailMobileSafe(renderEmailHtml(emailCard, summary));
+  const html = renderEmailHtml(emailCard, summary);
   const text = renderEmailText(emailCard, summary);
+  const validation = assertValidNumerologyEmailHtml(html, emailCard);
   ensureDirForFile(EMAIL_HTML_PATH);
   fs.writeFileSync(EMAIL_HTML_PATH, html);
   fs.writeFileSync(EMAIL_TEXT_PATH, `${text}\n`);
 
   console.log(`[mlb-numerology] Generated card for ${card.date}`);
   console.log(`[mlb-numerology] Top play: ${emailCard.topPlay ? `${emailCard.topPlay.player} (${emailCard.topPlay.numerologyScore})` : "none"}`);
-  console.log(`[mlb-numerology] Email selection: ${emailCard.emailSelectionPolicy?.mode ?? "unknown"}; selected=${emailCard.allQualifiedPlaysOver50.length}; above65=${emailCard.emailSelectionPolicy?.aboveThresholdCount ?? 0}`);
+  console.log(`[mlb-numerology] Email selection: ${emailCard.emailSelectionPolicy?.mode ?? "unknown"}; selected=${emailCard.emailSelectedPlays.length}; above65=${emailCard.emailSelectionPolicy?.aboveThresholdCount ?? 0}`);
+  console.log(`[mlb-numerology] Email validation passed: summary=${validation.summaryCount}; details=${validation.detailedCount}`);
   console.log(`[mlb-numerology] Email preview written to ${EMAIL_TEXT_PATH}`);
 
   if (shouldSend) {
@@ -83,6 +85,8 @@ async function main() {
 }
 
 async function sendEmail({ card, html, text }) {
+  assertValidNumerologyEmailHtml(html, card);
+
   if (!sendGateEnabled) {
     throw new Error("Live send blocked. Set NUMEROLOGY_EMAIL_LIVE=true and pass --send to send.");
   }
@@ -98,7 +102,7 @@ async function sendEmail({ card, html, text }) {
     text,
     date: card.date,
     topPlay: card.topPlay,
-    qualifiedCount: card.allQualifiedPlaysOver50.length,
+    qualifiedCount: card.emailSelectedPlays.length,
   };
 
   const response = await fetch(webhookUrl, {
