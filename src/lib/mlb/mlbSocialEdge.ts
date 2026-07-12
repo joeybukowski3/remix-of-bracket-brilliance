@@ -1,30 +1,32 @@
 /**
  * ML Edges social-table transparency layer.
  *
- * The Moneyline Edge model (see mlbModelEdge.ts, computeModelEdge) produces
- * five weighted factors whose `weightedDifference` values sum EXACTLY to the
- * overall away-minus-home model differential. This module regroups those
- * factors for a transparent ML Edges table and defines a genuinely
- * recent-window Form Edge that is NOT drawn from the model's
- * season-contaminated internal "Recent Form" factor.
+ * The canonical Moneyline Edge model (mlbModelEdge.ts, computeModelEdge)
+ * produces five weighted factors whose `weightedDifference` values sum EXACTLY
+ * to the overall away-minus-home model differential. This module:
  *
- * ── Component model (what the table shows) ──────────────────────────────────
- *   Pitching Edge = Pitcher Quality factor                     (model)
- *   Batting Edge  = Matchup Edge + Lineup Offense factors       (model)
- *   Other         = Model Edge − Pitching − Batting             (residual)
- *                 = model's internal Recent Form factor + Season Quality.
- *   ⇒ Pitching + Batting + Other = Model Edge  (additive identity, tested)
+ *   1. Regroups those factors into four displayed, additive canonical drivers:
+ *        Pitching   = Pitcher Quality factor
+ *        Batting    = Matchup Edge + Lineup Offense factors
+ *        Model Form = Recent Form factor       (internal to the JKB model)
+ *        Season     = Season Quality factor
+ *      ⇒ Pitching + Batting + Model Form + Season = canonical Model Edge.
  *
- *   Form Edge     = a SEPARATE, season-free recent-record differential
- *                   (2W = last 5 games, 4W = last 14 games). It is a
- *                   diagnostic lens on short-window results and is deliberately
- *                   NOT part of the additive identity above — the model's own
- *                   recent-form factor lives inside "Other".
+ *   2. Defines a SEPARATE recent-record diagnostic ("Recent Form L5/L14") from
+ *      completed-game records. It is season-free, NOT one of the canonical
+ *      model's factor contributions, and is deliberately excluded from the
+ *      additive identity above.
  *
- * Why Form Edge is not the model's Recent Form factor: that factor is
- * 55% last-5-games + 45% home/away SEASON split, so it cannot honestly be
- * labeled "recent only". Season Quality is never discarded — it stays inside
- * the canonical Model Edge and is disclosed via "Other".
+ *   3. Establishes factor-availability provenance from the SOURCE data. The
+ *      canonical model neutral-fills missing inputs (eraScore(null)=50, empty
+ *      record → 0.5 win%) and always emits all five factors, so a factor's
+ *      weightedDifference of ~0 can be a real measured tie OR a neutral fill —
+ *      the ModelEdgeResult alone cannot tell them apart. Missingness is
+ *      therefore derived from whether the underlying detail fields exist.
+ *
+ *   4. Computes a display edge that equals the canonical edge when all factors
+ *      are available, an "Adjusted Model Edge" (valid factors renormalized)
+ *      when some are genuinely unavailable, or N/A below a completeness gate.
  *
  * PER MODEL AUDIT (see ML_EDGE_METHODOLOGY): the model produces no calibrated
  * win probability. The headline Model Edge is a factor-point advantage, NOT a
@@ -39,61 +41,161 @@ import {
   type ModelEdgeResult,
   type ModelFactor,
 } from "@/lib/mlb/mlbModelEdge";
+import type { MlbGameDetail } from "@/lib/mlb/mlbTypes";
 
 // ---------------------------------------------------------------------------
-// Recent-form window
+// Recent-record window (game-count windows — NOT calendar weeks)
 // ---------------------------------------------------------------------------
 
 /**
- * Supported recent-form windows. These map to the two genuine recent-record
- * windows the data exposes (last 5 games / last 14 games), which approximate
- * ~2 and ~4 weeks of play. A true calendar 28-day W-L window does not exist in
- * the model's data contract, so 4W falls back to the last-14-games record; a
- * row with no such record renders N/A (never fabricated).
+ * Recent-record windows. These are game-count windows exposed by the data:
+ * L5 = last 5 completed games, L14 = last 14 completed games. They are NOT
+ * 2-week / 4-week calendar windows — a true 14-day / 28-day W-L window is a
+ * separate future enhancement. A window with no parseable record renders N/A.
  */
-export type FormWindow = "2w" | "4w";
+export type FormWindow = "l5" | "l14";
 
-/** Canonical default window for the deterministic social screenshot. */
-export const DEFAULT_FORM_WINDOW: FormWindow = "2w";
+/** Canonical default window for the deterministic social screenshot/export. */
+export const DEFAULT_FORM_WINDOW: FormWindow = "l5";
 
 export const FORM_WINDOW_LABELS: Record<FormWindow, string> = {
-  "2w": "2W",
-  "4w": "4W",
+  l5: "L5",
+  l14: "L14",
 };
 
-/** Human sentence describing exactly what each window measures. */
+/** Short source phrase (footer / inline). */
 export const FORM_WINDOW_SOURCES: Record<FormWindow, string> = {
-  "2w": "last 5 completed games",
-  "4w": "last 14 completed games",
+  l5: "last 5 completed games",
+  l14: "last 14 completed games",
+};
+
+/** Full accessible/tooltip description. */
+export const FORM_WINDOW_LONG: Record<FormWindow, string> = {
+  l5: "Last 5 completed games",
+  l14: "Last 14 completed games",
 };
 
 /**
- * Weight applied to the recent win% differential so Form Edge lands on the
- * same factor-point scale as the model's other component edges. Mirrors the
- * model's own Recent Form factor weight (0.15) for visual comparability.
+ * Weight applied to the recent win% differential so the recent-record
+ * diagnostic lands on the same factor-point scale as the canonical component
+ * edges (mirrors the model's Recent Form weight, 0.15, for comparability).
  */
 const FORM_SCALE_WEIGHT = 0.15;
 
 // ---------------------------------------------------------------------------
-// Component edges (regrouped model factors)
+// Canonical group weights
 // ---------------------------------------------------------------------------
 
-const COMPONENT_FACTORS = {
+export type CanonicalGroup = "pitching" | "batting" | "modelForm" | "season";
+
+/**
+ * Grouped canonical factor weights (sum to 1.0): Pitching = Pitcher Quality
+ * (.30); Batting = Matchup (.25) + Lineup Offense (.20) = .45; Model Form =
+ * Recent Form (.15); Season = Season Quality (.10).
+ */
+export const MODEL_GROUP_WEIGHTS: Record<CanonicalGroup, number> = {
+  pitching: 0.30,
+  batting: 0.45,
+  modelForm: 0.15,
+  season: 0.10,
+};
+
+/** Primary (higher-weight performance) groups for the completeness gate. */
+export const PRIMARY_GROUPS: CanonicalGroup[] = ["pitching", "batting", "modelForm"];
+
+const GROUP_FACTOR_LABELS: Record<CanonicalGroup, readonly string[]> = {
   pitching: ["Pitcher Quality"],
   batting: ["Matchup Edge", "Lineup Offense"],
-} as const;
+  modelForm: ["Recent Form"],
+  season: ["Season Quality"],
+};
+
+// ---------------------------------------------------------------------------
+// Factor availability provenance (distinguishes measured-zero from missing)
+// ---------------------------------------------------------------------------
+
+export type FactorAvailability = {
+  /** True when the group can be used (its real source fields are present). */
+  available: boolean;
+  /** True when the underlying source fields exist (not neutral-filled). */
+  sourceFieldsPresent: boolean;
+  /** True when some sub-inputs were absent and the model fell back to neutral. */
+  usedFallback: boolean;
+  reason?: string;
+};
+
+export type GroupAvailability = Record<CanonicalGroup, FactorAvailability>;
+
+function isNum(v: unknown): boolean {
+  if (v == null || v === "") return false;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n);
+}
+
+/**
+ * Derive per-group availability from the SOURCE detail fields — NOT from the
+ * (always-populated, neutral-filled) ModelEdgeResult. A group is unavailable
+ * only when its real inputs are absent; a present-but-zero value stays a real
+ * measured zero.
+ */
+export function getFactorAvailability(detail: MlbGameDetail): GroupAvailability {
+  const aw = detail?.starters?.away;
+  const hw = detail?.starters?.home;
+  const awayPitch = isNum(aw?.era) || isNum(aw?.strikeOuts) || isNum(aw?.inningsPitched);
+  const homePitch = isNum(hw?.era) || isNum(hw?.strikeOuts) || isNum(hw?.inningsPitched);
+  const pitching: FactorAvailability = {
+    available: awayPitch && homePitch,
+    sourceFieldsPresent: awayPitch && homePitch,
+    usedFallback: !(isNum(aw?.era) && isNum(hw?.era)),
+    reason: awayPitch && homePitch ? undefined : "starter stats missing",
+  };
+
+  const awayBat = isNum(detail?.lineupSummaries?.away?.ops);
+  const homeBat = isNum(detail?.lineupSummaries?.home?.ops);
+  const splitsPresent = isNum(detail?.opponentSplits?.awayBattingVsHomeStarter?.ops)
+    || isNum(detail?.opponentSplits?.homeBattingVsAwayStarter?.ops);
+  const batting: FactorAvailability = {
+    available: awayBat && homeBat,
+    sourceFieldsPresent: awayBat && homeBat,
+    usedFallback: !splitsPresent,
+    reason: awayBat && homeBat ? undefined : "lineup summaries missing",
+  };
+
+  const awayForm = parseRecordWinPct(detail?.awayContext?.lastFiveRecord) != null;
+  const homeForm = parseRecordWinPct(detail?.homeContext?.lastFiveRecord) != null;
+  const modelForm: FactorAvailability = {
+    available: awayForm && homeForm,
+    sourceFieldsPresent: awayForm && homeForm,
+    usedFallback: false,
+    reason: awayForm && homeForm ? undefined : "recent record missing",
+  };
+
+  const awaySzn = parseRecordWinPct(detail?.game?.away?.record) != null;
+  const homeSzn = parseRecordWinPct(detail?.game?.home?.record) != null;
+  const season: FactorAvailability = {
+    available: awaySzn && homeSzn,
+    sourceFieldsPresent: awaySzn && homeSzn,
+    usedFallback: false,
+    reason: awaySzn && homeSzn ? undefined : "season record missing",
+  };
+
+  return { pitching, batting, modelForm, season };
+}
+
+// ---------------------------------------------------------------------------
+// Canonical component decomposition (additive)
+// ---------------------------------------------------------------------------
 
 export type ComponentEdges = {
-  /** Selected team's starting-pitching factor advantage (points), or null. */
-  pitching: number | null;
-  /** Selected team's lineup/offense factor advantage (points), or null. */
-  batting: number | null;
-  /**
-   * Residual model contribution not shown as its own column
-   * (= model's internal recent-form factor + season quality), points.
-   */
-  other: number;
-  /** Overall model edge for the pick (points) = pitching + batting + other. */
+  /** Selected team's Pitcher-Quality factor advantage (points). */
+  pitching: number;
+  /** Selected team's Matchup + Lineup-Offense advantage (points). */
+  batting: number;
+  /** Selected team's internal Recent-Form factor advantage (points). */
+  modelForm: number;
+  /** Selected team's Season-Quality factor advantage (points). */
+  season: number;
+  /** Canonical Model Edge for the pick (points) = the four groups summed. */
   overall: number;
 };
 
@@ -104,41 +206,102 @@ function sumWeightedDifference(factors: ModelFactor[], labels: readonly string[]
   }, 0);
 }
 
-/** True when a factor group has at least one real (present) factor. */
-function hasFactor(factors: ModelFactor[], labels: readonly string[]): boolean {
-  return labels.some((label) => factors.some((f) => f.label === label));
-}
-
 /**
- * Regroup a model result into displayed component edges, oriented so a POSITIVE
- * value favors the selected team. `weightedDifference` is (away − home) × weight,
- * so a home pick flips the sign. Pushes have no selected side and should not be
- * shown as component rows.
- *
- * Pitching/Batting return null only when the underlying model factors are
- * entirely absent (never coerced to 0). `other` is a residual so the additive
- * identity Pitching + Batting + Other = Model Edge always holds for the pick.
+ * Regroup a model result into the four canonical component edges, oriented so a
+ * POSITIVE value favors the selected team. `weightedDifference` is
+ * (away − home) × weight, so a home pick flips the sign. These four are the
+ * full factor decomposition and are additive: their sum is the canonical Model
+ * Edge for the pick. (Pushes have no selected side.)
  */
 export function getComponentEdges(edge: ModelEdgeResult): ComponentEdges {
   const orient = edge.pick === "home" ? -1 : 1;
-  const overall = orient * edge.factors.reduce((s, f) => s + f.weightedDifference, 0);
-
-  const pitching = hasFactor(edge.factors, COMPONENT_FACTORS.pitching)
-    ? orient * sumWeightedDifference(edge.factors, COMPONENT_FACTORS.pitching)
-    : null;
-  const batting = hasFactor(edge.factors, COMPONENT_FACTORS.batting)
-    ? orient * sumWeightedDifference(edge.factors, COMPONENT_FACTORS.batting)
-    : null;
-
-  // Residual = everything not surfaced as its own column. Uses 0 for a missing
-  // covered group so the identity still closes on the model's real total.
-  const other = overall - (pitching ?? 0) - (batting ?? 0);
-
-  return { pitching, batting, other, overall };
+  const pitching = orient * sumWeightedDifference(edge.factors, GROUP_FACTOR_LABELS.pitching);
+  const batting = orient * sumWeightedDifference(edge.factors, GROUP_FACTOR_LABELS.batting);
+  const modelForm = orient * sumWeightedDifference(edge.factors, GROUP_FACTOR_LABELS.modelForm);
+  const season = orient * sumWeightedDifference(edge.factors, GROUP_FACTOR_LABELS.season);
+  return { pitching, batting, modelForm, season, overall: pitching + batting + modelForm + season };
 }
 
 // ---------------------------------------------------------------------------
-// Form Edge — genuine recent-window record differential (season-free)
+// Displayed edge: canonical (complete) | adjusted (partial) | N/A (insufficient)
+// ---------------------------------------------------------------------------
+
+/** Minimum fraction of total canonical weight required to trust the edge. */
+export const MIN_WEIGHT_AVAILABLE = 0.70;
+/** Minimum number of the primary groups (pitching/batting/modelForm) required. */
+export const MIN_PRIMARY_GROUPS = 2;
+
+export type DisplayedEdge = {
+  /** Canonical Model Edge (points) — full model, always computable. */
+  canonical: number;
+  /** What the table shows: canonical if complete, adjusted if partial, else null. */
+  displayed: number | null;
+  /** True when `displayed` used renormalization over a subset of factors. */
+  adjusted: boolean;
+  /** Fraction of canonical weight available (0–1). */
+  weightAvailable: number;
+  /** Count of primary groups present. */
+  primaryGroupsPresent: number;
+  /** Passes the completeness gate. */
+  ok: boolean;
+  /** Per-group display values: null when the group is unavailable. */
+  components: Record<CanonicalGroup, number | null>;
+};
+
+/**
+ * Compute the displayed edge from the canonical decomposition + source
+ * availability.
+ *
+ *  • All four groups available → displayed === canonical exactly (no recompute).
+ *  • Some groups unavailable but the completeness gate passes → Adjusted Model
+ *    Edge: exclude unavailable groups and renormalize valid weights.
+ *        adjusted = Σ(available weightedContribution) / Σ(available weight)
+ *    which equals Σ rawDiffᵢ × (weightᵢ / availableWeight) since a stored
+ *    weightedDifference already equals rawDiffᵢ × weightᵢ.
+ *  • Below the gate → displayed = null (N/A). Unavailable factors are EXCLUDED,
+ *    never substituted with 0 / neutral / league average.
+ */
+export function computeDisplayedEdge(edge: ModelEdgeResult, availability: GroupAvailability): DisplayedEdge {
+  const c = getComponentEdges(edge);
+  const rawByGroup: Record<CanonicalGroup, number> = {
+    pitching: c.pitching,
+    batting: c.batting,
+    modelForm: c.modelForm,
+    season: c.season,
+  };
+
+  const groups = Object.keys(MODEL_GROUP_WEIGHTS) as CanonicalGroup[];
+  const present = Object.fromEntries(groups.map((g) => [g, availability[g].available])) as Record<CanonicalGroup, boolean>;
+
+  const components = Object.fromEntries(
+    groups.map((g) => [g, present[g] ? rawByGroup[g] : null]),
+  ) as Record<CanonicalGroup, number | null>;
+
+  const weightAvailable = groups.reduce((s, g) => s + (present[g] ? MODEL_GROUP_WEIGHTS[g] : 0), 0);
+  const primaryGroupsPresent = PRIMARY_GROUPS.filter((g) => present[g]).length;
+  const allPresent = groups.every((g) => present[g]);
+  const ok = primaryGroupsPresent >= MIN_PRIMARY_GROUPS && weightAvailable >= MIN_WEIGHT_AVAILABLE - 1e-9;
+
+  let displayed: number | null = null;
+  let adjusted = false;
+  if (ok) {
+    if (allPresent) {
+      // Guarantee the complete-row identity: displayed === canonical exactly.
+      displayed = c.overall;
+      adjusted = false;
+    } else {
+      const availWeight = groups.reduce((s, g) => s + (present[g] ? MODEL_GROUP_WEIGHTS[g] : 0), 0);
+      const availContrib = groups.reduce((s, g) => s + (present[g] ? rawByGroup[g] : 0), 0);
+      displayed = availWeight > 0 ? availContrib / availWeight : null;
+      adjusted = displayed != null;
+    }
+  }
+
+  return { canonical: c.overall, displayed, adjusted, weightAvailable, primaryGroupsPresent, ok, components };
+}
+
+// ---------------------------------------------------------------------------
+// Recent-record diagnostic (season-free; NOT a canonical factor)
 // ---------------------------------------------------------------------------
 
 /** Parse "W-L" → win fraction, or null when there are no games / it is invalid. */
@@ -153,10 +316,11 @@ export function parseRecordWinPct(record: string | null | undefined): number | n
 }
 
 /**
- * Recent-form edge (points) for the selected team = (pickWin% − oppWin%) over
- * the chosen window, scaled to the component-edge point range. Returns null if
- * either side's recent record is missing/unparseable for that window — the
- * table then shows N/A rather than a fabricated 0.
+ * Recent-record diagnostic (points) for the selected team =
+ * (pickWin% − oppWin%) over the chosen completed-game window, scaled to the
+ * component-point range. Returns null (→ N/A) if either side's record is
+ * missing/unparseable — never a fabricated 0. This is a season-free diagnostic
+ * and is NOT part of the canonical Model Edge.
  */
 export function getFormEdge(
   pickRecord: string | null | undefined,
@@ -185,6 +349,15 @@ export function getComponentBand(value: number): {
   return { key: "against", label: "Opp edge", color: "#f87171" };
 }
 
+/**
+ * Confidence index (50–82) for a given edge magnitude, mirroring the canonical
+ * model's own mapping so a complete row's grade matches the model, and an
+ * adjusted row's grade is derived consistently from its displayed edge.
+ */
+export function confidenceForEdgePoints(absPoints: number): number {
+  return Math.round(Math.min(82, 52 + (Math.abs(absPoints) / 5) * 4));
+}
+
 export function getEdgeGrade(confidence: number): {
   key: EdgeTierKey;
   label: string;
@@ -204,7 +377,8 @@ export const NA_LABEL = "N/A";
 
 /**
  * Shared null-safe signed-points formatter (e.g. "+4.2", "-1.1", "N/A").
- * Missing data is NEVER coerced to 0/Even/Neutral.
+ * A real measured zero renders "0.0"; only null/NaN render "N/A". Missing data
+ * is NEVER coerced to 0/Even/Neutral.
  */
 export function formatEdgePoints(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) return NA_LABEL;
@@ -250,131 +424,66 @@ export function noVigProbability(
 }
 
 // ---------------------------------------------------------------------------
-// Missing-data policy: weight renormalization + completeness gate
+// Weight renormalization (used by computeDisplayedEdge; exported for tests)
 // ---------------------------------------------------------------------------
 
 /**
- * Display-group weights (mirror the model's grouped factor weights, summing to
- * 1.0). Pitching = Pitcher Quality (.30); Batting = Matchup (.25) + Lineup (.20)
- * = .45; Form = Recent Form (.15); Season = Season Quality (.10).
- *
- * NOTE ON CANONICAL POLICY: the production model (computeModelEdge) neutral-
- * fills missing inputs (50 / 0.5 win%) and does NOT renormalize — it always
- * produces a value. This module does not override that for the Model Edge
- * number. Renormalization here powers the DISPLAY-LEVEL completeness gate and
- * confidence indicator only, so a too-sparse row can render Model Edge = N/A
- * instead of a neutral-fill guess.
- */
-export const MODEL_GROUP_WEIGHTS: Record<"pitching" | "batting" | "form" | "season", number> = {
-  pitching: 0.30,
-  batting: 0.45,
-  form: 0.15,
-  season: 0.10,
-};
-
-/**
  * Renormalize the weights of the groups that are present so they sum to 1.0,
- * preserving their relative proportions. Absent groups contribute nothing
- * (they are excluded, never treated as zero-valued measurements). Returns an
- * empty object when no group is present.
+ * preserving their relative proportions. Absent groups are EXCLUDED (never
+ * treated as zero-valued measurements). Returns {} when nothing is present.
  */
 export function renormalizeWeights(
-  present: Partial<Record<keyof typeof MODEL_GROUP_WEIGHTS, boolean>>,
-): Partial<Record<keyof typeof MODEL_GROUP_WEIGHTS, number>> {
-  const keys = (Object.keys(MODEL_GROUP_WEIGHTS) as Array<keyof typeof MODEL_GROUP_WEIGHTS>)
-    .filter((k) => present[k]);
+  present: Partial<Record<CanonicalGroup, boolean>>,
+): Partial<Record<CanonicalGroup, number>> {
+  const keys = (Object.keys(MODEL_GROUP_WEIGHTS) as CanonicalGroup[]).filter((k) => present[k]);
   const total = keys.reduce((s, k) => s + MODEL_GROUP_WEIGHTS[k], 0);
   if (total <= 0) return {};
-  const out: Partial<Record<keyof typeof MODEL_GROUP_WEIGHTS, number>> = {};
+  const out: Partial<Record<CanonicalGroup, number>> = {};
   for (const k of keys) out[k] = MODEL_GROUP_WEIGHTS[k] / total;
   return out;
 }
 
-export type CompletenessInput = {
-  hasIdentity: boolean; // teams + pick present
-  hasPitching: boolean;
-  hasBatting: boolean;
-  hasForm: boolean;
-  hasSeason: boolean;
-};
-
-export type Completeness = {
-  ok: boolean;
-  weightAvailable: number; // 0–1, fraction of total model weight present
-  primaryGroupsPresent: number; // of pitching/batting/form
-};
-
-/** Minimum fraction of total model weight required to trust the Model Edge. */
-export const MIN_WEIGHT_AVAILABLE = 0.70;
-/** Minimum number of the three primary component groups required. */
-export const MIN_PRIMARY_GROUPS = 2;
-
-/**
- * Deterministic completeness gate: core identity required, at least
- * MIN_PRIMARY_GROUPS of the three primary groups (pitching/batting/form)
- * present, and at least MIN_WEIGHT_AVAILABLE of total model weight available.
- * Fails closed → the caller renders Model Edge (and grade) as N/A.
- */
-export function computeCompleteness(input: CompletenessInput): Completeness {
-  const present = {
-    pitching: input.hasPitching,
-    batting: input.hasBatting,
-    form: input.hasForm,
-    season: input.hasSeason,
-  };
-  const weightAvailable = (Object.keys(MODEL_GROUP_WEIGHTS) as Array<keyof typeof MODEL_GROUP_WEIGHTS>)
-    .reduce((s, k) => s + (present[k] ? MODEL_GROUP_WEIGHTS[k] : 0), 0);
-  const primaryGroupsPresent = [input.hasPitching, input.hasBatting, input.hasForm].filter(Boolean).length;
-  const ok =
-    input.hasIdentity &&
-    primaryGroupsPresent >= MIN_PRIMARY_GROUPS &&
-    weightAvailable >= MIN_WEIGHT_AVAILABLE - 1e-9;
-  return { ok, weightAvailable, primaryGroupsPresent };
-}
-
 // ---------------------------------------------------------------------------
-// Primary reason (one concise, data-derived note; window-aware)
+// Primary reason (window-aware; canonical drivers kept distinct from record)
 // ---------------------------------------------------------------------------
 
 /**
- * Build a single concise reason for the lean. Only metrics that actually exist
- * can generate text — an N/A metric never produces a narrative. The recent-form
- * driver is labeled with the active window and never conflates season quality.
+ * Build one concise reason. Canonical model-driver reasons (pitching/batting/
+ * model form/season) are kept distinct from the recent-record diagnostic. Only
+ * available metrics can generate text; an N/A metric never produces a
+ * narrative, and a fallback-only value is not used.
  */
 export function buildPrimaryReason(args: {
   pitching: number | null;
   batting: number | null;
-  form: number | null;
+  modelForm: number | null;
+  season: number | null;
+  formEdge: number | null;
   formWindow: FormWindow;
   pickTeam: string;
   context?: string | null;
 }): string | null {
-  const { pitching, batting, form, formWindow, pickTeam, context } = args;
-  const candidates: Array<{ label: string; value: number; kind: "pitch" | "bat" | "form" }> = [];
-  if (pitching != null) candidates.push({ label: "Starter", value: pitching, kind: "pitch" });
-  if (batting != null) candidates.push({ label: "Lineup", value: batting, kind: "bat" });
-  if (form != null) candidates.push({ label: "Form", value: form, kind: "form" });
+  const { pitching, batting, modelForm, season, formEdge, formWindow, pickTeam, context } = args;
 
-  if (candidates.length === 0) return context ?? null;
+  const canonical: Array<{ value: number; text: string }> = [];
+  if (pitching != null) canonical.push({ value: pitching, text: "Starting pitching drives the model edge" });
+  if (batting != null) canonical.push({ value: batting, text: `Lineup matchup favors ${pickTeam}` });
+  if (modelForm != null) canonical.push({ value: modelForm, text: `Internal model form favors ${pickTeam}` });
+  if (season != null) canonical.push({ value: season, text: `Season quality supports ${pickTeam}` });
 
-  const strongest = candidates.reduce((best, c) => (Math.abs(c.value) > Math.abs(best.value) ? c : best));
-  if (Math.abs(strongest.value) < 1) return context ?? null;
+  // Strongest canonical driver that favors the pick.
+  const driver = canonical
+    .filter((c) => c.value >= 1)
+    .sort((a, b) => b.value - a.value)[0];
+  if (driver) return driver.text;
 
-  const windowLabel = FORM_WINDOW_LABELS[formWindow];
-  const positives = candidates.filter((c) => c.value > 0).sort((a, b) => b.value - a.value);
-
-  // Strongest signal favors the opponent but another positive carries the lean.
-  if (strongest.value < 0 && positives.length > 0) {
-    const carrier = positives[0];
-    if (carrier.kind === "form") return `Recent ${windowLabel} form offsets a weaker ${strongest.label.toLowerCase()}`;
-    return `${carrier.label} edge offsets weaker ${strongest.label.toLowerCase()}`;
+  // No strong canonical driver: fall back to the recent-record diagnostic,
+  // kept explicitly distinct from model-driver language.
+  if (formEdge != null && formEdge >= 1) {
+    return `Recent ${FORM_WINDOW_LABELS[formWindow]} record favors ${pickTeam}`;
   }
 
-  const driver = strongest.value > 0 ? strongest : positives[0];
-  if (!driver) return context ?? null;
-  if (driver.kind === "pitch") return "Starter advantage drives the lean";
-  if (driver.kind === "bat") return "Lineup edge drives the lean";
-  return `Recent ${windowLabel} form favors ${pickTeam}`;
+  return context ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -398,20 +507,26 @@ export type MlSocialRow = {
   fadeTeam: string;
   selectedAmerican: string | null;
 
-  /** Overall model edge (points), or null when completeness fails. */
+  /** Displayed edge (points): canonical if complete, adjusted if partial, else null. */
   modelEdgePoints: number | null;
-  /** Uncalibrated edge-strength index (50–82) that drives the grade. */
+  /** Canonical edge (points) for reference; null only if the pick is a push. */
+  canonicalEdgePoints: number | null;
+  /** True when `modelEdgePoints` is a renormalized adjusted edge. */
+  isAdjusted: boolean;
+  /** Confidence index (50–82) derived from the DISPLAYED edge (drives grade/color). */
   confidence: number;
-  /** Fraction of model weight available (0–1). */
+  /** Fraction of canonical weight available (0–1). */
   completeness: number;
 
+  /** Canonical additive drivers (null when the group's source data is unavailable). */
   pitchingEdge: number | null;
   battingEdge: number | null;
-  /** Genuine recent-window record edge for the ACTIVE window (points), or null. */
+  modelFormEdge: number | null;
+  seasonEdge: number | null;
+
+  /** Recent-record diagnostic for the ACTIVE window (points), or null. Not additive. */
   formEdge: number | null;
   formWindow: FormWindow;
-  /** Residual model contribution (season + internal recent form), points. */
-  otherEdge: number | null;
 
   marketImpliedProbability: number | null;
   noVigMarketProbability: number | null;
@@ -419,7 +534,7 @@ export type MlSocialRow = {
   polymarketYes: number | null;
   polymarketNo: number | null;
 
-  /** Grade label, or null when Model Edge is N/A. */
+  /** Grade label, or null when the displayed Model Edge is N/A. */
   grade: string | null;
   primaryReason: string | null;
 };
@@ -430,8 +545,8 @@ export type MlSocialRow = {
 
 /**
  * Deterministic ordering:
- *   1. Rows with a valid Model Edge before N/A rows.
- *   2. Model Edge (points) descending.
+ *   1. Rows with a valid displayed Model Edge (canonical OR adjusted) before N/A.
+ *   2. Displayed Model Edge (points) descending.
  *   3. confidence descending.
  *   4. selected team abbreviation ascending.
  *   5. gamePk ascending.

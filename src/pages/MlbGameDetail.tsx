@@ -34,15 +34,17 @@ import {
   americanToImpliedProbability,
   buildPrimaryReason,
   compareMlSocialRows,
-  computeCompleteness,
+  computeDisplayedEdge,
+  confidenceForEdgePoints,
   DEFAULT_FORM_WINDOW,
   formatEdgePoints,
   formatMarketPct,
   FORM_WINDOW_LABELS,
+  FORM_WINDOW_LONG,
   FORM_WINDOW_SOURCES,
   getComponentBand,
-  getComponentEdges,
   getEdgeGrade,
+  getFactorAvailability,
   getFormEdge,
   noVigProbability,
   type FormWindow,
@@ -2511,9 +2513,10 @@ function SocialTableML({
   mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
   polymarketGames?: import("@/lib/mlb/polymarketMoneylines").MoneylineGame[];
 }) {
-  // Recent-form window. Default 2W → deterministic social screenshot (the X
-  // export captures this default). The selector affects ONLY Form Edge and the
-  // recent-form reason text — not pitching, batting, season, or market data.
+  // Recent-record window. Default L5 → deterministic social screenshot (the X
+  // export captures this default). The selector affects ONLY the recent-record
+  // diagnostic and its reason text — never pitching, batting, model form,
+  // season, market odds, or the Model Edge.
   const [formWindow, setFormWindow] = useState<FormWindow>(DEFAULT_FORM_WINDOW);
   const { getTeam: getTeamWrc } = useTeamWrc();
 
@@ -2528,20 +2531,25 @@ function SocialTableML({
       const pickAbbr = pickIsAway ? game.away.abbreviation : game.home.abbreviation;
       const fadeAbbr = pickIsAway ? game.home.abbreviation : game.away.abbreviation;
 
-      // Pitching = Pitcher Quality; Batting = Matchup + Lineup Offense;
-      // Other = residual (model's internal recent form + season quality), so
-      // Pitching + Batting + Other = Model Edge. See mlbSocialEdge.ts.
-      const components = getComponentEdges(edge);
+      // Factor availability from SOURCE fields (not the neutral-filled result),
+      // then the displayed edge: canonical when complete, Adjusted Model Edge
+      // when some factors are genuinely unavailable, N/A below the gate.
+      const availability = getFactorAvailability(detail);
+      const display = computeDisplayedEdge(edge, availability);
+      const pitchingEdge = display.components.pitching;
+      const battingEdge = display.components.batting;
+      const modelFormEdge = display.components.modelForm;
+      const seasonEdge = display.components.season;
 
-      // Form Edge = genuine, season-FREE recent-record differential for the
-      // active window (2W = last 5 games from game context; 4W = last 14 games
-      // from the wRC+ dataset). Null → N/A, never fabricated.
+      // Recent-record diagnostic (season-free). L5 = last 5 completed games
+      // (game context); L14 = last 14 completed games (wRC+ dataset). These are
+      // game-count windows, NOT calendar weeks. Null → N/A, never fabricated.
       const pickCtx = pickIsAway ? detail.awayContext : detail.homeContext;
       const oppCtx = pickIsAway ? detail.homeContext : detail.awayContext;
-      const pickRecord = formWindow === "2w"
+      const pickRecord = formWindow === "l5"
         ? pickCtx?.lastFiveRecord ?? null
         : getTeamWrc(pickAbbr)?.last14Record ?? null;
-      const oppRecord = formWindow === "2w"
+      const oppRecord = formWindow === "l5"
         ? oppCtx?.lastFiveRecord ?? null
         : getTeamWrc(fadeAbbr)?.last14Record ?? null;
       const formEdge = getFormEdge(pickRecord, oppRecord);
@@ -2567,19 +2575,15 @@ function SocialTableML({
         noVigProbability(marketImplied, fadeImplied) ??
         noVigProbability(pmYes, pmFadeSide?.yesPrice ?? null);
 
-      // Display-level completeness gate. The canonical model neutral-fills
-      // internally; here we render Model Edge = N/A when the underlying detail
-      // is too sparse to trust (see computeCompleteness).
-      const hasPitching = detail.starters?.away?.era != null || detail.starters?.home?.era != null ||
-        detail.starters?.away?.strikeOuts != null || detail.starters?.home?.strikeOuts != null;
-      const hasBatting = detail.lineupSummaries?.away?.ops != null || detail.lineupSummaries?.home?.ops != null;
-      const hasSeasonForm = !!(pickCtx?.lastFiveRecord && oppCtx?.lastFiveRecord);
-      const hasSeason = !!(game.away.record && game.home.record);
-      const completeness = computeCompleteness({
-        hasIdentity: true, hasPitching, hasBatting, hasForm: hasSeasonForm, hasSeason,
-      });
+      // Grade + color follow the DISPLAYED edge (canonical or adjusted), so a
+      // row's grade always matches the number shown. N/A rows carry no grade.
+      const displayedEdge = display.displayed;
+      const confidence = displayedEdge != null
+        ? confidenceForEdgePoints(displayedEdge)
+        : edge.confidence;
+      const grade = displayedEdge != null ? getEdgeGrade(confidence).label : null;
 
-      // Pitcher names + regression context for the primary-reason note.
+      // Pitcher names + regression context for the reason fallback only.
       const awayPitcherName = game.away.probablePitcher?.fullName || detail?.starters.away.name || null;
       const homePitcherName = game.home.probablePitcher?.fullName || detail?.starters.home.name || null;
       const awayReg = pitcherRegressionData.find((p) => p.name === awayPitcherName);
@@ -2589,9 +2593,6 @@ function SocialTableML({
       let context: string | null = null;
       if (fadePitcherReg && fadePitcherReg.regressionScore < -2) context = `${fadeAbbr} starter overperforming`;
       else if (pickPitcherReg && pickPitcherReg.regressionScore > 2) context = `${pickAbbr} starter undervalued`;
-
-      const pitchingEdge = hasPitching ? components.pitching : null;
-      const battingEdge = hasBatting ? components.batting : null;
 
       return {
         gamePk: game.gamePk,
@@ -2603,33 +2604,40 @@ function SocialTableML({
         selectedTeam: pickAbbr,
         fadeTeam: fadeAbbr,
         selectedAmerican: pickAmerican,
-        modelEdgePoints: completeness.ok ? components.overall : null,
-        confidence: edge.confidence,
-        completeness: completeness.weightAvailable,
+        modelEdgePoints: displayedEdge,
+        canonicalEdgePoints: display.canonical,
+        isAdjusted: display.adjusted,
+        confidence,
+        completeness: display.weightAvailable,
         pitchingEdge,
         battingEdge,
+        modelFormEdge,
+        seasonEdge,
         formEdge,
         formWindow,
-        otherEdge: completeness.ok ? components.other : null,
         marketImpliedProbability: marketImplied,
         noVigMarketProbability: noVig,
         polymarketYes: pmYes,
         polymarketNo: pmNo,
-        grade: completeness.ok ? getEdgeGrade(edge.confidence).label : null,
-        primaryReason: buildPrimaryReason({
-          pitching: pitchingEdge, batting: battingEdge, form: formEdge, formWindow, pickTeam: pickAbbr, context,
-        }),
+        grade,
+        primaryReason: display.ok
+          ? buildPrimaryReason({
+              pitching: pitchingEdge, batting: battingEdge, modelForm: modelFormEdge,
+              season: seasonEdge, formEdge, formWindow, pickTeam: pickAbbr, context,
+            })
+          : null,
       };
     })
     .filter((r): r is MlSocialRow => r !== null)
-    // Deterministic: valid rows first, then Model Edge desc → confidence →
+    // Deterministic: valid rows first, then displayed edge desc → confidence →
     // team → gamePk; N/A rows sort last. See compareMlSocialRows.
     .sort(compareMlSocialRows)
     .slice(0, 8);
 
   const MEDALS = ["🥇", "🥈", "🥉"];
   const ACCENTS = ["#f97316", "#fb923c", "#fbbf24", "#facc15", "#a3e635", "#34d399", "#38bdf8", "#818cf8"];
-  const DESKTOP_COLUMNS = "22px minmax(132px,1fr) 50px 50px 50px 62px minmax(94px,auto)";
+  // # | matchup | pitch | bat | recent-form | model-context(form+season) | model-edge | pick
+  const DESKTOP_COLUMNS = "20px minmax(116px,1fr) 44px 44px 56px 70px 64px minmax(92px,auto)";
 
   // Model Edge value color. When the edge is present it follows the SAME
   // confidence tier that drives the grade (so number and grade never disagree);
@@ -2658,16 +2666,44 @@ function SocialTableML({
 
   const formLabel = FORM_WINDOW_LABELS[formWindow];
 
-  // Recent-form window toggle. Affects ONLY Form Edge + recent-form reasons.
+  // Grouped "Model Context" cell: the two lower-weight canonical drivers
+  // (internal Model Form + Season). Part of the additive identity; kept
+  // visually distinct from the separate recent-record diagnostic.
+  function ModelContextCell({ modelForm, season }: { modelForm: number | null; season: number | null }) {
+    const line = (label: string, value: number | null) => {
+      const color = value != null ? getComponentBand(value).color : "#64748b";
+      return (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 4, lineHeight: 1.2 }}>
+          <span style={{ color: "#64748b", fontSize: 8, fontWeight: 700 }}>{label}</span>
+          <span style={{ color, fontSize: 10, fontWeight: 800 }}>{formatEdgePoints(value)}</span>
+        </div>
+      );
+    };
+    return (
+      <div
+        style={{ minWidth: 0, borderLeft: "1px solid #14243d", borderRight: "1px solid #14243d", padding: "0 5px" }}
+        title="Model Form = JKB model internal recent-form factor; Season = season-long quality factor"
+      >
+        {line("Form", modelForm)}
+        {line("Seas", season)}
+      </div>
+    );
+  }
+
+  // Recent-record window toggle (L5 = last 5 completed games; L14 = last 14).
+  // Affects ONLY the recent-record diagnostic + its reason text.
   function WindowToggle() {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        <span style={{ color: "#64748b", fontSize: 9, fontWeight: 700 }}>FORM</span>
-        {(["2w", "4w"] as FormWindow[]).map((w) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }} role="group" aria-label="Recent record window">
+        <span style={{ color: "#64748b", fontSize: 9, fontWeight: 700 }}>RECENT</span>
+        {(["l5", "l14"] as FormWindow[]).map((w) => (
           <button
             key={w}
             type="button"
             onClick={() => setFormWindow(w)}
+            aria-pressed={formWindow === w}
+            aria-label={FORM_WINDOW_LONG[w]}
+            title={FORM_WINDOW_LONG[w]}
             style={{
               border: "1px solid #1e3a5f",
               background: formWindow === w ? "#3b82f6" : "transparent",
@@ -2728,7 +2764,7 @@ function SocialTableML({
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 900, fontSize: 16, color: "#fff", letterSpacing: "-.3px", whiteSpace: "nowrap" }}>🏆 MLB ML EDGES</div>
           <div style={{ color: "#38bdf8", fontSize: 11, marginTop: 2 }}>
-            Pitching · Batting · Recent Form drivers — sorted by Model Edge
+            Model drivers + recent record — sorted by Model Edge
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginLeft: "auto" }}>
@@ -2745,7 +2781,8 @@ function SocialTableML({
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700 }}>MATCHUP</div>
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>PITCH</div>
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>BAT</div>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>FORM {formLabel}</div>
+          <div style={{ color: "#38bdf8", fontSize: 9, fontWeight: 700, textAlign: "center" }}>RECENT {formLabel}</div>
+          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL CTX</div>
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL EDGE</div>
           <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "right" }}>PICK · GRADE</div>
         </div>
@@ -2763,11 +2800,14 @@ function SocialTableML({
               data-ml-confidence={row.confidence}
               data-ml-differential={row.modelEdgePoints != null ? Math.round(row.modelEdgePoints) : ""}
               data-ml-model-edge={row.modelEdgePoints != null ? row.modelEdgePoints.toFixed(2) : ""}
+              data-ml-canonical={row.canonicalEdgePoints != null ? row.canonicalEdgePoints.toFixed(2) : ""}
+              data-ml-adjusted={row.isAdjusted ? "1" : "0"}
               data-ml-pitching={row.pitchingEdge != null ? row.pitchingEdge.toFixed(2) : ""}
               data-ml-batting={row.battingEdge != null ? row.battingEdge.toFixed(2) : ""}
+              data-ml-model-form={row.modelFormEdge != null ? row.modelFormEdge.toFixed(2) : ""}
+              data-ml-season={row.seasonEdge != null ? row.seasonEdge.toFixed(2) : ""}
               data-ml-form={row.formEdge != null ? row.formEdge.toFixed(2) : ""}
               data-ml-form-window={row.formWindow}
-              data-ml-other={row.otherEdge != null ? row.otherEdge.toFixed(2) : ""}
               data-ml-grade={row.grade ?? ""}
               data-ml-novig={row.noVigMarketProbability ?? ""}
               data-ml-pick-american={row.selectedAmerican ?? ""}
@@ -2806,18 +2846,23 @@ function SocialTableML({
                 </div>
               </div>
 
-              {/* Component edges */}
+              {/* Canonical additive drivers */}
               <ComponentCell label="PITCH" value={row.pitchingEdge} />
               <ComponentCell label="BAT" value={row.battingEdge} />
-              <ComponentCell label={`FORM ${formLabel}`} value={row.formEdge} />
 
-              {/* Model Edge (points) + Other residual */}
+              {/* Recent-record diagnostic (separate from the additive identity) */}
+              <ComponentCell label={`REC ${formLabel}`} value={row.formEdge} />
+
+              {/* Model Context: internal Model Form + Season (additive) */}
+              <ModelContextCell modelForm={row.modelFormEdge} season={row.seasonEdge} />
+
+              {/* Model Edge (points) — canonical or Adjusted */}
               <div style={{ textAlign: "center", minWidth: 0 }}>
                 <div style={{ color: edgeValueColor(row), fontSize: 16, fontWeight: 900, lineHeight: 1.05 }}>
                   {formatEdgePoints(row.modelEdgePoints)}
                 </div>
-                <div style={{ color: "#475569", fontSize: 7.5, fontWeight: 700 }}>
-                  {row.otherEdge != null ? `pts · ${formatEdgePoints(row.otherEdge)} other` : "pts"}
+                <div style={{ color: row.isAdjusted ? "#fbbf24" : "#475569", fontSize: 7.5, fontWeight: 700, whiteSpace: "nowrap" }}>
+                  {row.modelEdgePoints == null ? "N/A" : row.isAdjusted ? "adj pts" : "pts"}
                 </div>
               </div>
 
@@ -2840,7 +2885,7 @@ function SocialTableML({
                     </span>
                   )}
                 </div>
-                {row.grade && (
+                {row.grade ? (
                   <span style={{
                     background: getEdgeGrade(row.confidence).bg,
                     color: getEdgeGrade(row.confidence).text,
@@ -2852,6 +2897,11 @@ function SocialTableML({
                   }}>
                     {row.grade}
                   </span>
+                ) : (
+                  <span style={{ color: "#64748b", fontSize: 10, fontWeight: 700 }}>No grade (N/A)</span>
+                )}
+                {row.isAdjusted && (
+                  <span style={{ color: "#fbbf24", fontSize: 8, fontWeight: 700, whiteSpace: "nowrap" }} title="Adjusted for partial data">Adjusted · partial data</span>
                 )}
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ color: "#94a3b8", fontSize: 9, fontWeight: 700, whiteSpace: "nowrap" }}>Mkt {noVig}</span>
@@ -2922,20 +2972,32 @@ function SocialTableML({
                     </span>
                   )}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ color: edgeValueColor(row), fontSize: 16, fontWeight: 900 }}>{formatEdgePoints(row.modelEdgePoints)}</span>
-                  {row.grade && (
-                    <span style={{ background: getEdgeGrade(row.confidence).bg, color: getEdgeGrade(row.confidence).text, borderRadius: 4, padding: "2px 7px", fontWeight: 700, fontSize: 10, whiteSpace: "nowrap" }}>{row.grade}</span>
-                  )}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: edgeValueColor(row), fontSize: 16, fontWeight: 900 }}>{formatEdgePoints(row.modelEdgePoints)}</span>
+                    {row.grade ? (
+                      <span style={{ background: getEdgeGrade(row.confidence).bg, color: getEdgeGrade(row.confidence).text, borderRadius: 4, padding: "2px 7px", fontWeight: 700, fontSize: 10, whiteSpace: "nowrap" }}>{row.grade}</span>
+                    ) : (
+                      <span style={{ color: "#64748b", fontSize: 10, fontWeight: 700 }}>No grade (N/A)</span>
+                    )}
+                  </div>
+                  {row.isAdjusted && <span style={{ color: "#fbbf24", fontSize: 9, fontWeight: 700 }}>Adjusted · partial data</span>}
                 </div>
               </div>
 
-              {/* Component edges */}
+              {/* Model Drivers (canonical, additive) */}
               <div style={{ marginTop: 8, background: "#060d1a", borderRadius: 6, padding: "4px 10px" }}>
+                <div style={{ color: "#475569", fontSize: 9, fontWeight: 800, letterSpacing: ".05em", marginBottom: 1 }}>MODEL DRIVERS</div>
                 {compRow("Pitching", row.pitchingEdge)}
                 {compRow("Batting", row.battingEdge)}
-                {compRow(`Form (${formLabel})`, row.formEdge)}
-                {row.otherEdge != null && compRow("Other (season + form)", row.otherEdge)}
+                {compRow("Model Form", row.modelFormEdge)}
+                {compRow("Season", row.seasonEdge)}
+              </div>
+
+              {/* Recent Record (separate diagnostic) */}
+              <div style={{ marginTop: 6, background: "#060d1a", borderRadius: 6, padding: "4px 10px" }}>
+                <div style={{ color: "#38bdf8", fontSize: 9, fontWeight: 800, letterSpacing: ".05em", marginBottom: 1 }}>RECENT RECORD</div>
+                {compRow(`${formLabel} form`, row.formEdge)}
               </div>
 
               {/* Secondary: reason + market */}
@@ -2960,7 +3022,7 @@ function SocialTableML({
       {/* Footer */}
       <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 9.5, color: "#475569", lineHeight: 1.35 }}>
-          Model Edge (pts) = full factor model, not a win-probability edge · Pitch + Bat + Other = Model Edge (Other = season quality + internal recent form) · Form {formLabel} = {FORM_WINDOW_SOURCES[formWindow]} record, a recent-only diagnostic not summed into Model Edge
+          Model Edge (pts) = full factor model, not a win-probability edge · Pitch + Bat + Model Ctx (Model Form + Season) = Model Edge · Recent {formLabel} = {FORM_WINDOW_SOURCES[formWindow]} record, a season-free diagnostic NOT summed into Model Edge · Adjusted = one or more factors missing, valid weights renormalized · N/A = data unavailable
           {hasPoly ? " · Mkt = no-vig implied · Poly = Polymarket" : " · Mkt = no-vig implied"}
         </span>
         <span style={{ fontSize: 10, color: "#3b82f6", fontWeight: 700, flexShrink: 0 }}>joeknowsball.com</span>

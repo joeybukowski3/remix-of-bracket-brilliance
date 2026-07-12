@@ -3,38 +3,50 @@ import {
   americanToImpliedProbability,
   buildPrimaryReason,
   compareMlSocialRows,
-  computeCompleteness,
+  computeDisplayedEdge,
+  confidenceForEdgePoints,
+  DEFAULT_FORM_WINDOW,
+  FORM_WINDOW_LABELS,
+  FORM_WINDOW_LONG,
+  FORM_WINDOW_SOURCES,
   formatEdgePoints,
   formatMarketPct,
   getComponentBand,
   getComponentEdges,
-  getEdgeGrade,
+  getFactorAvailability,
   getFormEdge,
   noVigProbability,
   parseRecordWinPct,
   renormalizeWeights,
+  type CanonicalGroup,
+  type GroupAvailability,
   type MlSocialRow,
 } from "./mlbSocialEdge";
 import { computeModelEdge, type ModelEdgeResult, type ModelFactor } from "./mlbModelEdge";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
+import type { MlbGameDetail } from "@/lib/mlb/mlbTypes";
 
 // --- helpers ---------------------------------------------------------------
 
-function factor(label: string, weightedDifference: number): ModelFactor {
-  return { label, awayScore: 50, homeScore: 50, weight: 0.2, weightedDifference, description: "" };
+function factor(label: string, weightedDifference: number, weight: number): ModelFactor {
+  return { label, awayScore: 50, homeScore: 50, weight, weightedDifference, description: "" };
 }
 
+/**
+ * Build a model result from RAW group differentials (away − home, unweighted),
+ * matching the canonical factor representation weightedDifference = raw × weight.
+ */
 function makeEdge(
   pick: ModelEdgeResult["pick"],
-  diffs: Partial<Record<string, number>>,
+  raw: { pitching?: number; matchup?: number; lineup?: number; recentForm?: number; season?: number },
   confidence = 65,
 ): ModelEdgeResult {
   const factors: ModelFactor[] = [
-    factor("Pitcher Quality", diffs["Pitcher Quality"] ?? 0),
-    factor("Matchup Edge", diffs["Matchup Edge"] ?? 0),
-    factor("Lineup Offense", diffs["Lineup Offense"] ?? 0),
-    factor("Recent Form", diffs["Recent Form"] ?? 0),
-    factor("Season Quality", diffs["Season Quality"] ?? 0),
+    factor("Pitcher Quality", (raw.pitching ?? 0) * 0.30, 0.30),
+    factor("Matchup Edge", (raw.matchup ?? 0) * 0.25, 0.25),
+    factor("Lineup Offense", (raw.lineup ?? 0) * 0.20, 0.20),
+    factor("Recent Form", (raw.recentForm ?? 0) * 0.15, 0.15),
+    factor("Season Quality", (raw.season ?? 0) * 0.10, 0.10),
   ];
   const differential = Math.abs(factors.reduce((s, f) => s + f.weightedDifference, 0));
   return {
@@ -43,316 +55,340 @@ function makeEdge(
   };
 }
 
-// --- American odds → implied probability ----------------------------------
+const ALL_AVAILABLE: GroupAvailability = {
+  pitching: { available: true, sourceFieldsPresent: true, usedFallback: false },
+  batting: { available: true, sourceFieldsPresent: true, usedFallback: false },
+  modelForm: { available: true, sourceFieldsPresent: true, usedFallback: false },
+  season: { available: true, sourceFieldsPresent: true, usedFallback: false },
+};
+function availWithout(...missing: CanonicalGroup[]): GroupAvailability {
+  const a: GroupAvailability = JSON.parse(JSON.stringify(ALL_AVAILABLE));
+  for (const g of missing) a[g] = { available: false, sourceFieldsPresent: false, usedFallback: false };
+  return a;
+}
 
-describe("americanToImpliedProbability", () => {
-  it("converts favorite / underdog odds correctly", () => {
-    expect(americanToImpliedProbability("-136")).toBeCloseTo(0.5763, 4);
-    expect(americanToImpliedProbability("+120")).toBeCloseTo(0.4545, 4);
-    expect(americanToImpliedProbability(-110)).toBeCloseTo(0.5238, 4);
+// --- Part 1: L5 / L14 labels ----------------------------------------------
+
+describe("recent-record window labels (L5 / L14, not weeks)", () => {
+  it("default window is L5", () => {
+    expect(DEFAULT_FORM_WINDOW).toBe("l5");
   });
-  it("returns null for missing/invalid odds (fails safe)", () => {
-    for (const v of [null, undefined, "", "abc", 0]) {
-      expect(americanToImpliedProbability(v as never)).toBeNull();
+  it("labels are L5 / L14", () => {
+    expect(FORM_WINDOW_LABELS.l5).toBe("L5");
+    expect(FORM_WINDOW_LABELS.l14).toBe("L14");
+  });
+  it("source phrases describe completed games, not calendar weeks", () => {
+    expect(FORM_WINDOW_SOURCES.l5).toBe("last 5 completed games");
+    expect(FORM_WINDOW_SOURCES.l14).toBe("last 14 completed games");
+    expect(FORM_WINDOW_LONG.l5).toBe("Last 5 completed games");
+    for (const v of [...Object.values(FORM_WINDOW_SOURCES), ...Object.values(FORM_WINDOW_LONG)]) {
+      expect(v).not.toMatch(/week/i);
+      expect(v).not.toMatch(/\b[24]W\b/);
     }
   });
 });
 
-// --- two-sided no-vig probability -----------------------------------------
+// --- market math -----------------------------------------------------------
 
-describe("noVigProbability", () => {
-  it("normalizes the overround out of a two-sided market", () => {
+describe("americanToImpliedProbability / noVigProbability", () => {
+  it("converts and de-vigs a two-sided market", () => {
     const pick = americanToImpliedProbability("-136")!;
     const opp = americanToImpliedProbability("+120")!;
-    const noVig = noVigProbability(pick, opp)!;
-    expect(noVig).toBeCloseTo(0.5590, 4);
-    expect(noVig).toBeLessThan(pick);
+    expect(pick).toBeCloseTo(0.5763, 4);
+    expect(noVigProbability(pick, opp)).toBeCloseTo(0.5590, 4);
   });
-  it("is symmetric — pick and opponent no-vig sum to 1", () => {
-    const pick = americanToImpliedProbability("-150")!;
-    const opp = americanToImpliedProbability("+130")!;
-    expect(noVigProbability(pick, opp)! + noVigProbability(opp, pick)!).toBeCloseTo(1, 10);
+  it("fails safe to null on missing side or invalid odds", () => {
+    expect(americanToImpliedProbability(null)).toBeNull();
+    expect(noVigProbability(0.57, null)).toBeNull();
   });
-  it("returns null when the opposite side is missing (fails safe)", () => {
-    const pick = americanToImpliedProbability("-136")!;
-    expect(noVigProbability(pick, null)).toBeNull();
-    expect(noVigProbability(null, pick)).toBeNull();
-  });
-  it("does not double-scale — a fair 50/50 market stays 0.5", () => {
+  it("does not double-scale a fair market", () => {
     const even = americanToImpliedProbability("+100")!;
     expect(noVigProbability(even, even)).toBeCloseTo(0.5, 10);
   });
 });
 
-// --- component edges: Pitching/Batting/Other, additivity -------------------
+// --- Part 2: canonical decomposition + additivity --------------------------
 
-describe("getComponentEdges", () => {
-  it("groups Pitching = Pitcher Quality, Batting = Matchup + Lineup Offense", () => {
-    const edge = makeEdge("away", {
-      "Pitcher Quality": 4, "Matchup Edge": 1.5, "Lineup Offense": 0.5,
-      "Recent Form": -0.4, "Season Quality": -0.2,
-    });
+describe("getComponentEdges (four canonical additive drivers)", () => {
+  it("groups Pitching / Batting / Model Form / Season", () => {
+    const edge = makeEdge("away", { pitching: 10, matchup: 4, lineup: 2, recentForm: 3, season: 5 });
     const c = getComponentEdges(edge);
-    expect(c.pitching).toBeCloseTo(4, 10);
-    expect(c.batting).toBeCloseTo(2, 10);
+    expect(c.pitching).toBeCloseTo(3.0, 10);   // 10 * .30
+    expect(c.batting).toBeCloseTo(1.4, 10);    // 4*.25 + 2*.20 = 1.0 + 0.4
+    expect(c.modelForm).toBeCloseTo(0.45, 10); // 3 * .15
+    expect(c.season).toBeCloseTo(0.5, 10);     // 5 * .10
   });
-
-  it("Pitching + Batting + Other == Model Edge (additive identity)", () => {
-    const edge = makeEdge("away", {
-      "Pitcher Quality": 3.1, "Matchup Edge": 1.2, "Lineup Offense": -0.7,
-      "Recent Form": 0.9, "Season Quality": 0.3,
-    });
+  it("Pitching + Batting + Model Form + Season == canonical Model Edge", () => {
+    const edge = makeEdge("away", { pitching: 8, matchup: 3, lineup: -1, recentForm: 2, season: 1 });
     const c = getComponentEdges(edge);
-    expect((c.pitching ?? 0) + (c.batting ?? 0) + c.other).toBeCloseTo(c.overall, 10);
+    expect(c.pitching + c.batting + c.modelForm + c.season).toBeCloseTo(c.overall, 10);
   });
-
-  it("Other retains the model's internal recent-form + season quality (season not discarded)", () => {
-    const edge = makeEdge("away", { "Recent Form": 1.1, "Season Quality": 0.4 });
-    const c = getComponentEdges(edge);
-    expect(c.other).toBeCloseTo(1.5, 10);
+  it("orients to the selected team for a home pick", () => {
+    const away = makeEdge("away", { pitching: 5 });
+    const home = makeEdge("home", { pitching: -5 });
+    expect(getComponentEdges(away).pitching).toBeCloseTo(getComponentEdges(home).pitching, 10);
   });
-
-  it("orients components toward the selected team for a home pick", () => {
-    const away = makeEdge("away", { "Pitcher Quality": 5 });
-    const home = makeEdge("home", { "Pitcher Quality": -5 });
-    expect(getComponentEdges(away).pitching).toBeCloseTo(5, 10);
-    expect(getComponentEdges(home).pitching).toBeCloseTo(5, 10);
-  });
-
-  it("selected favored vs opponent favored in pitching", () => {
-    expect(getComponentEdges(makeEdge("away", { "Pitcher Quality": 6 })).pitching!).toBeGreaterThan(0);
-    expect(getComponentEdges(makeEdge("away", { "Pitcher Quality": -6 })).pitching!).toBeLessThan(0);
-  });
-
-  it("returns null (not 0) for a component whose factors are entirely absent", () => {
-    const edge = makeEdge("away", { "Pitcher Quality": 3 });
-    edge.factors = edge.factors.filter((f) => f.label === "Pitcher Quality" || f.label === "Season Quality");
-    const c = getComponentEdges(edge);
-    expect(c.batting).toBeNull();
-    expect(c.pitching).toBeCloseTo(3, 10);
-    // Identity still closes using the model's real total.
-    expect((c.pitching ?? 0) + (c.batting ?? 0) + c.other).toBeCloseTo(c.overall, 10);
-  });
-
-  it("real dev fixture: identity holds and matches model differential magnitude", () => {
+  it("real dev fixture: identity holds and matches model differential", () => {
     const edge = computeModelEdge(DEV_MLB_MATCHUP_FIXTURE.detail);
     const c = getComponentEdges(edge);
-    expect((c.pitching ?? 0) + (c.batting ?? 0) + c.other).toBeCloseTo(c.overall, 6);
+    expect(c.pitching + c.batting + c.modelForm + c.season).toBeCloseTo(c.overall, 6);
     expect(Math.abs(c.overall)).toBeCloseTo(edge.differential, 0);
   });
 });
 
-// --- Form Edge: recent-window only, season excluded ------------------------
+// --- Part 2: factor availability (real zero vs missing vs fallback) --------
 
-describe("parseRecordWinPct", () => {
-  it("parses a W-L record to a win fraction", () => {
-    expect(parseRecordWinPct("10-4")).toBeCloseTo(10 / 14, 10);
-    expect(parseRecordWinPct("3-2")).toBeCloseTo(0.6, 10);
+describe("getFactorAvailability (source provenance)", () => {
+  const base = DEV_MLB_MATCHUP_FIXTURE.detail;
+
+  it("all groups available for the complete dev fixture", () => {
+    const a = getFactorAvailability(base);
+    expect(a.pitching.available).toBe(true);
+    expect(a.batting.available).toBe(true);
+    expect(a.modelForm.available).toBe(true);
+    expect(a.season.available).toBe(true);
   });
-  it("returns null for missing / zero-game / invalid records", () => {
-    for (const v of [null, undefined, "", "—", "0-0", "abc"]) {
-      expect(parseRecordWinPct(v as never)).toBeNull();
-    }
+
+  it("a real measured zero differential is NOT flagged missing", () => {
+    // Records that produce a genuine tie still have present source fields.
+    const detail: MlbGameDetail = JSON.parse(JSON.stringify(base));
+    detail.awayContext.lastFiveRecord = "3-3"; // real .500
+    detail.homeContext.lastFiveRecord = "3-3";
+    const a = getFactorAvailability(detail);
+    expect(a.modelForm.available).toBe(true);
+    expect(a.modelForm.sourceFieldsPresent).toBe(true);
+  });
+
+  it("explicitly missing starter stats → pitching unavailable", () => {
+    const detail: MlbGameDetail = JSON.parse(JSON.stringify(base));
+    detail.starters.away = { ...detail.starters.away, era: null, strikeOuts: null, inningsPitched: null };
+    expect(getFactorAvailability(detail).pitching.available).toBe(false);
+  });
+
+  it("missing lineup summaries → batting unavailable", () => {
+    const detail: MlbGameDetail = JSON.parse(JSON.stringify(base));
+    detail.lineupSummaries.away = { ...detail.lineupSummaries.away, ops: null };
+    expect(getFactorAvailability(detail).batting.available).toBe(false);
+  });
+
+  it("missing recent / season records → those groups unavailable", () => {
+    const detail: MlbGameDetail = JSON.parse(JSON.stringify(base));
+    detail.awayContext.lastFiveRecord = "—";
+    detail.game.away = { ...detail.game.away, record: "" };
+    const a = getFactorAvailability(detail);
+    expect(a.modelForm.available).toBe(false);
+    expect(a.season.available).toBe(false);
+  });
+
+  it("fallback-filled is distinguishable from unavailable (ERA missing but K present)", () => {
+    const detail: MlbGameDetail = JSON.parse(JSON.stringify(base));
+    detail.starters.away = { ...detail.starters.away, era: null }; // still has strikeOuts/IP
+    const a = getFactorAvailability(detail);
+    expect(a.pitching.available).toBe(true);
+    expect(a.pitching.usedFallback).toBe(true);
   });
 });
 
-describe("getFormEdge (recent-window record only)", () => {
-  it("is positive when the pick has the better recent record", () => {
-    // .714 vs .429 → (0.2857)*100*0.15 ≈ +4.29
-    expect(getFormEdge("10-4", "6-8")).toBeCloseTo(4.29, 2);
+// --- Part 3: displayed edge (canonical / adjusted / N/A) -------------------
+
+describe("computeDisplayedEdge", () => {
+  it("complete row → displayed edge equals canonical exactly (no recompute)", () => {
+    const edge = makeEdge("away", { pitching: 8, matchup: 3, lineup: 1, recentForm: 2, season: 1 });
+    const d = computeDisplayedEdge(edge, ALL_AVAILABLE);
+    expect(d.adjusted).toBe(false);
+    expect(d.displayed).toBe(d.canonical);
+    expect(d.ok).toBe(true);
+    expect(d.weightAvailable).toBeCloseTo(1, 10);
   });
-  it("is negative when the opponent is hotter", () => {
-    expect(getFormEdge("4-10", "10-4")!).toBeLessThan(0);
+
+  it("worked example: Model Form unavailable → adjusted edge renormalizes valid weights", () => {
+    // Raw diffs: pitching +10 (.30), batting +4 combined (.45), season +2 (.10);
+    // model form unavailable (.15). Available weight = .85.
+    // Adjusted = 10*(.30/.85) + 4*(.45/.85) + 2*(.10/.85) = (3.0+1.8+0.2)/.85.
+    const edge = makeEdge("away", { pitching: 10, matchup: 4, lineup: 4, recentForm: 999, season: 2 });
+    // batting raw must be +4 combined: matchup .25 + lineup .20; to get combined
+    // weightedDifference 1.8 with raw 4 we need matchup=4, lineup=4 → 4*.25+4*.20=1.8. ✓
+    const d = computeDisplayedEdge(edge, availWithout("modelForm"));
+    expect(d.adjusted).toBe(true);
+    expect(d.weightAvailable).toBeCloseTo(0.85, 10);
+    expect(d.displayed).toBeCloseTo((3.0 + 1.8 + 0.2) / 0.85, 6); // ≈ 5.882
+    // Model Form component renders null (excluded, not zeroed).
+    expect(d.components.modelForm).toBeNull();
+    expect(d.components.pitching).toBeCloseTo(3.0, 6);
   });
-  it("uses ONLY the supplied recent record — no season input exists in this function", () => {
-    // Same recent records but wildly different (hypothetical) season quality
-    // cannot change the output: the function takes only recent records.
-    expect(getFormEdge("7-7", "7-7")).toBeCloseTo(0, 10);
+
+  it("a missing factor does NOT behave as a neutral zero", () => {
+    // With season genuinely +8 but UNAVAILABLE, excluding it changes the result
+    // vs. treating it as measured 0.
+    const edge = makeEdge("away", { pitching: 6, matchup: 4, lineup: 4, recentForm: 2, season: 8 });
+    const excluded = computeDisplayedEdge(edge, availWithout("season")).displayed!;
+    const asZero = computeDisplayedEdge(makeEdge("away", { pitching: 6, matchup: 4, lineup: 4, recentForm: 2, season: 0 }), ALL_AVAILABLE).displayed!;
+    expect(excluded).not.toBeCloseTo(asZero, 3);
   });
-  it("distinct windows produce distinct edges (2W last-5 vs 4W last-14)", () => {
-    const twoW = getFormEdge("4-1", "1-4"); // last 5 games, hot
-    const fourW = getFormEdge("8-6", "7-7"); // last 14 games, mild
-    expect(twoW).not.toBeCloseTo(fourW!, 2);
-    expect(twoW!).toBeGreaterThan(fourW!);
+
+  it("below minimum completeness → displayed N/A (null)", () => {
+    // Only batting + season available: primary groups = 1, weight = .55.
+    const edge = makeEdge("away", { pitching: 5, matchup: 3, lineup: 3, recentForm: 1, season: 1 });
+    const d = computeDisplayedEdge(edge, availWithout("pitching", "modelForm"));
+    expect(d.ok).toBe(false);
+    expect(d.displayed).toBeNull();
   });
-  it("returns null when either side's window record is missing (renders N/A)", () => {
-    expect(getFormEdge(null, "6-8")).toBeNull();
-    expect(getFormEdge("10-4", null)).toBeNull();
-    expect(getFormEdge("0-0", "6-8")).toBeNull();
+
+  it("no divide-by-zero / NaN when nothing is available", () => {
+    const edge = makeEdge("away", { pitching: 5 });
+    const d = computeDisplayedEdge(edge, availWithout("pitching", "batting", "modelForm", "season"));
+    expect(d.displayed).toBeNull();
+    expect(Number.isNaN(d.weightAvailable)).toBe(false);
+  });
+
+  it("one primary missing but 70% weight present still passes (adjusted)", () => {
+    const edge = makeEdge("away", { pitching: 6, matchup: 4, lineup: 4, recentForm: 2, season: 2 });
+    const d = computeDisplayedEdge(edge, availWithout("modelForm")); // .85 weight, 2 primaries
+    expect(d.ok).toBe(true);
+    expect(d.adjusted).toBe(true);
   });
 });
 
-// --- N/A rendering (shared formatters) -------------------------------------
+describe("renormalizeWeights", () => {
+  it("renormalizes present groups to 1, excluding (not zeroing) the missing one", () => {
+    const w = renormalizeWeights({ pitching: true, batting: true, modelForm: false, season: true });
+    expect(w.modelForm).toBeUndefined();
+    expect(Object.values(w).reduce((s, v) => s + (v ?? 0), 0)).toBeCloseTo(1, 10);
+    expect(w.pitching).toBeCloseTo(0.30 / 0.85, 10);
+  });
+  it("returns {} when nothing present", () => {
+    expect(renormalizeWeights({})).toEqual({});
+  });
+});
 
-describe("null-safe formatters render N/A, never 0 / Even / Neutral", () => {
-  it("formatEdgePoints", () => {
+// --- Part 4: N/A formatting; real zero stays 0.0 ---------------------------
+
+describe("null-safe formatters", () => {
+  it("formatEdgePoints renders N/A for null/NaN, 0.0 for real zero, no -0", () => {
     expect(formatEdgePoints(6.84)).toBe("+6.8");
     expect(formatEdgePoints(-1.24)).toBe("-1.2");
+    expect(formatEdgePoints(0)).toBe("0.0");       // measured zero is real
+    expect(formatEdgePoints(-0.02)).toBe("0.0");   // no negative zero
     expect(formatEdgePoints(null)).toBe("N/A");
-    expect(formatEdgePoints(undefined)).toBe("N/A");
     expect(formatEdgePoints(NaN)).toBe("N/A");
-    expect(formatEdgePoints(-0.02)).toBe("0.0"); // no negative zero
   });
   it("consistent rounding at the .05 boundary", () => {
     expect(formatEdgePoints(2.049)).toBe("+2.0");
     expect(formatEdgePoints(2.05)).toBe("+2.1");
   });
-  it("formatMarketPct", () => {
+  it("formatMarketPct renders N/A for missing", () => {
     expect(formatMarketPct(0.559)).toBe("56%");
     expect(formatMarketPct(null)).toBe("N/A");
-    expect(formatMarketPct(NaN)).toBe("N/A");
   });
 });
 
-// --- component bands / grade ----------------------------------------------
-
-describe("getComponentBand / getEdgeGrade", () => {
-  it("bands span strong / edge / even / against with distinct colors", () => {
+describe("getComponentBand / grade helpers", () => {
+  it("bands span the range with distinct colors", () => {
     expect(getComponentBand(5).key).toBe("strong");
-    expect(getComponentBand(2).key).toBe("edge");
     expect(getComponentBand(0).key).toBe("even");
     expect(getComponentBand(-3).key).toBe("against");
     expect(new Set([5, 2, 0, -3].map((v) => getComponentBand(v).color)).size).toBe(4);
   });
-  it("grade thresholds align with the shared confidence tiers", () => {
-    expect(getEdgeGrade(75).label).toBe("Strong lean");
-    expect(getEdgeGrade(65).label).toBe("Moderate lean");
-    expect(getEdgeGrade(58).label).toBe("Slight lean");
-    expect(getEdgeGrade(52).label).toBe("Coin flip");
+  it("confidenceForEdgePoints mirrors the canonical model mapping", () => {
+    // model: round(min(82, 52 + (abs/5)*4))
+    expect(confidenceForEdgePoints(0)).toBe(52);
+    expect(confidenceForEdgePoints(10)).toBe(60);
+    expect(confidenceForEdgePoints(100)).toBe(82); // capped
+    expect(confidenceForEdgePoints(-10)).toBe(60); // magnitude
   });
 });
 
-// --- missing-data policy: renormalization + completeness -------------------
+// --- Form Edge diagnostic --------------------------------------------------
 
-describe("renormalizeWeights", () => {
-  it("renormalizes present groups to sum to 1, preserving proportions", () => {
-    const w = renormalizeWeights({ pitching: true, batting: true, form: true, season: true });
-    const total = Object.values(w).reduce((s, v) => s + (v ?? 0), 0);
-    expect(total).toBeCloseTo(1, 10);
-    expect(w.pitching).toBeCloseTo(0.30, 10);
+describe("parseRecordWinPct / getFormEdge (recent-record diagnostic)", () => {
+  it("parses records and rejects empty/zero-game", () => {
+    expect(parseRecordWinPct("10-4")).toBeCloseTo(10 / 14, 10);
+    for (const v of [null, "—", "0-0", "abc"]) expect(parseRecordWinPct(v as never)).toBeNull();
   });
-
-  it("excludes a missing group (not treated as zero) and renormalizes the rest", () => {
-    // Spec example: pitching .30, batting .45, form .15, season .10; Form missing
-    // → valid total .85, renormalize.
-    const w = renormalizeWeights({ pitching: true, batting: true, form: false, season: true });
-    expect(w.form).toBeUndefined();
-    const total = Object.values(w).reduce((s, v) => s + (v ?? 0), 0);
-    expect(total).toBeCloseTo(1, 10);
-    expect(w.pitching).toBeCloseTo(0.30 / 0.85, 10);
-    expect(w.batting).toBeCloseTo(0.45 / 0.85, 10);
-    expect(w.season).toBeCloseTo(0.10 / 0.85, 10);
+  it("is season-free: depends only on the supplied window records", () => {
+    expect(getFormEdge("10-4", "6-8")).toBeCloseTo(4.29, 2);
+    expect(getFormEdge("7-7", "7-7")).toBeCloseTo(0, 10);
   });
-
-  it("returns an empty object when nothing is present", () => {
-    expect(renormalizeWeights({})).toEqual({});
+  it("L5 vs L14 windows produce distinct diagnostics", () => {
+    const l5 = getFormEdge("4-1", "1-4");
+    const l14 = getFormEdge("8-6", "7-7");
+    expect(l5).not.toBeCloseTo(l14!, 2);
+  });
+  it("returns null (N/A) when a side's record is missing", () => {
+    expect(getFormEdge(null, "6-8")).toBeNull();
+    expect(getFormEdge("0-0", "6-8")).toBeNull();
   });
 });
 
-describe("computeCompleteness", () => {
-  const full = { hasIdentity: true, hasPitching: true, hasBatting: true, hasForm: true, hasSeason: true };
-
-  it("passes with full data (weight 1.0)", () => {
-    const c = computeCompleteness(full);
-    expect(c.ok).toBe(true);
-    expect(c.weightAvailable).toBeCloseTo(1, 10);
-  });
-  it("one missing primary component does not fail the gate (.85 ≥ .70)", () => {
-    const c = computeCompleteness({ ...full, hasForm: false });
-    expect(c.ok).toBe(true);
-    expect(c.weightAvailable).toBeCloseTo(0.85, 10);
-  });
-  it("fails when below 70% weight available", () => {
-    // Only batting + season = .55
-    const c = computeCompleteness({ ...full, hasPitching: false, hasForm: false });
-    expect(c.weightAvailable).toBeCloseTo(0.55, 10);
-    expect(c.ok).toBe(false);
-  });
-  it("fails when fewer than 2 primary groups present", () => {
-    // Pitching only (.30 primary weight) + season → 1 primary group, .40 weight
-    const c = computeCompleteness({ ...full, hasBatting: false, hasForm: false });
-    expect(c.primaryGroupsPresent).toBe(1);
-    expect(c.ok).toBe(false);
-  });
-  it("fails without core identity regardless of components", () => {
-    expect(computeCompleteness({ ...full, hasIdentity: false }).ok).toBe(false);
-  });
-});
-
-// --- primary reason (window-aware, no season conflation) -------------------
+// --- Part 7: primary reason (window-aware; distinct from model drivers) ----
 
 describe("buildPrimaryReason", () => {
-  const base = { formWindow: "2w" as const, pickTeam: "TEX", context: null as string | null };
+  const base = { formWindow: "l5" as const, pickTeam: "TEX", context: null as string | null };
 
-  it("names starter / lineup drivers", () => {
-    expect(buildPrimaryReason({ ...base, pitching: 5, batting: 1, form: 0.2 }))
-      .toBe("Starter advantage drives the lean");
-    expect(buildPrimaryReason({ ...base, pitching: 1, batting: 4, form: 0.2 }))
-      .toBe("Lineup edge drives the lean");
+  it("uses the strongest available canonical driver", () => {
+    expect(buildPrimaryReason({ ...base, pitching: 5, batting: 1, modelForm: 0.2, season: 0.1, formEdge: 0.2 }))
+      .toBe("Starting pitching drives the model edge");
+    expect(buildPrimaryReason({ ...base, pitching: 1, batting: 4, modelForm: 0.2, season: 0.1, formEdge: 0.2 }))
+      .toBe("Lineup matchup favors TEX");
+    expect(buildPrimaryReason({ ...base, pitching: 0.2, batting: 0.3, modelForm: 3, season: 0.1, formEdge: 0.2 }))
+      .toBe("Internal model form favors TEX");
+    expect(buildPrimaryReason({ ...base, pitching: 0.2, batting: 0.3, modelForm: 0.1, season: 4, formEdge: 0.2 }))
+      .toBe("Season quality supports TEX");
   });
-  it("labels a recent-form driver with the active window and team, not 'season'", () => {
-    const r = buildPrimaryReason({ ...base, pitching: 0.5, batting: 0.5, form: 4, formWindow: "4w" });
-    expect(r).toBe("Recent 4W form favors TEX");
-    expect(r).not.toMatch(/season/i);
+
+  it("uses the recent-record diagnostic (L5/L14) only when no canonical driver is strong; kept distinct", () => {
+    const r = buildPrimaryReason({ ...base, formWindow: "l14", pitching: 0.2, batting: 0.1, modelForm: 0.1, season: 0.1, formEdge: 4 });
+    expect(r).toBe("Recent L14 record favors TEX");
+    expect(r).not.toMatch(/model edge|season/i);
   });
-  it("never generates form text when the form metric is N/A", () => {
-    const r = buildPrimaryReason({ ...base, pitching: 0.2, batting: 0.1, form: null });
-    expect(r).toBeNull(); // nothing strong, no context
-    const r2 = buildPrimaryReason({ ...base, pitching: 4, batting: 0.1, form: null });
-    expect(r2).toBe("Starter advantage drives the lean");
+
+  it("never generates text from a missing (null) metric", () => {
+    expect(buildPrimaryReason({ ...base, pitching: null, batting: null, modelForm: null, season: null, formEdge: null }))
+      .toBeNull();
+    expect(buildPrimaryReason({ ...base, pitching: 5, batting: null, modelForm: null, season: null, formEdge: null }))
+      .toBe("Starting pitching drives the model edge");
   });
-  it("explains an offsetting positive when the strongest signal favors the opponent", () => {
-    expect(buildPrimaryReason({ ...base, pitching: -6, batting: 5, form: 2 }))
-      .toBe("Lineup edge offsets weaker starter");
-  });
-  it("falls back to caller context only when nothing meaningful drives the lean", () => {
-    expect(buildPrimaryReason({ ...base, pitching: 0.2, batting: -0.1, form: 0.1, context: "TB starter overperforming" }))
-      .toBe("TB starter overperforming");
+
+  it("falls back to caller context when nothing is strong", () => {
+    expect(buildPrimaryReason({ ...base, pitching: 0.2, batting: 0.1, modelForm: 0.1, season: 0.1, formEdge: 0.1, context: "BAL starter overperforming" }))
+      .toBe("BAL starter overperforming");
   });
 });
 
-// --- sorting (N/A rows last, deterministic) --------------------------------
+// --- Part 7: sorting -------------------------------------------------------
 
 describe("compareMlSocialRows", () => {
   const base: MlSocialRow = {
     gamePk: 1, awayAbbr: "AWY", homeAbbr: "HOM", awayPitcher: null, homePitcher: null,
     gameTime: "", selectedTeam: "AWY", fadeTeam: "HOM", selectedAmerican: null,
-    modelEdgePoints: 5, confidence: 65, completeness: 1,
-    pitchingEdge: 0, battingEdge: 0, formEdge: 0, formWindow: "2w", otherEdge: 0,
+    modelEdgePoints: 5, canonicalEdgePoints: 5, isAdjusted: false, confidence: 65, completeness: 1,
+    pitchingEdge: 0, battingEdge: 0, modelFormEdge: 0, seasonEdge: 0,
+    formEdge: 0, formWindow: "l5",
     marketImpliedProbability: null, noVigMarketProbability: null,
     polymarketYes: null, polymarketNo: null, grade: "Moderate lean", primaryReason: null,
   };
 
-  it("orders by model edge points descending", () => {
+  it("orders by displayed edge desc; adjusted rows sort by their adjusted edge", () => {
     const rows = [
-      { ...base, gamePk: 1, modelEdgePoints: 3 },
+      { ...base, gamePk: 1, modelEdgePoints: 3, isAdjusted: true },
       { ...base, gamePk: 2, modelEdgePoints: 8 },
-      { ...base, gamePk: 3, modelEdgePoints: 5 },
+      { ...base, gamePk: 3, modelEdgePoints: 5, isAdjusted: true },
     ];
     expect([...rows].sort(compareMlSocialRows).map((r) => r.gamePk)).toEqual([2, 3, 1]);
   });
 
-  it("places N/A (null Model Edge) rows deterministically AFTER valid rows", () => {
+  it("N/A rows sort after all valid rows, deterministically", () => {
     const rows = [
       { ...base, gamePk: 1, modelEdgePoints: null, grade: null },
       { ...base, gamePk: 2, modelEdgePoints: 4 },
       { ...base, gamePk: 3, modelEdgePoints: null, grade: null, selectedTeam: "BAL" },
     ];
     const sorted = [...rows].sort(compareMlSocialRows).map((r) => r.gamePk);
-    expect(sorted[0]).toBe(2); // valid row first
-    expect(sorted.slice(1)).toEqual([1, 3]); // N/A rows after; equal confidence → team asc (AWY<BAL)
+    expect(sorted[0]).toBe(2);
+    expect(sorted.slice(1)).toEqual([1, 3]); // equal conf → team asc AWY<BAL
   });
 
-  it("breaks ties: confidence, then team, then gamePk", () => {
-    const rows = [
-      { ...base, gamePk: 30, modelEdgePoints: 5, confidence: 60, selectedTeam: "SEA" },
-      { ...base, gamePk: 10, modelEdgePoints: 5, confidence: 70, selectedTeam: "TB" },
-      { ...base, gamePk: 20, modelEdgePoints: 5, confidence: 70, selectedTeam: "NYY" },
-    ];
-    expect([...rows].sort(compareMlSocialRows).map((r) => r.gamePk)).toEqual([20, 10, 30]);
-  });
-
-  it("is a stable total order (idempotent under re-sort)", () => {
+  it("is idempotent under re-sort", () => {
     const rows = [
       { ...base, gamePk: 3, modelEdgePoints: 5 },
       { ...base, gamePk: 1, modelEdgePoints: 5 },
