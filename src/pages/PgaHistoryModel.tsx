@@ -22,6 +22,7 @@ import {
   resolveMajorType,
   scoreFourResultHistory,
   scoreRecentResults,
+  selectModelRecentResults,
   selectAllMajorHistory,
   selectSpecificMajorHistory,
   type PgaTournamentModelRow,
@@ -189,16 +190,17 @@ export default function PgaHistoryModel() {
       const history = playerHistoryMap.get(key);
       const majorHistory = majorHistoryMap.get(key)?.results ?? [];
       const recentResults = history?.recentResults.slice(0, RECENT_START_COUNT) ?? [];
+      const modelRecentResults = selectModelRecentResults(history, RECENT_START_COUNT);
       const eventResults = findEventHistory(history, eventSlug, eventName);
       const specificMajorResults = selectSpecificMajorHistory(majorHistory, majorType);
       const allMajorResults = selectAllMajorHistory(majorHistory);
       const displayPercentiles = percentiles.get(key) ?? {};
       const courseFit = calculateCourseFit(displayPercentiles, fitWeights);
-      const recentScore = scoreRecentResults(recentResults);
+      const recentScore = scoreRecentResults(modelRecentResults);
       const eventHistoryScore = scoreFourResultHistory(eventResults);
       const specificMajorScore = scoreFourResultHistory(specificMajorResults);
       const allMajorScore = scoreRecentResults(allMajorResults);
-      const trend = calculateTrend(recentResults);
+      const trend = calculateTrend(modelRecentResults);
       const baseScore = baseScores.get(key) ?? 50;
       const modelScore = calculateTournamentModelScore({
         baseScore,

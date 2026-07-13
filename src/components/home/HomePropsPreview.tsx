@@ -30,6 +30,7 @@ import {
   resolveMajorType,
   scoreFourResultHistory,
   scoreRecentResults,
+  selectModelRecentResults,
   selectAllMajorHistory,
   selectSpecificMajorHistory,
 } from "@/lib/pga/historyModel";
@@ -299,7 +300,7 @@ export function PgaRankingsPreview({ tournamentName }: { tournamentName: string 
         const key = normalizePlayerKey(player.player);
         const history = playerHistoryMap.get(key);
         const majorHistory = majorHistoryMap.get(key)?.results ?? [];
-        const recentResults = history?.recentResults.slice(0, RECENT_START_COUNT) ?? [];
+        const recentResults = selectModelRecentResults(history, RECENT_START_COUNT);
         const eventResults = findEventHistory(history, eventSlug, eventName);
         const specificMajorResults = selectSpecificMajorHistory(majorHistory, majorType);
         const allMajorResults = selectAllMajorHistory(majorHistory);
