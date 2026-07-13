@@ -19,7 +19,7 @@ describe("scoped PGA player history refresh", () => {
     const refreshed = new Map([["1", [scottish("T4")]]]);
     const merged = mergeScopedHistory(before, refreshed, options(["1"]));
     expect(visibleRecentResults(merged.payload.players[0]).map((result) => result.finishText)).toEqual(["T4", "T4", "T11", "1", "T20"]);
-    expect(merged.payload.players[0].modelRecentResults).toEqual(before.players[0].recentResults.slice(0, 5));
+    expect(merged.payload.players[0]).not.toHaveProperty("modelRecentResults");
     expect(visibleRecentResults(merged.payload.players[0])).toHaveLength(5);
     expect(merged.payload.players[0].recentResults[0]).toMatchObject({ eventName: EVENT.eventName, madeCut: true, status: "finished" });
   });
@@ -65,6 +65,16 @@ describe("scoped PGA player history refresh", () => {
     expect(first.payload.players[0].recentResults.filter((result) => resultIdentity(result) === "2026:R2026541")).toHaveLength(1);
   });
 
+  it("removes the deprecated model snapshot and stays idempotent", () => {
+    const legacy = { ...player("Legacy", "41"), modelRecentResults: [old("OLD", "2026-06-21", "T20")] };
+    const first = mergeScopedHistory(payload([legacy]), new Map([["41", []]]), options(["41"]));
+    const second = mergeScopedHistory(first.payload, new Map([["41", []]]), options(["41"]));
+    expect(first.changed).toBe(true);
+    expect(first.payload.players[0]).not.toHaveProperty("modelRecentResults");
+    expect(second.changed).toBe(false);
+    expect(second.payload).toBe(first.payload);
+  });
+
   it("uses the shared identity utility for accents, punctuation, suffixes, initials, and observed aliases", () => {
     const history = payload([
       player("Ludvig Aberg", "10"),
@@ -101,13 +111,10 @@ describe("scoped PGA player history refresh", () => {
       .toThrow(/Known participant 33/);
   });
 
-  it("preserves unrelated major, ranking, model, JKB Trend, course-fit, and best-bet inputs", () => {
+  it("preserves Specific Major and Last 8 Majors inputs", () => {
     const before = payload([player("Scoped", "40")]);
     const preservation = {
       majorHistory: { specificMajor: ["T4"], last8Majors: ["T4", "T11"] },
-      rows: [{ player: "Scoped", rank: 1, modelRank: 1, modelScore: 89.2, jkbTrend: 3, courseFit: 91.4 }],
-      bestBets: ["Scoped"],
-      currentTournament: { tournamentName: "The Open" },
     };
     const snapshot = JSON.stringify(preservation);
     mergeScopedHistory(before, new Map([["40", [scottish("1")]]]), options(["40"]));

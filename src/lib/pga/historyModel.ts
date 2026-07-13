@@ -32,7 +32,6 @@ export type PgaHistoryStats = {
 export type PgaPlayerHistoryRecord = {
   player: string;
   sourcePlayerName?: string;
-  modelRecentResults?: PgaHistoryResult[];
   recentResults: PgaHistoryResult[];
   eventHistory: Record<string, PgaHistoryResult[]>;
   stats?: PgaHistoryStats;
@@ -404,13 +403,6 @@ export function calculateTournamentModelScore(args: {
 
 export function scoreRecentResults(results: PgaHistoryResult[]) {
   return scoreHistory(results.slice(0, 8), RECENT_WEIGHTS);
-}
-
-export function selectModelRecentResults(
-  record: PgaPlayerHistoryRecord | null | undefined,
-  count: number,
-) {
-  return (record?.modelRecentResults ?? record?.recentResults ?? []).slice(0, count);
 }
 
 export function scoreFourResultHistory(results: PgaHistoryResult[]) {

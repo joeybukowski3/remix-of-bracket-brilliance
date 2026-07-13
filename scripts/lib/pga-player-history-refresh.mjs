@@ -201,6 +201,7 @@ export function visibleRecentResults(player) {
 }
 
 function mergePlayerHistory(player, refreshedResults, asOfDate, allowedEventIdentities) {
+  const { modelRecentResults: deprecatedModelRecentResults, ...playerWithoutModelSnapshot } = player;
   const existingRecent = player.recentResults ?? [];
   const existingIdentities = collectPlayerEventIdentities(player);
   const newestStoredDate = existingRecent.reduce(
@@ -218,7 +219,11 @@ function mergePlayerHistory(player, refreshedResults, asOfDate, allowedEventIden
       && !existingIdentities.has(identity);
   });
 
-  if (!added.length) return { changed: false, player, added: [] };
+  if (!added.length) {
+    return deprecatedModelRecentResults === undefined
+      ? { changed: false, player, added: [] }
+      : { changed: true, player: playerWithoutModelSnapshot, added: [] };
+  }
 
   const recentResults = dedupeResults([...added, ...existingRecent])
     .sort(sortNewestFirst)
@@ -233,7 +238,7 @@ function mergePlayerHistory(player, refreshedResults, asOfDate, allowedEventIden
 
   return {
     changed: true,
-    player: { ...player, modelRecentResults: existingRecent.slice(0, VISIBLE_RECENT_COUNT), recentResults, eventHistory },
+    player: { ...playerWithoutModelSnapshot, recentResults, eventHistory },
     added,
   };
 }

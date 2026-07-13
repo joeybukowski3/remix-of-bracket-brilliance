@@ -2,8 +2,8 @@ name: Refresh PGA Player History
 
 on:
   schedule:
-    # Later Monday, after the prior tournament normally completes and before
-    # the 12:00 UTC PGA field/model rollover updates the featured artifacts.
+    # Monday after the prior tournament normally completes. Successful
+    # completion dependency-triggers the stats/trend/model rollover.
     - cron: "30 10 * * 1"
   workflow_dispatch:
 
