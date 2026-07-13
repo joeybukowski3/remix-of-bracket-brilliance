@@ -101,12 +101,13 @@ describe("generated model metadata (data-source transparency)", () => {
 });
 
 describe("Monday workflow guarantees", () => {
-  it("runs field sync, stats fallback, then model generation, then the sync guard — in that order", () => {
+  it("runs field sync, stats refresh, JKB Trend, model generation, and the sync guard in order", () => {
     const jobsSection = WORKFLOW.slice(WORKFLOW.indexOf("jobs:"));
     const order = [
       "fetch-pga-current-field.mjs",
       "check-pga-stats-freshness.mjs",
       "fetch-pga-player-stats.mjs",
+      "npm run pga:trend",
       "generate-pga-tournament-rankings.mjs",
       "check-pga-field-sync.mjs",
     ].map((step) => jobsSection.indexOf(step));
@@ -114,9 +115,12 @@ describe("Monday workflow guarantees", () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 
-  it("keeps Monday scheduling and manual dispatch without an exact-hour gate", () => {
+  it("dependency-triggers Monday only after history succeeds and keeps Tue/Wed fallbacks", () => {
     const cron = WORKFLOW.match(/cron:\s*"([^"]+)"/)?.[1] ?? "";
-    expect(cron.split(" ")[4]).toContain("1"); // Monday included
+    expect(cron.split(" ")[4]).toBe("2,3");
+    expect(WORKFLOW).toContain("workflow_run:");
+    expect(WORKFLOW).toContain("Refresh PGA Player History");
+    expect(WORKFLOW).toContain("github.event.workflow_run.conclusion == 'success'");
     expect(WORKFLOW).toContain("workflow_dispatch");
     expect(WORKFLOW).not.toContain("should_run");
   });

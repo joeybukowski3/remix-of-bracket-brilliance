@@ -1,0 +1,94 @@
+name: Refresh PGA Player History
+
+on:
+  schedule:
+    # Monday after the prior tournament normally completes. Successful
+    # completion dependency-triggers the stats/trend/model rollover.
+    - cron: "30 10 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate completed-event metadata
+        id: event
+        shell: bash
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const field=JSON.parse(fs.readFileSync('public/data/pga/current-field.json','utf8')); const today=new Date().toISOString().slice(0,10); const age=Math.floor((Date.parse(today+'T00:00:00Z')-Date.parse(field.endDate+'T00:00:00Z'))/86400000); if(!field.validated||!/^R[0-9]+$/.test(field.tournamentId||'')) throw new Error('Current field lacks a validated official event ID.'); if(age<0||age>14) throw new Error('Current field is not a recently completed event.'); const rows={event_id:field.tournamentId,event_name:field.tournament,event_date:field.endDate,season:field.startDate.slice(0,4),as_of:today}; fs.appendFileSync(process.env.GITHUB_OUTPUT,Object.entries(rows).map(([key,value])=>key+'='+value).join('\n')+'\n');"
+
+      - name: Refresh current featured-field histories to temporary output
+        env:
+          PGA_API_KEY: ${{ secrets.PGA_API_KEY }}
+        run: >-
+          npm run pga:refresh-history-scoped --
+          --input public/data/pga/player-history.json
+          --scope-file public/data/pga/next-tournament.json
+          --participant-file public/data/pga/current-field.json
+          --output ${{ runner.temp }}/player-history.json
+          --cache-dir ${{ runner.temp }}/pga-history-cache
+          --retries 3
+          --request-delay-ms 125
+          --as-of-date ${{ steps.event.outputs.as_of }}
+          --expected-event-id "${{ steps.event.outputs.event_id }}"
+          --expected-event-name "${{ steps.event.outputs.event_name }}"
+          --expected-event-date "${{ steps.event.outputs.event_date }}"
+          --expected-season "${{ steps.event.outputs.season }}"
+
+      - name: Validate scoped output
+        run: >-
+          npm run pga:validate-history-refresh --
+          --before public/data/pga/player-history.json
+          --after ${{ runner.temp }}/player-history.json
+          --scope-file public/data/pga/next-tournament.json
+          --participant-file public/data/pga/current-field.json
+          --expected-event-id "${{ steps.event.outputs.event_id }}"
+          --expected-event-name "${{ steps.event.outputs.event_name }}"
+          --expected-event-date "${{ steps.event.outputs.event_date }}"
+          --expected-season "${{ steps.event.outputs.season }}"
+
+      - name: Replace validated history artifact
+        run: cp "${{ runner.temp }}/player-history.json" public/data/pga/player-history.json
+
+      - name: Commit explicitly allowlisted history file
+        shell: bash
+        run: |
+          if git diff --quiet -- public/data/pga/player-history.json; then
+            echo "No PGA player-history changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/pga/player-history.json
+          git commit -m "chore: refresh scoped PGA player history"
+          TARGET_BRANCH="${GITHUB_REF_NAME}"
+          if [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]; then TARGET_BRANCH=main; fi
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${TARGET_BRANCH}"; then exit 0; fi
+            git pull --rebase origin "${TARGET_BRANCH}"
+          done
+          echo "Unable to push scoped PGA history after three attempts."
+          exit 1

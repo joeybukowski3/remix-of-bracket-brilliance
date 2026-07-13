@@ -1,16 +1,23 @@
 name: Sync PGA Data
 
 on:
+  workflow_run:
+    workflows:
+      - Refresh PGA Player History
+    types:
+      - completed
+    branches:
+      - main
   schedule:
-    # Mon/Tue/Wed 12:00 UTC (8 AM EDT / 7 AM EST). Multiple days cover the
-    # weekly tournament rollover (fields for Thursday starts publish early in
-    # the week) and retry naturally after a failed day.
+    # Monday is dependency-triggered only after player history finishes.
+    # Tue/Wed 12:00 UTC runs keep the provisional upcoming field current and
+    # retry naturally after delayed field or statistics publication.
     #
     # IMPORTANT: no runtime hour gate. The previous design skipped every step
     # unless the run started in the 8 AM ET hour — GitHub regularly delays
     # cron runs by hours, so scheduled runs silently no-opped (all steps
     # skipped, run reported success) and PGA data went stale for weeks.
-    - cron: "0 12 * * 1,2,3"
+    - cron: "0 12 * * 2,3"
   workflow_dispatch:
   push:
     branches:
@@ -34,6 +41,7 @@ permissions:
 
 jobs:
   sync:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     env:
       TARGET_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
@@ -83,6 +91,9 @@ jobs:
           echo "Sheet data is stale or missing — falling back to direct PGA Tour API pull."
           node scripts/fetch-pga-player-stats.mjs
 
+      - name: Generate JKB Trend from refreshed history and player stats
+        run: npm run pga:trend
+
       - name: Generate tournament rankings and model from player stats (primary model source)
         run: node scripts/generate-pga-tournament-rankings.mjs
 
@@ -93,7 +104,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/pga/current-field.json public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json public/data/pga/player-stats-meta.json
+          git add public/data/pga/current-field.json public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json public/data/pga/player-stats-meta.json public/data/pga/jkb-trend-rankings.json public/data/pga/round-history-pga.json
           if git diff --cached --quiet; then
             echo "No PGA data changes to commit."
             exit 0

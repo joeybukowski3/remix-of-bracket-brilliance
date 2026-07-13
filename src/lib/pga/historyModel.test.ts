@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateCourseFit,
   calculateTournamentModelScore,
   calculateTrend,
   findEventHistory,
@@ -44,6 +45,42 @@ describe("PGA history model", () => {
     const goodFirst = ["1", "T4", "T8", "T12", "T18", "T25", "T30", "MC"].map((finish) => result(finish));
     const goodLast = [...goodFirst].reverse();
     expect(scoreRecentResults(goodFirst)!).toBeGreaterThan(scoreRecentResults(goodLast)!);
+  });
+
+  it("flows a newly completed result through recent form, JKB Trend, and the unchanged major formula", () => {
+    const before = ["MC", "T50", "T40", "T30", "T20"].map((finish) => result(finish));
+    const after = [result("1"), ...before].slice(0, 5);
+    const beforeRecent = scoreRecentResults(before);
+    const afterRecent = scoreRecentResults(after);
+    const beforeTrend = calculateTrend(before);
+    const afterTrend = calculateTrend(after);
+    const courseFit = calculateCourseFit({ sgTotal: 80, sgApp: 60 }, { sgTotal: 0.5, sgApp: 0.5 });
+    const fixed = {
+      baseScore: 75,
+      courseFit,
+      eventHistoryScore: null,
+      specificMajorScore: 70,
+      allMajorScore: 65,
+      isMajor: true,
+    };
+    const beforeModel = calculateTournamentModelScore({
+      ...fixed,
+      recentScore: beforeRecent,
+      trendScore: beforeTrend.score,
+    });
+    const afterModel = calculateTournamentModelScore({
+      ...fixed,
+      recentScore: afterRecent,
+      trendScore: afterTrend.score,
+    });
+
+    expect(after.map((row) => row.finishText)).toEqual(["1", "MC", "T50", "T40", "T30"]);
+    expect({ beforeRecent, afterRecent }).toEqual({ beforeRecent: 40.4, afterRecent: 50 });
+    expect({ beforeTrend: beforeTrend.score, afterTrend: afterTrend.score }).toEqual({ beforeTrend: 16.3, afterTrend: 40.5 });
+    expect(courseFit).toBe(70);
+    expect({ beforeModel, afterModel }).toEqual({ beforeModel: 61.2, afterModel: 65.1 });
+    expect([beforeModel, 63].sort((left, right) => right - left)).toEqual([63, beforeModel]);
+    expect([afterModel, 63].sort((left, right) => right - left)).toEqual([afterModel, 63]);
   });
 
   it("shrinks small same-event samples toward neutral", () => {
