@@ -10,6 +10,8 @@ export type JkbTrendRanking = {
   recent20: number | null;
   baseline: number | null;
   vsBaseline: number | null;
+  recent20Percentile?: number | null;
+  vsBaselinePercentile?: number | null;
   finishForm: number | null;
   roundsUsed: number;
   startsUsed: number;
@@ -23,7 +25,14 @@ export type JkbTrendPayload = {
   name: string;
   generatedAt: string;
   asOf?: string;
-  sources?: Record<string, { rounds?: number; sourceUrl?: string }>;
+  validation?: { status?: "valid" | "invalid" };
+  sources?: Record<string, {
+    status?: "available" | "unavailable";
+    usableRoundCount?: number;
+    rejectedRoundCount?: number;
+    newestUsableRoundDate?: string | null;
+    sourceUrl?: string;
+  }>;
   players: JkbTrendRanking[];
 };
 
@@ -38,7 +47,11 @@ export function useJkbTrendRankings() {
       .then(async (response) => {
         if (response.status === 404) return null;
         if (!response.ok) throw new Error(`Trend ranking request failed (${response.status})`);
-        return response.json() as Promise<JkbTrendPayload>;
+        const payload = await response.json() as JkbTrendPayload;
+        if (payload.version >= 2 && payload.validation?.status !== "valid") {
+          throw new Error("Trend ranking validation status is not valid");
+        }
+        return payload;
       })
       .then((nextPayload) => {
         if (!active) return;

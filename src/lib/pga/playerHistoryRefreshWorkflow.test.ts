@@ -51,8 +51,10 @@ describe("PGA scoped player-history workflow", () => {
     const jobs = rollover.slice(rollover.indexOf("jobs:"));
     const ordered = [
       "actions/checkout@v4",
+      "npm run pga:trend -- --validate-input-only",
       "check-pga-stats-freshness.mjs",
-      "npm run pga:trend",
+      'npm run pga:trend -- --output-dir "${RUNNER_TEMP}/jkb-trend"',
+      "Publish validated JKB Trend artifacts",
       "generate-pga-tournament-rankings.mjs",
       "check-pga-field-sync.mjs",
       "git commit -m \"chore: sync PGA sheet data\"",
@@ -60,6 +62,17 @@ describe("PGA scoped player-history workflow", () => {
     expect(ordered.every((index) => index >= 0)).toBe(true);
     expect([...ordered].sort((left, right) => left - right)).toEqual(ordered);
     expect(rollover).toContain("ref: ${{ env.TARGET_BRANCH }}");
+  });
+
+  it("validates to temporary output before replacing the last valid trend artifacts", () => {
+    const generate = rollover.indexOf('npm run pga:trend -- --output-dir "${RUNNER_TEMP}/jkb-trend"');
+    const publish = rollover.indexOf("Publish validated JKB Trend artifacts");
+    const commit = rollover.indexOf("git commit -m \"chore: sync PGA sheet data\"");
+    expect(generate).toBeGreaterThan(0);
+    expect(publish).toBeGreaterThan(generate);
+    expect(commit).toBeGreaterThan(publish);
+    expect(rollover).toContain('cp "${RUNNER_TEMP}/jkb-trend/round-history-pga.json" public/data/pga/round-history-pga.json');
+    expect(rollover).toContain('cp "${RUNNER_TEMP}/jkb-trend/jkb-trend-rankings.json" public/data/pga/jkb-trend-rankings.json');
   });
 
   it("commits generated trend output but later field rollovers cannot overwrite player history", () => {
@@ -70,7 +83,7 @@ describe("PGA scoped player-history workflow", () => {
 
   it("feeds refreshed history to both JKB Trend generation and frontend model scoring", () => {
     expect(trendGenerator).toContain('"player-history.json"');
-    expect(trendGenerator).toContain("flattenPgaHistory(pgaHistory)");
+    expect(trendGenerator).toContain("flattenPgaHistory(payloads.pgaHistory");
     expect(trendGenerator).toContain("Object.values(player.eventHistory ?? {}).flat()");
     expect(historyPage).toContain("scoreRecentResults(recentResults)");
     expect(historyPage).toContain("calculateTrend(recentResults)");
