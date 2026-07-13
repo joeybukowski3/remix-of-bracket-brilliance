@@ -59,7 +59,7 @@ describe("MlbStrikeoutPropsXExport route", () => {
   it("displays the correct side and side-specific odds for OVER and UNDER", () => {
     const rows = [
       kRow({ pitcher: "Over Guy", pitcherId: 1, gameId: 10, direction: "over", oddsOver: "-120", oddsUnder: "+100", projectionEdge: 1.2 }),
-      kRow({ pitcher: "Under Guy", pitcherId: 2, gameId: 11, direction: "under", oddsOver: "-110", oddsUnder: "-130", projectionEdge: -2.0 }),
+      kRow({ pitcher: "Under Guy", pitcherId: 2, gameId: 11, direction: "under", oddsOver: "-110", oddsUnder: "-130", projectedKs: 4.5, projectionEdge: -2.0 }),
     ];
     const selection = selectConfirmedKRows({ rows });
     const artifact = buildKArtifact({ slateDate: "2026-07-12", snapshot, selectionStatus: "READY_CONFIRMED_SELECTIONS", selectedRows: selection.selected });

@@ -1,7 +1,6 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
 import { checkDailyPostingLock, getForceRepostOverride, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
 import { buildConfirmationSnapshot, resolveHrRowFacts } from "./lib/mlb-x-confirmation-snapshot.mjs";
@@ -12,21 +11,19 @@ import {
   ARTIFACT_MISMATCH_STATUS,
   assertArtifactConsistency,
   buildHrArtifact,
-  encodeArtifact,
   validateArtifact,
 } from "./lib/mlb-x-selection-artifact.mjs";
 import { buildHrCaptionFromArtifact } from "./lib/mlb-x-artifact-caption.mjs";
-import { startLocalPreviewServer } from "./lib/mlb-x-local-preview-server.mjs";
+import { writeMlbSocialGraphic } from "./lib/mlb-social-graphic-renderer.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const RAW_DATA_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const PRODUCTION_BASE_URL = "https://www.joeknowsball.com/data/mlb";
 const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
-const EXPORT_ROUTE = "/mlb/hr-props/x-export";
-const EXPORT_SELECTOR = '[data-x-export="mlb-hr-social"]';
-const HR_TARGET_TABLE_SIZE = 3;
+const HR_TARGET_TABLE_SIZE = 5;
 const SCREENSHOT_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x.png");
+const SVG_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x.svg");
 const ARTIFACT_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x-selection.json");
 const DEFAULT_DUPLICATE_STATE_DIR = path.join(ROOT, "artifacts", "x-post-state");
 const args = new Set(process.argv.slice(2));
@@ -104,6 +101,10 @@ function normalizeBatter(value) {
     hrScore: toFiniteNumber(value?.hrScore),
     hrScoreRank: toFiniteNumber(value?.hrScoreRank),
     hrOddsYes: normalizeText(value?.hrOddsYes) || null,
+    barrelRate: toFiniteNumber(value?.barrelRate),
+    hardHitRate: toFiniteNumber(value?.hardHitRate),
+    last7HR: toFiniteNumber(value?.last7HR),
+    last30HR: toFiniteNumber(value?.last30HR),
     lineupStatus: value?.lineupStatus ?? "unknown",
     battingOrder: value?.battingOrder ?? null,
   };
@@ -173,45 +174,13 @@ function logFinalStatus(status) {
 }
 
 /**
- * Render the bare HR export route locally against the built SPA and screenshot
- * the confirmed-only table. Returns { screenshotPath, renderedRows } scraped
- * back from the DOM (used to prove the image matches the artifact).
+ * Render the confirmed-only immutable artifact through the deterministic SVG
+ * renderer, rasterize it at 2x, and extract row metadata back from the SVG for
+ * the existing artifact/caption consistency proof.
  */
-async function renderExportAndScrape(artifact, { outputPath = SCREENSHOT_PATH } = {}) {
-  mkdirSync(path.dirname(outputPath), { recursive: true });
-  const encoded = encodeArtifact(artifact);
-  const server = await startLocalPreviewServer();
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const page = await browser.newPage({ viewport: { width: 1160, height: 1500 }, deviceScaleFactor: 2 });
-    page.setDefaultTimeout(30000);
-    await page.goto(`${server.url}${EXPORT_ROUTE}?d=${encoded}`, { waitUntil: "networkidle" });
-
-    const exportTarget = page.locator(EXPORT_SELECTOR).first();
-    await exportTarget.waitFor({ state: "visible", timeout: 15000 });
-
-    const rowLocators = exportTarget.locator("[data-hr-row]");
-    const rowCount = await rowLocators.count();
-    const renderedRows = [];
-    for (let i = 0; i < rowCount; i++) {
-      const data = await rowLocators.nth(i).evaluate((el) => ({
-        playerId: el.getAttribute("data-hr-player-id") || "",
-        gameId: el.getAttribute("data-hr-game-id") || "",
-        player: el.getAttribute("data-hr-player") || "",
-        team: el.getAttribute("data-hr-team") || "",
-        battingOrder: el.getAttribute("data-hr-order") || "",
-        hrScore: el.getAttribute("data-hr-score") || "",
-        hrOddsYes: el.getAttribute("data-hr-odds") || "",
-      }));
-      renderedRows.push(data);
-    }
-
-    await exportTarget.screenshot({ path: outputPath, animations: "disabled" });
-    return { screenshotPath: outputPath, renderedRows };
-  } finally {
-    await browser.close();
-    await server.close();
-  }
+async function renderExportAndScrape(artifact, { outputPath = SCREENSHOT_PATH, svgPath = SVG_PATH } = {}) {
+  const rendered = await writeMlbSocialGraphic({ kind: "hr", slateDate: artifact.slateDate, rows: artifact.rows, svgPath, pngPath: outputPath });
+  return { screenshotPath: rendered.pngPath, svgPath: rendered.svgPath, renderedRows: rendered.renderedRows };
 }
 
 async function publishPost({ client, caption, screenshotPath }) {
@@ -312,6 +281,12 @@ async function main() {
     return;
   }
 
+  if (artifact.rows.length !== HR_TARGET_TABLE_SIZE) {
+    console.log(`[mlb-hr-props-x] Not posting: fixed five-row graphic requires ${HR_TARGET_TABLE_SIZE} confirmed plays; received ${artifact.rows.length}.`);
+    logFinalStatus("SKIPPED_INSUFFICIENT_ROWS");
+    return;
+  }
+
   // Freeze + validate the immutable artifact, then build the caption from it.
   const artifactError = validateArtifact(artifact, { slateDate, now });
   if (artifactError) {
@@ -335,8 +310,8 @@ async function main() {
   console.log("");
 
   // Render the bare export locally + scrape the rendered rows.
-  const { screenshotPath, renderedRows } = await renderExportAndScrape(artifact);
-  console.log(`[mlb-hr-props-x] screenshotPath=${screenshotPath} renderedRows=${renderedRows.length}`);
+  const { screenshotPath, svgPath, renderedRows } = await renderExportAndScrape(artifact);
+  console.log(`[mlb-hr-props-x] svgPath=${svgPath} screenshotPath=${screenshotPath} renderedRows=${renderedRows.length}`);
 
   // Prove image + caption + artifact all describe the same players, same order.
   const mismatch = assertArtifactConsistency({ artifact, renderedRows, captionRows: captionResult.captionRows });
