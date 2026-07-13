@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { areWeightsEqual, getWeightTotal } from "@/lib/pga/modelEngine";
 import { getRankColor } from "@/lib/pga/rankColors";
-import { PGA_WEIGHT_DEFINITIONS } from "@/lib/pga/pgaWeights";
+import { PGA_CUSTOM_MODEL_KEY, PGA_TOP_20_PROFILE_KEY, PGA_WEIGHT_DEFINITIONS } from "@/lib/pga/pgaWeights";
 import type { PgaModelTableConfig, PlayerModelRow, PgaWeights } from "@/lib/pga/pgaTypes";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -42,12 +42,13 @@ type Props = {
   draftWeights?: PgaWeights;
   appliedWeights?: PgaWeights;
   selectedPreset?: string;
-  activePreset?: string | null;
-  draftPreset?: string | null;
+  activeModelLabel?: string;
   presetOptions?: Array<{ key: string; label: string; description: string }>;
   onPresetSelect?: (preset: string) => void;
   onWeightChange?: (key: keyof PgaWeights, value: number) => void;
   onApply?: () => void;
+  onNormalize?: () => void;
+  onLoadTop20?: () => void;
   onReset?: () => void;
 };
 
@@ -55,74 +56,123 @@ type Props = {
 
 const CATEGORIES = ["Ball Striking", "Short Game", "Scoring", "Form"] as const;
 
-function WeightSliderRow({
-  draftWeights, appliedWeights, selectedPreset, activePreset, draftPreset,
-  presetOptions, onPresetSelect, onWeightChange, onApply, onReset,
+export function PgaModelControls({
+  draftWeights, appliedWeights, selectedPreset, activeModelLabel,
+  presetOptions, onPresetSelect, onWeightChange, onApply, onNormalize, onLoadTop20, onReset,
 }: {
   draftWeights: PgaWeights; appliedWeights: PgaWeights; selectedPreset: string;
-  activePreset: string | null; draftPreset: string | null;
+  activeModelLabel: string;
   presetOptions: Array<{ key: string; label: string; description: string }>;
   onPresetSelect: (preset: string) => void;
   onWeightChange: (key: keyof PgaWeights, value: number) => void;
-  onApply: () => void; onReset: () => void;
+  onApply: () => void; onNormalize: () => void; onLoadTop20: () => void; onReset: () => void;
 }) {
   const draftTotal = getWeightTotal(draftWeights);
   const hasDraftChanges = !areWeightsEqual(draftWeights, appliedWeights);
-  const totalOk = Math.abs(draftTotal - 100) < 5;
-  const visibleActivePreset = presetOptions.find((p) => p.key === activePreset)?.label ?? "Custom";
-  const visibleDraftPreset  = presetOptions.find((p) => p.key === draftPreset)?.label  ?? "Custom";
+  const totalOk = Math.abs(draftTotal - 100) < 0.001;
+  const canApply = draftTotal > 0 && Number.isFinite(draftTotal);
+  const isCustom = selectedPreset === PGA_CUSTOM_MODEL_KEY;
   const selectedPresetDescription = presetOptions.find((p) => p.key === selectedPreset)?.description;
+  const isTop20Profile = selectedPreset === PGA_TOP_20_PROFILE_KEY;
 
   return (
-    <div className="border-b border-border/60 bg-secondary/20 px-4 py-4 sm:px-5">
-      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+    <div className="border-b border-border/60 bg-secondary/20 px-4 py-3 sm:px-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Model Weights</span>
-          <span className="rounded-full bg-card px-2.5 py-0.5 text-[10px] font-semibold text-foreground ring-1 ring-border/70">Active: {visibleActivePreset}</span>
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">Draft: {visibleDraftPreset}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${totalOk ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{draftTotal}% total</span>
-          {hasDraftChanges && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">Unsaved changes</span>}
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Active Model</span>
+          <span className="rounded-full bg-card px-2.5 py-0.5 text-[10px] font-semibold text-foreground ring-1 ring-border/70">{activeModelLabel}</span>
+          {isCustom ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${totalOk ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{formatWeight(draftTotal)}% total</span> : null}
+          {isCustom && hasDraftChanges ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">Unapplied changes</span> : null}
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
+        <div className="min-w-0 sm:min-w-52">
           <label className="sr-only" htmlFor="pga-preset-select">Model preset</label>
           <select
             id="pga-preset-select" value={selectedPreset}
             onChange={(e) => onPresetSelect(e.target.value)}
-            className="w-full min-w-0 rounded-full border border-border bg-card px-3 py-2 text-[11px] font-medium text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 sm:w-auto sm:py-1"
+            className="w-full min-w-0 rounded-full border border-border bg-card px-3 py-2 text-[11px] font-medium text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 sm:py-1.5"
           >
             {presetOptions.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+            <option value={PGA_CUSTOM_MODEL_KEY}>Custom Model</option>
           </select>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={onReset} className="rounded-full border border-border bg-card px-3 py-2 text-[11px] font-medium text-muted-foreground transition hover:bg-secondary sm:py-1">Reset</button>
-            <button type="button" onClick={onApply} disabled={!hasDraftChanges} className="rounded-full bg-primary px-3 py-2 text-[11px] font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:py-1">Apply Weights</button>
-          </div>
         </div>
       </div>
-      <p className="mb-4 text-[11px] leading-5 text-muted-foreground sm:max-w-[44rem]">
-        Preset: <span className="font-medium text-foreground">{presetOptions.find((p) => p.key === selectedPreset)?.label}</span>{" "}{selectedPresetDescription}
-      </p>
-      <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
-        {CATEGORIES.map((category) => (
-          <div key={category} className="min-w-0">
-            <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60">{category}</p>
-            <div className="space-y-2.5">
-              {PGA_WEIGHT_DEFINITIONS.filter((d) => d.category === category).map((def) => (
-                <div key={def.key} className="min-w-0 overflow-hidden rounded-2xl bg-card/80 px-3 py-2.5" title={def.label}>
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <span className="min-w-0 truncate text-[10px] text-muted-foreground">{def.label}</span>
-                    <span className="shrink-0 text-right text-[10px] font-semibold tabular-nums text-foreground">{draftWeights[def.key]}%</span>
-                  </div>
-                  <input type="range" min={def.min} max={def.max} step={def.step} value={draftWeights[def.key]}
-                    onChange={(e) => onWeightChange(def.key, Number(e.target.value))}
-                    className="mt-2 block h-2 w-full min-w-0 cursor-pointer accent-primary" />
-                </div>
-              ))}
+
+      {!isCustom ? (
+        <p className="mt-2 text-[11px] leading-5 text-muted-foreground sm:max-w-[52rem]">
+          {isTop20Profile
+            ? "Top 20 Profile emphasizes the existing model categories most associated with strong, high-floor placement performance. It is a comparative rating, not a predicted probability."
+            : selectedPresetDescription}
+          {isTop20Profile ? <span className="mt-1 block text-[10px]">Methodology: This is a comparative model rating, not a calibrated Top 20 probability or fair betting price.</span> : null}
+        </p>
+      ) : (
+        <details open className="mt-3 rounded-2xl border border-border/70 bg-card/60 px-3 py-3 sm:px-4">
+          <summary className="cursor-pointer text-[11px] font-semibold text-foreground">Edit Weights</summary>
+          <div className="mt-3 flex flex-col gap-3 border-b border-border/60 pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <p className={`text-[10px] ${totalOk ? "text-muted-foreground" : "font-medium text-amber-700"}`} role={totalOk ? undefined : "alert"}>
+              {totalOk ? "Weights total 100%." : `Weights total ${formatWeight(draftTotal)}%. Normalize manually or Apply to normalize to 100%.`}
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              <button type="button" onClick={onLoadTop20} className="rounded-full border border-border bg-card px-3 py-2 text-[10px] font-medium text-foreground transition hover:bg-secondary sm:py-1.5">Load Top 20</button>
+              <button type="button" onClick={onNormalize} disabled={!canApply || totalOk} className="rounded-full border border-border bg-card px-3 py-2 text-[10px] font-medium text-foreground transition hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5">Normalize</button>
+              <button type="button" onClick={onReset} className="rounded-full border border-border bg-card px-3 py-2 text-[10px] font-medium text-muted-foreground transition hover:bg-secondary sm:py-1.5">Reset Default</button>
+              <button type="button" onClick={onApply} disabled={!canApply || !hasDraftChanges} className="rounded-full bg-primary px-3 py-2 text-[10px] font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5">Apply</button>
             </div>
           </div>
-        ))}
-      </div>
+          <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
+            {CATEGORIES.map((category) => (
+              <div key={category} className="min-w-0">
+                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-muted-foreground/60">{category}</p>
+                <div className="grid grid-cols-2 gap-2 sm:block sm:space-y-2">
+                  {PGA_WEIGHT_DEFINITIONS.filter((definition) => definition.category === category).map((definition) => (
+                    <div key={definition.key} className="min-w-0 rounded-xl bg-card px-3 py-2" title={definition.label}>
+                      <div className="flex min-w-0 items-center justify-between gap-3">
+                        <label htmlFor={`pga-weight-${definition.key}`} className="min-w-0 truncate text-[10px] text-muted-foreground">{definition.label}</label>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <input
+                            id={`pga-weight-${definition.key}`}
+                            aria-label={`${definition.label} weight`}
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={draftWeights[definition.key]}
+                            onChange={(event) => {
+                              const value = event.currentTarget.valueAsNumber;
+                              if (Number.isFinite(value) && value >= 0 && value <= 100) {
+                                onWeightChange(definition.key, value);
+                                return;
+                              }
+                              event.currentTarget.value = String(draftWeights[definition.key]);
+                            }}
+                            className="w-14 rounded-md border border-border bg-background px-1.5 py-1 text-right text-[10px] font-semibold tabular-nums text-foreground"
+                          />
+                          <span className="text-[10px] text-muted-foreground">%</span>
+                        </div>
+                      </div>
+                      <input
+                        aria-label={`${definition.label} weight slider`}
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={draftWeights[definition.key]}
+                        onChange={(event) => onWeightChange(definition.key, event.currentTarget.valueAsNumber)}
+                        className="mt-2 hidden h-2 w-full min-w-0 cursor-pointer accent-primary sm:block"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
+}
+
+function formatWeight(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 // ─── Compact rank badge (matches hub style) ───────────────────────────────────
@@ -157,8 +207,8 @@ function ScorePill({ score, rank }: { score: number; rank: number }) {
 
 export default function PgaModelTable({
   rows, tableConfig, isFullPage = false, onExpandFullPage,
-  draftWeights, appliedWeights, selectedPreset, activePreset, draftPreset,
-  presetOptions, onPresetSelect, onWeightChange, onApply, onReset,
+  draftWeights, appliedWeights, selectedPreset, activeModelLabel,
+  presetOptions, onPresetSelect, onWeightChange, onApply, onNormalize, onLoadTop20, onReset,
 }: Props) {
   const [view, setView]               = useState<ViewMode>("model");
   const [visibleStats, setVisibleStats] = useState<Set<StatColKey>>(
@@ -188,7 +238,7 @@ export default function PgaModelTable({
   }
 
   const hasWeights = draftWeights && appliedWeights && selectedPreset &&
-    presetOptions && onPresetSelect && onWeightChange && onApply && onReset;
+    activeModelLabel && presetOptions && onPresetSelect && onWeightChange && onApply && onNormalize && onLoadTop20 && onReset;
 
   return (
     <section className="rounded-[30px] bg-card shadow-[0_2px_12px_hsl(var(--foreground)/0.06)] ring-1 ring-border/60">
@@ -256,12 +306,12 @@ export default function PgaModelTable({
 
       {/* ── Weight sliders ── */}
       {hasWeights && (
-        <WeightSliderRow
+        <PgaModelControls
           draftWeights={draftWeights!} appliedWeights={appliedWeights!}
-          selectedPreset={selectedPreset!} activePreset={activePreset ?? null}
-          draftPreset={draftPreset ?? null} presetOptions={presetOptions!}
+          selectedPreset={selectedPreset!} activeModelLabel={activeModelLabel!}
+          presetOptions={presetOptions!}
           onPresetSelect={onPresetSelect!} onWeightChange={onWeightChange!}
-          onApply={onApply!} onReset={onReset!} />
+          onApply={onApply!} onNormalize={onNormalize!} onLoadTop20={onLoadTop20!} onReset={onReset!} />
       )}
 
       {/* ── Empty state ── */}

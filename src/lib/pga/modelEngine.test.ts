@@ -1,4 +1,5 @@
 import { calculateCompositeScore, normalizeTournamentPlayerData, rankPlayersByScore } from "@/lib/pga/modelEngine";
+import { PGA_TOP_20_PROFILE_WEIGHTS } from "@/lib/pga/pgaWeights";
 import type { PgaWeights, RawPgaPlayer } from "@/lib/pga/pgaTypes";
 
 function buildRawPlayer(overrides: Partial<RawPgaPlayer>): RawPgaPlayer {
@@ -120,5 +121,86 @@ describe("PGA model missing-data handling", () => {
     const rows = rankPlayersByScore(players, weights);
 
     expect(rows.map((row) => row.player)).toEqual(["Complete A", "Complete B"]);
+  });
+});
+
+describe("PGA model preset ranking", () => {
+  const balancedWeights: PgaWeights = {
+    sgApproach: 22,
+    par4: 14,
+    drivingAccuracy: 11,
+    bogeyAvoidance: 11,
+    sgAroundGreen: 9,
+    trendRank: 11,
+    birdie125150: 7,
+    sgPutting: 6,
+    birdieUnder125: 3,
+    courseTrueSg: 6,
+  };
+
+  function rankedPlayer(name: string, statRank: number, trendRank: number, courseTrueSg: number) {
+    return buildRawPlayer({
+      "Player Name": name,
+      TrendRank: trendRank,
+      "Course True SG": courseTrueSg,
+      "SG: Approach the Green_rank": statRank,
+      "SG: Around the Green_rank": statRank,
+      "SG: Putting_rank": statRank,
+      "Par 4 Scoring Average_rank": statRank,
+      "Driving Accuracy %_rank": statRank,
+      "Bogey Avoidance_rank": statRank,
+      "Birdie or Better 125-150 yds_rank": statRank,
+      "Birdie or Better <125 yds_rank": statRank,
+    });
+  }
+
+  it("changes order through rankPlayersByScore when Top 20 Profile is selected", () => {
+    const players = normalizeTournamentPlayerData([
+      rankedPlayer("Form and History", 30, 1, 2),
+      rankedPlayer("Baseline Stats", 5, 80, -2),
+    ]);
+
+    expect(rankPlayersByScore(players, balancedWeights).map((row) => row.player)).toEqual(["Baseline Stats", "Form and History"]);
+    expect(rankPlayersByScore(players, PGA_TOP_20_PROFILE_WEIGHTS as PgaWeights).map((row) => row.player)).toEqual(["Form and History", "Baseline Stats"]);
+  });
+
+  it("keeps existing preset scoring unchanged and does not mutate base players", () => {
+    const players = normalizeTournamentPlayerData([
+      rankedPlayer("Form and History", 30, 1, 2),
+      rankedPlayer("Baseline Stats", 5, 80, -2),
+    ]);
+    const before = structuredClone(players);
+    const rows = rankPlayersByScore(players, balancedWeights);
+
+    expect(rows.map((row) => [row.player, Number(row.score.toFixed(6))])).toEqual([
+      ["Baseline Stats", 0.795301],
+      ["Form and History", 0.698],
+    ]);
+    expect(players).toEqual(before);
+  });
+
+  it("uses each tournament's supplied course history with the same Top 20 weights", () => {
+    const firstTournament = normalizeTournamentPlayerData([
+      rankedPlayer("Alpha", 20, 20, 2),
+      rankedPlayer("Bravo", 20, 20, -2),
+    ]);
+    const secondTournament = normalizeTournamentPlayerData([
+      rankedPlayer("Alpha", 20, 20, -2),
+      rankedPlayer("Bravo", 20, 20, 2),
+    ]);
+
+    expect(rankPlayersByScore(firstTournament, PGA_TOP_20_PROFILE_WEIGHTS as PgaWeights)[0].player).toBe("Alpha");
+    expect(rankPlayersByScore(secondTournament, PGA_TOP_20_PROFILE_WEIGHTS as PgaWeights)[0].player).toBe("Bravo");
+  });
+
+  it("keeps alphabetical tie-breaking deterministic", () => {
+    const players = normalizeTournamentPlayerData([
+      rankedPlayer("Zulu", 10, 10, 1),
+      rankedPlayer("Alpha", 10, 10, 1),
+    ]);
+    const rows = rankPlayersByScore(players, PGA_TOP_20_PROFILE_WEIGHTS as PgaWeights);
+
+    expect(rows.map((row) => row.player)).toEqual(["Alpha", "Zulu"]);
+    expect(rows.map((row) => row.rank)).toEqual([1, 1]);
   });
 });
