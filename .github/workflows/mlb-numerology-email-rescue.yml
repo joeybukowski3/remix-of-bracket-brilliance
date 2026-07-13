@@ -2,6 +2,11 @@ name: MLB Numerology Email Reliable Delivery
 
 on:
   workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional Eastern Time slate date (YYYY-MM-DD)"
+        required: false
+        type: string
   push:
     branches: [main]
     paths:
@@ -24,7 +29,49 @@ permissions:
   contents: write
 
 jobs:
+  slate-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has_games: ${{ steps.slate.outputs.has_games }}
+      game_count: ${{ steps.slate.outputs.game_count }}
+      slate_date: ${{ steps.slate.outputs.slate_date }}
+      reason: ${{ steps.slate.outputs.reason }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check official MLB slate
+        id: slate
+        env:
+          REQUESTED_SLATE_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.date || '' }}
+        run: node scripts/lib/mlb-slate-gate.mjs --date "$REQUESTED_SLATE_DATE"
+
+      - name: Summarize blank slate no-op
+        if: steps.slate.outputs.has_games == 'false'
+        env:
+          SLATE_DATE: ${{ steps.slate.outputs.slate_date }}
+        shell: bash
+        run: |
+          echo "## MLB Numerology Email Reliable Delivery" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "No MLB games scheduled for ${SLATE_DATE} ET. Numerology email delivery completed as a successful no-op." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Preserved the previous valid numerology data." >> "$GITHUB_STEP_SUMMARY"
+          echo "- No email content was generated." >> "$GITHUB_STEP_SUMMARY"
+          echo "- No email providers, retries, or delivery verification were called." >> "$GITHUB_STEP_SUMMARY"
+          echo "- No commit or push was attempted." >> "$GITHUB_STEP_SUMMARY"
+
   deliver-email:
+    needs: slate-check
+    if: needs.slate-check.outputs.has_games == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     steps:
@@ -40,7 +87,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          today_et="$(TZ=America/New_York date '+%Y-%m-%d')"
+          slate_date="${{ needs.slate-check.outputs.slate_date }}"
 
           for attempt in $(seq 1 46); do
             git fetch origin main
@@ -48,17 +95,17 @@ jobs:
 
             data_date="$(jq -r '.date // empty' public/data/mlb/numerology-daily.json 2>/dev/null || true)"
             sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
-            echo "attempt=${attempt}/46 today_et=${today_et} data_date=${data_date} sent_date=${sent_date}"
+            echo "attempt=${attempt}/46 slate_date=${slate_date} data_date=${data_date} sent_date=${sent_date}"
 
-            if [ "$sent_date" = "$today_et" ]; then
+            if [ "$sent_date" = "$slate_date" ]; then
               echo "send=false" >> "$GITHUB_OUTPUT"
-              echo "Today's email is already recorded as sent."
+              echo "The target slate email is already recorded as sent."
               exit 0
             fi
 
-            if [ "$data_date" = "$today_et" ]; then
+            if [ "$data_date" = "$slate_date" ]; then
               echo "send=true" >> "$GITHUB_OUTPUT"
-              echo "Fresh data is available and today's receipt is absent."
+              echo "Fresh target-slate data is available and its receipt is absent."
               exit 0
             fi
 
@@ -67,7 +114,7 @@ jobs:
             fi
           done
 
-          echo "::error::Fresh numerology data did not become available for ${today_et}."
+          echo "::error::Fresh numerology data did not become available for ${slate_date}."
           exit 1
 
       - name: Set up Node
