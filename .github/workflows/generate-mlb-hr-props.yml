@@ -14,6 +14,10 @@ on:
       timezone: "America/New_York" # 11:40 AM ET — final early-game refresh
   workflow_dispatch:
     inputs:
+      date:
+        description: "Optional Eastern Time slate date (YYYY-MM-DD)"
+        type: string
+        required: false
       enable_phase2_shadow:
         description: "Enable Phase 2 shadow generation and comparison"
         type: boolean
@@ -30,6 +34,7 @@ on:
       - main
     paths:
       - .github/workflows/generate-mlb-hr-props.yml
+      - scripts/lib/mlb-slate-gate.mjs
 
 # Share one lock with the other automated workflows that commit generated data to main.
 concurrency:
@@ -40,8 +45,50 @@ permissions:
   contents: write
 
 jobs:
+  slate-check:
+    name: Check official MLB slate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      has_games: ${{ steps.slate.outputs.has_games }}
+      game_count: ${{ steps.slate.outputs.game_count }}
+      slate_date: ${{ steps.slate.outputs.slate_date }}
+      reason: ${{ steps.slate.outputs.reason }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check official MLB schedule
+        id: slate
+        env:
+          REQUESTED_SLATE_DATE: ${{ inputs.date }}
+        run: node scripts/lib/mlb-slate-gate.mjs --date "$REQUESTED_SLATE_DATE"
+
+      - name: Summarize successful no-op
+        if: steps.slate.outputs.has_games == 'false'
+        env:
+          SLATE_DATE: ${{ steps.slate.outputs.slate_date }}
+        run: |
+          echo "No MLB games scheduled for ${SLATE_DATE} ET. Workflow completed as a successful no-op."
+          {
+            echo "### MLB empty slate"
+            echo "No MLB games scheduled for ${SLATE_DATE} ET. Workflow completed as a successful no-op."
+            echo "- Official schedule entries: 0"
+            echo "- No providers were called."
+            echo "- No generated files changed."
+            echo "- No commit was attempted."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   generate-mlb-data:
-    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+    needs: slate-check
+    if: needs.slate-check.outputs.has_games == 'true' && (github.event_name != 'push' || github.actor != 'github-actions[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
