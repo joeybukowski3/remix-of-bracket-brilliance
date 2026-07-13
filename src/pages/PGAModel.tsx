@@ -11,10 +11,23 @@ import PgaSidebar from "@/components/pga/PgaSidebar";
 import PgaTopProjectionsCard from "@/components/pga/PgaTopProjectionsCard";
 import { usePgaTournamentPlayers } from "@/hooks/usePgaTournamentPlayers";
 import { areWeightsEqual, buildTournamentMeta, getTopProjections, rankPlayersByScore } from "@/lib/pga/modelEngine";
-import { detectActivePreset, getStoredPgaActivePreset, getStoredPgaAppliedWeights, getWeightsForPreset, storePgaActivePreset, storePgaAppliedWeights } from "@/lib/pga/pgaWeights";
+import {
+  PGA_CUSTOM_MODEL_KEY,
+  PGA_TOP_20_PROFILE_KEY,
+  detectActivePreset,
+  getStoredPgaActivePreset,
+  getStoredPgaAppliedWeights,
+  getStoredPgaCustomWeights,
+  getWeightsForPreset,
+  normalizePgaWeightsToPercent,
+  storePgaActivePreset,
+  storePgaAppliedWeights,
+  storePgaCustomWeights,
+  withPermanentPgaPresets,
+} from "@/lib/pga/pgaWeights";
 import { FEATURED_PGA_TOURNAMENT, getFeaturedPgaHubContext, getPgaTournamentBySlug } from "@/lib/pga/tournaments";
 import { type PgaWeights } from "@/lib/pga/pgaTypes";
-import { getTournamentModelPath, getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
+import { getTournamentModelPath, getTournamentPicksPath, type PgaPresetDefinition } from "@/lib/pga/tournamentConfig";
 import { buildPgaModelTableConfig } from "@/lib/pga/tournamentUi";
 import NotFound from "@/pages/NotFound";
 
@@ -31,17 +44,23 @@ export default function PGAModel() {
   // Load the permanent, reliable model config (presets + weights) from a static JSON file.
   // This allows the sliders + preset dropdown to be driven by the official tournament formulas
   // even when the full player dataset is not yet available.
-  const [modelConfig, setModelConfig] = useState<any>(null);
+  const [modelConfig, setModelConfig] = useState<{ presets?: PgaPresetDefinition[] } | null>(null);
   const [modelConfigLoaded, setModelConfigLoaded] = useState(false);
+  const [modelStateReady, setModelStateReady] = useState(false);
+  const configuredPresetsRef = useRef<PgaPresetDefinition[] | null>(null);
 
   useEffect(() => {
     let active = true;
+    setModelConfig(null);
+    setModelConfigLoaded(false);
+    setModelStateReady(false);
+    configuredPresetsRef.current = null;
     async function loadModelConfig() {
       try {
         const configPath = `/data/pga/${tournament.slug}-model-config.json`;
         const res = await fetch(configPath, { cache: "no-store" });
         if (!res.ok) throw new Error("Model config not found");
-        const data = await res.json();
+        const data = await res.json() as { presets?: PgaPresetDefinition[] };
         if (active) setModelConfig(data);
       } catch {
         if (active) setModelConfig(null);
@@ -55,40 +74,34 @@ export default function PGAModel() {
 
   // Always have a safe set of presets so the sliders and dropdown can render.
   // Prefer the permanent JSON config; fall back to the embedded tournament data as placeholder.
-  const activePresets = (modelConfig?.presets?.length ? modelConfig.presets : (tournament.model?.presets || [])) as any[];
-
-  const defaultWeights = (activePresets[0]?.weights ?? tournament.model.presets[0].weights) as PgaWeights;
-
-  const initialWeights = useMemo(() => getStoredPgaAppliedWeights(tournament.slug, defaultWeights), [tournament.slug, defaultWeights]);
-  const initialPreset = useMemo(
-    () => detectActivePreset(initialWeights, activePresets) ?? getStoredPgaActivePreset(tournament.slug, activePresets) ?? activePresets[0]?.key,
-    [initialWeights, tournament.slug, activePresets],
+  const embeddedPresets = useMemo(
+    () => withPermanentPgaPresets(tournament.model.presets),
+    [tournament.model.presets],
+  );
+  const activePresets = useMemo(
+    () => withPermanentPgaPresets(modelConfig?.presets?.length ? modelConfig.presets : tournament.model.presets),
+    [modelConfig, tournament.model.presets],
+  );
+  const defaultWeights = activePresets[0]?.weights ?? tournament.model.presets[0].weights;
+  const initialModelState = useMemo(
+    () => resolveStoredModelState(tournament.slug, embeddedPresets, embeddedPresets[0].weights),
+    [embeddedPresets, tournament.slug],
   );
 
-  const [draftWeights, setDraftWeights] = useState<PgaWeights>(initialWeights);
-  const [appliedWeights, setAppliedWeights] = useState<PgaWeights>(initialWeights);
-  const [selectedPreset, setSelectedPreset] = useState(initialPreset);
+  const [draftWeights, setDraftWeights] = useState<PgaWeights>(initialModelState.weights);
+  const [appliedWeights, setAppliedWeights] = useState<PgaWeights>(initialModelState.weights);
+  const [selectedPreset, setSelectedPreset] = useState(initialModelState.presetKey);
   const [isFullPage, setIsFullPage] = useState(false);
 
-  // Track whether we've applied the real config from the JSON so we can
-  // keep the loading screen up until the state is fully consistent.
-  const hasAppliedRealConfig = useRef(false);
-  const [realConfigApplied, setRealConfigApplied] = useState(false);
-
   useEffect(() => {
-    if (modelConfigLoaded && modelConfig && !hasAppliedRealConfig.current) {
-      const realPresets = modelConfig.presets || [];
-      if (realPresets.length > 0) {
-        const defaultKey = realPresets[0].key;
-        const newWeights = getWeightsForPreset(realPresets, defaultKey);
-        setDraftWeights(newWeights);
-        setAppliedWeights(newWeights);
-        setSelectedPreset(defaultKey);
-        hasAppliedRealConfig.current = true;
-        setRealConfigApplied(true);
-      }
-    }
-  }, [modelConfigLoaded, modelConfig]);
+    if (!modelConfigLoaded || configuredPresetsRef.current === activePresets) return;
+    const restored = resolveStoredModelState(tournament.slug, activePresets, defaultWeights);
+    setDraftWeights(restored.weights);
+    setAppliedWeights(restored.weights);
+    setSelectedPreset(restored.presetKey);
+    configuredPresetsRef.current = activePresets;
+    setModelStateReady(true);
+  }, [activePresets, defaultWeights, modelConfigLoaded, tournament.slug]);
 
   const picksPath = tournamentSlug ? getTournamentPicksPath(tournament) : featuredHub.picksPath;
   const modelPath = tournamentSlug ? getTournamentModelPath(tournament) : featuredHub.modelPath;
@@ -101,13 +114,14 @@ export default function PGAModel() {
   });
 
   useEffect(() => {
+    if (!modelStateReady) return;
     storePgaAppliedWeights(tournament.slug, appliedWeights);
-  }, [appliedWeights, tournament.slug]);
+  }, [appliedWeights, modelStateReady, tournament.slug]);
 
   useEffect(() => {
-    const detectedPreset = detectActivePreset(appliedWeights, activePresets);
-    storePgaActivePreset(tournament.slug, detectedPreset ?? selectedPreset);
-  }, [appliedWeights, selectedPreset, tournament.slug, activePresets]);
+    if (!modelStateReady) return;
+    storePgaActivePreset(tournament.slug, selectedPreset);
+  }, [modelStateReady, selectedPreset, tournament.slug]);
 
   useEffect(() => {
     document.body.style.overflow = isFullPage ? "hidden" : "";
@@ -124,19 +138,21 @@ export default function PGAModel() {
   const topProjections = useMemo(() => getTopProjections(rows, tournament), [rows, tournament]);
   const meta = useMemo(() => buildTournamentMeta(tournament, players.length), [tournament, players.length]);
   const hasDraftChanges = useMemo(() => !areWeightsEqual(draftWeights, appliedWeights), [draftWeights, appliedWeights]);
-  const activePreset = useMemo(() => detectActivePreset(appliedWeights, activePresets), [appliedWeights, activePresets]);
-  const draftPreset = useMemo(() => detectActivePreset(draftWeights, activePresets), [draftWeights, activePresets]);
+  const activeModelLabel = selectedPreset === PGA_CUSTOM_MODEL_KEY
+    ? "Custom Model"
+    : activePresets.find((preset) => preset.key === selectedPreset)?.label ?? activePresets[0]?.label ?? "Model";
   const tableConfig = useMemo(() => buildPgaModelTableConfig(tournament), [tournament]);
   if (isMissingTournament) {
     return <NotFound />;
   }
 
   function applyDraftWeights() {
-    setAppliedWeights({ ...draftWeights });
-    const detectedPreset = detectActivePreset(draftWeights, activePresets);
-    if (detectedPreset) {
-      setSelectedPreset(detectedPreset);
-    }
+    const normalized = normalizePgaWeightsToPercent(draftWeights);
+    if (!normalized) return;
+    setDraftWeights(normalized);
+    setAppliedWeights(normalized);
+    setSelectedPreset(PGA_CUSTOM_MODEL_KEY);
+    storePgaCustomWeights(tournament.slug, normalized);
   }
 
   function resetToPreset() {
@@ -144,17 +160,39 @@ export default function PGAModel() {
     setDraftWeights(nextWeights);
     setAppliedWeights(nextWeights);
     setSelectedPreset(activePresets[0]?.key);
+    storePgaCustomWeights(tournament.slug, nextWeights);
   }
 
   function updateWeight(key: keyof PgaWeights, value: number) {
-    setDraftWeights((current) => ({ ...current, [key]: value }));
+    if (!Number.isFinite(value) || value < 0) return;
+    setDraftWeights((current) => ({ ...current, [key]: Math.min(value, 100) }));
   }
 
   function selectPreset(presetKey: string) {
+    if (presetKey === PGA_CUSTOM_MODEL_KEY) {
+      const nextWeights = getStoredPgaCustomWeights(tournament.slug, appliedWeights);
+      setSelectedPreset(PGA_CUSTOM_MODEL_KEY);
+      setDraftWeights(nextWeights);
+      setAppliedWeights(nextWeights);
+      return;
+    }
     const nextWeights = getWeightsForPreset(activePresets, presetKey);
     setSelectedPreset(presetKey);
     setDraftWeights(nextWeights);
     setAppliedWeights(nextWeights);
+  }
+
+  function normalizeDraftWeights() {
+    const normalized = normalizePgaWeightsToPercent(draftWeights);
+    if (normalized) setDraftWeights(normalized);
+  }
+
+  function loadTop20Profile() {
+    const nextWeights = getWeightsForPreset(activePresets, PGA_TOP_20_PROFILE_KEY);
+    setSelectedPreset(PGA_CUSTOM_MODEL_KEY);
+    setDraftWeights(nextWeights);
+    setAppliedWeights(nextWeights);
+    storePgaCustomWeights(tournament.slug, nextWeights);
   }
 
   if (status === "loading") {
@@ -209,7 +247,7 @@ export default function PGAModel() {
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
         <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-card px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <span className="text-base font-semibold tracking-[-0.02em] text-foreground">{tournament.model.courseHistoryDisplay} Model</span>
+            <span className="text-base font-semibold tracking-[-0.02em] text-foreground">{tournament.model.courseHistoryDisplay} Model · {activeModelLabel}</span>
             <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{rows.length} golfers</span>
             {hasDraftChanges ? (
               <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
@@ -237,12 +275,13 @@ export default function PGAModel() {
             draftWeights={draftWeights}
             appliedWeights={appliedWeights}
             selectedPreset={selectedPreset}
-            activePreset={activePreset}
-            draftPreset={draftPreset}
+            activeModelLabel={activeModelLabel}
             presetOptions={activePresets}
             onPresetSelect={selectPreset}
             onWeightChange={updateWeight}
             onApply={applyDraftWeights}
+            onNormalize={normalizeDraftWeights}
+            onLoadTop20={loadTop20Profile}
             onReset={resetToPreset}
           />
         </div>
@@ -292,12 +331,13 @@ export default function PGAModel() {
                   draftWeights={draftWeights}
                   appliedWeights={appliedWeights}
                   selectedPreset={selectedPreset}
-                  activePreset={activePreset}
-                  draftPreset={draftPreset}
+                  activeModelLabel={activeModelLabel}
                   presetOptions={activePresets}
                   onPresetSelect={selectPreset}
                   onWeightChange={updateWeight}
                   onApply={applyDraftWeights}
+                  onNormalize={normalizeDraftWeights}
+                  onLoadTop20={loadTop20Profile}
                   onReset={resetToPreset}
                 />
                 <PgaFooterMeta hubPath={featuredHub.hubPath} tournamentPath={picksPath} tournamentLabel={tournament.shortName} />
@@ -308,4 +348,21 @@ export default function PGAModel() {
       </div>
     </SiteShell>
   );
+}
+
+function resolveStoredModelState(slug: string, presets: PgaPresetDefinition[], defaultWeights: PgaWeights) {
+  const storedPreset = getStoredPgaActivePreset(slug, presets, true);
+  if (storedPreset === PGA_CUSTOM_MODEL_KEY) {
+    return { presetKey: PGA_CUSTOM_MODEL_KEY, weights: getStoredPgaCustomWeights(slug, defaultWeights) };
+  }
+  if (storedPreset) {
+    return { presetKey: storedPreset, weights: getWeightsForPreset(presets, storedPreset) };
+  }
+
+  const storedWeights = getStoredPgaAppliedWeights(slug, defaultWeights);
+  const detectedPreset = detectActivePreset(storedWeights, presets);
+  if (detectedPreset) {
+    return { presetKey: detectedPreset, weights: getWeightsForPreset(presets, detectedPreset) };
+  }
+  return { presetKey: PGA_CUSTOM_MODEL_KEY, weights: storedWeights };
 }
