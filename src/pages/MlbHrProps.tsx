@@ -70,8 +70,18 @@ export type HrDashboardPitcher = {
   workloadFlags?: string[];
 };
 
+export type HrLineupStatus = "confirmed" | "projected" | "unknown";
+
 export type HrDashboardBatter = {
   gameKey: string;
+  /** Canonical numeric MLB player id. Null when upstream could not resolve one — never fabricated. */
+  playerId: number | null;
+  /** Canonical numeric MLB gamePk. `gameKey` (e.g. "MIL@PIT") is a display/grouping alias only. */
+  gameId: number | null;
+  lineupStatus: HrLineupStatus;
+  battingOrder: number | null;
+  starterConfirmed: boolean | null;
+  position: string | null;
   player: string;
   team: string;
   opponent: string;
@@ -125,6 +135,17 @@ export type HrDashboardBatter = {
   /** @deprecated Alias for marketImpliedProbability, kept for backward compatibility only. */
   hrImplied?: number | null;
   angleTags: string[];
+  // ── Phase 1 shadow-only fields (computed client-side by the analytics
+  //    bridge engine; never used for sorting, best bets, Sin City, or any
+  //    public recommendation; NOT probabilities) ──────────────────────────
+  shadowAbsoluteScore?: number | null;
+  shadowScoreStatus?: "ok" | "suppressed";
+  shadowSlateRank?: number | null;
+  shadowCompleteness?: number;
+  shadowConfidence?: number;
+  shadowContributions?: import("@/lib/mlb/analytics/types").MetricContribution[];
+  shadowNormalizedMetrics?: Record<string, number>;
+  shadowMissingMetrics?: string[];
 };
 
 export type HrGameEnvironment = {
@@ -147,6 +168,8 @@ export type HrDashboardPayload = {
   pitchers: HrDashboardPitcher[];
   batters: HrDashboardBatter[];
   gameEnvironments?: HrGameEnvironment[];
+  /** Phase 1 shadow bridge-score version metadata. Additive; UI ignores it. */
+  shadowMeta?: import("@/lib/mlb/analytics/shadow").HrShadowMeta;
 };
 
 export type HrPropPick = {
@@ -346,6 +369,28 @@ function isStarterPlaceholder(value: unknown) {
   return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "TO BE ANNOUNCED" || normalized === "TO BE DETERMINED";
 }
 
+/**
+ * Canonical MLB ids must be positive integers. Anything else (missing,
+ * non-numeric, fractional, zero/negative) is represented as null —
+ * unavailable — matching the generator, which warns and keeps the row
+ * rather than fabricating an id.
+ */
+function normalizeCanonicalMlbId(v: unknown): number | null {
+  const n = normalizeNumber(v);
+  return n != null && Number.isInteger(n) && n > 0 ? n : null;
+}
+
+function normalizeLineupStatus(v: unknown): HrLineupStatus {
+  const s = normalizeText(v).toLowerCase();
+  return s === "confirmed" || s === "projected" ? s : "unknown";
+}
+
+/** Batting order slot (1–9). Out-of-range or missing values are unavailable. */
+function normalizeBattingOrder(v: unknown): number | null {
+  const n = normalizeNumber(v);
+  return n != null && Number.isInteger(n) && n >= 1 && n <= 9 ? n : null;
+}
+
 function normalizeGame(entry: unknown): HrDashboardGame | null {
   if (!isRecord(entry)) return null;
   const g = {
@@ -423,11 +468,17 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
   if (!isRecord(entry)) return null;
   const b = {
     gameKey: normalizeText(entry.gameKey),
+    playerId: normalizeCanonicalMlbId(entry.playerId),
+    gameId: normalizeCanonicalMlbId(entry.gameId),
+    lineupStatus: normalizeLineupStatus(entry.lineupStatus),
+    battingOrder: normalizeBattingOrder(entry.battingOrder),
+    starterConfirmed: typeof entry.starterConfirmed === "boolean" ? entry.starterConfirmed : null,
+    position: normalizeText(entry.position) || null,
     player: normalizeText(entry.player),
     team: normalizeTeamValue(entry.team),
     opponent: normalizeTeamValue(entry.opponent),
     opposingPitcher: normalizeText(entry.opposingPitcher) || "TBD",
-    opposingPitcherId: normalizeNumber(entry.opposingPitcherId),
+    opposingPitcherId: normalizeCanonicalMlbId(entry.opposingPitcherId),
     pitcherHand: normalizeText(entry.pitcherHand) || "R",
     ballpark: normalizeText(entry.ballpark) || "Unknown Venue",
     parkFactor: normalizeNumber(entry.parkFactor),
