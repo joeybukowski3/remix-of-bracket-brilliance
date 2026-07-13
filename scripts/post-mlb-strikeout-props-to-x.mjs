@@ -13,21 +13,19 @@ import {
   ARTIFACT_MISMATCH_STATUS,
   assertArtifactConsistency,
   buildKArtifact,
-  encodeArtifact,
   validateArtifact,
 } from "./lib/mlb-x-selection-artifact.mjs";
 import { buildKCaptionFromArtifact } from "./lib/mlb-x-artifact-caption.mjs";
-import { startLocalPreviewServer } from "./lib/mlb-x-local-preview-server.mjs";
+import { writeMlbSocialGraphic } from "./lib/mlb-social-graphic-renderer.mjs";
 
 const ROOT = process.cwd();
 const STRIKEOUT_PROPS_URL = "https://www.joeknowsball.com/mlb";
 const PAGE_EXPORT_SELECTOR = '[data-x-export="mlb-k-social"]';
 const ROW_SELECTOR = "[data-k-row]";
 const K_TAB_LABEL = "K Props";
-const EXPORT_ROUTE = "/mlb/strikeout-props/x-export";
-const EXPORT_SELECTOR = '[data-x-export="mlb-k-social"]';
 const K_TARGET_TABLE_SIZE = 5;
 const SCREENSHOT_PATH = path.join(ROOT, "artifacts", "mlb-strikeout-props-x.png");
+const SVG_PATH = path.join(ROOT, "artifacts", "mlb-strikeout-props-x.svg");
 const ARTIFACT_PATH = path.join(ROOT, "artifacts", "mlb-strikeout-props-x-selection.json");
 const DEFAULT_DUPLICATE_STATE_DIR = path.join(ROOT, "artifacts", "x-post-state");
 const args = new Set(process.argv.slice(2));
@@ -155,6 +153,7 @@ async function scrapeKPageRows(page) {
       side: el.getAttribute("data-k-side") || "",
       projectedKs: el.getAttribute("data-k-projected-ks") || "",
       projectionEdge: el.getAttribute("data-k-projection-edge") || "",
+      strikeoutScore: el.getAttribute("data-k-score") || "",
     }));
     rows.push({
       pitcher: normalizeText(data.pitcher),
@@ -168,6 +167,7 @@ async function scrapeKPageRows(page) {
       direction: normalizeText(data.side) || null,
       projectedKs: toFiniteNumber(data.projectedKs),
       projectionEdge: toFiniteNumber(data.projectionEdge),
+      strikeoutScore: toFiniteNumber(data.strikeoutScore),
     });
   }
 
@@ -175,39 +175,10 @@ async function scrapeKPageRows(page) {
   return { date: meta.date, generatedAt: meta.generatedAt, rows: eligibleRows };
 }
 
-/** Render the bare K export route locally + scrape rendered rows for the consistency check. */
-async function renderExportAndScrape(browser, artifact, { outputPath = SCREENSHOT_PATH } = {}) {
-  mkdirSync(path.dirname(outputPath), { recursive: true });
-  const encoded = encodeArtifact(artifact);
-  const server = await startLocalPreviewServer();
-  try {
-    const page = await browser.newPage({ viewport: { width: 1160, height: 1500 }, deviceScaleFactor: 2 });
-    page.setDefaultTimeout(30000);
-    await page.goto(`${server.url}${EXPORT_ROUTE}?d=${encoded}`, { waitUntil: "networkidle" });
-    const exportTarget = page.locator(EXPORT_SELECTOR).first();
-    await exportTarget.waitFor({ state: "visible", timeout: 15000 });
-
-    const rowLocators = exportTarget.locator("[data-k-row]");
-    const rowCount = await rowLocators.count();
-    const renderedRows = [];
-    for (let i = 0; i < rowCount; i++) {
-      const data = await rowLocators.nth(i).evaluate((el) => ({
-        pitcherId: el.getAttribute("data-k-pitcher-id") || "",
-        gameId: el.getAttribute("data-k-game-id") || "",
-        pitcher: el.getAttribute("data-k-pitcher") || "",
-        team: el.getAttribute("data-k-team") || "",
-        side: el.getAttribute("data-k-side") || "",
-        kLine: el.getAttribute("data-k-line") || "",
-        odds: el.getAttribute("data-k-odds") || "",
-      }));
-      renderedRows.push(data);
-    }
-    await exportTarget.screenshot({ path: outputPath, animations: "disabled" });
-    await page.close();
-    return { screenshotPath: outputPath, renderedRows };
-  } finally {
-    await server.close();
-  }
+/** Render deterministic SVG/PNG + extract row metadata for the consistency check. */
+async function renderExportAndScrape(browser, artifact, { outputPath = SCREENSHOT_PATH, svgPath = SVG_PATH } = {}) {
+  const rendered = await writeMlbSocialGraphic({ kind: "k", slateDate: artifact.slateDate, rows: artifact.rows, svgPath, pngPath: outputPath, browser });
+  return { screenshotPath: rendered.pngPath, svgPath: rendered.svgPath, renderedRows: rendered.renderedRows };
 }
 
 async function publishPost({ client, caption, screenshotPath }) {
@@ -317,6 +288,12 @@ async function main() {
       return;
     }
 
+    if (artifact.rows.length !== K_TARGET_TABLE_SIZE) {
+      console.log(`[mlb-strikeout-props-x] Not posting: fixed five-row graphic requires ${K_TARGET_TABLE_SIZE} valid plays; received ${artifact.rows.length}.`);
+      logFinalStatus("SKIPPED_INSUFFICIENT_ROWS");
+      return;
+    }
+
     const artifactError = validateArtifact(artifact, { slateDate, now });
     if (artifactError) {
       console.error(`[mlb-strikeout-props-x] ${artifactError}`);
@@ -338,8 +315,8 @@ async function main() {
     console.log(captionResult.caption);
     console.log("");
 
-    const { screenshotPath, renderedRows } = await renderExportAndScrape(browser, artifact);
-    console.log(`[mlb-strikeout-props-x] screenshotPath=${screenshotPath} renderedRows=${renderedRows.length}`);
+    const { screenshotPath, svgPath, renderedRows } = await renderExportAndScrape(browser, artifact);
+    console.log(`[mlb-strikeout-props-x] svgPath=${svgPath} screenshotPath=${screenshotPath} renderedRows=${renderedRows.length}`);
 
     const mismatch = assertArtifactConsistency({ artifact, renderedRows, captionRows: captionResult.captionRows });
     if (mismatch) {

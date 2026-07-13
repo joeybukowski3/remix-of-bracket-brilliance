@@ -128,6 +128,10 @@ export function buildHrArtifact({ slateDate, snapshot, selectedRows = [], select
     hrScore: toFiniteNumber(row.hrScore),
     hrOddsYes: normalizeText(row.hrOddsYes) || null,
     opposingPitcher: normalizeText(row.opposingPitcher) || null,
+    barrelRate: toFiniteNumber(row.barrelRate),
+    hardHitRate: toFiniteNumber(row.hardHitRate),
+    last7HR: toFiniteNumber(row.last7HR),
+    last30HR: toFiniteNumber(row.last30HR),
   }));
   return artifact;
 }
@@ -136,8 +140,11 @@ export function buildHrArtifact({ slateDate, snapshot, selectedRows = [], select
 export function buildKArtifact({ slateDate, snapshot, selectedRows = [], selectionStatus }) {
   const artifact = baseArtifact({ contentType: "k", slateDate, snapshot, selectionStatus });
   artifact.rows = selectedRows.map((row, index) => {
-    const side = normalizeText(row.direction || row.side).toUpperCase();
-    const odds = side === "UNDER" ? normalizeText(row.oddsUnder) : normalizeText(row.oddsOver);
+    const projectedKs = toFiniteNumber(row.projectedKs);
+    const kLine = toFiniteNumber(row.kLine);
+    const projectionDifference = projectedKs == null || kLine == null ? null : Number((projectedKs - kLine).toFixed(2));
+    const side = projectionDifference == null || projectionDifference === 0 ? "" : projectionDifference > 0 ? "OVER" : "UNDER";
+    const odds = side === "UNDER" ? normalizeText(row.oddsUnder) : side === "OVER" ? normalizeText(row.oddsOver) : "";
     return {
       rank: index + 1,
       pitcherId: row.pitcherId ?? null,
@@ -146,10 +153,14 @@ export function buildKArtifact({ slateDate, snapshot, selectedRows = [], selecti
       team: normalizeText(row.team).toUpperCase(),
       opponent: normalizeText(row.opponent).toUpperCase(),
       side,
-      kLine: toFiniteNumber(row.kLine),
+      kLine,
       odds: odds || null,
-      projectedKs: toFiniteNumber(row.projectedKs),
-      projectionEdge: toFiniteNumber(row.projectionEdge),
+      oddsOver: normalizeText(row.oddsOver) || null,
+      oddsUnder: normalizeText(row.oddsUnder) || null,
+      projectedKs,
+      projectionEdge: projectionDifference,
+      projectionDifference,
+      strikeoutScore: toFiniteNumber(row.strikeoutScore ?? row.kScore),
       bookmaker: normalizeText(row.bookmaker) || null,
     };
   });
