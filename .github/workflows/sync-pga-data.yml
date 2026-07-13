@@ -61,6 +61,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate JKB Trend round schema from committed history
+        run: npm run pga:trend -- --validate-input-only
+
       - name: Fetch current tournament field
         run: node scripts/fetch-pga-current-field.mjs
 
@@ -91,8 +94,13 @@ jobs:
           echo "Sheet data is stale or missing — falling back to direct PGA Tour API pull."
           node scripts/fetch-pga-player-stats.mjs
 
-      - name: Generate JKB Trend from refreshed history and player stats
-        run: npm run pga:trend
+      - name: Generate and validate JKB Trend in temporary output
+        run: npm run pga:trend -- --output-dir "${RUNNER_TEMP}/jkb-trend"
+
+      - name: Publish validated JKB Trend artifacts
+        run: |
+          cp "${RUNNER_TEMP}/jkb-trend/round-history-pga.json" public/data/pga/round-history-pga.json
+          cp "${RUNNER_TEMP}/jkb-trend/jkb-trend-rankings.json" public/data/pga/jkb-trend-rankings.json
 
       - name: Generate tournament rankings and model from player stats (primary model source)
         run: node scripts/generate-pga-tournament-rankings.mjs

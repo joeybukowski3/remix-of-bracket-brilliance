@@ -104,10 +104,12 @@ describe("Monday workflow guarantees", () => {
   it("runs field sync, stats refresh, JKB Trend, model generation, and the sync guard in order", () => {
     const jobsSection = WORKFLOW.slice(WORKFLOW.indexOf("jobs:"));
     const order = [
+      "npm run pga:trend -- --validate-input-only",
       "fetch-pga-current-field.mjs",
       "check-pga-stats-freshness.mjs",
       "fetch-pga-player-stats.mjs",
-      "npm run pga:trend",
+      'npm run pga:trend -- --output-dir "${RUNNER_TEMP}/jkb-trend"',
+      "Publish validated JKB Trend artifacts",
       "generate-pga-tournament-rankings.mjs",
       "check-pga-field-sync.mjs",
     ].map((step) => jobsSection.indexOf(step));

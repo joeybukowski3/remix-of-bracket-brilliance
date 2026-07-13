@@ -20,7 +20,7 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
     <>
       {trendPayload?.generatedAt ? (
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-[10px] text-cyan-950">
-          <span><strong>JKB Trend Rank:</strong> trailing 20 adjusted rounds across PGA, LIV and DP World Tour data.</span>
+          <span><strong>JKB Trend Rank:</strong> trailing 20 adjusted rounds from validated {availableTrendTours(trendPayload.sources)} data.</span>
           <span>Updated {new Date(trendPayload.generatedAt).toLocaleDateString()}</span>
         </div>
       ) : trendError ? (
@@ -360,4 +360,9 @@ function signed(value: number | null) {
 function trendMetric(ranking: JkbTrendRanking | null, fallback: string) {
   if (ranking?.rank == null) return fallback;
   return `#${ranking.rank}${ranking.confidence === "provisional" ? "*" : ""} · ${signed(ranking.recent20)}`;
+}
+
+function availableTrendTours(sources: Record<string, { status?: string }> | undefined) {
+  const available = Object.entries(sources ?? {}).filter(([, source]) => source.status === "available").map(([tour]) => tour);
+  return available.length ? available.join("/") : "available tour";
 }
