@@ -144,6 +144,8 @@ export function normalizeRoundScore(value, options = {}) {
     return { usable: false, reason: "unsupported_score_unit" };
   }
 
+  // Repository audit: historical values outside 45-100 were Modified Stableford
+  // points or multi-round team totals, not individual 18-hole stroke scores.
   if (strokes < config.minActualStrokes || strokes > config.maxActualStrokes) {
     const ambiguous = !declaredUnit && rawScore >= -15 && rawScore <= 20;
     return { usable: false, reason: ambiguous ? "unsupported_or_ambiguous_score_unit" : "round_score_out_of_range" };
@@ -342,7 +344,7 @@ export function buildAdjustedRounds(rounds, statsMap = new Map(), config = DEFAU
       const strength = eventStrength.get(row.eventIdentity) ?? 0;
       const adjustedPerformance = fieldRelative + strength;
       if (Math.abs(fieldRelative) > config.maxFieldRelative) {
-        validationErrors.push(`${row.player} ${groupKey} field-relative ${fieldRelative.toFixed(2)} exceeds ${config.maxFieldRelative}.`);
+        validationErrors.push(`${row.player} ${groupKey} tracked-cohort-relative ${fieldRelative.toFixed(2)} exceeds ${config.maxFieldRelative}.`);
       }
       if (Math.abs(adjustedPerformance) > config.maxAdjustedPerformance) {
         validationErrors.push(`${row.player} ${groupKey} adjusted performance ${adjustedPerformance.toFixed(2)} exceeds ${config.maxAdjustedPerformance}.`);
@@ -464,7 +466,7 @@ export function validateTrendOutput(context) {
   for (const row of adjustedRounds) {
     if (row.scoreUnit !== "actual_strokes") errors.push(`${row.player} has non-normalized score unit ${row.scoreUnit}.`);
     if (row.fieldSize < config.minEventRoundField) errors.push(`${row.eventRoundGroupKey} has only ${row.fieldSize} rows.`);
-    if (Math.abs(row.fieldRelative) > config.maxFieldRelative) errors.push(`${row.player} has extreme field-relative value ${row.fieldRelative}.`);
+    if (Math.abs(row.fieldRelative) > config.maxFieldRelative) errors.push(`${row.player} has extreme tracked-cohort-relative value ${row.fieldRelative}.`);
     if (Math.abs(row.adjustedPerformance) > config.maxAdjustedPerformance) errors.push(`${row.player} has extreme adjusted performance ${row.adjustedPerformance}.`);
   }
   for (const row of rankings) {
@@ -480,11 +482,11 @@ export function validateTrendOutput(context) {
   return {
     status: "valid",
     checkedAt: asOf.toISOString(),
-    minimumEventRoundField: config.minEventRoundField,
-    maximumFieldRelative: config.maxFieldRelative,
+    minimumTrackedCohortSize: config.minEventRoundField,
+    maximumTrackedCohortRelative: config.maxFieldRelative,
     maximumAdjustedPerformance: config.maxAdjustedPerformance,
     maximumWeightedRecent20: config.maxWeightedRecent20,
-    checks: ["actual-strokes-only comparison groups", "coherent event identity", "duplicate observation removal", "minimum comparison-group size", "chronological recent-20 selection", "field-relative and weighted-output bounds", "recent PGA source freshness"],
+    checks: ["actual-strokes-only comparison groups", "coherent event identity", "duplicate observation removal", "minimum tracked-cohort size", "chronological recent-20 selection", "tracked-cohort-relative and weighted-output bounds", "recent PGA source freshness"],
   };
 }
 
@@ -567,10 +569,11 @@ export function generateTrendArtifacts(payloads, options = {}) {
       officialMinRounds: config.officialMinRounds,
       provisionalMinRounds: config.provisionalMinRounds,
       recentRoundMaxAgeDays: config.recencyDays,
-      minimumEventRoundField: config.minEventRoundField,
+      comparisonPopulation: "available_tracked_players",
+      minimumTrackedCohortSize: config.minEventRoundField,
       weights: { recent20: 0.70, versusBaseline: 0.20, lastFiveFinishes: 0.10 },
-      scoreSchema: "Only actual 18-hole stroke scores in the validated range are compared. Explicit relative-to-par rows require authoritative course par and are converted before grouping; ambiguous points, totals, missing values, and out-of-range values are rejected.",
-      note: "Each score is measured in strokes against the same canonical event identity (official ID when available) and round among tracked players, then adjusted by the existing bounded SG Total field-strength estimate.",
+      scoreSchema: "Only actual 18-hole stroke scores in the validated 45-100 range are compared. Repository values outside that range are Modified Stableford points or multi-round team totals, not legitimate individual stroke-play rounds. Explicit relative-to-par rows require authoritative course par and are converted before grouping; ambiguous points, totals, and missing values are rejected.",
+      note: "Each score is measured in strokes against the available tracked-player cohort for the same canonical event identity (official ID when available) and round, then adjusted by the existing bounded SG Total field-strength estimate. This is not a complete tournament-field average.",
     },
     validation,
     sources,
@@ -589,9 +592,9 @@ function diagnosticRow(row, includedIn) {
     storedRawScore: row.rawScore,
     interpretedScoreUnit: row.scoreUnit,
     eventRoundGroupKey: row.eventRoundGroupKey,
-    groupFieldSize: row.fieldSize,
-    groupFieldAverage: rounded(row.fieldAverage),
-    playerFieldRelative: rounded(row.fieldRelative),
+    trackedCohortSize: row.fieldSize,
+    trackedCohortAverage: rounded(row.fieldAverage),
+    playerVersusTrackedCohort: rounded(row.fieldRelative),
     fieldStrengthAdjustment: rounded(row.eventStrength),
     adjustedPerformance: rounded(row.adjustedPerformance),
     sourceTour: row.tour,

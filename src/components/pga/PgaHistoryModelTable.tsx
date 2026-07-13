@@ -20,7 +20,7 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
     <>
       {trendPayload?.generatedAt ? (
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-[10px] text-cyan-950">
-          <span><strong>JKB Trend Rank:</strong> trailing 20 adjusted rounds from validated {availableTrendTours(trendPayload.sources)} data.</span>
+          <span><strong>JKB Trend Rank:</strong> trailing 20 adjusted rounds versus the available tracked-player cohort in validated {availableTrendTours(trendPayload.sources)} data, not complete tournament fields.</span>
           <span>Updated {new Date(trendPayload.generatedAt).toLocaleDateString()}</span>
         </div>
       ) : trendError ? (

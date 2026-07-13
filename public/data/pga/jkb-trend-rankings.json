@@ -2,8 +2,8 @@
   "version": 2,
   "schemaVersion": "jkb-trend-rankings-v2",
   "name": "JKB Trend Rank",
-  "generatedAt": "2026-07-13T16:03:53.752Z",
-  "asOf": "2026-07-13T16:03:53.752Z",
+  "generatedAt": "2026-07-13T17:49:20.813Z",
+  "asOf": "2026-07-13T17:49:20.812Z",
   "newestUsableRoundDate": "2026-07-12",
   "playerCount": 155,
   "rankedPlayerCount": 155,
@@ -14,29 +14,30 @@
     "officialMinRounds": 20,
     "provisionalMinRounds": 12,
     "recentRoundMaxAgeDays": 28,
-    "minimumEventRoundField": 8,
+    "comparisonPopulation": "available_tracked_players",
+    "minimumTrackedCohortSize": 8,
     "weights": {
       "recent20": 0.7,
       "versusBaseline": 0.2,
       "lastFiveFinishes": 0.1
     },
-    "scoreSchema": "Only actual 18-hole stroke scores in the validated range are compared. Explicit relative-to-par rows require authoritative course par and are converted before grouping; ambiguous points, totals, missing values, and out-of-range values are rejected.",
-    "note": "Each score is measured in strokes against the same canonical event identity (official ID when available) and round among tracked players, then adjusted by the existing bounded SG Total field-strength estimate."
+    "scoreSchema": "Only actual 18-hole stroke scores in the validated 45-100 range are compared. Repository values outside that range are Modified Stableford points or multi-round team totals, not legitimate individual stroke-play rounds. Explicit relative-to-par rows require authoritative course par and are converted before grouping; ambiguous points, totals, and missing values are rejected.",
+    "note": "Each score is measured in strokes against the available tracked-player cohort for the same canonical event identity (official ID when available) and round, then adjusted by the existing bounded SG Total field-strength estimate. This is not a complete tournament-field average."
   },
   "validation": {
     "status": "valid",
-    "checkedAt": "2026-07-13T16:03:53.752Z",
-    "minimumEventRoundField": 8,
-    "maximumFieldRelative": 20,
+    "checkedAt": "2026-07-13T17:49:20.812Z",
+    "minimumTrackedCohortSize": 8,
+    "maximumTrackedCohortRelative": 20,
     "maximumAdjustedPerformance": 20.75,
     "maximumWeightedRecent20": 8,
     "checks": [
       "actual-strokes-only comparison groups",
       "coherent event identity",
       "duplicate observation removal",
-      "minimum comparison-group size",
+      "minimum tracked-cohort size",
       "chronological recent-20 selection",
-      "field-relative and weighted-output bounds",
+      "tracked-cohort-relative and weighted-output bounds",
       "recent PGA source freshness"
     ]
   },

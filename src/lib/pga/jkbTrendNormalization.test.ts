@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_TREND_CONFIG,
   buildAdjustedRounds,
+  buildDiagnostics,
   buildPlayerSummaries,
   dedupeRounds,
   eventIdentity,
@@ -157,6 +158,18 @@ describe("JKB Trend artifact health and determinism", () => {
     expect(result.rankingsArtifact.sources.LIV.status).toBe("unavailable");
     expect(result.rankingsArtifact.sources.DPWT.status).toBe("unavailable");
     expect(result.rankingsArtifact.sources.PGA.status).toBe("available");
+  });
+
+  it("labels comparison groups as tracked cohorts rather than complete fields", () => {
+    const result = generateTrendArtifacts(syntheticPayloads(), { asOf: new Date("2026-07-13T00:00:00Z"), generatedAt: "2026-07-13T00:00:00Z" });
+    expect(result.rankingsArtifact.methodology.comparisonPopulation).toBe("available_tracked_players");
+    expect(result.rankingsArtifact.methodology.minimumTrackedCohortSize).toBe(8);
+    expect(result.rankingsArtifact.methodology.note).toContain("not a complete tournament-field average");
+    expect(result.rankingsArtifact.validation.minimumTrackedCohortSize).toBe(8);
+    expect(result.rankingsArtifact.validation).not.toHaveProperty("minimumEventRoundField");
+    const diagnosticRound = buildDiagnostics(result, ["Player 1"]).players[0].recent20Rounds[0];
+    expect(diagnosticRound).toMatchObject({ trackedCohortSize: 8 });
+    expect(diagnosticRound).not.toHaveProperty("groupFieldSize");
   });
 
   it("produces deterministic ranks and idempotent content apart from generation time", () => {
