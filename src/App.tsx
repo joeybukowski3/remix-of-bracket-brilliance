@@ -50,7 +50,7 @@ import PgaHub from "./pages/PgaHub";
 import PgaHistoryModel from "./pages/PgaHistoryModel";
 import PgaCustom from "./pages/PgaCustom";
 import PgaDfsUpload from "./pages/PgaDfsUpload";
-import PgaBestBets from "./pages/PgaBestBets";
+import PgaOpenChampionshipBestBets from "./pages/PgaOpenChampionshipBestBets";
 import PGAModel from "./pages/PGAModel";
 import PGAModelTableView from "./pages/PGAModelTableView";
 import PGATop40Picks from "./pages/PGATop40Picks";
@@ -157,7 +157,8 @@ const App = () => (
           <Route path="/pga/legacy" element={<PgaHub />} />
           <Route path="/pga/custom" element={<PgaCustom />} />
           <Route path="/pga/dfs" element={<PgaDfsUpload />} />
-          <Route path="/pga/best-bets" element={<PgaBestBets />} />
+          <Route path="/pga/best-bets" element={<PgaOpenChampionshipBestBets />} />
+          <Route path="/pga/the-open-2026-model-value-bets" element={<PgaOpenChampionshipBestBets />} />
           <Route path="/pga/model" element={<PGAModel />} />
           <Route path="/pga/model/table" element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug" element={<PGA />} />
