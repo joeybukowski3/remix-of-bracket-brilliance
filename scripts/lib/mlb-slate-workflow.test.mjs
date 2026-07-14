@@ -7,6 +7,7 @@ import { runSlateGate } from "./mlb-slate-gate.mjs";
 const dataWorkflow = readFileSync(".github/workflows/generate-mlb-hr-props.yml", "utf8");
 const numerologyWorkflow = readFileSync(".github/workflows/generate-mlb-numerology.yml", "utf8");
 const emailWorkflow = readFileSync(".github/workflows/mlb-numerology-email-rescue.yml", "utf8");
+const receiptPersistence = readFileSync("scripts/lib/persist-mlb-numerology-email-receipt.sh", "utf8");
 const noGameMessage = "No MLB games scheduled for ${SLATE_DATE} ET. Workflow completed as a successful no-op.";
 const emailNoGameMessage = "No MLB games scheduled for ${SLATE_DATE} ET. Numerology email delivery completed as a successful no-op.";
 
@@ -154,6 +155,65 @@ test("Reliable Delivery manual dispatch gates and delivers the explicit ET date"
   });
   assert.equal(result.slateDate, "2026-08-04");
   assert.match(requestedUrl, /date=2026-08-04$/);
+});
+
+test("Reliable Delivery stages only the receipt and never commits previews", () => {
+  assert.match(emailWorkflow, /SLATE_DATE: \$\{\{ needs\.slate-check\.outputs\.slate_date \}\}/);
+  assert.match(emailWorkflow, /bash scripts\/lib\/persist-mlb-numerology-email-receipt\.sh/);
+  assert.match(receiptPersistence, /git add -- "\$receipt"/);
+  assert.match(receiptPersistence, /staged_paths="\$\(git diff --cached --name-only\)"/);
+  assert.match(receiptPersistence, /if \[ "\$staged_paths" != "\$receipt" \]/);
+  assert.doesNotMatch(receiptPersistence, /git add (?:-A|\.)\b/);
+  assert.doesNotMatch(receiptPersistence, /git commit[^\n]*(?:email-preview\.html|email-preview\.txt)/);
+  assert.doesNotMatch(receiptPersistence, /NUMEROLOGY_EMAIL_WEBHOOK|email:send|curl\s/);
+});
+
+test("Reliable Delivery cleans generated files before syncing and preserves the receipt", () => {
+  const save = receiptPersistence.indexOf('cp "$receipt" "$tmp_receipt"');
+  const reset = receiptPersistence.indexOf("git reset --hard HEAD");
+  const cleanArchive = receiptPersistence.indexOf('git clean -fd -- "$archive_path"');
+  const cleanPreviews = receiptPersistence.indexOf("git clean -fdx --");
+  const cleanCheck = receiptPersistence.indexOf("git status --porcelain --untracked-files=all");
+  const fetch = receiptPersistence.indexOf("git fetch origin main");
+  const sync = receiptPersistence.indexOf("git reset --hard FETCH_HEAD");
+  const restore = receiptPersistence.indexOf('cp "$tmp_receipt" "$receipt"');
+  const stage = receiptPersistence.indexOf('git add -- "$receipt"');
+  assert.ok(save < reset);
+  assert.ok(reset < cleanArchive && cleanArchive < cleanPreviews);
+  assert.ok(cleanPreviews < cleanCheck && cleanCheck < fetch);
+  assert.ok(fetch < sync && sync < restore && restore < stage);
+  assert.match(receiptPersistence, /git status --short/);
+  assert.match(receiptPersistence, /public\/data\/mlb\/numerology\/email-preview\.html/);
+  assert.match(receiptPersistence, /public\/data\/mlb\/numerology\/email-preview\.txt/);
+});
+
+test("Reliable Delivery validates the complete target-slate receipt contract", () => {
+  assert.match(receiptPersistence, /\.date == \$date/);
+  assert.match(receiptPersistence, /\.result == "sent" or \.result == "already_exists"/);
+  assert.match(receiptPersistence, /\.subject == \$subject/);
+  assert.match(receiptPersistence, /\.emailKey == \$email_key/);
+  assert.match(receiptPersistence, /\.timestamp \| type == "string" and length > 0/);
+  assert.match(receiptPersistence, /\.sourceWorkflow == \$source/);
+  assert.match(receiptPersistence, /if ! validate_receipt "\$tmp_receipt"/);
+  assert.match(receiptPersistence, /malformed or does not match slate date/);
+});
+
+test("Reliable Delivery treats an existing matching receipt as success", () => {
+  const sync = receiptPersistence.indexOf("git reset --hard FETCH_HEAD");
+  const validateMain = receiptPersistence.indexOf('validate_receipt "$receipt"');
+  const sameResult = receiptPersistence.indexOf('if [ "$origin_result" = "$intended_result" ]');
+  const success = receiptPersistence.indexOf("nothing to commit.", sameResult);
+  assert.ok(sync < validateMain && validateMain < sameResult && sameResult < success);
+});
+
+test("Reliable Delivery retries only concurrent non-fast-forward pushes from a clean main", () => {
+  assert.match(receiptPersistence, /max_attempts=5/);
+  assert.match(receiptPersistence, /for attempt in \$\(seq 1 "\$max_attempts"\)/);
+  assert.match(receiptPersistence, /git fetch origin main\s+git reset --hard FETCH_HEAD/);
+  assert.match(receiptPersistence, /git push origin HEAD:main/);
+  assert.match(receiptPersistence, /grep -Eq '\\\(fetch first\\\)\|non-fast-forward'/);
+  assert.match(receiptPersistence, /failed for a reason other than a concurrent main update; not retrying/);
+  assert.ok(receiptPersistence.indexOf("git reset --hard HEAD") < receiptPersistence.indexOf("git fetch origin main"));
 });
 
 async function simulateWorkflow(payload, calls) {

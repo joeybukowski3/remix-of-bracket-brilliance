@@ -153,28 +153,7 @@ jobs:
 
       - name: Persist send receipt
         if: steps.receipt.outputs.send == 'true'
+        env:
+          SLATE_DATE: ${{ needs.slate-check.outputs.slate_date }}
         shell: bash
-        run: |
-          set -euo pipefail
-          test -f public/data/mlb/numerology/email-send-state.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/mlb/numerology/email-send-state.json
-
-          if git diff --cached --quiet; then
-            echo "::error::Send completed without updating the send receipt."
-            exit 1
-          fi
-
-          git commit -m "chore: numerology email tracking $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
-          for attempt in 1 2 3 4 5; do
-            git fetch origin main
-            if git rebase origin/main && git push origin HEAD:main; then
-              exit 0
-            fi
-            git rebase --abort || true
-            sleep $((attempt * 10))
-          done
-
-          echo "::error::Email sent, but its receipt could not be pushed after five attempts."
-          exit 1
+        run: bash scripts/lib/persist-mlb-numerology-email-receipt.sh
