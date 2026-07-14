@@ -81,7 +81,7 @@ test("K odds allow a one-sided market through unchecked for coherence", () => {
 });
 
 test("HR odds update matches and preserve public fields", () => {
-  const result = injectHrOdds(raw, { date: "2026-06-28", hrOdds: {
+  const result = injectHrOdds(raw, { date: "2026-06-28", fetchedAt: "2026-06-28T13:00:00Z", hrOdds: {
     "jose ramirez": { line: 0.5, yes: "+245", no: "-350", bookmaker: "draftkings" },
     "o'neil cruz": { line: 0.5, yes: "+390", no: "-600", bookmaker: "fanduel" },
   }});
@@ -89,6 +89,8 @@ test("HR odds update matches and preserve public fields", () => {
   assert.equal(result.data.batters[0].hrOddsYes, "+245");
   assert.equal(result.data.batters[0].hrOddsNo, "-350");
   assert.equal(result.data.batters[0].hrOddsBook, "draftkings");
+  assert.equal(result.data.batters[0].hrOddsCapturedAt, "2026-06-28T13:00:00Z");
+  assert.equal(result.data.batters[0].hrOddsSlateDate, "2026-06-28");
   assert.equal(result.data.batters[1].hrLine, 0.5);
   assert.equal(result.data.batters[2].hrOddsYes, null);
 });

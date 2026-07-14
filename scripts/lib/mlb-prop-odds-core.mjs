@@ -28,7 +28,7 @@ function isSameSlateHrOdds(batter, slateDate) {
 }
 
 function clearHrOdds(batter) {
-  return { ...batter, hrLine: null, hrOddsYes: null, hrOddsNo: null, hrOddsBook: null, hrOddsSlateDate: null };
+  return { ...batter, hrLine: null, hrOddsYes: null, hrOddsNo: null, hrOddsBook: null, hrOddsSlateDate: null, hrOddsCapturedAt: null };
 }
 
 function isSameSlateKOdds(pitcher, slateDate) {
@@ -43,6 +43,7 @@ export function injectHrOdds(rawData, oddsData) {
   const slateDate = String(rawData?.date ?? "").trim();
   const oddsSlateDate = resolveOddsSlateDate(oddsData);
   const sameSlate = Boolean(slateDate && oddsSlateDate && slateDate === oddsSlateDate);
+  const oddsCapturedAt = String(oddsData?.fetchedAt ?? oddsData?.generatedAt ?? "").trim() || null;
   const source = oddsData?.hrOdds && typeof oddsData.hrOdds === "object" ? oddsData.hrOdds : {};
   const usefulEntries = new Map(Object.entries(source)
     .filter(([, entry]) => entry && isAmericanOdds(entry.yes))
@@ -64,7 +65,7 @@ export function injectHrOdds(rawData, oddsData) {
       counts.battersMatched += 1;
       counts.battersUpdated += 1;
       counts.withYesPrice += 1;
-      return { ...batter, hrLine: entry.line ?? 0.5, hrOddsYes: entry.yes, hrOddsNo: isAmericanOdds(entry.no) ? entry.no : null, hrOddsBook: entry.bookmaker ?? null, hrOddsSlateDate: slateDate };
+      return { ...batter, hrLine: entry.line ?? 0.5, hrOddsYes: entry.yes, hrOddsNo: isAmericanOdds(entry.no) ? entry.no : null, hrOddsBook: entry.bookmaker ?? null, hrOddsSlateDate: slateDate, hrOddsCapturedAt: oddsCapturedAt };
     }
     counts.battersUnmatched += 1;
     if (existingCurrent) {
