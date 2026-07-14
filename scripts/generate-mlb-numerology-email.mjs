@@ -16,6 +16,7 @@ import {
 import { selectNumerologyEmailPlays } from "./lib/mlb-numerology-email-selection.mjs";
 import { assertValidNumerologyEmailHtml } from "./lib/mlb-numerology-email-validation.mjs";
 import { enrichCardPlaysWithContext } from "./lib/mlb-numerology-player-context.mjs";
+import { deliverNumerologyEmail } from "./lib/mlb-numerology-email-delivery.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb", "numerology");
@@ -96,37 +97,18 @@ async function sendEmail({ card, html, text }) {
     throw new Error("Live send requested but NUMEROLOGY_EMAIL_WEBHOOK_URL is not configured.");
   }
 
-  const payload = {
-    subject: `MLB Numerology Plays — ${card.date}`,
+  const result = await deliverNumerologyEmail({
+    card,
     html,
     text,
-    date: card.date,
-    topPlay: card.topPlay,
-    qualifiedCount: card.emailSelectedPlays.length,
-  };
-
-  const response = await fetch(webhookUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(process.env.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN
-        ? { Authorization: `Bearer ${process.env.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN}` }
-        : {}),
-    },
-    body: JSON.stringify(payload),
+    webhookUrl,
+    webhookToken: process.env.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN,
+    receiptPath: EMAIL_SEND_STATE_PATH,
+    fetchImpl: fetch,
   });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(`Email webhook failed ${response.status}: ${body.slice(0, 500)}`);
-  }
-
-  writeJson(EMAIL_SEND_STATE_PATH, {
-    date: card.date,
-    sentAt: new Date().toISOString(),
-    source: "github-actions",
-  });
-  console.log(`[mlb-numerology] Live email webhook sent and receipt recorded for ${card.date}.`);
+  console.log(`[mlb-numerology] Delivery status=${result.status}; receipt recorded for ${card.date}.`);
+  return result;
 }
 
 main().catch((error) => {

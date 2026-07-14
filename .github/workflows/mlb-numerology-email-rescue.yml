@@ -95,11 +95,13 @@ jobs:
 
             data_date="$(jq -r '.date // empty' public/data/mlb/numerology-daily.json 2>/dev/null || true)"
             sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
-            echo "attempt=${attempt}/46 slate_date=${slate_date} data_date=${data_date} sent_date=${sent_date}"
+            sent_result="$(jq -r '.result // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
+            sent_at="$(jq -r '.sentAt // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
+            echo "attempt=${attempt}/46 slate_date=${slate_date} data_date=${data_date} sent_date=${sent_date} sent_result=${sent_result}"
 
-            if [ "$sent_date" = "$slate_date" ]; then
+            if [ "$sent_date" = "$slate_date" ] && { [ "$sent_result" = "sent" ] || [ "$sent_result" = "already_exists" ] || { [ -z "$sent_result" ] && [ -n "$sent_at" ]; }; }; then
               echo "send=false" >> "$GITHUB_OUTPUT"
-              echo "The target slate email is already recorded as sent."
+              echo "The target slate email is already recorded as delivered."
               exit 0
             fi
 
