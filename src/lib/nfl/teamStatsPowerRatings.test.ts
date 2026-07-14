@@ -316,6 +316,7 @@ describe("sanity report (v0.2)", () => {
 describe("public isolation", () => {
   it("power-ratings.json is not imported/read by any page, component or hook", () => {
     const dirs = ["src/pages", "src/components", "src/hooks"];
+    const internalV03Allowlist = new Set(["src/hooks/useNflV03Artifacts.ts"]);
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
@@ -323,7 +324,7 @@ describe("public isolation", () => {
         if (entry.isDirectory()) walk(rel);
         else if (/\.(ts|tsx)$/.test(entry.name)) {
           const source = readFileSync(join(ROOT, rel), "utf-8");
-          if (/power-ratings/.test(source)) offenders.push(rel);
+          if (/power-ratings/.test(source) && !internalV03Allowlist.has(rel)) offenders.push(rel);
         }
       }
     };

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -67,6 +68,7 @@ import {
 
 const queryClient = new QueryClient();
 const routerBase = import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL;
+const NflV03Review = lazy(() => import("./pages/NflV03Review"));
 
 function LegacyScheduleRedirect() {
   const { gameId = "" } = useParams();
@@ -117,6 +119,14 @@ const App = () => (
             <Route path="guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
             <Route path="2026-guide" element={<Navigate to="/nfl/guide" replace />} />
           </Route>
+          <Route
+            path="/internal/jkb-nfl-v03-review-7f3c9a"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading internal NFL review…</div>}>
+                <NflV03Review />
+              </Suspense>
+            }
+          />
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/world-cup" element={<WorldCup2026 />} />
           <Route path="/world-cup/analyzer" element={<WorldCupAnalyzer />} />
