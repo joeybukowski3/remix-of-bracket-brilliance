@@ -107,7 +107,19 @@ jobs:
 
       - name: Check whether The Open detailed package is active
         id: open_detailed
-        run: node --input-type=module -e "import fs from 'node:fs'; const field = JSON.parse(fs.readFileSync('public/data/pga/current-field.json', 'utf8')); fs.appendFileSync(process.env.GITHUB_OUTPUT, `active=${field.tournamentId === 'R2026100'}\n`);"
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+
+          const field = JSON.parse(
+            fs.readFileSync("public/data/pga/current-field.json", "utf8"),
+          );
+
+          const active = field.tournamentId === "R2026100";
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `active=${active}\n`);
+          console.log(`The Open detailed package active: ${active}`);
+          NODE
 
       - name: Generate and validate The Open detailed model in temporary output
         if: steps.open_detailed.outputs.active == 'true'
