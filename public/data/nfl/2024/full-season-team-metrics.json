@@ -1,0 +1,1577 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.2",
+    "modelVersion": "nfl-power-v0.3.0",
+    "validationStatus": "stage-1",
+    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "season": 2024,
+    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "notes": [
+      "Internal Stage-1 full-season team metrics artifact.",
+      "Only completed regular-season games and REG weekly rows are included.",
+      "Win percentage is display-only and is not scored.",
+      "Pythagorean expected wins use exponent 2.37."
+    ],
+    "knownLimitations": [],
+    "formulaWeights": {
+      "opponentAdjustedOffensiveEpaPerPlay": 0.4,
+      "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
+      "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "frozenPublicScaleDivisor": 0.733,
+    "trajectory": {
+      "statement": "lambda = 0",
+      "lambda": 0,
+      "shrinkageK": 4,
+      "cap": 1
+    }
+  },
+  "adjustmentMethods": {
+    "margin": "game-level one-pass residual",
+    "epa": "opponent-mean one-pass"
+  },
+  "metricKeys": [
+    "offEpaPerPlay",
+    "defEpaPerPlay",
+    "netEpaPerPlay",
+    "pointDiffPerGame"
+  ],
+  "teams": [
+    {
+      "teamId": "nfl-buf",
+      "slug": "buffalo-bills",
+      "abbr": "buf",
+      "name": "Buffalo Bills",
+      "gamesPlayed": 17,
+      "wins": 13,
+      "losses": 4,
+      "ties": 0,
+      "winPercentage": 0.764706,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.1764,
+          "adjusted": 0.168695,
+          "zScore": 1.694955,
+          "rank": 2,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0001,
+          "adjusted": 0.003816,
+          "zScore": 0.09564,
+          "rank": 14,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1765,
+          "adjusted": 0.164879,
+          "zScore": 1.382838,
+          "rank": 3,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 9.235294,
+          "adjusted": 8.058824,
+          "zScore": 1.296912,
+          "rank": 3,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.2484,
+      "rushingEpaPerPlay": 0.098,
+      "pythagoreanExpectedWins": 11.881,
+      "expectedWinsDelta": 1.119,
+      "adjustedComposite": 0.97562,
+      "rawComposite": 1.049623
+    },
+    {
+      "teamId": "nfl-mia",
+      "slug": "miami-dolphins",
+      "abbr": "mia",
+      "name": "Miami Dolphins",
+      "gamesPlayed": 17,
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "winPercentage": 0.470588,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0368,
+          "adjusted": -0.048076,
+          "zScore": -0.616917,
+          "rank": 22,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0217,
+          "adjusted": -0.00299,
+          "zScore": 0.215214,
+          "rank": 13,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0151,
+          "adjusted": -0.045086,
+          "zScore": -0.383592,
+          "rank": 21,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -1.117647,
+          "adjusted": -3.214533,
+          "zScore": -0.517317,
+          "rank": 21,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.0686,
+      "rushingEpaPerPlay": -0.186,
+      "pythagoreanExpectedWins": 7.961,
+      "expectedWinsDelta": 0.039,
+      "adjustedComposite": -0.264145,
+      "rawComposite": -0.017792
+    },
+    {
+      "teamId": "nfl-ne",
+      "slug": "new-england-patriots",
+      "abbr": "ne",
+      "name": "New England Patriots",
+      "gamesPlayed": 17,
+      "wins": 4,
+      "losses": 13,
+      "ties": 0,
+      "winPercentage": 0.235294,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0824,
+          "adjusted": -0.084847,
+          "zScore": -1.009078,
+          "rank": 27,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0712,
+          "adjusted": 0.066563,
+          "zScore": -1.006781,
+          "rank": 29,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1536,
+          "adjusted": -0.151409,
+          "zScore": -1.27809,
+          "rank": 29,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -7.529412,
+          "adjusted": -7.975779,
+          "zScore": -1.283547,
+          "rank": 30,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.0914,
+      "rushingEpaPerPlay": -0.0707,
+      "pythagoreanExpectedWins": 5.023,
+      "expectedWinsDelta": -1.023,
+      "adjustedComposite": -1.063053,
+      "rawComposite": -1.044803
+    },
+    {
+      "teamId": "nfl-nyj",
+      "slug": "ny-jets",
+      "abbr": "nyj",
+      "name": "NY Jets",
+      "gamesPlayed": 17,
+      "wins": 5,
+      "losses": 12,
+      "ties": 0,
+      "winPercentage": 0.294118,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0026,
+          "adjusted": 0.001118,
+          "zScore": -0.092259,
+          "rank": 18,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.026,
+          "adjusted": 0.033992,
+          "zScore": -0.434539,
+          "rank": 23,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0286,
+          "adjusted": -0.032874,
+          "zScore": -0.280854,
+          "rank": 19,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -3.882353,
+          "adjusted": -4.176471,
+          "zScore": -0.672122,
+          "rank": 24,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.033,
+      "rushingEpaPerPlay": -0.066,
+      "pythagoreanExpectedWins": 6.73,
+      "expectedWinsDelta": -1.73,
+      "adjustedComposite": -0.345144,
+      "rawComposite": -0.286562
+    },
+    {
+      "teamId": "nfl-bal",
+      "slug": "baltimore-ravens",
+      "abbr": "bal",
+      "name": "Baltimore Ravens",
+      "gamesPlayed": 17,
+      "wins": 12,
+      "losses": 5,
+      "ties": 0,
+      "winPercentage": 0.705882,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.2093,
+          "adjusted": 0.224471,
+          "zScore": 2.289815,
+          "rank": 1,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0468,
+          "adjusted": -0.037549,
+          "zScore": 0.822388,
+          "rank": 7,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.2561,
+          "adjusted": 0.26202,
+          "zScore": 2.200085,
+          "rank": 1,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 9.235294,
+          "adjusted": 9.944637,
+          "zScore": 1.600397,
+          "rank": 2,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.3403,
+      "rushingEpaPerPlay": 0.0909,
+      "pythagoreanExpectedWins": 11.93,
+      "expectedWinsDelta": 0.07,
+      "adjustedComposite": 1.564961,
+      "rawComposite": 1.508528
+    },
+    {
+      "teamId": "nfl-cin",
+      "slug": "cincinnati-bengals",
+      "abbr": "cin",
+      "name": "Cincinnati Bengals",
+      "gamesPlayed": 17,
+      "wins": 9,
+      "losses": 8,
+      "ties": 0,
+      "winPercentage": 0.529412,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0978,
+          "adjusted": 0.104689,
+          "zScore": 1.012328,
+          "rank": 6,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0286,
+          "adjusted": 0.053569,
+          "zScore": -0.778484,
+          "rank": 27,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0692,
+          "adjusted": 0.05112,
+          "zScore": 0.425787,
+          "rank": 12,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 2.235294,
+          "adjusted": 1.193772,
+          "zScore": 0.192114,
+          "rank": 14,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.1645,
+      "rushingEpaPerPlay": -0.025,
+      "pythagoreanExpectedWins": 9.343,
+      "expectedWinsDelta": -0.343,
+      "adjustedComposite": 0.13196,
+      "rawComposite": 0.306358
+    },
+    {
+      "teamId": "nfl-cle",
+      "slug": "cleveland-browns",
+      "abbr": "cle",
+      "name": "Cleveland Browns",
+      "gamesPlayed": 17,
+      "wins": 3,
+      "losses": 14,
+      "ties": 0,
+      "winPercentage": 0.176471,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.1797,
+          "adjusted": -0.169041,
+          "zScore": -1.907013,
+          "rank": 32,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0006,
+          "adjusted": -0.015984,
+          "zScore": 0.443511,
+          "rank": 11,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1803,
+          "adjusted": -0.153056,
+          "zScore": -1.291947,
+          "rank": 30,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -10.411765,
+          "adjusted": -9.010381,
+          "zScore": -1.450047,
+          "rank": 31,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.2407,
+      "rushingEpaPerPlay": -0.0661,
+      "pythagoreanExpectedWins": 3.821,
+      "expectedWinsDelta": -0.821,
+      "adjustedComposite": -0.87541,
+      "rawComposite": -1.058246
+    },
+    {
+      "teamId": "nfl-pit",
+      "slug": "pittsburgh-steelers",
+      "abbr": "pit",
+      "name": "Pittsburgh Steelers",
+      "gamesPlayed": 17,
+      "wins": 10,
+      "losses": 7,
+      "ties": 0,
+      "winPercentage": 0.588235,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0405,
+          "adjusted": -0.029429,
+          "zScore": -0.418045,
+          "rank": 20,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0167,
+          "adjusted": -0.020772,
+          "zScore": 0.527637,
+          "rank": 10,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0238,
+          "adjusted": -0.008656,
+          "zScore": -0.077112,
+          "rank": 17,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 1.941176,
+          "adjusted": 2.041522,
+          "zScore": 0.328544,
+          "rank": 12,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.0081,
+      "rushingEpaPerPlay": -0.0905,
+      "pythagoreanExpectedWins": 9.412,
+      "expectedWinsDelta": 0.588,
+      "adjustedComposite": 0.109546,
+      "rawComposite": 0.02659
+    },
+    {
+      "teamId": "nfl-hou",
+      "slug": "houston-texans",
+      "abbr": "hou",
+      "name": "Houston Texans",
+      "gamesPlayed": 17,
+      "wins": 10,
+      "losses": 7,
+      "ties": 0,
+      "winPercentage": 0.588235,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0527,
+          "adjusted": -0.059394,
+          "zScore": -0.737621,
+          "rank": 25,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0674,
+          "adjusted": -0.061514,
+          "zScore": 1.24343,
+          "rank": 4,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0147,
+          "adjusted": 0.00212,
+          "zScore": 0.01355,
+          "rank": 16,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 0,
+          "adjusted": -0.698962,
+          "zScore": -0.112484,
+          "rank": 17,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.0261,
+      "rushingEpaPerPlay": -0.0909,
+      "pythagoreanExpectedWins": 8.5,
+      "expectedWinsDelta": 1.5,
+      "adjustedComposite": 0.179827,
+      "rawComposite": 0.263457
+    },
+    {
+      "teamId": "nfl-ind",
+      "slug": "indianapolis-colts",
+      "abbr": "ind",
+      "name": "Indianapolis Colts",
+      "gamesPlayed": 17,
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "winPercentage": 0.470588,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0538,
+          "adjusted": -0.046082,
+          "zScore": -0.59565,
+          "rank": 21,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0034,
+          "adjusted": 0.027663,
+          "zScore": -0.323336,
+          "rank": 21,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0572,
+          "adjusted": -0.073745,
+          "zScore": -0.624698,
+          "rank": 22,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -2.941176,
+          "adjusted": -3.615917,
+          "zScore": -0.581912,
+          "rank": 22,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.0636,
+      "rushingEpaPerPlay": -0.0429,
+      "pythagoreanExpectedWins": 7.255,
+      "expectedWinsDelta": 0.745,
+      "adjustedComposite": -0.483977,
+      "rawComposite": -0.317763
+    },
+    {
+      "teamId": "nfl-jax",
+      "slug": "jacksonville-jaguars",
+      "abbr": "jax",
+      "name": "Jacksonville Jaguars",
+      "gamesPlayed": 17,
+      "wins": 4,
+      "losses": 13,
+      "ties": 0,
+      "winPercentage": 0.235294,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0109,
+          "adjusted": 0.011418,
+          "zScore": 0.017591,
+          "rank": 16,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.1184,
+          "adjusted": 0.152998,
+          "zScore": -2.525387,
+          "rank": 32,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1293,
+          "adjusted": -0.14158,
+          "zScore": -1.195395,
+          "rank": 27,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -6.764706,
+          "adjusted": -7.49827,
+          "zScore": -1.206702,
+          "rank": 27,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.0049,
+      "rushingEpaPerPlay": -0.0328,
+      "pythagoreanExpectedWins": 5.537,
+      "expectedWinsDelta": -1.537,
+      "adjustedComposite": -1.244459,
+      "rawComposite": -1.044509
+    },
+    {
+      "teamId": "nfl-ten",
+      "slug": "tennessee-titans",
+      "abbr": "ten",
+      "name": "Tennessee Titans",
+      "gamesPlayed": 17,
+      "wins": 3,
+      "losses": 14,
+      "ties": 0,
+      "winPercentage": 0.176471,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.1135,
+          "adjusted": -0.105029,
+          "zScore": -1.224324,
+          "rank": 29,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0228,
+          "adjusted": 0.016333,
+          "zScore": -0.124287,
+          "rank": 17,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1363,
+          "adjusted": -0.121362,
+          "zScore": -1.025305,
+          "rank": 25,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -8.764706,
+          "adjusted": -7.965398,
+          "zScore": -1.281877,
+          "rank": 29,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.1148,
+      "rushingEpaPerPlay": -0.1117,
+      "pythagoreanExpectedWins": 4.818,
+      "expectedWinsDelta": -1.818,
+      "adjustedComposite": -0.79582,
+      "rawComposite": -0.881456
+    },
+    {
+      "teamId": "nfl-den",
+      "slug": "denver-broncos",
+      "abbr": "den",
+      "name": "Denver Broncos",
+      "gamesPlayed": 17,
+      "wins": 10,
+      "losses": 7,
+      "ties": 0,
+      "winPercentage": 0.588235,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0243,
+          "adjusted": 0.024195,
+          "zScore": 0.153853,
+          "rank": 14,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.1044,
+          "adjusted": -0.094161,
+          "zScore": 1.817016,
+          "rank": 1,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1287,
+          "adjusted": 0.118355,
+          "zScore": 0.991436,
+          "rank": 6,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 6.705882,
+          "adjusted": 6.15917,
+          "zScore": 0.991199,
+          "rank": 7,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.0674,
+      "rushingEpaPerPlay": -0.0311,
+      "pythagoreanExpectedWins": 11.509,
+      "expectedWinsDelta": -1.509,
+      "adjustedComposite": 0.986587,
+      "rawComposite": 1.0479
+    },
+    {
+      "teamId": "nfl-kc",
+      "slug": "kansas-city-chiefs",
+      "abbr": "kc",
+      "name": "Kansas City Chiefs",
+      "gamesPlayed": 17,
+      "wins": 15,
+      "losses": 2,
+      "ties": 0,
+      "winPercentage": 0.882353,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0601,
+          "adjusted": 0.07623,
+          "zScore": 0.708813,
+          "rank": 9,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.013,
+          "adjusted": 0.012322,
+          "zScore": -0.053803,
+          "rank": 15,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0471,
+          "adjusted": 0.063908,
+          "zScore": 0.533374,
+          "rank": 11,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 3.470588,
+          "adjusted": 4.062284,
+          "zScore": 0.653746,
+          "rank": 10,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.0983,
+      "rushingEpaPerPlay": 0.0057,
+      "pythagoreanExpectedWins": 10.154,
+      "expectedWinsDelta": 4.846,
+      "adjustedComposite": 0.392753,
+      "rawComposite": 0.292949
+    },
+    {
+      "teamId": "nfl-lv",
+      "slug": "las-vegas-raiders",
+      "abbr": "lv",
+      "name": "Las Vegas Raiders",
+      "gamesPlayed": 17,
+      "wins": 4,
+      "losses": 13,
+      "ties": 0,
+      "winPercentage": 0.235294,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.1453,
+          "adjusted": -0.139382,
+          "zScore": -1.5907,
+          "rank": 31,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0078,
+          "adjusted": -0.003408,
+          "zScore": 0.222552,
+          "rank": 12,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1531,
+          "adjusted": -0.135974,
+          "zScore": -1.148233,
+          "rank": 26,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -7.352941,
+          "adjusted": -6.397924,
+          "zScore": -1.029622,
+          "rank": 26,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.0919,
+      "rushingEpaPerPlay": -0.2418,
+      "pythagoreanExpectedWins": 5.252,
+      "expectedWinsDelta": -1.252,
+      "adjustedComposite": -0.753184,
+      "rawComposite": -0.868731
+    },
+    {
+      "teamId": "nfl-lac",
+      "slug": "la-chargers",
+      "abbr": "lac",
+      "name": "LA Chargers",
+      "gamesPlayed": 17,
+      "wins": 11,
+      "losses": 6,
+      "ties": 0,
+      "winPercentage": 0.647059,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0379,
+          "adjusted": 0.033518,
+          "zScore": 0.253289,
+          "rank": 12,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0698,
+          "adjusted": -0.055337,
+          "zScore": 1.134914,
+          "rank": 5,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1077,
+          "adjusted": 0.088855,
+          "zScore": 0.743253,
+          "rank": 9,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 5.941176,
+          "adjusted": 4.975779,
+          "zScore": 0.800755,
+          "rank": 9,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.1145,
+      "rushingEpaPerPlay": -0.0537,
+      "pythagoreanExpectedWins": 11.305,
+      "expectedWinsDelta": -0.305,
+      "adjustedComposite": 0.715432,
+      "rawComposite": 0.844043
+    },
+    {
+      "teamId": "nfl-dal",
+      "slug": "dallas-cowboys",
+      "abbr": "dal",
+      "name": "Dallas Cowboys",
+      "gamesPlayed": 17,
+      "wins": 7,
+      "losses": 10,
+      "ties": 0,
+      "winPercentage": 0.411765,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0887,
+          "adjusted": -0.089076,
+          "zScore": -1.054185,
+          "rank": 28,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0796,
+          "adjusted": 0.056198,
+          "zScore": -0.824681,
+          "rank": 28,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1683,
+          "adjusted": -0.145274,
+          "zScore": -1.226474,
+          "rank": 28,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -6.941176,
+          "adjusted": -5.972318,
+          "zScore": -0.961129,
+          "rank": 25,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.0684,
+      "rushingEpaPerPlay": -0.1206,
+      "pythagoreanExpectedWins": 5.684,
+      "expectedWinsDelta": 1.316,
+      "adjustedComposite": -0.943772,
+      "rawComposite": -1.110827
+    },
+    {
+      "teamId": "nfl-nyg",
+      "slug": "ny-giants",
+      "abbr": "nyg",
+      "name": "NY Giants",
+      "gamesPlayed": 17,
+      "wins": 3,
+      "losses": 14,
+      "ties": 0,
+      "winPercentage": 0.176471,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.1177,
+          "adjusted": -0.117641,
+          "zScore": -1.358829,
+          "rank": 30,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0635,
+          "adjusted": 0.049622,
+          "zScore": -0.709137,
+          "rank": 26,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1812,
+          "adjusted": -0.167262,
+          "zScore": -1.411461,
+          "rank": 31,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -8.352941,
+          "adjusted": -7.626298,
+          "zScore": -1.227305,
+          "rank": 28,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.1505,
+      "rushingEpaPerPlay": -0.0683,
+      "pythagoreanExpectedWins": 4.597,
+      "expectedWinsDelta": -1.597,
+      "adjustedComposite": -1.072647,
+      "rawComposite": -1.165787
+    },
+    {
+      "teamId": "nfl-phi",
+      "slug": "philadelphia-eagles",
+      "abbr": "phi",
+      "name": "Philadelphia Eagles",
+      "gamesPlayed": 17,
+      "wins": 14,
+      "losses": 3,
+      "ties": 0,
+      "winPercentage": 0.823529,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.1012,
+          "adjusted": 0.072136,
+          "zScore": 0.665149,
+          "rank": 10,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0842,
+          "adjusted": -0.079255,
+          "zScore": 1.55513,
+          "rank": 3,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1854,
+          "adjusted": 0.151391,
+          "zScore": 1.269362,
+          "rank": 4,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 9.411765,
+          "adjusted": 7.809689,
+          "zScore": 1.256818,
+          "rank": 5,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.1154,
+      "rushingEpaPerPlay": 0.09,
+      "pythagoreanExpectedWins": 12.444,
+      "expectedWinsDelta": 1.556,
+      "adjustedComposite": 1.139475,
+      "rawComposite": 1.316047
+    },
+    {
+      "teamId": "nfl-wsh",
+      "slug": "washington-commanders",
+      "abbr": "wsh",
+      "name": "Washington Commanders",
+      "gamesPlayed": 17,
+      "wins": 12,
+      "losses": 5,
+      "ties": 0,
+      "winPercentage": 0.705882,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.1334,
+          "adjusted": 0.114648,
+          "zScore": 1.11854,
+          "rank": 4,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0096,
+          "adjusted": 0.028886,
+          "zScore": -0.344833,
+          "rank": 22,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1238,
+          "adjusted": 0.085761,
+          "zScore": 0.717222,
+          "rank": 10,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 5.529412,
+          "adjusted": 3.775087,
+          "zScore": 0.607527,
+          "rank": 11,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.1379,
+      "rushingEpaPerPlay": 0.1286,
+      "pythagoreanExpectedWins": 10.624,
+      "expectedWinsDelta": 1.376,
+      "adjustedComposite": 0.430988,
+      "rawComposite": 0.688002
+    },
+    {
+      "teamId": "nfl-chi",
+      "slug": "chicago-bears",
+      "abbr": "chi",
+      "name": "Chicago Bears",
+      "gamesPlayed": 17,
+      "wins": 5,
+      "losses": 12,
+      "ties": 0,
+      "winPercentage": 0.294118,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0758,
+          "adjusted": -0.072405,
+          "zScore": -0.876392,
+          "rank": 26,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0305,
+          "adjusted": 0.014275,
+          "zScore": -0.088114,
+          "rank": 16,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1063,
+          "adjusted": -0.08668,
+          "zScore": -0.733523,
+          "rank": 23,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -3.529412,
+          "adjusted": -2.460208,
+          "zScore": -0.395923,
+          "rank": 20,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.0841,
+      "rushingEpaPerPlay": -0.0635,
+      "pythagoreanExpectedWins": 6.744,
+      "expectedWinsDelta": -1.744,
+      "adjustedComposite": -0.464987,
+      "rawComposite": -0.614423
+    },
+    {
+      "teamId": "nfl-det",
+      "slug": "detroit-lions",
+      "abbr": "det",
+      "name": "Detroit Lions",
+      "gamesPlayed": 17,
+      "wins": 15,
+      "losses": 2,
+      "ties": 0,
+      "winPercentage": 0.882353,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.1627,
+          "adjusted": 0.166695,
+          "zScore": 1.673625,
+          "rank": 3,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0301,
+          "adjusted": -0.030461,
+          "zScore": 0.697853,
+          "rank": 9,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1928,
+          "adjusted": 0.197155,
+          "zScore": 1.654379,
+          "rank": 2,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 13.058824,
+          "adjusted": 13.50173,
+          "zScore": 2.172843,
+          "rank": 1,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.2952,
+      "rushingEpaPerPlay": 0.0179,
+      "pythagoreanExpectedWins": 13.021,
+      "expectedWinsDelta": 1.979,
+      "adjustedComposite": 1.38316,
+      "rawComposite": 1.315748
+    },
+    {
+      "teamId": "nfl-gb",
+      "slug": "green-bay-packers",
+      "abbr": "gb",
+      "name": "Green Bay Packers",
+      "gamesPlayed": 17,
+      "wins": 11,
+      "losses": 6,
+      "ties": 0,
+      "winPercentage": 0.647059,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0792,
+          "adjusted": 0.090765,
+          "zScore": 0.863833,
+          "rank": 7,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0548,
+          "adjusted": -0.053767,
+          "zScore": 1.10732,
+          "rank": 6,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.134,
+          "adjusted": 0.144532,
+          "zScore": 1.211658,
+          "rank": 5,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 7.176471,
+          "adjusted": 8.051903,
+          "zScore": 1.295798,
+          "rank": 4,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.1546,
+      "rushingEpaPerPlay": 0.0075,
+      "pythagoreanExpectedWins": 11.473,
+      "expectedWinsDelta": -0.473,
+      "adjustedComposite": 1.047621,
+      "rawComposite": 0.952844
+    },
+    {
+      "teamId": "nfl-min",
+      "slug": "minnesota-vikings",
+      "abbr": "min",
+      "name": "Minnesota Vikings",
+      "gamesPlayed": 17,
+      "wins": 14,
+      "losses": 3,
+      "ties": 0,
+      "winPercentage": 0.823529,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.021,
+          "adjusted": 0.01603,
+          "zScore": 0.066776,
+          "rank": 15,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0848,
+          "adjusted": -0.084125,
+          "zScore": 1.640703,
+          "rank": 2,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1058,
+          "adjusted": 0.100155,
+          "zScore": 0.83832,
+          "rank": 7,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 5.882353,
+          "adjusted": 5.792388,
+          "zScore": 0.932173,
+          "rank": 8,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.0954,
+      "rushingEpaPerPlay": -0.0761,
+      "pythagoreanExpectedWins": 11.069,
+      "expectedWinsDelta": 2.931,
+      "adjustedComposite": 0.869426,
+      "rawComposite": 0.874113
+    },
+    {
+      "teamId": "nfl-atl",
+      "slug": "atlanta-falcons",
+      "abbr": "atl",
+      "name": "Atlanta Falcons",
+      "gamesPlayed": 17,
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "winPercentage": 0.470588,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0317,
+          "adjusted": 0.027201,
+          "zScore": 0.185911,
+          "rank": 13,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0599,
+          "adjusted": 0.066951,
+          "zScore": -1.013602,
+          "rank": 30,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0282,
+          "adjusted": -0.039751,
+          "zScore": -0.338706,
+          "rank": 20,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -2,
+          "adjusted": -1.961938,
+          "zScore": -0.315736,
+          "rank": 19,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.0581,
+      "rushingEpaPerPlay": 0.0003,
+      "pythagoreanExpectedWins": 7.659,
+      "expectedWinsDelta": 0.341,
+      "adjustedComposite": -0.394224,
+      "rawComposite": -0.316986
+    },
+    {
+      "teamId": "nfl-car",
+      "slug": "carolina-panthers",
+      "abbr": "car",
+      "name": "Carolina Panthers",
+      "gamesPlayed": 17,
+      "wins": 5,
+      "losses": 12,
+      "ties": 0,
+      "winPercentage": 0.294118,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0459,
+          "adjusted": -0.05297,
+          "zScore": -0.669113,
+          "rank": 23,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.157,
+          "adjusted": 0.146898,
+          "zScore": -2.418215,
+          "rank": 31,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.2029,
+          "adjusted": -0.199868,
+          "zScore": -1.685773,
+          "rank": 32,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -11.352941,
+          "adjusted": -10.702422,
+          "zScore": -1.722348,
+          "rank": 32,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.0846,
+      "rushingEpaPerPlay": 0.0091,
+      "pythagoreanExpectedWins": 4.365,
+      "expectedWinsDelta": 0.635,
+      "adjustedComposite": -1.579401,
+      "rawComposite": -1.598041
+    },
+    {
+      "teamId": "nfl-no",
+      "slug": "new-orleans-saints",
+      "abbr": "no",
+      "name": "New Orleans Saints",
+      "gamesPlayed": 17,
+      "wins": 5,
+      "losses": 12,
+      "ties": 0,
+      "winPercentage": 0.294118,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0427,
+          "adjusted": -0.056223,
+          "zScore": -0.703806,
+          "rank": 24,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0342,
+          "adjusted": 0.036281,
+          "zScore": -0.474742,
+          "rank": 24,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0769,
+          "adjusted": -0.092503,
+          "zScore": -0.782516,
+          "rank": 24,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -3.529412,
+          "adjusted": -4.051903,
+          "zScore": -0.652075,
+          "rank": 23,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": -0.0768,
+      "rushingEpaPerPlay": 0.0026,
+      "pythagoreanExpectedWins": 6.874,
+      "expectedWinsDelta": -1.874,
+      "adjustedComposite": -0.601834,
+      "rawComposite": -0.500614
+    },
+    {
+      "teamId": "nfl-tb",
+      "slug": "tampa-bay-buccaneers",
+      "abbr": "tb",
+      "name": "Tampa Bay Buccaneers",
+      "gamesPlayed": 17,
+      "wins": 10,
+      "losses": 7,
+      "ties": 0,
+      "winPercentage": 0.588235,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.1247,
+          "adjusted": 0.111595,
+          "zScore": 1.08598,
+          "rank": 5,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0269,
+          "adjusted": 0.017328,
+          "zScore": -0.141752,
+          "rank": 18,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0978,
+          "adjusted": 0.094267,
+          "zScore": 0.788782,
+          "rank": 8,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 6.882353,
+          "adjusted": 6.539792,
+          "zScore": 1.052453,
+          "rank": 6,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.1893,
+      "rushingEpaPerPlay": 0.0429,
+      "pythagoreanExpectedWins": 11.088,
+      "expectedWinsDelta": -1.088,
+      "adjustedComposite": 0.588182,
+      "rawComposite": 0.574362
+    },
+    {
+      "teamId": "nfl-ari",
+      "slug": "arizona-cardinals",
+      "abbr": "ari",
+      "name": "Arizona Cardinals",
+      "gamesPlayed": 17,
+      "wins": 8,
+      "losses": 9,
+      "ties": 0,
+      "winPercentage": 0.470588,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0832,
+          "adjusted": 0.083142,
+          "zScore": 0.782528,
+          "rank": 8,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0614,
+          "adjusted": 0.042669,
+          "zScore": -0.586979,
+          "rank": 25,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0218,
+          "adjusted": 0.040473,
+          "zScore": 0.336213,
+          "rank": 14,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 1.235294,
+          "adjusted": 1.968858,
+          "zScore": 0.31685,
+          "rank": 13,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.1126,
+      "rushingEpaPerPlay": 0.0469,
+      "pythagoreanExpectedWins": 9.042,
+      "expectedWinsDelta": -1.042,
+      "adjustedComposite": 0.14159,
+      "rawComposite": -0.010994
+    },
+    {
+      "teamId": "nfl-lar",
+      "slug": "la-rams",
+      "abbr": "lar",
+      "name": "LA Rams",
+      "gamesPlayed": 17,
+      "wins": 10,
+      "losses": 7,
+      "ties": 0,
+      "winPercentage": 0.588235,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.005,
+          "adjusted": 0.010459,
+          "zScore": 0.007366,
+          "rank": 17,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0388,
+          "adjusted": 0.023351,
+          "zScore": -0.247582,
+          "rank": 20,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0338,
+          "adjusted": -0.012892,
+          "zScore": -0.112743,
+          "rank": 18,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -1.117647,
+          "adjusted": -0.200692,
+          "zScore": -0.032298,
+          "rank": 16,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.0583,
+      "rushingEpaPerPlay": -0.0649,
+      "pythagoreanExpectedWins": 7.992,
+      "expectedWinsDelta": 2.008,
+      "adjustedComposite": -0.102546,
+      "rawComposite": -0.257259
+    },
+    {
+      "teamId": "nfl-sf",
+      "slug": "san-francisco-49ers",
+      "abbr": "sf",
+      "name": "San Francisco 49ers",
+      "gamesPlayed": 17,
+      "wins": 6,
+      "losses": 11,
+      "ties": 0,
+      "winPercentage": 0.352941,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0654,
+          "adjusted": 0.061465,
+          "zScore": 0.551347,
+          "rank": 11,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0398,
+          "adjusted": 0.020698,
+          "zScore": -0.200971,
+          "rank": 19,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0256,
+          "adjusted": 0.040767,
+          "zScore": 0.338688,
+          "rank": 13,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -2.764706,
+          "adjusted": -1.366782,
+          "zScore": -0.219957,
+          "rank": 18,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.1201,
+      "rushingEpaPerPlay": -0.0028,
+      "pythagoreanExpectedWins": 7.358,
+      "expectedWinsDelta": -1.358,
+      "adjustedComposite": 0.096159,
+      "rawComposite": -0.06086
+    },
+    {
+      "teamId": "nfl-sea",
+      "slug": "seattle-seahawks",
+      "abbr": "sea",
+      "name": "Seattle Seahawks",
+      "gamesPlayed": 17,
+      "wins": 10,
+      "losses": 7,
+      "ties": 0,
+      "winPercentage": 0.588235,
+      "winPercentageScored": false,
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0117,
+          "adjusted": -0.016276,
+          "zScore": -0.277768,
+          "rank": 19,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0159,
+          "adjusted": -0.03479,
+          "zScore": 0.773917,
+          "rank": 8,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0042,
+          "adjusted": 0.018514,
+          "zScore": 0.151474,
+          "rank": 15,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 0.411765,
+          "adjusted": 1.020761,
+          "zScore": 0.164272,
+          "rank": 15,
+          "missing": false
+        }
+      },
+      "passingEpaPerPlay": 0.013,
+      "rushingEpaPerPlay": -0.0535,
+      "pythagoreanExpectedWins": 8.69,
+      "expectedWinsDelta": 1.31,
+      "adjustedComposite": 0.231314,
+      "rawComposite": 0.095089
+    }
+  ]
+}

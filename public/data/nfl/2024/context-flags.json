@@ -1,0 +1,60 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.2",
+    "modelVersion": "nfl-power-v0.3.0",
+    "validationStatus": "stage-1",
+    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "season": 2024,
+    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "notes": [
+      "Internal Stage-1 context flags artifact.",
+      "Screen entries are review candidates and never exclude games.",
+      "Only confirmed manual entries can affect the alternate final-eight view."
+    ],
+    "knownLimitations": [],
+    "formulaWeights": {
+      "opponentAdjustedOffensiveEpaPerPlay": 0.4,
+      "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
+      "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "frozenPublicScaleDivisor": 0.733,
+    "trajectory": {
+      "statement": "lambda = 0",
+      "lambda": 0,
+      "shrinkageK": 4,
+      "cap": 1
+    }
+  },
+  "flags": [
+    {
+      "gameId": "2024_18_KC_DEN",
+      "team": "den",
+      "flag": "week18-anomaly",
+      "origin": "screen",
+      "enteredBy": "nfl-v03-week18-screen",
+      "date": "2025-01-05",
+      "note": "Week 18 margin screen: actual 38, prior mean 4.75, prior standard deviation 15.197, threshold 2.",
+      "source": "public/data/nfl/2024/results.json"
+    },
+    {
+      "gameId": "2024_18_KC_DEN",
+      "team": "kc",
+      "flag": "week18-anomaly",
+      "origin": "screen",
+      "enteredBy": "nfl-v03-week18-screen",
+      "date": "2025-01-05",
+      "note": "Week 18 margin screen: actual -38, prior mean 6.063, prior standard deviation 6.189, threshold 2.",
+      "source": "public/data/nfl/2024/results.json"
+    },
+    {
+      "gameId": "2024_18_MIN_DET",
+      "team": "min",
+      "flag": "week18-anomaly",
+      "origin": "screen",
+      "enteredBy": "nfl-v03-week18-screen",
+      "date": "2025-01-06",
+      "note": "Week 18 margin screen: actual -22, prior mean 7.625, prior standard deviation 9.486, threshold 2.",
+      "source": "public/data/nfl/2024/results.json"
+    }
+  ]
+}

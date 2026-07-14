@@ -1,0 +1,44 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.2",
+    "modelVersion": "nfl-power-v0.3.0",
+    "validationStatus": "stage-1",
+    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "season": 2026,
+    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "notes": [
+      "Internal Stage-1 final-eight team metrics artifact.",
+      "Windows use dateUtc ascending, then week ascending, then gameId ascending.",
+      "Playoffs are excluded; Week 18 is included when it is among the last eight completed games.",
+      "Window z-scores use the full-season league distributions.",
+      "L8 opponent strength is the mean full-season adjusted composite of the selected opponents.",
+      "The alternate flagged view never replaces canonical metrics."
+    ],
+    "knownLimitations": [
+      "No completed 2026 results or weekly source rows are available; team metrics are empty."
+    ],
+    "formulaWeights": {
+      "opponentAdjustedOffensiveEpaPerPlay": 0.4,
+      "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
+      "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "frozenPublicScaleDivisor": 0.733,
+    "trajectory": {
+      "statement": "lambda = 0",
+      "lambda": 0,
+      "shrinkageK": 4,
+      "cap": 1
+    }
+  },
+  "adjustmentMethods": {
+    "margin": "game-level one-pass residual",
+    "epa": "opponent-mean one-pass"
+  },
+  "metricKeys": [
+    "offEpaPerPlay",
+    "defEpaPerPlay",
+    "netEpaPerPlay",
+    "pointDiffPerGame"
+  ],
+  "teams": []
+}

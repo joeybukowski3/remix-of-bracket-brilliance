@@ -1,0 +1,70 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.2",
+    "modelVersion": "nfl-power-v0.3.0",
+    "validationStatus": "stage-1",
+    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "season": 2022,
+    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "notes": [
+      "Internal Stage-1 context flags artifact.",
+      "Screen entries are review candidates and never exclude games.",
+      "Only confirmed manual entries can affect the alternate final-eight view."
+    ],
+    "knownLimitations": [],
+    "formulaWeights": {
+      "opponentAdjustedOffensiveEpaPerPlay": 0.4,
+      "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
+      "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "frozenPublicScaleDivisor": 0.733,
+    "trajectory": {
+      "statement": "lambda = 0",
+      "lambda": 0,
+      "shrinkageK": 4,
+      "cap": 1
+    }
+  },
+  "flags": [
+    {
+      "gameId": "2022_18_BAL_CIN",
+      "team": "bal",
+      "flag": "week18-anomaly",
+      "origin": "screen",
+      "enteredBy": "nfl-v03-week18-screen",
+      "date": "2023-01-08",
+      "note": "Week 18 margin screen: actual -11, prior mean 2.875, prior standard deviation 6.927, threshold 2.",
+      "source": "public/data/nfl/2022/results.json"
+    },
+    {
+      "gameId": "2022_18_DAL_WAS",
+      "team": "dal",
+      "flag": "week18-anomaly",
+      "origin": "screen",
+      "enteredBy": "nfl-v03-week18-screen",
+      "date": "2023-01-08",
+      "note": "Week 18 margin screen: actual -20, prior mean 9.063, prior standard deviation 13.975, threshold 2.",
+      "source": "public/data/nfl/2022/results.json"
+    },
+    {
+      "gameId": "2022_18_DAL_WAS",
+      "team": "wsh",
+      "flag": "week18-anomaly",
+      "origin": "screen",
+      "enteredBy": "nfl-v03-week18-screen",
+      "date": "2023-01-08",
+      "note": "Week 18 margin screen: actual 20, prior mean -2.625, prior standard deviation 9.413, threshold 2.",
+      "source": "public/data/nfl/2022/results.json"
+    },
+    {
+      "gameId": "2022_18_TB_ATL",
+      "team": "atl",
+      "flag": "week18-anomaly",
+      "origin": "screen",
+      "enteredBy": "nfl-v03-week18-screen",
+      "date": "2023-01-08",
+      "note": "Week 18 margin screen: actual 13, prior mean -2.125, prior standard deviation 6.945, threshold 2.",
+      "source": "public/data/nfl/2022/results.json"
+    }
+  ]
+}

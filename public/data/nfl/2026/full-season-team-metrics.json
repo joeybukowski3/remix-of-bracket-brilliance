@@ -1,0 +1,42 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.2",
+    "modelVersion": "nfl-power-v0.3.0",
+    "validationStatus": "stage-1",
+    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "season": 2026,
+    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "notes": [
+      "Internal Stage-1 full-season team metrics artifact.",
+      "Only completed regular-season games and REG weekly rows are included.",
+      "Win percentage is display-only and is not scored.",
+      "Pythagorean expected wins use exponent 2.37."
+    ],
+    "knownLimitations": [
+      "No completed 2026 results or weekly source rows are available; team metrics are empty."
+    ],
+    "formulaWeights": {
+      "opponentAdjustedOffensiveEpaPerPlay": 0.4,
+      "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
+      "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "frozenPublicScaleDivisor": 0.733,
+    "trajectory": {
+      "statement": "lambda = 0",
+      "lambda": 0,
+      "shrinkageK": 4,
+      "cap": 1
+    }
+  },
+  "adjustmentMethods": {
+    "margin": "game-level one-pass residual",
+    "epa": "opponent-mean one-pass"
+  },
+  "metricKeys": [
+    "offEpaPerPlay",
+    "defEpaPerPlay",
+    "netEpaPerPlay",
+    "pointDiffPerGame"
+  ],
+  "teams": []
+}

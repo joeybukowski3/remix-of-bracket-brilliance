@@ -1,0 +1,40 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.2",
+    "modelVersion": "nfl-power-v0.3.0",
+    "validationStatus": "stage-1",
+    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "season": 2025,
+    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "notes": [
+      "Internal Stage-1 context flags artifact.",
+      "Screen entries are review candidates and never exclude games.",
+      "Only confirmed manual entries can affect the alternate final-eight view."
+    ],
+    "knownLimitations": [],
+    "formulaWeights": {
+      "opponentAdjustedOffensiveEpaPerPlay": 0.4,
+      "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
+      "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "frozenPublicScaleDivisor": 0.733,
+    "trajectory": {
+      "statement": "lambda = 0",
+      "lambda": 0,
+      "shrinkageK": 4,
+      "cap": 1
+    }
+  },
+  "flags": [
+    {
+      "gameId": "2025_18_TEN_JAX",
+      "team": "ten",
+      "flag": "week18-anomaly",
+      "origin": "screen",
+      "enteredBy": "nfl-v03-week18-screen",
+      "date": "2026-01-04",
+      "note": "Week 18 margin screen: actual -34, prior mean -10, prior standard deviation 10.846, threshold 2.",
+      "source": "public/data/nfl/2025/results.json"
+    }
+  ]
+}
