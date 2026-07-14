@@ -115,7 +115,11 @@ test("Reliable Delivery keeps normal-game delivery and current-slate protection"
   const delivery = emailWorkflow.slice(emailWorkflow.indexOf("  deliver-email:"));
   assert.match(delivery, /if \[ "\$data_date" = "\$slate_date" \]/);
   assert.match(delivery, /Fresh numerology data did not become available for \$\{slate_date\}/);
-  assert.match(delivery, /if \[ "\$sent_date" = "\$slate_date" \]/);
+  assert.match(delivery, /if \[ "\$sent_date" = "\$slate_date" \].*"sent".*"already_exists".*"\$sent_at"/);
+  assert.match(delivery, /already recorded as delivered/);
+  assert.ok(delivery.indexOf('if [ "$sent_date" = "$slate_date" ]') < delivery.indexOf('if [ "$data_date" = "$slate_date" ]'));
+  assert.ok(delivery.indexOf("email:preview") < delivery.indexOf("email:send"));
+  assert.ok(delivery.indexOf("email:send") < delivery.indexOf("Persist send receipt"));
 });
 
 test("Reliable Delivery fails safely on schedule uncertainty before email providers", async () => {
