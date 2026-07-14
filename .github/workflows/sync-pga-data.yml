@@ -29,6 +29,9 @@ on:
       - "scripts/fetch-pga-current-field.mjs"
       - "scripts/lib/pga-field-selection.mjs"
       - "scripts/check-pga-field-sync.mjs"
+      - "scripts/generate-pga-detailed-model-data.mjs"
+      - "scripts/lib/pga-detailed-model.mjs"
+      - "src/data/pga/schedule.json"
       - "public/data/pga/schedule.json"
 
 # Share one lock with the other automated workflows that commit generated data to main.
@@ -102,6 +105,18 @@ jobs:
           cp "${RUNNER_TEMP}/jkb-trend/round-history-pga.json" public/data/pga/round-history-pga.json
           cp "${RUNNER_TEMP}/jkb-trend/jkb-trend-rankings.json" public/data/pga/jkb-trend-rankings.json
 
+      - name: Check whether The Open detailed package is active
+        id: open_detailed
+        run: node --input-type=module -e "import fs from 'node:fs'; const field = JSON.parse(fs.readFileSync('public/data/pga/current-field.json', 'utf8')); fs.appendFileSync(process.env.GITHUB_OUTPUT, `active=${field.tournamentId === 'R2026100'}\n`);"
+
+      - name: Generate and validate The Open detailed model in temporary output
+        if: steps.open_detailed.outputs.active == 'true'
+        run: node scripts/generate-pga-detailed-model-data.mjs --slug the-open-2026-picks --output "${RUNNER_TEMP}/the-open-2026.json"
+
+      - name: Publish validated The Open detailed model
+        if: steps.open_detailed.outputs.active == 'true'
+        run: cp "${RUNNER_TEMP}/the-open-2026.json" public/data/pga/the-open-2026.json
+
       - name: Generate tournament rankings and model from player stats (primary model source)
         run: node scripts/generate-pga-tournament-rankings.mjs
 
@@ -112,7 +127,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/pga/current-field.json public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json public/data/pga/player-stats-meta.json public/data/pga/jkb-trend-rankings.json public/data/pga/round-history-pga.json
+          git add public/data/pga/current-field.json public/data/pga/power-rankings.json public/data/pga/current-tournament.json public/data/pga/next-tournament.json public/data/pga/schedule.json public/data/pga/course-weights.json public/data/pga/player-stats-raw.json public/data/pga/player-stats-meta.json public/data/pga/jkb-trend-rankings.json public/data/pga/round-history-pga.json public/data/pga/the-open-2026.json
           if git diff --cached --quiet; then
             echo "No PGA data changes to commit."
             exit 0
