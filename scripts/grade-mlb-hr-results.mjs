@@ -14,6 +14,8 @@
  *   node scripts/grade-mlb-hr-results.mjs --all-pending      # explicit alias for the default behavior
  *   node scripts/grade-mlb-hr-results.mjs --dry-run          # compute grades but do not write
  *   node scripts/grade-mlb-hr-results.mjs --validate-only    # check archive schema, make no provider calls, no writes
+ *   node scripts/grade-mlb-hr-results.mjs --regrade-unresolved # retry legacy unresolved records into a temp candidate
+ *   MLB_HR_REGRADE_ALLOW_TRACKED_WRITE=true node scripts/grade-mlb-hr-results.mjs --regrade-unresolved --apply-regrade
  *
  * Always exits 0 on recoverable errors (network hiccups, missing games) so
  * a single bad lookup never blocks the rest of the grading run -- matching
@@ -21,10 +23,13 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
-import { classifyGameState, gradePrediction, isGradeable } from "./lib/mlb-hr-grading.mjs";
+import { buildArchiveKey } from "./lib/mlb-hr-archive.mjs";
+import { buildCompleteGameSummary, findPlayerBattingLine, gradePrediction, isGradeable } from "./lib/mlb-hr-grading.mjs";
+import { assessPredictionTiming } from "./lib/mlb-hr-tracking-integrity.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -38,6 +43,8 @@ const DATE_ARG = (() => {
 })();
 const DRY_RUN = args.includes("--dry-run");
 const VALIDATE_ONLY = args.includes("--validate-only");
+const REGRADE_UNRESOLVED = args.includes("--regrade-unresolved");
+const APPLY_REGRADE = args.includes("--apply-regrade");
 // --all-pending is the default behavior; accepted as an explicit no-op flag
 // for callers (e.g. workflow YAML) that want to be unambiguous.
 
@@ -53,36 +60,156 @@ async function fetchJson(url) {
   }
 }
 
-/** Fetch the game status + relevant team boxscore for a single gameId, caching by gameId across the run. */
-async function buildGameSummaryCache() {
+/** Fetch a complete home+away game summary once per gameId. */
+export function createGameSummaryLoader({ fetchJsonImpl = fetchJson } = {}) {
   const cache = new Map();
-  return async function getGameSummary(gameId, playerTeam) {
+  async function getGameSummary(gameId) {
     if (cache.has(gameId)) return cache.get(gameId);
-    try {
-      const schedule = await fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePk=${gameId}&hydrate=linescore`);
-      const game = schedule?.dates?.[0]?.games?.[0];
-      if (!game) {
-        const result = { gameState: "scheduled", boxscoreTeam: null };
-        cache.set(gameId, result);
-        return result;
+    const request = (async () => {
+      try {
+        const schedule = await fetchJsonImpl(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePk=${gameId}&hydrate=team,linescore`);
+        const game = schedule?.dates?.[0]?.games?.[0];
+        if (!game) {
+          return { gameId, gameState: "unresolved_retryable", resolutionError: "schedule_game_not_found" };
+        }
+        let boxscore = null;
+        if (game?.status?.abstractGameState === "Final") {
+          boxscore = await fetchJsonImpl(`https://statsapi.mlb.com/api/v1/game/${gameId}/boxscore`);
+        }
+        return buildCompleteGameSummary(game, boxscore);
+      } catch (err) {
+        console.warn(`[hr-grading] Game summary fetch failed for gameId=${gameId}: ${err.message}`);
+        return { gameId, gameState: "unresolved_retryable", resolutionError: `game_summary_fetch_failed:${err.message}` };
       }
-      const gameState = classifyGameState(game);
-      let boxscoreTeam = null;
-      if (gameState === "final") {
-        const boxscore = await fetchJson(`https://statsapi.mlb.com/api/v1/game/${gameId}/boxscore`);
-        const homeAbbr = game.teams?.home?.team?.abbreviation;
-        const awayAbbr = game.teams?.away?.team?.abbreviation;
-        boxscoreTeam = playerTeam === homeAbbr ? boxscore?.teams?.home : playerTeam === awayAbbr ? boxscore?.teams?.away : null;
-      }
-      const result = { gameState, boxscoreTeam };
-      cache.set(gameId, result);
-      return result;
-    } catch (err) {
-      console.warn(`[hr-grading] Game summary fetch failed for gameId=${gameId}: ${err.message}`);
-      const result = { gameState: "scheduled", boxscoreTeam: null };
-      cache.set(gameId, result);
-      return result;
+    })();
+    cache.set(gameId, request);
+    return request;
+  }
+  return { getGameSummary, cache };
+}
+
+function statusCounts(records) {
+  const counts = {};
+  for (const record of records) {
+    const status = record.result?.status ?? "missing";
+    counts[status] = (counts[status] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function enrichRecordIdentity(record, gameSummary) {
+  record.officialGameDate = gameSummary.officialGameDate ?? record.officialGameDate ?? record.date;
+  record.gameStartTime = gameSummary.gameStartTime ?? record.gameStartTime ?? null;
+  record.gameNumber = gameSummary.gameNumber ?? record.gameNumber ?? null;
+  record.doubleHeader = gameSummary.doubleHeader ?? record.doubleHeader ?? null;
+  record.timing = assessPredictionTiming(record.generatedAt, record.gameStartTime);
+
+  if (record.teamId == null) {
+    const inHome = Boolean(findPlayerBattingLine(gameSummary.homeBattingLines, record.playerId));
+    const inAway = Boolean(findPlayerBattingLine(gameSummary.awayBattingLines, record.playerId));
+    if (inHome !== inAway) {
+      record.teamId = inHome ? gameSummary.homeTeamId : gameSummary.awayTeamId;
+      record.opponentId = inHome ? gameSummary.awayTeamId : gameSummary.homeTeamId;
     }
+  }
+}
+
+function isRetryableStatus(status) {
+  return status === "pending"
+    || status === "suspended"
+    || status === "unresolved"
+    || status === "unresolved_retryable";
+}
+
+function modelSnapshot(record) {
+  return JSON.stringify({
+    hrQualityScore: record.hrQualityScore ?? null,
+    hrRank: record.hrRank ?? null,
+    candidateHrQualityScore: record.candidateHrQualityScore ?? null,
+    candidateRank: record.candidateRank ?? null,
+    candidateModelVersion: record.candidateModelVersion ?? null,
+    phase2Shadow: record.phase2Shadow ?? null,
+  });
+}
+
+export function validateRegradedArchive(records, { beforeRecords = null } = {}) {
+  const errors = [];
+  const keys = records.map(buildArchiveKey);
+  if (new Set(keys).size !== keys.length) errors.push("duplicate_archive_keys");
+  if (records.some((record) => record.playerId == null || record.gameId == null)) errors.push("missing_player_or_game_id");
+
+  const dateMismatches = records.filter(
+    (record) => record.officialGameDate && record.date && record.officialGameDate !== record.date,
+  ).length;
+  if (dateMismatches > 0) errors.push(`official_date_mismatch:${dateMismatches}`);
+
+  const binary = records.filter((record) => record.result?.status === "hit" || record.result?.status === "miss");
+  const hits = binary.filter((record) => record.result.status === "hit").length;
+  const hitRate = binary.length ? hits / binary.length : null;
+  if (binary.length >= 100 && (hitRate < 0.005 || hitRate > 0.2)) {
+    errors.push(`suspicious_hit_rate:${hitRate}`);
+  }
+
+  const providerFailureCount = records.filter((record) => (
+    record.result?.status === "unresolved_retryable"
+    && /^(game_summary_fetch_failed|schedule_game_not_found|final_boxscore_missing)/.test(record.result?.resolutionReason ?? "")
+  )).length;
+  if (providerFailureCount > 0) errors.push(`provider_resolution_failures:${providerFailureCount}`);
+
+  const performanceTerminal = records.filter((record) => (
+    record.result?.status === "hit"
+    || record.result?.status === "miss"
+    || record.result?.status === "did_not_play"
+  ));
+  const teamIdentityErrorCount = performanceTerminal.filter((record) => (
+    record.teamId == null
+    || record.opponentId == null
+    || Number(record.teamId) === Number(record.opponentId)
+  )).length;
+  if (teamIdentityErrorCount > 0) errors.push(`terminal_team_identity_errors:${teamIdentityErrorCount}`);
+
+  let beforeStatusCounts = null;
+  let beforeRetryableCount = null;
+  let afterRetryableCount = records.filter((record) => isRetryableStatus(record.result?.status)).length;
+  let resolvedRetryableCount = null;
+  let modelMutationCount = 0;
+  if (Array.isArray(beforeRecords)) {
+    beforeStatusCounts = statusCounts(beforeRecords);
+    beforeRetryableCount = beforeRecords.filter((record) => isRetryableStatus(record.result?.status)).length;
+    resolvedRetryableCount = beforeRetryableCount - afterRetryableCount;
+    if (records.length !== beforeRecords.length) errors.push("record_count_changed");
+
+    const beforeByKey = new Map(beforeRecords.map((record) => [buildArchiveKey(record), modelSnapshot(record)]));
+    modelMutationCount = records.filter((record) => beforeByKey.get(buildArchiveKey(record)) !== modelSnapshot(record)).length;
+    if (modelMutationCount > 0) errors.push(`model_score_mutations:${modelMutationCount}`);
+
+    if (beforeRetryableCount >= 100) {
+      const terminalCoverage = resolvedRetryableCount / beforeRetryableCount;
+      if (terminalCoverage < 0.5) errors.push(`insufficient_terminal_coverage:${terminalCoverage}`);
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    recordCount: records.length,
+    beforeStatusCounts,
+    statusCounts: statusCounts(records),
+    beforeRetryableCount,
+    afterRetryableCount,
+    resolvedRetryableCount,
+    binaryCount: binary.length,
+    hitCount: hits,
+    hitRate,
+    dateMismatchCount: dateMismatches,
+    providerFailureCount,
+    teamIdentityErrorCount,
+    modelMutationCount,
+    validationThresholds: {
+      hitRateMin: 0.005,
+      hitRateMax: 0.2,
+      minimumTerminalCoverage: 0.5,
+    },
   };
 }
 
@@ -136,22 +263,44 @@ async function main() {
     return;
   }
 
-  let candidates = archive.records.filter(isGradeable);
+  if (APPLY_REGRADE && !REGRADE_UNRESOLVED) {
+    throw new Error("--apply-regrade requires --regrade-unresolved.");
+  }
+  if (APPLY_REGRADE && process.env.MLB_HR_REGRADE_ALLOW_TRACKED_WRITE !== "true") {
+    throw new Error("--apply-regrade requires MLB_HR_REGRADE_ALLOW_TRACKED_WRITE=true.");
+  }
+
+  let candidates = archive.records.filter((record) => isGradeable(record, { regradeUnresolved: REGRADE_UNRESOLVED }));
   if (DATE_ARG) {
     candidates = candidates.filter((r) => r.date === DATE_ARG);
   }
 
   if (candidates.length === 0) {
-    console.log("[hr-grading] No pending records to grade.");
+    console.log("[hr-grading] No retryable records to grade.");
     return;
   }
 
-  console.log(`[hr-grading] Grading ${candidates.length} pending record(s)${DATE_ARG ? ` for date=${DATE_ARG}` : ""}.`);
+  const uniqueGameCount = new Set(candidates.map((record) => record.gameId).filter((value) => value != null)).size;
+  console.log(`[hr-grading] Grading ${candidates.length} retryable record(s) across ${uniqueGameCount} unique game(s)${DATE_ARG ? ` for date=${DATE_ARG}` : ""}.`);
 
-  const getGameSummary = await buildGameSummaryCache();
+  let regradeBackupPath = null;
+  let regradeOutputPath = null;
+  const recordsBeforeRegrade = REGRADE_UNRESOLVED
+    ? structuredClone(archive.records)
+    : null;
+  if (REGRADE_UNRESOLVED) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    regradeBackupPath = path.join(os.tmpdir(), `mlb-hr-prediction-history-${stamp}.backup.json`);
+    regradeOutputPath = path.join(os.tmpdir(), `mlb-hr-prediction-history-${stamp}.regraded.json`);
+    writeFileSync(regradeBackupPath, readFileSync(ARCHIVE_PATH));
+    console.log(`[hr-grading] Historical regrade backup written: ${regradeBackupPath}`);
+  }
+
+  const { getGameSummary } = createGameSummaryLoader();
   let gradedCount = 0;
   let stillPendingCount = 0;
   let errorCount = 0;
+  let changedCount = 0;
 
   for (const record of candidates) {
     if (record.gameId == null || record.playerId == null) {
@@ -160,9 +309,12 @@ async function main() {
       continue;
     }
     try {
-      const gameSummary = await getGameSummary(record.gameId, record.team);
+      const previousResult = JSON.stringify(record.result);
+      const gameSummary = await getGameSummary(record.gameId);
+      enrichRecordIdentity(record, gameSummary);
       const result = gradePrediction(record, gameSummary);
       record.result = result;
+      if (JSON.stringify(result) !== previousResult) changedCount++;
       if (result.status === "pending") stillPendingCount++;
       else gradedCount++;
     } catch (err) {
@@ -171,29 +323,50 @@ async function main() {
     }
   }
 
-  console.log(`[hr-grading] graded=${gradedCount} stillPending=${stillPendingCount} errors=${errorCount}`);
+  console.log(`[hr-grading] changed=${changedCount} graded=${gradedCount} stillPending=${stillPendingCount} errors=${errorCount}`);
 
   if (DRY_RUN) {
     console.log("[hr-grading] --dry-run set, not writing.");
     return;
   }
 
-  if (gradedCount === 0) {
+  if (changedCount === 0) {
     console.log("[hr-grading] No records changed status. Skipping write.");
     return;
   }
 
   archive.lastUpdatedAt = new Date().toISOString();
-  writeFileSync(ARCHIVE_PATH, `${JSON.stringify(archive, null, 2)}\n`, "utf8");
+  const serialized = `${JSON.stringify(archive, null, 2)}\n`;
+
+  if (REGRADE_UNRESOLVED) {
+    const validation = validateRegradedArchive(archive.records, { beforeRecords: recordsBeforeRegrade });
+    writeFileSync(regradeOutputPath, serialized, "utf8");
+    console.log(`[hr-grading] Historical regrade candidate written: ${regradeOutputPath}`);
+    console.log(`[hr-grading] Historical regrade validation: ${JSON.stringify(validation)}`);
+    if (!validation.valid) {
+      throw new Error(`Historical regrade validation failed; tracked archive preserved. ${validation.errors.join(", ")}`);
+    }
+    if (!APPLY_REGRADE) {
+      console.log("[hr-grading] Historical regrade candidate validated; tracked archive preserved because --apply-regrade was not provided.");
+      return;
+    }
+  }
+
+  writeFileSync(ARCHIVE_PATH, serialized, "utf8");
   console.log(`[hr-grading] Wrote ${ARCHIVE_PATH}`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
-    // Always exit 0 on unexpected errors per the resilience pattern used by
-    // grade-polymarket-results.mjs -- grading failures should never block
-    // the rest of the pipeline.
-    console.error(`[hr-grading] Fatal (non-blocking): ${err instanceof Error ? err.message : err}`);
+    const message = err instanceof Error ? err.message : err;
+    if (REGRADE_UNRESOLVED) {
+      console.error(`[hr-grading] Historical regrade aborted: ${message}`);
+      process.exitCode = 1;
+      return;
+    }
+    // Ordinary scheduled grading remains non-blocking on an isolated provider
+    // failure so one unavailable game cannot block the rest of the data job.
+    console.error(`[hr-grading] Fatal (non-blocking): ${message}`);
     process.exitCode = 0;
   });
 }

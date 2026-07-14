@@ -20,6 +20,7 @@ import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { buildPerformanceSummary } from "./lib/mlb-hr-performance-summary.mjs";
 import { assessCalibrationReadiness } from "./lib/mlb-hr-calibration-scaffold.mjs";
+import { normalizeArchiveRecord } from "./lib/mlb-hr-tracking-integrity.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -54,8 +55,9 @@ async function main() {
     return;
   }
 
-  const summary = buildPerformanceSummary(archive.records);
-  const calibration = assessCalibrationReadiness(archive.records);
+  const normalizedRecords = archive.records.map(normalizeArchiveRecord);
+  const summary = buildPerformanceSummary(normalizedRecords);
+  const calibration = assessCalibrationReadiness(normalizedRecords);
 
   const eligibleTotal = summary.totalGradedRecords;
   const sampleWarning = eligibleTotal < MIN_SAMPLE_SIZE_WARNING

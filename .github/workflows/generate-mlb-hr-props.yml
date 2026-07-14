@@ -224,7 +224,7 @@ jobs:
           ENABLE_HR_BULLPEN_SHADOW: "false"
           ENABLE_HR_HAND_SPLIT_SHADOW: "false"
           ENABLE_PHASE2_SHADOW_COMPARISON: "false"
-        run: node scripts/generate-mlb-hr-props-with-k-shadow.mjs --force
+        run: node scripts/generate-mlb-hr-props-with-k-shadow.mjs --force --date "${{ needs.slate-check.outputs.slate_date }}"
 
       - name: Extract Phase 2 batter IDs (preliminary pass)
         id: extract_ids_preliminary
@@ -298,7 +298,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             echo "HR props attempt ${attempt}/3"
-            if node scripts/generate-mlb-hr-props-with-k-shadow.mjs --force; then
+            if node scripts/generate-mlb-hr-props-with-k-shadow.mjs --force --date "${{ needs.slate-check.outputs.slate_date }}"; then
               exit 0
             fi
             sleep $((attempt * 10))

@@ -139,6 +139,7 @@ export function computeHrHandSplitShadow({ batterHandSplits = null, opposingPitc
     shadowExperimentVersion: MLB_HR_HAND_SPLIT_SHADOW_VERSION,
     shadowComponent: "hand-split",
     selectedSide: availability.selectedSide,
+    freshnessStatus: batterHandSplits?.freshnessStatus ?? null,
   };
 
   const unavailableResult = (reason) => ({

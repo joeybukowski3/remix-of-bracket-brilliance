@@ -436,10 +436,10 @@ describe("HR result grading", () => {
     assert.equal(result.status, "pending");
   });
 
-  it("final game with no matching box-score line is unresolved, not silently a miss", () => {
+  it("final game with no matching legacy box-score line is retryable, not silently a miss", () => {
     const game = { gameState: "final", boxscoreTeam: { players: {} } };
     const result = gradePrediction(RECORD, game);
-    assert.equal(result.status, "unresolved");
+    assert.equal(result.status, "unresolved_retryable");
   });
 
   it("isGradeable correctly identifies pending vs already-graded records", () => {

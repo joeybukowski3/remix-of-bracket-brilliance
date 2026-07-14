@@ -27,6 +27,7 @@ import { pathToFileURL } from "node:url";
 import { computeHrConfidence } from "./lib/mlb-hr-confidence.mjs";
 import { buildArchiveRecord, mergeArchiveBatch, buildArchiveKey } from "./lib/mlb-hr-archive.mjs";
 import { MLB_HR_MODEL_VERSION } from "./lib/mlb-hr-model-version.mjs";
+import { HR_ARCHIVE_SCHEMA_VERSION } from "./lib/mlb-hr-tracking-integrity.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -93,7 +94,7 @@ async function main() {
   const existingArchive = loadJsonSafe(ARCHIVE_PATH, { records: [] });
   const existingRecords = Array.isArray(existingArchive.records) ? existingArchive.records : [];
 
-  const { records, appended, updated, skippedGraded } = mergeArchiveBatch(existingRecords, newRecords);
+  const { records, appended, updated, skippedGraded, preservedPregame } = mergeArchiveBatch(existingRecords, newRecords);
 
   if (records.length > MAX_ARCHIVE_RECORDS) {
     console.error(`[hr-archive] Archive would grow to ${records.length} records, exceeding the safety cap of ${MAX_ARCHIVE_RECORDS}. Refusing to write -- investigate before raising the cap.`);
@@ -102,13 +103,13 @@ async function main() {
   }
 
   const output = {
-    schemaVersion: 1,
+    schemaVersion: HR_ARCHIVE_SCHEMA_VERSION,
     lastUpdatedAt: new Date().toISOString(),
     recordCount: records.length,
     records,
   };
 
-  console.log(`[hr-archive] date=${date} modelVersion=${modelVersion} appended=${appended} updated=${updated} skippedGraded=${skippedGraded} totalRecords=${records.length}`);
+  console.log(`[hr-archive] date=${date} modelVersion=${modelVersion} appended=${appended} updated=${updated} skippedGraded=${skippedGraded} preservedPregame=${preservedPregame} totalRecords=${records.length}`);
 
   if (DRY_RUN) {
     console.log("[hr-archive] --dry-run set, not writing.");

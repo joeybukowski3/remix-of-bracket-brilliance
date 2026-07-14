@@ -15,6 +15,8 @@ const SCRIPT_PATH = path.join(import.meta.dirname, "build-mlb-hr-archive.mjs");
 function makeFixtureBatter(overrides = {}) {
   return {
     gameKey: "NYY@BOS", player: "Test Player", playerId: 12345, gameId: 555,
+    teamId: 147, opponentId: 111, officialGameDate: "2026-06-30",
+    gameStartTime: "2026-06-30T13:00:00.000Z", gameNumber: 1, doubleHeader: "N",
     position: "OF", team: "NYY", opponent: "BOS",
     opposingPitcher: "Some Pitcher", opposingPitcherId: 999, opposingPitcherHrVs: 60,
     pitcherHand: "R", ballpark: "Fenway Park", parkFactor: 0.95,
@@ -23,12 +25,23 @@ function makeFixtureBatter(overrides = {}) {
     last7HR: 1, last30HR: 4, weatherBoost: 1, batterHand: "R",
     hrScore: 72.5, hrScoreRank: 3, angleTags: [],
     pitcherXera: 4.2, pitcherRegressionScore: 0.3, pitcherFlyBallRate: 40,
-    hrOddsYes: "+320", hrOddsNo: null, hrOddsBook: "fanduel",
+    hrOddsYes: "+320", hrOddsNo: null, hrLine: 0.5, hrOddsBook: "fanduel",
+    hrOddsCapturedAt: "2026-06-30T08:55:00.000Z", hrOddsSlateDate: "2026-06-30",
     marketImpliedProbability: 0.238, qualityRank: 3, marketRank: 5, rankDifference: 2,
     valueStatus: "uncalibrated", hrValueEdge: null, hrImplied: 0.238,
     modelVersion: "test-v1", confidenceLevel: "high", confidenceReasons: [],
     dataCompletenessPercent: 100, explanation: "Test explanation.",
     candidateHrQualityScore: 70.1, candidateRank: 4, candidateModelVersion: "test-candidate-v1",
+    phase2Rank: 2,
+    phase2Shadow: {
+      shadowExperimentVersion: "test-phase2-v1",
+      enabledComponents: { bullpen: true, handSplit: true },
+      combinedShadowScore: 74.1,
+      componentContributions: { bullpen: 1.1, handSplit: 0.5 },
+      componentAvailability: { bullpen: true, handSplit: true },
+      bullpenShadow: { freshnessStatus: "fresh" },
+      handSplitShadow: { freshnessStatus: "fresh" },
+    },
     lineupStatus: "confirmed", battingOrder: 4, starterConfirmed: true,
     ...overrides,
   };
@@ -167,6 +180,66 @@ describe("build-mlb-hr-archive.mjs I/O", () => {
     runScript(dir);
     const archive = readArchive(dir);
     assert.equal(archive.records.length, 2); // not deduplicated by name
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("keeps the same player in both games of a doubleheader", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "hr-archive-doubleheader-"));
+    mkdirSync(path.join(dir, "public", "data", "mlb"), { recursive: true });
+    writeRaw(dir, [
+      makeFixtureBatter({ gameId: 701, gameNumber: 1, doubleHeader: "Y" }),
+      makeFixtureBatter({ gameId: 702, gameNumber: 2, doubleHeader: "Y" }),
+    ]);
+    runScript(dir);
+    const archive = readArchive(dir);
+    assert.equal(archive.records.length, 2);
+    assert.deepEqual(archive.records.map((record) => record.gameId).sort(), [701, 702]);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("persists schema-v2 identity, timing, odds, and Phase 2 fields", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "hr-archive-schema2-"));
+    mkdirSync(path.join(dir, "public", "data", "mlb"), { recursive: true });
+    writeRaw(dir, [makeFixtureBatter()]);
+    runScript(dir);
+    const archive = readArchive(dir);
+    const record = archive.records[0];
+    assert.equal(archive.schemaVersion, 2);
+    assert.equal(record.teamId, 147);
+    assert.equal(record.opponentId, 111);
+    assert.equal(record.timing.eligibleForEvaluation, true);
+    assert.equal(record.oddsCapturedAt, "2026-06-30T08:55:00.000Z");
+    assert.equal(record.oddsSourceSlateDate, "2026-06-30");
+    assert.equal(record.phase2Shadow.combinedShadowScore, 74.1);
+    assert.equal(record.phase2Shadow.rank, 2);
+    assert.equal(record.phase2Shadow.bullpenContribution, 1.1);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("preserves the clean pregame snapshot when a later run is post-start", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "hr-archive-poststart-"));
+    mkdirSync(path.join(dir, "public", "data", "mlb"), { recursive: true });
+    writeRaw(dir, [makeFixtureBatter({ hrScore: 72.5 })]);
+    runScript(dir);
+    writeRaw(dir, [makeFixtureBatter({ hrScore: 99.9 })], { generatedAt: "2026-06-30T14:00:00.000Z" });
+    runScript(dir);
+    const record = readArchive(dir).records[0];
+    assert.equal(record.hrQualityScore, 72.5);
+    assert.equal(record.timing.timingStatus, "verified_pregame");
+    assert.equal(record.excludedPredictionRuns.length, 1);
+    assert.equal(record.excludedPredictionRuns[0].timingStatus, "post_start");
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("uses the raw payload slate date as the archive date", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "hr-archive-explicit-date-"));
+    mkdirSync(path.join(dir, "public", "data", "mlb"), { recursive: true });
+    writeRaw(dir, [makeFixtureBatter({ officialGameDate: "2026-07-02" })], {
+      date: "2026-07-02",
+      generatedAt: "2026-07-02T09:00:00.000Z",
+    });
+    runScript(dir);
+    assert.equal(readArchive(dir).records[0].date, "2026-07-02");
     rmSync(dir, { recursive: true, force: true });
   });
 });

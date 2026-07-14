@@ -11,6 +11,8 @@ import { computeGameHrEnvironmentScore, QUALIFYING_HR_SCORE_THRESHOLD } from "./
 import { classifyPitcherRole, calculateProjectedInnings } from "./lib/mlb-projected-innings.mjs";
 import { getPhase2Flags } from "./lib/mlb-phase2-flags.mjs";
 import { computeHrPhase2Shadow } from "./lib/mlb-hr-phase2-shadow.mjs";
+import { computeShadowRanks } from "./lib/mlb-phase2-shadow-comparison.mjs";
+import { resolveOddsSlateDate } from "./lib/mlb-prop-odds-core.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -24,7 +26,7 @@ const FORCE = process.argv.includes("--force");
 const MIN_GENERATION_HOUR_ET = 10;
 const GROK_API_URL = "https://api.x.ai/v1/chat/completions";
 const GROK_MODEL = "grok-4-1-fast-non-reasoning";
-const SEASON = new Date().getFullYear();
+let ACTIVE_SEASON = new Date().getFullYear();
 const PICK_LIMITS = {
   bestBets: 5,
   valueBets: 3,
@@ -136,13 +138,24 @@ export function buildHrPhase2Shadow({ hrScore, opponentTeamId, opposingPitcherSe
   });
 }
 
-function getTodayEt() {
+export function getEasternDate(now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date());
+  }).format(now);
+}
+
+export function resolveSlateDate(argv = process.argv.slice(2), now = new Date()) {
+  const index = argv.indexOf("--date");
+  if (index === -1) return getEasternDate(now);
+  const value = String(argv[index + 1] ?? "").trim();
+  const parsed = new Date(`${value}T12:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    throw new Error("--date must be a valid YYYY-MM-DD Eastern slate date.");
+  }
+  return value;
 }
 
 function getCurrentEtHour() {
@@ -154,13 +167,13 @@ function getCurrentEtHour() {
   return Number(hourText);
 }
 
-function getNextRunAt() {
+function getNextRunAt(slateDate = getEasternDate()) {
   const etHour = getCurrentEtHour();
   const tz = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "short" })
     .formatToParts(new Date())
     .find((p) => p.type === "timeZoneName")?.value ?? "ET";
   const offset = tz === "EDT" ? "-04:00" : "-05:00";
-  const today = getTodayEt();
+  const today = slateDate;
   if (etHour < 10) return { time: `${today}T10:00:00${offset}`, label: "10:00 AM ET" };
   if (etHour < 13) return { time: `${today}T13:00:00${offset}`, label: "1:00 PM ET" };
   return null; // No more scheduled runs today
@@ -176,6 +189,13 @@ function normalizeName(value) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+}
+
+export function buildBatterGameIdentity(player) {
+  const playerId = toFiniteNumber(player?.playerId);
+  const gameId = toFiniteNumber(player?.gameId);
+  if (playerId != null && gameId != null) return `${playerId}|${gameId}`;
+  return `fallback|${normalizeName(player?.player)}|${normalizeTeamCode(player?.team)}|${normalizeTeamCode(player?.opponent)}|${gameId ?? "missing-game"}`;
 }
 
 function normalizeTeamCode(value) {
@@ -388,14 +408,16 @@ async function fetchText(url) {
   return response.text();
 }
 
-async function loadSchedule() {
-  const date = getTodayEt();
+async function loadSchedule(date) {
   const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=team,linescore,probablePitcher`;
   const json = await fetchJson(url);
   const games = json?.dates?.[0]?.games ?? [];
   return games.map((game) => ({
     gamePk: game.gamePk,
     gameDate: game.gameDate,
+    officialDate: game.officialDate ?? date,
+    gameNumber: game.gameNumber ?? null,
+    doubleHeader: game.doubleHeader ?? null,
     venue: game.venue?.name ?? "Unknown Venue",
     away: {
       id: game?.teams?.away?.team?.id ?? null,
@@ -448,7 +470,7 @@ function extractLineupFromTeamBox(boxTeam) {
 
 async function fetchTeamSeasonSchedule(teamId) {
   if (!teamId) return [];
-  const json = await fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=${SEASON}&teamId=${teamId}&hydrate=linescore`);
+  const json = await fetchJson(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&season=${ACTIVE_SEASON}&teamId=${teamId}&hydrate=linescore`);
   return (json?.dates || []).flatMap((dateBlock) => dateBlock.games || []);
 }
 
@@ -479,7 +501,7 @@ const pitcherSeasonCache = new Map();
 async function fetchPitcherSeasonStats(id) {
   if (!id) return null;
   if (pitcherSeasonCache.has(id)) return pitcherSeasonCache.get(id);
-  const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${SEASON}&group=pitching`);
+  const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${ACTIVE_SEASON}&group=pitching`);
   const stats = json?.stats?.[0]?.splits?.[0]?.stat ?? null;
   pitcherSeasonCache.set(id, stats);
   return stats;
@@ -489,7 +511,7 @@ const batterSeasonCache = new Map();
 async function fetchBatterSeasonStats(id) {
   if (!id) return null;
   if (batterSeasonCache.has(id)) return batterSeasonCache.get(id);
-  const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${SEASON}&group=hitting`);
+  const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&season=${ACTIVE_SEASON}&group=hitting`);
   const stats = json?.stats?.[0]?.splits?.[0]?.stat ?? null;
   batterSeasonCache.set(id, stats);
   return stats;
@@ -499,7 +521,7 @@ const gameLogCache = new Map();
 async function fetchBatterHrGameLog(id) {
   if (!id) return [];
   if (gameLogCache.has(id)) return gameLogCache.get(id);
-  const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=gameLog&season=${SEASON}&group=hitting`);
+  const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=gameLog&season=${ACTIVE_SEASON}&group=hitting`);
   const splits = json?.stats?.[0]?.splits ?? [];
   const rows = splits.map((split) => ({
     date: split.date,
@@ -530,7 +552,7 @@ export function parseCsv(text) {
 }
 
 async function fetchStatcastBatterMap() {
-  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=batter&filter=&min=1&selections=player_id,player_name,barrel_batted_rate,hard_hit_percent,exit_velocity_avg,isolated_power,pull_percent,xba,whiff_percent,k_percent,bb_percent&sort=barrel_batted_rate&sortDir=desc&chart=false&csv=true`;
+  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${ACTIVE_SEASON}&type=batter&filter=&min=1&selections=player_id,player_name,barrel_batted_rate,hard_hit_percent,exit_velocity_avg,isolated_power,pull_percent,xba,whiff_percent,k_percent,bb_percent&sort=barrel_batted_rate&sortDir=desc&chart=false&csv=true`;
   try {
     const text = await fetchText(url);
     if (!text || text.startsWith("<!DOCTYPE")) return { rowsByPlayerId: new Map(), averages: {} };
@@ -558,7 +580,7 @@ async function fetchStatcastBatterMap() {
 // FanGraphs pitcher leaderboard — FB% (flyball rate), HR, GS
 // Used as a more reliable flyball% source than Statcast's fb_rate which often returns 0
 async function fetchFanGraphsPitcherMap() {
-  const url = `https://www.fangraphs.com/api/leaders/major-league/data?age=0&pos=all&stats=pit&lg=all&qual=0&season=${SEASON}&season1=${SEASON}&ind=0&team=0&rost=0&players=0&type=0&sortcol=7&sortdir=default&pageitems=300&pagenum=1`;
+  const url = `https://www.fangraphs.com/api/leaders/major-league/data?age=0&pos=all&stats=pit&lg=all&qual=0&season=${ACTIVE_SEASON}&season1=${ACTIVE_SEASON}&ind=0&team=0&rost=0&players=0&type=0&sortcol=7&sortdir=default&pageitems=300&pagenum=1`;
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 15000);
@@ -602,7 +624,7 @@ async function fetchPitcherGameLog(id) {
   if (!id) return { starts: [], seasonAirOuts: 0, seasonGroundOuts: 0 };
   if (pitcherGameLogCache.has(id)) return pitcherGameLogCache.get(id);
   try {
-    const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=gameLog&season=${SEASON}&group=pitching`);
+    const json = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=gameLog&season=${ACTIVE_SEASON}&group=pitching`);
     const splits = json?.stats?.[0]?.splits ?? [];
     // Only count starts (not relief appearances)
     const starts = splits
@@ -633,7 +655,7 @@ async function fetchPitcherGameLog(id) {
 }
 
 async function fetchStatcastPitcherMap() {
-  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${SEASON}&type=pitcher&filter=&min=1&selections=player_id,player_name,xera,hard_hit_percent,barrel_batted_rate,whiff_percent,k_percent,bb_percent,fb_rate,exit_velocity_avg&sort=hard_hit_percent&sortDir=desc&chart=false&csv=true`;
+  const url = `https://baseballsavant.mlb.com/leaderboard/custom?year=${ACTIVE_SEASON}&type=pitcher&filter=&min=1&selections=player_id,player_name,xera,hard_hit_percent,barrel_batted_rate,whiff_percent,k_percent,bb_percent,fb_rate,exit_velocity_avg&sort=hard_hit_percent&sortDir=desc&chart=false&csv=true`;
   try {
     const text = await fetchText(url);
     if (!text || text.startsWith("<!DOCTYPE")) return { rowsByPlayerId: new Map(), averages: {} };
@@ -901,6 +923,12 @@ function validateBatterRows(rows) {
       player: normalizeText(row.player),
       playerId: toFiniteNumber(row.playerId) ?? null,
       gameId: toFiniteNumber(row.gameId) ?? null,
+      teamId: toFiniteNumber(row.teamId) ?? null,
+      opponentId: toFiniteNumber(row.opponentId) ?? null,
+      officialGameDate: normalizeText(row.officialGameDate) || null,
+      gameStartTime: normalizeText(row.gameStartTime) || null,
+      gameNumber: toFiniteNumber(row.gameNumber) ?? null,
+      doubleHeader: normalizeText(row.doubleHeader) || null,
       lineupStatus: normalizeText(row.lineupStatus) || "unknown",
       battingOrder: toFiniteNumber(row.battingOrder) ?? null,
       starterConfirmed: row.starterConfirmed === true,
@@ -946,8 +974,14 @@ function validateBatterRows(rows) {
       throw new Error(`Generated HR prop row is missing identity fields: ${JSON.stringify(row)}`);
     }
 
-    if (normalized.playerId == null || normalized.gameId == null) {
-      console.warn(`[hr-props] Stable ID missing for ${normalized.player} (${normalized.team}) — playerId=${normalized.playerId}, gameId=${normalized.gameId}. Archive will mark this record low-confidence rather than fabricate an ID.`);
+    if (normalized.playerId == null || normalized.gameId == null || normalized.teamId == null || normalized.opponentId == null) {
+      throw new Error(`Generated HR prop row is missing stable grading IDs: ${JSON.stringify({
+        player: normalized.player,
+        playerId: normalized.playerId,
+        gameId: normalized.gameId,
+        teamId: normalized.teamId,
+        opponentId: normalized.opponentId,
+      })}`);
     }
 
     const requiredNumbers = [
@@ -992,6 +1026,7 @@ function validatePitcherRows(rows) {
   return rows.map((row) => {
     const normalized = {
       gameKey: normalizeText(row.gameKey),
+      gameId: toFiniteNumber(row.gameId) ?? null,
       pitcher: normalizeText(row.pitcher),
       pitcherId: toFiniteNumber(row.pitcherId),
       team: normalizeTeamCode(row.team),
@@ -1040,9 +1075,16 @@ function validateGameRows(rows) {
 
   return rows.map((row) => ({
     gameKey: normalizeText(row.gameKey),
+    gameId: toFiniteNumber(row.gameId) ?? null,
     matchup: normalizeText(row.matchup),
+    awayTeamId: toFiniteNumber(row.awayTeamId) ?? null,
     awayTeam: normalizeTeamCode(row.awayTeam),
+    homeTeamId: toFiniteNumber(row.homeTeamId) ?? null,
     homeTeam: normalizeTeamCode(row.homeTeam),
+    officialGameDate: normalizeText(row.officialGameDate) || null,
+    gameStartTime: normalizeText(row.gameStartTime) || null,
+    gameNumber: toFiniteNumber(row.gameNumber) ?? null,
+    doubleHeader: normalizeText(row.doubleHeader) || null,
     stadium: normalizeText(row.stadium) || "Unknown Venue",
     roofType: normalizeText(row.roofType) || "Unknown",
     temperature: toFiniteNumber(row.temperature),
@@ -1054,7 +1096,7 @@ function validateGameRows(rows) {
   }));
 }
 
-function validateRawPayload(payload) {
+function validateRawPayload(payload, fallbackDate = getEasternDate()) {
   if (!isPlainObject(payload)) {
     throw new Error("Generated raw HR props payload is not an object.");
   }
@@ -1065,7 +1107,7 @@ function validateRawPayload(payload) {
   }
 
   return {
-    date: normalizeText(payload.date) || getTodayEt(),
+    date: normalizeText(payload.date) || fallbackDate,
     generatedAt: normalizeText(payload.generatedAt) || new Date().toISOString(),
     modelVersion,
     nextRunAt: payload.nextRunAt ?? null,
@@ -1203,7 +1245,7 @@ function normalizeSlatePreview(value, fallbackPreview) {
   return { slateOverview, modelNote };
 }
 
-function buildBestBetsPayload(rows, picksResult, previewResult, deterministicPicks) {
+function buildBestBetsPayload(rows, picksResult, previewResult, deterministicPicks, slateDate = getEasternDate()) {
   // deterministicPicks (when provided) is the authoritative selection -- it
   // replaces the old "top N straight slice" fallback entirely, so even when
   // Grok is unavailable, selection still applies the TBD-exclusion and
@@ -1217,7 +1259,7 @@ function buildBestBetsPayload(rows, picksResult, previewResult, deterministicPic
     : buildFallbackSections(rows);
   const lookups = createRowLookups(rows);
   return {
-    date: getTodayEt(),
+    date: slateDate,
     generatedAt: new Date().toISOString(),
     modelVersion: MLB_HR_MODEL_VERSION,
     slatePreview: normalizeSlatePreview(previewResult, buildFallbackSlatePreview(rows)),
@@ -1310,11 +1352,11 @@ async function callGrokWithRetry(prompt, maxRetries = 3, validate) {
   }
 }
 
-function shouldSkip(force) {
+function shouldSkip(force, slateDate = getEasternDate()) {
   if (force || !existsSync(BEST_BETS_OUTPUT_PATH)) return false;
   try {
     const existing = JSON.parse(readFileSync(BEST_BETS_OUTPUT_PATH, "utf8"));
-    return existing?.date === getTodayEt();
+    return existing?.date === slateDate;
   } catch {
     return false;
   }
@@ -1349,19 +1391,22 @@ function buildSummary(players, limit) {
 
 async function main() {
   ensureDataDir();
+  const slateDate = resolveSlateDate();
+  ACTIVE_SEASON = Number(slateDate.slice(0, 4));
+  console.log(`[hr-props] resolvedSlateDate=${slateDate}`);
   if (!FORCE && getCurrentEtHour() < MIN_GENERATION_HOUR_ET) {
     console.log(`Skipping MLB HR props generation before ${MIN_GENERATION_HOUR_ET}:00 AM ET. Pass --force to override.`);
     return;
   }
 
-  if (shouldSkip(FORCE)) {
-    console.log("MLB HR props already generated today. Pass --force to regenerate.");
+  if (shouldSkip(FORCE, slateDate)) {
+    console.log(`MLB HR props already generated for ${slateDate}. Pass --force to regenerate.`);
     return;
   }
 
-  const schedule = await loadSchedule();
+  const schedule = await loadSchedule(slateDate);
   if (!schedule.length) {
-    throw new Error("MLB schedule returned zero games for today. Existing HR props files were preserved.");
+    throw new Error(`MLB schedule returned zero games for ${slateDate}. Existing HR props files were preserved.`);
   }
 
   const statcastBatters = await fetchStatcastBatterMap();
@@ -1391,8 +1436,13 @@ async function main() {
 
       pendingGames.push({
         gameKey,
+        gameId: game.gamePk,
         matchup: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
         venue: game.venue,
+        officialGameDate: game.officialDate,
+        gameStartTime: game.gameDate,
+        gameNumber: game.gameNumber,
+        doubleHeader: game.doubleHeader,
         missingPitcherSide: missing,
       });
       console.log(`[skip] ${gameKey} — pitcher TBD for: ${missing.join(", ")}`);
@@ -1428,9 +1478,16 @@ async function main() {
     const parkFactor = parkFactorForVenue(game.venue, weatherContext.stadium);
     const gameContext = {
       gameKey,
+      gameId: game.gamePk,
       matchup: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
+      awayTeamId: game.away.id,
       awayTeam: game.away.abbreviation,
+      homeTeamId: game.home.id,
       homeTeam: game.home.abbreviation,
+      officialGameDate: game.officialDate,
+      gameStartTime: game.gameDate,
+      gameNumber: game.gameNumber,
+      doubleHeader: game.doubleHeader,
       stadium: weatherContext.stadium || game.venue,
       roofType: weatherContext.roofType,
       temperature: weatherContext.temperature,
@@ -1470,6 +1527,7 @@ async function main() {
     for (const starter of starterContexts) {
       pitcherPool.push({
         gameKey,
+        gameId: game.gamePk,
         pitcher: starter.pitcherName,
         pitcherId: starter.pitcherId,
         team: starter.team,
@@ -1526,10 +1584,15 @@ async function main() {
         pitcherHr9: computeHr9(homePitcherStats?.homeRuns, homePitcherStats?.inningsPitched),
         // Phase 2 additions -- shadow-only, unread by any live scoring path.
         opponentTeamId: game.home.id ?? null,
+        battingTeamId: game.away.id ?? null,
         opposingPitcherSeasonStats: homePitcherStats,
         gameKey,
         gameContext,
         gamePk: game.gamePk,
+        officialGameDate: game.officialDate,
+        gameStartTime: game.gameDate,
+        gameNumber: game.gameNumber,
+        doubleHeader: game.doubleHeader,
       },
       {
         lineup: homeLineup,
@@ -1542,10 +1605,15 @@ async function main() {
         pitcherHr9: computeHr9(awayPitcherStats?.homeRuns, awayPitcherStats?.inningsPitched),
         // Phase 2 additions -- shadow-only, unread by any live scoring path.
         opponentTeamId: game.away.id ?? null,
+        battingTeamId: game.home.id ?? null,
         opposingPitcherSeasonStats: awayPitcherStats,
         gameKey,
         gameContext,
         gamePk: game.gamePk,
+        officialGameDate: game.officialDate,
+        gameStartTime: game.gameDate,
+        gameNumber: game.gameNumber,
+        doubleHeader: game.doubleHeader,
       },
     ];
 
@@ -1575,6 +1643,12 @@ async function main() {
           player: hitter.fullName || hitter.name || "Unknown Player",
           playerId: hitter.id ?? null,
           gameId: context.gamePk ?? null,
+          teamId: context.battingTeamId,
+          opponentId: context.opponentTeamId,
+          officialGameDate: context.officialGameDate,
+          gameStartTime: context.gameStartTime,
+          gameNumber: context.gameNumber,
+          doubleHeader: context.doubleHeader,
           lineupStatus: context.lineupConfirmed ? "confirmed" : "projected",
           battingOrder: battingOrderIndex + 1,
           starterConfirmed: true, // pitcherContexts only contains games where both probable pitchers are known (TBD games are skipped earlier)
@@ -1612,7 +1686,7 @@ async function main() {
     }
   }
 
-  const dedupedPitchers = Array.from(new Map(pitcherPool.map((pitcher) => [`${pitcher.gameKey}|${pitcher.team}`, pitcher])).values());
+  const dedupedPitchers = Array.from(new Map(pitcherPool.map((pitcher) => [`${pitcher.gameId}|${pitcher.team}`, pitcher])).values());
   const pitcherContexts = {
     hardHitValues: dedupedPitchers.map((pitcher) => pitcher.hardHitRate),
     flyBallValues: dedupedPitchers.map((pitcher) => pitcher.flyBallRate),
@@ -1629,7 +1703,7 @@ async function main() {
     .sort((left, right) => right.hrVs - left.hrVs || left.pitcher.localeCompare(right.pitcher));
   const pitcherLookup = new Map(scoredPitchers.map((pitcher) => [String(pitcher.pitcherId ?? `${pitcher.gameKey}|${pitcher.team}`), pitcher]));
 
-  const dedupedPool = Array.from(new Map(batterPool.map((player) => [`${normalizeName(player.player)}-${player.team}-${player.opponent}`, player])).values());
+  const dedupedPool = Array.from(new Map(batterPool.map((player) => [buildBatterGameIdentity(player), player])).values());
   const batterContexts = {
     barrelValues: dedupedPool.map((player) => player.barrelRate),
     hardHitValues: dedupedPool.map((player) => player.hardHitRate),
@@ -1722,6 +1796,12 @@ async function main() {
       player: player.player,
       playerId: player.playerId,
       gameId: player.gameId,
+      teamId: player.teamId,
+      opponentId: player.opponentId,
+      officialGameDate: player.officialGameDate,
+      gameStartTime: player.gameStartTime,
+      gameNumber: player.gameNumber,
+      doubleHeader: player.doubleHeader,
       lineupStatus: player.lineupStatus,
       battingOrder: player.battingOrder,
       starterConfirmed: player.starterConfirmed,
@@ -1819,15 +1899,15 @@ async function main() {
   }));
   const validatedRows = validateBatterRows(scored);
   const validatedPayload = validateRawPayload({
-    date: getTodayEt(),
+    date: slateDate,
     generatedAt: new Date().toISOString(),
     modelVersion: MLB_HR_MODEL_VERSION,
-    nextRunAt: getNextRunAt(),
+    nextRunAt: getNextRunAt(slateDate),
     pendingGames,
     games: gamePool,
     pitchers: validatedPitchers,
     batters: validatedRows,
-  });
+  }, slateDate);
   console.log(`Validated ${validatedPayload.batters.length} batters, ${validatedPayload.pitchers.length} pitchers, and ${validatedPayload.games.length} games for the MLB HR dashboard.`);
 
   // Helper: normalize player name for odds lookup
@@ -1850,6 +1930,8 @@ async function main() {
   // raw market-implied probability), plus a transparent quality-rank vs
   // market-rank comparison that is explicitly NOT labeled a probability edge.
   function attachOddsAndValue(batters) {
+    const oddsCapturedAt = normalizeText(mlbOdds.fetchedAt) || null;
+    const oddsSlateDate = resolveOddsSlateDate(mlbOdds) || null;
     // Market rank: sort by market-implied probability (only among batters with odds)
     const withOdds = batters.filter(b => {
       const key = normName(b.player);
@@ -1867,6 +1949,7 @@ async function main() {
       const hrOddsEntry = mlbOdds.hrOdds?.[key] ?? null;
       const hrOddsYes = hrOddsEntry?.yes ?? null;           // e.g. "+350"
       const hrOddsNo  = hrOddsEntry?.no  ?? null;           // e.g. "-450"
+      const hrLine = hrOddsEntry?.line ?? null;
       const hrOddsBook = hrOddsEntry?.bookmaker ?? null;
       const marketImpliedProbability = hrOddsEntry?.impliedYes ?? null; // raw market-implied prob, NOT de-vigged unless both sides present
 
@@ -1882,7 +1965,10 @@ async function main() {
         ...b,
         hrOddsYes,
         hrOddsNo,
+        hrLine,
         hrOddsBook,
+        hrOddsCapturedAt: hrOddsYes != null ? oddsCapturedAt : null,
+        hrOddsSlateDate: hrOddsYes != null ? oddsSlateDate : null,
         marketImpliedProbability,
         qualityRank,
         marketRank,
@@ -1971,7 +2057,7 @@ async function main() {
     });
   }
 
-  const bestBetsPayload = buildBestBetsPayload(battersWithOdds, picksResult, previewResult, deterministicPicks);
+  const bestBetsPayload = buildBestBetsPayload(battersWithOdds, picksResult, previewResult, deterministicPicks, slateDate);
   // Enrich picks with odds data
   if (bestBetsPayload.bestBets) bestBetsPayload.bestBets = attachOddsToPick(bestBetsPayload.bestBets, battersWithOdds);
   if (bestBetsPayload.valueBets) bestBetsPayload.valueBets = attachOddsToPick(bestBetsPayload.valueBets, battersWithOdds);
@@ -1983,6 +2069,7 @@ async function main() {
   const weatherAvailableKeys = new Set(weatherByGameKey instanceof Map ? weatherByGameKey.keys() : Object.keys(weatherByGameKey ?? {}));
   const candidateScoresArr = battersWithOdds.map(b => computeCandidateHrScore(b));
   const candidateRankMap = rankCandidateScores(candidateScoresArr);
+  const phase2RankMap = computeShadowRanks(battersWithOdds);
 
   validatedPayload.batters = battersWithOdds.map((b, i) => {
     const confidence = computeHrConfidence({
@@ -2023,6 +2110,7 @@ async function main() {
       candidateHrQualityScore: candidate.candidateHrQualityScore,
       candidateRank,
       candidateModelVersion: candidate.candidateModelVersion,
+      phase2Rank: phase2RankMap.get(i) ?? null,
     };
   });
 

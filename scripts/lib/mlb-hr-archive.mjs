@@ -17,6 +17,8 @@
  *    NEVER overwritten by a fresh generation run
  */
 
+import { assessPredictionTiming, serializePhase2Shadow } from "./mlb-hr-tracking-integrity.mjs";
+
 export function buildArchiveKey(record) {
   return `${record.date}|${record.playerId}|${record.gameId}|${record.modelVersion}`;
 }
@@ -32,19 +34,26 @@ export function buildArchiveKey(record) {
  * @returns {object} archive record
  */
 export function buildArchiveRecord({ player, date, generatedAt, modelVersion, confidence, candidate }) {
+  const gameStartTime = player.gameStartTime ?? null;
   return {
     date,
     generatedAt,
     modelVersion,
     playerId: player.playerId ?? null,
     playerName: player.player,
+    teamId: player.teamId ?? null,
     team: player.team,
+    opponentId: player.opponentId ?? null,
     opponent: player.opponent,
     opposingPitcherId: player.opposingPitcherId ?? null,
     opposingPitcherName: player.opposingPitcher,
     lineupStatus: player.lineupStatus ?? "unknown",
     battingOrder: player.battingOrder ?? null,
     gameId: player.gameId ?? null,
+    officialGameDate: player.officialGameDate ?? date,
+    gameStartTime,
+    gameNumber: player.gameNumber ?? null,
+    doubleHeader: player.doubleHeader ?? null,
 
     hrQualityScore: player.hrScore,
     hrRank: player.hrScoreRank,
@@ -64,21 +73,30 @@ export function buildArchiveRecord({ player, date, generatedAt, modelVersion, co
       pitcherHrVulnerability: player.opposingPitcherHrVs,
       pitcherXera: player.pitcherXera,
       pitcherRegressionScore: player.pitcherRegressionScore,
+      pitcherFlyBallRate: player.pitcherFlyBallRate,
     },
 
     hrOddsYes: player.hrOddsYes ?? null,
+    hrLine: player.hrLine ?? null,
     hrOddsBook: player.hrOddsBook ?? null,
     marketImpliedProbability: player.hrImplied ?? null,
+    oddsCapturedAt: player.hrOddsCapturedAt ?? null,
+    oddsSourceSlateDate: player.hrOddsSlateDate ?? null,
+    oddsMarket: player.hrOddsYes != null ? "player_home_runs" : null,
 
     candidateHrQualityScore: candidate?.candidateHrQualityScore ?? null,
     candidateRank: candidate?.candidateRank ?? null,
     candidateModelVersion: candidate?.candidateModelVersion ?? null,
+
+    phase2Shadow: serializePhase2Shadow(player),
 
     dataCompletenessPercent: confidence?.dataCompletenessPercent ?? null,
     confidenceLevel: confidence?.confidenceLevel ?? null,
     confidenceReasons: confidence?.confidenceReasons ?? [],
     explanation: player.explanation ?? null,
     starterConfirmationStatus: player.starterConfirmed ? "confirmed" : "probable",
+    lineupCapturedAt: generatedAt,
+    timing: assessPredictionTiming(generatedAt, gameStartTime),
 
     result: {
       status: "pending",
@@ -86,6 +104,8 @@ export function buildArchiveRecord({ player, date, generatedAt, modelVersion, co
       plateAppearances: null,
       gameFinalStatus: null,
       gradedAt: null,
+      resolutionReason: null,
+      attemptCount: 0,
     },
 
     firstGeneratedAt: generatedAt,
@@ -96,7 +116,7 @@ export function buildArchiveRecord({ player, date, generatedAt, modelVersion, co
 /**
  * @param {object[]} existingRecords
  * @param {object} newRecord
- * @returns {{ records: object[], action: "appended"|"updated"|"skipped_graded" }}
+ * @returns {{ records: object[], action: "appended"|"updated"|"skipped_graded"|"preserved_pregame" }}
  */
 export function upsertArchiveRecord(existingRecords, newRecord) {
   const key = buildArchiveKey(newRecord);
@@ -112,6 +132,23 @@ export function upsertArchiveRecord(existingRecords, newRecord) {
     return { records: existingRecords, action: "skipped_graded" };
   }
 
+  if (existing.timing?.eligibleForEvaluation === true && newRecord.timing?.timingStatus === "post_start") {
+    const records = [...existingRecords];
+    records[idx] = {
+      ...existing,
+      runHistory: [...(existing.runHistory ?? []), newRecord.generatedAt],
+      excludedPredictionRuns: [
+        ...(existing.excludedPredictionRuns ?? []),
+        {
+          generatedAt: newRecord.generatedAt,
+          timingStatus: newRecord.timing.timingStatus,
+          exclusionReason: newRecord.timing.exclusionReason,
+        },
+      ],
+    };
+    return { records, action: "preserved_pregame" };
+  }
+
   const updated = {
     ...newRecord,
     firstGeneratedAt: existing.firstGeneratedAt ?? newRecord.firstGeneratedAt,
@@ -125,17 +162,18 @@ export function upsertArchiveRecord(existingRecords, newRecord) {
 }
 
 /**
- * @returns {{ records: object[], appended: number, updated: number, skippedGraded: number }}
+ * @returns {{ records: object[], appended: number, updated: number, skippedGraded: number, preservedPregame: number }}
  */
 export function mergeArchiveBatch(existingRecords, newRecords) {
   let records = existingRecords;
-  let appended = 0, updated = 0, skippedGraded = 0;
+  let appended = 0, updated = 0, skippedGraded = 0, preservedPregame = 0;
   for (const rec of newRecords) {
     const result = upsertArchiveRecord(records, rec);
     records = result.records;
     if (result.action === "appended") appended++;
     else if (result.action === "updated") updated++;
+    else if (result.action === "preserved_pregame") preservedPregame++;
     else skippedGraded++;
   }
-  return { records, appended, updated, skippedGraded };
+  return { records, appended, updated, skippedGraded, preservedPregame };
 }

@@ -2,16 +2,12 @@
  * mlb-phase2-shadow-isolation.test.mjs
  * Run via: node --test scripts/mlb-phase2-shadow-isolation.test.mjs
  *
- * Proves, without modifying archive/grader/social/UI behavior, that
- * `phase2Shadow` never reaches a graded archive record, a grader, a
- * social-post script, or any src/ (public UI) file:
- *   1. Archive whitelist regression: buildArchiveRecord() ignores an
- *      injected phase2Shadow field on the input, because both archive
- *      builders construct their record with an explicit field-by-field
- *      whitelist rather than a spread.
- *   2. Static isolation: grep-equivalent source scan confirming no
- *      grader, performance-summary, social-post, or src/** file
- *      references phase2Shadow at all.
+ * Proves Phase 2 remains isolated from live scoring and public consumers
+ * while the HR archive now intentionally persists its evaluation fields:
+ *   1. The ML archive still ignores an injected HR shadow.
+ *   2. The HR archive serializes only the documented shadow fields.
+ *   3. Social-post, live grading logic, and src/** files do not consume
+ *      the shadow score for production decisions.
  *
  * As of the Phase 2 workflow-activation commit, the shared "Generate MLB
  * Data" workflow (.github/workflows/generate-mlb-hr-props.yml) is an
@@ -31,7 +27,7 @@ import { buildArchiveRecord as buildHrArchiveRecord } from "./lib/mlb-hr-archive
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
-describe("Archive whitelist regression: phase2Shadow is never copied into a graded archive record", () => {
+describe("Archive whitelist regression: Phase 2 persistence is scoped to HR tracking", () => {
   it("mlb-ml-archive.mjs's buildArchiveRecord ignores an injected phase2Shadow field", () => {
     const pick = {
       gameId: 12345,
@@ -51,7 +47,7 @@ describe("Archive whitelist regression: phase2Shadow is never copied into a grad
     assert.equal("phase2Shadow" in record, false, "buildArchiveRecord must not copy phase2Shadow into the archive record");
   });
 
-  it("mlb-hr-archive.mjs's buildArchiveRecord ignores an injected phase2Shadow field", () => {
+  it("mlb-hr-archive.mjs persists the documented Phase 2 evaluation fields", () => {
     const player = {
       playerId: 592450,
       player: "Aaron Judge",
@@ -65,11 +61,28 @@ describe("Archive whitelist regression: phase2Shadow is never copied into a grad
       hrScore: 62.4,
       hrScoreRank: 1,
       starterConfirmed: true,
-      // Injected -- must NOT survive into the archive record.
-      phase2Shadow: { combinedShadowScore: 99, enabledComponents: { bullpen: true, handSplit: true } },
+      phase2Rank: 1,
+      phase2Shadow: {
+        combinedShadowScore: 99,
+        shadowExperimentVersion: "phase2-test-v1",
+        enabledComponents: { bullpen: true, handSplit: true },
+        componentContributions: { bullpen: 1, handSplit: 2 },
+        componentAvailability: { bullpen: true, handSplit: true },
+      },
     };
     const record = buildHrArchiveRecord({ player, date: "2026-07-03", generatedAt: new Date().toISOString(), modelVersion: "mlb-hr-quality-v1.1", confidence: {} });
-    assert.equal("phase2Shadow" in record, false, "buildArchiveRecord must not copy phase2Shadow into the archive record");
+    assert.deepEqual(record.phase2Shadow, {
+      enabled: true,
+      combinedShadowScore: 99,
+      rank: 1,
+      version: "phase2-test-v1",
+      bullpenContribution: 1,
+      handSplitContribution: 2,
+      bullpenAvailable: true,
+      handSplitAvailable: true,
+      bullpenFreshness: null,
+      handSplitFreshness: null,
+    });
   });
 });
 
@@ -98,9 +111,8 @@ function filesReferencing(files, needle) {
   });
 }
 
-describe("Static isolation: no grader/performance-summary/social-post file references phase2Shadow", () => {
+describe("Static isolation: public consumers and live grading logic do not use phase2Shadow", () => {
   const guardedScripts = [
-    "grade-mlb-hr-results.mjs",
     "grade-mlb-ml-results.mjs",
     "grade-polymarket-results.mjs",
     "build-mlb-hr-performance-summary.mjs",
@@ -110,15 +122,20 @@ describe("Static isolation: no grader/performance-summary/social-post file refer
     "post-mlb-strikeout-props-to-x.mjs",
   ].map((name) => path.join(ROOT, "scripts", name));
 
-  it("none of the grader/performance-summary/social-post scripts reference phase2Shadow", () => {
+  it("none of the public consumer or unrelated grading scripts reference phase2Shadow", () => {
     const offenders = filesReferencing(guardedScripts, "phase2Shadow");
     assert.deepEqual(offenders, [], `unexpected phase2Shadow reference in: ${offenders.join(", ")}`);
   });
 
-  it("mlb-ml-archive.mjs and mlb-hr-archive.mjs library modules do not reference phase2Shadow", () => {
-    const archiveLibs = [path.join(ROOT, "scripts", "lib", "mlb-ml-archive.mjs"), path.join(ROOT, "scripts", "lib", "mlb-hr-archive.mjs")];
-    const offenders = filesReferencing(archiveLibs, "phase2Shadow");
-    assert.deepEqual(offenders, []);
+  it("live HR grading rules do not reference phase2Shadow", () => {
+    const gradingLogic = [path.join(ROOT, "scripts", "lib", "mlb-hr-grading.mjs")];
+    const offenders = filesReferencing(gradingLogic, "phase2Shadow");
+    assert.deepEqual(offenders, [], "outcome grading must not depend on the shadow score");
+  });
+
+  it("the ML archive remains isolated from HR phase2Shadow", () => {
+    const mlArchive = [path.join(ROOT, "scripts", "lib", "mlb-ml-archive.mjs")];
+    assert.deepEqual(filesReferencing(mlArchive, "phase2Shadow"), []);
   });
 });
 
@@ -217,9 +234,9 @@ describe("Static isolation: the comparison artifact (ml-phase2-shadow-comparison
     }
   });
 
-  it("neither generator (ML or HR) reads or references the comparison artifact or its build module", () => {
+  it("neither generator reads the comparison artifact or invokes its build script", () => {
     const generatorFiles = [path.join(ROOT, "scripts", "generate-mlb-ml-picks.mjs"), path.join(ROOT, "scripts", "generate-mlb-hr-props.mjs")];
-    for (const needle of needles) {
+    for (const needle of ["ml-phase2-shadow-comparison.json", "build-mlb-phase2-shadow-comparison.mjs"]) {
       const offenders = filesReferencing(generatorFiles, needle);
       assert.deepEqual(offenders, [], `unexpected "${needle}" reference in: ${offenders.join(", ")}`);
     }

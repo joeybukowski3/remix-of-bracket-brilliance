@@ -530,6 +530,13 @@ describe("every HR generation path uses the K-shadow-aware wrapper", () => {
     assert.match(final.run, /node scripts\/generate-mlb-hr-props-with-k-shadow\.mjs --force/);
   });
 
+  it("passes the authoritative slate-check date into every HR generation pass", () => {
+    for (const name of ["Preliminary HR generation for Phase 2 cache IDs", "Generate final HR props and best bets"]) {
+      const step = stepByName(name);
+      assert.match(step.run, /--date "\$\{\{ needs\.slate-check\.outputs\.slate_date \}\}"/);
+    }
+  });
+
   it("the wrapper is invoked exactly twice (preliminary + final), matching the two HR passes", () => {
     const occurrences = (RAW_TEXT.match(/generate-mlb-hr-props-with-k-shadow\.mjs/g) ?? []).length;
     assert.equal(occurrences, 2);
