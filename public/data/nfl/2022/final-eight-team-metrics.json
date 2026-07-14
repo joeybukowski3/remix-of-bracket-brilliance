@@ -1,0 +1,3351 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.2",
+    "modelVersion": "nfl-power-v0.3.0",
+    "validationStatus": "stage-1",
+    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "season": 2022,
+    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "notes": [
+      "Internal Stage-1 final-eight team metrics artifact.",
+      "Windows use dateUtc ascending, then week ascending, then gameId ascending.",
+      "Playoffs are excluded; Week 18 is included when it is among the last eight completed games.",
+      "Window z-scores use the full-season league distributions.",
+      "L8 opponent strength is the mean full-season adjusted composite of the selected opponents.",
+      "The alternate flagged view never replaces canonical metrics."
+    ],
+    "knownLimitations": [],
+    "formulaWeights": {
+      "opponentAdjustedOffensiveEpaPerPlay": 0.4,
+      "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
+      "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "frozenPublicScaleDivisor": 0.733,
+    "trajectory": {
+      "statement": "lambda = 0",
+      "lambda": 0,
+      "shrinkageK": 4,
+      "cap": 1
+    }
+  },
+  "adjustmentMethods": {
+    "margin": "game-level one-pass residual",
+    "epa": "opponent-mean one-pass"
+  },
+  "metricKeys": [
+    "offEpaPerPlay",
+    "defEpaPerPlay",
+    "netEpaPerPlay",
+    "pointDiffPerGame"
+  ],
+  "teams": [
+    {
+      "teamId": "nfl-ari",
+      "slug": "arizona-cardinals",
+      "abbr": "ari",
+      "name": "Arizona Cardinals",
+      "windowGames": [
+        "2022_10_ARI_LA",
+        "2022_11_SF_ARI",
+        "2022_12_LAC_ARI",
+        "2022_14_NE_ARI",
+        "2022_15_ARI_DEN",
+        "2022_16_TB_ARI",
+        "2022_17_ARI_ATL",
+        "2022_18_ARI_SF"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.198535,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.1447,
+          "adjusted": -0.114891,
+          "zScore": -1.433712,
+          "rank": 27,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0136,
+          "adjusted": -0.008956,
+          "zScore": 0.072779,
+          "rank": 19,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1311,
+          "adjusted": -0.105934,
+          "zScore": -1.19823,
+          "rank": 26,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -8.875,
+          "adjusted": -7.76574,
+          "zScore": -1.761729,
+          "rank": 29,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.1447,
+          "adjusted": -0.114891,
+          "zScore": -1.433712,
+          "rank": 27,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0136,
+          "adjusted": -0.008956,
+          "zScore": 0.072779,
+          "rank": 19,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1311,
+          "adjusted": -0.105934,
+          "zScore": -1.19823,
+          "rank": 26,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -8.875,
+          "adjusted": -7.76574,
+          "zScore": -1.761729,
+          "rank": 29,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -1.031241,
+      "adjustedComposite": -0.896719,
+      "rawDelta": -0.202306,
+      "adjustedDelta": -0.227434,
+      "rawVsAdjGap": 0.025128,
+      "trajectoryRaw": -0.227434,
+      "trajectoryShrunk": -0.151623,
+      "trajectoryClamped": -0.151623,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.202306,
+        "adjustedDelta": -0.227434,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-atl",
+      "slug": "atlanta-falcons",
+      "abbr": "atl",
+      "name": "Atlanta Falcons",
+      "windowGames": [
+        "2022_10_ATL_CAR",
+        "2022_11_CHI_ATL",
+        "2022_12_ATL_WAS",
+        "2022_13_PIT_ATL",
+        "2022_15_ATL_NO",
+        "2022_16_ATL_BAL",
+        "2022_17_ARI_ATL",
+        "2022_18_TB_ATL"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.209485,
+      "contextFlags": [
+        {
+          "gameId": "2022_18_TB_ATL",
+          "team": "atl",
+          "flag": "week18-anomaly",
+          "origin": "screen",
+          "enteredBy": "nfl-v03-week18-screen",
+          "date": "2023-01-08",
+          "note": "Week 18 margin screen: actual 13, prior mean -2.125, prior standard deviation 6.945, threshold 2.",
+          "source": "public/data/nfl/2022/results.json"
+        }
+      ],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0296,
+          "adjusted": -0.036991,
+          "zScore": -0.40827,
+          "rank": 18,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0427,
+          "adjusted": 0.070331,
+          "zScore": -1.454105,
+          "rank": 30,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0723,
+          "adjusted": -0.107322,
+          "zScore": -1.214043,
+          "rank": 27,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -1.625,
+          "adjusted": -4.287799,
+          "zScore": -0.972639,
+          "rank": 24,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0296,
+          "adjusted": -0.036991,
+          "zScore": -0.40827,
+          "rank": 18,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0427,
+          "adjusted": 0.070331,
+          "zScore": -1.454105,
+          "rank": 30,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0723,
+          "adjusted": -0.107322,
+          "zScore": -1.214043,
+          "rank": 27,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -1.625,
+          "adjusted": -4.287799,
+          "zScore": -0.972639,
+          "rank": 24,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.563262,
+      "adjustedComposite": -0.939478,
+      "rawDelta": 0.00492,
+      "adjustedDelta": -0.268207,
+      "rawVsAdjGap": 0.273126,
+      "trajectoryRaw": -0.268207,
+      "trajectoryShrunk": -0.178805,
+      "trajectoryClamped": -0.178805,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.00492,
+        "adjustedDelta": -0.268207,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-bal",
+      "slug": "baltimore-ravens",
+      "abbr": "bal",
+      "name": "Baltimore Ravens",
+      "windowGames": [
+        "2022_11_CAR_BAL",
+        "2022_12_BAL_JAX",
+        "2022_13_DEN_BAL",
+        "2022_14_BAL_PIT",
+        "2022_15_BAL_CLE",
+        "2022_16_ATL_BAL",
+        "2022_17_PIT_BAL",
+        "2022_18_BAL_CIN"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.069103,
+      "contextFlags": [
+        {
+          "gameId": "2022_18_BAL_CIN",
+          "team": "bal",
+          "flag": "week18-anomaly",
+          "origin": "screen",
+          "enteredBy": "nfl-v03-week18-screen",
+          "date": "2023-01-08",
+          "note": "Week 18 margin screen: actual -11, prior mean 2.875, prior standard deviation 6.927, threshold 2.",
+          "source": "public/data/nfl/2022/results.json"
+        }
+      ],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0675,
+          "adjusted": -0.079853,
+          "zScore": -0.972494,
+          "rank": 25,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.061,
+          "adjusted": -0.067919,
+          "zScore": 1.208253,
+          "rank": 7,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0065,
+          "adjusted": -0.011934,
+          "zScore": -0.126916,
+          "rank": 21,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -0.5,
+          "adjusted": -0.971622,
+          "zScore": -0.220251,
+          "rank": 20,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0675,
+          "adjusted": -0.079853,
+          "zScore": -0.972494,
+          "rank": 25,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.061,
+          "adjusted": -0.067919,
+          "zScore": 1.208253,
+          "rank": 7,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0065,
+          "adjusted": -0.011934,
+          "zScore": -0.126916,
+          "rank": 21,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -0.5,
+          "adjusted": -0.971622,
+          "zScore": -0.220251,
+          "rank": 20,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.083027,
+      "adjustedComposite": 0.050253,
+      "rawDelta": -0.131206,
+      "adjustedDelta": -0.302647,
+      "rawVsAdjGap": 0.171441,
+      "trajectoryRaw": -0.302647,
+      "trajectoryShrunk": -0.201764,
+      "trajectoryClamped": -0.201764,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.131206,
+        "adjustedDelta": -0.302647,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-buf",
+      "slug": "buffalo-bills",
+      "abbr": "buf",
+      "name": "Buffalo Bills",
+      "windowGames": [
+        "2022_10_MIN_BUF",
+        "2022_11_CLE_BUF",
+        "2022_12_BUF_DET",
+        "2022_13_BUF_NE",
+        "2022_14_NYJ_BUF",
+        "2022_15_MIA_BUF",
+        "2022_16_BUF_CHI",
+        "2022_18_NE_BUF"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.092579,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0823,
+          "adjusted": 0.072572,
+          "zScore": 1.033963,
+          "rank": 6,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0356,
+          "adjusted": -0.027169,
+          "zScore": 0.423507,
+          "rank": 15,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1179,
+          "adjusted": 0.099741,
+          "zScore": 1.14584,
+          "rank": 6,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 8.375,
+          "adjusted": 7.447495,
+          "zScore": 1.689913,
+          "rank": 5,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0823,
+          "adjusted": 0.072572,
+          "zScore": 1.033963,
+          "rank": 6,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0356,
+          "adjusted": -0.027169,
+          "zScore": 0.423507,
+          "rank": 15,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1179,
+          "adjusted": 0.099741,
+          "zScore": 1.14584,
+          "rank": 6,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 8.375,
+          "adjusted": 7.447495,
+          "zScore": 1.689913,
+          "rank": 5,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 1.037018,
+      "adjustedComposite": 0.920971,
+      "rawDelta": -0.360258,
+      "adjustedDelta": -0.462514,
+      "rawVsAdjGap": 0.102257,
+      "trajectoryRaw": -0.462514,
+      "trajectoryShrunk": -0.308343,
+      "trajectoryClamped": -0.308343,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.360258,
+        "adjustedDelta": -0.462514,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-car",
+      "slug": "carolina-panthers",
+      "abbr": "car",
+      "name": "Carolina Panthers",
+      "windowGames": [
+        "2022_10_ATL_CAR",
+        "2022_11_CAR_BAL",
+        "2022_12_DEN_CAR",
+        "2022_14_CAR_SEA",
+        "2022_15_PIT_CAR",
+        "2022_16_DET_CAR",
+        "2022_17_CAR_TB",
+        "2022_18_CAR_NO"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.123062,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0253,
+          "adjusted": 0.009709,
+          "zScore": 0.206468,
+          "rank": 15,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0169,
+          "adjusted": -0.015831,
+          "zScore": 0.205174,
+          "rank": 17,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0422,
+          "adjusted": 0.025541,
+          "zScore": 0.300185,
+          "rank": 14,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 2.75,
+          "adjusted": 1.80779,
+          "zScore": 0.410354,
+          "rank": 13,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0253,
+          "adjusted": 0.009709,
+          "zScore": 0.206468,
+          "rank": 15,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0169,
+          "adjusted": -0.015831,
+          "zScore": 0.205174,
+          "rank": 17,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0422,
+          "adjusted": 0.025541,
+          "zScore": 0.300185,
+          "rank": 14,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 2.75,
+          "adjusted": 1.80779,
+          "zScore": 0.410354,
+          "rank": 13,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.362775,
+      "adjustedComposite": 0.246728,
+      "rawDelta": 0.705813,
+      "adjustedDelta": 0.637431,
+      "rawVsAdjGap": 0.068382,
+      "trajectoryRaw": 0.637431,
+      "trajectoryShrunk": 0.424954,
+      "trajectoryClamped": 0.424954,
+      "trajectoryLabel": "Late Riser",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.705813,
+        "adjustedDelta": 0.637431,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-chi",
+      "slug": "chicago-bears",
+      "abbr": "chi",
+      "name": "Chicago Bears",
+      "windowGames": [
+        "2022_10_DET_CHI",
+        "2022_11_CHI_ATL",
+        "2022_12_CHI_NYJ",
+        "2022_13_GB_CHI",
+        "2022_15_PHI_CHI",
+        "2022_16_BUF_CHI",
+        "2022_17_CHI_DET",
+        "2022_18_MIN_CHI"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.111429,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.096,
+          "adjusted": -0.119616,
+          "zScore": -1.49591,
+          "rank": 28,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.1595,
+          "adjusted": 0.119281,
+          "zScore": -2.396763,
+          "rank": 32,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.2555,
+          "adjusted": -0.238897,
+          "zScore": -2.713598,
+          "rank": 32,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -13.5,
+          "adjusted": -11.180722,
+          "zScore": -2.536534,
+          "rank": 32,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.096,
+          "adjusted": -0.119616,
+          "zScore": -1.49591,
+          "rank": 28,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.1595,
+          "adjusted": 0.119281,
+          "zScore": -2.396763,
+          "rank": 32,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.2555,
+          "adjusted": -0.238897,
+          "zScore": -2.713598,
+          "rank": 32,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -13.5,
+          "adjusted": -11.180722,
+          "zScore": -2.536534,
+          "rank": 32,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -2.29984,
+      "adjustedComposite": -2.064376,
+      "rawDelta": -0.9223,
+      "adjustedDelta": -0.829927,
+      "rawVsAdjGap": -0.092373,
+      "trajectoryRaw": -0.829927,
+      "trajectoryShrunk": -0.553285,
+      "trajectoryClamped": -0.553285,
+      "trajectoryLabel": "Late Decline",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.9223,
+        "adjustedDelta": -0.829927,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-cin",
+      "slug": "cincinnati-bengals",
+      "abbr": "cin",
+      "name": "Cincinnati Bengals",
+      "windowGames": [
+        "2022_09_CAR_CIN",
+        "2022_11_CIN_PIT",
+        "2022_12_CIN_TEN",
+        "2022_13_KC_CIN",
+        "2022_14_CLE_CIN",
+        "2022_15_CIN_TB",
+        "2022_16_CIN_NE",
+        "2022_18_BAL_CIN"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.128017,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0845,
+          "adjusted": 0.089697,
+          "zScore": 1.259389,
+          "rank": 4,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0478,
+          "adjusted": -0.058369,
+          "zScore": 1.024343,
+          "rank": 10,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1323,
+          "adjusted": 0.148066,
+          "zScore": 1.696598,
+          "rank": 3,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 9.25,
+          "adjusted": 9.131319,
+          "zScore": 2.071946,
+          "rank": 3,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0845,
+          "adjusted": 0.089697,
+          "zScore": 1.259389,
+          "rank": 4,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0478,
+          "adjusted": -0.058369,
+          "zScore": 1.024343,
+          "rank": 10,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1323,
+          "adjusted": 0.148066,
+          "zScore": 1.696598,
+          "rank": 3,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 9.25,
+          "adjusted": 9.131319,
+          "zScore": 2.071946,
+          "rank": 3,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 1.178561,
+      "adjustedComposite": 1.327882,
+      "rawDelta": 0.326212,
+      "adjustedDelta": 0.349502,
+      "rawVsAdjGap": -0.02329,
+      "trajectoryRaw": 0.349502,
+      "trajectoryShrunk": 0.233001,
+      "trajectoryClamped": 0.233001,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.326212,
+        "adjustedDelta": 0.349502,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-cle",
+      "slug": "cleveland-browns",
+      "abbr": "cle",
+      "name": "Cleveland Browns",
+      "windowGames": [
+        "2022_11_CLE_BUF",
+        "2022_12_TB_CLE",
+        "2022_13_CLE_HOU",
+        "2022_14_CLE_CIN",
+        "2022_15_BAL_CLE",
+        "2022_16_NO_CLE",
+        "2022_17_CLE_WAS",
+        "2022_18_CLE_PIT"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.197847,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0452,
+          "adjusted": -0.024703,
+          "zScore": -0.246523,
+          "rank": 17,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0856,
+          "adjusted": -0.075519,
+          "zScore": 1.35461,
+          "rank": 5,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0404,
+          "adjusted": 0.050816,
+          "zScore": 0.588243,
+          "rank": 12,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 0.125,
+          "adjusted": 0.576631,
+          "zScore": 0.131023,
+          "rank": 16,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0452,
+          "adjusted": -0.024703,
+          "zScore": -0.246523,
+          "rank": 17,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0856,
+          "adjusted": -0.075519,
+          "zScore": 1.35461,
+          "rank": 5,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0404,
+          "adjusted": 0.050816,
+          "zScore": 0.588243,
+          "rank": 12,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 0.125,
+          "adjusted": 0.576631,
+          "zScore": 0.131023,
+          "rank": 16,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.414463,
+      "adjustedComposite": 0.469439,
+      "rawDelta": 0.568951,
+      "adjustedDelta": 0.571834,
+      "rawVsAdjGap": -0.002884,
+      "trajectoryRaw": 0.571834,
+      "trajectoryShrunk": 0.381223,
+      "trajectoryClamped": 0.381223,
+      "trajectoryLabel": "Late Riser",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.568951,
+        "adjustedDelta": 0.571834,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-dal",
+      "slug": "dallas-cowboys",
+      "abbr": "dal",
+      "name": "Dallas Cowboys",
+      "windowGames": [
+        "2022_11_DAL_MIN",
+        "2022_12_NYG_DAL",
+        "2022_13_IND_DAL",
+        "2022_14_HOU_DAL",
+        "2022_15_DAL_JAX",
+        "2022_16_PHI_DAL",
+        "2022_17_DAL_TEN",
+        "2022_18_DAL_WAS"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.245664,
+      "contextFlags": [
+        {
+          "gameId": "2022_18_DAL_WAS",
+          "team": "dal",
+          "flag": "week18-anomaly",
+          "origin": "screen",
+          "enteredBy": "nfl-v03-week18-screen",
+          "date": "2023-01-08",
+          "note": "Week 18 margin screen: actual -20, prior mean 9.063, prior standard deviation 13.975, threshold 2.",
+          "source": "public/data/nfl/2022/results.json"
+        }
+      ],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0311,
+          "adjusted": 0.037022,
+          "zScore": 0.565998,
+          "rank": 12,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.1209,
+          "adjusted": -0.089769,
+          "zScore": 1.629031,
+          "rank": 3,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.152,
+          "adjusted": 0.126791,
+          "zScore": 1.454127,
+          "rank": 4,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 9.75,
+          "adjusted": 8.440142,
+          "zScore": 1.915129,
+          "rank": 4,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0311,
+          "adjusted": 0.037022,
+          "zScore": 0.565998,
+          "rank": 12,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.1209,
+          "adjusted": -0.089769,
+          "zScore": 1.629031,
+          "rank": 3,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.152,
+          "adjusted": 0.126791,
+          "zScore": 1.454127,
+          "rank": 4,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 9.75,
+          "adjusted": 8.440142,
+          "zScore": 1.915129,
+          "rank": 4,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 1.482759,
+      "adjustedComposite": 1.261037,
+      "rawDelta": 0.395057,
+      "adjustedDelta": 0.266248,
+      "rawVsAdjGap": 0.128809,
+      "trajectoryRaw": 0.266248,
+      "trajectoryShrunk": 0.177499,
+      "trajectoryClamped": 0.177499,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.395057,
+        "adjustedDelta": 0.266248,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-den",
+      "slug": "denver-broncos",
+      "abbr": "den",
+      "name": "Denver Broncos",
+      "windowGames": [
+        "2022_11_LV_DEN",
+        "2022_12_DEN_CAR",
+        "2022_13_DEN_BAL",
+        "2022_14_KC_DEN",
+        "2022_15_ARI_DEN",
+        "2022_16_DEN_LA",
+        "2022_17_DEN_KC",
+        "2022_18_LAC_DEN"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.078981,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.1074,
+          "adjusted": -0.120666,
+          "zScore": -1.509732,
+          "rank": 29,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0296,
+          "adjusted": -0.001969,
+          "zScore": -0.061784,
+          "rank": 20,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.137,
+          "adjusted": -0.118697,
+          "zScore": -1.343684,
+          "rank": 29,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -6.75,
+          "adjusted": -6.339269,
+          "zScore": -1.438085,
+          "rank": 28,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.1074,
+          "adjusted": -0.120666,
+          "zScore": -1.509732,
+          "rank": 29,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0296,
+          "adjusted": -0.001969,
+          "zScore": -0.061784,
+          "rank": 20,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.137,
+          "adjusted": -0.118697,
+          "zScore": -1.343684,
+          "rank": 29,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -6.75,
+          "adjusted": -6.339269,
+          "zScore": -1.438085,
+          "rank": 28,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -1.080792,
+      "adjustedComposite": -0.916223,
+      "rawDelta": -0.645409,
+      "adjustedDelta": -0.427532,
+      "rawVsAdjGap": -0.217876,
+      "trajectoryRaw": -0.427532,
+      "trajectoryShrunk": -0.285022,
+      "trajectoryClamped": -0.285022,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.645409,
+        "adjustedDelta": -0.427532,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-det",
+      "slug": "detroit-lions",
+      "abbr": "det",
+      "name": "Detroit Lions",
+      "windowGames": [
+        "2022_11_DET_NYG",
+        "2022_12_BUF_DET",
+        "2022_13_JAX_DET",
+        "2022_14_MIN_DET",
+        "2022_15_DET_NYJ",
+        "2022_16_DET_CAR",
+        "2022_17_CHI_DET",
+        "2022_18_DET_GB"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.10002,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.1198,
+          "adjusted": 0.100597,
+          "zScore": 1.402872,
+          "rank": 3,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0163,
+          "adjusted": 0.007444,
+          "zScore": -0.243045,
+          "rank": 23,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1035,
+          "adjusted": 0.093153,
+          "zScore": 1.070762,
+          "rank": 7,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 8.875,
+          "adjusted": 9.135455,
+          "zScore": 2.072885,
+          "rank": 2,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.1198,
+          "adjusted": 0.100597,
+          "zScore": 1.402872,
+          "rank": 3,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0163,
+          "adjusted": 0.007444,
+          "zScore": -0.243045,
+          "rank": 23,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1035,
+          "adjusted": 0.093153,
+          "zScore": 1.070762,
+          "rank": 7,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 8.875,
+          "adjusted": 9.135455,
+          "zScore": 2.072885,
+          "rank": 2,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.854299,
+      "adjustedComposite": 0.878508,
+      "rawDelta": 1.140125,
+      "adjustedDelta": 1.098991,
+      "rawVsAdjGap": 0.041134,
+      "trajectoryRaw": 1.098991,
+      "trajectoryShrunk": 0.732661,
+      "trajectoryClamped": 0.732661,
+      "trajectoryLabel": "Late Riser",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 1.140125,
+        "adjustedDelta": 1.098991,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-gb",
+      "slug": "green-bay-packers",
+      "abbr": "gb",
+      "name": "Green Bay Packers",
+      "windowGames": [
+        "2022_10_DAL_GB",
+        "2022_11_TEN_GB",
+        "2022_12_GB_PHI",
+        "2022_13_GB_CHI",
+        "2022_15_LA_GB",
+        "2022_16_GB_MIA",
+        "2022_17_MIN_GB",
+        "2022_18_DET_GB"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.037861,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0603,
+          "adjusted": 0.045034,
+          "zScore": 0.671471,
+          "rank": 10,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0628,
+          "adjusted": 0.051644,
+          "zScore": -1.09423,
+          "rank": 29,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0025,
+          "adjusted": -0.006609,
+          "zScore": -0.066227,
+          "rank": 20,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 4.125,
+          "adjusted": 4.123966,
+          "zScore": 0.935857,
+          "rank": 9,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0603,
+          "adjusted": 0.045034,
+          "zScore": 0.671471,
+          "rank": 10,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0628,
+          "adjusted": 0.051644,
+          "zScore": -1.09423,
+          "rank": 29,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0025,
+          "adjusted": -0.006609,
+          "zScore": -0.066227,
+          "rank": 20,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 4.125,
+          "adjusted": 4.123966,
+          "zScore": 0.935857,
+          "rank": 9,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.010534,
+      "adjustedComposite": 0.018068,
+      "rawDelta": 0.316172,
+      "adjustedDelta": 0.36849,
+      "rawVsAdjGap": -0.052318,
+      "trajectoryRaw": 0.36849,
+      "trajectoryShrunk": 0.24566,
+      "trajectoryClamped": 0.24566,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.316172,
+        "adjustedDelta": 0.36849,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-hou",
+      "slug": "houston-texans",
+      "abbr": "hou",
+      "name": "Houston Texans",
+      "windowGames": [
+        "2022_11_WAS_HOU",
+        "2022_12_HOU_MIA",
+        "2022_13_CLE_HOU",
+        "2022_14_HOU_DAL",
+        "2022_15_KC_HOU",
+        "2022_16_HOU_TEN",
+        "2022_17_JAX_HOU",
+        "2022_18_HOU_IND"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.154896,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.2686,
+          "adjusted": -0.251066,
+          "zScore": -3.226261,
+          "rank": 32,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.061,
+          "adjusted": -0.067894,
+          "zScore": 1.207771,
+          "rank": 8,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.2076,
+          "adjusted": -0.183172,
+          "zScore": -2.078503,
+          "rank": 31,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -9.125,
+          "adjusted": -8.69221,
+          "zScore": -1.97193,
+          "rank": 30,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.2686,
+          "adjusted": -0.251066,
+          "zScore": -3.226261,
+          "rank": 32,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.061,
+          "adjusted": -0.067894,
+          "zScore": 1.207771,
+          "rank": 8,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.2076,
+          "adjusted": -0.183172,
+          "zScore": -2.078503,
+          "rank": 31,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -9.125,
+          "adjusted": -8.69221,
+          "zScore": -1.97193,
+          "rank": 30,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -1.323643,
+      "adjustedComposite": -1.201782,
+      "rawDelta": -0.004846,
+      "adjustedDelta": 0.195869,
+      "rawVsAdjGap": -0.200715,
+      "trajectoryRaw": 0.195869,
+      "trajectoryShrunk": 0.130579,
+      "trajectoryClamped": 0.130579,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.004846,
+        "adjustedDelta": 0.195869,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-ind",
+      "slug": "indianapolis-colts",
+      "abbr": "ind",
+      "name": "Indianapolis Colts",
+      "windowGames": [
+        "2022_10_IND_LV",
+        "2022_11_PHI_IND",
+        "2022_12_PIT_IND",
+        "2022_13_IND_DAL",
+        "2022_15_IND_MIN",
+        "2022_16_LAC_IND",
+        "2022_17_IND_NYG",
+        "2022_18_HOU_IND"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.067303,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.1509,
+          "adjusted": -0.158916,
+          "zScore": -2.013238,
+          "rank": 31,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0231,
+          "adjusted": 0.016344,
+          "zScore": -0.414438,
+          "rank": 25,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.174,
+          "adjusted": -0.175259,
+          "zScore": -1.988324,
+          "rank": 30,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -10.875,
+          "adjusted": -10.434858,
+          "zScore": -2.367309,
+          "rank": 31,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.1509,
+          "adjusted": -0.158916,
+          "zScore": -2.013238,
+          "rank": 31,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0231,
+          "adjusted": 0.016344,
+          "zScore": -0.414438,
+          "rank": 25,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.174,
+          "adjusted": -0.175259,
+          "zScore": -1.988324,
+          "rank": 30,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -10.875,
+          "adjusted": -10.434858,
+          "zScore": -2.367309,
+          "rank": 31,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -1.428665,
+      "adjustedComposite": -1.444532,
+      "rawDelta": -0.419509,
+      "adjustedDelta": -0.355708,
+      "rawVsAdjGap": -0.0638,
+      "trajectoryRaw": -0.355708,
+      "trajectoryShrunk": -0.237139,
+      "trajectoryClamped": -0.237139,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.419509,
+        "adjustedDelta": -0.355708,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-jax",
+      "slug": "jacksonville-jaguars",
+      "abbr": "jax",
+      "name": "Jacksonville Jaguars",
+      "windowGames": [
+        "2022_10_JAX_KC",
+        "2022_12_BAL_JAX",
+        "2022_13_JAX_DET",
+        "2022_14_JAX_TEN",
+        "2022_15_DAL_JAX",
+        "2022_16_JAX_NYJ",
+        "2022_17_JAX_HOU",
+        "2022_18_TEN_JAX"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.017233,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.038,
+          "adjusted": 0.043247,
+          "zScore": 0.647941,
+          "rank": 11,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0225,
+          "adjusted": -0.013731,
+          "zScore": 0.164734,
+          "rank": 18,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0605,
+          "adjusted": 0.056978,
+          "zScore": 0.658477,
+          "rank": 10,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 4.125,
+          "adjusted": 4.388672,
+          "zScore": 0.995915,
+          "rank": 8,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.038,
+          "adjusted": 0.043247,
+          "zScore": 0.647941,
+          "rank": 11,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0225,
+          "adjusted": -0.013731,
+          "zScore": 0.164734,
+          "rank": 18,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0605,
+          "adjusted": 0.056978,
+          "zScore": 0.658477,
+          "rank": 10,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 4.125,
+          "adjusted": 4.388672,
+          "zScore": 0.995915,
+          "rank": 8,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.529066,
+      "adjustedComposite": 0.524253,
+      "rawDelta": 0.025912,
+      "adjustedDelta": 0.270974,
+      "rawVsAdjGap": -0.245062,
+      "trajectoryRaw": 0.270974,
+      "trajectoryShrunk": 0.180649,
+      "trajectoryClamped": 0.180649,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.025912,
+        "adjustedDelta": 0.270974,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-kc",
+      "slug": "kansas-city-chiefs",
+      "abbr": "kc",
+      "name": "Kansas City Chiefs",
+      "windowGames": [
+        "2022_11_KC_LAC",
+        "2022_12_LA_KC",
+        "2022_13_KC_CIN",
+        "2022_14_KC_DEN",
+        "2022_15_KC_HOU",
+        "2022_16_SEA_KC",
+        "2022_17_DEN_KC",
+        "2022_18_KC_LV"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.341499,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.1565,
+          "adjusted": 0.153447,
+          "zScore": 2.098566,
+          "rank": 1,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0791,
+          "adjusted": -0.035019,
+          "zScore": 0.574679,
+          "rank": 13,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.2356,
+          "adjusted": 0.188466,
+          "zScore": 2.157035,
+          "rank": 2,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 7.875,
+          "adjusted": 5.93279,
+          "zScore": 1.346251,
+          "rank": 6,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.1565,
+          "adjusted": 0.153447,
+          "zScore": 2.098566,
+          "rank": 1,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0791,
+          "adjusted": -0.035019,
+          "zScore": 0.574679,
+          "rank": 13,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.2356,
+          "adjusted": 0.188466,
+          "zScore": 2.157035,
+          "rank": 2,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 7.875,
+          "adjusted": 5.93279,
+          "zScore": 1.346251,
+          "rank": 6,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 1.738035,
+      "adjustedComposite": 1.338548,
+      "rawDelta": 0.315538,
+      "adjustedDelta": 0.059028,
+      "rawVsAdjGap": 0.25651,
+      "trajectoryRaw": 0.059028,
+      "trajectoryShrunk": 0.039352,
+      "trajectoryClamped": 0.039352,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.315538,
+        "adjustedDelta": 0.059028,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-lac",
+      "slug": "la-chargers",
+      "abbr": "lac",
+      "name": "LA Chargers",
+      "windowGames": [
+        "2022_11_KC_LAC",
+        "2022_12_LAC_ARI",
+        "2022_13_LAC_LV",
+        "2022_14_MIA_LAC",
+        "2022_15_TEN_LAC",
+        "2022_16_LAC_IND",
+        "2022_17_LA_LAC",
+        "2022_18_LAC_DEN"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.276079,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0622,
+          "adjusted": 0.056372,
+          "zScore": 0.820713,
+          "rank": 9,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0217,
+          "adjusted": 0.005256,
+          "zScore": -0.200919,
+          "rank": 22,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0839,
+          "adjusted": 0.051116,
+          "zScore": 0.591662,
+          "rank": 11,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 4.375,
+          "adjusted": 1.73426,
+          "zScore": 0.393671,
+          "rank": 14,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0622,
+          "adjusted": 0.056372,
+          "zScore": 0.820713,
+          "rank": 9,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0217,
+          "adjusted": 0.005256,
+          "zScore": -0.200919,
+          "rank": 22,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0839,
+          "adjusted": 0.051116,
+          "zScore": 0.591662,
+          "rank": 11,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 4.375,
+          "adjusted": 1.73426,
+          "zScore": 0.393671,
+          "rank": 14,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.659554,
+      "adjustedComposite": 0.326652,
+      "rawDelta": 0.741171,
+      "adjustedDelta": 0.509985,
+      "rawVsAdjGap": 0.231186,
+      "trajectoryRaw": 0.509985,
+      "trajectoryShrunk": 0.33999,
+      "trajectoryClamped": 0.33999,
+      "trajectoryLabel": "Late Riser",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.741171,
+        "adjustedDelta": 0.509985,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-lar",
+      "slug": "la-rams",
+      "abbr": "lar",
+      "name": "LA Rams",
+      "windowGames": [
+        "2022_11_LA_NO",
+        "2022_12_LA_KC",
+        "2022_13_SEA_LA",
+        "2022_14_LV_LA",
+        "2022_15_LA_GB",
+        "2022_16_DEN_LA",
+        "2022_17_LA_LAC",
+        "2022_18_LA_SEA"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.042066,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0458,
+          "adjusted": -0.057016,
+          "zScore": -0.671871,
+          "rank": 22,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0263,
+          "adjusted": 0.009069,
+          "zScore": -0.274339,
+          "rank": 24,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0721,
+          "adjusted": -0.066084,
+          "zScore": -0.744061,
+          "rank": 23,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -3.125,
+          "adjusted": -2.898093,
+          "zScore": -0.657337,
+          "rank": 22,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0458,
+          "adjusted": -0.057016,
+          "zScore": -0.671871,
+          "rank": 22,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0263,
+          "adjusted": 0.009069,
+          "zScore": -0.274339,
+          "rank": 24,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0721,
+          "adjusted": -0.066084,
+          "zScore": -0.744061,
+          "rank": 23,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -3.125,
+          "adjusted": -2.898093,
+          "zScore": -0.657337,
+          "rank": 22,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.583812,
+      "adjustedComposite": -0.509951,
+      "rawDelta": 0.120959,
+      "adjustedDelta": -0.010449,
+      "rawVsAdjGap": 0.131408,
+      "trajectoryRaw": -0.010449,
+      "trajectoryShrunk": -0.006966,
+      "trajectoryClamped": -0.006966,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.120959,
+        "adjustedDelta": -0.010449,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-lv",
+      "slug": "las-vegas-raiders",
+      "abbr": "lv",
+      "name": "Las Vegas Raiders",
+      "windowGames": [
+        "2022_11_LV_DEN",
+        "2022_12_LV_SEA",
+        "2022_13_LAC_LV",
+        "2022_14_LV_LA",
+        "2022_15_NE_LV",
+        "2022_16_LV_PIT",
+        "2022_17_SF_LV",
+        "2022_18_KC_LV"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.226638,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0085,
+          "adjusted": 0.027859,
+          "zScore": 0.445387,
+          "rank": 13,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0166,
+          "adjusted": 0.005156,
+          "zScore": -0.198994,
+          "rank": 21,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0081,
+          "adjusted": 0.022703,
+          "zScore": 0.267846,
+          "rank": 15,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 0,
+          "adjusted": 1.021025,
+          "zScore": 0.231849,
+          "rank": 15,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0085,
+          "adjusted": 0.027859,
+          "zScore": 0.445387,
+          "rank": 13,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0166,
+          "adjusted": 0.005156,
+          "zScore": -0.198994,
+          "rank": 21,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0081,
+          "adjusted": 0.022703,
+          "zScore": 0.267846,
+          "rank": 15,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 0,
+          "adjusted": 1.021025,
+          "zScore": 0.231849,
+          "rank": 15,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.09642,
+      "adjustedComposite": 0.144927,
+      "rawDelta": 0.366557,
+      "adjustedDelta": 0.682197,
+      "rawVsAdjGap": -0.31564,
+      "trajectoryRaw": 0.682197,
+      "trajectoryShrunk": 0.454798,
+      "trajectoryClamped": 0.454798,
+      "trajectoryLabel": "Late Riser",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.366557,
+        "adjustedDelta": 0.682197,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-mia",
+      "slug": "miami-dolphins",
+      "abbr": "mia",
+      "name": "Miami Dolphins",
+      "windowGames": [
+        "2022_10_CLE_MIA",
+        "2022_12_HOU_MIA",
+        "2022_13_MIA_SF",
+        "2022_14_MIA_LAC",
+        "2022_15_MIA_BUF",
+        "2022_16_GB_MIA",
+        "2022_17_MIA_NE",
+        "2022_18_NYJ_MIA"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.168126,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0069,
+          "adjusted": 0.015272,
+          "zScore": 0.279691,
+          "rank": 14,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0566,
+          "adjusted": -0.049719,
+          "zScore": 0.857765,
+          "rank": 11,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0497,
+          "adjusted": 0.064991,
+          "zScore": 0.749795,
+          "rank": 9,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 1.125,
+          "adjusted": 2.59869,
+          "zScore": 0.589796,
+          "rank": 12,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0069,
+          "adjusted": 0.015272,
+          "zScore": 0.279691,
+          "rank": 14,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0566,
+          "adjusted": -0.049719,
+          "zScore": 0.857765,
+          "rank": 11,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0497,
+          "adjusted": 0.064991,
+          "zScore": 0.749795,
+          "rank": 9,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 1.125,
+          "adjusted": 2.59869,
+          "zScore": 0.589796,
+          "rank": 12,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.432733,
+      "adjustedComposite": 0.572942,
+      "rawDelta": 0.276568,
+      "adjustedDelta": 0.28728,
+      "rawVsAdjGap": -0.010711,
+      "trajectoryRaw": 0.28728,
+      "trajectoryShrunk": 0.19152,
+      "trajectoryClamped": 0.19152,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.276568,
+        "adjustedDelta": 0.28728,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-min",
+      "slug": "minnesota-vikings",
+      "abbr": "min",
+      "name": "Minnesota Vikings",
+      "windowGames": [
+        "2022_11_DAL_MIN",
+        "2022_12_NE_MIN",
+        "2022_13_NYJ_MIN",
+        "2022_14_MIN_DET",
+        "2022_15_IND_MIN",
+        "2022_16_NYG_MIN",
+        "2022_17_MIN_GB",
+        "2022_18_MIN_CHI"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.201226,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0293,
+          "adjusted": -0.039803,
+          "zScore": -0.445293,
+          "rank": 19,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0543,
+          "adjusted": 0.073794,
+          "zScore": -1.520785,
+          "rank": 31,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0836,
+          "adjusted": -0.113597,
+          "zScore": -1.285559,
+          "rank": 28,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -4.75,
+          "adjusted": -5.76574,
+          "zScore": -1.30796,
+          "rank": 27,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0293,
+          "adjusted": -0.039803,
+          "zScore": -0.445293,
+          "rank": 19,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0543,
+          "adjusted": 0.073794,
+          "zScore": -1.520785,
+          "rank": 31,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0836,
+          "adjusted": -0.113597,
+          "zScore": -1.285559,
+          "rank": 28,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -4.75,
+          "adjusted": -5.76574,
+          "zScore": -1.30796,
+          "rank": 27,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.780341,
+      "adjustedComposite": -1.048023,
+      "rawDelta": -0.480291,
+      "adjustedDelta": -0.687989,
+      "rawVsAdjGap": 0.207698,
+      "trajectoryRaw": -0.687989,
+      "trajectoryShrunk": -0.458659,
+      "trajectoryClamped": -0.458659,
+      "trajectoryLabel": "Late Decline",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.480291,
+        "adjustedDelta": -0.687989,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-ne",
+      "slug": "new-england-patriots",
+      "abbr": "ne",
+      "name": "New England Patriots",
+      "windowGames": [
+        "2022_11_NYJ_NE",
+        "2022_12_NE_MIN",
+        "2022_13_BUF_NE",
+        "2022_14_NE_ARI",
+        "2022_15_NE_LV",
+        "2022_16_CIN_NE",
+        "2022_17_MIA_NE",
+        "2022_18_NE_BUF"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.321712,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0691,
+          "adjusted": -0.062891,
+          "zScore": -0.749207,
+          "rank": 23,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0449,
+          "adjusted": -0.069219,
+          "zScore": 1.233288,
+          "rank": 6,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0242,
+          "adjusted": 0.006328,
+          "zScore": 0.081221,
+          "rank": 19,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -2.5,
+          "adjusted": -0.294233,
+          "zScore": -0.066562,
+          "rank": 18,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0691,
+          "adjusted": -0.062891,
+          "zScore": -0.749207,
+          "rank": 23,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0449,
+          "adjusted": -0.069219,
+          "zScore": 1.233288,
+          "rank": 6,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0242,
+          "adjusted": 0.006328,
+          "zScore": 0.081221,
+          "rank": 19,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -2.5,
+          "adjusted": -0.294233,
+          "zScore": -0.066562,
+          "rank": 18,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.131974,
+      "adjustedComposite": 0.18032,
+      "rawDelta": -0.525415,
+      "adjustedDelta": -0.210579,
+      "rawVsAdjGap": -0.314836,
+      "trajectoryRaw": -0.210579,
+      "trajectoryShrunk": -0.140386,
+      "trajectoryClamped": -0.140386,
+      "trajectoryLabel": "Schedule-Masked Fade",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.525415,
+        "adjustedDelta": -0.210579,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-no",
+      "slug": "new-orleans-saints",
+      "abbr": "no",
+      "name": "New Orleans Saints",
+      "windowGames": [
+        "2022_10_NO_PIT",
+        "2022_11_LA_NO",
+        "2022_12_NO_SF",
+        "2022_13_NO_TB",
+        "2022_15_ATL_NO",
+        "2022_16_NO_CLE",
+        "2022_17_NO_PHI",
+        "2022_18_CAR_NO"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.129601,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0861,
+          "adjusted": -0.082716,
+          "zScore": -1.010174,
+          "rank": 26,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.081,
+          "adjusted": -0.098069,
+          "zScore": 1.788869,
+          "rank": 2,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0051,
+          "adjusted": 0.015353,
+          "zScore": 0.184079,
+          "rank": 17,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 0,
+          "adjusted": 0.543084,
+          "zScore": 0.123412,
+          "rank": 17,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0861,
+          "adjusted": -0.082716,
+          "zScore": -1.010174,
+          "rank": 26,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.081,
+          "adjusted": -0.098069,
+          "zScore": 1.788869,
+          "rank": 2,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0051,
+          "adjusted": 0.015353,
+          "zScore": 0.184079,
+          "rank": 17,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 0,
+          "adjusted": 0.543084,
+          "zScore": 0.123412,
+          "rank": 17,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.160478,
+      "adjustedComposite": 0.33616,
+      "rawDelta": 0.001552,
+      "adjustedDelta": 0.162029,
+      "rawVsAdjGap": -0.160478,
+      "trajectoryRaw": 0.162029,
+      "trajectoryShrunk": 0.10802,
+      "trajectoryClamped": 0.10802,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.001552,
+        "adjustedDelta": 0.162029,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-nyg",
+      "slug": "ny-giants",
+      "abbr": "nyg",
+      "name": "NY Giants",
+      "windowGames": [
+        "2022_11_DET_NYG",
+        "2022_12_NYG_DAL",
+        "2022_13_WAS_NYG",
+        "2022_14_PHI_NYG",
+        "2022_15_NYG_WAS",
+        "2022_16_NYG_MIN",
+        "2022_17_IND_NYG",
+        "2022_18_NYG_PHI"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.247867,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0373,
+          "adjusted": 0.064084,
+          "zScore": 0.922237,
+          "rank": 7,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0465,
+          "adjusted": 0.042081,
+          "zScore": -0.910079,
+          "rank": 28,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0092,
+          "adjusted": 0.022003,
+          "zScore": 0.259868,
+          "rank": 16,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -2.5,
+          "adjusted": -0.824563,
+          "zScore": -0.186886,
+          "rank": 19,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0373,
+          "adjusted": 0.064084,
+          "zScore": 0.922237,
+          "rank": 7,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0465,
+          "adjusted": 0.042081,
+          "zScore": -0.910079,
+          "rank": 28,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0092,
+          "adjusted": 0.022003,
+          "zScore": 0.259868,
+          "rank": 16,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -2.5,
+          "adjusted": -0.824563,
+          "zScore": -0.186886,
+          "rank": 19,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.279617,
+      "adjustedComposite": -0.032514,
+      "rawDelta": -0.084098,
+      "adjustedDelta": 0.17807,
+      "rawVsAdjGap": -0.262168,
+      "trajectoryRaw": 0.17807,
+      "trajectoryShrunk": 0.118713,
+      "trajectoryClamped": 0.118713,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.084098,
+        "adjustedDelta": 0.17807,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-nyj",
+      "slug": "ny-jets",
+      "abbr": "nyj",
+      "name": "NY Jets",
+      "windowGames": [
+        "2022_11_NYJ_NE",
+        "2022_12_CHI_NYJ",
+        "2022_13_NYJ_MIN",
+        "2022_14_NYJ_BUF",
+        "2022_15_DET_NYJ",
+        "2022_16_JAX_NYJ",
+        "2022_17_NYJ_SEA",
+        "2022_18_NYJ_MIA"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.047891,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.1314,
+          "adjusted": -0.148178,
+          "zScore": -1.871894,
+          "rank": 30,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0389,
+          "adjusted": -0.065281,
+          "zScore": 1.157461,
+          "rank": 9,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0925,
+          "adjusted": -0.082897,
+          "zScore": -0.935673,
+          "rank": 25,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -5,
+          "adjusted": -3.996898,
+          "zScore": -0.906638,
+          "rank": 23,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.1314,
+          "adjusted": -0.148178,
+          "zScore": -1.871894,
+          "rank": 30,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0389,
+          "adjusted": -0.065281,
+          "zScore": 1.157461,
+          "rank": 9,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0925,
+          "adjusted": -0.082897,
+          "zScore": -0.935673,
+          "rank": 25,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -5,
+          "adjusted": -3.996898,
+          "zScore": -0.906638,
+          "rank": 23,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.606772,
+      "adjustedComposite": -0.467101,
+      "rawDelta": -0.523822,
+      "adjustedDelta": -0.576371,
+      "rawVsAdjGap": 0.052548,
+      "trajectoryRaw": -0.576371,
+      "trajectoryShrunk": -0.384247,
+      "trajectoryClamped": -0.384247,
+      "trajectoryLabel": "Late Decline",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.523822,
+        "adjustedDelta": -0.576371,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-phi",
+      "slug": "philadelphia-eagles",
+      "abbr": "phi",
+      "name": "Philadelphia Eagles",
+      "windowGames": [
+        "2022_11_PHI_IND",
+        "2022_12_GB_PHI",
+        "2022_13_TEN_PHI",
+        "2022_14_PHI_NYG",
+        "2022_15_PHI_CHI",
+        "2022_16_PHI_DAL",
+        "2022_17_NO_PHI",
+        "2022_18_NYG_PHI"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.302023,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0984,
+          "adjusted": 0.081422,
+          "zScore": 1.150461,
+          "rank": 5,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0553,
+          "adjusted": -0.038119,
+          "zScore": 0.634377,
+          "rank": 12,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1537,
+          "adjusted": 0.119541,
+          "zScore": 1.371499,
+          "rank": 5,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 6.75,
+          "adjusted": 4.962201,
+          "zScore": 1.12604,
+          "rank": 7,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0984,
+          "adjusted": 0.081422,
+          "zScore": 1.150461,
+          "rank": 5,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0553,
+          "adjusted": -0.038119,
+          "zScore": 0.634377,
+          "rank": 12,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.1537,
+          "adjusted": 0.119541,
+          "zScore": 1.371499,
+          "rank": 5,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 6.75,
+          "adjusted": 4.962201,
+          "zScore": 1.12604,
+          "rank": 7,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 1.205223,
+      "adjustedComposite": 0.939143,
+      "rawDelta": -0.241719,
+      "adjustedDelta": -0.282225,
+      "rawVsAdjGap": 0.040505,
+      "trajectoryRaw": -0.282225,
+      "trajectoryShrunk": -0.18815,
+      "trajectoryClamped": -0.18815,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.241719,
+        "adjustedDelta": -0.282225,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-pit",
+      "slug": "pittsburgh-steelers",
+      "abbr": "pit",
+      "name": "Pittsburgh Steelers",
+      "windowGames": [
+        "2022_11_CIN_PIT",
+        "2022_12_PIT_IND",
+        "2022_13_PIT_ATL",
+        "2022_14_BAL_PIT",
+        "2022_15_PIT_CAR",
+        "2022_16_LV_PIT",
+        "2022_17_PIT_BAL",
+        "2022_18_CLE_PIT"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.138285,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.0785,
+          "adjusted": 0.060697,
+          "zScore": 0.877646,
+          "rank": 8,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.019,
+          "adjusted": -0.018694,
+          "zScore": 0.260299,
+          "rank": 16,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0975,
+          "adjusted": 0.079391,
+          "zScore": 0.913911,
+          "rank": 8,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 3.625,
+          "adjusted": 3.175437,
+          "zScore": 0.720651,
+          "rank": 10,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.0785,
+          "adjusted": 0.060697,
+          "zScore": 0.877646,
+          "rank": 8,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.019,
+          "adjusted": -0.018694,
+          "zScore": 0.260299,
+          "rank": 16,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.0975,
+          "adjusted": 0.079391,
+          "zScore": 0.913911,
+          "rank": 8,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 3.625,
+          "adjusted": 3.175437,
+          "zScore": 0.720651,
+          "rank": 10,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.692786,
+      "adjustedComposite": 0.599308,
+      "rawDelta": 0.933701,
+      "adjustedDelta": 0.66502,
+      "rawVsAdjGap": 0.26868,
+      "trajectoryRaw": 0.66502,
+      "trajectoryShrunk": 0.443347,
+      "trajectoryClamped": 0.443347,
+      "trajectoryLabel": "Late Riser",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.933701,
+        "adjustedDelta": 0.66502,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-sea",
+      "slug": "seattle-seahawks",
+      "abbr": "sea",
+      "name": "Seattle Seahawks",
+      "windowGames": [
+        "2022_10_SEA_TB",
+        "2022_12_LV_SEA",
+        "2022_13_SEA_LA",
+        "2022_14_CAR_SEA",
+        "2022_15_SF_SEA",
+        "2022_16_SEA_KC",
+        "2022_17_NYJ_SEA",
+        "2022_18_LA_SEA"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.125854,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0549,
+          "adjusted": -0.043641,
+          "zScore": -0.495808,
+          "rank": 20,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0205,
+          "adjusted": 0.019756,
+          "zScore": -0.480154,
+          "rank": 27,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0754,
+          "adjusted": -0.063397,
+          "zScore": -0.713432,
+          "rank": 22,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -1.875,
+          "adjusted": -1.677505,
+          "zScore": -0.380404,
+          "rank": 21,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0549,
+          "adjusted": -0.043641,
+          "zScore": -0.495808,
+          "rank": 20,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0205,
+          "adjusted": 0.019756,
+          "zScore": -0.480154,
+          "rank": 27,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0754,
+          "adjusted": -0.063397,
+          "zScore": -0.713432,
+          "rank": 22,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -1.875,
+          "adjusted": -1.677505,
+          "zScore": -0.380404,
+          "rank": 21,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.534922,
+      "adjustedComposite": -0.466466,
+      "rawDelta": -0.449825,
+      "adjustedDelta": -0.351233,
+      "rawVsAdjGap": -0.098592,
+      "trajectoryRaw": -0.351233,
+      "trajectoryShrunk": -0.234155,
+      "trajectoryClamped": -0.234155,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.449825,
+        "adjustedDelta": -0.351233,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-sf",
+      "slug": "san-francisco-49ers",
+      "abbr": "sf",
+      "name": "San Francisco 49ers",
+      "windowGames": [
+        "2022_11_SF_ARI",
+        "2022_12_NO_SF",
+        "2022_13_MIA_SF",
+        "2022_14_TB_SF",
+        "2022_15_SF_SEA",
+        "2022_16_WAS_SF",
+        "2022_17_SF_LV",
+        "2022_18_ARI_SF"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": -0.171755,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": 0.1047,
+          "adjusted": 0.101972,
+          "zScore": 1.420972,
+          "rank": 2,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.1623,
+          "adjusted": -0.138131,
+          "zScore": 2.560375,
+          "rank": 1,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.267,
+          "adjusted": 0.240103,
+          "zScore": 2.745545,
+          "rank": 1,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 17.25,
+          "adjusted": 14.873966,
+          "zScore": 3.374862,
+          "rank": 1,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": 0.1047,
+          "adjusted": 0.101972,
+          "zScore": 1.420972,
+          "rank": 2,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.1623,
+          "adjusted": -0.138131,
+          "zScore": 2.560375,
+          "rank": 1,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.267,
+          "adjusted": 0.240103,
+          "zScore": 2.745545,
+          "rank": 1,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 17.25,
+          "adjusted": 14.873966,
+          "zScore": 3.374862,
+          "rank": 1,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 2.495857,
+      "adjustedComposite": 2.267511,
+      "rawDelta": 0.756925,
+      "adjustedDelta": 0.772354,
+      "rawVsAdjGap": -0.015429,
+      "trajectoryRaw": 0.772354,
+      "trajectoryShrunk": 0.514903,
+      "trajectoryClamped": 0.514903,
+      "trajectoryLabel": "Late Riser",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.756925,
+        "adjustedDelta": 0.772354,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-tb",
+      "slug": "tampa-bay-buccaneers",
+      "abbr": "tb",
+      "name": "Tampa Bay Buccaneers",
+      "windowGames": [
+        "2022_10_SEA_TB",
+        "2022_12_TB_CLE",
+        "2022_13_NO_TB",
+        "2022_14_TB_SF",
+        "2022_15_CIN_TB",
+        "2022_16_TB_ARI",
+        "2022_17_CAR_TB",
+        "2022_18_TB_ATL"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.087348,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0232,
+          "adjusted": -0.021591,
+          "zScore": -0.205551,
+          "rank": 16,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0205,
+          "adjusted": -0.031631,
+          "zScore": 0.509444,
+          "rank": 14,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0027,
+          "adjusted": 0.010041,
+          "zScore": 0.123532,
+          "rank": 18,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -5.375,
+          "adjusted": -4.751034,
+          "zScore": -1.07774,
+          "rank": 25,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0232,
+          "adjusted": -0.021591,
+          "zScore": -0.205551,
+          "rank": 16,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0205,
+          "adjusted": -0.031631,
+          "zScore": 0.509444,
+          "rank": 14,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.0027,
+          "adjusted": 0.010041,
+          "zScore": 0.123532,
+          "rank": 18,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -5.375,
+          "adjusted": -4.751034,
+          "zScore": -1.07774,
+          "rank": 25,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -0.199173,
+      "adjustedComposite": -0.093991,
+      "rawDelta": -0.125433,
+      "adjustedDelta": -0.143855,
+      "rawVsAdjGap": 0.018422,
+      "trajectoryRaw": -0.143855,
+      "trajectoryShrunk": -0.095903,
+      "trajectoryClamped": -0.095903,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.125433,
+        "adjustedDelta": -0.143855,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-ten",
+      "slug": "tennessee-titans",
+      "abbr": "ten",
+      "name": "Tennessee Titans",
+      "windowGames": [
+        "2022_11_TEN_GB",
+        "2022_12_CIN_TEN",
+        "2022_13_TEN_PHI",
+        "2022_14_JAX_TEN",
+        "2022_15_TEN_LAC",
+        "2022_16_HOU_TEN",
+        "2022_17_DAL_TEN",
+        "2022_18_TEN_JAX"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.221211,
+      "contextFlags": [],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0787,
+          "adjusted": -0.063003,
+          "zScore": -0.750688,
+          "rank": 24,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0384,
+          "adjusted": 0.017444,
+          "zScore": -0.435621,
+          "rank": 26,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1171,
+          "adjusted": -0.080447,
+          "zScore": -0.90775,
+          "rank": 24,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -7.375,
+          "adjusted": -4.883387,
+          "zScore": -1.107768,
+          "rank": 26,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0787,
+          "adjusted": -0.063003,
+          "zScore": -0.750688,
+          "rank": 24,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": 0.0384,
+          "adjusted": 0.017444,
+          "zScore": -0.435621,
+          "rank": 26,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": -0.1171,
+          "adjusted": -0.080447,
+          "zScore": -0.90775,
+          "rank": 24,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": -7.375,
+          "adjusted": -4.883387,
+          "zScore": -1.107768,
+          "rank": 26,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": -1.024585,
+      "adjustedComposite": -0.696077,
+      "rawDelta": -0.528202,
+      "adjustedDelta": -0.205836,
+      "rawVsAdjGap": -0.322365,
+      "trajectoryRaw": -0.205836,
+      "trajectoryShrunk": -0.137224,
+      "trajectoryClamped": -0.137224,
+      "trajectoryLabel": "Schedule-Masked Fade",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": -0.528202,
+        "adjustedDelta": -0.205836,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    },
+    {
+      "teamId": "nfl-wsh",
+      "slug": "washington-commanders",
+      "abbr": "wsh",
+      "name": "Washington Commanders",
+      "windowGames": [
+        "2022_10_WAS_PHI",
+        "2022_11_WAS_HOU",
+        "2022_12_ATL_WAS",
+        "2022_13_WAS_NYG",
+        "2022_15_NYG_WAS",
+        "2022_16_WAS_SF",
+        "2022_17_CLE_WAS",
+        "2022_18_DAL_WAS"
+      ],
+      "windowSize": 8,
+      "shortWindow": false,
+      "l8OpponentStrength": 0.139854,
+      "contextFlags": [
+        {
+          "gameId": "2022_18_DAL_WAS",
+          "team": "wsh",
+          "flag": "week18-anomaly",
+          "origin": "screen",
+          "enteredBy": "nfl-v03-week18-screen",
+          "date": "2023-01-08",
+          "note": "Week 18 margin screen: actual 20, prior mean -2.625, prior standard deviation 9.413, threshold 2.",
+          "source": "public/data/nfl/2022/results.json"
+        }
+      ],
+      "canonicalMetricsLabel": "canonical",
+      "metrics": {
+        "offEpaPerPlay": {
+          "raw": -0.0503,
+          "adjusted": -0.046028,
+          "zScore": -0.527236,
+          "rank": 21,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0643,
+          "adjusted": -0.087931,
+          "zScore": 1.593645,
+          "rank": 4,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.014,
+          "adjusted": 0.041903,
+          "zScore": 0.486668,
+          "rank": 13,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 1.375,
+          "adjusted": 3.160731,
+          "zScore": 0.717314,
+          "rank": 11,
+          "missing": false
+        }
+      },
+      "metricsExFlaggedLabel": "alternateExcludingConfirmedManualFlags",
+      "metricsExFlagged": {
+        "offEpaPerPlay": {
+          "raw": -0.0503,
+          "adjusted": -0.046028,
+          "zScore": -0.527236,
+          "rank": 21,
+          "missing": false
+        },
+        "defEpaPerPlay": {
+          "raw": -0.0643,
+          "adjusted": -0.087931,
+          "zScore": 1.593645,
+          "rank": 4,
+          "missing": false
+        },
+        "netEpaPerPlay": {
+          "raw": 0.014,
+          "adjusted": 0.041903,
+          "zScore": 0.486668,
+          "rank": 13,
+          "missing": false
+        },
+        "pointDiffPerGame": {
+          "raw": 1.375,
+          "adjusted": 3.160731,
+          "zScore": 0.717314,
+          "rank": 11,
+          "missing": false
+        }
+      },
+      "alternateExcludedGameIds": [],
+      "rawComposite": 0.275824,
+      "adjustedComposite": 0.570026,
+      "rawDelta": 0.275374,
+      "adjustedDelta": 0.46265,
+      "rawVsAdjGap": -0.187277,
+      "trajectoryRaw": 0.46265,
+      "trajectoryShrunk": 0.308434,
+      "trajectoryClamped": 0.308434,
+      "trajectoryLabel": "Stable",
+      "modifiers": [],
+      "triggers": {
+        "rawDelta": 0.275374,
+        "adjustedDelta": 0.46265,
+        "lateRiser": 0.5,
+        "lateDecline": -0.5,
+        "scheduleInflatedAdjustedMaximum": 0.25,
+        "scheduleMaskedAdjustedMinimum": -0.25,
+        "scheduleModifierGap": 0.5
+      }
+    }
+  ]
+}
