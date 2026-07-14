@@ -47,7 +47,7 @@ import PublicBetting from "./pages/PublicBetting";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
 import PgaHub from "./pages/PgaHub";
-import PgaHistoryModel from "./pages/PgaHistoryModel";
+import PgaHistoryModel from "./pages/PgaHistoryModelWithArticles";
 import PgaCustom from "./pages/PgaCustom";
 import PgaDfsUpload from "./pages/PgaDfsUpload";
 import PgaOpenChampionshipBestBets from "./pages/PgaOpenChampionshipBestBets";
