@@ -9,9 +9,10 @@
  *   PGA_API_KEY=da2-xxxxx node scripts/fetch-pga-player-stats.mjs
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 const ROOT = process.cwd();
 const OUTPUT_PATH = path.join(ROOT, "public", "data", "pga", "player-stats-raw.json");
@@ -32,7 +33,23 @@ const STAT_MAP = [
   { id: "102", outputKey: "drivingAccuracy", fields: ["%"], transform: parsePercent },
   { id: "02414", outputKey: "bogeyAvoidance", fields: ["% Makes Bogey"], transform: (v) => parsePercent(v) / 100 },
   { id: "02415", outputKey: "birdieBogeyRatio", fields: ["Birdie to Bogey Ratio"], transform: Number },
+  { id: "143", outputKey: "par4ScoringAverage", fields: ["Avg", "AVG", "Average"], transform: Number },
+  { id: "360", outputKey: "birdie125150", fields: ["%", "Birdie or Better %"], transform: parsePercent },
+  { id: "361", outputKey: "birdieUnder125", fields: ["%", "Birdie or Better %"], transform: parsePercent },
 ];
+
+const EXISTING_REQUIRED_OUTPUT_KEYS = [
+  "sgTotal",
+  "sgOTT",
+  "sgApp",
+  "sgAtG",
+  "sgPutt",
+  "drivingDistance",
+  "drivingAccuracy",
+  "bogeyAvoidance",
+  "birdieBogeyRatio",
+];
+const NEW_REQUIRED_OUTPUT_KEYS = ["par4ScoringAverage", "birdie125150", "birdieUnder125"];
 
 function parsePercent(v) {
   if (v == null) return null;
@@ -74,7 +91,11 @@ async function fetchStat(statId) {
   if (json.errors) {
     throw new Error(`GraphQL error for stat ${statId}: ${JSON.stringify(json.errors).slice(0, 200)}`);
   }
-  return json?.data?.statDetails?.rows ?? [];
+  const rows = json?.data?.statDetails?.rows ?? [];
+  if (!Array.isArray(rows) || rows.length < 20) {
+    throw new Error(`Suspiciously empty response for stat ${statId}: ${Array.isArray(rows) ? rows.length : "non-array"} rows`);
+  }
+  return { rows, status: res.status };
 }
 
 function statValueFor(row, fieldNames) {
@@ -92,12 +113,15 @@ async function main() {
   console.log(`[pga-player-stats] Using API key: ${API_KEY.slice(0, 10)}...`);
 
   const playerData = new Map();
+  const requestResults = [];
 
   for (const { id, outputKey, fields, transform } of STAT_MAP) {
     console.log(`[pga-player-stats] Fetching ${outputKey} (statId ${id})...`);
     let rows;
     try {
-      rows = await fetchStat(id);
+      const response = await fetchStat(id);
+      rows = response.rows;
+      requestResults.push({ id, outputKey, httpStatus: response.status, rowCount: rows.length });
     } catch (err) {
       console.error(`[pga-player-stats] FAILED to fetch ${outputKey}: ${err.message}`);
       console.error("[pga-player-stats] This usually means the PGA Tour API key has rotated.");
@@ -131,20 +155,46 @@ async function main() {
     .filter((player) => player.sgTotal != null)
     .sort((a, b) => a.player.localeCompare(b.player));
 
-  mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
-  writeFileSync(OUTPUT_PATH, JSON.stringify(result, null, 2) + "\n");
-  console.log(`[pga-player-stats] Wrote ${result.length} players to ${OUTPUT_PATH}`);
-
   const metaPath = path.join(path.dirname(OUTPUT_PATH), "player-stats-meta.json");
+  const previousRows = existsSync(OUTPUT_PATH) ? JSON.parse(readFileSync(OUTPUT_PATH, "utf8")) : [];
+  const previousMeta = existsSync(metaPath) ? JSON.parse(readFileSync(metaPath, "utf8")) : null;
   const today = new Date().toISOString().split("T")[0];
-  writeFileSync(metaPath, JSON.stringify({
+  const meta = {
     exportDate: today,
     syncedAt: new Date().toISOString(),
     playerCount: result.length,
     playersWithIds: result.filter((player) => player.playerId).length,
     source: "pga-tour-api-fallback",
-  }, null, 2) + "\n");
-  console.log(`[pga-player-stats] Wrote metadata to ${metaPath}`);
+    provider: GRAPHQL_URL,
+    requestCount: requestResults.length,
+    categories: requestResults,
+  };
+
+  const validation = validateStatsRefresh({ previousRows, previousMeta, nextRows: result, nextMeta: meta });
+  console.log(`[pga-player-stats] Validation passed: ${JSON.stringify(validation)}`);
+
+  mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
+  const temporaryDataPath = `${OUTPUT_PATH}.tmp-${process.pid}`;
+  const temporaryMetaPath = `${metaPath}.tmp-${process.pid}`;
+  const dataText = JSON.stringify(result, null, 2) + "\n";
+  const metaText = JSON.stringify(meta, null, 2) + "\n";
+
+  try {
+    writeFileSync(temporaryDataPath, dataText, "utf8");
+    writeFileSync(temporaryMetaPath, metaText, "utf8");
+    const temporaryRows = JSON.parse(readFileSync(temporaryDataPath, "utf8"));
+    const temporaryMeta = JSON.parse(readFileSync(temporaryMetaPath, "utf8"));
+    validateStatsRefresh({ previousRows, previousMeta, nextRows: temporaryRows, nextMeta: temporaryMeta });
+    writeFileSync(OUTPUT_PATH, dataText, "utf8");
+    writeFileSync(metaPath, metaText, "utf8");
+  } finally {
+    rmSync(temporaryDataPath, { force: true });
+    rmSync(temporaryMetaPath, { force: true });
+  }
+
+  console.log(`[pga-player-stats] Wrote ${result.length} validated players to ${OUTPUT_PATH}`);
+  console.log(`[pga-player-stats] Wrote validated metadata to ${metaPath}`);
+  console.log(`[pga-player-stats] Requests: ${JSON.stringify(requestResults)}`);
 
   const scheffler = result.find((player) => player.player === "Scottie Scheffler");
   if (scheffler) {
@@ -152,7 +202,69 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error("[pga-player-stats] Fatal error:", err.message);
-  process.exitCode = 1;
-});
+export function validateStatsRefresh({ previousRows = [], previousMeta = null, nextRows, nextMeta }) {
+  if (!Array.isArray(nextRows) || nextRows.length < 100) {
+    throw new Error(`Refusing suspicious player stats output with ${Array.isArray(nextRows) ? nextRows.length : "non-array"} rows.`);
+  }
+  if (!nextMeta || nextMeta.playerCount !== nextRows.length || nextMeta.requestCount !== STAT_MAP.length) {
+    throw new Error("Player stats metadata does not match the fetched output.");
+  }
+  const syncedAt = Date.parse(nextMeta.syncedAt);
+  if (!Number.isFinite(syncedAt) || Math.abs(Date.now() - syncedAt) > 10 * 60 * 1000) {
+    throw new Error("Player stats metadata timestamp is missing or not current.");
+  }
+
+  const normalizedNames = nextRows.map((row) => normalizePlayerName(row.player));
+  if (normalizedNames.some((name) => !name) || new Set(normalizedNames).size !== nextRows.length) {
+    throw new Error("Player stats output contains a missing or duplicate normalized player identity.");
+  }
+
+  const coverage = Object.fromEntries(
+    [...EXISTING_REQUIRED_OUTPUT_KEYS, ...NEW_REQUIRED_OUTPUT_KEYS]
+      .map((key) => [key, nextRows.filter((row) => Number.isFinite(row[key])).length]),
+  );
+  for (const key of NEW_REQUIRED_OUTPUT_KEYS) {
+    if (coverage[key] < 75) throw new Error(`Required fetched category ${key} has suspicious coverage: ${coverage[key]}.`);
+  }
+
+  const previousCoverage = Object.fromEntries(
+    EXISTING_REQUIRED_OUTPUT_KEYS.map((key) => [key, Array.isArray(previousRows) ? previousRows.filter((row) => Number.isFinite(row[key])).length : 0]),
+  );
+  if (Array.isArray(previousRows) && previousRows.length > 0) {
+    if (nextRows.length < previousRows.length * 0.9) {
+      throw new Error(`Player row count fell from ${previousRows.length} to ${nextRows.length}.`);
+    }
+    for (const key of EXISTING_REQUIRED_OUTPUT_KEYS) {
+      if (coverage[key] < Math.floor(previousCoverage[key] * 0.95)) {
+        throw new Error(`Existing category ${key} coverage fell from ${previousCoverage[key]} to ${coverage[key]}.`);
+      }
+    }
+  }
+  if (previousMeta?.source && nextMeta.source !== previousMeta.source) {
+    throw new Error(`Player stats source changed from ${previousMeta.source} to ${nextMeta.source}.`);
+  }
+
+  return {
+    previousRowCount: Array.isArray(previousRows) ? previousRows.length : 0,
+    nextRowCount: nextRows.length,
+    previousCoverage,
+    coverage,
+  };
+}
+
+function normalizePlayerName(value) {
+  return String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(jr|sr|ii|iii|iv)\b/g, "")
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error("[pga-player-stats] Fatal error:", err.message);
+    process.exitCode = 1;
+  });
+}

@@ -355,7 +355,37 @@
     "noCutLabel": "Major cut",
     "dataFile": "the-open-2026.json",
     "registration": "generated",
-    "previousWinner": "Scottie Scheffler"
+    "modelOnly": true,
+    "previousWinner": "Scottie Scheffler",
+    "par": 70,
+    "yardage": 7223,
+    "tournamentType": "major",
+    "major": true,
+    "officialMetadataSource": "https://www.theopen.com/royal-birkdale-154th-open/course-guide",
+    "summaryBlurb": "Royal Birkdale's 2026 championship setup is a par-70, 7,223-yard links test where approach play, controlled scoring, and Open history feed the existing detailed model.",
+    "courseTraits": [
+      "The official 2026 championship setup is par 70 at 7,223 yards.",
+      "The detailed model uses current PGA Tour statistics and corrected JKB Trend without substituting missing player data.",
+      "Royal Birkdale history is used when supported, with broader Open Championship history as the configured sparse-venue fallback."
+    ],
+    "modelFocus": "The shared detailed model uses current form, field-relative statistical ranks, and supported Open history. Missing categories remain unavailable and the scoring engine renormalizes only across observed evidence.",
+    "detailedModel": {
+      "fieldFile": "public/data/pga/current-field.json",
+      "statsFile": "public/data/pga/player-stats-raw.json",
+      "statsMetaFile": "public/data/pga/player-stats-meta.json",
+      "trendFile": "public/data/pga/jkb-trend-rankings.json",
+      "historyFile": "public/data/pga/round-history-pga.json",
+      "field": {
+        "tournamentId": "R2026100",
+        "tournamentSlug": "the-open-championship"
+      },
+      "history": {
+        "eventName": "The Open Championship",
+        "courseName": "Royal Birkdale Golf Club",
+        "venueMinimumRounds": 2,
+        "fallback": "event-history"
+      }
+    }
   },
   {
     "id": "corales-puntacana-championship-2026",

@@ -17,7 +17,10 @@ import process from "node:process";
 
 const ROOT = process.cwd();
 const META_PATH = path.join(ROOT, "public", "data", "pga", "player-stats-meta.json");
+const STATS_PATH = path.join(ROOT, "public", "data", "pga", "player-stats-raw.json");
 const MAX_STALE_DAYS = parseInt(process.env.PGA_STATS_MAX_STALE_DAYS || "10", 10);
+const REQUIRED_DETAILED_FIELDS = ["par4ScoringAverage", "birdie125150", "birdieUnder125"];
+const MIN_REQUIRED_FIELD_COVERAGE = 75;
 
 function daysBetween(a, b) {
   return Math.abs(a - b) / (1000 * 60 * 60 * 24);
@@ -62,7 +65,29 @@ function main() {
     return;
   }
 
-  console.log(`[freshness] OK — sheet data is fresh.`);
+  let stats;
+  try {
+    stats = JSON.parse(readFileSync(STATS_PATH, "utf8"));
+  } catch (err) {
+    console.error(`[freshness] Could not read ${STATS_PATH}: ${err.message}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const coverage = Object.fromEntries(
+    REQUIRED_DETAILED_FIELDS.map((field) => [field, stats.filter((player) => Number.isFinite(player[field])).length]),
+  );
+  console.log(`[freshness] Detailed field coverage: ${JSON.stringify(coverage)}`);
+  for (const field of REQUIRED_DETAILED_FIELDS) {
+    if (coverage[field] < MIN_REQUIRED_FIELD_COVERAGE) {
+      console.error(`[freshness] REQUIRED CATEGORY MISSING — ${field} has ${coverage[field]} profiles.`);
+      console.error(`[freshness] Falling back to the direct PGA Tour API pull for this run.`);
+      process.exitCode = 1;
+      return;
+    }
+  }
+
+  console.log(`[freshness] OK — stats are fresh and detailed categories are present.`);
 }
 
 main();

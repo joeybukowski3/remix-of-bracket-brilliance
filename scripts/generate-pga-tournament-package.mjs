@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { fetchField } from "./fetch-pga-field.mjs";
+import { generateDetailedModelArtifact } from "./generate-pga-detailed-model-data.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -167,12 +168,15 @@ async function main() {
   for (const target of targets) {
     // Auto-fetch the registered field and attach to the entry before data export.
     // This ensures the model only scores players actually entered in the tournament.
-    const fieldFilePath = await fetchField(target.slug, { force: args.forceField });
+    const fieldFilePath = target.detailedModel
+      ? path.join(repoRoot, target.detailedModel.fieldFile)
+      : await fetchField(target.slug, { force: args.forceField });
     if (fieldFilePath) {
       const relPath = path.relative(repoRoot, fieldFilePath).replace(/\\/g, "/");
       target.workbook = target.workbook ?? {};
       target.workbook.fieldFile = relPath;
-      console.log(`[field] ${target.slug} → ${relPath} (${JSON.parse(fs.readFileSync(fieldFilePath, "utf8")).playerCount} players)`);
+      const fieldPayload = JSON.parse(fs.readFileSync(fieldFilePath, "utf8"));
+      console.log(`[field] ${target.slug} → ${relPath} (${fieldPayload.playerCount ?? fieldPayload.fieldCount ?? fieldPayload.players?.length ?? 0} players)`);
     } else {
       console.warn(`[field] No field file for ${target.slug} — model will include all workbook players.`);
     }
@@ -242,6 +246,7 @@ function writeGeneratedTournamentModule(entry) {
   const exportName = `${toIdentifier(entry.slug)}Tournament`;
   const overrideName = `${toIdentifier(entry.slug)}Override`;
   const baseConfig = buildGeneratedBaseConfig(entry);
+  if (entry.modelOnly) applyModelOnlyCopy(baseConfig, entry);
   const fileContents = `import { definePgaTournamentConfig, type PgaTournamentConfigInput } from "@/lib/pga/tournamentConfig";
 import { applyPgaTournamentOverride } from "@/lib/pga/tournamentOverrides";
 import { ${overrideName} } from "@/data/pga/overrides/${entry.slug}";
@@ -253,6 +258,34 @@ export const ${exportName} = definePgaTournamentConfig(
 );
 `;
   fs.writeFileSync(modulePath, fileContents, "utf8");
+}
+
+function applyModelOnlyCopy(config, entry) {
+  config.hero.title = `${entry.name} ${entry.season} Detailed Model`;
+  config.hero.intro = `The detailed ${entry.name} model uses the current field and the shared PGA ranking architecture.`;
+  config.hero.support = "Switch presets or edit custom weights to compare the current normalized model inputs.";
+  config.hero.secondaryCtaLabel = "Tournament overview";
+  config.seo.title = `${entry.name} ${entry.season} Detailed PGA Model`;
+  config.seo.description = `${entry.name} ${entry.season} detailed PGA model rankings for ${entry.courseName}.`;
+  config.seo.faqs = [
+    { question: `What data feeds the ${entry.name} model?`, answer: entry.summaryBlurb },
+    { question: "How are missing categories handled?", answer: "Missing categories remain unavailable. The shared model applies its minimum-evidence gate and renormalizes across observed inputs." },
+    { question: "Can the model weights be changed?", answer: "Yes. Use an existing preset, Top 20 Profile, or Custom Model on the detailed model page." },
+    { question: "How are the rankings updated?", answer: "The validated weekly PGA refresh rebuilds the detailed artifact from the current field, player statistics, JKB Trend, and configured tournament history." },
+  ];
+  config.picksPage = {
+    top10Intro: "",
+    top40Intro: "",
+    strategyBullets: [],
+    parlayBullets: [],
+    tierOneBets: [],
+    tierTwoBets: [],
+    tierThreeBets: [],
+    fades: [],
+    top40Rows: [],
+    summaryRows: [],
+  };
+  config.manual = { modelFocusNote: entry.modelFocus };
 }
 
 function ensureOverrideStub(entry) {
@@ -322,6 +355,10 @@ ${entries}
 
 function ensureTournamentData(entry, workbookOverride) {
   const dataOutput = path.join(repoRoot, "public", "data", "pga", entry.dataFile);
+  if (entry.detailedModel) {
+    generateDetailedModelArtifact({ slug: entry.slug, output: dataOutput });
+    return;
+  }
   if (fs.existsSync(dataOutput) && !workbookOverride && !isEmptyTournamentDataFile(dataOutput)) {
     return;
   }
