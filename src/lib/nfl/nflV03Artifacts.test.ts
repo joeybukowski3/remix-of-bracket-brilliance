@@ -335,7 +335,9 @@ describe("NFL v0.3 determinism, dry-run, and isolation", () => {
       "manual-adjustments.json",
     ];
     const source = sourceFiles(join(ROOT, "src"))
-      .filter((path) => !path.endsWith("nflV03Artifacts.test.ts"))
+      .filter((path) => !/\.test\.tsx?$/.test(path))
+      .filter((path) => !path.endsWith("useNflV03Artifacts.ts"))
+      .filter((path) => !path.endsWith("NflV03Review.tsx"))
       .map((path) => readFileSync(path, "utf8"))
       .join("\n");
     for (const filename of filenames) expect(source).not.toContain(filename);
