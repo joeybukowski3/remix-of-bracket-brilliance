@@ -47,7 +47,7 @@ import PublicBetting from "./pages/PublicBetting";
 import NotFound from "./pages/NotFound";
 import PGA from "./pages/PGA";
 import PgaHub from "./pages/PgaHub";
-import PgaHistoryModel from "./pages/PgaHistoryModel";
+import PgaHistoryModelWithArticles from "./pages/PgaHistoryModelWithArticles";
 import PgaCustom from "./pages/PgaCustom";
 import PgaDfsUpload from "./pages/PgaDfsUpload";
 import PgaOpenChampionshipBestBets from "./pages/PgaOpenChampionshipBestBets";
@@ -132,13 +132,6 @@ const App = () => (
           <Route path="/world-cup/analyzer" element={<WorldCupAnalyzer />} />
           <Route path="/odds-tracker" element={<PublicBetting />} />
           <Route path="/public-betting" element={<Navigate to="/odds-tracker" replace />} />
-          {/* Unlinked, dedicated routes for the X-post screenshot generators
-              (scripts/post-mlb-*-to-x.mjs) -- not part of site navigation.
-              Deliberately kept OUTSIDE MlbLayout: the automated screenshot
-              capture needs a bare page with no header/sidebar chrome. The HR
-              and K routes render ONLY the rows in the immutable per-attempt
-              selection artifact passed via `?d=` (base64), so the screenshot
-              can never show players the readiness gate did not confirm. */}
           <Route path="/mlb/numerology/x-export" element={<MlbNumerologyXExport />} />
           <Route path="/mlb/hr-props/x-export" element={<MlbHrPropsXExport />} />
           <Route path="/mlb/strikeout-props/x-export" element={<MlbStrikeoutPropsXExport />} />
@@ -153,12 +146,13 @@ const App = () => (
             <Route path="power-rankings" element={<MlbPowerRankings />} />
           </Route>
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
-          <Route path="/pga" element={<PgaHistoryModel />} />
+          <Route path="/pga" element={<PgaHistoryModelWithArticles />} />
           <Route path="/pga/legacy" element={<PgaHub />} />
           <Route path="/pga/custom" element={<PgaCustom />} />
           <Route path="/pga/dfs" element={<PgaDfsUpload />} />
-          <Route path="/pga/best-bets" element={<PgaOpenChampionshipBestBets />} />
-          <Route path="/pga/the-open-2026-model-value-bets" element={<PgaOpenChampionshipBestBets />} />
+          <Route path="/pga/the-open-2026-picks-best-bets-odds" element={<PgaOpenChampionshipBestBets />} />
+          <Route path="/pga/best-bets" element={<Navigate to="/pga/the-open-2026-picks-best-bets-odds" replace />} />
+          <Route path="/pga/the-open-2026-model-value-bets" element={<Navigate to="/pga/the-open-2026-picks-best-bets-odds" replace />} />
           <Route path="/pga/model" element={<PGAModel />} />
           <Route path="/pga/model/table" element={<PGAModelTableView />} />
           <Route path="/pga/:tournamentSlug" element={<PGA />} />
