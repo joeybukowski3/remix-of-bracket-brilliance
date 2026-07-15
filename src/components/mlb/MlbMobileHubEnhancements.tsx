@@ -137,18 +137,15 @@ export default function MlbMobileHubEnhancements() {
     return () => observer.disconnect();
   }, [pathname]);
 
-  return <>
-    {pathname === "/mlb" && <a href="/mlb/numerology" className="jkb-mobile-numerology-link" aria-label="Open MLB Numerology"><span aria-hidden="true">🔮</span><span>Numerology</span></a>}
+  return (
     <style>{`
-      .jkb-mobile-matchup-summary,.jkb-mobile-numerology-link{display:none}
+      .jkb-mobile-matchup-summary{display:none}
       @media (max-width:767px){
-        .jkb-mobile-numerology-link{display:flex;position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:80;align-items:center;gap:7px;border:1px solid rgba(160,120,255,.45);border-radius:999px;background:#171426;color:#eadfff;padding:10px 14px;font-size:12px;font-weight:800;box-shadow:0 10px 28px rgba(0,0,0,.28)}
-        .jkb-mobile-numerology-link span:first-child{font-size:17px;line-height:1}
         .jkb-mobile-matchup-card{min-height:0!important;overflow:hidden}
         .jkb-mobile-matchup-card[data-mobile-expanded="false"]>:not(.jkb-mobile-matchup-summary){display:none!important}
         .jkb-mobile-matchup-summary{display:grid;grid-template-columns:minmax(82px,1fr) minmax(132px,1.25fr) minmax(82px,1fr);align-items:center;gap:6px;width:100%;padding:12px 10px;background:#fff}
         .jkb-mobile-team-side{display:flex;align-items:center;gap:6px;min-width:0;color:#031635}.jkb-mobile-team-side-right{justify-content:flex-end;text-align:right}.jkb-mobile-team-text{display:flex;min-width:0;flex-direction:column;gap:1px}.jkb-mobile-team-text span{font-size:11px;font-weight:900;line-height:1.1}.jkb-mobile-team-text small{max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;font-weight:700;line-height:1.15;color:#64748b}.jkb-mobile-team-logo{width:34px!important;height:34px!important;object-fit:contain;flex:0 0 auto}.jkb-mobile-team-fallback{display:grid;place-items:center;width:34px;height:34px;border-radius:999px;background:#eff4ff;color:#031635;font-size:9px;font-weight:900}.jkb-mobile-market-center{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;min-width:0}.jkb-mobile-market-center>small{font-size:10px;line-height:1;color:#0f766e;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.jkb-mobile-market-center strong{font-size:14px;line-height:1.1;color:#0f766e;white-space:nowrap}.jkb-mobile-market-center span{display:inline-flex;border-radius:999px;background:#031635;padding:4px 8px;color:white;font-size:9px;font-weight:800;line-height:1;white-space:nowrap}
       }
     `}</style>
-  </>;
+  );
 }

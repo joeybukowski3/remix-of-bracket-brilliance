@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, ExternalLink, Flame, Gauge, Radar, Shield, Sparkles, Swords, Target, TrendingUp, Wind } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, Dice5, ExternalLink, Flame, Gauge, Radar, Shield, Sparkles, Swords, Target, TrendingUp, Wind } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
@@ -941,29 +941,29 @@ export function PropPreviewCard({
 
 const MLB_TOOL_CARDS = [
   {
-    title: "MLB Props Hub",
-    body: "Comprehensive prop analytics for every game on the slate with matchup context.",
+    title: "Props Hub",
+    body: "Broader daily MLB prop and value-play view.",
     to: "/mlb/props",
     icon: <BarChart3 className="h-5 w-5" />,
     accent: "border-t-[#031635]",
   },
   {
     title: "HR Props",
-    body: "Daily home run model projections and edges with park, weather, and pitcher risk.",
+    body: "Daily home-run model rankings and available market context.",
     to: "/mlb/hr-props",
     icon: <Flame className="h-5 w-5" />,
     accent: "border-t-sky-700",
   },
   {
     title: "Strikeout Props",
-    body: "Pitcher K-prop rankings by skill profile, whiff rate, and opponent strikeout tendency.",
+    body: "Starter strikeout projections versus market totals.",
     to: "/mlb/strikeout-props",
     icon: <Radar className="h-5 w-5" />,
     accent: "border-t-emerald-700",
   },
   {
     title: "Batter vs Pitcher",
-    body: "Table-first matchup board for batter power, pitcher attackability, and park context.",
+    body: "Hitter-versus-starter matchup analysis using underlying contact data.",
     to: "/mlb/batter-vs-pitcher",
     icon: <Swords className="h-5 w-5" />,
     accent: "border-t-slate-300",
@@ -981,6 +981,27 @@ const MLB_TOOL_CARDS = [
     to: "/mlb#props",
     icon: <Gauge className="h-5 w-5" />,
     accent: "border-t-[#006399]",
+  },
+  {
+    title: "Power Rankings",
+    body: "Model-based team strength ratings, not standings.",
+    to: "/mlb/power-rankings",
+    icon: <BarChart3 className="h-5 w-5" />,
+    accent: "border-t-indigo-600",
+  },
+  {
+    title: "Sin City",
+    body: "Strict high-risk, high-reward qualifying plays.",
+    to: "/mlb/sin-city",
+    icon: <Dice5 className="h-5 w-5" />,
+    accent: "border-t-rose-600",
+  },
+  {
+    title: "Numerology",
+    body: "Specialty numerology analysis.",
+    to: "/mlb/numerology",
+    icon: <Sparkles className="h-5 w-5" />,
+    accent: "border-t-fuchsia-600",
   },
 ];
 
@@ -3151,8 +3172,8 @@ function SocialMediaTablesSection({
           <span style={{ fontSize: 11, color: "#94a3b8" }}>Data refreshes at 3 AM · 10 AM · 1 PM ET</span>
           <div style={{ display: "flex", gap: 8 }}>
             <Link to="/mlb/hr-props"          style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9", textDecoration: "none" }}>Open HR Props →</Link>
-            <Link to="/mlb/strikeout-props"   style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textDecoration: "none" }}>K Props →</Link>
-            <Link to="/mlb/batter-vs-pitcher" style={{ fontSize: 11, fontWeight: 700, color: "#8b5cf6", textDecoration: "none" }}>Hit Props →</Link>
+            <Link to="/mlb/strikeout-props"   style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textDecoration: "none" }}>Strikeout Props →</Link>
+            <Link to="/mlb/batter-vs-pitcher" style={{ fontSize: 11, fontWeight: 700, color: "#8b5cf6", textDecoration: "none" }}>Batter vs Pitcher →</Link>
           </div>
         </div>
       </div>

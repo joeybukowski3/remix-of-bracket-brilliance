@@ -54,10 +54,10 @@ describe("isMlbNavItemActive", () => {
     expect(isMlbNavItemActive("/mlb/strikeout-props", "#overdue", overdue)).toBe(false);
   });
 
-  it("the Prop Optimizer utility CTA is active on /mlb/props", () => {
-    const propOptimizer = itemById("prop-optimizer");
-    expect(propOptimizer.href).toBe("/mlb/props");
-    expect(isMlbNavItemActive("/mlb/props", "", propOptimizer)).toBe(true);
+  it("the Props Hub item is active on /mlb/props", () => {
+    const propsHub = itemById("props-hub");
+    expect(propsHub.href).toBe("/mlb/props");
+    expect(isMlbNavItemActive("/mlb/props", "", propsHub)).toBe(true);
   });
 });
 
@@ -67,7 +67,29 @@ describe("MLB_NAV_SECTIONS", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("preserves the main/Tables/Utilities grouping used by the sidebar", () => {
-    expect(MLB_NAV_SECTIONS.map((section) => section.label)).toEqual([null, "Tables", "Utilities"]);
+  it("does not expose retired navigation labels", () => {
+    expect(MLB_NAV_ITEMS.map((item) => item.label)).not.toEqual(
+      expect.arrayContaining(["K Props", "Hit Props", "Prop Optimizer"]),
+    );
+  });
+
+  it("uses the approved sidebar groups and item order", () => {
+    expect(MLB_NAV_SECTIONS.map((section) => section.label)).toEqual(["Main", "Models & Specials"]);
+    expect(MLB_NAV_SECTIONS[0].items.map(({ label, href }) => [label, href])).toEqual([
+      ["Game Matchups", "/mlb#schedule"],
+      ["HR Props", "/mlb/hr-props"],
+      ["Strikeout Props", "/mlb/strikeout-props"],
+      ["Batter vs Pitcher", "/mlb/batter-vs-pitcher"],
+      ["Props Hub", "/mlb/props"],
+      ["Power Rankings", "/mlb/power-rankings"],
+    ]);
+    expect(MLB_NAV_SECTIONS[1].items.map(({ label, href }) => [label, href])).toEqual([
+      ["Moneyline Edges", "/mlb#moneylines"],
+      ["Pitcher Regression", "/mlb#pitcher-regression"],
+      ["Overdue Batters", "/mlb/hr-props#overdue"],
+      ["Biggest Mismatches", "/mlb/hr-props#mismatches"],
+      ["Sin City", "/mlb/sin-city"],
+      ["Numerology", "/mlb/numerology"],
+    ]);
   });
 });

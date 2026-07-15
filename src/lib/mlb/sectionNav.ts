@@ -2,9 +2,10 @@ import type { ComponentType } from "react";
 import {
   BarChart3,
   CalendarDays,
+  Dice5,
   Flame,
   Radar,
-  Rocket,
+  Sparkles,
   Swords,
   TrendingUp,
   type LucideProps,
@@ -23,8 +24,6 @@ export type MlbNavItem = {
    * `#game-<id>` hash on /mlb, not just the literal `#schedule` anchor.
    */
   activeHashPrefixes?: string[];
-  /** Renders as the dark CTA button instead of a plain nav link. */
-  variant?: "link" | "cta";
 };
 
 export type MlbNavSection = {
@@ -35,9 +34,7 @@ export type MlbNavSection = {
 
 // Single source of truth for MLB navigation -- consumed by the desktop
 // sidebar, the mobile drawer, and active-route matching. Preserves the
-// exact destinations and grouping of the pre-existing MlbHubSidebar /
-// MLB_HUB_LINKS in MlbGameDetail.tsx (main nav + "Tables" group), plus the
-// Prop Optimizer CTA that previously lived outside that array.
+// exact destinations used across the MLB hub.
 //
 // Dropped: a 10th "Schedule" entry duplicating "Game Matchups" (same
 // `/mlb#schedule` target) existed in the old MLB_HUB_LINKS array but was
@@ -46,11 +43,8 @@ export type MlbNavSection = {
 export const MLB_NAV_SECTIONS: MlbNavSection[] = [
   {
     id: "main",
-    label: null,
+    label: "Main",
     items: [
-      { id: "hit-props", label: "Hit Props", href: "/mlb/batter-vs-pitcher", icon: Swords },
-      { id: "hr-props", label: "HR Props", href: "/mlb/hr-props", icon: Flame },
-      { id: "k-props", label: "K Props", href: "/mlb/strikeout-props", icon: Radar },
       {
         id: "game-matchups",
         label: "Game Matchups",
@@ -62,27 +56,23 @@ export const MLB_NAV_SECTIONS: MlbNavSection[] = [
         // active parent item for every game-detail hash.
         activeHashPrefixes: ["#game-"],
       },
+      { id: "hr-props", label: "HR Props", href: "/mlb/hr-props", icon: Flame },
+      { id: "strikeout-props", label: "Strikeout Props", href: "/mlb/strikeout-props", icon: Radar },
+      { id: "batter-vs-pitcher", label: "Batter vs Pitcher", href: "/mlb/batter-vs-pitcher", icon: Swords },
+      { id: "props-hub", label: "Props Hub", href: "/mlb/props", icon: TrendingUp },
       { id: "power-rankings", label: "Power Rankings", href: "/mlb/power-rankings", icon: BarChart3 },
     ],
   },
   {
-    id: "tables",
-    label: "Tables",
+    id: "models-specials",
+    label: "Models & Specials",
     items: [
       { id: "moneyline-edges", label: "Moneyline Edges", href: "/mlb#moneylines", icon: TrendingUp },
       { id: "pitcher-regression", label: "Pitcher Regression", href: "/mlb#pitcher-regression", icon: BarChart3 },
       { id: "overdue-batters", label: "Overdue Batters", href: "/mlb/hr-props#overdue", icon: Flame },
       { id: "biggest-mismatches", label: "Biggest Mismatches", href: "/mlb/hr-props#mismatches", icon: Swords },
-    ],
-  },
-  {
-    id: "utilities",
-    label: "Utilities",
-    items: [
-      // Labeled "Prop Optimizer" but targets the existing Props Hub page --
-      // there is no dedicated /mlb/prop-optimizer route. Preserved exactly
-      // as the pre-existing CTA button behaved.
-      { id: "prop-optimizer", label: "Prop Optimizer", href: "/mlb/props", icon: Rocket, variant: "cta" },
+      { id: "sin-city", label: "Sin City", href: "/mlb/sin-city", icon: Dice5 },
+      { id: "numerology", label: "Numerology", href: "/mlb/numerology", icon: Sparkles },
     ],
   },
 ];
