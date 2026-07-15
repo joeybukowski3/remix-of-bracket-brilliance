@@ -1,17 +1,17 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, CalendarDays, Dice5, Flame, Radar, Sparkles, Swords } from "lucide-react";
+import { BarChart3, CalendarDays, Dice5, Flame, Radar, Swords, TrendingUp } from "lucide-react";
 import MlbHrBestBets from "@/components/mlb/MlbHrBestBets";
 import { cn } from "@/lib/utils";
 
 const NAV_TILES = [
   { label: "HR Props", to: "/mlb/hr-props", bg: "bg-sky-500 hover:bg-sky-600", icon: <Flame className="h-3 w-3" /> },
-  { label: "Sin City", to: "/mlb/sin-city", bg: "bg-rose-500 hover:bg-rose-600", icon: <Dice5 className="h-3 w-3" /> },
-  { label: "Numerology", to: "/mlb/numerology", bg: "bg-fuchsia-500 hover:bg-fuchsia-600", icon: <Sparkles className="h-3 w-3" /> },
-  { label: "K Props", to: "/mlb/strikeout-props", bg: "bg-emerald-500 hover:bg-emerald-600", icon: <Radar className="h-3 w-3" /> },
-  { label: "Hit Props", to: "/mlb/batter-vs-pitcher", bg: "bg-violet-500 hover:bg-violet-600", icon: <Swords className="h-3 w-3" /> },
+  { label: "Strikeout Props", to: "/mlb/strikeout-props", bg: "bg-emerald-500 hover:bg-emerald-600", icon: <Radar className="h-3 w-3" /> },
+  { label: "Batter vs Pitcher", to: "/mlb/batter-vs-pitcher", bg: "bg-violet-500 hover:bg-violet-600", icon: <Swords className="h-3 w-3" /> },
   { label: "Game Matchups", to: "/mlb#schedule", bg: "bg-amber-500 hover:bg-amber-600", icon: <CalendarDays className="h-3 w-3" /> },
+  { label: "Props Hub", to: "/mlb/props", bg: "bg-cyan-500 hover:bg-cyan-600", icon: <TrendingUp className="h-3 w-3" /> },
   { label: "Power Rankings", to: "/mlb/power-rankings", bg: "bg-indigo-500 hover:bg-indigo-600", icon: <BarChart3 className="h-3 w-3" /> },
+  { label: "Sin City", to: "/mlb/sin-city", bg: "bg-rose-500 hover:bg-rose-600", icon: <Dice5 className="h-3 w-3" /> },
 ];
 
 const MLB_MAIN_DESKTOP_STYLES = `

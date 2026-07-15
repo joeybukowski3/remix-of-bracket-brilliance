@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -52,10 +52,6 @@ export default function MlbSectionSidebar({ mobile = false, onNavigate }: MlbSec
   const location = useLocation();
   const isActive = (item: MlbNavItem) => isMlbNavItemActive(location.pathname, location.hash, item);
 
-  const mainSection = MLB_NAV_SECTIONS.find((section) => section.id === "main")!;
-  const tablesSection = MLB_NAV_SECTIONS.find((section) => section.id === "tables")!;
-  const utilitiesSection = MLB_NAV_SECTIONS.find((section) => section.id === "utilities")!;
-
   return (
     <aside
       className={cn(
@@ -71,39 +67,18 @@ export default function MlbSectionSidebar({ mobile = false, onNavigate }: MlbSec
       </div>
 
       <nav className="flex flex-col gap-1" aria-label="MLB sitemap">
-        {mainSection.items.map((item) => (
-          <NavLink key={item.id} item={item} active={isActive(item)} onNavigate={onNavigate} />
-        ))}
-
-        {tablesSection.items.length > 0 && (
-          <>
-            <div className="mx-4 my-2 border-t border-slate-200" />
+        {MLB_NAV_SECTIONS.map((section, index) => (
+          <Fragment key={section.id}>
+            {index > 0 && <div className="mx-4 my-2 border-t border-slate-200" />}
             <div className="px-5 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-400">
-              {tablesSection.label}
+              {section.label}
             </div>
-            {tablesSection.items.map((item) => (
+            {section.items.map((item) => (
               <NavLink key={item.id} item={item} active={isActive(item)} onNavigate={onNavigate} />
             ))}
-          </>
-        )}
+          </Fragment>
+        ))}
       </nav>
-
-      {utilitiesSection.items.map((item) => {
-        const Icon = item.icon;
-        return (
-          <div key={item.id} className="mt-6 px-4">
-            <Link
-              to={item.href}
-              onClick={onNavigate}
-              aria-current={isActive(item) ? "page" : undefined}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#031635] px-4 py-3 text-xs font-extrabold text-white transition hover:bg-[#1a2b4b]"
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          </div>
-        );
-      })}
 
       {/* Vertical "Bet with our partners" section card (stacked, no horizontal scroll) */}
       <div className="mt-4 border-t border-slate-200 pt-3 px-3">
@@ -157,19 +132,6 @@ export default function MlbSectionSidebar({ mobile = false, onNavigate }: MlbSec
             <span>Green = improve ↑</span>
           </div>
         </div>
-      </div>
-
-      {/* Easter egg — text invisible unless selected, fully clickable */}
-      <div className="px-5 pb-3 pt-1">
-        <Link
-          to="/mlb/numerology"
-          onClick={onNavigate}
-          aria-label="Open MLB numerical alignment analysis"
-          className="block select-text text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400 focus-visible:rounded"
-          style={{ color: "transparent", userSelect: "text" }}
-        >
-          369
-        </Link>
       </div>
     </aside>
   );
