@@ -75,6 +75,30 @@ const bigUnderEdgeRow: PitcherStrikeoutTeamRow = {
   kLine: 7.0,
 };
 
+const noMarketRow: PitcherStrikeoutTeamRow = {
+  ...baseRow,
+  rank: 4,
+  pitcher: "No Market Pitcher",
+  team: "SEA",
+  opponent: "OAK",
+  gameKey: "SEA@OAK",
+  kLine: undefined,
+  kOddsOver: undefined,
+  kOddsUnder: undefined,
+};
+
+const lineWithoutOddsRow: PitcherStrikeoutTeamRow = {
+  ...baseRow,
+  rank: 5,
+  pitcher: "Line Only Pitcher",
+  team: "NYY",
+  opponent: "BOS",
+  gameKey: "NYY@BOS",
+  kLine: 5.5,
+  kOddsOver: undefined,
+  kOddsUnder: undefined,
+};
+
 const dashboardFixture = { date: "2026-07-09", generatedAt: "2026-07-09T12:00:00.000Z", games: [], pitchers: [], batters: [] };
 
 function mockPropsData(rows: PitcherStrikeoutTeamRow[]) {
@@ -105,6 +129,50 @@ function firstDesktopRow(name: string | RegExp) {
 const SLOW_RENDER_TIMEOUT_MS = 15000;
 
 describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
+  it("renders the page, Edge, Best Value, rank, and related-tool guidance without changing the model controls", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow]);
+    await renderPage();
+
+    expect(screen.getByRole("heading", { name: "How to use this page" })).toBeTruthy();
+    expect(screen.getByText(/This board ranks today's probable starters by K Score/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Understanding Edge" })).toBeTruthy();
+    expect(screen.getByText("Edge compares our projected strikeouts to the sportsbook line.")).toBeTruthy();
+    expect(screen.getByText(/Best Value ranks the largest differences between the model and sportsbook line/)).toBeTruthy();
+
+    const rankControl = screen.getByRole("button", { name: "Model Rank. This remains fixed even if you sort by another column." });
+    expect(rankControl).toHaveAttribute("title", "Model Rank. This remains fixed even if you sort by another column.");
+
+    const relatedTools = screen.getByRole("navigation", { name: "Related MLB tools" });
+    expect(within(relatedTools).getByRole("link", { name: "MLB Hub" })).toHaveAttribute("href", "/mlb");
+    expect(within(relatedTools).getByRole("link", { name: "HR Props" })).toHaveAttribute("href", "/mlb/hr-props");
+    expect(within(relatedTools).getByRole("link", { name: "Batter vs Pitcher" })).toHaveAttribute("href", "/mlb/batter-vs-pitcher");
+    expect(within(relatedTools).getByRole("link", { name: "Props Hub" })).toHaveAttribute("href", "/mlb/props");
+    expect(within(relatedTools).getByRole("link", { name: "Sin City" })).toHaveAttribute("href", "/mlb/sin-city");
+    expect(within(relatedTools).getByRole("link", { name: "Power Rankings" })).toHaveAttribute("href", "/mlb/power-rankings");
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("shows explicit missing-line and missing-odds messages without removing ranked pitchers", async () => {
+    vi.resetModules();
+    mockPropsData([baseRow, noMarketRow, lineWithoutOddsRow]);
+    await renderPage();
+
+    const mainTable = screen.getAllByRole("table")[0];
+    expect(within(mainTable).getByText("No line posted yet")).toBeTruthy();
+    expect(within(mainTable).getByText("Odds not yet available for this slate.")).toBeTruthy();
+    expect(within(mainTable).getByText("No Market Pitcher")).toBeTruthy();
+    expect(within(mainTable).getByText("Line Only Pitcher")).toBeTruthy();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("shows a slate-level market message when no ranked pitcher has a posted line or odds", async () => {
+    vi.resetModules();
+    mockPropsData([noMarketRow]);
+    await renderPage();
+
+    expect(screen.getByText("No line posted yet. Odds not yet available for this slate.")).toBeTruthy();
+    expect(screen.getAllByText("No Market Pitcher").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
   it("clicking anywhere on the desktop row (not just the pitcher name) toggles expansion", async () => {
     vi.resetModules();
     mockPropsData([baseRow]);
