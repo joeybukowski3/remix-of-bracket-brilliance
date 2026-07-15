@@ -494,6 +494,7 @@ export default function Matchup() {
     description:
       "Compare NCAA teams using advanced analytics including offensive rating, defensive efficiency, pace, rebounding, and custom model scores.",
     canonical: `https://www.joeknowsball.com${NCAA_MATCHUP_PATH}`,
+    noindex: true,
   });
 
   const handleWeightChange = (key: string, value: number) => {

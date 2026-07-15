@@ -929,6 +929,7 @@ export default function BettingEdge() {
     description:
       "Compare NCAA model probabilities against live Vegas implied odds with dynamic betting edges, sliders, and custom presets.",
     canonical: `https://www.joeknowsball.com${NCAA_BETTING_EDGE_PATH}`,
+    noindex: true,
   });
 
   const officialMatchupByGameId = useMemo(

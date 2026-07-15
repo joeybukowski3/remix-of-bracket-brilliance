@@ -16,10 +16,8 @@ import {
 import { useLiveTeams } from "@/hooks/useLiveTeams";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { NCAA_BRACKET_PATH, NCAA_MATCHUP_PATH, NCAA_SCHEDULE_PATH } from "@/lib/routes";
-import { getSeoMeta } from "@/lib/seo";
 
 export default function Rankings() {
-  const seo = getSeoMeta("ncaa");
   const [weights, setWeights] = useState<StatWeight[]>(DEFAULT_STAT_WEIGHTS);
   const [showSliders, setShowSliders] = useState(true);
   const [mode, setMode] = useState<"all" | "field">("all");
@@ -40,9 +38,10 @@ export default function Rankings() {
   }), [homeInflationPenaltyWeight, q1BonusWeight]);
 
   usePageSeo({
-    title: seo.title,
-    description: seo.description,
-    path: seo.path,
+    title: "NCAA Basketball Analytics & Custom Rankings | Joe Knows Ball",
+    description: "Archived NCAA basketball analytics and custom team rankings.",
+    path: "/rankings",
+    noindex: true,
   });
 
   const handleWeightChange = (key: string, value: number) => {

@@ -13,14 +13,10 @@ const SECTIONS = [
     ],
   },
   {
-    label: "NCAA",
-    emoji: "🏀",
+    label: "NCAA Football",
+    emoji: "🏈",
     links: [
-      { label: "Power Rankings",  to: "/ncaa" },
-      { label: "Schedule",        to: "/ncaa/schedule" },
-      { label: "Matchups",        to: "/ncaa/matchup" },
-      { label: "Betting Edge",    to: "/ncaa/betting-edge" },
-      { label: "Bracket",         to: "/ncaa/bracket" },
+      { label: "NCAA Football", to: "/ncaa" },
     ],
   },
   {
@@ -73,7 +69,7 @@ export default function SiteFooter() {
               <span className="text-[17px] font-bold text-white">Joe Knows Ball</span>
             </Link>
             <p className="text-[13px] leading-6 text-slate-500">
-              Free sports analytics — MLB matchup intelligence, PGA golf models, and NCAA bracket tools. No account required.
+              Free sports analytics — MLB matchup intelligence and PGA golf models, with NCAA Football in development. No account required.
             </p>
             <p className="text-[11px] italic text-slate-600">Built by someone who actually bets.</p>
           </div>

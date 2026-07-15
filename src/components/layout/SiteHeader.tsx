@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 const navItems = [
   { to: "/", label: "Home" },
   { to: "/mlb", label: "MLB" },
-  { to: "/ncaa", label: "NCAA" },
+  { to: "/ncaa", label: "NCAA Football" },
   { to: "/nfl/guide", label: "NFL" },
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
@@ -33,7 +33,7 @@ export default function SiteHeader() {
           <span className="site-logo-text tracking-normal normal-case">Joe Knows Ball</span>
         </Link>
 
-        <nav className="hidden items-center gap-5 md:flex">
+        <nav className="hidden items-center gap-5 lg:flex">
           {navItems.map((item) => {
             const active = isActive(location.pathname, item);
             if (!item.to) return <span key={`${item.label}-disabled`} className="text-[15px] font-medium text-[#333333]">{item.label}</span>;
@@ -45,13 +45,13 @@ export default function SiteHeader() {
           })}
         </nav>
 
-        <button type="button" onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? "Close navigation" : "Open navigation"} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#1a1a1a] transition hover:bg-[#f5f5f5] md:hidden">
+        <button type="button" onClick={() => setMobileOpen((value) => !value)} aria-label={mobileOpen ? "Close navigation" : "Open navigation"} className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#1a1a1a] transition hover:bg-[#f5f5f5] lg:hidden">
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {mobileOpen ? (
-        <div className="border-t border-[#eeeeee] px-4 py-3 md:hidden">
+        <div className="border-t border-[#eeeeee] px-4 py-3 lg:hidden">
           <div className="rounded-2xl bg-white p-3 shadow-[0_12px_32px_rgba(17,17,17,0.05)]">
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => {

@@ -268,6 +268,7 @@ export default function Schedule() {
     description:
       "Track live and upcoming NCAA basketball games with matchup breakdowns, advanced team analytics, and daily slate analysis across Division I.",
     canonical: `https://www.joeknowsball.com${NCAA_SCHEDULE_PATH}`,
+    noindex: true,
   });
 
   const [selectedDate, setSelectedDate] = useState(new Date());
