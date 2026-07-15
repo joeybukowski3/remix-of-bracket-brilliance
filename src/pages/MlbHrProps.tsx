@@ -11,6 +11,7 @@ import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
 import { resolveKPropStatus, type KPropStatus } from "@/lib/mlb/kPropStatus";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type HrDashboardGame = {
   gameKey: string;
@@ -787,6 +788,17 @@ function formatDateLabel(v?: string) {
   if (Number.isNaN(d.getTime())) return v;
   return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(d);
 }
+function formatHrPropsUpdatedTime(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const time = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/New_York",
+  }).format(date);
+  return `${time} ET`;
+}
 function formatPercent(v: number | null | undefined, digits = 1) { return Number.isFinite(v) ? `${Number(v).toFixed(digits)}%` : DASH; }
 function formatNumber(v: number | null | undefined, digits = 1) { return Number.isFinite(v) ? Number(v).toFixed(digits) : DASH; }
 function formatDecimal(v: number | null | undefined, digits = 3) { return Number.isFinite(v) ? Number(v).toFixed(digits) : DASH; }
@@ -1490,10 +1502,11 @@ function GameSelect({ value, onChange, options, label }: { value: string; onChan
 
 function DataLegend() {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontSize: 12, color: "#64748b", padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 16, backgroundColor: "#f8fafc" }}>
-      <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span>🔥</span><span>Top edge gets the clearest fill</span></span>
-      <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span>✨</span><span>Strong edge gets a light tint</span></span>
-      <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span>❄️</span><span>K-heavy or suppressive spots lean cool</span></span>
+    <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-600" aria-label="Table color legend">
+      <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-green-600" aria-hidden="true" /><span>Stronger relative values use green highlights.</span></span>
+      <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-blue-500" aria-hidden="true" /><span>Weaker relative values use cooler blue highlights.</span></span>
+      <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-slate-200" aria-hidden="true" /><span>Neutral values remain subdued.</span></span>
+      <span>Colors are comparative within the current slate and metric.</span>
     </div>
   );
 }
@@ -1574,6 +1587,27 @@ function ThBtn({ onClick, children, style }: { onClick: () => void; children: Re
     <button type="button" onClick={onClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: "inherit", fontWeight: "inherit", color: "inherit", textAlign: "left", ...style }}>
       {children}
     </button>
+  );
+}
+
+function HeaderHelp({ label, description }: { label: string; description: string }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`About ${label}`}
+          title={description}
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-[10px] font-black normal-case tracking-normal text-slate-500 transition hover:border-sky-400 hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+        >
+          ?
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" align="start" className="w-64 p-3 text-left normal-case tracking-normal">
+        <div className="text-xs font-bold text-slate-900">{label}</div>
+        <p className="mt-1 text-xs font-normal leading-5 text-slate-600">{description}</p>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -1705,6 +1739,7 @@ export default function MlbHrProps() {
   const strikeoutHeat = useMemo(() => buildStrikeoutHeatRanges(strikeoutRows), [strikeoutRows]);
   const batterLookup = useMemo(() => new Map(batters.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])), [batters]);
   const hasHrOdds = useMemo(() => batters.some(b => b.hrOddsYes != null), [batters]);
+  const modelUpdatedAt = formatHrPropsUpdatedTime(dashboard?.generatedAt);
   const visibleBestBets = useMemo(
     () => bestBets?.bestBets.filter((pick) => !isStarterPlaceholder(pick.opposingPitcher) && batterLookup.has(`${pick.player}|${pick.team}|${pick.opponent}`)) ?? [],
     [bestBets, batterLookup],
@@ -1970,6 +2005,11 @@ export default function MlbHrProps() {
                       <p className={cn("mt-1 max-w-3xl leading-5 text-sky-200/70", isMobile ? "text-[11px]" : "text-xs")}>
                         HR Quality Score is a relative matchup-quality ranking, not a calibrated probability.
                       </p>
+                      {modelUpdatedAt ? (
+                        <p className={cn("mt-2 font-medium text-sky-100/80", isMobile ? "text-[11px]" : "text-xs")}>
+                          Updated {modelUpdatedAt}
+                        </p>
+                      ) : null}
                     </div>
                     <div className={cn("flex flex-wrap gap-2", isMobile ? "items-center justify-between" : "")}>
                       {isMobile ? (
@@ -1991,17 +2031,6 @@ export default function MlbHrProps() {
                     <span>{games.length} games</span>
                     <span>•</span>
                     <span>{pitchers.length} starters</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link to="/mlb/strikeout-props" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition opacity-90 hover:opacity-100" style={{ backgroundColor: "#22c55e" }}>
-                      🎯 K Props
-                    </Link>
-                    <Link to="/mlb/batter-vs-pitcher" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition opacity-90 hover:opacity-100" style={{ backgroundColor: "#8b5cf6" }}>
-                      ⚔️ Hit Props
-                    </Link>
-                    <Link to="/mlb" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-extrabold text-white transition opacity-90 hover:opacity-100" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
-                      🏠 MLB Hub
-                    </Link>
                   </div>
                 </div>
 
@@ -2029,23 +2058,16 @@ export default function MlbHrProps() {
 
                 <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
                   <p className="max-w-4xl text-sm leading-7 text-slate-600">
-                    Use this MLB HR props board to compare park factors, pitcher vulnerability, and batter power signals
-                    across the current slate, then cross-check full-game context on the{" "}
-                    <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
-                      MLB matchup analytics page
-                    </a>
-                    .
+                    This board ranks today&apos;s batters by HR Quality Score — a relative measure of home-run matchup strength built from barrel rate, hard-hit rate, recent power, and the opposing pitcher&apos;s HR vulnerability. It&apos;s a ranking tool for research, not a prediction of who will homer or a guaranteed pick.
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-3 text-sm">
-                    <a href="/mlb" className="font-semibold text-sky-800 hover:underline">
-                      View today&apos;s MLB matchup analytics
-                    </a>
-                    <a href="/mlb/strikeout-props" className="font-semibold text-sky-800 hover:underline">
-                      View strikeout prop model
-                    </a>
-                    <a href="/mlb/batter-vs-pitcher" className="font-semibold text-sky-800 hover:underline">
-                      View batter vs pitcher model
-                    </a>
+                  <div className="mt-3 border-t border-slate-200 pt-3">
+                    <h2 className="text-base font-bold text-slate-900">How to read this page</h2>
+                    <dl className="mt-2 grid gap-x-5 gap-y-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
+                      <div><dt className="inline font-bold text-slate-900">HR Score — </dt><dd className="inline">Higher scores indicate stronger relative home-run matchups today. It is not a probability.</dd></div>
+                      <div><dt className="inline font-bold text-slate-900">HR Odds — </dt><dd className="inline">Current sportsbook anytime-home-run price when available.</dd></div>
+                      <div><dt className="inline font-bold text-slate-900">Market % — </dt><dd className="inline">Raw implied probability from the sportsbook odds. It is not adjusted for vig and is not a model estimate.</dd></div>
+                      <div><dt className="inline font-bold text-slate-900">Use both together — </dt><dd className="inline">Compare matchup strength with the available market price to identify research opportunities.</dd></div>
+                    </dl>
                   </div>
                 </section>
 
@@ -2397,18 +2419,50 @@ export default function MlbHrProps() {
                                   ["opposingPitcherHrVs","P.HR", "Ptch HR VS"],
                                   ["pitcherXera",      "xERA",    "Ptch xERA"],
                                   ["pitcherFlyBallRate", "FB%",   "Ptch FB%"],
-                                ] as [string, string, string][]).map(([key, short, full]) => (
-                                  <th key={key} className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[44px] sm:max-w-none sm:whitespace-nowrap">
-                                    <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900 leading-tight">
-                                      <span className="sm:hidden">{short}</span>
-                                      <span className="hidden sm:inline">{full}</span>
-                                      {makeSortIndicator(batterSortKey === key, batterSortDirection)}
-                                    </button>
-                                  </th>
-                                ))}
-                                <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[40px] sm:max-w-none sm:whitespace-nowrap">
-                                  <span className="sm:hidden">Regr</span>
-                                  <span className="hidden sm:inline">Ptch Regr</span>
+                                ] as [string, string, string][]).map(([key, short, full]) => {
+                                  const help = key === "hrScore"
+                                    ? {
+                                        label: "HR Score",
+                                        description: "Relative HR matchup-quality score. It ranks batters against each other today and is not a probability of hitting a home run.",
+                                      }
+                                    : key === "hrOddsYes"
+                                      ? {
+                                          label: "HR Odds",
+                                          description: "Sportsbook anytime-home-run price. Shown only when available.",
+                                        }
+                                      : null;
+                                  return (
+                                    <th key={key} className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold max-w-[56px] sm:max-w-none sm:whitespace-nowrap">
+                                      <div className="flex items-center gap-0.5">
+                                        <button type="button" onClick={() => handleBatterSort(key as BatterSortKey)} className="hover:text-slate-900 leading-tight">
+                                          <span className="sm:hidden">{short}</span>
+                                          <span className="hidden sm:inline">{full}</span>
+                                          {makeSortIndicator(batterSortKey === key, batterSortDirection)}
+                                        </button>
+                                        {help ? <HeaderHelp label={help.label} description={help.description} /> : null}
+                                      </div>
+                                      {key === "hrOddsYes" ? (
+                                        <div className="mt-0.5 flex items-center gap-0.5 normal-case tracking-normal text-[8px] text-slate-400 sm:text-[9px]">
+                                          <span className="sm:hidden">Mkt %</span>
+                                          <span className="hidden sm:inline">Market %</span>
+                                          <HeaderHelp
+                                            label="Market %"
+                                            description="Raw sportsbook-implied probability from the displayed odds. Not adjusted for vig and not a model estimate."
+                                          />
+                                        </div>
+                                      ) : null}
+                                    </th>
+                                  );
+                                })}
+                                <th className="min-w-[64px] border-b border-slate-200 bg-slate-50 px-1 py-1.5 text-left font-bold sm:min-w-[116px] sm:px-2 sm:whitespace-nowrap">
+                                  <div className="flex items-center gap-0.5">
+                                    <span className="sm:hidden">Trend</span>
+                                    <span className="hidden sm:inline">Pitcher Trend</span>
+                                    <HeaderHelp
+                                      label="Pitcher Trend"
+                                      description="Recent pitcher form compared with season baseline. Positive values indicate more home-run risk than the season numbers suggest; negative values indicate less."
+                                    />
+                                  </div>
                                 </th>
                                 <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold sm:whitespace-nowrap">Angle</th>
                               </tr>
@@ -2446,7 +2500,9 @@ export default function MlbHrProps() {
                                             </div>
                                           )}
                                         </div>
-                                      ) : null}
+                                      ) : (
+                                        <span className="block min-w-[96px] text-[9px] leading-4 text-slate-400">No sportsbook odds posted yet.</span>
+                                      )}
                                     </td>
                                     )}
                                     {/* HR Score */}
@@ -2904,6 +2960,22 @@ export default function MlbHrProps() {
                     </div>
                   </section>
                 ) : null}
+
+                <section aria-labelledby="more-mlb-tools-title" className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                  <h2 id="more-mlb-tools-title" className="text-sm font-bold text-slate-900">More MLB tools</h2>
+                  <nav className="mt-2 flex flex-wrap gap-2" aria-label="Related MLB tools">
+                    {[
+                      ["MLB Hub", "/mlb"],
+                      ["Strikeout Props", "/mlb/strikeout-props"],
+                      ["Batter vs Pitcher", "/mlb/batter-vs-pitcher"],
+                      ["Sin City", "/mlb/sin-city"],
+                    ].map(([label, to]) => (
+                      <Link key={to} to={to} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-sky-800 transition hover:border-sky-300 hover:bg-sky-50">
+                        {label}
+                      </Link>
+                    ))}
+                  </nav>
+                </section>
               </section>
             </div>
           )}
