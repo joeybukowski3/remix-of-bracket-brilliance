@@ -1,26 +1,15 @@
 import { Link } from "react-router-dom";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
-import SiteFooter from "@/components/layout/SiteFooter";
+import SiteShell from "@/components/layout/SiteShell";
 
 const sports = [
   { id: "mlb", name: "MLB", route: "/mlb", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png" },
   { id: "ncaa", name: "NCAA", route: "/ncaa", logo: "https://cdn.worldvectorlogo.com/logos/ncaa-4.svg" },
-  { id: "nfl", name: "NFL", route: "/nfl", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" },
+  { id: "nfl", name: "NFL", route: "/nfl/guide", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" },
   { id: "nba", name: "NBA", route: "/nba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png", locked: true },
   { id: "pga", name: "PGA", route: "/pga", logo: "/logos/pga.svg" },
   { id: "world-cup", name: "World Cup", route: "/world-cup", logo: "/logos/wc2026-logo.png" },
-] as const;
-
-const navItems = [
-  { label: "Home", route: "/" },
-  { label: "MLB", route: "/mlb" },
-  { label: "NCAA", route: "/ncaa" },
-  { label: "NFL", route: "/nfl" },
-  { label: "NBA", route: "/nba" },
-  { label: "PGA", route: "/pga" },
-  { label: "⚽ WC26", route: "/world-cup" },
-  { label: "📊 Splits", route: "/public-betting" },
 ] as const;
 
 function SportCard({
@@ -60,7 +49,7 @@ function SportCard({
         </div>
       </div>
       <span className="mt-3 text-[16px] font-bold text-[#111111]">{name}</span>
-      <span className="mt-2 text-[12px] font-semibold text-[#111111]">{locked ? "Subscription Required" : "Open"}</span>
+      <span className="mt-2 text-[12px] font-semibold text-[#111111]">{locked ? "Coming Soon" : "Open"}</span>
     </>
   );
 
@@ -100,76 +89,60 @@ export default function HomeHeroOnly() {
   });
 
   return (
-    <main className="min-h-screen bg-[#f8f8f8]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}>
-      <header className="w-full bg-white">
-        <div className="mx-auto flex min-h-[72px] max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="site-logo-link">
-            <img src="/images/jkb-icon-trimmed.png" alt="Joe Knows Ball icon" className="site-logo-img" />
-            <span className="site-logo-text">Joe Knows Ball</span>
-          </Link>
-          <nav className="hidden items-center gap-9 md:flex">
-            {navItems.map((item) => (
-              <Link key={item.label} to={item.route} className="text-[15px] font-normal text-[#111111] no-underline">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <section
-        className="relative overflow-hidden"
-        style={{
-          backgroundImage: "url('/images/Gemini_Generated_Image_r6ys4br6ys4br6ys.png')",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-        }}
-      >
-        <div className="absolute inset-0 bg-[rgba(0,0,0,0.55)]" />
-        <div className="relative mx-auto flex min-h-[calc(100vh-72px)] max-w-[1280px] items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-          <div className="w-full max-w-[920px]">
-            <div className="mx-auto flex max-w-[820px] flex-col items-center gap-5 text-center">
-              <h1 className="text-[22px] font-bold text-white sm:text-[28px]">Select a League</h1>
-              <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                {sports.map((sport) => (
-                  <SportCard
-                    key={sport.id}
-                    locked={Boolean("locked" in sport && sport.locked)}
-                    logo={sport.logo}
-                    name={sport.name}
-                    route={sport.route}
-                    darkBg={sport.id === "world-cup"}
-                  />
-                ))}
-              </div>
-              <section className="mt-4 w-full rounded-[18px] border border-white/15 bg-white/8 px-4 py-5 backdrop-blur-sm sm:px-5">
-                <h2 className="text-base font-bold text-white sm:text-lg">What You Get at Joe Knows Ball</h2>
-                <div className="mt-4 grid gap-3 text-left md:grid-cols-3">
-                  <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
-                    <div aria-hidden="true" className="text-lg">⛳</div>
-                    <div className="mt-2 text-sm font-bold text-white">Course-Weighted Golf Models</div>
-                    <p className="mt-1 text-sm leading-6 text-white/80">Every PGA tournament gets its own player rankings built from real course stats, strokes gained data, and adjustable weights you control.</p>
-                  </div>
-                  <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
-                    <div aria-hidden="true" className="text-lg">⚾</div>
-                    <div className="mt-2 text-sm font-bold text-white">MLB Matchup Intelligence</div>
-                    <p className="mt-1 text-sm leading-6 text-white/80">Pitcher-vs-lineup breakdowns, park factors, team form, and run total context for every game on the slate.</p>
-                  </div>
-                  <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
-                    <div aria-hidden="true" className="text-lg">📈</div>
-                    <div className="mt-2 text-sm font-bold text-white">DFS Value Finder</div>
-                    <p className="mt-1 text-sm leading-6 text-white/80">Upload your DraftKings or FanDuel salary sheet and instantly see which players are undervalued or overpriced against our model rankings.</p>
-                  </div>
+    <SiteShell>
+      <main className="bg-[#f8f8f8]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif' }}>
+        <section
+          className="relative overflow-hidden"
+          style={{
+            backgroundImage: "url('/images/Gemini_Generated_Image_r6ys4br6ys4br6ys.png')",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "cover",
+          }}
+        >
+          <div className="absolute inset-0 bg-[rgba(0,0,0,0.55)]" />
+          <div className="relative mx-auto flex min-h-[calc(100vh-72px)] max-w-[1280px] items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
+            <div className="w-full max-w-[920px]">
+              <div className="mx-auto flex max-w-[820px] flex-col items-center gap-5 text-center">
+                <h1 className="text-[22px] font-bold text-white sm:text-[28px]">Select a League</h1>
+                <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                  {sports.map((sport) => (
+                    <SportCard
+                      key={sport.id}
+                      locked={Boolean("locked" in sport && sport.locked)}
+                      logo={sport.logo}
+                      name={sport.name}
+                      route={sport.route}
+                      darkBg={sport.id === "world-cup"}
+                    />
+                  ))}
                 </div>
-                <p className="mt-4 text-sm text-white/68">Free. No account required. Built by someone who actually bets.</p>
-              </section>
+                <section className="mt-4 w-full rounded-[18px] border border-white/15 bg-white/8 px-4 py-5 backdrop-blur-sm sm:px-5">
+                  <h2 className="text-base font-bold text-white sm:text-lg">What You Get at Joe Knows Ball</h2>
+                  <div className="mt-4 grid gap-3 text-left md:grid-cols-3">
+                    <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
+                      <div aria-hidden="true" className="text-lg">⛳</div>
+                      <div className="mt-2 text-sm font-bold text-white">Course-Weighted Golf Models</div>
+                      <p className="mt-1 text-sm leading-6 text-white/80">Every PGA tournament gets its own player rankings built from real course stats, strokes gained data, and adjustable weights you control.</p>
+                    </div>
+                    <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
+                      <div aria-hidden="true" className="text-lg">⚾</div>
+                      <div className="mt-2 text-sm font-bold text-white">MLB Matchup Intelligence</div>
+                      <p className="mt-1 text-sm leading-6 text-white/80">Pitcher-vs-lineup breakdowns, park factors, team form, and run total context for every game on the slate.</p>
+                    </div>
+                    <div className="rounded-[14px] border border-white/12 bg-white/8 p-4">
+                      <div aria-hidden="true" className="text-lg">📈</div>
+                      <div className="mt-2 text-sm font-bold text-white">DFS Value Finder</div>
+                      <p className="mt-1 text-sm leading-6 text-white/80">Upload your DraftKings or FanDuel salary sheet and instantly see which players are undervalued or overpriced against our model rankings.</p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-white/68">Free. No account required. Built by someone who actually bets.</p>
+                </section>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <SiteFooter />
-    </main>
+        </section>
+      </main>
+    </SiteShell>
   );
 }
