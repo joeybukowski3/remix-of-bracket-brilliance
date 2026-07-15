@@ -8,9 +8,7 @@ const navItems = [
   { to: "/nfl/guide", label: "NFL" },
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
-  { to: "/pga/the-open-2026-picks-best-bets-odds", label: "2026 Open Picks" },
-  { to: "/world-cup", label: "⚽ WC26" },
-  { to: "/odds-tracker", label: "📊 Odds Tracker" },
+  { to: "/pga/the-open-2026-picks-best-bets-odds", label: "The Open 2026" },
 ];
 
 function isActive(pathname: string, item: { to: string | null; label: string }) {
