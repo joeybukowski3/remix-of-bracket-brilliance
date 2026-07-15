@@ -17,11 +17,6 @@ const pages = [
   { path: "/pga/model", changefreq: "daily", priority: "0.88" },
   { path: "/pga/top-40-golf-picks", changefreq: "weekly", priority: "0.82" },
   { path: "/nfl", changefreq: "weekly", priority: "0.7" },
-  { path: "/ncaa", changefreq: "daily", priority: "0.85" },
-  { path: "/ncaa/schedule", changefreq: "daily", priority: "0.82" },
-  { path: "/ncaa/matchup", changefreq: "daily", priority: "0.82" },
-  { path: "/ncaa/betting-edge", changefreq: "daily", priority: "0.8" },
-  { path: "/ncaa/bracket", changefreq: "weekly", priority: "0.76" },
   { path: "/donate", changefreq: "monthly", priority: "0.3" },
 ];
 

@@ -5,7 +5,7 @@ import SiteShell from "@/components/layout/SiteShell";
 
 const sports = [
   { id: "mlb", name: "MLB", route: "/mlb", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png" },
-  { id: "ncaa", name: "NCAA", route: "/ncaa", logo: "https://cdn.worldvectorlogo.com/logos/ncaa-4.svg" },
+  { id: "ncaa", name: "NCAA Football", route: "/ncaa", logo: "https://cdn.worldvectorlogo.com/logos/ncaa-4.svg", gated: true },
   { id: "nfl", name: "NFL", route: "/nfl/guide", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" },
   { id: "nba", name: "NBA", route: "/nba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png", locked: true },
   { id: "pga", name: "PGA", route: "/pga", logo: "/logos/pga.svg" },
@@ -18,17 +18,20 @@ function SportCard({
   name,
   route,
   darkBg = false,
+  gated = false,
 }: {
   locked?: boolean;
   logo: string;
   name: string;
   route: string;
   darkBg?: boolean;
+  gated?: boolean;
 }) {
+  const unavailable = locked || gated;
   const cardClassName = `flex w-full max-w-[160px] flex-col items-center rounded-[14px] border border-black/8 bg-white px-4 py-5 text-center no-underline shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-md:max-w-none ${
     locked
       ? "cursor-default opacity-80"
-      : "transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(0,0,0,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+      : `transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(0,0,0,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 ${gated ? "opacity-80" : ""}`
   }`;
 
   const cardContent = (
@@ -49,7 +52,7 @@ function SportCard({
         </div>
       </div>
       <span className="mt-3 text-[16px] font-bold text-[#111111]">{name}</span>
-      <span className="mt-2 text-[12px] font-semibold text-[#111111]">{locked ? "Coming Soon" : "Open"}</span>
+      <span className="mt-2 text-[12px] font-semibold text-[#111111]">{unavailable ? "Coming Soon" : "Open"}</span>
     </>
   );
 
@@ -114,6 +117,7 @@ export default function HomeHeroOnly() {
                       name={sport.name}
                       route={sport.route}
                       darkBg={sport.id === "world-cup"}
+                      gated={Boolean("gated" in sport && sport.gated)}
                     />
                   ))}
                 </div>

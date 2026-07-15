@@ -104,10 +104,11 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     noindex: true,
   },
   ncaa: {
-    title: "NCAA Basketball Analytics & Bracket Tools | Joe Knows Ball",
+    title: "NCAA Football Analytics — Coming Soon | Joe Knows Ball",
     description:
-      "College basketball analytics, custom team rankings, matchup breakdowns, and March Madness bracket builder.",
+      "NCAA Football power rankings, matchup analysis, betting models, and team insights are being developed.",
     path: "/ncaa",
+    noindex: true,
   },
   "world-cup": {
     title: "FIFA World Cup 2026 Power Rankings & Bracket Predictions | Joe Knows Ball",

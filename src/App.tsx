@@ -8,7 +8,6 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import MlbMobileHubEnhancements from "@/components/mlb/MlbMobileHubEnhancements";
 import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
 import Home from "./pages/Home";
-import Rankings from "./pages/Rankings";
 import Schedule from "./pages/Schedule";
 import GameDetail from "./pages/GameDetail";
 import Matchup from "./pages/Matchup";
@@ -90,8 +89,20 @@ const App = () => (
         <ErrorBoundary section="Page">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/rankings" element={<Rankings />} />
-          <Route path={NCAA_BASE_PATH} element={<Rankings />} />
+          <Route path="/rankings" element={<Navigate to={NCAA_BASE_PATH} replace />} />
+          <Route
+            path={NCAA_BASE_PATH}
+            element={
+              <ComingSoon
+                sport="NCAA Football"
+                heading="NCAA Football"
+                status="Premium Access Coming Soon"
+                description="Power rankings, matchup analysis, betting models, and team insights are being developed. Access is not currently available."
+                icon="🏈"
+                seoPage="ncaa"
+              />
+            }
+          />
           <Route path="/schedule" element={<Navigate to={NCAA_SCHEDULE_PATH} replace />} />
           <Route path="/schedule/:gameId" element={<LegacyScheduleRedirect />} />
           <Route path={NCAA_SCHEDULE_PATH} element={<Schedule />} />

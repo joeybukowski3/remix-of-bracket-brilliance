@@ -253,6 +253,7 @@ export default function Bracket() {
     description:
       "Build the official 2026 NCAA tournament bracket with advanced metrics, custom rankings, and path difficulty projections.",
     canonical: `https://www.joeknowsball.com${NCAA_BRACKET_PATH}`,
+    noindex: true,
   });
 
   const { data: liveTeams = [] } = useLiveTeams();
