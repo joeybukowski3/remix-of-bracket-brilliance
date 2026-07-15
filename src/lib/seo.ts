@@ -30,9 +30,9 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     path: "/",
   },
   mlb: {
-    title: "MLB Game Matchup Analysis & Daily Player Props | Joe Knows Ball",
+    title: "MLB Props, Matchups & Daily Analytics | Joe Knows Ball",
     description:
-      "Live MLB game matchup analyzer with park factors, pitcher vs batter analysis, lineup context, and daily HR props, strikeout props, and hit props betting models.",
+      "Daily MLB props, batter-vs-pitcher analysis, strikeout projections, home run models, and betting research from Joe Knows Ball.",
     path: "/mlb",
   },
   "mlb-hr-props": {

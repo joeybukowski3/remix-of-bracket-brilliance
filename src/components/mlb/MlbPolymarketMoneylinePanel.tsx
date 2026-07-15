@@ -367,7 +367,8 @@ export default function MlbPolymarketMoneylinePanel({
         </div>
       ) : data && data.totalGames === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center text-[11px] text-slate-400">
-          No MLB games scheduled today.
+          <p>No MLB games are scheduled today.</p>
+          <p className="mt-1.5">Today&apos;s models and projections will automatically return when the next MLB slate becomes available.</p>
         </div>
       ) : (
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center text-[11px] text-slate-400">
