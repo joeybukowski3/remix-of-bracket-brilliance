@@ -127,6 +127,19 @@ function MobileStatCell({ label, value, position }: { label: string; value: stri
   );
 }
 
+function StrikeoutPageGuide() {
+  return (
+    <section aria-labelledby="strikeout-page-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <h2 id="strikeout-page-guide-title" className="text-base font-black text-slate-900">How to use this page</h2>
+      <div className="mt-2 space-y-1.5 text-sm leading-6 text-slate-600">
+        <p>This board ranks today&apos;s probable starters by K Score, a matchup-strength rating built from pitcher strikeout ability and the opposing lineup&apos;s strikeout tendencies.</p>
+        <p>When sportsbook strikeout lines are available, the page also compares our projected strikeouts against the market line.</p>
+        <p>This is a research tool designed to compare pitchers and prices. It is not a guarantee of results or a betting recommendation.</p>
+      </div>
+    </section>
+  );
+}
+
 const LOW_CONFIDENCE_STATUS_LABELS: Record<string, string> = {
   LOW_CONFIDENCE: "Low confidence",
   INSUFFICIENT_DATA: "Insufficient data",
@@ -336,15 +349,16 @@ export default function MlbStrikeoutProps() {
         <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
           <div className="space-y-4">
             <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={0} bestScore={null} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
+            <StrikeoutPageGuide />
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Data Not Available</div>
           </div>
         </main>
     );
   }
 
-  const SortTh = ({ k, label }: { k: SortKey; label: string }) => (
+  const SortTh = ({ k, label, help }: { k: SortKey; label: string; help?: string }) => (
     <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">
-      <button type="button" onClick={() => handleSort(k)} className="hover:text-slate-900">{label}{makeSortIndicator(sortKey === k, sortDir)}</button>
+      <button type="button" onClick={() => handleSort(k)} className="hover:text-slate-900" aria-label={help} title={help}>{label}{makeSortIndicator(sortKey === k, sortDir)}</button>
     </th>
   );
 
@@ -353,6 +367,7 @@ export default function MlbStrikeoutProps() {
         <div className="space-y-4">
           <MlbNavHero />
           <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={strikeoutDetailRows.length} bestScore={bestScore} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Hit Props", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
+          <StrikeoutPageGuide />
           {isDetailsStale && <MlbStrikeoutPropDetailsStaleBanner detailsDate={detailsDate} slateDate={slateDate} />}
           <KBestBetsSection rows={strikeoutDetailRows} />
 
@@ -381,7 +396,7 @@ export default function MlbStrikeoutProps() {
               </div>
             </aside>
 
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               <section className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="grid gap-2 sm:grid-cols-4">
                   <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search pitcher, team, park" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-300 focus:bg-white" />
@@ -414,20 +429,33 @@ export default function MlbStrikeoutProps() {
                     Best Value
                   </button>
                 </div>
+                <p className="mt-2 text-xs leading-5 text-slate-500">Best Value ranks the largest differences between the model and sportsbook line. It includes both OVER and UNDER opportunities.</p>
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500"><span>{filteredRows.length} pitchers shown</span><Link to="/mlb" className="font-bold text-sky-700 hover:underline">Back to MLB</Link></div>
+              </section>
+
+              <section aria-labelledby="strikeout-edge-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <h2 id="strikeout-edge-guide-title" className="text-sm font-black text-slate-900">Understanding Edge</h2>
+                <div className="mt-1.5 space-y-1 text-xs leading-5 text-slate-600">
+                  <p>Edge compares our projected strikeouts to the sportsbook line.</p>
+                  <p><strong className="text-slate-900">OVER</strong> means the model projects more strikeouts than the posted line. <strong className="text-slate-900">UNDER</strong> means fewer.</p>
+                  <p>Edge measures model disagreement with the market—it is not a betting recommendation by itself.</p>
+                  {!hasKOdds && <p className="font-semibold text-slate-500">No line posted yet. Odds not yet available for this slate.</p>}
+                </div>
               </section>
 
               <section data-x-export="mlb-strikeout-props" className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
                 <div className="hidden overflow-x-auto md:block" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="min-w-full border-separate border-spacing-0 text-xs">
                     <thead className="sticky top-0 z-20"><tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
-                      <SortTh k="rank" label="#" /><SortTh k="pitcher" label="Pitcher" />{hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K/9</th><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Avg IP</th>
+                      <SortTh k="rank" label="#" help="Model Rank. This remains fixed even if you sort by another column." /><SortTh k="pitcher" label="Pitcher" />{hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K/9</th><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Avg IP</th>
                     </tr></thead>
                     <tbody>{filteredRows.length ? filteredRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
                       const isExpanded = expandedRowKey === rowKey;
                       const desktopColumnCount = hasKOdds ? 15 : 12;
                       const edgeInfo = getProjectionEdgeInfo(row);
+                      const hasPostedLine = row.kLine != null && row.kLine > 0;
+                      const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
                       const rowLabel = `${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`;
                       const onRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
                         if (event.key === "Enter" || event.key === " ") {
@@ -452,7 +480,7 @@ export default function MlbStrikeoutProps() {
                           <MlbTeamLogo team={row.team} size={16} /><span className="whitespace-nowrap text-[11px] font-semibold text-slate-900">{row.pitcher}</span><span className="text-[9px] text-slate-400">vs {row.opponent}</span>
                         </span>
                       </td>
-                      {hasKOdds && <td className="border-b border-slate-100 px-2 py-1"><div className="font-semibold text-slate-900">{fmt(row.kLine)}</div><div className="text-[9px] text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</div></td>}
+                      {hasKOdds && <td className="border-b border-slate-100 px-2 py-1"><div className="font-semibold text-slate-900">{hasPostedLine ? fmt(row.kLine) : "No line posted yet"}</div>{hasPostedOdds ? <div className="text-[9px] text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</div> : hasPostedLine ? <div className="max-w-[120px] text-[9px] leading-4 text-slate-500">Odds not yet available for this slate.</div> : null}</td>}
                       {hasKOdds && <td className="border-b border-slate-100 px-2 py-1 font-semibold text-slate-900">{fmt(edgeInfo.projectedKs)}</td>}
                       {hasKOdds && (
                         <td className="border-b border-slate-100 px-2 py-1">
@@ -484,6 +512,8 @@ export default function MlbStrikeoutProps() {
                     const rowKey = keyForStrikeoutPropRow(row, slateDate);
                     const isExpanded = expandedRowKey === rowKey;
                     const edgeInfo = getProjectionEdgeInfo(row);
+                    const hasPostedLine = row.kLine != null && row.kLine > 0;
+                    const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
                     const tintClass = edgeInfo.direction === "over" ? "bg-orange-50/70" : edgeInfo.direction === "under" ? "bg-blue-50/70" : "bg-white";
                     return (
                     <article key={`mobile-${row.rank}-${row.pitcher}`} className={cn("overflow-hidden rounded-xl border border-slate-100 shadow-sm", tintClass)}>
@@ -502,9 +532,9 @@ export default function MlbStrikeoutProps() {
                       <PropScoreBadge score={row.strikeoutMatchupScore} />
                     </button>
                     {hasKOdds && (
-                      <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2 text-xs">
-                        <span className="font-bold">Line {fmt(row.kLine)} K</span>
-                        <span className="text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span>
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 text-xs">
+                        <span className="font-bold">{hasPostedLine ? `Line ${fmt(row.kLine)} K` : "No line posted yet"}</span>
+                        <span className="text-slate-500">{hasPostedOdds ? <>O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</> : "Odds not yet available for this slate."}</span>
                         <span className={cn(
                           "rounded-full px-2 py-0.5 text-[10px] font-black tabular-nums",
                           edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
@@ -635,6 +665,24 @@ export default function MlbStrikeoutProps() {
                   </div>
                 </section>
               )}
+
+              <section aria-labelledby="more-mlb-tools-title" className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <h2 id="more-mlb-tools-title" className="text-sm font-bold text-slate-900">More MLB tools</h2>
+                <nav className="mt-2 flex flex-wrap gap-2" aria-label="Related MLB tools">
+                  {[
+                    ["MLB Hub", "/mlb"],
+                    ["HR Props", "/mlb/hr-props"],
+                    ["Batter vs Pitcher", "/mlb/batter-vs-pitcher"],
+                    ["Props Hub", "/mlb/props"],
+                    ["Sin City", "/mlb/sin-city"],
+                    ["Power Rankings", "/mlb/power-rankings"],
+                  ].map(([label, to]) => (
+                    <Link key={to} to={to} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-sky-800 transition hover:border-sky-300 hover:bg-sky-50">
+                      {label}
+                    </Link>
+                  ))}
+                </nav>
+              </section>
             </div>
           </div>
         </div>
