@@ -711,6 +711,49 @@ function formatGameTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatMlbSlateDate(value: unknown) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T12:00:00Z`);
+  if (!Number.isFinite(date.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "America/New_York",
+  }).format(date);
+}
+
+function formatMlbModelUpdate(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
+  }).format(date);
+}
+
+function formatMlbNextRefresh(value: unknown) {
+  if (!value || typeof value !== "object") return null;
+  const nextRunAt = value as { label?: unknown; time?: unknown };
+  if (typeof nextRunAt.time === "string" && nextRunAt.time.trim()) {
+    const date = new Date(nextRunAt.time);
+    if (Number.isFinite(date.getTime())) {
+      return new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/New_York",
+        timeZoneName: "short",
+      }).format(date);
+    }
+  }
+  return typeof nextRunAt.label === "string" && nextRunAt.label.trim() ? nextRunAt.label.trim() : null;
+}
+
 type PropPreviewTheme = "hr" | "k" | "bvp";
 
 export type PropPreviewRow = {
@@ -740,11 +783,13 @@ function TeamAbbrBadge({ team }: { team: string }) {
 
 export function PropPreviewCard({
   title,
+  description,
   rows,
   to,
   theme,
 }: {
   title: string;
+  description?: string;
   rows: PropPreviewRow[];
   to: string;
   theme: PropPreviewTheme;
@@ -775,14 +820,17 @@ export function PropPreviewCard({
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className={cn("flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3", themeClasses.header)}>
-        <div className="flex items-center gap-2">
+      <div className={cn("flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3", themeClasses.header)}>
+        <div className="flex min-w-0 items-start gap-2">
           <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
           {theme === "hr" ? <Flame className="h-4 w-4" /> : theme === "k" ? <Radar className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
           </span>
-          <h3 className="text-[17px] font-bold text-[#031635] 2xl:text-lg">{title}</h3>
+          <div className="min-w-0">
+            <h3 className="text-[17px] font-bold text-[#031635] 2xl:text-lg">{title}</h3>
+            {description ? <p className="mt-0.5 text-[11px] font-medium leading-4 text-slate-600">{description}</p> : null}
+          </div>
         </div>
-        <Link to={to} className={cn("text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
+        <Link to={to} className={cn("shrink-0 text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
           {themeClasses.note}
         </Link>
       </div>
@@ -3129,13 +3177,22 @@ function HomeSchedule({
   mlbOdds: import("@/hooks/useMlbOdds").MlbOddsData | null;
 }) {
   const {
+    dashboard,
     batters: propBatters,
     batterVsPitcherRows,
     pitchers: propPitchers,
     strikeoutRows,
     pendingGames,
+    propDate,
     nextRunAt,
   } = useMlbPropsData();
+
+  const freshnessItems = [
+    { label: "Slate", value: formatMlbSlateDate(propDate) },
+    { label: "Today's games", value: String(games.length) },
+    { label: "Last model update", value: formatMlbModelUpdate(dashboard?.generatedAt) },
+    { label: "Next refresh", value: formatMlbNextRefresh(nextRunAt) },
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
 
   const topHrProps = useMemo(() => propBatters
     .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
@@ -3231,17 +3288,44 @@ function HomeSchedule({
       <div className="flex flex-col gap-5 px-4 py-6 sm:px-5 lg:px-6 2xl:flex-row">
         <div className="min-w-0 flex-1 space-y-3">
 
+          <header className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[#031635] sm:text-[28px]">MLB Analytics Hub</h1>
+            <p className="mt-1.5 max-w-4xl text-sm leading-6 text-slate-600">
+              Joe Knows Ball&apos;s MLB models analyze today&apos;s games, home run props, strikeout props, batter-vs-pitcher matchups, and betting value throughout the season.
+            </p>
+            <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-500 sm:text-xs">
+              {freshnessItems.map((item) => (
+                <div key={item.label} className="inline-flex items-baseline gap-1">
+                  <dt className="font-semibold text-slate-700">{item.label}:</dt>
+                  <dd className="tabular-nums">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </header>
+
           <MlbNavHero />
 
           <section id="props" className="space-y-3">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">Daily prop preview</div>
-              <div className="mt-0.5 text-sm font-semibold text-slate-900">Top model edges</div>
+              <h2 className="text-xl font-extrabold tracking-tight text-[#031635]">Today&apos;s Top Model Edges</h2>
+              <p className="mt-0.5 text-xs text-slate-500">Our highest-rated projections from today&apos;s MLB model.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 3xl:gap-5">
-              <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" />
-              <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" />
+              <PropPreviewCard
+                title="Top HR Props"
+                description="Ranks today's home run opportunities using our proprietary hitter model."
+                rows={hrPreviewRows}
+                to="/mlb/hr-props"
+                theme="hr"
+              />
+              <PropPreviewCard
+                title="Top K Props"
+                description="Highlights today's largest strikeout projection differences versus sportsbook markets."
+                rows={strikeoutPreviewRows}
+                to="/mlb/strikeout-props"
+                theme="k"
+              />
             </div>
 
             {pendingGames.length > 0 && (
@@ -3286,6 +3370,15 @@ function HomeSchedule({
         <aside className="hidden w-[310px] shrink-0 2xl:block 2xl:sticky 2xl:top-24 2xl:self-start 2xl:max-h-[calc(100vh-6rem)] 2xl:overflow-y-auto 2xl:overflow-x-hidden 3xl:w-[360px] 4xl:w-[410px] polymarket-panel-scroll">
           <MlbPolymarketMoneylinePanel onOpenGame={onOpenGame} mlEdges={mlEdges} />
         </aside>
+      </div>
+
+      <div className="px-4 pb-6 sm:px-5 lg:px-6">
+        <section aria-labelledby="mlb-methodology-title" className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <h2 id="mlb-methodology-title" className="text-lg font-bold text-[#031635]">How to use these models</h2>
+          <p className="mt-1.5 max-w-5xl text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">
+            These projections compare Joe Knows Ball&apos;s proprietary model against available betting markets to surface research opportunities. Model scores are comparative ratings and should not be interpreted as guarantees or win probabilities.
+          </p>
+        </section>
       </div>
     </div>
   );
