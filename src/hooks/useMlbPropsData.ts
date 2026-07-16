@@ -59,14 +59,25 @@ type FetchOutcome<T> = { ok: true; value: T } | { ok: false; error: unknown };
  * Fetches and normalizes the HR dashboard payload as one unit, catching
  * both the network/HTTP failure case and any JSON-parse failure in a
  * single result type. A non-OK HTTP response is treated as a fetch
- * failure, never silently normalized as an empty/null success.
+ * failure, never silently normalized as an empty/null success -- and so
+ * is an HTTP-200 response that parses as JSON but that
+ * normalizeHrDashboardPayload rejects as unusable (not a record/array, or
+ * missing required fields). Without this, a `{ ok: true, value: null }`
+ * outcome could overwrite a previously valid dashboard with null and
+ * clear an in-progress error just because best bets happened to succeed.
+ * The success type guarantees a usable, non-null dashboard -- callers
+ * never need to null-check a successful outcome.
  */
-async function fetchDashboardOutcome(): Promise<FetchOutcome<HrDashboardPayload | null>> {
+async function fetchDashboardOutcome(): Promise<FetchOutcome<HrDashboardPayload>> {
   try {
     const response = await fetch("/data/mlb/hr-props-raw.json", { cache: "no-store" });
     if (!response.ok) return { ok: false, error: new Error(`HTTP ${response.status}`) };
     const rawPayload = await response.json();
-    return { ok: true, value: normalizeHrDashboardPayload(rawPayload) };
+    const normalized = normalizeHrDashboardPayload(rawPayload);
+    if (normalized == null) {
+      return { ok: false, error: new Error("Invalid normalized MLB dashboard payload") };
+    }
+    return { ok: true, value: normalized };
   } catch (error: unknown) {
     return { ok: false, error };
   }

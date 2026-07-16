@@ -197,6 +197,33 @@ describe("useMlbPropsData — initial fetch lifecycle", () => {
     expect(result.current.status.kind).toBe("error");
   });
 
+  // normalizeHrDashboardPayload's only null-returning branch is
+  // "not an array and not a record" (isRecord fails) -- there is no plain
+  // JS object shape it currently rejects outright, since any record
+  // defaults its missing/malformed fields rather than returning null. The
+  // two tests below exercise that single guard with two different
+  // malformed JSON root values (a string, and a JSON null) to prove the
+  // fetchDashboardOutcome fix applies regardless of which kind of
+  // unusable body triggers it, not because the normalizer has two
+  // distinct rejection paths.
+  it("21. an initial HTTP-200 response with parseable but non-object dashboard JSON is treated as an error, never a null success", async () => {
+    stubRound({ dashboard: { ok: true, payload: "unexpected string response" } });
+    const { result } = renderHook(() => useMlbPropsData());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.dashboard).toBeNull();
+    expect(result.current.error).toBe("Unable to load MLB model data.");
+    expect(result.current.status).toMatchObject({ kind: "error", hasLastKnownData: false });
+  });
+
+  it("22. an initial HTTP-200 response whose JSON body normalizeHrDashboardPayload rejects (JSON null) is also treated as an error", async () => {
+    stubRound({ dashboard: { ok: true, payload: null } });
+    const { result } = renderHook(() => useMlbPropsData());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.dashboard).toBeNull();
+    expect(result.current.error).toBe("Unable to load MLB model data.");
+    expect(result.current.status).toMatchObject({ kind: "error", hasLastKnownData: false });
+  });
+
   it("5a. successful empty-slate payload with a valid nextRunAt returns waiting-for-slate", async () => {
     stubRound({
       dashboard: {
@@ -443,6 +470,98 @@ describe("useMlbPropsData — polling: error preservation and recovery", () => {
     expect(result.current.games.length).toBeGreaterThan(0);
     expect(result.current.pitchers.length).toBeGreaterThan(0);
     expect(result.current.batters.length).toBeGreaterThan(0);
+  });
+
+  it("23. a valid initial fetch followed by an HTTP-200 normalized-null poll retains the prior dashboard/arrays and reports a refresh error", async () => {
+    vi.useFakeTimers();
+    stubRound({ dashboard: { ok: true, payload: rawPayload() } });
+
+    const { result } = renderHook(() => useMlbPropsData());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    expect(result.current.dashboard).not.toBeNull();
+    const dashboardBeforeFailure = result.current.dashboard;
+    const gamesBeforeFailure = result.current.games;
+    const pitchersBeforeFailure = result.current.pitchers;
+    const battersBeforeFailure = result.current.batters;
+
+    // Round 2: HTTP-200, parseable, but a shape normalizeHrDashboardPayload rejects.
+    stubRound({ dashboard: { ok: true, payload: "unexpected string response" } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
+
+    expect(result.current.dashboard).toBe(dashboardBeforeFailure);
+    expect(result.current.games).toEqual(gamesBeforeFailure);
+    expect(result.current.pitchers).toEqual(pitchersBeforeFailure);
+    expect(result.current.batters).toEqual(battersBeforeFailure);
+    expect(result.current.error).toBe("Unable to refresh MLB model data.");
+    expect(result.current.status).toMatchObject({ kind: "error", hasLastKnownData: true });
+  });
+
+  it("24. a normalized-null dashboard failure with a successful (changed) best-bets response still treats the round as a dashboard failure -- best bets unchanged, error not cleared", async () => {
+    vi.useFakeTimers();
+    const round1BestBets = bestBetsPayload({ generatedAt: "round-1" });
+    stubRound({ dashboard: { ok: true, payload: rawPayload() }, bestBets: { ok: true, payload: round1BestBets } });
+
+    const { result } = renderHook(() => useMlbPropsData());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    const dashboardAfterRound1 = result.current.dashboard;
+    expect(result.current.bestBets).toEqual(round1BestBets);
+
+    // Round 2: dashboard normalizes to null; best bets would succeed if
+    // applied, but per the existing dashboard-failure policy (test #14)
+    // it is left untouched this round -- neither applied nor blamed.
+    stubRound({
+      dashboard: { ok: true, payload: null },
+      bestBets: { ok: true, payload: bestBetsPayload({ generatedAt: "round-2-unused" }) },
+    });
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
+
+    expect(result.current.dashboard).toBe(dashboardAfterRound1);
+    expect(result.current.bestBets).toEqual(round1BestBets);
+    expect(result.current.error).toBe("Unable to refresh MLB model data.");
+  });
+
+  it("25a. a valid recovery after a normalized-null failure with no prior data populates the dashboard and clears the error", async () => {
+    vi.useFakeTimers();
+    // Round 1: normalized-null failure, nothing has ever loaded.
+    stubRound({ dashboard: { ok: true, payload: "unexpected string response" } });
+    const { result } = renderHook(() => useMlbPropsData());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    expect(result.current.dashboard).toBeNull();
+    expect(result.current.error).toBe("Unable to load MLB model data.");
+
+    // Round 2: recovers with a valid payload -- dashboard updates for the first time.
+    stubRound({ dashboard: { ok: true, payload: rawPayload() } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.dashboard).not.toBeNull();
+    expect(result.current.status.kind).toBe("current");
+  });
+
+  it("25b. a valid recovery after a normalized-null failure, with the SAME generatedAt as the pre-failure success, dedupes the dashboard write but still clears the error", async () => {
+    vi.useFakeTimers();
+    const payload = rawPayload({ generatedAt: "2026-07-16T09:32:34.452Z" });
+
+    // Round 1: success, establishes lastGeneratedAt and a retained dashboard.
+    stubRound({ dashboard: { ok: true, payload } });
+    const { result } = renderHook(() => useMlbPropsData());
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    const dashboardAfterRound1 = result.current.dashboard;
+    expect(result.current.error).toBeNull();
+
+    // Round 2: normalized-null failure.
+    stubRound({ dashboard: { ok: true, payload: null } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
+    expect(result.current.dashboard).toBe(dashboardAfterRound1);
+    expect(result.current.error).toBe("Unable to refresh MLB model data.");
+
+    // Round 3: recovers with the identical generatedAt (dedupe-eligible).
+    stubRound({ dashboard: { ok: true, payload } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); });
+
+    expect(result.current.dashboard).toBe(dashboardAfterRound1); // deduped, same reference
+    expect(result.current.error).toBeNull();
+    expect(result.current.status.kind).not.toBe("error");
   });
 });
 
