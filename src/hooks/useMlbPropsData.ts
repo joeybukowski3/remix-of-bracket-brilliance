@@ -126,8 +126,8 @@ export function useMlbPropsData() {
       strikeoutDetailRows,
       strikeoutRows,
       tbdFootnotes: buildTbdFootnotes(tbdGameKeys, allGames, allPitchers, allBatters),
-      pendingGames: (dashboard as any)?.pendingGames ?? [],
-      nextRunAt: (dashboard as any)?.nextRunAt ?? null,
+      pendingGames: dashboard?.pendingGames ?? [],
+      nextRunAt: dashboard?.nextRunAt ?? null,
     };
   }, [bestBets, dashboard, loading]);
 }

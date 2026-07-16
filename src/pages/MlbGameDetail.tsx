@@ -59,7 +59,7 @@ import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
 import type { MlbComparisonMetric, MlbGameDetail, MlbLineupRow, MlbOpponentSplit, MlbRouteState, MlbScheduleGame, MlbTeamWrcData } from "@/lib/mlb/mlbTypes";
 import { getSeoMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import { ScorePill, HrDashboardPitcher, TeamLogoBadge, type HrDashboardBatter, type PitcherStrikeoutTeamRow, type PitcherVsBatterRow } from "@/pages/MlbHrProps";
+import { ScorePill, HrDashboardPitcher, TeamLogoBadge, type HrDashboardBatter, type HrDashboardNextRunAt, type HrDashboardPendingGame, type PitcherStrikeoutTeamRow, type PitcherVsBatterRow } from "@/pages/MlbHrProps";
 
 const SEASON = new Date().getFullYear();
 
@@ -752,6 +752,78 @@ function formatMlbNextRefresh(value: unknown) {
     }
   }
   return typeof nextRunAt.label === "string" && nextRunAt.label.trim() ? nextRunAt.label.trim() : null;
+}
+
+/**
+ * Extracted out of HomeSchedule as a narrowly scoped test hook so the
+ * freshness header can be rendered and asserted on directly, without
+ * mounting HomeSchedule's much heavier dependency tree (slate analyzer,
+ * Polymarket panel, social tables). Renders the exact same markup
+ * HomeSchedule's <header> previously inlined -- no visual or DOM output
+ * change.
+ */
+export function MlbAnalyticsHubFreshnessHeader({
+  propDate,
+  gamesCount,
+  generatedAt,
+  nextRunAt,
+}: {
+  propDate: string | null;
+  gamesCount: number;
+  generatedAt: string | null | undefined;
+  nextRunAt: HrDashboardNextRunAt | null;
+}) {
+  const freshnessItems = [
+    { label: "Slate", value: formatMlbSlateDate(propDate) },
+    { label: "Today's games", value: String(gamesCount) },
+    { label: "Last model update", value: formatMlbModelUpdate(generatedAt) },
+    { label: "Next refresh", value: formatMlbNextRefresh(nextRunAt) },
+  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
+
+  return (
+    <header className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+      <h1 className="text-2xl font-extrabold tracking-tight text-[#031635] sm:text-[28px]">MLB Analytics Hub</h1>
+      <p className="mt-1.5 max-w-4xl text-sm leading-6 text-slate-600">
+        Joe Knows Ball&apos;s MLB models analyze today&apos;s games, home run props, strikeout props, batter-vs-pitcher matchups, and betting value throughout the season.
+      </p>
+      <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-500 sm:text-xs">
+        {freshnessItems.map((item) => (
+          <div key={item.label} className="inline-flex items-baseline gap-1">
+            <dt className="font-semibold text-slate-700">{item.label}:</dt>
+            <dd className="tabular-nums">{item.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </header>
+  );
+}
+
+/**
+ * Extracted out of HomeSchedule for the same testability reason as
+ * MlbAnalyticsHubFreshnessHeader above. Renders the exact same markup
+ * HomeSchedule's pending-games banner previously inlined -- no visual or
+ * DOM output change.
+ */
+export function MlbPendingGamesBanner({
+  pendingGames,
+  nextRunAt,
+}: {
+  pendingGames: HrDashboardPendingGame[];
+  nextRunAt: HrDashboardNextRunAt | null;
+}) {
+  if (pendingGames.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+      <span className="font-semibold">⏳ {pendingGames.length} game{pendingGames.length !== 1 ? "s" : ""} excluded</span>
+      {" — starting pitchers not yet announced for: "}
+      <span className="font-medium">{pendingGames.map((g) => g.matchup).join(", ")}</span>
+      {nextRunAt ? (
+        <span className="ml-1 text-amber-600">· Check back after {nextRunAt.label} when the model refreshes.</span>
+      ) : (
+        <span className="ml-1 text-amber-600">· These matchups may be added in a future model update.</span>
+      )}
+    </div>
+  );
 }
 
 type PropPreviewTheme = "hr" | "k" | "bvp";
@@ -3208,13 +3280,6 @@ function HomeSchedule({
     nextRunAt,
   } = useMlbPropsData();
 
-  const freshnessItems = [
-    { label: "Slate", value: formatMlbSlateDate(propDate) },
-    { label: "Today's games", value: String(games.length) },
-    { label: "Last model update", value: formatMlbModelUpdate(dashboard?.generatedAt) },
-    { label: "Next refresh", value: formatMlbNextRefresh(nextRunAt) },
-  ].filter((item): item is { label: string; value: string } => Boolean(item.value));
-
   const topHrProps = useMemo(() => propBatters
     .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
     .slice()
@@ -3309,20 +3374,12 @@ function HomeSchedule({
       <div className="flex flex-col gap-5 px-4 py-6 sm:px-5 lg:px-6 2xl:flex-row">
         <div className="min-w-0 flex-1 space-y-3">
 
-          <header className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[#031635] sm:text-[28px]">MLB Analytics Hub</h1>
-            <p className="mt-1.5 max-w-4xl text-sm leading-6 text-slate-600">
-              Joe Knows Ball&apos;s MLB models analyze today&apos;s games, home run props, strikeout props, batter-vs-pitcher matchups, and betting value throughout the season.
-            </p>
-            <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-slate-100 pt-3 text-[11px] text-slate-500 sm:text-xs">
-              {freshnessItems.map((item) => (
-                <div key={item.label} className="inline-flex items-baseline gap-1">
-                  <dt className="font-semibold text-slate-700">{item.label}:</dt>
-                  <dd className="tabular-nums">{item.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </header>
+          <MlbAnalyticsHubFreshnessHeader
+            propDate={propDate}
+            gamesCount={games.length}
+            generatedAt={dashboard?.generatedAt}
+            nextRunAt={nextRunAt}
+          />
 
           <MlbNavHero />
 
@@ -3349,18 +3406,7 @@ function HomeSchedule({
               />
             </div>
 
-            {pendingGames.length > 0 && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-                <span className="font-semibold">⏳ {pendingGames.length} game{pendingGames.length !== 1 ? "s" : ""} excluded</span>
-                {" — starting pitchers not yet announced for: "}
-                <span className="font-medium">{pendingGames.map((g: any) => g.matchup).join(", ")}</span>
-                {nextRunAt ? (
-                  <span className="ml-1 text-amber-600">· Check back after {nextRunAt.label} when the model refreshes.</span>
-                ) : (
-                  <span className="ml-1 text-amber-600">· These matchups may be added in a future model update.</span>
-                )}
-              </div>
-            )}
+            <MlbPendingGamesBanner pendingGames={pendingGames} nextRunAt={nextRunAt} />
           </section>
 
           <MlbSlateAnalyzer games={games} detailPreviews={detailPreviews} pitchers={propPitchers} onOpenGame={onOpenGame} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} />
