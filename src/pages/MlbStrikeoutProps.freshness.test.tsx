@@ -577,3 +577,120 @@ describe("MlbStrikeoutProps — freshness status integration", () => {
     }
   });
 });
+
+const NO_PROJECTION_ROWS_MESSAGE = "Strikeout model data is available, but no pitcher projection rows are currently listed for this slate.";
+
+describe("MlbStrikeoutProps — zero-projection-rows page-local message", () => {
+  it("41. current status + zero rows: shows current status, the zero-projection message, and no table/filters", async () => {
+    vi.resetModules();
+    mockPropsData({ status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    expect(screen.getByText("Current slate data")).toBeInTheDocument();
+    expect(screen.getByText(NO_PROJECTION_ROWS_MESSAGE)).toBeInTheDocument();
+    expect(container.querySelector("table")).toBeNull();
+    expect(container.querySelector("input")).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("42. lineup-pending status + zero rows: shows lineup status and the zero-projection message", async () => {
+    vi.resetModules();
+    mockPropsData({ status: LINEUP_PENDING_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("Lineups still updating")).toBeInTheDocument();
+    expect(screen.getByText(NO_PROJECTION_ROWS_MESSAGE)).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("43. stale-past status + zero rows: shows stale status and the zero-projection message", async () => {
+    vi.resetModules();
+    mockPropsData({ status: STALE_PAST_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("Showing an earlier MLB slate")).toBeInTheDocument();
+    expect(screen.getByText(NO_PROJECTION_ROWS_MESSAGE)).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("44. retained-data refresh error + zero rows: shows the retained-data warning and the zero-projection message", async () => {
+    vi.resetModules();
+    mockPropsData({ status: ERROR_WITH_DATA_STATUS });
+    await renderPage();
+
+    expect(screen.getByText(/Unable to refresh MLB model data/)).toBeInTheDocument();
+    expect(screen.getByText(NO_PROJECTION_ROWS_MESSAGE)).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("45. waiting-for-slate + zero rows: does not show the zero-projection message", async () => {
+    vi.resetModules();
+    mockPropsData({ status: WAITING_FOR_SLATE_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("Waiting for today’s slate")).toBeInTheDocument();
+    expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("46. no-games-scheduled + zero rows: does not show the zero-projection message", async () => {
+    vi.resetModules();
+    mockPropsData({ status: NO_GAMES_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("No MLB games currently listed")).toBeInTheDocument();
+    expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("47. unavailable + zero rows: does not show the zero-projection message", async () => {
+    vi.resetModules();
+    mockPropsData({ status: UNAVAILABLE_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("MLB model data unavailable")).toBeInTheDocument();
+    expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("48. blocking error (no retained data) + zero rows: does not show the zero-projection message", async () => {
+    vi.resetModules();
+    mockPropsData({ status: ERROR_NO_DATA_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("Unable to load MLB model data")).toBeInTheDocument();
+    expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("49. loading: does not show the zero-projection message", async () => {
+    vi.resetModules();
+    mockPropsData({ status: LOADING_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("Loading MLB model data")).toBeInTheDocument();
+    expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("50. projection rows exist but no sportsbook lines: existing odds-pending copy remains, zero-projection message absent", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [highScoreNoLineRow], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("No line posted yet. Odds not yet available for this slate.")).toBeInTheDocument();
+    expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("51. projection rows exist but no qualifying value plays: zero-projection message absent", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [noEdgeRow], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("No Edge Pitcher").length).toBeGreaterThan(0);
+    expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("52. user filters produce zero visible rows: existing filtered message remains, zero-projection message absent", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], status: CURRENT_STATUS });
+    await renderPage();
+
+    const search = screen.getByPlaceholderText("Search pitcher, team, park");
+    fireEvent.change(search, { target: { value: "Nonexistent Pitcher Name" } });
+
+    expect(screen.getByText("No pitchers match the current filters.")).toBeInTheDocument();
+    expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+});

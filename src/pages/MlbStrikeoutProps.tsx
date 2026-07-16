@@ -350,6 +350,16 @@ export default function MlbStrikeoutProps() {
   // whether there's a table worth rendering at all.
   const hasUsableStrikeoutData = strikeoutDetailRows.length > 0;
 
+  // FreshnessStatus explains shared MLB model freshness, but a nonblocking
+  // status with zero rows still needs its own explanation for why the
+  // table itself is empty -- otherwise "Current slate data" next to
+  // nothing reads as broken, not merely row-less. Blocking/loading/
+  // waiting/no-games statuses are already fully explained by
+  // FreshnessStatus's own copy, so this never fires alongside those.
+  const shouldShowNoProjectionRowsMessage =
+    !hasUsableStrikeoutData
+    && (status.kind === "current" || status.kind === "lineup-pending" || status.kind === "stale" || (status.kind === "error" && status.hasLastKnownData));
+
   if (status.kind === "loading") {
     return (
         <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
@@ -369,6 +379,11 @@ export default function MlbStrikeoutProps() {
             <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={0} bestScore={null} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Batter vs Pitcher", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
             <StrikeoutPageGuide />
             <FreshnessStatus status={status} />
+            {shouldShowNoProjectionRowsMessage && (
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                Strikeout model data is available, but no pitcher projection rows are currently listed for this slate.
+              </div>
+            )}
           </div>
         </main>
     );
