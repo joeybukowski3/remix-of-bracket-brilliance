@@ -143,13 +143,19 @@ describe("MlbStrikeoutProps sort modes and row-anywhere click", () => {
     const rankControl = screen.getByRole("button", { name: "Model Rank. This remains fixed even if you sort by another column." });
     expect(rankControl).toHaveAttribute("title", "Model Rank. This remains fixed even if you sort by another column.");
 
+    // Related-tool links now come from the shared, registry-driven
+    // RelatedTools component: canonical label is "Game Matchups" (not the
+    // old page-local "MLB Hub"), and Strikeout Props is correctly absent
+    // from its own related-tools list.
     const relatedTools = screen.getByRole("navigation", { name: "Related MLB tools" });
-    expect(within(relatedTools).getByRole("link", { name: "MLB Hub" })).toHaveAttribute("href", "/mlb");
+    expect(within(relatedTools).getByRole("link", { name: "Game Matchups" })).toHaveAttribute("href", "/mlb");
     expect(within(relatedTools).getByRole("link", { name: "HR Props" })).toHaveAttribute("href", "/mlb/hr-props");
     expect(within(relatedTools).getByRole("link", { name: "Batter vs Pitcher" })).toHaveAttribute("href", "/mlb/batter-vs-pitcher");
     expect(within(relatedTools).getByRole("link", { name: "Props Hub" })).toHaveAttribute("href", "/mlb/props");
     expect(within(relatedTools).getByRole("link", { name: "Sin City" })).toHaveAttribute("href", "/mlb/sin-city");
     expect(within(relatedTools).getByRole("link", { name: "Power Rankings" })).toHaveAttribute("href", "/mlb/power-rankings");
+    expect(within(relatedTools).queryByRole("link", { name: "Strikeout Props" })).toBeNull();
+    expect(within(relatedTools).queryByRole("link", { name: "Numerology" })).toBeNull();
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("shows explicit missing-line and missing-odds messages without removing ranked pitchers", async () => {

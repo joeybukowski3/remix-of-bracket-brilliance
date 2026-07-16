@@ -11,9 +11,13 @@ import type { SeoPage } from "@/lib/seo";
  * terminology drift ("K Props" still appears in `SiteFooter.tsx` today
  * even though the canonical label is "Strikeout Props"). This file defines
  * the canonical *product/presentation* metadata contract those consumers
- * will migrate onto incrementally in later PRs. Until that migration
- * happens, this registry is not read by any of them -- existing production
- * consumers remain operationally unchanged.
+ * migrate onto incrementally, one focused PR at a time. As of this PR, only
+ * the shared `RelatedTools` component (`components/mlb/RelatedTools.tsx`)
+ * reads from it, for exactly 3 pages (HR Props, Strikeout Props, Batter vs
+ * Pitcher). `sectionNav.ts`, `MlbNavHero`, `SiteFooter`, `SeoFooterBlock`,
+ * `lib/seo.ts`, and `MlbPropsHub` still carry their own independent copies
+ * of this metadata and remain operationally unchanged until each is
+ * migrated in its own dedicated PR.
  *
  * `sectionNav.ts` was deliberately left untouched rather than evolved into
  * this registry:
@@ -76,21 +80,23 @@ import type { SeoPage } from "@/lib/seo";
  *                          route; each page's methodology lives inline
  *                          ("How to read this page" sections). This field
  *                          is reserved for a future dedicated surface.
- * - `relatedToolIds`    -- left `undefined` for every tool in this PR.
- *                          Related-tool curation is intentionally deferred:
- *                          the audit that motivated this registry found at
- *                          least 3 different, mutually inconsistent "More
- *                          MLB tools" / sibling-link lists already live in
- *                          production, none of which is more authoritative
- *                          than another. Populating this field now --
- *                          including with a "relate every tool to every
- *                          other tool" default -- would silently assert a
- *                          product relationship (e.g. that Numerology and
- *                          Sin City belong on every conventional analytics
- *                          page) that has not been approved. No canonical
- *                          related-tool relationships exist yet. A future
- *                          dedicated Related Tools PR will define them,
- *                          deliberately, before any consumer migration.
+ * - `relatedToolIds`    -- curated for exactly the 3 tools migrated onto the
+ *                          shared `RelatedTools` component in this PR
+ *                          (hr-props, strikeout-props, batter-vs-pitcher):
+ *                          each relates to the other two, plus
+ *                          game-matchups, props-hub, power-rankings, and
+ *                          sin-city -- the approved "conventional MLB
+ *                          analytics" ecosystem. `numerology` is
+ *                          deliberately excluded from all three: it remains
+ *                          a valid public MLB tool with its own navigation
+ *                          entry, but it is a specialized product with a
+ *                          different analytical premise and is not part of
+ *                          the default related-tools recommendation. The
+ *                          other 5 registry entries (game-matchups,
+ *                          props-hub, power-rankings, sin-city, numerology)
+ *                          remain `undefined` -- they are not migrated onto
+ *                          `RelatedTools` in this PR, so inventing
+ *                          relationships for them would be speculative.
  *
  * This registry intentionally excludes: scoring weights, thresholds,
  * rankings, model/API/workflow configuration, generated-data paths, odds
@@ -154,12 +160,12 @@ export interface MlbToolDefinition {
   /**
    * Curated related-tool ids, when curation has happened. `undefined`
    * means "relationships not yet curated" -- it is not shorthand for "no
-   * relationships" or "related to everything." Every tool in this PR is
-   * `undefined`: no canonical related-tool relationships exist yet. A
-   * future dedicated Related Tools PR will populate this deliberately,
-   * before any consumer migrates onto it. Use `getRelatedMlbTools` rather
-   * than reading this field directly -- it normalizes the undefined case
-   * to an empty, frozen array.
+   * relationships" or "related to everything." Curated so far only for the
+   * 3 tools migrated onto the shared `RelatedTools` component in this PR
+   * (hr-props, strikeout-props, batter-vs-pitcher); the other 5 registry
+   * entries remain `undefined` pending their own migration. Use
+   * `getRelatedMlbTools` rather than reading this field directly -- it
+   * normalizes the undefined case to an empty, frozen array.
    */
   relatedToolIds?: readonly MlbToolId[];
   seoKey?: SeoPage;
@@ -174,8 +180,10 @@ export interface MlbToolDefinition {
 // Regression, Overdue Batters, Biggest Mismatches) are not standalone
 // tools and have no registry entry.
 //
-// relatedToolIds is intentionally omitted from every entry below (see the
-// field's JSDoc on MlbToolDefinition) -- curation is deferred, not defaulted.
+// relatedToolIds is set only on hr-props, strikeout-props, and
+// batter-vs-pitcher (the 3 tools migrated onto RelatedTools in this PR);
+// it's intentionally omitted from the other 5 entries below (see the
+// field's JSDoc on MlbToolDefinition) -- their curation is still deferred.
 const MLB_TOOL_DEFINITIONS: readonly MlbToolDefinition[] = [
   {
     id: "game-matchups",
@@ -217,6 +225,14 @@ const MLB_TOOL_DEFINITIONS: readonly MlbToolDefinition[] = [
     showInNav: true,
     showInFooter: true,
     wideContent: true,
+    relatedToolIds: [
+      "game-matchups",
+      "strikeout-props",
+      "batter-vs-pitcher",
+      "props-hub",
+      "power-rankings",
+      "sin-city",
+    ],
     seoKey: "mlb-hr-props",
   },
   {
@@ -237,6 +253,14 @@ const MLB_TOOL_DEFINITIONS: readonly MlbToolDefinition[] = [
     showInNav: true,
     showInFooter: true,
     wideContent: false,
+    relatedToolIds: [
+      "game-matchups",
+      "hr-props",
+      "batter-vs-pitcher",
+      "props-hub",
+      "power-rankings",
+      "sin-city",
+    ],
     seoKey: "mlb-strikeout-props",
   },
   {
@@ -257,6 +281,14 @@ const MLB_TOOL_DEFINITIONS: readonly MlbToolDefinition[] = [
     showInNav: true,
     showInFooter: true,
     wideContent: false,
+    relatedToolIds: [
+      "game-matchups",
+      "hr-props",
+      "strikeout-props",
+      "props-hub",
+      "power-rankings",
+      "sin-city",
+    ],
     seoKey: "mlb-batter-vs-pitcher",
   },
   {

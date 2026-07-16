@@ -5,7 +5,6 @@ import {
   getRelatedMlbTools,
   getVisibleMlbTools,
   MLB_TOOLS,
-  type MlbToolDefinition,
   type MlbToolId,
 } from "./tools";
 import { MLB_NAV_ITEMS } from "./sectionNav";
@@ -118,44 +117,115 @@ describe("getMlbToolByRoute", () => {
   });
 });
 
-describe("related-tool curation is deferred", () => {
-  // relatedToolIds is intentionally undefined for every tool in this PR --
-  // no canonical related-tool relationships exist yet. A dedicated Related
-  // Tools PR will curate these deliberately before any consumer migrates
-  // onto this field. No provisional relationships are added here to make
-  // these tests pass.
-  it("leaves relatedToolIds undefined for every tool (no relationships curated yet)", () => {
-    for (const tool of MLB_TOOLS) {
-      expect(tool.relatedToolIds).toBeUndefined();
+const CURATED_TOOL_IDS: MlbToolId[] = ["hr-props", "strikeout-props", "batter-vs-pitcher"];
+const UNCURATED_TOOL_IDS: MlbToolId[] = ["game-matchups", "props-hub", "power-rankings", "sin-city", "numerology"];
+
+const EXPECTED_RELATED_TOOL_IDS: Record<"hr-props" | "strikeout-props" | "batter-vs-pitcher", MlbToolId[]> = {
+  "hr-props": ["game-matchups", "strikeout-props", "batter-vs-pitcher", "props-hub", "power-rankings", "sin-city"],
+  "strikeout-props": ["game-matchups", "hr-props", "batter-vs-pitcher", "props-hub", "power-rankings", "sin-city"],
+  "batter-vs-pitcher": ["game-matchups", "hr-props", "strikeout-props", "props-hub", "power-rankings", "sin-city"],
+};
+
+describe("curated related-tool relationships (HR Props, Strikeout Props, Batter vs Pitcher)", () => {
+  // These 3 tools are migrated onto the shared RelatedTools component in
+  // this PR; their relatedToolIds are now curated per the approved
+  // product decision (game-matchups, the other 2 curated tools, props-hub,
+  // power-rankings, sin-city -- numerology deliberately excluded).
+  it("HR Props relates to exactly the approved 6 tools, in the approved order", () => {
+    expect(getMlbTool("hr-props").relatedToolIds).toEqual(EXPECTED_RELATED_TOOL_IDS["hr-props"]);
+  });
+
+  it("Strikeout Props relates to exactly the approved 6 tools, in the approved order", () => {
+    expect(getMlbTool("strikeout-props").relatedToolIds).toEqual(EXPECTED_RELATED_TOOL_IDS["strikeout-props"]);
+  });
+
+  it("Batter vs Pitcher relates to exactly the approved 6 tools, in the approved order", () => {
+    expect(getMlbTool("batter-vs-pitcher").relatedToolIds).toEqual(EXPECTED_RELATED_TOOL_IDS["batter-vs-pitcher"]);
+  });
+
+  it("excludes numerology from all three curated lists", () => {
+    for (const toolId of CURATED_TOOL_IDS) {
+      expect(getMlbTool(toolId).relatedToolIds).not.toContain("numerology");
     }
   });
 
-  it("getRelatedMlbTools resolves an undefined relatedToolIds to an empty array for every tool", () => {
-    for (const tool of MLB_TOOLS) {
-      expect(getRelatedMlbTools(tool.id)).toEqual([]);
+  it("each curated tool excludes itself from its own related list", () => {
+    for (const toolId of CURATED_TOOL_IDS) {
+      expect(getMlbTool(toolId).relatedToolIds).not.toContain(toolId);
     }
   });
 
-  it("getRelatedMlbTools's empty result is frozen and cannot mutate registry state", () => {
+  it("every curated relatedToolId resolves to a real registry entry", () => {
+    for (const toolId of CURATED_TOOL_IDS) {
+      for (const relatedId of getMlbTool(toolId).relatedToolIds ?? []) {
+        expect(ALL_TOOL_IDS).toContain(relatedId);
+      }
+    }
+  });
+
+  it("getRelatedMlbTools resolves HR Props' relationships to the expected canonical names and routes, in registry order", () => {
+    const related = getRelatedMlbTools("hr-props");
+    expect(related.map((tool) => [tool.id, tool.shortName, tool.route])).toEqual([
+      ["game-matchups", "Game Matchups", "/mlb"],
+      ["strikeout-props", "Strikeout Props", "/mlb/strikeout-props"],
+      ["batter-vs-pitcher", "Batter vs Pitcher", "/mlb/batter-vs-pitcher"],
+      ["props-hub", "Props Hub", "/mlb/props"],
+      ["power-rankings", "Power Rankings", "/mlb/power-rankings"],
+      ["sin-city", "Sin City", "/mlb/sin-city"],
+    ]);
+  });
+
+  it("getRelatedMlbTools resolves Strikeout Props' relationships to the expected canonical names and routes, in registry order", () => {
+    const related = getRelatedMlbTools("strikeout-props");
+    expect(related.map((tool) => [tool.id, tool.shortName, tool.route])).toEqual([
+      ["game-matchups", "Game Matchups", "/mlb"],
+      ["hr-props", "HR Props", "/mlb/hr-props"],
+      ["batter-vs-pitcher", "Batter vs Pitcher", "/mlb/batter-vs-pitcher"],
+      ["props-hub", "Props Hub", "/mlb/props"],
+      ["power-rankings", "Power Rankings", "/mlb/power-rankings"],
+      ["sin-city", "Sin City", "/mlb/sin-city"],
+    ]);
+  });
+
+  it("getRelatedMlbTools resolves Batter vs Pitcher's relationships to the expected canonical names and routes, in registry order", () => {
+    const related = getRelatedMlbTools("batter-vs-pitcher");
+    expect(related.map((tool) => [tool.id, tool.shortName, tool.route])).toEqual([
+      ["game-matchups", "Game Matchups", "/mlb"],
+      ["hr-props", "HR Props", "/mlb/hr-props"],
+      ["strikeout-props", "Strikeout Props", "/mlb/strikeout-props"],
+      ["props-hub", "Props Hub", "/mlb/props"],
+      ["power-rankings", "Power Rankings", "/mlb/power-rankings"],
+      ["sin-city", "Sin City", "/mlb/sin-city"],
+    ]);
+  });
+
+  it("getRelatedMlbTools returns a frozen, non-mutable array for curated tools too", () => {
     const related = getRelatedMlbTools("hr-props");
     expect(Object.isFrozen(related)).toBe(true);
     expect(() => {
-      (related as unknown as unknown[]).push(getMlbTool("sin-city"));
+      (related as unknown as unknown[]).push(getMlbTool("numerology"));
     }).toThrow();
-    // Mutating one call's result must not leak into a later call's result.
-    expect(getRelatedMlbTools("hr-props")).toEqual([]);
+    // Mutation attempts must not leak into a later call's result.
+    expect(getRelatedMlbTools("hr-props")).toEqual(EXPECTED_RELATED_TOOL_IDS["hr-props"].map((id) => getMlbTool(id)));
+  });
+});
+
+describe("related-tool curation remains deferred for the other 5 tools", () => {
+  // game-matchups, props-hub, power-rankings, sin-city, and numerology are
+  // not migrated onto RelatedTools in this PR -- inventing relationships
+  // for them would be speculative, so they stay undefined.
+  it("leaves relatedToolIds undefined for game-matchups, props-hub, power-rankings, sin-city, and numerology", () => {
+    for (const toolId of UNCURATED_TOOL_IDS) {
+      expect(getMlbTool(toolId).relatedToolIds).toBeUndefined();
+    }
   });
 
-  it("resolves a hypothetical populated relatedToolIds list to real tool definitions, matching the logic getRelatedMlbTools will use once curated", () => {
-    // Not part of MLB_TOOLS -- a standalone object shaped like what a
-    // future Related Tools PR would actually produce, used only to prove
-    // id-to-definition resolution behaves correctly ahead of curation.
-    const curatedTool: MlbToolDefinition = {
-      ...getMlbTool("hr-props"),
-      relatedToolIds: ["strikeout-props", "batter-vs-pitcher"],
-    };
-    const related = curatedTool.relatedToolIds!.map((id) => getMlbTool(id));
-    expect(related.map((tool) => tool.id)).toEqual(["strikeout-props", "batter-vs-pitcher"]);
+  it("getRelatedMlbTools resolves an undefined relatedToolIds to an empty, frozen array for each of the other 5 tools", () => {
+    for (const toolId of UNCURATED_TOOL_IDS) {
+      const related = getRelatedMlbTools(toolId);
+      expect(related).toEqual([]);
+      expect(Object.isFrozen(related)).toBe(true);
+    }
   });
 });
 
