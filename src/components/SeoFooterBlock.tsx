@@ -13,7 +13,7 @@ export default function SeoFooterBlock() {
       <div className="mt-4 flex flex-wrap gap-3 text-sm">
         <Link to="/mlb/hr-props" className="font-medium text-primary hover:underline">MLB HR Props</Link>
         <Link to="/mlb/strikeout-props" className="font-medium text-primary hover:underline">Strikeout Props</Link>
-        <Link to="/mlb/batter-vs-pitcher" className="font-medium text-primary hover:underline">Hit Props</Link>
+        <Link to="/mlb/batter-vs-pitcher" className="font-medium text-primary hover:underline">Batter vs Pitcher</Link>
         <Link to="/mlb" className="font-medium text-primary hover:underline">Game Matchup Analysis</Link>
         <Link to="/pga" className="font-medium text-primary hover:underline">PGA Golf Models</Link>
       </div>

@@ -26,7 +26,7 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
   home: {
     title: "MLB Props, PGA Golf Models & Analytics | Joe Knows Ball",
     description:
-      "Free MLB HR props, strikeout props, hit props, PGA Tour models, and game matchup analysis. Advanced sports betting analytics.",
+      "Free MLB HR props, strikeout props, batter vs pitcher matchups, PGA Tour models, and game matchup analysis. Advanced sports betting analytics.",
     path: "/",
   },
   mlb: {
@@ -54,9 +54,9 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     path: "/mlb/batter-vs-pitcher",
   },
   "mlb-props-hub": {
-    title: "MLB Props Hub — HR, Strikeout & Hit Props | Joe Knows Ball",
+    title: "MLB Props Hub — HR, Strikeout & Batter vs Pitcher | Joe Knows Ball",
     description:
-      "Central hub for all MLB daily prop models including home run props, strikeout props, hit props, and batter vs pitcher matchup analysis.",
+      "Central hub for all MLB daily prop models including home run props, strikeout props, and batter vs pitcher matchup analysis.",
     path: "/mlb/props",
   },
   pga: {

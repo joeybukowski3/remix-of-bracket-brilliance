@@ -9,7 +9,7 @@ const SECTIONS = [
       { label: "Game Matchups",       to: "/mlb" },
       { label: "HR Props Dashboard",  to: "/mlb/hr-props" },
       { label: "K Props Model",       to: "/mlb/strikeout-props" },
-      { label: "Hit Props Model",     to: "/mlb/batter-vs-pitcher" },
+      { label: "Batter vs Pitcher Model", to: "/mlb/batter-vs-pitcher" },
     ],
   },
   {
