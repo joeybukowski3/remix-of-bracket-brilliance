@@ -17,7 +17,7 @@ function renderMlbRoute(path: string) {
           <Route index element={<h1>MLB Hub Page</h1>} />
           <Route path="hr-props" element={<h1>HR Props Page</h1>} />
           <Route path="strikeout-props" element={<h1>K Props Page</h1>} />
-          <Route path="batter-vs-pitcher" element={<h1>Hit Props Page</h1>} />
+          <Route path="batter-vs-pitcher" element={<h1>Batter vs Pitcher Page</h1>} />
           <Route path="power-rankings" element={<h1>Power Rankings Page</h1>} />
           <Route path="props" element={<h1>Props Hub Page</h1>} />
           <Route path="sin-city" element={<h1>Sin City Page</h1>} />
@@ -34,7 +34,7 @@ describe("MlbLayout", () => {
     ["/mlb", "MLB Hub Page"],
     ["/mlb/hr-props", "HR Props Page"],
     ["/mlb/strikeout-props", "K Props Page"],
-    ["/mlb/batter-vs-pitcher", "Hit Props Page"],
+    ["/mlb/batter-vs-pitcher", "Batter vs Pitcher Page"],
     ["/mlb/power-rankings", "Power Rankings Page"],
     ["/mlb/props", "Props Hub Page"],
     ["/mlb/sin-city", "Sin City Page"],
