@@ -7,7 +7,9 @@ import {
   NFL_GUIDE_DIVISION_ORDER,
   NFL_GUIDE_MODEL_STATUS,
   NFL_GUIDE_RECORDS,
+  type NflGuideRecord,
 } from "@/lib/nfl/guideRecord";
+import { isNflGuidePilotTeam } from "@/lib/nfl/guidePilot";
 
 function renderGuide(variant: "live" | "print") {
   return render(
@@ -15,6 +17,11 @@ function renderGuide(variant: "live" | "print") {
       <GuideBody variant={variant} />
     </MemoryRouter>,
   );
+}
+
+/** Pilot teams render as guide-chapter-*, every other team as guide-team-*. */
+function teamTestId(team: NflGuideRecord) {
+  return isNflGuidePilotTeam(team.slug) ? `guide-chapter-${team.abbr}` : `guide-team-${team.abbr}`;
 }
 
 describe("GuideBody", () => {
@@ -25,12 +32,12 @@ describe("GuideBody", () => {
     expect(headings[0]).toHaveTextContent("2026 NFL Guide");
   });
 
-  it("renders a section for all 32 teams", () => {
+  it("renders a section for all 32 teams (compact card or pilot chapter)", () => {
     renderGuide("live");
     for (const team of NFL_GUIDE_RECORDS) {
-      expect(screen.getByTestId(`guide-team-${team.abbr}`), team.abbr).toBeInTheDocument();
+      expect(screen.getByTestId(teamTestId(team)), team.abbr).toBeInTheDocument();
     }
-    expect(screen.getAllByTestId(/^guide-team-/)).toHaveLength(32);
+    expect(screen.getAllByTestId(/^guide-(team|chapter)-/)).toHaveLength(32);
   });
 
   it("renders all eight divisions in a fixed order", () => {
@@ -47,8 +54,8 @@ describe("GuideBody", () => {
   it("resolves a logo or an explicit fallback for every team", () => {
     renderGuide("live");
     for (const team of NFL_GUIDE_RECORDS) {
-      const section = screen.getByTestId(`guide-team-${team.abbr}`);
-      const logo = within(section).getByAltText(`${team.name} logo`);
+      const section = screen.getByTestId(teamTestId(team));
+      const logo = within(section).getAllByAltText(`${team.name} logo`)[0];
       expect(logo, team.abbr).toBeInTheDocument();
     }
   });
@@ -76,13 +83,14 @@ describe("GuideBody", () => {
   });
 
   it("renders identical team and division content in the print variant", () => {
+    const teamSelector = "[data-testid^='guide-team-'], [data-testid^='guide-chapter-']";
     const live = renderGuide("live");
-    const liveTeams = live.container.querySelectorAll("[data-testid^='guide-team-']").length;
+    const liveTeams = live.container.querySelectorAll(teamSelector).length;
     const liveDivisions = live.container.querySelectorAll("[data-testid^='guide-division-']").length;
     live.unmount();
 
     const print = renderGuide("print");
-    expect(print.container.querySelectorAll("[data-testid^='guide-team-']")).toHaveLength(liveTeams);
+    expect(print.container.querySelectorAll(teamSelector)).toHaveLength(liveTeams);
     expect(print.container.querySelectorAll("[data-testid^='guide-division-']")).toHaveLength(liveDivisions);
     expect(print.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   });
@@ -113,16 +121,16 @@ describe("GuideBody", () => {
     renderGuide("live");
     const withoutMarket = NFL_GUIDE_RECORDS.filter((team) => team.market === null);
     for (const team of withoutMarket) {
-      const section = screen.getByTestId(`guide-team-${team.abbr}`);
+      const section = screen.getByTestId(teamTestId(team));
       expect(within(section).getByText("Data Unavailable"), team.abbr).toBeInTheDocument();
     }
     const withMarket = NFL_GUIDE_RECORDS.filter((team) => team.market !== null);
     for (const team of withMarket) {
-      const section = screen.getByTestId(`guide-team-${team.abbr}`);
+      const section = screen.getByTestId(teamTestId(team));
       expect(
-        within(section).getByText(team.market!.winTotal.toFixed(1)),
+        within(section).getAllByText(team.market!.winTotal.toFixed(1)).length,
         team.abbr,
-      ).toBeInTheDocument();
+      ).toBeGreaterThan(0);
     }
   });
 });

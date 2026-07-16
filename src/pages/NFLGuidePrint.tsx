@@ -54,9 +54,12 @@ const PRINT_STYLES = `
 
     .nfl-guide-print { font-size: 9pt; }
 
-    /* Keep cards, tables and division blocks from splitting across pages. */
+    /* Keep cards, tables and division blocks from splitting across pages.
+       Pilot team chapters (data-guide-chapter="pilot") are excluded: they are
+       deliberately allowed to span two pages, breaking between their own
+       break-inside-avoid sections rather than not at all. */
     .nfl-guide-print .guide-division,
-    .nfl-guide-print article,
+    .nfl-guide-print article:not([data-guide-chapter="pilot"]),
     .nfl-guide-print table,
     .nfl-guide-print .break-inside-avoid {
       break-inside: avoid;
@@ -66,6 +69,9 @@ const PRINT_STYLES = `
     /* Each conference starts a fresh page; the first must not add a blank one. */
     .nfl-guide-print .guide-conference { break-before: page; page-break-before: always; }
     .nfl-guide-print .guide-conference:first-of-type { break-before: auto; page-break-before: auto; }
+
+    /* A pilot team chapter always starts on its own fresh page. */
+    .nfl-guide-print [data-guide-chapter="pilot"] { break-before: page; page-break-before: always; }
 
     /* Division headings stay with the table they introduce. */
     .nfl-guide-print h2, .nfl-guide-print h3 { break-after: avoid; page-break-after: avoid; }

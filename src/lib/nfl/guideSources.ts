@@ -86,6 +86,14 @@ const fullSeasonMetricsSchema = seasonMetricsSchema.extend({
 
 export type NflFullSeasonMetrics = z.infer<typeof fullSeasonMetricsSchema>;
 
+const finalEightMetricsSchema = seasonMetricsSchema.extend({
+  trajectoryLabel: z.enum(["Late Riser", "Late Decline", "Stable"]),
+  contextFlags: z.array(z.unknown()).default([]),
+  l8OpponentStrength: z.number(),
+});
+
+export type NflFinalEightMetrics = z.infer<typeof finalEightMetricsSchema>;
+
 /**
  * Parses each record independently so a single malformed team is dropped rather
  * than throwing and taking the whole guide down with it.
@@ -122,9 +130,9 @@ export const NFL_FULL_SEASON_METRICS: NflFullSeasonMetrics[] = parseRecords(
   fullSeasonMetricsSchema,
 );
 
-export const NFL_FINAL_EIGHT_METRICS: NflSeasonMetrics[] = parseRecords(
+export const NFL_FINAL_EIGHT_METRICS: NflFinalEightMetrics[] = parseRecords(
   (rawFinalEightMetrics as { teams?: unknown }).teams,
-  seasonMetricsSchema,
+  finalEightMetricsSchema,
 );
 
 /**

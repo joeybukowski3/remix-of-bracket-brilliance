@@ -1,6 +1,8 @@
 import { SourceTag, TeamLogo } from "@/components/nfl/guide/GuideAtoms";
+import { GuideTeamChapter } from "@/components/nfl/guide/chapter/GuideTeamChapter";
 import { GuideTeamSection } from "@/components/nfl/guide/GuideTeamSection";
 import { formatNflRecord, type NflGuideDivision } from "@/lib/nfl/guideRecord";
+import { isNflGuidePilotTeam } from "@/lib/nfl/guidePilot";
 
 /**
  * Compact division comparison. Columns are only rendered when at least one team
@@ -128,9 +130,15 @@ export function GuideDivisionSection({ division }: { division: NflGuideDivision 
       </div>
 
       <div className="grid min-w-0 gap-3 lg:grid-cols-2 print:grid-cols-1">
-        {division.teams.map((team) => (
-          <GuideTeamSection key={team.abbr} team={team} />
-        ))}
+        {division.teams.map((team) =>
+          isNflGuidePilotTeam(team.slug) ? (
+            <div key={team.abbr} className="lg:col-span-2">
+              <GuideTeamChapter team={team} />
+            </div>
+          ) : (
+            <GuideTeamSection key={team.abbr} team={team} />
+          ),
+        )}
       </div>
     </section>
   );

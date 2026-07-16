@@ -58,6 +58,10 @@ export type NflGuideFinalEight = {
   offEpaRank: number | null;
   defEpaRank: number | null;
   netEpaRank: number | null;
+  /** Generator-computed label comparing the final-eight window to the full season. */
+  trajectoryLabel: "Late Riser" | "Late Decline" | "Stable";
+  /** Average opponent strength across the final-eight window (higher = tougher). */
+  opponentStrength: number;
 };
 
 export type NflGuideMarket = {
@@ -123,6 +127,8 @@ function buildRecord(team: NflCanonicalTeam): NflGuideRecord | null {
           offEpaRank: finalEight.metrics.offEpaPerPlay.rank,
           defEpaRank: finalEight.metrics.defEpaPerPlay.rank,
           netEpaRank: finalEight.metrics.netEpaPerPlay.rank,
+          trajectoryLabel: finalEight.trajectoryLabel,
+          opponentStrength: finalEight.l8OpponentStrength,
         }
       : null,
     market: market?.winTotal != null ? { winTotal: market.winTotal } : null,
