@@ -10,7 +10,6 @@ import {
   getPropEdgeTier,
   getBatterVsPitcherReason,
   ModelSummaryHeader,
-  PropEdgeBadge,
   PropScoreBadge,
   TeamLogoText,
 } from "@/components/mlb/MlbPropModelComponents";
@@ -85,6 +84,19 @@ function getRoofLabel(r: string) {
   return r || "Unknown";
 }
 
+function BvpPageGuide() {
+  return (
+    <section aria-labelledby="bvp-page-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <h2 id="bvp-page-guide-title" className="text-base font-black text-slate-900">How to read this page</h2>
+      <div className="mt-2 space-y-1.5 text-sm leading-6 text-slate-600">
+        <p>Matchup Score ranks today&apos;s batter vs. pitcher matchups against each other using current-season Statcast contact quality, opposing-pitcher vulnerability, and park and weather context.</p>
+        <p>Traditional batter-vs-pitcher history usually contains very small samples. Joe Knows Ball instead evaluates today&apos;s matchup using current-season contact quality, pitcher tendencies, and game context.</p>
+        <p>This is a research tool designed to compare matchups. It is not a betting recommendation.</p>
+      </div>
+    </section>
+  );
+}
+
 export default function MlbBatterVsPitcher() {
   usePageSeo(getSeoMeta("mlb-batter-vs-pitcher"));
   const { batterVsPitcherRows, dashboard, games, loading, pitchers } = useMlbPropsData();
@@ -96,8 +108,8 @@ export default function MlbBatterVsPitcher() {
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
 
   usePageSeo({
-    title: "MLB Hit Props Today 2026 — Batter vs Pitcher Model & Rankings | Joe Knows Ball",
-    description: "Daily MLB hit prop rankings using batter xBA, hard hit rate, barrel rate, and pitcher vulnerability scores. Free batter vs pitcher matchup model updated every day.",
+    title: "MLB Batter vs Pitcher Today 2026 — Daily Matchup Model & Rankings | Joe Knows Ball",
+    description: "Daily MLB batter vs pitcher matchup rankings using current-season contact quality, hard hit rate, barrel rate, and pitcher vulnerability. Free matchup model updated every day.",
     path: "/mlb/batter-vs-pitcher",
     structuredData: [
       {
@@ -106,7 +118,7 @@ export default function MlbBatterVsPitcher() {
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: "https://www.joeknowsball.com/" },
           { "@type": "ListItem", position: 2, name: "MLB", item: "https://www.joeknowsball.com/mlb" },
-          { "@type": "ListItem", position: 3, name: "Hit Props", item: "https://www.joeknowsball.com/mlb/batter-vs-pitcher" },
+          { "@type": "ListItem", position: 3, name: "Batter vs Pitcher", item: "https://www.joeknowsball.com/mlb/batter-vs-pitcher" },
         ],
       },
       {
@@ -115,8 +127,13 @@ export default function MlbBatterVsPitcher() {
         mainEntity: [
           {
             "@type": "Question",
-            name: "How does the MLB hit prop model work?",
-            acceptedAnswer: { "@type": "Answer", text: "The hit prop model ranks batters by combining xBA, hard hit rate, barrel rate, and pitcher vulnerability scores to identify the best daily matchups for hit and total base props." },
+            name: "How does the MLB Batter vs Pitcher matchup model work?",
+            acceptedAnswer: { "@type": "Answer", text: "The Batter vs Pitcher model ranks today's batters by combining current-season power and contact quality — hard hit rate, barrel rate, and recent HR profile — with the opposing pitcher's vulnerability to hard contact, then layers in park and weather context. Matchup Score is a relative ranking, not a probability or guaranteed outcome." },
+          },
+          {
+            "@type": "Question",
+            name: "Does this use career batter vs pitcher history?",
+            acceptedAnswer: { "@type": "Answer", text: "Traditional batter-vs-pitcher history usually contains very small samples. Joe Knows Ball instead evaluates today's matchup using current-season contact quality, pitcher tendencies, and game context." },
           },
         ],
       },
@@ -145,13 +162,43 @@ export default function MlbBatterVsPitcher() {
     setSortKey(key);
   };
 
-  const SortTh = ({ k, label }: { k: SortKey; label: string }) => (
+  const SortTh = ({ k, label, help }: { k: SortKey; label: string; help?: string }) => (
     <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">
-      <button type="button" onClick={() => handleSort(k)} className="hover:text-slate-900">
+      {/* title only (not aria-label) here: the visible label is the metric name itself and
+          must stay part of the accessible name, unlike the bare "#" rank glyph below. */}
+      <button type="button" onClick={() => handleSort(k)} className="hover:text-slate-900" title={help}>
         {label}{makeSortIndicator(sortKey === k, sortDir)}
       </button>
     </th>
   );
+
+  if (!loading && games.length === 0 && batterVsPitcherRows.length === 0) {
+    return (
+      <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
+        <div className="space-y-4">
+          <MlbNavHero />
+          <ModelSummaryHeader
+            eyebrow="Batter matchup model"
+            title="MLB Batter vs Pitcher Model"
+            description="Ranks today's batter vs. pitcher matchups using current-season contact quality, pitcher vulnerability, and game context."
+            generatedAt={dashboard?.generatedAt}
+            gamesCount={0}
+            rowsCount={0}
+            bestScore={null}
+            siblingLinks={[
+              { label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" },
+              { label: "K Props", to: "/mlb/strikeout-props", icon: "🎯", color: "#22c55e" },
+              { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" },
+            ]}
+          />
+          <BvpPageGuide />
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+            No MLB games are scheduled right now. Rankings return with the next MLB slate.
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
       <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
@@ -160,7 +207,7 @@ export default function MlbBatterVsPitcher() {
           <ModelSummaryHeader
             eyebrow="Batter matchup model"
             title="MLB Batter vs Pitcher Model"
-            description="Ranks batter attackability for hits and total bases using current batter quality, xBA/contact indicators, pitcher vulnerability, and game context."
+            description="Ranks today's batter vs. pitcher matchups using current-season contact quality, pitcher vulnerability, and game context."
             generatedAt={dashboard?.generatedAt}
             gamesCount={getGameCount(games)}
             rowsCount={batterVsPitcherRows.length}
@@ -171,6 +218,7 @@ export default function MlbBatterVsPitcher() {
               { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" },
             ]}
           />
+          <BvpPageGuide />
 
           <div className="grid gap-3 xl:grid-cols-[260px_minmax(0,1fr)]">
             {/* Park sidebar — hitter-friendly order */}
@@ -227,7 +275,7 @@ export default function MlbBatterVsPitcher() {
               </div>
             </aside>
 
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               {/* Filters */}
               <section className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="grid gap-2 sm:grid-cols-4">
@@ -252,24 +300,23 @@ export default function MlbBatterVsPitcher() {
 
               {/* Table */}
               <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm overflow-hidden">
-                <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                <div className="hidden overflow-x-auto md:block" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="min-w-full border-separate border-spacing-0 text-xs">
                     <thead className="sticky top-0 z-20">
                       <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
                         <th className="sticky left-0 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 font-black w-8 text-left">
-                          <button type="button" onClick={() => handleSort("rank")} className="hover:text-slate-900">#{makeSortIndicator(sortKey === "rank", sortDir)}</button>
+                          <button type="button" onClick={() => handleSort("rank")} className="hover:text-slate-900" aria-label="Model Rank. This remains fixed even if you sort by another column." title="Model Rank. This remains fixed even if you sort by another column.">#{makeSortIndicator(sortKey === "rank", sortDir)}</button>
                         </th>
                         <th className="sticky left-8 z-30 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 font-black whitespace-nowrap min-w-[130px] text-left">
                           <button type="button" onClick={() => handleSort("player")} className="hover:text-slate-900">Batter{makeSortIndicator(sortKey === "player", sortDir)}</button>
                         </th>
-                        <SortTh k="bestMatchupScore" label="Hit Score" />
-                        <SortTh k="xba" label="xBA" />
+                        <SortTh k="bestMatchupScore" label="Matchup Score" help="Overall matchup strength, roughly 0-100, ranking today's batters against each other. Not a probability or a betting recommendation." />
+                        <SortTh k="xba" label="xBA" help="Expected batting average from contact quality. Shown for context." />
                         <SortTh k="hardHitRate" label="Hard Hit%" />
                         <SortTh k="barrelRate" label="Barrel%" />
-                        <SortTh k="batterPowerScore" label="Batter Score" />
-                        <SortTh k="opposingPitcherHitsVs" label="Pitcher Score" />
-                        <SortTh k="pitcherVulnerabilityScore" label="Pitcher Vuln" />
-                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 font-black uppercase tracking-widest text-left whitespace-nowrap">Edge</th>
+                        <SortTh k="batterPowerScore" label="Batter Quality" help="Batter-side component: current-season power and contact quality." />
+                        <SortTh k="opposingPitcherHitsVs" label="Pitcher Contact Allowed" help="How much contact the opposing pitcher has allowed to comparable hitters. Higher favors the batter." />
+                        <SortTh k="pitcherVulnerabilityScore" label="Pitcher Power Risk" help="How vulnerable the opposing starter has been to hard contact and home runs. Higher favors the batter." />
                       </tr>
                     </thead>
                     <tbody>
@@ -314,11 +361,10 @@ export default function MlbBatterVsPitcher() {
                               </div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.pitcherVulnerabilityScore} display={fmt(row.pitcherVulnerabilityScore)} avg={50} spread={20} /></td>
-                            <td className="border-b border-slate-100 px-2 py-1"><PropEdgeBadge score={row.bestMatchupScore} /></td>
                           </tr>
                         );
                       }) : (
-                        <tr><td colSpan={10} className="px-3 py-6 text-center text-sm text-slate-500">No batters match the current filters.</td></tr>
+                        <tr><td colSpan={9} className="px-3 py-6 text-center text-sm text-slate-500">No batters match the current filters.</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -349,22 +395,50 @@ export default function MlbBatterVsPitcher() {
                             <div className="font-black text-slate-800">{row.xba != null ? row.xba.toFixed(3) : DASH}</div>
                           </div>
                           <div className="bg-sky-50/60 px-1 py-2">
-                            <div className="text-[9px] font-black uppercase tracking-wide text-sky-500 mb-1">Bat Score</div>
+                            <div className="text-[9px] font-black uppercase tracking-wide text-sky-500 mb-1">Batter</div>
                             <div className="font-black text-slate-800">{fmt(row.batterPowerScore)}</div>
                           </div>
                           <div className="bg-rose-50/60 px-1 py-2">
-                            <div className="text-[9px] font-black uppercase tracking-wide text-rose-500 mb-1">Pitch Score</div>
+                            <div className="text-[9px] font-black uppercase tracking-wide text-rose-500 mb-1">Pitcher</div>
                             <div className="font-black text-slate-800">{fmt(row.opposingPitcherHitsVs)}</div>
                           </div>
                           <div className="bg-violet-50/60 px-1 py-2">
-                            <div className="text-[9px] font-black uppercase tracking-wide text-violet-500 mb-1">Edge</div>
-                            <div><PropEdgeBadge score={row.bestMatchupScore} /></div>
+                            <div className="text-[9px] font-black uppercase tracking-wide text-violet-500 mb-1">Pwr Risk</div>
+                            <div className="font-black text-slate-800">{fmt(row.pitcherVulnerabilityScore)}</div>
                           </div>
                         </div>
                       </article>
                     );
                   })}
                 </div>
+              </section>
+
+              <section aria-labelledby="bvp-signal-legend-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <h2 id="bvp-signal-legend-title" className="text-xs font-black uppercase tracking-widest text-slate-500">Signal legend</h2>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+                  <span>🎯 Elite xBA</span>
+                  <span>💥 Elite hard-hit rate</span>
+                  <span>💣 Elite barrel rate</span>
+                  <span>⚔️ Vulnerable opposing pitcher</span>
+                </div>
+              </section>
+
+              <section aria-labelledby="bvp-more-tools-title" className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <h2 id="bvp-more-tools-title" className="text-sm font-bold text-slate-900">More MLB tools</h2>
+                <nav className="mt-2 flex flex-wrap gap-2" aria-label="Related MLB tools">
+                  {[
+                    ["MLB Hub", "/mlb"],
+                    ["HR Props", "/mlb/hr-props"],
+                    ["Strikeout Props", "/mlb/strikeout-props"],
+                    ["Props Hub", "/mlb/props"],
+                    ["Power Rankings", "/mlb/power-rankings"],
+                    ["Sin City", "/mlb/sin-city"],
+                  ].map(([label, to]) => (
+                    <Link key={to} to={to} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-sky-800 transition hover:border-sky-300 hover:bg-sky-50">
+                      {label}
+                    </Link>
+                  ))}
+                </nav>
               </section>
             </div>
           </div>
