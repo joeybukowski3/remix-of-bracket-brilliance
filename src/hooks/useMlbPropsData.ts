@@ -17,6 +17,7 @@ import {
 } from "@/lib/mlb/analytics/referenceRanges";
 import { enrichHrPayloadWithShadow } from "@/lib/mlb/analytics/shadow";
 import type { ReferenceRangeArtifact } from "@/lib/mlb/analytics/types";
+import { deriveMlbDataStatus, type MlbDataStatus } from "@/lib/mlb/mlbDataStatus";
 
 /**
  * Shadow-only enrichment (Phase 1): attach bridge Absolute Score fields to
@@ -44,12 +45,69 @@ function isStarterPlaceholder(value: unknown) {
 // Poll every 10 minutes so the page auto-updates when the workflow deploys new data.
 const POLL_INTERVAL_MS = 10 * 60 * 1000;
 
+// User-safe, stable error strings -- no stack traces, raw URLs, or
+// exception internals ever reach the hook's return value. The original
+// exception is logged via console.error only, matching how the rest of
+// this hook already handles shadow/range-artifact failures (console.warn).
+const DASHBOARD_LOAD_ERROR_MESSAGE = "Unable to load MLB model data.";
+const DASHBOARD_REFRESH_ERROR_MESSAGE = "Unable to refresh MLB model data.";
+const BEST_BETS_PARTIAL_ERROR_MESSAGE = "MLB model data loaded, but best bets could not be refreshed.";
+
+type FetchOutcome<T> = { ok: true; value: T } | { ok: false; error: unknown };
+
+/**
+ * Fetches and normalizes the HR dashboard payload as one unit, catching
+ * both the network/HTTP failure case and any JSON-parse failure in a
+ * single result type. A non-OK HTTP response is treated as a fetch
+ * failure, never silently normalized as an empty/null success -- and so
+ * is an HTTP-200 response that parses as JSON but that
+ * normalizeHrDashboardPayload rejects as unusable (not a record/array, or
+ * missing required fields). Without this, a `{ ok: true, value: null }`
+ * outcome could overwrite a previously valid dashboard with null and
+ * clear an in-progress error just because best bets happened to succeed.
+ * The success type guarantees a usable, non-null dashboard -- callers
+ * never need to null-check a successful outcome.
+ */
+async function fetchDashboardOutcome(): Promise<FetchOutcome<HrDashboardPayload>> {
+  try {
+    const response = await fetch("/data/mlb/hr-props-raw.json", { cache: "no-store" });
+    if (!response.ok) return { ok: false, error: new Error(`HTTP ${response.status}`) };
+    const rawPayload = await response.json();
+    const normalized = normalizeHrDashboardPayload(rawPayload);
+    if (normalized == null) {
+      return { ok: false, error: new Error("Invalid normalized MLB dashboard payload") };
+    }
+    return { ok: true, value: normalized };
+  } catch (error: unknown) {
+    return { ok: false, error };
+  }
+}
+
+/** Same shape as fetchDashboardOutcome, for the independent best-bets file. */
+async function fetchBestBetsOutcome(): Promise<FetchOutcome<HrBestBetsPayload | null>> {
+  try {
+    const response = await fetch("/data/mlb/hr-props-best-bets.json", { cache: "no-store" });
+    if (!response.ok) return { ok: false, error: new Error(`HTTP ${response.status}`) };
+    const rawPayload = await response.json();
+    return { ok: true, value: normalizeHrBestBetsPayload(rawPayload) };
+  } catch (error: unknown) {
+    return { ok: false, error };
+  }
+}
+
 export function useMlbPropsData() {
   const [dashboard, setDashboard] = useState<HrDashboardPayload | null>(null);
   const [bestBets, setBestBets] = useState<HrBestBetsPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasCompletedInitialFetch, setHasCompletedInitialFetch] = useState(false);
   const lastGeneratedAt = useRef<string | null>(null);
   const rangeArtifactRef = useRef<ReferenceRangeArtifact | null>(null);
+  // Monotonic: true once any successful dashboard has ever been set. Used
+  // only to pick the initial-load vs. refresh error wording -- dashboard
+  // state itself is never cleared on a later failure, so this never needs
+  // to flip back to false during the hook's lifetime.
+  const hasEverHadDashboardRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -68,38 +126,72 @@ export function useMlbPropsData() {
     }
 
     async function fetchData() {
-      try {
-        const [rawResponse, bestResponse, rangeArtifact] = await Promise.all([
-          fetch(`/data/mlb/hr-props-raw.json`, { cache: "no-store" }),
-          fetch(`/data/mlb/hr-props-best-bets.json`, { cache: "no-store" }),
-          fetchRangeArtifact(),
-        ]);
-        if (!active) return;
+      // Each resource resolves independently -- a single Promise.all
+      // rejection must never discard a valid dashboard just because the
+      // secondary best-bets file (or the range artifact) failed.
+      const [dashboardOutcome, bestBetsOutcome, rangeArtifact] = await Promise.all([
+        fetchDashboardOutcome(),
+        fetchBestBetsOutcome(),
+        fetchRangeArtifact(),
+      ]);
+      if (!active) return;
 
-        const rawPayload = rawResponse.ok ? await rawResponse.json() : null;
-        const bestPayload = bestResponse.ok ? await bestResponse.json() : null;
-        if (!active) return;
-
-        // Skip re-render if data hasn't changed
-        const newGeneratedAt = rawPayload?.generatedAt ?? null;
-        if (newGeneratedAt && newGeneratedAt === lastGeneratedAt.current) return;
-        lastGeneratedAt.current = newGeneratedAt;
-
-        setDashboard(withShadowScores(normalizeHrDashboardPayload(rawPayload), rangeArtifact));
-        setBestBets(normalizeHrBestBetsPayload(bestPayload));
-      } catch {
-        if (!active) return;
-        setDashboard(null);
-        setBestBets(null);
-      } finally {
-        if (active) setLoading(false);
+      if (!dashboardOutcome.ok) {
+        // The dashboard is the primary shared payload: if it fails, the
+        // whole round is an error and best-bets is left untouched this
+        // round (neither applied nor blamed) -- previously retained
+        // dashboard/bestBets state is preserved exactly as-is.
+        console.error("[mlb-props-data] dashboard fetch failed:", dashboardOutcome.error);
+        setError(hasEverHadDashboardRef.current ? DASHBOARD_REFRESH_ERROR_MESSAGE : DASHBOARD_LOAD_ERROR_MESSAGE);
+        setHasCompletedInitialFetch(true);
+        setLoading(false);
+        return;
       }
+
+      const normalizedDashboard = dashboardOutcome.value;
+      const newGeneratedAt = normalizedDashboard?.generatedAt ?? null;
+      // Skip re-render when generatedAt hasn't changed, but this must
+      // never suppress the error-clearing / best-bets-update logic below
+      // -- only the dashboard state write itself is skipped.
+      const isDuplicateGeneratedAt = Boolean(newGeneratedAt) && newGeneratedAt === lastGeneratedAt.current;
+
+      if (!isDuplicateGeneratedAt) {
+        lastGeneratedAt.current = newGeneratedAt;
+        const enriched = withShadowScores(normalizedDashboard, rangeArtifact);
+        setDashboard(enriched);
+        if (enriched != null) hasEverHadDashboardRef.current = true;
+      }
+
+      if (bestBetsOutcome.ok) {
+        setBestBets(bestBetsOutcome.value);
+        // Fully successful round (dashboard ok, whether or not it changed,
+        // plus best bets ok): clear any previously surfaced error,
+        // including after a same-generatedAt recovery poll.
+        setError(null);
+      } else {
+        console.error("[mlb-props-data] best-bets fetch failed:", bestBetsOutcome.error);
+        setError(BEST_BETS_PARTIAL_ERROR_MESSAGE);
+        // Do not clear bestBets -- preserve the previous value if any.
+      }
+
+      setHasCompletedInitialFetch(true);
+      setLoading(false);
     }
 
     fetchData();
     const interval = setInterval(fetchData, POLL_INTERVAL_MS);
     return () => { active = false; clearInterval(interval); };
   }, []);
+
+  // Pure derivation, recomputed only when hook state actually changes --
+  // not on a wall-clock timer. `new Date()` is read once per memo
+  // evaluation (mount, and whenever dashboard/loading/error/
+  // hasCompletedInitialFetch change), so `status` stays stable between
+  // renders rather than drifting continuously as real time passes.
+  const status: MlbDataStatus = useMemo(
+    () => deriveMlbDataStatus(dashboard, { loading, error, hasCompletedInitialFetch }, new Date()),
+    [dashboard, loading, error, hasCompletedInitialFetch],
+  );
 
   return useMemo(() => {
     const allGames = dashboard?.games ?? [];
@@ -117,8 +209,11 @@ export function useMlbPropsData() {
       dashboard,
       bestBets,
       loading,
-      stale: false,
-      propDate: dashboard ? (dashboard as any)?.date ?? null : null,
+      error,
+      status,
+      hasCompletedInitialFetch,
+      stale: status.kind === "stale",
+      propDate: dashboard?.date ?? null,
       games,
       pitchers,
       batters,
@@ -129,5 +224,5 @@ export function useMlbPropsData() {
       pendingGames: dashboard?.pendingGames ?? [],
       nextRunAt: dashboard?.nextRunAt ?? null,
     };
-  }, [bestBets, dashboard, loading]);
+  }, [bestBets, dashboard, error, hasCompletedInitialFetch, loading, status]);
 }
