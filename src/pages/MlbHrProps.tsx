@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
+import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
@@ -370,7 +371,6 @@ export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction:
 export const DEFAULT_MATCHUP_SORT = { key: "bestMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
 
 const DASH = "--";
-const EMPTY_MESSAGE = "Today's matchup dashboard generates daily at 10 AM ET. Check back after lineups are posted.";
 const ESPN_TEAM_ABBR: Record<string, string> = {
   AZ: "ari", ATH: "oak", WSH: "wsh", CWS: "chw", KCR: "kc",
   SDP: "sd", SFG: "sf", TBR: "tb", NYY: "nyy", NYM: "nym",
@@ -845,17 +845,6 @@ function formatDateLabel(v?: string) {
   const d = new Date(`${v}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return v;
   return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(d);
-}
-function formatHrPropsUpdatedTime(value: string | null | undefined) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  const time = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/New_York",
-  }).format(date);
-  return `${time} ET`;
 }
 function formatPercent(v: number | null | undefined, digits = 1) { return Number.isFinite(v) ? `${Number(v).toFixed(digits)}%` : DASH; }
 function formatNumber(v: number | null | undefined, digits = 1) { return Number.isFinite(v) ? Number(v).toFixed(digits) : DASH; }
@@ -1675,7 +1664,7 @@ export default function MlbHrProps() {
   usePageSeo(getSeoMeta("mlb-hr-props"));
   // Use the shared hook so HR/K/hit tables and game matchups always read from
   // the same data source and poll together every 10 minutes.
-  const { dashboard, bestBets } = useMlbPropsData();
+  const { dashboard, bestBets, status } = useMlbPropsData();
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
@@ -1797,7 +1786,6 @@ export default function MlbHrProps() {
   const strikeoutHeat = useMemo(() => buildStrikeoutHeatRanges(strikeoutRows), [strikeoutRows]);
   const batterLookup = useMemo(() => new Map(batters.map((row) => [`${row.player}|${row.team}|${row.opponent}`, row])), [batters]);
   const hasHrOdds = useMemo(() => batters.some(b => b.hrOddsYes != null), [batters]);
-  const modelUpdatedAt = formatHrPropsUpdatedTime(dashboard?.generatedAt);
   const visibleBestBets = useMemo(
     () => bestBets?.bestBets.filter((pick) => !isStarterPlaceholder(pick.opposingPitcher) && batterLookup.has(`${pick.player}|${pick.team}|${pick.opponent}`)) ?? [],
     [bestBets, batterLookup],
@@ -1943,8 +1931,14 @@ export default function MlbHrProps() {
         <div>
           <div className="mb-3"><MlbNavHero /></div>
           {!hasData ? (
-            <div className="rounded-[28px] border border-slate-200 bg-white p-3 text-sm text-slate-500 shadow-sm">
-              {EMPTY_MESSAGE}
+            <div className="space-y-3">
+              <div className="rounded-[30px] bg-[#0f2748] px-5 py-5 text-white shadow-sm">
+                <h1 className={cn("font-semibold tracking-[-0.04em]", isMobile ? "text-[28px]" : "text-3xl sm:text-4xl")}>MLB HR Prop Dashboard</h1>
+                <p className={cn("mt-2 max-w-3xl leading-6 text-sky-100", isMobile ? "text-[13px]" : "text-sm")}>
+                  Starting pitcher vulnerability, park environment, and batter power/contact angles for today&apos;s slate.
+                </p>
+              </div>
+              <FreshnessStatus status={status} />
             </div>
           ) : (
             <div className="grid gap-3 xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -2063,11 +2057,6 @@ export default function MlbHrProps() {
                       <p className={cn("mt-1 max-w-3xl leading-5 text-sky-200/70", isMobile ? "text-[11px]" : "text-xs")}>
                         HR Quality Score is a relative matchup-quality ranking, not a calibrated probability.
                       </p>
-                      {modelUpdatedAt ? (
-                        <p className={cn("mt-2 font-medium text-sky-100/80", isMobile ? "text-[11px]" : "text-xs")}>
-                          Updated {modelUpdatedAt}
-                        </p>
-                      ) : null}
                     </div>
                     <div className={cn("flex flex-wrap gap-2", isMobile ? "items-center justify-between" : "")}>
                       {isMobile ? (
@@ -2080,7 +2069,6 @@ export default function MlbHrProps() {
                         </button>
                       ) : null}
                       <span className={cn("rounded-full bg-white/10 px-3 py-1 font-semibold text-white", isMobile ? "text-[13px]" : "text-sm")}>👥 {slateSummary.hitterCount} hitters</span>
-                      <span className={cn("rounded-full bg-emerald-400/20 px-3 py-1 font-semibold text-emerald-100", isMobile ? "text-[13px]" : "text-sm")}>🟢 Live Slate</span>
                     </div>
                   </div>
                   <div className="mt-3 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-sky-200">
@@ -2091,6 +2079,8 @@ export default function MlbHrProps() {
                     <span>{pitchers.length} starters</span>
                   </div>
                 </div>
+
+                <FreshnessStatus status={status} />
 
                 <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
                   <div className="grid gap-3 md:grid-cols-3">

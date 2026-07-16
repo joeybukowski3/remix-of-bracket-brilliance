@@ -73,12 +73,13 @@ function formatSlateDate(value: string | null | undefined): string {
 }
 
 function buildLineupPendingSecondary(confirmedCount: number, totalCount: number): string {
-  const noun = totalCount === 1 ? "batter" : "batters";
-  const verb = totalCount === 1 ? "is" : "are";
-  if (confirmedCount === 0) {
-    return `None of the ${totalCount} listed ${noun} ${verb} confirmed yet.`;
+  if (totalCount === 1) {
+    return confirmedCount === 0 ? "The listed batter is not confirmed yet." : "The listed batter is confirmed.";
   }
-  return `${confirmedCount} of ${totalCount} listed ${noun} ${verb} confirmed.`;
+  if (confirmedCount === 0) {
+    return `None of the ${totalCount} listed batters are confirmed yet.`;
+  }
+  return `${confirmedCount} of ${totalCount} listed batters are confirmed.`;
 }
 
 /** Optional trailing context for the retained-data error state -- omitted entirely when nothing safely formattable is available. */
