@@ -93,7 +93,7 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     title: "NFL Analytics & Betting Models | Joe Knows Ball",
     description:
       "NFL matchup analytics, efficiency metrics, and betting context. Advanced football models coming soon.",
-    path: "/nfl",
+    path: "/nfl/power-ratings",
     noindex: true,
   },
   nba: {

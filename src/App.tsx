@@ -20,6 +20,7 @@ import MlbStrikeoutProps from "./pages/MlbStrikeoutProps";
 import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
 import MLBPercentileDemo from "./pages/MLBPercentileDemo";
 import NFL from "./pages/NFL";
+import NFLGuideHome from "./pages/NFLGuideHome";
 import NFLStandings from "./pages/NFLStandings";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import NFLGuide2026 from "./pages/NFLGuide2026";
@@ -89,7 +90,9 @@ const App = () => (
           <Route path="/bracket" element={<Navigate to={NCAA_BRACKET_PATH} replace />} />
           <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
-          <Route path="/nfl" element={<NFL />} />
+          {/* Branch-specific: /nfl is the NFL Guide development home on this branch, not the power-ratings hub. */}
+          <Route path="/nfl" element={<NFLGuideHome />} />
+          <Route path="/nfl/power-ratings" element={<NFL />} />
           <Route path="/nfl/standings" element={<NFLStandings />} />
           <Route path="/nfl/super-bowl" element={<NFLSuperBowlOdds />} />
           <Route path="/nfl/coach-of-year" element={<NFLCoachOfYear2026 />} />

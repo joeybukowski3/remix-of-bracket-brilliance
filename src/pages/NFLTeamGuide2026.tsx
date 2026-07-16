@@ -28,7 +28,7 @@ export default function NFLTeamGuide2026() {
     noindex: !team,
   });
 
-  if (!team) return <Navigate to="/nfl" replace />;
+  if (!team) return <Navigate to="/nfl/guide" replace />;
   const divisionTeams = NFL_GUIDE_DIVISIONS.find((entry) => entry.division === team.division)?.teams ?? [];
 
   return (
@@ -36,7 +36,7 @@ export default function NFLTeamGuide2026() {
       <main id="top" className="min-h-screen bg-slate-50 pb-16">
         <section className="border-b border-slate-800 text-white" style={{ background: `linear-gradient(125deg, #020617 0%, ${team.color} 135%)` }}>
           <div className="mx-auto max-w-[1400px] px-4 py-9 sm:px-6 lg:px-8">
-            <Link to="/nfl" className="text-xs font-black text-sky-200 hover:text-white">← Back to NFL power ratings</Link>
+            <Link to="/nfl/power-ratings" className="text-xs font-black text-sky-200 hover:text-white">← Back to NFL power ratings</Link>
 
             <div className="mt-5 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center">

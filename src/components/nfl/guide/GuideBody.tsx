@@ -54,7 +54,10 @@ export function GuideBody({ variant }: { variant: GuideVariant }) {
         </section>
       ))}
 
-      <footer className="break-inside-avoid border-t-2 border-slate-900 pt-3 text-[10px] leading-4 text-slate-600">
+      <footer
+        id="guide-methodology"
+        className="scroll-mt-24 break-inside-avoid border-t-2 border-slate-900 pt-3 text-[10px] leading-4 text-slate-600"
+      >
         <p className="font-black uppercase tracking-wider text-slate-900">Methodology &amp; attribution</p>
         <p className="mt-1">
           Power ratings are JoeKnowsBall model output (nfl-power-v0.3.0) derived from completed regular-season

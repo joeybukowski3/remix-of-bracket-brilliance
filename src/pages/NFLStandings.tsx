@@ -80,7 +80,7 @@ export default function NFLStandings() {
             <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">2026 NFL Standings by Division</h1>
             <p className="mt-2 text-sm text-slate-500">Sorted by record, then preseason power rank · Select a team for its full dashboard</p>
             <nav className="mt-5 flex flex-wrap gap-2" aria-label="NFL sections">
-              <Link to="/nfl" className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700">Power Ratings</Link>
+              <Link to="/nfl/power-ratings" className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700">Power Ratings</Link>
               <span className="rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white">Standings by Division</span>
               <Link to="/nfl/super-bowl" className="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700">Super Bowl Odds</Link>
             </nav>
