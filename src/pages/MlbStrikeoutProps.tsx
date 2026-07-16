@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
+import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import {
@@ -270,7 +271,7 @@ function KBestBetsSection({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
 
 export default function MlbStrikeoutProps() {
   usePageSeo(getSeoMeta("mlb-strikeout-props"));
-  const { dashboard, games, loading, strikeoutDetailRows } = useMlbPropsData();
+  const { dashboard, games, status, strikeoutDetailRows } = useMlbPropsData();
   const { loading: detailsLoading, fileUnavailable: detailsUnavailable, detailsByKey, detailsDate } = useMlbStrikeoutPropDetails();
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
@@ -341,17 +342,48 @@ export default function MlbStrikeoutProps() {
     setSortKey(key);
   };
 
-  if (loading) {
-    return <main className="site-page bg-[#edf2f7] py-8"><div className="text-center text-sm text-slate-500">Loading strikeout prop model…</div></main>;
-  }
+  // `strikeoutDetailRows` is the single row collection this page renders a
+  // table from -- unlike HR Props, this page never separately consumes
+  // `pitchers` or `strikeoutRows`, so those aren't part of the visibility
+  // decision. `status` (the shared hook's source of truth) decides what
+  // FreshnessStatus says in either shell below; this boolean only decides
+  // whether there's a table worth rendering at all.
+  const hasUsableStrikeoutData = strikeoutDetailRows.length > 0;
 
-  if (!strikeoutDetailRows.length) {
+  // FreshnessStatus explains shared MLB model freshness, but a nonblocking
+  // status with zero rows still needs its own explanation for why the
+  // table itself is empty -- otherwise "Current slate data" next to
+  // nothing reads as broken, not merely row-less. Blocking/loading/
+  // waiting/no-games statuses are already fully explained by
+  // FreshnessStatus's own copy, so this never fires alongside those.
+  const shouldShowNoProjectionRowsMessage =
+    !hasUsableStrikeoutData
+    && (status.kind === "current" || status.kind === "lineup-pending" || status.kind === "stale" || (status.kind === "error" && status.hasLastKnownData));
+
+  if (status.kind === "loading") {
     return (
         <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
           <div className="space-y-4">
             <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={0} bestScore={null} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Batter vs Pitcher", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
             <StrikeoutPageGuide />
-            <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Data Not Available</div>
+            <FreshnessStatus status={status} />
+          </div>
+        </main>
+    );
+  }
+
+  if (!hasUsableStrikeoutData) {
+    return (
+        <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
+          <div className="space-y-4">
+            <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={0} bestScore={null} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Batter vs Pitcher", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
+            <StrikeoutPageGuide />
+            <FreshnessStatus status={status} />
+            {shouldShowNoProjectionRowsMessage && (
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                Strikeout model data is available, but no pitcher projection rows are currently listed for this slate.
+              </div>
+            )}
           </div>
         </main>
     );
@@ -369,6 +401,7 @@ export default function MlbStrikeoutProps() {
           <MlbNavHero />
           <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={strikeoutDetailRows.length} bestScore={bestScore} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Batter vs Pitcher", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
           <StrikeoutPageGuide />
+          <FreshnessStatus status={status} />
           {isDetailsStale && <MlbStrikeoutPropDetailsStaleBanner detailsDate={detailsDate} slateDate={slateDate} />}
           <KBestBetsSection rows={strikeoutDetailRows} />
 

@@ -103,7 +103,13 @@ const dashboardFixture = { date: "2026-07-09", generatedAt: "2026-07-09T12:00:00
 
 function mockPropsData(rows: PitcherStrikeoutTeamRow[]) {
   vi.doMock("@/hooks/useMlbPropsData", () => ({
-    useMlbPropsData: () => ({ dashboard: dashboardFixture, games: [], loading: false, strikeoutDetailRows: rows }),
+    useMlbPropsData: () => ({
+      dashboard: dashboardFixture,
+      games: [],
+      loading: false,
+      strikeoutDetailRows: rows,
+      status: { kind: "current", slateDate: dashboardFixture.date, generatedAt: dashboardFixture.generatedAt },
+    }),
   }));
 }
 
