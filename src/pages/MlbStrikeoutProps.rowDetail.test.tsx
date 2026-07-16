@@ -83,6 +83,7 @@ function mockPropsData(rows: PitcherStrikeoutTeamRow[]) {
       games: [],
       loading: false,
       strikeoutDetailRows: rows,
+      status: { kind: "current", slateDate: dashboardFixture.date, generatedAt: dashboardFixture.generatedAt },
     }),
   }));
 }
