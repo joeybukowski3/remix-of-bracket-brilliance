@@ -38,7 +38,7 @@ const SECTIONS = [
     label: "NFL",
     emoji: "🏈",
     links: [
-      { label: "NFL Hub", to: "/nfl", soon: true },
+      { label: "NFL Guide", to: "/nfl" },
     ],
   },
   {
