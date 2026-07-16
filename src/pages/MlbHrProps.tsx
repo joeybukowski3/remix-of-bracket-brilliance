@@ -2,6 +2,7 @@
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
 import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
+import { MlbParkFactorsStrip } from "@/components/mlb/MlbParkFactorsStrip";
 import SportsbookBar from "@/components/SportsbookBar";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
@@ -854,12 +855,6 @@ function getEspnTeamLogo(team?: string, dark = false) {
   const folder = dark ? "500-dark" : "500";
   return `https://a.espncdn.com/i/teamlogos/mlb/${folder}/${ESPN_TEAM_ABBR[t] ?? t.toLowerCase()}.png`;
 }
-function getRoofLabel(r: string) {
-  if (/open/i.test(r)) return "Open";
-  if (/retractable/i.test(r)) return "Retractable";
-  if (/dome|closed/i.test(r)) return "Roof";
-  return r || "Unknown";
-}
 
 export function getParkFactorTone(value: number) {
   if (value >= 1.10) return "bg-green-500 text-white";
@@ -1666,7 +1661,6 @@ export default function MlbHrProps() {
   // the same data source and poll together every 10 minutes.
   const { dashboard, bestBets, status } = useMlbPropsData();
   const [isMobile, setIsMobile] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
   const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
@@ -1722,9 +1716,6 @@ export default function MlbHrProps() {
     const syncMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (!mobile) {
-        setIsSidebarOpen(false);
-      }
     };
 
     syncMobile();
@@ -1941,112 +1932,7 @@ export default function MlbHrProps() {
               <FreshnessStatus status={status} />
             </div>
           ) : (
-            <div className="grid gap-3 xl:grid-cols-[300px_minmax(0,1fr)]">
-              <aside className={cn("space-y-3 xl:sticky xl:top-4 xl:self-start", isMobile ? "hidden" : "")}>
-                <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="border-l-2 border-sky-500 pl-2 text-sm font-semibold uppercase tracking-[0.14em] text-sky-900">🏟️ Park Factors</div>
-                      <div className="mt-1 text-xs text-slate-500">Today&apos;s park and weather context</div>
-                    </div>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{parkRows.length} parks</span>
-                  </div>
-                  <div className="mt-3 space-y-3">
-                    {parkRows.map((park) => (
-                      <article key={park.key} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <TeamLogoBadge team={park.awayTeam} size={20} showLabel={false} />
-                            <span className="text-[10px] font-bold text-slate-400">@</span>
-                            <TeamLogoBadge team={park.homeTeam} size={20} showLabel={false} />
-                            <span className="ml-1 text-[11px] font-bold text-slate-900">{park.matchup}</span>
-                          </div>
-                          <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold", getParkFactorTone(park.parkFactor))}>
-                            {park.parkFactor.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-[10px] text-slate-400">{park.stadium}</div>
-                        {park.hrPerGame != null && (
-                          <div className="mt-1.5 flex items-center gap-1.5">
-                            <span className={cn(
-                              "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                              park.hrPerGame >= 2.7 ? "bg-red-100 text-red-700" :
-                              park.hrPerGame >= 2.3 ? "bg-orange-100 text-orange-700" :
-                              park.hrPerGame >= 2.0 ? "bg-amber-100 text-amber-700" :
-                              "bg-slate-100 text-slate-600"
-                            )}>
-                              ⚾ {park.hrPerGame.toFixed(2)} HR/game
-                            </span>
-                          </div>
-                        )}
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}</span>
-                          {park.windSpeed != null && park.windSpeed >= 10 && (
-                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">💨 {park.windSpeed.toFixed(0)} MPH {getWindArrow(park.windDirection)} {park.windDirection}</span>
-                          )}
-                        </div>
-                        <div className="mt-1.5 text-[10px] text-slate-400">{park.windSpeed != null && park.windSpeed < 10 ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection} · ` : ""}{park.conditions}</div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              </aside>
-
-              {isMobile && isSidebarOpen ? (
-                <div className="fixed inset-0 z-40 bg-slate-950/35" onClick={() => setIsSidebarOpen(false)}>
-                  <aside
-                    className="absolute left-0 top-0 h-full w-[88vw] max-w-[320px] overflow-y-auto border-r border-slate-200 bg-white p-3 shadow-xl"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="border-l-2 border-sky-500 pl-2 text-sm font-semibold uppercase tracking-[0.14em] text-sky-900">🏟️ Park Factors</div>
-                      <button
-                        type="button"
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600"
-                      >
-                        Close
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {parkRows.map((park) => (
-                        <article key={`mobile-${park.key}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900">{park.matchup}</div>
-                              <div className="mt-1 text-xs text-slate-500">{park.stadium}</div>
-                              {park.hrPerGame != null && (
-                                <span className={cn(
-                                  "mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold",
-                                  park.hrPerGame >= 2.7 ? "bg-red-100 text-red-700" :
-                                  park.hrPerGame >= 2.3 ? "bg-orange-100 text-orange-700" :
-                                  park.hrPerGame >= 2.0 ? "bg-amber-100 text-amber-700" :
-                                  "bg-slate-100 text-slate-600"
-                                )}>
-                                  ⚾ {park.hrPerGame.toFixed(2)} HR/game
-                                </span>
-                              )}
-                            </div>
-                            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold", getParkFactorTone(park.parkFactor))}>
-                              {park.parkFactor.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">{getRoofLabel(park.roofType)}</span>
-                            <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                              {park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}
-                            </span>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </aside>
-                </div>
-              ) : null}
-
-              <section className="min-w-0 flex-1 space-y-3">
+              <section className="space-y-3">
                 <div className="rounded-[30px] bg-[#0f2748] px-5 py-5 text-white shadow-sm">
                   <div className={cn("flex flex-col gap-3", isMobile ? "" : "lg:flex-row lg:items-start lg:justify-between")}>
                     <div>
@@ -2059,15 +1945,6 @@ export default function MlbHrProps() {
                       </p>
                     </div>
                     <div className={cn("flex flex-wrap gap-2", isMobile ? "items-center justify-between" : "")}>
-                      {isMobile ? (
-                        <button
-                          type="button"
-                          onClick={() => setIsSidebarOpen(true)}
-                          className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm font-semibold text-white"
-                        >
-                          ☰ Parks
-                        </button>
-                      ) : null}
                       <span className={cn("rounded-full bg-white/10 px-3 py-1 font-semibold text-white", isMobile ? "text-[13px]" : "text-sm")}>👥 {slateSummary.hitterCount} hitters</span>
                     </div>
                   </div>
@@ -2081,6 +1958,8 @@ export default function MlbHrProps() {
                 </div>
 
                 <FreshnessStatus status={status} />
+
+                <MlbParkFactorsStrip parks={parkRows} perspective="hitter" subtitle="Today's park and weather context" />
 
                 <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
                   <div className="grid gap-3 md:grid-cols-3">
@@ -3011,7 +2890,6 @@ export default function MlbHrProps() {
 
                 <RelatedTools currentToolId="hr-props" />
               </section>
-            </div>
           )}
         </div>
       </main>

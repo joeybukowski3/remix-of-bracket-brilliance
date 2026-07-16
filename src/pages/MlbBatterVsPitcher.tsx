@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
 import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
+import { MlbParkFactorsStrip } from "@/components/mlb/MlbParkFactorsStrip";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import {
@@ -18,9 +19,6 @@ import {
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import {
   buildParkSidebarRows,
-  getParkFactorTone,
-  getWindArrow,
-  TeamLogoBadge,
   type PitcherVsBatterRow,
 } from "@/pages/MlbHrProps";
 import { cn } from "@/lib/utils";
@@ -77,13 +75,6 @@ function fmt(v: number | null | undefined, digits = 1) {
 
 function makeSortIndicator(active: boolean, dir: SortDirection) {
   return active ? (dir === "asc" ? " ↑" : " ↓") : "";
-}
-
-function getRoofLabel(r: string) {
-  if (/open/i.test(r)) return "Open";
-  if (/retractable/i.test(r)) return "Retractable";
-  if (/dome|closed/i.test(r)) return "Roof";
-  return r || "Unknown";
 }
 
 function BvpPageGuide() {
@@ -266,62 +257,9 @@ export default function MlbBatterVsPitcher() {
           <BvpPageGuide />
           <FreshnessStatus status={status} />
 
-          <div className="grid gap-3 xl:grid-cols-[260px_minmax(0,1fr)]">
-            {/* Park sidebar — hitter-friendly order */}
-            <aside className="hidden xl:block space-y-3 xl:sticky xl:top-4 xl:self-start">
-              <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
-                    <div className="border-l-2 border-sky-500 pl-2 text-sm font-semibold uppercase tracking-[0.14em] text-sky-900">🏟️ Park Factors</div>
-                    <div className="mt-1 text-xs text-slate-500">Hitter-friendly order</div>
-                  </div>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{parkRows.length} parks</span>
-                </div>
-                <div className="space-y-2">
-                  {parkRows.map((park) => (
-                    <article key={park.key} className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1">
-                          <TeamLogoBadge team={park.awayTeam} size={18} showLabel={false} />
-                          <span className="text-[9px] font-bold text-slate-300">@</span>
-                          <TeamLogoBadge team={park.homeTeam} size={18} showLabel={false} />
-                          <span className="ml-1 text-[10px] text-slate-400 truncate">{park.stadium}</span>
-                        </div>
-                        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", getParkFactorTone(park.parkFactor))}>
-                          {park.parkFactor.toFixed(2)}
-                        </span>
-                      </div>
-                      {park.hrPerGame != null && (
-                        <div className="mt-1">
-                          <span className={cn(
-                            "rounded-full px-1.5 py-0.5 text-[9px] font-bold",
-                            park.hrPerGame >= 2.7 ? "bg-red-100 text-red-700" :
-                            park.hrPerGame >= 2.3 ? "bg-orange-100 text-orange-700" :
-                            park.hrPerGame >= 2.0 ? "bg-amber-100 text-amber-700" :
-                            "bg-slate-100 text-slate-600"
-                          )}>
-                            ⚾ {park.hrPerGame.toFixed(2)} HR/G
-                          </span>
-                        </div>
-                      )}
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
-                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
-                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">Precip {park.precipitation != null ? `${park.precipitation.toFixed(0)}%` : DASH}</span>
-                        {park.windSpeed != null && park.windSpeed >= 10 && (
-                          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">💨 {park.windSpeed.toFixed(0)} MPH {getWindArrow(park.windDirection)} {park.windDirection}</span>
-                        )}
-                      </div>
-                      {(park.windSpeed == null || park.windSpeed < 10) && (
-                        <div className="mt-1 text-[9px] text-slate-400">{park.windSpeed != null ? `${park.windSpeed.toFixed(0)} MPH ${park.windDirection} · ` : ""}{park.conditions}</div>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </aside>
+          <MlbParkFactorsStrip parks={parkRows} perspective="hitter" subtitle="Hitter-friendly order" />
 
-            <div className="min-w-0 space-y-4">
+          <div className="space-y-4">
               {/* Filters */}
               <section className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="grid gap-2 sm:grid-cols-4">
@@ -471,7 +409,6 @@ export default function MlbBatterVsPitcher() {
 
               <RelatedTools currentToolId="batter-vs-pitcher" />
             </div>
-          </div>
         </div>
       </main>
   );
