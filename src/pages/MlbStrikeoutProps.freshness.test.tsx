@@ -563,7 +563,7 @@ describe("MlbStrikeoutProps — freshness status integration", () => {
 
   it("40. no other page component is imported or modified for freshness migration", () => {
     const pagesDir = "src/pages";
-    const migratedPages = ["MlbHrProps.tsx", "MlbStrikeoutProps.tsx"];
+    const migratedPages = ["MlbHrProps.tsx", "MlbStrikeoutProps.tsx", "MlbBatterVsPitcher.tsx"];
     const otherPageFiles = readdirSync(pagesDir).filter(
       (name) => name.endsWith(".tsx") && !name.includes(".test.") && !migratedPages.includes(name),
     );
@@ -692,5 +692,27 @@ describe("MlbStrikeoutProps — zero-projection-rows page-local message", () => 
 
     expect(screen.getByText("No pitchers match the current filters.")).toBeInTheDocument();
     expect(screen.queryByText(NO_PROJECTION_ROWS_MESSAGE)).toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+});
+
+describe("MlbStrikeoutProps — ModelSummaryHeader timestamp de-duplication", () => {
+  it("38. passes showUpdatedAt={false} to ModelSummaryHeader", () => {
+    const source = readFileSync("src/pages/MlbStrikeoutProps.tsx", "utf-8");
+    const modelSummaryHeaderCalls = source.match(/<ModelSummaryHeader\b[^]*?\/>/g) ?? [];
+    expect(modelSummaryHeaderCalls.length).toBeGreaterThan(0);
+    for (const call of modelSummaryHeaderCalls) {
+      expect(call).toContain("showUpdatedAt={false}");
+    }
+  });
+
+  it("39. current status no longer shows a duplicate 'Last updated' timestamp cell", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], status: CURRENT_STATUS });
+    await renderPage();
+
+    // FreshnessStatus owns the "Model updated ..." sentence for the current
+    // state; ModelSummaryHeader's own "Last updated" cell must not also render.
+    expect(screen.queryByText("Last updated")).toBeNull();
+    expect(screen.getByText(/Model updated .+ ET\.$/)).toBeInTheDocument();
   }, SLOW_RENDER_TIMEOUT_MS);
 });

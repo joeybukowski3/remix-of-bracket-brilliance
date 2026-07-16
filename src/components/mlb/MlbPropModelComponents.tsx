@@ -136,6 +136,7 @@ export function ModelSummaryHeader({
   bestScore,
   backTo = "/mlb",
   siblingLinks,
+  showUpdatedAt = true,
 }: {
   title: string;
   eyebrow: string;
@@ -146,7 +147,16 @@ export function ModelSummaryHeader({
   bestScore: number | null | undefined;
   backTo?: string;
   siblingLinks?: Array<{ label: string; to: string; icon: ReactNode; color: string }>;
+  /** Set false on pages that already surface freshness via the shared FreshnessStatus component, to avoid showing the model-updated timestamp twice. Defaults to true so every existing consumer is unaffected. */
+  showUpdatedAt?: boolean;
 }) {
+  const summaryCells: Array<[string, string]> = [
+    ...(showUpdatedAt ? ([["Last updated", formatModelTimestamp(generatedAt)]] as Array<[string, string]>) : []),
+    ["Games analyzed", String(gamesCount)],
+    ["Rows ranked", String(rowsCount)],
+    ["Best edge", formatPropNumber(bestScore)],
+  ];
+
   return (
     <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
       <div className="bg-[#10243f] px-4 py-4 text-white sm:px-5">
@@ -176,13 +186,8 @@ export function ModelSummaryHeader({
           </Link>
         </div>
       </div>
-      <div className="grid gap-px bg-slate-200 sm:grid-cols-4">
-        {[
-          ["Last updated", formatModelTimestamp(generatedAt)],
-          ["Games analyzed", String(gamesCount)],
-          ["Rows ranked", String(rowsCount)],
-          ["Best edge", formatPropNumber(bestScore)],
-        ].map(([label, value]) => (
+      <div className={cn("grid gap-px bg-slate-200", showUpdatedAt ? "sm:grid-cols-4" : "sm:grid-cols-3")}>
+        {summaryCells.map(([label, value]) => (
           <div key={label} className="bg-white px-4 py-3">
             <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{label}</div>
             <div className="mt-1 text-sm font-black text-slate-950">{value}</div>

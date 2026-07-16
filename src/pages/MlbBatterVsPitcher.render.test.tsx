@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import type { PitcherVsBatterRow } from "@/pages/MlbHrProps";
+import type { MlbDataStatus } from "@/lib/mlb/mlbDataStatus";
 
 // Same jsdom caveat as the Strikeout Props tests: the page renders a desktop
 // table and a mobile card list simultaneously (jsdom doesn't evaluate CSS
@@ -63,14 +64,18 @@ const baseGame = {
   parkFactor: 1.0,
 };
 
-function mockPropsData(rows: PitcherVsBatterRow[], games: (typeof baseGame)[] = [baseGame]) {
+function mockPropsData(
+  rows: PitcherVsBatterRow[],
+  games: (typeof baseGame)[] = [baseGame],
+  status: MlbDataStatus = { kind: "current", slateDate: dashboardFixture.date, generatedAt: dashboardFixture.generatedAt },
+) {
   vi.doMock("@/hooks/useMlbPropsData", () => ({
     useMlbPropsData: () => ({
       dashboard: dashboardFixture,
       games,
-      loading: false,
       batterVsPitcherRows: rows,
       pitchers: [],
+      status,
     }),
   }));
 }
@@ -141,12 +146,12 @@ describe("MlbBatterVsPitcher clarity presentation", () => {
     expect(container.textContent).not.toMatch(/Hit Props/);
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("shows a friendly empty-slate message instead of stale data when there are no games", async () => {
+  it("shows the shared no-games status instead of stale data when there are no games", async () => {
     vi.resetModules();
-    mockPropsData([], []);
+    mockPropsData([], [], { kind: "no-games-scheduled", slateDate: dashboardFixture.date });
     await renderPage();
 
-    expect(screen.getByText(/No MLB games are scheduled right now\. Rankings return with the next MLB slate\./)).toBeTruthy();
+    expect(screen.getByText("No MLB games currently listed")).toBeInTheDocument();
     expect(screen.queryByRole("table")).toBeNull();
   }, SLOW_RENDER_TIMEOUT_MS);
 
