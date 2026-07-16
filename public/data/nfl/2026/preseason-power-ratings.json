@@ -1,0 +1,1123 @@
+{
+  "_meta": {
+    "schemaVersion": "nfl-v0.2",
+    "modelVersion": "nfl-power-v0.3.0",
+    "validationStatus": "stage-1",
+    "generatedAt": "2026-07-14T12:51:57.553Z",
+    "season": 2026,
+    "source": "checked-in NFL results and immutable nflverse stats_team weekly cache, regular season only",
+    "notes": [
+      "Internal Stage-1 preseason power ratings artifact.",
+      "Historical inputs come from the completed 2025 regular season.",
+      "The public scale is fixed at 50 + 15 × (composite / 0.733), capped to [1, 99].",
+      "Offense and defense subratings use the same fixed transform.",
+      "Movement compares only with a stored prior publication; identical reruns preserve stored movement."
+    ],
+    "knownLimitations": [
+      "Trajectory is published for review but does not affect launch scoring because lambda = 0."
+    ],
+    "formulaWeights": {
+      "opponentAdjustedOffensiveEpaPerPlay": 0.4,
+      "opponentAdjustedDefensiveEpaPerPlayInverted": 0.4,
+      "opponentAdjustedPointDifferentialPerGame": 0.2
+    },
+    "frozenPublicScaleDivisor": 0.733,
+    "trajectory": {
+      "statement": "lambda = 0",
+      "lambda": 0,
+      "shrinkageK": 4,
+      "cap": 1
+    }
+  },
+  "sourceSeason": 2025,
+  "ratings": [
+    {
+      "teamId": "nfl-lar",
+      "slug": "la-rams",
+      "abbr": "lar",
+      "name": "LA Rams",
+      "historical": {
+        "fullSeasonComposite": 1.261527,
+        "l8AdjustedComposite": 1.204118,
+        "trajectoryRaw": -0.057409,
+        "trajectoryShrunk": -0.038273,
+        "trajectoryClamped": -0.038273,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 1.261527,
+      "publicRating": 75.815696,
+      "offenseRating": 83.380771,
+      "defenseRating": 61.333206,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 1,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-sea",
+      "slug": "seattle-seahawks",
+      "abbr": "sea",
+      "name": "Seattle Seahawks",
+      "historical": {
+        "fullSeasonComposite": 1.117642,
+        "l8AdjustedComposite": 1.345052,
+        "trajectoryRaw": 0.22741,
+        "trajectoryShrunk": 0.151607,
+        "trajectoryClamped": 0.151607,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 1.117642,
+      "publicRating": 72.871255,
+      "offenseRating": 54.744502,
+      "defenseRating": 82.218281,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 2,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-hou",
+      "slug": "houston-texans",
+      "abbr": "hou",
+      "name": "Houston Texans",
+      "historical": {
+        "fullSeasonComposite": 0.885891,
+        "l8AdjustedComposite": 0.402386,
+        "trajectoryRaw": -0.483505,
+        "trajectoryShrunk": -0.322337,
+        "trajectoryClamped": -0.322337,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.885891,
+      "publicRating": 68.128738,
+      "offenseRating": 49.380068,
+      "defenseRating": 82.21515,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 3,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-jax",
+      "slug": "jacksonville-jaguars",
+      "abbr": "jax",
+      "name": "Jacksonville Jaguars",
+      "historical": {
+        "fullSeasonComposite": 0.804124,
+        "l8AdjustedComposite": 1.750637,
+        "trajectoryRaw": 0.946513,
+        "trajectoryShrunk": 0.631009,
+        "trajectoryClamped": 0.631009,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.804124,
+      "publicRating": 66.455471,
+      "offenseRating": 55.820737,
+      "defenseRating": 71.752312,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 4,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-buf",
+      "slug": "buffalo-bills",
+      "abbr": "buf",
+      "name": "Buffalo Bills",
+      "historical": {
+        "fullSeasonComposite": 0.735078,
+        "l8AdjustedComposite": 1.002779,
+        "trajectoryRaw": 0.267701,
+        "trajectoryShrunk": 0.178468,
+        "trajectoryClamped": 0.178468,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.735078,
+      "publicRating": 65.042524,
+      "offenseRating": 77.290996,
+      "defenseRating": 50.520334,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 5,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-ne",
+      "slug": "new-england-patriots",
+      "abbr": "ne",
+      "name": "New England Patriots",
+      "historical": {
+        "fullSeasonComposite": 0.70119,
+        "l8AdjustedComposite": 1.158692,
+        "trajectoryRaw": 0.457502,
+        "trajectoryShrunk": 0.305002,
+        "trajectoryClamped": 0.305002,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.70119,
+      "publicRating": 64.349045,
+      "offenseRating": 74.282851,
+      "defenseRating": 50.742203,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 6,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-phi",
+      "slug": "philadelphia-eagles",
+      "abbr": "phi",
+      "name": "Philadelphia Eagles",
+      "historical": {
+        "fullSeasonComposite": 0.645939,
+        "l8AdjustedComposite": 0.659461,
+        "trajectoryRaw": 0.013522,
+        "trajectoryShrunk": 0.009015,
+        "trajectoryClamped": 0.009015,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.645939,
+      "publicRating": 63.218397,
+      "offenseRating": 48.248377,
+      "defenseRating": 79.311944,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 7,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-den",
+      "slug": "denver-broncos",
+      "abbr": "den",
+      "name": "Denver Broncos",
+      "historical": {
+        "fullSeasonComposite": 0.61378,
+        "l8AdjustedComposite": 0.520165,
+        "trajectoryRaw": -0.093615,
+        "trajectoryShrunk": -0.06241,
+        "trajectoryClamped": -0.06241,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.61378,
+      "publicRating": 62.5603,
+      "offenseRating": 57.056446,
+      "defenseRating": 68.214686,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 8,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-det",
+      "slug": "detroit-lions",
+      "abbr": "det",
+      "name": "Detroit Lions",
+      "historical": {
+        "fullSeasonComposite": 0.549984,
+        "l8AdjustedComposite": -0.061376,
+        "trajectoryRaw": -0.61136,
+        "trajectoryShrunk": -0.407573,
+        "trajectoryClamped": -0.407573,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.549984,
+      "publicRating": 61.254789,
+      "offenseRating": 64.117026,
+      "defenseRating": 56.67678,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 9,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-ind",
+      "slug": "indianapolis-colts",
+      "abbr": "ind",
+      "name": "Indianapolis Colts",
+      "historical": {
+        "fullSeasonComposite": 0.507377,
+        "l8AdjustedComposite": -0.14605,
+        "trajectoryRaw": -0.653427,
+        "trajectoryShrunk": -0.435618,
+        "trajectoryClamped": -0.435618,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.507377,
+      "publicRating": 60.382885,
+      "offenseRating": 73.563056,
+      "defenseRating": 45.174829,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 10,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-kc",
+      "slug": "kansas-city-chiefs",
+      "abbr": "kc",
+      "name": "Kansas City Chiefs",
+      "historical": {
+        "fullSeasonComposite": 0.391457,
+        "l8AdjustedComposite": -0.591878,
+        "trajectoryRaw": -0.983335,
+        "trajectoryShrunk": -0.655557,
+        "trajectoryClamped": -0.655557,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.391457,
+      "publicRating": 58.010716,
+      "offenseRating": 59.626317,
+      "defenseRating": 56.623656,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 11,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-gb",
+      "slug": "green-bay-packers",
+      "abbr": "gb",
+      "name": "Green Bay Packers",
+      "historical": {
+        "fullSeasonComposite": 0.301617,
+        "l8AdjustedComposite": 0.155887,
+        "trajectoryRaw": -0.14573,
+        "trajectoryShrunk": -0.097153,
+        "trajectoryClamped": -0.097153,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.301617,
+      "publicRating": 56.172244,
+      "offenseRating": 70.647838,
+      "defenseRating": 42.652865,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 12,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-lac",
+      "slug": "la-chargers",
+      "abbr": "lac",
+      "name": "LA Chargers",
+      "historical": {
+        "fullSeasonComposite": 0.274041,
+        "l8AdjustedComposite": 0.449482,
+        "trajectoryRaw": 0.175441,
+        "trajectoryShrunk": 0.116961,
+        "trajectoryClamped": 0.116961,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.274041,
+      "publicRating": 55.607933,
+      "offenseRating": 43.993431,
+      "defenseRating": 68.453745,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 13,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-sf",
+      "slug": "san-francisco-49ers",
+      "abbr": "sf",
+      "name": "San Francisco 49ers",
+      "historical": {
+        "fullSeasonComposite": 0.245394,
+        "l8AdjustedComposite": 0.311249,
+        "trajectoryRaw": 0.065855,
+        "trajectoryShrunk": 0.043903,
+        "trajectoryClamped": 0.043903,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.245394,
+      "publicRating": 55.021705,
+      "offenseRating": 72.7656,
+      "defenseRating": 31.541569,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 14,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-bal",
+      "slug": "baltimore-ravens",
+      "abbr": "bal",
+      "name": "Baltimore Ravens",
+      "historical": {
+        "fullSeasonComposite": 0.23934,
+        "l8AdjustedComposite": 0.469188,
+        "trajectoryRaw": 0.229848,
+        "trajectoryShrunk": 0.153232,
+        "trajectoryClamped": 0.153232,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.23934,
+      "publicRating": 54.897817,
+      "offenseRating": 60.480641,
+      "defenseRating": 48.27807,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 15,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-chi",
+      "slug": "chicago-bears",
+      "abbr": "chi",
+      "name": "Chicago Bears",
+      "historical": {
+        "fullSeasonComposite": 0.193226,
+        "l8AdjustedComposite": 0.603487,
+        "trajectoryRaw": 0.410261,
+        "trajectoryShrunk": 0.273507,
+        "trajectoryClamped": 0.273507,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.193226,
+      "publicRating": 53.954147,
+      "offenseRating": 63.764761,
+      "defenseRating": 45.012326,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 16,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-pit",
+      "slug": "pittsburgh-steelers",
+      "abbr": "pit",
+      "name": "Pittsburgh Steelers",
+      "historical": {
+        "fullSeasonComposite": 0.1187,
+        "l8AdjustedComposite": 0.40575,
+        "trajectoryRaw": 0.28705,
+        "trajectoryShrunk": 0.191367,
+        "trajectoryClamped": 0.191367,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.1187,
+      "publicRating": 52.429059,
+      "offenseRating": 57.34075,
+      "defenseRating": 46.99208,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 17,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-min",
+      "slug": "minnesota-vikings",
+      "abbr": "min",
+      "name": "Minnesota Vikings",
+      "historical": {
+        "fullSeasonComposite": 0.044805,
+        "l8AdjustedComposite": 0.644657,
+        "trajectoryRaw": 0.599852,
+        "trajectoryShrunk": 0.399901,
+        "trajectoryClamped": 0.399901,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": 0.044805,
+      "publicRating": 50.916883,
+      "offenseRating": 18.380553,
+      "defenseRating": 81.887033,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 18,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-tb",
+      "slug": "tampa-bay-buccaneers",
+      "abbr": "tb",
+      "name": "Tampa Bay Buccaneers",
+      "historical": {
+        "fullSeasonComposite": -0.110206,
+        "l8AdjustedComposite": -1.03269,
+        "trajectoryRaw": -0.922484,
+        "trajectoryShrunk": -0.61499,
+        "trajectoryClamped": -0.61499,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.110206,
+      "publicRating": 47.744761,
+      "offenseRating": 48.527135,
+      "defenseRating": 48.199939,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 19,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-atl",
+      "slug": "atlanta-falcons",
+      "abbr": "atl",
+      "name": "Atlanta Falcons",
+      "historical": {
+        "fullSeasonComposite": -0.198318,
+        "l8AdjustedComposite": -0.076135,
+        "trajectoryRaw": 0.122183,
+        "trajectoryShrunk": 0.081455,
+        "trajectoryClamped": 0.081455,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.198318,
+      "publicRating": 45.941651,
+      "offenseRating": 43.435914,
+      "defenseRating": 51.978199,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 20,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-no",
+      "slug": "new-orleans-saints",
+      "abbr": "no",
+      "name": "New Orleans Saints",
+      "historical": {
+        "fullSeasonComposite": -0.239061,
+        "l8AdjustedComposite": 0.342187,
+        "trajectoryRaw": 0.581248,
+        "trajectoryShrunk": 0.387499,
+        "trajectoryClamped": 0.387499,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.239061,
+      "publicRating": 45.107892,
+      "offenseRating": 26.914018,
+      "defenseRating": 70.322565,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 21,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-nyg",
+      "slug": "ny-giants",
+      "abbr": "nyg",
+      "name": "NY Giants",
+      "historical": {
+        "fullSeasonComposite": -0.3514,
+        "l8AdjustedComposite": 0.026932,
+        "trajectoryRaw": 0.378332,
+        "trajectoryShrunk": 0.252221,
+        "trajectoryClamped": 0.252221,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.3514,
+      "publicRating": 42.809004,
+      "offenseRating": 52.488056,
+      "defenseRating": 35.057299,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 22,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-car",
+      "slug": "carolina-panthers",
+      "abbr": "car",
+      "name": "Carolina Panthers",
+      "historical": {
+        "fullSeasonComposite": -0.541616,
+        "l8AdjustedComposite": -0.450751,
+        "trajectoryRaw": 0.090865,
+        "trajectoryShrunk": 0.060577,
+        "trajectoryClamped": 0.060577,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.541616,
+      "publicRating": 38.916453,
+      "offenseRating": 36.771965,
+      "defenseRating": 42.045048,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 23,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-ari",
+      "slug": "arizona-cardinals",
+      "abbr": "ari",
+      "name": "Arizona Cardinals",
+      "historical": {
+        "fullSeasonComposite": -0.545078,
+        "l8AdjustedComposite": -1.011884,
+        "trajectoryRaw": -0.466806,
+        "trajectoryShrunk": -0.311204,
+        "trajectoryClamped": -0.311204,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.545078,
+      "publicRating": 38.845607,
+      "offenseRating": 45.482933,
+      "defenseRating": 36.587053,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 24,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-cin",
+      "slug": "cincinnati-bengals",
+      "abbr": "cin",
+      "name": "Cincinnati Bengals",
+      "historical": {
+        "fullSeasonComposite": -0.683715,
+        "l8AdjustedComposite": 0.065276,
+        "trajectoryRaw": 0.748991,
+        "trajectoryShrunk": 0.499327,
+        "trajectoryClamped": 0.499327,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.683715,
+      "publicRating": 36.008561,
+      "offenseRating": 55.99824,
+      "defenseRating": 16.558247,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 25,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-dal",
+      "slug": "dallas-cowboys",
+      "abbr": "dal",
+      "name": "Dallas Cowboys",
+      "historical": {
+        "fullSeasonComposite": -0.69107,
+        "l8AdjustedComposite": -0.927304,
+        "trajectoryRaw": -0.236234,
+        "trajectoryShrunk": -0.15749,
+        "trajectoryClamped": -0.15749,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.69107,
+      "publicRating": 35.858049,
+      "offenseRating": 68.144536,
+      "defenseRating": 3.843752,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 26,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-cle",
+      "slug": "cleveland-browns",
+      "abbr": "cle",
+      "name": "Cleveland Browns",
+      "historical": {
+        "fullSeasonComposite": -0.700169,
+        "l8AdjustedComposite": -0.81446,
+        "trajectoryRaw": -0.114291,
+        "trajectoryShrunk": -0.076194,
+        "trajectoryClamped": -0.076194,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.700169,
+      "publicRating": 35.671849,
+      "offenseRating": 1,
+      "defenseRating": 77.675941,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 27,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-mia",
+      "slug": "miami-dolphins",
+      "abbr": "mia",
+      "name": "Miami Dolphins",
+      "historical": {
+        "fullSeasonComposite": -0.703922,
+        "l8AdjustedComposite": -0.349253,
+        "trajectoryRaw": 0.354669,
+        "trajectoryShrunk": 0.236446,
+        "trajectoryClamped": 0.236446,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.703922,
+      "publicRating": 35.595048,
+      "offenseRating": 44.046126,
+      "defenseRating": 29.371173,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 28,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-wsh",
+      "slug": "washington-commanders",
+      "abbr": "wsh",
+      "name": "Washington Commanders",
+      "historical": {
+        "fullSeasonComposite": -0.832297,
+        "l8AdjustedComposite": -1.00961,
+        "trajectoryRaw": -0.177313,
+        "trajectoryShrunk": -0.118209,
+        "trajectoryClamped": -0.118209,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -0.832297,
+      "publicRating": 32.968001,
+      "offenseRating": 49.076344,
+      "defenseRating": 17.878595,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 29,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-lv",
+      "slug": "las-vegas-raiders",
+      "abbr": "lv",
+      "name": "Las Vegas Raiders",
+      "historical": {
+        "fullSeasonComposite": -1.229343,
+        "l8AdjustedComposite": -1.595497,
+        "trajectoryRaw": -0.366154,
+        "trajectoryShrunk": -0.244103,
+        "trajectoryClamped": -0.244103,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -1.229343,
+      "publicRating": 24.842913,
+      "offenseRating": 4.001405,
+      "defenseRating": 50.931289,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 30,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-ten",
+      "slug": "tennessee-titans",
+      "abbr": "ten",
+      "name": "Tennessee Titans",
+      "historical": {
+        "fullSeasonComposite": -1.233525,
+        "l8AdjustedComposite": -0.840489,
+        "trajectoryRaw": 0.393036,
+        "trajectoryShrunk": 0.262024,
+        "trajectoryClamped": 0.262024,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -1.233525,
+      "publicRating": 24.757333,
+      "offenseRating": 24.005737,
+      "defenseRating": 28.03206,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 31,
+      "rankChange": null,
+      "ratingChange": null
+    },
+    {
+      "teamId": "nfl-nyj",
+      "slug": "ny-jets",
+      "abbr": "nyj",
+      "name": "NY Jets",
+      "historical": {
+        "fullSeasonComposite": -1.571393,
+        "l8AdjustedComposite": -2.167313,
+        "trajectoryRaw": -0.59592,
+        "trajectoryShrunk": -0.39728,
+        "trajectoryClamped": -0.39728,
+        "lambda": 0,
+        "k": 4,
+        "cap": 1
+      },
+      "manualAdjustments": [],
+      "internalZ": -1.571393,
+      "publicRating": 17.843254,
+      "offenseRating": 17.577551,
+      "defenseRating": 21.91779,
+      "uncertainty": {
+        "band": "standard",
+        "inputs": {
+          "sourceSeason": 2025,
+          "fullSeasonGames": 17,
+          "finalWindowGames": 8,
+          "shortWindow": false,
+          "activeManualEntryCount": 0
+        }
+      },
+      "rank": 32,
+      "rankChange": null,
+      "ratingChange": null
+    }
+  ]
+}

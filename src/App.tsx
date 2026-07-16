@@ -23,6 +23,7 @@ import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import NFLGuide2026 from "./pages/NFLGuide2026";
+import NFLGuidePrint from "./pages/NFLGuidePrint";
 import NFLRegression2026 from "./pages/NFLRegression2026";
 import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
 import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
@@ -96,6 +97,9 @@ const App = () => (
           <Route path="/nfl/guide/regression" element={<NFLRegression2026 />} />
           <Route path="/nfl/guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
           <Route path="/nfl/2026-guide" element={<Navigate to="/nfl/guide" replace />} />
+          {/* Print-focused rendering of the same guide data as /nfl/guide. */}
+          <Route path="/nfl-guide" element={<NFLGuidePrint />} />
+          <Route path="/nfl-guide/" element={<NFLGuidePrint />} />
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
           <Route path="/world-cup" element={<WorldCup2026 />} />
           <Route path="/odds-tracker" element={<PublicBetting />} />
