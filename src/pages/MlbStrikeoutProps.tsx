@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
+import RelatedTools from "@/components/mlb/RelatedTools";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import {
@@ -666,23 +667,7 @@ export default function MlbStrikeoutProps() {
                 </section>
               )}
 
-              <section aria-labelledby="more-mlb-tools-title" className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <h2 id="more-mlb-tools-title" className="text-sm font-bold text-slate-900">More MLB tools</h2>
-                <nav className="mt-2 flex flex-wrap gap-2" aria-label="Related MLB tools">
-                  {[
-                    ["MLB Hub", "/mlb"],
-                    ["HR Props", "/mlb/hr-props"],
-                    ["Batter vs Pitcher", "/mlb/batter-vs-pitcher"],
-                    ["Props Hub", "/mlb/props"],
-                    ["Sin City", "/mlb/sin-city"],
-                    ["Power Rankings", "/mlb/power-rankings"],
-                  ].map(([label, to]) => (
-                    <Link key={to} to={to} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-sky-800 transition hover:border-sky-300 hover:bg-sky-50">
-                      {label}
-                    </Link>
-                  ))}
-                </nav>
-              </section>
+              <RelatedTools currentToolId="strikeout-props" />
             </div>
           </div>
         </div>

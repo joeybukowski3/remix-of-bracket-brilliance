@@ -118,13 +118,19 @@ describe("MlbBatterVsPitcher clarity presentation", () => {
 
     expect(screen.getByRole("heading", { name: "Signal legend" })).toBeTruthy();
 
+    // Related-tool links now come from the shared, registry-driven
+    // RelatedTools component: canonical label is "Game Matchups" (not the
+    // old page-local "MLB Hub"), and Batter vs Pitcher is correctly absent
+    // from its own related-tools list.
     const relatedTools = screen.getByRole("navigation", { name: "Related MLB tools" });
-    expect(within(relatedTools).getByRole("link", { name: "MLB Hub" })).toHaveAttribute("href", "/mlb");
+    expect(within(relatedTools).getByRole("link", { name: "Game Matchups" })).toHaveAttribute("href", "/mlb");
     expect(within(relatedTools).getByRole("link", { name: "HR Props" })).toHaveAttribute("href", "/mlb/hr-props");
     expect(within(relatedTools).getByRole("link", { name: "Strikeout Props" })).toHaveAttribute("href", "/mlb/strikeout-props");
     expect(within(relatedTools).getByRole("link", { name: "Props Hub" })).toHaveAttribute("href", "/mlb/props");
     expect(within(relatedTools).getByRole("link", { name: "Power Rankings" })).toHaveAttribute("href", "/mlb/power-rankings");
     expect(within(relatedTools).getByRole("link", { name: "Sin City" })).toHaveAttribute("href", "/mlb/sin-city");
+    expect(within(relatedTools).queryByRole("link", { name: "Batter vs Pitcher" })).toBeNull();
+    expect(within(relatedTools).queryByRole("link", { name: "Numerology" })).toBeNull();
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("does not use 'Hit Props' terminology for this tool anywhere on the page", async () => {
