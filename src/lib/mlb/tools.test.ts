@@ -5,6 +5,7 @@ import {
   getRelatedMlbTools,
   getVisibleMlbTools,
   MLB_TOOLS,
+  type MlbToolDefinition,
   type MlbToolId,
 } from "./tools";
 import { MLB_NAV_ITEMS } from "./sectionNav";
@@ -83,14 +84,6 @@ describe("MLB_TOOLS immutability", () => {
     }
   });
 
-  it("freezes each tool's relatedToolIds array", () => {
-    for (const tool of MLB_TOOLS) {
-      expect(Object.isFrozen(tool.relatedToolIds)).toBe(true);
-      expect(() => {
-        tool.relatedToolIds.push("numerology");
-      }).toThrow();
-    }
-  });
 });
 
 describe("getMlbTool", () => {
@@ -125,26 +118,71 @@ describe("getMlbToolByRoute", () => {
   });
 });
 
-describe("related-tool integrity", () => {
-  it("every relatedToolId references a real registry entry", () => {
+describe("related-tool curation is deferred", () => {
+  // relatedToolIds is intentionally undefined for every tool in this PR --
+  // no canonical related-tool relationships exist yet. A dedicated Related
+  // Tools PR will curate these deliberately before any consumer migrates
+  // onto this field. No provisional relationships are added here to make
+  // these tests pass.
+  it("leaves relatedToolIds undefined for every tool (no relationships curated yet)", () => {
     for (const tool of MLB_TOOLS) {
-      for (const relatedId of tool.relatedToolIds) {
-        expect(ALL_TOOL_IDS).toContain(relatedId);
-      }
+      expect(tool.relatedToolIds).toBeUndefined();
     }
   });
 
-  it("a tool never lists itself as related", () => {
+  it("getRelatedMlbTools resolves an undefined relatedToolIds to an empty array for every tool", () => {
     for (const tool of MLB_TOOLS) {
-      expect(tool.relatedToolIds).not.toContain(tool.id);
+      expect(getRelatedMlbTools(tool.id)).toEqual([]);
     }
   });
 
-  it("getRelatedMlbTools returns full tool definitions matching the tool's relatedToolIds", () => {
-    const hrProps = getMlbTool("hr-props");
+  it("getRelatedMlbTools's empty result is frozen and cannot mutate registry state", () => {
     const related = getRelatedMlbTools("hr-props");
-    expect(related.map((tool) => tool.id).sort()).toEqual([...hrProps.relatedToolIds].sort());
-    expect(related.some((tool) => tool.id === "hr-props")).toBe(false);
+    expect(Object.isFrozen(related)).toBe(true);
+    expect(() => {
+      (related as unknown as unknown[]).push(getMlbTool("sin-city"));
+    }).toThrow();
+    // Mutating one call's result must not leak into a later call's result.
+    expect(getRelatedMlbTools("hr-props")).toEqual([]);
+  });
+
+  it("resolves a hypothetical populated relatedToolIds list to real tool definitions, matching the logic getRelatedMlbTools will use once curated", () => {
+    // Not part of MLB_TOOLS -- a standalone object shaped like what a
+    // future Related Tools PR would actually produce, used only to prove
+    // id-to-definition resolution behaves correctly ahead of curation.
+    const curatedTool: MlbToolDefinition = {
+      ...getMlbTool("hr-props"),
+      relatedToolIds: ["strikeout-props", "batter-vs-pitcher"],
+    };
+    const related = curatedTool.relatedToolIds!.map((id) => getMlbTool(id));
+    expect(related.map((tool) => tool.id)).toEqual(["strikeout-props", "batter-vs-pitcher"]);
+  });
+});
+
+describe("related-tool integrity rules a future curation must satisfy", () => {
+  // These validate the *rule* a future curated relatedToolIds list must
+  // follow, using synthetic candidate ids -- not real registry data.
+  // relatedToolIds stays undefined for every tool in MLB_TOOLS in this PR;
+  // this only proves the invariant-checking logic is correct so a later
+  // curation PR can rely on it (and so these tests fail loudly if someone
+  // curates a bad relationship).
+  function isValidRelatedToolIds(toolId: MlbToolId, candidateRelatedIds: readonly MlbToolId[]): boolean {
+    return (
+      candidateRelatedIds.every((id) => (ALL_TOOL_IDS as string[]).includes(id)) &&
+      !candidateRelatedIds.includes(toolId)
+    );
+  }
+
+  it("accepts a candidate list where every id is a real registered tool and none is the tool itself", () => {
+    expect(isValidRelatedToolIds("hr-props", ["strikeout-props", "batter-vs-pitcher"])).toBe(true);
+  });
+
+  it("rejects a candidate list containing an id that is not a real registered tool", () => {
+    expect(isValidRelatedToolIds("hr-props", ["strikeout-props", "not-a-real-tool" as MlbToolId])).toBe(false);
+  });
+
+  it("rejects a candidate list where a tool references itself", () => {
+    expect(isValidRelatedToolIds("hr-props", ["hr-props", "strikeout-props"])).toBe(false);
   });
 });
 

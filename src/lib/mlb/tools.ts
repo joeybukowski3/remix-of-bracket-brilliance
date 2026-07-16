@@ -9,9 +9,11 @@ import type { SeoPage } from "@/lib/seo";
  * `SeoFooterBlock.tsx`, `lib/seo.ts`, and several inline "More MLB tools" /
  * sibling-link arrays. That duplication has already produced live
  * terminology drift ("K Props" still appears in `SiteFooter.tsx` today
- * even though the canonical label is "Strikeout Props"). This file is the
- * single canonical *product/presentation* source of truth those consumers
- * can migrate onto incrementally in later PRs.
+ * even though the canonical label is "Strikeout Props"). This file defines
+ * the canonical *product/presentation* metadata contract those consumers
+ * will migrate onto incrementally in later PRs. Until that migration
+ * happens, this registry is not read by any of them -- existing production
+ * consumers remain operationally unchanged.
  *
  * `sectionNav.ts` was deliberately left untouched rather than evolved into
  * this registry:
@@ -74,18 +76,21 @@ import type { SeoPage } from "@/lib/seo";
  *                          route; each page's methodology lives inline
  *                          ("How to read this page" sections). This field
  *                          is reserved for a future dedicated surface.
- * - `relatedToolIds`    -- deliberately a conservative full mesh (every
- *                          public tool relates to every other public
- *                          tool). The audit that motivated this registry
- *                          found at least 3 different, mutually
- *                          inconsistent "More MLB tools" / sibling-link
- *                          lists already live in production, none of which
- *                          is more authoritative than another. Picking any
- *                          one of them as canonical would silently encode
- *                          an undocumented product decision; an unopinionated
- *                          full mesh avoids that until a future migration
- *                          PR curates this deliberately (see repo-wide
- *                          "no-consumer-migration" scope for this PR).
+ * - `relatedToolIds`    -- left `undefined` for every tool in this PR.
+ *                          Related-tool curation is intentionally deferred:
+ *                          the audit that motivated this registry found at
+ *                          least 3 different, mutually inconsistent "More
+ *                          MLB tools" / sibling-link lists already live in
+ *                          production, none of which is more authoritative
+ *                          than another. Populating this field now --
+ *                          including with a "relate every tool to every
+ *                          other tool" default -- would silently assert a
+ *                          product relationship (e.g. that Numerology and
+ *                          Sin City belong on every conventional analytics
+ *                          page) that has not been approved. No canonical
+ *                          related-tool relationships exist yet. A future
+ *                          dedicated Related Tools PR will define them,
+ *                          deliberately, before any consumer migration.
  *
  * This registry intentionally excludes: scoring weights, thresholds,
  * rankings, model/API/workflow configuration, generated-data paths, odds
@@ -146,12 +151,20 @@ export interface MlbToolDefinition {
   showInNav: boolean;
   showInFooter: boolean;
   wideContent: boolean;
-  relatedToolIds: MlbToolId[];
+  /**
+   * Curated related-tool ids, when curation has happened. `undefined`
+   * means "relationships not yet curated" -- it is not shorthand for "no
+   * relationships" or "related to everything." Every tool in this PR is
+   * `undefined`: no canonical related-tool relationships exist yet. A
+   * future dedicated Related Tools PR will populate this deliberately,
+   * before any consumer migrates onto it. Use `getRelatedMlbTools` rather
+   * than reading this field directly -- it normalizes the undefined case
+   * to an empty, frozen array.
+   */
+  relatedToolIds?: readonly MlbToolId[];
   seoKey?: SeoPage;
   methodologyHref?: string;
 }
-
-type MlbToolBaseDefinition = Omit<MlbToolDefinition, "relatedToolIds">;
 
 // Order here is the registry's canonical order: `sectionNav.ts`'s "Main"
 // section (Game Matchups, HR Props, Strikeout Props, Batter vs Pitcher,
@@ -160,7 +173,10 @@ type MlbToolBaseDefinition = Omit<MlbToolDefinition, "relatedToolIds">;
 // utility items in that second section (Moneyline Edges, Pitcher
 // Regression, Overdue Batters, Biggest Mismatches) are not standalone
 // tools and have no registry entry.
-const MLB_TOOL_BASE_DEFINITIONS: readonly MlbToolBaseDefinition[] = [
+//
+// relatedToolIds is intentionally omitted from every entry below (see the
+// field's JSDoc on MlbToolDefinition) -- curation is deferred, not defaulted.
+const MLB_TOOL_DEFINITIONS: readonly MlbToolDefinition[] = [
   {
     id: "game-matchups",
     // The /mlb index route's own <h1> (MlbGameDetail.tsx) -- it composites
@@ -321,15 +337,7 @@ const MLB_TOOL_BASE_DEFINITIONS: readonly MlbToolBaseDefinition[] = [
 ];
 
 function buildMlbToolRegistry(): readonly MlbToolDefinition[] {
-  const ids = MLB_TOOL_BASE_DEFINITIONS.map((tool) => tool.id);
-  return Object.freeze(
-    MLB_TOOL_BASE_DEFINITIONS.map((tool) =>
-      Object.freeze({
-        ...tool,
-        relatedToolIds: Object.freeze(ids.filter((id) => id !== tool.id)) as MlbToolId[],
-      }),
-    ),
-  );
+  return Object.freeze(MLB_TOOL_DEFINITIONS.map((tool) => Object.freeze({ ...tool })));
 }
 
 /** Canonical, immutable MLB tool registry in canonical display order. */
@@ -368,12 +376,25 @@ export function getMlbToolByRoute(route: string): MlbToolDefinition | undefined 
   return MLB_TOOLS_BY_ROUTE.get(route);
 }
 
-/** Returns the full tool definitions for a tool's related-tool ids. */
-export function getRelatedMlbTools(id: MlbToolId): MlbToolDefinition[] {
-  return getMlbTool(id).relatedToolIds.map((relatedId) => getMlbTool(relatedId));
+/** Shared, frozen empty result for tools with no curated relationships yet. */
+const EMPTY_RELATED_TOOLS: readonly MlbToolDefinition[] = Object.freeze([]);
+
+/**
+ * Returns the full tool definitions for a tool's curated related-tool ids.
+ * Safely resolves an `undefined` `relatedToolIds` (relationships not yet
+ * curated -- true for every tool today) to an empty, frozen array rather
+ * than throwing or fabricating relationships. The returned array is always
+ * frozen, so callers cannot mutate it into registry state.
+ */
+export function getRelatedMlbTools(id: MlbToolId): readonly MlbToolDefinition[] {
+  const relatedIds = getMlbTool(id).relatedToolIds;
+  if (!relatedIds || relatedIds.length === 0) {
+    return EMPTY_RELATED_TOOLS;
+  }
+  return Object.freeze(relatedIds.map((relatedId) => getMlbTool(relatedId)));
 }
 
 /** Returns every tool that should appear in MLB navigation surfaces, in canonical order. */
-export function getVisibleMlbTools(): MlbToolDefinition[] {
+export function getVisibleMlbTools(): readonly MlbToolDefinition[] {
   return MLB_TOOLS.filter((tool) => tool.showInNav);
 }
