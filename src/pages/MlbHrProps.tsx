@@ -161,6 +161,31 @@ export type HrGameEnvironment = {
   avgQualifyingHitterScore: number | null;
 };
 
+/** The generator's next scheduled run for today's slate (see getNextRunAt() in generate-mlb-hr-props.mjs). Both fields are always written together or the whole value is null -- there is no partial form. */
+export type HrDashboardNextRunAt = {
+  time: string;
+  label: string;
+};
+
+/**
+ * A game the generator excluded from `games`/`pitchers`/`batters` because at
+ * least one side's starting pitcher hadn't been announced yet (see the
+ * `pendingGames.push(...)` call in generate-mlb-hr-props.mjs). Only
+ * `matchup` is required; the remaining fields mirror exactly what the
+ * generator writes and are omitted rather than fabricated when absent.
+ */
+export type HrDashboardPendingGame = {
+  matchup: string;
+  gameKey?: string;
+  gameId?: number | null;
+  venue?: string;
+  officialGameDate?: string;
+  gameStartTime?: string;
+  gameNumber?: number | null;
+  doubleHeader?: string | null;
+  missingPitcherSide?: string[];
+};
+
 export type HrDashboardPayload = {
   date: string;
   generatedAt: string;
@@ -171,6 +196,8 @@ export type HrDashboardPayload = {
   gameEnvironments?: HrGameEnvironment[];
   /** Phase 1 shadow bridge-score version metadata. Additive; UI ignores it. */
   shadowMeta?: import("@/lib/mlb/analytics/shadow").HrShadowMeta;
+  nextRunAt: HrDashboardNextRunAt | null;
+  pendingGames: HrDashboardPendingGame[];
 };
 
 export type HrPropPick = {
@@ -528,11 +555,40 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
   return b as HrDashboardBatter;
 }
 
+/** Rejects a missing/null/non-object value and any object missing either non-empty string field -- the generator never writes a partial nextRunAt (see getNextRunAt() in generate-mlb-hr-props.mjs), so a partial value here is malformed, not a legitimately smaller shape. */
+function normalizeNextRunAt(value: unknown): HrDashboardNextRunAt | null {
+  if (!isRecord(value)) return null;
+  const time = normalizeText(value.time);
+  const label = normalizeText(value.label);
+  if (!time || !label) return null;
+  return { time, label };
+}
+
+/** Only `matchup` is required; every other field is copied only when present so a future generator field addition/removal degrades gracefully instead of invalidating the whole entry. */
+function normalizePendingGame(entry: unknown): HrDashboardPendingGame | null {
+  if (!isRecord(entry)) return null;
+  const matchup = normalizeText(entry.matchup);
+  if (!matchup) return null;
+  return {
+    matchup,
+    gameKey: normalizeText(entry.gameKey) || undefined,
+    gameId: normalizeNumber(entry.gameId),
+    venue: normalizeText(entry.venue) || undefined,
+    officialGameDate: normalizeText(entry.officialGameDate) || undefined,
+    gameStartTime: normalizeText(entry.gameStartTime) || undefined,
+    gameNumber: normalizeNumber(entry.gameNumber),
+    doubleHeader: normalizeText(entry.doubleHeader) || undefined,
+    missingPitcherSide: normalizeStringList(entry.missingPitcherSide),
+  };
+}
+
 export function normalizeHrDashboardPayload(value: unknown): HrDashboardPayload | null {
   if (Array.isArray(value)) {
     return {
       date: "", generatedAt: "", games: [], pitchers: [],
       batters: value.map(normalizeBatter).filter((e): e is HrDashboardBatter => Boolean(e)),
+      nextRunAt: null,
+      pendingGames: [],
     };
   }
   if (!isRecord(value)) return null;
@@ -557,6 +613,8 @@ export function normalizeHrDashboardPayload(value: unknown): HrDashboardPayload 
     pitchers: Array.isArray(value.pitchers) ? value.pitchers.map(normalizePitcher).filter((e): e is HrDashboardPitcher => Boolean(e)) : [],
     batters: Array.isArray(value.batters) ? value.batters.map(normalizeBatter).filter((e): e is HrDashboardBatter => Boolean(e)) : [],
     gameEnvironments,
+    nextRunAt: normalizeNextRunAt(value.nextRunAt),
+    pendingGames: Array.isArray(value.pendingGames) ? value.pendingGames.map(normalizePendingGame).filter((e): e is HrDashboardPendingGame => Boolean(e)) : [],
   };
 }
 
