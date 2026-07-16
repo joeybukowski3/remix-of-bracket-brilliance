@@ -40,6 +40,13 @@ const LINEUP_PENDING_ONE_TOTAL: MlbDataStatus = {
   totalCount: 1,
 };
 
+const LINEUP_PENDING_ONE_TOTAL_CONFIRMED: MlbDataStatus = {
+  kind: "lineup-pending",
+  slateDate: "2026-07-16",
+  confirmedCount: 1,
+  totalCount: 1,
+};
+
 const WAITING_FOR_SLATE: MlbDataStatus = {
   kind: "waiting-for-slate",
   slateDate: "2026-07-16",
@@ -171,7 +178,12 @@ describe("FreshnessStatus — lineup pending", () => {
 
   it("12. one total batter uses correct grammar", () => {
     render(<FreshnessStatus status={LINEUP_PENDING_ONE_TOTAL} />);
-    expect(screen.getByText("None of the 1 listed batter is confirmed yet.")).toBeInTheDocument();
+    expect(screen.getByText("The listed batter is not confirmed yet.")).toBeInTheDocument();
+  });
+
+  it("12b. one total batter, confirmed, uses correct singular grammar", () => {
+    render(<FreshnessStatus status={LINEUP_PENDING_ONE_TOTAL_CONFIRMED} />);
+    expect(screen.getByText("The listed batter is confirmed.")).toBeInTheDocument();
   });
 
   it("13. uses informational semantics, not alert", () => {

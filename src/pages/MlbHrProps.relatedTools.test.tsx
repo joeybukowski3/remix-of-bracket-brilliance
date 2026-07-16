@@ -107,6 +107,7 @@ function mockPropsData() {
     useMlbPropsData: () => ({
       dashboard: dashboardFixture,
       bestBets: null,
+      status: { kind: "current", slateDate: dashboardFixture.date, generatedAt: dashboardFixture.generatedAt },
     }),
   }));
 }
