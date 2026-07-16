@@ -108,23 +108,32 @@ export function Metric({
   );
 }
 
+/**
+ * Defaults to h2 (guide-wide sections: conference, league overview) so
+ * existing callers keep their current level unless they opt into a nested
+ * one. Chapter subsections nested under a team's own h3 heading should pass
+ * `as="h3"` rather than reusing the guide-wide h2.
+ */
 export function GuideSectionHeading({
   eyebrow,
   title,
   description,
   id,
+  as = "h2",
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   id?: string;
+  as?: "h2" | "h3";
 }) {
+  const HeadingTag = as;
   return (
     <div id={id} className="border-b-2 border-slate-900 pb-2">
       {eyebrow ? (
         <div className="text-[10px] font-black uppercase tracking-[0.18em] text-indigo-700">{eyebrow}</div>
       ) : null}
-      <h2 className="mt-0.5 text-xl font-black tracking-tight text-slate-900">{title}</h2>
+      <HeadingTag className="mt-0.5 text-xl font-black tracking-tight text-slate-900">{title}</HeadingTag>
       {description ? <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-600">{description}</p> : null}
     </div>
   );

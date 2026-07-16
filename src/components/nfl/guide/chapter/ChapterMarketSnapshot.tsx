@@ -17,7 +17,7 @@ export function ChapterMarketSnapshot({ team }: { team: NflGuideRecord }) {
 
   return (
     <section className="break-inside-avoid border border-slate-200 bg-white p-3">
-      <GuideSectionHeading eyebrow="Market snapshot" title="Win total and futures" />
+      <GuideSectionHeading as="h3" eyebrow="Market snapshot" title="Win total and futures" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="market" />
         <span className="text-[10px] text-slate-500">
@@ -26,7 +26,9 @@ export function ChapterMarketSnapshot({ team }: { team: NflGuideRecord }) {
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {market ? <Metric label="Win total" value={market.winTotal.toFixed(1)} sub="Site win totals" /> : null}
+        {market ? (
+          <Metric label="Win total" value={market.winTotal.toFixed(1)} sub="Preseason market win total" />
+        ) : null}
         {odds?.division ? (
           <Metric label={odds.division.label} value={odds.division.displayValue} sub="Division odds" />
         ) : null}
@@ -40,22 +42,23 @@ export function ChapterMarketSnapshot({ team }: { team: NflGuideRecord }) {
 
       {disagreement ? (
         <p className="mt-3 text-[11px] leading-4 text-slate-600">
-          Model rank <span className="font-black text-slate-900">#{disagreement.modelRank}</span> vs. market
+          NFL v0.3 rank <span className="font-black text-slate-900">#{disagreement.modelRank}</span> vs. market
           win-total rank <span className="font-black text-slate-900">#{disagreement.marketRank}</span> — a{" "}
           <span className="font-black text-slate-900">
             {disagreement.rankGap > 0 ? `+${disagreement.rankGap}` : disagreement.rankGap}
           </span>{" "}
           gap. {disagreement.rankGap > 0
-            ? "The model rates the team higher than its market win total implies."
+            ? "The v0.3 model rates the team higher than its market win total implies."
             : disagreement.rankGap < 0
-              ? "The market win total implies a higher standing than the model rank."
-              : "The model rank and market win-total rank agree."}
+              ? "The market win total implies a higher standing than the v0.3 rank."
+              : "The v0.3 rank and market win-total rank agree."}
         </p>
       ) : null}
 
-      {odds ? (
+      {market || odds ? (
         <p className="mt-2 text-[9px] text-slate-500">
-          Source: 2026 VSiN NFL Betting Guide, page {vsin?.sourcePage}.
+          {market ? "Win total snapshot date unavailable in legacy source." : null}
+          {odds ? ` Futures source: 2026 VSiN NFL Betting Guide, page ${vsin?.sourcePage}.` : null}
         </p>
       ) : null}
     </section>

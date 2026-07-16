@@ -17,8 +17,12 @@ export function ChapterSourceNotes({ team }: { team: NflGuideRecord }) {
       </p>
 
       <div data-print-hidden className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-        <Link to={`/nfl/guide/team/${team.slug}`} className="font-black text-indigo-700 hover:underline">
-          {team.name} full dashboard →
+        <Link
+          to={`/nfl/guide/team/${team.slug}`}
+          className="font-black text-indigo-700 hover:underline"
+          aria-describedby={`${team.abbr}-legacy-dashboard-note`}
+        >
+          {team.name} Legacy Team Dashboard →
         </Link>
         <Link to="/nfl/power-ratings" className="font-black text-indigo-700 hover:underline">
           Power ratings →
@@ -30,6 +34,10 @@ export function ChapterSourceNotes({ team }: { team: NflGuideRecord }) {
           Methodology →
         </Link>
       </div>
+      <p data-print-hidden id={`${team.abbr}-legacy-dashboard-note`} className="mt-1 text-[9px] text-slate-500">
+        The legacy dashboard uses an older hand-curated rating system, not the NFL v0.3 ratings shown in this
+        chapter.
+      </p>
     </section>
   );
 }

@@ -148,6 +148,7 @@ export default function NFLTeamGuide2026() {
               <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
                 <div className="font-black">Preseason status</div>
                 <p className="mt-1">Ratings use the site's 2025 performance model and June preseason totals as the baseline. The VSiN statistics and listed futures odds are displayed as source material and do not overwrite the Joe Knows Ball model.</p>
+                <p className="mt-1">This dashboard uses the legacy preseason/team-dashboard rating system. The NFL Guide (<Link to="/nfl/guide" className="font-black underline">/nfl/guide</Link>) uses a newer, separate NFL v0.3 Stage-1 dataset; the two are not the same rating and may show different ranks for the same team.</p>
               </section>
             </div>
 

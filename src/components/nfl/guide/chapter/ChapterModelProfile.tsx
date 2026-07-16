@@ -43,7 +43,7 @@ export function ChapterModelProfile({ team }: { team: NflGuideRecord }) {
 
   return (
     <section className="break-inside-avoid border border-slate-200 bg-white p-3">
-      <GuideSectionHeading eyebrow="Model profile" title="Power model comparison" />
+      <GuideSectionHeading as="h3" eyebrow="Model profile" title="Power model comparison" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="model" />
         <span className="text-[10px] text-slate-500">

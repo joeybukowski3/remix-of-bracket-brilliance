@@ -13,7 +13,7 @@ export function ChapterOffseasonSummary({ team }: { team: NflGuideRecord }) {
 
   return (
     <section className="break-inside-avoid border border-slate-200 bg-white p-3">
-      <GuideSectionHeading eyebrow="Offseason" title="Coaching & verified movement" />
+      <GuideSectionHeading as="h3" eyebrow="Offseason" title="Coaching & verified movement" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="editorial" />
         <span className="text-[10px] text-slate-500">Verified through {offseason.verifiedAt}</span>

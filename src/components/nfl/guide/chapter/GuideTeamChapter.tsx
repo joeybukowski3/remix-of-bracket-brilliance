@@ -45,8 +45,12 @@ export function GuideTeamChapter({ team }: { team: NflGuideRecord }) {
             {previousSeason ? (
               <Metric label="2025 record" value={formatNflRecord(previousSeason)} />
             ) : null}
-            {model ? <Metric label="Model rank" value={`#${model.rank}`} sub="v0.3 public rating" /> : null}
-            {model ? <Metric label="Public score" value={model.publicRating.toFixed(1)} sub="0-99 scale" /> : null}
+            {model ? (
+              <Metric label="NFL v0.3 Preseason Rank" value={`#${model.rank}`} sub="Internal Stage-1" />
+            ) : null}
+            {model ? (
+              <Metric label="NFL v0.3 Public Rating" value={model.publicRating.toFixed(1)} sub="0-99 scale" />
+            ) : null}
             {market ? <Metric label="Win total" value={market.winTotal.toFixed(1)} sub="Market" /> : null}
           </div>
         </header>

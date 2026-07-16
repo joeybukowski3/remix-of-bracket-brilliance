@@ -150,4 +150,77 @@ describe("GuideTeamChapter (Seattle pilot)", () => {
     expect(screen.queryByText(/verified additions/i)).not.toBeInTheDocument();
     expect(screen.getByText(/verified departures/i)).toBeInTheDocument();
   });
+
+  it("labels the header rank and score with the v0.3 dataset, not a bare generic label", () => {
+    renderChapter();
+    expect(screen.getByText("NFL v0.3 Preseason Rank")).toBeInTheDocument();
+    expect(screen.getByText("NFL v0.3 Public Rating")).toBeInTheDocument();
+    // Guards against regressing back to the ambiguous bare labels.
+    expect(screen.queryByText("Model rank")).not.toBeInTheDocument();
+    expect(screen.queryByText("Public score")).not.toBeInTheDocument();
+  });
+
+  it("labels the model-vs-market comparison with the v0.3 dataset instead of a bare 'model rank'", () => {
+    renderChapter();
+    expect(screen.getByText(/NFL v0\.3 rank/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Model rank\b/)).not.toBeInTheDocument();
+  });
+
+  it("links to the deep team page as a Legacy Team Dashboard, with an accessible note distinguishing it from v0.3", () => {
+    renderChapter();
+    const link = screen.getByRole("link", { name: /legacy team dashboard/i });
+    expect(link).toHaveAttribute("href", `/nfl/guide/team/${seattle.slug}`);
+    const describedById = link.getAttribute("aria-describedby");
+    expect(describedById).toBeTruthy();
+    const note = document.getElementById(describedById!);
+    expect(note).not.toBeNull();
+    expect(note?.textContent).toMatch(/older hand-curated rating system/i);
+    expect(note?.textContent).toMatch(/not the nfl v0\.3 ratings/i);
+  });
+
+  it("identifies the win total as an undated preseason market snapshot, in one place", () => {
+    renderChapter();
+    expect(screen.getByText("Preseason market win total")).toBeInTheDocument();
+    const limitationMatches = screen.getAllByText(/snapshot date unavailable in legacy source/i);
+    expect(limitationMatches).toHaveLength(1);
+  });
+
+  it("never implies the win total is live or current", () => {
+    renderChapter();
+    // Every mention of "live" in the chapter must be part of a "not live" disclaimer,
+    // never an unqualified claim that a price is live or current.
+    const liveMentions = screen.getAllByText((_, el) => /\blive\b/i.test(el?.textContent ?? ""));
+    expect(liveMentions.length).toBeGreaterThan(0);
+    for (const el of liveMentions) {
+      expect(el.textContent, el.textContent ?? "").toMatch(/not live/i);
+    }
+    expect(screen.queryByText(/current win total/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("GuideTeamChapter semantic heading order", () => {
+  it("nests every chapter subsection heading one level below the team name, with no skipped or reused guide-wide levels", () => {
+    const { container } = renderChapter();
+    const headings = [...container.querySelectorAll("h1, h2, h3, h4")];
+    const levels = headings.map((h) => h.tagName);
+
+    // No h1 (page-level) and no h2 (guide-wide: conference/league overview) inside a single team chapter.
+    expect(levels.every((tag) => tag === "H3")).toBe(true);
+
+    // The team name is the first heading encountered, before any subsection heading.
+    expect(headings[0]?.textContent).toBe("Seattle Seahawks");
+
+    const subsectionTitles = [
+      "Power model comparison",
+      "Schedule strength and rest profile",
+      "Win total and futures",
+      "Coaching & verified movement",
+      "What the numbers show",
+    ];
+    for (const title of subsectionTitles) {
+      const heading = headings.find((h) => h.textContent === title);
+      expect(heading, title).toBeDefined();
+      expect(heading?.tagName, title).toBe("H3");
+    }
+  });
 });

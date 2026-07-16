@@ -32,7 +32,7 @@ export function ChapterModelSummary({ team }: { team: NflGuideRecord }) {
 
   return (
     <section className="break-inside-avoid border border-slate-200 bg-slate-50 p-3">
-      <GuideSectionHeading eyebrow="Model summary — not editorial analysis" title="What the numbers show" />
+      <GuideSectionHeading as="h3" eyebrow="Model summary — not editorial analysis" title="What the numbers show" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="model" />
         <span className="text-[10px] text-slate-500">
