@@ -17,6 +17,10 @@ import { selectNumerologyEmailPlays } from "./lib/mlb-numerology-email-selection
 import { assertValidNumerologyEmailHtml } from "./lib/mlb-numerology-email-validation.mjs";
 import { enrichCardPlaysWithContext } from "./lib/mlb-numerology-player-context.mjs";
 import { deliverNumerologyEmail } from "./lib/mlb-numerology-email-delivery.mjs";
+import {
+  injectRecentTopMatchesHtml,
+  injectRecentTopMatchesText,
+} from "./lib/mlb-numerology-recent-history.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb", "numerology");
@@ -65,8 +69,8 @@ async function main() {
   // minimum when fewer than three players clear the threshold.
   const selectedEmailCard = selectNumerologyEmailPlays(card);
   const emailCard = await enrichCardPlaysWithContext(selectedEmailCard);
-  const html = renderEmailHtml(emailCard, summary);
-  const text = renderEmailText(emailCard, summary);
+  const html = injectRecentTopMatchesHtml(renderEmailHtml(emailCard, summary), performance);
+  const text = injectRecentTopMatchesText(renderEmailText(emailCard, summary), performance);
   const validation = assertValidNumerologyEmailHtml(html, emailCard);
   ensureDirForFile(EMAIL_HTML_PATH);
   fs.writeFileSync(EMAIL_HTML_PATH, html);
