@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
+import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import {
@@ -100,7 +101,7 @@ function BvpPageGuide() {
 
 export default function MlbBatterVsPitcher() {
   usePageSeo(getSeoMeta("mlb-batter-vs-pitcher"));
-  const { batterVsPitcherRows, dashboard, games, loading, pitchers } = useMlbPropsData();
+  const { batterVsPitcherRows, dashboard, games, status, pitchers } = useMlbPropsData();
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("all");
@@ -173,7 +174,18 @@ export default function MlbBatterVsPitcher() {
     </th>
   );
 
-  if (!loading && games.length === 0 && batterVsPitcherRows.length === 0) {
+  // FreshnessStatus explains shared MLB model freshness, but a nonblocking
+  // status with zero rows still needs its own explanation for why the
+  // matchup table itself is empty -- otherwise "Current slate data" next
+  // to nothing reads as broken, not merely row-less. Blocking/loading/
+  // waiting/no-games statuses are already fully explained by
+  // FreshnessStatus's own copy, so this never fires alongside those.
+  const hasUsableBvpData = batterVsPitcherRows.length > 0;
+  const shouldShowNoMatchupRowsMessage =
+    !hasUsableBvpData
+    && (status.kind === "current" || status.kind === "lineup-pending" || status.kind === "stale" || (status.kind === "error" && status.hasLastKnownData));
+
+  if (status.kind === "loading") {
     return (
       <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
         <div className="space-y-4">
@@ -183,9 +195,10 @@ export default function MlbBatterVsPitcher() {
             title="MLB Batter vs Pitcher Model"
             description="Ranks today's batter vs. pitcher matchups using current-season contact quality, pitcher vulnerability, and game context."
             generatedAt={dashboard?.generatedAt}
-            gamesCount={0}
+            gamesCount={getGameCount(games)}
             rowsCount={0}
             bestScore={null}
+            showUpdatedAt={false}
             siblingLinks={[
               { label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" },
               { label: "K Props", to: "/mlb/strikeout-props", icon: "🎯", color: "#22c55e" },
@@ -193,9 +206,39 @@ export default function MlbBatterVsPitcher() {
             ]}
           />
           <BvpPageGuide />
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-            No MLB games are scheduled right now. Rankings return with the next MLB slate.
-          </div>
+          <FreshnessStatus status={status} />
+        </div>
+      </main>
+    );
+  }
+
+  if (!hasUsableBvpData) {
+    return (
+      <main className="site-page bg-[#edf2f7] py-4 text-slate-900">
+        <div className="space-y-4">
+          <MlbNavHero />
+          <ModelSummaryHeader
+            eyebrow="Batter matchup model"
+            title="MLB Batter vs Pitcher Model"
+            description="Ranks today's batter vs. pitcher matchups using current-season contact quality, pitcher vulnerability, and game context."
+            generatedAt={dashboard?.generatedAt}
+            gamesCount={getGameCount(games)}
+            rowsCount={0}
+            bestScore={null}
+            showUpdatedAt={false}
+            siblingLinks={[
+              { label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" },
+              { label: "K Props", to: "/mlb/strikeout-props", icon: "🎯", color: "#22c55e" },
+              { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" },
+            ]}
+          />
+          <BvpPageGuide />
+          <FreshnessStatus status={status} />
+          {shouldShowNoMatchupRowsMessage && (
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+              MLB model data is available, but no batter-versus-pitcher matchup rows are currently listed for this slate.
+            </div>
+          )}
         </div>
       </main>
     );
@@ -213,6 +256,7 @@ export default function MlbBatterVsPitcher() {
             gamesCount={getGameCount(games)}
             rowsCount={batterVsPitcherRows.length}
             bestScore={bestScore}
+            showUpdatedAt={false}
             siblingLinks={[
               { label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" },
               { label: "K Props", to: "/mlb/strikeout-props", icon: "🎯", color: "#22c55e" },
@@ -220,6 +264,7 @@ export default function MlbBatterVsPitcher() {
             ]}
           />
           <BvpPageGuide />
+          <FreshnessStatus status={status} />
 
           <div className="grid gap-3 xl:grid-cols-[260px_minmax(0,1fr)]">
             {/* Park sidebar — hitter-friendly order */}
@@ -294,7 +339,7 @@ export default function MlbBatterVsPitcher() {
                   </select>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                  <span>{loading ? "Loading…" : `${filteredRows.length} batter matchups shown`}</span>
+                  <span>{filteredRows.length} batter matchups shown</span>
                   <Link to="/mlb" className="font-bold text-sky-700 hover:underline">Back to MLB</Link>
                 </div>
               </section>
