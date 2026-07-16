@@ -16,7 +16,7 @@ function renderMlbRoute(path: string) {
         <Route path="/mlb" element={<MlbLayout />}>
           <Route index element={<h1>MLB Hub Page</h1>} />
           <Route path="hr-props" element={<h1>HR Props Page</h1>} />
-          <Route path="strikeout-props" element={<h1>K Props Page</h1>} />
+          <Route path="strikeout-props" element={<h1>Strikeout Props Page</h1>} />
           <Route path="batter-vs-pitcher" element={<h1>Batter vs Pitcher Page</h1>} />
           <Route path="power-rankings" element={<h1>Power Rankings Page</h1>} />
           <Route path="props" element={<h1>Props Hub Page</h1>} />
@@ -33,7 +33,7 @@ describe("MlbLayout", () => {
   it.each([
     ["/mlb", "MLB Hub Page"],
     ["/mlb/hr-props", "HR Props Page"],
-    ["/mlb/strikeout-props", "K Props Page"],
+    ["/mlb/strikeout-props", "Strikeout Props Page"],
     ["/mlb/batter-vs-pitcher", "Batter vs Pitcher Page"],
     ["/mlb/power-rankings", "Power Rankings Page"],
     ["/mlb/props", "Props Hub Page"],
@@ -61,13 +61,25 @@ describe("MlbLayout", () => {
     renderMlbRoute("/mlb/hr-props");
     const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
     expect(within(nav).getByRole("link", { name: /HR Props/i }).getAttribute("aria-current")).toBe("page");
-    expect(within(nav).getByRole("link", { name: /K Props/i }).getAttribute("aria-current")).toBeNull();
+    expect(within(nav).getByRole("link", { name: /Strikeout Props/i }).getAttribute("aria-current")).toBeNull();
   });
 
-  it("highlights K Props as the active item on /mlb/strikeout-props", () => {
+  it("highlights Strikeout Props as the active item on /mlb/strikeout-props", () => {
     renderMlbRoute("/mlb/strikeout-props");
     const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
-    expect(within(nav).getByRole("link", { name: /K Props/i }).getAttribute("aria-current")).toBe("page");
+    expect(within(nav).getByRole("link", { name: /Strikeout Props/i }).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("highlights Batter vs Pitcher as the active item on /mlb/batter-vs-pitcher", () => {
+    renderMlbRoute("/mlb/batter-vs-pitcher");
+    const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
+    expect(within(nav).getByRole("link", { name: /Batter vs Pitcher/i }).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("highlights Props Hub as the active item on /mlb/props", () => {
+    renderMlbRoute("/mlb/props");
+    const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
+    expect(within(nav).getByRole("link", { name: /Props Hub/i }).getAttribute("aria-current")).toBe("page");
   });
 
   it("does not mark any nav item active on the plain /mlb home state", () => {
@@ -149,12 +161,12 @@ describe("MlbLayout", () => {
     }
   });
 
-  it("includes the sportsbook partner block and Prop Optimizer utility CTA", () => {
+  it("includes the sportsbook partner block and does not reintroduce the removed Prop Optimizer CTA", () => {
     renderMlbRoute("/mlb");
     expect(screen.getByText("Bet with our partners")).toBeTruthy();
     for (const book of ["DraftKings", "FanDuel", "Fanatics", "BetMGM", "Caesars"]) {
       expect(screen.getAllByText(book).length).toBeGreaterThan(0);
     }
-    expect(screen.getAllByRole("link", { name: /Prop Optimizer/i }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: /Prop Optimizer/i })).toBeNull();
   });
 });
