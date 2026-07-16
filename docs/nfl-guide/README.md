@@ -1,12 +1,27 @@
-# JoeKnowsBall 2026 NFL Guide — Review Copy 01
+# JoeKnowsBall 2026 NFL Guide — Development Branch
 
-This folder preserves the first working copy of the standalone JoeKnowsBall 2026 NFL season guide.
+This branch is the dedicated visual-development environment for the standalone JoeKnowsBall 2026 NFL season guide.
 
-## Review artifact
+## Branch policy
 
-- `2026-nfl-guide-review-copy-01.html` — self-contained, browser-reviewable first copy.
+- Branch: `chatgpt/nfl-team-dashboards-final`
+- This branch is **not intended to be merged into `main`**.
+- Experimental guide presentation, report layout, and data integrations may be developed here without changing the production NFL experience.
+- The branch preview deployment is the primary review surface.
 
-The first copy establishes the intended publication structure:
+## Review routes
+
+- `/nfl` — branch-only NFL Guide development home.
+- `/nfl/guide` — live interactive guide and team-analysis experience.
+- `/nfl-guide/` — printable report preview with a **Print / Save as PDF** action.
+
+The printable route embeds the live guide. When guide pages or their supporting branch data are updated and the branch redeploys, the preview reflects those updates automatically.
+
+## Preserved first copy
+
+- `2026-nfl-guide-review-copy-01.html` — the original self-contained browser-reviewable first copy.
+
+The first copy established the intended publication structure:
 
 - league and futures overview
 - all eight divisions
@@ -15,11 +30,7 @@ The first copy establishes the intended publication structure:
 - team-improvement framing
 - initial best-bets board
 
-## Status
-
-This is a design and editorial prototype, not a production page and not a final betting publication. It is intentionally isolated under `docs/` and is not imported by the application, linked from the website, included in routing, or used by any workflow.
-
-## Planned Copy 02 integrations
+## Planned integrations
 
 1. Official team logos stored locally.
 2. Full two-page team previews.
@@ -28,7 +39,7 @@ This is a design and editorial prototype, not a production page and not a final 
 5. Warren Sharp schedule strength, net rest, opponent-preparation, and weekly rest-edge data already present on this branch.
 6. Futures tables for win totals, divisions, conferences, Super Bowl, and Coach of the Year.
 7. Schedule heat maps, team-comparison charts, and roster-movement graphics.
-8. A repeatable PDF generator after the editorial and data contracts are finalized.
+8. A repeatable export process after the editorial and data contracts are finalized.
 
 ## Important
 
