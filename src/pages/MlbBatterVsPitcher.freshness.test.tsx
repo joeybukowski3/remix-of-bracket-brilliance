@@ -460,7 +460,7 @@ describe("MlbBatterVsPitcher — freshness status integration", () => {
 
   it("no other page component is modified for this freshness migration", () => {
     const pagesDir = "src/pages";
-    const migratedPages = ["MlbHrProps.tsx", "MlbStrikeoutProps.tsx", "MlbBatterVsPitcher.tsx"];
+    const migratedPages = ["MlbHrProps.tsx", "MlbStrikeoutProps.tsx", "MlbBatterVsPitcher.tsx", "MlbPropsHub.tsx"];
     const otherPageFiles = readdirSync(pagesDir).filter(
       (name) => name.endsWith(".tsx") && !name.includes(".test.") && !migratedPages.includes(name),
     );

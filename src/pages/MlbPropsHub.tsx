@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { ScorePill, TeamLogoBadge } from "@/pages/MlbHrProps";
+import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
 
 const DASH = "--";
 const formatPercent = (value: number | null | undefined) => Number.isFinite(value) ? `${Number(value).toFixed(1)}%` : DASH;
@@ -16,7 +17,7 @@ function ToolCard({ title, body, to }: { title: string; body: string; to: string
 }
 
 export default function MlbPropsHub() {
-  const { batters, strikeoutRows, batterVsPitcherRows } = useMlbPropsData();
+  const { status, batters, strikeoutRows, batterVsPitcherRows } = useMlbPropsData();
   const topBatters = batters
     .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
     .slice()
@@ -24,6 +25,18 @@ export default function MlbPropsHub() {
     .slice(0, 8);
   const topStrikeouts = strikeoutRows.slice(0, 8);
   const topMatchups = batterVsPitcherRows.slice(0, 8);
+
+  // Each preview card answers "does this tool have content", independent of
+  // the shared FreshnessStatus above it -- but during loading/blocking, or a
+  // waiting/no-games status with nothing to preview at all, showing three
+  // separate empty-section messages would just repeat what FreshnessStatus
+  // already said. Preview data that exists despite a waiting/no-games label
+  // is preserved and shown normally (see the `hasAnyPreviewSource` branch).
+  const isBlockingStatus = status.kind === "unavailable" || (status.kind === "error" && !status.hasLastKnownData);
+  const isWaitingOrNoGames = status.kind === "waiting-for-slate" || status.kind === "no-games-scheduled";
+  const hasAnyPreviewSource = topBatters.length > 0 || topStrikeouts.length > 0 || topMatchups.length > 0;
+  const shouldShowPreviewSection = status.kind !== "loading" && !isBlockingStatus && !(isWaitingOrNoGames && !hasAnyPreviewSource);
+  const strikeoutsWithLines = topStrikeouts.filter((row) => row.kLine != null && row.kLine > 0);
 
   usePageSeo({
     title: "Today's MLB Props",
@@ -42,29 +55,36 @@ export default function MlbPropsHub() {
             </p>
           </section>
 
+          <FreshnessStatus status={status} />
+
           <div className="grid gap-3 md:grid-cols-3">
             <ToolCard title="MLB HR Props" body="Batter-focused home run model with park, power, and pitcher HR vulnerability." to="/mlb/hr-props" />
             <ToolCard title="MLB Strikeout Props" body="Pitcher K prop rankings by pitcher skill and opponent strikeout tendency." to="/mlb/strikeout-props" />
             <ToolCard title="Batter vs Pitcher" body="Table-first matchup board for batter power, pitcher attackability, and park context." to="/mlb/batter-vs-pitcher" />
           </div>
 
+          {shouldShowPreviewSection && (
           <section className="grid gap-4 xl:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-slate-900">Batters</h2>
                 <Link to="/mlb/hr-props" className="text-xs font-semibold text-sky-800 hover:underline">Open HR props</Link>
               </div>
-              <div className="space-y-2">
-                {topBatters.map((row) => (
-                  <div key={`${row.player}-${row.team}`} className="grid grid-cols-[minmax(0,1fr)_56px] items-center gap-3 rounded-xl bg-slate-50 px-3 py-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-slate-900">{row.player} <span className="text-xs text-slate-500">{row.position}</span></div>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500"><TeamLogoBadge team={row.team} size={18} /> vs {row.opponent}</div>
+              {topBatters.length > 0 ? (
+                <div className="space-y-2">
+                  {topBatters.map((row) => (
+                    <div key={`${row.player}-${row.team}`} className="grid grid-cols-[minmax(0,1fr)_56px] items-center gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-slate-900">{row.player} <span className="text-xs text-slate-500">{row.position}</span></div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500"><TeamLogoBadge team={row.team} size={18} /> vs {row.opponent}</div>
+                      </div>
+                      <ScorePill value={row.hrScore} />
                     </div>
-                    <ScorePill value={row.hrScore} />
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No ranked home-run prop rows are currently listed for this slate.</p>
+              )}
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -72,17 +92,28 @@ export default function MlbPropsHub() {
                 <h2 className="text-lg font-semibold text-slate-900">Pitchers</h2>
                 <Link to="/mlb/strikeout-props" className="text-xs font-semibold text-sky-800 hover:underline">Open K props</Link>
               </div>
-              <div className="space-y-2">
-                {topStrikeouts.map((row) => (
-                  <div key={`${row.pitcher}-${row.team}`} className="grid grid-cols-[minmax(0,1fr)_56px] items-center gap-3 rounded-xl bg-slate-50 px-3 py-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-slate-900">{row.pitcher}</div>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500"><TeamLogoBadge team={row.team} size={18} /> vs {row.opponent} | Opp K {formatPercent(row.opponentTeamKRate)}</div>
-                    </div>
-                    <ScorePill value={row.kMatchupScore} />
+              {topStrikeouts.length > 0 ? (
+                <>
+                  {strikeoutsWithLines.length === 0 ? (
+                    <p className="mb-2 text-xs text-slate-500">Projections are available, but sportsbook strikeout lines have not been posted yet.</p>
+                  ) : strikeoutsWithLines.length < topStrikeouts.length ? (
+                    <p className="mb-2 text-xs text-slate-500">Lines available for {strikeoutsWithLines.length} of {topStrikeouts.length} pitchers.</p>
+                  ) : null}
+                  <div className="space-y-2">
+                    {topStrikeouts.map((row) => (
+                      <div key={`${row.pitcher}-${row.team}`} className="grid grid-cols-[minmax(0,1fr)_56px] items-center gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-slate-900">{row.pitcher}</div>
+                          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500"><TeamLogoBadge team={row.team} size={18} /> vs {row.opponent} | Opp K {formatPercent(row.opponentTeamKRate)}</div>
+                        </div>
+                        <ScorePill value={row.kMatchupScore} />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500">No strikeout projection rows are currently listed for this slate.</p>
+              )}
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -90,16 +121,21 @@ export default function MlbPropsHub() {
                 <h2 className="text-lg font-semibold text-slate-900">Batters vs Pitchers</h2>
                 <Link to="/mlb/batter-vs-pitcher" className="text-xs font-semibold text-sky-800 hover:underline">Open table</Link>
               </div>
-              <div className="space-y-2">
-                {topMatchups.map((row) => (
-                  <div key={`${row.player}-${row.opposingPitcher}`} className="rounded-xl bg-slate-50 px-3 py-2">
-                    <div className="truncate text-sm font-semibold text-slate-900">{row.player} <span className="text-xs text-slate-500">{row.position}</span></div>
-                    <div className="mt-1 text-xs text-slate-500">{row.team} vs {row.opposingPitcher} | HR target {row.hrTargetScore.toFixed(1)}</div>
-                  </div>
-                ))}
-              </div>
+              {topMatchups.length > 0 ? (
+                <div className="space-y-2">
+                  {topMatchups.map((row) => (
+                    <div key={`${row.player}-${row.opposingPitcher}`} className="rounded-xl bg-slate-50 px-3 py-2">
+                      <div className="truncate text-sm font-semibold text-slate-900">{row.player} <span className="text-xs text-slate-500">{row.position}</span></div>
+                      <div className="mt-1 text-xs text-slate-500">{row.team} vs {row.opposingPitcher} | HR target {row.hrTargetScore.toFixed(1)}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No batter-versus-pitcher matchup rows are currently listed for this slate.</p>
+              )}
             </div>
           </section>
+          )}
         </div>
       </main>
   );
