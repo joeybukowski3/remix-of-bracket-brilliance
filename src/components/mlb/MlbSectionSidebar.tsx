@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { SPORTSBOOKS } from "@/lib/sportsbooks";
-import { MLB_NAV_SECTIONS, isMlbNavItemActive, type MlbNavItem } from "@/lib/mlb/sectionNav";
+import { MLB_NAV_SECTIONS, getMlbNavIconColorClass, isMlbNavItemActive, type MlbNavItem } from "@/lib/mlb/sectionNav";
 
 const STAT_GLOSSARY: [string, string][] = [
   ["xERA", "Expected ERA from Statcast exit velocity & launch angle. Strips luck from actual results."],
@@ -37,7 +37,7 @@ function NavLink({ item, active, onNavigate }: { item: MlbNavItem; active: boole
         active ? "bg-[#dce9ff] text-[#031635]" : "text-slate-600",
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className={cn("h-4 w-4", getMlbNavIconColorClass(item.icon))} />
       {item.label}
     </Link>
   );
