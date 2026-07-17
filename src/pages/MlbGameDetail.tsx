@@ -2295,7 +2295,23 @@ function SocialTableHits({ rows }: { rows: PitcherVsBatterRow[] }) {
   );
 }
 
-function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], batters = [], games = []) {
+// strikeoutDetailRows (buildPitcherStrikeoutRows' full per-pitcher shape)
+// is checked FIRST, ahead of strikeoutRows (buildPitcherStrikeoutMatchupRows'
+// leaner "matchup summary" shape): strikeoutDetailRows is the only one of
+// the two that carries projectedKs/projectedIP/workloadConfidenceGrade/
+// workloadFlags/etc, which resolveKPropStatus (via selectTopSocialKRows in
+// the K tab and selectTopKValuePlays in the Value tab) requires before it
+// will ever classify a row as VALID. strikeoutRows structurally lacks those
+// fields entirely, so every row built from it always resolved to
+// INSUFFICIENT_DATA ("Missing workload") regardless of how much real model
+// data existed upstream -- checking strikeoutRows first (the previous
+// order) meant the K social table and the K portion of the Value table
+// were always empty, since strikeoutRows is populated on every normal
+// slate. See src/pages/MlbGameDetail.kSocialTable.test.tsx for the
+// regression coverage.
+export function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], batters = [], games = []) {
+  if (strikeoutDetailRows?.length) return strikeoutDetailRows;
+
   if (strikeoutRows?.length) {
     return strikeoutRows.map(r => ({
       ...r,
@@ -2304,7 +2320,6 @@ function getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers = [], ba
       strikeoutMatchupScore: r.strikeoutMatchupScore ?? r.kMatchupScore ?? 0,
     }));
   }
-  if (strikeoutDetailRows?.length) return strikeoutDetailRows;
 
   if (!pitchers?.length) return [];
 
