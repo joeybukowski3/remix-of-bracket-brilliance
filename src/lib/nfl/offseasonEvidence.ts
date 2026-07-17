@@ -987,6 +987,268 @@ export function buildNflOffseasonEvidenceDataset(input: BuildNflOffseasonEvidenc
   };
 }
 
+function generatedEvidenceStatus(value: unknown): NflEvidenceStatus {
+  if (value === "verified" || value === "partially_verified" || value === "unverified") return value;
+  return "partially_verified";
+}
+
+function generatedSourceFromRef(ref: UnknownRecord, sourceById: ReadonlyMap<string, UnknownRecord>): NflEvidenceSource {
+  const sourceId = typeof ref.sourceId === "string" ? ref.sourceId : "generated-personnel-evidence";
+  const source = sourceById.get(sourceId);
+  const sourcePath =
+    typeof source?.sourcePath === "string"
+      ? source.sourcePath
+      : typeof source?.cachePath === "string"
+        ? source.cachePath
+        : "public/data/nfl/2026/personnel-evidence.json";
+  return {
+    sourceId,
+    sourceName: typeof source?.sourceName === "string" ? source.sourceName : "Generated NFL personnel evidence",
+    sourceType: source?.sourceType === "official_team" ? "official_team" : source?.sourceType === "league" ? "league" : "other",
+    sourcePath,
+    sourceUpdatedAt: typeof source?.sourceUpdatedAt === "string" ? source.sourceUpdatedAt : null,
+    sourcePage: typeof ref.sourceRowId === "string" ? ref.sourceRowId : null,
+    sourceUrl: typeof source?.sourceUrl === "string" ? source.sourceUrl : null,
+    verified: source?.verified === true,
+  };
+}
+
+function generatedSources(sourceRefs: unknown, sourceById: ReadonlyMap<string, UnknownRecord>): NflEvidenceSource[] {
+  if (!Array.isArray(sourceRefs) || sourceRefs.length === 0) {
+    return [
+      {
+        sourceId: "generated-personnel-evidence",
+        sourceName: "Generated NFL personnel evidence",
+        sourceType: "other",
+        sourcePath: "public/data/nfl/2026/personnel-evidence.json",
+        sourceUpdatedAt: null,
+        sourcePage: null,
+        sourceUrl: null,
+        verified: false,
+      },
+    ];
+  }
+  return mergeSources(sourceRefs.filter(isRecord).map((ref) => generatedSourceFromRef(ref, sourceById)));
+}
+
+function generatedPlayerName(player: unknown): string | null {
+  if (!isRecord(player)) return null;
+  const name = player.playerName ?? player.name;
+  return typeof name === "string" && name.trim() ? name.trim() : null;
+}
+
+function generatedPersonnelKind(type: unknown): NflPersonnelEvidenceKind {
+  if (type === "trade_addition") return "trade_addition";
+  if (type === "trade_departure") return "trade_departure";
+  if (type === "draft_selection") return "draft_addition";
+  if (type === "retirement") return "retirement";
+  if (type === "release" || type === "unsigned_departure") return "other_departure";
+  if (type === "free_agent_signing" || type === "re_signing") return "free_agent_addition";
+  if (type === "waiver_claim") return "other_addition";
+  return "other_addition";
+}
+
+function generatedTransactionToPersonnel(teamId: string, transaction: UnknownRecord, sourceById: ReadonlyMap<string, UnknownRecord>): PersonnelDraft | null {
+  const playerName = generatedPlayerName(transaction.player);
+  if (!playerName) return null;
+  const notes = notesFromParts([
+    "Generated personnel evidence",
+    typeof transaction.type === "string" ? transaction.type.replace(/_/g, " ") : null,
+    typeof transaction.notes === "string" ? transaction.notes : null,
+  ]);
+  return createPersonnelDraft({
+    teamId,
+    playerName,
+    position: typeof transaction.position === "string" ? transaction.position : null,
+    kind: generatedPersonnelKind(transaction.type),
+    expectedRole: EXPECTED_ROLES_FROM_GENERATED.has(transaction.expectedRole as string)
+      ? (transaction.expectedRole as NflPersonnelEvidenceItem["expectedRole"])
+      : "unknown",
+    significance: transaction.expectedRole === "starter" ? "major" : "unknown",
+    evidenceStatus: generatedEvidenceStatus(transaction.evidenceStatus),
+    notes,
+    sources: generatedSources(transaction.sourceRefs, sourceById),
+  });
+}
+
+const EXPECTED_ROLES_FROM_GENERATED = new Set(["starter", "rotation", "depth", "developmental", "unknown"]);
+
+function generatedInjuryReturnToPersonnel(teamId: string, injury: UnknownRecord, sourceById: ReadonlyMap<string, UnknownRecord>): PersonnelDraft | null {
+  const playerName = generatedPlayerName(injury.player);
+  if (!playerName) return null;
+  return createPersonnelDraft({
+    teamId,
+    playerName,
+    position: typeof injury.position === "string" ? injury.position : null,
+    kind: "returning_from_injury",
+    expectedRole: EXPECTED_ROLES_FROM_GENERATED.has(injury.priorRole as string)
+      ? (injury.priorRole as NflPersonnelEvidenceItem["expectedRole"])
+      : "unknown",
+    significance: "unknown",
+    evidenceStatus: generatedEvidenceStatus(injury.evidenceStatus),
+    notes: notesFromParts([
+      "Generated injury-return evidence; medical readiness not inferred",
+      Number.isInteger(injury.gamesMissed) ? `games missed ${injury.gamesMissed}` : null,
+      typeof injury.expectedReturnStatus === "string" ? `expected return status ${injury.expectedReturnStatus}` : null,
+      typeof injury.notes === "string" ? injury.notes : null,
+    ]),
+    sources: generatedSources(injury.sourceRefs, sourceById),
+  });
+}
+
+function generatedCoachingKind(
+  role: NflCoachingEvidenceItem["role"],
+  status: unknown,
+): NflCoachingEvidenceKind {
+  const isNew = status === "new" || status === "changed_role";
+  if (role === "head_coach") return isNew ? "new_head_coach" : "returning_head_coach";
+  if (role === "offensive_coordinator") return isNew ? "new_offensive_coordinator" : "returning_offensive_coordinator";
+  if (role === "defensive_coordinator") return isNew ? "new_defensive_coordinator" : "returning_defensive_coordinator";
+  return "scheme_change";
+}
+
+function generatedCoachToDraft(teamId: string, role: NflCoachingEvidenceItem["role"], raw: unknown, sourceById: ReadonlyMap<string, UnknownRecord>): CoachingDraft | null {
+  if (!isRecord(raw)) return null;
+  if (raw.status === "unknown" || raw.status === "vacancy") return null;
+  const coachName = typeof raw.coachName === "string" && raw.coachName.trim() ? raw.coachName.trim() : null;
+  if (!coachName) return null;
+  return createCoachingDraft({
+    teamId,
+    coachName,
+    role,
+    kind: generatedCoachingKind(role, raw.status),
+    continuityStatus: raw.status === "returning" ? "returning" : raw.status === "changed_role" ? "changed_role" : "new",
+    evidenceStatus: generatedEvidenceStatus(raw.evidenceStatus),
+    notes: notesFromParts([
+      "Generated coaching evidence",
+      typeof raw.priorRole === "string" ? `prior role ${raw.priorRole}` : null,
+      typeof raw.schemeChange === "string" ? `sourced scheme change: ${raw.schemeChange}` : null,
+    ]),
+    sources: generatedSources(raw.sourceRefs, sourceById),
+  });
+}
+
+function generatedQuarterbackContinuity(status: unknown): NflOffseasonEvidenceRecord["quarterbackContinuity"] | null {
+  if (status === "returning_starter") return "returning_starter";
+  if (status === "new_starter") return "new_starter";
+  if (status === "open_competition" || status === "rookie_candidate" || status === "veteran_acquisition") return "competition";
+  if (status === "unknown") return "unknown";
+  return null;
+}
+
+function hasCompleteGeneratedMetric(team: UnknownRecord, key: string): boolean {
+  const returningProduction = team.returningProduction;
+  if (!isRecord(returningProduction) || !isRecord(returningProduction.metrics)) return false;
+  const metric = returningProduction.metrics[key];
+  return isRecord(metric) && metric.coverageComplete === true && typeof metric.denominator === "number";
+}
+
+function mergeGeneratedTeamRecord(base: NflOffseasonEvidenceRecord, generatedTeam: UnknownRecord, sourceById: ReadonlyMap<string, UnknownRecord>): NflOffseasonEvidenceRecord {
+  const personnelDrafts: PersonnelDraft[] = [
+    ...base.personnel.map((item) => ({
+      ...item,
+      sources: item.sources?.length ? item.sources : [item.source],
+    })),
+  ];
+  for (const transaction of Array.isArray(generatedTeam.transactions) ? generatedTeam.transactions.filter(isRecord) : []) {
+    const draft = generatedTransactionToPersonnel(base.teamId, transaction, sourceById);
+    if (draft) personnelDrafts.push(draft);
+  }
+  for (const injury of Array.isArray(generatedTeam.injuryReturns) ? generatedTeam.injuryReturns.filter(isRecord) : []) {
+    const draft = generatedInjuryReturnToPersonnel(base.teamId, injury, sourceById);
+    if (draft) personnelDrafts.push(draft);
+  }
+
+  const coachingDrafts: CoachingDraft[] = [
+    ...base.coaching.map((item) => ({
+      ...item,
+      sources: item.sources?.length ? item.sources : [item.source],
+    })),
+  ];
+  const coachingContinuity = generatedTeam.coachingContinuity;
+  if (isRecord(coachingContinuity)) {
+    const headCoach = generatedCoachToDraft(base.teamId, "head_coach", coachingContinuity.headCoach, sourceById);
+    const offensiveCoordinator = generatedCoachToDraft(base.teamId, "offensive_coordinator", coachingContinuity.offensiveCoordinator, sourceById);
+    const defensiveCoordinator = generatedCoachToDraft(base.teamId, "defensive_coordinator", coachingContinuity.defensiveCoordinator, sourceById);
+    for (const draft of [headCoach, offensiveCoordinator, defensiveCoordinator]) if (draft) coachingDrafts.push(draft);
+  }
+
+  const personnelResult = finalizePersonnel(personnelDrafts);
+  const personnel = personnelResult.items;
+  const coaching = finalizeCoaching(coachingDrafts);
+  const generatedQb = isRecord(generatedTeam.quarterbackContinuity)
+    ? generatedQuarterbackContinuity(generatedTeam.quarterbackContinuity.status)
+    : null;
+  const coverage = {
+    ...base.coverage,
+    additionsComplete: base.coverage.additionsComplete || (Array.isArray(generatedTeam.transactions) && generatedTeam.transactions.length > 0),
+    departuresComplete: base.coverage.departuresComplete || (Array.isArray(generatedTeam.transactions) && generatedTeam.transactions.length > 0),
+    returningPlayersComplete:
+      base.coverage.returningPlayersComplete ||
+      (hasCompleteGeneratedMetric(generatedTeam, "offensiveSnaps") && hasCompleteGeneratedMetric(generatedTeam, "defensiveSnaps")),
+    injuryReturnsComplete: base.coverage.injuryReturnsComplete || (Array.isArray(generatedTeam.injuryReturns) && generatedTeam.injuryReturns.length > 0),
+    coachingComplete:
+      coaching.some((item) => item.role === "head_coach") &&
+      coaching.some((item) => item.role === "offensive_coordinator") &&
+      coaching.some((item) => item.role === "defensive_coordinator"),
+  };
+  const sources = mergeSources([
+    ...personnel.flatMap((item) => item.sources),
+    ...coaching.flatMap((item) => item.sources),
+  ]);
+  const mergedBase = {
+    ...base,
+    quarterbackContinuity: generatedQb ?? base.quarterbackContinuity,
+    personnel,
+    coaching,
+    coverage,
+    sources,
+  };
+  const validation = validateRecord(mergedBase);
+  validation.warnings.push(...personnelResult.warnings);
+  const generatedWarnings = [
+    ...(Array.isArray(generatedTeam.warnings) ? generatedTeam.warnings.filter((warning): warning is string => typeof warning === "string") : []),
+    ...(Array.isArray(generatedTeam.conflicts)
+      ? generatedTeam.conflicts.filter(isRecord).map((conflict) => typeof conflict.message === "string" ? conflict.message : "generated personnel conflict")
+      : []),
+  ];
+  const merged = {
+    ...mergedBase,
+    confidence: confidenceForRecord(mergedBase, validation),
+  };
+  merged.confidence.warnings = [...new Set([...merged.confidence.warnings, ...generatedWarnings])].sort();
+  return merged;
+}
+
+export function mergeGeneratedPersonnelEvidenceDataset(
+  baseDataset: NflOffseasonEvidenceDataset,
+  generatedDataset: unknown,
+): NflOffseasonEvidenceDataset {
+  if (!isRecord(generatedDataset) || !Array.isArray(generatedDataset.teams)) return baseDataset;
+  const sourceById = new Map<string, UnknownRecord>(
+    Array.isArray(generatedDataset.sources)
+      ? generatedDataset.sources.filter(isRecord).map((source) => [String(source.sourceId), source])
+      : [],
+  );
+  const generatedByTeamId = new Map<string, UnknownRecord>(
+    generatedDataset.teams.filter(isRecord).map((team) => [String(team.teamId), team]),
+  );
+  const records = baseDataset.records.map((record) => {
+    const generatedTeam = generatedByTeamId.get(record.teamId);
+    return generatedTeam ? mergeGeneratedTeamRecord(record, generatedTeam, sourceById) : record;
+  });
+  const validation = validateNflOffseasonEvidence(records);
+  for (const conflict of Array.isArray(generatedDataset.conflicts) ? generatedDataset.conflicts.filter(isRecord) : []) {
+    if (typeof conflict.message === "string") validation.warnings.push(conflict.message);
+  }
+  validation.warnings.sort();
+  return {
+    metadata: metadata(records, validation),
+    records,
+    validation,
+  };
+}
+
 export const NFL_OFFSEASON_EVIDENCE_DATASET = buildNflOffseasonEvidenceDataset();
 export const NFL_OFFSEASON_EVIDENCE_METADATA = NFL_OFFSEASON_EVIDENCE_DATASET.metadata;
 

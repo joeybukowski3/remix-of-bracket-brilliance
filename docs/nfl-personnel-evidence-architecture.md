@@ -6,6 +6,19 @@ This document defines the data completion workflow required before an official
 improvement/decline model can be scored. It does not define a score, change the
 NFL v0.3 ratings, add UI, or populate missing player data.
 
+Phase 5B adds infrastructure only:
+
+- Schema and validation helpers live in `scripts/lib/nfl-personnel/schema.mjs`.
+- Identity helpers live in `scripts/lib/nfl-personnel/identity.mjs`.
+- Transaction reconciliation lives in `scripts/lib/nfl-personnel/transactions.mjs`.
+- Completeness gates live in `scripts/lib/nfl-personnel/completeness.mjs`.
+- The fixture/local generator is `scripts/generate-nfl-personnel-evidence.mjs`.
+- The synthetic fixture is `scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json`.
+- The compatibility adapter is additive in `src/lib/nfl/offseasonEvidence.ts`.
+
+No real all-32-team player data is populated yet, and no production
+`public/data/nfl/<season>/personnel-evidence.json` is checked in.
+
 ## Existing Source Inventory
 
 | Path | Provider | Seasons | Teams | Update process | Freshness | Structure | Reliability | Licensing or redistribution concern | Canonical artifact fit |
@@ -208,6 +221,32 @@ If split later, keep one generated index:
 - `public/data/nfl/2026/personnel-evidence.json` as the manifest and gate record
 - category shards under `public/data/nfl/2026/personnel/`
 
+Implemented schema version:
+
+- `nfl-personnel-evidence-v0.1`
+
+Local fixture commands:
+
+```bash
+npm run nfl:personnel:validate
+npm run nfl:personnel:generate:fixture
+```
+
+Direct generator usage:
+
+```bash
+node scripts/generate-nfl-personnel-evidence.mjs \
+  --season=2026 \
+  --prior-season=2025 \
+  --input=scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json \
+  --output=C:\tmp\personnel-evidence.json
+```
+
+`--validate-only` validates and prints a summary without writing. `--dry-run`
+builds and validates the deterministic artifact without writing. The generator
+does not fetch external providers; every run must use explicit fixture/input
+paths.
+
 ## Source Hierarchy
 
 General rules:
@@ -340,6 +379,9 @@ Failure behavior:
 - Hard fail when required source metadata is missing.
 - Hard fail when all-team mandatory categories regress from complete to partial.
 - Warn, but do not fail, on advisory category gaps before scoring is enabled.
+- Fixture/local generation exits nonzero on schema or reconciliation validation
+  failure.
+- Output is written only after validation succeeds.
 
 ## Migration Path
 
@@ -350,6 +392,16 @@ Phase 5B should add an adapter that reads
 existing public evidence record shape. The current Warren Sharp and manual
 adapters can remain as fallbacks until the generated artifact reaches the scoring
 gates.
+
+Phase 5B implemented the adapter as
+`mergeGeneratedPersonnelEvidenceDataset(baseDataset, generatedDataset)` in
+`src/lib/nfl/offseasonEvidence.ts`. It supplements the stable evidence contract:
+generated transaction and injury records become personnel evidence, generated
+coaching records become coaching evidence, generated QB continuity can supersede
+manual-derived QB continuity only through the explicit generated status, and
+missing generated fields do not erase existing manual/Warren Sharp evidence.
+Generated conflicts remain visible as warnings. The adapter still produces no
+team-quality score.
 
 Compatibility rules:
 

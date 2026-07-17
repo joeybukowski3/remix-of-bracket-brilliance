@@ -44,7 +44,9 @@
     "mlb:strikeout-prop-details": "node scripts/generate-mlb-strikeout-prop-details.mjs",
     "mlb:bvp-history": "node scripts/generate-mlb-bvp-history.mjs",
     "nfl:schedules": "node scripts/generate-nfl-schedules-results.mjs",
-    "nfl:team-ratings": "node scripts/generate-nfl-team-stats-power-ratings.mjs"
+    "nfl:team-ratings": "node scripts/generate-nfl-team-stats-power-ratings.mjs",
+    "nfl:personnel:validate": "node scripts/generate-nfl-personnel-evidence.mjs --season=2026 --prior-season=2025 --input=scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json --validate-only",
+    "nfl:personnel:generate:fixture": "node scripts/generate-nfl-personnel-evidence.mjs --season=2026 --prior-season=2025 --input=scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json --dry-run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
