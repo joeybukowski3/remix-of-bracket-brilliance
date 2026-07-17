@@ -4,6 +4,7 @@ import MlbBvpHistoryPanel, {
   AvgVsPitcherCell,
   MlbBvpHistoryPanelLoading,
   MlbBvpHistoryPanelNoHistory,
+  MlbBvpHistoryPanelNoMatchups,
   MlbBvpHistoryPanelUnavailable,
 } from "./MlbBvpHistoryPanel";
 import type { BvpHistoryEntry } from "@/hooks/useMlbBvpHistory";
@@ -15,6 +16,7 @@ function makeEntry(overrides: Partial<BvpHistoryEntry> = {}): BvpHistoryEntry {
     pitcherId: 605400,
     batter: "Juan Soto",
     pitcher: "Aaron Nola",
+    status: "available",
     career: { pa: 59, h: 11, avg: 0.262, hr: 5 },
     last5y: { pa: 27, h: 7, avg: 0.412, hr: 3 },
     ...overrides,
@@ -38,8 +40,25 @@ describe("AvgVsPitcherCell", () => {
   });
 
   it("shows a dash when the entry has no career split", () => {
-    render(<AvgVsPitcherCell entry={makeEntry({ career: null })} loading={false} />);
+    render(<AvgVsPitcherCell entry={makeEntry({ career: null, status: "unavailable" })} loading={false} />);
     expect(screen.getByText("—")).toBeInTheDocument();
+  });
+
+  it("shows 'No ABs' only when status is positively confirmed no_matchups", () => {
+    render(<AvgVsPitcherCell entry={makeEntry({ career: null, last5y: null, status: "no_matchups" })} loading={false} />);
+    expect(screen.getByText("No ABs")).toBeInTheDocument();
+  });
+
+  it("shows a dash (never 'No ABs') for an unavailable pair, even with both windows null", () => {
+    render(<AvgVsPitcherCell entry={makeEntry({ career: null, last5y: null, status: "unavailable" })} loading={false} />);
+    expect(screen.getByText("—")).toBeInTheDocument();
+    expect(screen.queryByText("No ABs")).not.toBeInTheDocument();
+  });
+
+  it("shows a dash (never 'No ABs') for an invariant-rejected inconsistent pair", () => {
+    render(<AvgVsPitcherCell entry={makeEntry({ career: null, last5y: null, status: "inconsistent" })} loading={false} />);
+    expect(screen.getByText("—")).toBeInTheDocument();
+    expect(screen.queryByText("No ABs")).not.toBeInTheDocument();
   });
 });
 
@@ -54,10 +73,18 @@ describe("MlbBvpHistoryPanelLoading / Unavailable / NoHistory", () => {
     expect(screen.getByTestId("bvp-history-unavailable")).toHaveTextContent("Juan Soto");
   });
 
-  it("renders the shared 'No prior matchups.' message, since a genuine no-history pair and an invariant-rejected pair are indistinguishable at render time", () => {
+  it("renders a neutral 'unavailable' message, not a confirmed no-matchups claim, for missing/errored/inconsistent pairs", () => {
     render(<MlbBvpHistoryPanelNoHistory batter="Juan Soto" pitcher="Aaron Nola" />);
     const el = screen.getByTestId("bvp-history-none");
-    expect(el).toHaveTextContent("No prior matchups.");
+    expect(el).toHaveTextContent("unavailable");
+    expect(el).not.toHaveTextContent(/no prior matchups/i);
+    expect(el).toHaveAttribute("aria-label", expect.stringContaining("Juan Soto"));
+  });
+
+  it("renders a confirmed 'No ABs' message only via MlbBvpHistoryPanelNoMatchups", () => {
+    render(<MlbBvpHistoryPanelNoMatchups batter="Juan Soto" pitcher="Aaron Nola" />);
+    const el = screen.getByTestId("bvp-history-no-matchups");
+    expect(el).toHaveTextContent("No ABs");
     expect(el).toHaveAttribute("aria-label", expect.stringContaining("Juan Soto"));
   });
 });
@@ -93,9 +120,20 @@ describe("MlbBvpHistoryPanel", () => {
     expect(screen.getByRole("button", { name: "Last 5Y" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("renders the no-history state when both windows are null (never faced)", () => {
-    render(<MlbBvpHistoryPanel entry={makeEntry({ career: null, last5y: null })} batter="Juan Soto" pitcher="Aaron Nola" />);
+  it("renders the neutral unavailable state when both windows are null but emptiness wasn't positively confirmed", () => {
+    render(<MlbBvpHistoryPanel entry={makeEntry({ career: null, last5y: null, status: "unavailable" })} batter="Juan Soto" pitcher="Aaron Nola" />);
     expect(screen.getByTestId("bvp-history-none")).toBeInTheDocument();
+  });
+
+  it("renders the confirmed 'No ABs' state when status is positively confirmed no_matchups", () => {
+    render(<MlbBvpHistoryPanel entry={makeEntry({ career: null, last5y: null, status: "no_matchups" })} batter="Juan Soto" pitcher="Aaron Nola" />);
+    expect(screen.getByTestId("bvp-history-no-matchups")).toBeInTheDocument();
+  });
+
+  it("renders the neutral unavailable state (never 'No ABs') for an invariant-rejected inconsistent pair", () => {
+    render(<MlbBvpHistoryPanel entry={makeEntry({ career: null, last5y: null, status: "inconsistent" })} batter="Juan Soto" pitcher="Aaron Nola" />);
+    expect(screen.getByTestId("bvp-history-none")).toBeInTheDocument();
+    expect(screen.queryByTestId("bvp-history-no-matchups")).not.toBeInTheDocument();
   });
 
   it("shows a per-window empty state when only one window has data", () => {

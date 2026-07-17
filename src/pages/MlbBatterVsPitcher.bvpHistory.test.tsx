@@ -73,6 +73,7 @@ const historyEntry: BvpHistoryEntry = {
   pitcherId: 605400,
   batter: "Adley Rutschman",
   pitcher: "Justin Steele",
+  status: "available",
   career: { pa: 59, h: 11, avg: 0.262, hr: 5 },
   last5y: { pa: 27, h: 7, avg: 0.412, hr: 3 },
 };

@@ -2913,15 +2913,30 @@ export default function MlbHrProps() {
                                     {activeMatchupLens === "best" ? (
                                       <>
                                         <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
-                                        <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.opposingPitcherHitsVs, matchupHeat.opposingPitcherHitsVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHitsVs} /></td>
-                                        <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.opposingPitcherHitsVs, matchupHeat.opposingPitcherHitsVs, { intent: "warm", weight: "secondary" })}>
+                                          <div className="flex items-center gap-1">
+                                            {row.opposingPitcherHitsVs != null && row.opposingPitcherHitsVs >= 70 && <span className="text-[11px]">⚔️</span>}
+                                            <ScorePill value={row.opposingPitcherHitsVs} />
+                                          </div>
+                                        </td>
+                                        <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}>
+                                          <div className="flex items-center gap-1">
+                                            {row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 && <span className="text-[11px]">⚔️</span>}
+                                            <ScorePill value={row.opposingPitcherHrVs} />
+                                          </div>
+                                        </td>
                                         <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.bestMatchupScore, matchupHeat.bestMatchupScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.bestMatchupScore} /></td>
                                         <td className="border-b border-slate-100 px-4 py-1.5">{formatDecimal(row.xba, 3)}</td>
                                       </>
                                     ) : (
                                       <>
                                         <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.hrScore, matchupHeat.hrScore, { intent: "warm", weight: "secondary" })}><ScorePill value={row.hrScore} /></td>
-                                        <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}><ScorePill value={row.opposingPitcherHrVs} /></td>
+                                        <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.opposingPitcherHrVs, matchupHeat.opposingPitcherHrVs, { intent: "warm", weight: "secondary" })}>
+                                          <div className="flex items-center gap-1">
+                                            {row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 && <span className="text-[11px]">⚔️</span>}
+                                            <ScorePill value={row.opposingPitcherHrVs} />
+                                          </div>
+                                        </td>
                                         <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.hrTargetScore, matchupHeat.hrTargetScore, { intent: "warm", weight: "primary" })}><ScorePill value={row.hrTargetScore} /></td>
                                         <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.barrelRate, matchupHeat.barrelRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.barrelRate)}</td>
                                         <td className="border-b border-slate-100 px-4 py-1.5" style={getHeatCellStyle(row.hardHitRate, matchupHeat.hardHitRate, { intent: "warm", weight: "secondary" })}>{formatPercent(row.hardHitRate)}</td>

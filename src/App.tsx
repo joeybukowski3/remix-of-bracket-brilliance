@@ -29,6 +29,7 @@ import MlbNumerologyXExport from "./pages/MlbNumerologyXExport";
 import MlbHrPropsXExport from "./pages/MlbHrPropsXExport";
 import MlbStrikeoutPropsXExport from "./pages/MlbStrikeoutPropsXExport";
 import MlbPowerRankings from "./pages/MlbPowerRankings";
+import MlbVulnerablePitchers from "./pages/MlbVulnerablePitchers";
 import NFL from "./pages/NFL";
 import NFLStandings from "./pages/NFLStandings";
 import NFLSchedule from "./pages/NFLSchedule";
@@ -155,6 +156,7 @@ const App = () => (
             <Route path="batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
             <Route path="numerology" element={<MlbNumerologyPage />} />
             <Route path="power-rankings" element={<MlbPowerRankings />} />
+            <Route path="vulnerable-pitchers" element={<MlbVulnerablePitchers />} />
           </Route>
           <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
           <Route path="/pga" element={<PgaHistoryModelWithArticles />} />

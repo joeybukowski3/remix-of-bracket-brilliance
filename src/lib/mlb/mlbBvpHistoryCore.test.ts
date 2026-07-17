@@ -70,6 +70,7 @@ describe("buildBvpHistoryEntry", () => {
       pitcherId: 605400,
       batter: "Juan Soto",
       pitcher: "Aaron Nola",
+      status: "available",
       career: { pa: 59, h: 11, avg: 0.262, hr: 5 },
       last5y: null,
     });

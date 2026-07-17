@@ -12,9 +12,25 @@ function fmtAvg(value: number | null | undefined) {
   return value == null ? DASH : value.toFixed(3).replace(/^0\./, ".");
 }
 
-/** Compact "AVG vs P" table-column cell -- shows career AVG only; the full Career/Last 5Y breakdown lives in the expandable panel. */
+/**
+ * Compact "AVG vs P" table-column cell -- shows career AVG when available.
+ * Renders "No ABs" ONLY when entry.status === "no_matchups", i.e. the
+ * generator positively confirmed this batter has never faced this pitcher
+ * (see isConfirmedEmptyVsPlayerResponse in mlb-bvp-history-core.mjs). Every
+ * other reason a value could be missing -- no entry at all (unresolved
+ * lookup key, late pitcher change), a fetch error, a stale/partial file, or
+ * an invariant-rejected pair -- falls through to the plain dash, since none
+ * of those confirm anything about whether the matchup happened.
+ */
 export function AvgVsPitcherCell({ entry, loading }: { entry: BvpHistoryEntry | undefined; loading: boolean }) {
   if (loading && !entry) return <span className="text-[11px] text-slate-300">{DASH}</span>;
+  if (entry?.status === "no_matchups") {
+    return (
+      <span data-testid="avg-vs-p-no-abs" className="text-[11px] font-semibold text-slate-400">
+        No ABs
+      </span>
+    );
+  }
   const avg = entry?.career?.avg ?? null;
   if (avg == null) return <span className="text-[11px] text-slate-300">{DASH}</span>;
   return <span className="text-[11px] font-semibold tabular-nums text-slate-700">{fmtAvg(avg)}</span>;
@@ -40,13 +56,30 @@ export function MlbBvpHistoryPanelUnavailable({ batter }: { batter: string }) {
 }
 
 /**
- * Shown both when a batter has genuinely never faced this pitcher and when
- * the generator rejected the pair for violating the career/last5y
- * counting-stat invariant (see violatesCareerInvariant) -- both cases
- * arrive here as entry.career === null && entry.last5y === null, and
- * neither can be distinguished from the other at render time, so both get
- * the same honest "nothing reliable to show" message rather than a
- * misleading per-cause explanation.
+ * Shown when entry.status === "no_matchups" -- the generator positively
+ * confirmed both career and trailing-5-year lookups returned zero prior
+ * matchups for this exact pair. This is the only render path allowed to
+ * claim a confirmed empty history.
+ */
+export function MlbBvpHistoryPanelNoMatchups({ batter, pitcher }: { batter: string; pitcher: string }) {
+  return (
+    <div
+      data-testid="bvp-history-no-matchups"
+      className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-xs text-slate-400"
+      aria-label={`Batter-vs-pitcher history for ${batter} vs ${pitcher}`}
+    >
+      No ABs -- {batter} has never faced {pitcher}.
+    </div>
+  );
+}
+
+/**
+ * Shown when both windows are null but that emptiness was NOT positively
+ * confirmed this run (entry.status is "unavailable" or "inconsistent") --
+ * a missing lookup, a fetch error, a stale file, or an invariant-rejected
+ * pair (see violatesCareerInvariant). Deliberately does not claim "no
+ * prior matchups", since none of those causes confirm anything about
+ * whether the matchup happened.
  */
 export function MlbBvpHistoryPanelNoHistory({ batter, pitcher }: { batter: string; pitcher: string }) {
   return (
@@ -55,7 +88,7 @@ export function MlbBvpHistoryPanelNoHistory({ batter, pitcher }: { batter: strin
       className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-xs text-slate-400"
       aria-label={`Batter-vs-pitcher history for ${batter} vs ${pitcher}`}
     >
-      No prior matchups.
+      Batter-vs-pitcher history unavailable for this matchup.
     </div>
   );
 }
@@ -82,6 +115,9 @@ export default function MlbBvpHistoryPanel({ entry, batter, pitcher }: { entry: 
   const hasLast5y = entry.last5y != null;
 
   if (!hasCareer && !hasLast5y) {
+    if (entry.status === "no_matchups") {
+      return <MlbBvpHistoryPanelNoMatchups batter={batter} pitcher={pitcher} />;
+    }
     return <MlbBvpHistoryPanelNoHistory batter={batter} pitcher={pitcher} />;
   }
 
