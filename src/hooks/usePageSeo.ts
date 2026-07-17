@@ -3,7 +3,8 @@ import { useEffect } from "react";
 const SITE_NAME = "Joe Knows Ball";
 const CANONICAL_BASE = "https://www.joeknowsball.com";
 
-const DEFAULT_OG_IMAGE = "https://www.joeknowsball.com/og-default.png";
+const DEFAULT_OG_IMAGE = "https://www.joeknowsball.com/og/joeknowsball-social-preview-v2.png";
+const DEFAULT_OG_IMAGE_ALT = "Joe Knows Ball advanced sports analytics and betting models";
 
 interface PageSeoOptions {
   title: string;
@@ -88,9 +89,13 @@ export function usePageSeo({
     upsertMeta('meta[property="og:url"]', { property: "og:url", content: canonicalUrl });
     const resolvedOgImage = ogImage ?? DEFAULT_OG_IMAGE;
     upsertMeta('meta[property="og:image"]', { property: "og:image", content: resolvedOgImage });
+    upsertMeta('meta[property="og:image:secure_url"]', { property: "og:image:secure_url", content: resolvedOgImage });
+    upsertMeta('meta[property="og:image:type"]', { property: "og:image:type", content: "image/png" });
     upsertMeta('meta[property="og:image:width"]', { property: "og:image:width", content: "1200" });
     upsertMeta('meta[property="og:image:height"]', { property: "og:image:height", content: "630" });
+    upsertMeta('meta[property="og:image:alt"]', { property: "og:image:alt", content: DEFAULT_OG_IMAGE_ALT });
     upsertMeta('meta[name="twitter:image"]', { name: "twitter:image", content: resolvedOgImage });
+    upsertMeta('meta[name="twitter:image:alt"]', { name: "twitter:image:alt", content: DEFAULT_OG_IMAGE_ALT });
     upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary_large_image" });
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: fullTitle });
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: description });
