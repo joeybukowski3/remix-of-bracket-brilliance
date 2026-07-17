@@ -44,17 +44,19 @@ function tempState() {
   return { root, hr: path.join(root, "hr"), k: path.join(root, "k") };
 }
 
-function saveReceipt(stateDir, key) {
+function saveReceipt(stateDir, key, content = {}) {
   const file = getDuplicateStatePath(key, stateDir);
   mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, "{}\n");
+  writeFileSync(file, `${JSON.stringify(content)}\n`);
 }
 
 test("both receipts short-circuit before schedule, boxscore, or HR data fetch", async () => {
   const state = tempState();
   try {
     saveReceipt(state.hr, `mlb-hr-props:${SLATE_DATE}`);
-    saveReceipt(state.k, `mlb-k-props:${SLATE_DATE}`);
+    // K is only "fully posted" (short-circuit eligible) once both the main
+    // tweet AND its self-reply are recorded -- see getPollReceiptState.
+    saveReceipt(state.k, `mlb-k-props:${SLATE_DATE}`, { tweetId: "111", replyTweetId: "222" });
     let fetchCount = 0;
     const result = await createSharedMlbXPollPlan({
       now: NOW,
@@ -120,6 +122,109 @@ test("a posted HR side is independent while K remains eligible", async () => {
     });
     assert.equal(result.plan.hr.state, PollPlanState.POSTED);
     assert.equal(result.plan.k.shouldRun, true);
+  } finally {
+    rmSync(state.root, { recursive: true, force: true });
+  }
+});
+
+test("a K receipt with a main tweet but no reply does NOT short-circuit -- the plan keeps K eligible to recover the missing reply", async () => {
+  const state = tempState();
+  try {
+    // HR already fully posted too (existence-based, no reply concept for
+    // HR) so this test isolates K's reply-pending behavior specifically.
+    saveReceipt(state.hr, `mlb-hr-props:${SLATE_DATE}`);
+    saveReceipt(state.k, `mlb-k-props:${SLATE_DATE}`, { tweetId: "111", replyTweetId: null });
+    const result = await createSharedMlbXPollPlan({
+      now: NOW,
+      hrStateDir: state.hr,
+      kStateDir: state.k,
+      buildSnapshot: async () => ({ ok: true, timing: { hasGames: true, phase: "EXPIRED", isExpired: true, isFinalCutoff: false, allGamesStarted: true }, games: [] }),
+      loadHrRaw: async () => { throw new Error("HR is already posted, must not fetch"); },
+    });
+    // Not the "both fully posted" short-circuit -- K's reply-pending state
+    // alone is enough to keep the plan doing live work.
+    assert.equal(result.plan.bothAlreadyPosted, false);
+    assert.equal(result.plan.hr.state, PollPlanState.POSTED);
+    // K is ready to recover the reply EVEN THOUGH normal K market timing
+    // (EXPIRED) would otherwise never be ready for a fresh post.
+    assert.equal(result.plan.k.shouldRun, true);
+    assert.equal(result.plan.k.reason, "READY_REPLY_RECOVERY");
+  } finally {
+    rmSync(state.root, { recursive: true, force: true });
+  }
+});
+
+test("a K receipt with both main tweet and reply IS fully posted -- normal short-circuit resumes", async () => {
+  const state = tempState();
+  try {
+    saveReceipt(state.hr, `mlb-hr-props:${SLATE_DATE}`);
+    saveReceipt(state.k, `mlb-k-props:${SLATE_DATE}`, { tweetId: "111", replyTweetId: "222" });
+    const result = await createSharedMlbXPollPlan({
+      now: NOW,
+      hrStateDir: state.hr,
+      kStateDir: state.k,
+      buildSnapshot: async () => { throw new Error("must not build snapshot"); },
+      loadHrRaw: async () => { throw new Error("must not fetch HR raw"); },
+    });
+    assert.equal(result.plan.bothAlreadyPosted, true);
+    assert.equal(result.plan.k.state, PollPlanState.POSTED);
+    assert.equal(result.plan.k.shouldRun, false);
+  } finally {
+    rmSync(state.root, { recursive: true, force: true });
+  }
+});
+
+test("K's 11:00 AM ET earliest-post guard blocks the plan before the floor, even with confirmed starters/lineups", async () => {
+  const state = tempState();
+  const beforeFloor = new Date("2026-07-17T14:59:00.000Z"); // 10:59 AM EDT
+  const atFloor = new Date("2026-07-17T15:00:00.000Z"); // 11:00 AM EDT
+  const snapshot = {
+    ok: true,
+    timing: { hasGames: true, phase: "PREFERRED", isFinalCutoff: false, isExpired: false, allGamesStarted: false },
+    games: [{ started: false, excluded: false, awayStarter: { id: 1 }, homeStarter: { id: 2 }, awayLineup: { confirmed: true }, homeLineup: { confirmed: true } }],
+  };
+  try {
+    const before = await createSharedMlbXPollPlan({
+      now: beforeFloor,
+      hrStateDir: state.hr,
+      kStateDir: state.k,
+      buildSnapshot: async () => snapshot,
+      loadHrRaw: async () => ({ date: "2026-07-17", batters: [] }),
+    });
+    assert.equal(before.plan.k.shouldRun, false);
+    assert.equal(before.plan.k.reason, "WAITING_FOR_EARLIEST_POST_TIME");
+
+    const at = await createSharedMlbXPollPlan({
+      now: atFloor,
+      hrStateDir: state.hr,
+      kStateDir: state.k,
+      buildSnapshot: async () => snapshot,
+      loadHrRaw: async () => ({ date: "2026-07-17", batters: [] }),
+    });
+    assert.equal(at.plan.k.shouldRun, true);
+  } finally {
+    rmSync(state.root, { recursive: true, force: true });
+  }
+});
+
+test("HR is entirely unaffected by K's earliest-post guard, before or after 11:00 AM ET", async () => {
+  const state = tempState();
+  const beforeFloor = new Date("2026-07-17T14:59:00.000Z");
+  try {
+    saveReceipt(state.k, `mlb-k-props:2026-07-17`, { tweetId: "111", replyTweetId: "222" }); // K fully posted, isolate HR
+    const result = await createSharedMlbXPollPlan({
+      now: beforeFloor,
+      hrStateDir: state.hr,
+      kStateDir: state.k,
+      buildSnapshot: async () => ({ ok: true, timing: { hasGames: true, phase: "PREFERRED", isFinalCutoff: false, isExpired: false, allGamesStarted: false }, games: [] }),
+      loadHrRaw: async () => ({
+        date: "2026-07-17",
+        batters: Array.from({ length: 18 }, (_, i) => ({ player: `P${i}`, team: i < 9 ? "BOS" : "TB", gameId: 1, lineupStatus: "confirmed", battingOrder: (i % 9) + 1, hrScore: 50 - i })),
+      }),
+    });
+    // HR readiness is governed purely by its own first-pitch-relative gate,
+    // never by K's 11:00 AM floor.
+    assert.equal(result.plan.hr.reason !== "WAITING_FOR_EARLIEST_POST_TIME", true);
   } finally {
     rmSync(state.root, { recursive: true, force: true });
   }

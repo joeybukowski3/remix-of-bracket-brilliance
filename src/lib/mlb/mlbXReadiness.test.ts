@@ -117,3 +117,37 @@ describe("resolvePostingReadiness posting decisions", () => {
     expect(r.minutesUntilFirstPitch).toBe(75);
   });
 });
+
+describe("earliestPostGuardPassed (K's fixed 11:00 AM ET floor)", () => {
+  it("false blocks readiness outright, even with a fully qualified board", () => {
+    const r = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: false });
+    expect(r.ready).toBe(false);
+    expect(r.finalStatus).toBe(ReadinessStatus.WAITING_FOR_EARLIEST_POST_TIME);
+  });
+
+  it("true allows normal readiness to proceed", () => {
+    const r = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: true });
+    expect(r.ready).toBe(true);
+  });
+
+  it("defaults to true (no-op) when omitted -- HR/Numerology are unaffected", () => {
+    const r = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3 });
+    expect(r.ready).toBe(true);
+  });
+
+  it("the existing final cutoff still wins over the guard -- SKIPPED_AFTER_CUTOFF, not WAITING_FOR_EARLIEST_POST_TIME", () => {
+    const r = resolvePostingReadiness({ timing: timing({ isExpired: true, phase: "EXPIRED" }), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: false });
+    expect(r.finalStatus).toBe(ReadinessStatus.SKIPPED_AFTER_CUTOFF);
+  });
+
+  it("the final-cutoff post-what-you-have fallback still applies once the guard has passed", () => {
+    const r = resolvePostingReadiness({
+      timing: timing({ isFinalCutoff: true, phase: "FINAL_CUTOFF" }),
+      confirmedCount: 1,
+      targetCount: 3,
+      earliestPostGuardPassed: true,
+    });
+    expect(r.ready).toBe(true);
+    expect(r.finalStatus).toBe(ReadinessStatus.READY_CONFIRMED_SELECTIONS);
+  });
+});

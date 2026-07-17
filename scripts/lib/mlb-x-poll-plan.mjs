@@ -37,6 +37,10 @@ function contentPlan({ posted, readiness }) {
     confirmedRowsWithoutGameIdentity: readiness?.confirmedRowsWithoutGameIdentity ?? 0,
     scheduledGameCount: readiness?.scheduledGameCount ?? null,
     confirmedGameCoverage: readiness?.confirmedGameCoverage ?? null,
+    // K-only fixed daily earliest-post floor (11:00 AM ET) -- null for
+    // content types that never pass earliestPostGuardPassed (HR/Numerology),
+    // never a fabricated true/false.
+    earliestPostGuardPassed: readiness?.earliestPostGuardPassed ?? null,
   };
 }
 

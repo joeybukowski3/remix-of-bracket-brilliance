@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildHrCaptionFromArtifact, buildKCaptionFromArtifact } from "../../../scripts/lib/mlb-x-artifact-caption.mjs";
+import { buildHrCaptionFromArtifact, buildKCaptionFromArtifact, K_VALUE_REPLY_CAPTION } from "../../../scripts/lib/mlb-x-artifact-caption.mjs";
 import { buildHrArtifact, buildKArtifact } from "../../../scripts/lib/mlb-x-selection-artifact.mjs";
 
 const snapshot = { ok: true, asOf: "2026-07-12T15:00:00Z", timing: { earliestGameTime: "2026-07-12T17:00:00Z", minutesUntilFirstPitch: 75, phase: "PREFERRED" } };
@@ -52,5 +52,27 @@ describe("buildKCaptionFromArtifact", () => {
     expect(result.caption).toContain("-105");
     expect(result.caption).not.toContain("+100"); // the non-favored OVER-row under price never appears
     expect(result.captionRows).toBe(artifact.rows);
+  });
+
+  it("leads with the top-ranked (rank 1) play and contains no CTA/URL/hashtags/question", () => {
+    const artifact = buildKArtifact({
+      slateDate: "2026-07-12",
+      snapshot,
+      selectionStatus: "READY_CONFIRMED_SELECTIONS",
+      selectedRows: [{ pitcher: "Tarik Skubal", team: "DET", opponent: "PHI", kLine: 7.5, oddsOver: "-120", oddsUnder: "+100", projectedKs: 9.3, pitcherId: 1, gameId: 10 }],
+    });
+    const result = buildKCaptionFromArtifact(artifact);
+    expect(result.caption).toContain("Top Value Play: Tarik Skubal");
+    expect(result.caption).not.toMatch(/link in bio/i);
+    expect(result.caption).not.toMatch(/#\w/);
+    expect(result.caption).not.toMatch(/https?:\/\//i);
+    expect(result.caption).not.toContain("?");
+  });
+});
+
+describe("K_VALUE_REPLY_CAPTION", () => {
+  it("matches the approved static self-reply copy exactly", () => {
+    expect(K_VALUE_REPLY_CAPTION).toBe("Full table and custom models are FREE at JoeKnowsBall. Link in bio.\n\n#MLB #StrikeoutProps #MLBPicks #SportsAnalytics");
+    expect(K_VALUE_REPLY_CAPTION.length).toBeLessThanOrEqual(280);
   });
 });

@@ -196,6 +196,40 @@ export function getEtSlateDate(now = new Date()) {
   }).format(now instanceof Date ? now : new Date(now));
 }
 
+/**
+ * Current wall-clock time in America/New_York, as minutes since midnight.
+ * DST-safe via Intl (no manual EST/EDT offset arithmetic) -- used for
+ * content types with a fixed daily earliest-post clock time (currently K's
+ * ~11:00 AM ET floor) layered on top of the first-pitch-relative window
+ * above, rather than a hardcoded UTC cron hour.
+ */
+export function getEtMinutesSinceMidnight(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now instanceof Date ? now : new Date(now));
+  // hour12:false can format midnight as "24" in some environments; normalize.
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? "0") % 24;
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? "0");
+  return hour * 60 + minute;
+}
+
+/** True once the America/New_York wall clock has reached hour:minute today (DST-safe). */
+export function isAtOrAfterEtClockTime(now, hour, minute) {
+  return getEtMinutesSinceMidnight(now) >= hour * 60 + minute;
+}
+
+// K-only: 11:00 AM ET is the opening of the K posting window (not a fixed
+// publication guarantee) -- posting still waits on the phase/final-cutoff
+// window above this floor. HR/Numerology are entirely unaffected; they
+// never pass earliestPostGuardPassed to resolvePostingReadiness. Shared
+// here (rather than defined once in the poller and once in the poster)
+// so both call sites can never drift out of sync with each other.
+export const K_EARLIEST_POST_ET_HOUR = 11;
+export const K_EARLIEST_POST_ET_MINUTE = 0;
+
 const STATS_API_SCHEDULE_URL = "https://statsapi.mlb.com/api/v1/schedule";
 
 /**

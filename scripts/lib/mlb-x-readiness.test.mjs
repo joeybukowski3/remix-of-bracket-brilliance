@@ -7,6 +7,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { ReadinessStatus, WaitingReason, formatGameCoverageLogLine, resolvePostingReadiness } from "./mlb-x-readiness.mjs";
+import { isAtOrAfterEtClockTime, K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE } from "./mlb-x-slate-timing.mjs";
 
 function timing(overrides = {}) {
   return {
@@ -226,5 +227,102 @@ describe("formatGameCoverageLogLine", () => {
   it("handles a null/undefined readiness gracefully rather than throwing", () => {
     assert.equal(formatGameCoverageLogLine(null), "confirmedGames=n/a scheduledGames=n/a coverage=n/a rowsWithoutGameIdentity=0");
     assert.equal(formatGameCoverageLogLine(undefined), "confirmedGames=n/a scheduledGames=n/a coverage=n/a rowsWithoutGameIdentity=0");
+  });
+});
+
+describe("resolvePostingReadiness -- earliestPostGuardPassed (K's fixed 11:00 AM ET floor)", () => {
+  it("10:59 AM ET (guard not yet passed) blocks readiness even with a fully qualified board", () => {
+    const guardPassed = isAtOrAfterEtClockTime(new Date("2026-07-17T14:59:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE); // EDT
+    const result = resolvePostingReadiness({
+      timing: timing(),
+      confirmedCount: 5,
+      targetCount: 3,
+      earliestPostGuardPassed: guardPassed,
+    });
+    assert.equal(guardPassed, false);
+    assert.equal(result.ready, false);
+    assert.equal(result.finalStatus, ReadinessStatus.WAITING_FOR_EARLIEST_POST_TIME);
+  });
+
+  it("11:00 AM ET (guard exactly passed) is eligible", () => {
+    const guardPassed = isAtOrAfterEtClockTime(new Date("2026-07-17T15:00:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE); // EDT
+    const result = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: guardPassed });
+    assert.equal(guardPassed, true);
+    assert.equal(result.ready, true);
+    assert.equal(result.finalStatus, ReadinessStatus.READY_CONFIRMED_SELECTIONS);
+  });
+
+  it("11:01 AM ET (guard passed) is eligible", () => {
+    const guardPassed = isAtOrAfterEtClockTime(new Date("2026-07-17T15:01:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE); // EDT
+    const result = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: guardPassed });
+    assert.equal(guardPassed, true);
+    assert.equal(result.ready, true);
+  });
+
+  it("EST (winter) date: 10:59 AM ET blocked, 11:00 AM ET eligible", () => {
+    const before = isAtOrAfterEtClockTime(new Date("2026-01-15T15:59:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE);
+    const at = isAtOrAfterEtClockTime(new Date("2026-01-15T16:00:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE);
+    assert.equal(before, false);
+    assert.equal(at, true);
+    assert.equal(resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: before }).ready, false);
+    assert.equal(resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: at }).ready, true);
+  });
+
+  it("EDT (summer) date: 10:59 AM ET blocked, 11:00 AM ET eligible", () => {
+    const before = isAtOrAfterEtClockTime(new Date("2026-07-17T14:59:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE);
+    const at = isAtOrAfterEtClockTime(new Date("2026-07-17T15:00:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE);
+    assert.equal(before, false);
+    assert.equal(at, true);
+    assert.equal(resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: before }).ready, false);
+    assert.equal(resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: at }).ready, true);
+  });
+
+  it("a board that would already be ready before 11:00 does NOT post -- the guard blocks it outright", () => {
+    // Fully qualified (confirmedCount >= targetCount) -- would be READY without the guard.
+    const withoutGuard = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3 });
+    assert.equal(withoutGuard.ready, true);
+    const withGuard = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: false });
+    assert.equal(withGuard.ready, false);
+    assert.equal(withGuard.finalStatus, ReadinessStatus.WAITING_FOR_EARLIEST_POST_TIME);
+  });
+
+  it("an unready board at/after 11:00 continues polling (WAITING_FOR_LINEUPS), not blocked by the guard", () => {
+    const result = resolvePostingReadiness({ timing: timing(), confirmedCount: 1, targetCount: 3, earliestPostGuardPassed: true });
+    assert.equal(result.ready, false);
+    assert.equal(result.finalStatus, ReadinessStatus.WAITING_FOR_LINEUPS);
+  });
+
+  it("a board that becomes ready later (after the guard passes) posts normally", () => {
+    const stillWaiting = resolvePostingReadiness({ timing: timing(), confirmedCount: 1, targetCount: 3, earliestPostGuardPassed: true });
+    assert.equal(stillWaiting.ready, false);
+    const nowReady = resolvePostingReadiness({ timing: timing(), confirmedCount: 3, targetCount: 3, earliestPostGuardPassed: true });
+    assert.equal(nowReady.ready, true);
+  });
+
+  it("the existing final cutoff still stops posting even when checked before 11:00 -- SKIPPED_AFTER_CUTOFF, not WAITING_FOR_EARLIEST_POST_TIME", () => {
+    // isExpired is checked before the earliestPostGuardPassed guard, so an
+    // early slate whose window has already fully closed reports the more
+    // informative SKIPPED_AFTER_CUTOFF rather than implying a post might
+    // still happen once 11:00 arrives.
+    const result = resolvePostingReadiness({ timing: timing({ isExpired: true }), confirmedCount: 5, targetCount: 3, earliestPostGuardPassed: false });
+    assert.equal(result.ready, false);
+    assert.equal(result.finalStatus, ReadinessStatus.SKIPPED_AFTER_CUTOFF);
+  });
+
+  it("the final cutoff's post-what-you-have fallback still applies once the guard has passed", () => {
+    const result = resolvePostingReadiness({
+      timing: timing({ isFinalCutoff: true }),
+      confirmedCount: 1,
+      targetCount: 3,
+      maxTableSize: 3,
+      earliestPostGuardPassed: true,
+    });
+    assert.equal(result.ready, true);
+    assert.equal(result.finalStatus, ReadinessStatus.READY_CONFIRMED_SELECTIONS);
+  });
+
+  it("defaults to true (no-op) when omitted -- HR/Numerology callers are entirely unaffected", () => {
+    const result = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 3 });
+    assert.equal(result.ready, true);
   });
 });

@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   checkDailyPostingLock,
   getDuplicateStatePath,
   getForceRepostOverride,
+  readPostReceipt,
   savePostReceipt,
   slugifyKey,
 } from "./mlb-x-daily-lock.mjs";
@@ -110,4 +111,43 @@ test("getDuplicateStatePath is stable and deterministic for the same key/dir", (
   const a = getDuplicateStatePath("mlb-hr-props:2026-07-10", "/tmp/state");
   const b = getDuplicateStatePath("mlb-hr-props:2026-07-10", "/tmp/state");
   assert.equal(a, b);
+});
+
+test("readPostReceipt returns null (never throws) when the file doesn't exist", () => {
+  withTempStateDir((dir) => {
+    const statePath = getDuplicateStatePath("mlb-k-props:2026-07-17", dir);
+    assert.equal(readPostReceipt(statePath), null);
+  });
+});
+
+test("readPostReceipt returns null (never throws) for a malformed/unparsable file", () => {
+  withTempStateDir((dir) => {
+    const statePath = getDuplicateStatePath("mlb-k-props:2026-07-17", dir);
+    savePostReceipt(statePath, {}); // creates the directory
+    writeFileSync(statePath, "{ not valid json");
+    assert.equal(readPostReceipt(statePath), null);
+  });
+});
+
+test("readPostReceipt round-trips exactly what savePostReceipt wrote (K's main+reply receipt shape)", () => {
+  withTempStateDir((dir) => {
+    const statePath = getDuplicateStatePath("mlb-k-props:2026-07-17", dir);
+    const receipt = { dailyPostingKey: "mlb-k-props:2026-07-17", tweetId: "111", tweetUrl: "https://x.com/_joeknowsball_/status/111", replyTweetId: null, replyTweetUrl: null };
+    savePostReceipt(statePath, receipt);
+    assert.deepEqual(readPostReceipt(statePath), receipt);
+  });
+});
+
+test("readPostReceipt reflects a reply added after the main receipt was first saved (partial-failure recovery shape)", () => {
+  withTempStateDir((dir) => {
+    const statePath = getDuplicateStatePath("mlb-k-props:2026-07-17", dir);
+    const mainOnly = { dailyPostingKey: "mlb-k-props:2026-07-17", tweetId: "111", replyTweetId: null };
+    savePostReceipt(statePath, mainOnly);
+    assert.equal(readPostReceipt(statePath).replyTweetId, null);
+
+    savePostReceipt(statePath, { ...mainOnly, replyTweetId: "222", replyTweetUrl: "https://x.com/_joeknowsball_/status/222" });
+    const recovered = readPostReceipt(statePath);
+    assert.equal(recovered.tweetId, "111");
+    assert.equal(recovered.replyTweetId, "222");
+  });
 });
