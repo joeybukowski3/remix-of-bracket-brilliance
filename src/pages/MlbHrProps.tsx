@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { Fragment, useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
 import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
@@ -9,6 +9,8 @@ import { getSeoMeta } from "@/lib/seo";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { evaluateSinCityHitter } from "@/lib/mlb/mlbHrFilter";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
+import { keyForBvpRow, useMlbBvpHistory } from "@/hooks/useMlbBvpHistory";
+import MlbBvpHistoryPanel, { AvgVsPitcherCell, MlbBvpHistoryPanelLoading, MlbBvpHistoryPanelUnavailable } from "@/components/mlb/MlbBvpHistoryPanel";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
@@ -285,8 +287,12 @@ export type PitcherVsBatterRow = {
   rank: number;
   gameKey: string;
   player: string;
+  /** Display-only identity passthrough for joining historical batter-vs-pitcher context at render time. Never used in scoring, ranking, filtering, or sorting. */
+  playerId: number | null;
   team: string;
   opposingPitcher: string;
+  /** Display-only identity passthrough -- see playerId above. */
+  opposingPitcherId: number | null;
   park: string;
   parkFactor: number;
   hrScore: number;
@@ -1053,8 +1059,8 @@ export function buildPitcherVsBatterRows(
     ).toFixed(1));
 
     return {
-      rank: 0, gameKey: b.gameKey, player: b.player, team: b.team,
-      opposingPitcher: b.opposingPitcher, park: game?.stadium ?? b.ballpark,
+      rank: 0, gameKey: b.gameKey, player: b.player, playerId: b.playerId, team: b.team,
+      opposingPitcher: b.opposingPitcher, opposingPitcherId: b.opposingPitcherId, park: game?.stadium ?? b.ballpark,
       parkFactor: game?.parkFactor ?? b.parkFactor, hrScore: b.hrScore,
       opposingPitcherHrVs: hrVs,
       opposingPitcherHitsVs: hitsVs,
@@ -1660,6 +1666,12 @@ export default function MlbHrProps() {
   // Use the shared hook so HR/K/hit tables and game matchups always read from
   // the same data source and poll together every 10 minutes.
   const { dashboard, bestBets, status } = useMlbPropsData();
+  // Display-only batter-vs-pitcher history (career + trailing-5Y PA/H/AVG/HR),
+  // joined at render time by (batter id, opposing pitcher id). Never read by
+  // hrScore, matchup scores, rankings, filters, or sorting anywhere below.
+  const { loading: bvpHistoryLoading, fileUnavailable: bvpHistoryUnavailable, historyByKey: bvpHistoryByKey } = useMlbBvpHistory();
+  const [bvpExpandedBatterKey, setBvpExpandedBatterKey] = useState<string | null>(null);
+  const [bvpExpandedMatchupKey, setBvpExpandedMatchupKey] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
   const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
@@ -1917,6 +1929,34 @@ export default function MlbHrProps() {
     setStrikeoutSortKey(key);
   };
 
+  const toggleBvpBatterRow = (row: { playerId: number | null; opposingPitcherId: number | null }) => {
+    const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
+    setBvpExpandedBatterKey((current) => (current === key ? null : key));
+  };
+
+  const toggleBvpMatchupRow = (row: { playerId: number | null; opposingPitcherId: number | null }) => {
+    const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
+    setBvpExpandedMatchupKey((current) => (current === key ? null : key));
+  };
+
+  /**
+   * Shared batter-vs-pitcher history detail panel -- used by both the
+   * Batter View table and the Matchups table, since both row types carry
+   * the same (playerId, opposingPitcherId) identity pair. Display-only:
+   * this never reads or writes hrScore, matchup scores, rankings,
+   * recommendations, confidence, eligibility, or sorting.
+   */
+  function BvpDetailPanel({ playerId, opposingPitcherId, player, opposingPitcher }: {
+    playerId: number | null; opposingPitcherId: number | null; player: string; opposingPitcher: string;
+  }) {
+    if (bvpHistoryLoading) return <MlbBvpHistoryPanelLoading />;
+    if (bvpHistoryUnavailable) return <MlbBvpHistoryPanelUnavailable batter={player} />;
+    const key = keyForBvpRow(playerId, opposingPitcherId);
+    const entry = key ? bvpHistoryByKey.get(key) : undefined;
+    if (!entry) return <MlbBvpHistoryPanelUnavailable batter={player} />;
+    return <MlbBvpHistoryPanel entry={entry} batter={player} pitcher={opposingPitcher} />;
+  }
+
   return (
       <main className={cn("site-page bg-[#edf2f7] pb-12 pt-3 text-slate-900", isMobile ? "text-[14px]" : "")}>
         <div>
@@ -2003,6 +2043,7 @@ export default function MlbHrProps() {
                     <div className="flex flex-nowrap gap-3 overflow-x-auto whitespace-nowrap" style={{ WebkitOverflowScrolling: "touch" }}>
                       {[
                         { key: "batters", label: "💥 Batters" },
+                        { key: "matchups", label: "⚔️ Matchup Lenses" },
                       ].map((tab) => (
                         <button
                           key={tab.key}
@@ -2392,14 +2433,42 @@ export default function MlbHrProps() {
                                   </div>
                                 </th>
                                 <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold sm:whitespace-nowrap">Angle</th>
+                                <th className="border-b border-slate-200 bg-slate-50 px-1 sm:px-2 py-1.5 text-left font-bold sm:whitespace-nowrap">
+                                  <div className="flex items-center gap-0.5">
+                                    AVG vs P
+                                    <HeaderHelp
+                                      label="AVG vs P"
+                                      description="Batter's career batting average against this specific opposing starter. Historical context only -- not used in HR Score or any ranking. Click a row to see PA, H, HR, and a Career / Last 5Y toggle."
+                                    />
+                                  </div>
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
                               {filteredBatters.length ? filteredBatters.map((row, i) => {
                                 const rowBg = i % 2 === 0 ? "bg-white" : "bg-slate-50/70";
+                                const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
+                                const isBvpExpanded = bvpExpandedBatterKey === bvpKey;
+                                const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
+                                const bvpRowLabel = `${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`;
+                                const onBvpRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
+                                  if (event.key === "Enter" || event.key === " ") {
+                                    event.preventDefault();
+                                    toggleBvpBatterRow(row);
+                                  }
+                                };
                                 const stickyBg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
                                 return (
-                                  <tr key={`${row.player}-${row.team}-${row.opponent}`} className={rowBg}>
+                                  <Fragment key={`${row.player}-${row.team}-${row.opponent}`}>
+                                  <tr
+                                    onClick={() => toggleBvpBatterRow(row)}
+                                    onKeyDown={onBvpRowKeyDown}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={isBvpExpanded}
+                                    aria-label={bvpRowLabel}
+                                    className={cn(rowBg, "cursor-pointer transition-colors hover:brightness-[0.98]")}
+                                  >
                                     {/* Sticky rank — shows current sort position, not raw model rank */}
                                     <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-black text-slate-400 ${stickyBg}`}>
                                       {i + 1}
@@ -2407,6 +2476,7 @@ export default function MlbHrProps() {
                                     {/* Sticky name */}
                                     <td className={`sticky left-6 sm:left-8 z-10 border-b border-r border-slate-100 px-1.5 sm:px-2 py-0.5 sm:py-1 ${stickyBg}`}>
                                       <div className="flex items-center gap-1">
+                                        <span aria-hidden="true" className={cn("shrink-0 text-[8px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
                                         <TeamLogoBadge team={row.team} size={13} showLabel={false} />
                                         <span className="font-semibold text-slate-900 whitespace-nowrap text-[10px] sm:text-[11px]">{row.player}</span>
                                       </div>
@@ -2534,11 +2604,23 @@ export default function MlbHrProps() {
                                         })()}
                                       </div>
                                     </td>
+                                    {/* AVG vs P — display-only historical context, click row to expand */}
+                                    <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
+                                      <AvgVsPitcherCell entry={bvpEntry} loading={bvpHistoryLoading} />
+                                    </td>
                                   </tr>
+                                  {isBvpExpanded && (
+                                    <tr>
+                                      <td colSpan={10} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
+                                        <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                      </td>
+                                    </tr>
+                                  )}
+                                  </Fragment>
                                 );
                               }) : (
                                 <tr>
-                                  <td colSpan={9} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={10} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     {hrFilterActive ? "No Sin City batters match the current filters." : "No batters match the current search or game filter."}
                                   </td>
                                 </tr>
@@ -2746,6 +2828,17 @@ export default function MlbHrProps() {
                                 {activeMatchupLens !== "strikeout" ? (
                                   <th className="border-b border-slate-200 bg-white px-4 py-1 text-left font-semibold whitespace-nowrap">Angle</th>
                                 ) : null}
+                                {activeMatchupLens !== "strikeout" ? (
+                                  <th className="border-b border-slate-200 bg-white px-4 py-1 text-left font-semibold whitespace-nowrap">
+                                    <div className="flex items-center gap-1">
+                                      AVG vs P
+                                      <HeaderHelp
+                                        label="AVG vs P"
+                                        description="Batter's career batting average against this specific opposing starter. Historical context only -- not used in Matchup Score or any ranking. Click a row to see PA, H, HR, and a Career / Last 5Y toggle."
+                                      />
+                                    </div>
+                                  </th>
+                                ) : null}
                               </tr>
                             </thead>
                             <tbody>
@@ -2780,11 +2873,34 @@ export default function MlbHrProps() {
                                     </td>
                                   </tr>
                                 )
-                                : filteredMatchups.length ? filteredMatchups.map((row) => (
-                                  <tr key={`${row.rank}-${row.player}-${row.opposingPitcher}`} className="odd:bg-white even:bg-slate-50/60">
+                                : filteredMatchups.length ? filteredMatchups.map((row) => {
+                                  const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
+                                  const isBvpExpanded = bvpExpandedMatchupKey === bvpKey;
+                                  const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
+                                  const bvpRowLabel = `${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`;
+                                  const onBvpRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
+                                    if (event.key === "Enter" || event.key === " ") {
+                                      event.preventDefault();
+                                      toggleBvpMatchupRow(row);
+                                    }
+                                  };
+                                  return (
+                                  <Fragment key={`${row.rank}-${row.player}-${row.opposingPitcher}`}>
+                                  <tr
+                                    onClick={() => toggleBvpMatchupRow(row)}
+                                    onKeyDown={onBvpRowKeyDown}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={isBvpExpanded}
+                                    aria-label={bvpRowLabel}
+                                    className="cursor-pointer odd:bg-white even:bg-slate-50/60 transition-colors hover:brightness-[0.98]"
+                                  >
                                     <td className="border-b border-slate-100 px-4 py-1.5">{row.rank}</td>
                                     <td className="border-b border-slate-100 px-4 py-1.5 min-w-[180px]">
-                                      <div className="font-medium text-slate-900">{row.player}</div>
+                                      <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                                        <span aria-hidden="true" className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
+                                        {row.player}
+                                      </div>
                                     </td>
                                     <td className="border-b border-slate-100 px-4 py-1.5"><TeamLogoBadge team={row.team} size={20} /></td>
                                     <td className="border-b border-slate-100 px-4 py-1.5 min-w-[150px]">{row.opposingPitcher}</td>
@@ -2819,10 +2935,23 @@ export default function MlbHrProps() {
                                         )) : <span className="text-slate-400">{DASH}</span>}
                                       </div>
                                     </td>
+                                    {/* AVG vs P — display-only historical context, click row to expand */}
+                                    <td className="border-b border-slate-100 px-4 py-1.5">
+                                      <AvgVsPitcherCell entry={bvpEntry} loading={bvpHistoryLoading} />
+                                    </td>
                                   </tr>
-                                )) : (
+                                  {isBvpExpanded && (
+                                    <tr>
+                                      <td colSpan={activeMatchupLens === "hr" ? 13 : 12} className="border-b border-slate-100 bg-slate-50 px-4 py-2">
+                                        <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                      </td>
+                                    </tr>
+                                  )}
+                                  </Fragment>
+                                  );
+                                }) : (
                                 <tr>
-                                  <td colSpan={activeMatchupLens === "hr" ? 12 : 11} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
+                                  <td colSpan={activeMatchupLens === "hr" ? 13 : 12} className="border-b border-slate-100 px-3 py-6 text-center text-sm text-slate-500">
                                     No matchup rows match the current search or game filter.
                                   </td>
                                 </tr>
