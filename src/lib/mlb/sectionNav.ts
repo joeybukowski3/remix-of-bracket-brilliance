@@ -5,6 +5,7 @@ import {
   Dice5,
   Flame,
   Radar,
+  Share2,
   Sparkles,
   Swords,
   TrendingUp,
@@ -68,6 +69,7 @@ export const MLB_NAV_SECTIONS: MlbNavSection[] = [
     label: "Models & Specials",
     items: [
       { id: "moneyline-edges", label: "Moneyline Edges", href: "/mlb#moneylines", icon: TrendingUp },
+      { id: "social-tables", label: "Social Media Tables", href: "/mlb#social-tables", icon: Share2 },
       { id: "pitcher-regression", label: "Vulnerable Pitchers", href: "/mlb/vulnerable-pitchers", icon: BarChart3 },
       { id: "overdue-batters", label: "Overdue Batters", href: "/mlb/hr-props#overdue", icon: Flame },
       { id: "biggest-mismatches", label: "Biggest Mismatches", href: "/mlb/hr-props#mismatches", icon: Swords },

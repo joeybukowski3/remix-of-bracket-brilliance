@@ -2656,7 +2656,7 @@ function SocialTableValue({
   );
 }
 
-function SocialTableML({
+export function SocialTableML({
   games,
   detailPreviews,
   pitcherRegressionData,
@@ -2799,7 +2799,7 @@ function SocialTableML({
   // confidence tier that drives the grade (so number and grade never disagree);
   // an N/A edge renders muted.
   function edgeValueColor(row: MlSocialRow): string {
-    if (row.modelEdgePoints == null) return "#64748b";
+    if (row.modelEdgePoints == null) return "#94a3b8";
     const tier = getEdgeTierKey(row.confidence);
     if (tier === "strong") return "#34d399";
     if (tier === "moderate") return "#4ade80";
@@ -2813,9 +2813,9 @@ function SocialTableML({
     const band = value != null ? getComponentBand(value) : null;
     return (
       <div style={{ textAlign: "center", minWidth: 0 }}>
-        <div style={{ color: "#64748b", fontSize: 8, fontWeight: 800, letterSpacing: ".04em" }}>{label}</div>
-        <div style={{ color: band?.color ?? "#64748b", fontSize: 13, fontWeight: 900, lineHeight: 1.1 }}>{formatEdgePoints(value)}</div>
-        <div style={{ color: "#475569", fontSize: 7.5, fontWeight: 700, whiteSpace: "nowrap" }}>{band?.label ?? " "}</div>
+        <div style={{ color: "#94a3b8", fontSize: 8, fontWeight: 800, letterSpacing: ".04em" }}>{label}</div>
+        <div style={{ color: band?.color ?? "#94a3b8", fontSize: 13, fontWeight: 900, lineHeight: 1.1 }}>{formatEdgePoints(value)}</div>
+        <div style={{ color: "#94a3b8", fontSize: 8, fontWeight: 700, whiteSpace: "nowrap" }}>{band?.label ?? " "}</div>
       </div>
     );
   }
@@ -2827,10 +2827,10 @@ function SocialTableML({
   // visually distinct from the separate recent-record diagnostic.
   function ModelContextCell({ modelForm, season }: { modelForm: number | null; season: number | null }) {
     const line = (label: string, value: number | null) => {
-      const color = value != null ? getComponentBand(value).color : "#64748b";
+      const color = value != null ? getComponentBand(value).color : "#94a3b8";
       return (
         <div style={{ display: "flex", justifyContent: "space-between", gap: 4, lineHeight: 1.2 }}>
-          <span style={{ color: "#64748b", fontSize: 8, fontWeight: 700 }}>{label}</span>
+          <span style={{ color: "#94a3b8", fontSize: 8, fontWeight: 700 }}>{label}</span>
           <span style={{ color, fontSize: 10, fontWeight: 800 }}>{formatEdgePoints(value)}</span>
         </div>
       );
@@ -2851,7 +2851,7 @@ function SocialTableML({
   function WindowToggle() {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 4 }} role="group" aria-label="Recent record window">
-        <span style={{ color: "#64748b", fontSize: 9, fontWeight: 700 }}>RECENT</span>
+        <span style={{ color: "#94a3b8", fontSize: 9, fontWeight: 700 }}>RECENT</span>
         {(["l5", "l14"] as FormWindow[]).map((w) => (
           <button
             key={w}
@@ -2880,7 +2880,7 @@ function SocialTableML({
 
   if (rows.length === 0) {
     return (
-      <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>
+      <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#94a3b8", fontSize: 13, textAlign: "center" }}>
         Model edge data not yet available. Check back after game previews load.
       </div>
     );
@@ -2933,14 +2933,14 @@ function SocialTableML({
       <div className="jkb-mle-desktop">
         {/* Column headers */}
         <div style={{ display: "grid", gridTemplateColumns: DESKTOP_COLUMNS, gap: 6, padding: "6px 12px", background: "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center" }}>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700 }}>#</div>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700 }}>MATCHUP</div>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>PITCH</div>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>BAT</div>
+          <div style={{ color: "#cbd5e1", fontSize: 9, fontWeight: 700 }}>#</div>
+          <div style={{ color: "#cbd5e1", fontSize: 9, fontWeight: 700 }}>MATCHUP</div>
+          <div style={{ color: "#cbd5e1", fontSize: 9, fontWeight: 700, textAlign: "center" }}>PITCH</div>
+          <div style={{ color: "#cbd5e1", fontSize: 9, fontWeight: 700, textAlign: "center" }}>BAT</div>
           <div style={{ color: "#38bdf8", fontSize: 9, fontWeight: 700, textAlign: "center" }}>RECENT {formLabel}</div>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL CTX</div>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL EDGE</div>
-          <div style={{ color: "#475569", fontSize: 9, fontWeight: 700, textAlign: "right" }}>PICK · GRADE</div>
+          <div style={{ color: "#cbd5e1", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL CTX</div>
+          <div style={{ color: "#cbd5e1", fontSize: 9, fontWeight: 700, textAlign: "center" }}>MODEL EDGE</div>
+          <div style={{ color: "#cbd5e1", fontSize: 9, fontWeight: 700, textAlign: "right" }}>PICK · GRADE</div>
         </div>
 
         {/* Rows */}
@@ -2977,12 +2977,12 @@ function SocialTableML({
                 padding: "8px 12px",
                 background: i % 2 === 0 ? "#0d1e38" : "#091629",
                 borderBottom: "1px solid #1e3a5f",
-                borderLeft: `3px solid ${ACCENTS[i] ?? "#475569"}`,
+                borderLeft: `3px solid ${ACCENTS[i] ?? "#94a3b8"}`,
                 alignItems: "center",
               }}
             >
               {/* Rank */}
-              <div style={{ fontWeight: 900, color: ACCENTS[i] ?? "#475569", fontSize: i < 3 ? 15 : 12, textAlign: "center" }}>
+              <div style={{ fontWeight: 900, color: ACCENTS[i] ?? "#94a3b8", fontSize: i < 3 ? 15 : 12, textAlign: "center" }}>
                 {i < 3 ? MEDALS[i] : i + 1}
               </div>
 
@@ -2991,10 +2991,10 @@ function SocialTableML({
                 <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
                   <TeamLogoBadge team={row.awayAbbr} size={20} showLabel={false} dark={true} />
                   <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.awayAbbr}</span>
-                  <span style={{ color: "#475569", fontSize: 10 }}>@</span>
+                  <span style={{ color: "#94a3b8", fontSize: 10 }}>@</span>
                   <TeamLogoBadge team={row.homeAbbr} size={20} showLabel={false} dark={true} />
                   <span style={{ color: "#fff", fontSize: 12, fontWeight: 800 }}>{row.homeAbbr}</span>
-                  <span style={{ color: "#64748b", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
+                  <span style={{ color: "#94a3b8", fontSize: 10, marginLeft: 2 }}>{row.gameTime}</span>
                 </div>
                 <div style={{ fontSize: 10, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {row.awayPitcher?.split(" ").pop() ?? "TBD"} vs {row.homePitcher?.split(" ").pop() ?? "TBD"}
@@ -3017,7 +3017,7 @@ function SocialTableML({
                 <div style={{ color: edgeValueColor(row), fontSize: 16, fontWeight: 900, lineHeight: 1.05 }}>
                   {formatEdgePoints(row.modelEdgePoints)}
                 </div>
-                <div style={{ color: row.isAdjusted ? "#fbbf24" : "#475569", fontSize: 7.5, fontWeight: 700, whiteSpace: "nowrap" }}>
+                <div style={{ color: row.isAdjusted ? "#fbbf24" : "#94a3b8", fontSize: 8, fontWeight: 700, whiteSpace: "nowrap" }}>
                   {row.modelEdgePoints == null ? "N/A" : row.isAdjusted ? "adj pts" : "pts"}
                 </div>
               </div>
@@ -3054,7 +3054,7 @@ function SocialTableML({
                     {row.grade}
                   </span>
                 ) : (
-                  <span style={{ color: "#64748b", fontSize: 10, fontWeight: 700 }}>No grade (N/A)</span>
+                  <span style={{ color: "#94a3b8", fontSize: 10, fontWeight: 700 }}>No grade (N/A)</span>
                 )}
                 {row.isAdjusted && (
                   <span style={{ color: "#fbbf24", fontSize: 8, fontWeight: 700, whiteSpace: "nowrap" }} title="Adjusted for partial data">Adjusted · partial data</span>
@@ -3086,7 +3086,7 @@ function SocialTableML({
             return (
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
                 <span style={{ color: "#94a3b8", fontSize: 12, fontWeight: 700 }}>{label}</span>
-                <span style={{ color: band?.color ?? "#64748b", fontSize: 13, fontWeight: 800 }}>{formatEdgePoints(value)}</span>
+                <span style={{ color: band?.color ?? "#94a3b8", fontSize: 13, fontWeight: 800 }}>{formatEdgePoints(value)}</span>
               </div>
             );
           };
@@ -3097,20 +3097,20 @@ function SocialTableML({
                 padding: "10px 14px",
                 background: i % 2 === 0 ? "#0d1e38" : "#091629",
                 borderBottom: "1px solid #1e3a5f",
-                borderLeft: `3px solid ${ACCENTS[i] ?? "#475569"}`,
+                borderLeft: `3px solid ${ACCENTS[i] ?? "#94a3b8"}`,
               }}
             >
               {/* Matchup + time */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <span style={{ color: ACCENTS[i] ?? "#475569", fontWeight: 900, fontSize: 13 }}>{i < 3 ? MEDALS[i] : i + 1}</span>
+                  <span style={{ color: ACCENTS[i] ?? "#94a3b8", fontWeight: 900, fontSize: 13 }}>{i < 3 ? MEDALS[i] : i + 1}</span>
                   <TeamLogoBadge team={row.awayAbbr} size={20} showLabel={false} dark={true} />
                   <span style={{ color: "#fff", fontSize: 13, fontWeight: 800 }}>{row.awayAbbr}</span>
-                  <span style={{ color: "#475569", fontSize: 11 }}>@</span>
+                  <span style={{ color: "#94a3b8", fontSize: 11 }}>@</span>
                   <TeamLogoBadge team={row.homeAbbr} size={20} showLabel={false} dark={true} />
                   <span style={{ color: "#fff", fontSize: 13, fontWeight: 800 }}>{row.homeAbbr}</span>
                 </div>
-                <span style={{ color: "#64748b", fontSize: 11 }}>{row.gameTime}</span>
+                <span style={{ color: "#94a3b8", fontSize: 11 }}>{row.gameTime}</span>
               </div>
               <div style={{ fontSize: 11, color: "#cbd5e1", marginTop: 3 }}>
                 {row.awayPitcher?.split(" ").pop() ?? "TBD"} vs {row.homePitcher?.split(" ").pop() ?? "TBD"}
@@ -3119,7 +3119,7 @@ function SocialTableML({
               {/* Pick + Model Edge headline */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>Pick</span>
+                  <span style={{ color: "#94a3b8", fontSize: 11, fontWeight: 700 }}>Pick</span>
                   <TeamLogoBadge team={row.selectedTeam} size={20} showLabel={false} dark={true} />
                   <span style={{ color: "#fff", fontWeight: 900, fontSize: 14 }}>{row.selectedTeam}</span>
                   {row.selectedAmerican && (
@@ -3134,7 +3134,7 @@ function SocialTableML({
                     {row.grade ? (
                       <span style={{ background: getEdgeGrade(row.confidence).bg, color: getEdgeGrade(row.confidence).text, borderRadius: 4, padding: "2px 7px", fontWeight: 700, fontSize: 10, whiteSpace: "nowrap" }}>{row.grade}</span>
                     ) : (
-                      <span style={{ color: "#64748b", fontSize: 10, fontWeight: 700 }}>No grade (N/A)</span>
+                      <span style={{ color: "#94a3b8", fontSize: 10, fontWeight: 700 }}>No grade (N/A)</span>
                     )}
                   </div>
                   {row.isAdjusted && <span style={{ color: "#fbbf24", fontSize: 9, fontWeight: 700 }}>Adjusted · partial data</span>}
@@ -3143,7 +3143,7 @@ function SocialTableML({
 
               {/* Model Drivers (canonical, additive) */}
               <div style={{ marginTop: 8, background: "#060d1a", borderRadius: 6, padding: "4px 10px" }}>
-                <div style={{ color: "#475569", fontSize: 9, fontWeight: 800, letterSpacing: ".05em", marginBottom: 1 }}>MODEL DRIVERS</div>
+                <div style={{ color: "#94a3b8", fontSize: 9, fontWeight: 800, letterSpacing: ".05em", marginBottom: 1 }}>MODEL DRIVERS</div>
                 {compRow("Pitching", row.pitchingEdge)}
                 {compRow("Batting", row.battingEdge)}
                 {compRow("Model Form", row.modelFormEdge)}
@@ -3177,7 +3177,7 @@ function SocialTableML({
 
       {/* Footer */}
       <div style={{ padding: "8px 14px", background: "#091629", borderTop: "1px solid #1e3a5f", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 9.5, color: "#475569", lineHeight: 1.35 }}>
+        <span style={{ fontSize: 9.5, color: "#94a3b8", lineHeight: 1.35 }}>
           Model Edge (pts) = full factor model, not a win-probability edge · Pitch + Bat + Model Ctx (Model Form + Season) = Model Edge · Recent {formLabel} = {FORM_WINDOW_SOURCES[formWindow]} record, a season-free diagnostic NOT summed into Model Edge · Adjusted = one or more factors missing, valid weights renormalized · N/A = data unavailable
           {hasPoly ? " · Mkt = no-vig implied · Poly = Polymarket" : " · Mkt = no-vig implied"}
         </span>
@@ -3215,7 +3215,7 @@ function SocialMediaTablesSection({
   const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, propsGames);
 
   return (
-    <section style={{ marginTop: 16 }}>
+    <section id="social-tables" style={{ marginTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0ea5e9" }}>Daily export</div>

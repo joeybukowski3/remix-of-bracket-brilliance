@@ -345,7 +345,7 @@ export function getComponentBand(value: number): {
 } {
   if (value >= 3.5) return { key: "strong", label: "Advantage", color: "#34d399" };
   if (value >= 1) return { key: "edge", label: "Slight edge", color: "#a3e635" };
-  if (value > -1) return { key: "even", label: "Even", color: "#64748b" };
+  if (value > -1) return { key: "even", label: "Even", color: "#94a3b8" };
   return { key: "against", label: "Opp edge", color: "#f87171" };
 }
 
