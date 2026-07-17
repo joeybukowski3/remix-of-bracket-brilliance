@@ -35,6 +35,9 @@ const ROOT = process.cwd();
 const PRODUCTION_BASE_URL = "https://www.joeknowsball.com/data/mlb";
 const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
 const HR_TARGET_TABLE_SIZE = 3;
+// See post-mlb-hr-props-to-x.mjs: a single early-confirmed game must never
+// alone satisfy readiness by raw headcount.
+const MIN_CONFIRMED_GAMES = 2;
 
 function getArg(name, fallback = "") {
   const prefix = `--${name}=`;
@@ -130,6 +133,8 @@ async function runHr({ source, now, fetchImpl }) {
     maxTableSize: HR_TARGET_TABLE_SIZE,
     projectedExcludedCount: selection.projectedExcludedCount,
     confirmationSourceFailed: !snapshot.ok,
+    confirmedGameCount: selection.confirmedGameCount,
+    minConfirmedGames: MIN_CONFIRMED_GAMES,
   });
 
   emit({
@@ -141,6 +146,7 @@ async function runHr({ source, now, fetchImpl }) {
     phase: readiness.phase,
     minutesUntilFirstPitch: readiness.minutesUntilFirstPitch ?? "n/a",
     confirmedCount: selection.confirmedCount,
+    confirmedGameCount: selection.confirmedGameCount,
     projectedExcludedCount: selection.projectedExcludedCount,
     selectedCount: readiness.selectedCount,
     finalStatus: readiness.finalStatus,

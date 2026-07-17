@@ -31,6 +31,10 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function normalizeTeamKey(value) {
+  return typeof value === "string" ? value.trim().toUpperCase() : "";
+}
+
 /**
  * Rebuild the HR X table from confirmed-eligible hitters, highest HR score
  * first, backfilling down the confirmed pool.
@@ -41,8 +45,8 @@ function toFiniteNumber(value) {
  * @param {(row:object)=>boolean|null} [params.liveConfirm]  optional live re-confirmation; return false to veto a
  *                                                            generated-confirmed row, null/true to defer to generated status
  * @param {number} [params.maxTableSize]        upper bound on rows (default 3)
- * @returns {{ selected: Array<object>, confirmedCount: number, projectedExcludedCount: number,
- *             unconfirmedExcludedCount: number, startedExcludedCount: number }}
+ * @returns {{ selected: Array<object>, confirmedCount: number, confirmedGameCount: number,
+ *             projectedExcludedCount: number, unconfirmedExcludedCount: number, startedExcludedCount: number }}
  */
 export function selectConfirmedHrProps({
   batters = [],
@@ -86,9 +90,21 @@ export function selectConfirmedHrProps({
     return (toFiniteNumber(left.hrScoreRank) ?? Infinity) - (toFiniteNumber(right.hrScoreRank) ?? Infinity);
   });
 
+  // Distinct games represented in the FULL confirmed pool (before slicing to
+  // maxTableSize) -- lets the caller's readiness gate require the confirmed
+  // pool to span more than one game before treating a raw headcount as "the
+  // slate is ready," so a single early-confirmed game can never alone
+  // satisfy readiness and monopolize the table. Falls back to `team` when
+  // `gameId` is missing (each confirmed lineup is one team's batting order
+  // within exactly one game, so team is an equally valid game proxy).
+  const confirmedGameCount = new Set(
+    confirmed.map((row) => (row.gameId != null ? `game:${row.gameId}` : `team:${normalizeTeamKey(row.team)}`)),
+  ).size;
+
   return {
     selected: confirmed.slice(0, maxTableSize),
     confirmedCount: confirmed.length,
+    confirmedGameCount,
     projectedExcludedCount,
     unconfirmedExcludedCount,
     startedExcludedCount,

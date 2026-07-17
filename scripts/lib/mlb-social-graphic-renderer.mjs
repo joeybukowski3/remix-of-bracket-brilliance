@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "@playwright/test";
+import { getEmailTeamLogoUrl } from "./mlb-team-email-assets.mjs";
 
 export const SOCIAL_GRAPHIC_GEOMETRY = Object.freeze({
   width: 1600,
@@ -74,6 +75,43 @@ function scoreStyle(value, thresholds) {
   if (value != null && value >= thresholds.gold) return { fill: COLORS.gold, text: COLORS.navy };
   if (value != null && value >= thresholds.navy) return { fill: COLORS.navy, text: "#fff" };
   return { fill: "#8A97A8", text: "#fff" };
+}
+
+/**
+ * HR Score pill color -- same four hex colors and thresholds as the
+ * website's SocialTableHR sc() function (src/pages/MlbGameDetail.tsx), so
+ * the export matches the richer site table it links to. Unlike the generic
+ * scoreStyle() above (still used for K Score, unchanged), a present numeric
+ * HR Score never renders gray -- it always falls in one of four real,
+ * visible tiers; only a genuinely missing (null) score stays muted, since
+ * that's absent data, not a bad score.
+ */
+function hrScoreStyle(value) {
+  if (value == null) return { fill: "#8A97A8", text: "#fff" };
+  if (value >= 70) return { fill: "#22c55e", text: "#fff" };
+  if (value >= 65) return { fill: "#4ade80", text: "#000" };
+  if (value >= 62) return { fill: "#facc15", text: "#000" };
+  return { fill: "#fb923c", text: "#fff" };
+}
+
+/**
+ * Percentage-stat text color (Barrel%, Hard-Hit%) -- mirrors the website's
+ * statCol(v, hi, mid) exactly: green at/above hi, light green at/above mid,
+ * otherwise a muted (not hidden) gray. Data-driven, unlike a fixed color
+ * regardless of value.
+ */
+function statColor(value, hi, mid) {
+  if (value == null) return "#94a3b8";
+  return value >= hi ? "#22c55e" : value >= mid ? "#86efac" : "#94a3b8";
+}
+
+/**
+ * Count-stat text color (L7, L30 home runs) -- mirrors the website's inline
+ * `v >= hi ? green : v >= mid ? gold : muted` bands exactly.
+ */
+function countColor(value, hi, mid) {
+  if (value == null) return "#94a3b8";
+  return value >= hi ? "#22c55e" : value >= mid ? "#facc15" : "#94a3b8";
 }
 
 function triangle(centerX, centerY, direction, size, color) {
@@ -217,7 +255,8 @@ export function normalizeStrikeoutRows(rows, limit = SOCIAL_GRAPHIC_GEOMETRY.row
 
 export function getHomeRunIndicators(row) {
   const qualifying = [];
-  if (toFiniteNumber(row?.hrScore) >= 78) qualifying.push("score");
+  // 70, matching the website's SocialTableHR fire-icon trigger (score >= 70).
+  if (toFiniteNumber(row?.hrScore) >= 70) qualifying.push("score");
   if (toFiniteNumber(row?.barrelPercent) >= 18) qualifying.push("barrel");
   if (toFiniteNumber(row?.hardHitPercent) >= 55) qualifying.push("hardHit");
   if (toFiniteNumber(row?.last30) >= 8) qualifying.push("last30");
@@ -252,6 +291,62 @@ export function createLocalMlbLogoResolver({ logoDirectory = path.join(process.c
     const dataUri = `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
     cache.set(abbreviation, dataUri);
     return dataUri;
+  };
+}
+
+/**
+ * Fetches each team's real MLB logo from the same ESPN CDN source already
+ * used sitewide (getEmailTeamLogoUrl, mirroring src/lib/mlb/mlbTeamLogos.ts
+ * -- the crest art rendered everywhere else in the app), and returns a
+ * SYNCHRONOUS resolver usable by renderMlbSocialSvg's row rendering (which
+ * must stay synchronous/offline-testable). Prefetches every team up front
+ * so the synchronous render pass never blocks on the network.
+ *
+ * A team whose fetch fails (network error, non-200, timeout) falls back to
+ * the local placeholder-badge SVG rather than failing the whole export --
+ * this keeps rendering screenshot-safe even when ESPN's CDN is briefly
+ * unreachable from CI. This is the resolver writeMlbSocialGraphic uses by
+ * default for production renders; renderMlbSocialSvg itself keeps using
+ * createLocalMlbLogoResolver as its own default so it stays deterministic
+ * and network-free for direct/unit-test callers.
+ */
+export async function createRemoteMlbLogoResolver({ teams = [], fetchImpl = fetch, timeoutMs = 8000 } = {}) {
+  const localFallback = createLocalMlbLogoResolver();
+  const cache = new Map();
+  const uniqueTeams = Array.from(new Set(teams.map((team) => normalizeText(team).toUpperCase()).filter(Boolean)));
+
+  await Promise.all(
+    uniqueTeams.map(async (team) => {
+      try {
+        const url = getEmailTeamLogoUrl(team);
+        if (!url || !/^https?:\/\//i.test(url)) {
+          cache.set(team, localFallback(team));
+          return;
+        }
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        let response;
+        try {
+          response = await fetchImpl(url, { signal: controller.signal });
+        } finally {
+          clearTimeout(timeout);
+        }
+        if (!response.ok) {
+          cache.set(team, localFallback(team));
+          return;
+        }
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const contentType = response.headers?.get?.("content-type") || "image/png";
+        cache.set(team, `data:${contentType};base64,${buffer.toString("base64")}`);
+      } catch {
+        cache.set(team, localFallback(team));
+      }
+    }),
+  );
+
+  return (team) => {
+    const key = normalizeText(team).toUpperCase();
+    return cache.get(key) ?? localFallback(team);
   };
 }
 
@@ -328,18 +423,18 @@ function renderHomeRunRow(row, index, resolveLogo) {
   const odds = row.hrOdds ?? "N/A";
   const matchup = truncateText(`vs ${row.opposingPitcher || "TBD"}`, 31);
   svg += `<text x="200" y="${top + 82}" font-size="20" text-anchor="start"><tspan fill="${COLORS.blue}" font-weight="800">${escapeXml(odds)}</tspan><tspan fill="${COLORS.faint}">   •   </tspan><tspan fill="${COLORS.gray}">${escapeXml(matchup)}</tspan></text>`;
-  const style = scoreStyle(row.hrScore, { green: 78, gold: 77, navy: 70 });
+  const style = hrScoreStyle(row.hrScore);
   const pillX = 676;
   svg += `<rect x="${pillX}" y="${middle - 26}" width="128" height="52" rx="11" fill="${style.fill}"/>`;
   svg += text(740, middle + 9, formatMetric(row.hrScore), { size: 27, weight: 800, fill: style.text });
   if (indicators.has("score")) svg += icon("fire", 814, middle + 9, 26);
-  svg += text(946, middle + 9, formatMetric(row.barrelPercent, 1, "%"), { size: 25, weight: 700, anchor: "end" });
+  svg += text(946, middle + 9, formatMetric(row.barrelPercent, 1, "%"), { size: 25, weight: 700, anchor: "end", fill: statColor(row.barrelPercent, 20, 16) });
   if (indicators.has("barrel")) svg += icon("barrel", 956, middle + 9, 24);
-  svg += text(1126, middle + 9, formatMetric(row.hardHitPercent, 1, "%"), { size: 25, weight: 700, fill: COLORS.gray, anchor: "end" });
+  svg += text(1126, middle + 9, formatMetric(row.hardHitPercent, 1, "%"), { size: 25, weight: 700, anchor: "end", fill: statColor(row.hardHitPercent, 54, 50) });
   if (indicators.has("hardHit")) svg += icon("burst", 1136, middle + 9, 24);
-  svg += text(1286, middle + 9, formatCount(row.last7), { size: 26, weight: 800, anchor: "end" });
+  svg += text(1286, middle + 9, formatCount(row.last7), { size: 26, weight: 800, anchor: "end", fill: countColor(row.last7, 3, 2) });
   if (indicators.has("last7")) svg += icon("trend", 1296, middle + 9, 24);
-  svg += text(1426, middle + 9, formatCount(row.last30), { size: 26, weight: 800, anchor: "end" });
+  svg += text(1426, middle + 9, formatCount(row.last30), { size: 26, weight: 800, anchor: "end", fill: countColor(row.last30, 8, 5) });
   if (indicators.has("last30")) svg += icon("crown", 1436, middle + 9, 24);
   return `${svg}</g>`;
 }
@@ -465,8 +560,13 @@ export async function rasterizeSvgToPng(svg, outputPath, { browser: existingBrow
   return outputPath;
 }
 
-export async function writeMlbSocialGraphic({ kind, slateDate, rows, svgPath, pngPath, resolveLogo, browser }) {
-  const svg = renderMlbSocialSvg({ kind, slateDate, rows, resolveLogo });
+export async function writeMlbSocialGraphic({ kind, slateDate, rows, svgPath, pngPath, resolveLogo, browser, fetchImpl }) {
+  // Production default: real ESPN-CDN team logos, prefetched for exactly the
+  // teams appearing in this graphic. Callers (e.g. tests) that pass their
+  // own resolveLogo -- typically createLocalMlbLogoResolver() for a fully
+  // offline/deterministic render -- are left untouched.
+  const logoResolver = resolveLogo ?? (await createRemoteMlbLogoResolver({ teams: (rows ?? []).map((row) => row?.team), fetchImpl }));
+  const svg = renderMlbSocialSvg({ kind, slateDate, rows, resolveLogo: logoResolver });
   mkdirSync(path.dirname(svgPath), { recursive: true });
   writeFileSync(svgPath, `${svg}\n`, "utf8");
   await rasterizeSvgToPng(svg, pngPath, { browser });

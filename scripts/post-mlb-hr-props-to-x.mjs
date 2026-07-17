@@ -22,6 +22,11 @@ const RAW_DATA_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const PRODUCTION_BASE_URL = "https://www.joeknowsball.com/data/mlb";
 const GITHUB_BASE_URL = "https://raw.githubusercontent.com/joeybukowski3/remix-of-bracket-brilliance/main/public/data/mlb";
 const HR_TARGET_TABLE_SIZE = 5;
+// A single early-confirmed game (one team's 9-batter lineup) must never
+// alone satisfy readiness -- it would post a table drawn entirely from one
+// matchup instead of representing the slate. Still overridden at the final
+// cutoff, which posts whatever is confirmed rather than miss the window.
+const MIN_CONFIRMED_GAMES = 2;
 const SCREENSHOT_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x.png");
 const SVG_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x.svg");
 const ARTIFACT_PATH = path.join(ROOT, "artifacts", "mlb-hr-props-x-selection.json");
@@ -220,6 +225,8 @@ async function buildSelection({ source, now }) {
     maxTableSize: HR_TARGET_TABLE_SIZE,
     projectedExcludedCount: selection.projectedExcludedCount,
     confirmationSourceFailed: !snapshot.ok,
+    confirmedGameCount: selection.confirmedGameCount,
+    minConfirmedGames: MIN_CONFIRMED_GAMES,
   });
 
   const artifact = buildHrArtifact({
@@ -237,7 +244,7 @@ function logSelection({ slateDate, rawDate, snapshot, selection, readiness }) {
   console.log(`[mlb-hr-props-x] rawSlateDate=${rawDate || "missing"}`);
   console.log(`[mlb-hr-props-x] snapshotOk=${snapshot.ok} confirmationAsOf=${snapshot.asOf}`);
   console.log(`[mlb-hr-props-x] phase=${readiness.phase} minutesUntilFirstPitch=${readiness.minutesUntilFirstPitch ?? "n/a"}`);
-  console.log(`[mlb-hr-props-x] confirmedCount=${selection.confirmedCount} projectedExcluded=${selection.projectedExcludedCount} selectedCount=${readiness.selectedCount}`);
+  console.log(`[mlb-hr-props-x] confirmedCount=${selection.confirmedCount} confirmedGameCount=${selection.confirmedGameCount} projectedExcluded=${selection.projectedExcludedCount} selectedCount=${readiness.selectedCount}`);
 }
 
 async function main() {

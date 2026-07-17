@@ -10,6 +10,9 @@ import { getEtSlateDate, SlatePhase } from "./mlb-x-slate-timing.mjs";
 const PRODUCTION_HR_RAW_URL = "https://www.joeknowsball.com/data/mlb/hr-props-raw.json";
 const HR_TARGET_TABLE_SIZE = 3;
 const K_TARGET_TABLE_SIZE = 5;
+// See post-mlb-hr-props-to-x.mjs: a single early-confirmed game must never
+// alone satisfy readiness by raw headcount.
+const HR_MIN_CONFIRMED_GAMES = 2;
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -71,6 +74,8 @@ export function resolveHrPollReadiness({ raw, snapshot, slateDate }) {
     maxTableSize: HR_TARGET_TABLE_SIZE,
     projectedExcludedCount: selection.projectedExcludedCount,
     confirmationSourceFailed: !snapshot.ok,
+    confirmedGameCount: selection.confirmedGameCount,
+    minConfirmedGames: HR_MIN_CONFIRMED_GAMES,
   });
 }
 

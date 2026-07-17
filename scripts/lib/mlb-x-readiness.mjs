@@ -51,6 +51,16 @@ function waitingStatusFor(reason) {
  * @param {boolean} [params.alreadyPosted]  today's slate already has a post receipt
  * @param {boolean} [params.confirmationSourceFailed] the confirmation data source could not be verified
  * @param {string} [params.waitingReason]   WaitingReason.* to use when short of target before cutoff
+ * @param {number} [params.confirmedGameCount] distinct games represented in the confirmed pool (default
+ *                                              Infinity -- a no-op for callers with no game-diversity concept,
+ *                                              e.g. K/Numerology's single-signal readiness checks)
+ * @param {number} [params.minConfirmedGames]  minimum distinct games required before a full-count table is
+ *                                              treated as "ready early" (default 1 -- no additional
+ *                                              requirement). Prevents an early-confirmed single game from
+ *                                              alone satisfying readiness and monopolizing the table with
+ *                                              one matchup's hitters; still overridden by the final cutoff
+ *                                              below, which posts whatever is confirmed rather than miss the
+ *                                              window entirely.
  */
 export function resolvePostingReadiness({
   timing,
@@ -61,6 +71,8 @@ export function resolvePostingReadiness({
   alreadyPosted = false,
   confirmationSourceFailed = false,
   waitingReason = WaitingReason.LINEUPS,
+  confirmedGameCount = Infinity,
+  minConfirmedGames = 1,
 } = {}) {
   const cap = Number.isFinite(maxTableSize) ? maxTableSize : targetCount;
   const minutesUntilFirstPitch = timing?.minutesUntilFirstPitch ?? null;
@@ -95,9 +107,11 @@ export function resolvePostingReadiness({
   }
 
   // We have confirmed selections. Publish immediately once we have a full
-  // table, or at the final cutoff post whatever confirmed rows we have
-  // (smaller table allowed -- never padded with projected players).
-  const hasFullTable = confirmedCount >= targetCount;
+  // table AND enough game diversity, or at the final cutoff post whatever
+  // confirmed rows we have regardless of diversity (smaller table allowed --
+  // never padded with projected players, and never silently skip the
+  // window just because only one game posted first).
+  const hasFullTable = confirmedCount >= targetCount && confirmedGameCount >= minConfirmedGames;
   if (hasFullTable || atCutoff) {
     return result(ReadinessStatus.READY_CONFIRMED_SELECTIONS, true, Math.min(confirmedCount, cap));
   }
