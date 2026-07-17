@@ -57,6 +57,7 @@ import {
   buildBvpHistoryKey,
   filterCacheForSlate,
   isCachedEntryFullyValid,
+  isConfirmedEmptyVsPlayerResponse,
   parseVsPlayerSplit,
   resolveWindow,
   violatesCareerInvariant,
@@ -171,6 +172,12 @@ async function main() {
 
     const freshCareer = careerError ? null : parseVsPlayerSplit(careerJson, "vsPlayerTotal");
     const freshLast5y = last5yError ? null : parseVsPlayerSplit(last5yJson, "vsPlayer5Y");
+    // Positively confirmed empty ONLY when this run's own fetch succeeded and
+    // unambiguously returned zero splits -- never inferred from a fetch
+    // error, a malformed response, or a cache-fallback (which reflects a
+    // PRIOR run's fetch, not this one). This is what "No ABs" is gated on.
+    const careerConfirmedEmpty = !careerError && isConfirmedEmptyVsPlayerResponse(careerJson, "vsPlayerTotal");
+    const last5yConfirmedEmpty = !last5yError && isConfirmedEmptyVsPlayerResponse(last5yJson, "vsPlayer5Y");
 
     // Window-level fallback: a fetch ERROR (not a clean "no data" result)
     // preserves whatever valid value was cached for that specific window.
@@ -186,6 +193,8 @@ async function main() {
       pitcher: pair.pitcher,
       career,
       last5y,
+      careerConfirmedEmpty,
+      last5yConfirmedEmpty,
     });
 
     if (entry.career != null || entry.last5y != null) successCount += 1;

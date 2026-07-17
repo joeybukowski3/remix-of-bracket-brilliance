@@ -9,12 +9,23 @@ export type BvpHistorySplit = {
   hr: number | null;
 };
 
+/**
+ * Machine-readable availability state for one BvpHistoryEntry, mirroring
+ * BVP_HISTORY_STATUSES in mlb-bvp-history-core.mjs. Only "no_matchups" means
+ * the generator positively confirmed the batter has never faced this
+ * pitcher -- that is the sole state allowed to render "No ABs". Every other
+ * state (including "unavailable", a plain missing/errored/stale lookup)
+ * must render the existing generic dash/unavailable UI.
+ */
+export type BvpHistoryStatus = "available" | "no_matchups" | "unavailable" | "inconsistent";
+
 export type BvpHistoryEntry = {
   key: string;
   batterId: number;
   pitcherId: number;
   batter: string | null;
   pitcher: string | null;
+  status: BvpHistoryStatus;
   career: BvpHistorySplit | null;
   last5y: BvpHistorySplit | null;
 };

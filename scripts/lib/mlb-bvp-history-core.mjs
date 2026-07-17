@@ -85,6 +85,25 @@ export function parseVsPlayerSplit(json, expectedStatsType) {
 }
 
 /**
+ * True only when the response POSITIVELY CONFIRMS zero prior matchups for
+ * this exact window: the correct stats[] block (matched by
+ * type.displayName, same rule as parseVsPlayerSplit) was found
+ * unambiguously, and it contains exactly zero splits. This is narrower
+ * than "parseVsPlayerSplit returned null" -- that also happens for a
+ * mismatched/ambiguous block, a block with more than one split, or invalid
+ * stat values, none of which confirm anything about whether the matchup
+ * happened. Only this function's true result may ever justify telling a
+ * user "no prior at-bats" instead of an unqualified dash.
+ */
+export function isConfirmedEmptyVsPlayerResponse(json, expectedStatsType) {
+  const statsBlocks = Array.isArray(json?.stats) ? json.stats : [];
+  const matchingBlocks = statsBlocks.filter((block) => block?.type?.displayName === expectedStatsType);
+  if (matchingBlocks.length !== 1) return false;
+  const splits = Array.isArray(matchingBlocks[0].splits) ? matchingBlocks[0].splits : [];
+  return splits.length === 0;
+}
+
+/**
  * True when a counting stat (PA, H, or HR -- not AVG, which is a ratio and
  * has no monotonic relationship across windows) is higher in the
  * trailing-5-year split than in the career split. A trailing window can
@@ -110,15 +129,23 @@ export function violatesCareerInvariant(career, last5y) {
 
 /**
  * True when a cached entry is complete enough that this run doesn't need
- * to re-fetch it at all: both windows already resolved to real data (or a
- * confirmed empty split, i.e. genuinely no history -- see the generator,
- * which only ever caches entries after parseVsPlayerSplit has already
- * validated them, so a non-null cached window is never zero-filled or
- * fabricated). A pair with even one null window is still eligible for a
- * fresh fetch attempt this run, since that window may resolve on retry.
+ * to re-fetch it at all: both windows already resolved to real data (see
+ * the generator, which only ever caches entries after parseVsPlayerSplit
+ * has already validated them, so a non-null cached window is never
+ * zero-filled or fabricated), AND the entry already carries a
+ * status of "available" -- this fast path always returns the cached
+ * object as-is (see the generator's cache-reuse branch), so requiring
+ * status here (rather than just checking career/last5y) guarantees an
+ * older-shaped cache entry written before the status field existed can
+ * never be reused verbatim without one; it instead falls through to a
+ * fresh fetch, which re-derives status correctly via buildBvpHistoryEntry.
+ * A pair with even one null window, or a "no_matchups" status, is still
+ * eligible for a fresh fetch attempt this run -- re-confirming a confirmed
+ * no-matchups pair every run is safer than permanently trusting a stale
+ * confirmation, and a null window may resolve on retry.
  */
 export function isCachedEntryFullyValid(entry) {
-  return Boolean(entry) && entry.career != null && entry.last5y != null;
+  return Boolean(entry) && entry.career != null && entry.last5y != null && entry.status === "available";
 }
 
 /**
@@ -154,6 +181,36 @@ export function filterCacheForSlate(previousPayload, slateDate) {
   return new Map(entries.filter((entry) => entry?.key).map((entry) => [entry.key, entry]));
 }
 
+/** Machine-readable availability state for one BvpHistoryEntry -- see resolveBvpHistoryStatus. */
+export const BVP_HISTORY_STATUSES = ["available", "no_matchups", "unavailable", "inconsistent"];
+
+/**
+ * Derives the pair-level status from the two resolved windows plus whether
+ * each window's own fetch this run positively confirmed zero prior
+ * matchups (see isConfirmedEmptyVsPlayerResponse). This is the single
+ * source of truth the frontend relies on to distinguish a genuine
+ * "No ABs" (both windows independently confirmed empty) from every other
+ * reason a value could be missing:
+ *
+ *   - "inconsistent": the two windows disagreed on a counting stat (see
+ *     violatesCareerInvariant) -- neither endpoint is trustworthy here.
+ *   - "available": at least one window has real, validated data.
+ *   - "no_matchups": both windows are null, AND both were positively
+ *     confirmed empty this run (not merely null for some other reason).
+ *   - "unavailable": both windows are null, but at least one of them is
+ *     null for a reason OTHER than a confirmed-empty response (a fetch
+ *     error, a malformed/ambiguous response, or a cache-fallback that
+ *     itself couldn't confirm anything this run) -- we genuinely don't
+ *     know whether this pair has ever met, so this must never render as
+ *     "No ABs".
+ */
+export function resolveBvpHistoryStatus({ career, last5y, careerConfirmedEmpty, last5yConfirmedEmpty, invariantViolated }) {
+  if (invariantViolated) return "inconsistent";
+  if (career != null || last5y != null) return "available";
+  if (careerConfirmedEmpty && last5yConfirmedEmpty) return "no_matchups";
+  return "unavailable";
+}
+
 /**
  * Assemble the final BvpHistoryEntry record for one batter/opposing-pitcher
  * pair. When the two windows fail violatesCareerInvariant, the entire pair
@@ -167,15 +224,33 @@ export function filterCacheForSlate(previousPayload, slateDate) {
  * or look up an entry in that state; the generator filters invalid ids out
  * before ever reaching this function.
  */
-export function buildBvpHistoryEntry({ batterId, pitcherId, batter, pitcher, career, last5y }) {
+export function buildBvpHistoryEntry({
+  batterId,
+  pitcherId,
+  batter,
+  pitcher,
+  career,
+  last5y,
+  careerConfirmedEmpty = false,
+  last5yConfirmedEmpty = false,
+}) {
   const rejected = violatesCareerInvariant(career, last5y);
+  const finalCareer = rejected ? null : (career ?? null);
+  const finalLast5y = rejected ? null : (last5y ?? null);
   return {
     key: buildBvpHistoryKey(batterId, pitcherId),
     batterId,
     pitcherId,
     batter: batter ?? null,
     pitcher: pitcher ?? null,
-    career: rejected ? null : (career ?? null),
-    last5y: rejected ? null : (last5y ?? null),
+    status: resolveBvpHistoryStatus({
+      career: finalCareer,
+      last5y: finalLast5y,
+      careerConfirmedEmpty,
+      last5yConfirmedEmpty,
+      invariantViolated: rejected,
+    }),
+    career: finalCareer,
+    last5y: finalLast5y,
   };
 }

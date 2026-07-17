@@ -85,7 +85,7 @@ describe("MLB_NAV_SECTIONS", () => {
     ]);
     expect(MLB_NAV_SECTIONS[1].items.map(({ label, href }) => [label, href])).toEqual([
       ["Moneyline Edges", "/mlb#moneylines"],
-      ["Pitcher Regression", "/mlb#pitcher-regression"],
+      ["Vulnerable Pitchers", "/mlb/vulnerable-pitchers"],
       ["Overdue Batters", "/mlb/hr-props#overdue"],
       ["Biggest Mismatches", "/mlb/hr-props#mismatches"],
       ["Sin City", "/mlb/sin-city"],

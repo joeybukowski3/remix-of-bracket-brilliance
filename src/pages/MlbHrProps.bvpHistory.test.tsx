@@ -117,6 +117,7 @@ const historyEntry: BvpHistoryEntry = {
   pitcherId: 1,
   batter: "Adley Rutschman",
   pitcher: "Justin Steele",
+  status: "available",
   career: { pa: 59, h: 11, avg: 0.262, hr: 5 },
   last5y: { pa: 27, h: 7, avg: 0.412, hr: 3 },
 };
@@ -246,5 +247,92 @@ describe("MlbHrProps — AVG vs P (Matchup Lenses table)", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: /batter-vs-pitcher history for Adley Rutschman/ })[0]);
     expect(screen.getAllByRole("button", { name: "Career" }).length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+});
+
+describe("MlbHrProps — sword emoji on the strongest matchups (restored, same >= 70 rule already used on the Batters tab and Batter vs Pitcher)", () => {
+  it("shows the sword on the Batters tab when the opposing pitcher's HR VS is >= 70", async () => {
+    vi.resetModules();
+    vi.doMock("@/hooks/useMlbPropsData", () => ({
+      useMlbPropsData: () => ({
+        dashboard: {
+          ...dashboardFixture,
+          batters: [makeBatter({ playerId: 1, player: "Adley Rutschman", opposingPitcherHrVs: 74.9 })],
+        },
+        bestBets: null,
+        status: { kind: "current", slateDate: dashboardFixture.date, generatedAt: dashboardFixture.generatedAt },
+      }),
+    }));
+    mockBvpHistory();
+    await renderPage();
+
+    // Exact match only, since the "⚔️ Matchup Lenses" tab label and heading
+    // always contain the glyph as a substring -- only a standalone "⚔️" text
+    // node is the real per-row indicator.
+    expect(screen.getAllByText("⚔️", { exact: true }).length).toBeGreaterThanOrEqual(1);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("does not show the sword on the Batters tab when the opposing pitcher's HR VS is below 70", async () => {
+    vi.resetModules();
+    vi.doMock("@/hooks/useMlbPropsData", () => ({
+      useMlbPropsData: () => ({
+        dashboard: {
+          ...dashboardFixture,
+          batters: [makeBatter({ playerId: 1, player: "Adley Rutschman", opposingPitcherHrVs: 55 })],
+        },
+        bestBets: null,
+        status: { kind: "current", slateDate: dashboardFixture.date, generatedAt: dashboardFixture.generatedAt },
+      }),
+    }));
+    mockBvpHistory();
+    await renderPage();
+
+    expect(screen.queryAllByText("⚔️", { exact: true })).toHaveLength(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("shows the sword on the Matchup Lenses (Best Matchups) table using the same >= 70 rule on Pitcher Hits VS and Pitcher HR VS", async () => {
+    vi.resetModules();
+    vi.doMock("@/hooks/useMlbPropsData", () => ({
+      useMlbPropsData: () => ({
+        dashboard: {
+          ...dashboardFixture,
+          batters: [makeBatter({ playerId: 1, player: "Adley Rutschman", opposingPitcherHitsVs: 71, opposingPitcherHrVs: 74.9 })],
+        },
+        bestBets: null,
+        status: { kind: "current", slateDate: dashboardFixture.date, generatedAt: dashboardFixture.generatedAt },
+      }),
+    }));
+    mockBvpHistory();
+    await renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "⚔️ Matchup Lenses" }));
+
+    // 2 standalone inline row indicators (Pitcher Hits VS, Pitcher HR VS).
+    // Exact match only, since the tab label and heading contain the glyph as
+    // a substring within a longer text node and must not count here.
+    expect(screen.getAllByText("⚔️", { exact: true }).length).toBeGreaterThanOrEqual(2);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("does not show the sword on the Matchup Lenses table when both pitcher-vulnerability metrics are below 70", async () => {
+    vi.resetModules();
+    vi.doMock("@/hooks/useMlbPropsData", () => ({
+      useMlbPropsData: () => ({
+        dashboard: {
+          ...dashboardFixture,
+          batters: [makeBatter({ playerId: 1, player: "Adley Rutschman", opposingPitcherHitsVs: 62, opposingPitcherHrVs: 55 })],
+        },
+        bestBets: null,
+        status: { kind: "current", slateDate: dashboardFixture.date, generatedAt: dashboardFixture.generatedAt },
+      }),
+    }));
+    mockBvpHistory();
+    await renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "⚔️ Matchup Lenses" }));
+
+    // The tab label and section heading always contain the glyph as part of
+    // a longer text node ("⚔️ Matchup Lenses"), so they never match an exact
+    // "⚔️" query -- zero exact matches confirms no per-row indicator rendered.
+    expect(screen.queryAllByText("⚔️", { exact: true })).toHaveLength(0);
   }, SLOW_RENDER_TIMEOUT_MS);
 });

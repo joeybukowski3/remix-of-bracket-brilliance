@@ -68,7 +68,7 @@ export const MLB_NAV_SECTIONS: MlbNavSection[] = [
     label: "Models & Specials",
     items: [
       { id: "moneyline-edges", label: "Moneyline Edges", href: "/mlb#moneylines", icon: TrendingUp },
-      { id: "pitcher-regression", label: "Pitcher Regression", href: "/mlb#pitcher-regression", icon: BarChart3 },
+      { id: "pitcher-regression", label: "Vulnerable Pitchers", href: "/mlb/vulnerable-pitchers", icon: BarChart3 },
       { id: "overdue-batters", label: "Overdue Batters", href: "/mlb/hr-props#overdue", icon: Flame },
       { id: "biggest-mismatches", label: "Biggest Mismatches", href: "/mlb/hr-props#mismatches", icon: Swords },
       { id: "sin-city", label: "Sin City", href: "/mlb/sin-city", icon: Dice5 },

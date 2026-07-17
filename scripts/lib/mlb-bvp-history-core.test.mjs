@@ -13,7 +13,9 @@ import {
   buildBvpHistoryKey,
   filterCacheForSlate,
   isCachedEntryFullyValid,
+  isConfirmedEmptyVsPlayerResponse,
   parseVsPlayerSplit,
+  resolveBvpHistoryStatus,
   resolveWindow,
   violatesCareerInvariant,
 } from "./mlb-bvp-history-core.mjs";
@@ -178,6 +180,7 @@ describe("buildBvpHistoryEntry", () => {
       pitcherId: 605400,
       batter: "Juan Soto",
       pitcher: "Aaron Nola",
+      status: "available",
       career: { pa: 59, h: 11, avg: 0.262, hr: 5 },
       last5y: { pa: 27, h: 7, avg: 0.412, hr: 3 },
     });
@@ -261,19 +264,27 @@ describe("violatesCareerInvariant", () => {
 describe("isCachedEntryFullyValid", () => {
   const split = { pa: 10, h: 3, avg: 0.3, hr: 1 };
 
-  it("returns true when both windows are non-null", () => {
-    assert.equal(isCachedEntryFullyValid({ career: split, last5y: split }), true);
+  it("returns true when both windows are non-null and status is 'available'", () => {
+    assert.equal(isCachedEntryFullyValid({ career: split, last5y: split, status: "available" }), true);
   });
 
   it("returns false when either window is null", () => {
-    assert.equal(isCachedEntryFullyValid({ career: split, last5y: null }), false);
-    assert.equal(isCachedEntryFullyValid({ career: null, last5y: split }), false);
-    assert.equal(isCachedEntryFullyValid({ career: null, last5y: null }), false);
+    assert.equal(isCachedEntryFullyValid({ career: split, last5y: null, status: "available" }), false);
+    assert.equal(isCachedEntryFullyValid({ career: null, last5y: split, status: "available" }), false);
+    assert.equal(isCachedEntryFullyValid({ career: null, last5y: null, status: "available" }), false);
   });
 
   it("returns false for a missing/undefined entry", () => {
     assert.equal(isCachedEntryFullyValid(undefined), false);
     assert.equal(isCachedEntryFullyValid(null), false);
+  });
+
+  it("returns false for an older-shaped cache entry with both windows non-null but no status field -- forces a refetch instead of reusing a pre-status entry verbatim", () => {
+    assert.equal(isCachedEntryFullyValid({ career: split, last5y: split }), false);
+  });
+
+  it("returns false when status is 'no_matchups', even with both windows null -- re-confirmed every run rather than cached", () => {
+    assert.equal(isCachedEntryFullyValid({ career: null, last5y: null, status: "no_matchups" }), false);
   });
 });
 
@@ -334,5 +345,116 @@ describe("filterCacheForSlate", () => {
     const map = filterCacheForSlate({ date: "2026-07-17", history: [entryA, { ...entryB, key: null }] }, "2026-07-17");
     assert.equal(map.size, 1);
     assert.ok(map.has("1|2"));
+  });
+});
+
+describe("isConfirmedEmptyVsPlayerResponse", () => {
+  it("is true only when the matching block is found unambiguously and has zero splits", () => {
+    const json = vsPlayerResponse("vsPlayerTotal", []);
+    assert.equal(isConfirmedEmptyVsPlayerResponse(json, "vsPlayerTotal"), true);
+  });
+
+  it("is false when the matching block has real splits (not empty)", () => {
+    const json = vsPlayerResponse("vsPlayerTotal", [{ stat: { plateAppearances: 9, hits: 3, avg: ".375", homeRuns: 1 } }]);
+    assert.equal(isConfirmedEmptyVsPlayerResponse(json, "vsPlayerTotal"), false);
+  });
+
+  it("is false when no block matches the expected stats type (never confirms emptiness from an ambiguous response)", () => {
+    const json = vsPlayerResponse("vsPlayer5Y", []);
+    assert.equal(isConfirmedEmptyVsPlayerResponse(json, "vsPlayerTotal"), false);
+  });
+
+  it("is false when more than one block matches the expected stats type", () => {
+    const json = { stats: [{ type: { displayName: "vsPlayerTotal" }, splits: [] }, { type: { displayName: "vsPlayerTotal" }, splits: [] }] };
+    assert.equal(isConfirmedEmptyVsPlayerResponse(json, "vsPlayerTotal"), false);
+  });
+
+  it("is false for a malformed response with no stats array at all", () => {
+    assert.equal(isConfirmedEmptyVsPlayerResponse({}, "vsPlayerTotal"), false);
+    assert.equal(isConfirmedEmptyVsPlayerResponse(null, "vsPlayerTotal"), false);
+  });
+});
+
+describe("resolveBvpHistoryStatus", () => {
+  it("returns 'inconsistent' whenever the invariant was violated, regardless of the resolved windows", () => {
+    assert.equal(
+      resolveBvpHistoryStatus({ career: null, last5y: null, careerConfirmedEmpty: true, last5yConfirmedEmpty: true, invariantViolated: true }),
+      "inconsistent",
+    );
+  });
+
+  it("returns 'available' whenever at least one window has real data", () => {
+    assert.equal(
+      resolveBvpHistoryStatus({ career: { pa: 1, h: 1, avg: 1, hr: 1 }, last5y: null, careerConfirmedEmpty: false, last5yConfirmedEmpty: false, invariantViolated: false }),
+      "available",
+    );
+  });
+
+  it("returns 'no_matchups' only when both windows are null AND both were positively confirmed empty this run", () => {
+    assert.equal(
+      resolveBvpHistoryStatus({ career: null, last5y: null, careerConfirmedEmpty: true, last5yConfirmedEmpty: true, invariantViolated: false }),
+      "no_matchups",
+    );
+  });
+
+  it("returns 'unavailable' when both windows are null but only one was positively confirmed empty", () => {
+    assert.equal(
+      resolveBvpHistoryStatus({ career: null, last5y: null, careerConfirmedEmpty: true, last5yConfirmedEmpty: false, invariantViolated: false }),
+      "unavailable",
+    );
+    assert.equal(
+      resolveBvpHistoryStatus({ career: null, last5y: null, careerConfirmedEmpty: false, last5yConfirmedEmpty: true, invariantViolated: false }),
+      "unavailable",
+    );
+  });
+
+  it("returns 'unavailable' when both windows are null and neither was confirmed empty (fetch errors, cache fallback, malformed responses)", () => {
+    assert.equal(
+      resolveBvpHistoryStatus({ career: null, last5y: null, careerConfirmedEmpty: false, last5yConfirmedEmpty: false, invariantViolated: false }),
+      "unavailable",
+    );
+  });
+});
+
+describe("buildBvpHistoryEntry status field", () => {
+  it("sets status to 'no_matchups' when both windows are null and both were positively confirmed empty", () => {
+    const entry = buildBvpHistoryEntry({
+      batterId: 1,
+      pitcherId: 2,
+      career: null,
+      last5y: null,
+      careerConfirmedEmpty: true,
+      last5yConfirmedEmpty: true,
+    });
+    assert.equal(entry.status, "no_matchups");
+  });
+
+  it("defaults careerConfirmedEmpty/last5yConfirmedEmpty to false, so an ordinary null/null entry is 'unavailable' not 'no_matchups'", () => {
+    const entry = buildBvpHistoryEntry({ batterId: 1, pitcherId: 2, career: null, last5y: null });
+    assert.equal(entry.status, "unavailable");
+  });
+
+  it("sets status to 'inconsistent' (never 'no_matchups') when the pair violates the career/last5y invariant, even if both windows were confirmed empty", () => {
+    const entry = buildBvpHistoryEntry({
+      batterId: 1,
+      pitcherId: 2,
+      career: { pa: 2, h: 0, avg: 0, hr: 0 },
+      last5y: { pa: 5, h: 1, avg: 0.25, hr: 0 },
+      careerConfirmedEmpty: true,
+      last5yConfirmedEmpty: true,
+    });
+    assert.equal(entry.status, "inconsistent");
+    assert.equal(entry.career, null);
+    assert.equal(entry.last5y, null);
+  });
+
+  it("sets status to 'available' whenever at least one window has real data, regardless of confirmed-empty flags", () => {
+    const entry = buildBvpHistoryEntry({
+      batterId: 1,
+      pitcherId: 2,
+      career: { pa: 59, h: 11, avg: 0.262, hr: 5 },
+      last5y: null,
+    });
+    assert.equal(entry.status, "available");
   });
 });
