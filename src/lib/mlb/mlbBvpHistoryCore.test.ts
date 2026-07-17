@@ -3,6 +3,7 @@ import {
   buildBvpHistoryEntry,
   buildBvpHistoryKey,
   parseVsPlayerSplit,
+  violatesCareerInvariant,
   // @ts-expect-error -- plain JS module, no type declarations
 } from "../../../scripts/lib/mlb-bvp-history-core.mjs";
 
@@ -59,5 +60,35 @@ describe("buildBvpHistoryEntry", () => {
     for (const forbidden of ["hrScore", "matchupScore", "rank", "recommendation", "confidence", "eligible", "bestBet"]) {
       expect(Object.keys(entry)).not.toContain(forbidden);
     }
+  });
+
+  it("nulls both windows when they violate the career/last5y counting-stat invariant -- real case: Kyle Schwarber vs Christian Scott", () => {
+    // MLB StatsAPI's vsPlayerTotal lagged vsPlayer5Y by not yet reflecting a
+    // just-completed game (see scripts/lib/mlb-bvp-history-invariant.test.mjs
+    // for the full fixture-backed investigation).
+    const entry = buildBvpHistoryEntry({
+      batterId: 656941,
+      pitcherId: 681035,
+      batter: "Kyle Schwarber",
+      pitcher: "Christian Scott",
+      career: { pa: 2, h: 0, avg: 0, hr: 0 },
+      last5y: { pa: 5, h: 1, avg: 0.25, hr: 0 },
+    });
+    expect(entry.career).toBeNull();
+    expect(entry.last5y).toBeNull();
+  });
+});
+
+describe("violatesCareerInvariant", () => {
+  it("returns false for a valid pair", () => {
+    expect(violatesCareerInvariant({ pa: 59, h: 11, avg: 0.262, hr: 5 }, { pa: 27, h: 7, avg: 0.412, hr: 3 })).toBe(false);
+  });
+
+  it("returns true when last5y.pa exceeds career.pa", () => {
+    expect(violatesCareerInvariant({ pa: 2, h: 0, avg: 0, hr: 0 }, { pa: 5, h: 1, avg: 0.25, hr: 0 })).toBe(true);
+  });
+
+  it("ignores AVG -- a higher recent average alone is never a violation", () => {
+    expect(violatesCareerInvariant({ pa: 100, h: 20, avg: 0.2, hr: 2 }, { pa: 20, h: 8, avg: 0.4, hr: 1 })).toBe(false);
   });
 });

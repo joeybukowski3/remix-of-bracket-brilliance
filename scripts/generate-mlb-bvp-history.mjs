@@ -19,7 +19,12 @@
  *
  * Fails softly per pair (never fabricates data — missing fields stay null
  * and a warning is logged) but hard-fails only if the input file is
- * missing/malformed, since that is required for every row.
+ * missing/malformed, since that is required for every row. A pair whose
+ * two windows disagree on a counting stat (last5y.pa/h/hr exceeding the
+ * career total -- see violatesCareerInvariant) is also nulled out
+ * entirely: neither MLB StatsAPI endpoint is proven authoritative when
+ * they're inconsistent with each other, so this never publishes a value
+ * it can't verify.
  *
  * Usage:
  *   node scripts/generate-mlb-bvp-history.mjs
@@ -30,7 +35,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildBvpHistoryEntry, buildBvpHistoryKey, parseVsPlayerSplit } from "./lib/mlb-bvp-history-core.mjs";
+import { buildBvpHistoryEntry, buildBvpHistoryKey, parseVsPlayerSplit, violatesCareerInvariant } from "./lib/mlb-bvp-history-core.mjs";
 import { DEFAULT_CONCURRENCY, fetchBvpHistoryForPair, runLimited } from "./lib/mlb-bvp-history-fetch.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -94,6 +99,11 @@ async function main() {
   const warnings = [];
   let successCount = 0;
   let partialCount = 0;
+  // Bounded counter (not a per-pair log line): how many pairs had a
+  // career/last5y counting-stat invariant violation (see
+  // violatesCareerInvariant) and were therefore nulled out entirely rather
+  // than published with an untrustworthy value.
+  let invariantRejectedCount = 0;
 
   const history = await runLimited(pairs, DEFAULT_CONCURRENCY, async (pair) => {
     const { careerJson, careerError, last5yJson, last5yError } = await fetchBvpHistoryForPair(pair.batterId, pair.pitcherId);
@@ -104,10 +114,9 @@ async function main() {
     const career = careerError ? null : parseVsPlayerSplit(careerJson);
     const last5y = last5yError ? null : parseVsPlayerSplit(last5yJson);
 
-    if (career != null || last5y != null) successCount += 1;
-    else partialCount += 1;
+    if (violatesCareerInvariant(career, last5y)) invariantRejectedCount += 1;
 
-    return buildBvpHistoryEntry({
+    const entry = buildBvpHistoryEntry({
       batterId: pair.batterId,
       pitcherId: pair.pitcherId,
       batter: pair.batter,
@@ -115,6 +124,11 @@ async function main() {
       career,
       last5y,
     });
+
+    if (entry.career != null || entry.last5y != null) successCount += 1;
+    else partialCount += 1;
+
+    return entry;
   });
 
   const payload = {
@@ -125,6 +139,9 @@ async function main() {
   };
 
   console.log(`[bvp-history] built ${history.length} history records (${successCount} with data, ${partialCount} unavailable)`);
+  if (invariantRejectedCount > 0) {
+    console.warn(`[bvp-history] ${invariantRejectedCount} pair(s) rejected for violating the career/last5y counting-stat invariant (PA/H/HR) -- MLB StatsAPI's vsPlayerTotal and vsPlayer5Y disagreed, so both windows were set to null rather than publishing an unverified value.`);
+  }
   if (warnings.length) {
     console.warn(`[bvp-history] ${warnings.length} warning(s):`);
     for (const warning of warnings.slice(0, 25)) console.warn(`  - ${warning}`);

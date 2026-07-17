@@ -1,10 +1,14 @@
 /**
  * mlb-bvp-history-core.test.mjs
  * Run via: node --test scripts/lib/mlb-bvp-history-core.test.mjs
+ *
+ * See mlb-bvp-history-invariant.test.mjs for the real-world, fixture-backed
+ * regression coverage of violatesCareerInvariant / buildBvpHistoryEntry's
+ * rejection behavior -- the cases here use synthetic values only.
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildBvpHistoryEntry, buildBvpHistoryKey, parseVsPlayerSplit } from "./mlb-bvp-history-core.mjs";
+import { buildBvpHistoryEntry, buildBvpHistoryKey, parseVsPlayerSplit, violatesCareerInvariant } from "./mlb-bvp-history-core.mjs";
 
 describe("buildBvpHistoryKey", () => {
   it("joins batter id and pitcher id with a pipe", () => {
@@ -89,5 +93,53 @@ describe("buildBvpHistoryEntry", () => {
     for (const forbidden of ["hrScore", "matchupScore", "rank", "recommendation", "confidence", "eligible", "bestBet"]) {
       assert.equal(keys.includes(forbidden), false, `entry must not contain "${forbidden}"`);
     }
+  });
+
+  it("nulls both windows, never zero-fills, when the pair violates the career/last5y invariant", () => {
+    const entry = buildBvpHistoryEntry({
+      batterId: 1,
+      pitcherId: 2,
+      batter: "Test Batter",
+      pitcher: "Test Pitcher",
+      career: { pa: 2, h: 0, avg: 0, hr: 0 },
+      last5y: { pa: 5, h: 1, avg: 0.25, hr: 0 },
+    });
+    assert.equal(entry.career, null);
+    assert.equal(entry.last5y, null);
+    // Identity fields survive rejection -- only the untrustworthy stats are dropped.
+    assert.equal(entry.batter, "Test Batter");
+    assert.equal(entry.pitcher, "Test Pitcher");
+  });
+});
+
+describe("violatesCareerInvariant", () => {
+  it("returns false for a valid pair where last5y is a true subset of career", () => {
+    assert.equal(
+      violatesCareerInvariant({ pa: 59, h: 11, avg: 0.262, hr: 5 }, { pa: 27, h: 7, avg: 0.412, hr: 3 }),
+      false,
+    );
+  });
+
+  it("returns true when last5y.pa exceeds career.pa", () => {
+    assert.equal(violatesCareerInvariant({ pa: 2, h: 0, avg: 0, hr: 0 }, { pa: 5, h: 1, avg: 0.25, hr: 0 }), true);
+  });
+
+  it("returns true when last5y.h exceeds career.h, independent of pa", () => {
+    assert.equal(violatesCareerInvariant({ pa: 20, h: 3, avg: 0.15, hr: 1 }, { pa: 10, h: 5, avg: 0.5, hr: 1 }), true);
+  });
+
+  it("returns true when last5y.hr exceeds career.hr, independent of pa/h", () => {
+    assert.equal(violatesCareerInvariant({ pa: 20, h: 5, avg: 0.25, hr: 1 }, { pa: 10, h: 3, avg: 0.3, hr: 2 }), true);
+  });
+
+  it("ignores AVG entirely -- a higher recent average is normal and never a violation", () => {
+    assert.equal(violatesCareerInvariant({ pa: 100, h: 20, avg: 0.2, hr: 2 }, { pa: 20, h: 8, avg: 0.4, hr: 1 }), false);
+  });
+
+  it("returns false when either window is null", () => {
+    const split = { pa: 10, h: 3, avg: 0.3, hr: 1 };
+    assert.equal(violatesCareerInvariant(null, split), false);
+    assert.equal(violatesCareerInvariant(split, null), false);
+    assert.equal(violatesCareerInvariant(null, null), false);
   });
 });

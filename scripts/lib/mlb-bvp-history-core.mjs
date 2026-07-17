@@ -47,15 +47,47 @@ export function parseVsPlayerSplit(json) {
   return { pa, h, avg, hr };
 }
 
-/** Assemble the final BvpHistoryEntry record for one batter/opposing-pitcher pair. */
+/**
+ * True when a counting stat (PA, H, or HR -- not AVG, which is a ratio and
+ * has no monotonic relationship across windows) is higher in the
+ * trailing-5-year split than in the career split. A trailing window can
+ * never contain more career events than the all-time total for the same
+ * pair, so a violation means the two source endpoints disagree about the
+ * same batter/pitcher matchup and neither can be trusted in isolation.
+ *
+ * Confirmed root cause (see scripts/lib/__fixtures__/mlb-bvp-history/):
+ * MLB StatsAPI's vsPlayerTotal endpoint can lag vsPlayer5Y by more than 24
+ * hours in reflecting a just-completed game (verified against the
+ * pitcher's own game log and a boxscore), and vsPlayer5Y has independently
+ * shown its own data-quality issues (a mismatched team field in one
+ * fixture) in cases unrelated to same-day lag. Neither endpoint is proven
+ * authoritative when they disagree.
+ */
+export function violatesCareerInvariant(career, last5y) {
+  if (career == null || last5y == null) return false;
+  if (last5y.pa != null && career.pa != null && last5y.pa > career.pa) return true;
+  if (last5y.h != null && career.h != null && last5y.h > career.h) return true;
+  if (last5y.hr != null && career.hr != null && last5y.hr > career.hr) return true;
+  return false;
+}
+
+/**
+ * Assemble the final BvpHistoryEntry record for one batter/opposing-pitcher
+ * pair. When the two windows fail violatesCareerInvariant, the entire pair
+ * is treated as unreliable -- both windows are set to null (never
+ * zero-filled) rather than publishing a value that can't be trusted. This
+ * is a display-only feature: failing soft to "no history" is safer than
+ * presenting a potentially wrong number.
+ */
 export function buildBvpHistoryEntry({ batterId, pitcherId, batter, pitcher, career, last5y }) {
+  const rejected = violatesCareerInvariant(career, last5y);
   return {
     key: buildBvpHistoryKey(batterId, pitcherId),
     batterId,
     pitcherId,
     batter: batter ?? null,
     pitcher: pitcher ?? null,
-    career: career ?? null,
-    last5y: last5y ?? null,
+    career: rejected ? null : (career ?? null),
+    last5y: rejected ? null : (last5y ?? null),
   };
 }

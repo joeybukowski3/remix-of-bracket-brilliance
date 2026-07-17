@@ -29,17 +29,17 @@ describe("AvgVsPitcherCell", () => {
 
   it("shows a dash when there is no entry", () => {
     render(<AvgVsPitcherCell entry={undefined} loading={false} />);
-    expect(screen.getByText("N/A")).toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
   });
 
   it("shows a dash while loading and no entry is available yet", () => {
     render(<AvgVsPitcherCell entry={undefined} loading />);
-    expect(screen.getByText("N/A")).toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
   });
 
   it("shows a dash when the entry has no career split", () => {
     render(<AvgVsPitcherCell entry={makeEntry({ career: null })} loading={false} />);
-    expect(screen.getByText("N/A")).toBeInTheDocument();
+    expect(screen.getByText("—")).toBeInTheDocument();
   });
 });
 
@@ -54,11 +54,11 @@ describe("MlbBvpHistoryPanelLoading / Unavailable / NoHistory", () => {
     expect(screen.getByTestId("bvp-history-unavailable")).toHaveTextContent("Juan Soto");
   });
 
-  it("renders a no-history message naming both players", () => {
+  it("renders the shared 'No prior matchups.' message, since a genuine no-history pair and an invariant-rejected pair are indistinguishable at render time", () => {
     render(<MlbBvpHistoryPanelNoHistory batter="Juan Soto" pitcher="Aaron Nola" />);
     const el = screen.getByTestId("bvp-history-none");
-    expect(el).toHaveTextContent("Juan Soto");
-    expect(el).toHaveTextContent("Aaron Nola");
+    expect(el).toHaveTextContent("No prior matchups.");
+    expect(el).toHaveAttribute("aria-label", expect.stringContaining("Juan Soto"));
   });
 });
 

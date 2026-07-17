@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { BvpHistoryEntry, BvpHistorySplit } from "@/hooks/useMlbBvpHistory";
 import { cn } from "@/lib/utils";
 
-const DASH = "N/A";
+const DASH = "—";
 
 function fmtInt(value: number | null | undefined) {
   return value == null ? DASH : String(value);
@@ -39,13 +39,23 @@ export function MlbBvpHistoryPanelUnavailable({ batter }: { batter: string }) {
   );
 }
 
+/**
+ * Shown both when a batter has genuinely never faced this pitcher and when
+ * the generator rejected the pair for violating the career/last5y
+ * counting-stat invariant (see violatesCareerInvariant) -- both cases
+ * arrive here as entry.career === null && entry.last5y === null, and
+ * neither can be distinguished from the other at render time, so both get
+ * the same honest "nothing reliable to show" message rather than a
+ * misleading per-cause explanation.
+ */
 export function MlbBvpHistoryPanelNoHistory({ batter, pitcher }: { batter: string; pitcher: string }) {
   return (
     <div
       data-testid="bvp-history-none"
       className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-xs text-slate-400"
+      aria-label={`Batter-vs-pitcher history for ${batter} vs ${pitcher}`}
     >
-      {batter} has no recorded plate appearances against {pitcher}.
+      No prior matchups.
     </div>
   );
 }
