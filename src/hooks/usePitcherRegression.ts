@@ -24,6 +24,7 @@ type RegressionJson = {
 export function usePitcherRegression() {
   const [data, setData] = useState<PitcherRegressionData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/data/mlb/pitcher-regression.json")
@@ -46,13 +47,15 @@ export function usePitcherRegression() {
           summary: p.summary,
         }));
         setData(pitchers);
+        setGeneratedAt(json.generatedAt ?? null);
       })
       .catch(() => {
         // Fall back to empty — static data file no longer needed
         setData([]);
+        setGeneratedAt(null);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  return { data, loading };
+  return { data, loading, generatedAt };
 }

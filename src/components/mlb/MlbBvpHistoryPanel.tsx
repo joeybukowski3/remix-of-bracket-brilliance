@@ -26,7 +26,7 @@ export function AvgVsPitcherCell({ entry, loading }: { entry: BvpHistoryEntry | 
   if (loading && !entry) return <span className="text-[11px] text-slate-300">{DASH}</span>;
   if (entry?.status === "no_matchups") {
     return (
-      <span data-testid="avg-vs-p-no-abs" className="text-[11px] font-semibold text-slate-400">
+      <span data-testid="avg-vs-p-no-abs" title="No prior plate appearances against this pitcher" className="text-[11px] font-semibold text-slate-400">
         No ABs
       </span>
     );
@@ -68,7 +68,7 @@ export function MlbBvpHistoryPanelNoMatchups({ batter, pitcher }: { batter: stri
       className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-xs text-slate-400"
       aria-label={`Batter-vs-pitcher history for ${batter} vs ${pitcher}`}
     >
-      No ABs -- {batter} has never faced {pitcher}.
+      No ABs — {batter} has never faced {pitcher}.
     </div>
   );
 }

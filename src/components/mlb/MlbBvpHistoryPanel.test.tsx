@@ -49,6 +49,11 @@ describe("AvgVsPitcherCell", () => {
     expect(screen.getByText("No ABs")).toBeInTheDocument();
   });
 
+  it("gives the 'No ABs' cell an accessible explanatory title", () => {
+    render(<AvgVsPitcherCell entry={makeEntry({ career: null, last5y: null, status: "no_matchups" })} loading={false} />);
+    expect(screen.getByText("No ABs")).toHaveAttribute("title", "No prior plate appearances against this pitcher");
+  });
+
   it("shows a dash (never 'No ABs') for an unavailable pair, even with both windows null", () => {
     render(<AvgVsPitcherCell entry={makeEntry({ career: null, last5y: null, status: "unavailable" })} loading={false} />);
     expect(screen.getByText("—")).toBeInTheDocument();
@@ -86,6 +91,13 @@ describe("MlbBvpHistoryPanelLoading / Unavailable / NoHistory", () => {
     const el = screen.getByTestId("bvp-history-no-matchups");
     expect(el).toHaveTextContent("No ABs");
     expect(el).toHaveAttribute("aria-label", expect.stringContaining("Juan Soto"));
+  });
+
+  it("uses an em dash, not a double hyphen, in the no-matchups message", () => {
+    render(<MlbBvpHistoryPanelNoMatchups batter="Juan Soto" pitcher="Aaron Nola" />);
+    const el = screen.getByTestId("bvp-history-no-matchups");
+    expect(el.textContent).toContain("No ABs — Juan Soto has never faced Aaron Nola.");
+    expect(el.textContent).not.toContain("--");
   });
 });
 
