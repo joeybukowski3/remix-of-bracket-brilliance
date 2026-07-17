@@ -13,7 +13,8 @@ export function ChapterSourceNotes({ team }: { team: NflGuideRecord }) {
         JoeKnowsBall v0.3 power ratings and full-season/final-eight metrics (nflverse-derived, Stage-1 internal).
         Warren Sharp&apos;s 2026 Football Preview for schedule strength and rest. 2026 VSiN NFL Betting Guide for
         offensive and defensive reference statistics and futures prices. Site win totals for the market line.
-        Coaching and player movement compiled from public transaction reporting.
+        Coaching and player movement compiled from public transaction reporting. Opponent, date, and home/away
+        for the schedule breakdown are a one-time ESPN schedule snapshot; this is not live data.
       </p>
 
       <div data-print-hidden className="mt-3 flex flex-wrap gap-x-4 gap-y-1">

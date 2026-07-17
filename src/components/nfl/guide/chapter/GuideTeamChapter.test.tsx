@@ -162,7 +162,9 @@ describe("GuideTeamChapter (Seattle pilot)", () => {
 
   it("labels the model-vs-market comparison with the v0.3 dataset instead of a bare 'model rank'", () => {
     renderChapter();
-    expect(screen.getByText(/NFL v0\.3 rank/)).toBeInTheDocument();
+    const marketSection = screen.getByText("Win total and futures").closest("section");
+    expect(marketSection).not.toBeNull();
+    expect(within(marketSection!).getByText(/NFL v0\.3 rank/)).toBeInTheDocument();
     expect(screen.queryByText(/^Model rank\b/)).not.toBeInTheDocument();
   });
 

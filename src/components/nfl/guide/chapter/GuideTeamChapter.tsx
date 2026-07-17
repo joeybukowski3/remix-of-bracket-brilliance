@@ -4,6 +4,7 @@ import { ChapterMarketSnapshot } from "@/components/nfl/guide/chapter/ChapterMar
 import { ChapterModelProfile } from "@/components/nfl/guide/chapter/ChapterModelProfile";
 import { ChapterModelSummary } from "@/components/nfl/guide/chapter/ChapterModelSummary";
 import { ChapterOffseasonSummary } from "@/components/nfl/guide/chapter/ChapterOffseasonSummary";
+import { ChapterScheduleBreakdown } from "@/components/nfl/guide/chapter/ChapterScheduleBreakdown";
 import { ChapterScheduleProfile } from "@/components/nfl/guide/chapter/ChapterScheduleProfile";
 import { ChapterSourceNotes } from "@/components/nfl/guide/chapter/ChapterSourceNotes";
 import { formatNflRecord, NFL_GUIDE_MODEL_STATUS, type NflGuideRecord } from "@/lib/nfl/guideRecord";
@@ -73,6 +74,7 @@ export function GuideTeamChapter({ team }: { team: NflGuideRecord }) {
       <div className="space-y-4 p-4">
         <ChapterModelProfile team={team} />
         <ChapterScheduleProfile team={team} />
+        <ChapterScheduleBreakdown team={team} />
         <ChapterMarketSnapshot team={team} />
         <ChapterOffseasonSummary team={team} />
         <ChapterModelSummary team={team} />
@@ -88,16 +90,17 @@ function AtAGlance({ team }: { team: NflGuideRecord }) {
   return (
     <div className="grid grid-cols-2 gap-px border-b-2 border-slate-900 bg-slate-200 sm:grid-cols-4">
       {model ? (
-        <GlanceTile label="Offense" value={model.offenseRating.toFixed(1)} sub="Public rating" />
+        <GlanceTile label="Offense" value={model.offenseRating.toFixed(1)} sub="Public rating" tint="indigo" />
       ) : null}
       {model ? (
-        <GlanceTile label="Defense" value={model.defenseRating.toFixed(1)} sub="Public rating" />
+        <GlanceTile label="Defense" value={model.defenseRating.toFixed(1)} sub="Public rating" tint="indigo" />
       ) : null}
       {schedule ? (
         <GlanceTile
           label="Schedule strength"
           value={`#${schedule.strengthOfSchedule.hardestFirstRank}`}
           sub="1 = hardest"
+          tint="teal"
         />
       ) : null}
       {schedule ? (
@@ -105,6 +108,7 @@ function AtAGlance({ team }: { team: NflGuideRecord }) {
           label="Net rest edge"
           value={schedule.netRestDays > 0 ? `+${schedule.netRestDays}` : String(schedule.netRestDays)}
           sub={`Rank #${schedule.netRestEdgeRank}`}
+          tint="teal"
         />
       ) : null}
       {offseason ? (
@@ -112,15 +116,32 @@ function AtAGlance({ team }: { team: NflGuideRecord }) {
           label="Head coach"
           value={offseason.headCoach2026}
           sub={offseason.status === "Changed" ? "New in 2026" : "Returning"}
+          tint="stone"
         />
       ) : null}
     </div>
   );
 }
 
-function GlanceTile({ label, value, sub }: { label: string; value: string; sub: string }) {
+const GLANCE_TINT_CLASSES: Record<"indigo" | "teal" | "stone", string> = {
+  indigo: "bg-indigo-50/40",
+  teal: "bg-teal-50/40",
+  stone: "bg-stone-50/60",
+};
+
+function GlanceTile({
+  label,
+  value,
+  sub,
+  tint,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  tint: "indigo" | "teal" | "stone";
+}) {
   return (
-    <div className="bg-white px-3 py-2.5">
+    <div className={`px-3 py-2.5 ${GLANCE_TINT_CLASSES[tint]}`}>
       <div className="text-[9px] font-bold uppercase tracking-[0.09em] text-slate-500">{label}</div>
       <div className="mt-0.5 truncate text-base font-black tabular-nums text-slate-900" title={value}>
         {value}

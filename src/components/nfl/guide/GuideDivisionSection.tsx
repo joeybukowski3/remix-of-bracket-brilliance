@@ -132,7 +132,7 @@ export function GuideDivisionSection({ division }: { division: NflGuideDivision 
       <div className="grid min-w-0 gap-3 lg:grid-cols-2 print:grid-cols-1">
         {division.teams.map((team) =>
           isNflGuidePilotTeam(team.slug) ? (
-            <div key={team.abbr} className="lg:col-span-2">
+            <div key={team.abbr} className="min-w-0 lg:col-span-2">
               <GuideTeamChapter team={team} />
             </div>
           ) : (

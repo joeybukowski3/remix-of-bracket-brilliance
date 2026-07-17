@@ -41,8 +41,14 @@ export function ChapterModelProfile({ team }: { team: NflGuideRecord }) {
       ? model.finalEightComposite - model.fullSeasonComposite
       : 0;
 
+  const trendTone = finalEight?.trajectoryLabel === "Late Riser"
+    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+    : finalEight?.trajectoryLabel === "Late Decline"
+      ? "border-red-300 bg-red-50 text-red-700"
+      : "border-slate-300 bg-slate-100 text-slate-700";
+
   return (
-    <section className="break-inside-avoid border border-slate-200 bg-white p-3">
+    <section className="break-inside-avoid border border-slate-200 border-l-4 border-l-indigo-400 bg-indigo-50/30 p-3">
       <GuideSectionHeading as="h3" eyebrow="Model profile" title="Power model comparison" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="model" />
@@ -82,8 +88,12 @@ export function ChapterModelProfile({ team }: { team: NflGuideRecord }) {
           </div>
           {finalEight ? (
             <p className="mt-2 text-[11px] leading-4 text-slate-600">
-              <span className="font-black text-slate-900">{finalEight.trajectoryLabel}:</span> Seattle{" "}
-              {TRAJECTORY_COPY[finalEight.trajectoryLabel]} ({formatSignedNumber(trend, 2)} composite).
+              <span
+                className={`mr-1 inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide ${trendTone}`}
+              >
+                {finalEight.trajectoryLabel}
+              </span>
+              Seattle {TRAJECTORY_COPY[finalEight.trajectoryLabel]} ({formatSignedNumber(trend, 2)} composite).
               This label is published for review and does not change the public rating above.
             </p>
           ) : null}

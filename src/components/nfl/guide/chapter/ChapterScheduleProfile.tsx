@@ -20,7 +20,7 @@ export function ChapterScheduleProfile({ team }: { team: NflGuideRecord }) {
     );
 
   return (
-    <section className="break-inside-avoid border border-slate-200 bg-white p-3">
+    <section className="break-inside-avoid border border-slate-200 border-l-4 border-l-teal-400 bg-teal-50/30 p-3">
       <GuideSectionHeading as="h3" eyebrow="Schedule & rest" title="Schedule strength and rest profile" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="schedule" />

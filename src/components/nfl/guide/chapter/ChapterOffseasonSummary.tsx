@@ -12,7 +12,7 @@ export function ChapterOffseasonSummary({ team }: { team: NflGuideRecord }) {
   const departures = offseason.departures ?? [];
 
   return (
-    <section className="break-inside-avoid border border-slate-200 bg-white p-3">
+    <section className="break-inside-avoid border border-slate-200 border-l-4 border-l-stone-400 bg-stone-50/50 p-3">
       <GuideSectionHeading as="h3" eyebrow="Offseason" title="Coaching & verified movement" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="editorial" />

@@ -31,7 +31,7 @@ export function ChapterModelSummary({ team }: { team: NflGuideRecord }) {
       : null;
 
   return (
-    <section className="break-inside-avoid border border-slate-200 bg-slate-50 p-3">
+    <section className="break-inside-avoid border border-slate-200 border-l-4 border-l-indigo-300 bg-slate-50 p-3">
       <GuideSectionHeading as="h3" eyebrow="Model summary — not editorial analysis" title="What the numbers show" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="model" />
@@ -49,8 +49,19 @@ export function ChapterModelSummary({ team }: { team: NflGuideRecord }) {
         </li>
         {team.finalEight ? (
           <li>
-            Full-season vs. final-eight trend: <span className="font-black text-slate-900">{team.finalEight.trajectoryLabel}</span> (
-            {formatSignedNumber(model.finalEightComposite - model.fullSeasonComposite, 2)} composite change).
+            Full-season vs. final-eight trend:{" "}
+            <span
+              className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide ${
+                team.finalEight.trajectoryLabel === "Late Riser"
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  : team.finalEight.trajectoryLabel === "Late Decline"
+                    ? "border-red-300 bg-red-50 text-red-700"
+                    : "border-slate-300 bg-slate-100 text-slate-700"
+              }`}
+            >
+              {team.finalEight.trajectoryLabel}
+            </span>{" "}
+            ({formatSignedNumber(model.finalEightComposite - model.fullSeasonComposite, 2)} composite change).
           </li>
         ) : null}
         {schedule ? (

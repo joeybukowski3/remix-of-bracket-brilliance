@@ -16,7 +16,7 @@ export function ChapterMarketSnapshot({ team }: { team: NflGuideRecord }) {
   if (!market && !odds) return null;
 
   return (
-    <section className="break-inside-avoid border border-slate-200 bg-white p-3">
+    <section className="break-inside-avoid border border-slate-200 border-l-4 border-l-amber-400 bg-amber-50/30 p-3">
       <GuideSectionHeading as="h3" eyebrow="Market snapshot" title="Win total and futures" />
       <div className="mt-3 flex items-center gap-2">
         <SourceTag kind="market" />
@@ -41,17 +41,29 @@ export function ChapterMarketSnapshot({ team }: { team: NflGuideRecord }) {
       </div>
 
       {disagreement ? (
-        <p className="mt-3 text-[11px] leading-4 text-slate-600">
-          NFL v0.3 rank <span className="font-black text-slate-900">#{disagreement.modelRank}</span> vs. market
-          win-total rank <span className="font-black text-slate-900">#{disagreement.marketRank}</span> — a{" "}
-          <span className="font-black text-slate-900">
-            {disagreement.rankGap > 0 ? `+${disagreement.rankGap}` : disagreement.rankGap}
-          </span>{" "}
-          gap. {disagreement.rankGap > 0
-            ? "The v0.3 model rates the team higher than its market win total implies."
-            : disagreement.rankGap < 0
-              ? "The market win total implies a higher standing than the v0.3 rank."
-              : "The v0.3 rank and market win-total rank agree."}
+        <p className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] leading-4 text-slate-600">
+          <span>
+            NFL v0.3 rank <span className="font-black text-slate-900">#{disagreement.modelRank}</span> vs. market
+            win-total rank <span className="font-black text-slate-900">#{disagreement.marketRank}</span> —
+          </span>
+          <span
+            className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[10px] font-black tabular-nums ${
+              disagreement.rankGap > 0
+                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                : disagreement.rankGap < 0
+                  ? "border-red-300 bg-red-50 text-red-700"
+                  : "border-slate-300 bg-slate-100 text-slate-700"
+            }`}
+          >
+            {disagreement.rankGap > 0 ? `+${disagreement.rankGap}` : disagreement.rankGap} gap
+          </span>
+          <span>
+            {disagreement.rankGap > 0
+              ? "The v0.3 model rates the team higher than its market win total implies."
+              : disagreement.rankGap < 0
+                ? "The market win total implies a higher standing than the v0.3 rank."
+                : "The v0.3 rank and market win-total rank agree."}
+          </span>
         </p>
       ) : null}
 
