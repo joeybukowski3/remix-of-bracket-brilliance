@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import MlbLayout from "@/components/mlb/MlbLayout";
-import { MLB_NAV_ITEMS } from "@/lib/mlb/sectionNav";
+import { getMlbNavIconColorClass, MLB_NAV_ITEMS } from "@/lib/mlb/sectionNav";
 
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div data-testid="site-shell">{children}</div>,
@@ -168,5 +168,23 @@ describe("MlbLayout", () => {
       expect(screen.getAllByText(book).length).toBeGreaterThan(0);
     }
     expect(screen.queryByRole("link", { name: /Prop Optimizer/i })).toBeNull();
+  });
+
+  it("renders every sidebar icon with its coordinated color class, so the sidebar is not visually monochrome", () => {
+    renderMlbRoute("/mlb");
+    const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
+    for (const item of MLB_NAV_ITEMS) {
+      const link = within(nav).getByRole("link", { name: new RegExp(item.label, "i") });
+      const icon = link.querySelector("svg");
+      expect(icon).toBeTruthy();
+      expect(icon?.getAttribute("class")).toContain(getMlbNavIconColorClass(item.icon));
+    }
+  });
+
+  it("Moneyline Edges points at the ML Edges social-table anchor, not the older #moneylines panel", () => {
+    renderMlbRoute("/mlb");
+    const nav = screen.getByRole("navigation", { name: "MLB sitemap" });
+    const link = within(nav).getByRole("link", { name: /Moneyline Edges/i });
+    expect(link.getAttribute("href")).toBe("/mlb#ml-edges-social");
   });
 });

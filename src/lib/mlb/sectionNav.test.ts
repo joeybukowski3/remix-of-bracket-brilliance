@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMlbNavItemActive, MLB_NAV_ITEMS, MLB_NAV_SECTIONS } from "./sectionNav";
+import { getMlbNavIconColorClass, isMlbNavItemActive, MLB_NAV_ITEMS, MLB_NAV_SECTIONS } from "./sectionNav";
 
 function itemById(id: string) {
   const item = MLB_NAV_ITEMS.find((entry) => entry.id === id);
@@ -19,10 +19,12 @@ describe("isMlbNavItemActive", () => {
     expect(isMlbNavItemActive("/mlb/strikeout-props", "", hrProps)).toBe(false);
   });
 
-  it("requires exact hash equality for hash-bearing items", () => {
+  it("Moneyline Edges links to /mlb#ml-edges-social (the ML Edges social-table tab), not the older #moneylines panel", () => {
     const moneylines = itemById("moneyline-edges");
-    expect(isMlbNavItemActive("/mlb", "#moneylines", moneylines)).toBe(true);
+    expect(moneylines.href).toBe("/mlb#ml-edges-social");
+    expect(isMlbNavItemActive("/mlb", "#ml-edges-social", moneylines)).toBe(true);
     expect(isMlbNavItemActive("/mlb", "#pitcher-regression", moneylines)).toBe(false);
+    expect(isMlbNavItemActive("/mlb", "#moneylines", moneylines)).toBe(false);
     expect(isMlbNavItemActive("/mlb", "", moneylines)).toBe(false);
   });
 
@@ -37,7 +39,7 @@ describe("isMlbNavItemActive", () => {
     const socialTables = itemById("social-tables");
     expect(socialTables.href).toBe("/mlb#social-tables");
     expect(isMlbNavItemActive("/mlb", "#social-tables", socialTables)).toBe(true);
-    expect(isMlbNavItemActive("/mlb", "#moneylines", socialTables)).toBe(false);
+    expect(isMlbNavItemActive("/mlb", "#ml-edges-social", socialTables)).toBe(false);
     expect(isMlbNavItemActive("/mlb", "", socialTables)).toBe(false);
     expect(isMlbNavItemActive("/mlb/hr-props", "#social-tables", socialTables)).toBe(false);
   });
@@ -93,7 +95,7 @@ describe("MLB_NAV_SECTIONS", () => {
       ["Power Rankings", "/mlb/power-rankings"],
     ]);
     expect(MLB_NAV_SECTIONS[1].items.map(({ label, href }) => [label, href])).toEqual([
-      ["Moneyline Edges", "/mlb#moneylines"],
+      ["Moneyline Edges", "/mlb#ml-edges-social"],
       ["Social Media Tables", "/mlb#social-tables"],
       ["Vulnerable Pitchers", "/mlb/vulnerable-pitchers"],
       ["Overdue Batters", "/mlb/hr-props#overdue"],
@@ -101,5 +103,40 @@ describe("MLB_NAV_SECTIONS", () => {
       ["Sin City", "/mlb/sin-city"],
       ["Numerology", "/mlb/numerology"],
     ]);
+  });
+});
+
+describe("getMlbNavIconColorClass", () => {
+  it("gives every icon actually used in MLB_NAV_SECTIONS a real (non-fallback) color", () => {
+    for (const item of MLB_NAV_ITEMS) {
+      expect(getMlbNavIconColorClass(item.icon)).not.toBe("text-slate-500");
+    }
+  });
+
+  it("is coordinated: the same icon always resolves to the same color, everywhere it's used", () => {
+    // Flame appears on both hr-props and overdue-batters; Swords on both
+    // batter-vs-pitcher and biggest-mismatches; BarChart3 on both
+    // power-rankings and pitcher-regression -- confirms the mapping is
+    // keyed by icon component, not accidentally duplicated per item.
+    const hrProps = itemById("hr-props");
+    const overdueBatters = itemById("overdue-batters");
+    expect(hrProps.icon).toBe(overdueBatters.icon);
+    expect(getMlbNavIconColorClass(hrProps.icon)).toBe(getMlbNavIconColorClass(overdueBatters.icon));
+
+    const batterVsPitcher = itemById("batter-vs-pitcher");
+    const biggestMismatches = itemById("biggest-mismatches");
+    expect(batterVsPitcher.icon).toBe(biggestMismatches.icon);
+    expect(getMlbNavIconColorClass(batterVsPitcher.icon)).toBe(getMlbNavIconColorClass(biggestMismatches.icon));
+
+    const powerRankings = itemById("power-rankings");
+    const pitcherRegression = itemById("pitcher-regression");
+    expect(powerRankings.icon).toBe(pitcherRegression.icon);
+    expect(getMlbNavIconColorClass(powerRankings.icon)).toBe(getMlbNavIconColorClass(pitcherRegression.icon));
+  });
+
+  it("gives every distinct icon a distinct color, so the sidebar is not visually monochrome", () => {
+    const distinctIcons = Array.from(new Set(MLB_NAV_ITEMS.map((item) => item.icon)));
+    const colors = distinctIcons.map((icon) => getMlbNavIconColorClass(icon));
+    expect(new Set(colors).size).toBe(distinctIcons.length);
   });
 });

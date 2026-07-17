@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, Dice5, ExternalLink, Flame, Gauge, Radar, Shield, Sparkles, Swords, Target, TrendingUp, Wind } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
@@ -3187,7 +3187,7 @@ export function SocialTableML({
   );
 }
 
-function SocialMediaTablesSection({
+export function SocialMediaTablesSection({
   games,
   detailPreviews,
   pitcherRegressionData,
@@ -3201,6 +3201,26 @@ function SocialMediaTablesSection({
   const { batters, strikeoutRows, batterVsPitcherRows, strikeoutDetailRows, pitchers, games: propsGames, loading } = useMlbPropsData();
   const [activeTab, setActiveTab] = useState<"ml" | "hr" | "k" | "hits" | "value">("hr");
   const { data: polymarketData } = usePolymarketMlbMoneylines();
+  const location = useLocation();
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Sidebar deep links into this section: "Social Media Tables" -> #social-tables
+  // (scroll only), "Moneyline Edges" -> #ml-edges-social (select the ML Edges
+  // tab, then scroll). location.hash (React Router's reactive location) is
+  // used rather than a native `hashchange` listener because the sidebar
+  // navigates via <Link>, which updates history via pushState and never
+  // fires a native hashchange event. Gated on `loading` because this
+  // section (and its #social-tables anchor) doesn't exist in the DOM until
+  // useMlbPropsData() resolves -- scrolling before then would be a no-op.
+  useEffect(() => {
+    if (loading) return;
+    if (location.hash === "#ml-edges-social") {
+      setActiveTab("ml");
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else if (location.hash === "#social-tables") {
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [loading, location.hash]);
 
   if (loading) return null;
 
@@ -3215,7 +3235,7 @@ function SocialMediaTablesSection({
   const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, propsGames);
 
   return (
-    <section id="social-tables" style={{ marginTop: 16 }}>
+    <section id="social-tables" ref={sectionRef} style={{ marginTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0ea5e9" }}>Daily export</div>
