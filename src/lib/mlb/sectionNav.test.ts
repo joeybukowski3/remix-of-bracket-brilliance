@@ -33,6 +33,15 @@ describe("isMlbNavItemActive", () => {
     expect(isMlbNavItemActive("/mlb", "", moneylines)).toBe(false);
   });
 
+  it("Social Media Tables links to /mlb#social-tables and requires exact hash equality", () => {
+    const socialTables = itemById("social-tables");
+    expect(socialTables.href).toBe("/mlb#social-tables");
+    expect(isMlbNavItemActive("/mlb", "#social-tables", socialTables)).toBe(true);
+    expect(isMlbNavItemActive("/mlb", "#moneylines", socialTables)).toBe(false);
+    expect(isMlbNavItemActive("/mlb", "", socialTables)).toBe(false);
+    expect(isMlbNavItemActive("/mlb/hr-props", "#social-tables", socialTables)).toBe(false);
+  });
+
   it("Game Matchups stays active for any #game-<id> hash via activeHashPrefixes", () => {
     const gameMatchups = itemById("game-matchups");
     expect(isMlbNavItemActive("/mlb", "#game-716463", gameMatchups)).toBe(true);
@@ -85,6 +94,7 @@ describe("MLB_NAV_SECTIONS", () => {
     ]);
     expect(MLB_NAV_SECTIONS[1].items.map(({ label, href }) => [label, href])).toEqual([
       ["Moneyline Edges", "/mlb#moneylines"],
+      ["Social Media Tables", "/mlb#social-tables"],
       ["Vulnerable Pitchers", "/mlb/vulnerable-pitchers"],
       ["Overdue Batters", "/mlb/hr-props#overdue"],
       ["Biggest Mismatches", "/mlb/hr-props#mismatches"],
