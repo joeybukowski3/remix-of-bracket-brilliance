@@ -778,10 +778,12 @@ describe("MlbStrikeoutProps — table width and Park Factors layout", () => {
     expect(screen.getAllByText("1.00").length).toBeGreaterThan(0);
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("existing roof/weather info still renders inside Park Factors", async () => {
+  it("existing roof/weather info still renders inside Park Factors once expanded", async () => {
     vi.resetModules();
     mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
     await renderPage();
+
+    fireEvent.click(screen.getByText("Show details"));
 
     expect(screen.getAllByText("Open").length).toBeGreaterThan(0);
     expect(screen.getAllByText("78°").length).toBeGreaterThan(0);
