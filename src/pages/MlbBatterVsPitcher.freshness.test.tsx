@@ -471,3 +471,94 @@ describe("MlbBatterVsPitcher — freshness status integration", () => {
     }
   });
 });
+
+describe("MlbBatterVsPitcher — table width and Park Factors layout", () => {
+  it("no longer uses a two-column park-sidebar/main-content grid", () => {
+    const source = readFileSync("src/pages/MlbBatterVsPitcher.tsx", "utf-8");
+    expect(source).not.toContain("xl:grid-cols-[260px_minmax(0,1fr)]");
+  });
+
+  it("Park Factors still renders", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("🏟️ Park Factors").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("Park Factors appears before the page filters/table, and FreshnessStatus appears before Park Factors", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const statusEl = container.querySelector("[data-tone]");
+    const parkSection = Array.from(container.querySelectorAll("section")).find((el) => el.querySelector(":scope > details"));
+    const table = container.querySelector("table");
+
+    expect(statusEl).toBeInTheDocument();
+    expect(parkSection).toBeTruthy();
+    expect(table).toBeInTheDocument();
+    expect(statusEl!.compareDocumentPosition(parkSection!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(parkSection!.compareDocumentPosition(table!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("main table retains an .overflow-x-auto wrapper", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    expect(container.querySelector(".overflow-x-auto")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("existing Park Factor value renders unchanged", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("1.00").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("existing roof/weather info still renders inside Park Factors", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("Open").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("78°").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("existing sticky rank/player columns remain present", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    expect(container.querySelector("th.sticky")).toBeInTheDocument();
+    expect(container.querySelector("td.sticky")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("RelatedTools remains unchanged", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getByRole("navigation", { name: "Related MLB tools" })).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("no page-level horizontal-overflow-hiding class was introduced on the main wrapper", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const main = container.querySelector("main");
+    expect(main?.className).not.toMatch(/overflow-x-(hidden|scroll)/);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("Park Factors is not wrapped in a fixed-width sidebar column on mobile", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [baseRow], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const parkSection = Array.from(container.querySelectorAll("section")).find((el) => el.querySelector(":scope > details"));
+    expect(parkSection?.className).not.toMatch(/w-\[\d+px\]/);
+  }, SLOW_RENDER_TIMEOUT_MS);
+});

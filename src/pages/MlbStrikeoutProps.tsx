@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
 import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
+import { MlbParkFactorsStrip } from "@/components/mlb/MlbParkFactorsStrip";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import {
@@ -16,8 +17,6 @@ import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import {
   buildParkSidebarRows,
-  getWindArrow,
-  TeamLogoBadge,
   type PitcherStrikeoutTeamRow,
 } from "@/pages/MlbHrProps";
 import { buildKPropBestBets, type KBestBet } from "@/lib/mlb/kPropBestBets";
@@ -76,6 +75,14 @@ function getRowTintClass(row: PitcherStrikeoutTeamRow, index: number) {
   return index % 2 === 0 ? "bg-white" : "bg-slate-50/70";
 }
 
+/** Same tint as getRowTintClass but fully opaque -- sticky cells need an opaque background of their own so horizontally-scrolled columns from the same row don't show through underneath them. */
+function getStickyRowTintClass(row: PitcherStrikeoutTeamRow, index: number) {
+  const { direction } = getProjectionEdgeInfo(row);
+  if (direction === "over") return "bg-orange-50";
+  if (direction === "under") return "bg-blue-50";
+  return index % 2 === 0 ? "bg-white" : "bg-slate-50";
+}
+
 function fmt(value: number | null | undefined, digits = 1) {
   if (value == null || !Number.isFinite(value)) return DASH;
   return value.toFixed(digits);
@@ -83,21 +90,6 @@ function fmt(value: number | null | undefined, digits = 1) {
 
 function makeSortIndicator(active: boolean, direction: SortDirection) {
   return active ? (direction === "asc" ? " ↑" : " ↓") : "";
-}
-
-function getRoofLabel(value: string) {
-  if (/open/i.test(value)) return "Open";
-  if (/retractable/i.test(value)) return "Retractable";
-  if (/dome|closed/i.test(value)) return "Roof";
-  return value || "Unknown";
-}
-
-function getKParkTone(value: number) {
-  if (value <= 0.93) return "bg-green-500 text-white";
-  if (value <= 0.97) return "bg-green-200 text-green-900";
-  if (value >= 1.10) return "bg-red-500 text-white";
-  if (value >= 1.04) return "bg-red-200 text-red-900";
-  return "bg-slate-200 text-slate-700";
 }
 
 function StatScorePill({ value }: { value: number | null | undefined }) {
@@ -405,32 +397,9 @@ export default function MlbStrikeoutProps() {
           {isDetailsStale && <MlbStrikeoutPropDetailsStaleBanner detailsDate={detailsDate} slateDate={slateDate} />}
           <KBestBetsSection rows={strikeoutDetailRows} />
 
-          <div className="grid gap-3 xl:grid-cols-[260px_minmax(0,1fr)]">
-            <aside className="hidden space-y-3 xl:sticky xl:top-4 xl:block xl:self-start">
-              <div className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div><div className="border-l-2 border-emerald-500 pl-2 text-sm font-semibold uppercase tracking-[0.14em] text-emerald-900">🏟️ Park Factors</div><div className="mt-1 text-xs text-slate-500">Pitcher-friendly order</div></div>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{parkRows.length} parks</span>
-                </div>
-                <div className="space-y-2">
-                  {parkRows.map((park) => (
-                    <article key={park.key} className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex min-w-0 items-center gap-1"><TeamLogoBadge team={park.awayTeam} size={18} showLabel={false} /><span className="text-[9px] font-bold text-slate-300">@</span><TeamLogoBadge team={park.homeTeam} size={18} showLabel={false} /><span className="ml-1 truncate text-[10px] text-slate-400">{park.stadium}</span></div>
-                        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", getKParkTone(park.parkFactor))}>{park.parkFactor.toFixed(2)}</span>
-                      </div>
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">{getRoofLabel(park.roofType)}</span>
-                        <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">{park.temperature != null ? `${park.temperature.toFixed(0)}°` : DASH}</span>
-                        {park.windSpeed != null && park.windSpeed >= 10 && <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-800">💨 {park.windSpeed.toFixed(0)} MPH {getWindArrow(park.windDirection)}</span>}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </aside>
+          <MlbParkFactorsStrip parks={parkRows} perspective="pitcher" subtitle="Pitcher-friendly order" showPrecipitation={false} />
 
-            <div className="min-w-0 space-y-4">
+          <div className="space-y-4">
               <section className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="grid gap-2 sm:grid-cols-4">
                   <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search pitcher, team, park" className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-sky-300 focus:bg-white" />
@@ -481,7 +450,13 @@ export default function MlbStrikeoutProps() {
                 <div className="hidden overflow-x-auto md:block" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="min-w-full border-separate border-spacing-0 text-xs">
                     <thead className="sticky top-0 z-20"><tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
-                      <SortTh k="rank" label="#" help="Model Rank. This remains fixed even if you sort by another column." /><SortTh k="pitcher" label="Pitcher" />{hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K/9</th><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Avg IP</th>
+                      <th className="sticky left-0 z-30 w-8 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        <button type="button" onClick={() => handleSort("rank")} className="hover:text-slate-900" aria-label="Model Rank. This remains fixed even if you sort by another column." title="Model Rank. This remains fixed even if you sort by another column.">#{makeSortIndicator(sortKey === "rank", sortDir)}</button>
+                      </th>
+                      <th className="sticky left-8 z-30 min-w-[140px] border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">
+                        <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
+                      </th>
+                      {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K/9</th><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Avg IP</th>
                     </tr></thead>
                     <tbody>{filteredRows.length ? filteredRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
@@ -508,7 +483,7 @@ export default function MlbStrikeoutProps() {
                         aria-label={rowLabel}
                         className={cn("cursor-pointer transition-colors hover:brightness-[0.98]", getRowTintClass(row, index))}
                       >
-                      <td className="border-b border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400">{row.rank}</td><td className="border-b border-slate-100 px-2 py-1">
+                      <td className={cn("sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400", getStickyRowTintClass(row, index))}>{row.rank}</td><td className={cn("sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1", getStickyRowTintClass(row, index))}>
                         <span className="flex items-center gap-1">
                           <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
                           <MlbTeamLogo team={row.team} size={16} /><span className="whitespace-nowrap text-[11px] font-semibold text-slate-900">{row.pitcher}</span><span className="text-[9px] text-slate-400">vs {row.opponent}</span>
@@ -702,7 +677,6 @@ export default function MlbStrikeoutProps() {
 
               <RelatedTools currentToolId="strikeout-props" />
             </div>
-          </div>
         </div>
       </main>
   );

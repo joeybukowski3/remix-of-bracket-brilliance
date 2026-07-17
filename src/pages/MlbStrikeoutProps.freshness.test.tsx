@@ -18,7 +18,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import type { MlbDataStatus } from "@/lib/mlb/mlbDataStatus";
-import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
+import type { HrDashboardGame, PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 
 vi.mock("@/components/layout/SiteShell", () => ({
   default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -147,11 +147,26 @@ const NO_GAMES_STATUS: MlbDataStatus = { kind: "no-games-scheduled", slateDate: 
 
 const dashboardFixture = { date: "2026-07-16", generatedAt: "2026-07-16T09:32:34.452Z", games: [], pitchers: [], batters: [] };
 
-function mockPropsData(options: { rows?: PitcherStrikeoutTeamRow[]; status: MlbDataStatus }) {
+const baseGame: HrDashboardGame = {
+  gameKey: "BAL@CHC",
+  matchup: "BAL @ CHC",
+  awayTeam: "BAL",
+  homeTeam: "CHC",
+  stadium: "Wrigley Field",
+  roofType: "Open",
+  temperature: 78,
+  precipitation: 0,
+  windSpeed: 6,
+  windDirection: "SW",
+  conditions: "Clear",
+  parkFactor: 1.0,
+};
+
+function mockPropsData(options: { rows?: PitcherStrikeoutTeamRow[]; games?: HrDashboardGame[]; status: MlbDataStatus }) {
   vi.doMock("@/hooks/useMlbPropsData", () => ({
     useMlbPropsData: () => ({
       dashboard: dashboardFixture,
-      games: [],
+      games: options.games ?? [],
       strikeoutDetailRows: options.rows ?? [],
       status: options.status,
     }),
@@ -714,5 +729,97 @@ describe("MlbStrikeoutProps — ModelSummaryHeader timestamp de-duplication", ()
     // state; ModelSummaryHeader's own "Last updated" cell must not also render.
     expect(screen.queryByText("Last updated")).toBeNull();
     expect(screen.getByText(/Model updated .+ ET\.$/)).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+});
+
+describe("MlbStrikeoutProps — table width and Park Factors layout", () => {
+  it("no longer uses a two-column park-sidebar/main-content grid", () => {
+    const source = readFileSync("src/pages/MlbStrikeoutProps.tsx", "utf-8");
+    expect(source).not.toContain("xl:grid-cols-[260px_minmax(0,1fr)]");
+  });
+
+  it("Park Factors still renders", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("🏟️ Park Factors").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("Park Factors appears before the page filters/table, and FreshnessStatus appears before Park Factors", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const statusEl = container.querySelector("[data-tone]");
+    const parkSection = Array.from(container.querySelectorAll("section")).find((el) => el.querySelector(":scope > details"));
+    const table = container.querySelector("table");
+
+    expect(statusEl).toBeInTheDocument();
+    expect(parkSection).toBeTruthy();
+    expect(table).toBeInTheDocument();
+    expect(statusEl!.compareDocumentPosition(parkSection!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(parkSection!.compareDocumentPosition(table!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("main table retains an .overflow-x-auto wrapper", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    expect(container.querySelector(".overflow-x-auto")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("existing Park Factor value renders unchanged", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("1.00").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("existing roof/weather info still renders inside Park Factors", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("Open").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("78°").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("existing header columns and sticky rank/pitcher cells remain present", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    expect(screen.getAllByRole("button", { name: /K Score/ }).length).toBeGreaterThan(0);
+    expect(container.querySelector("th.sticky")).toBeInTheDocument();
+    expect(container.querySelector("td.sticky")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("RelatedTools remains unchanged", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getByRole("navigation", { name: "Related MLB tools" })).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("no page-level horizontal-overflow-hiding class was introduced on the main wrapper", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const main = container.querySelector("main");
+    expect(main?.className).not.toMatch(/overflow-x-(hidden|scroll)/);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("Park Factors is not wrapped in a fixed-width sidebar column on mobile", async () => {
+    vi.resetModules();
+    mockPropsData({ rows: [rowWithLine], games: [baseGame], status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const parkSection = Array.from(container.querySelectorAll("section")).find((el) => el.querySelector(":scope > details"));
+    expect(parkSection?.className).not.toMatch(/w-\[\d+px\]/);
   }, SLOW_RENDER_TIMEOUT_MS);
 });

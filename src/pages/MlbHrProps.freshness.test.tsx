@@ -460,3 +460,98 @@ describe("MlbHrProps — freshness status integration", () => {
     expect(source).not.toContain("deriveMlbDataStatus");
   });
 });
+
+describe("MlbHrProps — table width and Park Factors layout", () => {
+  it("31. no longer uses a two-column park-sidebar/main-content grid", () => {
+    const source = readFileSync("src/pages/MlbHrProps.tsx", "utf-8");
+    expect(source).not.toContain("xl:grid-cols-[300px_minmax(0,1fr)]");
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("32. Park Factors still renders", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("🏟️ Park Factors").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("33. Park Factors appears before the page filters/table, and FreshnessStatus appears before Park Factors", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const statusEl = container.querySelector("[data-tone]");
+    // MlbParkFactorsStrip's own root <section> is the only one with a
+    // <details> descendant (its mobile disclosure) -- an ancestor <section>
+    // that merely contains the strip would also match a plain textContent
+    // search, so anchor on that structural marker instead.
+    const parkSection = Array.from(container.querySelectorAll("section")).find((el) => el.querySelector(":scope > details"));
+    const table = container.querySelector("table");
+
+    expect(statusEl).toBeInTheDocument();
+    expect(parkSection).toBeTruthy();
+    expect(table).toBeInTheDocument();
+    expect(statusEl!.compareDocumentPosition(parkSection!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(parkSection!.compareDocumentPosition(table!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("34. main table retains an .overflow-x-auto wrapper", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    expect(container.querySelector(".overflow-x-auto")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("35. existing Park Factor value renders unchanged", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    await renderPage();
+
+    // baseGame.parkFactor = 1.0 (see fixture above), rendered as "1.00".
+    expect(screen.getAllByText("1.00").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("36. existing roof/weather info still renders inside Park Factors", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getAllByText("Open").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("78°").length).toBeGreaterThan(0);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("37. existing row values and score pills remain unchanged", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getByText("Adley Rutschman")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("38. RelatedTools remains unchanged", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    await renderPage();
+
+    expect(screen.getByRole("navigation", { name: "Related MLB tools" })).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("39. no page-level horizontal-overflow-hiding class was introduced on the main wrapper", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const main = container.querySelector("main");
+    expect(main?.className).not.toMatch(/overflow-x-(hidden|scroll)/);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("40. Park Factors is not wrapped in a fixed-width sidebar column on mobile", async () => {
+    vi.resetModules();
+    mockPropsData({ dashboard: fullDashboard, status: CURRENT_STATUS });
+    const { container } = await renderPage();
+
+    const parkSection = Array.from(container.querySelectorAll("section")).find((el) => el.querySelector(":scope > details"));
+    expect(parkSection?.className).not.toMatch(/w-\[\d+px\]/);
+  }, SLOW_RENDER_TIMEOUT_MS);
+});
