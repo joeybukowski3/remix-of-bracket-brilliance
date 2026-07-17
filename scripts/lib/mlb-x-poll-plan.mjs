@@ -28,6 +28,15 @@ function contentPlan({ posted, readiness }) {
     state,
     reason: posted ? ReadinessStatus.SKIPPED_ALREADY_POSTED_TODAY : readiness?.finalStatus,
     shouldRun: state === PollPlanState.READY,
+    // Reporting-only game-diversity/coverage fields, forwarded verbatim from
+    // resolvePostingReadiness so callers (e.g. plan-mlb-x-posts.mjs) can log
+    // them without reaching past this plan into the raw readiness object.
+    // null/0 for content types with no game-diversity concept (K/Numerology)
+    // or once already posted, never a fabricated number.
+    confirmedGameCount: readiness?.confirmedGameCount ?? null,
+    confirmedRowsWithoutGameIdentity: readiness?.confirmedRowsWithoutGameIdentity ?? 0,
+    scheduledGameCount: readiness?.scheduledGameCount ?? null,
+    confirmedGameCoverage: readiness?.confirmedGameCoverage ?? null,
   };
 }
 

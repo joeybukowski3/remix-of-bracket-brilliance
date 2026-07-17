@@ -6,7 +6,7 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { ReadinessStatus, WaitingReason, resolvePostingReadiness } from "./mlb-x-readiness.mjs";
+import { ReadinessStatus, WaitingReason, formatGameCoverageLogLine, resolvePostingReadiness } from "./mlb-x-readiness.mjs";
 
 function timing(overrides = {}) {
   return {
@@ -150,5 +150,81 @@ describe("resolvePostingReadiness -- confirmedGameCount / minConfirmedGames (fix
       confirmedGameCount: 1,
     });
     assert.equal(result.ready, true);
+  });
+});
+
+describe("resolvePostingReadiness -- coverage reporting fields (confirmedRowsWithoutGameIdentity, scheduledGameCount, confirmedGameCoverage)", () => {
+  it("echoes confirmedRowsWithoutGameIdentity onto the result, defaulting to 0", () => {
+    const withDefault = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 5 });
+    assert.equal(withDefault.confirmedRowsWithoutGameIdentity, 0);
+
+    const withValue = resolvePostingReadiness({
+      timing: timing(),
+      confirmedCount: 5,
+      targetCount: 5,
+      confirmedRowsWithoutGameIdentity: 3,
+    });
+    assert.equal(withValue.confirmedRowsWithoutGameIdentity, 3);
+  });
+
+  it("computes scheduledGameCount from timing.gameCount and confirmedGameCoverage as a ratio of it", () => {
+    const result = resolvePostingReadiness({
+      timing: timing({ gameCount: 15 }),
+      confirmedCount: 5,
+      targetCount: 5,
+      confirmedGameCount: 2,
+      minConfirmedGames: 2,
+    });
+    assert.equal(result.scheduledGameCount, 15);
+    assert.equal(result.confirmedGameCount, 2);
+    assert.ok(Math.abs(result.confirmedGameCoverage - 2 / 15) < 1e-9);
+  });
+
+  it("reports confirmedGameCount/scheduledGameCount/confirmedGameCoverage as null when not applicable (K/Numerology, no timing.gameCount)", () => {
+    const result = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 5 });
+    assert.equal(result.confirmedGameCount, null);
+    assert.equal(result.scheduledGameCount, null);
+    assert.equal(result.confirmedGameCoverage, null);
+  });
+
+  it("never claims full coverage from a raw headcount alone -- coverage is confirmedGameCount / scheduledGameCount, not confirmedCount-derived", () => {
+    const result = resolvePostingReadiness({
+      timing: timing({ isFinalCutoff: true, gameCount: 15 }),
+      confirmedCount: 9,
+      targetCount: 5,
+      maxTableSize: 5,
+      confirmedGameCount: 1,
+      minConfirmedGames: 2,
+    });
+    // Posts at the cutoff despite only 1 of 15 games confirmed -- but the
+    // coverage field must still honestly report that, not imply "full slate".
+    assert.equal(result.ready, true);
+    assert.equal(result.confirmedGameCount, 1);
+    assert.equal(result.scheduledGameCount, 15);
+    assert.ok(Math.abs(result.confirmedGameCoverage - 1 / 15) < 1e-9);
+  });
+});
+
+describe("formatGameCoverageLogLine", () => {
+  it("formats confirmedGames/scheduledGames/coverage/rowsWithoutGameIdentity from a readiness result", () => {
+    const readiness = resolvePostingReadiness({
+      timing: timing({ gameCount: 15 }),
+      confirmedCount: 5,
+      targetCount: 5,
+      confirmedGameCount: 2,
+      minConfirmedGames: 2,
+      confirmedRowsWithoutGameIdentity: 1,
+    });
+    assert.equal(formatGameCoverageLogLine(readiness), "confirmedGames=2 scheduledGames=15 coverage=13% rowsWithoutGameIdentity=1");
+  });
+
+  it("renders n/a for fields that don't apply, e.g. a readiness result with no game-diversity concept", () => {
+    const readiness = resolvePostingReadiness({ timing: timing(), confirmedCount: 5, targetCount: 5 });
+    assert.equal(formatGameCoverageLogLine(readiness), "confirmedGames=n/a scheduledGames=n/a coverage=n/a rowsWithoutGameIdentity=0");
+  });
+
+  it("handles a null/undefined readiness gracefully rather than throwing", () => {
+    assert.equal(formatGameCoverageLogLine(null), "confirmedGames=n/a scheduledGames=n/a coverage=n/a rowsWithoutGameIdentity=0");
+    assert.equal(formatGameCoverageLogLine(undefined), "confirmedGames=n/a scheduledGames=n/a coverage=n/a rowsWithoutGameIdentity=0");
   });
 });

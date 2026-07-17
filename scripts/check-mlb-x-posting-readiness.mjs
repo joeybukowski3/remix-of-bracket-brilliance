@@ -28,7 +28,7 @@ import path from "node:path";
 import process from "node:process";
 import { buildConfirmationSnapshot, resolveHrRowFacts } from "./lib/mlb-x-confirmation-snapshot.mjs";
 import { selectConfirmedHrProps } from "./lib/mlb-hr-x-selection-core.mjs";
-import { resolvePostingReadiness, ReadinessStatus } from "./lib/mlb-x-readiness.mjs";
+import { formatGameCoverageLogLine, resolvePostingReadiness, ReadinessStatus } from "./lib/mlb-x-readiness.mjs";
 import { fetchSlateTiming, getEtSlateDate, SlatePhase } from "./lib/mlb-x-slate-timing.mjs";
 
 const ROOT = process.cwd();
@@ -135,7 +135,10 @@ async function runHr({ source, now, fetchImpl }) {
     confirmationSourceFailed: !snapshot.ok,
     confirmedGameCount: selection.confirmedGameCount,
     minConfirmedGames: MIN_CONFIRMED_GAMES,
+    confirmedRowsWithoutGameIdentity: selection.confirmedRowsWithoutGameIdentity,
   });
+
+  console.log(`[x-readiness] ${formatGameCoverageLogLine(readiness)}`);
 
   emit({
     content: "hr",
@@ -147,6 +150,9 @@ async function runHr({ source, now, fetchImpl }) {
     minutesUntilFirstPitch: readiness.minutesUntilFirstPitch ?? "n/a",
     confirmedCount: selection.confirmedCount,
     confirmedGameCount: selection.confirmedGameCount,
+    confirmedRowsWithoutGameIdentity: selection.confirmedRowsWithoutGameIdentity,
+    scheduledGameCount: readiness.scheduledGameCount ?? "n/a",
+    confirmedGameCoverage: readiness.confirmedGameCoverage != null ? readiness.confirmedGameCoverage.toFixed(2) : "n/a",
     projectedExcludedCount: selection.projectedExcludedCount,
     selectedCount: readiness.selectedCount,
     finalStatus: readiness.finalStatus,

@@ -5,7 +5,7 @@ import { TwitterApi } from "twitter-api-v2";
 import { checkDailyPostingLock, getForceRepostOverride, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
 import { buildConfirmationSnapshot, resolveHrRowFacts } from "./lib/mlb-x-confirmation-snapshot.mjs";
 import { selectConfirmedHrProps } from "./lib/mlb-hr-x-selection-core.mjs";
-import { resolvePostingReadiness } from "./lib/mlb-x-readiness.mjs";
+import { formatGameCoverageLogLine, resolvePostingReadiness } from "./lib/mlb-x-readiness.mjs";
 import { getEtSlateDate } from "./lib/mlb-x-slate-timing.mjs";
 import {
   ARTIFACT_MISMATCH_STATUS,
@@ -227,6 +227,7 @@ async function buildSelection({ source, now }) {
     confirmationSourceFailed: !snapshot.ok,
     confirmedGameCount: selection.confirmedGameCount,
     minConfirmedGames: MIN_CONFIRMED_GAMES,
+    confirmedRowsWithoutGameIdentity: selection.confirmedRowsWithoutGameIdentity,
   });
 
   const artifact = buildHrArtifact({
@@ -244,7 +245,8 @@ function logSelection({ slateDate, rawDate, snapshot, selection, readiness }) {
   console.log(`[mlb-hr-props-x] rawSlateDate=${rawDate || "missing"}`);
   console.log(`[mlb-hr-props-x] snapshotOk=${snapshot.ok} confirmationAsOf=${snapshot.asOf}`);
   console.log(`[mlb-hr-props-x] phase=${readiness.phase} minutesUntilFirstPitch=${readiness.minutesUntilFirstPitch ?? "n/a"}`);
-  console.log(`[mlb-hr-props-x] confirmedCount=${selection.confirmedCount} confirmedGameCount=${selection.confirmedGameCount} projectedExcluded=${selection.projectedExcludedCount} selectedCount=${readiness.selectedCount}`);
+  console.log(`[mlb-hr-props-x] confirmedCount=${selection.confirmedCount} projectedExcluded=${selection.projectedExcludedCount} selectedCount=${readiness.selectedCount}`);
+  console.log(`[mlb-hr-props-x] ${formatGameCoverageLogLine(readiness)}`);
 }
 
 async function main() {

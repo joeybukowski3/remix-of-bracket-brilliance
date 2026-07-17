@@ -76,6 +76,7 @@ export function resolveHrPollReadiness({ raw, snapshot, slateDate }) {
     confirmationSourceFailed: !snapshot.ok,
     confirmedGameCount: selection.confirmedGameCount,
     minConfirmedGames: HR_MIN_CONFIRMED_GAMES,
+    confirmedRowsWithoutGameIdentity: selection.confirmedRowsWithoutGameIdentity,
   });
 }
 

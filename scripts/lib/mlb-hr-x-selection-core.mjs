@@ -31,8 +31,27 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function normalizeTeamKey(value) {
-  return typeof value === "string" ? value.trim().toUpperCase() : "";
+/**
+ * Canonical per-game identity for the confirmed-pool game-diversity check
+ * (see confirmedGameCount below). Uses ONLY `gameId` -- verified against
+ * production hr-props-raw.json (2026-07-17 slate, 252 batters): `gameId`
+ * is present, numeric, and finite on 100% of rows, so no fallback identity
+ * is invented for merely-theoretical completeness. StatsAPI assigns a
+ * distinct gamePk to each leg of a doubleheader, so `gameId` alone also
+ * keeps doubleheader legs correctly distinct without extra gameNumber
+ * handling.
+ *
+ * Deliberately does NOT use team, opponent, pitcher, or player identity --
+ * any one of those alone is NOT a valid game proxy (both teams in one
+ * matchup would resolve to two different identities and wrongly count as
+ * two games, exactly the bug this replaces). Returns null (never a
+ * fabricated identity) when `gameId` is missing or not a finite number;
+ * such a row is counted in `confirmedRowsWithoutGameIdentity` instead of
+ * silently inflating `confirmedGameCount`.
+ */
+export function getConfirmedGameIdentity(row) {
+  const gameId = toFiniteNumber(row?.gameId);
+  return gameId == null ? null : `game:${gameId}`;
 }
 
 /**
@@ -46,7 +65,8 @@ function normalizeTeamKey(value) {
  *                                                            generated-confirmed row, null/true to defer to generated status
  * @param {number} [params.maxTableSize]        upper bound on rows (default 3)
  * @returns {{ selected: Array<object>, confirmedCount: number, confirmedGameCount: number,
- *             projectedExcludedCount: number, unconfirmedExcludedCount: number, startedExcludedCount: number }}
+ *             confirmedRowsWithoutGameIdentity: number, projectedExcludedCount: number,
+ *             unconfirmedExcludedCount: number, startedExcludedCount: number }}
  */
 export function selectConfirmedHrProps({
   batters = [],
@@ -94,17 +114,23 @@ export function selectConfirmedHrProps({
   // maxTableSize) -- lets the caller's readiness gate require the confirmed
   // pool to span more than one game before treating a raw headcount as "the
   // slate is ready," so a single early-confirmed game can never alone
-  // satisfy readiness and monopolize the table. Falls back to `team` when
-  // `gameId` is missing (each confirmed lineup is one team's batting order
-  // within exactly one game, so team is an equally valid game proxy).
-  const confirmedGameCount = new Set(
-    confirmed.map((row) => (row.gameId != null ? `game:${row.gameId}` : `team:${normalizeTeamKey(row.team)}`)),
-  ).size;
+  // satisfy readiness and monopolize the table. Only rows with a reliable
+  // getConfirmedGameIdentity() contribute; a row with no reliable identity
+  // is counted separately (confirmedRowsWithoutGameIdentity) rather than
+  // silently treated as its own distinct game.
+  const gameIdentities = new Set();
+  let confirmedRowsWithoutGameIdentity = 0;
+  for (const row of confirmed) {
+    const identity = getConfirmedGameIdentity(row);
+    if (identity == null) confirmedRowsWithoutGameIdentity += 1;
+    else gameIdentities.add(identity);
+  }
 
   return {
     selected: confirmed.slice(0, maxTableSize),
     confirmedCount: confirmed.length,
-    confirmedGameCount,
+    confirmedGameCount: gameIdentities.size,
+    confirmedRowsWithoutGameIdentity,
     projectedExcludedCount,
     unconfirmedExcludedCount,
     startedExcludedCount,
