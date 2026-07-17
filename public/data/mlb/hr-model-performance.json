@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-16T12:51:13.423Z",
+  "generatedAt": "2026-07-17T12:20:44.382Z",
   "note": "Score-band results are empirical outcome rates from graded historical predictions. HR Quality Score is a ranking score, not a calibrated probability — these rates describe what happened, not a validated forecast.",
-  "totalGradedRecords": 18,
+  "totalGradedRecords": 32,
   "byScoreBand": {
     "80+": {
       "predictions": 0,
@@ -26,37 +26,37 @@
       "sampleSize": 0
     },
     "60-69.9": {
-      "predictions": 3,
-      "eligibleGraded": 3,
+      "predictions": 6,
+      "eligibleGraded": 6,
       "hrHits": 0,
       "actualHrRate": 0,
-      "avgMarketImpliedProbability": 15.6,
-      "avgOdds": 553,
+      "avgMarketImpliedProbability": 23.2,
+      "avgOdds": 397,
       "flatBetRoi": -100,
       "calibrationDifference": null,
-      "sampleSize": 3
+      "sampleSize": 6
     },
     "50-59.9": {
-      "predictions": 2,
-      "eligibleGraded": 2,
+      "predictions": 5,
+      "eligibleGraded": 5,
       "hrHits": 0,
       "actualHrRate": 0,
-      "avgMarketImpliedProbability": 10.6,
-      "avgOdds": 850,
+      "avgMarketImpliedProbability": 16.5,
+      "avgOdds": 584,
       "flatBetRoi": -100,
       "calibrationDifference": null,
-      "sampleSize": 2
+      "sampleSize": 5
     },
     "Below 50": {
-      "predictions": 13,
-      "eligibleGraded": 13,
-      "hrHits": 0,
-      "actualHrRate": 0,
-      "avgMarketImpliedProbability": 11.4,
-      "avgOdds": 862,
-      "flatBetRoi": -100,
+      "predictions": 21,
+      "eligibleGraded": 21,
+      "hrHits": 1,
+      "actualHrRate": 4.8,
+      "avgMarketImpliedProbability": 13.4,
+      "avgOdds": 732,
+      "flatBetRoi": -69,
       "calibrationDifference": null,
-      "sampleSize": 13
+      "sampleSize": 21
     }
   },
   "byConfidenceLevel": {
@@ -72,15 +72,15 @@
       "sampleSize": 0
     },
     "medium": {
-      "predictions": 18,
-      "eligibleGraded": 18,
-      "hrHits": 0,
-      "actualHrRate": 0,
-      "avgMarketImpliedProbability": 12,
-      "avgOdds": 809,
-      "flatBetRoi": -100,
+      "predictions": 32,
+      "eligibleGraded": 32,
+      "hrHits": 1,
+      "actualHrRate": 3.1,
+      "avgMarketImpliedProbability": 15.8,
+      "avgOdds": 643,
+      "flatBetRoi": -80,
       "calibrationDifference": null,
-      "sampleSize": 18
+      "sampleSize": 32
     },
     "low": {
       "predictions": 0,
@@ -118,40 +118,40 @@
       "sampleSize": 18
     },
     "unconfirmed": {
-      "predictions": 0,
-      "eligibleGraded": 0,
-      "hrHits": 0,
-      "actualHrRate": null,
-      "avgMarketImpliedProbability": null,
-      "avgOdds": null,
-      "flatBetRoi": null,
+      "predictions": 14,
+      "eligibleGraded": 14,
+      "hrHits": 1,
+      "actualHrRate": 7.1,
+      "avgMarketImpliedProbability": 21.1,
+      "avgOdds": 413,
+      "flatBetRoi": -52.3,
       "calibrationDifference": null,
-      "sampleSize": 0
+      "sampleSize": 14
     }
   },
   "byModelVersion": {
     "mlb-hr-quality-v1.1": {
-      "predictions": 18,
-      "eligibleGraded": 18,
-      "hrHits": 0,
-      "actualHrRate": 0,
-      "avgMarketImpliedProbability": 12,
-      "avgOdds": 809,
-      "flatBetRoi": -100,
+      "predictions": 32,
+      "eligibleGraded": 32,
+      "hrHits": 1,
+      "actualHrRate": 3.1,
+      "avgMarketImpliedProbability": 15.8,
+      "avgOdds": 643,
+      "flatBetRoi": -80,
       "calibrationDifference": null,
-      "sampleSize": 18
+      "sampleSize": 32
     }
   },
-  "sampleSizeWarning": "Sample size (18 graded predictions) is below the 20-record warning threshold -- band-level rates below are not statistically meaningful yet.",
+  "sampleSizeWarning": null,
   "calibrationReadiness": {
-    "sampleCount": 18,
-    "hrOutcomeCount": 0,
-    "calendarDayCount": 1,
+    "sampleCount": 32,
+    "hrOutcomeCount": 1,
+    "calendarDayCount": 2,
     "meetsMinimumThreshold": false,
     "warnings": [
-      "Insufficient graded predictions: 18/1000",
-      "Insufficient HR outcomes: 0/100",
-      "Insufficient calendar-day coverage: 1/28 days"
+      "Insufficient graded predictions: 32/1000",
+      "Insufficient HR outcomes: 1/100",
+      "Insufficient calendar-day coverage: 2/28 days"
     ],
     "readyForCalibrationFit": false
   }
