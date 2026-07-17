@@ -7,27 +7,25 @@ import { slugifyNflTeam } from "@/lib/nfl/guide2026";
 import {
   NFL_2025_TREND_DATASET,
   NFL_TREND_METADATA,
-  type NflTrendClassification,
-  type NflTrendConfidenceLevel,
   type NflTrendRecord,
 } from "@/lib/nfl/teamTrends";
 import {
+  NFL_TREND_CLASSIFICATION_LABELS,
   NFL_TREND_SORT_LABELS,
+  classificationTone,
+  confidenceTone,
+  formatTrendNumber,
+  formatTrendRank,
+  movementLabel,
+  movementTone,
+  rankMovementArrow,
+  rankMovementLabel,
   sortTrendRowsForNflPage,
   type NflTrendSortKey,
 } from "@/lib/nfl/teamTrendPresentation";
 
 type ViewMode = "avg" | "percentile";
 type PowerRatingsView = "preseason" | "trend";
-
-const TREND_CLASSIFICATION_LABELS: Record<NflTrendClassification, string> = {
-  strong_improvement: "Strong late-season improvement",
-  moderate_improvement: "Moderate late-season improvement",
-  stable: "Stable late-season profile",
-  moderate_decline: "Moderate late-season decline",
-  strong_decline: "Strong late-season decline",
-  insufficient_data: "Insufficient data",
-};
 
 const TEAM_COLOR_BY_ABBR = new Map(NFL_POWER_RATINGS.map((team) => [team.abbr, team.color]));
 
@@ -68,44 +66,23 @@ function TrendLogo({ record }: { record: NflTrendRecord }) {
   return <img src={nflLogoUrl(record.abbr)} alt="" className="nfl-pr-logo" loading="lazy" onError={() => setFailed(true)} />;
 }
 
-function formatTrendNumber(value: number | null, digits = 1): string {
-  if (value === null) return "—";
-  return `${value > 0 ? "+" : ""}${value.toFixed(digits)}`;
-}
-
-function formatRank(rank: number | null): string {
-  return rank === null ? "—" : `#${rank}`;
-}
-
-function movementLabel(value: number | null, unit: string, digits = 1): string {
-  if (value === null) return `No ${unit} movement available`;
-  if (value > 0) return `Improved by ${value.toFixed(digits)} ${unit}`;
-  if (value < 0) return `Declined by ${Math.abs(value).toFixed(digits)} ${unit}`;
-  return `No ${unit} change`;
-}
-
-function rankMovementLabel(value: number | null): string {
-  if (value === null) return "No rank movement available";
-  if (value > 0) return `Improved ${value} spots`;
-  if (value < 0) return `Declined ${Math.abs(value)} spots`;
-  return "No rank change";
-}
-
 function movementClass(value: number | null): string {
-  if (value === null || value === 0) return "is-neutral";
-  return value > 0 ? "is-up" : "is-down";
-}
-
-function classificationClass(classification: NflTrendClassification): string {
-  if (classification.endsWith("improvement")) return "is-up";
-  if (classification.endsWith("decline")) return "is-down";
-  if (classification === "insufficient_data") return "is-low";
+  const tone = movementTone(value);
+  if (tone === "up") return "is-up";
+  if (tone === "down") return "is-down";
   return "is-neutral";
 }
 
-function confidenceClass(level: NflTrendConfidenceLevel): string {
-  if (level === "high") return "is-high";
-  if (level === "medium") return "is-medium";
+function trendToneClass(tone: "up" | "down" | "neutral" | "low"): string {
+  if (tone === "up") return "is-up";
+  if (tone === "down") return "is-down";
+  if (tone === "low") return "is-low";
+  return "is-neutral";
+}
+
+function confidenceClass(tone: "up" | "down" | "neutral" | "low"): string {
+  if (tone === "up") return "is-high";
+  if (tone === "neutral") return "is-medium";
   return "is-low";
 }
 
@@ -263,7 +240,7 @@ export default function NFL() {
                       <tbody>
                         {trendRows.map((record) => (
                           <tr key={record.teamId} data-testid="nfl-trend-row">
-                            <td className="nfl-pr-rank" data-label="Final-eight rank">{formatRank(record.finalEight.rank)}</td>
+                            <td className="nfl-pr-rank" data-label="Final-eight rank">{formatTrendRank(record.finalEight.rank)}</td>
                             <td className="nfl-pr-team" data-label="Team">
                               <Link to={`/nfl/guide/team/${record.slug}`} className="nfl-pr-team-link" aria-label={`Open ${record.name} team dashboard`}>
                                 <span className="nfl-pr-accent" style={{ background: TEAM_COLOR_BY_ABBR.get(record.abbr) ?? "#0c1f3a" }} aria-hidden />
@@ -271,9 +248,9 @@ export default function NFL() {
                                 <span className="nfl-pr-name">{record.name}</span>
                               </Link>
                             </td>
-                            <td className="nfl-trend-num" data-label="Full-season rank">{formatRank(record.fullSeason.rank)}</td>
+                            <td className="nfl-trend-num" data-label="Full-season rank">{formatTrendRank(record.fullSeason.rank)}</td>
                             <td className={`nfl-trend-move ${movementClass(record.deltas.rank)}`} data-label="Rank movement">
-                              <span aria-hidden>{record.deltas.rank === null ? "—" : record.deltas.rank > 0 ? `↑ ${record.deltas.rank}` : record.deltas.rank < 0 ? `↓ ${Math.abs(record.deltas.rank)}` : "→ 0"}</span>
+                              <span aria-hidden>{rankMovementArrow(record.deltas.rank)}</span>
                               <span className="sr-only">{rankMovementLabel(record.deltas.rank)}</span>
                             </td>
                             <td className="nfl-trend-num" data-label="Full-season rating">{record.fullSeason.comparableRating?.toFixed(1) ?? "—"}</td>
@@ -291,10 +268,10 @@ export default function NFL() {
                               <span className="sr-only">{movementLabel(record.deltas.defense, "defense z-score", 2)}</span>
                             </td>
                             <td data-label="Classification">
-                              <span className={`nfl-trend-badge ${classificationClass(record.classification)}`}>{TREND_CLASSIFICATION_LABELS[record.classification]}</span>
+                              <span className={`nfl-trend-badge ${trendToneClass(classificationTone(record.classification))}`}>{NFL_TREND_CLASSIFICATION_LABELS[record.classification]}</span>
                             </td>
                             <td data-label="Confidence">
-                              <span className={`nfl-trend-confidence ${confidenceClass(record.confidence.level)}`}>{record.confidence.level}</span>
+                              <span className={`nfl-trend-confidence ${confidenceClass(confidenceTone(record.confidence.level))}`}>{record.confidence.level}</span>
                             </td>
                           </tr>
                         ))}

@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import NflTeamDashboardExtras from "@/components/nfl/NflTeamDashboardExtras";
 import NflCoachOfYearCase from "@/components/nfl/NflCoachOfYearCase";
+import NflTeamTrendPanel from "@/components/nfl/team-dashboard/NflTeamTrendPanel";
 import {
   NflTeamHeaderOdds,
   NflTeamStatsSidebar,
@@ -59,7 +60,7 @@ export default function NFLTeamGuide2026() {
             <Metric label="Model wins" value={team.projectedWins.toFixed(1)} emphasis />
             <Metric label="Win total" value={team.marketWinTotal?.toFixed(1) ?? "—"} />
             <Metric label="Model edge" value={team.modelVsMarketGap == null ? "—" : formatSigned(team.modelVsMarketGap)} tone={team.modelVsMarketGap == null ? "neutral" : team.modelVsMarketGap > 0 ? "good" : team.modelVsMarketGap < 0 ? "bad" : "neutral"} />
-            <Metric label="Power rank" value={`#${team.powerRank}`} />
+            <Metric label="Legacy 2026 rank" value={`#${team.powerRank}`} />
             <Metric label="Offense" value={`#${team.offenseRank}`} tone={team.offenseRank <= 10 ? "good" : team.offenseRank >= 24 ? "bad" : "neutral"} />
             <Metric label="Defense" value={`#${team.defenseRank}`} tone={team.defenseRank <= 10 ? "good" : team.defenseRank >= 24 ? "bad" : "neutral"} />
             <Metric label="Schedule" value={team.scheduleRank == null ? "—" : `#${team.scheduleRank}`} />
@@ -67,6 +68,7 @@ export default function NFLTeamGuide2026() {
 
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
             <div className="min-w-0 space-y-8">
+              <NflTeamTrendPanel team={team} />
               <NflTeamDashboardExtras team={team} />
               <NflCoachOfYearCase team={team} />
 
@@ -143,7 +145,7 @@ export default function NFLTeamGuide2026() {
 
               <section className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950">
                 <div className="font-black">Preseason status</div>
-                <p className="mt-1">Ratings use the site's 2025 performance model and June preseason totals as the baseline. The VSiN statistics and listed futures odds are displayed as source material and do not overwrite the Joe Knows Ball model.</p>
+                <p className="mt-1">Existing dashboard metrics use the Legacy 2026 Preseason Rating, built from the site's 2025 performance model and June preseason totals. The late-season trend panel uses NFL v0.3 2025 Performance Trend data and does not replace the preseason rank. The VSiN statistics and listed futures odds are displayed as source material and do not overwrite the Joe Knows Ball model.</p>
               </section>
             </div>
 

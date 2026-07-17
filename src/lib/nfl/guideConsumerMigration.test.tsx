@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { readFileSync } from "node:fs";
@@ -81,6 +81,25 @@ describe("/nfl/guide/team/:teamSlug renders from normalized data", () => {
   it("redirects unknown slugs to /nfl/guide (existing behavior)", () => {
     renderTeamRoute("los-angeles-rams");
     expect(screen.getByTestId("guide-index-redirect")).toBeTruthy();
+  });
+
+  it.each([
+    ["jacksonville-jaguars", "Strong late-season improvement"],
+    ["cincinnati-bengals", "Strong late-season improvement"],
+    ["seattle-seahawks", "Stable late-season profile"],
+    ["kansas-city-chiefs", "Strong late-season decline"],
+  ])("renders the shared 2025 trend panel for %s", (slug, classification) => {
+    renderTeamRoute(slug);
+
+    const panel = screen.getByTestId("nfl-team-trend-panel");
+    expect(within(panel).getByText("2025 Late-Season Trend")).toBeTruthy();
+    expect(within(panel).getByText("NFL v0.3 2025 Performance Trend")).toBeTruthy();
+    expect(within(panel).getByText(classification)).toBeTruthy();
+    expect(screen.getByText("Legacy 2026 rank")).toBeTruthy();
+    expect(screen.getByText(/Legacy 2026 Preseason Rating/)).toBeTruthy();
+    expect(screen.getByText(/does not replace the preseason rank/i)).toBeTruthy();
+    expect(panel.textContent).not.toMatch(/2026 projected improvement|roster quality|coaching conclusion|injury conclusion/i);
+    document.body.innerHTML = "";
   });
 });
 
