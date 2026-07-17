@@ -425,6 +425,17 @@ jobs:
         continue-on-error: true
         run: node scripts/generate-mlb-strikeout-prop-details.mjs
 
+      # feat/mlb-bvp-history-context: generates display-only career and
+      # trailing-5-year batter-vs-pitcher history for the "AVG vs P" column
+      # and expandable history panel on /mlb/hr-props and
+      # /mlb/batter-vs-pitcher. Reads the now-finalized hr-props-raw.json;
+      # writes only bvp-history.json, never hr-props-raw.json or
+      # hr-props-best-bets.json. Fails softly per batter/pitcher pair
+      # (never blocks the core HR/K props pipeline above).
+      - name: Generate batter-vs-pitcher history
+        continue-on-error: true
+        run: node scripts/generate-mlb-bvp-history.mjs
+
       - name: Report MLB prop odds enrichment
         run: |
           echo "fetch_odds=${{ steps.fetch_odds.outcome }}"

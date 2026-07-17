@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
@@ -21,6 +21,8 @@ import {
   buildParkSidebarRows,
   type PitcherVsBatterRow,
 } from "@/pages/MlbHrProps";
+import { keyForBvpRow, useMlbBvpHistory } from "@/hooks/useMlbBvpHistory";
+import MlbBvpHistoryPanel, { AvgVsPitcherCell, MlbBvpHistoryPanelLoading, MlbBvpHistoryPanelUnavailable } from "@/components/mlb/MlbBvpHistoryPanel";
 import { cn } from "@/lib/utils";
 
 const DASH = "—";
@@ -93,12 +95,31 @@ function BvpPageGuide() {
 export default function MlbBatterVsPitcher() {
   usePageSeo(getSeoMeta("mlb-batter-vs-pitcher"));
   const { batterVsPitcherRows, dashboard, games, status, pitchers } = useMlbPropsData();
+  // Display-only batter-vs-pitcher history (career + trailing-5Y PA/H/AVG/HR),
+  // joined at render time by (batter id, opposing pitcher id). Never read by
+  // Matchup Score, rankings, filters, confidence tiers, or sorting below.
+  const { loading: bvpHistoryLoading, fileUnavailable: bvpHistoryUnavailable, historyByKey: bvpHistoryByKey } = useMlbBvpHistory();
+  const [bvpExpandedKey, setBvpExpandedKey] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
   const [gameFilter, setGameFilter] = useState("all");
   const [confidenceFilter, setConfidenceFilter] = useState("All tiers");
   const [sortKey, setSortKey] = useState<SortKey>("bestMatchupScore");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
+
+  const toggleBvpRow = (row: PitcherVsBatterRow) => {
+    const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
+    setBvpExpandedKey((current) => (current === key ? null : key));
+  };
+
+  function BvpDetailPanel({ row }: { row: PitcherVsBatterRow }) {
+    if (bvpHistoryLoading) return <MlbBvpHistoryPanelLoading />;
+    if (bvpHistoryUnavailable) return <MlbBvpHistoryPanelUnavailable batter={row.player} />;
+    const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
+    const entry = key ? bvpHistoryByKey.get(key) : undefined;
+    if (!entry) return <MlbBvpHistoryPanelUnavailable batter={row.player} />;
+    return <MlbBvpHistoryPanel entry={entry} batter={row.player} pitcher={row.opposingPitcher} />;
+  }
 
   usePageSeo({
     title: "MLB Batter vs Pitcher Today 2026 — Daily Matchup Model & Rankings | Joe Knows Ball",
@@ -301,6 +322,9 @@ export default function MlbBatterVsPitcher() {
                         <SortTh k="batterPowerScore" label="Batter Quality" help="Batter-side component: current-season power and contact quality." />
                         <SortTh k="opposingPitcherHitsVs" label="Pitcher Contact Allowed" help="How much contact the opposing pitcher has allowed to comparable hitters. Higher favors the batter." />
                         <SortTh k="pitcherVulnerabilityScore" label="Pitcher Power Risk" help="How vulnerable the opposing starter has been to hard contact and home runs. Higher favors the batter." />
+                        <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap" title="Batter's career batting average against this specific opposing starter. Historical context only -- not used in Matchup Score or any ranking. Click a row to see PA, H, HR, and a Career / Last 5Y toggle.">
+                          AVG vs P
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -308,11 +332,31 @@ export default function MlbBatterVsPitcher() {
                         const pitcherTeam = getPitcherTeamForBatter(row, pitchers);
                         const bg = i % 2 === 0 ? "bg-white" : "bg-slate-50/70";
                         const sbg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
+                        const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
+                        const isBvpExpanded = bvpExpandedKey === bvpKey;
+                        const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
+                        const bvpRowLabel = `${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`;
+                        const onBvpRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            toggleBvpRow(row);
+                          }
+                        };
                         return (
-                          <tr key={`${row.rank}-${row.player}-${row.team}-${row.opposingPitcher}`} className={bg}>
+                          <Fragment key={`${row.rank}-${row.player}-${row.team}-${row.opposingPitcher}`}>
+                          <tr
+                            onClick={() => toggleBvpRow(row)}
+                            onKeyDown={onBvpRowKeyDown}
+                            role="button"
+                            tabIndex={0}
+                            aria-expanded={isBvpExpanded}
+                            aria-label={bvpRowLabel}
+                            className={cn(bg, "cursor-pointer transition-colors hover:brightness-[0.98]")}
+                          >
                             <td className={`sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400 ${sbg}`}>{row.rank}</td>
                             <td className={`sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1 ${sbg}`}>
                               <div className="flex items-center gap-1.5">
+                                <span aria-hidden="true" className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
                                 <TeamLogoText team={row.team} size={16} />
                                 <span className="font-semibold text-slate-900 whitespace-nowrap text-[11px]">{row.player}</span>
                               </div>
@@ -345,10 +389,21 @@ export default function MlbBatterVsPitcher() {
                               </div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1"><GradCell value={row.pitcherVulnerabilityScore} display={fmt(row.pitcherVulnerabilityScore)} avg={50} spread={20} /></td>
+                            <td className="border-b border-slate-100 px-2 py-1">
+                              <AvgVsPitcherCell entry={bvpEntry} loading={bvpHistoryLoading} />
+                            </td>
                           </tr>
+                          {isBvpExpanded && (
+                            <tr>
+                              <td colSpan={10} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
+                                <BvpDetailPanel row={row} />
+                              </td>
+                            </tr>
+                          )}
+                          </Fragment>
                         );
                       }) : (
-                        <tr><td colSpan={9} className="px-3 py-6 text-center text-sm text-slate-500">No batters match the current filters.</td></tr>
+                        <tr><td colSpan={10} className="px-3 py-6 text-center text-sm text-slate-500">No batters match the current filters.</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -358,22 +413,32 @@ export default function MlbBatterVsPitcher() {
                 <div className="grid gap-2 p-3 md:hidden">
                   {filteredRows.slice(0, 50).map((row) => {
                     const pitcherTeam = getPitcherTeamForBatter(row, pitchers);
+                    const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
+                    const isBvpExpanded = bvpExpandedKey === bvpKey;
+                    const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
                     return (
                       <article key={`m-${row.rank}-${row.player}`} className="rounded-xl border border-slate-100 overflow-hidden shadow-sm bg-white">
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 border-b border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => toggleBvpRow(row)}
+                          aria-expanded={isBvpExpanded}
+                          aria-label={`${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`}
+                          className="flex w-full items-center justify-between gap-2 px-3 py-2 bg-slate-50 border-b border-slate-100 text-left hover:bg-slate-100"
+                        >
                           <div className="flex items-center gap-2 min-w-0">
+                            <span aria-hidden="true" className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
                             <span className="text-[10px] font-black text-slate-300">#{row.rank}</span>
                             <span className="font-black text-slate-900 text-sm truncate">{row.player}</span>
                           </div>
                           <PropScoreBadge score={row.bestMatchupScore} />
-                        </div>
+                        </button>
                         <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] border-b border-slate-100">
                           <TeamLogoText team={row.team} size={13} />
                           <span className="text-slate-300">vs</span>
                           <TeamLogoText team={pitcherTeam} size={13} />
                           <span className="text-slate-500 truncate">{row.opposingPitcher}</span>
                         </div>
-                        <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]">
+                        <div className="grid grid-cols-5 divide-x divide-slate-100 text-center text-[10px]">
                           <div className="bg-sky-50/60 px-1 py-2">
                             <div className="text-[9px] font-black uppercase tracking-wide text-sky-500 mb-1">xBA</div>
                             <div className="font-black text-slate-800">{row.xba != null ? row.xba.toFixed(3) : DASH}</div>
@@ -390,7 +455,16 @@ export default function MlbBatterVsPitcher() {
                             <div className="text-[9px] font-black uppercase tracking-wide text-violet-500 mb-1">Pwr Risk</div>
                             <div className="font-black text-slate-800">{fmt(row.pitcherVulnerabilityScore)}</div>
                           </div>
+                          <div className="bg-slate-50 px-1 py-2">
+                            <div className="text-[9px] font-black uppercase tracking-wide text-slate-500 mb-1">AVG vs P</div>
+                            <div className="font-black text-slate-800"><AvgVsPitcherCell entry={bvpEntry} loading={bvpHistoryLoading} /></div>
+                          </div>
                         </div>
+                        {isBvpExpanded && (
+                          <div className="border-t border-slate-100 p-2">
+                            <BvpDetailPanel row={row} />
+                          </div>
+                        )}
                       </article>
                     );
                   })}
