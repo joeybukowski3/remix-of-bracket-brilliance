@@ -47,19 +47,20 @@ describe("bvp-history isolation", () => {
     }
   });
 
-  it("the bvp-history generator has exactly one writeFileSync call, targeting its own OUTPUT_PATH", () => {
+  it("the bvp-history generator has exactly one writeFileSync call, targeting its own output path", () => {
     const source = readScript("scripts/generate-mlb-bvp-history.mjs");
     const writeCalls = source.match(/writeFileSync\([^)]*\)/g) ?? [];
     assert.equal(writeCalls.length, 1, `expected exactly one writeFileSync call, found ${writeCalls.length}`);
-    assert.match(writeCalls[0], /OUTPUT_PATH/);
+    assert.match(writeCalls[0], /args\.output/);
     assert.doesNotMatch(writeCalls[0], /hr-props-raw|hr-props-best-bets/);
   });
 
-  it("the bvp-history generator's only readFileSync call targets its own input path (hr-props-raw.json by default), never hr-props-best-bets.json", () => {
+  it("the bvp-history generator has exactly two readFileSync calls -- its own input path and its own prior output (same-slate cache) -- never hr-props-best-bets.json", () => {
     const source = readScript("scripts/generate-mlb-bvp-history.mjs");
     const readCalls = source.match(/readFileSync\([^)]*\)/g) ?? [];
-    assert.equal(readCalls.length, 1, `expected exactly one readFileSync call, found ${readCalls.length}`);
-    assert.match(readCalls[0], /args\.input/);
-    assert.doesNotMatch(readCalls[0], /hr-props-best-bets/);
+    assert.equal(readCalls.length, 2, `expected exactly two readFileSync calls (input + same-slate cache), found ${readCalls.length}`);
+    assert.ok(readCalls.some((call) => /args\.input/.test(call)), "one readFileSync call must read args.input (hr-props-raw.json by default)");
+    assert.ok(readCalls.some((call) => /outputPath/.test(call)), "one readFileSync call must read the generator's own prior output, for same-slate cache reuse");
+    for (const call of readCalls) assert.doesNotMatch(call, /hr-props-best-bets/);
   });
 });

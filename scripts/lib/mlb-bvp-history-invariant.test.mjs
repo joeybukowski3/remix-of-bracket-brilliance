@@ -78,8 +78,8 @@ const CASES = [
 describe("real-world invariant violations (fixtures captured 2026-07-17)", () => {
   for (const testCase of CASES) {
     describe(testCase.name, () => {
-      const career = parseVsPlayerSplit(loadFixture(testCase.totalFixture));
-      const last5y = parseVsPlayerSplit(loadFixture(testCase.fiveYFixture));
+      const career = parseVsPlayerSplit(loadFixture(testCase.totalFixture), "vsPlayerTotal");
+      const last5y = parseVsPlayerSplit(loadFixture(testCase.fiveYFixture), "vsPlayer5Y");
 
       it("parses the raw vsPlayerTotal fixture to the documented career values", () => {
         assert.deepEqual(career, testCase.expectedCareer);

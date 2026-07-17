@@ -32,6 +32,12 @@ describe("keyForBvpRow", () => {
     expect(keyForBvpRow(665742, null)).toBeNull();
     expect(keyForBvpRow(undefined, undefined)).toBeNull();
   });
+
+  it("returns null when either id is not a positive finite integer (zero, negative, non-integer)", () => {
+    expect(keyForBvpRow(0, 605400)).toBeNull();
+    expect(keyForBvpRow(665742, -1)).toBeNull();
+    expect(keyForBvpRow(665742.5, 605400)).toBeNull();
+  });
 });
 
 describe("useMlbBvpHistory", () => {

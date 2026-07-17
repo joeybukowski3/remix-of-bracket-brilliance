@@ -35,10 +35,15 @@ type State = {
 
 const POLL_INTERVAL_MS = 10 * 60 * 1000;
 
-/** Builds the same key used by the generator, from a batter/pitcher identity pair. Display-only join -- never used in scoring, ranking, filtering, or sorting. */
+/**
+ * Builds the same key used by the generator, from a batter/pitcher
+ * identity pair. Display-only join -- never used in scoring, ranking,
+ * filtering, or sorting. Delegates all validation to buildBvpHistoryKey
+ * (null unless both ids are positive finite integers) rather than
+ * duplicating the rule here, so the two can never drift apart.
+ */
 export function keyForBvpRow(batterId: number | null | undefined, pitcherId: number | null | undefined): string | null {
-  if (batterId == null || pitcherId == null) return null;
-  return buildBvpHistoryKey(batterId, pitcherId) as string;
+  return (buildBvpHistoryKey(batterId, pitcherId) as string | null) ?? null;
 }
 
 export function useMlbBvpHistory() {

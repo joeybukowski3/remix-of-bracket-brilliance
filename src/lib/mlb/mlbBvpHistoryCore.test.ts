@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildBvpHistoryEntry,
   buildBvpHistoryKey,
+  filterCacheForSlate,
   parseVsPlayerSplit,
   violatesCareerInvariant,
   // @ts-expect-error -- plain JS module, no type declarations
@@ -15,22 +16,41 @@ describe("buildBvpHistoryKey", () => {
   it("is order-sensitive", () => {
     expect(buildBvpHistoryKey(1, 2)).not.toBe(buildBvpHistoryKey(2, 1));
   });
+
+  it("returns null unless both ids are positive finite integers", () => {
+    expect(buildBvpHistoryKey(null, 2)).toBeNull();
+    expect(buildBvpHistoryKey(1, undefined)).toBeNull();
+    expect(buildBvpHistoryKey(0, 2)).toBeNull();
+    expect(buildBvpHistoryKey(-1, 2)).toBeNull();
+    expect(buildBvpHistoryKey(1.5, 2)).toBeNull();
+    expect(buildBvpHistoryKey(NaN, 2)).toBeNull();
+  });
 });
 
 describe("parseVsPlayerSplit", () => {
-  it("extracts pa/h/avg/hr from a real-shaped MLB StatsAPI vsPlayer response", () => {
-    const json = { stats: [{ splits: [{ stat: { plateAppearances: 9, hits: 3, avg: ".375", homeRuns: 1 } }] }] };
-    expect(parseVsPlayerSplit(json)).toEqual({ pa: 9, h: 3, avg: 0.375, hr: 1 });
+  it("extracts pa/h/avg/hr when the stats[] block's type.displayName matches expectedStatsType", () => {
+    const json = { stats: [{ type: { displayName: "vsPlayerTotal" }, splits: [{ stat: { plateAppearances: 9, hits: 3, avg: ".375", homeRuns: 1 } }] }] };
+    expect(parseVsPlayerSplit(json, "vsPlayerTotal")).toEqual({ pa: 9, h: 3, avg: 0.375, hr: 1 });
+  });
+
+  it("returns null (mismatched) when no block matches expectedStatsType", () => {
+    const json = { stats: [{ type: { displayName: "vsPlayer5Y" }, splits: [{ stat: { plateAppearances: 9, hits: 3, avg: ".375", homeRuns: 1 } }] }] };
+    expect(parseVsPlayerSplit(json, "vsPlayerTotal")).toBeNull();
   });
 
   it("returns null when there are no splits (never faced)", () => {
-    expect(parseVsPlayerSplit({ stats: [{ splits: [] }] })).toBeNull();
+    expect(parseVsPlayerSplit({ stats: [{ type: { displayName: "vsPlayerTotal" }, splits: [] }] }, "vsPlayerTotal")).toBeNull();
   });
 
   it("returns null for entirely missing input, never throwing", () => {
-    expect(parseVsPlayerSplit(null)).toBeNull();
-    expect(parseVsPlayerSplit(undefined)).toBeNull();
-    expect(parseVsPlayerSplit({})).toBeNull();
+    expect(parseVsPlayerSplit(null, "vsPlayerTotal")).toBeNull();
+    expect(parseVsPlayerSplit(undefined, "vsPlayerTotal")).toBeNull();
+    expect(parseVsPlayerSplit({}, "vsPlayerTotal")).toBeNull();
+  });
+
+  it("returns null when plateAppearances is zero (no zero-filled no-history windows)", () => {
+    const json = { stats: [{ type: { displayName: "vsPlayerTotal" }, splits: [{ stat: { plateAppearances: 0, hits: 0, avg: ".000", homeRuns: 0 } }] }] };
+    expect(parseVsPlayerSplit(json, "vsPlayerTotal")).toBeNull();
   });
 });
 
@@ -90,5 +110,24 @@ describe("violatesCareerInvariant", () => {
 
   it("ignores AVG -- a higher recent average alone is never a violation", () => {
     expect(violatesCareerInvariant({ pa: 100, h: 20, avg: 0.2, hr: 2 }, { pa: 20, h: 8, avg: 0.4, hr: 1 })).toBe(false);
+  });
+});
+
+describe("filterCacheForSlate", () => {
+  const entry = { key: "1|2", batterId: 1, pitcherId: 2, batter: "A", pitcher: "P", career: { pa: 10, h: 3, avg: 0.3, hr: 1 }, last5y: null };
+
+  it("reuses entries when the payload's date matches the requested slate date", () => {
+    const map = filterCacheForSlate({ date: "2026-07-17", history: [entry] }, "2026-07-17");
+    expect(map.size).toBe(1);
+    expect(map.get("1|2")).toEqual(entry);
+  });
+
+  it("discards everything from a prior slate date", () => {
+    const map = filterCacheForSlate({ date: "2026-07-16", history: [entry] }, "2026-07-17");
+    expect(map.size).toBe(0);
+  });
+
+  it("returns an empty map for a null payload, never throwing", () => {
+    expect(filterCacheForSlate(null, "2026-07-17").size).toBe(0);
   });
 });
