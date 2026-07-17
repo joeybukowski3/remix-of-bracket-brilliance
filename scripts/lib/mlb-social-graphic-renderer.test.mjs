@@ -1,8 +1,18 @@
+/**
+ * mlb-social-graphic-renderer.test.mjs
+ *
+ * Not in vitest.config.ts's own include glob (src/**\/*.{test,spec}.{ts,tsx}),
+ * but actually executed as part of the full suite via the side-effecting
+ * import in src/lib/mlb/mlbSocialGraphicRenderer.test.ts -- must keep using
+ * vitest's describe/expect/it (not node:test) for that import to register
+ * these tests with vitest's collector.
+ */
 import { describe, expect, it } from "vitest";
 import {
   SOCIAL_GRAPHIC_GEOMETRY,
   calculateProjectionDifference,
   createLocalMlbLogoResolver,
+  createRemoteMlbLogoResolver,
   extractRenderedRowsFromSvg,
   formatProjectionDifference,
   getHomeRunIndicators,
@@ -49,6 +59,10 @@ function kRow(index, overrides = {}) {
 
 const fiveHrRows = () => [1, 2, 3, 4, 5].map((index) => hrRow(index));
 const fiveKRows = () => [1, 2, 3, 4, 5].map((index) => kRow(index));
+
+function firstRowSlice(svg) {
+  return svg.slice(svg.indexOf('<g data-social-row="0"'), svg.indexOf('<g data-social-row="1"'));
+}
 
 describe("projection difference and recommendation", () => {
   it("calculates projected strikeouts minus the market line", () => {
@@ -119,7 +133,12 @@ describe("inline indicator rules", () => {
   });
 
   it("does not qualify values below the Home Run thresholds", () => {
-    expect(getHomeRunIndicators({ hrScore: 77.9, barrelPercent: 17.9, hardHitPercent: 54.9, last30: 7, last7: 2 })).toEqual([]);
+    expect(getHomeRunIndicators({ hrScore: 69.9, barrelPercent: 17.9, hardHitPercent: 54.9, last30: 7, last7: 2 })).toEqual([]);
+  });
+
+  it("fire-icon threshold is 70, matching the website's SocialTableHR trigger (not the old 78)", () => {
+    expect(getHomeRunIndicators({ hrScore: 69.9 })).toEqual([]);
+    expect(getHomeRunIndicators({ hrScore: 70 })).toEqual(["score"]);
   });
 
   it("applies strikeout projection and K Score thresholds", () => {
@@ -165,6 +184,51 @@ describe("deterministic production SVG", () => {
     expect(fallback).toContain('data-team-logo-fallback="NYY"');
   });
 
+  describe("HR Score pill color matches the website's SocialTableHR sc() exactly (no gray floor for real scores)", () => {
+    it.each([
+      [72, "#22c55e"],
+      [67, "#4ade80"],
+      [63, "#facc15"],
+      [40, "#fb923c"],
+    ])("hrScore=%s -> pill fill %s", (hrScore, expectedFill) => {
+      const rows = fiveHrRows();
+      rows[0] = hrRow(1, { hrScore });
+      const svg = renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows });
+      expect(firstRowSlice(svg)).toContain(`fill="${expectedFill}"`);
+    });
+
+    it("a genuinely missing HR score stays muted gray, not a fabricated tier", () => {
+      const rows = fiveHrRows();
+      rows[0] = hrRow(1, { hrScore: null });
+      const svg = renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows });
+      expect(firstRowSlice(svg)).toContain('fill="#8A97A8"');
+    });
+  });
+
+  describe("Barrel% / Hard-Hit% / L7 / L30 use data-driven color, not a fixed color regardless of value", () => {
+    it("Barrel% and Hard-Hit% follow the website's statCol(hi, mid) bands", () => {
+      const rows = fiveHrRows();
+      rows[0] = hrRow(1, { barrelRate: 21, hardHitRate: 30 });
+      const highRow = firstRowSlice(renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows }));
+      expect(highRow).toContain('fill="#22c55e"'); // barrel >= 20
+      expect(highRow).toContain('fill="#94a3b8"'); // hardHit below 50
+
+      const rows2 = fiveHrRows();
+      rows2[0] = hrRow(1, { barrelRate: 5, hardHitRate: 51 });
+      const mixedRow = firstRowSlice(renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows: rows2 }));
+      expect(mixedRow).toContain('fill="#86efac"'); // hardHit >= 50, < 54
+    });
+
+    it("L7 and L30 follow the website's green/gold/gray bands", () => {
+      const rows = fiveHrRows();
+      rows[0] = hrRow(1, { last7HR: 3, last30HR: 5 });
+      const svg = renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows });
+      const firstRow = firstRowSlice(svg);
+      expect(firstRow).toContain('fill="#22c55e"'); // last7HR >= 3
+      expect(firstRow).toContain('fill="#facc15"'); // last30HR >= 5, < 8
+    });
+  });
+
   it("uses N/A when recommended-side odds are missing", () => {
     const rows = fiveKRows();
     rows[0] = kRow(1, { projectedKs: 5, oddsOver: "+130", oddsUnder: null });
@@ -185,7 +249,7 @@ describe("deterministic production SVG", () => {
     const rows = fiveKRows();
     rows[0] = kRow(1, { projectedKs: 8, strikeoutScore: 86 });
     const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
-    const firstRow = svg.slice(svg.indexOf('<g data-social-row="0"'), svg.indexOf('<g data-social-row="1"'));
+    const firstRow = firstRowSlice(svg);
     expect(firstRow).toContain('data-icon="projection"');
     expect(firstRow).not.toContain('points="1034,');
   });
@@ -211,5 +275,83 @@ describe("deterministic production SVG", () => {
     const before = structuredClone(rows);
     expect(normalizeHomeRunRows(rows)).toHaveLength(5);
     expect(rows).toEqual(before);
+  });
+});
+
+describe("createRemoteMlbLogoResolver", () => {
+  function fakePngResponse(bytes = [1, 2, 3, 4]) {
+    return {
+      ok: true,
+      headers: { get: (name) => (name === "content-type" ? "image/png" : null) },
+      arrayBuffer: async () => Uint8Array.from(bytes).buffer,
+    };
+  }
+
+  it("embeds a real fetched logo as a base64 data URI", async () => {
+    const fetchImpl = async (url) => {
+      expect(url).toContain("espncdn.com");
+      expect(url).toContain("bos.png");
+      return fakePngResponse();
+    };
+    const resolve = await createRemoteMlbLogoResolver({ teams: ["BOS"], fetchImpl });
+    const logo = resolve("BOS");
+    expect(logo).toMatch(/^data:image\/png;base64,/);
+  });
+
+  it("prefetches exactly the distinct teams requested, case-insensitively deduplicated", async () => {
+    const requested = [];
+    const fetchImpl = async (url) => {
+      requested.push(url);
+      return fakePngResponse();
+    };
+    await createRemoteMlbLogoResolver({ teams: ["bos", "BOS", "nyy", ""], fetchImpl });
+    expect(requested).toHaveLength(2);
+  });
+
+  it("falls back to the local placeholder logo on a non-200 response", async () => {
+    const fetchImpl = async () => ({ ok: false, status: 500 });
+    const resolve = await createRemoteMlbLogoResolver({ teams: ["BOS"], fetchImpl });
+    const logo = resolve("BOS");
+    expect(logo).toMatch(/^data:image\/svg\+xml;base64,/);
+  });
+
+  it("falls back to the local placeholder logo on a network error (never throws, stays screenshot-safe)", async () => {
+    const fetchImpl = async () => {
+      throw new Error("network unreachable");
+    };
+    const resolve = await createRemoteMlbLogoResolver({ teams: ["BOS"], fetchImpl });
+    const logo = resolve("BOS");
+    expect(logo).toMatch(/^data:image\/svg\+xml;base64,/);
+  });
+
+  it("fetches the shared generic-MLB fallback logo (getEmailTeamLogoUrl's own FALLBACK_LOGO) for an unrecognized team", async () => {
+    const requestedUrls = [];
+    const fetchImpl = async (url) => {
+      requestedUrls.push(url);
+      return fakePngResponse();
+    };
+    const resolve = await createRemoteMlbLogoResolver({ teams: ["ZZZ"], fetchImpl });
+    const logo = resolve("ZZZ");
+    expect(logo).toMatch(/^data:image\/png;base64,/);
+    expect(requestedUrls[0]).toContain("espncdn.com");
+  });
+
+  it("falls through to null (renderTeamLogo's own generic circle badge) when the fetch fails and no local placeholder file exists either", async () => {
+    const fetchImpl = async () => ({ ok: false, status: 404 });
+    const resolve = await createRemoteMlbLogoResolver({ teams: ["ZZZ"], fetchImpl });
+    // "zzz.svg" has no local placeholder file, matching createLocalMlbLogoResolver's
+    // own null-on-missing-file contract -- renderTeamLogo treats a null/falsy
+    // resolveLogo result as "draw the generic circle+abbreviation badge",
+    // never throwing.
+    expect(resolve("ZZZ")).toBeNull();
+  });
+
+  it("resolver embeds into a real SVG render with no external href (screenshot-safe, no live network needed at rasterize time)", async () => {
+    const fetchImpl = async () => fakePngResponse();
+    const resolve = await createRemoteMlbLogoResolver({ teams: ["BOS", "NYY"], fetchImpl });
+    const rows = fiveHrRows();
+    const svg = renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows, resolveLogo: resolve });
+    expect(svg).not.toContain('href="http');
+    expect(svg).toContain('data-team-logo="BOS"');
   });
 });

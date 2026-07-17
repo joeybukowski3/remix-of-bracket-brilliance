@@ -51,6 +51,20 @@ function waitingStatusFor(reason) {
  * @param {boolean} [params.alreadyPosted]  today's slate already has a post receipt
  * @param {boolean} [params.confirmationSourceFailed] the confirmation data source could not be verified
  * @param {string} [params.waitingReason]   WaitingReason.* to use when short of target before cutoff
+ * @param {number} [params.confirmedGameCount] distinct games represented in the confirmed pool (default
+ *                                              Infinity -- a no-op for callers with no game-diversity concept,
+ *                                              e.g. K/Numerology's single-signal readiness checks)
+ * @param {number} [params.minConfirmedGames]  minimum distinct games required before a full-count table is
+ *                                              treated as "ready early" (default 1 -- no additional
+ *                                              requirement). Prevents an early-confirmed single game from
+ *                                              alone satisfying readiness and monopolizing the table with
+ *                                              one matchup's hitters; still overridden by the final cutoff
+ *                                              below, which posts whatever is confirmed rather than miss the
+ *                                              window entirely.
+ * @param {number} [params.confirmedRowsWithoutGameIdentity] confirmed rows whose game could not be reliably
+ *                                              identified (reporting only -- echoed onto the result so every
+ *                                              caller, including ones that only propagate the readiness
+ *                                              object, can log it)
  */
 export function resolvePostingReadiness({
   timing,
@@ -61,10 +75,23 @@ export function resolvePostingReadiness({
   alreadyPosted = false,
   confirmationSourceFailed = false,
   waitingReason = WaitingReason.LINEUPS,
+  confirmedGameCount = Infinity,
+  minConfirmedGames = 1,
+  confirmedRowsWithoutGameIdentity = 0,
 } = {}) {
   const cap = Number.isFinite(maxTableSize) ? maxTableSize : targetCount;
   const minutesUntilFirstPitch = timing?.minutesUntilFirstPitch ?? null;
   const phase = timing?.phase ?? "NO_GAMES";
+  // Reporting-only fields, independent of the ready/wait/skip decision below.
+  // Never claim "full slate" from a raw headcount -- coverage is confirmed
+  // games divided by every game on today's schedule (timing.gameCount from
+  // computeSlateTiming), not just the confirmed subset.
+  const reportedConfirmedGameCount = Number.isFinite(confirmedGameCount) ? confirmedGameCount : null;
+  const scheduledGameCount = Number.isFinite(timing?.gameCount) ? timing.gameCount : null;
+  const confirmedGameCoverage =
+    reportedConfirmedGameCount != null && scheduledGameCount != null && scheduledGameCount > 0
+      ? reportedConfirmedGameCount / scheduledGameCount
+      : null;
 
   const result = (finalStatus, ready, selectedCount = 0) => ({
     ready,
@@ -75,6 +102,10 @@ export function resolvePostingReadiness({
     selectedCount,
     projectedExcludedCount,
     minutesUntilFirstPitch,
+    confirmedGameCount: reportedConfirmedGameCount,
+    confirmedRowsWithoutGameIdentity,
+    scheduledGameCount,
+    confirmedGameCoverage,
   });
 
   // Fail-closed guards first -- order matters.
@@ -95,9 +126,11 @@ export function resolvePostingReadiness({
   }
 
   // We have confirmed selections. Publish immediately once we have a full
-  // table, or at the final cutoff post whatever confirmed rows we have
-  // (smaller table allowed -- never padded with projected players).
-  const hasFullTable = confirmedCount >= targetCount;
+  // table AND enough game diversity, or at the final cutoff post whatever
+  // confirmed rows we have regardless of diversity (smaller table allowed --
+  // never padded with projected players, and never silently skip the
+  // window just because only one game posted first).
+  const hasFullTable = confirmedCount >= targetCount && confirmedGameCount >= minConfirmedGames;
   if (hasFullTable || atCutoff) {
     return result(ReadinessStatus.READY_CONFIRMED_SELECTIONS, true, Math.min(confirmedCount, cap));
   }
@@ -105,4 +138,22 @@ export function resolvePostingReadiness({
   // Some confirmed rows, but short of the preferred table size and not yet at
   // the cutoff -- keep waiting for more confirmations / opposing lineup / markets.
   return result(waitingStatusFor(waitingReason), false);
+}
+
+/**
+ * Shared log-line fragment for a readiness result's game-coverage fields,
+ * so every HR readiness call site (post-mlb-hr-props-to-x.mjs,
+ * check-mlb-x-posting-readiness.mjs, mlb-x-poll-gate.mjs) reports the same
+ * wording -- e.g. "confirmedGames=2 scheduledGames=15 coverage=13%" -- and
+ * never silently implies full-slate coverage from a raw headcount alone.
+ * Fields that don't apply (a readiness result with no game-diversity
+ * concept, e.g. K/Numerology) render as "n/a" rather than a fabricated
+ * number.
+ */
+export function formatGameCoverageLogLine(readiness) {
+  const confirmedGames = readiness?.confirmedGameCount ?? "n/a";
+  const scheduledGames = readiness?.scheduledGameCount ?? "n/a";
+  const coverage = readiness?.confirmedGameCoverage != null ? `${Math.round(readiness.confirmedGameCoverage * 100)}%` : "n/a";
+  const withoutIdentity = readiness?.confirmedRowsWithoutGameIdentity ?? 0;
+  return `confirmedGames=${confirmedGames} scheduledGames=${scheduledGames} coverage=${coverage} rowsWithoutGameIdentity=${withoutIdentity}`;
 }

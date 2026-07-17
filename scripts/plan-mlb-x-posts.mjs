@@ -43,6 +43,15 @@ emit({
   k_should_run: result.plan.k.shouldRun,
   hr_status: result.plan.hr.reason,
   k_status: result.plan.k.reason,
+  // Game-diversity/coverage reporting for the HR readiness gate -- see
+  // mlb-x-readiness.mjs's formatGameCoverageLogLine. Never claims full-slate
+  // coverage from a raw headcount; "n/a"/0 once already posted or before any
+  // live data has been evaluated.
+  hr_confirmed_game_count: result.plan.hr.confirmedGameCount ?? "n/a",
+  hr_scheduled_game_count: result.plan.hr.scheduledGameCount ?? "n/a",
+  hr_confirmed_game_coverage:
+    result.plan.hr.confirmedGameCoverage != null ? result.plan.hr.confirmedGameCoverage.toFixed(2) : "n/a",
+  hr_confirmed_rows_without_game_identity: result.plan.hr.confirmedRowsWithoutGameIdentity ?? 0,
   plan_path: planPath,
   snapshot_path: snapshotPath,
 });
