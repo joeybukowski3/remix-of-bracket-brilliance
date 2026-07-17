@@ -2,11 +2,12 @@
  * mlb-x-artifact-caption.test.mjs
  * Run via: node --test scripts/lib/mlb-x-artifact-caption.test.mjs
  *
- * Previously no dedicated test file existed for this module. Covers:
+ * Covers:
  *   - buildHrCaptionFromArtifact stays byte-for-byte unchanged (regression --
  *     this rewrite only touches the K value-post caption)
- *   - buildKCaptionFromArtifact: leads with the top-ranked play, contains no
- *     CTA/URL/hashtags/question, fits the 280-char budget, safe fallback
+ *   - buildKCaptionFromArtifact: EXACT approved template for the top-ranked
+ *     play only -- no date heading, no remaining rows, no odds, no CTA, no
+ *     URL, no hashtags, no question
  *   - K_VALUE_REPLY_CAPTION: exact approved static text
  */
 import { describe, it } from "node:test";
@@ -54,78 +55,94 @@ describe("K_VALUE_REPLY_CAPTION -- exact approved static text", () => {
   });
 });
 
-describe("buildKCaptionFromArtifact -- leads with the top-ranked play, no CTA/URL/hashtags/question", () => {
+describe("buildKCaptionFromArtifact -- EXACT approved template, top play only", () => {
   it("no confirmed rows -> skipped", () => {
     const result = buildKCaptionFromArtifact({ slateDate: "2026-07-17", rows: [] });
     assert.equal(result.skipped, true);
     assert.equal(result.caption, "");
   });
 
-  it("leads the caption with the rank-1 row's pitcher/side/line/odds/projection/edge", () => {
-    const artifact = { slateDate: "2026-07-17", rows: [kRow()] };
-    const result = buildKCaptionFromArtifact(artifact);
-    assert.equal(result.skipped, false);
-    assert.ok(result.caption.startsWith("JoeKnowsBall MLB K Props - Jul 17\n\nTop Value Play: Gavin Williams (CLE) vs PIT"));
-    assert.ok(result.caption.includes("OVER 6.5 Ks (-150)"));
-    assert.ok(result.caption.includes("Model 8.1 K (+1.6 edge)"));
-  });
-
-  it("contains no CTA, URL, hashtags, or question mark", () => {
+  it("exact Over example from the approved spec", () => {
     const artifact = {
       slateDate: "2026-07-17",
-      rows: [kRow(), kRow({ rank: 2, pitcher: "Some Guy", team: "NYY", side: "UNDER", kLine: 5.5, odds: "+110", projectedKs: 3.9, projectionEdge: -1.6 })],
+      rows: [{ rank: 1, pitcher: "Logan Gilbert", team: "SEA", opponent: "HOU", side: "OVER", kLine: 5.5, odds: "-120", projectedKs: 7.1, projectionEdge: 1.6 }],
     };
     const result = buildKCaptionFromArtifact(artifact);
+    assert.equal(result.skipped, false);
+    assert.equal(
+      result.caption,
+      ["Logan Gilbert leads today's qualified K value board.", "", "Model projection: 7.1 K", "Market line: 5.5 K", "Recommended side: Over 5.5", "Projection edge: +1.6 K"].join("\n"),
+    );
+  });
+
+  it("exact Under example from the approved spec", () => {
+    const artifact = {
+      slateDate: "2026-07-17",
+      rows: [{ rank: 1, pitcher: "Jose Berrios", team: "TOR", opponent: "NYY", side: "UNDER", kLine: 5.5, odds: "+105", projectedKs: 4.3, projectionEdge: -1.2 }],
+    };
+    const result = buildKCaptionFromArtifact(artifact);
+    assert.equal(result.skipped, false);
+    assert.equal(
+      result.caption,
+      ["Jose Berrios leads today's qualified K value board.", "", "Model projection: 4.3 K", "Market line: 5.5 K", "Recommended side: Under 5.5", "Projection edge: -1.2 K"].join("\n"),
+    );
+  });
+
+  it("describes ONLY the top-ranked (rank 1) row -- ignores every other row entirely", () => {
+    const artifact = {
+      slateDate: "2026-07-17",
+      rows: [
+        kRow({ rank: 1, pitcher: "First", side: "OVER" }),
+        kRow({ rank: 2, pitcher: "Second", team: "NYY", side: "UNDER" }),
+        kRow({ rank: 3, pitcher: "Third", team: "LAD", side: "OVER" }),
+      ],
+    };
+    const result = buildKCaptionFromArtifact(artifact);
+    assert.equal(result.caption.includes("Second"), false);
+    assert.equal(result.caption.includes("Third"), false);
+    assert.equal(result.caption.includes("2."), false);
+    assert.equal(result.caption.includes("3."), false);
+  });
+
+  it("contains no date heading, no odds, no CTA, URL, hashtags, or question mark", () => {
+    const artifact = { slateDate: "2026-07-17", rows: [kRow()] };
+    const result = buildKCaptionFromArtifact(artifact);
+    assert.equal(result.caption.includes("Jul 17"), false);
+    assert.equal(result.caption.includes(kRow().odds), false);
     assert.equal(result.caption.includes("?"), false);
     assert.equal(/link in bio/i.test(result.caption), false);
     assert.equal(/#\w/.test(result.caption), false);
     assert.equal(/https?:\/\//i.test(result.caption), false);
+    assert.equal(/JoeKnowsBall MLB K Props/i.test(result.caption), false);
   });
 
-  it("lists the remaining rows compactly after the top play, in rank order", () => {
-    const artifact = {
-      slateDate: "2026-07-17",
-      rows: [
-        kRow({ rank: 1, pitcher: "First", projectedKs: 8.1, kLine: 6.5, side: "OVER", odds: "-150" }),
-        kRow({ rank: 2, pitcher: "Second", team: "NYY", side: "UNDER", kLine: 5.5, odds: "+110" }),
-        kRow({ rank: 3, pitcher: "Third", team: "LAD", side: "OVER", kLine: 7.5, odds: "-120" }),
-      ],
-    };
+  it("uses title case Over/Under, never all caps", () => {
+    const overResult = buildKCaptionFromArtifact({ slateDate: "2026-07-17", rows: [kRow({ side: "OVER" })] });
+    assert.ok(overResult.caption.includes("Over"));
+    assert.equal(overResult.caption.includes("OVER"), false);
+    const underResult = buildKCaptionFromArtifact({ slateDate: "2026-07-17", rows: [kRow({ side: "UNDER", projectionEdge: -1.6 })] });
+    assert.ok(underResult.caption.includes("Under"));
+    assert.equal(underResult.caption.includes("UNDER"), false);
+  });
+
+  it("always renders exactly one decimal place for projection, line, and edge, even for whole numbers", () => {
+    const artifact = { slateDate: "2026-07-17", rows: [kRow({ projectedKs: 7, kLine: 5, side: "OVER", projectionEdge: 2 })] };
     const result = buildKCaptionFromArtifact(artifact);
-    assert.ok(result.caption.includes("2. Second NYY — UNDER 5.5 (+110)"));
-    assert.ok(result.caption.includes("3. Third LAD — OVER 7.5 (-120)"));
+    assert.ok(result.caption.includes("Model projection: 7.0 K"));
+    assert.ok(result.caption.includes("Market line: 5.0 K"));
+    assert.ok(result.caption.includes("Recommended side: Over 5.0"));
+    assert.ok(result.caption.includes("Projection edge: +2.0 K"));
   });
 
-  it("a single-row artifact renders the top play with no trailing list", () => {
+  it("stays comfortably within the 280-char budget for the exact template", () => {
     const artifact = { slateDate: "2026-07-17", rows: [kRow()] };
     const result = buildKCaptionFromArtifact(artifact);
     assert.equal(result.skipped, false);
-    assert.equal(result.caption.includes("2."), false);
-  });
-
-  it("stays within the 280-char budget for a full 5-row board with realistic names", () => {
-    const rows = [1, 2, 3, 4, 5].map((n) =>
-      kRow({ rank: n, pitcher: `Pitcher Number ${n}`, team: "BOS", side: n % 2 === 0 ? "UNDER" : "OVER", kLine: 6.5, odds: "-120", projectedKs: 8.1, projectionEdge: n % 2 === 0 ? -1.6 : 1.6 }),
-    );
-    const result = buildKCaptionFromArtifact({ slateDate: "2026-07-17", rows });
-    assert.equal(result.skipped, false);
     assert.ok(result.caption.length <= 280, `caption is ${result.caption.length} chars`);
+    assert.ok(result.caption.length < 200, `expected comfortably under 280, got ${result.caption.length}`);
   });
 
-  it("falls back to the short format when the long format would exceed 280 chars, still with no CTA/hashtags", () => {
-    const rows = [1, 2, 3, 4, 5].map((n) =>
-      kRow({ rank: n, pitcher: `Jonathan Alexander Christopherson-Worthington the ${n}`, team: "BOS", side: n % 2 === 0 ? "UNDER" : "OVER", kLine: 6.5, odds: "-150" }),
-    );
-    const result = buildKCaptionFromArtifact({ slateDate: "2026-07-17", rows });
-    if (!result.skipped) {
-      assert.ok(result.caption.length <= 280);
-      assert.equal(/link in bio|#\w/i.test(result.caption), false);
-    } else {
-      assert.ok(result.reason.includes("chars"));
-    }
-  });
-
-  it("captionRows exactly matches artifact.rows for the artifact/render/caption consistency proof", () => {
+  it("captionRows returns the full artifact.rows (data-flow proof for assertArtifactConsistency), not just the described top row", () => {
     const rows = [kRow(), kRow({ rank: 2, pitcher: "Second" })];
     const result = buildKCaptionFromArtifact({ slateDate: "2026-07-17", rows });
     assert.deepEqual(result.captionRows, rows);

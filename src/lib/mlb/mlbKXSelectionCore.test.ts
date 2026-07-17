@@ -124,3 +124,33 @@ describe("selectConfirmedKRows ranking + confirmation", () => {
     expect(selectConfirmedKRows({ rows, maxTableSize: 5 }).selected).toHaveLength(5);
   });
 });
+
+describe("selectConfirmedKRows deterministic tie-breaks (edge -> projected IP -> pitcher name)", () => {
+  it("breaks a tied absolute edge by higher projected IP, descending", () => {
+    const rows = [
+      kRow({ pitcher: "LowerIP", projectedKs: 8.1, kLine: 6.5, projectedIP: 5.0 }), // edge +1.6
+      kRow({ pitcher: "HigherIP", projectedKs: 8.1, kLine: 6.5, projectedIP: 6.5 }), // edge +1.6, same magnitude
+    ];
+    const { selected } = selectConfirmedKRows({ rows });
+    expect(selected.map((r) => r.pitcher)).toEqual(["HigherIP", "LowerIP"]);
+  });
+
+  it("falls through to alphabetical pitcher name when both edge and projected IP tie exactly", () => {
+    const rows = [
+      kRow({ pitcher: "Zeta", projectedKs: 8.1, kLine: 6.5, projectedIP: 5.5 }),
+      kRow({ pitcher: "Alpha", projectedKs: 8.1, kLine: 6.5, projectedIP: 5.5 }),
+      kRow({ pitcher: "Mike", projectedKs: 8.1, kLine: 6.5, projectedIP: 5.5 }),
+    ];
+    const { selected } = selectConfirmedKRows({ rows });
+    expect(selected.map((r) => r.pitcher)).toEqual(["Alpha", "Mike", "Zeta"]);
+  });
+
+  it("edge takes priority over projected IP -- a bigger edge always wins regardless of IP", () => {
+    const rows = [
+      kRow({ pitcher: "BigEdgeLowIP", projectedKs: 10.5, kLine: 6.5, projectedIP: 3.1 }), // edge +4.0
+      kRow({ pitcher: "SmallEdgeHighIP", projectedKs: 7.0, kLine: 6.5, projectedIP: 7.0 }), // edge +0.5
+    ];
+    const { selected } = selectConfirmedKRows({ rows });
+    expect(selected.map((r) => r.pitcher)).toEqual(["BigEdgeLowIP", "SmallEdgeHighIP"]);
+  });
+});

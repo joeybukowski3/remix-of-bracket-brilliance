@@ -242,3 +242,34 @@ describe("selectConfirmedKRows -- opposing-lineup handling (pre-existing, unchan
     assert.equal(selection.excludedStaleStarterCount, 1);
   });
 });
+
+describe("selectConfirmedKRows -- deterministic tie-breaks (edge -> projected IP -> pitcher name)", () => {
+  it("breaks a tied absolute edge by higher projected IP, descending", () => {
+    const rows = [
+      row({ pitcher: "LowerIP", projectedKs: 7.1, kLine: 5.5, projectedIP: 5.0 }), // edge +1.6
+      row({ pitcher: "HigherIP", projectedKs: 7.1, kLine: 5.5, projectedIP: 6.5 }), // edge +1.6, same magnitude
+      row({ pitcher: "MidIP", projectedKs: 4.1, kLine: 5.7, projectedIP: 5.8, oddsUnder: "+100" }), // edge -1.6, same magnitude
+    ];
+    const selection = selectConfirmedKRows({ rows, maxTableSize: 5 });
+    assert.deepEqual(selection.selected.map((r) => r.pitcher), ["HigherIP", "MidIP", "LowerIP"]);
+  });
+
+  it("falls through to alphabetical pitcher name when both edge and projected IP tie exactly", () => {
+    const rows = [
+      row({ pitcher: "Zeta", projectedKs: 7.1, kLine: 5.5, projectedIP: 5.5 }),
+      row({ pitcher: "Alpha", projectedKs: 7.1, kLine: 5.5, projectedIP: 5.5 }),
+      row({ pitcher: "Mike", projectedKs: 7.1, kLine: 5.5, projectedIP: 5.5 }),
+    ];
+    const selection = selectConfirmedKRows({ rows, maxTableSize: 5 });
+    assert.deepEqual(selection.selected.map((r) => r.pitcher), ["Alpha", "Mike", "Zeta"]);
+  });
+
+  it("edge takes priority over projected IP -- a bigger edge always wins regardless of IP", () => {
+    const rows = [
+      row({ pitcher: "BigEdgeLowIP", projectedKs: 9.5, kLine: 5.5, projectedIP: 3.1 }), // edge +4.0
+      row({ pitcher: "SmallEdgeHighIP", projectedKs: 6.0, kLine: 5.5, projectedIP: 7.0 }), // edge +0.5
+    ];
+    const selection = selectConfirmedKRows({ rows, maxTableSize: 5 });
+    assert.deepEqual(selection.selected.map((r) => r.pitcher), ["BigEdgeLowIP", "SmallEdgeHighIP"]);
+  });
+});

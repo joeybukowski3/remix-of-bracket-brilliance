@@ -23,7 +23,9 @@ const COLORS = Object.freeze({
   green: "#13A66A",
   gold: "#F2B134",
   red: "#D9534F",
-  under: "#2E3566",
+  // Restrained, genuinely blue (distinct from the navy background/header and
+  // from the Over green/teal) -- Under badge fill only.
+  under: "#1D63B3",
   negative: "#C0432E",
   zebra: "#F6F8FB",
   faint: "#C6D0DC",
@@ -181,41 +183,6 @@ function sideOdds(row, side) {
   return normalizeText(value) || null;
 }
 
-export function selectStrikeoutValuePlays(rows, limit = SOCIAL_GRAPHIC_GEOMETRY.rowCount) {
-  const normalized = (Array.isArray(rows) ? rows : []).map((row) => {
-    const projectedStrikeouts = toFiniteNumber(row?.projectedStrikeouts ?? row?.projectedKs);
-    const marketStrikeoutLine = toFiniteNumber(row?.marketStrikeoutLine ?? row?.kLine);
-    const projectionDifference = calculateProjectionDifference(projectedStrikeouts, marketStrikeoutLine);
-    const recommendedSide = recommendedStrikeoutSide(projectionDifference);
-    return {
-      ...row,
-      pitcher: normalizeText(row?.pitcher ?? row?.name),
-      team: normalizeText(row?.team).toUpperCase(),
-      opponent: normalizeText(row?.opponent).toUpperCase(),
-      marketStrikeoutLine,
-      projectedStrikeouts,
-      projectionDifference,
-      recommendedSide,
-      recommendedOdds: recommendedSide ? sideOdds(row, recommendedSide) : null,
-      kScore: toFiniteNumber(row?.kScore ?? row?.strikeoutScore ?? row?.strikeoutMatchupScore),
-    };
-  });
-
-  return normalized
-    .filter((row) => row.pitcher && row.team && row.projectionDifference != null && row.recommendedSide)
-    .sort((left, right) => {
-      const edgeDelta = Math.abs(right.projectionDifference) - Math.abs(left.projectionDifference);
-      if (edgeDelta !== 0) return edgeDelta;
-      const scoreDelta = (right.kScore ?? -Infinity) - (left.kScore ?? -Infinity);
-      if (scoreDelta !== 0) return scoreDelta;
-      const nameDelta = left.pitcher.localeCompare(right.pitcher, "en");
-      if (nameDelta !== 0) return nameDelta;
-      return left.team.localeCompare(right.team, "en");
-    })
-    .slice(0, Math.max(0, limit))
-    .map((row, index) => ({ ...row, rank: index + 1 }));
-}
-
 export function normalizeHomeRunRows(rows, limit = SOCIAL_GRAPHIC_GEOMETRY.rowCount) {
   return (Array.isArray(rows) ? rows : []).slice(0, Math.max(0, limit)).map((row, index) => ({
     rank: index + 1,
@@ -234,23 +201,42 @@ export function normalizeHomeRunRows(rows, limit = SOCIAL_GRAPHIC_GEOMETRY.rowCo
   }));
 }
 
+/**
+ * Normalizes K rows for rendering -- trusts the artifact's already-decided
+ * order and already-derived side/edge values (mlb-k-x-selection-core.mjs's
+ * selectConfirmedKRows already ranked and computed these); NEVER re-sorts
+ * or re-filters here, mirroring normalizeHomeRunRows above exactly. The
+ * five selected rows must render in precisely the order they arrive in.
+ *
+ * Falls back to computing projectionDifference/recommendedSide from
+ * projectedKs - kLine only when the artifact-shaped fields
+ * (projectionEdge/side) aren't present on a given row -- a per-row
+ * convenience for direct/legacy callers, never a cross-row sort or filter.
+ */
 export function normalizeStrikeoutRows(rows, limit = SOCIAL_GRAPHIC_GEOMETRY.rowCount) {
-  return selectStrikeoutValuePlays(rows, limit).map((row) => ({
-    rank: row.rank,
-    pitcherId: row.pitcherId ?? null,
-    gameId: row.gameId ?? null,
-    pitcher: row.pitcher,
-    team: row.team,
-    opponent: row.opponent,
-    marketStrikeoutLine: row.marketStrikeoutLine,
-    overOdds: normalizeText(row.oddsOver ?? row.kOddsOver) || null,
-    underOdds: normalizeText(row.oddsUnder ?? row.kOddsUnder) || null,
-    projectedStrikeouts: row.projectedStrikeouts,
-    projectionDifference: row.projectionDifference,
-    recommendedSide: row.recommendedSide,
-    recommendedOdds: row.recommendedOdds,
-    kScore: row.kScore,
-  }));
+  return (Array.isArray(rows) ? rows : []).slice(0, Math.max(0, limit)).map((row, index) => {
+    const projectedStrikeouts = toFiniteNumber(row?.projectedStrikeouts ?? row?.projectedKs);
+    const marketStrikeoutLine = toFiniteNumber(row?.marketStrikeoutLine ?? row?.kLine);
+    const explicitEdge = toFiniteNumber(row?.projectionDifference ?? row?.projectionEdge);
+    const projectionDifference = explicitEdge ?? calculateProjectionDifference(projectedStrikeouts, marketStrikeoutLine);
+    const explicitSide = normalizeText(row?.recommendedSide ?? row?.side).toUpperCase();
+    const recommendedSide = explicitSide === "OVER" || explicitSide === "UNDER" ? explicitSide : recommendedStrikeoutSide(projectionDifference);
+    return {
+      rank: index + 1,
+      pitcherId: row?.pitcherId ?? null,
+      gameId: row?.gameId ?? null,
+      pitcher: normalizeText(row?.pitcher ?? row?.name),
+      team: normalizeText(row?.team).toUpperCase(),
+      opponent: normalizeText(row?.opponent).toUpperCase(),
+      marketStrikeoutLine,
+      projectedStrikeouts,
+      projectedIP: toFiniteNumber(row?.projectedIP),
+      projectionDifference,
+      recommendedSide,
+      recommendedOdds: normalizeText(row?.recommendedOdds ?? row?.odds) || sideOdds(row, recommendedSide),
+      kScore: toFiniteNumber(row?.kScore ?? row?.strikeoutScore ?? row?.strikeoutMatchupScore),
+    };
+  });
 }
 
 export function getHomeRunIndicators(row) {
@@ -379,7 +365,7 @@ function renderHeader(kind, slateDate, url) {
   const boxY = 32;
   const boxSize = 46;
   const title = kind === "hr" ? "MLB HOME RUN PROPS" : "MLB STRIKEOUT VALUE PLAYS";
-  const subtitle = kind === "hr" ? "Top Model Edges  •  Today’s Slate" : "Top Projection Edges vs. Market Lines";
+  const subtitle = kind === "hr" ? "Top Model Edges  •  Today’s Slate" : "Top Qualified Model vs. Market Edges";
   const titleSize = kind === "hr" ? 52 : 46;
   let svg = `<rect x="${boxX}" y="${boxY}" width="${boxSize}" height="${boxSize}" rx="12" fill="${COLORS.navy}"/>`;
   svg += `<circle cx="${boxX + boxSize / 2}" cy="${boxY + boxSize / 2}" r="14" fill="#fff"/>`;
@@ -454,7 +440,11 @@ function renderStrikeoutRow(row, index, resolveLogo) {
   svg += renderTeamLogo(158, middle, row.team, resolveLogo);
   const pitcherName = truncateText(row.pitcher || "Unknown", 24);
   svg += text(200, top + 50, pitcherName, { size: pitcherName.length > 16 ? 30 : 34, weight: 800, anchor: "start", tabular: false });
-  svg += text(200, top + 82, truncateText(`vs ${row.opponent || "TBD"}`, 31), { size: 20, weight: 400, fill: COLORS.gray, anchor: "start", tabular: false });
+  const projectedIP = toFiniteNumber(row.projectedIP);
+  // Compact supporting field -- fits cleanly on the existing matchup line,
+  // never its own column.
+  const opponentLine = projectedIP != null ? `vs ${row.opponent || "TBD"}  ·  ${projectedIP.toFixed(1)} IP` : `vs ${row.opponent || "TBD"}`;
+  svg += text(200, top + 82, truncateText(opponentLine, 40), { size: 20, weight: 400, fill: COLORS.gray, anchor: "start", tabular: false });
   const badgeX = 577;
   svg += `<rect x="${badgeX}" y="${middle - 30}" width="166" height="60" rx="12" fill="${isOver ? COLORS.green : COLORS.under}"/>`;
   svg += triangle(badgeX + 17, middle - 4, isOver ? "up" : "down", 7, "#fff");

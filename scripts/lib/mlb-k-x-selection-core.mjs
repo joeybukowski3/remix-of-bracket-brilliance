@@ -36,7 +36,12 @@
  *
  * Ranking: all qualified plays sorted by absolute projection edge descending
  * -- Overs and Unders compete equally on the same board, never a side
- * preference.
+ * preference. Deterministic tie-breaks (never left to input/scrape order):
+ *   1. absolute projection edge, descending
+ *   2. projected IP, descending
+ *   3. pitcher name, alphabetical (final stable tie-breaker)
+ * Deliberately does NOT tie-break on EV, implied probability, odds price,
+ * or any Over/Under preference.
  *
  * Opposing-lineup handling (pre-existing, unchanged by the value-play rewrite):
  *   - During the polling/preferred window we PREFER rows whose opposing
@@ -103,6 +108,21 @@ function hasOddsForSide(row, side) {
 }
 
 /**
+ * Descending numeric compare where a missing value (null/undefined) always
+ * sorts last. Deliberately not `(b ?? -Infinity) - (a ?? -Infinity)`: when
+ * *both* sides are missing that subtracts -Infinity from -Infinity, which
+ * is NaN, not 0 -- silently breaking the tie-break chain, since a
+ * comparator returning NaN doesn't reliably fall through to the next
+ * criterion.
+ */
+function compareDescendingNullsLast(a, b) {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return b - a;
+}
+
+/**
  * Full value-play eligibility for one row -- see module doc above for the
  * complete guard list. Returns `side`/`edgeInfo` alongside the boolean so
  * callers never have to recompute the derived side separately, and `reason`
@@ -163,7 +183,13 @@ export function selectConfirmedKRows({ rows = [], atCutoff = false, maxTableSize
   const pool = atCutoff ? eligible : eligible.filter((r) => r.opposingLineupConfirmed);
   const heldForOpposingCount = atCutoff ? 0 : eligible.length - pool.length;
 
-  pool.sort((left, right) => Math.abs(right.projectionEdge) - Math.abs(left.projectionEdge));
+  pool.sort((left, right) => {
+    const edgeDelta = Math.abs(right.projectionEdge) - Math.abs(left.projectionEdge);
+    if (edgeDelta !== 0) return edgeDelta;
+    const ipDelta = compareDescendingNullsLast(toFiniteNumber(left.projectedIP), toFiniteNumber(right.projectedIP));
+    if (ipDelta !== 0) return ipDelta;
+    return normalizeText(left.pitcher).localeCompare(normalizeText(right.pitcher), "en");
+  });
 
   return {
     selected: pool.slice(0, maxTableSize),

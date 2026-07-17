@@ -30,31 +30,52 @@ describe("buildHrCaptionFromArtifact", () => {
   });
 });
 
-describe("buildKCaptionFromArtifact", () => {
-  it("uses the favored side + side-correct odds from the artifact", () => {
+describe("buildKCaptionFromArtifact -- EXACT approved template, top play only", () => {
+  it("exact Over example, built through the real artifact pipeline", () => {
+    const artifact = buildKArtifact({
+      slateDate: "2026-07-12",
+      snapshot,
+      selectionStatus: "READY_CONFIRMED_SELECTIONS",
+      selectedRows: [{ pitcher: "Logan Gilbert", team: "SEA", opponent: "HOU", kLine: 5.5, oddsOver: "-120", oddsUnder: "+100", projectedKs: 7.1, pitcherId: 1, gameId: 10 }],
+    });
+    const result = buildKCaptionFromArtifact(artifact);
+    expect(result.skipped).toBe(false);
+    expect(result.caption).toBe(
+      ["Logan Gilbert leads today's qualified K value board.", "", "Model projection: 7.1 K", "Market line: 5.5 K", "Recommended side: Over 5.5", "Projection edge: +1.6 K"].join("\n"),
+    );
+  });
+
+  it("exact Under example, built through the real artifact pipeline", () => {
+    const artifact = buildKArtifact({
+      slateDate: "2026-07-12",
+      snapshot,
+      selectionStatus: "READY_CONFIRMED_SELECTIONS",
+      selectedRows: [{ pitcher: "Jose Berrios", team: "TOR", opponent: "NYY", kLine: 5.5, oddsOver: "-110", oddsUnder: "+105", projectedKs: 4.3, pitcherId: 2, gameId: 11 }],
+    });
+    const result = buildKCaptionFromArtifact(artifact);
+    expect(result.skipped).toBe(false);
+    expect(result.caption).toBe(
+      ["Jose Berrios leads today's qualified K value board.", "", "Model projection: 4.3 K", "Market line: 5.5 K", "Recommended side: Under 5.5", "Projection edge: -1.2 K"].join("\n"),
+    );
+  });
+
+  it("describes only the top-ranked play -- a second artifact row never appears in the caption", () => {
     const artifact = buildKArtifact({
       slateDate: "2026-07-12",
       snapshot,
       selectionStatus: "READY_CONFIRMED_SELECTIONS",
       selectedRows: [
-        { pitcher: "Tarik Skubal", team: "DET", opponent: "PHI", direction: "over", kLine: 7.5, oddsOver: "-120", oddsUnder: "+100", projectedKs: 9.3, projectionEdge: 1.8, pitcherId: 1, gameId: 10 },
-        { pitcher: "Zack Wheeler", team: "PHI", opponent: "DET", direction: "under", kLine: 6.5, oddsOver: "-110", oddsUnder: "-105", projectedKs: 4.9, projectionEdge: -1.6, pitcherId: 2, gameId: 10 },
+        { pitcher: "Tarik Skubal", team: "DET", opponent: "PHI", kLine: 7.5, oddsOver: "-120", oddsUnder: "+100", projectedKs: 9.3, pitcherId: 1, gameId: 10 },
+        { pitcher: "Zack Wheeler", team: "PHI", opponent: "DET", kLine: 6.5, oddsOver: "-110", oddsUnder: "-105", projectedKs: 4.9, pitcherId: 2, gameId: 10 },
       ],
     });
     const result = buildKCaptionFromArtifact(artifact);
-    expect(result.skipped).toBe(false);
-    // Side-correct odds: OVER uses oddsOver (-120), UNDER uses oddsUnder (-105).
     expect(result.caption).toContain("Tarik Skubal");
-    expect(result.caption).toContain("Zack Wheeler");
-    expect(result.caption).toContain("OVER");
-    expect(result.caption).toContain("UNDER");
-    expect(result.caption).toContain("-120");
-    expect(result.caption).toContain("-105");
-    expect(result.caption).not.toContain("+100"); // the non-favored OVER-row under price never appears
-    expect(result.captionRows).toBe(artifact.rows);
+    expect(result.caption).not.toContain("Zack Wheeler");
+    expect(result.captionRows).toBe(artifact.rows); // still the full artifact (data-flow proof), not just the top row
   });
 
-  it("leads with the top-ranked (rank 1) play and contains no CTA/URL/hashtags/question", () => {
+  it("contains no CTA/URL/hashtags/question, and uses title case Over/Under (not all caps)", () => {
     const artifact = buildKArtifact({
       slateDate: "2026-07-12",
       snapshot,
@@ -62,7 +83,8 @@ describe("buildKCaptionFromArtifact", () => {
       selectedRows: [{ pitcher: "Tarik Skubal", team: "DET", opponent: "PHI", kLine: 7.5, oddsOver: "-120", oddsUnder: "+100", projectedKs: 9.3, pitcherId: 1, gameId: 10 }],
     });
     const result = buildKCaptionFromArtifact(artifact);
-    expect(result.caption).toContain("Top Value Play: Tarik Skubal");
+    expect(result.caption).toContain("Over");
+    expect(result.caption).not.toContain("OVER");
     expect(result.caption).not.toMatch(/link in bio/i);
     expect(result.caption).not.toMatch(/#\w/);
     expect(result.caption).not.toMatch(/https?:\/\//i);
