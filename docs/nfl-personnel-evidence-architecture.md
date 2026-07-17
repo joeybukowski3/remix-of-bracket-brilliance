@@ -1,0 +1,421 @@
+# NFL Personnel Evidence Architecture
+
+Status: Phase 5A architecture pass for 2026 NFL season readiness.
+
+This document defines the data completion workflow required before an official
+improvement/decline model can be scored. It does not define a score, change the
+NFL v0.3 ratings, add UI, or populate missing player data.
+
+## Existing Source Inventory
+
+| Path | Provider | Seasons | Teams | Update process | Freshness | Structure | Reliability | Licensing or redistribution concern | Canonical artifact fit |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `public/data/nfl/teams.json` | Repo canonical mapping, aligned to nflverse and site data | Season-agnostic | 32 | Hand-curated, test-guarded | `_meta.generatedAt` 2026-07-07 | Structured JSON | High for team identity | Low evident concern, but still repo-owned mapping | Yes, canonical team identity input |
+| `public/data/nfl/<season>/games.json` | nflverse `nfldata` games CSV | 2022-2026 | 32 where scheduled | `npm run nfl:schedules`, workflow `nfl-schedules-results.yml` | 2026 files generated 2026-07-07 | Structured generated JSON | High for schedule/results identity, not personnel | Source notes say betting columns are not ingested | No for personnel, useful for team/week validation |
+| `public/data/nfl/<season>/results.json` | nflverse `nfldata` games CSV | 2022-2026 | Completed-game teams | Same as games | 2026 empty until finals | Structured generated JSON | High for completed results, not personnel | Same as games | No for personnel, useful for prior-season production context only at team level |
+| `public/data/nfl/<season>/team-stats.json` | Repo aggregation from results plus nflverse `stats_team` | 2022-2026 | 32 | `npm run nfl:team-ratings`, workflow `nfl-team-ratings.yml` | 2026 generated 2026-07-07, no games yet | Structured generated JSON | High for team-level EPA/plays, not player retention | nflverse source URL recorded; license terms not encoded in repo | No for personnel, can support sanity/context only |
+| `public/data/nfl/<season>/power-ratings.json` | Repo experimental model | 2022-2026 | Rated teams when games exist | Same as team-stats | 2026 generated 2026-07-07, empty ratings | Structured generated JSON | Not an evidence source for personnel | Internal model output | No, explicitly out of scope |
+| `public/data/nfl/<season>/full-season-team-metrics.json` | Repo NFL v0.3 generated metrics | 2022-2026 | 32 where source season exists | `scripts/generate-nfl-v03-artifacts.mjs` | 2026 generated 2026-07-14 | Structured generated JSON | Useful for team performance, not player retention | Internal generated artifact | No, do not modify for personnel Phase 5A |
+| `public/data/nfl/<season>/final-eight-team-metrics.json` | Repo NFL v0.3 generated metrics | 2022-2026 | 32 where source season exists | Same as v0.3 artifacts | 2026 generated 2026-07-14 | Structured generated JSON | Useful for trajectory context, not personnel | Internal generated artifact | No, do not modify for personnel Phase 5A |
+| `public/data/nfl/<season>/context-flags.json` | Repo NFL v0.3 context flags | 2022-2026 | 32 possible | Same as v0.3 artifacts | 2026 generated 2026-07-14 | Structured generated JSON | Manual/context screen only, not personnel completion | Internal generated artifact | No |
+| `public/data/nfl/<season>/manual-adjustments.json` | Repo owner-maintained adjustments | 2023-2026 present | Any team with entries | Same as v0.3 artifacts plus owner entries | 2026 generated 2026-07-14 | Structured generated JSON | Not personnel source; adjustment entries are intentionally not invented | Internal generated artifact | No |
+| `public/data/nfl/<season>/preseason-power-ratings.json` | Repo NFL v0.3 preseason ratings | 2023-2026 | 32 | `scripts/generate-nfl-v03-artifacts.mjs` | 2026 generated 2026-07-14 | Structured generated JSON | Rating output only | Internal model output | No |
+| `data/nfl/nflverse/stats-team-week/*.csv` | nflverse `stats_team` weekly release | 2022-2025 | 32 | Committed immutable cache, validated offline | Retrieved 2026-07-14 per manifest | Structured CSV | High for team-week totals, no player IDs | Source URLs stored; license terms not encoded | No for personnel, useful adapter pattern |
+| `data/nfl/nflverse/stats-team-week/manifest.json` | Repo provenance manifest for cached nflverse CSVs | 2022-2025 | 32 observed teams | Generated/maintained with cache | Retrieved 2026-07-14 | Structured JSON | High for provenance and byte integrity | Same as cached CSVs | Yes as pattern for source cache manifests |
+| `src/data/nflOffseason2026.ts` | Repo manual offseason snapshot | 2026 target | 32 coach records, selective player moves | Manual updates | Verified through 2026-06-23 | Structured TypeScript | Medium: useful but incomplete by design | Repo interpretation of public reporting; source URLs absent | Transitional input only, not final canonical artifact |
+| `src/data/nflWarrenSharpTeams2026.ts` | Warren Sharp 2026 Football Preview | 2026 guide, with 2025 context | 32 | Hand-extracted into TypeScript | Source date not encoded | Structured TypeScript | Medium-high for extracted guide facts, incomplete transaction coverage | Paid/guide content; avoid broad public redistribution | Supplemental input only |
+| `src/data/nflWarrenSharpAdvanced2026.ts` | Warren Sharp 2026 Football Preview, some FTN AGL attribution | 2025 context for 2026 | 32 team rows, QB metrics subset | Hand-extracted into TypeScript | Source date not encoded | Structured TypeScript | Medium for projected QB and health-by-unit context; not player injury readiness | Paid/guide and FTN-attributed context | Supplemental input only |
+| `src/data/nflVsinGuide2026.json` | VSiN 2026 NFL Betting Guide | 2025 stats, 2026 guide | 32 | Extracted JSON | Source date not encoded | Structured JSON | Good for team stat context, not personnel evidence | Paid/guide content; avoid public table republication | No for personnel |
+| `src/data/nflWarrenSharpSchedule2026.json` | Warren Sharp schedule extract | 2026 | 32 | Extracted JSON | Source date not encoded | Structured JSON | Schedule/rest context only | Paid/guide content | No for personnel |
+| `src/lib/nfl/offseasonEvidence.ts` | Repo adapter/contract | 2026 target | 32 | Pure TypeScript assembly from checked-in sources | Assembled at 2026-07-17 | Structured TypeScript contract | Good contract, intentionally incomplete coverage | Depends on upstream source concerns | Stable public evidence contract to adapt to generated artifacts |
+| `docs/nfl-offseason-evidence.md` | Repo documentation | 2026 target | 32 | Manual docs | Updated with Phase 4 | Documentation | High for current contract limitations | None | Keep, link to architecture |
+| `docs/nfl-data-inventory.md` | Repo documentation | 2022-2026 | 32 | Manual docs | Current PR foundation | Documentation | High for existing pipeline conventions | Notes free-first mandate | Keep as base inventory |
+| `scripts/generate-nfl-schedules-results.mjs` and `scripts/lib/nfl-schedules-results-core.mjs` | nflverse games CSV | 2022-2026 | 32 | Fetch or local input, writes generated JSON | Runtime fetch when run | Structured generator | High for schedule/results, not personnel | Avoids betting columns | Pattern only |
+| `scripts/generate-nfl-team-stats-power-ratings.mjs` and `scripts/lib/nfl-team-ratings-core.mjs` | nflverse `stats_team`, repo results | 2022-2026 | 32 | Fetch or local stats dir, writes generated JSON | Runtime fetch when run | Structured generator | High for team-level stats, no player retention | No betting fields read | Pattern only |
+| `scripts/lib/nfl-advanced-stats.mjs` | nflverse `stats_team` parser | 2022-2026 capable | 32 | Library consumed by ratings generator/tests | Runtime source freshness | Structured parser | High for team-week totals, no player-level stats | Source URL encoded | Pattern for adapters and validation |
+| `scripts/validate-nfl-weekly-source-cache.mjs` | Repo cache validator | 2022-2025 | 32 | Offline validation | Manifest retrieved 2026-07-14 | Structured validator | High validation pattern | Same as cache | Pattern for personnel source cache validation |
+| `.github/workflows/nfl-schedules-results.yml` | GitHub Actions | 2022-2026 | 32 | Daily Sep-Feb, commits to main | Runs only when scheduled/dispatch | Workflow | Reliable for schedule/result freshness | None beyond source terms | Pattern for future personnel workflow, do not modify in Phase 5A |
+| `.github/workflows/nfl-team-ratings.yml` | GitHub Actions | 2022-2026 | 32 | Tuesdays Sep-Feb, commits to main | Runs only when scheduled/dispatch | Workflow | Reliable for ratings refresh, not personnel | None beyond source terms | Pattern only |
+| `api/nfl/team-schedule.ts` | ESPN site API | 2026 | One requested team, validated against site abbrs | Runtime API with 30-minute cache | Live at request time | Structured API response | Good schedule fallback, not personnel | ESPN API terms not encoded | No |
+| `api/nfl/super-bowl-odds.ts` | Polymarket Gamma API | Current market | Recognized teams in active market | Runtime API with 5-minute cache | Live at request time | Structured API response | Market data only | Market/public API terms not encoded | No |
+| `package.json` | Repo scripts | 2022-2026 NFL scripts present | 32 through scripts | Manual command invocation | Current | Structured scripts list | Reliable command registry | None | Add future personnel commands here in Phase 5B |
+| `src/lib/nfl/*test*` | Repo tests | Mostly 2022-2026 | 32 in many tests | Vitest | Current | Structured tests | High for invariants | None | Extend with generated personnel artifact tests |
+
+No repository-owned source currently contains complete player-level snaps,
+starts, rosters, depth charts, official transaction logs, injured reserve,
+games missed, or returning-production joins.
+
+## Required Evidence Categories
+
+### Quarterback Continuity
+
+Required fields:
+
+- `teamId`, `abbr`, `targetSeason`
+- `status`: `returning_starter`, `new_starter`, `open_competition`, `rookie_candidate`, `veteran_acquisition`, `unknown`
+- `playerId` when resolved, otherwise `playerName`
+- `priorTeamId` and `newTeamId` when applicable
+- `basis`: sourced projected starter, official depth chart, transaction, coach quote, or competition note
+- `effectiveDate`
+- `sourceRefs`
+- `verificationStatus`: `verified`, `partially_verified`, `unverified`, `conflicted`
+
+Optional enrichments:
+
+- prior-season pass attempts, starts, EPA source pointer, contract/draft capital,
+  competition participants, depth-chart rank history.
+
+### Returning Production
+
+Required fields by team and side/unit:
+
+- `teamId`, `targetSeason`, `sourceSeason`
+- `sourceCutoff`
+- retained totals and denominators for available categories
+- `completeness`: available, unavailable, partial, or blocked
+- `sourceRefs`
+- `validationWarnings`
+
+Minimum category targets:
+
+- offensive snaps retained
+- defensive snaps retained
+- starts retained
+- QB pass attempts retained
+- rushing production retained
+- receiving production retained
+- offensive-line snaps retained
+- pass-rush production retained
+- secondary snaps retained
+
+Optional enrichments:
+
+- special-teams snaps retained, position-group denominators, player-level retained
+  shares, playoff inclusion flags, games active, games started by position, pressure
+  rates, coverage snaps, alignment buckets.
+
+Do not assume all categories are immediately obtainable. A category can be
+mandatory for scoring only after an approved source can produce it for all 32
+teams.
+
+### Injury Returns
+
+Required fields:
+
+- `teamId`, `playerId` when resolved, `playerName`, `position`
+- `gamesMissed`
+- `availabilityCategory`: injured reserve, PUP/NFI, missed regular-season games,
+  late-season absence, postseason absence, unknown
+- `expectedReturnStatus`: expected available, limited/uncertain, not expected, unknown
+- `priorRole`: starter, rotation, depth, specialist, unknown
+- `sourceDate`
+- `sourceRefs`
+- `verificationStatus`
+
+Optional enrichments:
+
+- injury label, transaction designation, return-to-practice date, activation date,
+  prior-season snap share, prior-season starts.
+
+Do not infer medical readiness. Use only sourced availability language and keep
+team optimism, beat reports, and official designations distinct.
+
+### Transactions
+
+Required fields:
+
+- `transactionId`
+- `playerId` when resolved, `playerName`, `position`
+- `type`: addition, departure, trade, release, retirement, draft_addition,
+  waiver_claim, practice_squad, unsigned_free_agent, extension_only, unknown
+- `previousTeamId`, `newTeamId`
+- `transactionDate`
+- `sourceRefs`
+- `verificationStatus`
+
+Optional enrichments:
+
+- expected role only when sourced, contract terms, draft round/pick, trade assets,
+  roster designation, active/practice-squad status, voided/reversed status.
+
+### Coaching Continuity
+
+Required fields:
+
+- `teamId`, `targetSeason`
+- `role`: head coach, offensive coordinator, defensive coordinator
+- `coachName`
+- `status`: returning, new, changed_role, interim, unknown
+- `priorRole`
+- `effectiveDate`
+- `sourceRefs`
+- `verificationStatus`
+
+Optional enrichments:
+
+- play-caller status, scheme family, position coach promotions, prior team,
+  coordinator title variants, source quote.
+
+Scheme transition may be recorded only when sourced.
+
+## Proposed Generated Artifacts
+
+Use one consolidated artifact first:
+
+- `public/data/nfl/2026/personnel-evidence.json`
+
+The artifact should include:
+
+- `schemaVersion`: `nfl-personnel-evidence-v0.1`
+- `targetSeason`
+- `generatedAt`
+- `sourceCutoff`
+- `sources`: source id, provider, URL/path, retrieved date, source date, license note
+- `completeness`: all-team and per-category summaries
+- `teams`: one record per canonical team
+- item-level provenance on every QB, transaction, production, injury, and coaching row
+- `validationWarnings`
+- `conflicts`
+
+Recommended top-level shape:
+
+```json
+{
+  "schemaVersion": "nfl-personnel-evidence-v0.1",
+  "targetSeason": 2026,
+  "generatedAt": "ISO",
+  "sourceCutoff": "YYYY-MM-DD",
+  "sources": [],
+  "completeness": {},
+  "teams": [],
+  "validationWarnings": [],
+  "conflicts": []
+}
+```
+
+A consolidated file is preferable for Phase 5B because completeness gates need
+cross-category validation: a QB move affects transactions, QB continuity, and
+returning production; a coordinator change affects coaching continuity and scheme
+provenance. Splitting early into
+`returning-production.json`, `coaching-continuity.json`, and transaction files
+would reduce file size and ownership friction later, but it would make conflict
+visibility and scoring gates easier to bypass. Split only when the consolidated
+artifact becomes too large, has clearly separate refresh cadences, or needs
+different licensing exposure.
+
+If split later, keep one generated index:
+
+- `public/data/nfl/2026/personnel-evidence.json` as the manifest and gate record
+- category shards under `public/data/nfl/2026/personnel/`
+
+## Source Hierarchy
+
+General rules:
+
+- Higher-priority sources override only when facts genuinely conflict.
+- Lower-priority sources may supplement missing fields.
+- Conflicting evidence remains visible in `conflicts`.
+- No unsupported source dates.
+- No invented source URLs.
+- No silent manual overrides.
+
+Priority by category:
+
+| Category | Priority order |
+| --- | --- |
+| QB continuity | 1. official team/league depth chart or transaction, 2. approved structured roster/depth provider, 3. approved public roster/schedule source, 4. Warren Sharp/VSiN context, 5. repo manual evidence |
+| Returning production | 1. approved structured statistical provider with player/team IDs and snaps/starts, 2. official league/player participation source if available, 3. approved public stats source, 4. Warren Sharp/FTN context only for aggregate health, 5. repo manual evidence only for unavailable markers |
+| Injury returns | 1. official team/league transaction and injury designation, 2. approved structured injury/participation provider, 3. approved public transaction source, 4. Warren Sharp/FTN aggregate health context, 5. repo manual evidence |
+| Transactions | 1. official league transaction log and team announcements, 2. approved structured transaction provider, 3. approved public roster source, 4. Warren Sharp/VSiN context, 5. repo manual evidence |
+| Coaching continuity | 1. official team staff pages/announcements, 2. approved structured staff provider, 3. approved public reporting source, 4. Warren Sharp/VSiN context, 5. repo manual evidence |
+
+## Generator And Validation Architecture
+
+Recommended scripts:
+
+- `scripts/generate-nfl-personnel-evidence.mjs`
+- `scripts/lib/nfl-personnel/schema.mjs`
+- `scripts/lib/nfl-personnel/sources/*.mjs`
+- `scripts/lib/nfl-personnel/identity.mjs`
+- `scripts/lib/nfl-personnel/transactions.mjs`
+- `scripts/lib/nfl-personnel/returning-production.mjs`
+- `scripts/lib/nfl-personnel/validation.mjs`
+
+Recommended package commands:
+
+- `nfl:personnel-evidence`: generate canonical artifact
+- `nfl:personnel-evidence:validate`: validate committed source caches and artifact
+- `nfl:personnel-evidence:dry-run`: generate to a temp/output directory without writing production files
+
+Recommended workflow:
+
+- Manual `workflow_dispatch` for Phase 5B.
+- Scheduled offseason refresh only after sources are approved and source terms are documented.
+- Never push generated personnel evidence without validation passing.
+
+Adapters:
+
+- Each source adapter returns normalized facts plus raw provenance.
+- Adapters cannot assign final conflict resolution.
+- Adapters must use canonical team IDs from `teams.json`.
+- Player identity is resolved through stable IDs when provided by source; otherwise
+  through normalized name plus position, team, date, and source-specific key.
+
+Identity handling:
+
+- Keep `playerId`, `sourcePlayerId`, `playerName`, `normalizedName`, suffix, position,
+  birth date or college only if sourced.
+- Do not merge duplicate names without a stable ID or strong disambiguators.
+- Normalize suffixes for matching, but preserve display names.
+- Track team code aliases, including `LA` to `lar` and `WAS` to `wsh`.
+- Fail on unknown team abbreviations unless an explicit alias map handles them.
+
+Deduplication:
+
+- Deduplicate exact same source fact by source id and source row key.
+- Merge corroborating facts only when player identity, transaction type, teams,
+  and date are compatible.
+- Preserve all supporting sources.
+- Mark incompatible rows as conflicts instead of dropping one.
+
+Transaction reconciliation:
+
+- A traded player should appear as a departure for the old team and an addition
+  for the new team, linked by one `movementId`.
+- Multi-team movement creates an ordered movement chain by transaction date.
+- Retired players remain departures with `newTeamId: null` and terminal status.
+- Practice-squad/depth signings are transactions but do not receive expected role
+  unless sourced.
+- Unsigned free agents are departures only when a source confirms the previous
+  team separation or free-agent status.
+- Rookie records have no NFL production retained unless a source gives prior NFL
+  production.
+- Releases and later re-signings must both remain visible and net to current
+  roster status only after date ordering.
+- Players missing from one source but present in another remain partial, not
+  deleted.
+
+Returning-production methodology:
+
+1. Build prior-season player production by canonical prior team.
+2. Build target-season roster/transaction status through `sourceCutoff`.
+3. Mark retained production when the player remains with the same team or has
+   no sourced departure.
+4. Remove production when a sourced departure, retirement, or unsigned status is
+   confirmed.
+5. Add incoming production separately as acquired production, not retained
+   production.
+6. Calculate team retained shares only from categories with complete denominator
+   coverage.
+7. Emit unavailable/partial category warnings instead of filling zeroes.
+
+Injury-return handling:
+
+- Treat injury returns as evidence, not projections.
+- `expectedReturnStatus` must come from source language or official designation.
+- Games missed should come from a structured game/active/injury source where
+  possible.
+- Player role should come from prior starts/snaps or an explicit source.
+- Conflicting availability reports remain visible.
+
+Completeness scoring:
+
+- Count category completeness by all 32 teams, item provenance coverage,
+  unresolved conflicts, and source freshness.
+- Completeness is not team quality.
+- A category with no approved source should be `unavailable`, not `complete`.
+
+Freshness and determinism:
+
+- Every run records `generatedAt` and `sourceCutoff`.
+- Every source records source date and retrieval date separately.
+- Output sorting must be deterministic by team, category, date, player identity,
+  and source id.
+- Validation fails on malformed dates, unknown teams, duplicate source row keys,
+  missing required provenance, or unresolved mandatory conflicts.
+
+Failure behavior:
+
+- Hard fail when canonical team identity is unknown.
+- Hard fail when required source metadata is missing.
+- Hard fail when all-team mandatory categories regress from complete to partial.
+- Warn, but do not fail, on advisory category gaps before scoring is enabled.
+
+## Migration Path
+
+Keep `src/lib/nfl/offseasonEvidence.ts` stable during the transition.
+
+Phase 5B should add an adapter that reads
+`public/data/nfl/2026/personnel-evidence.json` and maps generated facts into the
+existing public evidence record shape. The current Warren Sharp and manual
+adapters can remain as fallbacks until the generated artifact reaches the scoring
+gates.
+
+Compatibility rules:
+
+- Preserve existing exported types unless a concrete consumer need requires an
+  additive type.
+- Preserve existing tests and add artifact-adapter parity tests.
+- Keep current confidence semantics: evidence confidence only, never team quality.
+- Reduce hand-entered interpretation by moving source normalization into scripts.
+- Do not rewrite the current contract until generated artifacts cover all
+  mandatory gates.
+
+## Completeness Gates Before Scoring
+
+Mandatory gates:
+
+- All 32 canonical teams represented.
+- QB continuity known or explicitly `open_competition` for all 32 teams.
+- Head coach, offensive coordinator, and defensive coordinator coverage complete
+  for all 32 teams.
+- Transaction coverage complete through a stated `sourceCutoff`.
+- Returning offensive and defensive production available for all 32 teams from
+  approved structured sources.
+- Item-level provenance present for every personnel, production, injury, QB, and
+  coaching fact.
+- No unresolved major conflicts affecting QB continuity, head coach, coordinator,
+  current team, retirement, or retained-production denominators.
+- Source dates and retrieval dates within the approved freshness window.
+- Validation passes deterministically from clean checkout.
+
+Advisory gates:
+
+- Injury-return evidence present for all teams or explicitly unavailable by team.
+- Offensive-line snaps retained available separately from total offensive snaps.
+- Pass-rush and secondary retained production available separately from total
+  defensive snaps.
+- Expected role sourced for major additions/departures.
+- Scheme transition provenance for every new coordinator.
+- Duplicate-name disambiguation rate reported.
+
+Do not allow official improvement/decline scoring until all mandatory gates pass.
+
+## Unresolved Source Decisions
+
+- Select the approved player-level source for snaps, starts, pass attempts,
+  carries, targets, receptions, receiving yards, rushing yards, sacks, pressures,
+  tackles, interceptions, and offensive-line/secondary/pass-rush grouping.
+- Select the approved transaction source and decide whether league/team official
+  pages are cached, linked, or manually referenced.
+- Select the approved injury/games-missed source and decide how to represent
+  uncertain medical language.
+- Decide whether paid-guide-derived Warren Sharp/VSiN facts remain internal-only
+  inputs or can appear in generated public JSON as summarized evidence.
+- Define the freshness window for offseason sources before scoring.
+- Decide whether source caches belong under `data/nfl/` with manifests before
+  generated artifacts are written to `public/data/nfl/2026/`.
+
+## Recommended Phase 5B Slice
+
+Build schema and validation first, without fetching all teams:
+
+1. Add `scripts/lib/nfl-personnel/schema.mjs` with pure validators for the
+   consolidated artifact shape.
+2. Add a fixture-only generator path that writes to a temp directory.
+3. Add identity utilities for canonical team lookup and player-name preservation.
+4. Add transaction reconciliation tests covering trades, multi-team movement,
+   retirements, practice-squad signings, unsigned free agents, rookies, duplicate
+   names, suffixes, team aliases, and missing-source players.
+5. Add an adapter test proving `offseasonEvidence.ts` can consume a minimal
+   generated artifact while preserving the current contract.
