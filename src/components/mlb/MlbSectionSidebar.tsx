@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { ChevronDown, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -149,12 +149,20 @@ export function MlbMobileMenu() {
     <div className="mb-4 xl:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
-          <Button type="button" variant="outline" className="w-full justify-between border-slate-200 bg-white font-black text-slate-900 shadow-sm" aria-label="Open MLB menu">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-between border-[#1a2b4b] bg-[#eff4ff] font-black text-slate-900 shadow-sm transition-colors"
+            aria-label="Open MLB menu"
+          >
             <span className="inline-flex items-center gap-2">
               <Menu className="h-4 w-4" aria-hidden />
               MLB Menu
             </span>
-            <span className="text-[10px] uppercase tracking-wider text-slate-500">Sections</span>
+            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-slate-500">
+              {open ? "Tap to collapse" : "Tap to expand"}
+              <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", open && "rotate-180")} aria-hidden />
+            </span>
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="top-[73px] h-[calc(100vh-73px)] w-[88vw] max-w-sm overflow-y-auto bg-slate-50 p-0">
