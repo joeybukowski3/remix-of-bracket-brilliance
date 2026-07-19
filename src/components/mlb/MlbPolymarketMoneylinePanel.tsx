@@ -1,9 +1,12 @@
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ExternalLink, MapPin } from "lucide-react";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { formatCents } from "@/lib/mlb/polymarketMoneylines";
 import { getEdgeTierLabel } from "@/lib/mlb/mlbModelEdge";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import type { MoneylineGame } from "@/lib/mlb/polymarketMoneylines";
 import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 
@@ -298,6 +301,18 @@ export default function MlbPolymarketMoneylinePanel({
 } = {}) {
   const { data, isLoading, isError } = usePolymarketMlbMoneylines();
   const { data: pitcherRegressionData } = usePitcherRegression();
+  const location = useLocation();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [mobileOpen, setMobileOpen] = useState<string>("");
+
+  // #moneylines deep-links (e.g. from the sidebar "Game Matchups" flow)
+  // must reveal this panel even when its mobile accordion starts closed.
+  useEffect(() => {
+    if (location.hash === "#moneylines") {
+      setMobileOpen("polymarket");
+      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [location.hash]);
 
   const getPitcherXera = (name: string | null): number | null => {
     if (!name) return null;
@@ -321,64 +336,83 @@ export default function MlbPolymarketMoneylinePanel({
 
   const hasEdges = Object.keys(mlEdges).length > 0;
 
-  return (
-    <div className="polymarket-panel box-border w-full min-w-0 pr-1.5">
-      {/* Header */}
-      <div className="mb-2.5 rounded-xl bg-[#031635] px-3 py-2.5">
-        <div className="text-[11px] font-extrabold leading-tight tracking-wide text-white">
-          Polymarket Moneylines
-        </div>
-        <div className="mt-0.5 text-[10px] leading-tight text-sky-300/80">
-          {hasEdges ? "Sorted by model edge strength" : "Live YES / NO prices for today's games"}
-        </div>
-        {data && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[9px] tabular-nums text-slate-400">
-            <span>{formatUpdatedAgo(data.updatedAt)}</span>
-            <span>
-              {data.matchedCount} of {data.totalGames} games matched
-            </span>
-            {data.stale && (
-              <span className="rounded bg-amber-500/20 px-1 py-0.5 text-amber-300">
-                Stale
-              </span>
-            )}
-          </div>
-        )}
+  const headerNode = (
+    <div className="rounded-xl bg-[#031635] px-3 py-2.5 text-left">
+      <div className="text-[11px] font-extrabold leading-tight tracking-wide text-white">
+        Polymarket Moneylines
       </div>
-
-      {/* Body */}
-      {isLoading ? (
-        <LoadingSkeleton />
-      ) : isError ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-[11px] text-red-700">
-          Unable to load Polymarket data. The MLB page is unaffected.
-        </div>
-      ) : sortedGames.length > 0 ? (
-        <div className="space-y-2">
-          {sortedGames.map((game) => (
-            <GameCard
-              key={game.gamePk}
-              game={game}
-              mlEdge={mlEdges[game.gamePk] ?? null}
-              onOpenGame={onOpenGame}
-              getPitcherXera={getPitcherXera}
-            />
-          ))}
-        </div>
-      ) : data && data.totalGames === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center text-[11px] text-slate-400">
-          <p>No MLB games are scheduled today.</p>
-          <p className="mt-1.5">Today&apos;s models and projections will automatically return when the next MLB slate becomes available.</p>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center text-[11px] text-slate-400">
-          No active Polymarket moneyline markets found.
+      <div className="mt-0.5 text-[10px] leading-tight text-sky-300/80">
+        {hasEdges ? "Sorted by model edge strength" : "Live YES / NO prices for today's games"}
+      </div>
+      {data && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[9px] tabular-nums text-slate-400">
+          <span>{formatUpdatedAgo(data.updatedAt)}</span>
+          <span>
+            {data.matchedCount} of {data.totalGames} games matched
+          </span>
+          {data.stale && (
+            <span className="rounded bg-amber-500/20 px-1 py-0.5 text-amber-300">
+              Stale
+            </span>
+          )}
         </div>
       )}
+    </div>
+  );
 
-      {/* Footer */}
-      <div className="mt-2 text-center text-[8px] text-slate-400">
-        Prices reflect Polymarket prediction market bids · Not sportsbook odds
+  const bodyNode = isLoading ? (
+    <LoadingSkeleton />
+  ) : isError ? (
+    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-[11px] text-red-700">
+      Unable to load Polymarket data. The MLB page is unaffected.
+    </div>
+  ) : sortedGames.length > 0 ? (
+    <div className="space-y-2">
+      {sortedGames.map((game) => (
+        <GameCard
+          key={game.gamePk}
+          game={game}
+          mlEdge={mlEdges[game.gamePk] ?? null}
+          onOpenGame={onOpenGame}
+          getPitcherXera={getPitcherXera}
+        />
+      ))}
+    </div>
+  ) : data && data.totalGames === 0 ? (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center text-[11px] text-slate-400">
+      <p>No MLB games are scheduled today.</p>
+      <p className="mt-1.5">Today&apos;s models and projections will automatically return when the next MLB slate becomes available.</p>
+    </div>
+  ) : (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center text-[11px] text-slate-400">
+      No active Polymarket moneyline markets found.
+    </div>
+  );
+
+  const footerNode = (
+    <div className="mt-2 text-center text-[8px] text-slate-400">
+      Prices reflect Polymarket prediction market bids · Not sportsbook odds
+    </div>
+  );
+
+  return (
+    <div ref={panelRef} className="polymarket-panel box-border w-full min-w-0 pr-1.5">
+      {/* Mobile: collapsible, collapsed by default (unless #moneylines is deep-linked) */}
+      <Accordion type="single" collapsible className="md:hidden" value={mobileOpen} onValueChange={setMobileOpen}>
+        <AccordionItem value="polymarket" className="border-none">
+          <AccordionTrigger className="p-0 hover:no-underline">{headerNode}</AccordionTrigger>
+          <AccordionContent className="px-0 pb-0 pt-2">
+            {bodyNode}
+            {footerNode}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Desktop: always expanded, unchanged */}
+      <div className="hidden md:block">
+        <div className="mb-2.5">{headerNode}</div>
+        {bodyNode}
+        {footerNode}
       </div>
     </div>
   );

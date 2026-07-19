@@ -3413,6 +3413,17 @@ function HomeSchedule({
     return map;
   }, [detailPreviews, polymarketData]);
 
+  // #pitcher-regression deep-links (sidebar / mobile preview "View Full
+  // Model" links) must reliably scroll this always-visible section into
+  // view, same pattern as SocialMediaTablesSection's hash effect below.
+  const location = useLocation();
+  const pitcherRegressionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (location.hash === "#pitcher-regression") {
+      pitcherRegressionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [location.hash]);
+
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
       <div className="flex flex-col gap-5 px-4 py-6 sm:px-5 lg:px-6 2xl:flex-row">
@@ -3464,7 +3475,7 @@ function HomeSchedule({
           <MlbToolsGrid />
           
           {/* Pitcher Regression Table */}
-          <section id="pitcher-regression" className="space-y-3">
+          <section id="pitcher-regression" ref={pitcherRegressionRef} className="space-y-3">
             <div className="flex flex-col gap-1">
               <h2 className="text-xl font-bold tracking-tight text-[#031635]">Pitcher Regression Analysis</h2>
               <p className="text-xs text-slate-500">Today's starters — ERA vs expected metrics (xFIP/xERA). Negative score = overperforming (regression risk), Positive = underperforming (improvement likely). Auto-generated from MLB Stats API + Baseball Savant.</p>
