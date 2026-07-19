@@ -52,6 +52,9 @@ emit({
   hr_confirmed_game_coverage:
     result.plan.hr.confirmedGameCoverage != null ? result.plan.hr.confirmedGameCoverage.toFixed(2) : "n/a",
   hr_confirmed_rows_without_game_identity: result.plan.hr.confirmedRowsWithoutGameIdentity ?? 0,
+  // K's fixed 11:00 AM ET earliest-post floor -- "n/a" once already posted
+  // (no readiness was evaluated) rather than a fabricated true/false.
+  k_earliest_post_guard_passed: result.plan.k.earliestPostGuardPassed ?? "n/a",
   plan_path: planPath,
   snapshot_path: snapshotPath,
 });

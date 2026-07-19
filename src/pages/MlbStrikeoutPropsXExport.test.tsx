@@ -25,11 +25,15 @@ function kRow(overrides: Record<string, unknown>) {
     opponent: "PHI",
     status: "VALID",
     kLine: 6.5,
-    direction: "over",
     oddsOver: "-115",
     oddsUnder: "-105",
+    // projectedKs - kLine = +1.7 (OVER) by default. Side is derived
+    // strictly from this sign in mlb-k-x-selection-core.mjs -- a
+    // projectionEdge/direction override alone no longer has any effect;
+    // set projectedKs/kLine directly to control both the edge magnitude
+    // and the resulting side.
     projectedKs: 8.2,
-    projectionEdge: 1.7,
+    projectedIP: 6.0,
     isCurrentStarter: true,
     gameStarted: false,
     opposingLineupConfirmed: true,
@@ -42,9 +46,9 @@ function kRow(overrides: Record<string, unknown>) {
 describe("MlbStrikeoutPropsXExport route", () => {
   it("renders only current-starter rows, excludes the replaced starter, preserves absolute-edge order", () => {
     const rows = [
-      kRow({ pitcher: "current-low", pitcherId: 1, projectionEdge: 1.0 }),
-      kRow({ pitcher: "replaced", pitcherId: 2, isCurrentStarter: false, projectionEdge: 3.5 }),
-      kRow({ pitcher: "current-high", pitcherId: 3, projectionEdge: 2.4 }),
+      kRow({ pitcher: "current-low", pitcherId: 1, projectedKs: 7.5 }), // edge +1.0
+      kRow({ pitcher: "replaced", pitcherId: 2, isCurrentStarter: false, projectedKs: 10.0 }), // edge +3.5, excluded by starter check
+      kRow({ pitcher: "current-high", pitcherId: 3, projectedKs: 8.9 }), // edge +2.4
     ];
     const selection = selectConfirmedKRows({ rows });
     const artifact = buildKArtifact({ slateDate: "2026-07-12", snapshot, selectionStatus: "READY_CONFIRMED_SELECTIONS", selectedRows: selection.selected });
@@ -58,8 +62,8 @@ describe("MlbStrikeoutPropsXExport route", () => {
 
   it("displays the correct side and side-specific odds for OVER and UNDER", () => {
     const rows = [
-      kRow({ pitcher: "Over Guy", pitcherId: 1, gameId: 10, direction: "over", oddsOver: "-120", oddsUnder: "+100", projectionEdge: 1.2 }),
-      kRow({ pitcher: "Under Guy", pitcherId: 2, gameId: 11, direction: "under", oddsOver: "-110", oddsUnder: "-130", projectedKs: 4.5, projectionEdge: -2.0 }),
+      kRow({ pitcher: "Over Guy", pitcherId: 1, gameId: 10, projectedKs: 7.7, oddsOver: "-120", oddsUnder: "+100" }), // edge +1.2 -> OVER
+      kRow({ pitcher: "Under Guy", pitcherId: 2, gameId: 11, oddsOver: "-110", oddsUnder: "-130", projectedKs: 4.5 }), // edge -2.0 -> UNDER
     ];
     const selection = selectConfirmedKRows({ rows });
     const artifact = buildKArtifact({ slateDate: "2026-07-12", snapshot, selectionStatus: "READY_CONFIRMED_SELECTIONS", selectedRows: selection.selected });

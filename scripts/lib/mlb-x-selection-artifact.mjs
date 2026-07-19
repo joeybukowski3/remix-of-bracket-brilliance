@@ -158,6 +158,7 @@ export function buildKArtifact({ slateDate, snapshot, selectedRows = [], selecti
       oddsOver: normalizeText(row.oddsOver) || null,
       oddsUnder: normalizeText(row.oddsUnder) || null,
       projectedKs,
+      projectedIP: toFiniteNumber(row.projectedIP),
       projectionEdge: projectionDifference,
       projectionDifference,
       strikeoutScore: toFiniteNumber(row.strikeoutScore ?? row.kScore),

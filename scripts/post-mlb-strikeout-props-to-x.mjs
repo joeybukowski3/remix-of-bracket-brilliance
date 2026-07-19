@@ -4,18 +4,25 @@ import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
 import { filterEligibleKRows } from "./lib/mlb-k-social-eligibility.mjs";
-import { checkDailyPostingLock, getForceRepostOverride, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
+import { checkDailyPostingLock, getDuplicateStatePath, getForceRepostOverride, readPostReceipt, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
 import { buildConfirmationSnapshot, resolveKRowFacts } from "./lib/mlb-x-confirmation-snapshot.mjs";
 import { selectConfirmedKRows } from "./lib/mlb-k-x-selection-core.mjs";
 import { resolvePostingReadiness, WaitingReason } from "./lib/mlb-x-readiness.mjs";
-import { getEtSlateDate, SlatePhase } from "./lib/mlb-x-slate-timing.mjs";
+import {
+  getEtMinutesSinceMidnight,
+  getEtSlateDate,
+  isAtOrAfterEtClockTime,
+  K_EARLIEST_POST_ET_HOUR,
+  K_EARLIEST_POST_ET_MINUTE,
+  SlatePhase,
+} from "./lib/mlb-x-slate-timing.mjs";
 import {
   ARTIFACT_MISMATCH_STATUS,
   assertArtifactConsistency,
   buildKArtifact,
   validateArtifact,
 } from "./lib/mlb-x-selection-artifact.mjs";
-import { buildKCaptionFromArtifact } from "./lib/mlb-x-artifact-caption.mjs";
+import { buildKCaptionFromArtifact, K_VALUE_REPLY_CAPTION } from "./lib/mlb-x-artifact-caption.mjs";
 import { writeMlbSocialGraphic } from "./lib/mlb-social-graphic-renderer.mjs";
 
 const ROOT = process.cwd();
@@ -153,6 +160,7 @@ async function scrapeKPageRows(page) {
       side: el.getAttribute("data-k-side") || "",
       projectedKs: el.getAttribute("data-k-projected-ks") || "",
       projectionEdge: el.getAttribute("data-k-projection-edge") || "",
+      projectedIP: el.getAttribute("data-k-projected-ip") || "",
       strikeoutScore: el.getAttribute("data-k-score") || "",
     }));
     rows.push({
@@ -167,6 +175,7 @@ async function scrapeKPageRows(page) {
       direction: normalizeText(data.side) || null,
       projectedKs: toFiniteNumber(data.projectedKs),
       projectionEdge: toFiniteNumber(data.projectionEdge),
+      projectedIP: toFiniteNumber(data.projectedIP),
       strikeoutScore: toFiniteNumber(data.strikeoutScore),
     });
   }
@@ -192,8 +201,27 @@ async function publishPost({ client, caption, screenshotPath }) {
   return { tweetId, tweetUrl, mediaId };
 }
 
+/** Posts the approved static CTA/hashtag self-reply, threaded onto the given main tweet. */
+async function publishReply({ client, inReplyToTweetId }) {
+  const response = await client.v2.tweet(K_VALUE_REPLY_CAPTION, { reply: { in_reply_to_tweet_id: inReplyToTweetId } });
+  const replyTweetId = normalizeText(response?.data?.id);
+  if (!replyTweetId) throw new Error("Reply post response did not include a tweet ID.");
+  const replyTweetUrl = `https://x.com/_joeknowsball_/status/${replyTweetId}`;
+  console.log(`[mlb-strikeout-props-x] postedReplyUrl=${replyTweetUrl}`);
+  return { replyTweetId, replyTweetUrl };
+}
+
+function formatEtClock(now) {
+  const totalMinutes = getEtMinutesSinceMidnight(now);
+  const hour = Math.floor(totalMinutes / 60)
+    .toString()
+    .padStart(2, "0");
+  const minute = (totalMinutes % 60).toString().padStart(2, "0");
+  return `${hour}:${minute}`;
+}
+
 /** Enrich scraped rows with live confirmation, select via the K core, and freeze the artifact. */
-function buildSelection({ pageData, snapshot, slateDate }) {
+function buildSelection({ pageData, snapshot, slateDate, now, mode }) {
   const today = getTodayEt();
   const dataFresh = pageData.date === today;
   const enriched = (dataFresh ? pageData.rows : []).map((row) => {
@@ -221,6 +249,21 @@ function buildSelection({ pageData, snapshot, slateDate }) {
   // single strong confirmed edge is postable (K has no hard minimum).
   const targetCount = snapshot.timing.phase === SlatePhase.POLLING ? 3 : 1;
 
+  // 11:00 AM ET is the opening of the K posting window, not a fixed
+  // publication guarantee -- the existing first-pitch-relative phase/final
+  // cutoff below still governs everything else. This is the poster's own
+  // final live revalidation of the guard (the poll plan already checked it
+  // once before launching this job); see mlb-x-slate-timing.mjs. Always
+  // computed and logged accurately regardless of mode -- only its
+  // *blocking effect* on readiness is bypassed for dry-run below.
+  const earliestPostGuardPassed = isAtOrAfterEtClockTime(now, K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE);
+  // A manual dry-run may still preview a fully-qualified board before
+  // 11:00 AM ET (useful for QA) -- a scheduled/live post never bypasses the
+  // guard; the true guard status is still reported via earliestPostGuardPassed
+  // above regardless of mode, so a dry-run run before 11:00 clearly shows a
+  // live post would currently be blocked even while rendering a preview.
+  const readinessEarliestPostGuardPassed = mode === "dry-run" ? true : earliestPostGuardPassed;
+
   const readiness = resolvePostingReadiness({
     timing: snapshot.timing,
     confirmedCount: selection.selected.length,
@@ -229,6 +272,7 @@ function buildSelection({ pageData, snapshot, slateDate }) {
     projectedExcludedCount: selection.excludedStaleStarterCount,
     confirmationSourceFailed: !snapshot.ok,
     waitingReason,
+    earliestPostGuardPassed: readinessEarliestPostGuardPassed,
   });
 
   const artifact = buildKArtifact({
@@ -238,7 +282,7 @@ function buildSelection({ pageData, snapshot, slateDate }) {
     selectionStatus: readiness.finalStatus,
   });
 
-  return { selection, readiness, artifact, dataFresh };
+  return { selection, readiness, artifact, dataFresh, earliestPostGuardPassed };
 }
 
 async function main() {
@@ -261,6 +305,34 @@ async function main() {
 
   const now = new Date();
   const slateDate = getTodayEt();
+
+  // Reply-only recovery: if today's slate already has a main-post receipt
+  // but the self-reply never went out (a partial failure between the two
+  // posts), post ONLY the missing reply -- never re-run selection/scraping/
+  // rendering, and never re-post the main tweet. Skipped entirely under
+  // force_repost, which always takes the full fresh-post-and-reply path
+  // below instead (same override semantics as before this feature existed).
+  if (mode === "post" || mode === "post-text-only") {
+    const forceRepost = getForceRepostOverride(process.env.GITHUB_EVENT_NAME ?? "", process.env.K_X_FORCE_REPOST);
+    if (!forceRepost) {
+      const statePath = getDuplicateStatePath(buildDailyPostingKey(slateDate), getStateDir());
+      const existingReceipt = readPostReceipt(statePath);
+      if (existingReceipt && existingReceipt.tweetId && !existingReceipt.replyTweetId) {
+        console.log(`[mlb-strikeout-props-x] Recovering missing reply for existing post ${existingReceipt.tweetUrl ?? existingReceipt.tweetId}.`);
+        const reply = await publishReply({ client: account.client, inReplyToTweetId: existingReceipt.tweetId });
+        savePostReceipt(statePath, { ...existingReceipt, ...reply, replyPostedAt: new Date().toISOString() });
+        console.log(`[mlb-strikeout-props-x] duplicateReceipt=${statePath}`);
+        logFinalStatus("POSTED_REPLY_RECOVERY");
+        return;
+      }
+      if (existingReceipt && existingReceipt.tweetId && existingReceipt.replyTweetId) {
+        console.log(`[mlb-strikeout-props-x] Duplicate protection: ${buildDailyPostingKey(slateDate)} already posted with reply (${statePath}).`);
+        logFinalStatus("SKIPPED_ALREADY_POSTED_TODAY");
+        return;
+      }
+    }
+  }
+
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1080, height: 1400 }, deviceScaleFactor: 1 });
@@ -269,7 +341,7 @@ async function main() {
     await page.close();
 
     const snapshot = await buildConfirmationSnapshot({ date: slateDate, now });
-    const { selection, readiness, artifact, dataFresh } = buildSelection({ pageData, snapshot, slateDate });
+    const { selection, readiness, artifact, dataFresh, earliestPostGuardPassed } = buildSelection({ pageData, snapshot, slateDate, now, mode });
 
     if (mode === "post-key-only") {
       if (!readiness.ready) throw new Error(`Not ready: ${readiness.finalStatus}`);
@@ -279,8 +351,12 @@ async function main() {
 
     console.log(`[mlb-strikeout-props-x] mode=${mode}`);
     console.log(`[mlb-strikeout-props-x] slateDate=${slateDate} pageDate=${pageData.date || "missing"} dataFresh=${dataFresh}`);
-    console.log(`[mlb-strikeout-props-x] snapshotOk=${snapshot.ok} phase=${readiness.phase} minutesUntilFirstPitch=${readiness.minutesUntilFirstPitch ?? "n/a"}`);
+    console.log(
+      `[mlb-strikeout-props-x] utcNow=${now.toISOString()} etClock=${formatEtClock(now)} earliestPostEt=${String(K_EARLIEST_POST_ET_HOUR).padStart(2, "0")}:${String(K_EARLIEST_POST_ET_MINUTE).padStart(2, "0")} earliestPostGuardPassed=${earliestPostGuardPassed}`,
+    );
+    console.log(`[mlb-strikeout-props-x] snapshotOk=${snapshot.ok} phase=${readiness.phase} isFinalCutoff=${snapshot.timing.isFinalCutoff} minutesUntilFirstPitch=${readiness.minutesUntilFirstPitch ?? "n/a"}`);
     console.log(`[mlb-strikeout-props-x] validStarters=${selection.validStarterCount} heldForOpposing=${selection.heldForOpposingCount} selectedCount=${readiness.selectedCount}`);
+    console.log(`[mlb-strikeout-props-x] readinessResult=${readiness.finalStatus} ready=${readiness.ready}`);
 
     if (!readiness.ready) {
       console.log(`[mlb-strikeout-props-x] Not posting: ${readiness.finalStatus}`);
@@ -350,19 +426,34 @@ async function main() {
       rows: artifact.rows,
       postedAt: new Date().toISOString(),
       forcedOverride: forceRepost,
+      // Main post and self-reply are one posting unit sharing this receipt.
+      // Populated after the reply below succeeds -- left null here so a
+      // crash between the two posts leaves a receipt this script's own
+      // reply-recovery check (above) can find and finish on the next run.
+      replyTweetId: null,
+      replyTweetUrl: null,
+      replyPostedAt: null,
     };
 
+    let mainReceipt;
     if (mode === "post-text-only") {
       const response = await account.client.v2.tweet(captionResult.caption);
       const tweetId = normalizeText(response?.data?.id);
       if (!tweetId) throw new Error("X text-only post response did not include a tweet ID.");
-      savePostReceipt(lock.statePath, { ...baseReceipt, mode: "text-only", tweetId, tweetUrl: `https://x.com/_joeknowsball_/status/${tweetId}` });
+      mainReceipt = { ...baseReceipt, mode: "text-only", tweetId, tweetUrl: `https://x.com/_joeknowsball_/status/${tweetId}` };
     } else {
       const post = await publishPost({ client: account.client, caption: captionResult.caption, screenshotPath });
-      savePostReceipt(lock.statePath, { ...baseReceipt, tweetId: post.tweetId, tweetUrl: post.tweetUrl, mediaId: post.mediaId, screenshotPath });
+      mainReceipt = { ...baseReceipt, tweetId: post.tweetId, tweetUrl: post.tweetUrl, mediaId: post.mediaId, screenshotPath };
     }
+    // Save immediately -- before attempting the reply -- so a failure below
+    // never re-triggers a second main post; only the reply-recovery path
+    // above will ever run again for today's slate.
+    savePostReceipt(lock.statePath, mainReceipt);
     console.log(`[mlb-strikeout-props-x] duplicateReceipt=${lock.statePath}`);
     logFinalStatus("POSTED");
+
+    const reply = await publishReply({ client: account.client, inReplyToTweetId: mainReceipt.tweetId });
+    savePostReceipt(lock.statePath, { ...mainReceipt, ...reply, replyPostedAt: new Date().toISOString() });
   } finally {
     await browser.close();
   }

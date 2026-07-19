@@ -160,6 +160,16 @@ describe("artifact builders", () => {
     expect(artifact.rows[0].odds).toBe("-120");
   });
 
+  it("K artifact carries projectedIP through for the renderer's compact supporting field", () => {
+    const artifact = buildKArtifact({
+      slateDate: "2026-07-12",
+      snapshot,
+      selectionStatus: "READY_CONFIRMED_SELECTIONS",
+      selectedRows: [{ pitcher: "Tarik Skubal", team: "det", opponent: "phi", kLine: 7.5, oddsOver: "-120", projectedKs: 9.3, projectedIP: 6.4, pitcherId: 669373, gameId: 745002 }],
+    });
+    expect(artifact.rows[0].projectedIP).toBe(6.4);
+  });
+
   it("mismatch status constant is exported for the poster", () => {
     expect(ARTIFACT_MISMATCH_STATUS).toBe("FAILED_ARTIFACT_SELECTION_MISMATCH");
   });

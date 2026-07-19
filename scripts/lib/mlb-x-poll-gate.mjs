@@ -2,10 +2,16 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { selectConfirmedHrProps } from "./mlb-hr-x-selection-core.mjs";
 import { buildConfirmationSnapshot, resolveHrRowFacts } from "./mlb-x-confirmation-snapshot.mjs";
-import { getDuplicateStatePath } from "./mlb-x-daily-lock.mjs";
+import { getDuplicateStatePath, readPostReceipt } from "./mlb-x-daily-lock.mjs";
 import { createMlbXPollPlan } from "./mlb-x-poll-plan.mjs";
 import { ReadinessStatus, resolvePostingReadiness, WaitingReason } from "./mlb-x-readiness.mjs";
-import { getEtSlateDate, SlatePhase } from "./mlb-x-slate-timing.mjs";
+import {
+  getEtSlateDate,
+  isAtOrAfterEtClockTime,
+  K_EARLIEST_POST_ET_HOUR,
+  K_EARLIEST_POST_ET_MINUTE,
+  SlatePhase,
+} from "./mlb-x-slate-timing.mjs";
 
 const PRODUCTION_HR_RAW_URL = "https://www.joeknowsball.com/data/mlb/hr-props-raw.json";
 const HR_TARGET_TABLE_SIZE = 3;
@@ -41,12 +47,25 @@ function normalizeHrBatter(value) {
   };
 }
 
-export function getPollReceiptState({ slateDate, hrStateDir, kStateDir, exists = existsSync }) {
+export function getPollReceiptState({ slateDate, hrStateDir, kStateDir, exists = existsSync, readReceipt = readPostReceipt }) {
   const hrReceiptPath = getDuplicateStatePath(`mlb-hr-props:${slateDate}`, hrStateDir);
   const kReceiptPath = getDuplicateStatePath(`mlb-k-props:${slateDate}`, kStateDir);
+  const kReceipt = readReceipt(kReceiptPath);
   return {
     hrPosted: exists(hrReceiptPath),
-    kPosted: exists(kReceiptPath),
+    // K's main post and self-reply are one posting unit -- a receipt with a
+    // main tweetId but no replyTweetId yet (a partial failure, or simply an
+    // older receipt from before the self-reply feature existed) is NOT
+    // "fully posted": the plan must keep launching post-k so the poster's
+    // own reply-recovery path can finish the missing reply. Never re-posts
+    // the main tweet either way -- see post-mlb-strikeout-props-to-x.mjs.
+    kPosted: Boolean(kReceipt?.tweetId && kReceipt?.replyTweetId),
+    // Distinct from kPosted=false-because-nothing-posted-yet: a reply-only
+    // recovery must run regardless of normal market/timing readiness (a
+    // pending reply doesn't depend on the slate being "ready" the way a
+    // fresh post does), and must never be treated as a fresh posting
+    // opportunity by resolveKPollReadiness's ordinary starter/lineup checks.
+    kReplyPending: Boolean(kReceipt?.tweetId && !kReceipt?.replyTweetId),
     hrReceiptPath,
     kReceiptPath,
   };
@@ -83,9 +102,15 @@ export function resolveHrPollReadiness({ raw, snapshot, slateDate }) {
 /**
  * Cheap K confirmation gate. The snapshot's listed probable pitchers are the
  * current starters; the heavy poster still re-scrapes valid markets and
- * revalidates starters/lineups immediately before posting.
+ * revalidates starters/lineups (plus the full value-play eligibility --
+ * IP>3.0, non-zero edge, side-specific odds) immediately before posting.
+ *
+ * `now` is required to enforce K's 11:00 AM ET earliest-post floor
+ * (K_EARLIEST_POST_ET_HOUR/MINUTE) -- defaults to the current time so
+ * existing callers/tests that don't care about the guard keep working, but
+ * every real caller should pass the same `now` used to build `snapshot`.
  */
-export function resolveKPollReadiness({ snapshot }) {
+export function resolveKPollReadiness({ snapshot, now = new Date() }) {
   const starters = [];
   for (const game of snapshot?.games ?? []) {
     if (game.started || game.excluded) continue;
@@ -101,14 +126,21 @@ export function resolveKPollReadiness({ snapshot }) {
   const confirmedCount = atCutoff ? starters.length : starters.filter((starter) => starter.opposingLineupConfirmed).length;
   const waitingReason = starters.length > confirmedCount ? WaitingReason.OPPOSING_LINEUP : WaitingReason.VALID_MARKETS;
   const targetCount = snapshot?.timing?.phase === SlatePhase.POLLING ? 3 : 1;
-  return resolvePostingReadiness({
+  const earliestPostGuardPassed = isAtOrAfterEtClockTime(now, K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE);
+  const readiness = resolvePostingReadiness({
     timing: snapshot?.timing,
     confirmedCount,
     targetCount,
     maxTableSize: K_TARGET_TABLE_SIZE,
     confirmationSourceFailed: !snapshot?.ok,
     waitingReason,
+    earliestPostGuardPassed,
   });
+  // Echoed for logging (plan-mlb-x-posts.mjs) -- resolvePostingReadiness
+  // itself only encodes the pass/fail via finalStatus, not the raw guard
+  // input, so callers that want to log "guard passed: true/false" directly
+  // (independent of whatever else determined finalStatus) can read it here.
+  return { ...readiness, earliestPostGuardPassed };
 }
 
 function failedReadiness() {
@@ -145,7 +177,18 @@ export async function createSharedMlbXPollPlan({
       hrReadiness = failedReadiness();
     }
   }
-  const kReadiness = receipts.kPosted ? undefined : resolveKPollReadiness({ snapshot });
+  let kReadiness;
+  if (!receipts.kPosted) {
+    // A pending reply must get a chance to send regardless of normal
+    // market/timing conditions -- e.g. after the final cutoff, when a fresh
+    // post would correctly no longer be ready, a reply to an ALREADY-posted
+    // tweet is still fully appropriate and safe. Bypasses resolveKPollReadiness
+    // entirely for this case rather than risking it computing not-ready and
+    // leaving the reply stuck forever once the market window has closed.
+    kReadiness = receipts.kReplyPending
+      ? { ready: true, finalStatus: ReadinessStatus.READY_REPLY_RECOVERY, selectedCount: 0 }
+      : resolveKPollReadiness({ snapshot, now });
+  }
 
   return {
     plan: createMlbXPollPlan({

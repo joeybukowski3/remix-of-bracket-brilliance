@@ -3,9 +3,13 @@ import {
   SlatePhase,
   computeSlateTiming,
   fetchSlateTiming,
+  getEtMinutesSinceMidnight,
   getEtSlateDate,
+  isAtOrAfterEtClockTime,
   isGameExcluded,
   isGameStarted,
+  K_EARLIEST_POST_ET_HOUR,
+  K_EARLIEST_POST_ET_MINUTE,
   normalizeScheduleGames,
 } from "../../../scripts/lib/mlb-x-slate-timing.mjs";
 
@@ -253,5 +257,28 @@ describe("fetchSlateTiming fail-closed", () => {
     const result = await fetchSlateTiming({ now, date: "2026-07-15", fetchImpl });
     expect(result.phase).toBe(SlatePhase.PREFERRED);
     expect(result.minutesUntilFirstPitch).toBe(75);
+  });
+});
+
+describe("isAtOrAfterEtClockTime -- K's fixed 11:00 AM ET floor, DST-safe", () => {
+  it("EST (winter, UTC-5): blocked at 10:59, eligible at 11:00 and 11:01", () => {
+    expect(isAtOrAfterEtClockTime(new Date("2026-01-15T15:59:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE)).toBe(false);
+    expect(isAtOrAfterEtClockTime(new Date("2026-01-15T16:00:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE)).toBe(true);
+    expect(isAtOrAfterEtClockTime(new Date("2026-01-15T16:01:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE)).toBe(true);
+  });
+
+  it("EDT (summer, UTC-4): blocked at 10:59, eligible at 11:00 and 11:01", () => {
+    expect(isAtOrAfterEtClockTime(new Date("2026-07-17T14:59:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE)).toBe(false);
+    expect(isAtOrAfterEtClockTime(new Date("2026-07-17T15:00:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE)).toBe(true);
+    expect(isAtOrAfterEtClockTime(new Date("2026-07-17T15:01:00.000Z"), K_EARLIEST_POST_ET_HOUR, K_EARLIEST_POST_ET_MINUTE)).toBe(true);
+  });
+
+  it("K_EARLIEST_POST_ET_HOUR/MINUTE are 11:00", () => {
+    expect(K_EARLIEST_POST_ET_HOUR).toBe(11);
+    expect(K_EARLIEST_POST_ET_MINUTE).toBe(0);
+  });
+
+  it("getEtMinutesSinceMidnight normalizes midnight to 0, not 24*60", () => {
+    expect(getEtMinutesSinceMidnight(new Date("2026-07-17T04:00:00.000Z"))).toBe(0);
   });
 });

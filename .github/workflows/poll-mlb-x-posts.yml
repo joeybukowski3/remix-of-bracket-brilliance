@@ -193,7 +193,16 @@ jobs:
         shell: bash
         run: |
           FILE=".cache/mlb-strikeout-props-x-posted/mlb-k-props-${{ needs.plan.outputs.slate_date }}.json"
-          if [ -f "$FILE" ]; then echo "posted=true" >> "$GITHUB_OUTPUT"; else echo "posted=false" >> "$GITHUB_OUTPUT"; fi
+          # Main post + self-reply are one posting unit -- a receipt with a
+          # main tweetId but no replyTweetId yet is NOT fully posted; let
+          # this job continue so post-mlb-strikeout-props-to-x.mjs's own
+          # reply-recovery path can finish the missing reply.
+          if [ -f "$FILE" ]; then
+            REPLY_STATE="$(node -e "try{const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));process.stdout.write(r&&r.tweetId&&r.replyTweetId?'complete':'pending')}catch{process.stdout.write('pending')}" "$FILE")"
+            if [ "$REPLY_STATE" = "complete" ]; then echo "posted=true" >> "$GITHUB_OUTPUT"; else echo "posted=false" >> "$GITHUB_OUTPUT"; fi
+          else
+            echo "posted=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-node@v4
         if: steps.already.outputs.posted != 'true'

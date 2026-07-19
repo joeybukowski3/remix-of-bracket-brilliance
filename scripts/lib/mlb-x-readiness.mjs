@@ -25,6 +25,17 @@ export const ReadinessStatus = {
   SKIPPED_AFTER_CUTOFF: "SKIPPED_AFTER_CUTOFF",
   SKIPPED_ALREADY_POSTED_TODAY: "SKIPPED_ALREADY_POSTED_TODAY",
   FAILED_CONFIRMATION_SOURCE: "FAILED_CONFIRMATION_SOURCE",
+  /** Before a content type's fixed daily earliest-post clock time (currently only K's ~11:00 AM ET floor). */
+  WAITING_FOR_EARLIEST_POST_TIME: "WAITING_FOR_EARLIEST_POST_TIME",
+  /**
+   * A main post already exists but its self-reply never went out (currently
+   * only K). Ready regardless of the normal timing/market conditions --
+   * posting a pending reply doesn't depend on the slate being "ready" the
+   * way a fresh post does. See mlb-x-poll-gate.mjs's getPollReceiptState/
+   * createSharedMlbXPollPlan and post-mlb-strikeout-props-to-x.mjs's own
+   * reply-recovery short-circuit.
+   */
+  READY_REPLY_RECOVERY: "READY_REPLY_RECOVERY",
   POSTED: "POSTED",
 };
 
@@ -65,6 +76,15 @@ function waitingStatusFor(reason) {
  *                                              identified (reporting only -- echoed onto the result so every
  *                                              caller, including ones that only propagate the readiness
  *                                              object, can log it)
+ * @param {boolean} [params.earliestPostGuardPassed] false blocks readiness outright (WAITING_FOR_EARLIEST_
+ *                                              POST_TIME), regardless of confirmedCount or cutoff, until the
+ *                                              caller says a content type's fixed daily earliest-post clock
+ *                                              time has arrived. Default true -- a no-op for HR/Numerology,
+ *                                              which have no fixed daily start time; only K passes this
+ *                                              (see mlb-x-slate-timing.mjs's isAtOrAfterEtClockTime). Checked
+ *                                              after the existing hard-fail guards (no games, all started,
+ *                                              expired) so a slate whose window closes before the guard time
+ *                                              still reports the more informative SKIPPED_AFTER_CUTOFF instead.
  */
 export function resolvePostingReadiness({
   timing,
@@ -78,6 +98,7 @@ export function resolvePostingReadiness({
   confirmedGameCount = Infinity,
   minConfirmedGames = 1,
   confirmedRowsWithoutGameIdentity = 0,
+  earliestPostGuardPassed = true,
 } = {}) {
   const cap = Number.isFinite(maxTableSize) ? maxTableSize : targetCount;
   const minutesUntilFirstPitch = timing?.minutesUntilFirstPitch ?? null;
@@ -115,6 +136,12 @@ export function resolvePostingReadiness({
   if (timing.allGamesStarted) return result(ReadinessStatus.SKIPPED_ALL_GAMES_STARTED, false);
   if (phase === "PRE_POLLING") return result(ReadinessStatus.WAITING_FOR_POLLING_WINDOW, false);
   if (timing.isExpired) return result(ReadinessStatus.SKIPPED_AFTER_CUTOFF, false);
+  // Fixed daily earliest-post floor (currently only K's ~11:00 AM ET) -- a
+  // separate, additive constraint on top of the first-pitch-relative phase
+  // above, never a substitute for it. Blocks readiness outright, including
+  // the final-cutoff "post what you have" fallback below, since posting
+  // before this time is never allowed regardless of confirmed count.
+  if (!earliestPostGuardPassed) return result(ReadinessStatus.WAITING_FOR_EARLIEST_POST_TIME, false);
 
   // In a posting window (POLLING / PREFERRED / FINAL_CUTOFF).
   const atCutoff = Boolean(timing.isFinalCutoff);

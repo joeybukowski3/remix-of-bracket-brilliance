@@ -16,7 +16,7 @@
  * -- keeps it importable/testable without triggering the script's own
  * main() (which runs immediately at module load in each poster script).
  */
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 export function slugifyKey(value) {
@@ -46,6 +46,22 @@ export function checkDailyPostingLock(dailyPostingKey, stateDir, { allowOverride
 export function savePostReceipt(statePath, receipt) {
   mkdirSync(path.dirname(statePath), { recursive: true });
   writeFileSync(statePath, `${JSON.stringify(receipt, null, 2)}\n`);
+}
+
+/**
+ * Reads an existing post receipt, if any -- used to detect a partial
+ * failure (main post succeeded, a follow-up self-reply never went out) so
+ * the next run can recover by posting only what's missing, never re-posting
+ * the main content. Never throws: a missing or unparsable file is treated
+ * as "no receipt yet," identical to a fresh day, not a hard error.
+ */
+export function readPostReceipt(statePath) {
+  if (!existsSync(statePath)) return null;
+  try {
+    return JSON.parse(readFileSync(statePath, "utf8"));
+  } catch {
+    return null;
+  }
 }
 
 /**

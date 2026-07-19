@@ -26,12 +26,6 @@ function formatDateLabel(dateValue) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function formatPropLine(value) {
-  const number = toFiniteNumber(value);
-  if (number == null || number <= 0) return "";
-  return Number.isInteger(number) ? number.toFixed(0) : String(number);
-}
-
 function formatSignedEdge(edge) {
   const value = toFiniteNumber(edge);
   if (value == null) return "";
@@ -70,38 +64,55 @@ export function buildHrCaptionFromArtifact(artifact) {
   return { skipped: true, reason: `Skipping: caption is ${caption.length} chars; expected 280 or fewer.`, caption: "", captionRows: [] };
 }
 
+/**
+ * Approved static self-reply copy for the K value-post. Never varies by
+ * data -- posted verbatim as a reply to the main K value post, carrying the
+ * CTA/hashtags that used to live in the main caption. Exact wording per
+ * product approval; only ever change it if a platform character-limit issue
+ * forces a change, and report that before changing it (currently 116 chars,
+ * far under the 280 limit, so no truncation risk today).
+ */
+export const K_VALUE_REPLY_CAPTION = [
+  "Full table and custom models are FREE at JoeKnowsBall. Link in bio.",
+  "",
+  "#MLB #StrikeoutProps #MLBPicks #SportsAnalytics",
+].join("\n");
+
+/**
+ * Main K value-post caption: describes ONLY the top-ranked qualified play
+ * (rank 1 in artifact.rows, already sorted by absolute projection edge in
+ * mlb-k-x-selection-core.mjs) against the exact approved template. No date
+ * heading, no remaining rows (the screenshot carries the rest of the
+ * board), no odds, no CTA, no URL, no hashtags, no question -- that CTA/
+ * hashtag copy lives only in the self-reply (K_VALUE_REPLY_CAPTION above).
+ *
+ * `captionRows` intentionally returns the FULL artifact.rows (not just the
+ * described top row): it is a data-flow proof that this function operated
+ * on the exact same row set/order that got rendered into the screenshot
+ * (see assertArtifactConsistency in mlb-x-selection-artifact.mjs), not a
+ * literal list of what the caption text mentions.
+ */
 export function buildKCaptionFromArtifact(artifact) {
   const rows = Array.isArray(artifact?.rows) ? artifact.rows : [];
-  if (rows.length < 1) return { skipped: true, reason: "No confirmed K rows to post.", caption: "", captionRows: [] };
+  if (rows.length < 1) return { skipped: true, reason: "No confirmed K value plays to post.", caption: "", captionRows: [] };
 
-  const dateLabel = formatDateLabel(artifact?.slateDate);
-  const blocks = rows.map((row, index) => {
-    const side = normalizeText(row.side).toUpperCase() === "UNDER" ? "UNDER" : "OVER";
-    const header = `${index + 1}. ${row.pitcher} (${row.team}) vs ${row.opponent}`;
-    const pickLine = `${side} ${formatPropLine(row.kLine)} Ks (${row.odds ?? ""})`;
-    const projected = toFiniteNumber(row.projectedKs);
-    const projectionLine = `Projection: ${projected != null ? projected.toFixed(1) : "—"}`;
-    const edgeLine = `Edge: ${formatSignedEdge(row.projectionEdge)}`;
-    return [header, pickLine, projectionLine, edgeLine].join("\n");
-  });
+  const top = rows[0];
+  const side = normalizeText(top.side).toUpperCase() === "UNDER" ? "Under" : "Over";
+  const projectedKs = toFiniteNumber(top.projectedKs);
+  const kLine = toFiniteNumber(top.kLine);
+  const kLineLabel = kLine != null ? kLine.toFixed(1) : "—";
 
   const caption = [
-    `JoeKnowsBall MLB K Props - ${dateLabel}`,
+    `${top.pitcher} leads today's qualified K value board.`,
     "",
-    ...blocks.flatMap((block, index) => (index === 0 ? [block] : ["", block])),
-    "",
-    "Free Access to Full Table at Link in Bio",
-    "",
-    "#MLB #MLBPicks #Strikeouts #MLBBetting",
+    `Model projection: ${projectedKs != null ? projectedKs.toFixed(1) : "—"} K`,
+    `Market line: ${kLineLabel} K`,
+    `Recommended side: ${side} ${kLineLabel}`,
+    `Projection edge: ${formatSignedEdge(top.projectionEdge)} K`,
   ].join("\n");
 
   if (caption.length <= 280) return { skipped: false, reason: "", caption, captionRows: rows };
-
-  const shortLines = rows.map((row, index) => {
-    const side = normalizeText(row.side).toUpperCase() === "UNDER" ? "UNDER" : "OVER";
-    return `${index + 1}. ${row.pitcher} ${row.team} — ${side} ${formatPropLine(row.kLine)} (${row.odds ?? ""}) · Edge ${formatSignedEdge(row.projectionEdge)}`;
-  });
-  const shortCaption = [`MLB K Props - ${dateLabel}`, "", ...shortLines, "", "Full table: link in bio", "#MLB #Strikeouts"].join("\n");
-  if (shortCaption.length <= 280) return { skipped: false, reason: "", caption: shortCaption, captionRows: rows };
+  // No compact alternate wording -- the template is comfortably under 280
+  // chars for any realistic pitcher name; a pathological case fails closed.
   return { skipped: true, reason: `Skipping: caption is ${caption.length} chars; expected 280 or fewer.`, caption: "", captionRows: [] };
 }

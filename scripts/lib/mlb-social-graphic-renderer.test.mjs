@@ -21,7 +21,6 @@ import {
   normalizeStrikeoutRows,
   recommendedStrikeoutSide,
   renderMlbSocialSvg,
-  selectStrikeoutValuePlays,
 } from "./mlb-social-graphic-renderer.mjs";
 
 function hrRow(index, overrides = {}) {
@@ -83,44 +82,68 @@ describe("projection difference and recommendation", () => {
   });
 });
 
-describe("strikeout value selection", () => {
-  it("ranks mixed Over and Under plays by absolute edge, not K Score", () => {
-    const selected = selectStrikeoutValuePlays([
-      kRow(1, { pitcher: "Small Over", projectedKs: 7, strikeoutScore: 99 }),
-      kRow(2, { pitcher: "Large Under", projectedKs: 4.5, strikeoutScore: 70 }),
-      kRow(3, { pitcher: "Medium Over", projectedKs: 7.8, strikeoutScore: 80 }),
-    ]);
-    expect(selected.map((row) => row.pitcher)).toEqual(["Large Under", "Medium Over", "Small Over"]);
-    expect(selected.map((row) => row.recommendedSide)).toEqual(["UNDER", "OVER", "OVER"]);
+describe("normalizeStrikeoutRows -- trusts artifact order, never re-sorts or re-filters", () => {
+  it("preserves input order exactly, even when it is NOT sorted by absolute edge", () => {
+    // Deliberately "wrong" order by edge magnitude (small, large, medium) --
+    // the selection core (mlb-k-x-selection-core.mjs) already decided this
+    // order; the renderer must render it as-is, never re-rank it.
+    const rows = [
+      kRow(1, { pitcher: "Small Over", side: "OVER", projectionEdge: 0.5 }),
+      kRow(2, { pitcher: "Large Under", side: "UNDER", projectionEdge: -3.5 }),
+      kRow(3, { pitcher: "Medium Over", side: "OVER", projectionEdge: 1.8 }),
+    ];
+    const normalized = normalizeStrikeoutRows(rows);
+    expect(normalized.map((row) => row.pitcher)).toEqual(["Small Over", "Large Under", "Medium Over"]);
+    expect(normalized.map((row) => row.recommendedSide)).toEqual(["OVER", "UNDER", "OVER"]);
+    expect(normalized.map((row) => row.rank)).toEqual([1, 2, 3]);
+  });
+
+  it("trusts artifact-shaped side/projectionEdge directly, never re-deriving them", () => {
+    // side/projectionEdge deliberately disagree with what projectedKs/kLine
+    // alone would compute -- the artifact-provided fields must win.
+    const row = kRow(1, { side: "UNDER", projectionEdge: -9.9, projectedKs: 8, kLine: 5 });
+    const [normalized] = normalizeStrikeoutRows([row]);
+    expect(normalized.recommendedSide).toBe("UNDER");
+    expect(normalized.projectionDifference).toBe(-9.9);
+  });
+
+  it("falls back to computing side/edge from projectedKs - kLine only when artifact fields are absent (per-row, never a sort)", () => {
+    const rows = [kRow(1, { projectedKs: 7.5, kLine: 6.5 }), kRow(2, { projectedKs: 4.5, kLine: 6.5, oddsUnder: "-140" })];
+    const normalized = normalizeStrikeoutRows(rows);
+    expect(normalized[0].recommendedSide).toBe("OVER");
+    expect(normalized[1].recommendedSide).toBe("UNDER");
+    // order still preserved, not re-sorted by edge magnitude
+    expect(normalized.map((row) => row.pitcher)).toEqual(["Pitcher 1", "Pitcher 2"]);
   });
 
   it("uses side-specific odds and never substitutes the opposite side", () => {
-    const selected = selectStrikeoutValuePlays([
-      kRow(1, { projectedKs: 7.5, oddsOver: "+120", oddsUnder: "-150" }),
-      kRow(2, { projectedKs: 5.5, oddsOver: "+130", oddsUnder: "-140" }),
-      kRow(3, { projectedKs: 4.5, oddsOver: "+110", oddsUnder: null }),
-    ]);
-    expect(selected.find((row) => row.pitcher === "Pitcher 1")?.recommendedOdds).toBe("+120");
-    expect(selected.find((row) => row.pitcher === "Pitcher 2")?.recommendedOdds).toBe("-140");
-    expect(selected.find((row) => row.pitcher === "Pitcher 3")?.recommendedOdds).toBeNull();
+    const rows = [
+      kRow(1, { side: "OVER", projectionEdge: 1.2, oddsOver: "+120", oddsUnder: "-150" }),
+      kRow(2, { side: "UNDER", projectionEdge: -1.0, oddsOver: "+130", oddsUnder: "-140" }),
+      kRow(3, { side: "OVER", projectionEdge: 0.8, oddsOver: "+110", oddsUnder: null }),
+    ];
+    const normalized = normalizeStrikeoutRows(rows);
+    expect(normalized[0].recommendedOdds).toBe("+120");
+    expect(normalized[1].recommendedOdds).toBe("-140");
+    expect(normalized[2].recommendedOdds).toBe("+110");
   });
 
-  it("excludes zero-edge rows and limits output to five", () => {
-    const rows = [kRow(1, { projectedKs: 6.5 }), ...[2, 3, 4, 5, 6, 7].map((index) => kRow(index, { projectedKs: 6.5 + index }))];
-    const selected = selectStrikeoutValuePlays(rows, 5);
-    expect(selected).toHaveLength(5);
-    expect(selected.some((row) => row.pitcher === "Pitcher 1")).toBe(false);
+  it("truncates to limit without reordering", () => {
+    const rows = [1, 2, 3, 4, 5, 6, 7].map((n) => kRow(n, { side: n % 2 === 0 ? "UNDER" : "OVER", projectionEdge: n % 2 === 0 ? -n : n }));
+    const normalized = normalizeStrikeoutRows(rows, 5);
+    expect(normalized).toHaveLength(5);
+    expect(normalized.map((row) => row.pitcher)).toEqual(["Pitcher 1", "Pitcher 2", "Pitcher 3", "Pitcher 4", "Pitcher 5"]);
   });
 
-  it("uses deterministic tie breakers", () => {
-    const rows = [kRow(1, { pitcher: "Zulu", projectedKs: 7.5, strikeoutScore: 80 }), kRow(2, { pitcher: "Alpha", projectedKs: 5.5, strikeoutScore: 80 })];
-    expect(selectStrikeoutValuePlays(rows).map((row) => row.pitcher)).toEqual(["Alpha", "Zulu"]);
+  it("carries projectedIP through for the compact supporting field", () => {
+    const [normalized] = normalizeStrikeoutRows([kRow(1, { projectedIP: 5.8 })]);
+    expect(normalized.projectedIP).toBe(5.8);
   });
 
   it("does not mutate input rows", () => {
     const rows = fiveKRows();
     const before = structuredClone(rows);
-    selectStrikeoutValuePlays(rows);
+    normalizeStrikeoutRows(rows);
     expect(rows).toEqual(before);
   });
 });
@@ -172,6 +195,49 @@ describe("deterministic production SVG", () => {
     expect(svg).toContain("Jul 13, 2026");
     expect(svg).toContain("JoeKnowsBall.com/mlb/strikeout-props");
     expect(svg).toContain("Please bet responsibly. 21+");
+  });
+
+  it("K header clearly communicates the value-board purpose (approved title/subtitle)", () => {
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows: fiveKRows() });
+    expect(svg).toContain("MLB STRIKEOUT VALUE PLAYS");
+    expect(svg).toContain("Top Qualified Model vs. Market Edges");
+  });
+
+  it("K rows render in exactly artifact order end-to-end, never re-sorted by the renderer", () => {
+    const rows = [
+      kRow(1, { pitcher: "Small Over", side: "OVER", projectionEdge: 0.5 }),
+      kRow(2, { pitcher: "Large Under", side: "UNDER", projectionEdge: -3.5 }),
+      kRow(3, { pitcher: "Medium Over", side: "OVER", projectionEdge: 1.8 }),
+      kRow(4, { pitcher: "Fourth", side: "OVER", projectionEdge: 0.2 }),
+      kRow(5, { pitcher: "Fifth", side: "UNDER", projectionEdge: -0.1 }),
+    ];
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+    const rendered = extractRenderedRowsFromSvg(svg);
+    expect(rendered.map((row) => row.pitcher)).toEqual(["Small Over", "Large Under", "Medium Over", "Fourth", "Fifth"]);
+  });
+
+  it("Over and Under badges use visibly distinct, restrained colors", () => {
+    const rows = fiveKRows();
+    rows[0] = kRow(1, { side: "OVER", projectionEdge: 1.5 });
+    rows[1] = kRow(2, { side: "UNDER", projectionEdge: -1.5 });
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+    expect(svg).toContain('fill="#13A66A"'); // Over: restrained green/teal
+    expect(svg).toContain('fill="#1D63B3"'); // Under: restrained blue
+    expect(svg).not.toContain('fill="#2E3566"'); // old dark navy/purple Under color is gone
+  });
+
+  it("shows projected IP as a compact supporting field when present", () => {
+    const rows = fiveKRows();
+    rows[0] = kRow(1, { projectedIP: 5.8 });
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+    expect(svg).toContain("5.8 IP");
+  });
+
+  it("omits the IP suffix cleanly when projectedIP is absent", () => {
+    const rows = fiveKRows();
+    rows[0] = kRow(1, { projectedIP: undefined });
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+    expect(firstRowSlice(svg)).not.toContain(" IP");
   });
 
   it("renders embedded local logos and a safe abbreviation fallback", () => {

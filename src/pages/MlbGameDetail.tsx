@@ -2057,6 +2057,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-bookmaker={r.kOddsBook ?? ""}
               data-k-projected-ks={edgeInfo.projectedKs ?? ""}
               data-k-projection-edge={edgeInfo.projectionEdge ?? ""}
+              data-k-projected-ip={r.projectedIP ?? ""}
               data-k-side={edgeInfo.direction}
               data-k-status={kStatus}
               style={{ padding: "12px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", borderLeft: `4px solid ${accent}` }}
@@ -2145,6 +2146,7 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
               data-k-bookmaker={r.kOddsBook ?? ""}
               data-k-projected-ks={edgeInfo.projectedKs ?? ""}
               data-k-projection-edge={edgeInfo.projectionEdge ?? ""}
+              data-k-projected-ip={r.projectedIP ?? ""}
               data-k-side={edgeInfo.direction}
               data-k-status={kStatus}
               style={{ display: "grid", gridTemplateColumns: "28px 1fr 84px 72px 72px 68px", padding: "7px 10px", background: i % 2 === 0 ? "#0d1e38" : "#091629", borderBottom: "1px solid #1e3a5f", alignItems: "center", gap: 4, position: "relative" }}

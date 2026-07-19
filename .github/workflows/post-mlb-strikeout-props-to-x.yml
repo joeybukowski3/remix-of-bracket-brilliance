@@ -74,9 +74,20 @@ jobs:
           KEY="mlb-k-props:${{ steps.et_date.outputs.date }}"
           SLUG="$(echo "$KEY" | sed 's/[^a-zA-Z0-9._-]\+/-/g')"
           FORCE="${{ github.event_name == 'workflow_dispatch' && inputs.force_repost || 'false' }}"
-          if [ -f ".cache/mlb-strikeout-props-x-posted/${SLUG}.json" ] && [ "$FORCE" != "true" ]; then
-            echo "posted=true" >> "$GITHUB_OUTPUT"
-            echo "Today's slate already has a post receipt -- skipping (finalStatus=SKIPPED_ALREADY_POSTED_TODAY)."
+          RECEIPT=".cache/mlb-strikeout-props-x-posted/${SLUG}.json"
+          if [ -f "$RECEIPT" ] && [ "$FORCE" != "true" ]; then
+            # Main post + self-reply are one posting unit -- a receipt with
+            # a main tweetId but no replyTweetId yet is NOT fully posted;
+            # let the job continue so post-mlb-strikeout-props-to-x.mjs's
+            # own reply-recovery path can finish the missing reply.
+            REPLY_STATE="$(node -e "try{const r=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));process.stdout.write(r&&r.tweetId&&r.replyTweetId?'complete':'pending')}catch{process.stdout.write('pending')}" "$RECEIPT")"
+            if [ "$REPLY_STATE" = "complete" ]; then
+              echo "posted=true" >> "$GITHUB_OUTPUT"
+              echo "Today's slate already has a post + reply receipt -- skipping (finalStatus=SKIPPED_ALREADY_POSTED_TODAY)."
+            else
+              echo "posted=false" >> "$GITHUB_OUTPUT"
+              echo "Today's slate has a main-post receipt but no reply yet -- proceeding to recover the missing reply only."
+            fi
           else
             echo "posted=false" >> "$GITHUB_OUTPUT"
           fi
