@@ -396,8 +396,8 @@ export function validateReviewedIdentityOverrides(overridesFile, {
     if (record.expiresAfterSeason != null && (!Number.isInteger(record.expiresAfterSeason) || record.expiresAfterSeason < record.sourceSeason)) {
       errors.push({ code: "invalid_expiration", message: `${label} expiresAfterSeason must be at or after sourceSeason` });
     }
-    if (record.status === "approved" && targetSeason && record.expiresAfterSeason != null && record.expiresAfterSeason < targetSeason) {
-      errors.push({ code: "expired_override", message: `${label} approved override expired before target season` });
+    if (record.status === "approved" && targetSeason && record.expiresAfterSeason != null && record.sourceSeason > targetSeason) {
+      errors.push({ code: "future_scoped_override", message: `${label} sourceSeason cannot be after target season` });
     }
     if (priorSeason && record.sourceSeason !== priorSeason) {
       warnings.push({ code: "season_scope_mismatch", message: `${label} sourceSeason does not match priorSeason ${priorSeason}` });
@@ -1318,7 +1318,7 @@ function matchingOverrideDecision({ providerName, providerId, rows, overridesByP
       evidenceRefs.every((ref) => !ref.sourceId || sourceIds.has(ref.sourceId));
     const seasonMatches = !record.sourceSeason || seasons.has(record.sourceSeason);
     const teamMatches = !record.teamScope?.length || [...teamIds].every((teamId) => record.teamScope.includes(teamId));
-    const expirationOk = record.expiresAfterSeason == null || record.expiresAfterSeason >= targetSeason;
+    const expirationOk = record.expiresAfterSeason == null || record.sourceSeason <= record.expiresAfterSeason;
     const gsisConsistent = !record.gsisId || gsisIds.size === 0 || (gsisIds.size === 1 && gsisIds.has(record.gsisId));
     const applied = evidenceKnown && seasonMatches && teamMatches && expirationOk && gsisConsistent;
     const rejectedReasons = [

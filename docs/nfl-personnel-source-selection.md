@@ -584,12 +584,36 @@ simulation showing which pending mappings would clear conflicts and their metric
 impact; simulation never changes normal audit identity counts or generated
 metrics.
 
-Current repository review records for `AlfoDe00` and `SmitCh04` are `pending`.
-They require explicit user approval with a reviewer label and review date before
-they can become active. The recommended decision is to approve only if the live
-cached nflverse rows continue to show a unique roster GSIS mapping, matching
-team/season/position context, no competing candidate, and PFR snap rows limited
-to that same team and season.
+Phase 5C-2E approved the two current repository review records:
+
+- `nflverse-pfr-2025-alfode00-atl-review`
+- `nflverse-pfr-2025-smitch04-nyj-review`
+
+Both use `reviewedBy: joeybukowski3`, `reviewedAt: 2026-07-19`,
+`status: approved`, `sourceSeason: 2025`, `expiresAfterSeason: 2025`, and
+`permanent: false`. The approvals are season-scoped to 2025 nflverse/PFR
+identity evidence and do not loosen automatic matching for later seasons.
+
+The approved-only live four-team audit applied both records with no
+higher-priority GSIS rejection. Critical provider conflicts decreased from 2 to
+0. `AlfoDe00` resolved the Atlanta 2025 PFR snap-name variant to GSIS
+`00-0037034`; the reviewed rows include 582 defensive snaps and no offensive
+production. `SmitCh04` resolved the New York Jets Week 18 PFR snap-name variant
+to GSIS `00-0038602`; the reviewed row carries 2 special-teams snaps and no
+offensive or defensive production.
+
+The critical-conflict gate now clears for the four-team sample, but the 98%
+attribution gates still fail for every sample team:
+
+| Team | Offensive production | Offensive snaps | Defensive snaps |
+| --- | ---: | ---: | ---: |
+| ATL | 0.743906 | 0.510949 | 0.622467 |
+| CHI | 0.830094 | 0.759571 | 0.460476 |
+| NYJ | 0.717919 | 0.455113 | 0.653834 |
+| SEA | 0.803361 | 0.496497 | 0.789452 |
+
+Do not expand to all 32 teams until attribution failures are understood and
+reduced without lowering the thresholds.
 
 ## Unresolved Decisions Requiring Approval
 

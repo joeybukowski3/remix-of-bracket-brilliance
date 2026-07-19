@@ -377,6 +377,23 @@ their evidence refs. Pending override simulation is explicitly labeled
 `simulationOnly`; it can show before/after conflict counts and affected metrics,
 but it does not modify normal audit results.
 
+Phase 5C-2E approved `nflverse-pfr-2025-alfode00-atl-review` and
+`nflverse-pfr-2025-smitch04-nyj-review` with `reviewedBy: joeybukowski3`,
+`reviewedAt: 2026-07-19`, `status: approved`, `sourceSeason: 2025`,
+`expiresAfterSeason: 2025`, and `permanent: false`. The mappings are
+season-scoped to 2025 source evidence.
+
+The live approved-only audit applied both overrides, rejected neither due to
+higher-priority GSIS evidence, and reduced critical provider conflicts from 2
+to 0. `AlfoDe00` accounts for 582 Atlanta defensive snaps and no offensive
+production. `SmitCh04` accounts for 2 New York Jets special-teams snaps and no
+offensive or defensive production. Pending simulation is no longer needed for
+these records.
+
+The critical-conflict gate clears for the four-team sample. All sample teams
+still fail the 98% offensive-production, offensive-snap, and defensive-snap
+attribution thresholds, so the sample remains unsafe for all-32 expansion.
+
 The audit emits unsupported metrics as unavailable, not zero: starts,
 offensive-line snaps, sacks, pressures, and defensive-back snaps. It also keeps
 QB continuity and coaching continuity as unknown because the approved nflverse
