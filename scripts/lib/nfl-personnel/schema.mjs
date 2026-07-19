@@ -188,7 +188,8 @@ function validateMetric(result, metric, path, sourceIds) {
     return;
   }
   const { value, numerator, denominator, coverageComplete } = metric;
-  if (value != null && (typeof value !== "number" || value < 0 || value > 1)) {
+  const allowAuditOutOfRangeShare = metric.auditOnlyAllowOutOfRangeRetainedShare === true;
+  if (value != null && (typeof value !== "number" || value < 0 || (!allowAuditOutOfRangeShare && value > 1))) {
     addError(result, pathJoin(path, "value"), "invalid_share", "retained share must be null or between 0 and 1");
   }
   if (numerator != null && (typeof numerator !== "number" || numerator < 0)) {
@@ -200,7 +201,7 @@ function validateMetric(result, metric, path, sourceIds) {
   if (typeof coverageComplete !== "boolean") {
     addError(result, pathJoin(path, "coverageComplete"), "invalid_coverage_flag", "coverageComplete must be boolean");
   }
-  if (typeof numerator === "number" && typeof denominator === "number" && numerator > denominator) {
+  if (!allowAuditOutOfRangeShare && typeof numerator === "number" && typeof denominator === "number" && numerator > denominator) {
     addError(result, pathJoin(path, "numerator"), "numerator_exceeds_denominator", "numerator cannot exceed denominator");
   }
   if (coverageComplete && denominator == null) {

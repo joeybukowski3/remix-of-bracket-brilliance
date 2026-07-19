@@ -6,7 +6,7 @@
  * but refuses to write public/data/nfl/<season>/personnel-evidence.json.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import teamsJson from "../public/data/nfl/teams.json" with { type: "json" };
@@ -15,6 +15,7 @@ import {
   assertNonProductionOutput,
   buildNflverseFourTeamAudit,
   loadReviewedIdentityOverridesFile,
+  resolveNflverseAuditTeamScope,
   writeNflverseManifest,
 } from "./lib/nfl-personnel/providers/nflverse/audit.mjs";
 
@@ -32,6 +33,8 @@ function parseArgs(argv) {
     playerStats: null,
     snapCounts: null,
     players: null,
+    teams: null,
+    allTeams: false,
     rosterUrl: null,
     priorRosterUrl: null,
     playerStatsUrl: null,
@@ -40,6 +43,8 @@ function parseArgs(argv) {
     fixtureDir: null,
     cacheDir: null,
     output: null,
+    summaryOutput: null,
+    unresolvedQueueCsv: null,
     identityReviewOutput: null,
     reviewedOverrides: null,
     dryRun: false,
@@ -56,6 +61,7 @@ function parseArgs(argv) {
     else if (arg === "--simulate-pending-overrides") args.simulatePendingOverrides = true;
     else if (arg === "--fail-on-critical-conflict") args.failOnCriticalConflict = true;
     else if (arg === "--audit-override") args.auditOverride = true;
+    else if (arg === "--all-teams") args.allTeams = true;
     else if (arg.startsWith("--season=")) args.season = Number(arg.slice("--season=".length));
     else if (arg.startsWith("--prior-season=")) args.priorSeason = Number(arg.slice("--prior-season=".length));
     else if (arg.startsWith("--generated-at=")) args.generatedAt = arg.slice("--generated-at=".length);
@@ -65,6 +71,7 @@ function parseArgs(argv) {
     else if (arg.startsWith("--player-stats=")) args.playerStats = resolve(arg.slice("--player-stats=".length));
     else if (arg.startsWith("--snap-counts=")) args.snapCounts = resolve(arg.slice("--snap-counts=".length));
     else if (arg.startsWith("--players=")) args.players = resolve(arg.slice("--players=".length));
+    else if (arg.startsWith("--teams=")) args.teams = arg.slice("--teams=".length).split(",").map((team) => team.trim()).filter(Boolean);
     else if (arg.startsWith("--roster-url=")) args.rosterUrl = arg.slice("--roster-url=".length);
     else if (arg.startsWith("--prior-roster-url=")) args.priorRosterUrl = arg.slice("--prior-roster-url=".length);
     else if (arg.startsWith("--player-stats-url=")) args.playerStatsUrl = arg.slice("--player-stats-url=".length);
@@ -73,6 +80,8 @@ function parseArgs(argv) {
     else if (arg.startsWith("--fixture-dir=")) args.fixtureDir = resolve(arg.slice("--fixture-dir=".length));
     else if (arg.startsWith("--cache-dir=")) args.cacheDir = resolve(arg.slice("--cache-dir=".length));
     else if (arg.startsWith("--output=")) args.output = resolve(arg.slice("--output=".length));
+    else if (arg.startsWith("--summary-output=")) args.summaryOutput = resolve(arg.slice("--summary-output=".length));
+    else if (arg.startsWith("--unresolved-queue-csv=")) args.unresolvedQueueCsv = resolve(arg.slice("--unresolved-queue-csv=".length));
     else if (arg.startsWith("--identity-review-output=")) args.identityReviewOutput = resolve(arg.slice("--identity-review-output=".length));
     else if (arg.startsWith("--reviewed-overrides=")) args.reviewedOverrides = resolve(arg.slice("--reviewed-overrides=".length));
     else throw new Error(`Unknown argument: ${arg}`);
@@ -93,8 +102,52 @@ function parseArgs(argv) {
     throw new Error("--output is required unless --dry-run, --validate-only, or --validate-overrides-only is used");
   }
   if (args.output) assertNonProductionOutput(args.output, args.season);
+  if (args.summaryOutput) assertNonProductionOutput(args.summaryOutput, args.season);
+  if (args.unresolvedQueueCsv) assertNonProductionOutput(args.unresolvedQueueCsv, args.season);
   if (args.identityReviewOutput) assertNonProductionOutput(args.identityReviewOutput, args.season);
+  args.teamScope = resolveNflverseAuditTeamScope({
+    teamsJson,
+    teamAbbrs: args.teams,
+    allTeams: args.allTeams,
+  });
   return args;
+}
+
+function writeFileAtomic(filePath, contents) {
+  const target = resolve(filePath);
+  mkdirSync(dirname(target), { recursive: true });
+  const tmp = `${target}.tmp-${process.pid}`;
+  writeFileSync(tmp, contents);
+  renameSync(tmp, target);
+}
+
+function csvCell(value) {
+  const text = typeof value === "string" ? value : JSON.stringify(value ?? "");
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function unresolvedQueueCsv(rows) {
+  const headers = [
+    "team",
+    "sourcePlayerName",
+    "providerIds",
+    "position",
+    "category",
+    "metric",
+    "unresolvedQuantity",
+    "denominatorShare",
+    "reasonCategory",
+    "candidateMappings",
+    "sourceReferences",
+    "recommendedNextAction",
+    "automaticMayResolve",
+    "providerBasedMayResolve",
+    "humanReviewMayResolve",
+  ];
+  return [
+    headers.join(","),
+    ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(",")),
+  ].join("\n");
 }
 
 function loadManualOffseasonSnapshot() {
@@ -133,6 +186,7 @@ function loadManualOffseasonSnapshot() {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  const startedAt = Date.now();
   const manualDataset = loadManualOffseasonSnapshot();
   const reviewedOverrides = args.reviewedOverrides
     ? JSON.parse(readFileSync(args.reviewedOverrides, "utf8"))
@@ -154,6 +208,8 @@ async function main() {
     playersSourceUrl: args.playersUrl,
     cacheDir: args.cacheDir,
     teamsJson,
+    teamAbbrs: args.teams,
+    allTeams: args.allTeams,
     manualDataset,
     reviewedIdentityOverrides: reviewedOverrides,
     simulatePendingOverrides: args.simulatePendingOverrides,
@@ -206,14 +262,19 @@ async function main() {
   }
 
   if (!args.dryRun && !args.validateOnly && args.output) {
-    mkdirSync(dirname(args.output), { recursive: true });
-    writeFileSync(args.output, result.json);
+    writeFileAtomic(args.output, result.json);
+  }
+  if (!args.dryRun && !args.validateOnly && args.summaryOutput) {
+    writeFileAtomic(args.summaryOutput, result.summaryJson);
+  }
+  if (!args.dryRun && !args.validateOnly && args.unresolvedQueueCsv) {
+    writeFileAtomic(args.unresolvedQueueCsv, unresolvedQueueCsv(result.dataset.rankedUnresolvedIdentityQueue));
   }
   if (!args.dryRun && !args.validateOnly && args.identityReviewOutput) {
-    mkdirSync(dirname(args.identityReviewOutput), { recursive: true });
-    writeFileSync(args.identityReviewOutput, result.identityReviewJson);
+    writeFileAtomic(args.identityReviewOutput, result.identityReviewJson);
   }
 
+  const runtimeMs = Date.now() - startedAt;
   console.log(
     JSON.stringify(
       {
@@ -221,6 +282,7 @@ async function main() {
         warningCount: result.validation.warnings.length,
         teamCount: result.dataset.teams.length,
         teams: result.dataset.teams.map((team) => team.abbr),
+        teamScope: args.teamScope,
         readyForScoring: result.dataset.completenessEvaluation.readyForScoring,
         criticalIdentityConflicts: result.identityReview.criticalConflicts.length,
         reviewedOverridesApplied: result.dataset.reviewedIdentityOverrides.counts.applied,
@@ -231,9 +293,23 @@ async function main() {
             }
           : null,
         safeForAll32IdentityExpansion: result.identityReview.all32ExpansionGateEvaluation.safeForAll32IdentityExpansion,
+        teamsPassingMandatoryGates: result.summary.teamsPassingMandatoryGates,
+        teamsFailingMandatoryGates: result.summary.teamsFailingMandatoryGates,
+        failureCountByGate: result.summary.failureCountByGate,
+        datasetSizes: result.sourceManifests.map((source) => ({
+          dataset: source.dataset,
+          rowCount: source.rowCount,
+          byteSize: source.byteSize,
+          sha256: source.sha256,
+        })),
+        runtimeMs,
         output: args.output,
+        summaryOutput: args.summaryOutput,
+        unresolvedQueueCsv: args.unresolvedQueueCsv,
         identityReviewOutput: args.identityReviewOutput,
         wrote: Boolean(!args.dryRun && !args.validateOnly && args.output),
+        wroteSummary: Boolean(!args.dryRun && !args.validateOnly && args.summaryOutput),
+        wroteUnresolvedQueueCsv: Boolean(!args.dryRun && !args.validateOnly && args.unresolvedQueueCsv),
         wroteIdentityReview: Boolean(!args.dryRun && !args.validateOnly && args.identityReviewOutput),
         dryRun: args.dryRun,
         validateOnly: args.validateOnly,

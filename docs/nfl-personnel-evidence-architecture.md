@@ -490,6 +490,122 @@ four-team identity gates now pass, but production scoring gates still fail
 because this is not an all-32 artifact and QB continuity, coaching continuity,
 transactions, and injury returns remain out of scope.
 
+Phase 5C-2I expands the same nflverse identity audit infrastructure to an
+explicit all-32-team audit. This remains non-production evidence only. It does
+not create `public/data/nfl/<season>/personnel-evidence.json`, does not add a
+team-quality model, and does not label teams as improved or declined.
+
+Commands:
+
+```bash
+npm run nfl:personnel:nflverse:audit-all-32
+```
+
+Direct CLI usage:
+
+```bash
+node scripts/generate-nfl-personnel-nflverse-audit.mjs \
+  --season=2026 \
+  --prior-season=2025 \
+  --generated-at=2026-07-19T12:00:00.000Z \
+  --source-cutoff=2026-07-19 \
+  --all-teams \
+  --reviewed-overrides=data/nfl/personnel/reviewed-identity-overrides.json \
+  --players-url=https://github.com/nflverse/nflverse-data/releases/download/players/players.csv \
+  --cache-dir=data/nfl/personnel/raw/nflverse/2026/2026-07-19 \
+  --output=artifacts/nfl/personnel-audit/nflverse-all-32-audit.json \
+  --summary-output=artifacts/nfl/personnel-audit/nflverse-all-32-summary.json \
+  --unresolved-queue-csv=artifacts/nfl/personnel-audit/nflverse-all-32-unresolved-queue.csv \
+  --audit-override
+```
+
+Team scope rules:
+
+- Default scope remains the existing four-team sample.
+- `--teams=atl,sea` runs an explicit canonical subset.
+- `--all-teams` is required for all 32 teams; all-32 is never implicit.
+- Team abbreviations are validated against `public/data/nfl/teams.json`, with
+  unknown and duplicate teams rejected.
+- Output team ordering follows `teams.json` canonical order.
+
+Output locations:
+
+- Full audit: `artifacts/nfl/personnel-audit/nflverse-all-32-audit.json`
+- Compact summary:
+  `artifacts/nfl/personnel-audit/nflverse-all-32-summary.json`
+- Optional unresolved queue CSV:
+  `artifacts/nfl/personnel-audit/nflverse-all-32-unresolved-queue.csv`
+
+These paths are ignored by git. The CLI still refuses any `public/data/nfl/`
+output path and writes files atomically after validation succeeds.
+
+Mandatory identity gates:
+
+- Zero critical provider-ID conflicts.
+- At least 98% resolved offensive-production attribution.
+- At least 98% resolved offensive-snap attribution.
+- At least 98% resolved defensive-snap attribution.
+- 100% accounted-for coverage for mandatory quantities.
+- Explicit source completeness for mandatory quantities.
+- Fixed timestamp and deterministic ordering for replay verification.
+
+Special-teams snap attribution is reported as advisory in Phase 5C-2I. It does
+not fail the mandatory identity-promotion gate unless this architecture is
+changed in a later phase.
+
+League summary definitions:
+
+- Passing teams are teams with zero mandatory gate failures.
+- Failing teams remain listed individually; strong league medians do not hide a
+  failing team.
+- Attribution medians and minimums are computed across team-level resolved
+  attribution coverage.
+- Unresolved totals sum quantified unresolved quantities by offensive
+  production, offensive snaps, defensive snaps, and special-teams snaps.
+- Resolution-method contribution reports snap quantities by direct prior-roster
+  PFR mapping, approved reviewed override, nflverse `players` mapping, other
+  provider mapping, deterministic fallback, and unresolved exclusion.
+- The compact summary is generated directly from the full audit dataset and is
+  intended to be reproducible from it.
+
+Unresolved queue ranking:
+
+1. Mandatory metric impact before advisory-only impact.
+2. Larger share of the team denominator.
+3. Larger absolute unresolved quantity.
+4. Stable deterministic tie-breaker using team, metric, player name, and source
+   row ID.
+
+Each queue record includes team, source player name, provider IDs, position,
+category, unresolved quantity, denominator share, reason category, candidate
+mappings, source references, recommended next action, and whether automatic,
+provider-based, or human review may resolve it. The queue never auto-approves a
+reviewed override.
+
+Cache and performance notes:
+
+- Required local replay inputs are prior-season rosters, target-season rosters,
+  prior-season regular-season `stats_player`, and prior-season `snap_counts`.
+- `players.csv` is optional. If absent, the audit reports the supplemental
+  mapping as not supplied and continues with lower mapping coverage.
+- Source manifests include row counts, byte sizes, SHA-256 checksums, source
+  dates when available, and PFR-derived flags.
+- The all-32 run uses indexed provider/fallback identity joins rather than
+  broad pairwise name scans where practical.
+- Runtime is reported by the CLI console summary, not embedded in the audit JSON,
+  so fixed-timestamp deterministic comparisons can remain byte-identical.
+- Schema drift or missing required source files fail clearly before output files
+  are overwritten.
+
+Source and licensing cautions:
+
+- Use only approved nflverse release files and approved reviewed overrides for
+  this audit.
+- Do not scrape NFL.com or PFR directly.
+- `snap_counts` is PFR-derived through nflverse; review redistribution terms
+  before promoting any derived production artifact.
+- This all-32 audit is not production evidence and not a team-quality model.
+
 ## Source Hierarchy
 
 General rules:
