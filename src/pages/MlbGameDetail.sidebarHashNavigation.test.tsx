@@ -6,6 +6,11 @@
  * hashchange listener, since the sidebar navigates via <Link> (pushState),
  * which never fires a native hashchange event -- see the comment on the
  * effect in SocialMediaTablesSection.
+ *
+ * The section now renders both a mobile accordion path (md:hidden) and an
+ * always-expanded desktop path (hidden md:block) from the same header/body
+ * JSX, so header text and (once the mobile accordion is forced open) tab
+ * buttons can legitimately match twice — queries use getAllBy*()[0].
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -43,8 +48,8 @@ beforeEach(() => {
 describe("SocialMediaTablesSection hash navigation", () => {
   it("defaults to the HR Props tab with no relevant hash present", async () => {
     renderAt("");
-    await waitFor(() => expect(screen.getByText("Social Media Tables")).toBeInTheDocument());
-    const hrTab = screen.getByRole("button", { name: /HR Props/ });
+    await waitFor(() => expect(screen.getAllByText("Social Media Tables")[0]).toBeInTheDocument());
+    const hrTab = screen.getAllByRole("button", { name: /HR Props/ })[0];
     expect(hrTab).toHaveStyle({ color: "#031635" });
     expect(window.HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
@@ -52,14 +57,14 @@ describe("SocialMediaTablesSection hash navigation", () => {
   it("#social-tables scrolls the section into view without changing the active tab", async () => {
     renderAt("#social-tables");
     await waitFor(() => expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalled());
-    const hrTab = screen.getByRole("button", { name: /HR Props/ });
+    const hrTab = screen.getAllByRole("button", { name: /HR Props/ })[0];
     expect(hrTab).toHaveStyle({ color: "#031635" });
   });
 
   it("#ml-edges-social selects the ML Edges tab and scrolls the section into view", async () => {
     renderAt("#ml-edges-social");
     await waitFor(() => {
-      const mlTab = screen.getByRole("button", { name: /ML Edges/ });
+      const mlTab = screen.getAllByRole("button", { name: /ML Edges/ })[0];
       expect(mlTab).toHaveStyle({ color: "#031635" });
     });
     expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalled();
@@ -67,8 +72,8 @@ describe("SocialMediaTablesSection hash navigation", () => {
 
   it("an unrelated hash neither scrolls nor changes the active tab", async () => {
     renderAt("#schedule");
-    await waitFor(() => expect(screen.getByText("Social Media Tables")).toBeInTheDocument());
-    const hrTab = screen.getByRole("button", { name: /HR Props/ });
+    await waitFor(() => expect(screen.getAllByText("Social Media Tables")[0]).toBeInTheDocument());
+    const hrTab = screen.getAllByRole("button", { name: /HR Props/ })[0];
     expect(hrTab).toHaveStyle({ color: "#031635" });
     expect(window.HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
@@ -92,15 +97,53 @@ describe("SocialMediaTablesSection hash navigation", () => {
         </Routes>
       </MemoryRouter>,
     );
-    await waitFor(() => expect(screen.getByText("Social Media Tables")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText("Social Media Tables")[0]).toBeInTheDocument());
     expect(window.HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("link", { name: "Moneyline Edges" }));
 
     await waitFor(() => {
-      const mlTab = screen.getByRole("button", { name: /ML Edges/ });
+      const mlTab = screen.getAllByRole("button", { name: /ML Edges/ })[0];
       expect(mlTab).toHaveStyle({ color: "#031635" });
     });
     expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalled();
+  });
+});
+
+describe("SocialMediaTablesSection — mobile accordion", () => {
+  it("is collapsed by default on the mobile path with no relevant hash", () => {
+    renderAt("");
+    const triggers = screen.getAllByRole("button", { name: /Social Media Tables/ });
+    expect(triggers[0]).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("expands on click", () => {
+    renderAt("");
+    const trigger = screen.getAllByRole("button", { name: /Social Media Tables/ })[0];
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("#social-tables forces the mobile accordion open", async () => {
+    renderAt("#social-tables");
+    await waitFor(() => {
+      const trigger = screen.getAllByRole("button", { name: /Social Media Tables/ })[0];
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
+    });
+  });
+
+  it("#ml-edges-social forces the mobile accordion open", async () => {
+    renderAt("#ml-edges-social");
+    await waitFor(() => {
+      const trigger = screen.getAllByRole("button", { name: /Social Media Tables/ })[0];
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
+    });
+  });
+
+  it("footer links wrap (flexWrap) instead of overflowing on narrow viewports", () => {
+    renderAt("");
+    const link = screen.getAllByRole("link", { name: /Open HR Props/ })[0];
+    const footer = link.closest("div")?.parentElement;
+    expect(footer).toHaveStyle({ flexWrap: "wrap" });
   });
 });

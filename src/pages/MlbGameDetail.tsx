@@ -24,6 +24,7 @@ import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbPolymarketMoneylinePanel, { type PanelMlEdge } from "@/components/mlb/MlbPolymarketMoneylinePanel";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
@@ -3212,6 +3213,7 @@ export function SocialMediaTablesSection({
   const { data: polymarketData } = usePolymarketMlbMoneylines();
   const location = useLocation();
   const sectionRef = useRef<HTMLElement>(null);
+  const [mobileOpen, setMobileOpen] = useState<string>("");
 
   // Sidebar deep links into this section: "Social Media Tables" -> #social-tables
   // (scroll only), "Moneyline Edges" -> #ml-edges-social (select the ML Edges
@@ -3221,12 +3223,16 @@ export function SocialMediaTablesSection({
   // fires a native hashchange event. Gated on `loading` because this
   // section (and its #social-tables anchor) doesn't exist in the DOM until
   // useMlbPropsData() resolves -- scrolling before then would be a no-op.
+  // Either hash must also force the mobile accordion open, otherwise the
+  // target would be scrolled to while still collapsed.
   useEffect(() => {
     if (loading) return;
     if (location.hash === "#ml-edges-social") {
       setActiveTab("ml");
+      setMobileOpen("social-tables");
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else if (location.hash === "#social-tables") {
+      setMobileOpen("social-tables");
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [loading, location.hash]);
@@ -3243,55 +3249,73 @@ export function SocialMediaTablesSection({
 
   const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, propsGames);
 
-  return (
-    <section id="social-tables" ref={sectionRef} style={{ marginTop: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0ea5e9" }}>Daily export</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#031635", marginTop: 2, letterSpacing: "-.03em" }}>Social Media Tables</h2>
-          <p style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Live data — updates with each model refresh. Review below then export to post.</p>
-        </div>
+  const headerNode = (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12, textAlign: "left" }}>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0ea5e9" }}>Daily export</div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#031635", marginTop: 2, letterSpacing: "-.03em" }}>Social Media Tables</h2>
+        <p style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Live data — updates with each model refresh. Review below then export to post.</p>
+      </div>
+    </div>
+  );
+
+  const bodyNode = (
+    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,.06)", overflow: "hidden" }}>
+      {/* Tab bar */}
+      <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setActiveTab(t.key)}
+            style={{
+              flex: 1, padding: "10px 4px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
+              background: activeTab === t.key ? "#fff" : "transparent",
+              color: activeTab === t.key ? "#031635" : "#94a3b8",
+              borderBottom: activeTab === t.key ? "2px solid #e05c2e" : "2px solid transparent",
+              transition: "all .15s",
+            }}
+          >
+            {t.emoji} {t.label}
+          </button>
+        ))}
       </div>
 
-      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,.06)", overflow: "hidden" }}>
-        {/* Tab bar */}
-        <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setActiveTab(t.key)}
-              style={{
-                flex: 1, padding: "10px 4px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
-                background: activeTab === t.key ? "#fff" : "transparent",
-                color: activeTab === t.key ? "#031635" : "#94a3b8",
-                borderBottom: activeTab === t.key ? "2px solid #e05c2e" : "2px solid transparent",
-                transition: "all .15s",
-              }}
-            >
-              {t.emoji} {t.label}
-            </button>
-          ))}
-        </div>
+      {/* Table content */}
+      <div style={{ padding: 14 }}>
+        {activeTab === "ml"    && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
+        {activeTab === "hr"    && <SocialTableHR batters={batters} />}
+        {activeTab === "k"     && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
+        {activeTab === "hits"  && <SocialTableHits rows={batterVsPitcherRows} />}
+        {activeTab === "value" && <SocialTableValue batters={batters} kRows={kRows} />}
+      </div>
 
-        {/* Table content */}
-        <div style={{ padding: 14 }}>
-          {activeTab === "ml"    && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
-          {activeTab === "hr"    && <SocialTableHR batters={batters} />}
-          {activeTab === "k"     && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
-          {activeTab === "hits"  && <SocialTableHits rows={batterVsPitcherRows} />}
-          {activeTab === "value" && <SocialTableValue batters={batters} kRows={kRows} />}
+      {/* Footer hint */}
+      <div style={{ padding: "8px 14px 12px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8, rowGap: 4 }}>
+        <span style={{ fontSize: 11, color: "#94a3b8" }}>Data refreshes at 3 AM · 10 AM · 1 PM ET</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, rowGap: 4 }}>
+          <Link to="/mlb/hr-props"          style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9", textDecoration: "none" }}>Open HR Props →</Link>
+          <Link to="/mlb/strikeout-props"   style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textDecoration: "none" }}>Strikeout Props →</Link>
+          <Link to="/mlb/batter-vs-pitcher" style={{ fontSize: 11, fontWeight: 700, color: "#8b5cf6", textDecoration: "none" }}>Batter vs Pitcher →</Link>
         </div>
+      </div>
+    </div>
+  );
 
-        {/* Footer hint */}
-        <div style={{ padding: "8px 14px 12px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "#94a3b8" }}>Data refreshes at 3 AM · 10 AM · 1 PM ET</span>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Link to="/mlb/hr-props"          style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9", textDecoration: "none" }}>Open HR Props →</Link>
-            <Link to="/mlb/strikeout-props"   style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textDecoration: "none" }}>Strikeout Props →</Link>
-            <Link to="/mlb/batter-vs-pitcher" style={{ fontSize: 11, fontWeight: 700, color: "#8b5cf6", textDecoration: "none" }}>Batter vs Pitcher →</Link>
-          </div>
-        </div>
+  return (
+    <section id="social-tables" ref={sectionRef} style={{ marginTop: 16 }}>
+      {/* Mobile: collapsible, collapsed by default (unless #social-tables/#ml-edges-social is deep-linked) */}
+      <Accordion type="single" collapsible className="md:hidden" value={mobileOpen} onValueChange={setMobileOpen}>
+        <AccordionItem value="social-tables" className="border-none">
+          <AccordionTrigger className="p-0 hover:no-underline">{headerNode}</AccordionTrigger>
+          <AccordionContent className="px-0 pb-0 pt-0">{bodyNode}</AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Desktop: always expanded, unchanged */}
+      <div className="hidden md:block">
+        {headerNode}
+        {bodyNode}
       </div>
     </section>
   );
