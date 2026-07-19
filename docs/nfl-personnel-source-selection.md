@@ -380,9 +380,11 @@ Rules:
 
 ## Exact Recommended First Ingestion Slice
 
-Implement 5C-1 as a read-only, non-production audit slice.
+Phase 5C-2A implements the first read-only nflverse roster/production audit
+slice. It is not a production artifact and does not resolve the broader paid
+source decision.
 
-Recommended sample teams:
+Sample teams:
 
 | Team | Why selected from repository-backed evidence |
 | --- | --- |
@@ -391,20 +393,73 @@ Recommended sample teams:
 | New York Jets (`nfl-nyj`) | Manual/Warren Sharp evidence has returning head coach Aaron Glenn, Geno Smith trade addition, Minkah Fitzpatrick trade addition, and coordinator turnover context. Exercises trade reconciliation and QB acquisition with returning HC. |
 | Seattle Seahawks (`nfl-sea`) | Manual/Warren Sharp evidence has returning head coach Mike Macdonald, Sam Darnold as projected QB, and multiple departures including Kenneth Walker III. Exercises returning coach, new QB context, and meaningful departures. |
 
-No repository-backed source currently identifies an open QB competition, so the
-first slice should not force that case. Add an open-competition sample only when
-an approved source explicitly supports it.
+No repository-backed source currently identifies an open QB competition, so this
+slice does not force that case. Add an open-competition sample only when an
+approved source explicitly supports it.
 
-The first slice should:
+Implemented audit path:
 
-- Read source input only; no external broad scrape and no production overwrite.
-- Cache source metadata and checksums, not paid/raw data in git.
-- Preserve provider player IDs when present.
-- Generate a non-production audit artifact for these four teams only.
-- Compare generated transactions/coaching/QB facts against
-  `buildNflOffseasonEvidenceDataset()`.
-- Report conflicts without resolving them silently.
-- Exit nonzero on schema/reconciliation failure.
+- Adapter: `scripts/lib/nfl-personnel/providers/nflverse/audit.mjs`
+- CLI: `scripts/generate-nfl-personnel-nflverse-audit.mjs`
+- Cache validator: `scripts/validate-nfl-personnel-nflverse-cache.mjs`
+- Fixture command: `npm run nfl:personnel:nflverse:audit`
+- Cache validation command: `npm run nfl:personnel:nflverse:validate-cache`
+- Default fixture output:
+  `artifacts/nfl/personnel-audit/nflverse-four-team-audit.json`
+- Production guard: the CLI refuses to write
+  `public/data/nfl/<season>/personnel-evidence.json`.
+
+Exact nflverse release families used:
+
+| Family | Default release URL pattern | Fields used | Lineage caveat |
+| --- | --- | --- | --- |
+| Season rosters | `https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_<season>.csv` | `season`, `team`, `full_name`, `position`, `depth_chart_position`, `status`, `gsis_id`, `espn_id`, `sportradar_id`, `pfr_id`, plus other exposed provider IDs when present | Public nflverse roster release; roster presence is not transaction proof. |
+| Season player stats | `https://github.com/nflverse/nflverse-data/releases/download/player_stats/player_stats_season.csv` | `season`, `season_type`, `recent_team`/`team`, `player_id`, `player_display_name`, `position`, `attempts`, `carries`, `rushing_yards`, `targets`, `receptions`, `receiving_yards` | Public nflverse aggregate season-stats release; regular season only by default. |
+| Snap counts | `https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_<season>.csv` | `season`, `game_id`, `game_type`, `team`, `player`, `pfr_player_id`, `position`, `offense_snaps`, `offense_pct`, `defense_snaps`, `defense_pct`, `st_snaps`, `st_pct` | nflreadr documents snap counts as PFR-provided; review redistribution terms before production use. |
+
+The adapter supports explicit local paths and explicit URLs. When a cache
+directory is supplied it writes files and `manifest.json` under:
+
+```text
+data/nfl/personnel/raw/nflverse/<season>/<retrieval-date>/
+```
+
+The raw cache path is ignored by git. Synthetic test fixtures under
+`scripts/fixtures/nfl-personnel/nflverse/` are committed because they are small,
+fake, and exist only to validate parser and audit behavior.
+
+Calculation definitions for this slice:
+
+- Target roster evidence is the target-season season roster file as of the
+  declared `sourceCutoff`/`generatedAt`.
+- Prior production is prior-season regular season only; postseason rows are
+  excluded.
+- A prior player is retained only when matched to the same target team roster by
+  provider ID or, when no provider ID exists, deterministic
+  team/name/position fallback.
+- Provider ID priority is GSIS ID first, then approved provider IDs exposed by
+  nflverse, then fallback identity.
+- Incoming player production for another prior team is not counted as retained.
+- Unmatched production remains in the denominator and is reported separately.
+- If the aggregate player-stats release does not yet contain the requested
+  prior season, QB attempts/rushing/receiving metrics are emitted as unavailable
+  with null numerator and denominator.
+- Unavailable starts, offensive-line snaps, sacks, pressures, and defensive-back
+  snap metrics remain `null`; they are not inferred or zero-filled.
+
+Unsupported categories in Phase 5C-2A:
+
+- Complete transactions, including signings, releases, waivers, retirements, and
+  re-signings.
+- Coaching continuity and scheme changes.
+- Official QB starter/open-competition status.
+- Injury returns and medical readiness.
+- Starts, pressures, and clean offensive-line/secondary retained shares.
+
+This does not make the dataset ready for scoring because it covers only four
+teams, omits mandatory transaction/coaching/QB/injury categories, carries
+PFR-derived snap-count licensing cautions, and can still surface critical
+identity conflicts.
 
 ## Unresolved Decisions Requiring Approval
 

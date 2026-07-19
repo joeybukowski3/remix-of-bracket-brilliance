@@ -46,7 +46,9 @@
     "nfl:schedules": "node scripts/generate-nfl-schedules-results.mjs",
     "nfl:team-ratings": "node scripts/generate-nfl-team-stats-power-ratings.mjs",
     "nfl:personnel:validate": "node scripts/generate-nfl-personnel-evidence.mjs --season=2026 --prior-season=2025 --input=scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json --validate-only",
-    "nfl:personnel:generate:fixture": "node scripts/generate-nfl-personnel-evidence.mjs --season=2026 --prior-season=2025 --input=scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json --dry-run"
+    "nfl:personnel:generate:fixture": "node scripts/generate-nfl-personnel-evidence.mjs --season=2026 --prior-season=2025 --input=scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json --dry-run",
+    "nfl:personnel:nflverse:audit": "node scripts/generate-nfl-personnel-nflverse-audit.mjs --season=2026 --prior-season=2025 --generated-at=2026-07-17T12:00:00.000Z --source-cutoff=2026-07-17 --fixture-dir=scripts/fixtures/nfl-personnel/nflverse --output=artifacts/nfl/personnel-audit/nflverse-four-team-audit.json",
+    "nfl:personnel:nflverse:validate-cache": "node scripts/validate-nfl-personnel-nflverse-cache.mjs --manifest=scripts/fixtures/nfl-personnel/nflverse/manifest.fixture.json --base-dir=."
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

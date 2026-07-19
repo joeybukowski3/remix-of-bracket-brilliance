@@ -19,6 +19,22 @@ Phase 5B adds infrastructure only:
 No real all-32-team player data is populated yet, and no production
 `public/data/nfl/<season>/personnel-evidence.json` is checked in.
 
+Phase 5C-2A adds a read-only nflverse audit path for ATL, CHI, NYJ, and SEA:
+
+- Provider adapter:
+  `scripts/lib/nfl-personnel/providers/nflverse/audit.mjs`
+- Audit CLI: `scripts/generate-nfl-personnel-nflverse-audit.mjs`
+- Cache validator: `scripts/validate-nfl-personnel-nflverse-cache.mjs`
+- Synthetic fixtures: `scripts/fixtures/nfl-personnel/nflverse/`
+- Non-production output location:
+  `artifacts/nfl/personnel-audit/nflverse-four-team-audit.json`
+
+This audit proves roster identity matching and returning-production math using
+the approved nflverse roster, player-stats, and snap-count families. It still
+does not populate all 32 teams, does not create
+`public/data/nfl/<season>/personnel-evidence.json`, and does not score team
+improvement or decline.
+
 ## Existing Source Inventory
 
 | Path | Provider | Seasons | Teams | Update process | Freshness | Structure | Reliability | Licensing or redistribution concern | Canonical artifact fit |
@@ -230,6 +246,8 @@ Local fixture commands:
 ```bash
 npm run nfl:personnel:validate
 npm run nfl:personnel:generate:fixture
+npm run nfl:personnel:nflverse:audit
+npm run nfl:personnel:nflverse:validate-cache
 ```
 
 Direct generator usage:
@@ -246,6 +264,32 @@ node scripts/generate-nfl-personnel-evidence.mjs \
 builds and validates the deterministic artifact without writing. The generator
 does not fetch external providers; every run must use explicit fixture/input
 paths.
+
+The nflverse audit CLI requires explicit seasons and a fixed `--generated-at`
+timestamp for deterministic output. It accepts `--fixture-dir`, explicit local
+CSV paths, or explicit nflverse URLs. When `--cache-dir` is supplied, downloaded
+public nflverse files are cached with a manifest and SHA-256 checksums. Raw
+cache files under `data/nfl/personnel/raw/` are ignored by git.
+
+The approved Phase 5C-2A nflverse inputs are:
+
+- `roster_<targetSeason>.csv` from the `rosters` release for roster presence,
+  identity fields, roster status, depth-chart position, and years of experience.
+- `player_stats_season.csv` from the `player_stats` release for prior
+  regular-season pass attempts, carries, rushing yards, targets, receptions,
+  and receiving yards. The live release uses this aggregate season file; tests
+  use tiny explicit local fixtures. If the aggregate file does not contain the
+  requested prior season, the audit marks those production metrics unavailable
+  instead of filling zero.
+- `snap_counts_<priorSeason>.csv` from the `snap_counts` release for offensive,
+  defensive, and special-teams snaps. nflreadr documents this family as
+  PFR-provided, so production storage/public redistribution needs source-term
+  review.
+
+The audit emits unsupported metrics as unavailable, not zero: starts,
+offensive-line snaps, sacks, pressures, and defensive-back snaps. It also keeps
+QB continuity and coaching continuity as unknown because the approved nflverse
+files do not prove official starter status or staff continuity.
 
 ## Source Hierarchy
 
