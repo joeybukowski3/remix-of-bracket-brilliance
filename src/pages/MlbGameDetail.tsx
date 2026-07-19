@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, Dice5, ExternalLink, Flame, Gauge, Radar, Shield, Sparkles, Swords, Target, TrendingUp, Wind } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, Dice5, ExternalLink, Flame, Gauge, Radar, Shield, Sparkles, Swords, Target, TrendingUp } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
-import MlbModelPickBadge from "@/components/mlb/MlbModelPickBadge";
+import MlbModelEdgeHero from "@/components/mlb/MlbModelEdgeHero";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { useMlbOdds } from "@/hooks/useMlbOdds";
@@ -10,7 +10,6 @@ import { usePolymarketMlbMoneylines } from "@/hooks/usePolymarketMlbMoneylines";
 import { usePitcherPercentiles } from "@/hooks/usePitcherPercentiles";
 import { useTeamWrc } from "@/hooks/useTeamWrc";
 import SportsbookBar from "@/components/SportsbookBar";
-import MlbMatchupHero from "@/components/mlb/MlbMatchupHero";
 import MlbMatchupLayout from "@/components/mlb/MlbMatchupLayout";
 import MlbMatchupSummaryRow from "@/components/mlb/MlbMatchupSummaryRow";
 import MlbParkContextPanel from "@/components/mlb/MlbParkContextPanel";
@@ -54,7 +53,7 @@ import {
   type FormWindow,
   type MlSocialRow,
 } from "@/lib/mlb/mlbSocialEdge";
-import { computeK9, computePercent, formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
+import { formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { getProjectionEdgeInfo, selectTopSocialKRows } from "@/lib/mlb/kPropValueSorting";
 import { resolveKPropStatus } from "@/lib/mlb/kPropStatus";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
@@ -3664,54 +3663,6 @@ export function HomeSchedule({
   );
 }
 
-function getFeaturedMatchupEdge(detail: MlbGameDetail) {
-  const awayK9 = computeK9(detail.starters.away.strikeOuts, detail.starters.away.inningsPitched);
-  const homeK9 = computeK9(detail.starters.home.strikeOuts, detail.starters.home.inningsPitched);
-  const awayOpponentK = computePercent(
-    detail.opponentSplits.homeBattingVsAwayStarter?.strikeOuts ?? null,
-    detail.opponentSplits.homeBattingVsAwayStarter?.plateAppearances ?? null,
-  );
-  const homeOpponentK = computePercent(
-    detail.opponentSplits.awayBattingVsHomeStarter?.strikeOuts ?? null,
-    detail.opponentSplits.awayBattingVsHomeStarter?.plateAppearances ?? null,
-  );
-  const awayLineupOps = detail.lineupSummaries.away.ops;
-  const homeLineupOps = detail.lineupSummaries.home.ops;
-
-  const kCandidates = [
-    {
-      title: `${detail.starters.away.name} strikeout look`,
-      score: (awayK9 ?? 0) * 0.65 + (awayOpponentK ?? 0) * 0.35,
-      note: `${detail.game.home.abbreviation} split K% ${awayOpponentK?.toFixed(1) ?? "—"} with ${detail.starters.away.name} carrying a ${awayK9?.toFixed(1) ?? "—"} K/9.`,
-      icon: <Target className="h-5 w-5" />,
-    },
-    {
-      title: `${detail.starters.home.name} strikeout look`,
-      score: (homeK9 ?? 0) * 0.65 + (homeOpponentK ?? 0) * 0.35,
-      note: `${detail.game.away.abbreviation} split K% ${homeOpponentK?.toFixed(1) ?? "—"} with ${detail.starters.home.name} carrying a ${homeK9?.toFixed(1) ?? "—"} K/9.`,
-      icon: <Target className="h-5 w-5" />,
-    },
-  ].sort((left, right) => right.score - left.score);
-
-  const lineupDelta = Math.abs((awayLineupOps ?? 0) - (homeLineupOps ?? 0));
-  if (kCandidates[0].score >= 14 || lineupDelta < 0.035) {
-    return {
-      eyebrow: "Top edge to price first",
-      title: kCandidates[0].title,
-      note: kCandidates[0].note,
-      icon: kCandidates[0].icon,
-    };
-  }
-
-  const homeLineupAhead = (homeLineupOps ?? 0) > (awayLineupOps ?? 0);
-  return {
-    eyebrow: "Top edge to price first",
-    title: `${homeLineupAhead ? detail.game.home.abbreviation : detail.game.away.abbreviation} lineup pressure`,
-    note: `${detail.game.away.abbreviation} projected OPS ${awayLineupOps?.toFixed(3) ?? "—"} against ${detail.game.home.abbreviation} at ${homeLineupOps?.toFixed(3) ?? "—"}.`,
-    icon: <Swords className="h-5 w-5" />,
-  };
-}
-
 export default function MlbGameDetail() {
   const seo = getSeoMeta("mlb");
   const [routeState, setRouteState] = useState<MlbRouteState>(() => parseHash(window.location.hash));
@@ -3862,31 +3813,8 @@ export default function MlbGameDetail() {
   }, [detail, getPercentiles]);
   const parkContext = detail ? getParkContextValues(detail) : null;
   const propAngles = detail ? getPropAngles(detail) : [];
-  const featuredMatchupEdge = detail ? getFeaturedMatchupEdge(detail) : null;
   const awaySplitMetrics = detail ? buildSplitMetrics(detail.opponentSplits.awayBattingVsHomeStarter, "away-split") : [];
   const homeSplitMetrics = detail ? buildSplitMetrics(detail.opponentSplits.homeBattingVsAwayStarter, "home-split") : [];
-  const heroIndicators = detail ? [
-    {
-      label: "Best angle",
-      value: featuredMatchupEdge?.title ?? "Balanced matchup",
-      icon: <Crosshair className="h-4 w-4" />,
-    },
-    {
-      label: "Strikeout lean",
-      value: summaryCards[5]?.value ?? "Neutral",
-      icon: <Radar className="h-4 w-4" />,
-    },
-    {
-      label: "Run environment",
-      value: summaryCards[4]?.value ?? parkContext?.totalLean ?? "Neutral",
-      icon: <Flame className="h-4 w-4" />,
-    },
-    {
-      label: "Weather / wind",
-      value: detail.weather || "Context unavailable",
-      icon: <Wind className="h-4 w-4" />,
-    },
-  ] : [];
 
   return (
       <MlbMatchupLayout>
@@ -3934,22 +3862,7 @@ export default function MlbGameDetail() {
               </div>
             ) : null}
 
-            <MlbMatchupHero
-              detail={detail}
-              quickChips={[
-                { label: parkContext?.parkType || "Neutral park" },
-                { label: parkContext?.totalLean || "Neutral total" },
-                { label: summaryCards[2]?.value || "Lineup edge", tone: "positive" },
-                { label: summaryCards[5]?.value || "Strikeout environment" },
-              ]}
-              summaryIndicators={heroIndicators}
-              spotlight={featuredMatchupEdge ?? {
-                eyebrow: "Top edge to price first",
-                title: "Balanced matchup board",
-                note: "The core matchup signals are available below across team context, pitcher form, and lineup pressure.",
-                icon: <Sparkles className="h-5 w-5" />,
-              }}
-            />
+            <MlbModelEdgeHero detail={detail} mlbOdds={mlbOdds} />
 
             <MlbMatchupSummaryRow
               cards={summaryCards}
@@ -4067,9 +3980,6 @@ export default function MlbGameDetail() {
                 </MlbSectionCard>
               </div>
             </div>
-
-            {/* Model Pick Badge */}
-            <MlbModelPickBadge detail={detail} />
           </>
         )}
       </MlbMatchupLayout>
