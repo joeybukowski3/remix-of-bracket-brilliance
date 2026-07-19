@@ -13,6 +13,8 @@ export interface MobileModelPreviewAccordionProps {
   viewFullLabel?: string;
   children: ReactNode;
   className?: string;
+  /** Tint + icon color for the icon chip, e.g. "bg-amber-100 text-amber-700". Defaults to a neutral slate tint. */
+  iconClassName?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ export function MobileModelPreviewAccordion({
   viewFullLabel = "View Full Model",
   children,
   className,
+  iconClassName,
 }: MobileModelPreviewAccordionProps) {
   const isHashLink = viewFullHref?.startsWith("#");
 
@@ -42,7 +45,7 @@ export function MobileModelPreviewAccordion({
     >
       <AccordionTrigger className="gap-3 px-4 py-3 text-left hover:no-underline">
         <span className="flex min-w-0 flex-1 items-start gap-2.5">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+          <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", iconClassName ?? "bg-slate-100 text-slate-700")}>
             {icon}
           </span>
           <span className="min-w-0">

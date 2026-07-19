@@ -1263,9 +1263,9 @@ function MlbSlateAnalyzer({
                   panel (hidden md:flex there) so the label isn't duplicated. */}
               <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2 md:hidden">
                 <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Model Edge</span>
-                {cardMlPickAbbr && cardMlPickColor && cardEdgeTierLabel ? (
+                {cardMlPickAbbr && cardMlPickColor ? (
                   <span className="rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: cardMlPickColor }}>
-                    {cardMlPickAbbr} · {cardEdgeTierLabel}
+                    {cardEdgeTierLabel ? `${cardMlPickAbbr} · ${cardEdgeTierLabel}` : cardMlPickAbbr}
                   </span>
                 ) : cardMlEdge ? (
                   <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
@@ -3542,6 +3542,7 @@ export function HomeSchedule({
               <MobileModelPreviewAccordion
                 value="hr"
                 icon={<Flame className="h-4 w-4" />}
+                iconClassName="bg-amber-100 text-amber-700"
                 title="Top HR Props"
                 description="Ranks today's home run opportunities using our proprietary hitter model."
                 viewFullHref="/mlb/hr-props"
@@ -3551,6 +3552,7 @@ export function HomeSchedule({
               <MobileModelPreviewAccordion
                 value="k"
                 icon={<Radar className="h-4 w-4" />}
+                iconClassName="bg-emerald-100 text-emerald-700"
                 title="Top K Props"
                 description="Highlights today's largest strikeout projection differences versus sportsbook markets."
                 viewFullHref="/mlb/strikeout-props"
@@ -3560,6 +3562,7 @@ export function HomeSchedule({
               <MobileModelPreviewAccordion
                 value="bvp"
                 icon={<Swords className="h-4 w-4" />}
+                iconClassName="bg-purple-100 text-purple-700"
                 title="Batter vs Pitcher"
                 description="Today's strongest hitter/pitcher matchup scores."
                 viewFullHref="/mlb/batter-vs-pitcher"
@@ -3569,6 +3572,7 @@ export function HomeSchedule({
               <MobileModelPreviewAccordion
                 value="ml-edges"
                 icon={<TrendingUp className="h-4 w-4" />}
+                iconClassName="bg-blue-100 text-blue-700"
                 title="Top ML Edges"
                 description="Today's strongest model leans, ranked by factor differential."
                 viewFullHref="#moneylines"
@@ -3583,6 +3587,7 @@ export function HomeSchedule({
               <MobileModelPreviewAccordion
                 value="pitcher-regression"
                 icon={<Gauge className="h-4 w-4" />}
+                iconClassName="bg-indigo-100 text-indigo-700"
                 title="Pitcher Regression Analysis"
                 description="Today's starters most likely to regress toward (or away from) their expected ERA."
                 viewFullHref="#pitcher-regression"

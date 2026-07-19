@@ -71,4 +71,19 @@ describe("MobileModelPreviewAccordion", () => {
     fireEvent.click(screen.getByRole("button", { name: /Top HR Props/ }));
     expect(screen.queryByRole("link", { name: /View Full Model/ })).not.toBeInTheDocument();
   });
+
+  it("applies a neutral slate icon tint by default", () => {
+    renderItem();
+    const icon = screen.getByRole("button", { name: /Top HR Props/ }).querySelector("svg")?.parentElement;
+    expect(icon?.className).toMatch(/bg-slate-100/);
+    expect(icon?.className).toMatch(/text-slate-700/);
+  });
+
+  it("applies a custom iconClassName when provided, overriding the default tint", () => {
+    renderItem({ iconClassName: "bg-amber-100 text-amber-700" });
+    const icon = screen.getByRole("button", { name: /Top HR Props/ }).querySelector("svg")?.parentElement;
+    expect(icon?.className).toMatch(/bg-amber-100/);
+    expect(icon?.className).toMatch(/text-amber-700/);
+    expect(icon?.className).not.toMatch(/bg-slate-100/);
+  });
 });

@@ -206,4 +206,21 @@ describe("Today's Top Model Edges — mobile accordion group", () => {
     expect(mobileGroup).toBeTruthy();
     expect(desktopGrid).toBeTruthy();
   });
+
+  it("gives each of the 5 accordion icons a distinct, restrained category tint", () => {
+    renderHomeSchedule();
+    const expectedTints: Record<string, string> = {
+      "Top HR Props": "bg-amber-100",
+      "Top K Props": "bg-emerald-100",
+      "Batter vs Pitcher": "bg-purple-100",
+      "Top ML Edges": "bg-blue-100",
+      "Pitcher Regression Analysis": "bg-indigo-100",
+    };
+    for (const [title, tintClass] of Object.entries(expectedTints)) {
+      const trigger = screen.getAllByRole("button", { name: new RegExp(title) })[0];
+      const icon = trigger.querySelector("svg")?.parentElement;
+      expect(icon?.className, `${title} icon tint`).toMatch(new RegExp(tintClass));
+      expect(icon?.className, `${title} icon no longer neutral`).not.toMatch(/bg-slate-100/);
+    }
+  });
 });

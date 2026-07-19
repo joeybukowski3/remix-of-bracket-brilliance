@@ -36,11 +36,15 @@ vi.mock("@/hooks/usePitcherRegression", () => ({
   usePitcherRegression: () => ({ data: [] }),
 }));
 
-const { computeModelEdgeMock } = vi.hoisted(() => ({ computeModelEdgeMock: vi.fn() }));
+const { computeModelEdgeMock, getEdgeTierLabelMock } = vi.hoisted(() => ({
+  computeModelEdgeMock: vi.fn(),
+  getEdgeTierLabelMock: vi.fn(),
+}));
 
 vi.mock("@/lib/mlb/mlbModelEdge", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/mlb/mlbModelEdge")>();
-  return { ...actual, computeModelEdge: computeModelEdgeMock };
+  getEdgeTierLabelMock.mockImplementation(actual.getEdgeTierLabel);
+  return { ...actual, computeModelEdge: computeModelEdgeMock, getEdgeTierLabel: getEdgeTierLabelMock };
 });
 
 const GAME = DEV_MLB_MATCHUP_FIXTURE.schedule[0];
@@ -86,6 +90,9 @@ describe("Game Matchup Analyzer — mobile MODEL EDGE display", () => {
     expect(row.textContent).not.toMatch(/%/);
     expect(row.textContent).not.toMatch(/\b68\b/);
     expect(row.textContent).not.toMatch(/win probability|implied probability|chance to win/i);
+    // No dangling separator after the team abbreviation or tier label
+    expect(row.textContent).not.toMatch(/[·—-]\s*$/);
+    expect(row.textContent).not.toContain(`${GAME.home.abbreviation} —`);
   });
 
   it("shows 'Even' for a push (neutral) game", () => {
@@ -110,6 +117,25 @@ describe("Game Matchup Analyzer — mobile MODEL EDGE display", () => {
     renderWithDetail({});
     const row = getModelEdgeRow();
     expect(row).toHaveTextContent("Edge pending");
+  });
+
+  it("shows the bare team abbreviation with no trailing separator if a tier label is ever unavailable", () => {
+    computeModelEdgeMock.mockReturnValue({
+      pick: "home",
+      awayAbbr: GAME.away.abbreviation,
+      homeAbbr: GAME.home.abbreviation,
+      confidence: 68,
+      differential: 12,
+      factors: [],
+      topFactor: "",
+      summary: "",
+    });
+    getEdgeTierLabelMock.mockReturnValueOnce("");
+    renderWithDetail({ [GAME.gamePk]: DETAIL });
+
+    const row = getModelEdgeRow();
+    expect(row.textContent?.trim()).toBe(`Model Edge${GAME.home.abbreviation}`);
+    expect(row.textContent).not.toMatch(/[·—-]/);
   });
 
   it("keeps the desktop Edge Strength row separate (hidden on mobile, not duplicating the label)", () => {
