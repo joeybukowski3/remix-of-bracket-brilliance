@@ -60,9 +60,21 @@ function FactorRow({
   const total = factor.awayScore + factor.homeScore;
   const awayPct = total === 0 ? 50 : Math.round((factor.awayScore / total) * 100);
   const homePct = 100 - awayPct;
-  const leaderAbbr = factor.awayScore >= factor.homeScore ? awayAbbr : homeAbbr;
-  const leaderColor = factor.awayScore >= factor.homeScore ? awayColor : homeColor;
-  const edgeValue = Math.round(Math.abs(factor.weightedDifference));
+
+  // Edge column: the leader is derived from the SIGN of the canonical
+  // weightedDifference (positive = away leads, negative = home leads),
+  // never from a separate awayScore/homeScore comparison -- that would let
+  // >= silently hand a tied factor to the away team. The displayed number
+  // is the absolute magnitude of that signed value; direction is conveyed
+  // by which team's abbreviation it sits beside, not by a +/- sign on the
+  // number itself. A factor whose rounded magnitude is 0 (exact tie, or a
+  // signed value too small to round to a nonzero display) is shown as a
+  // neutral "EVEN / 0 / No advantage" rather than crediting either team.
+  const edgeMagnitude = Math.round(Math.abs(factor.weightedDifference));
+  const isNeutralEdge = edgeMagnitude === 0;
+  const awayLeads = factor.weightedDifference > 0;
+  const leaderAbbr = awayLeads ? awayAbbr : homeAbbr;
+  const leaderColor = awayLeads ? awayColor : homeColor;
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 md:grid md:grid-cols-[1fr_auto] md:items-center md:gap-3">
@@ -91,13 +103,15 @@ function FactorRow({
 
       {/* Edge column -- strong border separates it from the factor bar */}
       <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 border-t border-[#0f172a]/15 pt-2 md:min-w-[84px] md:border-l md:border-t-0 md:pl-3 md:pt-0">
-        <span className="text-[11px] font-extrabold" style={{ color: leaderColor }}>
-          {leaderAbbr}
+        <span className="text-[11px] font-extrabold" style={{ color: isNeutralEdge ? "#64748b" : leaderColor }}>
+          {isNeutralEdge ? "EVEN" : leaderAbbr}
         </span>
         <span className="text-[13px] font-extrabold text-[#031635]" title="Model differential">
-          +{edgeValue}
+          {isNeutralEdge ? "0" : `+${edgeMagnitude}`}
         </span>
-        <span className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">{leaderAbbr} advantage</span>
+        <span className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+          {isNeutralEdge ? "No advantage" : `${leaderAbbr} advantage`}
+        </span>
       </div>
     </div>
   );

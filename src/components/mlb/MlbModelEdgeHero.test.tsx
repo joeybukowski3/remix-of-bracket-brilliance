@@ -6,7 +6,7 @@
  * sourced from computeModelEdge(detail) and other existing canonical
  * helpers (never recomputed independently in the test).
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import MlbModelEdgeHero from "./MlbModelEdgeHero";
@@ -19,6 +19,34 @@ import type { MlbOddsData } from "@/hooks/useMlbOdds";
 const DETAIL = DEV_MLB_MATCHUP_FIXTURE.detail;
 const AWAY = DETAIL.game.away.abbreviation; // NYY
 const HOME = DETAIL.game.home.abbreviation; // BOS
+
+const { computeModelEdgeMock } = vi.hoisted(() => ({ computeModelEdgeMock: vi.fn() }));
+
+vi.mock("@/lib/mlb/mlbModelEdge", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/mlb/mlbModelEdge")>();
+  computeModelEdgeMock.mockImplementation(actual.computeModelEdge);
+  return { ...actual, computeModelEdge: computeModelEdgeMock };
+});
+
+function baseResult(overrides: Partial<ReturnType<typeof computeModelEdge>> = {}): ReturnType<typeof computeModelEdge> {
+  return {
+    pick: "away",
+    awayAbbr: AWAY,
+    homeAbbr: HOME,
+    confidence: 68,
+    differential: 12,
+    factors: [
+      { label: "Pitcher Quality", awayScore: 60, homeScore: 55, weight: 0.3, weightedDifference: 1.5, description: "ERA, K/9, BB%, HR/9" },
+      { label: "Matchup Edge", awayScore: 55, homeScore: 55, weight: 0.25, weightedDifference: 0, description: "Lineup OPS vs pitcher hand · lineup K%" },
+      { label: "Lineup Offense", awayScore: 50, homeScore: 58, weight: 0.2, weightedDifference: -1.6, description: "OPS, SLG, OBP" },
+      { label: "Recent Form", awayScore: 52, homeScore: 50, weight: 0.15, weightedDifference: 0.3, description: "Last 5 games · home/away split" },
+      { label: "Season Quality", awayScore: 51, homeScore: 51, weight: 0.1, weightedDifference: 0, description: "Season win %" },
+    ],
+    topFactor: "Pitcher Quality",
+    summary: `${AWAY} model lean driven by pitcher quality.`,
+    ...overrides,
+  };
+}
 
 const ODDS_WITH_LINE: MlbOddsData = {
   fetchedAt: new Date().toISOString(),
@@ -197,14 +225,22 @@ describe("MlbModelEdgeHero — factor breakdown and takeaway", () => {
     }
   });
 
-  it("14. each factor row's Edge column shows the leading team and a signed model-differential value", () => {
+  it("14. each factor row's Edge column shows the team led by the canonical weightedDifference sign, with its magnitude", () => {
     renderHero();
     const result = computeModelEdge(DETAIL);
     for (const factor of result.factors) {
-      const leaderAbbr = factor.awayScore >= factor.homeScore ? AWAY : HOME;
+      const magnitude = Math.round(Math.abs(factor.weightedDifference));
       const row = screen.getByText(factor.label).closest("div.rounded-lg")!;
-      expect(row).toHaveTextContent(`${leaderAbbr} advantage`);
-      expect(row.textContent).toMatch(/\+\d+/);
+      const valueEl = row.querySelector('[title="Model differential"]');
+      if (magnitude === 0) {
+        expect(row).toHaveTextContent("EVEN");
+        expect(row).toHaveTextContent("No advantage");
+        expect(valueEl?.textContent).toBe("0");
+      } else {
+        const leaderAbbr = factor.weightedDifference > 0 ? AWAY : HOME;
+        expect(row).toHaveTextContent(`${leaderAbbr} advantage`);
+        expect(valueEl?.textContent).toBe(`+${magnitude}`);
+      }
     }
   });
 
@@ -227,6 +263,67 @@ describe("MlbModelEdgeHero — factor breakdown and takeaway", () => {
       expect(text.slice(idx, idx + 3)).toBe(" wt");
     }
     expect(container.textContent).not.toMatch(/win probability|implied probability|chance to win/i);
+  });
+});
+
+describe("MlbModelEdgeHero — Edge column semantics", () => {
+  it("shows away-team advantage when weightedDifference is positive, magnitude only (no signed +/- on the raw value)", () => {
+    computeModelEdgeMock.mockReturnValueOnce(baseResult());
+    renderHero();
+    const row = screen.getByText("Pitcher Quality").closest("div.rounded-lg")!;
+    expect(row).toHaveTextContent(`${AWAY} advantage`);
+    expect(row).toHaveTextContent("+2"); // Math.round(Math.abs(1.5))
+    expect(row.textContent).not.toMatch(new RegExp(`${HOME} advantage`));
+  });
+
+  it("shows home-team advantage when weightedDifference is negative", () => {
+    computeModelEdgeMock.mockReturnValueOnce(baseResult());
+    renderHero();
+    const row = screen.getByText("Lineup Offense").closest("div.rounded-lg")!;
+    expect(row).toHaveTextContent(`${HOME} advantage`);
+    expect(row).toHaveTextContent("+2"); // Math.round(Math.abs(-1.6)) -- magnitude only
+    expect(row.textContent).not.toMatch(new RegExp(`${AWAY} advantage`));
+  });
+
+  it("an exact-zero (tied) factor shows EVEN, not a team credited via >= tie-breaking", () => {
+    computeModelEdgeMock.mockReturnValueOnce(baseResult());
+    renderHero();
+    const row = screen.getByText("Matchup Edge").closest("div.rounded-lg")!;
+    expect(row).toHaveTextContent("EVEN");
+    expect(row.textContent).not.toMatch(new RegExp(`${AWAY} advantage`));
+    expect(row.textContent).not.toMatch(new RegExp(`${HOME} advantage`));
+  });
+
+  it("never renders '+0' -- a zero-magnitude factor shows a bare '0'", () => {
+    computeModelEdgeMock.mockReturnValueOnce(baseResult());
+    renderHero();
+    const tiedRow = screen.getByText("Matchup Edge").closest("div.rounded-lg")!;
+    expect(tiedRow.textContent).not.toMatch(/\+0\b/);
+    expect(tiedRow).toHaveTextContent("0");
+    // Also covers a nonzero signed value that rounds down to a zero display magnitude
+    const roundsToZeroRow = screen.getByText("Recent Form").closest("div.rounded-lg")!;
+    expect(roundsToZeroRow.textContent).not.toMatch(/\+0\b/);
+    expect(roundsToZeroRow).toHaveTextContent("EVEN");
+  });
+
+  it("no '{team} advantage' label is ever shown for a tied factor", () => {
+    computeModelEdgeMock.mockReturnValueOnce(baseResult());
+    renderHero();
+    for (const label of ["Matchup Edge", "Season Quality"]) {
+      const row = screen.getByText(label).closest("div.rounded-lg")!;
+      expect(row).toHaveTextContent("No advantage");
+      expect(row.textContent).not.toContain(`${AWAY} advantage`);
+      expect(row.textContent).not.toContain(`${HOME} advantage`);
+    }
+  });
+
+  it("the Edge column's numeric value keeps the accessible 'Model differential' label and never appends %", () => {
+    computeModelEdgeMock.mockReturnValueOnce(baseResult());
+    renderHero();
+    const row = screen.getByText("Pitcher Quality").closest("div.rounded-lg")!;
+    const valueEl = row.querySelector('[title="Model differential"]');
+    expect(valueEl).toBeTruthy();
+    expect(valueEl?.textContent).not.toMatch(/%/);
   });
 });
 
