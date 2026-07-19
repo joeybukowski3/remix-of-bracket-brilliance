@@ -859,12 +859,15 @@ export function PropPreviewCard({
   rows,
   to,
   theme,
+  variant = "card",
 }: {
   title: string;
   description?: string;
   rows: PropPreviewRow[];
   to: string;
   theme: PropPreviewTheme;
+  /** "bare" skips the outer border/header block so this can nest inside an accordion whose trigger already shows title/description. */
+  variant?: "card" | "bare";
 }) {
   const themeClasses = theme === "hr"
     ? {
@@ -890,22 +893,26 @@ export function PropPreviewCard({
       note: "Full Model →",
     };
 
+  const isBare = variant === "bare";
+
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className={cn("flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3", themeClasses.header)}>
-        <div className="flex min-w-0 items-start gap-2">
-          <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
-          {theme === "hr" ? <Flame className="h-4 w-4" /> : theme === "k" ? <Radar className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-[17px] font-bold text-[#031635] 2xl:text-lg">{title}</h3>
-            {description ? <p className="mt-0.5 text-[11px] font-medium leading-4 text-slate-600">{description}</p> : null}
+    <div className={isBare ? "" : "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"}>
+      {!isBare && (
+        <div className={cn("flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3", themeClasses.header)}>
+          <div className="flex min-w-0 items-start gap-2">
+            <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
+            {theme === "hr" ? <Flame className="h-4 w-4" /> : theme === "k" ? <Radar className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-[17px] font-bold text-[#031635] 2xl:text-lg">{title}</h3>
+              {description ? <p className="mt-0.5 text-[11px] font-medium leading-4 text-slate-600">{description}</p> : null}
+            </div>
           </div>
+          <Link to={to} className={cn("shrink-0 text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
+            {themeClasses.note}
+          </Link>
         </div>
-        <Link to={to} className={cn("shrink-0 text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
-          {themeClasses.note}
-        </Link>
-      </div>
+      )}
 
       <div
         className={cn(
