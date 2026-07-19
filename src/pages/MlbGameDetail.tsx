@@ -1212,6 +1212,12 @@ function MlbSlateAnalyzer({
             ? (cardMlEdge.pick === "away" ? cardMlEdge.awayAbbr : cardMlEdge.homeAbbr) : null;
           const cardPmAgreement = getPolymarketAgreement(game.gamePk, cardMlEdge);
           const cardPmEdgeLabel: string = formatCardPmEdgeLabel(cardMlPickAbbr, cardPmAgreement);
+          // MODEL EDGE mobile summary: categorical team + tier label only --
+          // confidence (50-82) is a model-strength score, never a win
+          // probability, so it is never rendered as a percentage or a
+          // bare number here.
+          const cardMlPickColor = cardMlPickAbbr ? getMlbTeamColors(cardMlPickAbbr).primary : null;
+          const cardEdgeTierLabel = cardMlEdge && cardMlEdge.pick !== "push" ? getEdgeTierLabel(cardMlEdge.confidence) : null;
 
           return (
             <button
@@ -1250,6 +1256,22 @@ function MlbSlateAnalyzer({
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
                   <span className="text-[11px] font-semibold text-slate-500">{formatGameTime(game.gameDate)}</span>
                 </div>
+              </div>
+
+              {/* MODEL EDGE — mobile-only prominent summary. Desktop keeps the
+                  categorical "Edge Strength" row lower in the Market Summary
+                  panel (hidden md:flex there) so the label isn't duplicated. */}
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2 md:hidden">
+                <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Model Edge</span>
+                {cardMlPickAbbr && cardMlPickColor && cardEdgeTierLabel ? (
+                  <span className="rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: cardMlPickColor }}>
+                    {cardMlPickAbbr} · {cardEdgeTierLabel}
+                  </span>
+                ) : cardMlEdge ? (
+                  <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
+                ) : (
+                  <span className="text-[10px] font-semibold text-slate-400">Edge pending</span>
+                )}
               </div>
 
               {/* Main content */}
@@ -1721,7 +1743,7 @@ function MlbSlateAnalyzer({
                                     <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
                                     <span className="rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold text-white">{edges.total}</span>
                                   </div>
-                                  <div className="flex items-center justify-between gap-3" title={ML_EDGE_METHODOLOGY}>
+                                  <div className="hidden items-center justify-between gap-3 md:flex" title={ML_EDGE_METHODOLOGY}>
                                     <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Edge Strength</span>
                                     {mlPickAbbr && mlPickColor ? (
                                       <span className="rounded-full px-2.5 py-1 text-[9px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
