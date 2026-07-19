@@ -25,6 +25,9 @@ import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbPolymarketMoneylinePanel, { type PanelMlEdge } from "@/components/mlb/MlbPolymarketMoneylinePanel";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { MobileModelPreviewAccordion } from "@/components/mlb/MobileModelPreviewAccordion";
+import { ModelPreviewRowList, type ModelPreviewRow } from "@/components/mlb/ModelPreviewRowList";
+import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
@@ -3322,7 +3325,7 @@ export function SocialMediaTablesSection({
 }
 
 
-function HomeSchedule({
+export function HomeSchedule({
   games,
   detailPreviews,
   onOpenGame,
@@ -3437,6 +3440,50 @@ function HomeSchedule({
     return map;
   }, [detailPreviews, polymarketData]);
 
+  // Mobile "Top ML Edges" preview: top 5 games by the model's own
+  // differential descending -- the same ranking already used by the
+  // Polymarket panel (see PER MODEL AUDIT comment above). No new sort,
+  // no new calculation -- just a top-5 slice of data already computed.
+  const topMlEdgeRows = useMemo<ModelPreviewRow[]>(() => {
+    return Object.entries(mlEdges)
+      .map(([gamePkStr, edge]) => {
+        const game = games.find((g) => g.gamePk === Number(gamePkStr));
+        return game ? { edge, game } : null;
+      })
+      .filter((entry): entry is { edge: PanelMlEdge; game: MlbScheduleGame } => entry !== null)
+      .sort((a, b) => b.edge.differential - a.edge.differential)
+      .slice(0, 5)
+      .map(({ edge, game }) => {
+        const otherAbbr = edge.pickAbbr === game.away.abbreviation ? game.home.abbreviation : game.away.abbreviation;
+        return {
+          key: `ml-${game.gamePk}`,
+          player: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
+          team: edge.pickAbbr,
+          opponent: otherAbbr,
+          badge: { label: getEdgeTierLabel(edge.confidence), bg: getMlbTeamColors(edge.pickAbbr).primary, color: "#ffffff" },
+        };
+      });
+  }, [mlEdges, games]);
+
+  // Mobile "Pitcher Regression Analysis" preview: top 5 by |regressionScore|
+  // descending, an exact copy of MlbPitcherRegressionTable's own sort so the
+  // preview never diverges from the full table's ordering.
+  const topRegressionRows = useMemo<ModelPreviewRow[]>(() => {
+    return [...pitcherRegressionData]
+      .sort((a, b) => Math.abs(b.regressionScore) - Math.abs(a.regressionScore))
+      .slice(0, 5)
+      .map((pitcher) => {
+        const pill = regressionPillStyle(pitcher.regressionScore);
+        return {
+          key: `regr-${pitcher.pitcherId ?? pitcher.name}`,
+          player: pitcher.name,
+          team: pitcher.team,
+          scoreText: `${pitcher.regressionScore > 0 ? "+" : ""}${pitcher.regressionScore}`,
+          badge: { label: pill.label, bg: pill.bg, color: pill.color },
+        };
+      });
+  }, [pitcherRegressionData]);
+
   // #pitcher-regression deep-links (sidebar / mobile preview "View Full
   // Model" links) must reliably scroll this always-visible section into
   // view, same pattern as SocialMediaTablesSection's hash effect below.
@@ -3468,7 +3515,67 @@ function HomeSchedule({
               <p className="mt-0.5 text-xs text-slate-500">Our highest-rated projections from today&apos;s MLB model.</p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 3xl:gap-5">
+            {/* Mobile: 5 collapsed-by-default preview accordions, all independently expandable */}
+            <Accordion type="multiple" className="space-y-2 md:hidden">
+              <MobileModelPreviewAccordion
+                value="hr"
+                icon={<Flame className="h-4 w-4" />}
+                title="Top HR Props"
+                description="Ranks today's home run opportunities using our proprietary hitter model."
+                viewFullHref="/mlb/hr-props"
+              >
+                <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" variant="bare" />
+              </MobileModelPreviewAccordion>
+              <MobileModelPreviewAccordion
+                value="k"
+                icon={<Radar className="h-4 w-4" />}
+                title="Top K Props"
+                description="Highlights today's largest strikeout projection differences versus sportsbook markets."
+                viewFullHref="/mlb/strikeout-props"
+              >
+                <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" variant="bare" />
+              </MobileModelPreviewAccordion>
+              <MobileModelPreviewAccordion
+                value="bvp"
+                icon={<Swords className="h-4 w-4" />}
+                title="Batter vs Pitcher"
+                description="Today's strongest hitter/pitcher matchup scores."
+                viewFullHref="/mlb/batter-vs-pitcher"
+              >
+                <PropPreviewCard title="Batter vs Pitcher" rows={bvpPreviewRows} to="/mlb/batter-vs-pitcher" theme="bvp" variant="bare" />
+              </MobileModelPreviewAccordion>
+              <MobileModelPreviewAccordion
+                value="ml-edges"
+                icon={<TrendingUp className="h-4 w-4" />}
+                title="Top ML Edges"
+                description="Today's strongest model leans, ranked by factor differential."
+                viewFullHref="#moneylines"
+                viewFullLabel="View Full Model"
+              >
+                {topMlEdgeRows.length > 0 ? (
+                  <ModelPreviewRowList rows={topMlEdgeRows} />
+                ) : (
+                  <div className="px-4 py-4 text-center text-[11px] text-slate-400">No model edges available yet.</div>
+                )}
+              </MobileModelPreviewAccordion>
+              <MobileModelPreviewAccordion
+                value="pitcher-regression"
+                icon={<Gauge className="h-4 w-4" />}
+                title="Pitcher Regression Analysis"
+                description="Today's starters most likely to regress toward (or away from) their expected ERA."
+                viewFullHref="#pitcher-regression"
+                viewFullLabel="View Full Model"
+              >
+                {topRegressionRows.length > 0 ? (
+                  <ModelPreviewRowList rows={topRegressionRows} />
+                ) : (
+                  <div className="px-4 py-4 text-center text-[11px] text-slate-400">No pitcher regression data available yet.</div>
+                )}
+              </MobileModelPreviewAccordion>
+            </Accordion>
+
+            {/* Desktop: unchanged 2-card grid */}
+            <div className="hidden gap-4 md:grid md:grid-cols-2 3xl:gap-5">
               <PropPreviewCard
                 title="Top HR Props"
                 description="Ranks today's home run opportunities using our proprietary hitter model."
