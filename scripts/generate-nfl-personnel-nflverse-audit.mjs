@@ -6,7 +6,7 @@
  * but refuses to write public/data/nfl/<season>/personnel-evidence.json.
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import teamsJson from "../public/data/nfl/teams.json" with { type: "json" };
@@ -31,10 +31,12 @@ function parseArgs(argv) {
     priorRoster: null,
     playerStats: null,
     snapCounts: null,
+    players: null,
     rosterUrl: null,
     priorRosterUrl: null,
     playerStatsUrl: null,
     snapCountsUrl: null,
+    playersUrl: null,
     fixtureDir: null,
     cacheDir: null,
     output: null,
@@ -62,10 +64,12 @@ function parseArgs(argv) {
     else if (arg.startsWith("--prior-roster=")) args.priorRoster = resolve(arg.slice("--prior-roster=".length));
     else if (arg.startsWith("--player-stats=")) args.playerStats = resolve(arg.slice("--player-stats=".length));
     else if (arg.startsWith("--snap-counts=")) args.snapCounts = resolve(arg.slice("--snap-counts=".length));
+    else if (arg.startsWith("--players=")) args.players = resolve(arg.slice("--players=".length));
     else if (arg.startsWith("--roster-url=")) args.rosterUrl = arg.slice("--roster-url=".length);
     else if (arg.startsWith("--prior-roster-url=")) args.priorRosterUrl = arg.slice("--prior-roster-url=".length);
     else if (arg.startsWith("--player-stats-url=")) args.playerStatsUrl = arg.slice("--player-stats-url=".length);
     else if (arg.startsWith("--snap-counts-url=")) args.snapCountsUrl = arg.slice("--snap-counts-url=".length);
+    else if (arg.startsWith("--players-url=")) args.playersUrl = arg.slice("--players-url=".length);
     else if (arg.startsWith("--fixture-dir=")) args.fixtureDir = resolve(arg.slice("--fixture-dir=".length));
     else if (arg.startsWith("--cache-dir=")) args.cacheDir = resolve(arg.slice("--cache-dir=".length));
     else if (arg.startsWith("--output=")) args.output = resolve(arg.slice("--output=".length));
@@ -81,6 +85,8 @@ function parseArgs(argv) {
     args.priorRoster ??= join(args.fixtureDir, `roster_${args.priorSeason}.csv`);
     args.playerStats ??= join(args.fixtureDir, `stats_player_reg_${args.priorSeason}.csv`);
     args.snapCounts ??= join(args.fixtureDir, `snap_counts_${args.priorSeason}.csv`);
+    const playersFixture = join(args.fixtureDir, "players.csv");
+    if (!args.players && existsSync(playersFixture)) args.players = playersFixture;
   }
   if (args.validateOverridesOnly && !args.reviewedOverrides) throw new Error("--reviewed-overrides is required with --validate-overrides-only");
   if (!args.validateOnly && !args.dryRun && !args.validateOverridesOnly && !args.output) {
@@ -140,10 +146,12 @@ async function main() {
     priorRosterSourcePath: args.priorRoster,
     playerStatsSourcePath: args.playerStats,
     snapCountsSourcePath: args.snapCounts,
+    playersSourcePath: args.players,
     rosterSourceUrl: args.rosterUrl,
     priorRosterSourceUrl: args.priorRosterUrl,
     playerStatsSourceUrl: args.playerStatsUrl,
     snapCountsSourceUrl: args.snapCountsUrl,
+    playersSourceUrl: args.playersUrl,
     cacheDir: args.cacheDir,
     teamsJson,
     manualDataset,

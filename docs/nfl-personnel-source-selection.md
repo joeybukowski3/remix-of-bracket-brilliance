@@ -752,6 +752,96 @@ pass the offensive-snap attribution gate. SEA still fails offensive-snap
 attribution at 0.973342, and NYJ still fails defensive-snap attribution at
 0.922117. All-32 identity expansion is still not safe.
 
+Phase 5C-2H evaluates and ingests the documented nflverse `players` release as
+an optional supplemental identity crosswalk for the four-team audit. The exact
+approved URL is
+`https://github.com/nflverse/nflverse-data/releases/download/players/players.csv`;
+the dictionary is
+`https://nflreadr.nflverse.com/articles/dictionary_players.html`. A live
+read-only audit on 2026-07-19 observed `Last-Modified: 2026-07-19`, 25,032
+rows, and checksum
+`ed230d94ac3fe53ee49f2c0a3ab18507a778fd586c288104dbe9da663f3b2f31`.
+
+Fields used from `players.csv`: `gsis_id`, `display_name`,
+`common_first_name`, `first_name`, `last_name`, `short_name`, `football_name`,
+`suffix`, `pfr_id`, `espn_id`, `sportradar_id`, `position`,
+`position_group`, `latest_team`, and `status`. The release is not season-aware:
+`latest_team` is retained only as supplemental context and is never used as
+proof of prior-season team membership, target-season roster status, or retained
+status.
+
+Supplemental crosswalk priority is now:
+
+1. Stable GSIS identity already present in the source row.
+2. Unique prior-roster PFR-to-GSIS mapping.
+3. Approved reviewed override.
+4. Unique nflverse `players` PFR-to-GSIS mapping.
+5. Other documented provider-ID mapping.
+6. Deterministic prior-roster name/team/position-group fallback.
+7. Unresolved/excluded.
+
+The adapter accepts an explicit URL or local cache path and remains optional.
+When absent, the audit reports `candidate_supplement_not_supplied` and uses the
+Phase 5C-2G resolution flow. When present, live raw data remains under ignored
+audit/cache locations; no production `public/data/nfl/<season>/personnel-
+evidence.json` is written.
+
+Safety checks reject or warn on duplicate PFR IDs mapped to incompatible stable
+GSIS IDs, duplicate GSIS IDs mapped to incompatible people, missing PFR/GSIS
+IDs, non-stable historical GSIS-like IDs, name/suffix/position variants, and
+latest-team context that conflicts with the prior-season source context. A
+players-row mapping never overrides conflicting stable GSIS evidence.
+
+Named high-impact Phase 5C-2G gaps after applying the supplemental mapping:
+
+| Player/source name | Team | Snap impact resolved | Canonical GSIS | Notes |
+| --- | --- | ---: | --- | --- |
+| Sauce Gardner | NYJ | 410 defensive snaps | `00-0037190` | Unique `players` PFR-to-GSIS mapping; target-roster status remains separate. |
+| Quinnen Williams | NYJ | 365 defensive, 42 ST snaps | `00-0035718` | Unique `players` PFR-to-GSIS mapping; position/name context preserved. |
+| Olusegun Oluwatimi | SEA | 312 offensive snaps | `00-0038593` | Unique `players` PFR-to-GSIS mapping; name variant warning remains visible. |
+| Carl Jones | CHI | 148 ST snaps | `00-0039460` | Unique `players` PFR-to-GSIS mapping; not used as target-roster proof. |
+| Michael Carter II | NYJ | 145 defensive, 7 ST snaps | `00-0036501` | Unique `players` PFR-to-GSIS mapping. |
+| Ray-Ray McCloud | ATL | 139 offensive, 17 ST snaps | `00-0034407` | Unique `players` PFR-to-GSIS mapping; no retained-status inference. |
+
+Before/after resolved snap attribution:
+
+| Team | Offense before | Offense after | Defense before | Defense after | ST before | ST after |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ATL | 0.987475 | 0.999005 | 1.000000 | 1.000000 | 0.984540 | 0.990033 |
+| CHI | 1.000000 | 1.000000 | 0.984326 | 1.000000 | 0.958740 | 1.000000 |
+| NYJ | 0.999306 | 1.000000 | 0.922117 | 1.000000 | 0.980449 | 1.000000 |
+| SEA | 0.973342 | 1.000000 | 0.986471 | 1.000000 | 0.976487 | 1.000000 |
+
+Retained snap shares remain separate continuity evidence:
+
+| Team | Offensive snaps retained | Defensive snaps retained | Special-teams snaps retained |
+| --- | ---: | ---: | ---: |
+| ATL | 0.691772 | 0.622467 | 0.510578 |
+| CHI | 0.759571 | 0.460476 | 0.560096 |
+| NYJ | 0.727643 | 0.653834 | 0.722997 |
+| SEA | 0.925923 | 0.789452 | 0.914791 |
+
+Remaining unresolved live snap identities after Phase 5C-2H are limited to
+Nathan Carter (`CartNa00`) for ATL: 12 offensive snaps and 49 special-teams
+snaps. Accounted-for coverage remains 100% because unresolved quantities are
+explicitly quantified, but resolved attribution is not 100% for ATL offense or
+special teams.
+
+Exclusive source-contribution diagnostics reconcile to each snap denominator.
+For example, SEA offensive snaps are 6,201 direct roster PFR mapping, 5,338
+nflverse `players` mapping, 165 deterministic fallback, and 0 unresolved, for a
+total denominator of 11,704. NYJ defensive snaps are 11,445 direct roster PFR
+mapping and 971 nflverse `players` mapping, with 0 unresolved, for a total
+denominator of 12,416.
+
+Four-team identity expansion gates now pass for the sample: zero critical
+provider conflicts, at least 98% resolved offensive-production attribution,
+at least 98% resolved offensive-snap attribution, at least 98% resolved
+defensive-snap attribution, 100% accounted-for quantities, and deterministic
+replay. This does not make all-32 identity expansion safe by itself; the next
+phase must run the same optional-source diagnostics across all teams before any
+production personnel artifact or scoring work.
+
 ## Unresolved Decisions Requiring Approval
 
 - Whether to approve and fund SportsDataIO as the primary structured personnel

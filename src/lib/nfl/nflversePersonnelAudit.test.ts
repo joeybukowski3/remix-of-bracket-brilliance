@@ -162,6 +162,25 @@ function fixtureWithOffensiveLinePfrGap() {
   return dir;
 }
 
+function writePlayersFixture(dir: string, rows: string[]) {
+  writeFileSync(
+    join(dir, "players.csv"),
+    [
+      "gsis_id,display_name,common_first_name,first_name,last_name,short_name,football_name,suffix,esb_id,nfl_id,pfr_id,pff_id,otc_id,espn_id,smart_id,birth_date,position_group,position,ngs_position_group,ngs_position,height,weight,headshot,college_name,college_conference,jersey_number,rookie_season,last_season,latest_team,status,ngs_status,ngs_status_short_description,years_of_experience,pff_position,pff_status,draft_year,draft_round,draft_pick,draft_team",
+      ...rows,
+    ].join("\n"),
+  );
+}
+
+function fixtureWithPlayersMapping(rows: string[]) {
+  const dir = mkdtempSync(join(tmpdir(), "nflverse-players-map-"));
+  for (const filename of ["roster_2026.csv", "roster_2025.csv", "stats_player_reg_2025.csv", "snap_counts_2025.csv"]) {
+    writeFileSync(join(dir, filename), readFileSync(fixturePath(filename), "utf8"));
+  }
+  writePlayersFixture(dir, rows);
+  return dir;
+}
+
 describe("nflverse personnel cache manifests", () => {
   it("validates fixture checksums and reports mismatches", () => {
     const manifest = JSON.parse(readFileSync(fixturePath("manifest.fixture.json"), "utf8"));
@@ -212,6 +231,38 @@ describe("nflverse personnel identity", () => {
     expect(NFLVERSE_DATASETS.playerStats.requiredFields).toEqual(
       expect.arrayContaining(["season", "season_type", "recent_team", "player_id", "player_display_name", "position"]),
     );
+    expect(NFLVERSE_DATASETS.players.release).toBe("players");
+    expect(NFLVERSE_DATASETS.players.filename(2025)).toBe("players.csv");
+    expect(NFLVERSE_DATASETS.players.requiredFields).toEqual(
+      expect.arrayContaining(["gsis_id", "display_name", "pfr_id", "position", "position_group", "latest_team"]),
+    );
+  });
+
+  it("validates the supplemental nflverse players schema through offline replay", async () => {
+    const dir = fixtureWithPlayersMapping([
+      "00-PLAYER-1,Player One,Player,Player,One,P.One,Player,,PLA000001,,PlayOn00,,,,smart-1,2000-01-01,WR,WR,,,72,200,,College,,0,2024,2026,ATL,ACT,ACT,Active,2,WR,A,,,,",
+    ]);
+    try {
+      const loaded = await loadNflverseDataset({
+        dataset: "players",
+        season: 2025,
+        sourcePath: join(dir, "players.csv"),
+        retrievedAt: GENERATED_AT,
+      });
+
+      expect(loaded).toMatchObject({
+        dataset: "players",
+        family: "players",
+        release: "players",
+        rowCount: 1,
+        sourceUpdatedAt: null,
+      });
+      expect(loaded.headerColumns).toContain("gsis_id");
+      expect(loaded.headerColumns).toContain("pfr_id");
+      expect(loaded.sha256).toMatch(/^[a-f0-9]{64}$/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("uses GSIS first, preserves provider IDs, and warns on name-only collisions", async () => {
@@ -787,10 +838,89 @@ describe("nflverse returning-production audit", () => {
     }
   });
 
+  it("keeps supplemental players absent by default without making it mandatory", async () => {
+    const audit = await buildFixtureAudit();
+
+    expect(audit.dataset.nflverseIdMappingFeasibility).toMatchObject({
+      status: "candidate_supplement_not_supplied",
+      rowCount: 0,
+      checksum: null,
+    });
+    expect(audit.dataset.identityAttributionAccounting["nfl-atl"].metrics.offensiveSnaps).toMatchObject({
+      resolvedQuantity: 110,
+      unresolvedQuantity: 5,
+    });
+  });
+
+  it("uses unique nflverse players PFR-to-GSIS mappings without using latest_team as retention proof", async () => {
+    const dir = fixtureWithPlayersMapping([
+      "00-PFR-ONLY,PFR Only Runner,PFR,PFR,Runner,P.Runner,PFR,,PFR000001,,PfrOnl00,,,,smart-pfr,1999-01-01,RB,RB,,,70,210,,College,,0,2024,2026,ATL,ACT,ACT,Active,2,HB,A,,,,",
+    ]);
+    try {
+      const audit = await buildAuditFromFixtureDir(dir, {
+        playersSourcePath: join(dir, "players.csv"),
+      });
+      const metric = audit.dataset.identityAttributionAccounting["nfl-atl"].metrics.offensiveSnaps;
+      const team = audit.dataset.teams.find((record) => record.abbr === "atl");
+      const funnel = audit.dataset.snapResolutionDiagnostics.summaryByTeamAndSnapType["atl:offensiveSnaps"];
+
+      expect(audit.dataset.nflverseIdMappingFeasibility).toMatchObject({
+        status: "ingested_as_optional_supplemental_identity_source",
+        rowCount: 1,
+      });
+      expect(audit.dataset.identityMatchSummary.supplementalPlayersMapping).toMatchObject({
+        present: true,
+        uniqueSafePfrMappings: 1,
+        rejectedMappings: [],
+      });
+      expect(metric).toMatchObject({
+        totalSourceDenominator: 115,
+        resolvedQuantity: 115,
+        unresolvedQuantity: 0,
+        resolvedAttributionCoverage: 1,
+      });
+      expect(team?.returningProduction.metrics.offensiveSnaps).toMatchObject({
+        numerator: 70,
+        denominator: 115,
+        value: 0.608696,
+      });
+      expect(funnel.nflversePlayersMappingQuantity).toBe(5);
+      expect(funnel.canonicalResolvedQuantity).toBe(115);
+      expect(JSON.stringify(audit.dataset)).not.toMatch(/"(score|rating)"/i);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects conflicting supplemental players PFR mappings and leaves snaps unresolved", async () => {
+    const dir = fixtureWithPlayersMapping([
+      "00-PFR-ONLY-A,PFR Only Runner,PFR,PFR,Runner,P.Runner,PFR,,PFR000001,,PfrOnl00,,,,smart-pfr-a,1999-01-01,RB,RB,,,70,210,,College,,0,2024,2026,ATL,ACT,ACT,Active,2,HB,A,,,,",
+      "00-PFR-ONLY-B,Other Runner,Other,Other,Runner,O.Runner,Other,,PFR000002,,PfrOnl00,,,,smart-pfr-b,1998-01-01,RB,RB,,,70,210,,College,,0,2024,2026,ATL,ACT,ACT,Active,2,HB,A,,,,",
+    ]);
+    try {
+      const audit = await buildAuditFromFixtureDir(dir, {
+        playersSourcePath: join(dir, "players.csv"),
+      });
+
+      expect(audit.dataset.identityMatchSummary.supplementalPlayersMapping.rejectedMappings[0]).toMatchObject({
+        providerName: "pfrId",
+        providerId: "PfrOnl00",
+        reason: "duplicate_pfr_id_conflicting_gsis",
+      });
+      expect(audit.dataset.identityAttributionAccounting["nfl-atl"].metrics.offensiveSnaps).toMatchObject({
+        resolvedQuantity: 110,
+        unresolvedQuantity: 5,
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("reconciles snap-resolution funnel, position totals, and deterministic review queue ordering", async () => {
     const audit = await buildFixtureAudit();
     const team = audit.dataset.identityAttributionAccounting["nfl-atl"];
     const funnel = audit.dataset.snapResolutionDiagnostics.summaryByTeamAndSnapType["atl:offensiveSnaps"];
+    const contribution = audit.dataset.snapResolutionDiagnostics.sourceContributionByTeamAndSnapType["atl:offensiveSnaps"];
     const positionTotals = Object.entries(audit.dataset.snapResolutionDiagnostics.summaryByTeamSnapTypeAndPosition)
       .filter(([key]) => key.startsWith("atl:offensiveSnaps:"))
       .reduce((sum, [, record]) => sum + (record as { snapQuantity: number }).snapQuantity, 0);
@@ -799,6 +929,16 @@ describe("nflverse returning-production audit", () => {
     expect(funnel.snapQuantity).toBe(team.metrics.offensiveSnaps.totalSourceDenominator);
     expect(funnel.canonicalResolvedQuantity).toBe(team.metrics.offensiveSnaps.resolvedQuantity);
     expect(funnel.unresolvedExcludedQuantity).toBe(team.metrics.offensiveSnaps.unresolvedQuantity);
+    expect(contribution.totalSourceDenominator).toBe(team.metrics.offensiveSnaps.totalSourceDenominator);
+    expect(contribution.arithmeticReconciled).toBe(true);
+    expect(
+      contribution.directRosterPfrMappingQuantity +
+      contribution.reviewedOverrideQuantity +
+      contribution.nflversePlayersMappingQuantity +
+      contribution.otherProviderMappingQuantity +
+      contribution.deterministicFallbackQuantity +
+      contribution.unresolvedExcludedQuantity,
+    ).toBe(team.metrics.offensiveSnaps.totalSourceDenominator);
     expect(positionTotals).toBe(team.metrics.offensiveSnaps.totalSourceDenominator);
     expect(queue[0].snapQuantity).toBeGreaterThanOrEqual(queue[1].snapQuantity);
     expect(queue.find((row) => row.team === "atl" && row.playerName === "PFR Only Runner" && row.snapType === "offensiveSnaps")).toMatchObject({

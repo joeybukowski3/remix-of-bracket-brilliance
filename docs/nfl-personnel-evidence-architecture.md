@@ -452,6 +452,44 @@ NYJ 0.999306, and SEA 0.973342. Defensive attribution is ATL 1.000000, CHI
 offensive-snap attribution and NYJ defensive-snap attribution. The sample still
 is not safe for all-32 identity expansion.
 
+Phase 5C-2H adds the documented nflverse `players` release as an optional,
+read-only supplemental provider-ID crosswalk for the four-team audit. The
+adapter can read an explicit URL or local cache path for
+`https://github.com/nflverse/nflverse-data/releases/download/players/players.csv`
+and validates the expected identity fields before using it. Live raw files stay
+outside production imports and are not required for fixture replay.
+
+The identity priority with this supplement is:
+
+1. Stable source GSIS identity.
+2. Unique prior-roster PFR-to-GSIS mapping.
+3. Approved reviewed override.
+4. Unique nflverse `players` PFR-to-GSIS mapping.
+5. Other documented provider-ID mapping.
+6. Deterministic prior-roster name/team/position-group fallback.
+7. Unresolved/excluded.
+
+`latest_team` from the `players` release is treated as context only. It is not
+season-aware and must not prove prior-team assignment, target-roster presence,
+or retained status. Supplemental mappings also cannot override a conflicting
+stable GSIS identity.
+
+The audit emits `identityMatchSummary.supplementalPlayersMapping`,
+`nflverseIdMappingFeasibility`, and
+`snapResolutionDiagnostics.sourceContributionByTeamAndSnapType` so each snap
+denominator reconciles across direct roster PFR mapping, reviewed overrides,
+nflverse `players` mapping, other provider mapping, deterministic fallback, and
+unresolved exclusion.
+
+With the supplement enabled, the live four-team sample resolves ATL offensive
+snaps at 0.999005, CHI offensive snaps at 1.000000, NYJ offensive snaps at
+1.000000, and SEA offensive snaps at 1.000000. Defensive snaps resolve at
+1.000000 for all four teams. Remaining unresolved live snap quantities are ATL
+Nathan Carter (`CartNa00`): 12 offensive snaps and 49 special-teams snaps. The
+four-team identity gates now pass, but production scoring gates still fail
+because this is not an all-32 artifact and QB continuity, coaching continuity,
+transactions, and injury returns remain out of scope.
+
 ## Source Hierarchy
 
 General rules:
