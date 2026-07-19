@@ -34,6 +34,8 @@ export type HrDashboardGame = {
 
 export type HrDashboardPitcher = {
   gameKey: string;
+  /** Canonical numeric MLB gamePk. `gameKey` (e.g. "MIL@PIT") is a display/grouping alias only. Doubleheader games share a gameKey, so `gameId` is the only safe per-game join key. */
+  gameId: number | null;
   pitcher: string;
   pitcherId: number | null;
   team: string;
@@ -286,6 +288,8 @@ export type ParkSidebarRow = {
 export type PitcherVsBatterRow = {
   rank: number;
   gameKey: string;
+  /** Canonical numeric MLB gamePk, passed through from the joined batter row. Null when upstream could not resolve one -- never fabricated. Doubleheader-safe; `gameKey` alone is not. */
+  gameId: number | null;
   player: string;
   /** Display-only identity passthrough for joining historical batter-vs-pitcher context at render time. Never used in scoring, ranking, filtering, or sorting. */
   playerId: number | null;
@@ -321,6 +325,10 @@ export type PitcherVsBatterRow = {
 export type PitcherStrikeoutTeamRow = {
   rank: number;
   gameKey: string;
+  /** Canonical numeric MLB gamePk, passed through from the pitcher's raw row. Null when upstream could not resolve one -- never fabricated. Doubleheader-safe; `gameKey` alone is not. */
+  gameId: number | null;
+  /** Canonical numeric MLB pitcher id, passed through from the pitcher's raw row. */
+  pitcherId: number | null;
   pitcher: string;
   team: string;
   opponent: string;
@@ -450,6 +458,7 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
   if (!isRecord(entry)) return null;
   const p = {
     gameKey: normalizeText(entry.gameKey),
+    gameId: normalizeCanonicalMlbId(entry.gameId),
     pitcher: normalizeText(entry.pitcher),
     pitcherId: normalizeNumber(entry.pitcherId),
     team: normalizeTeamValue(entry.team),
@@ -1059,7 +1068,7 @@ export function buildPitcherVsBatterRows(
     ).toFixed(1));
 
     return {
-      rank: 0, gameKey: b.gameKey, player: b.player, playerId: b.playerId, team: b.team,
+      rank: 0, gameKey: b.gameKey, gameId: b.gameId ?? null, player: b.player, playerId: b.playerId, team: b.team,
       opposingPitcher: b.opposingPitcher, opposingPitcherId: b.opposingPitcherId, park: game?.stadium ?? b.ballpark,
       parkFactor: game?.parkFactor ?? b.parkFactor, hrScore: b.hrScore,
       opposingPitcherHrVs: hrVs,
@@ -1267,6 +1276,8 @@ export function buildPitcherStrikeoutRows(
       return {
         rank: 0,
         gameKey: pitcher.gameKey,
+        gameId: pitcher.gameId ?? null,
+        pitcherId: pitcher.pitcherId ?? null,
         pitcher: pitcher.pitcher,
         team: pitcher.team,
         opponent: pitcher.opponent,
@@ -1380,6 +1391,8 @@ export function buildPitcherStrikeoutMatchupRows(
     return {
       rank: row.rank,
       gameKey: row.gameKey,
+      gameId: row.gameId,
+      pitcherId: row.pitcherId,
       pitcher: row.pitcher,
       team: row.team,
       opponent: row.opponent,

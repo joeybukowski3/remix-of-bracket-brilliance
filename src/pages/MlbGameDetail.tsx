@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Activity, BarChart3, CalendarDays, CloudSun, Crosshair, Dice5, ExternalLink, Flame, Gauge, Radar, Shield, Sparkles, Swords, Target, TrendingUp } from "lucide-react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import MlbModelEdgeHero from "@/components/mlb/MlbModelEdgeHero";
+import MlbGameTopProps from "@/components/mlb/MlbGameTopProps";
 import MlbPitcherRegressionTable, { regressionPillStyle } from "@/components/mlb/MlbPitcherRegressionTable";
 import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { useMlbOdds } from "@/hooks/useMlbOdds";
@@ -30,6 +31,8 @@ import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
+import { useMLBNumerology } from "@/hooks/useMLBNumerology";
+import { useMlbBvpHistory } from "@/hooks/useMlbBvpHistory";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getParkContextValues, getPitcherComparisonMetrics, getPropAngles, getSummaryCards } from "@/lib/mlb/mlbComparisonHelpers";
 import { computeModelEdge, getEdgeTierKey, getEdgeTierLabel, ML_EDGE_METHODOLOGY } from "@/lib/mlb/mlbModelEdge";
@@ -86,7 +89,7 @@ type MlbCache = {
 let mlbCache: MlbCache | null = null;
 const DEV_FIXTURE_GAME_PK = String(DEV_MLB_MATCHUP_FIXTURE.detail.game.gamePk);
 
-function getOperationalDate() {
+export function getOperationalDate() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
     year: "numeric",
@@ -3677,6 +3680,10 @@ export default function MlbGameDetail() {
   const { data: PITCHER_REGRESSION_DATA, loading: regressionLoading } = usePitcherRegression();
   const { getPercentiles } = usePitcherPercentiles();
   const mlbOdds = useMlbOdds();
+  const { data: polymarketMoneylines } = usePolymarketMlbMoneylines();
+  const topPropsData = useMlbPropsData();
+  const { data: numerologyData, isStale: numerologyIsStale } = useMLBNumerology();
+  const { historyByKey: bvpHistoryByKey } = useMlbBvpHistory();
 
   usePageSeo({
     title: seo.title,
@@ -3863,6 +3870,23 @@ export default function MlbGameDetail() {
             ) : null}
 
             <MlbModelEdgeHero detail={detail} mlbOdds={mlbOdds} />
+
+            <MlbGameTopProps
+              detail={detail}
+              mlbOdds={mlbOdds}
+              polymarket={polymarketMoneylines}
+              gameStatusCategory={getSlateStatusCategory(detail.game.status)}
+              propsData={{
+                batters: topPropsData.batters,
+                strikeoutDetailRows: topPropsData.strikeoutDetailRows,
+                batterVsPitcherRows: topPropsData.batterVsPitcherRows,
+                pendingGames: topPropsData.pendingGames,
+                stale: topPropsData.stale,
+                generatedAt: topPropsData.dashboard?.generatedAt ?? null,
+              }}
+              bvpHistoryByKey={bvpHistoryByKey}
+              numerology={{ data: numerologyData, isStale: numerologyIsStale }}
+            />
 
             <MlbMatchupSummaryRow
               cards={summaryCards}
