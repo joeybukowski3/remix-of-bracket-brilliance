@@ -670,6 +670,88 @@ After the semantic correction, gate failures are ATL/CHI/SEA offensive-snap
 resolved attribution, plus NYJ offensive-snap and defensive-snap resolved
 attribution.
 
+Phase 5C-2G diagnosed the systematic ~53% offensive-snap attribution pattern.
+The root cause was not retained-status coupling. Identity attribution was already
+calculated separately from retained numerator, but snap rows carried only PFR IDs
+while many prior roster offensive linemen carried GSIS IDs with blank `pfr_id`.
+The crosswalk only used fallback identity keys when no provider ID existed, so
+PFR-only snap rows with an unmatched PFR ID could not bridge to a unique prior
+roster row by exact name, team, and compatible offensive-line position group.
+
+The safe correction is prior-roster-first:
+
+1. Resolve prior-season snap rows against prior-season roster identity evidence.
+2. Use provider IDs first.
+3. When the PFR ID has no prior-roster match, allow exact normalized
+   name/team/source-aware position-group fallback to a unique prior roster row.
+4. Assign canonical identity.
+5. Separately check the target-season roster for retained status.
+
+Departed players now remain resolved identity attribution and still contribute
+zero to retained numerator. Incoming players' prior production is not counted as
+retained for the new team.
+
+Updated live snap attribution:
+
+| Team | Offensive snap attribution before | Offensive snap attribution after | Defensive snap attribution before | Defensive snap attribution after |
+| --- | ---: | ---: | ---: | ---: |
+| ATL | 0.532515 | 0.987475 | 0.989952 | 1.000000 |
+| CHI | 0.541988 | 1.000000 | 0.984326 | 0.984326 |
+| NYJ | 0.539422 | 0.999306 | 0.921794 | 0.922117 |
+| SEA | 0.529819 | 0.973342 | 0.986471 | 0.986471 |
+
+Updated retained snap shares:
+
+| Team | Offensive snaps retained | Defensive snaps retained | Special-teams snaps retained |
+| --- | ---: | ---: | ---: |
+| ATL | 0.691772 | 0.622467 | 0.510578 |
+| CHI | 0.759571 | 0.460476 | 0.560096 |
+| NYJ | 0.727643 | 0.653834 | 0.722997 |
+| SEA | 0.925923 | 0.789452 | 0.914791 |
+
+Remaining unresolved snap quantities:
+
+| Team | Offensive snaps | Defensive snaps | Special-teams snaps |
+| --- | ---: | ---: | ---: |
+| ATL | 151 | 0 | 76 |
+| CHI | 0 | 185 | 207 |
+| NYJ | 8 | 967 | 101 |
+| SEA | 312 | 167 | 117 |
+
+The remaining high-impact unresolved queue is no longer dominated by generic
+offensive-line gaps. Top records are Sauce Gardner (`GardSa00`, NYJ defensive
+snaps 410), Quinnen Williams (`WillQu00`, NYJ defensive snaps 365), Olusegun
+Oluwatimi (`OluwOl00`, SEA offensive snaps 312), Carl Jones (`JoneCa05`, CHI
+special-teams snaps 148), Michael Carter II (`CartMi02`, NYJ defensive snaps
+145), and Ray-Ray McCloud (`McClRa00`, ATL offensive snaps 139). These records
+have no prior-roster PFR match or safe fallback candidate in the approved roster
+input and need source-backed review before any override.
+
+PFR-to-GSIS direct prior-roster coverage remains incomplete:
+
+| Team | Prior roster players | With PFR ID | PFR coverage |
+| --- | ---: | ---: | ---: |
+| ATL | 100 | 69 | 0.690000 |
+| CHI | 92 | 66 | 0.717391 |
+| NYJ | 103 | 79 | 0.766990 |
+| SEA | 88 | 60 | 0.681818 |
+
+Across the sample, 224 snap PFR IDs have a unique prior-roster PFR match. Another
+66 snap PFR IDs have no direct prior-roster PFR match, covering 22,263 offensive
+snaps, 1,541 defensive snaps, and 3,488 special-teams snaps before fallback or
+review resolution.
+
+nflverse ID-mapping feasibility: the documented `players` release is the best
+approved supplemental candidate for remaining PFR-to-GSIS gaps. The documented
+dictionary includes `gsis_id` as the primary key plus `pfr_id`, `espn_id`,
+`sportradar_id`, `position`, `position_group`, and `latest_team`. Phase 5C-2G
+documents this candidate only; it does not ingest the `players` release.
+
+Current expansion gates: critical conflicts remain zero. ATL, CHI, and NYJ now
+pass the offensive-snap attribution gate. SEA still fails offensive-snap
+attribution at 0.973342, and NYJ still fails defensive-snap attribution at
+0.922117. All-32 identity expansion is still not safe.
+
 ## Unresolved Decisions Requiring Approval
 
 - Whether to approve and fund SportsDataIO as the primary structured personnel

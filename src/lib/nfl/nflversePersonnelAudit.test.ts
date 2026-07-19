@@ -48,6 +48,21 @@ async function buildFixtureAudit() {
   });
 }
 
+async function buildAuditFromFixtureDir(dir: string, overrides?: Record<string, unknown>) {
+  return buildNflverseFourTeamAudit({
+    season: 2026,
+    priorSeason: 2025,
+    generatedAt: GENERATED_AT,
+    sourceCutoff: SOURCE_CUTOFF,
+    rosterSourcePath: join(dir, "roster_2026.csv"),
+    priorRosterSourcePath: join(dir, "roster_2025.csv"),
+    playerStatsSourcePath: join(dir, "stats_player_reg_2025.csv"),
+    snapCountsSourcePath: join(dir, "snap_counts_2025.csv"),
+    teamsJson,
+    ...overrides,
+  });
+}
+
 function reviewedOverrideRecord(overrides: Record<string, unknown> = {}) {
   return {
     overrideId: "fixture-pfr-conflict-review",
@@ -123,6 +138,26 @@ function fixtureWithPfrSpecialTeamsConflict() {
   writeFileSync(
     join(dir, "snap_counts_2025.csv"),
     `${readFileSync(join(dir, "snap_counts_2025.csv"), "utf8").trimEnd()}\n2025_18_NYJ_BUF,202601040buf,2025,REG,18,Reviewed Safety,PfrSt00,S,NYJ,BUF,0,0,0,0,2,.1\n`,
+  );
+  return dir;
+}
+
+function fixtureWithOffensiveLinePfrGap() {
+  const dir = mkdtempSync(join(tmpdir(), "nflverse-ol-pfr-gap-"));
+  for (const filename of ["roster_2026.csv", "roster_2025.csv", "stats_player_reg_2025.csv", "snap_counts_2025.csv"]) {
+    writeFileSync(join(dir, filename), readFileSync(fixturePath(filename), "utf8"));
+  }
+  writeFileSync(
+    join(dir, "roster_2025.csv"),
+    `${readFileSync(join(dir, "roster_2025.csv"), "utf8").trimEnd()}\n2025,ATL,OL,RG,ACT,Bridge Guard,00-ATL-OL1,3001,sr-atl-ol1,,,,,,,4\n2025,ATL,OL,LT,ACT,Departed Tackle,00-ATL-OL2,3002,sr-atl-ol2,,,,,,,7\n`,
+  );
+  writeFileSync(
+    join(dir, "roster_2026.csv"),
+    `${readFileSync(join(dir, "roster_2026.csv"), "utf8").trimEnd()}\n2026,ATL,OL,RG,ACT,Bridge Guard,00-ATL-OL1,3001,sr-atl-ol1,,,,,,,5\n`,
+  );
+  writeFileSync(
+    join(dir, "snap_counts_2025.csv"),
+    `${readFileSync(join(dir, "snap_counts_2025.csv"), "utf8").trimEnd()}\n2025_02_ATL,202509140atl,2025,REG,2,Bridge Guard,BridGu00,G,ATL,CAR,64,1,0,0,0,0\n2025_02_ATL,202509140atl,2025,REG,2,Departed Tackle,DepaTa00,T,ATL,CAR,32,.5,0,0,0,0\n`,
   );
   return dir;
 }
@@ -700,6 +735,80 @@ describe("nflverse returning-production audit", () => {
     expect(audit.dataset.identityReview.all32ExpansionGateEvaluation.failures).not.toContain(
       "atl:defensive_snap_resolved_attribution_below_threshold",
     );
+  });
+
+  it("keeps identity attribution independent from retained status for departed players", async () => {
+    const audit = await buildFixtureAudit();
+    const atlOffensiveSnaps = audit.dataset.identityAttributionAccounting["nfl-atl"].metrics.offensiveSnaps;
+    const departed = atlOffensiveSnaps.players.find((player) => player.playerName === "Departed Runner");
+
+    expect(departed).toMatchObject({
+      quantity: 40,
+      attributionStatus: "resolved",
+    });
+    expect(audit.dataset.teams.find((team) => team.abbr === "atl")?.returningProduction.metrics.offensiveSnaps).toMatchObject({
+      numerator: 70,
+      denominator: 115,
+      value: 0.608696,
+    });
+    expect(atlOffensiveSnaps).toMatchObject({
+      totalSourceDenominator: 115,
+      resolvedQuantity: 110,
+      unresolvedQuantity: 5,
+    });
+  });
+
+  it("uses prior-roster-first position-group fallback for PFR-only offensive-line snaps", async () => {
+    const dir = fixtureWithOffensiveLinePfrGap();
+    try {
+      const audit = await buildAuditFromFixtureDir(dir);
+      const atl = audit.dataset.teams.find((team) => team.abbr === "atl");
+      const metric = audit.dataset.identityAttributionAccounting["nfl-atl"].metrics.offensiveSnaps;
+      const funnel = audit.dataset.snapResolutionDiagnostics.summaryByTeamAndSnapType["atl:offensiveSnaps"];
+
+      expect(metric).toMatchObject({
+        totalSourceDenominator: 211,
+        resolvedQuantity: 206,
+        unresolvedQuantity: 5,
+        resolvedAttributionCoverage: 0.976303,
+      });
+      expect(atl?.returningProduction.metrics.offensiveSnaps).toMatchObject({
+        numerator: 134,
+        denominator: 211,
+        value: 0.635071,
+        unmatchedProduction: 77,
+      });
+      expect(funnel.deterministicFallbackQuantity).toBe(96);
+      expect(funnel.canonicalResolvedQuantity).toBe(206);
+      expect(funnel.unresolvedExcludedQuantity).toBe(5);
+      expect(JSON.stringify(audit.dataset)).not.toMatch(/"(score|rating)"/i);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("reconciles snap-resolution funnel, position totals, and deterministic review queue ordering", async () => {
+    const audit = await buildFixtureAudit();
+    const team = audit.dataset.identityAttributionAccounting["nfl-atl"];
+    const funnel = audit.dataset.snapResolutionDiagnostics.summaryByTeamAndSnapType["atl:offensiveSnaps"];
+    const positionTotals = Object.entries(audit.dataset.snapResolutionDiagnostics.summaryByTeamSnapTypeAndPosition)
+      .filter(([key]) => key.startsWith("atl:offensiveSnaps:"))
+      .reduce((sum, [, record]) => sum + (record as { snapQuantity: number }).snapQuantity, 0);
+    const queue = audit.dataset.snapResolutionDiagnostics.highImpactUnresolvedReviewQueue;
+
+    expect(funnel.snapQuantity).toBe(team.metrics.offensiveSnaps.totalSourceDenominator);
+    expect(funnel.canonicalResolvedQuantity).toBe(team.metrics.offensiveSnaps.resolvedQuantity);
+    expect(funnel.unresolvedExcludedQuantity).toBe(team.metrics.offensiveSnaps.unresolvedQuantity);
+    expect(positionTotals).toBe(team.metrics.offensiveSnaps.totalSourceDenominator);
+    expect(queue[0].snapQuantity).toBeGreaterThanOrEqual(queue[1].snapQuantity);
+    expect(queue.find((row) => row.team === "atl" && row.playerName === "PFR Only Runner" && row.snapType === "offensiveSnaps")).toMatchObject({
+      team: "atl",
+      playerName: "PFR Only Runner",
+      snapType: "offensiveSnaps",
+      snapQuantity: 5,
+      exclusionReason: "pfr_only_snap_identity",
+    });
+    expect(JSON.stringify(audit.dataset)).not.toMatch(/"(score|rating)"/i);
   });
 
   it("keeps pending, rejected, and superseded overrides out of normal audit while simulation stays isolated", async () => {

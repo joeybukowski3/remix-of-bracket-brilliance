@@ -418,6 +418,40 @@ offensive-line snaps, sacks, pressures, and defensive-back snaps. It also keeps
 QB continuity and coaching continuity as unknown because the approved nflverse
 files do not prove official starter status or staff continuity.
 
+Phase 5C-2G adds snap identity diagnostics and fixes the systematic offensive
+snap attribution gap without changing thresholds. The ~53% offensive attribution
+pattern came from PFR-only snap rows, incomplete prior-roster `pfr_id` coverage,
+and exact-position mismatch for offensive linemen. The retained-status logic was
+not the primary root cause: departed players can be fully resolved for identity
+attribution while contributing zero retained snaps.
+
+The corrected identity flow is:
+
+1. Read prior-season snap rows.
+2. Resolve snap identity against prior-season roster/provider evidence first.
+3. Prefer direct PFR-to-GSIS mapping when the prior roster has `pfr_id`.
+4. If no direct PFR match exists, allow exact normalized name, team, and
+   source-aware position-group fallback to bridge PFR-only snap rows to prior
+   roster GSIS identities.
+5. Assign canonical identity.
+6. Evaluate target-season roster presence separately for retained status.
+
+The audit now emits:
+
+- `snapResolutionDiagnostics.summaryByTeamAndSnapType`
+- `snapResolutionDiagnostics.summaryByTeamSnapTypeAndPosition`
+- `snapResolutionDiagnostics.unresolvedSnapQuantityByPosition`
+- `snapResolutionDiagnostics.highImpactUnresolvedReviewQueue`
+- `pfrToGsisCrosswalkCoverage`
+- `nflverseIdMappingFeasibility`
+
+The live sample improves offensive-snap resolved attribution from ATL 0.532515,
+CHI 0.541988, NYJ 0.539422, and SEA 0.529819 to ATL 0.987475, CHI 1.000000,
+NYJ 0.999306, and SEA 0.973342. Defensive attribution is ATL 1.000000, CHI
+0.984326, NYJ 0.922117, and SEA 0.986471. Remaining all-32 blockers are SEA
+offensive-snap attribution and NYJ defensive-snap attribution. The sample still
+is not safe for all-32 identity expansion.
+
 ## Source Hierarchy
 
 General rules:
