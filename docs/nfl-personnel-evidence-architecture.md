@@ -296,6 +296,46 @@ production counts. `recent_team` is used as the nflverse prior-production team
 assignment; multi-team/traded-player ambiguity is surfaced through the
 crosswalk rather than silently corrected.
 
+Phase 5C-2C extends the audit with identity-review infrastructure:
+
+- `identityReview.reasonTaxonomy` classifies unresolved identities as missing
+  GSIS, PFR-only snap identity, provider-ID conflict, same-name distinct people,
+  name/suffix/punctuation variant, position change, legitimate team change,
+  roster/stats/snap source gap, same-date team conflict, conflicting provider
+  name, insufficient evidence, or other.
+- `identityReview.resolutionPolicy` documents automatic resolution, warning
+  inclusion, mandatory exclusion, and no-fuzzy-matching rules.
+- `identityReview.criticalConflicts` preserves every source row using the
+  conflicting provider ID, including names, teams, positions, seasons, games,
+  and roster provider IDs.
+- `identityReview.productionImpactByTeam` quantifies affected offensive snaps,
+  defensive snaps, QB attempts, rushing production, and receiving production,
+  with lower/upper retained-share bounds.
+- `identityReview.identityQualityByTeam` reports GSIS-resolved,
+  provider-crosswalk resolved, deterministic fallback resolved,
+  warning-included, excluded, critical-conflict, production-coverage, and
+  snap-coverage counts.
+- `identityReview.all32ExpansionGateEvaluation` remains false when critical
+  conflicts or sub-98% attribution thresholds are present.
+
+The CLI can emit a separate audit-only review artifact:
+
+```bash
+node scripts/generate-nfl-personnel-nflverse-audit.mjs \
+  --season=2026 \
+  --prior-season=2025 \
+  --generated-at=2026-07-17T12:00:00.000Z \
+  --source-cutoff=2026-07-17 \
+  --fixture-dir=scripts/fixtures/nfl-personnel/nflverse \
+  --output=artifacts/nfl/personnel-audit/nflverse-four-team-audit.json \
+  --identity-review-output=artifacts/nfl/personnel-audit/nflverse-four-team-identity-review.json \
+  --audit-override
+```
+
+`--fail-on-critical-conflict` exits nonzero when provider-ID conflicts remain
+unless `--audit-override` is supplied. The CLI refuses `public/data/nfl/` output
+paths for audit artifacts.
+
 The audit emits unsupported metrics as unavailable, not zero: starts,
 offensive-line snaps, sacks, pressures, and defensive-back snaps. It also keeps
 QB continuity and coaching continuity as unknown because the approved nflverse

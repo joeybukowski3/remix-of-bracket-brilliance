@@ -37,12 +37,17 @@ function parseArgs(argv) {
     fixtureDir: null,
     cacheDir: null,
     output: null,
+    identityReviewOutput: null,
     dryRun: false,
     validateOnly: false,
+    failOnCriticalConflict: false,
+    auditOverride: false,
   };
   for (const arg of argv) {
     if (arg === "--dry-run") args.dryRun = true;
     else if (arg === "--validate-only") args.validateOnly = true;
+    else if (arg === "--fail-on-critical-conflict") args.failOnCriticalConflict = true;
+    else if (arg === "--audit-override") args.auditOverride = true;
     else if (arg.startsWith("--season=")) args.season = Number(arg.slice("--season=".length));
     else if (arg.startsWith("--prior-season=")) args.priorSeason = Number(arg.slice("--prior-season=".length));
     else if (arg.startsWith("--generated-at=")) args.generatedAt = arg.slice("--generated-at=".length);
@@ -58,6 +63,7 @@ function parseArgs(argv) {
     else if (arg.startsWith("--fixture-dir=")) args.fixtureDir = resolve(arg.slice("--fixture-dir=".length));
     else if (arg.startsWith("--cache-dir=")) args.cacheDir = resolve(arg.slice("--cache-dir=".length));
     else if (arg.startsWith("--output=")) args.output = resolve(arg.slice("--output=".length));
+    else if (arg.startsWith("--identity-review-output=")) args.identityReviewOutput = resolve(arg.slice("--identity-review-output=".length));
     else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!args.season || !args.priorSeason) throw new Error("--season and --prior-season are required");
@@ -71,6 +77,7 @@ function parseArgs(argv) {
   }
   if (!args.validateOnly && !args.dryRun && !args.output) throw new Error("--output is required unless --dry-run or --validate-only is used");
   if (args.output) assertNonProductionOutput(args.output, args.season);
+  if (args.identityReviewOutput) assertNonProductionOutput(args.identityReviewOutput, args.season);
   return args;
 }
 
@@ -143,10 +150,27 @@ async function main() {
     console.error(JSON.stringify({ valid: false, errors: result.validation.errors }, null, 2));
     process.exit(1);
   }
+  if (
+    args.failOnCriticalConflict &&
+    !args.auditOverride &&
+    result.identityReview.criticalConflicts.length > 0
+  ) {
+    console.error(JSON.stringify({
+      valid: false,
+      error: "critical identity conflicts remain; rerun with --audit-override for audit-only output",
+      criticalConflictCount: result.identityReview.criticalConflicts.length,
+      criticalConflicts: result.identityReview.criticalConflicts.map((conflict) => conflict.conflictId),
+    }, null, 2));
+    process.exit(1);
+  }
 
   if (!args.dryRun && !args.validateOnly && args.output) {
     mkdirSync(dirname(args.output), { recursive: true });
     writeFileSync(args.output, result.json);
+  }
+  if (!args.dryRun && !args.validateOnly && args.identityReviewOutput) {
+    mkdirSync(dirname(args.identityReviewOutput), { recursive: true });
+    writeFileSync(args.identityReviewOutput, result.identityReviewJson);
   }
 
   console.log(
@@ -157,10 +181,16 @@ async function main() {
         teamCount: result.dataset.teams.length,
         teams: result.dataset.teams.map((team) => team.abbr),
         readyForScoring: result.dataset.completenessEvaluation.readyForScoring,
+        criticalIdentityConflicts: result.identityReview.criticalConflicts.length,
+        safeForAll32IdentityExpansion: result.identityReview.all32ExpansionGateEvaluation.safeForAll32IdentityExpansion,
         output: args.output,
+        identityReviewOutput: args.identityReviewOutput,
         wrote: Boolean(!args.dryRun && !args.validateOnly && args.output),
+        wroteIdentityReview: Boolean(!args.dryRun && !args.validateOnly && args.identityReviewOutput),
         dryRun: args.dryRun,
         validateOnly: args.validateOnly,
+        failOnCriticalConflict: args.failOnCriticalConflict,
+        auditOverride: args.auditOverride,
         manifestPath: manifest ? join(args.cacheDir, "manifest.json") : null,
       },
       null,

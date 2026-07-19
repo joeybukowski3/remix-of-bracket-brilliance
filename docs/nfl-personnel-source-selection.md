@@ -484,6 +484,57 @@ teams, omits mandatory transaction/coaching/QB/injury categories, carries
 PFR-derived snap-count licensing cautions, and can still surface critical
 identity conflicts.
 
+Phase 5C-2C adds explicit identity diagnostics before any all-32 expansion:
+
+- Review output:
+  `artifacts/nfl/personnel-audit/nflverse-four-team-identity-review.json`
+- Local command:
+  `npm run nfl:personnel:nflverse:identity-review`
+- Strict mode:
+  `node scripts/generate-nfl-personnel-nflverse-audit.mjs ... --fail-on-critical-conflict`
+- Audit override:
+  `--audit-override` allows audit-only output even when unresolved conflicts
+  remain.
+
+Conflict taxonomy:
+
+- Missing or weak IDs: `missing_gsis_id`, `pfr_only_snap_identity`,
+  `insufficient_evidence`.
+- Provider contradictions: `provider_id_conflict`,
+  `conflicting_name_for_provider_id`, `same_name_distinct_people`,
+  `conflicting_team_same_date`.
+- Benign variants or review warnings: `name_variant`, `suffix_variant`,
+  `punctuation_variant`, `position_change`, `legitimate_team_change`,
+  `roster_missing_stats`, `stats_missing_roster`, `snaps_missing_roster`,
+  `other`.
+
+Resolution policy:
+
+- Automatic only when stable evidence supports it: punctuation-only variants,
+  suffix formatting variants, dated team changes, position changes with a
+  stable GSIS ID, and unique PFR-to-GSIS roster crosswalks.
+- Warning-level inclusion: unique deterministic team/name/position fallback
+  with no competing candidate, and source coverage gaps that do not change
+  identity.
+- Mandatory exclusion: one provider ID mapped to incompatible people, multiple
+  plausible same-name candidates, same-date team contradictions, unresolved
+  PFR-only snap identities, and insufficient deterministic context.
+- No fuzzy matching is allowed to override provider-ID conflicts.
+
+Production-impact accounting records every unresolved identity's affected snap
+or offensive-production quantity, lower/upper retained-share bounds, and whether
+`coverageComplete` should become false until review. This is accounting only,
+not team quality evaluation.
+
+Proposed all-32 identity expansion gates:
+
+- Zero critical provider-ID conflicts.
+- At least 98% offensive production attribution.
+- At least 98% offensive snap attribution.
+- At least 98% defensive snap attribution.
+- All excluded production explicitly quantified.
+- Deterministic replay from declared inputs.
+
 ## Unresolved Decisions Requiring Approval
 
 - Whether to approve and fund SportsDataIO as the primary structured personnel

@@ -129,6 +129,12 @@ describe("nflverse personnel identity", () => {
     expect(audit.dataset.conflicts.some((conflict) => conflict.message.includes("00-CONFLICT"))).toBe(true);
     expect(audit.dataset.identityMatchSummary.resolvedGsis).toBeGreaterThan(0);
     expect(audit.dataset.identityCrosswalk.some((entry) => entry.providerIds.gsisId?.includes("00-NYJ-WR2"))).toBe(true);
+    expect(audit.dataset.identityReview.reasonTaxonomy).toMatchObject({
+      providerIdConflict: "provider_id_conflict",
+      pfrOnlySnapIdentity: "pfr_only_snap_identity",
+      suffixVariant: "suffix_variant",
+    });
+    expect(audit.dataset.identityReview.resolutionPolicy.noFuzzyMatching).toBe(true);
   });
 
   it("allows legitimate team movement across seasons without counting incoming production as retained", async () => {
@@ -162,8 +168,21 @@ describe("nflverse personnel identity", () => {
       ),
     ).toBe(true);
     expect(
+      audit.dataset.identityReview.unresolvedIdentities.some((entry) =>
+        entry.sourceNameVariants.includes("PFR Only Runner") &&
+        entry.reasonCategories.includes("pfr_only_snap_identity") &&
+        entry.resolutionStatus === "excluded",
+      ),
+    ).toBe(true);
+    expect(
       audit.dataset.identityCrosswalk.some((entry) =>
         entry.providerIds.gsisId?.includes("00-ATL-WR1") && entry.warnings.includes("position changed across sources"),
+      ),
+    ).toBe(true);
+    expect(
+      audit.dataset.identityReview.automaticallyResolvedIdentities.some((entry) =>
+        entry.providerIds.gsisId?.includes("00-ATL-WR1") &&
+        entry.reasonCategories.includes("position_change"),
       ),
     ).toBe(true);
     expect(
@@ -173,6 +192,46 @@ describe("nflverse personnel identity", () => {
         entry.sourceNameVariants.includes("D.J. O'Neil-Smith Jr."),
       ),
     ).toBe(true);
+    expect(
+      audit.dataset.identityReview.automaticallyResolvedIdentities.some((entry) =>
+        entry.providerIds.gsisId?.includes("00-NYJ-WR2") &&
+        entry.reasonCategories.includes("suffix_variant"),
+      ),
+    ).toBe(true);
+  });
+
+  it("diagnoses provider conflicts without hardcoded resolutions", async () => {
+    const audit = await buildFixtureAudit();
+    const conflict = audit.dataset.identityReview.criticalConflicts.find((entry) =>
+      entry.providerId === "00-CONFLICT" || entry.message.includes("00-CONFLICT"),
+    )!;
+
+    expect(conflict).toMatchObject({
+      severity: "critical",
+      category: "identity",
+      deterministicResolutionPossible: false,
+      likelyCause: "conflicting_name_for_provider_id_in_approved_inputs",
+      fixtureIssue: false,
+      adapterLogicIssue: false,
+    });
+    expect(conflict.names).toEqual(["Conflict Person", "Different Person"]);
+    expect(conflict.sourceRows.length).toBe(2);
+  });
+
+  it("builds provider crosswalk diagnostics and per-team quality summaries", async () => {
+    const audit = await buildFixtureAudit();
+    const review = audit.dataset.identityReview;
+
+    expect(review.providerCrosswalkDiagnostics.gsisToPfr.length).toBeGreaterThan(0);
+    expect(review.providerCrosswalkDiagnostics.missingIdRates.snap_counts.missingGsisRate).toBe(1);
+    expect(review.identityQualityByTeam["nfl-atl"]).toMatchObject({
+      teamAbbr: "atl",
+      criticalConflicts: 1,
+      offensiveSnapCoveragePercentage: 0.608696,
+      defensiveSnapCoveragePercentage: 0,
+    });
+    expect(review.all32ExpansionGateEvaluation.safeForAll32IdentityExpansion).toBe(false);
+    expect(review.all32ExpansionGateEvaluation.failures).toContain("critical_provider_conflicts_present");
   });
 });
 
@@ -210,6 +269,20 @@ describe("nflverse returning-production audit", () => {
       playerName: "Atlas Defender",
       amount: 65,
     });
+    const pfrOnly = audit.dataset.identityReview.unresolvedIdentities.find((entry) =>
+      entry.sourceNameVariants.includes("PFR Only Runner"),
+    )!;
+    expect(pfrOnly.affectedProduction).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          teamAbbr: "atl",
+          affectedMetric: "offensiveSnaps",
+          excludedQuantity: 5,
+          retainedShareCouldChangeMaterially: true,
+          coverageCompleteRecommendation: "become_false_until_reviewed",
+        }),
+      ]),
+    );
   });
 
   it("calculates retained passing, rushing, and receiving production without zero-filling", async () => {
@@ -304,6 +377,7 @@ describe("nflverse returning-production audit", () => {
     expect(second.json).toBe(first.json);
     expect(first.validation.valid).toBe(true);
     expect(first.dataset.auditOnly).toBe(true);
+    expect(second.identityReviewJson).toBe(first.identityReviewJson);
     expect(first.dataset.teams.map((team) => team.abbr)).toEqual(["atl", "chi", "nyj", "sea"]);
     expect(first.dataset.completenessEvaluation.readyForScoring).toBe(false);
     expect(JSON.stringify(first.dataset)).not.toMatch(/"(score|rating|edge|pick|projection)"/i);
@@ -311,6 +385,9 @@ describe("nflverse returning-production audit", () => {
 
   it("refuses production personnel artifact output", () => {
     expect(() => assertNonProductionOutput("public/data/nfl/2026/personnel-evidence.json", 2026)).toThrow(
+      /refusing to write production/,
+    );
+    expect(() => assertNonProductionOutput("public/data/nfl/2026/identity-review.json", 2026)).toThrow(
       /refusing to write production/,
     );
   });
@@ -329,9 +406,11 @@ describe("nflverse audit CLI behavior", () => {
     ], { cwd: ROOT, encoding: "utf8" });
     expect(validateOnly).toContain('"validateOnly": true');
     expect(validateOnly).toContain('"wrote": false');
+    expect(validateOnly).toContain('"safeForAll32IdentityExpansion": false');
 
     const dir = mkdtempSync(join(tmpdir(), "nflverse-dry-"));
     const output = join(dir, "audit.json");
+    const reviewOutput = join(dir, "identity-review.json");
     try {
       const dryRun = execFileSync("node", [
         "scripts/generate-nfl-personnel-nflverse-audit.mjs",
@@ -341,13 +420,45 @@ describe("nflverse audit CLI behavior", () => {
         `--source-cutoff=${SOURCE_CUTOFF}`,
         `--fixture-dir=${FIXTURE_DIR}`,
         `--output=${output}`,
+        `--identity-review-output=${reviewOutput}`,
         "--dry-run",
       ], { cwd: ROOT, encoding: "utf8" });
       expect(dryRun).toContain('"dryRun": true');
       expect(existsSync(output)).toBe(false);
+      expect(existsSync(reviewOutput)).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("fails on critical conflicts unless explicitly kept audit-only", () => {
+    expect(() =>
+      execFileSync("node", [
+        "scripts/generate-nfl-personnel-nflverse-audit.mjs",
+        "--season=2026",
+        "--prior-season=2025",
+        `--generated-at=${GENERATED_AT}`,
+        `--source-cutoff=${SOURCE_CUTOFF}`,
+        `--fixture-dir=${FIXTURE_DIR}`,
+        "--validate-only",
+        "--fail-on-critical-conflict",
+      ], { cwd: ROOT, encoding: "utf8" }),
+    ).toThrow(/critical identity conflicts remain/);
+
+    const auditOverride = execFileSync("node", [
+      "scripts/generate-nfl-personnel-nflverse-audit.mjs",
+      "--season=2026",
+      "--prior-season=2025",
+      `--generated-at=${GENERATED_AT}`,
+      `--source-cutoff=${SOURCE_CUTOFF}`,
+      `--fixture-dir=${FIXTURE_DIR}`,
+      "--validate-only",
+      "--fail-on-critical-conflict",
+      "--audit-override",
+    ], { cwd: ROOT, encoding: "utf8" });
+
+    expect(auditOverride).toContain('"auditOverride": true');
+    expect(auditOverride).toContain('"criticalIdentityConflicts": 1');
   });
 
   it("preserves the existing manual offseason evidence contract", async () => {
