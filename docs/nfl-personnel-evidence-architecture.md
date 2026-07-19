@@ -336,6 +336,47 @@ node scripts/generate-nfl-personnel-nflverse-audit.mjs \
 unless `--audit-override` is supplied. The CLI refuses `public/data/nfl/` output
 paths for audit artifacts.
 
+Phase 5C-2D adds reviewed identity overrides without weakening automatic
+matching:
+
+- Review file:
+  `data/nfl/personnel/reviewed-identity-overrides.json`
+- Schema version:
+  `nflverse-reviewed-identity-overrides-v0.1`
+- Validation command:
+  `npm run nfl:personnel:nflverse:validate-overrides`
+- Audit-with-overrides command:
+  `npm run nfl:personnel:nflverse:audit-with-overrides`
+
+Each override must include provider, provider-person ID, season scope,
+canonical person ID, GSIS ID when available, canonical name, source name
+variants, team scope, position context, resolution type, evidence references,
+review metadata, status, and expiration/permanence metadata. `approved`
+overrides require evidence references, `reviewedBy`, and `reviewedAt`.
+Repository-authored proposed mappings stay `pending` until the user approves a
+reviewer label and date.
+
+Resolution priority is fixed:
+
+1. Stable GSIS identity.
+2. Unambiguous provider crosswalk.
+3. Approved reviewed override.
+4. Deterministic fallback with warning.
+5. Unresolved/excluded.
+
+Validation rejects duplicate active overrides, one provider ID mapped to
+multiple canonical people, inconsistent GSIS mappings, missing evidence,
+missing approved-review metadata, invalid or expired season scope, unknown
+source references when row IDs are available, placeholder dates/URLs, and
+approval based only on fuzzy name similarity. Overrides are considered only when
+their evidence matches the loaded source rows and no higher-priority stable ID
+contradicts the mapping.
+
+The audit output records considered/applied/rejected override decisions and
+their evidence refs. Pending override simulation is explicitly labeled
+`simulationOnly`; it can show before/after conflict counts and affected metrics,
+but it does not modify normal audit results.
+
 The audit emits unsupported metrics as unavailable, not zero: starts,
 offensive-line snaps, sacks, pressures, and defensive-back snaps. It also keeps
 QB continuity and coaching continuity as unknown because the approved nflverse

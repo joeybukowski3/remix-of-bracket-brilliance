@@ -14,6 +14,7 @@ import { normalizePlayerName } from "./lib/nfl-personnel/identity.mjs";
 import {
   assertNonProductionOutput,
   buildNflverseFourTeamAudit,
+  loadReviewedIdentityOverridesFile,
   writeNflverseManifest,
 } from "./lib/nfl-personnel/providers/nflverse/audit.mjs";
 
@@ -38,14 +39,19 @@ function parseArgs(argv) {
     cacheDir: null,
     output: null,
     identityReviewOutput: null,
+    reviewedOverrides: null,
     dryRun: false,
     validateOnly: false,
+    validateOverridesOnly: false,
+    simulatePendingOverrides: false,
     failOnCriticalConflict: false,
     auditOverride: false,
   };
   for (const arg of argv) {
     if (arg === "--dry-run") args.dryRun = true;
     else if (arg === "--validate-only") args.validateOnly = true;
+    else if (arg === "--validate-overrides-only") args.validateOverridesOnly = true;
+    else if (arg === "--simulate-pending-overrides") args.simulatePendingOverrides = true;
     else if (arg === "--fail-on-critical-conflict") args.failOnCriticalConflict = true;
     else if (arg === "--audit-override") args.auditOverride = true;
     else if (arg.startsWith("--season=")) args.season = Number(arg.slice("--season=".length));
@@ -64,6 +70,7 @@ function parseArgs(argv) {
     else if (arg.startsWith("--cache-dir=")) args.cacheDir = resolve(arg.slice("--cache-dir=".length));
     else if (arg.startsWith("--output=")) args.output = resolve(arg.slice("--output=".length));
     else if (arg.startsWith("--identity-review-output=")) args.identityReviewOutput = resolve(arg.slice("--identity-review-output=".length));
+    else if (arg.startsWith("--reviewed-overrides=")) args.reviewedOverrides = resolve(arg.slice("--reviewed-overrides=".length));
     else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!args.season || !args.priorSeason) throw new Error("--season and --prior-season are required");
@@ -75,7 +82,10 @@ function parseArgs(argv) {
     args.playerStats ??= join(args.fixtureDir, `stats_player_reg_${args.priorSeason}.csv`);
     args.snapCounts ??= join(args.fixtureDir, `snap_counts_${args.priorSeason}.csv`);
   }
-  if (!args.validateOnly && !args.dryRun && !args.output) throw new Error("--output is required unless --dry-run or --validate-only is used");
+  if (args.validateOverridesOnly && !args.reviewedOverrides) throw new Error("--reviewed-overrides is required with --validate-overrides-only");
+  if (!args.validateOnly && !args.dryRun && !args.validateOverridesOnly && !args.output) {
+    throw new Error("--output is required unless --dry-run, --validate-only, or --validate-overrides-only is used");
+  }
   if (args.output) assertNonProductionOutput(args.output, args.season);
   if (args.identityReviewOutput) assertNonProductionOutput(args.identityReviewOutput, args.season);
   return args;
@@ -118,6 +128,9 @@ function loadManualOffseasonSnapshot() {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const manualDataset = loadManualOffseasonSnapshot();
+  const reviewedOverrides = args.reviewedOverrides
+    ? JSON.parse(readFileSync(args.reviewedOverrides, "utf8"))
+    : null;
   const result = await buildNflverseFourTeamAudit({
     season: args.season,
     priorSeason: args.priorSeason,
@@ -134,7 +147,27 @@ async function main() {
     cacheDir: args.cacheDir,
     teamsJson,
     manualDataset,
+    reviewedIdentityOverrides: reviewedOverrides,
+    simulatePendingOverrides: args.simulatePendingOverrides,
   });
+
+  if (args.validateOverridesOnly) {
+    const loaded = loadReviewedIdentityOverridesFile(args.reviewedOverrides, {
+      targetSeason: args.season,
+      priorSeason: args.priorSeason,
+      sourceManifests: result.sourceManifests,
+      knownRowIds: new Set(result.dataset.identityCrosswalk.flatMap((entry) => entry.sourceRows.map((row) => row.rowId))),
+    });
+    console.log(JSON.stringify({
+      valid: loaded.validation.valid,
+      warningCount: loaded.validation.warnings.length,
+      overrideCount: loaded.overridesFile.overrides.length,
+      approved: loaded.overridesFile.overrides.filter((record) => record.status === "approved").length,
+      pending: loaded.overridesFile.overrides.filter((record) => record.status === "pending").length,
+      validateOverridesOnly: true,
+    }, null, 2));
+    return;
+  }
 
   let manifest = null;
   if (args.cacheDir) {
@@ -182,6 +215,13 @@ async function main() {
         teams: result.dataset.teams.map((team) => team.abbr),
         readyForScoring: result.dataset.completenessEvaluation.readyForScoring,
         criticalIdentityConflicts: result.identityReview.criticalConflicts.length,
+        reviewedOverridesApplied: result.dataset.reviewedIdentityOverrides.counts.applied,
+        pendingOverrideSimulation: result.dataset.reviewedIdentityOverrides.pendingSimulation.enabled
+          ? {
+              criticalConflictCountBefore: result.dataset.reviewedIdentityOverrides.pendingSimulation.criticalConflictCountBefore,
+              criticalConflictCountAfterSimulation: result.dataset.reviewedIdentityOverrides.pendingSimulation.criticalConflictCountAfterSimulation,
+            }
+          : null,
         safeForAll32IdentityExpansion: result.identityReview.all32ExpansionGateEvaluation.safeForAll32IdentityExpansion,
         output: args.output,
         identityReviewOutput: args.identityReviewOutput,
@@ -189,6 +229,8 @@ async function main() {
         wroteIdentityReview: Boolean(!args.dryRun && !args.validateOnly && args.identityReviewOutput),
         dryRun: args.dryRun,
         validateOnly: args.validateOnly,
+        validateOverridesOnly: args.validateOverridesOnly,
+        simulatePendingOverrides: args.simulatePendingOverrides,
         failOnCriticalConflict: args.failOnCriticalConflict,
         auditOverride: args.auditOverride,
         manifestPath: manifest ? join(args.cacheDir, "manifest.json") : null,

@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "nflverse-reviewed-identity-overrides-v0.1",
+  "provider": "nflverse",
+  "targetSeason": 2026,
+  "priorSeason": 2025,
+  "updatedAt": null,
+  "usageNotes": [
+    "Repository-owned human-review file for nflverse/PFR identity conflicts.",
+    "Pending records are proposed mappings only and are not applied by normal audit runs.",
+    "Approved records require evidence references, reviewedBy, and reviewedAt."
+  ],
+  "overrides": [
+    {
+      "overrideId": "nflverse-pfr-2025-alfode00-atl-review",
+      "schemaVersion": "nflverse-reviewed-identity-overrides-v0.1",
+      "provider": "nflverse",
+      "providerIdType": "pfrId",
+      "providerPersonId": "AlfoDe00",
+      "sourceSeason": 2025,
+      "canonicalPersonId": "nflverse-person:gsisid:00-0037034",
+      "gsisId": "00-0037034",
+      "canonicalName": "Dee Alford",
+      "sourceNameVariants": [
+        "DeAundre Alford",
+        "Dee Alford"
+      ],
+      "teamScope": [
+        "nfl-atl"
+      ],
+      "positionContext": [
+        "CB",
+        "DB"
+      ],
+      "resolutionType": "pfr_to_gsis_review",
+      "evidenceRefs": [
+        {
+          "sourceId": "nflverse-prior-rosters",
+          "sourceRowFilter": {
+            "season": 2025,
+            "team": "ATL",
+            "gsisId": "00-0037034",
+            "pfrId": "AlfoDe00"
+          }
+        },
+        {
+          "sourceId": "nflverse-snap-counts",
+          "sourceRowFilter": {
+            "season": 2025,
+            "team": "ATL",
+            "pfrId": "AlfoDe00"
+          }
+        }
+      ],
+      "sourceManifestRefs": [
+        "nflverse-prior-rosters",
+        "nflverse-snap-counts"
+      ],
+      "reviewedBy": null,
+      "reviewedAt": null,
+      "reviewNotes": "Pending user approval. Approved nflverse evidence must show a unique prior-roster GSIS row and PFR snap rows with no competing candidate before this can be approved.",
+      "status": "pending",
+      "expiresAfterSeason": 2026,
+      "permanent": false
+    },
+    {
+      "overrideId": "nflverse-pfr-2025-smitch04-nyj-review",
+      "schemaVersion": "nflverse-reviewed-identity-overrides-v0.1",
+      "provider": "nflverse",
+      "providerIdType": "pfrId",
+      "providerPersonId": "SmitCh04",
+      "sourceSeason": 2025,
+      "canonicalPersonId": "nflverse-person:gsisid:00-0038602",
+      "gsisId": "00-0038602",
+      "canonicalName": "Chris Smith II",
+      "sourceNameVariants": [
+        "Chris Smith II",
+        "Christopher Smith"
+      ],
+      "teamScope": [
+        "nfl-nyj"
+      ],
+      "positionContext": [
+        "DB",
+        "S"
+      ],
+      "resolutionType": "pfr_to_gsis_review",
+      "evidenceRefs": [
+        {
+          "sourceId": "nflverse-prior-rosters",
+          "sourceRowFilter": {
+            "season": 2025,
+            "team": "NYJ",
+            "gsisId": "00-0038602",
+            "pfrId": "SmitCh04"
+          }
+        },
+        {
+          "sourceId": "nflverse-snap-counts",
+          "sourceRowFilter": {
+            "season": 2025,
+            "team": "NYJ",
+            "week": 18,
+            "pfrId": "SmitCh04"
+          }
+        }
+      ],
+      "sourceManifestRefs": [
+        "nflverse-prior-rosters",
+        "nflverse-snap-counts"
+      ],
+      "reviewedBy": null,
+      "reviewedAt": null,
+      "reviewNotes": "Pending user approval. Approved nflverse evidence must show a unique prior-roster GSIS row and PFR snap row with no competing candidate before this can be approved.",
+      "status": "pending",
+      "expiresAfterSeason": 2026,
+      "permanent": false
+    }
+  ]
+}

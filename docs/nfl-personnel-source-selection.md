@@ -535,6 +535,62 @@ Proposed all-32 identity expansion gates:
 - All excluded production explicitly quantified.
 - Deterministic replay from declared inputs.
 
+Phase 5C-2D adds a human-review override loop for conflicts that strict
+automation must leave unresolved:
+
+- Review file:
+  `data/nfl/personnel/reviewed-identity-overrides.json`
+- Schema version:
+  `nflverse-reviewed-identity-overrides-v0.1`
+- Validation command:
+  `npm run nfl:personnel:nflverse:validate-overrides`
+- Audit-with-review command:
+  `npm run nfl:personnel:nflverse:audit-with-overrides`
+
+Reviewed overrides are repository-owned audit configuration, not production
+evidence. Each record carries `overrideId`, provider and provider-person ID,
+season scope, canonical person ID, GSIS ID when available, canonical name,
+source name variants, team scope, position context, resolution type, evidence
+references, review metadata, status, and expiration/permanence metadata.
+
+Statuses:
+
+- `pending`: proposed mapping for human review. It is never applied to normal
+  audit output.
+- `approved`: applied only after evidence references, `reviewedBy`, and
+  `reviewedAt` pass validation.
+- `rejected`: retained for audit history and never applied.
+- `superseded`: retained for audit history and never applied.
+
+Override priority remains below stable automated identity evidence:
+
+1. Stable GSIS identity.
+2. Unambiguous provider crosswalk.
+3. Approved reviewed override.
+4. Deterministic team/name/position fallback with warning.
+5. Unresolved/excluded.
+
+Safety rules reject duplicate active overrides for the same provider ID and
+scope, one provider ID mapped to multiple canonical people, inconsistent GSIS
+assignment for one canonical identity, missing evidence, missing approved-review
+metadata, invalid or expired season scope, unknown source references when source
+rows are available, placeholder dates or URLs, and approvals based only on fuzzy
+name similarity. Overrides cannot silently replace contradictory stable GSIS
+evidence.
+
+The CLI records whether each override was considered, applied, or rejected at
+application time. `--simulate-pending-overrides` produces a clearly labeled
+simulation showing which pending mappings would clear conflicts and their metric
+impact; simulation never changes normal audit identity counts or generated
+metrics.
+
+Current repository review records for `AlfoDe00` and `SmitCh04` are `pending`.
+They require explicit user approval with a reviewer label and review date before
+they can become active. The recommended decision is to approve only if the live
+cached nflverse rows continue to show a unique roster GSIS mapping, matching
+team/season/position context, no competing candidate, and PFR snap rows limited
+to that same team and season.
+
 ## Unresolved Decisions Requiring Approval
 
 - Whether to approve and fund SportsDataIO as the primary structured personnel

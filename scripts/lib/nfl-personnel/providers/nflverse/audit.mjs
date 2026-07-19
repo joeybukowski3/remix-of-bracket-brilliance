@@ -17,6 +17,7 @@ import {
 export const NFLVERSE_AUDIT_GENERATOR_VERSION = "nflverse-personnel-audit-v0.1";
 export const NFLVERSE_SAMPLE_TEAM_ABBRS = Object.freeze(["atl", "chi", "nyj", "sea"]);
 export const NFLVERSE_SOURCE_BASE = "https://github.com/nflverse/nflverse-data/releases/download";
+export const REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION = "nflverse-reviewed-identity-overrides-v0.1";
 
 export const NFLVERSE_DATASETS = Object.freeze({
   rosters: {
@@ -122,6 +123,14 @@ const IDENTITY_EXPANSION_GATES = Object.freeze({
   requireExcludedProductionQuantified: true,
   requireDeterministicReplay: true,
 });
+
+const REVIEWED_OVERRIDE_STATUSES = new Set(["approved", "rejected", "pending", "superseded"]);
+const ACTIVE_REVIEWED_OVERRIDE_STATUSES = new Set(["approved", "pending"]);
+const APPROVED_OVERRIDE_RESOLUTION_TYPES = new Set([
+  "pfr_to_gsis_review",
+  "provider_to_gsis_review",
+  "name_variant_review",
+]);
 
 function sha256(buffer) {
   return createHash("sha256").update(buffer).digest("hex");
@@ -265,6 +274,174 @@ export function validateNflverseManifest(manifest, { baseDir = "." } = {}) {
     }
   }
   return { valid: errors.length === 0, errors, warnings };
+}
+
+function isPlainObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value);
+}
+
+function isValidDateOnly(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`));
+}
+
+function isPlaceholderValue(value) {
+  return /^(tbd|todo|unknown|placeholder|n\/a)$/i.test(String(value ?? "").trim());
+}
+
+function reviewedOverrideScopeKey(record) {
+  return [
+    record.provider,
+    record.providerIdType ?? "providerPersonId",
+    record.providerPersonId,
+    record.sourceSeason ?? "all-seasons",
+    (record.teamScope ?? []).join("|") || "all-teams",
+  ].join(":");
+}
+
+function knownSourceIdsFromManifests(sourceManifests) {
+  return new Set(
+    (sourceManifests ?? [])
+      .map((source) => source.sourceId ?? NFLVERSE_DATASETS[source.dataset]?.sourceId)
+      .filter(Boolean),
+  );
+}
+
+export function validateReviewedIdentityOverrides(overridesFile, {
+  targetSeason = null,
+  priorSeason = null,
+  sourceManifests = [],
+  knownRowIds = null,
+} = {}) {
+  const errors = [];
+  const warnings = [];
+  const knownSourceIds = knownSourceIdsFromManifests(sourceManifests);
+  if (!isPlainObject(overridesFile)) {
+    return { valid: false, errors: [{ code: "invalid_overrides_file", message: "reviewed identity overrides file must be an object" }], warnings };
+  }
+  if (overridesFile.schemaVersion !== REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION) {
+    errors.push({ code: "unsupported_override_schema", message: "unsupported reviewed identity override schema" });
+  }
+  if (overridesFile.provider !== "nflverse") {
+    errors.push({ code: "unsupported_override_provider", message: "reviewed identity overrides currently support provider nflverse only" });
+  }
+  if (!Array.isArray(overridesFile.overrides)) {
+    errors.push({ code: "missing_overrides", message: "overrides must be an array" });
+    return { valid: errors.length === 0, errors, warnings };
+  }
+
+  const activeByScope = new Map();
+  const providerToCanonical = new Map();
+  const canonicalToGsis = new Map();
+  for (const [index, record] of overridesFile.overrides.entries()) {
+    const label = record?.overrideId ?? `override[${index}]`;
+    if (!isPlainObject(record)) {
+      errors.push({ code: "invalid_override_record", message: `${label} must be an object` });
+      continue;
+    }
+    if (record.schemaVersion !== REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION) {
+      errors.push({ code: "unsupported_override_record_schema", message: `${label} has unsupported schemaVersion` });
+    }
+    if (!record.overrideId || isPlaceholderValue(record.overrideId)) errors.push({ code: "missing_override_id", message: `${label} missing overrideId` });
+    if (record.provider !== "nflverse") errors.push({ code: "unsupported_override_record_provider", message: `${label} provider must be nflverse` });
+    if (!record.providerPersonId || isPlaceholderValue(record.providerPersonId)) errors.push({ code: "missing_provider_person_id", message: `${label} missing providerPersonId` });
+    if (!record.providerIdType || isPlaceholderValue(record.providerIdType)) errors.push({ code: "missing_provider_id_type", message: `${label} missing providerIdType` });
+    if (!Number.isInteger(record.sourceSeason) || record.sourceSeason < 2000 || record.sourceSeason > 2100) {
+      errors.push({ code: "invalid_source_season", message: `${label} sourceSeason must be an integer season` });
+    }
+    if (!record.canonicalPersonId || isPlaceholderValue(record.canonicalPersonId)) errors.push({ code: "missing_canonical_person_id", message: `${label} missing canonicalPersonId` });
+    if (!record.canonicalName || isPlaceholderValue(record.canonicalName)) errors.push({ code: "missing_canonical_name", message: `${label} missing canonicalName` });
+    if (!Array.isArray(record.sourceNameVariants) || record.sourceNameVariants.length === 0) {
+      errors.push({ code: "missing_source_name_variants", message: `${label} must include sourceNameVariants` });
+    }
+    if (!Array.isArray(record.teamScope)) errors.push({ code: "invalid_team_scope", message: `${label} teamScope must be an array` });
+    if (!Array.isArray(record.positionContext)) errors.push({ code: "invalid_position_context", message: `${label} positionContext must be an array` });
+    if (!record.resolutionType || isPlaceholderValue(record.resolutionType)) {
+      errors.push({ code: "missing_resolution_type", message: `${label} missing resolutionType` });
+    }
+    if (!REVIEWED_OVERRIDE_STATUSES.has(record.status)) {
+      errors.push({ code: "invalid_override_status", message: `${label} has invalid status` });
+    }
+    if (!Array.isArray(record.evidenceRefs) || record.evidenceRefs.length === 0) {
+      errors.push({ code: "missing_evidence_refs", message: `${label} must include evidenceRefs` });
+    } else {
+      for (const ref of record.evidenceRefs) {
+        if (!ref?.sourceId && !ref?.rowId) {
+          errors.push({ code: "invalid_evidence_ref", message: `${label} evidenceRefs must include sourceId or rowId` });
+        }
+        if (knownSourceIds.size > 0 && ref?.sourceId && !knownSourceIds.has(ref.sourceId)) {
+          errors.push({ code: "unknown_evidence_source", message: `${label} references unknown sourceId ${ref.sourceId}` });
+        }
+        if (knownRowIds && ref?.rowId && !knownRowIds.has(ref.rowId)) {
+          errors.push({ code: "unknown_evidence_row", message: `${label} references unknown source row ${ref.rowId}` });
+        }
+        if (ref?.sourceUrl && (/example\.com/i.test(ref.sourceUrl) || isPlaceholderValue(ref.sourceUrl))) {
+          errors.push({ code: "placeholder_evidence_url", message: `${label} contains placeholder evidence URL` });
+        }
+      }
+    }
+    if (record.status === "approved") {
+      if (!record.reviewedBy || isPlaceholderValue(record.reviewedBy)) errors.push({ code: "missing_reviewer", message: `${label} approved override missing reviewedBy` });
+      if (!isValidDateOnly(record.reviewedAt) || isPlaceholderValue(record.reviewedAt)) errors.push({ code: "missing_review_date", message: `${label} approved override missing valid reviewedAt` });
+      if (!APPROVED_OVERRIDE_RESOLUTION_TYPES.has(record.resolutionType)) {
+        errors.push({ code: "unsupported_approved_resolution_type", message: `${label} approved override has unsupported resolutionType` });
+      }
+      const notes = String(record.reviewNotes ?? "");
+      if (/fuzzy/i.test(notes) && !/no fuzzy/i.test(notes)) {
+        errors.push({ code: "fuzzy_only_override", message: `${label} approved override cannot be based only on fuzzy name similarity` });
+      }
+    }
+    if (record.status !== "approved" && (record.reviewedBy || record.reviewedAt)) {
+      warnings.push({ code: "review_metadata_ignored", message: `${label} has review metadata but status is ${record.status}` });
+    }
+    if (record.expiresAfterSeason != null && (!Number.isInteger(record.expiresAfterSeason) || record.expiresAfterSeason < record.sourceSeason)) {
+      errors.push({ code: "invalid_expiration", message: `${label} expiresAfterSeason must be at or after sourceSeason` });
+    }
+    if (record.status === "approved" && targetSeason && record.expiresAfterSeason != null && record.expiresAfterSeason < targetSeason) {
+      errors.push({ code: "expired_override", message: `${label} approved override expired before target season` });
+    }
+    if (priorSeason && record.sourceSeason !== priorSeason) {
+      warnings.push({ code: "season_scope_mismatch", message: `${label} sourceSeason does not match priorSeason ${priorSeason}` });
+    }
+
+    const active = ACTIVE_REVIEWED_OVERRIDE_STATUSES.has(record.status);
+    if (active) {
+      const scopeKey = reviewedOverrideScopeKey(record);
+      if (activeByScope.has(scopeKey)) {
+        errors.push({ code: "duplicate_active_override", message: `${label} duplicates active override ${activeByScope.get(scopeKey)}` });
+      }
+      activeByScope.set(scopeKey, record.overrideId);
+      const providerKeyValue = `${record.provider}:${record.providerIdType}:${record.providerPersonId}`;
+      const canonicalSet = providerToCanonical.get(providerKeyValue) ?? new Set();
+      canonicalSet.add(record.canonicalPersonId);
+      providerToCanonical.set(providerKeyValue, canonicalSet);
+      if (record.gsisId) {
+        const gsisSet = canonicalToGsis.get(record.canonicalPersonId) ?? new Set();
+        gsisSet.add(record.gsisId);
+        canonicalToGsis.set(record.canonicalPersonId, gsisSet);
+      }
+    }
+  }
+  for (const [providerKeyValue, canonicalSet] of providerToCanonical) {
+    if (canonicalSet.size > 1) {
+      errors.push({ code: "conflicting_provider_override", message: `${providerKeyValue} maps to multiple canonical people` });
+    }
+  }
+  for (const [canonicalPersonId, gsisSet] of canonicalToGsis) {
+    if (gsisSet.size > 1) {
+      errors.push({ code: "conflicting_canonical_identity", message: `${canonicalPersonId} maps to multiple GSIS IDs` });
+    }
+  }
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+export function loadReviewedIdentityOverridesFile(filePath, options = {}) {
+  const parsed = JSON.parse(readFileSync(filePath, "utf8"));
+  const validation = validateReviewedIdentityOverrides(parsed, options);
+  if (!validation.valid) {
+    const detail = validation.errors.map((error) => `${error.code}: ${error.message}`).join("; ");
+    throw new Error(`reviewed identity overrides invalid: ${detail}`);
+  }
+  return { overridesFile: parsed, validation };
 }
 
 function canonicalMaps(teamsJson) {
@@ -527,13 +704,15 @@ function sortedSet(set) {
   return [...(set ?? [])].sort();
 }
 
-function buildIdentityCrosswalk({ targetRosterRows, priorRosterRows, statRows, snapRows, sourceIds }) {
+function buildIdentityCrosswalk({ targetRosterRows, priorRosterRows, statRows, snapRows, sourceIds, reviewedOverrides = null, targetSeason }) {
   const unionFind = new UnionFind();
   const sourceRows = [];
   const diagnostics = {
     conflicts: [],
     warnings: [],
+    overrideApplications: [],
   };
+  const reviewedOverridesByProvider = overrideIndex(reviewedOverrides);
 
   function addSourceRows(rows, sourceKind, seasonRole, teamRole, metricFields = []) {
     for (const row of rows) {
@@ -679,12 +858,26 @@ function buildIdentityCrosswalk({ targetRosterRows, priorRosterRows, statRows, s
     const names = new Set(rows.map((row) => row.normalizedName));
     const compactNames = new Set(rows.map((row) => compactNameForVariant(row.name)));
     if (names.size > 1 && compactNames.size > 1) {
-      diagnostics.conflicts.push({
-        conflictId: stableId(["nflverse-crosswalk-provider-conflict", key]),
-        severity: "critical",
-        category: "identity",
-        message: `${key} maps to conflicting player names`,
+      const [providerName, providerId] = key.split(":");
+      const overrideDecision = matchingOverrideDecision({
+        providerName,
+        providerId,
+        rows,
+        overridesByProvider: reviewedOverridesByProvider,
+        targetSeason,
       });
+      diagnostics.overrideApplications.push(overrideDecision);
+      if (overrideDecision.applied) {
+        diagnostics.warnings.push(`${key} provider-name conflict resolved by reviewed override ${overrideDecision.overrideId}`);
+      } else {
+        diagnostics.conflicts.push({
+          conflictId: stableId(["nflverse-crosswalk-provider-conflict", key]),
+          severity: "critical",
+          category: "identity",
+          message: `${key} maps to conflicting player names`,
+          reviewedOverride: overrideDecision.considered ? overrideDecision : null,
+        });
+      }
     } else if (names.size > 1) {
       diagnostics.warnings.push(`${key} has punctuation or suffix name variants`);
     }
@@ -721,6 +914,11 @@ function buildIdentityCrosswalk({ targetRosterRows, priorRosterRows, statRows, s
     entries: crosswalk.sort((a, b) => a.canonicalPersonId.localeCompare(b.canonicalPersonId)),
     warnings: [...new Set(diagnostics.warnings)].sort(),
     conflicts: diagnostics.conflicts.sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
+    overrideApplications: diagnostics.overrideApplications.sort((a, b) =>
+      String(a.providerName).localeCompare(String(b.providerName)) ||
+      String(a.providerId).localeCompare(String(b.providerId)) ||
+      String(a.overrideId ?? "").localeCompare(String(b.overrideId ?? "")),
+    ),
   };
 }
 
@@ -1077,6 +1275,78 @@ function providerConflictKeys(conflicts) {
 function providerKeysForEntry(entry) {
   return Object.entries(entry.providerIds ?? {})
     .flatMap(([providerName, values]) => (values ?? []).map((value) => `${providerName}:${value}`));
+}
+
+function overrideIndex(overridesFile, { includePending = false } = {}) {
+  const index = new Map();
+  for (const record of overridesFile?.overrides ?? []) {
+    if (record.status !== "approved" && !(includePending && record.status === "pending")) continue;
+    const providerName = record.providerIdType;
+    if (!providerName || !record.providerPersonId) continue;
+    const key = `${providerName}:${record.providerPersonId}`;
+    index.set(key, [...(index.get(key) ?? []), record]);
+  }
+  for (const [key, records] of index) {
+    index.set(key, records.sort((a, b) => a.overrideId.localeCompare(b.overrideId)));
+  }
+  return index;
+}
+
+function matchingOverrideDecision({ providerName, providerId, rows, overridesByProvider, targetSeason }) {
+  const key = `${providerName}:${providerId}`;
+  const records = overridesByProvider.get(key) ?? [];
+  if (records.length === 0) {
+    return {
+      considered: false,
+      applied: false,
+      reason: "no reviewed override for provider ID",
+      providerName,
+      providerId,
+      overrideId: null,
+      evidenceRefs: [],
+      resultingIdentity: null,
+    };
+  }
+  const decisions = records.map((record) => {
+    const rowIds = new Set(rows.map((row) => row.rowId));
+    const sourceIds = new Set(rows.map((row) => row.sourceId));
+    const seasons = new Set(rows.map((row) => row.season));
+    const teamIds = new Set(rows.map((row) => row.teamId));
+    const gsisIds = new Set(rows.map((row) => row.providerIds?.gsisId).filter(Boolean));
+    const evidenceRefs = record.evidenceRefs ?? [];
+    const evidenceKnown = evidenceRefs.every((ref) => !ref.rowId || rowIds.has(ref.rowId)) &&
+      evidenceRefs.every((ref) => !ref.sourceId || sourceIds.has(ref.sourceId));
+    const seasonMatches = !record.sourceSeason || seasons.has(record.sourceSeason);
+    const teamMatches = !record.teamScope?.length || [...teamIds].every((teamId) => record.teamScope.includes(teamId));
+    const expirationOk = record.expiresAfterSeason == null || record.expiresAfterSeason >= targetSeason;
+    const gsisConsistent = !record.gsisId || gsisIds.size === 0 || (gsisIds.size === 1 && gsisIds.has(record.gsisId));
+    const applied = evidenceKnown && seasonMatches && teamMatches && expirationOk && gsisConsistent;
+    const rejectedReasons = [
+      evidenceKnown ? null : "evidence references do not match source rows",
+      seasonMatches ? null : "season scope does not match source rows",
+      teamMatches ? null : "team scope does not match source rows",
+      expirationOk ? null : "override expired",
+      gsisConsistent ? null : "stable GSIS evidence contradicts override",
+    ].filter(Boolean);
+    return {
+      considered: true,
+      applied,
+      reason: applied ? "reviewed override evidence matches provider conflict and does not contradict stable GSIS evidence" : rejectedReasons.join("; "),
+      providerName,
+      providerId,
+      overrideId: record.overrideId,
+      status: record.status,
+      evidenceRefs,
+      resultingIdentity: applied
+        ? {
+            canonicalPersonId: record.canonicalPersonId,
+            canonicalName: record.canonicalName,
+            gsisId: record.gsisId ?? null,
+          }
+        : null,
+    };
+  });
+  return decisions.find((decision) => decision.applied) ?? decisions[0];
 }
 
 function classifyIdentityEntry(entry, conflictKeys) {
@@ -1450,7 +1720,97 @@ function buildExpansionGateEvaluation(identityQualityByTeam, criticalConflictCou
   };
 }
 
-function buildIdentityReview({ dataset, crosswalk, teams }) {
+function impactForProviderConflict(conflict, crosswalk, teamsById) {
+  if (!conflict.providerName || !conflict.providerId) return [];
+  const seen = new Set();
+  return crosswalk.entries
+    .filter((entry) => (entry.providerIds?.[conflict.providerName] ?? []).includes(conflict.providerId))
+    .flatMap((entry) => metricImpactForEntry(entry, teamsById))
+    .filter((impact) => {
+      const key = `${impact.sourceRowId}:${impact.affectedMetric}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) =>
+      a.teamAbbr.localeCompare(b.teamAbbr) ||
+      a.affectedMetric.localeCompare(b.affectedMetric) ||
+      a.sourceRowId.localeCompare(b.sourceRowId),
+    );
+}
+
+function buildPendingOverrideSimulation({ crosswalk, teams, reviewedOverrides, targetSeason }) {
+  const pendingByProvider = overrideIndex(reviewedOverrides, { includePending: true });
+  const teamsById = new Map(teams.map((team) => [team.teamId, team]));
+  const simulatedDecisions = crosswalk.conflicts
+    .map((conflict) => diagnoseProviderConflict(conflict, crosswalk))
+    .map((diagnosed) => {
+      if (!diagnosed.providerName || !diagnosed.providerId) return null;
+      const decision = matchingOverrideDecision({
+        providerName: diagnosed.providerName,
+        providerId: diagnosed.providerId,
+        rows: diagnosed.sourceRows ?? [],
+        overridesByProvider: pendingByProvider,
+        targetSeason,
+      });
+      return {
+        ...decision,
+        simulationOnly: true,
+        wouldClearCriticalConflict: Boolean(decision.applied),
+        affectedProduction: impactForProviderConflict(diagnosed, crosswalk, teamsById),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) =>
+      String(a.providerName).localeCompare(String(b.providerName)) ||
+      String(a.providerId).localeCompare(String(b.providerId)) ||
+      String(a.overrideId ?? "").localeCompare(String(b.overrideId ?? "")),
+    );
+  const wouldClear = simulatedDecisions.filter((decision) => decision.wouldClearCriticalConflict).length;
+  return {
+    enabled: true,
+    simulationOnly: true,
+    pendingOverrideCount: (reviewedOverrides?.overrides ?? []).filter((record) => record.status === "pending").length,
+    criticalConflictCountBefore: crosswalk.conflicts.length,
+    criticalConflictCountAfterSimulation: Math.max(0, crosswalk.conflicts.length - wouldClear),
+    simulatedDecisions,
+    notes: [
+      "Pending override simulation is not applied to normal audit results.",
+      "Simulation does not change production artifacts or automatic identity policy.",
+    ],
+  };
+}
+
+function buildReviewedOverridesSummary({ reviewedOverrides, validation, crosswalk, teams, targetSeason, simulatePendingOverrides }) {
+  const records = reviewedOverrides?.overrides ?? [];
+  return {
+    schemaVersion: reviewedOverrides?.schemaVersion ?? REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION,
+    provided: Boolean(reviewedOverrides),
+    validation: validation ?? { valid: true, errors: [], warnings: [] },
+    counts: {
+      total: records.length,
+      approved: records.filter((record) => record.status === "approved").length,
+      pending: records.filter((record) => record.status === "pending").length,
+      rejected: records.filter((record) => record.status === "rejected").length,
+      superseded: records.filter((record) => record.status === "superseded").length,
+      applied: crosswalk.overrideApplications.filter((decision) => decision.applied).length,
+      rejectedAtApplication: crosswalk.overrideApplications.filter((decision) => decision.considered && !decision.applied).length,
+    },
+    resolutionPriority: [
+      "stable GSIS identity",
+      "unambiguous provider crosswalk",
+      "approved reviewed override",
+      "deterministic fallback with warning",
+      "unresolved/excluded",
+    ],
+    applications: crosswalk.overrideApplications,
+    pendingSimulation: simulatePendingOverrides
+      ? buildPendingOverrideSimulation({ crosswalk, teams, reviewedOverrides, targetSeason })
+      : { enabled: false, simulationOnly: true },
+  };
+}
+
+function buildIdentityReview({ dataset, crosswalk, teams, reviewedOverridesSummary = null }) {
   const conflictKeys = providerConflictKeys(crosswalk.conflicts);
   const teamsById = new Map(teams.map((team) => [team.teamId, team]));
   const reviewRecords = crosswalk.entries
@@ -1480,6 +1840,7 @@ function buildIdentityReview({ dataset, crosswalk, teams }) {
     warningLevelIdentities: reviewRecords.filter((record) => record.resolutionStatus === "warning_included"),
     automaticallyResolvedIdentities: reviewRecords.filter((record) => record.resolutionStatus === "automatically_resolved"),
     criticalConflicts,
+    reviewedIdentityOverrides: reviewedOverridesSummary,
     providerCrosswalkDiagnostics: buildProviderCrosswalkDiagnostics(crosswalk),
     productionImpactByTeam: summarizeImpactsByTeam(reviewRecords),
     identityQualityByTeam,
@@ -1559,6 +1920,8 @@ export async function buildNflverseFourTeamAudit({
   cacheDir = null,
   teamsJson,
   manualDataset = null,
+  reviewedIdentityOverrides = null,
+  simulatePendingOverrides = false,
 }) {
   requireSeason(season, "season");
   requireSeason(priorSeason, "priorSeason");
@@ -1628,6 +1991,19 @@ export async function buildNflverseFourTeamAudit({
     season: priorSeason,
     sourceId: NFLVERSE_DATASETS.snapCounts.sourceId,
   });
+  const knownRowIds = new Set([...rosterRows, ...priorRosterRows, ...statRows, ...snapRows].map((row) => row.rowId));
+  const overrideValidation = reviewedIdentityOverrides
+    ? validateReviewedIdentityOverrides(reviewedIdentityOverrides, {
+        targetSeason: season,
+        priorSeason,
+        sourceManifests: [rosters, priorRosters, playerStats, snapCounts],
+        knownRowIds,
+      })
+    : { valid: true, errors: [], warnings: [] };
+  if (!overrideValidation.valid) {
+    const detail = overrideValidation.errors.map((error) => `${error.code}: ${error.message}`).join("; ");
+    throw new Error(`reviewed identity overrides invalid: ${detail}`);
+  }
 
   const diagnostics = identityDiagnostics(rosterRows);
   const sourceIds = {
@@ -1642,6 +2018,8 @@ export async function buildNflverseFourTeamAudit({
     statRows,
     snapRows,
     sourceIds,
+    reviewedOverrides: reviewedIdentityOverrides,
+    targetSeason: season,
   });
   const identityCoverageByTeam = buildIdentityCoverageByTeam({ teams: sampleTeams, crosswalk });
   const teams = sampleTeams.map((team) =>
@@ -1658,6 +2036,14 @@ export async function buildNflverseFourTeamAudit({
     team.conflicts = [...diagnostics.conflicts, ...crosswalk.conflicts].filter((conflict) => conflict.message.includes(team.teamId));
   });
   const unmatchedProductionSummary = buildUnmatchedProductionSummary(teams);
+  const reviewedOverridesSummary = buildReviewedOverridesSummary({
+    reviewedOverrides: reviewedIdentityOverrides,
+    validation: overrideValidation,
+    crosswalk,
+    teams,
+    targetSeason: season,
+    simulatePendingOverrides,
+  });
 
   const dataset = {
     schemaVersion: PERSONNEL_EVIDENCE_SCHEMA_VERSION,
@@ -1691,6 +2077,7 @@ export async function buildNflverseFourTeamAudit({
     },
     identityCoverageByTeam,
     identityCrosswalk: crosswalk.entries,
+    reviewedIdentityOverrides: reviewedOverridesSummary,
     unmatchedPlayerSummary: Object.fromEntries(
       teams.map((team) => [
         team.teamId,
@@ -1716,6 +2103,7 @@ export async function buildNflverseFourTeamAudit({
       "nflverse snap_counts are PFR-derived; review redistribution terms before production use.",
       ...diagnostics.warnings,
       ...crosswalk.warnings,
+      ...overrideValidation.warnings.map((warning) => warning.message),
     ].sort(),
     conflicts: [...diagnostics.conflicts, ...crosswalk.conflicts].sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
     teams,
@@ -1724,7 +2112,7 @@ export async function buildNflverseFourTeamAudit({
     asOfDate: sourceCutoff,
     maxSourceAgeDays: 365,
   });
-  dataset.identityReview = buildIdentityReview({ dataset, crosswalk, teams });
+  dataset.identityReview = buildIdentityReview({ dataset, crosswalk, teams, reviewedOverridesSummary });
   const validation = validatePersonnelEvidenceDataset(dataset, teamsJson, { requireAllTeams: false });
   return {
     dataset,
