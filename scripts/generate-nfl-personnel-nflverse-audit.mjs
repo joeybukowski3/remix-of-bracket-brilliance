@@ -27,9 +27,11 @@ function parseArgs(argv) {
     generatedAt: null,
     sourceCutoff: null,
     roster: null,
+    priorRoster: null,
     playerStats: null,
     snapCounts: null,
     rosterUrl: null,
+    priorRosterUrl: null,
     playerStatsUrl: null,
     snapCountsUrl: null,
     fixtureDir: null,
@@ -46,9 +48,11 @@ function parseArgs(argv) {
     else if (arg.startsWith("--generated-at=")) args.generatedAt = arg.slice("--generated-at=".length);
     else if (arg.startsWith("--source-cutoff=")) args.sourceCutoff = arg.slice("--source-cutoff=".length);
     else if (arg.startsWith("--roster=")) args.roster = resolve(arg.slice("--roster=".length));
+    else if (arg.startsWith("--prior-roster=")) args.priorRoster = resolve(arg.slice("--prior-roster=".length));
     else if (arg.startsWith("--player-stats=")) args.playerStats = resolve(arg.slice("--player-stats=".length));
     else if (arg.startsWith("--snap-counts=")) args.snapCounts = resolve(arg.slice("--snap-counts=".length));
     else if (arg.startsWith("--roster-url=")) args.rosterUrl = arg.slice("--roster-url=".length);
+    else if (arg.startsWith("--prior-roster-url=")) args.priorRosterUrl = arg.slice("--prior-roster-url=".length);
     else if (arg.startsWith("--player-stats-url=")) args.playerStatsUrl = arg.slice("--player-stats-url=".length);
     else if (arg.startsWith("--snap-counts-url=")) args.snapCountsUrl = arg.slice("--snap-counts-url=".length);
     else if (arg.startsWith("--fixture-dir=")) args.fixtureDir = resolve(arg.slice("--fixture-dir=".length));
@@ -61,7 +65,8 @@ function parseArgs(argv) {
   if (!args.sourceCutoff) throw new Error("--source-cutoff is required");
   if (args.fixtureDir) {
     args.roster ??= join(args.fixtureDir, `roster_${args.season}.csv`);
-    args.playerStats ??= join(args.fixtureDir, `player_stats_season_${args.priorSeason}.csv`);
+    args.priorRoster ??= join(args.fixtureDir, `roster_${args.priorSeason}.csv`);
+    args.playerStats ??= join(args.fixtureDir, `stats_player_reg_${args.priorSeason}.csv`);
     args.snapCounts ??= join(args.fixtureDir, `snap_counts_${args.priorSeason}.csv`);
   }
   if (!args.validateOnly && !args.dryRun && !args.output) throw new Error("--output is required unless --dry-run or --validate-only is used");
@@ -112,9 +117,11 @@ async function main() {
     generatedAt: args.generatedAt,
     sourceCutoff: args.sourceCutoff,
     rosterSourcePath: args.roster,
+    priorRosterSourcePath: args.priorRoster,
     playerStatsSourcePath: args.playerStats,
     snapCountsSourcePath: args.snapCounts,
     rosterSourceUrl: args.rosterUrl,
+    priorRosterSourceUrl: args.priorRosterUrl,
     playerStatsSourceUrl: args.playerStatsUrl,
     snapCountsSourceUrl: args.snapCountsUrl,
     cacheDir: args.cacheDir,

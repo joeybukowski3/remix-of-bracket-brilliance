@@ -28,13 +28,22 @@ export const NFLVERSE_DATASETS = Object.freeze({
     sourceName: "nflverse rosters release",
     pfrDerived: false,
   },
+  priorRosters: {
+    family: "rosters",
+    release: "rosters",
+    filename: (season) => `roster_${season}.csv`,
+    requiredFields: ["season", "team", "position", "full_name"],
+    sourceId: "nflverse-prior-rosters",
+    sourceName: "nflverse prior-season rosters release",
+    pfrDerived: false,
+  },
   playerStats: {
-    family: "player_stats_season",
-    release: "player_stats",
-    filename: () => "player_stats_season.csv",
-    requiredFields: ["season"],
+    family: "stats_player_reg",
+    release: "stats_player",
+    filename: (season) => `stats_player_reg_${season}.csv`,
+    requiredFields: ["season", "season_type", "recent_team", "player_id", "player_display_name", "position"],
     sourceId: "nflverse-player-stats-season",
-    sourceName: "nflverse player_stats season release",
+    sourceName: "nflverse stats_player regular-season release",
     pfrDerived: false,
   },
   snapCounts: {
@@ -256,6 +265,12 @@ function primaryProviderId(providerIds) {
   return providerIds.gsisId ?? providerIds.pfrId ?? providerIds.espnId ?? providerIds.sportradarId ?? null;
 }
 
+function providerPriorityName(providerIds) {
+  if (providerIds.gsisId) return "gsis";
+  if (providerIds.pfrId || providerIds.espnId || providerIds.sportradarId) return "provider_id";
+  return "name_position_team";
+}
+
 function identityKeyFor({ providerIds, name, position, teamId }) {
   const providerId = primaryProviderId(providerIds);
   return buildPersonIdentity({ providerId, name, position, teamId }).identityKey;
@@ -287,6 +302,7 @@ export function normalizeNflverseRosterRows(rows, { teamsJson, allowedTeamAbbrs,
         yearsExp: field(row, ["years_exp"]),
         providerIds,
         providerId: primaryProviderId(providerIds),
+        identityMatchMethod: providerPriorityName(providerIds),
         identityKey: identityKeyFor({ providerIds, name, position, teamId: team.id }),
         sourceId,
       };
@@ -319,6 +335,7 @@ export function normalizeNflversePlayerStatRows(rows, { teamsJson, allowedTeamAb
         position,
         providerIds,
         providerId: primaryProviderId(providerIds),
+        identityMatchMethod: providerPriorityName(providerIds),
         identityKey: identityKeyFor({ providerIds, name, position, teamId: team.id }),
         passingAttempts: numberField(row, ["attempts", "passing_attempts"]),
         carries: numberField(row, ["carries", "rushing_attempts"]),
@@ -359,6 +376,7 @@ export function normalizeNflverseSnapRows(rows, { teamsJson, allowedTeamAbbrs, s
         position,
         providerIds,
         providerId: primaryProviderId(providerIds),
+        identityMatchMethod: providerPriorityName(providerIds),
         identityKey: identityKeyFor({ providerIds, name, position, teamId: team.id }),
         offensiveSnaps: numberField(row, ["offense_snaps"]),
         defensiveSnaps: numberField(row, ["defense_snaps"]),
@@ -401,6 +419,252 @@ function aggregateByIdentity(rows, metrics) {
   return byKey;
 }
 
+class UnionFind {
+  constructor() {
+    this.parent = new Map();
+  }
+
+  find(key) {
+    if (!this.parent.has(key)) this.parent.set(key, key);
+    const parent = this.parent.get(key);
+    if (parent !== key) this.parent.set(key, this.find(parent));
+    return this.parent.get(key);
+  }
+
+  union(a, b) {
+    const rootA = this.find(a);
+    const rootB = this.find(b);
+    if (rootA !== rootB) this.parent.set(rootB, rootA);
+  }
+}
+
+function providerKey(providerName, value) {
+  return value ? `${providerName}:${value}` : null;
+}
+
+function providerKeysForRow(row) {
+  return Object.entries(row.providerIds ?? {})
+    .map(([providerName, value]) => providerKey(providerName, value))
+    .filter(Boolean);
+}
+
+function fallbackKeyForRow(row) {
+  return stableId(["fallback", row.normalizedName, row.position ?? "unknown-position", row.teamId ?? "unknown-team"]);
+}
+
+function bestIdentityKey(keys) {
+  const orderedKeys = [...keys];
+  const priority = ["gsisId", "pfrId", "espnId", "sportradarId", "yahooId", "rotowireId", "pffId", "fantasyDataId", "sleeperId", "esbId"];
+  for (const providerName of priority) {
+    const match = orderedKeys.filter((key) => key.startsWith(`${providerName}:`)).sort()[0];
+    if (match) return match;
+  }
+  return orderedKeys.sort()[0] ?? "unresolved";
+}
+
+function addSetValue(map, key, value) {
+  if (value == null || value === "") return;
+  if (map instanceof Map) {
+    if (!map.has(key)) map.set(key, new Set());
+    map.get(key).add(value);
+  } else if (map[key]) {
+    map[key].add(value);
+  }
+}
+
+function sortedSet(set) {
+  return [...(set ?? [])].sort();
+}
+
+function buildIdentityCrosswalk({ targetRosterRows, priorRosterRows, statRows, snapRows, sourceIds }) {
+  const unionFind = new UnionFind();
+  const sourceRows = [];
+  const diagnostics = {
+    conflicts: [],
+    warnings: [],
+  };
+
+  function addSourceRows(rows, sourceKind, seasonRole, teamRole, metricFields = []) {
+    for (const row of rows) {
+      const keys = providerKeysForRow(row);
+      const fallback = fallbackKeyForRow(row);
+      const allKeys = keys.length > 0 ? keys : [fallback];
+      allKeys.forEach((key) => unionFind.find(key));
+      allKeys.slice(1).forEach((key) => unionFind.union(allKeys[0], key));
+      sourceRows.push({ row, keys: allKeys, fallback, sourceKind, seasonRole, teamRole, metricFields });
+    }
+  }
+
+  addSourceRows(targetRosterRows, "target_roster", "target", "targetSeasonTeams");
+  addSourceRows(priorRosterRows, "prior_roster", "prior", "priorSeasonTeams");
+  addSourceRows(statRows, "player_stats", "prior", "priorProductionTeams", [
+    "passingAttempts",
+    "carries",
+    "rushingYards",
+    "targets",
+    "receptions",
+    "receivingYards",
+  ]);
+  addSourceRows(snapRows, "snap_counts", "prior", "priorSnapTeams", [
+    "offensiveSnaps",
+    "defensiveSnaps",
+    "specialTeamsSnaps",
+  ]);
+
+  const groups = new Map();
+  for (const sourceRow of sourceRows) {
+    const roots = sourceRow.keys.map((key) => unionFind.find(key)).sort();
+    const root = roots[0] ?? sourceRow.fallback;
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(sourceRow);
+  }
+
+  const crosswalk = [];
+  const byProvider = new Map();
+
+  for (const rows of groups.values()) {
+    const keys = new Set();
+    const providerIds = {};
+    const providerIdSets = new Map();
+    const names = new Set();
+    const normalizedNames = new Set();
+    const positions = new Set();
+    const sourceRowsOut = [];
+    const teamSets = {
+      priorSeasonTeams: new Set(),
+      targetSeasonTeams: new Set(),
+      priorProductionTeams: new Set(),
+      priorSnapTeams: new Set(),
+    };
+    const sourcePresence = {
+      targetRoster: false,
+      priorRoster: false,
+      playerStats: false,
+      snapCounts: false,
+    };
+
+    for (const entry of rows) {
+      entry.keys.forEach((key) => keys.add(key));
+      names.add(entry.row.name);
+      normalizedNames.add(entry.row.normalizedName);
+      if (entry.row.position) positions.add(entry.row.position);
+      addSetValue(teamSets, entry.teamRole, entry.row.teamId);
+      if (entry.sourceKind === "target_roster") sourcePresence.targetRoster = true;
+      if (entry.sourceKind === "prior_roster") sourcePresence.priorRoster = true;
+      if (entry.sourceKind === "player_stats") sourcePresence.playerStats = true;
+      if (entry.sourceKind === "snap_counts") sourcePresence.snapCounts = true;
+      for (const [providerName, value] of Object.entries(entry.row.providerIds ?? {})) {
+        if (!value) continue;
+        if (!providerIdSets.has(providerName)) providerIdSets.set(providerName, new Set());
+        providerIdSets.get(providerName).add(value);
+        byProvider.set(`${providerName}:${value}`, [...(byProvider.get(`${providerName}:${value}`) ?? []), entry.row]);
+      }
+      sourceRowsOut.push({
+        sourceKind: entry.sourceKind,
+        sourceId: entry.row.sourceId,
+        rowId: entry.row.rowId,
+        season: entry.row.season,
+        teamId: entry.row.teamId,
+        teamAbbr: entry.row.teamAbbr,
+        position: entry.row.position,
+        playerName: entry.row.name,
+        identityMatchMethod: entry.row.identityMatchMethod,
+      });
+    }
+
+    for (const [providerName, values] of providerIdSets) providerIds[providerName] = sortedSet(values);
+    const canonicalKey = bestIdentityKey(keys);
+    const gsisCount = providerIds.gsisId?.length ?? 0;
+    const warnings = [];
+    if (gsisCount > 1) warnings.push("one person group has multiple GSIS IDs");
+    if (positions.size > 1) warnings.push("position changed across sources");
+    if (sourcePresence.snapCounts && !sourcePresence.targetRoster && !sourcePresence.priorRoster && !sourcePresence.playerStats) {
+      warnings.push("unresolved PFR-only snap identity");
+    }
+    if (sourcePresence.playerStats && !sourcePresence.targetRoster) warnings.push("stats player missing from target roster");
+    if (sourcePresence.snapCounts && !sourcePresence.targetRoster) warnings.push("snap player missing from target roster");
+    if (sourcePresence.targetRoster && !sourcePresence.playerStats) warnings.push("target roster player missing from prior player stats");
+    const priorTeams = new Set([...teamSets.priorSeasonTeams, ...teamSets.priorProductionTeams, ...teamSets.priorSnapTeams]);
+    const targetTeams = teamSets.targetSeasonTeams;
+    const legitimateTeamChange = priorTeams.size > 0 && targetTeams.size > 0 && [...priorTeams].some((teamId) => !targetTeams.has(teamId));
+    if (legitimateTeamChange) warnings.push("team changed across prior and target sources");
+
+    const status = gsisCount > 1
+      ? "conflicted"
+      : canonicalKey.startsWith("gsisId:")
+        ? "resolved_gsis"
+        : canonicalKey.includes("Id:")
+          ? "resolved_provider_id"
+          : "name_position_team";
+    crosswalk.push({
+      canonicalPersonId: stableId(["nflverse-person", canonicalKey]),
+      canonicalIdentityKey: canonicalKey,
+      providerIds,
+      normalizedNames: sortedSet(normalizedNames),
+      sourceNameVariants: sortedSet(names),
+      positions: sortedSet(positions),
+      priorSeasonTeams: sortedSet(teamSets.priorSeasonTeams),
+      priorProductionTeams: sortedSet(teamSets.priorProductionTeams),
+      priorSnapTeams: sortedSet(teamSets.priorSnapTeams),
+      targetSeasonTeams: sortedSet(teamSets.targetSeasonTeams),
+      identityMatchMethod: canonicalKey.startsWith("gsisId:")
+        ? "gsis"
+        : canonicalKey.includes("Id:")
+          ? "provider_id"
+          : "name_position_team",
+      resolutionStatus: status,
+      sourcePresence,
+      sourceRows: sourceRowsOut.sort((a, b) => String(a.sourceKind).localeCompare(String(b.sourceKind)) || String(a.rowId).localeCompare(String(b.rowId))),
+      warnings: [...new Set(warnings)].sort(),
+    });
+  }
+
+  for (const [key, rows] of byProvider) {
+    const names = new Set(rows.map((row) => row.normalizedName));
+    if (names.size > 1) {
+      diagnostics.conflicts.push({
+        conflictId: stableId(["nflverse-crosswalk-provider-conflict", key]),
+        severity: "critical",
+        category: "identity",
+        message: `${key} maps to conflicting player names`,
+      });
+    }
+  }
+  for (const entry of crosswalk) {
+    if ((entry.providerIds.gsisId?.length ?? 0) > 1) {
+      diagnostics.conflicts.push({
+        conflictId: stableId(["nflverse-crosswalk-multiple-gsis", entry.canonicalPersonId]),
+        severity: "critical",
+        category: "identity",
+        message: `${entry.canonicalPersonId} has multiple GSIS IDs`,
+      });
+    }
+  }
+  const byCrosswalkName = new Map();
+  for (const entry of crosswalk) {
+    for (const normalizedName of entry.normalizedNames) {
+      byCrosswalkName.set(normalizedName, [...(byCrosswalkName.get(normalizedName) ?? []), entry]);
+    }
+  }
+  for (const [normalizedName, entries] of byCrosswalkName) {
+    const canonicalPeople = new Set(entries.map((entry) => entry.canonicalPersonId));
+    const providerIdentities = new Set(
+      entries.flatMap((entry) => Object.values(entry.providerIds).flat()).filter(Boolean),
+    );
+    const nameOnlyCount = entries.filter((entry) => entry.identityMatchMethod === "name_position_team").length;
+    if (canonicalPeople.size > 1 && providerIdentities.size > 1) {
+      diagnostics.warnings.push(`same normalized name has distinct provider IDs: ${normalizedName}`);
+    }
+    if (nameOnlyCount > 1) diagnostics.warnings.push(`name-only collision requires provider ID before merge: ${normalizedName}`);
+  }
+
+  return {
+    entries: crosswalk.sort((a, b) => a.canonicalPersonId.localeCompare(b.canonicalPersonId)),
+    warnings: [...new Set(diagnostics.warnings)].sort(),
+    conflicts: diagnostics.conflicts.sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
+  };
+}
+
 function rosterIndexes(rosterRows) {
   const byProvider = new Map();
   const byFallback = new Map();
@@ -428,7 +692,12 @@ function matchToRoster(row, indexes, teamId) {
 function buildMetric({ rows, metricKey, sourceIds, indexes, teamId }) {
   if (rows.length === 0) {
     return {
-      metric: emptyMetric(sourceIds, `${metricKey} unavailable: no covered prior-season source rows for team`),
+      metric: {
+        ...emptyMetric(sourceIds, `${metricKey} unavailable: no covered prior-season source rows for team`),
+        matchedPlayerCount: 0,
+        unmatchedPlayerCount: 0,
+        unmatchedProduction: null,
+      },
       retained: [],
       unmatched: [],
     };
@@ -450,13 +719,20 @@ function buildMetric({ rows, metricKey, sourceIds, indexes, teamId }) {
   }
   const warnings = [];
   if (unmatched.length > 0) warnings.push(`${unmatched.length} player(s) with ${metricKey} production unmatched to target roster`);
+  const matchedPlayerCount = new Set(retained.map((row) => row.identityKey)).size;
+  const unmatchedProduction = unmatched.reduce((sum, row) => sum + row.amount, 0);
   return {
-    metric: buildReturningProductionMetric({
-      numerator,
-      denominator,
-      sourceRefs: sourceRefs(...sourceIds),
-      warnings,
-    }),
+    metric: {
+      ...buildReturningProductionMetric({
+        numerator,
+        denominator,
+        sourceRefs: sourceRefs(...sourceIds),
+        warnings,
+      }),
+      matchedPlayerCount,
+      unmatchedPlayerCount: unmatched.length,
+      unmatchedProduction,
+    },
     retained,
     unmatched,
   };
@@ -468,7 +744,7 @@ function unsupportedMetrics(sourceIds) {
       .filter((metric) => !SUPPORTED_AUDIT_METRICS.includes(metric))
       .map((metric) => [
         metric,
-        emptyMetric(sourceIds, `${metric} unavailable in Phase 5C-2A nflverse audit source selection`),
+        emptyMetric(sourceIds, `${metric} unavailable in Phase 5C-2B nflverse audit source selection`),
       ]),
   );
 }
@@ -516,10 +792,23 @@ function identityDiagnostics(rosterRows) {
   return { conflicts, warnings };
 }
 
-function buildTeamRecord({ team, rosterRows, statRows, snapRows, sourceIds }) {
+function buildTeamRecord({ team, rosterRows, statRows, snapRows, sourceIds, identityCoverage = null }) {
   const indexes = rosterIndexes(rosterRows);
   const teamStatRows = statRows.filter((row) => row.teamId === team.id);
   const teamSnapRows = snapRows.filter((row) => row.teamId === team.id);
+  const statByIdentity = aggregateByIdentity(teamStatRows, [
+    "passingAttempts",
+    "carries",
+    "rushingYards",
+    "targets",
+    "receptions",
+    "receivingYards",
+  ]);
+  const statAggregates = [...statByIdentity.values()].map((entry) => ({
+    ...entry.row,
+    ...entry.values,
+    rowIds: entry.rowIds,
+  }));
   const snapByIdentity = aggregateByIdentity(teamSnapRows, ["offensiveSnaps", "defensiveSnaps", "specialTeamsSnaps"]);
   const snapAggregates = [...snapByIdentity.values()].map((entry) => ({
     ...entry.row,
@@ -530,12 +819,12 @@ function buildTeamRecord({ team, rosterRows, statRows, snapRows, sourceIds }) {
   const metricInputs = {
     offensiveSnaps: { rows: snapAggregates, metricKey: "offensiveSnaps", sourceIds: [sourceIds.snapCounts] },
     defensiveSnaps: { rows: snapAggregates, metricKey: "defensiveSnaps", sourceIds: [sourceIds.snapCounts] },
-    qbPassAttempts: { rows: teamStatRows.filter((row) => row.position === "QB" || row.passingAttempts > 0), metricKey: "passingAttempts", sourceIds: [sourceIds.playerStats] },
-    carries: { rows: teamStatRows, metricKey: "carries", sourceIds: [sourceIds.playerStats] },
-    rushingYards: { rows: teamStatRows, metricKey: "rushingYards", sourceIds: [sourceIds.playerStats] },
-    targets: { rows: teamStatRows, metricKey: "targets", sourceIds: [sourceIds.playerStats] },
-    receptions: { rows: teamStatRows, metricKey: "receptions", sourceIds: [sourceIds.playerStats] },
-    receivingYards: { rows: teamStatRows, metricKey: "receivingYards", sourceIds: [sourceIds.playerStats] },
+    qbPassAttempts: { rows: statAggregates.filter((row) => row.position === "QB" || row.passingAttempts > 0), metricKey: "passingAttempts", sourceIds: [sourceIds.playerStats] },
+    carries: { rows: statAggregates, metricKey: "carries", sourceIds: [sourceIds.playerStats] },
+    rushingYards: { rows: statAggregates, metricKey: "rushingYards", sourceIds: [sourceIds.playerStats] },
+    targets: { rows: statAggregates, metricKey: "targets", sourceIds: [sourceIds.playerStats] },
+    receptions: { rows: statAggregates, metricKey: "receptions", sourceIds: [sourceIds.playerStats] },
+    receivingYards: { rows: statAggregates, metricKey: "receivingYards", sourceIds: [sourceIds.playerStats] },
   };
   const calculated = Object.fromEntries(
     Object.entries(metricInputs).map(([metricName, input]) => [
@@ -595,6 +884,7 @@ function buildTeamRecord({ team, rosterRows, statRows, snapRows, sourceIds }) {
       transactionsThroughCutoff: false,
       rosterEvidenceAvailable: rosterRows.length > 0,
       returningProductionAuditOnly: true,
+      identityCoverage,
     },
     warnings: [...new Set(warnings)].sort(),
     conflicts: [],
@@ -611,6 +901,98 @@ function unknownCoach(sourceId) {
     sourceRefs: sourceRefs(sourceId),
     evidenceStatus: "unverified",
   };
+}
+
+function buildPlayerStatSourceDiagnosis({ priorSeason, playerStats }) {
+  const seasonsPresent = [...new Set(playerStats.rows.map((row) => Number(row.season)).filter(Number.isFinite))].sort((a, b) => a - b);
+  const seasonTypeValues = [...new Set(playerStats.rows.map((row) => field(row, ["season_type", "game_type"]) ?? "").filter(Boolean))].sort();
+  const requestedSeasonRows = playerStats.rows.filter((row) => Number(row.season) === priorSeason).length;
+  const requestedRegularSeasonRows = playerStats.rows
+    .filter((row) => Number(row.season) === priorSeason)
+    .filter((row) => SEASON_TYPE_REG_VALUES.has(field(row, ["season_type", "game_type"]) ?? ""))
+    .length;
+  return {
+    status: requestedRegularSeasonRows > 0 ? "resolved" : "requested_season_absent",
+    previousInput: {
+      release: "player_stats",
+      filename: "player_stats_season.csv",
+      sourceUrl: `${NFLVERSE_SOURCE_BASE}/player_stats/player_stats_season.csv`,
+      issue: "The aggregate player_stats release was stale for this audit and did not include requested 2025 season rows.",
+    },
+    selectedInput: {
+      release: NFLVERSE_DATASETS.playerStats.release,
+      filename: NFLVERSE_DATASETS.playerStats.filename(priorSeason),
+      sourceUrl: playerStats.sourceUrl,
+      sourceUpdatedAt: playerStats.sourceUpdatedAt,
+      sourceLineage: "nflreadr load_player_stats(summary_level = 'reg') resolves to stats_player/stats_player_reg_<season>.csv.",
+    },
+    seasonsPresent,
+    seasonTypeValues,
+    requestedSeasonRows,
+    requestedRegularSeasonRows,
+    rowCount: playerStats.rowCount,
+    headerColumns: playerStats.headerColumns,
+  };
+}
+
+function buildIdentityCrosswalkSummary(crosswalk) {
+  const entries = crosswalk.entries;
+  return {
+    personCount: entries.length,
+    resolvedGsis: entries.filter((entry) => entry.identityMatchMethod === "gsis").length,
+    resolvedProviderId: entries.filter((entry) => entry.identityMatchMethod === "provider_id").length,
+    namePositionTeamFallback: entries.filter((entry) => entry.identityMatchMethod === "name_position_team").length,
+    unresolvedOrConflicted: entries.filter((entry) => entry.resolutionStatus === "conflicted" || entry.warnings.some((warning) => warning.includes("unresolved"))).length,
+    warningCount: crosswalk.warnings.length + entries.reduce((sum, entry) => sum + entry.warnings.length, 0),
+    conflictCount: crosswalk.conflicts.length,
+  };
+}
+
+function buildIdentityCoverageByTeam({ teams, crosswalk }) {
+  return Object.fromEntries(
+    teams.map((team) => {
+      const entries = crosswalk.entries.filter((entry) => {
+        const teamIds = [
+          ...entry.priorSeasonTeams,
+          ...entry.priorProductionTeams,
+          ...entry.priorSnapTeams,
+          ...entry.targetSeasonTeams,
+        ];
+        return teamIds.includes(team.id);
+      });
+      const withTargetRoster = entries.filter((entry) => entry.targetSeasonTeams.includes(team.id)).length;
+      const priorProductionEntries = entries.filter((entry) => entry.priorProductionTeams.includes(team.id)).length;
+      const unresolved = entries.filter((entry) => entry.resolutionStatus === "conflicted" || entry.warnings.some((warning) => warning.includes("unresolved"))).length;
+      const changedTeams = entries.filter((entry) => entry.warnings.includes("team changed across prior and target sources")).length;
+      return [
+        team.id,
+        {
+          personCount: entries.length,
+          targetRosterPlayers: withTargetRoster,
+          priorProductionPlayers: priorProductionEntries,
+          unresolvedOrConflicted: unresolved,
+          legitimateTeamChanges: changedTeams,
+        },
+      ];
+    }),
+  );
+}
+
+function buildUnmatchedProductionSummary(teams) {
+  return Object.fromEntries(
+    teams.map((team) => [
+      team.teamId,
+      Object.fromEntries(
+        Object.entries(team.returningProduction.advisory.unmatchedPlayers).map(([metric, rows]) => [
+          metric,
+          {
+            playerCount: rows.length,
+            amount: rows.reduce((sum, row) => sum + (row.amount ?? 0), 0),
+          },
+        ]),
+      ),
+    ]),
+  );
 }
 
 function sourceRecord(dataset, source) {
@@ -671,9 +1053,11 @@ export async function buildNflverseFourTeamAudit({
   generatedAt,
   sourceCutoff,
   rosterSourcePath = null,
+  priorRosterSourcePath = null,
   playerStatsSourcePath = null,
   snapCountsSourcePath = null,
   rosterSourceUrl = null,
+  priorRosterSourceUrl = null,
   playerStatsSourceUrl = null,
   snapCountsSourceUrl = null,
   cacheDir = null,
@@ -694,6 +1078,14 @@ export async function buildNflverseFourTeamAudit({
     season,
     sourcePath: rosterSourcePath,
     sourceUrl: rosterSourceUrl,
+    cacheDir: cacheRoot,
+  });
+  const priorRosters = await loadNflverseDataset({
+    ...loadOptions,
+    dataset: "priorRosters",
+    season: priorSeason,
+    sourcePath: priorRosterSourcePath,
+    sourceUrl: priorRosterSourceUrl,
     cacheDir: cacheRoot,
   });
   const playerStats = await loadNflverseDataset({
@@ -722,6 +1114,12 @@ export async function buildNflverseFourTeamAudit({
     season,
     sourceId: NFLVERSE_DATASETS.rosters.sourceId,
   });
+  const priorRosterRows = normalizeNflverseRosterRows(priorRosters.rows, {
+    teamsJson,
+    allowedTeamAbbrs: NFLVERSE_SAMPLE_TEAM_ABBRS,
+    season: priorSeason,
+    sourceId: NFLVERSE_DATASETS.priorRosters.sourceId,
+  });
   const statRows = normalizeNflversePlayerStatRows(playerStats.rows, {
     teamsJson,
     allowedTeamAbbrs: NFLVERSE_SAMPLE_TEAM_ABBRS,
@@ -738,9 +1136,18 @@ export async function buildNflverseFourTeamAudit({
   const diagnostics = identityDiagnostics(rosterRows);
   const sourceIds = {
     rosters: NFLVERSE_DATASETS.rosters.sourceId,
+    priorRosters: NFLVERSE_DATASETS.priorRosters.sourceId,
     playerStats: NFLVERSE_DATASETS.playerStats.sourceId,
     snapCounts: NFLVERSE_DATASETS.snapCounts.sourceId,
   };
+  const crosswalk = buildIdentityCrosswalk({
+    targetRosterRows: rosterRows,
+    priorRosterRows,
+    statRows,
+    snapRows,
+    sourceIds,
+  });
+  const identityCoverageByTeam = buildIdentityCoverageByTeam({ teams: sampleTeams, crosswalk });
   const teams = sampleTeams.map((team) =>
     buildTeamRecord({
       team,
@@ -748,16 +1155,18 @@ export async function buildNflverseFourTeamAudit({
       statRows,
       snapRows,
       sourceIds,
+      identityCoverage: identityCoverageByTeam[team.id],
     }),
   );
   teams.forEach((team) => {
-    team.conflicts = diagnostics.conflicts.filter((conflict) => conflict.message.includes(team.teamId));
+    team.conflicts = [...diagnostics.conflicts, ...crosswalk.conflicts].filter((conflict) => conflict.message.includes(team.teamId));
   });
+  const unmatchedProductionSummary = buildUnmatchedProductionSummary(teams);
 
   const dataset = {
     schemaVersion: PERSONNEL_EVIDENCE_SCHEMA_VERSION,
     auditOnly: true,
-    auditLabel: "Phase 5C-2A nflverse four-team returning-production audit",
+    auditLabel: "Phase 5C-2B nflverse four-team returning-production audit",
     targetSeason: season,
     priorSeason,
     generatedAt,
@@ -767,19 +1176,25 @@ export async function buildNflverseFourTeamAudit({
     generatorVersion: `${PERSONNEL_EVIDENCE_GENERATOR_VERSION}+${NFLVERSE_AUDIT_GENERATOR_VERSION}`,
     sources: [
       sourceRecord("rosters", rosters),
+      sourceRecord("priorRosters", priorRosters),
       sourceRecord("playerStats", playerStats),
       sourceRecord("snapCounts", snapCounts),
     ],
     completeness: {},
+    playerStatSourceDiagnosis: buildPlayerStatSourceDiagnosis({ priorSeason, playerStats }),
     identityMatchSummary: {
       teamCount: teams.length,
-      rosterPlayers: rosterRows.length,
+      targetRosterPlayers: rosterRows.length,
+      priorRosterPlayers: priorRosterRows.length,
       priorSeasonStatPlayers: statRows.length,
       priorSeasonSnapRows: snapRows.length,
       providerPriority: ["gsis_id", "approved provider ID", "team/name/position fallback"],
-      warnings: diagnostics.warnings,
-      conflicts: diagnostics.conflicts,
+      ...buildIdentityCrosswalkSummary(crosswalk),
+      warnings: [...new Set([...diagnostics.warnings, ...crosswalk.warnings])].sort(),
+      conflicts: [...diagnostics.conflicts, ...crosswalk.conflicts].sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
     },
+    identityCoverageByTeam,
+    identityCrosswalk: crosswalk.entries,
     unmatchedPlayerSummary: Object.fromEntries(
       teams.map((team) => [
         team.teamId,
@@ -788,6 +1203,7 @@ export async function buildNflverseFourTeamAudit({
         ),
       ]),
     ),
+    unmatchedProductionSummary,
     manualEvidenceComparison: Object.fromEntries(
       sampleTeams.map((team) => [
         team.id,
@@ -803,8 +1219,9 @@ export async function buildNflverseFourTeamAudit({
       "nflverse rosters prove roster presence at cutoff, not transaction method/date.",
       "nflverse snap_counts are PFR-derived; review redistribution terms before production use.",
       ...diagnostics.warnings,
+      ...crosswalk.warnings,
     ].sort(),
-    conflicts: diagnostics.conflicts.sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
+    conflicts: [...diagnostics.conflicts, ...crosswalk.conflicts].sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
     teams,
   };
   dataset.completenessEvaluation = evaluatePersonnelCompleteness(dataset, teamsJson, {
@@ -815,7 +1232,7 @@ export async function buildNflverseFourTeamAudit({
   return {
     dataset,
     validation,
-    sourceManifests: [rosters, playerStats, snapCounts],
+    sourceManifests: [rosters, priorRosters, playerStats, snapCounts],
     json: toNflJsonFileString(dataset),
   };
 }

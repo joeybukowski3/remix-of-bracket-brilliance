@@ -409,13 +409,25 @@ Implemented audit path:
 - Production guard: the CLI refuses to write
   `public/data/nfl/<season>/personnel-evidence.json`.
 
-Exact nflverse release families used:
+Exact nflverse release families used after Phase 5C-2B:
 
 | Family | Default release URL pattern | Fields used | Lineage caveat |
 | --- | --- | --- | --- |
 | Season rosters | `https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_<season>.csv` | `season`, `team`, `full_name`, `position`, `depth_chart_position`, `status`, `gsis_id`, `espn_id`, `sportradar_id`, `pfr_id`, plus other exposed provider IDs when present | Public nflverse roster release; roster presence is not transaction proof. |
-| Season player stats | `https://github.com/nflverse/nflverse-data/releases/download/player_stats/player_stats_season.csv` | `season`, `season_type`, `recent_team`/`team`, `player_id`, `player_display_name`, `position`, `attempts`, `carries`, `rushing_yards`, `targets`, `receptions`, `receiving_yards` | Public nflverse aggregate season-stats release; regular season only by default. |
+| Prior-season rosters | `https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_<priorSeason>.csv` | Same roster identity fields as target-season rosters | Used only for identity crosswalk and PFR-to-GSIS joins; not transaction proof. |
+| Season player stats | `https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_reg_<priorSeason>.csv` | `season`, `season_type`, `recent_team`/`team`, `player_id`, `player_display_name`, `position`, `attempts`, `carries`, `rushing_yards`, `targets`, `receptions`, `receiving_yards` | Current nflreadr `load_player_stats(summary_level = "reg")` release family; regular season only by default. |
 | Snap counts | `https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_<season>.csv` | `season`, `game_id`, `game_type`, `team`, `player`, `pfr_player_id`, `position`, `offense_snaps`, `offense_pct`, `defense_snaps`, `defense_pct`, `st_snaps`, `st_pct` | nflreadr documents snap counts as PFR-provided; review redistribution terms before production use. |
+
+Missing-2025 diagnosis: the Phase 5C-2A implementation initially selected the
+older aggregate
+`https://github.com/nflverse/nflverse-data/releases/download/player_stats/player_stats_season.csv`
+from the `player_stats` release. That release was last updated on
+2025-05-07 and did not include requested 2025 rows. The current nflreadr loader
+resolves regular-season player stats through the `stats_player` release, with
+season-specific files such as `stats_player_reg_2025.csv`; the GitHub release
+asset for 2025 was updated on 2026-07-10. The audit now records this diagnosis
+in `playerStatSourceDiagnosis` and fails or marks metrics unavailable when the
+requested prior season is absent instead of substituting another season.
 
 The adapter supports explicit local paths and explicit URLs. When a cache
 directory is supplied it writes files and `manifest.json` under:
@@ -438,12 +450,23 @@ Calculation definitions for this slice:
   provider ID or, when no provider ID exists, deterministic
   team/name/position fallback.
 - Provider ID priority is GSIS ID first, then approved provider IDs exposed by
-  nflverse, then fallback identity.
+  nflverse, then deterministic team/name/position fallback.
+- The identity crosswalk includes target rosters, prior rosters, prior player
+  stats, and prior snap counts. It preserves GSIS, ESPN, Sportradar, PFR, and
+  other exposed IDs; source name variants; normalized names; source presence;
+  prior/target teams; match method; warnings; and conflicts.
+- Identity validation reports provider-ID conflicts, multiple GSIS IDs in a
+  person group, same normalized names with distinct provider IDs, name-only
+  collisions, roster/stats/snap source gaps, legitimate team changes, position
+  changes, suffix/punctuation variants, and unresolved PFR-only snap identities.
 - Incoming player production for another prior team is not counted as retained.
 - Unmatched production remains in the denominator and is reported separately.
-- If the aggregate player-stats release does not yet contain the requested
-  prior season, QB attempts/rushing/receiving metrics are emitted as unavailable
-  with null numerator and denominator.
+- Offensive production metrics now include matched player count, unmatched
+  player count, and unmatched production amount.
+- `recent_team` is treated as the nflverse prior-production team assignment.
+  Multi-team or traded-player limitations remain visible through the crosswalk;
+  the audit does not infer transaction method or double-count incoming
+  production as retained.
 - Unavailable starts, offensive-line snaps, sacks, pressures, and defensive-back
   snap metrics remain `null`; they are not inferred or zero-filled.
 

@@ -19,7 +19,7 @@ Phase 5B adds infrastructure only:
 No real all-32-team player data is populated yet, and no production
 `public/data/nfl/<season>/personnel-evidence.json` is checked in.
 
-Phase 5C-2A adds a read-only nflverse audit path for ATL, CHI, NYJ, and SEA:
+Phase 5C-2A/2B adds a read-only nflverse audit path for ATL, CHI, NYJ, and SEA:
 
 - Provider adapter:
   `scripts/lib/nfl-personnel/providers/nflverse/audit.mjs`
@@ -29,8 +29,9 @@ Phase 5C-2A adds a read-only nflverse audit path for ATL, CHI, NYJ, and SEA:
 - Non-production output location:
   `artifacts/nfl/personnel-audit/nflverse-four-team-audit.json`
 
-This audit proves roster identity matching and returning-production math using
-the approved nflverse roster, player-stats, and snap-count families. It still
+This audit proves roster identity matching, provider-ID crosswalk behavior, and
+returning-production math using the approved nflverse roster, player-stats, and
+snap-count families. It still
 does not populate all 32 teams, does not create
 `public/data/nfl/<season>/personnel-evidence.json`, and does not score team
 improvement or decline.
@@ -271,20 +272,29 @@ CSV paths, or explicit nflverse URLs. When `--cache-dir` is supplied, downloaded
 public nflverse files are cached with a manifest and SHA-256 checksums. Raw
 cache files under `data/nfl/personnel/raw/` are ignored by git.
 
-The approved Phase 5C-2A nflverse inputs are:
+The approved Phase 5C-2B nflverse inputs are:
 
 - `roster_<targetSeason>.csv` from the `rosters` release for roster presence,
   identity fields, roster status, depth-chart position, and years of experience.
-- `player_stats_season.csv` from the `player_stats` release for prior
-  regular-season pass attempts, carries, rushing yards, targets, receptions,
-  and receiving yards. The live release uses this aggregate season file; tests
-  use tiny explicit local fixtures. If the aggregate file does not contain the
-  requested prior season, the audit marks those production metrics unavailable
-  instead of filling zero.
+- `roster_<priorSeason>.csv` from the `rosters` release for prior-season
+  identity crosswalk support and PFR-to-GSIS joins.
+- `stats_player_reg_<priorSeason>.csv` from the `stats_player` release for
+  prior regular-season pass attempts, carries, rushing yards, targets,
+  receptions, and receiving yards. Phase 5C-2A selected the older
+  `player_stats/player_stats_season.csv` aggregate, which was stale and did not
+  include 2025 rows. The current nflreadr regular-season loader resolves to
+  `stats_player/stats_player_reg_<season>.csv`.
 - `snap_counts_<priorSeason>.csv` from the `snap_counts` release for offensive,
   defensive, and special-teams snaps. nflreadr documents this family as
   PFR-provided, so production storage/public redistribution needs source-term
   review.
+
+The audit-only output now includes `playerStatSourceDiagnosis`,
+`identityCrosswalk`, `identityCoverageByTeam`, `unmatchedProductionSummary`,
+and retained offensive-production metrics with matched-player and unmatched
+production counts. `recent_team` is used as the nflverse prior-production team
+assignment; multi-team/traded-player ambiguity is surfaced through the
+crosswalk rather than silently corrected.
 
 The audit emits unsupported metrics as unavailable, not zero: starts,
 offensive-line snaps, sacks, pressures, and defensive-back snaps. It also keeps

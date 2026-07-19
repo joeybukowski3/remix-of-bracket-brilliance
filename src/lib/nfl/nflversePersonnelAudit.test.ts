@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import teamsJson from "../../../public/data/nfl/teams.json";
 import {
+  NFLVERSE_DATASETS,
   assertNonProductionOutput,
   buildNflverseFourTeamAudit,
   loadNflverseDataset,
@@ -29,7 +30,8 @@ async function buildFixtureAudit() {
     generatedAt: GENERATED_AT,
     sourceCutoff: SOURCE_CUTOFF,
     rosterSourcePath: fixturePath("roster_2026.csv"),
-    playerStatsSourcePath: fixturePath("player_stats_season_2025.csv"),
+    priorRosterSourcePath: fixturePath("roster_2025.csv"),
+    playerStatsSourcePath: fixturePath("stats_player_reg_2025.csv"),
     snapCountsSourcePath: fixturePath("snap_counts_2025.csv"),
     teamsJson,
     manualDataset: {
@@ -68,7 +70,7 @@ describe("nflverse personnel cache manifests", () => {
       retrievedAt: GENERATED_AT,
     });
 
-    expect(loaded.rowCount).toBe(12);
+    expect(loaded.rowCount).toBe(13);
     expect(loaded.headerColumns).toContain("gsis_id");
 
     const dir = mkdtempSync(join(tmpdir(), "nflverse-schema-"));
@@ -88,6 +90,14 @@ describe("nflverse personnel cache manifests", () => {
 });
 
 describe("nflverse personnel identity", () => {
+  it("selects the current season-specific stats_player regular-season file family", () => {
+    expect(NFLVERSE_DATASETS.playerStats.release).toBe("stats_player");
+    expect(NFLVERSE_DATASETS.playerStats.filename(2025)).toBe("stats_player_reg_2025.csv");
+    expect(NFLVERSE_DATASETS.playerStats.requiredFields).toEqual(
+      expect.arrayContaining(["season", "season_type", "recent_team", "player_id", "player_display_name", "position"]),
+    );
+  });
+
   it("uses GSIS first, preserves provider IDs, and warns on name-only collisions", async () => {
     const roster = await loadNflverseDataset({
       dataset: "rosters",
@@ -117,6 +127,8 @@ describe("nflverse personnel identity", () => {
       "name-only collision requires provider ID before merge: alex same",
     );
     expect(audit.dataset.conflicts.some((conflict) => conflict.message.includes("00-CONFLICT"))).toBe(true);
+    expect(audit.dataset.identityMatchSummary.resolvedGsis).toBeGreaterThan(0);
+    expect(audit.dataset.identityCrosswalk.some((entry) => entry.providerIds.gsisId?.includes("00-NYJ-WR2"))).toBe(true);
   });
 
   it("allows legitimate team movement across seasons without counting incoming production as retained", async () => {
@@ -134,6 +146,33 @@ describe("nflverse personnel identity", () => {
       denominator: 1000,
       value: 0.9,
     });
+    expect(
+      audit.dataset.identityCrosswalk.some((entry) =>
+        entry.providerIds.gsisId?.includes("00-SEA-WR1") && entry.warnings.includes("team changed across prior and target sources"),
+      ),
+    ).toBe(true);
+  });
+
+  it("surfaces PFR-only snap identities, position changes, and suffix/punctuation variants", async () => {
+    const audit = await buildFixtureAudit();
+
+    expect(
+      audit.dataset.identityCrosswalk.some((entry) =>
+        entry.sourceNameVariants.includes("PFR Only Runner") && entry.warnings.includes("unresolved PFR-only snap identity"),
+      ),
+    ).toBe(true);
+    expect(
+      audit.dataset.identityCrosswalk.some((entry) =>
+        entry.providerIds.gsisId?.includes("00-ATL-WR1") && entry.warnings.includes("position changed across sources"),
+      ),
+    ).toBe(true);
+    expect(
+      audit.dataset.identityCrosswalk.some((entry) =>
+        entry.providerIds.gsisId?.includes("00-NYJ-WR2") &&
+        entry.normalizedNames.includes("dj oneil smith") &&
+        entry.sourceNameVariants.includes("D.J. O'Neil-Smith Jr."),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -156,8 +195,11 @@ describe("nflverse returning-production audit", () => {
 
     expect(atl.returningProduction.metrics.offensiveSnaps).toMatchObject({
       numerator: 70,
-      denominator: 110,
-      value: 0.636364,
+      denominator: 115,
+      value: 0.608696,
+      matchedPlayerCount: 1,
+      unmatchedPlayerCount: 2,
+      unmatchedProduction: 45,
     });
     expect(atl.returningProduction.metrics.defensiveSnaps).toMatchObject({
       numerator: 0,
@@ -167,6 +209,44 @@ describe("nflverse returning-production audit", () => {
     expect(atl.returningProduction.advisory.unmatchedPlayers.defensiveSnaps[0]).toMatchObject({
       playerName: "Atlas Defender",
       amount: 65,
+    });
+  });
+
+  it("calculates retained passing, rushing, and receiving production without zero-filling", async () => {
+    const audit = await buildFixtureAudit();
+    const atl = audit.dataset.teams.find((team) => team.abbr === "atl")!;
+    const nyj = audit.dataset.teams.find((team) => team.abbr === "nyj")!;
+
+    expect(atl.returningProduction.metrics.qbPassAttempts).toMatchObject({
+      numerator: 500,
+      denominator: 500,
+      value: 1,
+      matchedPlayerCount: 1,
+      unmatchedProduction: 0,
+    });
+    expect(atl.returningProduction.metrics.carries).toMatchObject({
+      numerator: 22,
+      denominator: 222,
+      value: 0.099099,
+      unmatchedProduction: 200,
+    });
+    expect(atl.returningProduction.metrics.rushingYards).toMatchObject({
+      numerator: 90,
+      denominator: 990,
+      value: 0.090909,
+      unmatchedProduction: 900,
+    });
+    expect(atl.returningProduction.metrics.targets).toMatchObject({
+      numerator: 100,
+      denominator: 120,
+      value: 0.833333,
+      unmatchedProduction: 20,
+    });
+    expect(nyj.returningProduction.metrics.receivingYards).toMatchObject({
+      numerator: 140,
+      denominator: 740,
+      value: 0.189189,
+      unmatchedProduction: 600,
     });
   });
 
@@ -198,6 +278,7 @@ describe("nflverse returning-production audit", () => {
         generatedAt: GENERATED_AT,
         sourceCutoff: SOURCE_CUTOFF,
         rosterSourcePath: fixturePath("roster_2026.csv"),
+        priorRosterSourcePath: fixturePath("roster_2025.csv"),
         playerStatsSourcePath: emptyStats,
         snapCountsSourcePath: fixturePath("snap_counts_2025.csv"),
         teamsJson,
