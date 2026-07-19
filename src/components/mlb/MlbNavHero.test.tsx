@@ -16,6 +16,7 @@ const EXISTING_TILE_LABELS = [
   "Props Hub",
   "Power Rankings",
   "Sin City",
+  "Vulnerable Pitchers",
 ];
 
 function renderAt(path: string) {
@@ -70,5 +71,48 @@ describe("MlbNavHero — Vulnerable Pitchers pill", () => {
       return match?.[0];
     });
     expect(new Set(bgClasses).size).toBe(bgClasses.length);
+  });
+});
+
+describe("MlbNavHero — Numerology pill", () => {
+  it("renders a Numerology pill", () => {
+    renderAt("/mlb");
+    expect(screen.getByRole("link", { name: /Numerology/ })).toBeInTheDocument();
+  });
+
+  it("links to /mlb/numerology", () => {
+    renderAt("/mlb");
+    expect(screen.getByRole("link", { name: /Numerology/ })).toHaveAttribute("href", "/mlb/numerology");
+  });
+
+  it("is marked active (ring styling) on /mlb/numerology", () => {
+    renderAt("/mlb/numerology");
+    const link = screen.getByRole("link", { name: /Numerology/ });
+    expect(link.className).toMatch(/ring-2/);
+  });
+
+  it("is not marked active on a different route", () => {
+    renderAt("/mlb/power-rankings");
+    const link = screen.getByRole("link", { name: /Numerology/ });
+    expect(link.className).not.toMatch(/ring-2/);
+  });
+
+  it("uses the fuchsia accent, matching Numerology's established sidebar-nav color", () => {
+    renderAt("/mlb");
+    const link = screen.getByRole("link", { name: /Numerology/ });
+    expect(link.className).toMatch(/bg-fuchsia-500/);
+  });
+
+  it("preserves every existing MLB Hub pill", () => {
+    renderAt("/mlb");
+    for (const label of EXISTING_TILE_LABELS) {
+      expect(screen.getByRole("link", { name: new RegExp(label) })).toBeInTheDocument();
+    }
+  });
+
+  it("keeps the strip wrapping (flex-wrap) with the 9th tile added", () => {
+    renderAt("/mlb");
+    const tileStrip = screen.getByRole("link", { name: /Numerology/ }).parentElement;
+    expect(tileStrip?.className).toMatch(/flex-wrap/);
   });
 });
