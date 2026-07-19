@@ -14,7 +14,8 @@ import {
   validatePersonnelEvidenceDataset,
 } from "../../schema.mjs";
 
-export const NFLVERSE_AUDIT_GENERATOR_VERSION = "nflverse-personnel-audit-v0.1";
+export const NFLVERSE_AUDIT_GENERATOR_VERSION = "nflverse-personnel-audit-v0.2";
+export const NFLVERSE_AUDIT_SCHEMA_VERSION = "nflverse-four-team-audit-v0.2";
 export const NFLVERSE_SAMPLE_TEAM_ABBRS = Object.freeze(["atl", "chi", "nyj", "sea"]);
 export const NFLVERSE_SOURCE_BASE = "https://github.com/nflverse/nflverse-data/releases/download";
 export const REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION = "nflverse-reviewed-identity-overrides-v0.1";
@@ -117,10 +118,10 @@ const IDENTITY_RESOLUTION_POLICY = Object.freeze({
 
 const IDENTITY_EXPANSION_GATES = Object.freeze({
   maxCriticalProviderConflicts: 0,
-  minOffensiveProductionAttribution: 0.98,
+  minResolvedOffensiveProductionAttribution: 0.98,
   minOffensiveSnapAttribution: 0.98,
   minDefensiveSnapAttribution: 0.98,
-  requireExcludedProductionQuantified: true,
+  requireAccountedForCoverage: 1,
   requireDeterministicReplay: true,
 });
 
@@ -1651,18 +1652,210 @@ function buildProviderCrosswalkDiagnostics(crosswalk) {
   };
 }
 
-function metricCoverage(team, metricNames) {
-  const totals = metricNames.reduce((summary, metric) => {
-    const record = team.returningProduction.metrics[metric];
-    if (!record || record.denominator == null) return summary;
-    summary.denominator += record.denominator;
-    summary.unmatched += record.unmatchedProduction ?? 0;
-    return summary;
-  }, { denominator: 0, unmatched: 0 });
-  return totals.denominator > 0 ? Number(((totals.denominator - totals.unmatched) / totals.denominator).toFixed(6)) : null;
+const SOURCE_METRIC_TO_AUDIT_METRIC = Object.freeze({
+  offensiveSnaps: "offensiveSnaps",
+  defensiveSnaps: "defensiveSnaps",
+  specialTeamsSnaps: "specialTeamsSnaps",
+  passingAttempts: "qbPassAttempts",
+  carries: "carries",
+  rushingYards: "rushingYards",
+  targets: "targets",
+  receptions: "receptions",
+  receivingYards: "receivingYards",
+});
+
+const OFFENSIVE_PRODUCTION_METRICS = Object.freeze([
+  "qbPassAttempts",
+  "carries",
+  "rushingYards",
+  "targets",
+  "receptions",
+  "receivingYards",
+]);
+
+function ratio(numerator, denominator) {
+  return denominator > 0 ? Number((numerator / denominator).toFixed(6)) : null;
 }
 
-function buildIdentityQualitySummary({ teams, reviewRecords, crosswalk }) {
+function retainedMetricForTeam(team, metric) {
+  if (metric === "specialTeamsSnaps") return team.returningProduction.advisory.specialTeamsSnaps;
+  return team.returningProduction.metrics[metric];
+}
+
+function retainedAggregate(team, metricNames) {
+  const totals = metricNames.reduce((summary, metric) => {
+    const record = retainedMetricForTeam(team, metric);
+    if (!record || record.denominator == null || record.numerator == null) return summary;
+    summary.retainedNumerator += record.numerator;
+    summary.priorTeamDenominator += record.denominator;
+    summary.sourceCoverageComplete = summary.sourceCoverageComplete && record.coverageComplete === true;
+    return summary;
+  }, { retainedNumerator: 0, priorTeamDenominator: 0, sourceCoverageComplete: true });
+  return {
+    ...totals,
+    retainedShare: ratio(totals.retainedNumerator, totals.priorTeamDenominator),
+  };
+}
+
+function entryHasCriticalIdentityConflict(entry, conflictKeys) {
+  return entry.resolutionStatus === "conflicted" ||
+    (entry.providerIds.gsisId?.length ?? 0) > 1 ||
+    providerKeysForEntry(entry).some((key) => conflictKeys.has(key));
+}
+
+function attributionStatusForEntry(entry, conflictKeys) {
+  if (entryHasCriticalIdentityConflict(entry, conflictKeys) || entry.warnings.includes("unresolved PFR-only snap identity")) {
+    return "unresolved_excluded";
+  }
+  if (entry.identityMatchMethod === "name_position_team") return "warning_fallback";
+  return "resolved";
+}
+
+function appliedOverrideProviderKeys(crosswalk) {
+  return new Set(
+    (crosswalk.overrideApplications ?? [])
+      .filter((decision) => decision.applied)
+      .map((decision) => `${decision.providerName}:${decision.providerId}`),
+  );
+}
+
+function rowWasRestoredByApprovedOverride(row, appliedProviderKeys) {
+  return Object.entries(row.providerIds ?? {}).some(([providerName, value]) =>
+    value && appliedProviderKeys.has(`${providerName}:${value}`),
+  );
+}
+
+function emptyAttributionMetric({ team, metric }) {
+  const retained = retainedMetricForTeam(team, metric) ?? {};
+  return {
+    metric,
+    totalSourceDenominator: 0,
+    resolvedQuantity: 0,
+    restoredByApprovedOverrideQuantity: 0,
+    warningLevelFallbackQuantity: 0,
+    unresolvedQuantity: 0,
+    resolvedAttributionCoverage: null,
+    accountedForCoverage: null,
+    unresolvedShare: null,
+    retainedNumerator: retained.numerator ?? null,
+    priorTeamDenominator: retained.denominator ?? null,
+    retainedShare: retained.value ?? null,
+    sourceCoverageComplete: retained.coverageComplete === true,
+    identityCoverageComplete: false,
+    arithmeticReconciled: true,
+    players: [],
+  };
+}
+
+function summarizeAttributionMetric(record) {
+  const accounted = record.resolvedQuantity + record.warningLevelFallbackQuantity + record.unresolvedQuantity;
+  return {
+    ...record,
+    resolvedAttributionCoverage: ratio(record.resolvedQuantity, record.totalSourceDenominator),
+    accountedForCoverage: ratio(accounted, record.totalSourceDenominator),
+    unresolvedShare: ratio(record.unresolvedQuantity, record.totalSourceDenominator),
+    identityCoverageComplete: record.totalSourceDenominator > 0 && record.unresolvedQuantity === 0,
+    arithmeticReconciled: Math.abs(accounted - record.totalSourceDenominator) < 0.000001,
+    players: record.players.sort((a, b) =>
+      a.attributionStatus.localeCompare(b.attributionStatus) ||
+      b.quantity - a.quantity ||
+      a.playerName.localeCompare(b.playerName) ||
+      a.sourceRowId.localeCompare(b.sourceRowId),
+    ),
+  };
+}
+
+function buildIdentityAttributionAccounting({ teams, crosswalk }) {
+  const conflictKeys = providerConflictKeys(crosswalk.conflicts);
+  const appliedProviderKeys = appliedOverrideProviderKeys(crosswalk);
+  const teamRecords = new Map(teams.map((team) => [team.teamId, team]));
+  const byTeam = new Map(teams.map((team) => [
+    team.teamId,
+    {
+      teamId: team.teamId,
+      teamAbbr: team.abbr,
+      metrics: Object.fromEntries(
+        [...SUPPORTED_AUDIT_METRICS, "specialTeamsSnaps"].map((metric) => [metric, emptyAttributionMetric({ team, metric })]),
+      ),
+    },
+  ]));
+
+  for (const entry of crosswalk.entries) {
+    const baseStatus = attributionStatusForEntry(entry, conflictKeys);
+    for (const row of entry.sourceRows ?? []) {
+      const team = teamRecords.get(row.teamId);
+      if (!team) continue;
+      for (const [sourceMetric, quantity] of Object.entries(row.metrics ?? {})) {
+        if (!quantity) continue;
+        const metric = SOURCE_METRIC_TO_AUDIT_METRIC[sourceMetric];
+        if (!metric) continue;
+        const teamAccounting = byTeam.get(row.teamId);
+        const metricRecord = teamAccounting.metrics[metric];
+        const restoredByApprovedOverride = rowWasRestoredByApprovedOverride(row, appliedProviderKeys);
+        const attributionStatus = restoredByApprovedOverride ? "resolved" : baseStatus;
+        metricRecord.totalSourceDenominator += quantity;
+        if (attributionStatus === "resolved") metricRecord.resolvedQuantity += quantity;
+        else if (attributionStatus === "warning_fallback") metricRecord.warningLevelFallbackQuantity += quantity;
+        else metricRecord.unresolvedQuantity += quantity;
+        if (restoredByApprovedOverride) metricRecord.restoredByApprovedOverrideQuantity += quantity;
+        metricRecord.players.push({
+          playerName: row.playerName,
+          canonicalPersonId: entry.canonicalPersonId,
+          sourceRowId: row.rowId,
+          sourceKind: row.sourceKind,
+          teamAbbr: row.teamAbbr,
+          quantity,
+          attributionStatus,
+          restoredByApprovedOverride,
+          identityMatchMethod: entry.identityMatchMethod,
+          providerIds: row.providerIds,
+        });
+      }
+    }
+  }
+
+  return Object.fromEntries(
+    [...byTeam.entries()].map(([teamId, summary]) => [
+      teamId,
+      {
+        ...summary,
+        metricGroups: {
+          offensiveProduction: summarizeAttributionMetric(
+            OFFENSIVE_PRODUCTION_METRICS.reduce((group, metric) => {
+              const record = summary.metrics[metric];
+              group.totalSourceDenominator += record.totalSourceDenominator;
+              group.resolvedQuantity += record.resolvedQuantity;
+              group.restoredByApprovedOverrideQuantity += record.restoredByApprovedOverrideQuantity;
+              group.warningLevelFallbackQuantity += record.warningLevelFallbackQuantity;
+              group.unresolvedQuantity += record.unresolvedQuantity;
+              group.players.push(...record.players.map((player) => ({ ...player, metric })));
+              return group;
+            }, {
+              ...retainedAggregate(teamRecords.get(teamId), OFFENSIVE_PRODUCTION_METRICS),
+              metric: "offensiveProduction",
+              totalSourceDenominator: 0,
+              resolvedQuantity: 0,
+              restoredByApprovedOverrideQuantity: 0,
+              warningLevelFallbackQuantity: 0,
+              unresolvedQuantity: 0,
+              players: [],
+            }),
+          ),
+        },
+        metrics: Object.fromEntries(
+          Object.entries(summary.metrics).map(([metric, record]) => [metric, summarizeAttributionMetric(record)]),
+        ),
+      },
+    ]).sort((a, b) => a[1].teamAbbr.localeCompare(b[1].teamAbbr)),
+  );
+}
+
+function attributionMetricForTeam(identityAttributionAccounting, teamId, metric) {
+  if (metric === "offensiveProduction") return identityAttributionAccounting[teamId]?.metricGroups.offensiveProduction;
+  return identityAttributionAccounting[teamId]?.metrics[metric];
+}
+
+function buildIdentityQualitySummary({ teams, reviewRecords, crosswalk, identityAttributionAccounting }) {
   const criticalByTeam = new Map();
   const excludedByTeam = new Map();
   const warningIncludedByTeam = new Map();
@@ -1690,9 +1883,23 @@ function buildIdentityQualitySummary({ teams, reviewRecords, crosswalk }) {
       warningLevelIncluded: warningIncludedByTeam.get(team.teamId) ?? 0,
       unresolvedExcluded: excludedByTeam.get(team.teamId) ?? 0,
       criticalConflicts: criticalByTeam.get(team.teamId) ?? 0,
-      productionCoveragePercentage: metricCoverage(team, ["qbPassAttempts", "carries", "rushingYards", "targets", "receptions", "receivingYards"]),
-      offensiveSnapCoveragePercentage: metricCoverage(team, ["offensiveSnaps"]),
-      defensiveSnapCoveragePercentage: metricCoverage(team, ["defensiveSnaps"]),
+      retainedShares: {
+        offensiveProduction: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.retainedShare ?? null,
+        offensiveSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.retainedShare ?? null,
+        defensiveSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.retainedShare ?? null,
+        specialTeamsSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "specialTeamsSnaps")?.retainedShare ?? null,
+      },
+      attributionCoverage: {
+        offensiveProductionResolved: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.resolvedAttributionCoverage ?? null,
+        offensiveProductionAccountedFor: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.accountedForCoverage ?? null,
+        offensiveProductionUnresolvedShare: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.unresolvedShare ?? null,
+        offensiveSnapsResolved: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.resolvedAttributionCoverage ?? null,
+        offensiveSnapsAccountedFor: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.accountedForCoverage ?? null,
+        offensiveSnapsUnresolvedShare: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.unresolvedShare ?? null,
+        defensiveSnapsResolved: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.resolvedAttributionCoverage ?? null,
+        defensiveSnapsAccountedFor: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.accountedForCoverage ?? null,
+        defensiveSnapsUnresolvedShare: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.unresolvedShare ?? null,
+      },
     }];
   }).sort((a, b) => a[1].teamAbbr.localeCompare(b[1].teamAbbr)));
 }
@@ -1703,14 +1910,19 @@ function buildExpansionGateEvaluation(identityQualityByTeam, criticalConflictCou
     failures.push("critical_provider_conflicts_present");
   }
   for (const summary of Object.values(identityQualityByTeam)) {
-    if ((summary.productionCoveragePercentage ?? 0) < IDENTITY_EXPANSION_GATES.minOffensiveProductionAttribution) {
-      failures.push(`${summary.teamAbbr}:offensive_production_below_threshold`);
+    if ((summary.attributionCoverage.offensiveProductionResolved ?? 0) < IDENTITY_EXPANSION_GATES.minResolvedOffensiveProductionAttribution) {
+      failures.push(`${summary.teamAbbr}:offensive_production_resolved_attribution_below_threshold`);
     }
-    if ((summary.offensiveSnapCoveragePercentage ?? 0) < IDENTITY_EXPANSION_GATES.minOffensiveSnapAttribution) {
-      failures.push(`${summary.teamAbbr}:offensive_snap_below_threshold`);
+    if ((summary.attributionCoverage.offensiveSnapsResolved ?? 0) < IDENTITY_EXPANSION_GATES.minOffensiveSnapAttribution) {
+      failures.push(`${summary.teamAbbr}:offensive_snap_resolved_attribution_below_threshold`);
     }
-    if ((summary.defensiveSnapCoveragePercentage ?? 0) < IDENTITY_EXPANSION_GATES.minDefensiveSnapAttribution) {
-      failures.push(`${summary.teamAbbr}:defensive_snap_below_threshold`);
+    if ((summary.attributionCoverage.defensiveSnapsResolved ?? 0) < IDENTITY_EXPANSION_GATES.minDefensiveSnapAttribution) {
+      failures.push(`${summary.teamAbbr}:defensive_snap_resolved_attribution_below_threshold`);
+    }
+    for (const [key, value] of Object.entries(summary.attributionCoverage)) {
+      if (key.endsWith("AccountedFor") && value !== null && value < IDENTITY_EXPANSION_GATES.requireAccountedForCoverage) {
+        failures.push(`${summary.teamAbbr}:${key}_below_accounted_for_threshold`);
+      }
     }
   }
   return {
@@ -1810,7 +2022,7 @@ function buildReviewedOverridesSummary({ reviewedOverrides, validation, crosswal
   };
 }
 
-function buildIdentityReview({ dataset, crosswalk, teams, reviewedOverridesSummary = null }) {
+function buildIdentityReview({ dataset, crosswalk, teams, identityAttributionAccounting, reviewedOverridesSummary = null }) {
   const conflictKeys = providerConflictKeys(crosswalk.conflicts);
   const teamsById = new Map(teams.map((team) => [team.teamId, team]));
   const reviewRecords = crosswalk.entries
@@ -1824,11 +2036,11 @@ function buildIdentityReview({ dataset, crosswalk, teams, reviewedOverridesSumma
     .filter((record) => record.severity !== "info" || record.reasonCategories.some((category) => category !== IDENTITY_REASON_CATEGORIES.other))
     .sort((a, b) => a.severity.localeCompare(b.severity) || a.canonicalPersonId.localeCompare(b.canonicalPersonId));
   const criticalConflicts = crosswalk.conflicts.map((conflict) => diagnoseProviderConflict(conflict, crosswalk));
-  const identityQualityByTeam = buildIdentityQualitySummary({ teams, reviewRecords, crosswalk });
+  const identityQualityByTeam = buildIdentityQualitySummary({ teams, reviewRecords, crosswalk, identityAttributionAccounting });
   return {
-    schemaVersion: "nflverse-identity-review-v0.1",
+    schemaVersion: "nflverse-identity-review-v0.2",
     auditOnly: true,
-    auditLabel: "Phase 5C-2C nflverse identity review",
+    auditLabel: "Phase 5C-2F nflverse identity review",
     generatedAt: dataset.generatedAt,
     sourceCutoff: dataset.sourceCutoff,
     targetSeason: dataset.targetSeason,
@@ -1842,9 +2054,15 @@ function buildIdentityReview({ dataset, crosswalk, teams, reviewedOverridesSumma
     criticalConflicts,
     reviewedIdentityOverrides: reviewedOverridesSummary,
     providerCrosswalkDiagnostics: buildProviderCrosswalkDiagnostics(crosswalk),
+    identityAttributionAccounting,
     productionImpactByTeam: summarizeImpactsByTeam(reviewRecords),
     identityQualityByTeam,
     all32ExpansionGateEvaluation: buildExpansionGateEvaluation(identityQualityByTeam, criticalConflicts.length),
+    migrationNotes: [
+      "v0.2 separates retained share from identity-attribution coverage.",
+      "Retained share is descriptive roster continuity and is not used by identity expansion gates.",
+      "Resolved attribution, accounted-for coverage, unresolved share, and source completeness are reported separately.",
+    ],
     sourceLineageCautions: [
       "nflverse snap_counts are PFR-derived; review redistribution terms before production use.",
       "No fuzzy matching is used to override provider-ID conflicts.",
@@ -2044,11 +2262,13 @@ export async function buildNflverseFourTeamAudit({
     targetSeason: season,
     simulatePendingOverrides,
   });
+  const identityAttributionAccounting = buildIdentityAttributionAccounting({ teams, crosswalk });
 
   const dataset = {
     schemaVersion: PERSONNEL_EVIDENCE_SCHEMA_VERSION,
+    nflverseAuditSchemaVersion: NFLVERSE_AUDIT_SCHEMA_VERSION,
     auditOnly: true,
-    auditLabel: "Phase 5C-2B nflverse four-team returning-production audit",
+    auditLabel: "Phase 5C-2F nflverse four-team identity-attribution audit",
     targetSeason: season,
     priorSeason,
     generatedAt,
@@ -2078,6 +2298,7 @@ export async function buildNflverseFourTeamAudit({
     identityCoverageByTeam,
     identityCrosswalk: crosswalk.entries,
     reviewedIdentityOverrides: reviewedOverridesSummary,
+    identityAttributionAccounting,
     unmatchedPlayerSummary: Object.fromEntries(
       teams.map((team) => [
         team.teamId,
@@ -2087,6 +2308,7 @@ export async function buildNflverseFourTeamAudit({
       ]),
     ),
     unmatchedProductionSummary,
+    retentionUnmatchedProductionSummary: unmatchedProductionSummary,
     manualEvidenceComparison: Object.fromEntries(
       sampleTeams.map((team) => [
         team.id,
@@ -2099,6 +2321,7 @@ export async function buildNflverseFourTeamAudit({
     ),
     warnings: [
       "Audit-only artifact; not imported by production application code.",
+      "nflverse audit v0.2 separates retained share from identity-attribution coverage; retained share is not an identity expansion gate.",
       "nflverse rosters prove roster presence at cutoff, not transaction method/date.",
       "nflverse snap_counts are PFR-derived; review redistribution terms before production use.",
       ...diagnostics.warnings,
@@ -2112,7 +2335,7 @@ export async function buildNflverseFourTeamAudit({
     asOfDate: sourceCutoff,
     maxSourceAgeDays: 365,
   });
-  dataset.identityReview = buildIdentityReview({ dataset, crosswalk, teams, reviewedOverridesSummary });
+  dataset.identityReview = buildIdentityReview({ dataset, crosswalk, teams, identityAttributionAccounting, reviewedOverridesSummary });
   const validation = validatePersonnelEvidenceDataset(dataset, teamsJson, { requireAllTeams: false });
   return {
     dataset,

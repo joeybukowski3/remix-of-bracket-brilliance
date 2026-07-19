@@ -290,11 +290,12 @@ The approved Phase 5C-2B nflverse inputs are:
   review.
 
 The audit-only output now includes `playerStatSourceDiagnosis`,
-`identityCrosswalk`, `identityCoverageByTeam`, `unmatchedProductionSummary`,
-and retained offensive-production metrics with matched-player and unmatched
-production counts. `recent_team` is used as the nflverse prior-production team
-assignment; multi-team/traded-player ambiguity is surfaced through the
-crosswalk rather than silently corrected.
+`identityCrosswalk`, `identityCoverageByTeam`,
+`identityAttributionAccounting`, `unmatchedProductionSummary`,
+`retentionUnmatchedProductionSummary`, and retained offensive-production metrics
+with matched-player and unmatched production counts. `recent_team` is used as
+the nflverse prior-production team assignment; multi-team/traded-player
+ambiguity is surfaced through the crosswalk rather than silently corrected.
 
 Phase 5C-2C extends the audit with identity-review infrastructure:
 
@@ -313,8 +314,8 @@ Phase 5C-2C extends the audit with identity-review infrastructure:
   with lower/upper retained-share bounds.
 - `identityReview.identityQualityByTeam` reports GSIS-resolved,
   provider-crosswalk resolved, deterministic fallback resolved,
-  warning-included, excluded, critical-conflict, production-coverage, and
-  snap-coverage counts.
+  warning-included, excluded, critical-conflict, retained-share, resolved
+  attribution, accounted-for coverage, and unresolved-share counts.
 - `identityReview.all32ExpansionGateEvaluation` remains false when critical
   conflicts or sub-98% attribution thresholds are present.
 
@@ -390,9 +391,27 @@ production. `SmitCh04` accounts for 2 New York Jets special-teams snaps and no
 offensive or defensive production. Pending simulation is no longer needed for
 these records.
 
-The critical-conflict gate clears for the four-team sample. All sample teams
-still fail the 98% offensive-production, offensive-snap, and defensive-snap
-attribution thresholds, so the sample remains unsafe for all-32 expansion.
+Phase 5C-2F corrected the audit semantics. The Phase 5C-2E values previously
+described as attribution percentages were retained-production shares:
+
+```text
+retainedShare = retained resolved production / complete prior-team production
+resolvedAttributionCoverage = resolved source quantity / total source quantity
+accountedForCoverage = (resolved + warning fallback + quantified unresolved) / total source quantity
+unresolvedShare = unresolved source quantity / total source quantity
+```
+
+Retained share is roster-continuity evidence and is not an identity-quality
+gate. `sourceCoverageComplete` describes whether the underlying nflverse source
+denominator exists for the intended metric and season. `identityCoverageComplete`
+describes whether no unresolved identity quantity remains for that metric.
+
+The critical-conflict gate clears for the four-team sample. Offensive-production
+resolved attribution is 100% for ATL, CHI, NYJ, and SEA, and accounted-for
+coverage is 100% for the core offensive-production and snap metrics. The sample
+still fails identity expansion because ATL, CHI, NYJ, and SEA remain below 98%
+resolved offensive-snap attribution, and NYJ remains below 98% resolved
+defensive-snap attribution.
 
 The audit emits unsupported metrics as unavailable, not zero: starts,
 offensive-line snaps, sacks, pressures, and defensive-back snaps. It also keeps
@@ -499,6 +518,19 @@ Returning-production methodology:
 6. Calculate team retained shares only from categories with complete denominator
    coverage.
 7. Emit unavailable/partial category warnings instead of filling zeroes.
+
+Identity attribution methodology:
+
+1. Build total source denominators from regular-season source rows before
+   target-roster retention decisions.
+2. Classify every source quantity as resolved, restored by an approved override,
+   warning-level fallback, or unresolved/excluded.
+3. Compute `resolvedAttributionCoverage` from resolved canonical identities only.
+4. Compute `accountedForCoverage` from resolved, warning-level fallback, and
+   explicitly quantified unresolved quantities.
+5. Keep `retainedShare`, `unresolvedShare`, `sourceCoverageComplete`, and
+   `identityCoverageComplete` as separate fields.
+6. Do not let low retained share fail an identity expansion gate.
 
 Injury-return handling:
 

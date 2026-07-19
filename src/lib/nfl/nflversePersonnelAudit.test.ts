@@ -114,11 +114,11 @@ function fixtureWithPfrSpecialTeamsConflict() {
   }
   writeFileSync(
     join(dir, "roster_2025.csv"),
-    `${readFileSync(join(dir, "roster_2025.csv"), "utf8").trimEnd()}\n2025,NYJ,DB,S,ACT,Reviewed Safety II,00-PFR-ST1,2999,sr-pfr-st1,PfrSt00,,,,,,1\n`,
+    `${readFileSync(join(dir, "roster_2025.csv"), "utf8").trimEnd()}\n2025,NYJ,DB,S,ACT,Reviewed Safety Two,00-PFR-ST1,2999,sr-pfr-st1,PfrSt00,,,,,,1\n`,
   );
   writeFileSync(
     join(dir, "roster_2026.csv"),
-    `${readFileSync(join(dir, "roster_2026.csv"), "utf8").trimEnd()}\n2026,NYJ,DB,S,ACT,Reviewed Safety II,00-PFR-ST1,2999,sr-pfr-st1,PfrSt00,,,,,,2\n`,
+    `${readFileSync(join(dir, "roster_2026.csv"), "utf8").trimEnd()}\n2026,NYJ,DB,S,ACT,Reviewed Safety Two,00-PFR-ST1,2999,sr-pfr-st1,PfrSt00,,,,,,2\n`,
   );
   writeFileSync(
     join(dir, "snap_counts_2025.csv"),
@@ -308,8 +308,16 @@ describe("nflverse personnel identity", () => {
     expect(review.identityQualityByTeam["nfl-atl"]).toMatchObject({
       teamAbbr: "atl",
       criticalConflicts: 1,
-      offensiveSnapCoveragePercentage: 0.608696,
-      defensiveSnapCoveragePercentage: 0,
+      retainedShares: {
+        offensiveSnaps: 0.608696,
+        defensiveSnaps: 0,
+      },
+      attributionCoverage: {
+        offensiveSnapsResolved: 0.956522,
+        offensiveSnapsAccountedFor: 1,
+        defensiveSnapsResolved: 1,
+        defensiveSnapsAccountedFor: 1,
+      },
     });
     expect(review.all32ExpansionGateEvaluation.safeForAll32IdentityExpansion).toBe(false);
     expect(review.all32ExpansionGateEvaluation.failures).toContain("critical_provider_conflicts_present");
@@ -492,6 +500,14 @@ describe("nflverse returning-production audit", () => {
         },
       });
       expect(reviewed.dataset.identityMatchSummary.conflicts.some((conflict) => conflict.message.includes("00-CONFLICT"))).toBe(true);
+      expect(reviewed.dataset.identityAttributionAccounting["nfl-atl"].metrics.defensiveSnaps).toMatchObject({
+        totalSourceDenominator: 87,
+        resolvedQuantity: 87,
+        restoredByApprovedOverrideQuantity: 22,
+        retainedNumerator: 22,
+        retainedShare: 0.252874,
+        resolvedAttributionCoverage: 1,
+      });
       expect(JSON.stringify(reviewed.dataset)).not.toMatch(/"(score|rating)"/i);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -553,6 +569,10 @@ describe("nflverse returning-production audit", () => {
       expect(atl.returningProduction.metrics.defensiveSnaps.numerator).toBe(22);
       expect(atl.returningProduction.metrics.qbPassAttempts.numerator).toBe(500);
       expect(atl.returningProduction.metrics.targets.numerator).toBe(100);
+      expect(audit.dataset.identityAttributionAccounting["nfl-atl"].metrics.defensiveSnaps).toMatchObject({
+        restoredByApprovedOverrideQuantity: 22,
+        resolvedAttributionCoverage: 1,
+      });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -567,8 +587,8 @@ describe("nflverse returning-production audit", () => {
           providerPersonId: "PfrSt00",
           canonicalPersonId: "nflverse-person:gsisid:00-PFR-ST1",
           gsisId: "00-PFR-ST1",
-          canonicalName: "Reviewed Safety II",
-          sourceNameVariants: ["Reviewed Safety", "Reviewed Safety II"],
+          canonicalName: "Reviewed Safety Two",
+          sourceNameVariants: ["Reviewed Safety", "Reviewed Safety Two"],
           teamScope: ["nfl-nyj"],
           positionContext: ["DB", "S"],
         }),
@@ -594,6 +614,14 @@ describe("nflverse returning-production audit", () => {
         numerator: 2,
         denominator: 4,
         unmatchedProduction: 2,
+      });
+      expect(nyj.returningProduction.metrics.offensiveSnaps.numerator).toBe(66);
+      expect(nyj.returningProduction.metrics.defensiveSnaps.numerator).toBe(0);
+      expect(audit.dataset.identityAttributionAccounting["nfl-nyj"].metrics.specialTeamsSnaps).toMatchObject({
+        restoredByApprovedOverrideQuantity: 2,
+        resolvedQuantity: 4,
+        unresolvedQuantity: 0,
+        accountedForCoverage: 1,
       });
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -626,6 +654,51 @@ describe("nflverse returning-production audit", () => {
           gsisId: "00-0038602",
         }),
       ]),
+    );
+  });
+
+  it("separates retained share from identity attribution coverage", async () => {
+    const audit = await buildFixtureAudit();
+    const atl = audit.dataset.identityAttributionAccounting["nfl-atl"];
+
+    expect(audit.dataset.nflverseAuditSchemaVersion).toBe("nflverse-four-team-audit-v0.2");
+    expect(audit.identityReview.schemaVersion).toBe("nflverse-identity-review-v0.2");
+    expect(atl.metrics.defensiveSnaps).toMatchObject({
+      retainedShare: 0,
+      resolvedAttributionCoverage: 1,
+      accountedForCoverage: 1,
+      unresolvedShare: 0,
+      sourceCoverageComplete: true,
+      identityCoverageComplete: true,
+      arithmeticReconciled: true,
+    });
+    expect(atl.metrics.offensiveSnaps).toMatchObject({
+      retainedShare: 0.608696,
+      resolvedAttributionCoverage: 0.956522,
+      accountedForCoverage: 1,
+      unresolvedQuantity: 5,
+      unresolvedShare: 0.043478,
+      sourceCoverageComplete: true,
+      identityCoverageComplete: false,
+      arithmeticReconciled: true,
+    });
+    expect(atl.metricGroups.offensiveProduction).toMatchObject({
+      retainedShare: 0.57662,
+      resolvedAttributionCoverage: 1,
+      accountedForCoverage: 1,
+      unresolvedQuantity: 0,
+      sourceCoverageComplete: true,
+    });
+  });
+
+  it("can pass attribution gates despite low retained share when identities resolve", async () => {
+    const audit = await buildFixtureAudit();
+    const atl = audit.dataset.identityReview.identityQualityByTeam["nfl-atl"];
+
+    expect(atl.retainedShares.defensiveSnaps).toBe(0);
+    expect(atl.attributionCoverage.defensiveSnapsResolved).toBe(1);
+    expect(audit.dataset.identityReview.all32ExpansionGateEvaluation.failures).not.toContain(
+      "atl:defensive_snap_resolved_attribution_below_threshold",
     );
   });
 
@@ -716,6 +789,13 @@ describe("nflverse returning-production audit", () => {
         coverageComplete: false,
       });
       expect(atl.returningProduction.metrics.qbPassAttempts.warnings[0]).toContain("unavailable");
+      expect(audit.dataset.identityAttributionAccounting["nfl-atl"].metrics.qbPassAttempts).toMatchObject({
+        totalSourceDenominator: 0,
+        resolvedAttributionCoverage: null,
+        accountedForCoverage: null,
+        sourceCoverageComplete: false,
+        identityCoverageComplete: false,
+      });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

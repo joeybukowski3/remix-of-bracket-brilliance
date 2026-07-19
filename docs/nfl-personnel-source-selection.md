@@ -615,6 +615,61 @@ attribution gates still fail for every sample team:
 Do not expand to all 32 teams until attribution failures are understood and
 reduced without lowering the thresholds.
 
+Phase 5C-2F corrected the audit semantics. The values reported in Phase 5C-2E
+as attribution percentages were retained-production shares:
+
+```text
+retained share = retained resolved production / complete prior-team production
+```
+
+Retained share is roster-continuity evidence. It is not an identity-quality
+gate. A team can retain 51% of prior offensive snaps while the source rows are
+fully identified, and a team can retain a high share while still carrying
+unresolved source rows. The v0.2 audit adds explicit identity accounting:
+
+- `retainedShare`: retained numerator divided by prior-team denominator.
+- `resolvedAttributionCoverage`: source quantity linked to resolved canonical
+  identities divided by total source denominator.
+- `accountedForCoverage`: resolved quantity plus warning-level fallback plus
+  explicitly quantified unresolved quantity divided by total source denominator.
+- `unresolvedShare`: unresolved quantity divided by total source denominator.
+- `sourceCoverageComplete`: whether the underlying source denominator exists for
+  the intended metric and season.
+- `identityCoverageComplete`: whether no unresolved quantity remains for that
+  metric.
+
+The all-32 identity gates now use resolved attribution and accounted-for
+coverage, not retained share. Mandatory per-team gates remain zero critical
+provider conflicts, 98% resolved offensive-production attribution, 98% resolved
+offensive-snap attribution, 98% resolved defensive-snap attribution, 100%
+accounted-for coverage, explicit source-completeness status, and deterministic
+replay.
+
+Corrected four-team live audit results:
+
+| Team | Retained offensive production | Retained offensive snaps | Retained defensive snaps | Resolved offensive production | Resolved offensive snaps | Resolved defensive snaps | Accounted-for core metrics |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| ATL | 0.743906 | 0.510949 | 0.622467 | 1.000000 | 0.532515 | 0.989952 | 1.000000 |
+| CHI | 0.830094 | 0.759571 | 0.460476 | 1.000000 | 0.541988 | 0.984326 | 1.000000 |
+| NYJ | 0.717919 | 0.455113 | 0.653834 | 1.000000 | 0.539422 | 0.921794 | 1.000000 |
+| SEA | 0.803361 | 0.496497 | 0.789452 | 1.000000 | 0.529819 | 0.986471 | 1.000000 |
+
+Corrected unresolved quantities:
+
+| Team | Offensive production unresolved | Offensive snaps unresolved | Defensive snaps unresolved | Special-teams snaps unresolved |
+| --- | ---: | ---: | ---: | ---: |
+| ATL | 0 | 5636 | 122 | 788 |
+| CHI | 0 | 5814 | 185 | 842 |
+| NYJ | 0 | 5310 | 971 | 577 |
+| SEA | 0 | 5503 | 167 | 974 |
+
+`AlfoDe00` contributes 582 restored Atlanta defensive snaps and 73
+special-teams snaps to resolved attribution. `SmitCh04` contributes 2 restored
+Jets special-teams snaps. Neither reviewed override adds offensive production.
+After the semantic correction, gate failures are ATL/CHI/SEA offensive-snap
+resolved attribution, plus NYJ offensive-snap and defensive-snap resolved
+attribution.
+
 ## Unresolved Decisions Requiring Approval
 
 - Whether to approve and fund SportsDataIO as the primary structured personnel
