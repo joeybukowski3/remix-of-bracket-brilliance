@@ -188,3 +188,42 @@ describe("MlbLayout", () => {
     expect(link.getAttribute("href")).toBe("/mlb#ml-edges-social");
   });
 });
+
+describe("MLB Mobile Menu — accessibility & affordance", () => {
+  it("shows 'Tap to expand' helper text when closed", () => {
+    renderMlbRoute("/mlb");
+    const trigger = screen.getByRole("button", { name: /MLB Menu/i });
+    expect(within(trigger).getByText("Tap to expand")).toBeTruthy();
+  });
+
+  it("switches helper text to 'Tap to collapse' once opened", () => {
+    renderMlbRoute("/mlb");
+    const trigger = screen.getByRole("button", { name: /MLB Menu/i });
+    fireEvent.click(trigger);
+    expect(within(trigger).getByText("Tap to collapse")).toBeTruthy();
+    expect(within(trigger).queryByText("Tap to expand")).toBeNull();
+  });
+
+  it("toggles aria-expanded from false to true across open/close", () => {
+    renderMlbRoute("/mlb");
+    const trigger = screen.getByRole("button", { name: /MLB Menu/i });
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(trigger);
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("wires aria-controls on the trigger to the id of the opened dialog panel", () => {
+    renderMlbRoute("/mlb");
+    const trigger = screen.getByRole("button", { name: /MLB Menu/i });
+    fireEvent.click(trigger);
+    const dialog = screen.getByRole("dialog");
+    expect(trigger.getAttribute("aria-controls")).toBe(dialog.id);
+  });
+
+  it("applies the brand-blue border and tinted background treatment", () => {
+    renderMlbRoute("/mlb");
+    const trigger = screen.getByRole("button", { name: /MLB Menu/i });
+    expect(trigger.className).toMatch(/border-\[#1a2b4b\]/);
+    expect(trigger.className).toMatch(/bg-\[#eff4ff\]/);
+  });
+});

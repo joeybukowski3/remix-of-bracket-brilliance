@@ -24,6 +24,10 @@ import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import MlbSplitComparisonPanel from "@/components/mlb/MlbSplitComparisonPanel";
 import MlbTeamOverviewPanel from "@/components/mlb/MlbTeamOverviewPanel";
 import MlbPolymarketMoneylinePanel, { type PanelMlEdge } from "@/components/mlb/MlbPolymarketMoneylinePanel";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { MobileModelPreviewAccordion } from "@/components/mlb/MobileModelPreviewAccordion";
+import { ModelPreviewRowList, type ModelPreviewRow } from "@/components/mlb/ModelPreviewRowList";
+import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
@@ -859,12 +863,15 @@ export function PropPreviewCard({
   rows,
   to,
   theme,
+  variant = "card",
 }: {
   title: string;
   description?: string;
   rows: PropPreviewRow[];
   to: string;
   theme: PropPreviewTheme;
+  /** "bare" skips the outer border/header block so this can nest inside an accordion whose trigger already shows title/description. */
+  variant?: "card" | "bare";
 }) {
   const themeClasses = theme === "hr"
     ? {
@@ -890,22 +897,26 @@ export function PropPreviewCard({
       note: "Full Model →",
     };
 
+  const isBare = variant === "bare";
+
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className={cn("flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3", themeClasses.header)}>
-        <div className="flex min-w-0 items-start gap-2">
-          <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
-          {theme === "hr" ? <Flame className="h-4 w-4" /> : theme === "k" ? <Radar className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
-          </span>
-          <div className="min-w-0">
-            <h3 className="text-[17px] font-bold text-[#031635] 2xl:text-lg">{title}</h3>
-            {description ? <p className="mt-0.5 text-[11px] font-medium leading-4 text-slate-600">{description}</p> : null}
+    <div className={isBare ? "" : "overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"}>
+      {!isBare && (
+        <div className={cn("flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3", themeClasses.header)}>
+          <div className="flex min-w-0 items-start gap-2">
+            <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", themeClasses.icon)}>
+            {theme === "hr" ? <Flame className="h-4 w-4" /> : theme === "k" ? <Radar className="h-4 w-4" /> : <Swords className="h-4 w-4" />}
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-[17px] font-bold text-[#031635] 2xl:text-lg">{title}</h3>
+              {description ? <p className="mt-0.5 text-[11px] font-medium leading-4 text-slate-600">{description}</p> : null}
+            </div>
           </div>
+          <Link to={to} className={cn("shrink-0 text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
+            {themeClasses.note}
+          </Link>
         </div>
-        <Link to={to} className={cn("shrink-0 text-[10px] font-bold uppercase tracking-[0.16em] hover:underline", themeClasses.label)}>
-          {themeClasses.note}
-        </Link>
-      </div>
+      )}
 
       <div
         className={cn(
@@ -1201,6 +1212,12 @@ function MlbSlateAnalyzer({
             ? (cardMlEdge.pick === "away" ? cardMlEdge.awayAbbr : cardMlEdge.homeAbbr) : null;
           const cardPmAgreement = getPolymarketAgreement(game.gamePk, cardMlEdge);
           const cardPmEdgeLabel: string = formatCardPmEdgeLabel(cardMlPickAbbr, cardPmAgreement);
+          // MODEL EDGE mobile summary: categorical team + tier label only --
+          // confidence (50-82) is a model-strength score, never a win
+          // probability, so it is never rendered as a percentage or a
+          // bare number here.
+          const cardMlPickColor = cardMlPickAbbr ? getMlbTeamColors(cardMlPickAbbr).primary : null;
+          const cardEdgeTierLabel = cardMlEdge && cardMlEdge.pick !== "push" ? getEdgeTierLabel(cardMlEdge.confidence) : null;
 
           return (
             <button
@@ -1239,6 +1256,22 @@ function MlbSlateAnalyzer({
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
                   <span className="text-[11px] font-semibold text-slate-500">{formatGameTime(game.gameDate)}</span>
                 </div>
+              </div>
+
+              {/* MODEL EDGE — mobile-only prominent summary. Desktop keeps the
+                  categorical "Edge Strength" row lower in the Market Summary
+                  panel (hidden md:flex there) so the label isn't duplicated. */}
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2 md:hidden">
+                <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Model Edge</span>
+                {cardMlPickAbbr && cardMlPickColor ? (
+                  <span className="rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: cardMlPickColor }}>
+                    {cardEdgeTierLabel ? `${cardMlPickAbbr} · ${cardEdgeTierLabel}` : cardMlPickAbbr}
+                  </span>
+                ) : cardMlEdge ? (
+                  <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
+                ) : (
+                  <span className="text-[10px] font-semibold text-slate-400">Edge pending</span>
+                )}
               </div>
 
               {/* Main content */}
@@ -1710,7 +1743,7 @@ function MlbSlateAnalyzer({
                                     <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
                                     <span className="rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold text-white">{edges.total}</span>
                                   </div>
-                                  <div className="flex items-center justify-between gap-3" title={ML_EDGE_METHODOLOGY}>
+                                  <div className="hidden items-center justify-between gap-3 md:flex" title={ML_EDGE_METHODOLOGY}>
                                     <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Edge Strength</span>
                                     {mlPickAbbr && mlPickColor ? (
                                       <span className="rounded-full px-2.5 py-1 text-[9px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
@@ -3205,6 +3238,7 @@ export function SocialMediaTablesSection({
   const { data: polymarketData } = usePolymarketMlbMoneylines();
   const location = useLocation();
   const sectionRef = useRef<HTMLElement>(null);
+  const [mobileOpen, setMobileOpen] = useState<string>("");
 
   // Sidebar deep links into this section: "Social Media Tables" -> #social-tables
   // (scroll only), "Moneyline Edges" -> #ml-edges-social (select the ML Edges
@@ -3214,12 +3248,16 @@ export function SocialMediaTablesSection({
   // fires a native hashchange event. Gated on `loading` because this
   // section (and its #social-tables anchor) doesn't exist in the DOM until
   // useMlbPropsData() resolves -- scrolling before then would be a no-op.
+  // Either hash must also force the mobile accordion open, otherwise the
+  // target would be scrolled to while still collapsed.
   useEffect(() => {
     if (loading) return;
     if (location.hash === "#ml-edges-social") {
       setActiveTab("ml");
+      setMobileOpen("social-tables");
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else if (location.hash === "#social-tables") {
+      setMobileOpen("social-tables");
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [loading, location.hash]);
@@ -3236,62 +3274,80 @@ export function SocialMediaTablesSection({
 
   const kRows = getKRowsForSocial(strikeoutRows, strikeoutDetailRows, pitchers, batters, propsGames);
 
-  return (
-    <section id="social-tables" ref={sectionRef} style={{ marginTop: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0ea5e9" }}>Daily export</div>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#031635", marginTop: 2, letterSpacing: "-.03em" }}>Social Media Tables</h2>
-          <p style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Live data — updates with each model refresh. Review below then export to post.</p>
-        </div>
+  const headerNode = (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12, textAlign: "left" }}>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".16em", textTransform: "uppercase", color: "#0ea5e9" }}>Daily export</div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#031635", marginTop: 2, letterSpacing: "-.03em" }}>Social Media Tables</h2>
+        <p style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>Live data — updates with each model refresh. Review below then export to post.</p>
+      </div>
+    </div>
+  );
+
+  const bodyNode = (
+    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,.06)", overflow: "hidden" }}>
+      {/* Tab bar */}
+      <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setActiveTab(t.key)}
+            style={{
+              flex: 1, padding: "10px 4px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
+              background: activeTab === t.key ? "#fff" : "transparent",
+              color: activeTab === t.key ? "#031635" : "#94a3b8",
+              borderBottom: activeTab === t.key ? "2px solid #e05c2e" : "2px solid transparent",
+              transition: "all .15s",
+            }}
+          >
+            {t.emoji} {t.label}
+          </button>
+        ))}
       </div>
 
-      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,.06)", overflow: "hidden" }}>
-        {/* Tab bar */}
-        <div style={{ display: "flex", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setActiveTab(t.key)}
-              style={{
-                flex: 1, padding: "10px 4px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
-                background: activeTab === t.key ? "#fff" : "transparent",
-                color: activeTab === t.key ? "#031635" : "#94a3b8",
-                borderBottom: activeTab === t.key ? "2px solid #e05c2e" : "2px solid transparent",
-                transition: "all .15s",
-              }}
-            >
-              {t.emoji} {t.label}
-            </button>
-          ))}
-        </div>
+      {/* Table content */}
+      <div style={{ padding: 14 }}>
+        {activeTab === "ml"    && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
+        {activeTab === "hr"    && <SocialTableHR batters={batters} />}
+        {activeTab === "k"     && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
+        {activeTab === "hits"  && <SocialTableHits rows={batterVsPitcherRows} />}
+        {activeTab === "value" && <SocialTableValue batters={batters} kRows={kRows} />}
+      </div>
 
-        {/* Table content */}
-        <div style={{ padding: 14 }}>
-          {activeTab === "ml"    && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
-          {activeTab === "hr"    && <SocialTableHR batters={batters} />}
-          {activeTab === "k"     && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
-          {activeTab === "hits"  && <SocialTableHits rows={batterVsPitcherRows} />}
-          {activeTab === "value" && <SocialTableValue batters={batters} kRows={kRows} />}
+      {/* Footer hint */}
+      <div style={{ padding: "8px 14px 12px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8, rowGap: 4 }}>
+        <span style={{ fontSize: 11, color: "#94a3b8" }}>Data refreshes at 3 AM · 10 AM · 1 PM ET</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, rowGap: 4 }}>
+          <Link to="/mlb/hr-props"          style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9", textDecoration: "none" }}>Open HR Props →</Link>
+          <Link to="/mlb/strikeout-props"   style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textDecoration: "none" }}>Strikeout Props →</Link>
+          <Link to="/mlb/batter-vs-pitcher" style={{ fontSize: 11, fontWeight: 700, color: "#8b5cf6", textDecoration: "none" }}>Batter vs Pitcher →</Link>
         </div>
+      </div>
+    </div>
+  );
 
-        {/* Footer hint */}
-        <div style={{ padding: "8px 14px 12px", borderTop: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "#94a3b8" }}>Data refreshes at 3 AM · 10 AM · 1 PM ET</span>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Link to="/mlb/hr-props"          style={{ fontSize: 11, fontWeight: 700, color: "#0ea5e9", textDecoration: "none" }}>Open HR Props →</Link>
-            <Link to="/mlb/strikeout-props"   style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textDecoration: "none" }}>Strikeout Props →</Link>
-            <Link to="/mlb/batter-vs-pitcher" style={{ fontSize: 11, fontWeight: 700, color: "#8b5cf6", textDecoration: "none" }}>Batter vs Pitcher →</Link>
-          </div>
-        </div>
+  return (
+    <section id="social-tables" ref={sectionRef} style={{ marginTop: 16 }}>
+      {/* Mobile: collapsible, collapsed by default (unless #social-tables/#ml-edges-social is deep-linked) */}
+      <Accordion type="single" collapsible className="md:hidden" value={mobileOpen} onValueChange={setMobileOpen}>
+        <AccordionItem value="social-tables" className="border-none">
+          <AccordionTrigger className="p-0 hover:no-underline">{headerNode}</AccordionTrigger>
+          <AccordionContent className="px-0 pb-0 pt-0">{bodyNode}</AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Desktop: always expanded, unchanged */}
+      <div className="hidden md:block">
+        {headerNode}
+        {bodyNode}
       </div>
     </section>
   );
 }
 
 
-function HomeSchedule({
+export function HomeSchedule({
   games,
   detailPreviews,
   onOpenGame,
@@ -3406,6 +3462,61 @@ function HomeSchedule({
     return map;
   }, [detailPreviews, polymarketData]);
 
+  // Mobile "Top ML Edges" preview: top 5 games by the model's own
+  // differential descending -- the same ranking already used by the
+  // Polymarket panel (see PER MODEL AUDIT comment above). No new sort,
+  // no new calculation -- just a top-5 slice of data already computed.
+  const topMlEdgeRows = useMemo<ModelPreviewRow[]>(() => {
+    return Object.entries(mlEdges)
+      .map(([gamePkStr, edge]) => {
+        const game = games.find((g) => g.gamePk === Number(gamePkStr));
+        return game ? { edge, game } : null;
+      })
+      .filter((entry): entry is { edge: PanelMlEdge; game: MlbScheduleGame } => entry !== null)
+      .sort((a, b) => b.edge.differential - a.edge.differential)
+      .slice(0, 5)
+      .map(({ edge, game }) => {
+        const otherAbbr = edge.pickAbbr === game.away.abbreviation ? game.home.abbreviation : game.away.abbreviation;
+        return {
+          key: `ml-${game.gamePk}`,
+          player: `${game.away.abbreviation} @ ${game.home.abbreviation}`,
+          team: edge.pickAbbr,
+          opponent: otherAbbr,
+          badge: { label: getEdgeTierLabel(edge.confidence), bg: getMlbTeamColors(edge.pickAbbr).primary, color: "#ffffff" },
+        };
+      });
+  }, [mlEdges, games]);
+
+  // Mobile "Pitcher Regression Analysis" preview: top 5 by |regressionScore|
+  // descending, an exact copy of MlbPitcherRegressionTable's own sort so the
+  // preview never diverges from the full table's ordering.
+  const topRegressionRows = useMemo<ModelPreviewRow[]>(() => {
+    return [...pitcherRegressionData]
+      .sort((a, b) => Math.abs(b.regressionScore) - Math.abs(a.regressionScore))
+      .slice(0, 5)
+      .map((pitcher) => {
+        const pill = regressionPillStyle(pitcher.regressionScore);
+        return {
+          key: `regr-${pitcher.pitcherId ?? pitcher.name}`,
+          player: pitcher.name,
+          team: pitcher.team,
+          scoreText: `${pitcher.regressionScore > 0 ? "+" : ""}${pitcher.regressionScore}`,
+          badge: { label: pill.label, bg: pill.bg, color: pill.color },
+        };
+      });
+  }, [pitcherRegressionData]);
+
+  // #pitcher-regression deep-links (sidebar / mobile preview "View Full
+  // Model" links) must reliably scroll this always-visible section into
+  // view, same pattern as SocialMediaTablesSection's hash effect below.
+  const location = useLocation();
+  const pitcherRegressionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (location.hash === "#pitcher-regression") {
+      pitcherRegressionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [location.hash]);
+
   return (
     <div className="-mx-3 -my-3 bg-[#f8f9ff] lg:-mx-4 lg:-my-4">
       <div className="flex flex-col gap-5 px-4 py-6 sm:px-5 lg:px-6 2xl:flex-row">
@@ -3426,7 +3537,72 @@ function HomeSchedule({
               <p className="mt-0.5 text-xs text-slate-500">Our highest-rated projections from today&apos;s MLB model.</p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 3xl:gap-5">
+            {/* Mobile: 5 collapsed-by-default preview accordions, all independently expandable */}
+            <Accordion type="multiple" className="space-y-2 md:hidden">
+              <MobileModelPreviewAccordion
+                value="hr"
+                icon={<Flame className="h-4 w-4" />}
+                iconClassName="bg-amber-100 text-amber-700"
+                title="Top HR Props"
+                description="Ranks today's home run opportunities using our proprietary hitter model."
+                viewFullHref="/mlb/hr-props"
+              >
+                <PropPreviewCard title="Top HR Props" rows={hrPreviewRows} to="/mlb/hr-props" theme="hr" variant="bare" />
+              </MobileModelPreviewAccordion>
+              <MobileModelPreviewAccordion
+                value="k"
+                icon={<Radar className="h-4 w-4" />}
+                iconClassName="bg-emerald-100 text-emerald-700"
+                title="Top K Props"
+                description="Highlights today's largest strikeout projection differences versus sportsbook markets."
+                viewFullHref="/mlb/strikeout-props"
+              >
+                <PropPreviewCard title="Top K Props" rows={strikeoutPreviewRows} to="/mlb/strikeout-props" theme="k" variant="bare" />
+              </MobileModelPreviewAccordion>
+              <MobileModelPreviewAccordion
+                value="bvp"
+                icon={<Swords className="h-4 w-4" />}
+                iconClassName="bg-purple-100 text-purple-700"
+                title="Batter vs Pitcher"
+                description="Today's strongest hitter/pitcher matchup scores."
+                viewFullHref="/mlb/batter-vs-pitcher"
+              >
+                <PropPreviewCard title="Batter vs Pitcher" rows={bvpPreviewRows} to="/mlb/batter-vs-pitcher" theme="bvp" variant="bare" />
+              </MobileModelPreviewAccordion>
+              <MobileModelPreviewAccordion
+                value="ml-edges"
+                icon={<TrendingUp className="h-4 w-4" />}
+                iconClassName="bg-blue-100 text-blue-700"
+                title="Top ML Edges"
+                description="Today's strongest model leans, ranked by factor differential."
+                viewFullHref="#moneylines"
+                viewFullLabel="View Full Model"
+              >
+                {topMlEdgeRows.length > 0 ? (
+                  <ModelPreviewRowList rows={topMlEdgeRows} />
+                ) : (
+                  <div className="px-4 py-4 text-center text-[11px] text-slate-400">No model edges available yet.</div>
+                )}
+              </MobileModelPreviewAccordion>
+              <MobileModelPreviewAccordion
+                value="pitcher-regression"
+                icon={<Gauge className="h-4 w-4" />}
+                iconClassName="bg-indigo-100 text-indigo-700"
+                title="Pitcher Regression Analysis"
+                description="Today's starters most likely to regress toward (or away from) their expected ERA."
+                viewFullHref="#pitcher-regression"
+                viewFullLabel="View Full Model"
+              >
+                {topRegressionRows.length > 0 ? (
+                  <ModelPreviewRowList rows={topRegressionRows} />
+                ) : (
+                  <div className="px-4 py-4 text-center text-[11px] text-slate-400">No pitcher regression data available yet.</div>
+                )}
+              </MobileModelPreviewAccordion>
+            </Accordion>
+
+            {/* Desktop: unchanged 2-card grid */}
+            <div className="hidden gap-4 md:grid md:grid-cols-2 3xl:gap-5">
               <PropPreviewCard
                 title="Top HR Props"
                 description="Ranks today's home run opportunities using our proprietary hitter model."
@@ -3457,7 +3633,7 @@ function HomeSchedule({
           <MlbToolsGrid />
           
           {/* Pitcher Regression Table */}
-          <section id="pitcher-regression" className="space-y-3">
+          <section id="pitcher-regression" ref={pitcherRegressionRef} className="space-y-3">
             <div className="flex flex-col gap-1">
               <h2 className="text-xl font-bold tracking-tight text-[#031635]">Pitcher Regression Analysis</h2>
               <p className="text-xs text-slate-500">Today's starters — ERA vs expected metrics (xFIP/xERA). Negative score = overperforming (regression risk), Positive = underperforming (improvement likely). Auto-generated from MLB Stats API + Baseball Savant.</p>
