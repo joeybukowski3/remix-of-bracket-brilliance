@@ -11,6 +11,12 @@ import { MemoryRouter } from "react-router-dom";
 import { HomeSchedule } from "./MlbGameDetail";
 import type { PitcherRegressionData } from "@/lib/mlb/mlbPitcherRegression";
 
+// HomeSchedule is a large, heavy tree (renders the whole /mlb dashboard).
+// The default 5s test timeout is comfortably enough in isolation but can
+// be tight under full-suite CPU contention -- give every test here more
+// headroom rather than tuning each one individually.
+vi.setConfig({ testTimeout: 20000 });
+
 vi.mock("@/hooks/useMlbPropsData", () => ({
   useMlbPropsData: () => ({
     dashboard: { generatedAt: "2026-07-19T09:00:00Z" },
@@ -191,7 +197,7 @@ describe("Today's Top Model Edges — mobile accordion group", () => {
     expect(screen.getAllByRole("link", { name: /View Full Model/ }).find((l) => l.getAttribute("href") === "/mlb/batter-vs-pitcher")).toBeTruthy();
     expect(screen.getAllByRole("link", { name: /View Full Model/ }).find((l) => l.getAttribute("href") === "#moneylines")).toBeTruthy();
     expect(screen.getAllByRole("link", { name: /View Full Model/ }).find((l) => l.getAttribute("href") === "#pitcher-regression")).toBeTruthy();
-  }, 15000);
+  });
 
   it("mobile accordion group and desktop 2-card grid both render with the correct responsive classes", () => {
     const { container } = renderHomeSchedule();
