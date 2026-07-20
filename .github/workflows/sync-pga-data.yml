@@ -26,6 +26,7 @@ on:
       - ".github/workflows/sync-pga-data.yml"
       - "scripts/sync-pga-sheet.mjs"
       - "scripts/generate-pga-best-bets.mjs"
+      - "scripts/run-pga-best-bets-safe.mjs"
       - "scripts/fetch-pga-current-field.mjs"
       - "scripts/lib/pga-field-selection.mjs"
       - "scripts/check-pga-field-sync.mjs"
@@ -171,11 +172,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate PGA best bets
+      - name: Generate PGA best bets with provider-failure isolation
         env:
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: npm run pga:best-bets
+        run: node scripts/run-pga-best-bets-safe.mjs
 
       - name: Commit and push best bets
         run: |
@@ -186,6 +187,6 @@ jobs:
             echo "No best bets changes to commit."
             exit 0
           fi
-          node --input-type=module -e "import fs from 'node:fs'; const field = JSON.parse(fs.readFileSync('public/data/pga/current-field.json', 'utf8')); const bets = JSON.parse(fs.readFileSync('public/data/pga/best-bets.json', 'utf8')); const normalize = (value) => value.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); if (normalize(field.tournament) !== normalize(bets.tournament)) throw new Error(\`Refusing to commit best bets for ${bets.tournament}; official field is ${field.tournament}.\`);"
+          node --input-type=module -e "import fs from 'node:fs'; const field = JSON.parse(fs.readFileSync('public/data/pga/current-field.json', 'utf8')); const bets = JSON.parse(fs.readFileSync('public/data/pga/best-bets.json', 'utf8')); const normalize = (value) => value.normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); if (normalize(field.tournament) !== normalize(bets.tournament)) throw new Error(`Refusing to commit best bets for ${bets.tournament}; official field is ${field.tournament}.`);"
           git commit -m "chore: generate PGA best bets"
           git push origin HEAD:${TARGET_BRANCH}
