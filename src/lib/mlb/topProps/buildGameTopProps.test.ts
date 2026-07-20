@@ -567,6 +567,65 @@ describe("buildGameTopProps", () => {
       expect(result.strikeouts.items.map((i) => i.pitcher)).toEqual(["Qualified", "No market"]);
     });
 
+    it("keeps a NO_MARKET row informational when its pitcherId matches a current live starter", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [
+            makeKRow({ pitcher: "Current starter, no line yet", pitcherId: AWAY_STARTER_ID, kLine: null, kOddsOver: null, kOddsUnder: null }),
+          ],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items[0].qualification).toBe("informational");
+      expect(result.strikeouts.items[0].projectedKs).not.toBeNull();
+    });
+
+    it("excludes a scratched/replaced NO_MARKET row entirely -- never shown as stale informational content", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [
+            makeKRow({ pitcher: "Scratched pitcher", pitcherId: STALE_PITCHER_ID, kLine: null, kOddsOver: null, kOddsUnder: null }),
+          ],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(0);
+      expect(result.strikeouts.status).toBe("empty");
+    });
+
+    it("excludes a NO_MARKET row with a missing pitcherId -- never shown as informational either", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [
+            makeKRow({ pitcher: DEV_MLB_MATCHUP_FIXTURE.detail.starters.away.name, pitcherId: null, kLine: null, kOddsOver: null, kOddsUnder: null }),
+          ],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(0);
+      expect(result.strikeouts.status).toBe("empty");
+    });
+
+    it("shows both current starters together -- one qualified, one informational -- with the cap and ranking unchanged", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [
+            makeKRow({ pitcher: "Home starter, no market yet", pitcherId: HOME_STARTER_ID, team: HOME, opponent: AWAY, kLine: null, kOddsOver: null, kOddsUnder: null }),
+            makeKRow({ pitcher: "Away starter, qualified", pitcherId: AWAY_STARTER_ID, projectedKs: 8, kLine: 6.5 }),
+          ],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(2);
+      expect(result.strikeouts.items.map((i) => i.pitcher)).toEqual(["Away starter, qualified", "Home starter, no market yet"]);
+      expect(result.strikeouts.items[0].qualification).toBe("qualified");
+      expect(result.strikeouts.items[1].qualification).toBe("informational");
+    });
+
     it("derives Over and Under direction from getProjectionEdgeInfo(), and both remain eligible", () => {
       const overRow = makeKRow({ pitcher: "Over pitcher", pitcherId: AWAY_STARTER_ID, projectedKs: 8, kLine: 6.5, kOddsOver: "-115", kOddsUnder: "-105" });
       const underRow = makeKRow({ pitcher: "Under pitcher", pitcherId: HOME_STARTER_ID, team: HOME, opponent: AWAY, projectedKs: 5, kLine: 6.5, kOddsOver: "-115", kOddsUnder: "-105" });
