@@ -3,6 +3,15 @@ import { resolveKPropStatus } from "@/lib/mlb/kPropStatus";
 import { getProjectionEdgeInfo, sortByAbsoluteProjectionEdge } from "@/lib/mlb/kPropValueSorting";
 import { keyForBvpRow } from "@/hooks/useMlbBvpHistory";
 import { getPropEdgeTier } from "@/components/mlb/MlbPropModelComponents";
+// @ts-expect-error -- plain JS module, no type declarations. This is the
+// same value-play eligibility gate the completed Strikeout Props X
+// value-post workflow uses (scripts/lib/mlb-k-x-selection-core.mjs,
+// evaluateKValuePlayEligibility) -- VALID + projectedIP > 3.0 + nonzero
+// edge + odds present for the edge-derived side. Deliberately NOT the
+// looser >=0.4-edge/no-IP-check rule the public page's "Best Bets" section
+// (buildKPropBestBets) uses -- see the PR discussion for why these two
+// differ and which one this per-game card reuses.
+import { evaluateKValuePlayEligibility } from "../../../../scripts/lib/mlb-k-x-selection-core.mjs";
 import type { PitcherStrikeoutTeamRow, PitcherVsBatterRow } from "@/pages/MlbHrProps";
 import type { NumerologyPlay, WatchlistPlay } from "@/types/mlbNumerology";
 import type {
@@ -174,18 +183,32 @@ function buildStrikeoutsCard(input: BuildGameTopPropsInput): TopPropsCard<KPropI
   if (isPending) return emptyCard(K_CTA_HREF, "Starter TBD -- lineups not yet confirmed.");
 
   const gameRows = propsData.strikeoutDetailRows.filter((row) => row.gameId === identity.gamePk);
-  const surfaceable = gameRows.filter((row) => {
-    const { status } = resolveKPropStatus(row);
-    return status === "VALID" || status === "NO_MARKET";
-  });
 
-  if (surfaceable.length === 0) {
+  const qualified: PitcherStrikeoutTeamRow[] = [];
+  const informational: PitcherStrikeoutTeamRow[] = [];
+
+  for (const row of gameRows) {
+    const status = resolveKPropStatus(row).status;
+    if (status === "VALID") {
+      if (isQualifiedKValuePlay(row)) qualified.push(row);
+      // else: a real market exists, but it doesn't clear the value-play bar
+      // (zero edge, projectedIP <= 3.0, or missing odds for the derived
+      // side) -- excluded entirely, same as any other non-VALID/NO_MARKET
+      // status. A market-priced row we deliberately decline to recommend
+      // must never be shown as if it were an open, unrecommended option.
+    } else if (status === "NO_MARKET") {
+      informational.push(row);
+    }
+    // Every other status (LOW_CONFIDENCE, INSUFFICIENT_DATA, INVALID_ODDS,
+    // INVALID_WORKLOAD) is already excluded -- never surfaced here.
+  }
+
+  if (qualified.length === 0 && informational.length === 0) {
     return emptyCard(K_CTA_HREF, "No qualified strikeout play for this game.");
   }
 
-  const qualified = surfaceable.filter((row) => resolveKPropStatus(row).status === "VALID");
-  const informational = surfaceable.filter((row) => resolveKPropStatus(row).status === "NO_MARKET");
   const orderedRows: PitcherStrikeoutTeamRow[] = [...sortByAbsoluteProjectionEdge(qualified), ...informational];
+  const qualifiedSet = new Set(qualified);
 
   const items: KPropItem[] = orderedRows.slice(0, K_RESULT_CAP).map((row) => {
     const edge = getProjectionEdgeInfo(row);
@@ -193,7 +216,7 @@ function buildStrikeoutsCard(input: BuildGameTopPropsInput): TopPropsCard<KPropI
       pitcher: row.pitcher,
       team: row.team,
       opponent: row.opponent,
-      qualification: resolveKPropStatus(row).status === "VALID" ? "qualified" : "informational",
+      qualification: qualifiedSet.has(row) ? "qualified" : "informational",
       direction: edge.direction,
       projectedKs: edge.projectedKs,
       kLine: edge.kLine,
@@ -204,6 +227,34 @@ function buildStrikeoutsCard(input: BuildGameTopPropsInput): TopPropsCard<KPropI
   });
 
   return okCard(items, K_CTA_HREF);
+}
+
+/**
+ * A VALID row is only a "qualified" recommendation when it also clears the
+ * same value-play bar the completed Strikeout Props X workflow uses
+ * (evaluateKValuePlayEligibility in scripts/lib/mlb-k-x-selection-core.mjs):
+ * projectedIP strictly > 3.0, a nonzero projection edge, and valid odds for
+ * the edge-derived side specifically. Reused directly rather than
+ * reimplemented -- this must never drift from the X workflow's rule.
+ *
+ * isCurrentStarter/gameStarted are hard-coded here (true/false): that part
+ * of the shared function's contract is about the X-poster's own
+ * scrape-then-reconfirm staleness guard, which doesn't apply to this
+ * adapter -- it reads today's rows directly (no scraping), and "game
+ * started" is already handled at the whole-card level above.
+ */
+function isQualifiedKValuePlay(row: PitcherStrikeoutTeamRow): boolean {
+  const evaluation = evaluateKValuePlayEligibility({
+    status: "VALID",
+    kLine: row.kLine,
+    projectedKs: row.projectedKs,
+    projectedIP: row.projectedIP,
+    oddsOver: row.kOddsOver,
+    oddsUnder: row.kOddsUnder,
+    isCurrentStarter: true,
+    gameStarted: false,
+  });
+  return Boolean(evaluation.eligible);
 }
 
 function buildCareerLine(

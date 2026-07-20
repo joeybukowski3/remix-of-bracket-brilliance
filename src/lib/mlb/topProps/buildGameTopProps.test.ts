@@ -419,6 +419,97 @@ describe("buildGameTopProps", () => {
       const result = buildGameTopProps(input);
       expect(result.strikeouts.items).toHaveLength(2);
     });
+
+    it("excludes a zero-edge VALID row as a qualified play (a market exists, but it's not recommended)", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ projectedKs: 6.5, kLine: 6.5 })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(0);
+      expect(result.strikeouts.status).toBe("empty");
+    });
+
+    it("excludes a row with projectedIP exactly 3.0 (strictly greater than 3.0 required)", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ projectedIP: 3.0 })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(0);
+      expect(result.strikeouts.status).toBe("empty");
+    });
+
+    it("accepts a row with projectedIP just above 3.0", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ projectedIP: 3.01 })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items[0].qualification).toBe("qualified");
+    });
+
+    it("excludes a VALID row missing odds for the recommended side, per the canonical value-play selector", () => {
+      // direction is "over" (projectedKs 7.5 > kLine 6.5); odds exist only
+      // for the opposite (under) side, so the canonical selector's
+      // hasOddsForSide check fails for the derived "over" side.
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ kOddsOver: null, kOddsUnder: "-110" })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(0);
+      expect(result.strikeouts.status).toBe("empty");
+    });
+
+    it("keeps NO_MARKET rows informational regardless of the value-play bar", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ kLine: null, kOddsOver: null, kOddsUnder: null })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items[0].qualification).toBe("informational");
+      expect(result.strikeouts.items[0].projectedKs).not.toBeNull();
+    });
+
+    it("ranks qualified value-plays ahead of informational NO_MARKET rows", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [
+            makeKRow({ pitcher: "No market", pitcherId: 1, kLine: null, kOddsOver: null, kOddsUnder: null }),
+            makeKRow({ pitcher: "Qualified", pitcherId: 2, projectedKs: 8, kLine: 6.5 }),
+          ],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items.map((i) => i.pitcher)).toEqual(["Qualified", "No market"]);
+    });
+
+    it("derives Over and Under direction from getProjectionEdgeInfo(), and both remain eligible", () => {
+      const overRow = makeKRow({ pitcher: "Over pitcher", pitcherId: 1, projectedKs: 8, kLine: 6.5, kOddsOver: "-115", kOddsUnder: "-105" });
+      const underRow = makeKRow({ pitcher: "Under pitcher", pitcherId: 2, projectedKs: 5, kLine: 6.5, kOddsOver: "-115", kOddsUnder: "-105" });
+      const input = baseInput({
+        propsData: { ...baseInput().propsData, strikeoutDetailRows: [overRow, underRow] },
+      });
+      const result = buildGameTopProps(input);
+      const over = result.strikeouts.items.find((i) => i.pitcher === "Over pitcher");
+      const under = result.strikeouts.items.find((i) => i.pitcher === "Under pitcher");
+      expect(over?.direction).toBe("over");
+      expect(over?.qualification).toBe("qualified");
+      expect(under?.direction).toBe("under");
+      expect(under?.qualification).toBe("qualified");
+    });
   });
 
   describe("Batter vs Pitcher", () => {
