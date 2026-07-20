@@ -25,3 +25,42 @@ export function filterEligibleKRows(rows) {
   const excludedStatuses = rows.filter((row) => row.status !== "VALID").map((row) => row.status || "missing");
   return { eligibleRows, excludedCount, excludedStatuses };
 }
+
+/**
+ * The live K Props table (SocialTableK in MlbGameDetail.tsx) renders one
+ * `[data-k-row]` block for mobile (`sm:hidden`) and a second, separate one
+ * for desktop (`hidden sm:block`) -- a normal responsive pattern for human
+ * visitors, but Tailwind's responsive classes only toggle CSS `display`,
+ * they never remove either block from the DOM. The poster's Playwright
+ * scrape (post-mlb-strikeout-props-to-x.mjs) selects `[data-k-row]` without
+ * a visibility filter, so at any single viewport width it collects BOTH the
+ * visible and the CSS-hidden copy of every row -- every pitcher scraped
+ * twice, identical in every field. That duplication survives selection and
+ * trips the artifact's own duplicate-row-identity guard
+ * (mlb-x-selection-artifact.mjs), which then fails closed with
+ * FAILED_ARTIFACT_SELECTION_MISMATCH and blocks the post entirely.
+ *
+ * Dedupe defensively at the scrape boundary instead of relying on DOM
+ * visibility timing: two scraped rows for the same pitcher/team/opponent on
+ * the same page load are always the responsive-duplicate case, never two
+ * genuinely different plays (a pitcher can only start once, for one team,
+ * against one opponent, per slate day).
+ *
+ * @param {Array<{ pitcher?: string, team?: string, opponent?: string }>} rows
+ * @returns {{ rows: Array<object>, duplicatesRemoved: number }}
+ */
+export function dedupeScrapedKRows(rows) {
+  const seen = new Set();
+  const deduped = [];
+  let duplicatesRemoved = 0;
+  for (const row of rows) {
+    const key = [row.pitcher, row.team, row.opponent].map((v) => String(v ?? "").trim().toUpperCase()).join("|");
+    if (seen.has(key)) {
+      duplicatesRemoved += 1;
+      continue;
+    }
+    seen.add(key);
+    deduped.push(row);
+  }
+  return { rows: deduped, duplicatesRemoved };
+}

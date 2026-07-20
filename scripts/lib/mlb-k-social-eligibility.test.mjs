@@ -10,7 +10,7 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { filterEligibleKRows } from "./mlb-k-social-eligibility.mjs";
+import { dedupeScrapedKRows, filterEligibleKRows } from "./mlb-k-social-eligibility.mjs";
 
 describe("filterEligibleKRows", () => {
   it("keeps only rows with an explicit VALID status", () => {
@@ -50,5 +50,51 @@ describe("filterEligibleKRows", () => {
     const { eligibleRows, excludedCount } = filterEligibleKRows(rows);
     assert.equal(eligibleRows.length, 2);
     assert.equal(excludedCount, 0);
+  });
+});
+
+describe("dedupeScrapedKRows", () => {
+  it("drops the mobile/desktop responsive-DOM duplicate of the same pitcher/team/opponent", () => {
+    // Reproduces the production bug: SocialTableK renders one [data-k-row]
+    // block for mobile and one for desktop; Playwright's un-filtered
+    // [data-k-row] locator scrapes both, so every pitcher appears twice with
+    // otherwise-identical fields. This caused every K post attempt to fail
+    // with FAILED_ARTIFACT_SELECTION_MISMATCH ("duplicate row identity").
+    const rows = [
+      { pitcher: "Tarik Skubal", team: "DET", opponent: "CWS", kLine: 6.5 },
+      { pitcher: "Tarik Skubal", team: "DET", opponent: "CWS", kLine: 6.5 },
+      { pitcher: "Paul Skenes", team: "PIT", opponent: "CIN", kLine: 7.5 },
+      { pitcher: "Paul Skenes", team: "PIT", opponent: "CIN", kLine: 7.5 },
+    ];
+    const { rows: deduped, duplicatesRemoved } = dedupeScrapedKRows(rows);
+    assert.deepEqual(deduped.map((r) => r.pitcher), ["Tarik Skubal", "Paul Skenes"]);
+    assert.equal(duplicatesRemoved, 2);
+  });
+
+  it("keeps two different pitchers on the same team/opponent (a legitimate doubleheader-style case)", () => {
+    const rows = [
+      { pitcher: "Pitcher A", team: "NYY", opponent: "BOS" },
+      { pitcher: "Pitcher B", team: "NYY", opponent: "BOS" },
+    ];
+    const { rows: deduped, duplicatesRemoved } = dedupeScrapedKRows(rows);
+    assert.equal(deduped.length, 2);
+    assert.equal(duplicatesRemoved, 0);
+  });
+
+  it("is a no-op when there are no duplicates", () => {
+    const rows = [{ pitcher: "A", team: "NYY", opponent: "BOS" }, { pitcher: "B", team: "LAD", opponent: "SF" }];
+    const { rows: deduped, duplicatesRemoved } = dedupeScrapedKRows(rows);
+    assert.equal(deduped.length, 2);
+    assert.equal(duplicatesRemoved, 0);
+  });
+
+  it("treats identity as case-insensitive/whitespace-trimmed (defensive against scrape formatting drift)", () => {
+    const rows = [
+      { pitcher: "Tarik Skubal", team: "DET", opponent: "CWS" },
+      { pitcher: " Tarik Skubal ", team: "det", opponent: "cws" },
+    ];
+    const { rows: deduped, duplicatesRemoved } = dedupeScrapedKRows(rows);
+    assert.equal(deduped.length, 1);
+    assert.equal(duplicatesRemoved, 1);
   });
 });
