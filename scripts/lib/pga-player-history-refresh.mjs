@@ -1,5 +1,6 @@
 import {
   buildPgaPlayerLookup,
+  normalizePgaPlayerExactName,
   resolvePgaPlayerMatch,
 } from "../../src/lib/pga/playerIdentity.ts";
 
@@ -143,21 +144,117 @@ export function mergeScopedHistory(historyPayload, refreshedByPlayerId, options 
   };
 }
 
+// Merges a list of per-player PlayerRefreshResult entries (see
+// scripts/refresh-pga-player-history.mjs) instead of a Map of guaranteed
+// successes. Only "success" results are applied; anything else is left
+// untouched by construction, which is what gives failed players fault
+// isolation. A success with no matching existing record is bootstrapped as a
+// brand-new player and appended after all existing players, ordered
+// alphabetically among themselves so reruns are deterministic. New players
+// with zero qualifying results are still recorded (an empty starter record is
+// legitimate output, not corruption) — only players whose FETCH failed are
+// omitted from the artifact entirely (see Part 7 of the refresh contract).
+export function mergePartialScopedHistory(historyPayload, playerRefreshResults, options = {}) {
+  const asOfDate = options.asOfDate ?? new Date().toISOString().slice(0, 10);
+  const allowedEventIdentities = options.allowedEventIdentities
+    ? new Set(options.allowedEventIdentities)
+    : null;
+  const byId = new Map(historyPayload.players.map((player) => [String(player.playerId ?? ""), player]));
+  const changedPlayers = [];
+  const addedResults = [];
+  const successPlayerIds = [];
+  const newPlayerRecords = [];
+
+  for (const result of playerRefreshResults) {
+    if (result.status !== "success") continue;
+    const playerId = String(result.playerId);
+    const existing = byId.get(playerId);
+    successPlayerIds.push(playerId);
+
+    if (existing) {
+      const merged = mergePlayerHistory(existing, result.results, asOfDate, allowedEventIdentities);
+      if (merged.changed) {
+        byId.set(playerId, merged.player);
+        changedPlayers.push(existing.player);
+        addedResults.push(...merged.added.map((added) => ({ player: existing.player, ...added })));
+      }
+      continue;
+    }
+
+    const bootstrapBase = {
+      player: result.player,
+      playerId,
+      sourcePlayerName: result.player,
+      recentResults: [],
+      eventHistory: {},
+    };
+    const merged = mergePlayerHistory(bootstrapBase, result.results, asOfDate, allowedEventIdentities);
+    newPlayerRecords.push(merged.changed ? merged.player : bootstrapBase);
+    changedPlayers.push(result.player);
+    addedResults.push(...merged.added.map((added) => ({ player: result.player, ...added })));
+  }
+
+  const orderedExisting = historyPayload.players.map((player) => byId.get(String(player.playerId ?? "")) ?? player);
+  const orderedNew = newPlayerRecords.slice().sort((left, right) => left.player.localeCompare(right.player));
+  const players = [...orderedExisting, ...orderedNew];
+  const changed = changedPlayers.length > 0 || newPlayerRecords.length > 0;
+
+  return {
+    payload: changed
+      ? { ...historyPayload, generatedAt: options.generatedAt ?? new Date().toISOString(), players }
+      : historyPayload,
+    changed,
+    changedPlayers,
+    addedResults,
+    successPlayerIds,
+  };
+}
+
+// A scoped, per-player refresh can legitimately grow the roster (bootstrapped
+// new players resolved through the official field). scopePlayerIds must be
+// the set of player IDs that SUCCEEDED this run (existing players that
+// changed plus newly bootstrapped players) — every other player, whether
+// truly out-of-scope or a scoped player whose refresh failed this run, must
+// stay byte-identical, which is exactly the guarantee failed players need.
 export function validateScopedRefresh(before, after, context) {
   const scopeIds = new Set(context.scopePlayerIds.map(String));
   const beforeById = new Map(before.players.map((player) => [String(player.playerId ?? ""), player]));
   const afterById = new Map(after.players.map((player) => [String(player.playerId ?? ""), player]));
 
-  if (before.players.length !== after.players.length) throw new Error("Player count changed during scoped history refresh.");
-  if (before.players.map((player) => player.player).join("\n") !== after.players.map((player) => player.player).join("\n")) {
-    throw new Error("Player ordering changed during scoped history refresh.");
+  if (after.players.length < before.players.length) throw new Error("Player count decreased during scoped history refresh.");
+
+  const afterIds = after.players.map((player) => String(player.playerId ?? ""));
+  if (new Set(afterIds).size !== afterIds.length) throw new Error("Duplicate player IDs in output history.");
+  validateNoDuplicateCanonicalIdentity(after.players);
+
+  const beforeIds = new Set(beforeById.keys());
+  const beforeOrderInAfter = after.players.filter((player) => beforeIds.has(String(player.playerId ?? ""))).map((player) => player.player);
+  if (before.players.map((player) => player.player).join("\n") !== beforeOrderInAfter.join("\n")) {
+    throw new Error("Existing player ordering changed during scoped history refresh.");
+  }
+
+  const newPlayers = after.players.filter((player) => !beforeIds.has(String(player.playerId ?? "")));
+  if (newPlayers.length) {
+    for (const player of newPlayers) {
+      const playerId = String(player.playerId ?? "");
+      if (!playerId) throw new Error(`Newly added player ${player.player} has no canonical player ID.`);
+      if (!scopeIds.has(playerId)) throw new Error(`Player ${player.player} was added without a successful scoped refresh.`);
+    }
+    const alphabetical = newPlayers.map((player) => player.player).slice().sort((left, right) => left.localeCompare(right));
+    if (newPlayers.map((player) => player.player).join("\n") !== alphabetical.join("\n")) {
+      throw new Error("Newly bootstrapped players are not in deterministic alphabetical order.");
+    }
+    const firstNewIndex = after.players.findIndex((player) => !beforeIds.has(String(player.playerId ?? "")));
+    if (firstNewIndex !== before.players.length) {
+      throw new Error("Newly bootstrapped players must be appended after all existing players.");
+    }
   }
 
   for (const [playerId, player] of beforeById) {
     const refreshed = afterById.get(playerId);
     if (!refreshed) throw new Error(`Player ${player.player} disappeared during scoped history refresh.`);
     if (!scopeIds.has(playerId) && JSON.stringify(player) !== JSON.stringify(refreshed)) {
-      throw new Error(`Out-of-scope player ${player.player} changed during scoped history refresh.`);
+      throw new Error(`Out-of-scope or failed player ${player.player} changed during scoped history refresh.`);
     }
     validateNoDuplicateResults(refreshed);
   }
@@ -191,9 +288,45 @@ export function validatePublishedExpectedEvent(payload, scopePlayerIds, expected
   if (!participants.length) throw new Error(`Expected event ${expected.eventId} is absent from the scoped output.`);
   const participantIds = new Set(participants.map((player) => player.playerId));
   for (const playerId of requiredParticipantIds.map(String)) {
-    if (!participantIds.has(playerId)) throw new Error(`Known participant ${playerId} is missing expected event ${expected.eventId}.`);
+    // Only enforce this for participants who were actually part of the
+    // successful scope this run — a required participant whose refresh
+    // failed (and is therefore excluded from scopeIds) is already recorded
+    // as a failure and must not also be treated as a fatal validation error.
+    if (scopeIds.has(playerId) && !participantIds.has(playerId)) {
+      throw new Error(`Known participant ${playerId} is missing expected event ${expected.eventId}.`);
+    }
   }
   return participants.map((player) => player.player);
+}
+
+// fetchProfile is injected so this per-player fault-isolation step is testable
+// without real network access: it must resolve { data, requestSource } or
+// reject. A rejection or a structurally malformed response both become a
+// PlayerRefreshResult failure instead of throwing, which is what lets one
+// player's failure leave every other player unaffected.
+export async function refreshScopedPlayer(player, { fetchProfile, startYear }) {
+  try {
+    const { data, requestSource } = await fetchProfile(player.playerId);
+    if (data == null || typeof data !== "object" || !("playerProfileTournamentResults" in data)) {
+      return failedRefreshResult(player, "response-normalization", "PGA_MALFORMED_RESPONSE", "PGA Tour GraphQL response is missing playerProfileTournamentResults.");
+    }
+    const results = normalizePlayerTournamentResults(data, startYear);
+    return {
+      status: "success",
+      scopeName: player.scopeName,
+      player: player.player,
+      playerId: player.playerId,
+      resolutionMethod: player.resolutionMethod,
+      results,
+      requestSource,
+    };
+  } catch (error) {
+    return failedRefreshResult(player, "history-fetch", "PGA_HISTORY_FETCH_FAILED", error instanceof Error ? error.message : String(error));
+  }
+}
+
+function failedRefreshResult(player, stage, errorCode, message) {
+  return { status: "failed", scopeName: player.scopeName, player: player.player, playerId: player.playerId, resolutionMethod: player.resolutionMethod, stage, errorCode, message };
 }
 
 export function visibleRecentResults(player) {
@@ -281,6 +414,19 @@ function validateExpectedEvent(after, refreshedByPlayerId, scopeIds, expected) {
     if (scopeIds.has(String(playerId)) && !participantIds.has(String(playerId))) {
       throw new Error(`Known participant ${playerId} is missing expected event ${expectedId}.`);
     }
+  }
+}
+
+function validateNoDuplicateCanonicalIdentity(players) {
+  const idByExactName = new Map();
+  for (const player of players) {
+    const key = normalizePgaPlayerExactName(player.player);
+    const playerId = String(player.playerId ?? "");
+    const existingId = idByExactName.get(key);
+    if (existingId && existingId !== playerId) {
+      throw new Error(`Duplicate canonical player identity for "${player.player}" with different player IDs.`);
+    }
+    idByExactName.set(key, playerId);
   }
 }
 

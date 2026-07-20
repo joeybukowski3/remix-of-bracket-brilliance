@@ -26,6 +26,21 @@ describe("PGA scoped player-history workflow", () => {
     expect(workflow).toContain("--participant-file public/data/pga/current-field.json");
   });
 
+  it("exposes workflow_dispatch player_ids/player_names inputs for a targeted rerun", () => {
+    expect(workflow).toContain("player_ids:");
+    expect(workflow).toContain("player_names:");
+    expect(workflow).toContain("--player-id \"$PLAYER_IDS\"");
+    expect(workflow).toContain("--player \"$PLAYER_NAMES\"");
+  });
+
+  it("skips the current-week expected-event gate for a targeted rerun", () => {
+    const dispatchInputsIndex = workflow.indexOf("workflow_dispatch:");
+    const eventStepIndex = workflow.indexOf("Validate completed-event metadata");
+    expect(dispatchInputsIndex).toBeGreaterThan(0);
+    expect(eventStepIndex).toBeGreaterThan(dispatchInputsIndex);
+    expect(workflow).toContain("if: github.event_name != 'workflow_dispatch' || (!github.event.inputs.player_ids && !github.event.inputs.player_names)");
+  });
+
   it("stages only the explicit player-history allowlist and safely no-ops", () => {
     expect(workflow).toContain("git add public/data/pga/player-history.json");
     expect(workflow).not.toMatch(/^\s*git add public\/data\/pga\/?\s*$/m);
