@@ -27,9 +27,23 @@ on:
         required: true
         default: false
         type: boolean
+  # Dense 15-minute cadence across a 4-hour UTC window instead of two exact-
+  # minute crons. Root cause of numerology's 100% automated-posting failure
+  # (verified across every scheduled run since this workflow's creation):
+  # GitHub Actions routinely delivers a single once-a-day exact-minute
+  # `schedule:` trigger 60-180+ minutes late (confirmed via run history --
+  # the "0 15" / "0 16" UTC crons never once fired within the DST gate's
+  # +/-10 minute tolerance of the intended 11:00 AM ET target), so the DST
+  # match gate below correctly rejected every single firing as
+  # SKIPPED_DST_MISMATCH-adjacent lateness, day after day. The high-frequency
+  # */15 cadence already used by poll-mlb-x-posts.yml for HR/K does not
+  # exhibit this delay pattern. UTC 15-18 covers the 11:00 AM ET target in
+  # both EDT (15:00 UTC) and EST (16:00 UTC) with a wide delay buffer; the
+  # DST match gate (unchanged) still ensures only one firing per day actually
+  # proceeds, and the daily posting lock still guarantees at most one post
+  # even if more than one firing lands inside tolerance.
   schedule:
-    - cron: "0 15 * * *"
-    - cron: "0 16 * * *"
+    - cron: "*/15 15-18 * * *"
   push:
     branches: [main]
     paths:

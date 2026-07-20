@@ -1,9 +1,9 @@
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
-import { filterEligibleKRows } from "./lib/mlb-k-social-eligibility.mjs";
+import { dedupeScrapedKRows, filterEligibleKRows } from "./lib/mlb-k-social-eligibility.mjs";
 import { checkDailyPostingLock, getDuplicateStatePath, getForceRepostOverride, readPostReceipt, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
 import { buildConfirmationSnapshot, resolveKRowFacts } from "./lib/mlb-x-confirmation-snapshot.mjs";
 import { selectConfirmedKRows } from "./lib/mlb-k-x-selection-core.mjs";
@@ -180,7 +180,11 @@ async function scrapeKPageRows(page) {
     });
   }
 
-  const { eligibleRows } = filterEligibleKRows(rows);
+  const { rows: dedupedRows, duplicatesRemoved } = dedupeScrapedKRows(rows);
+  if (duplicatesRemoved > 0) {
+    console.log(`[mlb-strikeout-props-x] Removed ${duplicatesRemoved} duplicate scraped row(s) (mobile/desktop responsive DOM duplication).`);
+  }
+  const { eligibleRows } = filterEligibleKRows(dedupedRows);
   return { date: meta.date, generatedAt: meta.generatedAt, rows: eligibleRows };
 }
 
@@ -190,7 +194,15 @@ async function renderExportAndScrape(browser, artifact, { outputPath = SCREENSHO
   return { screenshotPath: rendered.pngPath, svgPath: rendered.svgPath, renderedRows: rendered.renderedRows };
 }
 
+/** Reject a missing/zero-byte screenshot before it ever reaches the X API -- a silent 0-byte or missing file must fail loudly, not upload an empty/invalid image. */
+function assertScreenshotUsable(screenshotPath) {
+  if (!existsSync(screenshotPath)) throw new Error(`Screenshot file missing before upload: ${screenshotPath}`);
+  const { size } = statSync(screenshotPath);
+  if (size <= 0) throw new Error(`Screenshot file is zero bytes before upload: ${screenshotPath}`);
+}
+
 async function publishPost({ client, caption, screenshotPath }) {
+  assertScreenshotUsable(screenshotPath);
   const mediaId = String(await client.v1.uploadMedia(screenshotPath, { mimeType: "image/png" }));
   await new Promise((resolve) => setTimeout(resolve, 2000));
   const response = await client.v2.tweet(caption, { media: { media_ids: [mediaId] } });
