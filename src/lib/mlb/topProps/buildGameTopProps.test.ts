@@ -11,6 +11,13 @@ const GAME_PK = DEV_MLB_MATCHUP_FIXTURE.detail.game.gamePk; // 2026051001, away 
 const AWAY = "NYY";
 const HOME = "BOS";
 const OTHER_GAME_PK = 999999999;
+// The fixture's live starters (detail.starters.{away,home}.id) -- Luis Gil
+// (away) and Brayan Bello (home). K-prop tests use these directly so the
+// new isCurrentStarter check reflects a real match against live identity,
+// not an arbitrary id that happens to bypass it.
+const AWAY_STARTER_ID = DEV_MLB_MATCHUP_FIXTURE.detail.starters.away.id as number;
+const HOME_STARTER_ID = DEV_MLB_MATCHUP_FIXTURE.detail.starters.home.id as number;
+const STALE_PITCHER_ID = 555555; // matches neither live starter -- a scratched/replaced pitcher
 
 function baseIdentity(overrides: Partial<GameIdentity> = {}): GameIdentity {
   return {
@@ -73,7 +80,7 @@ function makeKRow(overrides: Partial<PitcherStrikeoutTeamRow> = {}): PitcherStri
     rank: 1,
     gameKey: `${AWAY}@${HOME}`,
     gameId: GAME_PK,
-    pitcherId: 1001,
+    pitcherId: AWAY_STARTER_ID,
     pitcher: "Test Pitcher",
     team: AWAY,
     opponent: HOME,
@@ -411,13 +418,77 @@ describe("buildGameTopProps", () => {
         propsData: {
           ...baseInput().propsData,
           strikeoutDetailRows: [
-            makeKRow({ pitcher: "Away starter", pitcherId: 1, team: AWAY, opponent: HOME }),
-            makeKRow({ pitcher: "Home starter", pitcherId: 2, team: HOME, opponent: AWAY }),
+            makeKRow({ pitcher: "Away starter", pitcherId: AWAY_STARTER_ID, team: AWAY, opponent: HOME }),
+            makeKRow({ pitcher: "Home starter", pitcherId: HOME_STARTER_ID, team: HOME, opponent: AWAY }),
           ],
         },
       });
       const result = buildGameTopProps(input);
       expect(result.strikeouts.items).toHaveLength(2);
+    });
+
+    it("qualifies the current away starter (row.pitcherId matches detail.starters.away.id)", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ pitcher: "Away starter", pitcherId: AWAY_STARTER_ID, team: AWAY, opponent: HOME })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items[0].qualification).toBe("qualified");
+    });
+
+    it("qualifies the current home starter (row.pitcherId matches detail.starters.home.id)", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ pitcher: "Home starter", pitcherId: HOME_STARTER_ID, team: HOME, opponent: AWAY })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items[0].qualification).toBe("qualified");
+    });
+
+    it("excludes a scratched/replaced pitcher: same gameId, but pitcherId no longer matches either live starter", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ pitcher: "Stale starter", pitcherId: STALE_PITCHER_ID })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(0);
+      expect(result.strikeouts.status).toBe("empty");
+    });
+
+    it("does not qualify a row with a missing pitcherId when live starter ids are available (no name-based fallback)", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [makeKRow({ pitcher: DEV_MLB_MATCHUP_FIXTURE.detail.starters.away.name, pitcherId: null })],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(0);
+      expect(result.strikeouts.status).toBe("empty");
+    });
+
+    it("doubleheader protection remains intact: a same-gameKey row from the OTHER game's starter never qualifies here", () => {
+      const input = baseInput({
+        propsData: {
+          ...baseInput().propsData,
+          strikeoutDetailRows: [
+            // Same gameKey (doubleheader), but a different gameId -- already
+            // filtered out before starter-identity is even evaluated.
+            makeKRow({ pitcher: "Game 2 starter", gameId: OTHER_GAME_PK, gameKey: `${AWAY}@${HOME}`, pitcherId: HOME_STARTER_ID }),
+            makeKRow({ pitcher: "Game 1 starter", gameId: GAME_PK, gameKey: `${AWAY}@${HOME}`, pitcherId: AWAY_STARTER_ID }),
+          ],
+        },
+      });
+      const result = buildGameTopProps(input);
+      expect(result.strikeouts.items).toHaveLength(1);
+      expect(result.strikeouts.items[0].pitcher).toBe("Game 1 starter");
+      expect(result.strikeouts.items[0].qualification).toBe("qualified");
     });
 
     it("excludes a zero-edge VALID row as a qualified play (a market exists, but it's not recommended)", () => {
@@ -487,8 +558,8 @@ describe("buildGameTopProps", () => {
         propsData: {
           ...baseInput().propsData,
           strikeoutDetailRows: [
-            makeKRow({ pitcher: "No market", pitcherId: 1, kLine: null, kOddsOver: null, kOddsUnder: null }),
-            makeKRow({ pitcher: "Qualified", pitcherId: 2, projectedKs: 8, kLine: 6.5 }),
+            makeKRow({ pitcher: "No market", pitcherId: HOME_STARTER_ID, team: HOME, opponent: AWAY, kLine: null, kOddsOver: null, kOddsUnder: null }),
+            makeKRow({ pitcher: "Qualified", pitcherId: AWAY_STARTER_ID, projectedKs: 8, kLine: 6.5 }),
           ],
         },
       });
@@ -497,8 +568,8 @@ describe("buildGameTopProps", () => {
     });
 
     it("derives Over and Under direction from getProjectionEdgeInfo(), and both remain eligible", () => {
-      const overRow = makeKRow({ pitcher: "Over pitcher", pitcherId: 1, projectedKs: 8, kLine: 6.5, kOddsOver: "-115", kOddsUnder: "-105" });
-      const underRow = makeKRow({ pitcher: "Under pitcher", pitcherId: 2, projectedKs: 5, kLine: 6.5, kOddsOver: "-115", kOddsUnder: "-105" });
+      const overRow = makeKRow({ pitcher: "Over pitcher", pitcherId: AWAY_STARTER_ID, projectedKs: 8, kLine: 6.5, kOddsOver: "-115", kOddsUnder: "-105" });
+      const underRow = makeKRow({ pitcher: "Under pitcher", pitcherId: HOME_STARTER_ID, team: HOME, opponent: AWAY, projectedKs: 5, kLine: 6.5, kOddsOver: "-115", kOddsUnder: "-105" });
       const input = baseInput({
         propsData: { ...baseInput().propsData, strikeoutDetailRows: [overRow, underRow] },
       });

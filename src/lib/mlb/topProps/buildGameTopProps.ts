@@ -178,11 +178,23 @@ function buildStrikeoutsCard(input: BuildGameTopPropsInput): TopPropsCard<KPropI
   if (isGameStarted(input)) return closedCard(K_CTA_HREF, gameClosedMessage(input));
   if (input.propsData.stale) return staleCard(K_CTA_HREF);
 
-  const { identity, propsData } = input;
+  const { identity, propsData, detail } = input;
   const isPending = propsData.pendingGames.some((g) => g.gameId === identity.gamePk);
   if (isPending) return emptyCard(K_CTA_HREF, "Starter TBD -- lineups not yet confirmed.");
 
   const gameRows = propsData.strikeoutDetailRows.filter((row) => row.gameId === identity.gamePk);
+
+  // Live starter identity for THIS render -- gameId filtering alone proves a
+  // row belongs to this game, not that the pitcher is still the currently
+  // listed starter (a scratch/replacement/opener change can leave a stale
+  // same-game row behind). detail.starters is fetched fresh from the live
+  // MLB Stats API on every page load, independent of the props payload's
+  // own generation time, so this is the authoritative live source. Either
+  // side can legitimately be null (probable pitcher not yet posted) -- no
+  // name-based fallback is used when that happens; see isQualifiedKValuePlay.
+  const liveStarterIds: number[] = [detail.starters.away.id, detail.starters.home.id].filter(
+    (id): id is number => id != null,
+  );
 
   const qualified: PitcherStrikeoutTeamRow[] = [];
   const informational: PitcherStrikeoutTeamRow[] = [];
@@ -190,7 +202,7 @@ function buildStrikeoutsCard(input: BuildGameTopPropsInput): TopPropsCard<KPropI
   for (const row of gameRows) {
     const status = resolveKPropStatus(row).status;
     if (status === "VALID") {
-      if (isQualifiedKValuePlay(row)) qualified.push(row);
+      if (isQualifiedKValuePlay(row, liveStarterIds)) qualified.push(row);
       // else: a real market exists, but it doesn't clear the value-play bar
       // (zero edge, projectedIP <= 3.0, or missing odds for the derived
       // side) -- excluded entirely, same as any other non-VALID/NO_MARKET
@@ -233,17 +245,29 @@ function buildStrikeoutsCard(input: BuildGameTopPropsInput): TopPropsCard<KPropI
  * A VALID row is only a "qualified" recommendation when it also clears the
  * same value-play bar the completed Strikeout Props X workflow uses
  * (evaluateKValuePlayEligibility in scripts/lib/mlb-k-x-selection-core.mjs):
- * projectedIP strictly > 3.0, a nonzero projection edge, and valid odds for
- * the edge-derived side specifically. Reused directly rather than
+ * projectedIP strictly > 3.0, a nonzero projection edge, valid odds for the
+ * edge-derived side specifically, and -- the same guard the X workflow
+ * enforces via its own live confirmation snapshot -- the pitcher must still
+ * be the currently listed starter. Reused directly rather than
  * reimplemented -- this must never drift from the X workflow's rule.
  *
- * isCurrentStarter/gameStarted are hard-coded here (true/false): that part
- * of the shared function's contract is about the X-poster's own
- * scrape-then-reconfirm staleness guard, which doesn't apply to this
- * adapter -- it reads today's rows directly (no scraping), and "game
- * started" is already handled at the whole-card level above.
+ * isCurrentStarter is derived here from row.pitcherId against
+ * `liveStarterIds` (this game's two starter ids, read fresh from
+ * detail.starters). Deliberately conservative in both directions, with no
+ * display-name fallback:
+ *   - row.pitcherId missing -> never current (can't prove identity).
+ *   - liveStarterIds empty (both live starter ids unresolved -- MLB hasn't
+ *     posted a probable pitcher for one or both sides yet) -> no row can be
+ *     proven current, so nothing qualifies until a live id is available.
+ *   - row.pitcherId present but absent from liveStarterIds -> a stale
+ *     row for a scratched/replaced/opener-changed pitcher -- rejected.
+ *
+ * gameStarted is hard-coded false: that part of the shared function's
+ * contract is about the X-poster's own scrape-then-reconfirm staleness
+ * guard; "game started" is already handled at the whole-card level above.
  */
-function isQualifiedKValuePlay(row: PitcherStrikeoutTeamRow): boolean {
+function isQualifiedKValuePlay(row: PitcherStrikeoutTeamRow, liveStarterIds: readonly number[]): boolean {
+  const isCurrentStarter = row.pitcherId != null && liveStarterIds.includes(row.pitcherId);
   const evaluation = evaluateKValuePlayEligibility({
     status: "VALID",
     kLine: row.kLine,
@@ -251,7 +275,7 @@ function isQualifiedKValuePlay(row: PitcherStrikeoutTeamRow): boolean {
     projectedIP: row.projectedIP,
     oddsOver: row.kOddsOver,
     oddsUnder: row.kOddsUnder,
-    isCurrentStarter: true,
+    isCurrentStarter,
     gameStarted: false,
   });
   return Boolean(evaluation.eligible);
