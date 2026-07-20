@@ -31,6 +31,7 @@ on:
       - "scripts/check-pga-field-sync.mjs"
       - "scripts/generate-pga-detailed-model-data.mjs"
       - "scripts/lib/pga-detailed-model.mjs"
+      - "scripts/enforce-pga-model-field.mjs"
       - "src/data/pga/schedule.json"
       - "public/data/pga/schedule.json"
 
@@ -129,8 +130,10 @@ jobs:
         if: steps.open_detailed.outputs.active == 'true'
         run: cp "${RUNNER_TEMP}/the-open-2026.json" public/data/pga/the-open-2026.json
 
-      - name: Generate tournament rankings and model from player stats (primary model source)
-        run: node scripts/generate-pga-tournament-rankings.mjs
+      - name: Generate tournament rankings and restrict the current model to the validated field
+        run: |
+          node scripts/generate-pga-tournament-rankings.mjs
+          node scripts/enforce-pga-model-field.mjs
 
       - name: Verify field, model and stats match the scheduled current tournament
         run: node scripts/check-pga-field-sync.mjs
