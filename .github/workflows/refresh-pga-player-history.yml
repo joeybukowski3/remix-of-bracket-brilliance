@@ -6,6 +6,13 @@ on:
     # completion dependency-triggers the stats/trend/model rollover.
     - cron: "30 10 * * 1"
   workflow_dispatch:
+    inputs:
+      player_ids:
+        description: "Optional comma-separated canonical PGA Tour player IDs to refresh (targeted rerun)"
+        required: false
+      player_names:
+        description: "Optional comma-separated player names to refresh (targeted rerun)"
+        required: false
 
 concurrency:
   group: main-data-writers-${{ github.repository }}
@@ -36,39 +43,63 @@ jobs:
 
       - name: Validate completed-event metadata
         id: event
+        if: github.event_name != 'workflow_dispatch' || (!github.event.inputs.player_ids && !github.event.inputs.player_names)
         shell: bash
         run: |
           node --input-type=module -e "import fs from 'node:fs'; const field=JSON.parse(fs.readFileSync('public/data/pga/current-field.json','utf8')); const today=new Date().toISOString().slice(0,10); const age=Math.floor((Date.parse(today+'T00:00:00Z')-Date.parse(field.endDate+'T00:00:00Z'))/86400000); if(!field.validated||!/^R[0-9]+$/.test(field.tournamentId||'')) throw new Error('Current field lacks a validated official event ID.'); if(age<0||age>14) throw new Error('Current field is not a recently completed event.'); const rows={event_id:field.tournamentId,event_name:field.tournament,event_date:field.endDate,season:field.startDate.slice(0,4),as_of:today}; fs.appendFileSync(process.env.GITHUB_OUTPUT,Object.entries(rows).map(([key,value])=>key+'='+value).join('\n')+'\n');"
 
+      # A targeted rerun (player_ids/player_names supplied) refreshes only the
+      # requested players and skips the current-week expected-event gate,
+      # since it may intentionally be re-running a player from a prior event.
       - name: Refresh current featured-field histories to temporary output
         env:
           PGA_API_KEY: ${{ secrets.PGA_API_KEY }}
-        run: >-
-          npm run pga:refresh-history-scoped --
-          --input public/data/pga/player-history.json
-          --scope-file public/data/pga/next-tournament.json
-          --participant-file public/data/pga/current-field.json
-          --output ${{ runner.temp }}/player-history.json
-          --cache-dir ${{ runner.temp }}/pga-history-cache
-          --retries 3
-          --request-delay-ms 125
-          --as-of-date ${{ steps.event.outputs.as_of }}
-          --expected-event-id "${{ steps.event.outputs.event_id }}"
-          --expected-event-name "${{ steps.event.outputs.event_name }}"
-          --expected-event-date "${{ steps.event.outputs.event_date }}"
-          --expected-season "${{ steps.event.outputs.season }}"
+          PLAYER_IDS: ${{ github.event.inputs.player_ids }}
+          PLAYER_NAMES: ${{ github.event.inputs.player_names }}
+        shell: bash
+        run: |
+          set -e
+          ARGS=(--input public/data/pga/player-history.json
+                --participant-file public/data/pga/current-field.json
+                --output "${{ runner.temp }}/player-history.json"
+                --cache-dir "${{ runner.temp }}/pga-history-cache"
+                --retries 3
+                --request-delay-ms 125)
+          if [ -n "$PLAYER_IDS" ] || [ -n "$PLAYER_NAMES" ]; then
+            [ -n "$PLAYER_IDS" ] && ARGS+=(--player-id "$PLAYER_IDS")
+            [ -n "$PLAYER_NAMES" ] && ARGS+=(--player "$PLAYER_NAMES")
+            ARGS+=(--as-of-date "$(date -u +%F)")
+          else
+            ARGS+=(--scope-file public/data/pga/next-tournament.json
+                   --as-of-date "${{ steps.event.outputs.as_of }}"
+                   --expected-event-id "${{ steps.event.outputs.event_id }}"
+                   --expected-event-name "${{ steps.event.outputs.event_name }}"
+                   --expected-event-date "${{ steps.event.outputs.event_date }}"
+                   --expected-season "${{ steps.event.outputs.season }}")
+          fi
+          npm run pga:refresh-history-scoped -- "${ARGS[@]}"
 
       - name: Validate scoped output
-        run: >-
-          npm run pga:validate-history-refresh --
-          --before public/data/pga/player-history.json
-          --after ${{ runner.temp }}/player-history.json
-          --scope-file public/data/pga/next-tournament.json
-          --participant-file public/data/pga/current-field.json
-          --expected-event-id "${{ steps.event.outputs.event_id }}"
-          --expected-event-name "${{ steps.event.outputs.event_name }}"
-          --expected-event-date "${{ steps.event.outputs.event_date }}"
-          --expected-season "${{ steps.event.outputs.season }}"
+        env:
+          PLAYER_IDS: ${{ github.event.inputs.player_ids }}
+          PLAYER_NAMES: ${{ github.event.inputs.player_names }}
+        shell: bash
+        run: |
+          set -e
+          ARGS=(--before public/data/pga/player-history.json
+                --after "${{ runner.temp }}/player-history.json"
+                --participant-file public/data/pga/current-field.json)
+          if [ -n "$PLAYER_IDS" ] || [ -n "$PLAYER_NAMES" ]; then
+            [ -n "$PLAYER_IDS" ] && ARGS+=(--player-id "$PLAYER_IDS")
+            [ -n "$PLAYER_NAMES" ] && ARGS+=(--player "$PLAYER_NAMES")
+          else
+            ARGS+=(--scope-file public/data/pga/next-tournament.json
+                   --expected-event-id "${{ steps.event.outputs.event_id }}"
+                   --expected-event-name "${{ steps.event.outputs.event_name }}"
+                   --expected-event-date "${{ steps.event.outputs.event_date }}"
+                   --expected-season "${{ steps.event.outputs.season }}")
+          fi
+          npm run pga:validate-history-refresh -- "${ARGS[@]}"
 
       - name: Replace validated history artifact
         run: cp "${{ runner.temp }}/player-history.json" public/data/pga/player-history.json

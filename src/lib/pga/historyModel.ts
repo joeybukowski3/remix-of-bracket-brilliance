@@ -37,6 +37,26 @@ export type PgaPlayerHistoryRecord = {
   stats?: PgaHistoryStats;
 };
 
+export type PgaHistoryRefreshFailure = {
+  player: string;
+  playerId: string | null;
+  stage: string;
+  errorCode: string;
+  message: string;
+};
+
+export type PgaHistoryLastRefresh = {
+  attemptedAt: string;
+  asOfDate: string;
+  scopeCount: number;
+  successCount: number;
+  failureCount: number;
+  cacheHitCount: number;
+  requestCount: number;
+  status: "complete" | "partial" | "failed";
+  failedPlayers: PgaHistoryRefreshFailure[];
+};
+
 export type PgaPlayerHistoryPayload = {
   version: number;
   source: string;
@@ -49,6 +69,7 @@ export type PgaPlayerHistoryPayload = {
     category?: string;
   };
   players: PgaPlayerHistoryRecord[];
+  lastRefresh?: PgaHistoryLastRefresh;
 };
 
 export type PgaMajorHistoryPlayer = {

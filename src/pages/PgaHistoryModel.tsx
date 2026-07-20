@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import PgaFreshnessStatusPanel, { type PgaFreshnessStatusPanelItem } from "@/components/pga/PgaFreshnessStatusPanel";
 import PgaHistoryModelTable from "@/components/pga/PgaHistoryModelTable";
+import PgaPlayerHistoryRefreshNotice from "@/components/pga/PgaPlayerHistoryRefreshNotice";
 import {
   findCourseWeightEntry,
   getCurrentAndNextEvents,
@@ -49,7 +50,7 @@ type PlayerStatsMeta = Record<string, unknown>;
 
 export default function PgaHistoryModel() {
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
-  const { playerHistoryMap, majorHistoryMap, loading: historyLoading, error: historyError } = usePgaPlayerHistory();
+  const { playerHistory, playerHistoryMap, majorHistoryMap, loading: historyLoading, error: historyError } = usePgaPlayerHistory();
   const [field, setField] = useState<unknown>(null);
   const [fieldLoaded, setFieldLoaded] = useState(false);
   const [playerStatsMeta, setPlayerStatsMeta] = useState<PlayerStatsMeta | null>(null);
@@ -282,7 +283,14 @@ export default function PgaHistoryModel() {
           ) : null}
 
           {historyError && <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">History data is partially unavailable: {historyError}</div>}
-          {loading || historyLoading ? <div className="py-16 text-center text-sm text-slate-400">Loading tournament model…</div> : <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} />}
+          {loading || historyLoading ? (
+            <div className="py-16 text-center text-sm text-slate-400">Loading tournament model…</div>
+          ) : (
+            <>
+              <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} />
+              <PgaPlayerHistoryRefreshNotice lastRefresh={playerHistory?.lastRefresh} />
+            </>
+          )}
           <p className="mt-3 text-[11px] text-slate-400">Regular events use core stats, the last five starts, course fit, same-event history and trend. Majors replace event history with the last four starts in that major plus the last eight major starts overall.</p>
         </main>
         <aside className="hidden w-48 shrink-0 xl:block"><div className="sticky top-4 rounded-xl border bg-white p-3 shadow-sm"><div className="mb-2 text-[10px] font-black uppercase text-slate-500">Bet with our partners</div><div className="space-y-1">{SPORTSBOOKS.map((book) => <a key={book.name} href={book.referralUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded px-2 py-1.5 text-[11px] font-bold" style={{ backgroundColor: book.bgColor, color: book.textColor }}>{book.name}</a>)}</div></div></aside>
