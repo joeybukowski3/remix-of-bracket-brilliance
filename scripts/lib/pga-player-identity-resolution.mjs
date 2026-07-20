@@ -122,8 +122,46 @@ export function resolveRequestedScope({ targetedPlayerIds = [], targetedPlayerNa
   return resolveScopeUnified(scopeNames, historyPayload, participantPayload);
 }
 
+export function nameKey(value) {
+  return `name:${normalizePgaPlayerName(String(value ?? ""))}`;
+}
+
 export function failureKey(failure) {
-  return failure.playerId ? String(failure.playerId) : `name:${normalizePgaPlayerName(String(failure.player ?? failure.scopeName ?? ""))}`;
+  return failure.playerId ? String(failure.playerId) : nameKey(failure.player ?? failure.scopeName ?? "");
+}
+
+// A successful resolution can retire more than its own playerId/scopeName
+// key: it also clears any PRIOR name-only failure that the current unified
+// resolver independently proves is the same player (exact/canonical/alias
+// match to the same playerId — never a fuzzy guess, and never anything that
+// resolves ambiguously). This is what lets a player who once failed without
+// a canonical ID (e.g. before the official field listed them) get fully
+// reconciled once they resolve successfully, instead of leaving a stale
+// name-keyed warning behind forever.
+export function computeClearingKeys(successResults, { historyPayload, participantPayload, priorFailedPlayers = [] }) {
+  const context = {
+    historyLookup: buildHistoryLookup(historyPayload),
+    historyIndex: buildHistoryIndex(historyPayload),
+    participantLookup: buildParticipantLookup(participantPayload),
+  };
+  const priorNameOnlyFailures = priorFailedPlayers.filter((failure) => !failure.playerId && failure.player);
+  const keys = new Set();
+
+  for (const result of successResults) {
+    const playerId = String(result.playerId);
+    keys.add(playerId);
+    keys.add(nameKey(result.scopeName));
+    keys.add(nameKey(result.player));
+
+    for (const failure of priorNameOnlyFailures) {
+      const reResolved = resolveUnifiedIdentity(failure.player, context);
+      if (reResolved.status === "resolved" && String(reResolved.playerId) === playerId) {
+        keys.add(nameKey(failure.player));
+      }
+    }
+  }
+
+  return [...keys];
 }
 
 function resolved(scopeName, player, playerId, resolutionMethod, source, isNewPlayer) {

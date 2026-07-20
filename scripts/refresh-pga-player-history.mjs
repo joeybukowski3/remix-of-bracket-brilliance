@@ -7,7 +7,7 @@ import {
   refreshScopedPlayer,
   validateScopedRefresh,
 } from "./lib/pga-player-history-refresh.mjs";
-import { failureKey, resolveRequestedScope } from "./lib/pga-player-identity-resolution.mjs";
+import { computeClearingKeys, failureKey, resolveRequestedScope } from "./lib/pga-player-identity-resolution.mjs";
 import { mergeRefreshMetadata, resolveMetadataForWrite, toPublicFailure } from "./lib/pga-player-history-metadata.mjs";
 
 const GRAPHQL_URL = "https://orchestrator.pgatour.com/graphql";
@@ -113,10 +113,16 @@ async function main() {
 
   const failedThisRun = [...identityFailures, ...fetchFailures];
   const scopeKeysThisRun = [...merged.successPlayerIds, ...failedThisRun.map((failure) => failureKey(failure))];
+  const clearingKeys = computeClearingKeys(successResults, {
+    historyPayload: before,
+    participantPayload,
+    priorFailedPlayers: before.lastRefresh?.failedPlayers ?? [],
+  });
   const candidateMetadata = mergeRefreshMetadata(before.lastRefresh ?? null, {
     attemptedAt: new Date().toISOString(),
     asOfDate,
     scopeKeys: scopeKeysThisRun,
+    clearingKeys,
     failedPlayers: failedThisRun.map(toPublicFailure),
     cacheHitCount: cacheHits,
     requestCount,

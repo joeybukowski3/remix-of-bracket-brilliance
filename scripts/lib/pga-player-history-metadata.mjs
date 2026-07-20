@@ -9,14 +9,26 @@ import { failureKey } from "./pga-player-identity-resolution.mjs";
 // tracked-key set forward keeps scopeCount/successCount honest across runs of
 // different sizes, and failedPlayers outside the current run's scope survive
 // unless that run explicitly clears them.
+//
+// current.clearingKeys (see computeClearingKeys) carries extra identity keys
+// — typically a stale name-only key from before a player had a canonical ID
+// — that this run's successes have proven refer to the same player as a key
+// already in current.scopeKeys. Those extra keys both clear the matching
+// carried failure AND get retired from trackedKeys, so one logical player
+// never inflates scopeCount by being tracked under two keys at once.
 export function mergeRefreshMetadata(previous, current) {
   const previousTrackedKeys = new Set(previous?.trackedKeys ?? []);
   const previousFailedByKey = new Map((previous?.failedPlayers ?? []).map((failure) => [failureKey(failure), failure]));
   const scopeKeySet = new Set(current.scopeKeys);
+  const clearingKeySet = new Set([...current.scopeKeys, ...(current.clearingKeys ?? [])]);
+
   const trackedKeys = new Set([...previousTrackedKeys, ...current.scopeKeys]);
+  for (const key of clearingKeySet) {
+    if (!scopeKeySet.has(key)) trackedKeys.delete(key);
+  }
 
   const carriedFailures = [...previousFailedByKey.entries()]
-    .filter(([key]) => !scopeKeySet.has(key))
+    .filter(([key]) => !clearingKeySet.has(key))
     .map(([, failure]) => failure);
   const failedPlayers = [...carriedFailures, ...current.failedPlayers]
     .slice()
