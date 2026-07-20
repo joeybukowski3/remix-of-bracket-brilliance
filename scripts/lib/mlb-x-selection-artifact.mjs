@@ -168,6 +168,21 @@ export function buildKArtifact({ slateDate, snapshot, selectedRows = [], selecti
   return artifact;
 }
 
+/**
+ * Numerology artifact rows carry the full already-scored, already-ranked play
+ * object (see mlb-numerology-tracking.mjs's buildDailyNumerologyCard) plus a
+ * rank -- both the email HTML renderer and the X preview builder already
+ * consume exactly this shape via card.plays, so nothing downstream needs
+ * reshaping. Selection only ever filters/caps this array (mlb-numerology-x-
+ * selection-core.mjs); it is never re-sorted or re-scored here, so freezing
+ * it into the artifact cannot change numerology's ranking or scoring.
+ */
+export function buildNumerologyArtifact({ slateDate, snapshot, selectedRows = [], selectionStatus }) {
+  const artifact = baseArtifact({ contentType: "numerology", slateDate, snapshot, selectionStatus });
+  artifact.rows = selectedRows.map((row, index) => ({ ...row, rank: index + 1 }));
+  return artifact;
+}
+
 // ---------------------------------------------------------------------------
 // Validation + consistency
 // ---------------------------------------------------------------------------

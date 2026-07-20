@@ -9,7 +9,11 @@ export const PollPlanState = {
   SOURCE_FAILURE: "SOURCE_FAILURE",
 };
 
-function stateFor({ posted, readiness }) {
+// Exported (not just used internally) so other content types with the same
+// posted/readiness -> plan-state shape -- currently Numerology, via
+// mlb-numerology-poll-gate.mjs -- can reuse this exact decision instead of
+// duplicating it for a plan shape that isn't HR/K's fixed two-key object.
+export function stateFor({ posted, readiness }) {
   if (posted) return PollPlanState.POSTED;
   if (readiness?.finalStatus === ReadinessStatus.FAILED_CONFIRMATION_SOURCE) return PollPlanState.SOURCE_FAILURE;
   if (readiness?.finalStatus === ReadinessStatus.SKIPPED_NO_GAMES) return PollPlanState.NO_GAMES;
@@ -22,7 +26,7 @@ function stateFor({ posted, readiness }) {
   return readiness?.ready ? PollPlanState.READY : PollPlanState.WAITING;
 }
 
-function contentPlan({ posted, readiness }) {
+export function contentPlan({ posted, readiness }) {
   const state = stateFor({ posted, readiness });
   return {
     state,

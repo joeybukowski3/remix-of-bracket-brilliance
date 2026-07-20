@@ -13,7 +13,7 @@ import {
   summarizePerformance,
   writeJson,
 } from "./lib/mlb-numerology-tracking.mjs";
-import { selectNumerologyEmailPlays } from "./lib/mlb-numerology-email-selection.mjs";
+import { selectNumerologyEmailPlays, selectNumerologyEmailPlaysFromArtifact } from "./lib/mlb-numerology-email-selection.mjs";
 import { assertValidNumerologyEmailHtml } from "./lib/mlb-numerology-email-validation.mjs";
 import { enrichCardPlaysWithContext } from "./lib/mlb-numerology-player-context.mjs";
 import { deliverNumerologyEmail } from "./lib/mlb-numerology-email-delivery.mjs";
@@ -64,10 +64,17 @@ async function main() {
   writeJson(PERFORMANCE_PATH, performance);
   writeJson(PERFORMANCE_SUMMARY_PATH, summary);
 
-  // Keep the full board and tracking archives unchanged. The stricter rule is
-  // applied only to the subscriber email: all scores >65, with a top-three
-  // minimum when fewer than three players clear the threshold.
-  const selectedEmailCard = selectNumerologyEmailPlays(card);
+  // Keep the full board and tracking archives unchanged -- only which plays
+  // go in the subscriber email changes below. When a shared delivery
+  // artifact is provided (the normal automated path -- see
+  // plan-mlb-numerology-delivery.mjs / poll-mlb-numerology-delivery.yml),
+  // the email uses EXACTLY that artifact's confirmed-lineup selection, so it
+  // can never diverge from what the X post uses. Without one (manual/local
+  // preview runs), it falls back to the original score-threshold policy.
+  const artifactPath = process.env.NUMEROLOGY_SELECTION_ARTIFACT_PATH;
+  const selectedEmailCard = artifactPath
+    ? selectNumerologyEmailPlaysFromArtifact(card, loadJsonSafe(artifactPath, null))
+    : selectNumerologyEmailPlays(card);
   const emailCard = await enrichCardPlaysWithContext(selectedEmailCard);
   const html = injectRecentTopMatchesHtml(renderEmailHtml(emailCard, summary), performance);
   const text = injectRecentTopMatchesText(renderEmailText(emailCard, summary), performance);

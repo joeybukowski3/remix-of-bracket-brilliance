@@ -4,6 +4,7 @@ import {
   buildPlayCardSummary,
   buildSignalChips,
   buildXPostPreview,
+  buildXPostPreviewFromArtifact,
   describeSignalChip,
   validatePreviewReady,
 } from "../../../scripts/lib/mlb-numerology-x-post-core.mjs";
@@ -192,6 +193,43 @@ describe("mlb-numerology-x-post-core", () => {
       } else {
         expect(result.reason).toMatch(/280/);
       }
+    });
+  });
+
+  describe("buildXPostPreviewFromArtifact", () => {
+    it("builds the preview from exactly the artifact's rows, ignoring card.allQualifiedPlaysOver50", () => {
+      const card = makeCard({
+        date: "2026-07-20",
+        allQualifiedPlaysOver50: [makePlay({ player: "Ignored Score-Threshold Play" })],
+      });
+      const artifact = {
+        slateDate: "2026-07-20",
+        rows: [makePlay({ player: "Confirmed One" }), makePlay({ player: "Confirmed Two" })],
+      };
+      const preview = buildXPostPreviewFromArtifact(card, artifact);
+      expect(preview.topPlay?.player).toBe("Confirmed One");
+      expect(preview.secondPlay?.player).toBe("Confirmed Two");
+      expect(preview.thirdPlay).toBeNull();
+      expect(preview.totalQualifiedCount).toBe(2);
+    });
+
+    it("throws when the artifact's slate date does not match the card's", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      const staleArtifact = { slateDate: "2026-07-19", rows: [makePlay()] };
+      expect(() => buildXPostPreviewFromArtifact(card, staleArtifact)).toThrow(/slate date/i);
+    });
+
+    it("throws when the artifact is missing or malformed", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      expect(() => buildXPostPreviewFromArtifact(card, null)).toThrow(/missing or malformed/i);
+      expect(() => buildXPostPreviewFromArtifact(card, {})).toThrow(/missing or malformed/i);
+    });
+
+    it("produces a preview with no topPlay when the artifact has zero confirmed rows", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      const preview = buildXPostPreviewFromArtifact(card, { slateDate: "2026-07-20", rows: [] });
+      expect(preview.topPlay).toBeNull();
+      expect(preview.totalQualifiedCount).toBe(0);
     });
   });
 });

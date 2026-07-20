@@ -68,3 +68,39 @@ export function selectNumerologyEmailPlays(card, {
     },
   };
 }
+
+/**
+ * Confirmed-lineup selection policy: the email's selected plays are exactly
+ * the shared delivery artifact's rows (already confirmed-lineup-only,
+ * already ranked, already capped to 1-5 by mlb-numerology-x-selection-core
+ * -- see plan-mlb-numerology-delivery.mjs). This does NOT independently
+ * re-derive a selection from `card` the way selectNumerologyEmailPlays does
+ * -- it exists specifically so email and X can never diverge on which
+ * players qualify (both read the same frozen artifact).
+ *
+ * Throws if the artifact's slate date doesn't match the card's -- delivering
+ * against a stale/mismatched artifact must fail loudly, never silently.
+ */
+export function selectNumerologyEmailPlaysFromArtifact(card, artifact) {
+  if (!artifact || !Array.isArray(artifact.rows)) {
+    throw new Error("Numerology delivery artifact is missing or malformed (no rows[]).");
+  }
+  if (artifact.slateDate !== card?.date) {
+    throw new Error(`Numerology delivery artifact slate date ${artifact.slateDate} does not match card date ${card?.date}.`);
+  }
+
+  const emailSelectedPlays = artifact.rows.map((row, index) => ({ ...row, isTopPlay: index === 0 }));
+  const topPlay = emailSelectedPlays[0] ?? null;
+
+  return {
+    ...card,
+    topPlay,
+    emailSelectedPlays,
+    emailSelectionPolicy: {
+      mode: "confirmed-lineup-artifact",
+      selectedCount: emailSelectedPlays.length,
+      artifactSelectionStatus: artifact.selectionStatus ?? null,
+      artifactConfirmationAsOf: artifact.confirmationAsOf ?? null,
+    },
+  };
+}

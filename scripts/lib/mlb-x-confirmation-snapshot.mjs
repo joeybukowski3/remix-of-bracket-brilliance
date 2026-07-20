@@ -128,13 +128,18 @@ export function resolveNumerologyFacts(snapshot, play) {
 /**
  * Build the live confirmation snapshot. Thin fetch/compose over the pure
  * timing + confirmation cores. `fetchImpl` is injectable for tests.
+ *
+ * `computeTiming` defaults to the HR/K window (computeSlateTiming) so every
+ * existing caller is unaffected; Numerology's poll gate passes
+ * computeNumerologySlateTiming to get the first-pitch-relative 120/75/30
+ * window instead, without duplicating the fetch/compose logic here.
  */
-export async function buildConfirmationSnapshot({ date, now = new Date(), fetchImpl = fetch } = {}) {
+export async function buildConfirmationSnapshot({ date, now = new Date(), fetchImpl = fetch, computeTiming = computeSlateTiming } = {}) {
   const nowMs = now instanceof Date ? now.getTime() : Number(now);
   const asOf = new Date(nowMs).toISOString();
   try {
     const schedule = await fetchScheduleWithStarters({ date, fetchImpl });
-    const timing = computeSlateTiming({
+    const timing = computeTiming({
       games: schedule.map((g) => ({ gameDate: g.gameDate, status: g.status })),
       now,
       slateDate: date,
@@ -177,7 +182,7 @@ export async function buildConfirmationSnapshot({ date, now = new Date(), fetchI
       error: error instanceof Error ? error.message : String(error),
       slateDate: date,
       asOf,
-      timing: computeSlateTiming({ games: [], now, slateDate: date }),
+      timing: computeTiming({ games: [], now, slateDate: date }),
       games: [],
     };
   }

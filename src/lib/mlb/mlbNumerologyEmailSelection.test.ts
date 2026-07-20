@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectNumerologyEmailPlays } from "../../../scripts/lib/mlb-numerology-email-selection.mjs";
+import { selectNumerologyEmailPlays, selectNumerologyEmailPlaysFromArtifact } from "../../../scripts/lib/mlb-numerology-email-selection.mjs";
 
 function play(player, score, overrides = {}) {
   return {
@@ -74,5 +74,44 @@ describe("selectNumerologyEmailPlays", () => {
     expect(selected.topPlay.player).toBe("Only Player");
     expect(selected.plays).toBe(original.plays);
     expect(selected.allQualifiedPlaysOver50).toBe(original.allQualifiedPlaysOver50);
+  });
+});
+
+describe("selectNumerologyEmailPlaysFromArtifact", () => {
+  const baseCard = card([play("Ignored Score-Threshold Play", 90)]);
+
+  it("uses exactly the artifact's rows -- not an independent re-derivation from the card", () => {
+    const artifact = {
+      slateDate: undefined,
+      selectionStatus: "READY_CONFIRMED_SELECTIONS",
+      confirmationAsOf: "2026-07-20T18:00:00.000Z",
+      rows: [play("Confirmed One", 55), play("Confirmed Two", 52)],
+    };
+    const cardWithDate = { ...baseCard, date: "2026-07-20" };
+    artifact.slateDate = "2026-07-20";
+    const selected = selectNumerologyEmailPlaysFromArtifact(cardWithDate, artifact);
+    expect(selected.emailSelectedPlays.map((entry) => entry.player)).toEqual(["Confirmed One", "Confirmed Two"]);
+    expect(selected.topPlay?.player).toBe("Confirmed One");
+    expect(selected.emailSelectionPolicy.mode).toBe("confirmed-lineup-artifact");
+  });
+
+  it("throws when the artifact's slate date does not match the card's (stale/mismatched artifact must fail loudly)", () => {
+    const cardWithDate = { ...baseCard, date: "2026-07-20" };
+    const staleArtifact = { slateDate: "2026-07-19", rows: [play("Stale Play", 60)] };
+    expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, staleArtifact)).toThrow(/slate date/i);
+  });
+
+  it("throws when the artifact is missing or malformed", () => {
+    const cardWithDate = { ...baseCard, date: "2026-07-20" };
+    expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, null)).toThrow(/missing or malformed/i);
+    expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, {})).toThrow(/missing or malformed/i);
+  });
+
+  it("produces an empty selection (no topPlay) when the artifact has zero confirmed rows", () => {
+    const cardWithDate = { ...baseCard, date: "2026-07-20" };
+    const emptyArtifact = { slateDate: "2026-07-20", rows: [] };
+    const selected = selectNumerologyEmailPlaysFromArtifact(cardWithDate, emptyArtifact);
+    expect(selected.emailSelectedPlays).toEqual([]);
+    expect(selected.topPlay).toBeNull();
   });
 });

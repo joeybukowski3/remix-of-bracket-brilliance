@@ -1,5 +1,13 @@
 name: MLB Numerology Email Reliable Delivery
 
+# Manual/rescue-only email delivery workflow. Automatic delivery moved to
+# poll-mlb-numerology-delivery.yml, which shares ONE frozen, confirmed-
+# lineup selection artifact between the email delivery job and the X poster
+# (first-pitch-relative 120/75/30-minute timing, confirmed-lineup-only
+# eligibility -- see that workflow's header comment). This file still owns
+# manual operator access (e.g. an explicit override date) and, via the
+# fixed DST-paired schedule below being removed, no longer competes with the
+# automated path for the same daily send -- it is dispatch-only now.
 on:
   workflow_dispatch:
     inputs:
@@ -11,15 +19,6 @@ on:
     branches: [main]
     paths:
       - .github/workflows/mlb-numerology-email-rescue.yml
-  schedule:
-    # DST-paired primary and retry attempts. Every candidate is allowed to run;
-    # the fresh-data check and persisted receipt are the source of truth.
-    - cron: "15 8 * * *"
-    - cron: "15 9 * * *"
-    - cron: "0 11 * * *"
-    - cron: "0 12 * * *"
-    - cron: "0 14 * * *"
-    - cron: "0 15 * * *"
 
 concurrency:
   group: main-data-writers-${{ github.repository }}

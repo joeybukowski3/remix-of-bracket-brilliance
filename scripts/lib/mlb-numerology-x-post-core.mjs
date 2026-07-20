@@ -78,13 +78,16 @@ function formatDayNumberLabel(dailyProfile) {
 
 /**
  * Builds the full, clean data shape the X export graphic and caption
- * script consume from a numerology daily card. Top 3 = the 3 highest-
- * scoring qualifying plays; everything else over the score threshold goes
- * into othersOver50 (display-capped at MAX_OTHERS_DISPLAYED, with the true
- * remaining count preserved so nothing is silently dropped from the data).
+ * script consume from a numerology daily card and an explicit qualified-
+ * plays list. Top 3 = the 3 highest-ranked qualifying plays; everything
+ * else goes into othersOver50 (display-capped at MAX_OTHERS_DISPLAYED, with
+ * the true remaining count preserved so nothing is silently dropped).
+ * Shared by buildXPostPreview (score-threshold policy, `qualified` =
+ * card.allQualifiedPlaysOver50) and buildXPostPreviewFromArtifact
+ * (confirmed-lineup policy, `qualified` = the shared delivery artifact's
+ * rows) so the output shape can never drift between the two policies.
  */
-export function buildXPostPreview(card) {
-  const qualified = Array.isArray(card?.allQualifiedPlaysOver50) ? card.allQualifiedPlaysOver50 : [];
+function buildXPostPreviewFromPlays(card, qualified) {
   const topThree = qualified.slice(0, 3).map((play) => buildPlayCardSummary(play, { chipLimit: 5 }));
   const remaining = qualified.slice(3);
   const othersOver50 = remaining.slice(0, MAX_OTHERS_DISPLAYED).map((play) => {
@@ -124,6 +127,32 @@ export function buildXPostPreview(card) {
     othersOver50TruncatedCount: Math.max(0, remaining.length - othersOver50.length),
     totalQualifiedCount: qualified.length,
   };
+}
+
+/** Original score-threshold policy: qualified = every play over the card's score threshold, independent of lineup confirmation. */
+export function buildXPostPreview(card) {
+  const qualified = Array.isArray(card?.allQualifiedPlaysOver50) ? card.allQualifiedPlaysOver50 : [];
+  return buildXPostPreviewFromPlays(card, qualified);
+}
+
+/**
+ * Confirmed-lineup policy: qualified = the shared delivery artifact's rows
+ * (already confirmed-lineup-only, already ranked, already capped to 1-5 --
+ * see mlb-numerology-x-selection-core.mjs / plan-mlb-numerology-delivery.mjs).
+ * This is what the automated X delivery path uses, so its preview can never
+ * diverge from what the email delivery used for the same slate.
+ *
+ * Throws if the artifact's slate date doesn't match the card's -- posting
+ * against a stale/mismatched artifact must fail loudly, never silently.
+ */
+export function buildXPostPreviewFromArtifact(card, artifact) {
+  if (!artifact || !Array.isArray(artifact.rows)) {
+    throw new Error("Numerology delivery artifact is missing or malformed (no rows[]).");
+  }
+  if (artifact.slateDate !== card?.date) {
+    throw new Error(`Numerology delivery artifact slate date ${artifact.slateDate} does not match card date ${card?.date}.`);
+  }
+  return buildXPostPreviewFromPlays(card, artifact.rows);
 }
 
 /** Checks the preview is genuinely today's data with a real top play -- mirrors the freshness/readiness gate used by the HR props X poster. */
