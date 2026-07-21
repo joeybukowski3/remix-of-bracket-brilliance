@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertLivePostConfirmed,
   buildCaption,
   buildPlayCardSummary,
   buildSignalChips,
   buildXPostPreview,
+  buildXPostPreviewFromArtifact,
   describeSignalChip,
   validatePreviewReady,
 } from "../../../scripts/lib/mlb-numerology-x-post-core.mjs";
+import { buildNumerologyArtifact } from "../../../scripts/lib/mlb-x-selection-artifact.mjs";
 
 function makePlay(overrides: Record<string, unknown> = {}) {
   return {
@@ -192,6 +195,105 @@ describe("mlb-numerology-x-post-core", () => {
       } else {
         expect(result.reason).toMatch(/280/);
       }
+    });
+  });
+
+  describe("buildXPostPreviewFromArtifact", () => {
+    function snapshot(asOf = new Date().toISOString()) {
+      return { asOf, timing: { phase: "FINAL_CUTOFF", minutesUntilFirstPitch: 50, earliestGameTime: null } };
+    }
+    function confirmedArtifactRow(overrides: Record<string, unknown> = {}) {
+      return makePlay({ liveConfirmed: true, ...overrides });
+    }
+    function validArtifact(rows: unknown[] = [confirmedArtifactRow({ player: "Confirmed One" }), confirmedArtifactRow({ player: "Confirmed Two" })]) {
+      return buildNumerologyArtifact({ slateDate: "2026-07-20", snapshot: snapshot(), selectedRows: rows, selectionStatus: "READY_CONFIRMED_SELECTIONS" });
+    }
+
+    it("builds the preview from exactly the artifact's rows, ignoring card.allQualifiedPlaysOver50", () => {
+      const card = makeCard({
+        date: "2026-07-20",
+        allQualifiedPlaysOver50: [makePlay({ player: "Ignored Score-Threshold Play" })],
+      });
+      const preview = buildXPostPreviewFromArtifact(card, validArtifact());
+      expect(preview.topPlay?.player).toBe("Confirmed One");
+      expect(preview.secondPlay?.player).toBe("Confirmed Two");
+      expect(preview.thirdPlay).toBeNull();
+      expect(preview.totalQualifiedCount).toBe(2);
+      expect(preview.confirmationStatus).toBe("confirmed");
+    });
+
+    it("throws when the artifact's slate date does not match the card's (wrong-slate artifact must fail closed)", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      const wrongSlateArtifact = { ...validArtifact([confirmedArtifactRow()]), slateDate: "2026-07-19" };
+      expect(() => buildXPostPreviewFromArtifact(card, wrongSlateArtifact)).toThrow(/slate date/i);
+    });
+
+    it("throws when the artifact's confirmation snapshot is stale (must fail closed)", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      const staleAsOf = new Date(Date.now() - 60 * 60_000).toISOString();
+      const staleArtifact = buildNumerologyArtifact({ slateDate: "2026-07-20", snapshot: snapshot(staleAsOf), selectedRows: [confirmedArtifactRow()], selectionStatus: "READY_CONFIRMED_SELECTIONS" });
+      expect(() => buildXPostPreviewFromArtifact(card, staleArtifact)).toThrow(/stale/i);
+    });
+
+    it("throws when the artifact is missing or malformed", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      expect(() => buildXPostPreviewFromArtifact(card, null)).toThrow(/missing or malformed/i);
+      expect(() => buildXPostPreviewFromArtifact(card, {})).toThrow(/missing or malformed/i);
+    });
+
+    it("throws when the artifact has zero rows (empty artifact must block live delivery)", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      expect(() => buildXPostPreviewFromArtifact(card, validArtifact([]))).toThrow(/zero confirmed rows/i);
+    });
+
+    it("throws when any row in the artifact is missing the live-confirmed marker (an unconfirmed player must block live delivery)", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      const unconfirmedRow = makePlay({ player: "Snuck In Unconfirmed" }); // no liveConfirmed
+      const artifact = validArtifact([confirmedArtifactRow({ player: "Legit" }), unconfirmedRow]);
+      expect(() => buildXPostPreviewFromArtifact(card, artifact)).toThrow(/without live lineup confirmation/i);
+    });
+  });
+
+  describe("assertLivePostConfirmed (production-safety gate)", () => {
+    it("live X post (mode=post) with no artifact fails -- the unconfirmed score-threshold preview is never postable", () => {
+      const card = makeCard({ date: "2026-07-20", allQualifiedPlaysOver50: [makePlay()] });
+      const unconfirmedPreview = buildXPostPreview(card);
+      expect(unconfirmedPreview.confirmationStatus).toBe("unconfirmed-preview");
+      expect(() => assertLivePostConfirmed(unconfirmedPreview, "post")).toThrow(/not confirmed/i);
+    });
+
+    it("live text-only X post (mode=post-text-only) with no artifact fails", () => {
+      const card = makeCard({ date: "2026-07-20", allQualifiedPlaysOver50: [makePlay()] });
+      const unconfirmedPreview = buildXPostPreview(card);
+      expect(() => assertLivePostConfirmed(unconfirmedPreview, "post-text-only")).toThrow(/not confirmed/i);
+    });
+
+    it("dry-run without an artifact remains possible and the result is visibly marked unconfirmed", () => {
+      const card = makeCard({ date: "2026-07-20", allQualifiedPlaysOver50: [makePlay()] });
+      const unconfirmedPreview = buildXPostPreview(card);
+      expect(unconfirmedPreview.confirmationStatus).toBe("unconfirmed-preview");
+      expect(() => assertLivePostConfirmed(unconfirmedPreview, "dry-run")).not.toThrow();
+    });
+
+    it("verify-account and post-key-only are also unaffected (not live-posting modes)", () => {
+      const unconfirmedPreview = buildXPostPreview(makeCard({ date: "2026-07-20", allQualifiedPlaysOver50: [makePlay()] }));
+      expect(() => assertLivePostConfirmed(unconfirmedPreview, "verify-account")).not.toThrow();
+      expect(() => assertLivePostConfirmed(unconfirmedPreview, "post-key-only")).not.toThrow();
+    });
+
+    it("manual X post uses the confirmed selection: a valid artifact-driven preview is allowed to post/post-text-only", () => {
+      const card = makeCard({ date: "2026-07-20" });
+      const confirmedPreview = buildXPostPreviewFromArtifact(
+        card,
+        buildNumerologyArtifact({
+          slateDate: "2026-07-20",
+          snapshot: { asOf: new Date().toISOString(), timing: { phase: "FINAL_CUTOFF", minutesUntilFirstPitch: 50, earliestGameTime: null } },
+          selectedRows: [makePlay({ liveConfirmed: true })],
+          selectionStatus: "FORCED_CONFIRMED_SELECTION",
+        }),
+      );
+      expect(() => assertLivePostConfirmed(confirmedPreview, "post")).not.toThrow();
+      expect(() => assertLivePostConfirmed(confirmedPreview, "post-text-only")).not.toThrow();
     });
   });
 });

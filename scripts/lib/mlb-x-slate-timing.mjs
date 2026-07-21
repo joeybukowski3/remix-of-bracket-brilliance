@@ -115,11 +115,19 @@ export function normalizeScheduleGames(scheduleJson) {
     }));
 }
 
-function phaseForMinutesUntil(minutesUntil) {
-  if (minutesUntil > POLLING_LEAD_MINUTES) return SlatePhase.PRE_POLLING;
-  if (minutesUntil > PREFERRED_WINDOW_START_MINUTES) return SlatePhase.POLLING;
-  if (minutesUntil > PREFERRED_WINDOW_END_MINUTES) return SlatePhase.PREFERRED;
-  if (minutesUntil > FINAL_CUTOFF_MINUTES) return SlatePhase.FINAL_CUTOFF;
+function phaseForMinutesUntil(
+  minutesUntil,
+  {
+    pollingLeadMinutes = POLLING_LEAD_MINUTES,
+    preferredWindowStartMinutes = PREFERRED_WINDOW_START_MINUTES,
+    preferredWindowEndMinutes = PREFERRED_WINDOW_END_MINUTES,
+    finalCutoffMinutes = FINAL_CUTOFF_MINUTES,
+  } = {},
+) {
+  if (minutesUntil > pollingLeadMinutes) return SlatePhase.PRE_POLLING;
+  if (minutesUntil > preferredWindowStartMinutes) return SlatePhase.POLLING;
+  if (minutesUntil > preferredWindowEndMinutes) return SlatePhase.PREFERRED;
+  if (minutesUntil > finalCutoffMinutes) return SlatePhase.FINAL_CUTOFF;
   return SlatePhase.EXPIRED;
 }
 
@@ -127,9 +135,25 @@ function phaseForMinutesUntil(minutesUntil) {
  * Pure timing decision. Given today's games and a `now`, returns the stable
  * machine-readable slate-timing result documented in the PR.
  *
- * @param {{ games: Array<object>, now?: Date|number, slateDate?: string }} params
+ * The four window-boundary options default to the HR/K constants above, so
+ * every existing caller is unaffected. A caller with a different intended
+ * daily-delivery window (e.g. Numerology's first-pitch-relative 120/75/30
+ * schedule -- see computeNumerologySlateTiming below) can override them
+ * without duplicating this decision logic.
+ *
+ * @param {{ games: Array<object>, now?: Date|number, slateDate?: string,
+ *   pollingLeadMinutes?: number, preferredWindowStartMinutes?: number,
+ *   preferredWindowEndMinutes?: number, finalCutoffMinutes?: number }} params
  */
-export function computeSlateTiming({ games = [], now = new Date(), slateDate = "" } = {}) {
+export function computeSlateTiming({
+  games = [],
+  now = new Date(),
+  slateDate = "",
+  pollingLeadMinutes = POLLING_LEAD_MINUTES,
+  preferredWindowStartMinutes = PREFERRED_WINDOW_START_MINUTES,
+  preferredWindowEndMinutes = PREFERRED_WINDOW_END_MINUTES,
+  finalCutoffMinutes = FINAL_CUTOFF_MINUTES,
+} = {}) {
   const nowMs = now instanceof Date ? now.getTime() : Number(now);
 
   const usableGames = games.filter((g) => !isGameExcluded(g) && toEpochMs(g?.gameDate) != null);
@@ -160,7 +184,12 @@ export function computeSlateTiming({ games = [], now = new Date(), slateDate = "
   const earliestMs = Math.min(...startTimes);
   const allGamesStarted = usableGames.every((g) => isGameStarted(g, nowMs));
   const minutesUntilFirstPitch = Math.round((earliestMs - nowMs) / MS_PER_MINUTE);
-  const phase = phaseForMinutesUntil(minutesUntilFirstPitch);
+  const phase = phaseForMinutesUntil(minutesUntilFirstPitch, {
+    pollingLeadMinutes,
+    preferredWindowStartMinutes,
+    preferredWindowEndMinutes,
+    finalCutoffMinutes,
+  });
 
   const isFinalCutoff = phase === SlatePhase.FINAL_CUTOFF;
   const isPreferredWindow = phase === SlatePhase.PREFERRED;
@@ -170,10 +199,10 @@ export function computeSlateTiming({ games = [], now = new Date(), slateDate = "
   return {
     ...base,
     earliestGameTime: new Date(earliestMs).toISOString(),
-    pollingStartsAt: new Date(earliestMs - POLLING_LEAD_MINUTES * MS_PER_MINUTE).toISOString(),
-    preferredWindowStartsAt: new Date(earliestMs - PREFERRED_WINDOW_START_MINUTES * MS_PER_MINUTE).toISOString(),
-    preferredWindowEndsAt: new Date(earliestMs - PREFERRED_WINDOW_END_MINUTES * MS_PER_MINUTE).toISOString(),
-    finalCutoffAt: new Date(earliestMs - FINAL_CUTOFF_MINUTES * MS_PER_MINUTE).toISOString(),
+    pollingStartsAt: new Date(earliestMs - pollingLeadMinutes * MS_PER_MINUTE).toISOString(),
+    preferredWindowStartsAt: new Date(earliestMs - preferredWindowStartMinutes * MS_PER_MINUTE).toISOString(),
+    preferredWindowEndsAt: new Date(earliestMs - preferredWindowEndMinutes * MS_PER_MINUTE).toISOString(),
+    finalCutoffAt: new Date(earliestMs - finalCutoffMinutes * MS_PER_MINUTE).toISOString(),
     minutesUntilFirstPitch,
     allGamesStarted,
     hasGames: true,
@@ -229,6 +258,33 @@ export function isAtOrAfterEtClockTime(now, hour, minute) {
 // so both call sites can never drift out of sync with each other.
 export const K_EARLIEST_POST_ET_HOUR = 11;
 export const K_EARLIEST_POST_ET_MINUTE = 0;
+
+// Numerology delivery (email + X, sharing one frozen selection artifact) is
+// first-pitch-relative, not a fixed daily clock time: begin polling 120
+// minutes before the earliest first pitch, target delivery at 75 minutes
+// before (post whatever's confirmed as soon as anything qualifies from that
+// point on), and stop polling entirely at 30 minutes before. Modeled on the
+// same phase machinery as HR/K via computeNumerologySlateTiming below --
+// PREFERRED_START and PREFERRED_END are deliberately equal (collapsing the
+// PREFERRED phase to zero width) so the phase sequence is exactly
+// PRE_POLLING -> POLLING (120-75) -> FINAL_CUTOFF (75-30) -> EXPIRED (<30),
+// matching the three-boundary spec instead of HR/K's four-boundary one.
+export const NUMEROLOGY_POLLING_LEAD_MINUTES = 120;
+export const NUMEROLOGY_TARGET_MINUTES = 75;
+export const NUMEROLOGY_FINAL_CUTOFF_MINUTES = 30;
+
+/** computeSlateTiming preset for Numerology's first-pitch-relative delivery window (120/75/30 -- see constants above). */
+export function computeNumerologySlateTiming({ games = [], now = new Date(), slateDate = "" } = {}) {
+  return computeSlateTiming({
+    games,
+    now,
+    slateDate,
+    pollingLeadMinutes: NUMEROLOGY_POLLING_LEAD_MINUTES,
+    preferredWindowStartMinutes: NUMEROLOGY_TARGET_MINUTES,
+    preferredWindowEndMinutes: NUMEROLOGY_TARGET_MINUTES,
+    finalCutoffMinutes: NUMEROLOGY_FINAL_CUTOFF_MINUTES,
+  });
+}
 
 const STATS_API_SCHEDULE_URL = "https://statsapi.mlb.com/api/v1/schedule";
 

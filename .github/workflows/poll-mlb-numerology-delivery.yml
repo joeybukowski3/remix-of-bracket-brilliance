@@ -1,0 +1,270 @@
+name: Poll MLB Numerology Delivery
+
+# Shared first-pitch-relative delivery gate for Numerology email + X (see
+# scripts/lib/mlb-x-slate-timing.mjs's computeNumerologySlateTiming: begin
+# polling 120 minutes before the day's earliest first pitch, deliver
+# whatever is confirmed from 75 minutes before on, stop polling entirely at
+# 30 minutes before -- never a fixed daily clock time). Eligibility is
+# confirmed-lineup-only: a play must be live-confirmed in today's official
+# starting lineup (scripts/lib/mlb-x-confirmation-snapshot.mjs's
+# resolveNumerologyFacts) AND above the qualifying score threshold --
+# projected/probable/pending/unknown/bench/scratched players are never
+# eligible. Numerology's own scoring/ranking is never touched by any of this
+# -- only which already-ranked plays are eligible for delivery.
+#
+# The plan job restores both delivery receipts first and exits cheaply
+# without any live-data fetch once both are already delivered. Otherwise it
+# builds today's numerology card + one live confirmation snapshot, freezes
+# the confirmed selection into ONE shared artifact, and hands it to two
+# independent downstream jobs -- so email and X can never diverge on which
+# players qualify for the same slate, while each still keeps its own fully
+# independent delivery receipt (a GH Actions cache for X, a committed JSON
+# file for email) and can recover on its own.
+on:
+  schedule:
+    - cron: "*/15 12-23 * * *"
+    - cron: "*/15 0-2 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: poll-mlb-numerology-delivery
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      slate_date: ${{ steps.plan.outputs.slate_date }}
+      ready: ${{ steps.plan.outputs.ready }}
+      x_should_run: ${{ steps.plan.outputs.x_should_run }}
+      email_should_run: ${{ steps.plan.outputs.email_should_run }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # No setup-node/npm cache here: the plan uses only repo modules already
+      # present after checkout, matching poll-mlb-x-posts.yml's own plan job.
+      - name: Compute ET slate date
+        id: et_date
+        shell: bash
+        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore X delivery receipt
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/mlb-numerology-x-posted
+          key: mlb-numerology-x-posted-${{ steps.et_date.outputs.date }}-${{ github.run_id }}-plan
+          restore-keys: |
+            mlb-numerology-x-posted-${{ steps.et_date.outputs.date }}-
+
+      - name: Build shared delivery plan
+        id: plan
+        run: node scripts/plan-mlb-numerology-delivery.mjs
+
+      - name: Upload shared plan and selection artifact
+        if: steps.plan.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-numerology-poll-${{ github.run_id }}
+          path: |
+            artifacts/mlb-numerology-poll-plan.json
+            artifacts/mlb-numerology-selection-artifact.json
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "slate date: ${{ steps.plan.outputs.slate_date || steps.et_date.outputs.date }}"
+          echo "ready: ${{ steps.plan.outputs.ready || 'false' }}"
+          echo "X should run: ${{ steps.plan.outputs.x_should_run || 'false' }}"
+          echo "email should run: ${{ steps.plan.outputs.email_should_run || 'false' }}"
+
+  deliver-email:
+    needs: plan
+    if: needs.plan.outputs.email_should_run == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: mlb-numerology-email-delivery
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-numerology-poll-${{ github.run_id }}
+          path: artifacts
+
+      - name: Validate shared plan/artifact handoff
+        run: |
+          node --input-type=module -e "
+          import{readFileSync}from'node:fs';
+          const p=JSON.parse(readFileSync('artifacts/mlb-numerology-poll-plan.json'));
+          const a=JSON.parse(readFileSync('artifacts/mlb-numerology-selection-artifact.json'));
+          if(p.slateDate!==a.slateDate||p.numerology.shouldRun!==true)throw new Error('Invalid numerology poll plan/artifact handoff');
+          "
+
+      # Re-check after acquiring this job's own concurrency group -- a
+      # manual/rescue run may have delivered the email while this run was
+      # waiting after planning. Email's receipt is a committed file, so a
+      # fresh fetch+reset (not a cache restore) is the source of truth.
+      - name: Re-check email delivery receipt
+        id: already
+        shell: bash
+        run: |
+          git fetch origin main
+          git checkout origin/main -- public/data/mlb/numerology/email-send-state.json 2>/dev/null || true
+          slate_date="${{ needs.plan.outputs.slate_date }}"
+          sent_date="$(jq -r '.date // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
+          sent_result="$(jq -r '.result // empty' public/data/mlb/numerology/email-send-state.json 2>/dev/null || true)"
+          if [ "$sent_date" = "$slate_date" ] && { [ "$sent_result" = "sent" ] || [ "$sent_result" = "already_exists" ]; }; then
+            echo "delivered=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "delivered=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.already.outputs.delivered != 'true'
+        with: { node-version: 20, cache: npm }
+      - name: Install dependencies
+        if: steps.already.outputs.delivered != 'true'
+        run: npm ci
+
+      - name: Run numerology tracking unit tests
+        if: steps.already.outputs.delivered != 'true'
+        run: npx vitest run src/lib/mlb/mlbNumerologyTracking.test.ts
+
+      - name: Generate today's email payload from the shared artifact
+        if: steps.already.outputs.delivered != 'true'
+        env:
+          NUMEROLOGY_SELECTION_ARTIFACT_PATH: artifacts/mlb-numerology-selection-artifact.json
+        run: npm run mlb:numerology:email:preview
+
+      # generate-mlb-numerology-email.mjs's --send path re-runs the entire
+      # card-build + selection + render from scratch (it is a separate `node`
+      # invocation from the --preview step above, not a continuation of it)
+      # -- NUMEROLOGY_SELECTION_ARTIFACT_PATH must be set here too, or this
+      # step would silently fall back to the independent score-threshold
+      # selection and could send a different set of players than what was
+      # just previewed/validated.
+      - name: Send today's Buttondown email
+        if: steps.already.outputs.delivered != 'true'
+        env:
+          NUMEROLOGY_SELECTION_ARTIFACT_PATH: artifacts/mlb-numerology-selection-artifact.json
+          NUMEROLOGY_EMAIL_LIVE: "true"
+          NUMEROLOGY_EMAIL_WEBHOOK_URL: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_URL || vars.NUMEROLOGY_EMAIL_WEBHOOK_URL }}
+          NUMEROLOGY_EMAIL_WEBHOOK_TOKEN: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$NUMEROLOGY_EMAIL_WEBHOOK_URL" || { echo "::error::NUMEROLOGY_EMAIL_WEBHOOK_URL is not configured."; exit 1; }
+          test -n "$NUMEROLOGY_EMAIL_WEBHOOK_TOKEN" || { echo "::error::NUMEROLOGY_EMAIL_WEBHOOK_TOKEN is not configured."; exit 1; }
+          npm run mlb:numerology:email:send
+
+      - name: Persist send receipt
+        if: steps.already.outputs.delivered != 'true'
+        env:
+          SLATE_DATE: ${{ needs.plan.outputs.slate_date }}
+        shell: bash
+        run: bash scripts/lib/persist-mlb-numerology-email-receipt.sh
+
+  deliver-x:
+    needs: plan
+    if: needs.plan.outputs.x_should_run == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: post-mlb-numerology-to-x
+      cancel-in-progress: false
+    env:
+      X_EXPECTED_USERNAME: _joeknowsball_
+      X_DUPLICATE_STATE_DIR: .cache/mlb-numerology-x-posted
+      JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+      JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+      JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+      JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-numerology-poll-${{ github.run_id }}
+          path: artifacts
+
+      - name: Validate shared plan/artifact handoff
+        run: |
+          node --input-type=module -e "
+          import{readFileSync}from'node:fs';
+          const p=JSON.parse(readFileSync('artifacts/mlb-numerology-poll-plan.json'));
+          const a=JSON.parse(readFileSync('artifacts/mlb-numerology-selection-artifact.json'));
+          if(p.slateDate!==a.slateDate||p.numerology.shouldRun!==true)throw new Error('Invalid numerology poll plan/artifact handoff');
+          "
+
+      - name: Restore latest X delivery receipt
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/mlb-numerology-x-posted
+          key: mlb-numerology-x-posted-${{ needs.plan.outputs.slate_date }}-${{ github.run_id }}-x
+          restore-keys: |
+            mlb-numerology-x-posted-${{ needs.plan.outputs.slate_date }}-
+
+      - name: Re-check X delivery receipt
+        id: already
+        shell: bash
+        run: |
+          FILE=".cache/mlb-numerology-x-posted/mlb-numerology-${{ needs.plan.outputs.slate_date }}.json"
+          if [ -f "$FILE" ]; then echo "delivered=true" >> "$GITHUB_OUTPUT"; else echo "delivered=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/setup-node@v4
+        if: steps.already.outputs.delivered != 'true'
+        with: { node-version: 20, cache: npm }
+      - name: Install dependencies
+        if: steps.already.outputs.delivered != 'true'
+        run: npm ci
+      - name: Install Playwright
+        if: steps.already.outputs.delivered != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate today's X preview from the shared artifact
+        if: steps.already.outputs.delivered != 'true'
+        env:
+          NUMEROLOGY_SELECTION_ARTIFACT_PATH: artifacts/mlb-numerology-selection-artifact.json
+        run: node scripts/generate-mlb-numerology-x-preview.mjs
+
+      # Bundles the just-written local x-post-preview.json into dist/, so
+      # the local preview server below serves the exact confirmed selection
+      # -- never a stale or not-yet-deployed production copy.
+      - name: Build site for local export render
+        if: steps.already.outputs.delivered != 'true'
+        run: npm run build
+
+      - name: Post Numerology to X
+        id: post
+        if: steps.already.outputs.delivered != 'true'
+        shell: bash
+        env:
+          NUMEROLOGY_X_DATA_SOURCE: local
+          NUMEROLOGY_SELECTION_ARTIFACT_PATH: artifacts/mlb-numerology-selection-artifact.json
+          X_ALLOW_LIVE_POST: "true"
+          NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED: "true"
+          NUMEROLOGY_X_FORCE_REPOST: "false"
+        run: node scripts/run-numerology-x-post-locally.mjs --post
+
+      - name: Check for X delivery receipt
+        id: receipt
+        if: always() && steps.post.outcome != 'skipped'
+        shell: bash
+        run: |
+          FILE=".cache/mlb-numerology-x-posted/mlb-numerology-${{ needs.plan.outputs.slate_date }}.json"
+          if [ -f "$FILE" ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Persist X delivery receipt immediately
+        if: always() && steps.receipt.outputs.exists == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/mlb-numerology-x-posted
+          key: mlb-numerology-x-posted-${{ needs.plan.outputs.slate_date }}-${{ github.run_id }}-x

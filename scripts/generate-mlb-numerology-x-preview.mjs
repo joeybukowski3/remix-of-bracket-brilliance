@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { buildDailyNumerologyCard, ensureDirForFile, getTodayEt, loadJsonSafe, writeJson } from "./lib/mlb-numerology-tracking.mjs";
-import { buildXPostPreview } from "./lib/mlb-numerology-x-post-core.mjs";
+import { buildXPostPreview, buildXPostPreviewFromArtifact } from "./lib/mlb-numerology-x-post-core.mjs";
 
 const ROOT = process.cwd();
 const NUMEROLOGY_DAILY_PATH = path.join(ROOT, "public", "data", "mlb", "numerology-daily.json");
@@ -26,7 +26,16 @@ function main() {
   const hrPayload = loadJsonSafe(HR_RAW_PATH, null);
 
   const card = buildDailyNumerologyCard(numerologyPayload, { date: requestedDate, hrPayload });
-  const preview = buildXPostPreview(card);
+
+  // When a shared delivery artifact is provided (the normal automated path
+  // -- see plan-mlb-numerology-delivery.mjs), the X preview uses EXACTLY
+  // that artifact's confirmed-lineup selection so it can never diverge from
+  // what the email used for the same slate. Without one (manual/local
+  // preview runs), it falls back to the original score-threshold policy.
+  const artifactPath = process.env.NUMEROLOGY_SELECTION_ARTIFACT_PATH;
+  const preview = artifactPath
+    ? buildXPostPreviewFromArtifact(card, loadJsonSafe(artifactPath, null))
+    : buildXPostPreview(card);
 
   console.log(`[mlb-numerology-x] slate ${preview.date}`);
   console.log(`[mlb-numerology-x] daily number: ${preview.dayNumbers.universalDayLabel ?? "unknown"}`);

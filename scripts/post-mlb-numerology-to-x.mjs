@@ -4,7 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
-import { buildCaption, validatePreviewReady } from "./lib/mlb-numerology-x-post-core.mjs";
+import { assertLivePostConfirmed, buildCaption, validatePreviewReady } from "./lib/mlb-numerology-x-post-core.mjs";
 import { checkDailyPostingLock, getForceRepostOverride, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
 import { assertScheduledLiveGateEnabled } from "./lib/mlb-numerology-scheduled-gate.mjs";
 
@@ -292,8 +292,19 @@ async function main() {
   }
 
   const source = getDataSource();
-  if ((mode === "post" || mode === "post-text-only") && source !== "production") {
-    throw new Error("Live posting requires NUMEROLOGY_X_DATA_SOURCE=production.");
+  // The automated confirmed-lineup delivery path (poll-mlb-numerology-
+  // delivery.yml) builds x-post-preview.json locally from the shared,
+  // live-fetched selection artifact and screenshots a local server (see
+  // NUMEROLOGY_X_SCREENSHOT_URL below) instead of the deployed production
+  // site -- this is fresher than production, not staler, since it never
+  // waits on a git-commit-then-Vercel-deploy cycle inside the tight
+  // 120/75/30-minute delivery window. NUMEROLOGY_SELECTION_ARTIFACT_PATH is
+  // only ever set by that workflow, so this narrowly allows `local` for
+  // live posts in exactly that case -- an ordinary manual/local live-post
+  // attempt still requires NUMEROLOGY_X_DATA_SOURCE=production.
+  const usingSharedArtifact = Boolean(process.env.NUMEROLOGY_SELECTION_ARTIFACT_PATH);
+  if ((mode === "post" || mode === "post-text-only") && source !== "production" && !(source === "local" && usingSharedArtifact)) {
+    throw new Error("Live posting requires NUMEROLOGY_X_DATA_SOURCE=production, or =local together with NUMEROLOGY_SELECTION_ARTIFACT_PATH (the automated confirmed-lineup delivery path).");
   }
 
   const preview = await loadPreview(source);
@@ -316,6 +327,15 @@ async function main() {
     logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
     return;
   }
+
+  // Fail closed: crosses the x-post-preview.json file boundary on purpose
+  // -- it does not matter which process wrote the file or whether an
+  // artifact was available when it was written, only whether the file
+  // itself carries confirmationStatus="confirmed" (see assertLivePostConfirmed
+  // / buildXPostPreviewFromArtifact). --dry-run/--verify-account/--post-key-
+  // only are unaffected. A daily-lock force-repost override cannot bypass
+  // this -- it is a wholly separate mechanism checked much later below.
+  assertLivePostConfirmed(preview, mode);
 
   const result = buildCaption(preview);
   if (result.skipped) {

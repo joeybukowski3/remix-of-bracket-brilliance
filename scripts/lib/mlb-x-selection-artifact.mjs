@@ -168,6 +168,21 @@ export function buildKArtifact({ slateDate, snapshot, selectedRows = [], selecti
   return artifact;
 }
 
+/**
+ * Numerology artifact rows carry the full already-scored, already-ranked play
+ * object (see mlb-numerology-tracking.mjs's buildDailyNumerologyCard) plus a
+ * rank -- both the email HTML renderer and the X preview builder already
+ * consume exactly this shape via card.plays, so nothing downstream needs
+ * reshaping. Selection only ever filters/caps this array (mlb-numerology-x-
+ * selection-core.mjs); it is never re-sorted or re-scored here, so freezing
+ * it into the artifact cannot change numerology's ranking or scoring.
+ */
+export function buildNumerologyArtifact({ slateDate, snapshot, selectedRows = [], selectionStatus }) {
+  const artifact = baseArtifact({ contentType: "numerology", slateDate, snapshot, selectionStatus });
+  artifact.rows = selectedRows.map((row, index) => ({ ...row, rank: index + 1 }));
+  return artifact;
+}
+
 // ---------------------------------------------------------------------------
 // Validation + consistency
 // ---------------------------------------------------------------------------
@@ -196,6 +211,41 @@ export function validateArtifact(artifact, { slateDate, now = new Date(), maxAge
     return `Artifact confirmation is stale: ${ageMinutes.toFixed(1)} min old (max ${maxAgeMinutes}).`;
   }
   return "";
+}
+
+/**
+ * Strict gate for a numerology artifact about to drive a LIVE delivery
+ * (an email send or an X post) -- never used for a preview/dry-run that has
+ * no artifact at all (see the score-threshold fallback in the callers,
+ * which is only reachable when NUMEROLOGY_SELECTION_ARTIFACT_PATH is unset
+ * and the request is not a live send/post). Throws with a specific,
+ * actionable message on any failure; returns nothing on success. Reuses
+ * validateArtifact for the slate-date/duplicate-identity/staleness checks
+ * and adds the two numerology-specific requirements a live delivery must
+ * additionally satisfy: at least one row, and every row explicitly marked
+ * liveConfirmed by mlb-numerology-x-selection-core.mjs -- so a corrupted,
+ * hand-edited, or wrongly-produced artifact can never quietly slip an
+ * unconfirmed player into a live send.
+ */
+export function assertNumerologyArtifactConfirmed(artifact, { slateDate, now = new Date() } = {}) {
+  if (!artifact || typeof artifact !== "object" || !Array.isArray(artifact.rows)) {
+    throw new Error("Numerology delivery artifact is missing or malformed (no rows[]). Refusing live delivery.");
+  }
+  if (artifact.contentType !== "numerology") {
+    throw new Error(`Numerology delivery artifact has unexpected contentType "${artifact.contentType}". Refusing live delivery.`);
+  }
+  if (artifact.rows.length === 0) {
+    throw new Error("Numerology delivery artifact has zero confirmed rows. Refusing live delivery.");
+  }
+  const unconfirmedRow = artifact.rows.find((row) => row?.liveConfirmed !== true);
+  if (unconfirmedRow) {
+    const label = unconfirmedRow?.player ?? unconfirmedRow?.playerId ?? "unknown player";
+    throw new Error(`Numerology delivery artifact contains a row without live lineup confirmation (${label}). Refusing live delivery.`);
+  }
+  const validationError = validateArtifact(artifact, { slateDate, now });
+  if (validationError) {
+    throw new Error(`Numerology delivery artifact failed validation: ${validationError}`);
+  }
 }
 
 function identityList(contentType, rows) {
