@@ -16,12 +16,24 @@ type BestBetPick = {
   powerRank: number;
   topStats: string[];
   bullets: string[];
+  risk?: string;
+  angles?: string[];
   odds?: {
     outright?: string | null;
     top5?: string | null;
     top10?: string | null;
     top20?: string | null;
   } | null;
+};
+
+type ArticleSection = { heading: string; body: string };
+
+type Article = {
+  title: string;
+  dek?: string;
+  introduction: string;
+  sections: ArticleSection[];
+  conclusion: string;
 };
 
 type BestBetsPayload = {
@@ -45,6 +57,9 @@ type BestBetsPayload = {
   top5: BestBetPick[];
   top10: BestBetPick[];
   top20: BestBetPick[];
+  article?: Article | null;
+  methodologyNotes?: string[];
+  dataLimitations?: string[];
 };
 
 const EMPTY_MESSAGE = "No current card available";
@@ -220,6 +235,16 @@ function PickCard({
         ))}
       </div>
 
+      {pick.angles?.length ? (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {pick.angles.map((angle) => (
+            <span key={angle} className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+              {angle}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <ul className="mt-4 space-y-2">
         {pick.bullets.map((bullet) => (
           <li key={bullet} className="flex gap-2 text-sm leading-6 text-gray-700">
@@ -229,8 +254,57 @@ function PickCard({
         ))}
       </ul>
 
+      {pick.risk ? (
+        <div className="mt-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-800">
+          <span className="font-semibold">Main risk:</span> {pick.risk}
+        </div>
+      ) : null}
+
       <div className="mt-4 border-t border-gray-200 pt-3 text-xs italic text-gray-500">{tierNote}</div>
     </article>
+  );
+}
+
+function ArticleView({ article }: { article: Article }) {
+  return (
+    <article className="space-y-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+      <header className="space-y-1.5 border-b border-gray-200 pb-4">
+        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900 sm:text-3xl">{article.title}</h2>
+        {article.dek ? <p className="text-sm text-gray-500">{article.dek}</p> : null}
+      </header>
+      <p className="text-sm leading-7 text-gray-700">{article.introduction}</p>
+      {article.sections.map((section) => (
+        <section key={section.heading}>
+          <h3 className="text-base font-semibold text-gray-900">{section.heading}</h3>
+          <p className="mt-1.5 text-sm leading-7 text-gray-700">{section.body}</p>
+        </section>
+      ))}
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Final Card</div>
+        <p className="mt-1.5 text-sm leading-7 text-gray-800">{article.conclusion}</p>
+      </div>
+    </article>
+  );
+}
+
+function DataNotesFooter({ methodologyNotes, dataLimitations, generatedAt }: { methodologyNotes: string[]; dataLimitations: string[]; generatedAt?: string }) {
+  if (!methodologyNotes.length && !dataLimitations.length) return null;
+  return (
+    <section className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs leading-6 text-gray-600">
+      {methodologyNotes.length ? (
+        <div>
+          <span className="font-semibold text-gray-700">Methodology: </span>
+          {methodologyNotes.join(" ")}
+        </div>
+      ) : null}
+      {dataLimitations.length ? (
+        <div className="mt-1.5">
+          <span className="font-semibold text-gray-700">Data limitations: </span>
+          {dataLimitations.join(" ")}
+        </div>
+      ) : null}
+      {generatedAt ? <div className="mt-1.5 text-gray-400">Generated {formatGeneratedAt(generatedAt)}.</div> : null}
+    </section>
   );
 }
 
@@ -426,6 +500,22 @@ export default function PgaBestBets() {
                   </div>
                 </section>
               ))}
+
+              {data?.article && payloadMatchesTournament ? (
+                <section id="article" className="space-y-4 scroll-mt-24">
+                  <div>
+                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">This Week's Analysis</h2>
+                    <p className="mt-1 text-sm text-gray-500">The full write-up behind this week's board.</p>
+                  </div>
+                  <ArticleView article={data.article} />
+                </section>
+              ) : null}
+
+              <DataNotesFooter
+                methodologyNotes={data?.methodologyNotes ?? []}
+                dataLimitations={data?.dataLimitations ?? []}
+                generatedAt={data?.generatedAt}
+              />
             </>
           )}
         </div>

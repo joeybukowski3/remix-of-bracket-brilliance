@@ -74,6 +74,9 @@ export function buildUnavailableArtifact(field, model, reason = "GROK_UNAVAILABL
     top5: [],
     top10: [],
     top20: [],
+    article: null,
+    methodologyNotes: [],
+    dataLimitations: [],
   };
 }
 
@@ -87,6 +90,13 @@ export function finalizeSuccessfulArtifact(artifact, field, model) {
     ["outrights", "top5", "top10", "top20"].map((key) => [key, Array.isArray(artifact[key]) ? artifact[key].length : 0]),
   );
   const publishedSections = Object.values(counts).filter((count) => count > 0).length;
+  // The article is informational, not part of the 4-market "available" vs
+  // "partial" vs "unavailable" status computation below -- picks remain the
+  // core deliverable, and a page can render fine with picks but no article
+  // (e.g. the article call failed validation while the picks calls
+  // succeeded). Surfaced separately so the page/consumers can still detect
+  // and label a missing article on its own.
+  const hasArticle = Boolean(artifact.article?.title);
   return {
     ...artifact,
     schemaVersion: 2,
@@ -101,8 +111,9 @@ export function finalizeSuccessfulArtifact(artifact, field, model) {
       odds: artifact.valueBets?.length > 0 || ["outrights", "top5", "top10", "top20"].some(
         (key) => artifact[key]?.some?.((pick) => pick?.odds),
       ) ? "available" : "unavailable",
+      article: hasArticle ? "available" : "unavailable",
     },
-    sectionStatus: counts,
+    sectionStatus: { ...counts, article: hasArticle ? 1 : 0 },
   };
 }
 
