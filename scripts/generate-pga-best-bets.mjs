@@ -2,7 +2,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { buildPostOpenAngles, isPostOpenWindow } from "./lib/pga-post-open-angles.mjs";
+import {
+  buildCrossoverAngles,
+  buildPostOpenAngles,
+  isPostOpenWindow,
+  MAJOR_SWING_WORKLOAD_LIMITATION,
+} from "./lib/pga-post-open-angles.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "pga");
@@ -535,7 +540,25 @@ export function validateArticle(value) {
   const conclusion = typeof value.conclusion === "string" ? value.conclusion.trim() : "";
   const sections = Array.isArray(value.sections) ? value.sections.map(validateArticleSection).filter(Boolean) : [];
   if (!title || !introduction || !conclusion || sections.length < 3) return null;
-  return { title, dek, introduction, sections, conclusion };
+  // Additive and optional: absent/malformed entries resolve to [] so older
+  // artifacts and older Grok responses still validate unchanged.
+  const keyTakeaways = Array.isArray(value.keyTakeaways)
+    ? value.keyTakeaways
+        .map((entry) => ({
+          text: typeof entry?.text === "string" ? entry.text.trim() : "",
+          players: Array.isArray(entry?.players) ? entry.players.map(String).filter(Boolean) : [],
+        }))
+        .filter((entry) => entry.text)
+    : [];
+  const playersToApproachCautiously = Array.isArray(value.playersToApproachCautiously)
+    ? value.playersToApproachCautiously
+        .map((entry) => ({
+          player: typeof entry?.player === "string" ? entry.player.trim() : "",
+          reason: typeof entry?.reason === "string" ? entry.reason.trim() : "",
+        }))
+        .filter((entry) => entry.player && entry.reason)
+    : [];
+  return { title, dek, introduction, sections, conclusion, keyTakeaways, playersToApproachCautiously };
 }
 
 /**
@@ -545,17 +568,44 @@ export function validateArticle(value) {
  * also contain -- see the "article recommendations match the structured
  * cards" validation requirement.
  */
-async function generateArticle(apiKey, { tournamentName, courseName, startDate, fieldSize, summary, postOpenContext, picks, dataLimitations }) {
+async function generateArticle(apiKey, { tournamentName, courseName, startDate, fieldSize, summary, postOpenContext, picks, researchContext, hasAnyOdds, dataLimitations }) {
   const pickLines = (label, list) =>
     list.length
       ? `${label}: ${list.map((p) => `${p.player} (rank #${p.tournamentRank}${p.risk ? `, risk: ${p.risk}` : ""})`).join("; ")}`
       : `${label}: none generated this week.`;
 
+  // Top-5 is included in the frozen selection supplied to the article even
+  // though the editorial emphasis stays on outright/top-10/top-20, so the
+  // article can never treat a selected top-5 player as an outside name.
   const picksSummary = [
     pickLines("Outright targets", picks.outrights),
+    pickLines("Top-5 targets", picks.top5 ?? []),
     pickLines("Top-10 targets", picks.top10),
     pickLines("Top-20 targets", picks.top20),
   ].join("\n");
+
+  const researchLines = Object.values(researchContext ?? {}).map((entry) => {
+    const parts = [
+      `name=${entry.player}`,
+      `openFinish=${entry.openFinishBucket}`,
+      `scottish=${entry.scottish.participation}${entry.scottish.finishText ? ` (${entry.scottish.finishText})` : ""}`,
+      `majorSwingWorkload=${entry.majorSwingWorkload.bucket}${entry.majorSwingWorkload.rounds != null ? ` (${entry.majorSwingWorkload.rounds} tracked rounds)` : ""}`,
+      `fedex=${entry.fedex.bucket}${entry.fedex.rank != null ? ` rank #${entry.fedex.rank}` : ""}`,
+      `modelRank=${entry.model.tournamentRank ?? "NA"}`,
+      `powerRank=${entry.model.powerRank ?? "NA"}`,
+    ];
+    if (entry.crossoverAngles.length) parts.push(`crossover=${entry.crossoverAngles.map((a) => a.label).join(" / ")}`);
+    return parts.join(" | ");
+  });
+
+  const researchBlock = researchLines.length
+    ? [
+        "",
+        "Per-player research classifications for the selected picks (use these exact classifications; do not reclassify or invent):",
+        ...researchLines,
+        "These classifications are contextual research factors. They are not automatically positive or negative signals on their own. NO_TRACKED_ROUNDS means no rounds were recorded in the tracked events -- it does NOT mean the player rested.",
+      ].join("\n")
+    : "";
 
   const limitationsLine = dataLimitations.length ? `Known data limitations this week (state these plainly if relevant, do not work around them): ${dataLimitations.join("; ")}.` : "";
 
@@ -565,18 +615,24 @@ async function generateArticle(apiKey, { tournamentName, courseName, startDate, 
     "Tournament model data (top rows, ranks, strokes-gained categories, course weights):",
     summary,
     postOpenContext ? `\n${postOpenContext}` : "",
+    researchBlock,
     "",
-    "These are the picks already selected for this week's cards -- your article must discuss these exact players and must not introduce a different outright/top-10/top-20 recommendation than what's listed:",
+    "These are the picks already selected for this week's cards -- your article must discuss these exact players and must not introduce a different outright/top-5/top-10/top-20 recommendation than what's listed:",
     picksSummary,
     "",
     limitationsLine,
     "",
     DATA_DISCIPLINE_RULES,
+    "For every recommendation, cite at least two supplied factors, and at least one must come from either the model context or the post-Open research classifications above.",
+    "Distinguish clearly between model strength, contextual research, market price, and risk. Never present a contextual research classification as proof of a result.",
+    hasAnyOdds
+      ? "Where a price is supplied for a pick you may discuss market value. Where no price is supplied for that pick, do not."
+      : "NO market prices are available this week. You must NOT claim price value, market value, mispricing, or value at the current number for ANY pick. Describe model strength, ranking differential, model-supported targets, course fit, and contextual research instead.",
     "Tone: direct, confident but not absolute, analytical, concise, specific. No fake insider language. No 'lock', 'guarantee', or 'can't miss' claims. No generic AI phrases. No unnecessary explanation of basic golf concepts.",
     "Distinguish strong model-supported bets from secondary value plays and speculative long shots -- say explicitly which tier each pick belongs to.",
     "Include a short paragraph naming 1-3 players to approach cautiously (e.g. inflated price off one big result, weak underlying data) -- only if the data above actually supports a caution, otherwise omit this section.",
     "",
-    "Return ONLY a raw JSON object with no markdown, no code fences. Fields: title (string), dek (one-sentence subtitle string), introduction (2-3 sentences), sections (array of 5-8 objects, each { heading: string, body: string } -- cover tournament overview, course factors, weekly betting angles, post-Open workload/motivation ONLY if a context block was provided above, outright targets, top-10 targets, top-20 targets, and players to approach cautiously if applicable), conclusion (a short final betting-card-style wrap-up naming the top plays by tier).",
+    "Return ONLY a raw JSON object with no markdown, no code fences. Fields: title (string), dek (one-sentence subtitle string), introduction (2-3 sentences), keyTakeaways (array of 3-5 objects, each { text: string, players: array of player names referenced -- names MUST come from the selected picks above }), sections (array of 6-12 objects, each { heading: string, body: string } -- cover tournament overview, course fit, recent form, post-Open workload, FedExCup motivation, crossover research angles, outright targets, top-10 targets, top-20 targets, players to approach cautiously if applicable, final betting card, and data limitations), playersToApproachCautiously (array of 0-3 objects, each { player: string, reason: string } -- only players actually supplied above, omit entirely if the data supports no caution), conclusion (a short final betting-card-style wrap-up naming the top plays by tier).",
   ].filter(Boolean).join("\n");
 
   try {
@@ -783,6 +839,145 @@ export function selectPublishedPicks(pickArrays, { hasOddsApiKey, oddsLookup, fi
   };
 }
 
+const PICK_MARKETS = ["outrights", "top5", "top10", "top20"];
+
+/** Unique union of players across ALL four selected markets, in stable first-seen order. */
+export function collectSelectedPlayers(pickArrays) {
+  const seen = new Map();
+  for (const market of PICK_MARKETS) {
+    for (const pick of pickArrays?.[market] ?? []) {
+      const key = normalizeName(pick?.player ?? "");
+      if (key && !seen.has(key)) seen.set(key, pick.player);
+    }
+  }
+  return [...seen.values()];
+}
+
+/**
+ * Per-player research context, keyed by normalized player name.
+ *
+ * Built for the union of SELECTED picks, not an arbitrary top-N slice of the
+ * model -- the previous prompt-only context covered rows.slice(0, 25), which
+ * both missed selected players outside the top 25 and wasted context on players
+ * never recommended. Persisted so the frontend renders stored classifications
+ * instead of inventing them at display time.
+ */
+export function buildResearchContext(players, { rounds = [], fedexRows = [], sinceDate, windowStart = null, windowEnd = null, modelRows = [], powerByName = new Map() } = {}) {
+  const modelByName = new Map(modelRows.map((row) => [normalizeName(row.player), row]));
+  const context = {};
+  for (const player of players) {
+    const key = normalizeName(player);
+    const angles = buildPostOpenAngles(player, { rounds, fedexRows, sinceDate, windowStart, windowEnd });
+    const modelRow = modelByName.get(key) ?? null;
+    const powerRow = powerByName.get(key) ?? null;
+    const tournamentRank = Number.isFinite(Number(modelRow?.rank)) ? Number(modelRow.rank) : null;
+    const powerRank = Number.isFinite(Number(powerRow?.rank)) ? Number(powerRow.rank) : null;
+    const entry = {
+      player,
+      openFinishBucket: angles.openFinishBucket,
+      openResult: angles.openResult,
+      scottish: angles.scottish,
+      majorSwingWorkload: angles.majorSwingWorkload,
+      workloadRoundCount: angles.workloadRoundCount,
+      fedex: angles.fedex,
+      model: {
+        tournamentRank,
+        powerRank,
+        rankDifferential: tournamentRank != null && powerRank != null ? powerRank - tournamentRank : null,
+        modelScore: modelRow?.modelScore ?? null,
+        sgTotal: modelRow?.sgTotal ?? null,
+        sgApp: modelRow?.sgApp ?? null,
+        sgPutt: modelRow?.sgPutt ?? null,
+        sgAtg: modelRow?.sgAtg ?? null,
+        sgOtt: modelRow?.sgOtt ?? null,
+      },
+    };
+    entry.crossoverAngles = buildCrossoverAngles(entry);
+    context[key] = entry;
+  }
+  return context;
+}
+
+/**
+ * Phrases that assert a market/price judgement. Only valid when a price exists.
+ * Matched case-insensitively against generated bullets and risk text.
+ */
+const PRICE_CLAIM_PATTERNS = [
+  /\bprice\b/i,
+  /\bpriced\b/i,
+  /\bmarket value\b/i,
+  /\bmispric\w*/i,
+  /\bvalue at the (current )?number\b/i,
+  /\bodds (look|are|seem)\b/i,
+  /\bgenerous (price|number)\b/i,
+  /\bshort(er)? number\b/i,
+  /\boverlay\b/i,
+];
+
+const UNPRICED_FALLBACK_BULLET =
+  "Model-supported target: no market price was available this week, so this case rests on model rank and course fit rather than the number.";
+
+function marketOddsFor(pick, market) {
+  const odds = pick?.odds;
+  if (!odds) return null;
+  if (market === "outrights") return odds.outright ?? null;
+  return odds[market] ?? odds.outright ?? null;
+}
+
+/**
+ * Strips price/market-value claims from picks that have no price.
+ *
+ * A pick with null odds cannot support "the price looks like value" -- there is
+ * no price. Offending bullets are REMOVED rather than reworded, so nothing is
+ * fabricated; if that would leave a pick with no bullets, one deterministic and
+ * factually true line is substituted. Priced picks are returned untouched, so
+ * genuine market-value analysis still ships.
+ */
+export function enforceOddsLanguage(picks, market) {
+  return (picks ?? []).map((pick) => {
+    if (marketOddsFor(pick, market)) return pick;
+    const bullets = (pick.bullets ?? []).filter((bullet) => !PRICE_CLAIM_PATTERNS.some((pattern) => pattern.test(bullet)));
+    const risk = PRICE_CLAIM_PATTERNS.some((pattern) => pattern.test(pick.risk ?? "")) ? "" : pick.risk ?? "";
+    return {
+      ...pick,
+      bullets: bullets.length ? bullets : [UNPRICED_FALLBACK_BULLET],
+      risk,
+    };
+  });
+}
+
+/**
+ * Rejects article content that introduces recommendations outside the frozen
+ * selection.
+ *
+ * Deliberately NOT blanket prose name-rejection: general tournament context is
+ * allowed to mention any supplied player. Only the STRUCTURED recommendation
+ * surfaces are constrained -- keyTakeaways picks and playersToApproachCautiously
+ * -- which is both stricter where it matters and far less fragile than scanning
+ * free prose.
+ */
+export function validateArticleRecommendations(article, { selectedPlayers = [], cautionCandidates = null } = {}) {
+  if (!article) return { valid: false, violations: ["article missing"] };
+  const allowed = new Set(selectedPlayers.map((player) => normalizeName(player)));
+  const cautionAllowed = cautionCandidates ? new Set(cautionCandidates.map((p) => normalizeName(p))) : null;
+  const violations = [];
+
+  for (const entry of article.playersToApproachCautiously ?? []) {
+    const key = normalizeName(entry?.player ?? "");
+    if (!key) continue;
+    if (cautionAllowed && !cautionAllowed.has(key)) {
+      violations.push(`caution list contains unsupported player: ${entry.player}`);
+    }
+  }
+  for (const takeaway of article.keyTakeaways ?? []) {
+    for (const player of takeaway?.players ?? []) {
+      const key = normalizeName(player);
+      if (key && !allowed.has(key)) violations.push(`key takeaway recommends unselected player: ${player}`);
+    }
+  }
+  return { valid: violations.length === 0, violations };
+}
+
 function shouldSkip(outputPath, force) {
   if (force || !existsSync(outputPath)) return false;
   try {
@@ -845,9 +1040,20 @@ async function main() {
   const isPostOpen = roundHistoryAvailable && isPostOpenWindow(roundHistory.rounds, currentField.startDate);
   const fedexAvailable = Array.isArray(fedexStandings.rows) && fedexStandings.rows.length > 0;
 
+  // 14-day window preceding the current tournament. Recorded on every
+  // majorSwingWorkload entry so consumers know the period the tracked rounds
+  // were drawn from -- see MAJOR_SWING_WORKLOAD_LIMITATION for why the count
+  // itself is scoped to the two tracked championships rather than all events.
+  const workloadWindowStart = currentField.startDate
+    ? new Date(new Date(`${currentField.startDate}T12:00:00Z`).getTime() - 14 * 86_400_000).toISOString().slice(0, 10)
+    : null;
+
   const dataLimitations = [
     "Weather and tee-time data are not available in this pipeline; the article does not make weather- or tee-time-specific claims.",
   ];
+  if (isPostOpen) {
+    dataLimitations.push(MAJOR_SWING_WORKLOAD_LIMITATION);
+  }
   if (!roundHistoryAvailable) {
     dataLimitations.push("Recent-tournament round history was unavailable this week; post-Open and recent-form-by-event angles are omitted.");
   }
@@ -914,6 +1120,8 @@ async function main() {
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
   let outrights = [], top5 = [], top10 = [], top20 = [], preview = null, valueBets = [], article = null;
+  let selectedPlayers = [];
+  let researchContext = {};
   // "unavailable" = no Grok call was attempted at all (no key, not a dry run).
   // Set to the real observed outcome below. Never inferred from post-odds-filter
   // pick counts -- odds enrichment failing is not a Grok failure.
@@ -949,6 +1157,27 @@ async function main() {
 
     console.log(`After value filter: outrights=${outrights.length} top5=${top5.length} top10=${top10.length} top20=${top20.length}`);
 
+    // Unpriced picks cannot support price/market-value claims. Applied after
+    // selection so it never changes WHICH players are published, only what may
+    // be said about them.
+    outrights = enforceOddsLanguage(outrights, "outrights");
+    top5 = enforceOddsLanguage(top5, "top5");
+    top10 = enforceOddsLanguage(top10, "top10");
+    top20 = enforceOddsLanguage(top20, "top20");
+
+    // Research context for the UNION of all four selected markets.
+    selectedPlayers = collectSelectedPlayers({ outrights, top5, top10, top20 });
+    researchContext = buildResearchContext(selectedPlayers, {
+      rounds: roundHistory.rounds,
+      fedexRows: fedexAvailable ? fedexStandings.rows : [],
+      sinceDate: workloadWindowStart,
+      windowStart: workloadWindowStart,
+      windowEnd: currentField.startDate ?? null,
+      modelRows: tournamentData.rows,
+      powerByName: buildPlayerMaps(powerRankings, playerStats).powerByName,
+    });
+    console.log(`Research context built for ${selectedPlayers.length} selected player(s).`);
+
     await new Promise((r) => setTimeout(r, waitMs(1500)));
     preview = await generatePreview(apiKey, previewPrompt);
 
@@ -958,6 +1187,7 @@ async function main() {
     }
 
     await new Promise((r) => setTimeout(r, waitMs(1500)));
+    const hasAnyOdds = [outrights, top5, top10, top20].some((list) => list.some((pick) => pick?.odds));
     article = await generateArticle(apiKey, {
       tournamentName,
       courseName,
@@ -965,9 +1195,27 @@ async function main() {
       fieldSize: currentField.players.length,
       summary: previewSummary,
       postOpenContext,
-      picks: { outrights, top10, top20 },
+      // Frozen selection, all four markets including top5.
+      picks: { outrights, top5, top10, top20 },
+      researchContext,
+      hasAnyOdds,
       dataLimitations,
     });
+
+    if (article) {
+      const { valid, violations } = validateArticleRecommendations(article, { selectedPlayers });
+      if (!valid) {
+        console.warn(`::warning title=PGA article recommendation mismatch::${violations.join("; ")}`);
+        // Drop only the offending structured surfaces; the editorial prose and
+        // sections are still valid and are kept rather than losing the article.
+        article = {
+          ...article,
+          keyTakeaways: article.keyTakeaways.filter((takeaway) =>
+            (takeaway.players ?? []).every((player) =>
+              selectedPlayers.some((selected) => normalizeName(selected) === normalizeName(player)))),
+        };
+      }
+    }
   }
 
   const payload = {
@@ -981,6 +1229,11 @@ async function main() {
     top10,
     top20,
     article,
+    // Per-player research classifications, keyed by normalized player name, for
+    // the union of all four selected markets. Consumed by the page so the
+    // frontend renders stored classifications rather than deriving them.
+    researchContext,
+    selectedPlayers,
     // Observed provider outcome, recorded at the source. The safe runner
     // prefers this over inferring Grok health from published pick counts.
     sourceStatus: { grok: grokStatus },
