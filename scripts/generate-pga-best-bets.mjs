@@ -750,6 +750,39 @@ export function preparePicksForOutput(picks, oddsLookup, hasOddsApiKey) {
   return hasOddsApiKey ? withOdds : withOdds.map((pick) => ({ ...pick, odds: null }));
 }
 
+/**
+ * Decides whether odds-based value filtering runs at all.
+ *
+ * Odds are an enrichment, not a precondition for publishing model picks --
+ * the no-key path has always published unfiltered picks. Previously a
+ * configured ODDS_API_KEY whose lookup came back empty still ran the value
+ * filter, and since filterByValueAndOdds drops any pick without a price, a
+ * total odds-provider failure silently emptied all four markets and the
+ * artifact finalized as NO_VALID_PICKS despite a perfectly good model + Grok
+ * response.
+ *
+ * The fallback is deliberately whole-lookup only: if the lookup holds ANY
+ * usable entry the provider worked, so existing filtering and value
+ * thresholds apply unchanged. A pick individually lacking a price on a
+ * working odds week is still dropped, exactly as before -- there is no
+ * per-market fallback.
+ *
+ * filterByValueAndOdds is injected so this stays a pure, unit-testable
+ * decision without hoisting main()'s value-edge closures to module scope.
+ */
+export function selectPublishedPicks(pickArrays, { hasOddsApiKey, oddsLookup, filterByValueAndOdds }) {
+  const oddsAvailable = Object.keys(oddsLookup ?? {}).length > 0;
+  if (!hasOddsApiKey || !oddsAvailable) {
+    return { ...pickArrays };
+  }
+  return {
+    outrights: filterByValueAndOdds(pickArrays.outrights, "outright"),
+    top5: filterByValueAndOdds(pickArrays.top5, "top5"),
+    top10: filterByValueAndOdds(pickArrays.top10, "top10"),
+    top20: filterByValueAndOdds(pickArrays.top20, "top20"),
+  };
+}
+
 function shouldSkip(outputPath, force) {
   if (force || !existsSync(outputPath)) return false;
   try {
@@ -881,10 +914,20 @@ async function main() {
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
   let outrights = [], top5 = [], top10 = [], top20 = [], preview = null, valueBets = [], article = null;
+  // "unavailable" = no Grok call was attempted at all (no key, not a dry run).
+  // Set to the real observed outcome below. Never inferred from post-odds-filter
+  // pick counts -- odds enrichment failing is not a Grok failure.
+  let grokStatus = "unavailable";
   const waitMs = (ms) => (DRY_RUN ? 0 : ms);
 
   if (apiKey || DRY_RUN) {
     const combined = await generateCombinedPicks(apiKey, summary, currentField.players, postOpenContext);
+    // Measured pre-odds-filter: this is what Grok actually returned and what
+    // survived field validation, independent of any odds enrichment.
+    const grokPicksReturned = ["outrights", "top5", "top10", "top20"]
+      .reduce((total, key) => total + combined[key].length, 0);
+    grokStatus = grokPicksReturned > 0 ? "available" : "invalid-response";
+
     const pickArrays = {
       outrights: preparePicksForOutput(combined.outrights, oddsLookup, Boolean(oddsApiKey)),
       top5: preparePicksForOutput(combined.top5, oddsLookup, Boolean(oddsApiKey)),
@@ -892,14 +935,17 @@ async function main() {
       top20: preparePicksForOutput(combined.top20, oddsLookup, Boolean(oddsApiKey)),
     };
 
-    if (oddsApiKey) {
-      outrights = filterByValueAndOdds(pickArrays.outrights, "outright");
-      top5 = filterByValueAndOdds(pickArrays.top5, "top5");
-      top10 = filterByValueAndOdds(pickArrays.top10, "top10");
-      top20 = filterByValueAndOdds(pickArrays.top20, "top20");
-    } else {
-      ({ outrights, top5, top10, top20 } = pickArrays);
+    if (oddsApiKey && Object.keys(oddsLookup).length === 0) {
+      console.warn(
+        "::warning title=PGA odds enrichment unavailable::ODDS_API_KEY is configured but the odds lookup returned no usable entries. Publishing model picks without odds instead of dropping them; value filtering is skipped this run.",
+      );
     }
+
+    ({ outrights, top5, top10, top20 } = selectPublishedPicks(pickArrays, {
+      hasOddsApiKey: Boolean(oddsApiKey),
+      oddsLookup,
+      filterByValueAndOdds,
+    }));
 
     console.log(`After value filter: outrights=${outrights.length} top5=${top5.length} top10=${top10.length} top20=${top20.length}`);
 
@@ -935,6 +981,9 @@ async function main() {
     top10,
     top20,
     article,
+    // Observed provider outcome, recorded at the source. The safe runner
+    // prefers this over inferring Grok health from published pick counts.
+    sourceStatus: { grok: grokStatus },
     methodologyNotes: [
       "Picks are generated from a course-weighted strokes-gained model, cross-checked against the official PGA TOUR field.",
       isPostOpen

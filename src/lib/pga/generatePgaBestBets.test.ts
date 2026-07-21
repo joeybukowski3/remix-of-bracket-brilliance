@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -8,6 +8,7 @@ import {
   pickTournamentData,
   preparePicksForOutput,
   prepareTournamentModel,
+  selectPublishedPicks,
   validateArticle,
   validatePickArray,
 } from "../../../scripts/generate-pga-best-bets.mjs";
@@ -158,5 +159,173 @@ describe("validateArticle", () => {
   it("dek is optional -- an article without one is still valid", () => {
     const { dek: _dek, ...withoutDek } = validArticle;
     expect(validateArticle(withoutDek)?.dek).toBe("");
+  });
+});
+
+describe("PGA best-bets odds-failure fallback", () => {
+  const pick = (player: string, tournamentRank: number) => ({
+    player,
+    tournamentRank,
+    powerRank: tournamentRank,
+    topStats: ["SG Total=1.5", "SG APP=0.8"],
+    bullets: ["Course fit is strong.", "Recent form supports it."],
+    risk: "Putting variance.",
+    angles: [],
+    odds: null,
+  });
+
+  const pickArrays = {
+    outrights: [pick("Scottie Scheffler", 1), pick("Rory McIlroy", 2)],
+    top5: [pick("Scottie Scheffler", 1)],
+    top10: [pick("Collin Morikawa", 3)],
+    top20: [pick("Rory McIlroy", 2)],
+  };
+
+  /** Stands in for main()'s real filter: drops any pick lacking a price, as it always has. */
+  const dropUnpriced = (picks: Array<{ odds: unknown }>, marketKey: string) =>
+    picks.filter((p) => {
+      const odds = p.odds as Record<string, string> | null;
+      return Boolean(odds?.[marketKey] ?? odds?.outright);
+    });
+
+  it("retains the original picks when no odds key is configured", () => {
+    const calls: string[] = [];
+    const result = selectPublishedPicks(pickArrays, {
+      hasOddsApiKey: false,
+      oddsLookup: {},
+      filterByValueAndOdds: (picks: unknown, market: string) => {
+        calls.push(market);
+        return [];
+      },
+    });
+    expect(result).toEqual(pickArrays);
+    expect(calls).toEqual([]);
+  });
+
+  it("preserves existing value filtering when the odds lookup holds usable data", () => {
+    const priced = {
+      ...pickArrays,
+      outrights: [
+        { ...pick("Scottie Scheffler", 1), odds: { outright: "+450" } },
+        pick("Rory McIlroy", 2),
+      ],
+    };
+    const result = selectPublishedPicks(priced, {
+      hasOddsApiKey: true,
+      oddsLookup: { "scottie scheffler": { outright: "+450" } },
+      filterByValueAndOdds: dropUnpriced,
+    });
+    expect(result.outrights.map((p) => p.player)).toEqual(["Scottie Scheffler"]);
+    expect(result.top5).toEqual([]);
+    expect(result.top10).toEqual([]);
+    expect(result.top20).toEqual([]);
+  });
+
+  it("retains all original picks when a key is configured but the lookup is empty", () => {
+    const calls: string[] = [];
+    const result = selectPublishedPicks(pickArrays, {
+      hasOddsApiKey: true,
+      oddsLookup: {},
+      filterByValueAndOdds: (picks: unknown, market: string) => {
+        calls.push(market);
+        return [];
+      },
+    });
+    expect(result).toEqual(pickArrays);
+    expect(calls).toEqual([]);
+  });
+
+  it("does not fall back per-market when the lookup is non-empty but a market is unpriced", () => {
+    const result = selectPublishedPicks(pickArrays, {
+      hasOddsApiKey: true,
+      oddsLookup: { "scottie scheffler": { outright: "+450" } },
+      filterByValueAndOdds: dropUnpriced,
+    });
+    // Every market is unpriced in pickArrays, but the lookup is non-empty, so
+    // filtering stands and empties them. A per-market fallback would wrongly
+    // restore these.
+    expect(result.outrights).toEqual([]);
+    expect(result.top10).toEqual([]);
+    expect(result.top20).toEqual([]);
+  });
+
+  it("passes the retained picks to article generation after a total odds failure", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "pga-odds-fallback-"));
+    const dataDir = path.join(root, "public", "data", "pga");
+    mkdirSync(dataDir, { recursive: true });
+    const writeJson = (name: string, value: unknown) =>
+      writeFileSync(path.join(dataDir, name), JSON.stringify(value));
+
+    writeJson("current-field.json", travelersField);
+    // buildSummary reaches findWeightEntry, which needs a courseName -- the
+    // shared travelerModel omits it because other tests return before then.
+    writeJson("current-tournament.json", { ...travelerModel, courseName: "TPC River Highlands" });
+    writeJson("next-tournament.json", stalePgaModel);
+    writeJson("power-rankings.json", { rows: [] });
+    writeJson("player-stats-raw.json", []);
+    writeJson("course-weights.json", []);
+
+    const fixturePath = path.join(root, "fixture.json");
+    writeFileSync(
+      fixturePath,
+      JSON.stringify({
+        "combined-picks-1": {
+          outrights: [pick("Scottie Scheffler", 1)],
+          top5: [pick("Rory McIlroy", 2)],
+        },
+        "combined-picks-2": {
+          top10: [pick("Collin Morikawa", 3)],
+          top20: [pick("Rory McIlroy", 2)],
+        },
+        article: {
+          title: "Travelers Championship Model Targets",
+          dek: "Model-led card.",
+          introduction: "Intro.",
+          sections: [
+            { heading: "Tournament Overview", body: "Body." },
+            { heading: "Course Factors", body: "Body." },
+            { heading: "Outright Targets", body: "Body." },
+          ],
+          conclusion: "Conclusion.",
+        },
+      }),
+    );
+
+    try {
+      execFileSync(
+        process.execPath,
+        [
+          path.resolve(process.cwd(), "scripts/generate-pga-best-bets.mjs"),
+          "--dry-run",
+          `--fixture=${fixturePath}`,
+        ],
+        {
+          cwd: root,
+          // A key is configured, but --dry-run forces an empty odds lookup and
+          // skips the live fetch entirely -- exactly the total-odds-failure shape.
+          env: { ...process.env, GROK_API_KEY: "test-key", ODDS_API_KEY: "test-odds-key" },
+        },
+      );
+
+      const artifactsDir = path.join(root, "artifacts", "pga-best-bets");
+      const payload = JSON.parse(readFileSync(path.join(artifactsDir, "dry-run-payload.json"), "utf8"));
+      const prompts = JSON.parse(readFileSync(path.join(artifactsDir, "dry-run-prompts.json"), "utf8"));
+
+      // Picks survived the empty lookup instead of being filtered to nothing.
+      expect(payload.outrights.map((p: { player: string }) => p.player)).toEqual(["Scottie Scheffler"]);
+      expect(payload.top10).toHaveLength(1);
+      // Grok succeeded; odds enrichment did not. Status must say so.
+      expect(payload.sourceStatus.grok).toBe("available");
+
+      // The article prompt received the retained picks, not "none generated".
+      const articlePrompt = prompts.find((p: { label: string }) => p.label === "article")?.prompt ?? "";
+      expect(articlePrompt).toContain("Scottie Scheffler");
+      expect(articlePrompt).not.toContain("Outright targets: none generated this week.");
+
+      // best-bets.json is never touched by a dry run.
+      expect(existsSync(path.join(dataDir, "best-bets.json"))).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
