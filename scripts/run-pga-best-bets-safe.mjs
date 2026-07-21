@@ -107,7 +107,14 @@ export function finalizeSuccessfulArtifact(artifact, field, model) {
     reason: publishedSections > 0 ? null : "NO_VALID_PICKS",
     sourceStatus: {
       model: "available",
-      grok: publishedSections > 0 ? "available" : "invalid-response",
+      // Prefer the generator's observed outcome. Inferring Grok health from
+      // published pick counts is wrong: a total odds-provider failure empties
+      // every market even when Grok returned a full, valid pick set, which
+      // previously mislabeled a healthy Grok response as "invalid-response"
+      // and sent debugging at the wrong provider. The count-based inference
+      // remains only as a fallback for legacy artifacts written before the
+      // generator recorded this.
+      grok: artifact.sourceStatus?.grok ?? (publishedSections > 0 ? "available" : "invalid-response"),
       odds: artifact.valueBets?.length > 0 || ["outrights", "top5", "top10", "top20"].some(
         (key) => artifact[key]?.some?.((pick) => pick?.odds),
       ) ? "available" : "unavailable",

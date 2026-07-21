@@ -90,6 +90,47 @@ describe("PGA best-bets safe runner", () => {
     expect(withArticle.sectionStatus.article).toBe(1);
   });
 
+  it("does not mark NO_VALID_PICKS when model picks were retained through an odds failure", () => {
+    const output = finalizeSuccessfulArtifact({
+      tournament: "3M Open",
+      course: "TPC Twin Cities",
+      outrights: [{ player: "Cam Davis", odds: null }],
+      top5: [{ player: "Cam Davis", odds: null }],
+      top10: [{ player: "Cam Davis", odds: null }],
+      top20: [{ player: "Cam Davis", odds: null }],
+      valueBets: [],
+      article: { title: "3M Open Preview", sections: [] },
+      sourceStatus: { grok: "available" },
+    }, FIELD, MODEL);
+    expect(output.status).toBe("available");
+    expect(output.reason).toBeNull();
+    // Odds genuinely failed -- that much is still reported truthfully.
+    expect(output.sourceStatus.odds).toBe("unavailable");
+    // ...but a healthy Grok response is no longer relabeled as a Grok fault.
+    expect(output.sourceStatus.grok).toBe("available");
+  });
+
+  it("reports the generator's observed Grok outcome rather than inferring it from pick counts", () => {
+    // Grok really did return nothing usable: the generator says so explicitly.
+    const genuineGrokFailure = finalizeSuccessfulArtifact({
+      tournament: "3M Open",
+      outrights: [], top5: [], top10: [], top20: [],
+      valueBets: [],
+      sourceStatus: { grok: "invalid-response" },
+    }, FIELD, MODEL);
+    expect(genuineGrokFailure.sourceStatus.grok).toBe("invalid-response");
+    expect(genuineGrokFailure.reason).toBe("NO_VALID_PICKS");
+
+    // Legacy artifacts predate the recorded status, so the old count-based
+    // inference still applies as a fallback.
+    const legacy = finalizeSuccessfulArtifact({
+      tournament: "3M Open",
+      outrights: [], top5: [], top10: [], top20: [],
+      valueBets: [],
+    }, FIELD, MODEL);
+    expect(legacy.sourceStatus.grok).toBe("invalid-response");
+  });
+
   it("refuses to finalize a stale prior-tournament artifact", () => {
     expect(() => finalizeSuccessfulArtifact({ tournament: "PGA Championship", outrights: [] }, FIELD, MODEL))
       .toThrow(/current field is 3M Open/i);
