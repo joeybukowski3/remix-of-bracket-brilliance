@@ -10,6 +10,7 @@ import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { evaluateSinCityHitter } from "@/lib/mlb/mlbHrFilter";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { keyForBvpRow, useMlbBvpHistory } from "@/hooks/useMlbBvpHistory";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import MlbBvpHistoryPanel, { AvgVsPitcherCell, MlbBvpHistoryPanelLoading, MlbBvpHistoryPanelUnavailable } from "@/components/mlb/MlbBvpHistoryPanel";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
@@ -384,6 +385,8 @@ export const DEFAULT_TAB: TabKey = "batters";
 export const DEFAULT_PITCHER_SORT = { key: "hrVs" as PitcherSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_MATCHUP_SORT = { key: "bestMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
+/** Batter View incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. */
+export const BATTER_PAGE_SIZE = 50;
 
 const DASH = "--";
 const ESPN_TEAM_ABBR: Record<string, string> = {
@@ -1729,8 +1732,8 @@ export default function MlbHrProps() {
   /** Mobile-only expand toggle for the Strikeout Matchup lens's compact rows -- there is no batter-vs-pitcher panel for a team-level strikeout row, so this tracks expansion locally instead of reusing bvpExpandedMatchupKey. */
   const [expandedStrikeoutRowKey, setExpandedStrikeoutRowKey] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  /** Below the `lg` breakpoint (1024px): compact expandable-row layout instead of the desktop data tables. Rendered via JS branch (not CSS display toggling) so only one copy of each row ever sits in the DOM. */
-  const [isCompactLayout, setIsCompactLayout] = useState(false);
+  /** Below the `lg` breakpoint (1024px): compact expandable-row layout instead of the desktop data tables. Resolved synchronously via matchMedia (see useIsCompactLayout) so the first render already reflects the real viewport, and rendered via JS branch (not CSS display toggling) so only one copy of each row ever sits in the DOM. */
+  const isCompactLayout = useIsCompactLayout();
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
   const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
@@ -1748,6 +1751,15 @@ export default function MlbHrProps() {
   const [batterGameFilter, setBatterGameFilter] = useState("all");
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
   const [hrFilterActive, setHrFilterActive] = useState(false);
+  /** How many already-sorted/filtered batter rows are currently rendered -- "Show 50 more" grows this, a materially-changed filter/tab resets it. Never affects ranking order or which rows pass the filters, only how many of them are on screen. */
+  const [visibleBatterCount, setVisibleBatterCount] = useState(BATTER_PAGE_SIZE);
+  /** Mobile/tablet-only show-all toggles for the Overdue Batters and Biggest Mismatches insight cards -- desktop always shows the full (already-capped-at-8) list. */
+  const [showAllOverdue, setShowAllOverdue] = useState(false);
+  const [showAllMismatches, setShowAllMismatches] = useState(false);
+  /** Mobile/tablet-only expand toggles for sections that collapse to a single preview row/line below lg -- desktop always shows the full content, unchanged. */
+  const [topHrEnvironmentsExpanded, setTopHrEnvironmentsExpanded] = useState(false);
+  const [howToReadExpanded, setHowToReadExpanded] = useState(false);
+  const [slateNoteExpanded, setSlateNoteExpanded] = useState(false);
 
   usePageSeo({
     title: "MLB HR Props Today 2026 — Home Run Model & Rankings | Joe Knows Ball",
@@ -1786,13 +1798,16 @@ export default function MlbHrProps() {
     const syncMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      setIsCompactLayout(window.innerWidth < 1024);
     };
 
     syncMobile();
     window.addEventListener("resize", syncMobile);
     return () => window.removeEventListener("resize", syncMobile);
   }, []);
+
+  useEffect(() => {
+    setVisibleBatterCount(BATTER_PAGE_SIZE);
+  }, [activeTab, batterSearch, batterGameFilter, hrFilterActive, batterSortKey, batterSortDirection]);
 
   const allGames = dashboard?.games ?? [];
   const allPitchers = dashboard?.pitchers ?? [];
@@ -1917,6 +1932,11 @@ export default function MlbHrProps() {
     });
     return sortBatters(rows, batterSortKey, batterSortDirection);
   }, [applyHrFilter, batterGameFilter, batterSearch, batterSortDirection, batterSortKey, batters]);
+
+  const visibleBatters = useMemo(
+    () => filteredBatters.slice(0, visibleBatterCount),
+    [filteredBatters, visibleBatterCount],
+  );
 
   const filteredMatchups = useMemo(() => {
     const query = matchupSearch.trim().toLowerCase();
@@ -2058,7 +2078,14 @@ export default function MlbHrProps() {
 
                 <FreshnessStatus status={status} />
 
-                <MlbParkFactorsStrip parks={parkRows} perspective="hitter" subtitle="Today's park and weather context" />
+                <MlbParkFactorsStrip
+                  parks={parkRows}
+                  perspective="hitter"
+                  subtitle="Today's park and weather context"
+                  collapsedPreviewCount={isCompactLayout ? 1 : undefined}
+                  expandLabel={isCompactLayout ? "Click to expand" : undefined}
+                  collapseLabel={isCompactLayout ? "Show less" : undefined}
+                />
 
                 <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
                   <div className="grid gap-3 md:grid-cols-3">
@@ -2077,25 +2104,35 @@ export default function MlbHrProps() {
                   </div>
                   {bestBets?.slatePreview ? (
                     <div className="mt-3 border-t border-sky-200 pt-3 text-sm text-slate-600">
-                      <span className="font-semibold text-slate-800">📝 Slate note:</span> {bestBets.slatePreview.slateOverview}
+                      <span className="font-semibold text-slate-800">📝 Slate note:</span>{" "}
+                      {isCompactLayout && !slateNoteExpanded ? (
+                        <>
+                          <span className="line-clamp-1 align-bottom">{bestBets.slatePreview.slateOverview}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSlateNoteExpanded(true)}
+                            className="mt-0.5 block font-semibold text-sky-700 underline underline-offset-2"
+                          >
+                            Click to expand
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span>{bestBets.slatePreview.slateOverview}</span>
+                          {isCompactLayout && (
+                            <button
+                              type="button"
+                              onClick={() => setSlateNoteExpanded(false)}
+                              className="ml-1 font-semibold text-sky-700 underline underline-offset-2"
+                            >
+                              Show less
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   ) : null}
                 </div>
-
-                <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  <p className="max-w-4xl text-sm leading-7 text-slate-600">
-                    This board ranks today&apos;s batters by HR Quality Score — a relative measure of home-run matchup strength built from barrel rate, hard-hit rate, recent power, and the opposing pitcher&apos;s HR vulnerability. It&apos;s a ranking tool for research, not a prediction of who will homer or a guaranteed pick.
-                  </p>
-                  <div className="mt-3 border-t border-slate-200 pt-3">
-                    <h2 className="text-base font-bold text-slate-900">How to read this page</h2>
-                    <dl className="mt-2 grid gap-x-5 gap-y-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
-                      <div><dt className="inline font-bold text-slate-900">HR Score — </dt><dd className="inline">Higher scores indicate stronger relative home-run matchups today. It is not a probability.</dd></div>
-                      <div><dt className="inline font-bold text-slate-900">HR Odds — </dt><dd className="inline">Current sportsbook anytime-home-run price when available.</dd></div>
-                      <div><dt className="inline font-bold text-slate-900">Market % — </dt><dd className="inline">Raw implied probability from the sportsbook odds. It is not adjusted for vig and is not a model estimate.</dd></div>
-                      <div><dt className="inline font-bold text-slate-900">Use both together — </dt><dd className="inline">Compare matchup strength with the available market price to identify research opportunities.</dd></div>
-                    </dl>
-                  </div>
-                </section>
 
                 <div className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
                   <div className="border-b border-slate-200 px-4">
@@ -2262,7 +2299,7 @@ export default function MlbHrProps() {
                                   {isCompactLayout ? (
                                     /* Mobile/tablet (below lg): stacked rows -- no table, no horizontal scroll. */
                                     <div className="space-y-2">
-                                      {overdue.map((row) => (
+                                      {(showAllOverdue ? overdue : overdue.slice(0, 3)).map((row) => (
                                         <div key={`od-m-${row.player}-${row.team}`} className="rounded-lg border border-amber-100 bg-white/60 px-2 py-1.5">
                                           <div className="flex items-center justify-between gap-2">
                                             <div className="flex min-w-0 items-center gap-1.5">
@@ -2280,6 +2317,15 @@ export default function MlbHrProps() {
                                           </div>
                                         </div>
                                       ))}
+                                      {overdue.length > 3 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowAllOverdue((v) => !v)}
+                                          className="w-full rounded-lg border border-amber-200 bg-white/60 px-2 py-1.5 text-center text-[11px] font-semibold text-amber-800 transition hover:bg-white"
+                                        >
+                                          {showAllOverdue ? "Show top 3" : "Click to show all matches"}
+                                        </button>
+                                      )}
                                     </div>
                                   ) : (
                                     /* Desktop (lg and above): existing table, unchanged. */
@@ -2331,7 +2377,7 @@ export default function MlbHrProps() {
                                   {isCompactLayout ? (
                                     /* Mobile/tablet (below lg): stacked rows -- no table, no horizontal scroll. */
                                     <div className="space-y-2">
-                                      {mismatches.map((row) => (
+                                      {(showAllMismatches ? mismatches : mismatches.slice(0, 3)).map((row) => (
                                         <div key={`mm-m-${row.player}-${row.team}`} className="rounded-lg border border-red-100 bg-white/60 px-2 py-1.5">
                                           <div className="flex items-center justify-between gap-2">
                                             <div className="flex min-w-0 items-center gap-1.5">
@@ -2355,6 +2401,15 @@ export default function MlbHrProps() {
                                           </div>
                                         </div>
                                       ))}
+                                      {mismatches.length > 3 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowAllMismatches((v) => !v)}
+                                          className="w-full rounded-lg border border-red-200 bg-white/60 px-2 py-1.5 text-center text-[11px] font-semibold text-red-800 transition hover:bg-white"
+                                        >
+                                          {showAllMismatches ? "Show top 3" : "Click to show all matches"}
+                                        </button>
+                                      )}
                                     </div>
                                   ) : (
                                     /* Desktop (lg and above): existing table, unchanged. */
@@ -2404,47 +2459,6 @@ export default function MlbHrProps() {
                           );
                         })()}
 
-                        {/* Top HR Environments — game-level, informational only, never affects player ranking */}
-                        {gameEnvironments.length > 0 && (
-                          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-                            <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">🌡️ Top HR Environments</h2>
-                            <p className="mt-1 text-xs text-slate-500">Park, weather, and starter vulnerability combined into a game-level score. Does not affect individual player rankings.</p>
-                            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                              {gameEnvironments.slice(0, 6).map((g) => (
-                                <div key={g.gameKey} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="truncate text-sm font-semibold text-slate-900" title={g.matchup}>{g.matchup}</span>
-                                    <span className={cn(
-                                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
-                                      (g.gameHrEnvironmentScore ?? 0) >= 70 ? "bg-emerald-100 text-emerald-800" :
-                                      (g.gameHrEnvironmentScore ?? 0) >= 50 ? "bg-amber-100 text-amber-800" :
-                                      "bg-slate-200 text-slate-600",
-                                    )}>
-                                      {g.gameHrEnvironmentScore != null ? g.gameHrEnvironmentScore.toFixed(0) : "—"}
-                                    </span>
-                                  </div>
-                                  <div className="mt-1 truncate text-[11px] text-slate-400">{g.ballpark}</div>
-                                  <div className="mt-2 grid grid-cols-3 gap-1 text-center text-[10px]">
-                                    <div className="rounded bg-white px-1 py-1">
-                                      <div className="text-slate-400">Park</div>
-                                      <div className="font-semibold text-slate-700">{g.parkFactor != null ? g.parkFactor.toFixed(2) : "—"}</div>
-                                    </div>
-                                    <div className="rounded bg-white px-1 py-1">
-                                      <div className="text-slate-400">Weather</div>
-                                      <div className="font-semibold text-slate-700">{g.weatherEffect != null ? (g.weatherEffect > 0 ? "+" : "") + g.weatherEffect.toFixed(1) : "—"}</div>
-                                    </div>
-                                    <div className="rounded bg-white px-1 py-1">
-                                      <div className="text-slate-400">Starter Vuln</div>
-                                      <div className="font-semibold text-slate-700">{g.starterVulnerability != null ? g.starterVulnerability.toFixed(0) : "—"}</div>
-                                    </div>
-                                  </div>
-                                  <div className="mt-1.5 text-[10px] text-slate-400">{g.qualifyingHitterCount} qualifying bat{g.qualifyingHitterCount === 1 ? "" : "s"}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
                             <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-900">💥 Batter View</h2>
@@ -2479,7 +2493,7 @@ export default function MlbHrProps() {
                           {isCompactLayout ? (
                           /* Mobile/tablet (below lg): compact expandable rows. */
                           <div className="divide-y divide-slate-100">
-                            {filteredBatters.length ? filteredBatters.map((row, i) => {
+                            {visibleBatters.length ? visibleBatters.map((row, i) => {
                               const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
                               const isBvpExpanded = bvpExpandedBatterKey === bvpKey;
                               const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
@@ -2690,7 +2704,7 @@ export default function MlbHrProps() {
                               </tr>
                             </thead>
                             <tbody>
-                              {filteredBatters.length ? filteredBatters.map((row, i) => {
+                              {visibleBatters.length ? visibleBatters.map((row, i) => {
                                 const rowBg = i % 2 === 0 ? "bg-white" : "bg-slate-50/70";
                                 const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
                                 const isBvpExpanded = bvpExpandedBatterKey === bvpKey;
@@ -2857,6 +2871,75 @@ export default function MlbHrProps() {
                           </div>
                           )}
                         </div>
+                        {filteredBatters.length > 0 && (
+                          <div className="flex items-center justify-between gap-3 px-1 text-xs text-slate-500">
+                            <span>{visibleBatters.length} of {filteredBatters.length} batters</span>
+                            {visibleBatterCount < filteredBatters.length && (
+                              <button
+                                type="button"
+                                onClick={() => setVisibleBatterCount((count) => count + BATTER_PAGE_SIZE)}
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-800"
+                              >
+                                Show 50 more
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Top HR Environments -- game-level, informational only, never affects player ranking */}
+                        {gameEnvironments.length > 0 && (
+                          <div data-testid="top-hr-environments-section" className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">🌡️ Top HR Environments</h2>
+                                <p className="mt-1 text-xs text-slate-500">Park, weather, and starter vulnerability combined into a game-level score. Does not affect individual player rankings.</p>
+                              </div>
+                              {isCompactLayout && (
+                                <button
+                                  type="button"
+                                  onClick={() => setTopHrEnvironmentsExpanded((v) => !v)}
+                                  aria-expanded={topHrEnvironmentsExpanded}
+                                  className="shrink-0 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-800"
+                                >
+                                  {topHrEnvironmentsExpanded ? "Show less" : "Click to expand"}
+                                </button>
+                              )}
+                            </div>
+                            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              {(isCompactLayout && !topHrEnvironmentsExpanded ? gameEnvironments.slice(0, 1) : gameEnvironments.slice(0, 6)).map((g) => (
+                                <div key={g.gameKey} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="truncate text-sm font-semibold text-slate-900" title={g.matchup}>{g.matchup}</span>
+                                    <span className={cn(
+                                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
+                                      (g.gameHrEnvironmentScore ?? 0) >= 70 ? "bg-emerald-100 text-emerald-800" :
+                                      (g.gameHrEnvironmentScore ?? 0) >= 50 ? "bg-amber-100 text-amber-800" :
+                                      "bg-slate-200 text-slate-600",
+                                    )}>
+                                      {g.gameHrEnvironmentScore != null ? g.gameHrEnvironmentScore.toFixed(0) : "—"}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 truncate text-[11px] text-slate-400">{g.ballpark}</div>
+                                  <div className="mt-2 grid grid-cols-3 gap-1 text-center text-[10px]">
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Park</div>
+                                      <div className="font-semibold text-slate-700">{g.parkFactor != null ? g.parkFactor.toFixed(2) : "—"}</div>
+                                    </div>
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Weather</div>
+                                      <div className="font-semibold text-slate-700">{g.weatherEffect != null ? (g.weatherEffect > 0 ? "+" : "") + g.weatherEffect.toFixed(1) : "—"}</div>
+                                    </div>
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Starter Vuln</div>
+                                      <div className="font-semibold text-slate-700">{g.starterVulnerability != null ? g.starterVulnerability.toFixed(0) : "—"}</div>
+                                    </div>
+                                  </div>
+                                  <div className="mt-1.5 text-[10px] text-slate-400">{g.qualifyingHitterCount} qualifying bat{g.qualifyingHitterCount === 1 ? "" : "s"}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </section>
                     ) : null}
 
@@ -3402,6 +3485,40 @@ export default function MlbHrProps() {
                     </div>
                   </section>
                 ) : null}
+
+                <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900">How to read this page</h2>
+                      <p className="mt-0.5 text-xs text-slate-400">Terminology and Model Explanation</p>
+                    </div>
+                    {isCompactLayout && (
+                      <button
+                        type="button"
+                        onClick={() => setHowToReadExpanded((v) => !v)}
+                        aria-expanded={howToReadExpanded}
+                        className="shrink-0 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-800"
+                      >
+                        {howToReadExpanded ? "Show less" : "Click to expand"}
+                      </button>
+                    )}
+                  </div>
+                  {(!isCompactLayout || howToReadExpanded) && (
+                    <>
+                      <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
+                        This board ranks today&apos;s batters by HR Quality Score — a relative measure of home-run matchup strength built from barrel rate, hard-hit rate, recent power, and the opposing pitcher&apos;s HR vulnerability. It&apos;s a ranking tool for research, not a prediction of who will homer or a guaranteed pick.
+                      </p>
+                      <div className="mt-3 border-t border-slate-200 pt-3">
+                        <dl className="grid gap-x-5 gap-y-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
+                          <div><dt className="inline font-bold text-slate-900">HR Score — </dt><dd className="inline">Higher scores indicate stronger relative home-run matchups today. It is not a probability.</dd></div>
+                          <div><dt className="inline font-bold text-slate-900">HR Odds — </dt><dd className="inline">Current sportsbook anytime-home-run price when available.</dd></div>
+                          <div><dt className="inline font-bold text-slate-900">Market % — </dt><dd className="inline">Raw implied probability from the sportsbook odds. It is not adjusted for vig and is not a model estimate.</dd></div>
+                          <div><dt className="inline font-bold text-slate-900">Use both together — </dt><dd className="inline">Compare matchup strength with the available market price to identify research opportunities.</dd></div>
+                        </dl>
+                      </div>
+                    </>
+                  )}
+                </section>
 
                 <RelatedTools currentToolId="hr-props" />
               </section>

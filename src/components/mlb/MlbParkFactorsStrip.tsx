@@ -137,6 +137,12 @@ export interface MlbParkFactorsStripProps {
   showHrPerGame?: boolean;
   /** Matches each page's prior sidebar exactly -- HR Props and Batter vs Pitcher showed precipitation, Strikeout Props did not. */
   showPrecipitation?: boolean;
+  /** Limits the collapsed-state compact grid to this many parks (e.g. 1 for a mobile "just the top row" preview). Omit to show every park while collapsed, the existing default for all current consumers. Has no effect once expanded. */
+  collapsedPreviewCount?: number;
+  /** Overrides the "Show details" collapsed-state label. */
+  expandLabel?: string;
+  /** Overrides the "Hide details" expanded-state label. */
+  collapseLabel?: string;
   className?: string;
 }
 
@@ -154,10 +160,14 @@ export function MlbParkFactorsStrip({
   subtitle,
   showHrPerGame = perspective === "hitter",
   showPrecipitation = true,
+  collapsedPreviewCount,
+  expandLabel = "Show details",
+  collapseLabel = "Hide details",
   className,
 }: MlbParkFactorsStripProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const toneClass = perspective === "hitter" ? getHitterParkTone : getPitcherParkTone;
+  const collapsedParks = collapsedPreviewCount != null ? parks.slice(0, collapsedPreviewCount) : parks;
 
   return (
     <section className={cn("rounded-2xl border border-slate-200 bg-white p-3 shadow-sm", className)}>
@@ -180,7 +190,7 @@ export function MlbParkFactorsStrip({
             <span className="flex shrink-0 items-center gap-2">
               <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{parks.length} parks</span>
               <span className="flex items-center gap-1 text-xs font-semibold text-sky-700">
-                {isExpanded ? "Hide details" : "Show details"}
+                {isExpanded ? collapseLabel : expandLabel}
                 <span aria-hidden="true" className="text-slate-400 transition-transform duration-150 group-open:rotate-180">⌄</span>
               </span>
             </span>
@@ -190,7 +200,7 @@ export function MlbParkFactorsStrip({
             data-testid="park-factors-compact-grid"
             className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
           >
-            {parks.map((park) => (
+            {collapsedParks.map((park) => (
               <CompactParkItem key={park.key} park={park} toneClass={toneClass(park.parkFactor)} />
             ))}
           </div>
