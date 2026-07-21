@@ -100,4 +100,47 @@ describe("PgaBestBets freshness gating", () => {
     expect(screen.getByText(/This week's analysis generates every Monday/)).toBeInTheDocument();
     expect(screen.queryByText("Outright Winners")).not.toBeInTheDocument();
   });
+
+  it("renders the full weekly article, angle badges, risk callouts, and data-limitations footer when present", async () => {
+    renderPage({
+      ...currentPayload,
+      outrights: [
+        {
+          ...currentPayload.outrights[0],
+          risk: "Rust off a two-week layoff.",
+          angles: ["Open Top 5 finish", "FedExCup #1"],
+        },
+      ],
+      article: {
+        title: "Scottish Open Betting Preview",
+        dek: "A short subtitle.",
+        introduction: "Introduction paragraph.",
+        sections: [
+          { heading: "The Tournament", body: "Course overview body." },
+          { heading: "Outright Targets", body: "Outright targets body." },
+          { heading: "Top-10 Targets", body: "Top-10 targets body." },
+        ],
+        conclusion: "Final betting card wrap-up.",
+      },
+      methodologyNotes: ["Picks are generated from a course-weighted strokes-gained model."],
+      dataLimitations: ["Weather and tee-time data are not available in this pipeline."],
+    });
+
+    await waitFor(() => expect(screen.getByText("Scottie Scheffler")).toBeInTheDocument());
+    expect(screen.getByText("Open Top 5 finish")).toBeInTheDocument();
+    expect(screen.getByText("FedExCup #1")).toBeInTheDocument();
+    expect(screen.getByText(/Rust off a two-week layoff/)).toBeInTheDocument();
+    expect(screen.getByText("Scottish Open Betting Preview")).toBeInTheDocument();
+    expect(screen.getByText("Introduction paragraph.")).toBeInTheDocument();
+    expect(screen.getByText("Final betting card wrap-up.")).toBeInTheDocument();
+    expect(screen.getByText(/course-weighted strokes-gained model/)).toBeInTheDocument();
+    expect(screen.getByText(/Weather and tee-time data are not available/)).toBeInTheDocument();
+  });
+
+  it("does not render the article section when no article was generated", async () => {
+    renderPage(currentPayload);
+
+    await waitFor(() => expect(screen.getByText("Scottie Scheffler")).toBeInTheDocument());
+    expect(screen.queryByText("This Week's Analysis")).not.toBeInTheDocument();
+  });
 });

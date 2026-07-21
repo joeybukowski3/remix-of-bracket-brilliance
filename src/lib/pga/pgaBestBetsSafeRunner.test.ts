@@ -64,7 +64,30 @@ describe("PGA best-bets safe runner", () => {
     expect(output.schemaVersion).toBe(2);
     expect(output.status).toBe("partial");
     expect(output.reason).toBeNull();
-    expect(output.sectionStatus).toEqual({ outrights: 1, top5: 1, top10: 0, top20: 0 });
+    expect(output.sectionStatus).toEqual({ outrights: 1, top5: 1, top10: 0, top20: 0, article: 0 });
+  });
+
+  it("surfaces article availability independently of the 4-market pick status -- a missing article does not downgrade a full pick set", () => {
+    const withoutArticle = finalizeSuccessfulArtifact({
+      tournament: "3M Open",
+      course: "TPC Twin Cities",
+      outrights: [{ player: "Cam Davis" }],
+      top5: [{ player: "Cam Davis" }],
+      top10: [{ player: "Cam Davis" }],
+      top20: [{ player: "Cam Davis" }],
+      valueBets: [],
+      article: null,
+    }, FIELD, MODEL);
+    expect(withoutArticle.status).toBe("available");
+    expect(withoutArticle.sourceStatus.article).toBe("unavailable");
+    expect(withoutArticle.sectionStatus.article).toBe(0);
+
+    const withArticle = finalizeSuccessfulArtifact({
+      ...withoutArticle,
+      article: { title: "3M Open Preview", sections: [] },
+    }, FIELD, MODEL);
+    expect(withArticle.sourceStatus.article).toBe("available");
+    expect(withArticle.sectionStatus.article).toBe(1);
   });
 
   it("refuses to finalize a stale prior-tournament artifact", () => {

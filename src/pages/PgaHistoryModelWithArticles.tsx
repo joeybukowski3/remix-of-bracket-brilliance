@@ -3,7 +3,19 @@ import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import PgaHistoryModel from "./PgaHistoryModel";
 
-const PGA_ARTICLES = [
+type PgaArticleCard = {
+  title: string;
+  description: string;
+  date: string;
+  category: string;
+  path: string;
+};
+
+// Frozen historical entry for the 2026 Open Championship's one-off SEO page
+// -- kept as a secondary reference, never shown as "Latest" (see index === 0
+// below). The current week's article is fetched dynamically and prepended
+// ahead of this so the card never points at a stale prior-tournament page.
+const HISTORICAL_ARTICLES: PgaArticleCard[] = [
   {
     title: "2026 Open Championship Picks: Best Bets, Model Rankings and Golf Odds",
     description: "Model-driven outright, Top 5, Top 10, Top 20 and make-cut value for Royal Birkdale, plus the full interactive value board.",
@@ -13,8 +25,15 @@ const PGA_ARTICLES = [
   },
 ];
 
+function formatArticleDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "America/New_York" }).format(date);
+}
+
 export default function PgaHistoryModelWithArticles() {
   const [sidebarTarget, setSidebarTarget] = useState<Element | null>(null);
+  const [currentWeekArticle, setCurrentWeekArticle] = useState<PgaArticleCard | null>(null);
 
   useEffect(() => {
     const locateSidebar = () => {
@@ -28,6 +47,32 @@ export default function PgaHistoryModelWithArticles() {
     const frame = window.requestAnimationFrame(locateSidebar);
     return () => window.cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/data/pga/best-bets.json", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled || !payload?.article?.title || !payload?.tournament) return;
+        setCurrentWeekArticle({
+          title: payload.article.title,
+          description: payload.article.dek || payload.article.introduction || `Model-driven outright, top 10, and top 20 picks for ${payload.tournament}.`,
+          date: payload.generatedAt ? formatArticleDate(payload.generatedAt) : payload.tournament,
+          category: "Best Bets",
+          path: "/pga/best-bets",
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setCurrentWeekArticle(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const articles = currentWeekArticle ? [currentWeekArticle, ...HISTORICAL_ARTICLES] : HISTORICAL_ARTICLES;
 
   return (
     <>
@@ -45,7 +90,7 @@ export default function PgaHistoryModelWithArticles() {
               </div>
 
               <div className="space-y-2">
-                {PGA_ARTICLES.map((article, index) => (
+                {articles.map((article, index) => (
                   <Link
                     key={article.path}
                     to={article.path}

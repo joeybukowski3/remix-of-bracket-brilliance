@@ -8,6 +8,7 @@ import {
   pickTournamentData,
   preparePicksForOutput,
   prepareTournamentModel,
+  validateArticle,
   validatePickArray,
 } from "../../../scripts/generate-pga-best-bets.mjs";
 
@@ -99,5 +100,63 @@ describe("PGA best-bets tournament selection", () => {
       { player: "Scottie Scheffler", topStats: ["SG Total=1", "SG OTT=1"], bullets: ["One", "Two"] },
       { player: "Alternate Player", topStats: ["SG Total=1", "SG OTT=1"], bullets: ["One", "Two"] },
     ], travelersField.players).map((pick) => pick.player)).toEqual(["Scottie Scheffler"]);
+  });
+
+  it("carries through risk and angles when the model provides them, defaulting to empty when absent", () => {
+    const [withAngles, withoutAngles] = validatePickArray([
+      { player: "Scottie Scheffler", topStats: ["a", "b"], bullets: ["One", "Two"], risk: "Rust off a layoff.", angles: ["Open Top 5", "FedExCup safe"] },
+      { player: "Rory McIlroy", topStats: ["a", "b"], bullets: ["One", "Two"] },
+    ]);
+    expect(withAngles.risk).toBe("Rust off a layoff.");
+    expect(withAngles.angles).toEqual(["Open Top 5", "FedExCup safe"]);
+    expect(withoutAngles.risk).toBe("");
+    expect(withoutAngles.angles).toEqual([]);
+  });
+});
+
+describe("validateArticle", () => {
+  const validArticle = {
+    title: "3M Open Betting Preview",
+    dek: "A short subtitle.",
+    introduction: "Two sentences of introduction.",
+    sections: [
+      { heading: "The Tournament", body: "Body text." },
+      { heading: "Outright Targets", body: "Body text." },
+      { heading: "Top-10 Targets", body: "Body text." },
+    ],
+    conclusion: "Final wrap-up.",
+  };
+
+  it("accepts a well-formed article with at least 3 sections", () => {
+    expect(validateArticle(validArticle)).toEqual(validArticle);
+  });
+
+  it("rejects a missing/malformed article", () => {
+    expect(validateArticle(null)).toBeNull();
+    expect(validateArticle(undefined)).toBeNull();
+    expect(validateArticle("not an object")).toBeNull();
+  });
+
+  it("rejects an article missing a title, introduction, or conclusion", () => {
+    expect(validateArticle({ ...validArticle, title: "" })).toBeNull();
+    expect(validateArticle({ ...validArticle, introduction: "" })).toBeNull();
+    expect(validateArticle({ ...validArticle, conclusion: "" })).toBeNull();
+  });
+
+  it("rejects an article with fewer than 3 valid sections", () => {
+    expect(validateArticle({ ...validArticle, sections: [validArticle.sections[0]] })).toBeNull();
+  });
+
+  it("drops a malformed individual section (missing heading or body) rather than keeping it blank", () => {
+    const withBadSection = {
+      ...validArticle,
+      sections: [...validArticle.sections, { heading: "", body: "orphaned body" }],
+    };
+    expect(validateArticle(withBadSection)?.sections).toHaveLength(3);
+  });
+
+  it("dek is optional -- an article without one is still valid", () => {
+    const { dek: _dek, ...withoutDek } = validArticle;
+    expect(validateArticle(withoutDek)?.dek).toBe("");
   });
 });

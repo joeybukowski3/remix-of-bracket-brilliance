@@ -51,6 +51,7 @@ import PgaHistoryModelWithArticles from "./pages/PgaHistoryModelWithArticles";
 import PgaCustom from "./pages/PgaCustom";
 import PgaDfsUpload from "./pages/PgaDfsUpload";
 import PgaOpenChampionshipBestBets from "./pages/PgaOpenChampionshipBestBets";
+import PgaBestBets from "./pages/PgaBestBets";
 import PGAModel from "./pages/PGAModel";
 import PGAModelTableView from "./pages/PGAModelTableView";
 import PGATop40Picks from "./pages/PGATop40Picks";
@@ -163,8 +164,9 @@ const App = () => (
           <Route path="/pga/legacy" element={<PgaHub />} />
           <Route path="/pga/custom" element={<PgaCustom />} />
           <Route path="/pga/dfs" element={<PgaDfsUpload />} />
+          {/* Frozen historical page for the 2026 Open Championship (a one-off, hand-tuned SEO page for the major). Current-week best bets live at /pga/best-bets below. */}
           <Route path="/pga/the-open-2026-picks-best-bets-odds" element={<PgaOpenChampionshipBestBets />} />
-          <Route path="/pga/best-bets" element={<Navigate to="/pga/the-open-2026-picks-best-bets-odds" replace />} />
+          <Route path="/pga/best-bets" element={<PgaBestBets />} />
           <Route path="/pga/the-open-2026-model-value-bets" element={<Navigate to="/pga/the-open-2026-picks-best-bets-odds" replace />} />
           <Route path="/pga/model" element={<PGAModel />} />
           <Route path="/pga/model/table" element={<PGAModelTableView />} />
