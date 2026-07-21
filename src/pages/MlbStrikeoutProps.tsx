@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
+import { Fragment, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
@@ -6,6 +6,7 @@ import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
 import { MlbParkFactorsStrip } from "@/components/mlb/MlbParkFactorsStrip";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import {
   getGameCount,
   getPropEdgeTier,
@@ -32,6 +33,8 @@ import MlbStrikeoutPropRowDetail, {
 } from "@/components/mlb/MlbStrikeoutPropRowDetail";
 
 const DASH = "—";
+/** The main table incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. Mirrors the Batter View pattern from MlbHrProps.tsx. */
+const PAGE_SIZE = 50;
 
 type SortKey = "rank" | "pitcher" | "team" | "opponent" | "strikeoutMatchupScore" | "pitcherKSkillScore" | "opponentTeamStrikeoutScore" | "pitcherKRate" | "pitcherWhiffRate" | "pitcherKVs" | "opponentTeamKRate" | "opponentTeamWhiffRate" | "projectedKs" | "absoluteProjectionEdge";
 type SortDirection = "asc" | "desc";
@@ -92,6 +95,11 @@ function makeSortIndicator(active: boolean, direction: SortDirection) {
   return active ? (direction === "asc" ? " ↑" : " ↓") : "";
 }
 
+/** Turns a keyForStrikeoutPropRow() key (e.g. "dean-kremer|bal|chc|2026-07-08") into a stable, DOM-safe id for a compact row's expand panel + aria-controls pair. Prefixed per call site so the main table and Low Confidence rows never collide even if a key were ever reused. */
+function compactRowPanelId(prefix: string, rowKey: string) {
+  return `${prefix}-${rowKey.replace(/[^a-zA-Z0-9-]/g, "-")}`;
+}
+
 function StatScorePill({ value }: { value: number | null | undefined }) {
   if (value == null || !Number.isFinite(value)) return <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-400">{DASH}</span>;
   const number = Number(value);
@@ -99,24 +107,12 @@ function StatScorePill({ value }: { value: number | null | undefined }) {
   return <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums", tone)}>{number.toFixed(1)}</span>;
 }
 
-/**
- * Pastel gradient per mobile stat-cell position (K%, Whiff%, Opp K%, 4th
- * column) -- shared by both the main and Low Confidence mobile card grids
- * so the two sections stay visually consistent. Kept as one small class
- * map instead of repeating gradient strings inline at each call site.
- */
-const MOBILE_STAT_CELL_GRADIENTS = [
-  "bg-gradient-to-br from-sky-50 to-sky-100",
-  "bg-gradient-to-br from-emerald-50 to-emerald-100",
-  "bg-gradient-to-br from-amber-50 to-amber-100",
-  "bg-gradient-to-br from-violet-50 to-violet-100",
-] as const;
-
-function MobileStatCell({ label, value, position }: { label: string; value: string; position: 0 | 1 | 2 | 3 }) {
+/** Compact labeled tile for the mobile "K Model Metrics" expand grid -- mirrors MlbHrProps.tsx's MetricTile for visual consistency between the two pages' mobile redesigns. */
+function MetricTile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className={cn("px-1 py-2", MOBILE_STAT_CELL_GRADIENTS[position])}>
-      <div className="text-slate-500">{label}</div>
-      <div className="font-black text-slate-900">{value}</div>
+    <div className="rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+      <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="mt-0.5 flex items-center gap-1">{children}</div>
     </div>
   );
 }
@@ -142,14 +138,15 @@ const LOW_CONFIDENCE_STATUS_LABELS: Record<string, string> = {
 };
 
 /** Exclusion badge + reason chips for a Low Confidence table row -- see kPropStatus.ts. */
-function LowConfidenceStatusBadge({ row }: { row: PitcherStrikeoutTeamRow }) {
+/** `compact` omits the reason chips (kept for the desktop cell and the expand-grid detail) so the collapsed mobile row header -- a fixed-width flex row shared with the pitcher name -- only carries the short status label and never forces horizontal overflow. */
+function LowConfidenceStatusBadge({ row, compact = false }: { row: PitcherStrikeoutTeamRow; compact?: boolean }) {
   const { status, reasons } = resolveKPropStatus(row);
   const label = LOW_CONFIDENCE_STATUS_LABELS[status] ?? status;
   const reasonLabels = describeKPropStatusReasons(reasons);
   return (
     <div className="flex flex-col gap-1">
       <span className="inline-block w-fit rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-amber-800">{label}</span>
-      {reasonLabels.length > 0 && (
+      {!compact && reasonLabels.length > 0 && (
         <span className="text-[10px] leading-tight text-slate-500">{reasonLabels.join(" · ")}</span>
       )}
     </div>
@@ -272,6 +269,12 @@ export default function MlbStrikeoutProps() {
   const [sortKey, setSortKey] = useState<SortKey>("strikeoutMatchupScore");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
+  /** Below the `lg` breakpoint (1024px): compact expandable-row layout instead of the desktop data tables. Resolved synchronously via matchMedia (see useIsCompactLayout) so the first render already reflects the real viewport, and rendered via JS branch (not CSS display toggling) so only one copy of each row ever sits in the DOM. Mirrors MlbHrProps.tsx. */
+  const isCompactLayout = useIsCompactLayout();
+  /** How many already-sorted/filtered rows are currently rendered -- "Show 50 more" grows this, a materially-changed filter/sort resets it. Never affects ranking order or which rows pass the filters, only how many of them are on screen. */
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  /** Mobile/tablet-only expand toggle for the relocated "How to read this page" section -- collapsed by default below lg, always open at lg and above. */
+  const [howToReadExpanded, setHowToReadExpanded] = useState(false);
   const slateDate = dashboard?.date ?? null;
   // A details file loaded successfully but generated for a different slate
   // than the page is currently showing (e.g. yesterday's committed data
@@ -328,6 +331,12 @@ export default function MlbStrikeoutProps() {
     });
     return sortRows(rows, sortKey, sortDir);
   }, [mainRows, confidenceFilter, gameFilter, search, sortDir, sortKey, teamFilter]);
+
+  const visibleRows = useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, teamFilter, gameFilter, confidenceFilter, sortKey, sortDir]);
 
   const handleSort = (key: SortKey) => {
     setSortDir((current) => sortKey === key ? (current === "asc" ? "desc" : "asc") : ["pitcher", "team", "opponent"].includes(key) ? "asc" : "desc");
@@ -392,12 +401,19 @@ export default function MlbStrikeoutProps() {
         <div className="space-y-4">
           <MlbNavHero />
           <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={strikeoutDetailRows.length} bestScore={bestScore} showUpdatedAt={false} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Batter vs Pitcher", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
-          <StrikeoutPageGuide />
           <FreshnessStatus status={status} />
           {isDetailsStale && <MlbStrikeoutPropDetailsStaleBanner detailsDate={detailsDate} slateDate={slateDate} />}
           <KBestBetsSection rows={strikeoutDetailRows} />
 
-          <MlbParkFactorsStrip parks={parkRows} perspective="pitcher" subtitle="Pitcher-friendly order" showPrecipitation={false} />
+          <MlbParkFactorsStrip
+            parks={parkRows}
+            perspective="pitcher"
+            subtitle="Pitcher-friendly order"
+            showPrecipitation={false}
+            collapsedPreviewCount={isCompactLayout ? 1 : undefined}
+            expandLabel={isCompactLayout ? "Click to expand" : undefined}
+            collapseLabel={isCompactLayout ? "Show less" : undefined}
+          />
 
           <div className="space-y-4">
               <section className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
@@ -436,18 +452,91 @@ export default function MlbStrikeoutProps() {
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500"><span>{filteredRows.length} pitchers shown</span><Link to="/mlb" className="font-bold text-sky-700 hover:underline">Back to MLB</Link></div>
               </section>
 
-              <section aria-labelledby="strikeout-edge-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <h2 id="strikeout-edge-guide-title" className="text-sm font-black text-slate-900">Understanding Edge</h2>
-                <div className="mt-1.5 space-y-1 text-xs leading-5 text-slate-600">
-                  <p>Edge compares our projected strikeouts to the sportsbook line.</p>
-                  <p><strong className="text-slate-900">OVER</strong> means the model projects more strikeouts than the posted line. <strong className="text-slate-900">UNDER</strong> means fewer.</p>
-                  <p>Edge measures model disagreement with the market—it is not a betting recommendation by itself.</p>
-                  {!hasKOdds && <p className="font-semibold text-slate-500">No line posted yet. Odds not yet available for this slate.</p>}
-                </div>
-              </section>
-
               <section data-x-export="mlb-strikeout-props" className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-sm">
-                <div className="hidden overflow-x-auto md:block" style={{ WebkitOverflowScrolling: "touch" }}>
+                {isCompactLayout ? (
+                  /* Mobile/tablet (below lg): compact expandable rows, mirroring MlbHrProps.tsx's Batter View. */
+                  <div className="grid gap-2 p-3">
+                    {visibleRows.length ? visibleRows.map((row) => {
+                      const rowKey = keyForStrikeoutPropRow(row, slateDate);
+                      const isExpanded = expandedRowKey === rowKey;
+                      const panelId = compactRowPanelId("strikeout-row-detail", rowKey);
+                      const edgeInfo = getProjectionEdgeInfo(row);
+                      const hasPostedLine = row.kLine != null && row.kLine > 0;
+                      const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
+                      const tintClass = edgeInfo.direction === "over" ? "bg-orange-50/70" : edgeInfo.direction === "under" ? "bg-blue-50/70" : "bg-white";
+                      return (
+                        <article key={`mobile-${row.rank}-${row.pitcher}`} className={cn("overflow-hidden rounded-xl border border-slate-100 shadow-sm", tintClass)}>
+                          <button
+                            type="button"
+                            onClick={() => toggleRow(row)}
+                            aria-expanded={isExpanded}
+                            aria-controls={panelId}
+                            aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
+                            className="flex w-full flex-col gap-1 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                              <MlbTeamLogo team={row.team} size={28} />
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-[13px] font-black text-slate-900">{row.pitcher}</div>
+                                <div className="truncate text-[11px] text-slate-400">vs {row.opponent}</div>
+                              </div>
+                              <div className="flex shrink-0 flex-col items-end gap-1">
+                                {hasKOdds && (
+                                  <span className="whitespace-nowrap text-[10px] font-bold text-slate-600">
+                                    {hasPostedLine ? `${fmt(row.kLine)} K` : "No line yet"}
+                                    {hasPostedOdds && <span className="ml-1 text-slate-400">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span>}
+                                  </span>
+                                )}
+                                <PropScoreBadge score={row.strikeoutMatchupScore} />
+                              </div>
+                            </div>
+                            <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
+                              {isExpanded ? "Show less" : "Click to expand"}
+                            </span>
+                          </button>
+                          {isExpanded && (
+                            <div id={panelId} className="space-y-3 border-t border-slate-100 bg-slate-50 px-3 pb-3 pt-2">
+                              <div>
+                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">K Model Metrics</div>
+                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                  {hasKOdds && (
+                                    <MetricTile label="Edge">
+                                      <span className={cn(
+                                        "rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums",
+                                        edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
+                                      )}>
+                                        {formatEdgeLabel(row)}
+                                      </span>
+                                    </MetricTile>
+                                  )}
+                                  <MetricTile label="K Score"><StatScorePill value={row.strikeoutMatchupScore} /></MetricTile>
+                                  <MetricTile label="K%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.pitcherKRate)}%</span></MetricTile>
+                                  <MetricTile label="Whiff%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.pitcherWhiffRate)}%</span></MetricTile>
+                                  <MetricTile label="K VS"><StatScorePill value={row.pitcherKVs} /></MetricTile>
+                                  <MetricTile label="Pitcher K"><StatScorePill value={row.pitcherKSkillScore} /></MetricTile>
+                                  <MetricTile label="Opp K%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.opponentTeamKRate)}%</span></MetricTile>
+                                  <MetricTile label="Opp Whiff%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.opponentTeamWhiffRate)}%</span></MetricTile>
+                                  <MetricTile label="Opp K Score"><StatScorePill value={row.opponentTeamStrikeoutScore} /></MetricTile>
+                                  <MetricTile label="K/9"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedK9)}</span></MetricTile>
+                                  <MetricTile label="Avg IP"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedIP)}</span></MetricTile>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Recent Starts</div>
+                                <RowDetailPanel row={row} />
+                              </div>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    }) : (
+                      <div className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</div>
+                    )}
+                  </div>
+                ) : (
+                  /* Desktop (lg and above): existing table, unchanged. */
+                  <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="min-w-full border-separate border-spacing-0 text-xs">
                     <thead className="sticky top-0 z-20"><tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
                       <th className="sticky left-0 z-30 w-8 border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -458,7 +547,7 @@ export default function MlbStrikeoutProps() {
                       </th>
                       {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K/9</th><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Avg IP</th>
                     </tr></thead>
-                    <tbody>{filteredRows.length ? filteredRows.map((row, index) => {
+                    <tbody>{visibleRows.length ? visibleRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
                       const isExpanded = expandedRowKey === rowKey;
                       const desktopColumnCount = hasKOdds ? 15 : 12;
@@ -514,66 +603,102 @@ export default function MlbStrikeoutProps() {
                       );
                     }) : <tr><td colSpan={hasKOdds ? 15 : 12} className="px-3 py-6 text-center text-sm text-slate-500">No pitchers match the current filters.</td></tr>}</tbody>
                   </table>
-                </div>
-
-                <div className="grid gap-2 p-3 md:hidden">
-                  {filteredRows.slice(0, 50).map((row) => {
-                    const rowKey = keyForStrikeoutPropRow(row, slateDate);
-                    const isExpanded = expandedRowKey === rowKey;
-                    const edgeInfo = getProjectionEdgeInfo(row);
-                    const hasPostedLine = row.kLine != null && row.kLine > 0;
-                    const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
-                    const tintClass = edgeInfo.direction === "over" ? "bg-orange-50/70" : edgeInfo.direction === "under" ? "bg-blue-50/70" : "bg-white";
-                    return (
-                    <article key={`mobile-${row.rank}-${row.pitcher}`} className={cn("overflow-hidden rounded-xl border border-slate-100 shadow-sm", tintClass)}>
-                    <button
-                      type="button"
-                      onClick={() => toggleRow(row)}
-                      aria-expanded={isExpanded}
-                      aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
-                      className="flex w-full items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/60 px-3 py-2 text-left hover:bg-slate-100"
-                    >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
-                        <MlbTeamLogo team={row.team} size={40} />
-                        <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.pitcher}</div><div className="text-[10px] text-slate-500">{row.team} vs {row.opponent}</div></div>
-                      </div>
-                      <PropScoreBadge score={row.strikeoutMatchupScore} />
-                    </button>
-                    {hasKOdds && (
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 text-xs">
-                        <span className="font-bold">{hasPostedLine ? `Line ${fmt(row.kLine)} K` : "No line posted yet"}</span>
-                        <span className="text-slate-500">{hasPostedOdds ? <>O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</> : "Odds not yet available for this slate."}</span>
-                        <span className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] font-black tabular-nums",
-                          edgeInfo.direction === "over" ? "bg-orange-100 text-orange-800" : edgeInfo.direction === "under" ? "bg-blue-100 text-blue-800" : "bg-slate-100 text-slate-400",
-                        )}>
-                          {formatEdgeLabel(row)}
-                        </span>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]">
-                      <MobileStatCell label="K%" value={`${fmt(row.pitcherKRate)}%`} position={0} />
-                      <MobileStatCell label="Whiff%" value={`${fmt(row.pitcherWhiffRate)}%`} position={1} />
-                      <MobileStatCell label="Opp K%" value={`${fmt(row.opponentTeamKRate)}%`} position={2} />
-                      <MobileStatCell label="Proj K" value={fmt(row.projectedKs)} position={3} />
-                    </div>
-                    {isExpanded && <div className="border-t border-slate-100 p-2"><RowDetailPanel row={row} /></div>}
-                  </article>
-                    );
-                  })}
-                </div>
+                  </div>
+                )}
               </section>
 
+              {filteredRows.length > 0 && (
+                <div className="flex items-center justify-between gap-3 px-1 text-xs text-slate-500">
+                  <span>{visibleRows.length} of {filteredRows.length} pitchers</span>
+                  {visibleCount < filteredRows.length && (
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-800"
+                    >
+                      Show 50 more
+                    </button>
+                  )}
+                </div>
+              )}
+
               {lowConfidenceRows.length > 0 && (
-                <section className="overflow-hidden rounded-[20px] border border-amber-200 bg-white shadow-sm">
-                  <div className="border-b border-amber-100 bg-amber-50/60 px-3 py-2.5">
-                    <div className="text-sm font-black text-amber-900">Low Confidence</div>
-                    <p className="mt-0.5 text-[11px] text-amber-800">
-                      These pitchers are excluded from Best Value, Best Bets, and social picks because of a data or odds quality issue -- not because the model is confident in an UNDER. All currently available data is shown; unavailable metrics show as {DASH} instead of a fabricated number.
-                    </p>
-                  </div>
-                  <div className="hidden overflow-x-auto md:block" style={{ WebkitOverflowScrolling: "touch" }}>
+                <details className="group overflow-hidden rounded-[20px] border border-amber-200 bg-white shadow-sm">
+                  <summary className="cursor-pointer list-none border-b border-amber-100 bg-amber-50/60 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-black text-amber-900">Low Confidence <span className="font-bold text-amber-700">({lowConfidenceRows.length})</span></div>
+                        <p className="mt-0.5 text-[11px] text-amber-800">
+                          These pitchers are excluded from Best Value, Best Bets, and social picks because of a data or odds quality issue -- not because the model is confident in an UNDER. All currently available data is shown; unavailable metrics show as {DASH} instead of a fabricated number.
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-amber-700 transition-transform duration-150 group-open:rotate-180" aria-hidden="true">⌄</span>
+                    </div>
+                  </summary>
+
+                  {isCompactLayout ? (
+                    /* Mobile/tablet (below lg): compact expandable rows, mirroring the main table above. */
+                    <div className="grid gap-2 p-3">
+                      {lowConfidenceRows.map((row) => {
+                        const rowKey = keyForStrikeoutPropRow(row, slateDate);
+                        const isExpanded = expandedRowKey === rowKey;
+                        const panelId = compactRowPanelId("strikeout-lowconf-detail", rowKey);
+                        return (
+                          <article key={`mobile-low-confidence-${row.rank}-${row.pitcher}`} className="overflow-hidden rounded-xl border border-amber-100 bg-amber-50/20 shadow-sm">
+                            <button
+                              type="button"
+                              onClick={() => toggleRow(row)}
+                              aria-expanded={isExpanded}
+                              aria-controls={panelId}
+                              aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
+                              className="flex w-full flex-col gap-1 px-3 py-2.5 text-left transition-colors hover:bg-amber-50"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                                <MlbTeamLogo team={row.team} size={28} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-[13px] font-black text-slate-900">{row.pitcher}</div>
+                                  <div className="truncate text-[11px] text-slate-400">vs {row.opponent}</div>
+                                </div>
+                                <div className="shrink-0"><LowConfidenceStatusBadge row={row} compact /></div>
+                              </div>
+                              <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
+                                {isExpanded ? "Show less" : "Click to expand"}
+                              </span>
+                            </button>
+                            {isExpanded && (
+                              <div id={panelId} className="space-y-3 border-t border-amber-100 bg-amber-50/40 px-3 pb-3 pt-2">
+                                <div>
+                                  <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Exclusion Reason</div>
+                                  <LowConfidenceStatusBadge row={row} />
+                                </div>
+                                <div>
+                                  <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">K Model Metrics</div>
+                                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                    <MetricTile label="K Score"><StatScorePill value={row.strikeoutMatchupScore} /></MetricTile>
+                                    <MetricTile label="K%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.pitcherKRate)}%</span></MetricTile>
+                                    <MetricTile label="Whiff%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.pitcherWhiffRate)}%</span></MetricTile>
+                                    <MetricTile label="K VS"><StatScorePill value={row.pitcherKVs} /></MetricTile>
+                                    <MetricTile label="Pitcher K"><StatScorePill value={row.pitcherKSkillScore} /></MetricTile>
+                                    <MetricTile label="Opp K%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.opponentTeamKRate)}%</span></MetricTile>
+                                    <MetricTile label="Opp Whiff%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.opponentTeamWhiffRate)}%</span></MetricTile>
+                                    <MetricTile label="K/9"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedK9)}</span></MetricTile>
+                                    <MetricTile label="Avg IP"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedIP)}</span></MetricTile>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Recent Starts</div>
+                                  <RowDetailPanel row={row} />
+                                </div>
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* Desktop (lg and above): existing table, unchanged. */
+                    <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                     <table className="min-w-full border-separate border-spacing-0 text-xs">
                       <thead className="sticky top-0 z-20"><tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
                         <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">#</th>
@@ -639,41 +764,48 @@ export default function MlbStrikeoutProps() {
                         );
                       })}</tbody>
                     </table>
-                  </div>
-
-                  <div className="grid gap-2 p-3 md:hidden">
-                    {lowConfidenceRows.map((row) => {
-                      const rowKey = keyForStrikeoutPropRow(row, slateDate);
-                      const isExpanded = expandedRowKey === rowKey;
-                      return (
-                      <article key={`mobile-low-confidence-${row.rank}-${row.pitcher}`} className="overflow-hidden rounded-xl border border-amber-100 bg-amber-50/20 shadow-sm">
-                      <button
-                        type="button"
-                        onClick={() => toggleRow(row)}
-                        aria-expanded={isExpanded}
-                        aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
-                        className="flex w-full items-center justify-between gap-2 border-b border-amber-100 bg-amber-50/40 px-3 py-2 text-left hover:bg-amber-50"
-                      >
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
-                          <MlbTeamLogo team={row.team} size={40} />
-                          <div className="min-w-0"><div className="truncate text-sm font-black text-slate-900">{row.pitcher}</div><div className="text-[10px] text-slate-500">{row.team} vs {row.opponent}</div></div>
-                        </div>
-                        <LowConfidenceStatusBadge row={row} />
-                      </button>
-                      <div className="grid grid-cols-4 divide-x divide-slate-100 text-center text-[10px]">
-                        <MobileStatCell label="K%" value={`${fmt(row.pitcherKRate)}%`} position={0} />
-                        <MobileStatCell label="Whiff%" value={`${fmt(row.pitcherWhiffRate)}%`} position={1} />
-                        <MobileStatCell label="Opp K%" value={`${fmt(row.opponentTeamKRate)}%`} position={2} />
-                        <MobileStatCell label="K Score" value={fmt(row.strikeoutMatchupScore)} position={3} />
-                      </div>
-                      {isExpanded && <div className="border-t border-slate-100 p-2"><RowDetailPanel row={row} /></div>}
-                    </article>
-                      );
-                    })}
-                  </div>
-                </section>
+                    </div>
+                  )}
+                </details>
               )}
+
+              <section aria-labelledby="strikeout-page-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h2 id="strikeout-page-guide-title" className="text-base font-black text-slate-900">How to use this page</h2>
+                    <p className="mt-0.5 text-xs text-slate-400">Terminology and Model Explanation</p>
+                  </div>
+                  {isCompactLayout && (
+                    <button
+                      type="button"
+                      onClick={() => setHowToReadExpanded((v) => !v)}
+                      aria-expanded={howToReadExpanded}
+                      className="shrink-0 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-800"
+                    >
+                      {howToReadExpanded ? "Show less" : "Click to expand"}
+                    </button>
+                  )}
+                </div>
+                {(!isCompactLayout || howToReadExpanded) && (
+                  <div className="mt-2 space-y-1.5 text-sm leading-6 text-slate-600">
+                    <p>This board ranks today&apos;s probable starters by K Score, a matchup-strength rating built from pitcher strikeout ability and the opposing lineup&apos;s strikeout tendencies.</p>
+                    <p>When sportsbook strikeout lines are available, the page also compares our projected strikeouts against the market line.</p>
+                    <p>This is a research tool designed to compare pitchers and prices. It is not a guarantee of results or a betting recommendation.</p>
+                  </div>
+                )}
+              </section>
+
+              <section aria-labelledby="strikeout-edge-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <h2 id="strikeout-edge-guide-title" className="text-sm font-black text-slate-900">Understanding Edge</h2>
+                {(!isCompactLayout || howToReadExpanded) && (
+                  <div className="mt-1.5 space-y-1 text-xs leading-5 text-slate-600">
+                    <p>Edge compares our projected strikeouts to the sportsbook line.</p>
+                    <p><strong className="text-slate-900">OVER</strong> means the model projects more strikeouts than the posted line. <strong className="text-slate-900">UNDER</strong> means fewer.</p>
+                    <p>Edge measures model disagreement with the market—it is not a betting recommendation by itself.</p>
+                    {!hasKOdds && <p className="font-semibold text-slate-500">No line posted yet. Odds not yet available for this slate.</p>}
+                  </div>
+                )}
+              </section>
 
               <RelatedTools currentToolId="strikeout-props" />
             </div>

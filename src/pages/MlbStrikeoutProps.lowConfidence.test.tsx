@@ -122,7 +122,7 @@ describe("MlbStrikeoutProps Low Confidence table", () => {
     await renderPage();
 
     const lowConfidenceHeading = screen.getByText("Low Confidence");
-    const lowConfidenceSection = lowConfidenceHeading.closest("section");
+    const lowConfidenceSection = lowConfidenceHeading.closest("details");
     expect(lowConfidenceSection).not.toBeNull();
 
     // Perkins and Sandoval appear inside the Low Confidence section...
@@ -142,7 +142,7 @@ describe("MlbStrikeoutProps Low Confidence table", () => {
     mockPropsData([baseRow, perkinsRow, sandovalRow]);
     await renderPage();
 
-    const lowConfidenceSection = screen.getByText("Low Confidence").closest("section") as HTMLElement;
+    const lowConfidenceSection = screen.getByText("Low Confidence").closest("details") as HTMLElement;
     expect(within(lowConfidenceSection).getAllByText(/Invalid odds/i).length).toBeGreaterThan(0);
     expect(within(lowConfidenceSection).getAllByText(/Insufficient data/i).length).toBeGreaterThan(0);
   });
@@ -152,7 +152,7 @@ describe("MlbStrikeoutProps Low Confidence table", () => {
     mockPropsData([baseRow, sandovalRow]);
     await renderPage();
 
-    const lowConfidenceSection = screen.getByText("Low Confidence").closest("section") as HTMLElement;
+    const lowConfidenceSection = screen.getByText("Low Confidence").closest("details") as HTMLElement;
     const sandovalNameCells = within(lowConfidenceSection).getAllByText("Patrick Sandoval");
     const desktopRow = sandovalNameCells.map((el) => el.closest("tr")).find((tr) => tr);
     expect(desktopRow).toBeTruthy();
