@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  buildFullSeasonPublicPowerBoard,
   buildPublicPowerBoard,
   loadPublicPowerBoard,
   NFL_V03_PUBLIC_ALLOWED_ARTIFACT_FILES,
@@ -16,7 +17,11 @@ import { validateNflV03ReviewArtifact } from "@/lib/nfl/v03Review";
 
 const ROOT = resolve(__dirname, "../../..");
 const NFL_DATA = join(ROOT, "public", "data", "nfl");
-const REVIEW_ONLY_FILES = ["context-flags.json", "manual-adjustments.json", "final-eight-team-metrics.json"];
+const REVIEW_ONLY_FILES = [
+  "context-flags.json",
+  "manual-adjustments.json",
+  "final-eight-team-metrics.json",
+];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -37,11 +42,17 @@ async function committedFetch(input: RequestInfo | URL): Promise<Response> {
 }
 
 describe("public power board projection", () => {
-  it("projects committed 2026 preseason ratings with source-season records and colors", async () => {
+  it("loads 2026 as preseason because the current-season full-season artifact is empty", async () => {
     const board = await loadPublicPowerBoard(NFL_V03_PUBLIC_PRESEASON_SEASON, committedFetch);
     expect(board.modelVersion).toBe(NFL_V03_PUBLIC_MODEL_VERSION);
     expect(board.season).toBe(2026);
+    expect(board.selectedState).toBe("preseason");
+    expect(board.windowType).toBe("preseason");
     expect(board.sourceSeason).toBe(2025);
+    expect(board.fallbackUsed).toBe(false);
+    expect(board.title).toBe("2026 NFL Preseason Power Ratings");
+    expect(board.subtitle).toBe("Based on 2025 regular-season performance");
+    expect(board.recordColumnLabel).toBe("2025");
     expect(board.teams).toHaveLength(32);
     expect(board.teams.map((team) => team.rank)).toEqual(
       [...Array(32)].map((_, index) => index + 1)
@@ -54,12 +65,29 @@ describe("public power board projection", () => {
     expect(top.overallVsCenter).toBeCloseTo(25.815696, 5);
     expect(top.color).toMatch(/^#/);
     expect(top.sourceRecord).toBe("12-5");
-    expect(top.offRank).toBeGreaterThanOrEqual(1);
-    expect(top.offRank).toBeLessThanOrEqual(32);
 
     const serialized = JSON.stringify(board);
-    expect(serialized).not.toMatch(/internalZ|trajectoryRaw|manualAdjustments|contextFlags|uncertainty/);
+    expect(serialized).not.toMatch(
+      /internalZ|trajectoryRaw|manualAdjustments|contextFlags|uncertainty/
+    );
     expect(serialized).not.toMatch(/\b(betting|odds?|moneyline|spread|markets?|picks?)\b/i);
+  });
+
+  it("loads 2025 as full_season when completed games exist", async () => {
+    const board = await loadPublicPowerBoard(2025, committedFetch);
+    expect(board.selectedState).toBe("full_season");
+    expect(board.windowType).toBe("full_season");
+    expect(board.season).toBe(2025);
+    expect(board.sourceSeason).toBe(2025);
+    expect(board.title).toBe("2025 NFL Power Ratings");
+    expect(board.subtitle).toBe("Based on completed 2025 regular-season games");
+    expect(board.completedTeamGames).toBe(544);
+    expect(board.teams).toHaveLength(32);
+    expect(board.teams[0].abbr).toBe("lar");
+    expect(board.teams[0].publicRating).toBeCloseTo(75.815696, 5);
+    expect(board.teams[0].sourceRecord).toBe("12-5");
+    expect(board.recordColumnLabel).toBe("2025");
+    expect(board.fallbackUsed).toBe(false);
   });
 
   it("ranks offense and defense deterministically without mutating input ratings", () => {
@@ -83,6 +111,21 @@ describe("public power board projection", () => {
     }
   });
 
+  it("projects full-season public ratings with the frozen public scale", () => {
+    const path = join(NFL_DATA, "2025", NFL_V03_PUBLIC_FULL_SEASON_FILENAME);
+    const fullSeason = validateNflV03ReviewArtifact(
+      "fullSeason",
+      2025,
+      JSON.parse(readFileSync(path, "utf8")),
+      path
+    );
+    const board = buildFullSeasonPublicPowerBoard({ season: 2025, fullSeason, colors: [] });
+    expect(board.selectedState).toBe("full_season");
+    expect(board.teams).toHaveLength(32);
+    expect(board.teams[0].publicRating).toBeGreaterThanOrEqual(1);
+    expect(board.teams[0].publicRating).toBeLessThanOrEqual(99);
+  });
+
   it("parses canonical team colors from teams.json", () => {
     const teams = parseCanonicalTeamsJson(
       JSON.parse(readFileSync(join(NFL_DATA, "teams.json"), "utf8"))
@@ -91,7 +134,25 @@ describe("public power board projection", () => {
     expect(teams.find((team) => team.abbr === "buf")?.primaryColor).toBe("#00338d");
   });
 
-  it("fails when the preseason artifact is missing", async () => {
+  it("falls back to preseason when the current-season full-season file is malformed", async () => {
+    const fetcher = async (input: RequestInfo | URL) => {
+      if (String(input).includes(`/2026/${NFL_V03_PUBLIC_FULL_SEASON_FILENAME}`)) {
+        return new Response(JSON.stringify({ broken: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return committedFetch(input);
+    };
+    const board = await loadPublicPowerBoard(2026, fetcher);
+    expect(board.selectedState).toBe("preseason");
+    expect(board.fallbackUsed).toBe(true);
+    expect(board.fallbackExplanation).toMatch(/current-season ratings are not available/i);
+    expect(board.teams).toHaveLength(32);
+    expect(board.teams[0].abbr).toBe("lar");
+  });
+
+  it("fails when the preseason artifact is missing and full-season is not eligible", async () => {
     const fetcher = async (input: RequestInfo | URL) => {
       if (String(input).includes(NFL_V03_PUBLIC_PRESEASON_FILENAME)) {
         return new Response("missing", { status: 404 });
@@ -120,6 +181,7 @@ describe("public power integration isolation", () => {
   it("never references review-only Stage-1 files from the public loader path", () => {
     const publicSources = [
       join(ROOT, "src", "lib", "nfl", "publicPowerRatings.ts"),
+      join(ROOT, "src", "lib", "nfl", "publicRatingState.ts"),
       join(ROOT, "src", "hooks", "useNflV03PublicPowerRatings.ts"),
       join(ROOT, "src", "pages", "NFL.tsx"),
     ];
@@ -137,6 +199,7 @@ describe("public power integration isolation", () => {
     const page = readFileSync(join(ROOT, "src", "pages", "NFL.tsx"), "utf8");
     expect(page).toContain("useNflV03PublicPowerRatings");
     expect(page).toContain("model v0.3");
+    expect(page).toContain("data?.title");
     expect(page).not.toContain("NFL_POWER_RATINGS");
     expect(page).not.toContain("context-flags");
     expect(page).not.toContain("manual-adjustments");

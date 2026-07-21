@@ -91,12 +91,19 @@ export default function NFL() {
         <div className="site-container site-stack">
           <section className="nfl-pr-hero">
             <div className="nfl-pr-eyebrow">NFL · Power Ratings</div>
-            <h1 className="nfl-pr-title">2026 Preseason Power Rankings</h1>
+            <h1 className="nfl-pr-title">
+              {data?.title ?? "2026 NFL Preseason Power Ratings"}
+            </h1>
             <p className="nfl-pr-sub">
-              Joe Knows Ball model v0.3 · based on {data?.sourceSeason ?? 2025} regular-season
-              performance · Select a team for its schedule, stats, odds, value and offseason
-              changes
+              Joe Knows Ball model v0.3 · {data?.subtitle ?? "Based on 2025 regular-season performance"}
+              {" · "}
+              Select a team for its schedule, stats, odds, value and offseason changes
             </p>
+            {data?.fallbackExplanation ? (
+              <p className="nfl-pr-fallback" role="status">
+                {data.fallbackExplanation}
+              </p>
+            ) : null}
           </section>
 
           <div className="nfl-pr-layout">
@@ -159,7 +166,7 @@ export default function NFL() {
                           <th scope="col">Offense</th>
                           <th scope="col">Defense</th>
                           <th scope="col">Overall</th>
-                          <th scope="col">{data.sourceSeason}</th>
+                          <th scope="col">{data.recordColumnLabel}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -209,8 +216,11 @@ export default function NFL() {
                     </table>
                   </div>
                   <p className="nfl-pr-foot">
-                    {data.formula}. Model {data.modelVersion}. Trajectory does not affect launch
-                    scoring (λ = 0). Generated {new Date(data.generatedAt).toUTCString()}.
+                    {data.formula}. Model {data.modelVersion}. Window: {data.windowType}
+                    {data.selectedState === "full_season"
+                      ? ` · completed team-games ${data.completedTeamGames}`
+                      : ""}. Trajectory does not affect launch scoring (λ = 0). Generated{" "}
+                    {new Date(data.generatedAt).toUTCString()}.
                   </p>
                 </>
               )}
@@ -223,7 +233,7 @@ export default function NFL() {
 }
 
 const STYLES = `
-  .nfl-pr-hero{padding:4px 0 0}.nfl-pr-eyebrow{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1a6fc4}.nfl-pr-title{font-size:2rem;font-weight:800;letter-spacing:-.02em;color:#0c1f3a;margin-top:6px;line-height:1.05}.nfl-pr-sub{font-size:.9rem;color:#5a6878;margin-top:8px;max-width:52rem}
+  .nfl-pr-hero{padding:4px 0 0}.nfl-pr-eyebrow{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#1a6fc4}.nfl-pr-title{font-size:2rem;font-weight:800;letter-spacing:-.02em;color:#0c1f3a;margin-top:6px;line-height:1.05}.nfl-pr-sub{font-size:.9rem;color:#5a6878;margin-top:8px;max-width:52rem}.nfl-pr-fallback{font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;margin-top:10px;max-width:52rem}
   .nfl-pr-layout{display:grid;gap:18px;align-items:start}.nfl-pr-panel{width:100%;background:#fff;border:1px solid #e3e8ef;border-radius:16px;box-shadow:0 2px 12px rgba(12,31,58,.06);overflow:hidden}.nfl-pr-controls{padding:18px 20px 12px;border-bottom:1px solid #eef2f7}.nfl-pr-toggle{display:inline-flex;background:#eef2f7;border-radius:10px;padding:3px}.nfl-pr-toggle button{appearance:none;border:0;background:transparent;font-size:13px;font-weight:700;color:#5a6878;padding:8px 16px;border-radius:8px;cursor:pointer}.nfl-pr-toggle button.is-active{background:#fff;color:#0c1f3a;box-shadow:0 1px 3px rgba(12,31,58,.14)}.nfl-pr-legend{font-size:12px;color:#7a8694;margin-top:10px}
   .nfl-pr-status{padding:24px 20px;font-size:14px;color:#5a6878}.nfl-pr-status-error{color:#991b1b}
   .nfl-pr-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.nfl-pr-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}.nfl-pr-col-rank{width:48px}.nfl-pr-col-team{width:240px}.nfl-pr-col-rating{width:170px}.nfl-pr-col-record{width:80px}.nfl-pr-table thead th{background:#0c1f3a;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:11px 10px;text-align:center;white-space:nowrap}.nfl-pr-th-team{text-align:left!important}.nfl-pr-table tbody tr{border-bottom:1px solid #eef2f7}.nfl-pr-table tbody tr:hover{background:#f7faff}.nfl-pr-rank{text-align:center;font-weight:800;font-size:15px;color:#0c1f3a}

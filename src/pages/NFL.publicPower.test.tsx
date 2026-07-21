@@ -35,10 +35,14 @@ describe("public NFL power page v0.3 integration", () => {
 
     expect(screen.getByText(/Loading power ratings/)).toBeInTheDocument();
     expect(await screen.findByText("LA Rams")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "2026 Preseason Power Rankings" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "2026 NFL Preseason Power Ratings" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Based on 2025 regular-season performance/)).toBeInTheDocument();
     expect(screen.getByText(/Joe Knows Ball model v0\.3/)).toBeInTheDocument();
     expect(screen.getByText(/nfl-power-v0\.3\.0/)).toBeInTheDocument();
     expect(screen.getByText(/40% opponent-adjusted offensive EPA/)).toBeInTheDocument();
+    expect(screen.getByText(/Window: preseason/)).toBeInTheDocument();
 
     const ramsRow = screen.getByText("LA Rams").closest("tr");
     expect(ramsRow).toBeTruthy();
@@ -47,6 +51,7 @@ describe("public NFL power page v0.3 integration", () => {
 
     expect(screen.queryByText(/'26 Win Total/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Composite weighting: EPA/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/current-season ratings are not available/i)).not.toBeInTheDocument();
   });
 
   it("shows a file-specific error when the preseason artifact cannot load", async () => {
