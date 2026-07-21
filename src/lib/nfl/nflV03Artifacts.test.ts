@@ -326,7 +326,7 @@ describe("NFL v0.3 determinism, dry-run, and isolation", () => {
     expect(JSON.stringify(first)).not.toMatch(FORBIDDEN);
   });
 
-  it("has no public consumer import or reference", () => {
+  it("has no React or route consumer import or reference outside approved data adapters", () => {
     const filenames = [
       "full-season-team-metrics.json",
       "final-eight-team-metrics.json",
@@ -337,6 +337,7 @@ describe("NFL v0.3 determinism, dry-run, and isolation", () => {
     const source = sourceFiles(join(ROOT, "src"))
       .filter((path) => !/\.test\.tsx?$/.test(path))
       .filter((path) => !path.endsWith("useNflV03Artifacts.ts"))
+      .filter((path) => !path.endsWith("teamTrends.ts"))
       .filter((path) => !path.endsWith("NflV03Review.tsx"))
       .map((path) => readFileSync(path, "utf8"))
       .join("\n");

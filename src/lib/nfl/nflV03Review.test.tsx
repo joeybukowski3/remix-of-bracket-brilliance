@@ -160,12 +160,13 @@ describe("NFL v0.3 hidden route and public isolation", () => {
     }
   });
 
-  it("allows Stage-1 artifact filenames only in the dedicated internal loader", () => {
+  it("allows Stage-1 artifact filenames only in the dedicated internal loader and trend adapter", () => {
     const references = sourceFiles(join(ROOT, "src"))
       .filter((path) => !/\.test\.tsx?$/.test(path))
       .filter((path) => FILENAMES.some((filename) => readFileSync(path, "utf8").includes(filename)))
-      .map((path) => basename(path));
-    expect(references).toEqual(["useNflV03Artifacts.ts"]);
+      .map((path) => basename(path))
+      .sort();
+    expect(references).toEqual(["teamTrends.ts", "useNflV03Artifacts.ts"]);
   });
 
   it("leaves the public preseason source and all public NFL consumers untouched by the feature diff", () => {

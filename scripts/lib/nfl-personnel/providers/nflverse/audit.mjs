@@ -1,0 +1,3477 @@
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
+import { gunzipSync } from "node:zlib";
+import { parseCsv } from "../../../nfl-schedules-results-core.mjs";
+import { toNflJsonFileString } from "../../../nfl-data-meta.mjs";
+import { evaluatePersonnelCompleteness } from "../../completeness.mjs";
+import { buildPersonIdentity, normalizePlayerName, stableId } from "../../identity.mjs";
+import { buildReturningProductionMetric } from "../../returning-production.mjs";
+import {
+  PERSONNEL_EVIDENCE_GENERATOR_VERSION,
+  PERSONNEL_EVIDENCE_SCHEMA_VERSION,
+  RETURNING_PRODUCTION_METRICS,
+  validatePersonnelEvidenceDataset,
+} from "../../schema.mjs";
+
+export const NFLVERSE_AUDIT_GENERATOR_VERSION = "nflverse-personnel-audit-v0.3";
+export const NFLVERSE_AUDIT_SCHEMA_VERSION = "nflverse-personnel-audit-v0.3";
+export const NFLVERSE_SAMPLE_TEAM_ABBRS = Object.freeze(["atl", "chi", "nyj", "sea"]);
+export const NFLVERSE_SOURCE_BASE = "https://github.com/nflverse/nflverse-data/releases/download";
+export const REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION = "nflverse-reviewed-identity-overrides-v0.1";
+
+export const NFLVERSE_DATASETS = Object.freeze({
+  rosters: {
+    family: "rosters",
+    release: "rosters",
+    filename: (season) => `roster_${season}.csv`,
+    requiredFields: ["season", "team", "position", "full_name"],
+    sourceId: "nflverse-rosters",
+    sourceName: "nflverse rosters release",
+    pfrDerived: false,
+  },
+  priorRosters: {
+    family: "rosters",
+    release: "rosters",
+    filename: (season) => `roster_${season}.csv`,
+    requiredFields: ["season", "team", "position", "full_name"],
+    sourceId: "nflverse-prior-rosters",
+    sourceName: "nflverse prior-season rosters release",
+    pfrDerived: false,
+  },
+  playerStats: {
+    family: "stats_player_reg",
+    release: "stats_player",
+    filename: (season) => `stats_player_reg_${season}.csv`,
+    requiredFields: ["season", "season_type", "recent_team", "player_id", "player_display_name", "position"],
+    sourceId: "nflverse-player-stats-season",
+    sourceName: "nflverse stats_player regular-season release",
+    pfrDerived: false,
+  },
+  snapCounts: {
+    family: "snap_counts",
+    release: "snap_counts",
+    filename: (season) => `snap_counts_${season}.csv`,
+    requiredFields: ["season", "game_type", "team", "player", "pfr_player_id"],
+    sourceId: "nflverse-snap-counts",
+    sourceName: "nflverse snap_counts release",
+    pfrDerived: true,
+  },
+  players: {
+    family: "players",
+    release: "players",
+    filename: () => "players.csv",
+    requiredFields: ["gsis_id", "display_name", "pfr_id", "position", "position_group", "latest_team"],
+    sourceId: "nflverse-players",
+    sourceName: "nflverse players release",
+    pfrDerived: false,
+    seasonAware: false,
+  },
+});
+
+const SUPPORTED_AUDIT_METRICS = Object.freeze([
+  "offensiveSnaps",
+  "defensiveSnaps",
+  "specialTeamsSnaps",
+  "qbPassAttempts",
+  "carries",
+  "rushingYards",
+  "targets",
+  "receptions",
+  "receivingYards",
+]);
+
+const ALL_RETURNING_METRICS = new Set(RETURNING_PRODUCTION_METRICS);
+const SEASON_TYPE_REG_VALUES = new Set(["REG", "reg", "REGULAR", "regular", ""]);
+const ACTIVE_ROSTER_STATUSES = new Set(["ACT", "INA", "RES", "DEV", "EXE"]);
+const IDENTITY_REASON_CATEGORIES = Object.freeze({
+  missingGsisId: "missing_gsis_id",
+  pfrOnlySnapIdentity: "pfr_only_snap_identity",
+  providerIdConflict: "provider_id_conflict",
+  sameNameDistinctPeople: "same_name_distinct_people",
+  nameVariant: "name_variant",
+  suffixVariant: "suffix_variant",
+  punctuationVariant: "punctuation_variant",
+  positionChange: "position_change",
+  legitimateTeamChange: "legitimate_team_change",
+  rosterMissingStats: "roster_missing_stats",
+  statsMissingRoster: "stats_missing_roster",
+  snapsMissingRoster: "snaps_missing_roster",
+  conflictingTeamSameDate: "conflicting_team_same_date",
+  conflictingNameForProviderId: "conflicting_name_for_provider_id",
+  insufficientEvidence: "insufficient_evidence",
+  other: "other",
+});
+
+const IDENTITY_RESOLUTION_POLICY = Object.freeze({
+  automaticallyResolvable: [
+    IDENTITY_REASON_CATEGORIES.punctuationVariant,
+    IDENTITY_REASON_CATEGORIES.suffixVariant,
+    IDENTITY_REASON_CATEGORIES.legitimateTeamChange,
+    IDENTITY_REASON_CATEGORIES.positionChange,
+    "unique_pfr_to_gsis_crosswalk",
+  ],
+  warningIncluded: [
+    "unique_name_team_position_fallback",
+    "roster_status_mismatch_without_identity_change",
+    IDENTITY_REASON_CATEGORIES.rosterMissingStats,
+  ],
+  mustExclude: [
+    IDENTITY_REASON_CATEGORIES.providerIdConflict,
+    IDENTITY_REASON_CATEGORIES.conflictingNameForProviderId,
+    IDENTITY_REASON_CATEGORIES.sameNameDistinctPeople,
+    IDENTITY_REASON_CATEGORIES.conflictingTeamSameDate,
+    IDENTITY_REASON_CATEGORIES.insufficientEvidence,
+    IDENTITY_REASON_CATEGORIES.pfrOnlySnapIdentity,
+  ],
+  noFuzzyMatching: true,
+});
+
+const IDENTITY_EXPANSION_GATES = Object.freeze({
+  maxCriticalProviderConflicts: 0,
+  minResolvedOffensiveProductionAttribution: 0.98,
+  minOffensiveSnapAttribution: 0.98,
+  minDefensiveSnapAttribution: 0.98,
+  requireAccountedForCoverage: 1,
+  requireDeterministicReplay: true,
+});
+
+const MANDATORY_IDENTITY_METRICS = Object.freeze([
+  "offensiveProduction",
+  "offensiveSnaps",
+  "defensiveSnaps",
+]);
+
+const ADVISORY_IDENTITY_METRICS = Object.freeze(["specialTeamsSnaps"]);
+
+const PRODUCTION_AUDIT_METRICS = Object.freeze([
+  "qbPassAttempts",
+  "carries",
+  "rushingYards",
+  "targets",
+  "receptions",
+  "receivingYards",
+]);
+
+const REVIEWED_OVERRIDE_STATUSES = new Set(["approved", "rejected", "pending", "superseded"]);
+const ACTIVE_REVIEWED_OVERRIDE_STATUSES = new Set(["approved", "pending"]);
+const APPROVED_OVERRIDE_RESOLUTION_TYPES = new Set([
+  "pfr_to_gsis_review",
+  "provider_to_gsis_review",
+  "name_variant_review",
+]);
+
+function sha256(buffer) {
+  return createHash("sha256").update(buffer).digest("hex");
+}
+
+function requireSeason(value, label) {
+  if (!Number.isInteger(value) || value < 2000 || value > 2100) {
+    throw new Error(`${label} must be an integer season`);
+  }
+}
+
+function datasetUrl(dataset, season) {
+  const meta = NFLVERSE_DATASETS[dataset];
+  return `${NFLVERSE_SOURCE_BASE}/${meta.release}/${meta.filename(season)}`;
+}
+
+function fileTextFromBuffer(buffer, sourcePath) {
+  const bytes = sourcePath.endsWith(".gz") ? gunzipSync(buffer) : buffer;
+  return bytes.toString("utf8").replace(/^\uFEFF/, "");
+}
+
+async function readSourceBytes({ path, url }) {
+  if (path) {
+    if (!existsSync(path)) throw new Error(`required nflverse source file not found: ${path}`);
+    return { bytes: readFileSync(path), sourcePath: path, sourceUrl: url ?? null, fetched: false, sourceUpdatedAt: null };
+  }
+  if (!url) throw new Error("source path or URL is required");
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`nflverse fetch failed ${url}: HTTP ${response.status}`);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const lastModified = response.headers.get("last-modified");
+  const sourceUpdatedAt = lastModified && !Number.isNaN(Date.parse(lastModified))
+    ? new Date(lastModified).toISOString().slice(0, 10)
+    : null;
+  return { bytes, sourcePath: null, sourceUrl: url, fetched: true, sourceUpdatedAt };
+}
+
+function validateHeader(rows, requiredFields, dataset) {
+  const first = rows[0] ?? {};
+  const fields = new Set(Object.keys(first));
+  const missing = requiredFields.filter((field) => !fields.has(field));
+  if (missing.length > 0) {
+    throw new Error(`${dataset} schema drift: missing required fields ${missing.join(", ")}`);
+  }
+  return [...fields].sort();
+}
+
+export async function loadNflverseDataset({
+  dataset,
+  season,
+  sourcePath = null,
+  sourceUrl = null,
+  cacheDir = null,
+  retrievedAt,
+}) {
+  requireSeason(season, "season");
+  const meta = NFLVERSE_DATASETS[dataset];
+  if (!meta) throw new Error(`unsupported nflverse dataset ${dataset}`);
+  const url = sourceUrl ?? datasetUrl(dataset, season);
+  const { bytes, sourcePath: inputPath, fetched, sourceUpdatedAt } = await readSourceBytes({ path: sourcePath, url });
+  const checksum = sha256(bytes);
+  const filename = sourcePath ? basename(sourcePath) : basename(new URL(url).pathname);
+  let cachePath = sourcePath ? resolve(sourcePath) : null;
+
+  if (cacheDir && fetched) {
+    mkdirSync(cacheDir, { recursive: true });
+    cachePath = join(cacheDir, filename);
+    writeFileSync(cachePath, bytes);
+  }
+
+  const rows = parseCsv(fileTextFromBuffer(bytes, filename));
+  const headerColumns = validateHeader(rows, meta.requiredFields, dataset);
+  return {
+    dataset,
+    family: meta.family,
+    release: meta.release,
+    filename,
+    sourceUrl: url,
+    cachePath,
+    inputPath,
+    retrievedAt,
+    sourceUpdatedAt,
+    byteSize: bytes.length,
+    sha256: checksum,
+    rowCount: rows.length,
+    headerColumns,
+    pfrDerived: meta.pfrDerived,
+    rows,
+  };
+}
+
+export function writeNflverseManifest({ manifestPath, season, retrievedAt, datasets }) {
+  const manifest = {
+    schemaVersion: "nflverse-personnel-cache-v0.1",
+    provider: "nflverse",
+    season,
+    retrievedAt,
+    datasets: datasets.map((dataset) => ({
+      dataset: dataset.dataset,
+      family: dataset.family,
+      release: dataset.release,
+      filename: dataset.filename,
+      sourceUrl: dataset.sourceUrl,
+      cachePath: dataset.cachePath,
+      sourceUpdatedAt: dataset.sourceUpdatedAt,
+      byteSize: dataset.byteSize,
+      sha256: dataset.sha256,
+      rowCount: dataset.rowCount,
+      headerColumns: dataset.headerColumns,
+      pfrDerived: dataset.pfrDerived,
+    })).sort((a, b) => a.dataset.localeCompare(b.dataset)),
+  };
+  mkdirSync(dirname(resolve(manifestPath)), { recursive: true });
+  writeFileSync(manifestPath, toNflJsonFileString(manifest));
+  return manifest;
+}
+
+export function validateNflverseManifest(manifest, { baseDir = "." } = {}) {
+  const errors = [];
+  const warnings = [];
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+    return { valid: false, errors: [{ code: "invalid_manifest", message: "manifest must be an object" }], warnings };
+  }
+  if (manifest.schemaVersion !== "nflverse-personnel-cache-v0.1") {
+    errors.push({ code: "unsupported_manifest_schema", message: "unsupported nflverse cache manifest schema" });
+  }
+  if (!Array.isArray(manifest.datasets) || manifest.datasets.length === 0) {
+    errors.push({ code: "missing_datasets", message: "manifest.datasets must be a non-empty array" });
+  } else {
+    for (const entry of manifest.datasets) {
+      if (!entry?.dataset || !NFLVERSE_DATASETS[entry.dataset]) {
+        errors.push({ code: "unknown_dataset", message: `unknown dataset ${entry?.dataset ?? ""}` });
+      }
+      if (!entry?.sha256) errors.push({ code: "missing_checksum", message: `${entry?.dataset ?? "dataset"} missing sha256` });
+      const candidatePath = entry?.cachePath ? resolve(baseDir, entry.cachePath) : null;
+      if (candidatePath && existsSync(candidatePath)) {
+        const actual = sha256(readFileSync(candidatePath));
+        if (actual !== entry.sha256) {
+          errors.push({ code: "checksum_mismatch", message: `${entry.dataset} checksum mismatch` });
+        }
+      } else if (candidatePath) {
+        warnings.push({ code: "cache_file_missing", message: `${entry.dataset} cache file not found at ${entry.cachePath}` });
+      }
+    }
+  }
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+function isPlainObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value);
+}
+
+function isValidDateOnly(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`));
+}
+
+function isPlaceholderValue(value) {
+  return /^(tbd|todo|unknown|placeholder|n\/a)$/i.test(String(value ?? "").trim());
+}
+
+function reviewedOverrideScopeKey(record) {
+  return [
+    record.provider,
+    record.providerIdType ?? "providerPersonId",
+    record.providerPersonId,
+    record.sourceSeason ?? "all-seasons",
+    (record.teamScope ?? []).join("|") || "all-teams",
+  ].join(":");
+}
+
+function knownSourceIdsFromManifests(sourceManifests) {
+  return new Set(
+    (sourceManifests ?? [])
+      .map((source) => source.sourceId ?? NFLVERSE_DATASETS[source.dataset]?.sourceId)
+      .filter(Boolean),
+  );
+}
+
+export function validateReviewedIdentityOverrides(overridesFile, {
+  targetSeason = null,
+  priorSeason = null,
+  sourceManifests = [],
+  knownRowIds = null,
+} = {}) {
+  const errors = [];
+  const warnings = [];
+  const knownSourceIds = knownSourceIdsFromManifests(sourceManifests);
+  if (!isPlainObject(overridesFile)) {
+    return { valid: false, errors: [{ code: "invalid_overrides_file", message: "reviewed identity overrides file must be an object" }], warnings };
+  }
+  if (overridesFile.schemaVersion !== REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION) {
+    errors.push({ code: "unsupported_override_schema", message: "unsupported reviewed identity override schema" });
+  }
+  if (overridesFile.provider !== "nflverse") {
+    errors.push({ code: "unsupported_override_provider", message: "reviewed identity overrides currently support provider nflverse only" });
+  }
+  if (!Array.isArray(overridesFile.overrides)) {
+    errors.push({ code: "missing_overrides", message: "overrides must be an array" });
+    return { valid: errors.length === 0, errors, warnings };
+  }
+
+  const activeByScope = new Map();
+  const providerToCanonical = new Map();
+  const canonicalToGsis = new Map();
+  for (const [index, record] of overridesFile.overrides.entries()) {
+    const label = record?.overrideId ?? `override[${index}]`;
+    if (!isPlainObject(record)) {
+      errors.push({ code: "invalid_override_record", message: `${label} must be an object` });
+      continue;
+    }
+    if (record.schemaVersion !== REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION) {
+      errors.push({ code: "unsupported_override_record_schema", message: `${label} has unsupported schemaVersion` });
+    }
+    if (!record.overrideId || isPlaceholderValue(record.overrideId)) errors.push({ code: "missing_override_id", message: `${label} missing overrideId` });
+    if (record.provider !== "nflverse") errors.push({ code: "unsupported_override_record_provider", message: `${label} provider must be nflverse` });
+    if (!record.providerPersonId || isPlaceholderValue(record.providerPersonId)) errors.push({ code: "missing_provider_person_id", message: `${label} missing providerPersonId` });
+    if (!record.providerIdType || isPlaceholderValue(record.providerIdType)) errors.push({ code: "missing_provider_id_type", message: `${label} missing providerIdType` });
+    if (!Number.isInteger(record.sourceSeason) || record.sourceSeason < 2000 || record.sourceSeason > 2100) {
+      errors.push({ code: "invalid_source_season", message: `${label} sourceSeason must be an integer season` });
+    }
+    if (!record.canonicalPersonId || isPlaceholderValue(record.canonicalPersonId)) errors.push({ code: "missing_canonical_person_id", message: `${label} missing canonicalPersonId` });
+    if (!record.canonicalName || isPlaceholderValue(record.canonicalName)) errors.push({ code: "missing_canonical_name", message: `${label} missing canonicalName` });
+    if (!Array.isArray(record.sourceNameVariants) || record.sourceNameVariants.length === 0) {
+      errors.push({ code: "missing_source_name_variants", message: `${label} must include sourceNameVariants` });
+    }
+    if (!Array.isArray(record.teamScope)) errors.push({ code: "invalid_team_scope", message: `${label} teamScope must be an array` });
+    if (!Array.isArray(record.positionContext)) errors.push({ code: "invalid_position_context", message: `${label} positionContext must be an array` });
+    if (!record.resolutionType || isPlaceholderValue(record.resolutionType)) {
+      errors.push({ code: "missing_resolution_type", message: `${label} missing resolutionType` });
+    }
+    if (!REVIEWED_OVERRIDE_STATUSES.has(record.status)) {
+      errors.push({ code: "invalid_override_status", message: `${label} has invalid status` });
+    }
+    if (!Array.isArray(record.evidenceRefs) || record.evidenceRefs.length === 0) {
+      errors.push({ code: "missing_evidence_refs", message: `${label} must include evidenceRefs` });
+    } else {
+      for (const ref of record.evidenceRefs) {
+        if (!ref?.sourceId && !ref?.rowId) {
+          errors.push({ code: "invalid_evidence_ref", message: `${label} evidenceRefs must include sourceId or rowId` });
+        }
+        if (knownSourceIds.size > 0 && ref?.sourceId && !knownSourceIds.has(ref.sourceId)) {
+          errors.push({ code: "unknown_evidence_source", message: `${label} references unknown sourceId ${ref.sourceId}` });
+        }
+        if (knownRowIds && ref?.rowId && !knownRowIds.has(ref.rowId)) {
+          errors.push({ code: "unknown_evidence_row", message: `${label} references unknown source row ${ref.rowId}` });
+        }
+        if (ref?.sourceUrl && (/example\.com/i.test(ref.sourceUrl) || isPlaceholderValue(ref.sourceUrl))) {
+          errors.push({ code: "placeholder_evidence_url", message: `${label} contains placeholder evidence URL` });
+        }
+      }
+    }
+    if (record.status === "approved") {
+      if (!record.reviewedBy || isPlaceholderValue(record.reviewedBy)) errors.push({ code: "missing_reviewer", message: `${label} approved override missing reviewedBy` });
+      if (!isValidDateOnly(record.reviewedAt) || isPlaceholderValue(record.reviewedAt)) errors.push({ code: "missing_review_date", message: `${label} approved override missing valid reviewedAt` });
+      if (!APPROVED_OVERRIDE_RESOLUTION_TYPES.has(record.resolutionType)) {
+        errors.push({ code: "unsupported_approved_resolution_type", message: `${label} approved override has unsupported resolutionType` });
+      }
+      const notes = String(record.reviewNotes ?? "");
+      if (/fuzzy/i.test(notes) && !/no fuzzy/i.test(notes)) {
+        errors.push({ code: "fuzzy_only_override", message: `${label} approved override cannot be based only on fuzzy name similarity` });
+      }
+    }
+    if (record.status !== "approved" && (record.reviewedBy || record.reviewedAt)) {
+      warnings.push({ code: "review_metadata_ignored", message: `${label} has review metadata but status is ${record.status}` });
+    }
+    if (record.expiresAfterSeason != null && (!Number.isInteger(record.expiresAfterSeason) || record.expiresAfterSeason < record.sourceSeason)) {
+      errors.push({ code: "invalid_expiration", message: `${label} expiresAfterSeason must be at or after sourceSeason` });
+    }
+    if (record.status === "approved" && targetSeason && record.expiresAfterSeason != null && record.sourceSeason > targetSeason) {
+      errors.push({ code: "future_scoped_override", message: `${label} sourceSeason cannot be after target season` });
+    }
+    if (priorSeason && record.sourceSeason !== priorSeason) {
+      warnings.push({ code: "season_scope_mismatch", message: `${label} sourceSeason does not match priorSeason ${priorSeason}` });
+    }
+
+    const active = ACTIVE_REVIEWED_OVERRIDE_STATUSES.has(record.status);
+    if (active) {
+      const scopeKey = reviewedOverrideScopeKey(record);
+      if (activeByScope.has(scopeKey)) {
+        errors.push({ code: "duplicate_active_override", message: `${label} duplicates active override ${activeByScope.get(scopeKey)}` });
+      }
+      activeByScope.set(scopeKey, record.overrideId);
+      const providerKeyValue = `${record.provider}:${record.providerIdType}:${record.providerPersonId}`;
+      const canonicalSet = providerToCanonical.get(providerKeyValue) ?? new Set();
+      canonicalSet.add(record.canonicalPersonId);
+      providerToCanonical.set(providerKeyValue, canonicalSet);
+      if (record.gsisId) {
+        const gsisSet = canonicalToGsis.get(record.canonicalPersonId) ?? new Set();
+        gsisSet.add(record.gsisId);
+        canonicalToGsis.set(record.canonicalPersonId, gsisSet);
+      }
+    }
+  }
+  for (const [providerKeyValue, canonicalSet] of providerToCanonical) {
+    if (canonicalSet.size > 1) {
+      errors.push({ code: "conflicting_provider_override", message: `${providerKeyValue} maps to multiple canonical people` });
+    }
+  }
+  for (const [canonicalPersonId, gsisSet] of canonicalToGsis) {
+    if (gsisSet.size > 1) {
+      errors.push({ code: "conflicting_canonical_identity", message: `${canonicalPersonId} maps to multiple GSIS IDs` });
+    }
+  }
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+export function loadReviewedIdentityOverridesFile(filePath, options = {}) {
+  const parsed = JSON.parse(readFileSync(filePath, "utf8"));
+  const validation = validateReviewedIdentityOverrides(parsed, options);
+  if (!validation.valid) {
+    const detail = validation.errors.map((error) => `${error.code}: ${error.message}`).join("; ");
+    throw new Error(`reviewed identity overrides invalid: ${detail}`);
+  }
+  return { overridesFile: parsed, validation };
+}
+
+function canonicalMaps(teamsJson) {
+  const teams = Array.isArray(teamsJson?.teams) ? teamsJson.teams : [];
+  return {
+    byId: new Map(teams.map((team) => [team.id, team])),
+    byAbbr: new Map(teams.map((team) => [team.abbr, team])),
+    byNflverse: new Map(teams.map((team) => [team.nflverseAbbr, team])),
+  };
+}
+
+export function canonicalNflTeamAbbrs(teamsJson) {
+  const teams = Array.isArray(teamsJson?.teams) ? teamsJson.teams : [];
+  return teams.map((team) => team.abbr);
+}
+
+export function resolveNflverseAuditTeamScope({ teamsJson, teamAbbrs = null, allTeams = false } = {}) {
+  const maps = canonicalMaps(teamsJson);
+  const canonical = canonicalNflTeamAbbrs(teamsJson);
+  if (canonical.length !== 32) {
+    throw new Error(`teams.json must contain exactly 32 canonical NFL teams; found ${canonical.length}`);
+  }
+  if (new Set(canonical).size !== 32) {
+    throw new Error("teams.json contains duplicate canonical NFL team abbreviations");
+  }
+  if (allTeams && teamAbbrs?.length) {
+    throw new Error("--all-teams cannot be combined with an explicit team list");
+  }
+
+  const requested = allTeams ? canonical : (teamAbbrs?.length ? teamAbbrs : NFLVERSE_SAMPLE_TEAM_ABBRS);
+  const normalized = requested.map((abbr) => String(abbr).trim().toLowerCase()).filter(Boolean);
+  const duplicates = normalized.filter((abbr, index) => normalized.indexOf(abbr) !== index);
+  if (duplicates.length > 0) {
+    throw new Error(`duplicate NFL team abbreviation(s): ${[...new Set(duplicates)].sort().join(", ")}`);
+  }
+  const unknown = normalized.filter((abbr) => !maps.byAbbr.has(abbr));
+  if (unknown.length > 0) {
+    throw new Error(`unknown NFL team abbreviation(s): ${unknown.sort().join(", ")}`);
+  }
+  const ordered = canonical.filter((abbr) => normalized.includes(abbr));
+  if (allTeams && ordered.length !== 32) {
+    throw new Error(`--all-teams must include exactly 32 canonical teams; found ${ordered.length}`);
+  }
+  if (ordered.length !== normalized.length) {
+    throw new Error("team scope did not resolve to the requested canonical teams");
+  }
+  return {
+    mode: allTeams ? "all_32" : (teamAbbrs?.length ? "explicit" : "sample"),
+    expectedTeamCount: allTeams ? 32 : ordered.length,
+    teamCount: ordered.length,
+    teamAbbrs: ordered,
+    canonicalTeamCount: canonical.length,
+    canonicalTeamAbbrs: canonical,
+    deterministicOrdering: "teams.json canonical order",
+  };
+}
+
+function canonicalTeamForCode(code, maps) {
+  if (!code) return null;
+  const upper = String(code).toUpperCase();
+  return maps.byNflverse.get(upper) ?? maps.byAbbr.get(String(code).toLowerCase()) ?? null;
+}
+
+function field(row, names) {
+  for (const name of names) {
+    if (row[name] != null && String(row[name]).trim() !== "") return String(row[name]).trim();
+  }
+  return null;
+}
+
+function numberField(row, names) {
+  const raw = field(row, names);
+  if (raw == null || raw === "NA") return 0;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) throw new Error(`invalid numeric nflverse field ${names[0]}=${raw}`);
+  return value;
+}
+
+function providerIdsFromRow(row) {
+  return {
+    gsisId: field(row, ["gsis_id", "player_id"]),
+    espnId: field(row, ["espn_id"]),
+    pfrId: field(row, ["pfr_id", "pfr_player_id"]),
+    sportradarId: field(row, ["sportradar_id"]),
+    yahooId: field(row, ["yahoo_id"]),
+    rotowireId: field(row, ["rotowire_id"]),
+    pffId: field(row, ["pff_id"]),
+    fantasyDataId: field(row, ["fantasy_data_id"]),
+    sleeperId: field(row, ["sleeper_id"]),
+    esbId: field(row, ["esb_id"]),
+  };
+}
+
+function primaryProviderId(providerIds) {
+  return providerIds.gsisId ?? providerIds.pfrId ?? providerIds.espnId ?? providerIds.sportradarId ?? null;
+}
+
+const POSITION_IDENTITY_GROUPS = Object.freeze({
+  QB: "QB",
+  RB: "RB",
+  FB: "RB",
+  WR: "WR",
+  TE: "TE",
+  T: "OL",
+  OT: "OL",
+  G: "OL",
+  OG: "OL",
+  C: "OL",
+  OL: "OL",
+  LT: "OL",
+  RT: "OL",
+  LG: "OL",
+  RG: "OL",
+  DL: "DL",
+  DT: "DL",
+  NT: "DL",
+  DE: "pass_rush",
+  EDGE: "pass_rush",
+  OLB: "LB",
+  ILB: "LB",
+  MLB: "LB",
+  LB: "LB",
+  CB: "CB",
+  S: "S",
+  FS: "S",
+  SS: "S",
+  DB: "DB",
+  K: "specialist",
+  P: "specialist",
+  LS: "specialist",
+});
+
+function normalizePositionGroup(position) {
+  const value = String(position ?? "").trim().toUpperCase();
+  return POSITION_IDENTITY_GROUPS[value] ?? (value || "unknown");
+}
+
+function snapPositionBucket(position) {
+  const value = String(position ?? "").trim().toUpperCase();
+  if (["T", "OT", "LT", "RT"].includes(value)) return "OT";
+  if (["G", "OG", "LG", "RG"].includes(value)) return "OG";
+  if (value === "C") return "C";
+  if (value === "OL") return "OL/unknown offensive line";
+  return normalizePositionGroup(value);
+}
+
+function providerPriorityName(providerIds) {
+  if (providerIds.gsisId) return "gsis";
+  if (providerIds.pfrId || providerIds.espnId || providerIds.sportradarId) return "provider_id";
+  return "name_position_team";
+}
+
+function identityKeyFor({ providerIds, name, position, teamId }) {
+  const providerId = primaryProviderId(providerIds);
+  return buildPersonIdentity({ providerId, name, position, teamId }).identityKey;
+}
+
+export function normalizeNflverseRosterRows(rows, { teamsJson, allowedTeamAbbrs, season, sourceId }) {
+  const maps = canonicalMaps(teamsJson);
+  const allowed = new Set(allowedTeamAbbrs);
+  return rows
+    .filter((row) => Number(row.season) === season)
+    .map((row, index) => {
+      const team = canonicalTeamForCode(row.team, maps);
+      if (!team) return null;
+      if (!allowed.has(team.abbr)) return null;
+      const name = field(row, ["full_name", "player_name", "player_display_name", "football_name"]);
+      const position = field(row, ["position", "depth_chart_position"]);
+      if (!name || !position) throw new Error(`rosters schema drift at row ${index + 1}: missing player name or position`);
+      const providerIds = providerIdsFromRow(row);
+      return {
+        rowId: `roster:${season}:${team.abbr}:${primaryProviderId(providerIds) ?? normalizePlayerName(name)}:${index + 1}`,
+        season,
+        teamId: team.id,
+        teamAbbr: team.abbr,
+        name,
+        normalizedName: normalizePlayerName(name),
+        position,
+        rosterStatus: field(row, ["status", "status_description_abbr"]),
+        depthChartPosition: field(row, ["depth_chart_position"]),
+        yearsExp: field(row, ["years_exp"]),
+        providerIds,
+        providerId: primaryProviderId(providerIds),
+        identityMatchMethod: providerPriorityName(providerIds),
+        identityKey: identityKeyFor({ providerIds, name, position, teamId: team.id }),
+        sourceId,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.teamAbbr.localeCompare(b.teamAbbr) || a.identityKey.localeCompare(b.identityKey));
+}
+
+export function normalizeNflversePlayerStatRows(rows, { teamsJson, allowedTeamAbbrs, season, sourceId }) {
+  const maps = canonicalMaps(teamsJson);
+  const allowed = new Set(allowedTeamAbbrs);
+  return rows
+    .filter((row) => Number(row.season) === season)
+    .filter((row) => SEASON_TYPE_REG_VALUES.has(field(row, ["season_type", "game_type"]) ?? ""))
+    .map((row, index) => {
+      const team = canonicalTeamForCode(field(row, ["recent_team", "team"]), maps);
+      if (!team) return null;
+      if (!allowed.has(team.abbr)) return null;
+      const name = field(row, ["player_display_name", "player_name", "player"]);
+      const position = field(row, ["position", "player_position"]);
+      const passingAttempts = numberField(row, ["attempts", "passing_attempts"]);
+      const carries = numberField(row, ["carries", "rushing_attempts"]);
+      const rushingYards = numberField(row, ["rushing_yards"]);
+      const targets = numberField(row, ["targets"]);
+      const receptions = numberField(row, ["receptions"]);
+      const receivingYards = numberField(row, ["receiving_yards"]);
+      if (!name) {
+        const supportedQuantity = passingAttempts + carries + Math.abs(rushingYards) + targets + receptions + Math.abs(receivingYards);
+        if (supportedQuantity === 0) return null;
+        throw new Error(`player_stats schema drift at row ${index + 1}: missing player name with supported production`);
+      }
+      const providerIds = { gsisId: field(row, ["player_id", "gsis_id"]) };
+      return {
+        rowId: `player_stats:${season}:${team.abbr}:${primaryProviderId(providerIds) ?? normalizePlayerName(name)}:${index + 1}`,
+        season,
+        teamId: team.id,
+        teamAbbr: team.abbr,
+        name,
+        normalizedName: normalizePlayerName(name),
+        position,
+        providerIds,
+        providerId: primaryProviderId(providerIds),
+        identityMatchMethod: providerPriorityName(providerIds),
+        identityKey: identityKeyFor({ providerIds, name, position, teamId: team.id }),
+        passingAttempts,
+        carries,
+        rushingYards,
+        targets,
+        receptions,
+        receivingYards,
+        sacks: numberField(row, ["sacks", "def_sacks"]),
+        sourceId,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.teamAbbr.localeCompare(b.teamAbbr) || a.identityKey.localeCompare(b.identityKey));
+}
+
+export function normalizeNflverseSnapRows(rows, { teamsJson, allowedTeamAbbrs, season, sourceId }) {
+  const maps = canonicalMaps(teamsJson);
+  const allowed = new Set(allowedTeamAbbrs);
+  return rows
+    .filter((row) => Number(row.season) === season)
+    .filter((row) => (field(row, ["game_type"]) ?? "REG") === "REG")
+    .map((row, index) => {
+      const team = canonicalTeamForCode(row.team, maps);
+      if (!team) return null;
+      if (!allowed.has(team.abbr)) return null;
+      const name = field(row, ["player"]);
+      const position = field(row, ["position"]);
+      if (!name || !position) throw new Error(`snap_counts schema drift at row ${index + 1}: missing player name or position`);
+      const providerIds = { pfrId: field(row, ["pfr_player_id"]) };
+      return {
+        rowId: `snap_counts:${season}:${team.abbr}:${field(row, ["game_id"]) ?? "game"}:${primaryProviderId(providerIds) ?? normalizePlayerName(name)}:${index + 1}`,
+        season,
+        gameId: field(row, ["game_id"]),
+        teamId: team.id,
+        teamAbbr: team.abbr,
+        name,
+        normalizedName: normalizePlayerName(name),
+        position,
+        providerIds,
+        providerId: primaryProviderId(providerIds),
+        identityMatchMethod: providerPriorityName(providerIds),
+        identityKey: identityKeyFor({ providerIds, name, position, teamId: team.id }),
+        offensiveSnaps: numberField(row, ["offense_snaps"]),
+        defensiveSnaps: numberField(row, ["defense_snaps"]),
+        specialTeamsSnaps: numberField(row, ["st_snaps"]),
+        offensePct: numberField(row, ["offense_pct"]),
+        defensePct: numberField(row, ["defense_pct"]),
+        specialTeamsPct: numberField(row, ["st_pct"]),
+        sourceId,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.teamAbbr.localeCompare(b.teamAbbr) || String(a.gameId).localeCompare(String(b.gameId)) || a.identityKey.localeCompare(b.identityKey));
+}
+
+export function normalizeNflversePlayerMappingRows(rows, { teamsJson, sourceId }) {
+  const maps = canonicalMaps(teamsJson);
+  return rows
+    .map((row, index) => {
+      const name = field(row, ["display_name", "player_name", "full_name", "football_name"]);
+      const position = field(row, ["position", "position_group"]);
+      const providerIds = providerIdsFromRow(row);
+      if (!name || !position) return null;
+      const latestTeam = canonicalTeamForCode(field(row, ["latest_team"]), maps);
+      return {
+        rowId: `players:${primaryProviderId(providerIds) ?? normalizePlayerName(name)}:${index + 1}`,
+        season: null,
+        teamId: null,
+        teamAbbr: null,
+        latestTeamId: latestTeam?.id ?? null,
+        latestTeamAbbr: latestTeam?.abbr ?? field(row, ["latest_team"]),
+        name,
+        normalizedName: normalizePlayerName(name),
+        commonFirstName: field(row, ["common_first_name"]),
+        firstName: field(row, ["first_name"]),
+        lastName: field(row, ["last_name"]),
+        shortName: field(row, ["short_name"]),
+        footballName: field(row, ["football_name"]),
+        suffix: field(row, ["suffix"]),
+        position,
+        positionGroup: field(row, ["position_group"]),
+        rosterStatus: field(row, ["status", "ngs_status_short_description"]),
+        rookieSeason: field(row, ["rookie_season"]),
+        lastSeason: field(row, ["last_season"]),
+        providerIds,
+        providerId: primaryProviderId(providerIds),
+        identityMatchMethod: providerPriorityName(providerIds),
+        identityKey: identityKeyFor({ providerIds, name, position, teamId: "nflverse-players" }),
+        sourceId,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => String(a.providerIds.pfrId ?? "").localeCompare(String(b.providerIds.pfrId ?? "")) || a.normalizedName.localeCompare(b.normalizedName));
+}
+
+function sourceRefs(...sourceIds) {
+  return [...new Set(sourceIds.filter(Boolean))].map((sourceId) => ({ sourceId }));
+}
+
+function emptyMetric(sourceIds, message) {
+  return buildReturningProductionMetric({
+    numerator: null,
+    denominator: null,
+    sourceRefs: sourceRefs(...sourceIds),
+    warnings: [message],
+  });
+}
+
+function aggregateByIdentity(rows, metrics) {
+  const byKey = new Map();
+  for (const row of rows) {
+    const existing = byKey.get(row.identityKey) ?? {
+      row,
+      values: Object.fromEntries(metrics.map((metric) => [metric, 0])),
+      rowIds: [],
+    };
+    for (const metric of metrics) existing.values[metric] += row[metric] ?? 0;
+    existing.rowIds.push(row.rowId);
+    byKey.set(row.identityKey, existing);
+  }
+  return byKey;
+}
+
+class UnionFind {
+  constructor() {
+    this.parent = new Map();
+  }
+
+  find(key) {
+    if (!this.parent.has(key)) this.parent.set(key, key);
+    const parent = this.parent.get(key);
+    if (parent !== key) this.parent.set(key, this.find(parent));
+    return this.parent.get(key);
+  }
+
+  union(a, b) {
+    const rootA = this.find(a);
+    const rootB = this.find(b);
+    if (rootA !== rootB) this.parent.set(rootB, rootA);
+  }
+}
+
+function providerKey(providerName, value) {
+  return value ? `${providerName}:${value}` : null;
+}
+
+function isStableGsisId(value) {
+  return /^00-/.test(String(value ?? ""));
+}
+
+function providerKeysForRow(row) {
+  return Object.entries(row.providerIds ?? {})
+    .map(([providerName, value]) => providerKey(providerName, value))
+    .filter(Boolean);
+}
+
+function fallbackKeyForRow(row, scope = "source") {
+  return stableId(["fallback", scope, row.normalizedName, normalizePositionGroup(row.position), row.teamId ?? "unknown-team"]);
+}
+
+function bestIdentityKey(keys) {
+  const orderedKeys = [...keys];
+  const priority = ["gsisId", "pfrId", "espnId", "sportradarId", "yahooId", "rotowireId", "pffId", "fantasyDataId", "sleeperId", "esbId"];
+  for (const providerName of priority) {
+    const match = orderedKeys.filter((key) => key.startsWith(`${providerName}:`)).sort()[0];
+    if (match) return match;
+  }
+  return orderedKeys.sort()[0] ?? "unresolved";
+}
+
+function addSetValue(map, key, value) {
+  if (value == null || value === "") return;
+  if (map instanceof Map) {
+    if (!map.has(key)) map.set(key, new Set());
+    map.get(key).add(value);
+  } else if (map[key]) {
+    map[key].add(value);
+  }
+}
+
+function sortedSet(set) {
+  return [...(set ?? [])].sort();
+}
+
+function buildSupplementalPlayersSafety(playersRows = []) {
+  const byPfr = new Map();
+  const byGsis = new Map();
+  for (const row of playersRows) {
+    const pfrId = row.providerIds?.pfrId;
+    const gsisId = row.providerIds?.gsisId;
+    if (pfrId) byPfr.set(pfrId, [...(byPfr.get(pfrId) ?? []), row]);
+    if (gsisId) byGsis.set(gsisId, [...(byGsis.get(gsisId) ?? []), row]);
+  }
+
+  const safePfrIds = new Set();
+  const rejectedMappings = [];
+  for (const [pfrId, rows] of byPfr) {
+    const gsisIds = new Set(rows.map((row) => row.providerIds?.gsisId).filter(Boolean));
+    const compactNames = new Set(rows.map((row) => compactNameForVariant(row.name)).filter(Boolean));
+    if (gsisIds.size === 1 && isStableGsisId([...gsisIds][0])) {
+      safePfrIds.add(pfrId);
+    } else {
+      rejectedMappings.push({
+        providerName: "pfrId",
+        providerId: pfrId,
+        reason: gsisIds.size === 0
+          ? "missing_gsis_id"
+          : gsisIds.size === 1
+            ? "non_stable_gsis_id"
+            : "duplicate_pfr_id_conflicting_gsis",
+        gsisIds: sortedSet(gsisIds),
+        sourceNames: sortedSet(new Set(rows.map((row) => row.name))),
+      });
+    }
+    if (compactNames.size > 1 && gsisIds.size === 1) {
+      rejectedMappings.push({
+        providerName: "pfrId",
+        providerId: pfrId,
+        reason: "historical_name_variants_same_gsis",
+        gsisIds: sortedSet(gsisIds),
+        sourceNames: sortedSet(new Set(rows.map((row) => row.name))),
+        warningOnly: true,
+      });
+    }
+  }
+
+  const gsisWarnings = [];
+  for (const [gsisId, rows] of byGsis) {
+    const compactNames = new Set(rows.map((row) => compactNameForVariant(row.name)).filter(Boolean));
+    if (compactNames.size > 1) {
+      gsisWarnings.push({
+        providerName: "gsisId",
+        providerId: gsisId,
+        reason: "gsis_id_name_variants",
+        sourceNames: sortedSet(new Set(rows.map((row) => row.name))),
+      });
+    }
+  }
+
+  const safeRows = playersRows.filter((row) => row.providerIds?.pfrId && row.providerIds?.gsisId && safePfrIds.has(row.providerIds.pfrId));
+  return {
+    present: playersRows.length > 0,
+    rowCount: playersRows.length,
+    pfrRows: [...byPfr.values()].reduce((sum, rows) => sum + rows.length, 0),
+    gsisRows: [...byGsis.values()].reduce((sum, rows) => sum + rows.length, 0),
+    uniqueSafePfrMappings: safePfrIds.size,
+    rejectedMappingCount: rejectedMappings.filter((record) => !record.warningOnly).length,
+    warningCount: rejectedMappings.filter((record) => record.warningOnly).length + gsisWarnings.length,
+    rejectedMappings: rejectedMappings.filter((record) => !record.warningOnly).slice(0, 100),
+    warnings: [...rejectedMappings.filter((record) => record.warningOnly), ...gsisWarnings].slice(0, 100),
+    safeRows,
+  };
+}
+
+function buildIdentityCrosswalk({ targetRosterRows, priorRosterRows, statRows, snapRows, supplementalPlayerRows = [], sourceIds, reviewedOverrides = null, targetSeason }) {
+  const unionFind = new UnionFind();
+  const sourceRows = [];
+  const diagnostics = {
+    conflicts: [],
+    warnings: [],
+    overrideApplications: [],
+    supplementalPlayerMappings: null,
+  };
+  const reviewedOverridesByProvider = overrideIndex(reviewedOverrides);
+  const recordedOverrideApplications = new Set();
+  const supplementalPlayersSafety = buildSupplementalPlayersSafety(supplementalPlayerRows);
+  diagnostics.supplementalPlayerMappings = {
+    present: supplementalPlayersSafety.present,
+    rowCount: supplementalPlayersSafety.rowCount,
+    pfrRows: supplementalPlayersSafety.pfrRows,
+    gsisRows: supplementalPlayersSafety.gsisRows,
+    uniqueSafePfrMappings: supplementalPlayersSafety.uniqueSafePfrMappings,
+    rejectedMappingCount: supplementalPlayersSafety.rejectedMappingCount,
+    warningCount: supplementalPlayersSafety.warningCount,
+    rejectedMappings: supplementalPlayersSafety.rejectedMappings,
+    warnings: supplementalPlayersSafety.warnings,
+  };
+
+  function recordOverrideDecision(decision) {
+    const key = `${decision.providerName}:${decision.providerId}:${decision.overrideId ?? "none"}`;
+    if (recordedOverrideApplications.has(key)) {
+      const existingIndex = diagnostics.overrideApplications.findIndex((existing) =>
+        `${existing.providerName}:${existing.providerId}:${existing.overrideId ?? "none"}` === key,
+      );
+      if (existingIndex >= 0 && !diagnostics.overrideApplications[existingIndex].applied && decision.applied) {
+        diagnostics.overrideApplications[existingIndex] = decision;
+      }
+      return;
+    }
+    recordedOverrideApplications.add(key);
+    diagnostics.overrideApplications.push(decision);
+  }
+
+  function reviewedOverrideKeysForRow(row) {
+    const keys = [];
+    for (const [providerName, providerId] of Object.entries(row.providerIds ?? {})) {
+      if (!providerId) continue;
+      const decision = matchingOverrideDecision({
+        providerName,
+        providerId,
+        rows: [row],
+        overridesByProvider: reviewedOverridesByProvider,
+        targetSeason,
+        allowPartialSourceEvidence: true,
+      });
+      if (decision.considered) recordOverrideDecision(decision);
+      if (decision.applied) {
+        const gsisId = decision.resultingIdentity?.gsisId;
+        keys.push(gsisId ? providerKey("gsisId", gsisId) : `reviewedOverride:${decision.resultingIdentity?.canonicalPersonId}`);
+      }
+    }
+    return keys.filter(Boolean);
+  }
+
+  function addSourceRows(rows, sourceKind, seasonRole, teamRole, metricFields = [], { includeFallback = true } = {}) {
+    for (const row of rows) {
+      const keys = providerKeysForRow(row);
+      const reviewedKeys = reviewedOverrideKeysForRow(row);
+      const fallbackScope = seasonRole === "target" ? "target" : "prior";
+      const fallback = fallbackKeyForRow(row, fallbackScope);
+      const allKeys = [...new Set(includeFallback ? [...keys, ...reviewedKeys, fallback] : [...keys, ...reviewedKeys])];
+      if (allKeys.length === 0) continue;
+      allKeys.forEach((key) => unionFind.find(key));
+      allKeys.slice(1).forEach((key) => unionFind.union(allKeys[0], key));
+      sourceRows.push({ row, keys: allKeys, fallback, sourceKind, seasonRole, teamRole, metricFields });
+    }
+  }
+
+  addSourceRows(targetRosterRows, "target_roster", "target", "targetSeasonTeams");
+  addSourceRows(priorRosterRows, "prior_roster", "prior", "priorSeasonTeams");
+  addSourceRows(statRows, "player_stats", "prior", "priorProductionTeams", [
+    "passingAttempts",
+    "carries",
+    "rushingYards",
+    "targets",
+    "receptions",
+    "receivingYards",
+  ]);
+  addSourceRows(snapRows, "snap_counts", "prior", "priorSnapTeams", [
+    "offensiveSnaps",
+    "defensiveSnaps",
+    "specialTeamsSnaps",
+  ]);
+  addSourceRows(supplementalPlayersSafety.safeRows, "players", "supplemental", null, [], { includeFallback: false });
+
+  const groups = new Map();
+  for (const sourceRow of sourceRows) {
+    const roots = sourceRow.keys.map((key) => unionFind.find(key)).sort();
+    const root = roots[0] ?? sourceRow.fallback;
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(sourceRow);
+  }
+
+  const crosswalk = [];
+  const byProvider = new Map();
+
+  for (const rows of groups.values()) {
+    const keys = new Set();
+    const providerIds = {};
+    const providerIdSets = new Map();
+    const names = new Set();
+    const normalizedNames = new Set();
+    const positions = new Set();
+    const sourceRowsOut = [];
+    const teamSets = {
+      priorSeasonTeams: new Set(),
+      targetSeasonTeams: new Set(),
+      priorProductionTeams: new Set(),
+      priorSnapTeams: new Set(),
+    };
+    const sourcePresence = {
+      targetRoster: false,
+      priorRoster: false,
+      playerStats: false,
+      snapCounts: false,
+      playersMapping: false,
+    };
+
+    for (const entry of rows) {
+      entry.keys.forEach((key) => keys.add(key));
+      names.add(entry.row.name);
+      normalizedNames.add(entry.row.normalizedName);
+      if (entry.row.position) positions.add(entry.row.position);
+      if (entry.teamRole) addSetValue(teamSets, entry.teamRole, entry.row.teamId);
+      if (entry.sourceKind === "target_roster") sourcePresence.targetRoster = true;
+      if (entry.sourceKind === "prior_roster") sourcePresence.priorRoster = true;
+      if (entry.sourceKind === "player_stats") sourcePresence.playerStats = true;
+      if (entry.sourceKind === "snap_counts") sourcePresence.snapCounts = true;
+      if (entry.sourceKind === "players") sourcePresence.playersMapping = true;
+      for (const [providerName, value] of Object.entries(entry.row.providerIds ?? {})) {
+        if (!value) continue;
+        if (!providerIdSets.has(providerName)) providerIdSets.set(providerName, new Set());
+        providerIdSets.get(providerName).add(value);
+        byProvider.set(`${providerName}:${value}`, [...(byProvider.get(`${providerName}:${value}`) ?? []), entry.row]);
+      }
+      sourceRowsOut.push({
+        sourceKind: entry.sourceKind,
+        sourceId: entry.row.sourceId,
+        rowId: entry.row.rowId,
+        season: entry.row.season,
+        gameId: entry.row.gameId ?? null,
+        teamId: entry.row.teamId,
+        teamAbbr: entry.row.teamAbbr,
+        latestTeamId: entry.row.latestTeamId ?? null,
+        latestTeamAbbr: entry.row.latestTeamAbbr ?? null,
+        position: entry.row.position,
+        positionGroup: normalizePositionGroup(entry.row.position),
+        snapPositionBucket: entry.sourceKind === "snap_counts" ? snapPositionBucket(entry.row.position) : null,
+        playerName: entry.row.name,
+        normalizedName: entry.row.normalizedName,
+        identityKey: entry.row.identityKey,
+        providerIds: Object.fromEntries(Object.entries(entry.row.providerIds ?? {}).filter(([, value]) => value)),
+        identityMatchMethod: entry.row.identityMatchMethod,
+        metrics: Object.fromEntries(entry.metricFields.map((metric) => [metric, entry.row[metric] ?? 0])),
+      });
+    }
+
+    for (const [providerName, values] of providerIdSets) providerIds[providerName] = sortedSet(values);
+    const canonicalKey = bestIdentityKey(keys);
+    const gsisCount = providerIds.gsisId?.length ?? 0;
+    const warnings = [];
+    if (gsisCount > 1) warnings.push("one person group has multiple GSIS IDs");
+    if (positions.size > 1) warnings.push("position changed across sources");
+    if (sourcePresence.snapCounts && !sourcePresence.targetRoster && !sourcePresence.priorRoster && !sourcePresence.playerStats && !sourcePresence.playersMapping) {
+      warnings.push("unresolved PFR-only snap identity");
+    }
+    if (sourcePresence.playerStats && !sourcePresence.targetRoster) warnings.push("stats player missing from target roster");
+    if (sourcePresence.snapCounts && !sourcePresence.targetRoster) warnings.push("snap player missing from target roster");
+    if (sourcePresence.targetRoster && !sourcePresence.playerStats) warnings.push("target roster player missing from prior player stats");
+    const priorTeams = new Set([...teamSets.priorSeasonTeams, ...teamSets.priorProductionTeams, ...teamSets.priorSnapTeams]);
+    const targetTeams = teamSets.targetSeasonTeams;
+    const legitimateTeamChange = priorTeams.size > 0 && targetTeams.size > 0 && [...priorTeams].some((teamId) => !targetTeams.has(teamId));
+    if (legitimateTeamChange) warnings.push("team changed across prior and target sources");
+
+    const status = gsisCount > 1
+      ? "conflicted"
+      : canonicalKey.startsWith("gsisId:")
+        ? "resolved_gsis"
+        : canonicalKey.includes("Id:")
+          ? "resolved_provider_id"
+          : "name_position_team";
+    crosswalk.push({
+      canonicalPersonId: stableId(["nflverse-person", canonicalKey]),
+      canonicalIdentityKey: canonicalKey,
+      providerIds,
+      normalizedNames: sortedSet(normalizedNames),
+      sourceNameVariants: sortedSet(names),
+      positions: sortedSet(positions),
+      priorSeasonTeams: sortedSet(teamSets.priorSeasonTeams),
+      priorProductionTeams: sortedSet(teamSets.priorProductionTeams),
+      priorSnapTeams: sortedSet(teamSets.priorSnapTeams),
+      targetSeasonTeams: sortedSet(teamSets.targetSeasonTeams),
+      identityMatchMethod: canonicalKey.startsWith("gsisId:")
+        ? "gsis"
+        : canonicalKey.includes("Id:")
+          ? "provider_id"
+          : "name_position_team",
+      resolutionStatus: status,
+      sourcePresence,
+      sourceRows: sourceRowsOut.sort((a, b) => String(a.sourceKind).localeCompare(String(b.sourceKind)) || String(a.rowId).localeCompare(String(b.rowId))),
+      warnings: [...new Set(warnings)].sort(),
+    });
+  }
+
+  for (const [key, rows] of byProvider) {
+    const names = new Set(rows.map((row) => row.normalizedName));
+    const compactNames = new Set(rows.map((row) => compactNameForVariant(row.name)));
+    const stableGsisIds = new Set(rows.map((row) => row.providerIds?.gsisId).filter((value) => isStableGsisId(value)));
+    const hasSupplementalPlayersRow = rows.some((row) => row.sourceId === NFLVERSE_DATASETS.players.sourceId);
+    if (names.size > 1 && compactNames.size > 1) {
+      const [providerName, providerId] = key.split(":");
+      const overrideDecision = matchingOverrideDecision({
+        providerName,
+        providerId,
+        rows,
+        overridesByProvider: reviewedOverridesByProvider,
+        targetSeason,
+      });
+      recordOverrideDecision(overrideDecision);
+      if (overrideDecision.applied) {
+        diagnostics.warnings.push(`${key} provider-name conflict resolved by reviewed override ${overrideDecision.overrideId}`);
+      } else if (stableGsisIds.size === 1 && hasSupplementalPlayersRow) {
+        diagnostics.warnings.push(`${key} has historical/current name variants with a single stable GSIS mapping`);
+      } else {
+        diagnostics.conflicts.push({
+          conflictId: stableId(["nflverse-crosswalk-provider-conflict", key]),
+          severity: "critical",
+          category: "identity",
+          message: `${key} maps to conflicting player names`,
+          reviewedOverride: overrideDecision.considered ? overrideDecision : null,
+        });
+      }
+    } else if (names.size > 1) {
+      diagnostics.warnings.push(`${key} has punctuation or suffix name variants`);
+    }
+  }
+  for (const entry of crosswalk) {
+    if ((entry.providerIds.gsisId?.length ?? 0) > 1) {
+      diagnostics.conflicts.push({
+        conflictId: stableId(["nflverse-crosswalk-multiple-gsis", entry.canonicalPersonId]),
+        severity: "critical",
+        category: "identity",
+        message: `${entry.canonicalPersonId} has multiple GSIS IDs`,
+      });
+    }
+  }
+  const byCrosswalkName = new Map();
+  for (const entry of crosswalk) {
+    for (const normalizedName of entry.normalizedNames) {
+      byCrosswalkName.set(normalizedName, [...(byCrosswalkName.get(normalizedName) ?? []), entry]);
+    }
+  }
+  for (const [normalizedName, entries] of byCrosswalkName) {
+    const canonicalPeople = new Set(entries.map((entry) => entry.canonicalPersonId));
+    const providerIdentities = new Set(
+      entries.flatMap((entry) => Object.values(entry.providerIds).flat()).filter(Boolean),
+    );
+    const nameOnlyCount = entries.filter((entry) => entry.identityMatchMethod === "name_position_team").length;
+    if (canonicalPeople.size > 1 && providerIdentities.size > 1) {
+      diagnostics.warnings.push(`same normalized name has distinct provider IDs: ${normalizedName}`);
+    }
+    if (nameOnlyCount > 1) diagnostics.warnings.push(`name-only collision requires provider ID before merge: ${normalizedName}`);
+  }
+
+  return {
+    entries: crosswalk.sort((a, b) => a.canonicalPersonId.localeCompare(b.canonicalPersonId)),
+    warnings: [...new Set(diagnostics.warnings)].sort(),
+    conflicts: diagnostics.conflicts.sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
+    overrideApplications: diagnostics.overrideApplications.sort((a, b) =>
+      String(a.providerName).localeCompare(String(b.providerName)) ||
+      String(a.providerId).localeCompare(String(b.providerId)) ||
+      String(a.overrideId ?? "").localeCompare(String(b.overrideId ?? "")),
+    ),
+    supplementalPlayerMappings: diagnostics.supplementalPlayerMappings,
+  };
+}
+
+function rosterIndexes(rosterRows) {
+  const byProvider = new Map();
+  const byFallback = new Map();
+  const activeRows = rosterRows.filter((row) => ACTIVE_ROSTER_STATUSES.has(row.rosterStatus ?? "ACT"));
+  for (const row of activeRows) {
+    for (const value of Object.values(row.providerIds)) {
+      if (value) byProvider.set(stableId(["provider", value]), row);
+    }
+    byFallback.set(stableId(["name", row.normalizedName, normalizePositionGroup(row.position), row.teamId]), row);
+  }
+  return { activeRows, byProvider, byFallback };
+}
+
+function matchToRoster(row, indexes, teamId) {
+  for (const value of Object.values(row.providerIds)) {
+    if (!value) continue;
+    const match = indexes.byProvider.get(stableId(["provider", value]));
+    if (match && match.teamId === teamId) return { matched: true, rosterRow: match, method: value === row.providerIds.gsisId ? "gsis" : "provider_id" };
+  }
+  const fallback = indexes.byFallback.get(stableId(["name", row.normalizedName, normalizePositionGroup(row.position), teamId]));
+  if (fallback) return { matched: true, rosterRow: fallback, method: "name_position_team" };
+  return { matched: false, rosterRow: null, method: "unmatched" };
+}
+
+function buildMetric({ rows, metricKey, sourceIds, indexes, teamId }) {
+  if (rows.length === 0) {
+    return {
+      metric: {
+        ...emptyMetric(sourceIds, `${metricKey} unavailable: no covered prior-season source rows for team`),
+        matchedPlayerCount: 0,
+        unmatchedPlayerCount: 0,
+        unmatchedProduction: null,
+      },
+      retained: [],
+      unmatched: [],
+    };
+  }
+  const denominator = rows.reduce((sum, row) => sum + (row[metricKey] ?? 0), 0);
+  const retained = [];
+  const unmatched = [];
+  let numerator = 0;
+  for (const row of rows) {
+    const value = row[metricKey] ?? 0;
+    if (value === 0) continue;
+    const match = matchToRoster(row, indexes, teamId);
+    if (match.matched) {
+      numerator += value;
+      retained.push({ playerName: row.name, identityKey: row.identityKey, amount: value, matchMethod: match.method });
+    } else {
+      unmatched.push({ playerName: row.name, identityKey: row.identityKey, amount: value });
+    }
+  }
+  const warnings = [];
+  if (unmatched.length > 0) warnings.push(`${unmatched.length} player(s) with ${metricKey} production unmatched to target roster`);
+  const matchedPlayerCount = new Set(retained.map((row) => row.identityKey)).size;
+  const unmatchedProduction = unmatched.reduce((sum, row) => sum + row.amount, 0);
+  if (numerator > denominator) {
+    warnings.push(`${metricKey} retained numerator exceeds denominator because signed source quantities include negative contributors`);
+  }
+  const metric = buildReturningProductionMetric({
+    numerator,
+    denominator,
+    sourceRefs: sourceRefs(...sourceIds),
+    warnings,
+  });
+  if (numerator > denominator) metric.auditOnlyAllowOutOfRangeRetainedShare = true;
+  return {
+    metric: {
+      ...metric,
+      matchedPlayerCount,
+      unmatchedPlayerCount: unmatched.length,
+      unmatchedProduction,
+    },
+    retained,
+    unmatched,
+  };
+}
+
+function unsupportedMetrics(sourceIds) {
+  return Object.fromEntries(
+    [...ALL_RETURNING_METRICS]
+      .filter((metric) => !SUPPORTED_AUDIT_METRICS.includes(metric))
+      .map((metric) => [
+        metric,
+        emptyMetric(sourceIds, `${metric} unavailable in Phase 5C-2B nflverse audit source selection`),
+      ]),
+  );
+}
+
+function identityDiagnostics(rosterRows) {
+  const conflicts = [];
+  const warnings = [];
+  const byProvider = new Map();
+  const byName = new Map();
+
+  for (const row of rosterRows) {
+    for (const [providerName, value] of Object.entries(row.providerIds)) {
+      if (!value) continue;
+      const key = `${providerName}:${value}`;
+      byProvider.set(key, [...(byProvider.get(key) ?? []), row]);
+    }
+    if (!row.providerId) byName.set(row.normalizedName, [...(byName.get(row.normalizedName) ?? []), row]);
+  }
+
+  for (const [key, rows] of byProvider) {
+    const names = new Set(rows.map((row) => row.normalizedName));
+    const teams = new Set(rows.map((row) => row.teamId));
+    if (names.size > 1) {
+      conflicts.push({
+        conflictId: stableId(["nflverse-identity-conflict", key, "person"]),
+        severity: "critical",
+        category: "identity",
+        message: `${key} maps to conflicting player names`,
+      });
+    }
+    if (teams.size > 1) {
+      conflicts.push({
+        conflictId: stableId(["nflverse-identity-conflict", key, "team"]),
+        severity: "critical",
+        category: "identity",
+        message: `${key} maps to multiple teams at target roster cutoff`,
+      });
+    }
+  }
+
+  for (const [name, rows] of byName) {
+    if (rows.length > 1) warnings.push(`name-only collision requires provider ID before merge: ${name}`);
+  }
+
+  return { conflicts, warnings };
+}
+
+function buildTeamRecord({ team, rosterRows, statRows, snapRows, sourceIds, identityCoverage = null }) {
+  const indexes = rosterIndexes(rosterRows);
+  const teamStatRows = statRows.filter((row) => row.teamId === team.id);
+  const teamSnapRows = snapRows.filter((row) => row.teamId === team.id);
+  const statByIdentity = aggregateByIdentity(teamStatRows, [
+    "passingAttempts",
+    "carries",
+    "rushingYards",
+    "targets",
+    "receptions",
+    "receivingYards",
+  ]);
+  const statAggregates = [...statByIdentity.values()].map((entry) => ({
+    ...entry.row,
+    ...entry.values,
+    rowIds: entry.rowIds,
+  }));
+  const snapByIdentity = aggregateByIdentity(teamSnapRows, ["offensiveSnaps", "defensiveSnaps", "specialTeamsSnaps"]);
+  const snapAggregates = [...snapByIdentity.values()].map((entry) => ({
+    ...entry.row,
+    ...entry.values,
+    rowIds: entry.rowIds,
+  }));
+
+  const metricInputs = {
+    offensiveSnaps: { rows: snapAggregates, metricKey: "offensiveSnaps", sourceIds: [sourceIds.snapCounts] },
+    defensiveSnaps: { rows: snapAggregates, metricKey: "defensiveSnaps", sourceIds: [sourceIds.snapCounts] },
+    specialTeamsSnaps: { rows: snapAggregates, metricKey: "specialTeamsSnaps", sourceIds: [sourceIds.snapCounts] },
+    qbPassAttempts: { rows: statAggregates.filter((row) => row.position === "QB" || row.passingAttempts > 0), metricKey: "passingAttempts", sourceIds: [sourceIds.playerStats] },
+    carries: { rows: statAggregates, metricKey: "carries", sourceIds: [sourceIds.playerStats] },
+    rushingYards: { rows: statAggregates, metricKey: "rushingYards", sourceIds: [sourceIds.playerStats] },
+    targets: { rows: statAggregates, metricKey: "targets", sourceIds: [sourceIds.playerStats] },
+    receptions: { rows: statAggregates, metricKey: "receptions", sourceIds: [sourceIds.playerStats] },
+    receivingYards: { rows: statAggregates, metricKey: "receivingYards", sourceIds: [sourceIds.playerStats] },
+  };
+  const calculated = Object.fromEntries(
+    Object.entries(metricInputs).map(([metricName, input]) => [
+      metricName,
+      buildMetric({ ...input, indexes, teamId: team.id }),
+    ]),
+  );
+
+  const metrics = {
+    ...Object.fromEntries(Object.entries(calculated).map(([key, value]) => [key, value.metric])),
+    ...unsupportedMetrics([sourceIds.rosters, sourceIds.playerStats, sourceIds.snapCounts]),
+  };
+
+  const unmatched = Object.fromEntries(
+    Object.entries(calculated).map(([key, value]) => [key, value.unmatched]),
+  );
+  const retained = Object.fromEntries(
+    Object.entries(calculated).map(([key, value]) => [key, value.retained]),
+  );
+  const warnings = [
+    "Starts unavailable from approved Phase 5C-2A nflverse fields; not inferred.",
+    "Sacks, pressures, offensive-line snaps, and defensive-back snaps remain unavailable or advisory in this slice.",
+    ...Object.entries(unmatched).filter(([, rows]) => rows.length > 0).map(([key, rows]) => `${rows.length} unmatched ${key} production row(s)`),
+  ];
+
+  return {
+    teamId: team.id,
+    abbr: team.abbr,
+    slug: team.slug,
+    name: team.fullName ?? team.name,
+    quarterbackContinuity: {
+      status: "unknown",
+      player: null,
+      effectiveDate: null,
+      sourceRefs: sourceRefs(sourceIds.rosters),
+      evidenceStatus: "unverified",
+      notes: "QB continuity is not inferred from this returning-production audit.",
+    },
+    coachingContinuity: {
+      headCoach: unknownCoach(sourceIds.rosters),
+      offensiveCoordinator: unknownCoach(sourceIds.rosters),
+      defensiveCoordinator: unknownCoach(sourceIds.rosters),
+    },
+    returningProduction: {
+      metrics,
+      advisory: {
+        specialTeamsSnaps: calculated.specialTeamsSnaps
+          ? calculated.specialTeamsSnaps.metric
+          : emptyMetric([sourceIds.snapCounts], "special-teams snaps unavailable"),
+        retainedPlayers: retained,
+        unmatchedPlayers: unmatched,
+      },
+    },
+    transactions: [],
+    injuryReturns: [],
+    completeness: {
+      transactionsThroughCutoff: false,
+      rosterEvidenceAvailable: rosterRows.length > 0,
+      returningProductionAuditOnly: true,
+      identityCoverage,
+    },
+    warnings: [...new Set(warnings)].sort(),
+    conflicts: [],
+  };
+}
+
+function unknownCoach(sourceId) {
+  return {
+    status: "unknown",
+    coachName: null,
+    priorRole: null,
+    effectiveDate: null,
+    schemeChange: null,
+    sourceRefs: sourceRefs(sourceId),
+    evidenceStatus: "unverified",
+  };
+}
+
+function buildPlayerStatSourceDiagnosis({ priorSeason, playerStats }) {
+  const seasonsPresent = [...new Set(playerStats.rows.map((row) => Number(row.season)).filter(Number.isFinite))].sort((a, b) => a - b);
+  const seasonTypeValues = [...new Set(playerStats.rows.map((row) => field(row, ["season_type", "game_type"]) ?? "").filter(Boolean))].sort();
+  const requestedSeasonRows = playerStats.rows.filter((row) => Number(row.season) === priorSeason).length;
+  const requestedRegularSeasonRows = playerStats.rows
+    .filter((row) => Number(row.season) === priorSeason)
+    .filter((row) => SEASON_TYPE_REG_VALUES.has(field(row, ["season_type", "game_type"]) ?? ""))
+    .length;
+  return {
+    status: requestedRegularSeasonRows > 0 ? "resolved" : "requested_season_absent",
+    previousInput: {
+      release: "player_stats",
+      filename: "player_stats_season.csv",
+      sourceUrl: `${NFLVERSE_SOURCE_BASE}/player_stats/player_stats_season.csv`,
+      issue: "The aggregate player_stats release was stale for this audit and did not include requested 2025 season rows.",
+    },
+    selectedInput: {
+      release: NFLVERSE_DATASETS.playerStats.release,
+      filename: NFLVERSE_DATASETS.playerStats.filename(priorSeason),
+      sourceUrl: playerStats.sourceUrl,
+      sourceUpdatedAt: playerStats.sourceUpdatedAt,
+      sourceLineage: "nflreadr load_player_stats(summary_level = 'reg') resolves to stats_player/stats_player_reg_<season>.csv.",
+    },
+    seasonsPresent,
+    seasonTypeValues,
+    requestedSeasonRows,
+    requestedRegularSeasonRows,
+    rowCount: playerStats.rowCount,
+    headerColumns: playerStats.headerColumns,
+  };
+}
+
+function buildIdentityCrosswalkSummary(crosswalk) {
+  const entries = crosswalk.entries;
+  return {
+    personCount: entries.length,
+    resolvedGsis: entries.filter((entry) => entry.identityMatchMethod === "gsis").length,
+    resolvedProviderId: entries.filter((entry) => entry.identityMatchMethod === "provider_id").length,
+    namePositionTeamFallback: entries.filter((entry) => entry.identityMatchMethod === "name_position_team").length,
+    unresolvedOrConflicted: entries.filter((entry) => entry.resolutionStatus === "conflicted" || entry.warnings.some((warning) => warning.includes("unresolved"))).length,
+    warningCount: crosswalk.warnings.length + entries.reduce((sum, entry) => sum + entry.warnings.length, 0),
+    conflictCount: crosswalk.conflicts.length,
+    supplementalPlayersMapping: crosswalk.supplementalPlayerMappings,
+  };
+}
+
+function buildIdentityCoverageByTeam({ teams, crosswalk }) {
+  return Object.fromEntries(
+    teams.map((team) => {
+      const entries = crosswalk.entries.filter((entry) => {
+        const teamIds = [
+          ...entry.priorSeasonTeams,
+          ...entry.priorProductionTeams,
+          ...entry.priorSnapTeams,
+          ...entry.targetSeasonTeams,
+        ];
+        return teamIds.includes(team.id);
+      });
+      const withTargetRoster = entries.filter((entry) => entry.targetSeasonTeams.includes(team.id)).length;
+      const priorProductionEntries = entries.filter((entry) => entry.priorProductionTeams.includes(team.id)).length;
+      const unresolved = entries.filter((entry) => entry.resolutionStatus === "conflicted" || entry.warnings.some((warning) => warning.includes("unresolved"))).length;
+      const changedTeams = entries.filter((entry) => entry.warnings.includes("team changed across prior and target sources")).length;
+      return [
+        team.id,
+        {
+          personCount: entries.length,
+          targetRosterPlayers: withTargetRoster,
+          priorProductionPlayers: priorProductionEntries,
+          unresolvedOrConflicted: unresolved,
+          legitimateTeamChanges: changedTeams,
+        },
+      ];
+    }),
+  );
+}
+
+function buildUnmatchedProductionSummary(teams) {
+  return Object.fromEntries(
+    teams.map((team) => [
+      team.teamId,
+      Object.fromEntries(
+        Object.entries(team.returningProduction.advisory.unmatchedPlayers).map(([metric, rows]) => [
+          metric,
+          {
+            playerCount: rows.length,
+            amount: rows.reduce((sum, row) => sum + (row.amount ?? 0), 0),
+          },
+        ]),
+      ),
+    ]),
+  );
+}
+
+function compactNameForVariant(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b\.?$/i, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function rawNameHasSuffix(value) {
+  return /\b(jr|sr|ii|iii|iv|v)\b\.?$/i.test(String(value ?? "").trim());
+}
+
+function providerConflictKeys(conflicts) {
+  return new Set(
+    conflicts
+      .map((conflict) => conflict.message.match(/^([A-Za-z0-9]+):([^ ]+) maps to conflicting player names$/))
+      .filter(Boolean)
+      .map((match) => `${match[1]}:${match[2]}`),
+  );
+}
+
+function providerKeysForEntry(entry) {
+  return Object.entries(entry.providerIds ?? {})
+    .flatMap(([providerName, values]) => (values ?? []).map((value) => `${providerName}:${value}`));
+}
+
+function overrideIndex(overridesFile, { includePending = false } = {}) {
+  const index = new Map();
+  for (const record of overridesFile?.overrides ?? []) {
+    if (record.status !== "approved" && !(includePending && record.status === "pending")) continue;
+    const providerName = record.providerIdType;
+    if (!providerName || !record.providerPersonId) continue;
+    const key = `${providerName}:${record.providerPersonId}`;
+    index.set(key, [...(index.get(key) ?? []), record]);
+  }
+  for (const [key, records] of index) {
+    index.set(key, records.sort((a, b) => a.overrideId.localeCompare(b.overrideId)));
+  }
+  return index;
+}
+
+function matchingOverrideDecision({ providerName, providerId, rows, overridesByProvider, targetSeason, allowPartialSourceEvidence = false }) {
+  const key = `${providerName}:${providerId}`;
+  const records = overridesByProvider.get(key) ?? [];
+  if (records.length === 0) {
+    return {
+      considered: false,
+      applied: false,
+      reason: "no reviewed override for provider ID",
+      providerName,
+      providerId,
+      overrideId: null,
+      evidenceRefs: [],
+      resultingIdentity: null,
+    };
+  }
+  const decisions = records.map((record) => {
+    const rowIds = new Set(rows.map((row) => row.rowId));
+    const sourceIds = new Set(rows.map((row) => row.sourceId));
+    const seasons = new Set(rows.map((row) => row.season));
+    const teamIds = new Set(rows.map((row) => row.teamId).filter(Boolean));
+    const gsisIds = new Set(rows.map((row) => row.providerIds?.gsisId).filter(Boolean));
+    const evidenceRefs = record.evidenceRefs ?? [];
+    const rowEvidenceKnown = evidenceRefs.every((ref) => !ref.rowId || rowIds.has(ref.rowId));
+    const sourceEvidenceKnown = allowPartialSourceEvidence
+      ? evidenceRefs.some((ref) => !ref.sourceId || sourceIds.has(ref.sourceId))
+      : evidenceRefs.every((ref) => !ref.sourceId || sourceIds.has(ref.sourceId));
+    const evidenceKnown = rowEvidenceKnown && sourceEvidenceKnown;
+    const seasonMatches = !record.sourceSeason || seasons.has(record.sourceSeason);
+    const teamMatches = !record.teamScope?.length || [...teamIds].every((teamId) => record.teamScope.includes(teamId));
+    const expirationOk = record.expiresAfterSeason == null || record.sourceSeason <= record.expiresAfterSeason;
+    const gsisConsistent = !record.gsisId || gsisIds.size === 0 || (gsisIds.size === 1 && gsisIds.has(record.gsisId));
+    const applied = evidenceKnown && seasonMatches && teamMatches && expirationOk && gsisConsistent;
+    const rejectedReasons = [
+      evidenceKnown ? null : "evidence references do not match source rows",
+      seasonMatches ? null : "season scope does not match source rows",
+      teamMatches ? null : "team scope does not match source rows",
+      expirationOk ? null : "override expired",
+      gsisConsistent ? null : "stable GSIS evidence contradicts override",
+    ].filter(Boolean);
+    return {
+      considered: true,
+      applied,
+      reason: applied ? "reviewed override evidence matches provider conflict and does not contradict stable GSIS evidence" : rejectedReasons.join("; "),
+      providerName,
+      providerId,
+      overrideId: record.overrideId,
+      status: record.status,
+      evidenceRefs,
+      resultingIdentity: applied
+        ? {
+            canonicalPersonId: record.canonicalPersonId,
+            canonicalName: record.canonicalName,
+            gsisId: record.gsisId ?? null,
+          }
+        : null,
+    };
+  });
+  return decisions.find((decision) => decision.applied) ?? decisions[0];
+}
+
+function classifyIdentityEntry(entry, conflictKeys) {
+  const categories = new Set();
+  const providerKeys = providerKeysForEntry(entry);
+  const hasProviderConflict = providerKeys.some((key) => conflictKeys.has(key));
+  if (!entry.providerIds.gsisId?.length) categories.add(IDENTITY_REASON_CATEGORIES.missingGsisId);
+  if (entry.warnings.includes("unresolved PFR-only snap identity")) categories.add(IDENTITY_REASON_CATEGORIES.pfrOnlySnapIdentity);
+  if (hasProviderConflict || entry.resolutionStatus === "conflicted") categories.add(IDENTITY_REASON_CATEGORIES.providerIdConflict);
+  if (hasProviderConflict) categories.add(IDENTITY_REASON_CATEGORIES.conflictingNameForProviderId);
+  if (entry.warnings.includes("position changed across sources")) categories.add(IDENTITY_REASON_CATEGORIES.positionChange);
+  if (entry.warnings.includes("team changed across prior and target sources")) categories.add(IDENTITY_REASON_CATEGORIES.legitimateTeamChange);
+  if (entry.warnings.includes("target roster player missing from prior player stats")) categories.add(IDENTITY_REASON_CATEGORIES.rosterMissingStats);
+  if (entry.warnings.includes("stats player missing from target roster")) categories.add(IDENTITY_REASON_CATEGORIES.statsMissingRoster);
+  if (entry.warnings.includes("snap player missing from target roster")) categories.add(IDENTITY_REASON_CATEGORIES.snapsMissingRoster);
+  if ((entry.normalizedNames?.length ?? 0) > 1) categories.add(IDENTITY_REASON_CATEGORIES.nameVariant);
+  if ((entry.sourceNameVariants ?? []).some(rawNameHasSuffix)) categories.add(IDENTITY_REASON_CATEGORIES.suffixVariant);
+  const compactNames = new Set((entry.sourceNameVariants ?? []).map(compactNameForVariant).filter(Boolean));
+  if ((entry.normalizedNames?.length ?? 0) > 1 && compactNames.size === 1) {
+    categories.add(IDENTITY_REASON_CATEGORIES.punctuationVariant);
+  }
+  if (entry.identityMatchMethod === "name_position_team" && (entry.sourceRows?.length ?? 0) > 1) {
+    categories.add(IDENTITY_REASON_CATEGORIES.sameNameDistinctPeople);
+  }
+  if (categories.size === 0 && entry.identityMatchMethod === "name_position_team") {
+    categories.add(IDENTITY_REASON_CATEGORIES.insufficientEvidence);
+  }
+  if (categories.size === 0) categories.add(IDENTITY_REASON_CATEGORIES.other);
+
+  const mustExclude = [...categories].some((category) => IDENTITY_RESOLUTION_POLICY.mustExclude.includes(category));
+  const hasProviderCritical = [
+    IDENTITY_REASON_CATEGORIES.providerIdConflict,
+    IDENTITY_REASON_CATEGORIES.conflictingNameForProviderId,
+    IDENTITY_REASON_CATEGORIES.sameNameDistinctPeople,
+    IDENTITY_REASON_CATEGORIES.conflictingTeamSameDate,
+  ].some((category) => categories.has(category));
+  const effectiveCategories = new Set(categories);
+  if (
+    effectiveCategories.has(IDENTITY_REASON_CATEGORIES.nameVariant) &&
+    (effectiveCategories.has(IDENTITY_REASON_CATEGORIES.punctuationVariant) ||
+      effectiveCategories.has(IDENTITY_REASON_CATEGORIES.suffixVariant))
+  ) {
+    effectiveCategories.delete(IDENTITY_REASON_CATEGORIES.nameVariant);
+  }
+  const autoResolved = [...effectiveCategories].every((category) =>
+    IDENTITY_RESOLUTION_POLICY.automaticallyResolvable.includes(category) ||
+    category === IDENTITY_REASON_CATEGORIES.other,
+  );
+  const warningIncluded = !mustExclude && !autoResolved;
+  return {
+    reasonCategories: [...categories].sort(),
+    severity: hasProviderCritical || hasProviderConflict ? "critical" : mustExclude || warningIncluded ? "warning" : "info",
+    resolutionStatus: mustExclude ? "excluded" : autoResolved ? "automatically_resolved" : "warning_included",
+    recommendedReviewAction: mustExclude
+      ? "Review source rows before inclusion; no automatic merge is allowed."
+      : warningIncluded
+        ? "Retain with warning and monitor before all-32 expansion."
+        : "No manual action required under current policy.",
+  };
+}
+
+function sourceRefsForEntry(entry) {
+  return sourceRefs(...new Set((entry.sourceRows ?? []).map((row) => row.sourceId)));
+}
+
+function buildReviewRecord(entry, conflictKeys) {
+  const classification = classifyIdentityEntry(entry, conflictKeys);
+  const teamIds = [...new Set([
+    ...(entry.priorSeasonTeams ?? []),
+    ...(entry.priorProductionTeams ?? []),
+    ...(entry.priorSnapTeams ?? []),
+    ...(entry.targetSeasonTeams ?? []),
+  ])].sort();
+  return {
+    canonicalPersonId: entry.canonicalPersonId,
+    canonicalIdentityKey: entry.canonicalIdentityKey,
+    teams: teamIds,
+    sourceDatasets: [...new Set((entry.sourceRows ?? []).map((row) => row.sourceKind))].sort(),
+    sourceRowIdentities: (entry.sourceRows ?? []).map((row) => row.rowId).sort(),
+    normalizedNames: entry.normalizedNames,
+    sourceNameVariants: entry.sourceNameVariants,
+    positions: entry.positions,
+    providerIds: entry.providerIds,
+    priorSeasonTeams: entry.priorSeasonTeams,
+    priorProductionTeams: entry.priorProductionTeams,
+    priorSnapTeams: entry.priorSnapTeams,
+    targetSeasonTeams: entry.targetSeasonTeams,
+    seasons: [...new Set((entry.sourceRows ?? []).map((row) => row.season).filter(Boolean))].sort(),
+    games: [...new Set((entry.sourceRows ?? []).map((row) => row.gameId).filter(Boolean))].sort(),
+    identityMatchMethod: entry.identityMatchMethod,
+    matchCandidates: (entry.sourceRows ?? []).map((row) => ({
+      sourceKind: row.sourceKind,
+      sourceId: row.sourceId,
+      rowId: row.rowId,
+      playerName: row.playerName,
+      normalizedName: row.normalizedName,
+      position: row.position,
+      teamId: row.teamId,
+      teamAbbr: row.teamAbbr,
+      providerIds: row.providerIds,
+    })),
+    reasonCategories: classification.reasonCategories,
+    severity: classification.severity,
+    resolutionStatus: classification.resolutionStatus,
+    supportingSourceRefs: sourceRefsForEntry(entry),
+    recommendedReviewAction: classification.recommendedReviewAction,
+  };
+}
+
+function metricImpactForEntry(entry, teamsById) {
+  const impacts = [];
+  const metricMap = {
+    offensiveSnaps: "offensiveSnaps",
+    defensiveSnaps: "defensiveSnaps",
+    passingAttempts: "qbPassAttempts",
+    carries: "carries",
+    rushingYards: "rushingYards",
+    targets: "targets",
+    receptions: "receptions",
+    receivingYards: "receivingYards",
+  };
+  const retainedIdentityKeysByTeamMetric = new Map();
+  for (const team of teamsById.values()) {
+    for (const [metric, rows] of Object.entries(team.returningProduction.advisory.retainedPlayers ?? {})) {
+      retainedIdentityKeysByTeamMetric.set(`${team.teamId}:${metric}`, new Set(rows.map((row) => row.identityKey)));
+    }
+  }
+  for (const row of entry.sourceRows ?? []) {
+    for (const [sourceMetric, amount] of Object.entries(row.metrics ?? {})) {
+      if (!amount) continue;
+      const metric = metricMap[sourceMetric];
+      if (!metric) continue;
+      if (metric === "qbPassAttempts" && row.position !== "QB" && amount <= 0) continue;
+      const team = teamsById.get(row.teamId);
+      if (!team) continue;
+      const metricRecord = team.returningProduction.metrics[metric];
+      const retainedSet = retainedIdentityKeysByTeamMetric.get(`${team.teamId}:${metric}`) ?? new Set();
+      const includedInRetainedNumerator = retainedSet.has(row.identityKey);
+      const denominator = metricRecord.denominator ?? 0;
+      const numerator = metricRecord.numerator ?? 0;
+      const lowerNumerator = includedInRetainedNumerator ? Math.max(0, numerator - amount) : numerator;
+      const upperNumerator = includedInRetainedNumerator ? numerator : numerator + amount;
+      impacts.push({
+        teamId: team.teamId,
+        teamAbbr: team.abbr,
+        affectedMetric: metric,
+        excludedQuantity: includedInRetainedNumerator ? 0 : amount,
+        sourceQuantity: amount,
+        includedInRetainedNumerator,
+        retainedShareCouldChangeMaterially: denominator > 0 && amount / denominator >= 0.01,
+        lowerBound: denominator > 0 ? Number((lowerNumerator / denominator).toFixed(6)) : null,
+        upperBound: denominator > 0 ? Number((upperNumerator / denominator).toFixed(6)) : null,
+        coverageCompleteRecommendation: includedInRetainedNumerator ? "remain_true" : "become_false_until_reviewed",
+        sourceRowId: row.rowId,
+      });
+    }
+  }
+  return impacts.sort((a, b) =>
+    a.teamAbbr.localeCompare(b.teamAbbr) ||
+    a.affectedMetric.localeCompare(b.affectedMetric) ||
+    a.sourceRowId.localeCompare(b.sourceRowId),
+  );
+}
+
+function summarizeImpactsByTeam(records) {
+  const byTeam = new Map();
+  for (const record of records) {
+    for (const impact of record.affectedProduction ?? []) {
+      const key = impact.teamId;
+      const team = byTeam.get(key) ?? {
+        teamId: impact.teamId,
+        teamAbbr: impact.teamAbbr,
+        metrics: {},
+      };
+      const metric = team.metrics[impact.affectedMetric] ?? {
+        excludedQuantity: 0,
+        sourceQuantity: 0,
+        affectedRows: 0,
+        coverageCompleteShouldBecomeFalse: false,
+      };
+      metric.excludedQuantity += impact.excludedQuantity;
+      metric.sourceQuantity += impact.sourceQuantity;
+      metric.affectedRows += 1;
+      if (impact.coverageCompleteRecommendation === "become_false_until_reviewed") {
+        metric.coverageCompleteShouldBecomeFalse = true;
+      }
+      team.metrics[impact.affectedMetric] = metric;
+      byTeam.set(key, team);
+    }
+  }
+  return Object.fromEntries([...byTeam.entries()].sort((a, b) => a[1].teamAbbr.localeCompare(b[1].teamAbbr)));
+}
+
+function diagnoseProviderConflict(conflict, crosswalk) {
+  const match = conflict.message.match(/^([A-Za-z0-9]+):([^ ]+) maps to conflicting player names$/);
+  if (!match) return { ...conflict, deterministicResolutionPossible: false, cause: "unknown" };
+  const [, providerName, providerId] = match;
+  const sourceRows = crosswalk.entries
+    .flatMap((entry) => entry.sourceRows ?? [])
+    .filter((row) => row.providerIds?.[providerName] === providerId)
+    .sort((a, b) => a.rowId.localeCompare(b.rowId));
+  const names = [...new Set(sourceRows.map((row) => row.playerName))].sort();
+  const normalizedNames = [...new Set(sourceRows.map((row) => row.normalizedName))].sort();
+  const teams = [...new Set(sourceRows.map((row) => row.teamId))].sort();
+  const positions = [...new Set(sourceRows.map((row) => row.position).filter(Boolean))].sort();
+  const seasons = [...new Set(sourceRows.map((row) => row.season).filter(Boolean))].sort();
+  const games = [...new Set(sourceRows.map((row) => row.gameId).filter(Boolean))].sort();
+  const correspondingRosterProviderIds = sourceRows
+    .filter((row) => row.sourceKind === "target_roster" || row.sourceKind === "prior_roster")
+    .map((row) => row.providerIds)
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  return {
+    ...conflict,
+    providerName,
+    providerId,
+    names,
+    normalizedNames,
+    teams,
+    positions,
+    seasons,
+    games,
+    sourceRows,
+    correspondingRosterProviderIds,
+    likelyCause: normalizedNames.length > 1 ? "conflicting_name_for_provider_id_in_approved_inputs" : "adapter_grouping_review_required",
+    fixtureIssue: false,
+    adapterLogicIssue: false,
+    deterministicResolutionPossible: normalizedNames.length === 1,
+    resolution: normalizedNames.length === 1
+      ? "Can be retained through stable provider evidence."
+      : "Unresolved; requires source review before all-32 expansion.",
+  };
+}
+
+function buildProviderCrosswalkDiagnostics(crosswalk) {
+  const rows = crosswalk.entries.flatMap((entry) => entry.sourceRows ?? []);
+  const bySourceKind = new Map();
+  for (const row of rows) {
+    const source = bySourceKind.get(row.sourceKind) ?? {
+      rowCount: 0,
+      missingGsisId: 0,
+      missingPfrId: 0,
+    };
+    source.rowCount += 1;
+    if (!row.providerIds?.gsisId) source.missingGsisId += 1;
+    if (!row.providerIds?.pfrId) source.missingPfrId += 1;
+    bySourceKind.set(row.sourceKind, source);
+  }
+  const mappings = crosswalk.entries.map((entry) => ({
+    canonicalPersonId: entry.canonicalPersonId,
+    gsisIds: entry.providerIds.gsisId ?? [],
+    espnIds: entry.providerIds.espnId ?? [],
+    sportradarIds: entry.providerIds.sportradarId ?? [],
+    pfrIds: entry.providerIds.pfrId ?? [],
+    normalizedNames: entry.normalizedNames,
+    positions: entry.positions,
+    teamHistory: [...new Set([
+      ...(entry.priorSeasonTeams ?? []),
+      ...(entry.priorProductionTeams ?? []),
+      ...(entry.priorSnapTeams ?? []),
+      ...(entry.targetSeasonTeams ?? []),
+    ])].sort(),
+  }));
+  return {
+    gsisToEspn: mappings.filter((entry) => entry.gsisIds.length && entry.espnIds.length),
+    gsisToSportradar: mappings.filter((entry) => entry.gsisIds.length && entry.sportradarIds.length),
+    gsisToPfr: mappings.filter((entry) => entry.gsisIds.length && entry.pfrIds.length),
+    providerIdToNormalizedName: mappings.map((entry) => ({
+      canonicalPersonId: entry.canonicalPersonId,
+      providerIds: {
+        gsisId: entry.gsisIds,
+        espnId: entry.espnIds,
+        sportradarId: entry.sportradarIds,
+        pfrId: entry.pfrIds,
+      },
+      normalizedNames: entry.normalizedNames,
+    })),
+    providerIdToPosition: mappings.map((entry) => ({
+      canonicalPersonId: entry.canonicalPersonId,
+      providerIds: {
+        gsisId: entry.gsisIds,
+        pfrId: entry.pfrIds,
+      },
+      positions: entry.positions,
+    })),
+    providerIdToTeamHistory: mappings.map((entry) => ({
+      canonicalPersonId: entry.canonicalPersonId,
+      providerIds: {
+        gsisId: entry.gsisIds,
+        pfrId: entry.pfrIds,
+      },
+      teamHistory: entry.teamHistory,
+    })),
+    missingIdRates: Object.fromEntries([...bySourceKind.entries()].map(([sourceKind, summary]) => [
+      sourceKind,
+      {
+        ...summary,
+        missingGsisRate: summary.rowCount > 0 ? Number((summary.missingGsisId / summary.rowCount).toFixed(6)) : null,
+        missingPfrRate: summary.rowCount > 0 ? Number((summary.missingPfrId / summary.rowCount).toFixed(6)) : null,
+      },
+    ]).sort((a, b) => a[0].localeCompare(b[0]))),
+    mappingChangesAcrossSeasons: mappings.filter((entry) => entry.teamHistory.length > 1),
+  };
+}
+
+const SOURCE_METRIC_TO_AUDIT_METRIC = Object.freeze({
+  offensiveSnaps: "offensiveSnaps",
+  defensiveSnaps: "defensiveSnaps",
+  specialTeamsSnaps: "specialTeamsSnaps",
+  passingAttempts: "qbPassAttempts",
+  carries: "carries",
+  rushingYards: "rushingYards",
+  targets: "targets",
+  receptions: "receptions",
+  receivingYards: "receivingYards",
+});
+
+const OFFENSIVE_PRODUCTION_METRICS = Object.freeze([
+  "qbPassAttempts",
+  "carries",
+  "rushingYards",
+  "targets",
+  "receptions",
+  "receivingYards",
+]);
+
+function ratio(numerator, denominator) {
+  return denominator > 0 ? Number((numerator / denominator).toFixed(6)) : null;
+}
+
+function retainedMetricForTeam(team, metric) {
+  if (metric === "specialTeamsSnaps") return team.returningProduction.advisory.specialTeamsSnaps;
+  return team.returningProduction.metrics[metric];
+}
+
+function retainedAggregate(team, metricNames) {
+  const totals = metricNames.reduce((summary, metric) => {
+    const record = retainedMetricForTeam(team, metric);
+    if (!record || record.denominator == null || record.numerator == null) return summary;
+    summary.retainedNumerator += record.numerator;
+    summary.priorTeamDenominator += record.denominator;
+    summary.sourceCoverageComplete = summary.sourceCoverageComplete && record.coverageComplete === true;
+    return summary;
+  }, { retainedNumerator: 0, priorTeamDenominator: 0, sourceCoverageComplete: true });
+  return {
+    ...totals,
+    retainedShare: ratio(totals.retainedNumerator, totals.priorTeamDenominator),
+  };
+}
+
+function entryHasCriticalIdentityConflict(entry, conflictKeys) {
+  return entry.resolutionStatus === "conflicted" ||
+    (entry.providerIds.gsisId?.length ?? 0) > 1 ||
+    providerKeysForEntry(entry).some((key) => conflictKeys.has(key));
+}
+
+function attributionStatusForEntry(entry, conflictKeys) {
+  if (entryHasCriticalIdentityConflict(entry, conflictKeys) || entry.warnings.includes("unresolved PFR-only snap identity")) {
+    return "unresolved_excluded";
+  }
+  if (entry.identityMatchMethod === "name_position_team") return "warning_fallback";
+  return "resolved";
+}
+
+function appliedOverrideProviderKeys(crosswalk) {
+  return new Set(
+    (crosswalk.overrideApplications ?? [])
+      .filter((decision) => decision.applied)
+      .map((decision) => `${decision.providerName}:${decision.providerId}`),
+  );
+}
+
+function rowWasRestoredByApprovedOverride(row, appliedProviderKeys) {
+  return Object.entries(row.providerIds ?? {}).some(([providerName, value]) =>
+    value && appliedProviderKeys.has(`${providerName}:${value}`),
+  );
+}
+
+function emptyAttributionMetric({ team, metric }) {
+  const retained = retainedMetricForTeam(team, metric) ?? {};
+  return {
+    metric,
+    totalSourceDenominator: 0,
+    resolvedQuantity: 0,
+    restoredByApprovedOverrideQuantity: 0,
+    warningLevelFallbackQuantity: 0,
+    unresolvedQuantity: 0,
+    resolvedAttributionCoverage: null,
+    accountedForCoverage: null,
+    unresolvedShare: null,
+    retainedNumerator: retained.numerator ?? null,
+    priorTeamDenominator: retained.denominator ?? null,
+    retainedShare: retained.value ?? null,
+    sourceCoverageComplete: retained.coverageComplete === true,
+    identityCoverageComplete: false,
+    arithmeticReconciled: true,
+    players: [],
+  };
+}
+
+function summarizeAttributionMetric(record) {
+  const accounted = record.resolvedQuantity + record.warningLevelFallbackQuantity + record.unresolvedQuantity;
+  return {
+    ...record,
+    resolvedAttributionCoverage: ratio(record.resolvedQuantity, record.totalSourceDenominator),
+    accountedForCoverage: ratio(accounted, record.totalSourceDenominator),
+    unresolvedShare: ratio(record.unresolvedQuantity, record.totalSourceDenominator),
+    identityCoverageComplete: record.totalSourceDenominator > 0 && record.unresolvedQuantity === 0,
+    arithmeticReconciled: Math.abs(accounted - record.totalSourceDenominator) < 0.000001,
+    players: record.players.sort((a, b) =>
+      a.attributionStatus.localeCompare(b.attributionStatus) ||
+      b.quantity - a.quantity ||
+      a.playerName.localeCompare(b.playerName) ||
+      a.sourceRowId.localeCompare(b.sourceRowId),
+    ),
+  };
+}
+
+function buildIdentityAttributionAccounting({ teams, crosswalk }) {
+  const conflictKeys = providerConflictKeys(crosswalk.conflicts);
+  const appliedProviderKeys = appliedOverrideProviderKeys(crosswalk);
+  const teamRecords = new Map(teams.map((team) => [team.teamId, team]));
+  const byTeam = new Map(teams.map((team) => [
+    team.teamId,
+    {
+      teamId: team.teamId,
+      teamAbbr: team.abbr,
+      metrics: Object.fromEntries(
+        SUPPORTED_AUDIT_METRICS.map((metric) => [metric, emptyAttributionMetric({ team, metric })]),
+      ),
+    },
+  ]));
+
+  for (const entry of crosswalk.entries) {
+    const baseStatus = attributionStatusForEntry(entry, conflictKeys);
+    for (const row of entry.sourceRows ?? []) {
+      const team = teamRecords.get(row.teamId);
+      if (!team) continue;
+      for (const [sourceMetric, quantity] of Object.entries(row.metrics ?? {})) {
+        if (!quantity) continue;
+        const metric = SOURCE_METRIC_TO_AUDIT_METRIC[sourceMetric];
+        if (!metric) continue;
+        const teamAccounting = byTeam.get(row.teamId);
+        const metricRecord = teamAccounting.metrics[metric];
+        const restoredByApprovedOverride = rowWasRestoredByApprovedOverride(row, appliedProviderKeys);
+        const attributionStatus = restoredByApprovedOverride ? "resolved" : baseStatus;
+        metricRecord.totalSourceDenominator += quantity;
+        if (attributionStatus === "resolved") metricRecord.resolvedQuantity += quantity;
+        else if (attributionStatus === "warning_fallback") metricRecord.warningLevelFallbackQuantity += quantity;
+        else metricRecord.unresolvedQuantity += quantity;
+        if (restoredByApprovedOverride) metricRecord.restoredByApprovedOverrideQuantity += quantity;
+        metricRecord.players.push({
+          playerName: row.playerName,
+          canonicalPersonId: entry.canonicalPersonId,
+          sourceRowId: row.rowId,
+          sourceKind: row.sourceKind,
+          teamAbbr: row.teamAbbr,
+          quantity,
+          attributionStatus,
+          restoredByApprovedOverride,
+          identityMatchMethod: entry.identityMatchMethod,
+          providerIds: row.providerIds,
+        });
+      }
+    }
+  }
+
+  return Object.fromEntries(
+    [...byTeam.entries()].map(([teamId, summary]) => [
+      teamId,
+      {
+        ...summary,
+        metricGroups: {
+          offensiveProduction: summarizeAttributionMetric(
+            OFFENSIVE_PRODUCTION_METRICS.reduce((group, metric) => {
+              const record = summary.metrics[metric];
+              group.totalSourceDenominator += record.totalSourceDenominator;
+              group.resolvedQuantity += record.resolvedQuantity;
+              group.restoredByApprovedOverrideQuantity += record.restoredByApprovedOverrideQuantity;
+              group.warningLevelFallbackQuantity += record.warningLevelFallbackQuantity;
+              group.unresolvedQuantity += record.unresolvedQuantity;
+              group.players.push(...record.players.map((player) => ({ ...player, metric })));
+              return group;
+            }, {
+              ...retainedAggregate(teamRecords.get(teamId), OFFENSIVE_PRODUCTION_METRICS),
+              metric: "offensiveProduction",
+              totalSourceDenominator: 0,
+              resolvedQuantity: 0,
+              restoredByApprovedOverrideQuantity: 0,
+              warningLevelFallbackQuantity: 0,
+              unresolvedQuantity: 0,
+              players: [],
+            }),
+          ),
+        },
+        metrics: Object.fromEntries(
+          Object.entries(summary.metrics).map(([metric, record]) => [metric, summarizeAttributionMetric(record)]),
+        ),
+      },
+    ]).sort((a, b) => a[1].teamAbbr.localeCompare(b[1].teamAbbr)),
+  );
+}
+
+function attributionMetricForTeam(identityAttributionAccounting, teamId, metric) {
+  if (metric === "offensiveProduction") return identityAttributionAccounting[teamId]?.metricGroups.offensiveProduction;
+  return identityAttributionAccounting[teamId]?.metrics[metric];
+}
+
+function snapMetricEntries(row) {
+  return [
+    ["offensiveSnaps", row.metrics?.offensiveSnaps ?? 0],
+    ["defensiveSnaps", row.metrics?.defensiveSnaps ?? 0],
+    ["specialTeamsSnaps", row.metrics?.specialTeamsSnaps ?? 0],
+  ].filter(([, quantity]) => quantity > 0);
+}
+
+function rosterFallbackMatch(a, b) {
+  return a.normalizedName === b.normalizedName &&
+    a.teamId === b.teamId &&
+    normalizePositionGroup(a.position) === normalizePositionGroup(b.position);
+}
+
+function directPfrRosterMatches(crosswalk) {
+  const matches = new Map();
+  for (const entry of crosswalk.entries) {
+    for (const row of entry.sourceRows ?? []) {
+      if (row.sourceKind !== "prior_roster" || !row.providerIds?.pfrId) continue;
+      const key = row.providerIds.pfrId;
+      matches.set(key, [...(matches.get(key) ?? []), row]);
+    }
+  }
+  return matches;
+}
+
+function priorRosterFallbackMatches(crosswalk, snapRow) {
+  return (crosswalk.entries ?? [])
+    .flatMap((entry) => entry.sourceRows ?? [])
+    .filter((row) => row.sourceKind === "prior_roster" && rosterFallbackMatch(row, snapRow))
+    .sort((a, b) => a.rowId.localeCompare(b.rowId));
+}
+
+function snapRowResolutionMethod({ entry, row, directPfrMatches, appliedProviderKeys, conflictKeys }) {
+  const pfrId = row.providerIds?.pfrId ?? null;
+  const directMatches = pfrId ? directPfrMatches.get(pfrId) ?? [] : [];
+  if (pfrId && directMatches.length === 1 && directMatches[0].providerIds?.gsisId) return "direct_pfr_to_gsis";
+  if (pfrId && directMatches.length > 1) return "ambiguous_pfr_to_gsis";
+  if (rowWasRestoredByApprovedOverride(row, appliedProviderKeys)) return "approved_override";
+  if (entry.sourcePresence?.playersMapping && entry.providerIds?.gsisId?.length === 1) return "nflverse_players_pfr_to_gsis";
+  const fallbackMatches = priorRosterFallbackMatches({ entries: [entry] }, row);
+  if (fallbackMatches.some((match) => match.providerIds?.gsisId)) return "prior_roster_name_team_position_group";
+  if (attributionStatusForEntry(entry, conflictKeys) === "warning_fallback") return "deterministic_fallback";
+  if (pfrId) return "pfr_only_unresolved";
+  return "missing_provider_unresolved";
+}
+
+function emptySnapFunnelBucket() {
+  return {
+    rowCount: 0,
+    snapQuantity: 0,
+    pfrIdPresentRows: 0,
+    pfrIdPresentQuantity: 0,
+    directPfrToGsisRows: 0,
+    directPfrToGsisQuantity: 0,
+    otherProviderCrosswalkRows: 0,
+    otherProviderCrosswalkQuantity: 0,
+    approvedOverrideRows: 0,
+    approvedOverrideQuantity: 0,
+    nflversePlayersMappingRows: 0,
+    nflversePlayersMappingQuantity: 0,
+    deterministicFallbackRows: 0,
+    deterministicFallbackQuantity: 0,
+    canonicalResolvedRows: 0,
+    canonicalResolvedQuantity: 0,
+    unresolvedExcludedRows: 0,
+    unresolvedExcludedQuantity: 0,
+  };
+}
+
+function addSnapFunnelQuantity(bucket, { quantity, pfrIdPresent, method, attributionStatus, approvedOverrideApplied }) {
+  bucket.rowCount += 1;
+  bucket.snapQuantity += quantity;
+  if (pfrIdPresent) {
+    bucket.pfrIdPresentRows += 1;
+    bucket.pfrIdPresentQuantity += quantity;
+  }
+  if (method === "direct_pfr_to_gsis") {
+    bucket.directPfrToGsisRows += 1;
+    bucket.directPfrToGsisQuantity += quantity;
+  }
+  if (approvedOverrideApplied) {
+    bucket.approvedOverrideRows += 1;
+    bucket.approvedOverrideQuantity += quantity;
+  }
+  if (method === "nflverse_players_pfr_to_gsis") {
+    bucket.nflversePlayersMappingRows += 1;
+    bucket.nflversePlayersMappingQuantity += quantity;
+  }
+  if (["prior_roster_name_team_position_group", "deterministic_fallback"].includes(method)) {
+    bucket.deterministicFallbackRows += 1;
+    bucket.deterministicFallbackQuantity += quantity;
+  }
+  if (attributionStatus === "resolved" || attributionStatus === "warning_fallback") {
+    bucket.canonicalResolvedRows += 1;
+    bucket.canonicalResolvedQuantity += quantity;
+  } else {
+    bucket.unresolvedExcludedRows += 1;
+    bucket.unresolvedExcludedQuantity += quantity;
+  }
+}
+
+function emptySourceContributionBucket() {
+  return {
+    directRosterPfrMappingQuantity: 0,
+    reviewedOverrideQuantity: 0,
+    nflversePlayersMappingQuantity: 0,
+    otherProviderMappingQuantity: 0,
+    deterministicFallbackQuantity: 0,
+    unresolvedExcludedQuantity: 0,
+    totalSourceDenominator: 0,
+    arithmeticReconciled: true,
+  };
+}
+
+function sourceContributionKey({ method, attributionStatus, approvedOverrideApplied }) {
+  if (approvedOverrideApplied) return "reviewedOverrideQuantity";
+  if (method === "direct_pfr_to_gsis") return "directRosterPfrMappingQuantity";
+  if (method === "nflverse_players_pfr_to_gsis") return "nflversePlayersMappingQuantity";
+  if (method === "prior_roster_name_team_position_group" || method === "deterministic_fallback" || attributionStatus === "warning_fallback") {
+    return "deterministicFallbackQuantity";
+  }
+  if (attributionStatus === "resolved") return "otherProviderMappingQuantity";
+  return "unresolvedExcludedQuantity";
+}
+
+function sortedObjectFromMap(map) {
+  return Object.fromEntries([...map.entries()].sort(([a], [b]) => a.localeCompare(b)));
+}
+
+function aggregateSnapReviewQueue(rows) {
+  const byIdentity = new Map();
+  for (const row of rows) {
+    const key = [
+      row.team,
+      row.playerName,
+      row.pfrId ?? "missing-pfr",
+      row.positionBucket,
+      row.snapType,
+    ].join("|");
+    const existing = byIdentity.get(key) ?? {
+      ...row,
+      snapQuantity: 0,
+      sourceRefs: [],
+    };
+    existing.snapQuantity += row.snapQuantity;
+    existing.candidateMappingCount = Math.max(existing.candidateMappingCount, row.candidateMappingCount);
+    existing.priorRosterPresence = existing.priorRosterPresence || row.priorRosterPresence;
+    existing.targetRosterPresence = existing.targetRosterPresence || row.targetRosterPresence;
+    existing.sourceRefs.push(...row.sourceRefs);
+    byIdentity.set(key, existing);
+  }
+  return [...byIdentity.values()]
+    .map((row) => ({
+      ...row,
+      sourceRefs: row.sourceRefs.sort((a, b) => String(a.rowId).localeCompare(String(b.rowId))),
+    }))
+    .sort((a, b) =>
+      b.snapQuantity - a.snapQuantity ||
+      a.team.localeCompare(b.team) ||
+      a.snapType.localeCompare(b.snapType) ||
+      a.playerName.localeCompare(b.playerName) ||
+      String(a.pfrId).localeCompare(String(b.pfrId)),
+    );
+}
+
+function buildSnapResolutionDiagnostics({ teams, crosswalk, identityAttributionAccounting }) {
+  const conflictKeys = providerConflictKeys(crosswalk.conflicts);
+  const appliedProviderKeys = appliedOverrideProviderKeys(crosswalk);
+  const directPfrMatches = directPfrRosterMatches(crosswalk);
+  const teamAbbrById = new Map(teams.map((team) => [team.teamId, team.abbr]));
+  const funnelByTeam = new Map();
+  const funnelByPosition = new Map();
+  const sourceContributionByTeam = new Map();
+  const unresolvedByPosition = new Map();
+  const reviewQueue = [];
+
+  for (const entry of crosswalk.entries) {
+    const attributionStatus = attributionStatusForEntry(entry, conflictKeys);
+    for (const row of entry.sourceRows ?? []) {
+      if (row.sourceKind !== "snap_counts") continue;
+      const method = snapRowResolutionMethod({ entry, row, directPfrMatches, appliedProviderKeys, conflictKeys });
+      const approvedOverrideApplied = rowWasRestoredByApprovedOverride(row, appliedProviderKeys);
+      const retainedStatus = entry.targetSeasonTeams?.includes(row.teamId) ? "retained" : "departed_or_not_on_target_roster";
+      const rosterPresence = {
+        priorRoster: entry.sourcePresence?.priorRoster === true,
+        targetRoster: entry.sourcePresence?.targetRoster === true,
+      };
+      for (const [metric, quantity] of snapMetricEntries(row)) {
+        const teamAbbr = teamAbbrById.get(row.teamId) ?? row.teamAbbr;
+        const position = row.snapPositionBucket ?? snapPositionBucket(row.position);
+        const payload = {
+          quantity,
+          pfrIdPresent: Boolean(row.providerIds?.pfrId),
+          method,
+          attributionStatus,
+          approvedOverrideApplied,
+        };
+        const teamKey = `${teamAbbr}:${metric}`;
+        if (!funnelByTeam.has(teamKey)) funnelByTeam.set(teamKey, emptySnapFunnelBucket());
+        addSnapFunnelQuantity(funnelByTeam.get(teamKey), payload);
+        if (!sourceContributionByTeam.has(teamKey)) sourceContributionByTeam.set(teamKey, emptySourceContributionBucket());
+        const contribution = sourceContributionByTeam.get(teamKey);
+        contribution[sourceContributionKey(payload)] += quantity;
+        contribution.totalSourceDenominator += quantity;
+
+        const positionKey = `${teamAbbr}:${metric}:${position}`;
+        if (!funnelByPosition.has(positionKey)) funnelByPosition.set(positionKey, emptySnapFunnelBucket());
+        addSnapFunnelQuantity(funnelByPosition.get(positionKey), payload);
+
+        if (attributionStatus === "unresolved_excluded") {
+          unresolvedByPosition.set(positionKey, (unresolvedByPosition.get(positionKey) ?? 0) + quantity);
+          reviewQueue.push({
+            team: teamAbbr,
+            playerName: row.playerName,
+            pfrId: row.providerIds?.pfrId ?? null,
+            position: row.position,
+            positionBucket: position,
+            snapType: metric,
+            snapQuantity: quantity,
+            priorRosterPresence: rosterPresence.priorRoster,
+            targetRosterPresence: rosterPresence.targetRoster,
+            availableProviderIds: row.providerIds,
+            candidateMappingCount: priorRosterFallbackMatches(crosswalk, row).length,
+            exclusionReason: entry.warnings.includes("unresolved PFR-only snap identity")
+              ? "pfr_only_snap_identity"
+              : attributionStatus,
+            recommendedNextAction: method === "pfr_only_unresolved"
+              ? "review nflverse players ID mapping or source row evidence before considering an override"
+              : "review candidate mappings and source evidence",
+            humanReviewCouldResolve: method !== "ambiguous_pfr_to_gsis",
+            sourceRowId: row.rowId,
+            sourceRefs: [{ sourceId: row.sourceId, rowId: row.rowId }],
+          });
+        }
+      }
+    }
+  }
+
+  return {
+    summaryByTeamAndSnapType: sortedObjectFromMap(funnelByTeam),
+    sourceContributionByTeamAndSnapType: Object.fromEntries(
+      [...sourceContributionByTeam.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, record]) => {
+          const sum = record.directRosterPfrMappingQuantity +
+            record.reviewedOverrideQuantity +
+            record.nflversePlayersMappingQuantity +
+            record.otherProviderMappingQuantity +
+            record.deterministicFallbackQuantity +
+            record.unresolvedExcludedQuantity;
+          return [key, {
+            ...record,
+            arithmeticReconciled: sum === record.totalSourceDenominator,
+          }];
+        }),
+    ),
+    summaryByTeamSnapTypeAndPosition: sortedObjectFromMap(funnelByPosition),
+    unresolvedSnapQuantityByPosition: sortedObjectFromMap(unresolvedByPosition),
+    highImpactUnresolvedReviewQueue: aggregateSnapReviewQueue(reviewQueue).slice(0, 100),
+    reconciliation: Object.fromEntries(
+      Object.entries(identityAttributionAccounting).map(([teamId, team]) => [
+        teamId,
+        {
+          teamAbbr: team.teamAbbr,
+          offensiveSnaps: team.metrics.offensiveSnaps.arithmeticReconciled,
+          defensiveSnaps: team.metrics.defensiveSnaps.arithmeticReconciled,
+          specialTeamsSnaps: team.metrics.specialTeamsSnaps.arithmeticReconciled,
+        },
+      ]),
+    ),
+  };
+}
+
+function buildPfrToGsisCoverage({ teams, crosswalk }) {
+  const teamAbbrById = new Map(teams.map((team) => [team.teamId, team.abbr]));
+  const priorRosterByTeam = new Map();
+  const priorRosterByPfr = new Map();
+  const snapByPfr = new Map();
+
+  for (const entry of crosswalk.entries) {
+    for (const row of entry.sourceRows ?? []) {
+      if (row.sourceKind === "prior_roster") {
+        const teamAbbr = teamAbbrById.get(row.teamId) ?? row.teamAbbr;
+        if (!priorRosterByTeam.has(teamAbbr)) priorRosterByTeam.set(teamAbbr, { players: 0, withPfr: 0 });
+        const team = priorRosterByTeam.get(teamAbbr);
+        team.players += 1;
+        if (row.providerIds?.pfrId) {
+          team.withPfr += 1;
+          const key = `${teamAbbr}:${row.providerIds.pfrId}`;
+          priorRosterByPfr.set(key, [...(priorRosterByPfr.get(key) ?? []), row]);
+        }
+      }
+      if (row.sourceKind === "snap_counts" && row.providerIds?.pfrId) {
+        const teamAbbr = teamAbbrById.get(row.teamId) ?? row.teamAbbr;
+        const key = `${teamAbbr}:${row.providerIds.pfrId}`;
+        const existing = snapByPfr.get(key) ?? {
+          team: teamAbbr,
+          pfrId: row.providerIds.pfrId,
+          sourceNames: new Set(),
+          positions: new Set(),
+          offensiveSnaps: 0,
+          defensiveSnaps: 0,
+          specialTeamsSnaps: 0,
+        };
+        existing.sourceNames.add(row.playerName);
+        existing.positions.add(row.position);
+        existing.offensiveSnaps += row.metrics?.offensiveSnaps ?? 0;
+        existing.defensiveSnaps += row.metrics?.defensiveSnaps ?? 0;
+        existing.specialTeamsSnaps += row.metrics?.specialTeamsSnaps ?? 0;
+        snapByPfr.set(key, existing);
+      }
+    }
+  }
+
+  const snapPfrCoverage = [...snapByPfr.entries()].map(([key, summary]) => {
+    const matches = priorRosterByPfr.get(key) ?? [];
+    return {
+      team: summary.team,
+      pfrId: summary.pfrId,
+      sourceNames: [...summary.sourceNames].sort(),
+      positions: [...summary.positions].sort(),
+      directPriorRosterMatchCount: matches.length,
+      category: matches.length === 1 ? "unique_prior_roster_pfr_match" : matches.length > 1 ? "multiple_prior_roster_pfr_matches" : "no_prior_roster_pfr_match",
+      offensiveSnaps: summary.offensiveSnaps,
+      defensiveSnaps: summary.defensiveSnaps,
+      specialTeamsSnaps: summary.specialTeamsSnaps,
+    };
+  }).sort((a, b) => a.team.localeCompare(b.team) || a.category.localeCompare(b.category) || a.pfrId.localeCompare(b.pfrId));
+
+  const totals = snapPfrCoverage.reduce((acc, row) => {
+    if (!acc[row.category]) acc[row.category] = { pfrIds: 0, offensiveSnaps: 0, defensiveSnaps: 0, specialTeamsSnaps: 0 };
+    acc[row.category].pfrIds += 1;
+    acc[row.category].offensiveSnaps += row.offensiveSnaps;
+    acc[row.category].defensiveSnaps += row.defensiveSnaps;
+    acc[row.category].specialTeamsSnaps += row.specialTeamsSnaps;
+    return acc;
+  }, {});
+
+  return {
+    priorRosterPfrCoverageByTeam: Object.fromEntries(
+      [...priorRosterByTeam.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([team, summary]) => [
+          team,
+          {
+            ...summary,
+            pfrCoverage: ratio(summary.withPfr, summary.players),
+          },
+        ]),
+    ),
+    snapPfrCoverageByCategory: Object.fromEntries(Object.entries(totals).sort(([a], [b]) => a.localeCompare(b))),
+    snapPfrRecords: snapPfrCoverage,
+  };
+}
+
+function buildIdentityQualitySummary({ teams, reviewRecords, crosswalk, identityAttributionAccounting }) {
+  const criticalByTeam = new Map();
+  const excludedByTeam = new Map();
+  const warningIncludedByTeam = new Map();
+  for (const record of reviewRecords) {
+    for (const teamId of record.teams) {
+      if (record.severity === "critical") criticalByTeam.set(teamId, (criticalByTeam.get(teamId) ?? 0) + 1);
+      if (record.resolutionStatus === "excluded") excludedByTeam.set(teamId, (excludedByTeam.get(teamId) ?? 0) + 1);
+      if (record.resolutionStatus === "warning_included") warningIncludedByTeam.set(teamId, (warningIncludedByTeam.get(teamId) ?? 0) + 1);
+    }
+  }
+  return Object.fromEntries(teams.map((team) => {
+    const entries = crosswalk.entries.filter((entry) => [
+      ...(entry.priorSeasonTeams ?? []),
+      ...(entry.priorProductionTeams ?? []),
+      ...(entry.priorSnapTeams ?? []),
+      ...(entry.targetSeasonTeams ?? []),
+    ].includes(team.teamId));
+    const sourcePersonCount = (sourceKind) => new Set(
+      entries
+        .flatMap((entry) => entry.sourceRows ?? [])
+        .filter((row) => row.sourceKind === sourceKind && row.teamId === team.teamId)
+        .map((row) => row.providerIds?.gsisId ?? row.providerIds?.pfrId ?? row.identityKey ?? row.rowId),
+    ).size;
+    const sourceContributions = Object.values(
+      identityAttributionAccounting[team.teamId]?.metrics ?? {},
+    ).reduce((totals, metric) => {
+      for (const player of metric.players ?? []) {
+        if (player.restoredByApprovedOverride) totals.approvedReviewedOverrides += 1;
+      }
+      return totals;
+    }, {
+      approvedReviewedOverrides: 0,
+    });
+    return [team.teamId, {
+      teamId: team.teamId,
+      teamAbbr: team.abbr,
+      totalSourcePersons: entries.length,
+      totalRosterPersons: sourcePersonCount("target_roster"),
+      totalPriorRosterPersons: sourcePersonCount("prior_roster"),
+      totalStatsPersons: sourcePersonCount("player_stats"),
+      totalSnapPersons: sourcePersonCount("snap_counts"),
+      gsisResolved: entries.filter((entry) => entry.identityMatchMethod === "gsis").length,
+      priorRosterPfrMappings: entries.filter((entry) =>
+        entry.sourceRows?.some((row) => row.sourceKind === "prior_roster" && row.providerIds?.pfrId && row.providerIds?.gsisId),
+      ).length,
+      approvedReviewedOverrides: sourceContributions.approvedReviewedOverrides,
+      nflversePlayersMappings: entries.filter((entry) => entry.sourcePresence?.playersMapping).length,
+      otherProviderMappings: entries.filter((entry) =>
+        entry.identityMatchMethod === "provider_id" && !entry.sourcePresence?.playersMapping,
+      ).length,
+      providerCrosswalkResolved: entries.filter((entry) => entry.identityMatchMethod === "provider_id").length,
+      deterministicFallbackResolved: entries.filter((entry) => entry.identityMatchMethod === "name_position_team").length,
+      warningLevelIncluded: warningIncludedByTeam.get(team.teamId) ?? 0,
+      unresolvedExcluded: excludedByTeam.get(team.teamId) ?? 0,
+      criticalConflicts: criticalByTeam.get(team.teamId) ?? 0,
+      retainedShares: {
+        offensiveProduction: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.retainedShare ?? null,
+        offensiveSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.retainedShare ?? null,
+        defensiveSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.retainedShare ?? null,
+        specialTeamsSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "specialTeamsSnaps")?.retainedShare ?? null,
+      },
+      attributionCoverage: {
+        offensiveProductionResolved: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.resolvedAttributionCoverage ?? null,
+        offensiveProductionAccountedFor: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.accountedForCoverage ?? null,
+        offensiveProductionUnresolvedShare: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.unresolvedShare ?? null,
+        offensiveSnapsResolved: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.resolvedAttributionCoverage ?? null,
+        offensiveSnapsAccountedFor: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.accountedForCoverage ?? null,
+        offensiveSnapsUnresolvedShare: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.unresolvedShare ?? null,
+        defensiveSnapsResolved: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.resolvedAttributionCoverage ?? null,
+        defensiveSnapsAccountedFor: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.accountedForCoverage ?? null,
+        defensiveSnapsUnresolvedShare: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.unresolvedShare ?? null,
+        specialTeamsSnapsResolved: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "specialTeamsSnaps")?.resolvedAttributionCoverage ?? null,
+        specialTeamsSnapsAccountedFor: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "specialTeamsSnaps")?.accountedForCoverage ?? null,
+        specialTeamsSnapsUnresolvedShare: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "specialTeamsSnaps")?.unresolvedShare ?? null,
+      },
+      sourceCompleteness: {
+        offensiveProduction: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveProduction")?.sourceCoverageComplete ?? false,
+        offensiveSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.sourceCoverageComplete ?? false,
+        defensiveSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.sourceCoverageComplete ?? false,
+        specialTeamsSnaps: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "specialTeamsSnaps")?.sourceCoverageComplete ?? false,
+      },
+    }];
+  }));
+}
+
+function buildExpansionGateEvaluation(identityQualityByTeam, criticalConflictCount) {
+  const failures = [];
+  const teamResults = {};
+  const failureCountByGate = {};
+  const addFailure = (teamAbbr, gate) => {
+    failures.push(teamAbbr ? `${teamAbbr}:${gate}` : gate);
+    if (teamAbbr) failureCountByGate[gate] = (failureCountByGate[gate] ?? 0) + 1;
+  };
+  if (criticalConflictCount > IDENTITY_EXPANSION_GATES.maxCriticalProviderConflicts) {
+    addFailure(null, "critical_provider_conflicts_present");
+  }
+  for (const summary of Object.values(identityQualityByTeam)) {
+    const teamFailures = [];
+    const addTeamFailure = (gate) => {
+      teamFailures.push(gate);
+      addFailure(summary.teamAbbr, gate);
+    };
+    if (summary.criticalConflicts > IDENTITY_EXPANSION_GATES.maxCriticalProviderConflicts) {
+      addTeamFailure("critical_provider_conflicts_present");
+    }
+    if ((summary.attributionCoverage.offensiveProductionResolved ?? 0) < IDENTITY_EXPANSION_GATES.minResolvedOffensiveProductionAttribution) {
+      addTeamFailure("offensive_production_resolved_attribution_below_threshold");
+    }
+    if ((summary.attributionCoverage.offensiveSnapsResolved ?? 0) < IDENTITY_EXPANSION_GATES.minOffensiveSnapAttribution) {
+      addTeamFailure("offensive_snap_resolved_attribution_below_threshold");
+    }
+    if ((summary.attributionCoverage.defensiveSnapsResolved ?? 0) < IDENTITY_EXPANSION_GATES.minDefensiveSnapAttribution) {
+      addTeamFailure("defensive_snap_resolved_attribution_below_threshold");
+    }
+    for (const metric of MANDATORY_IDENTITY_METRICS) {
+      const accountedKey = `${metric}AccountedFor`;
+      const value = summary.attributionCoverage[accountedKey];
+      if (value !== null && value < IDENTITY_EXPANSION_GATES.requireAccountedForCoverage) {
+        addTeamFailure(`${accountedKey}_below_accounted_for_threshold`);
+      }
+      if (summary.sourceCompleteness?.[metric] !== true) {
+        addTeamFailure(`${metric}_source_incomplete`);
+      }
+    }
+    teamResults[summary.teamAbbr] = {
+      teamId: summary.teamId,
+      teamAbbr: summary.teamAbbr,
+      passesMandatoryGates: teamFailures.length === 0,
+      mandatoryFailures: [...new Set(teamFailures)].sort(),
+      advisory: {
+        specialTeamsSnapsResolved: summary.attributionCoverage.specialTeamsSnapsResolved ?? null,
+        specialTeamsSnapsAccountedFor: summary.attributionCoverage.specialTeamsSnapsAccountedFor ?? null,
+        specialTeamsSnapsSourceComplete: summary.sourceCompleteness?.specialTeamsSnaps === true,
+      },
+    };
+  }
+  const sortedFailures = [...new Set(failures)].sort();
+  const teamsPassingMandatoryGates = Object.values(teamResults)
+    .filter((result) => result.passesMandatoryGates)
+    .map((result) => result.teamAbbr)
+    .sort();
+  const teamsFailingMandatoryGates = Object.values(teamResults)
+    .filter((result) => !result.passesMandatoryGates)
+    .map((result) => result.teamAbbr)
+    .sort();
+  return {
+    safeForAll32IdentityExpansion: sortedFailures.length === 0,
+    failures: sortedFailures,
+    teamsPassingMandatoryGates,
+    teamsFailingMandatoryGates,
+    failureCountByGate: Object.fromEntries(Object.entries(failureCountByGate).sort(([a], [b]) => a.localeCompare(b))),
+    teamResults: Object.fromEntries(Object.entries(teamResults).sort(([a], [b]) => a.localeCompare(b))),
+    advisoryGates: {
+      specialTeamsSnaps: "reported, not mandatory for Phase 5C-2I identity promotion",
+    },
+    gates: IDENTITY_EXPANSION_GATES,
+  };
+}
+
+function median(values) {
+  const sorted = values.filter((value) => value !== null && Number.isFinite(value)).sort((a, b) => a - b);
+  if (sorted.length === 0) return null;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[mid]
+    : Number(((sorted[mid - 1] + sorted[mid]) / 2).toFixed(6));
+}
+
+function minimum(values) {
+  const filtered = values.filter((value) => value !== null && Number.isFinite(value));
+  return filtered.length > 0 ? Math.min(...filtered) : null;
+}
+
+function compactAttributionMetric(metricRecord) {
+  return {
+    priorTeamDenominator: metricRecord?.priorTeamDenominator ?? null,
+    retainedNumerator: metricRecord?.retainedNumerator ?? null,
+    retainedShare: metricRecord?.retainedShare ?? null,
+    resolvedAttributionCoverage: metricRecord?.resolvedAttributionCoverage ?? null,
+    accountedForCoverage: metricRecord?.accountedForCoverage ?? null,
+    unresolvedQuantity: metricRecord?.unresolvedQuantity ?? null,
+    unresolvedShare: metricRecord?.unresolvedShare ?? null,
+    sourceCoverageComplete: metricRecord?.sourceCoverageComplete === true,
+  };
+}
+
+function buildTeamLevelAuditResults({ teams, identityAttributionAccounting, identityQualityByTeam, gateEvaluation }) {
+  return teams.map((team) => {
+    const accounting = identityAttributionAccounting[team.teamId];
+    return {
+      teamId: team.teamId,
+      teamAbbr: team.abbr,
+      identityQuality: identityQualityByTeam[team.teamId],
+      mandatoryGateResult: gateEvaluation.teamResults[team.abbr],
+      offensiveProduction: Object.fromEntries(
+        PRODUCTION_AUDIT_METRICS.map((metric) => [metric, compactAttributionMetric(accounting?.metrics?.[metric])]),
+      ),
+      snaps: {
+        offensiveSnaps: compactAttributionMetric(accounting?.metrics?.offensiveSnaps),
+        defensiveSnaps: compactAttributionMetric(accounting?.metrics?.defensiveSnaps),
+        specialTeamsSnaps: compactAttributionMetric(accounting?.metrics?.specialTeamsSnaps),
+      },
+      returningProduction: {
+        offensiveSnapRetention: accounting?.metrics?.offensiveSnaps?.retainedShare ?? null,
+        defensiveSnapRetention: accounting?.metrics?.defensiveSnaps?.retainedShare ?? null,
+        specialTeamsSnapRetention: accounting?.metrics?.specialTeamsSnaps?.retainedShare ?? null,
+        passAttemptRetention: accounting?.metrics?.qbPassAttempts?.retainedShare ?? null,
+        rushingRetention: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "carries")?.retainedShare ?? null,
+        receivingRetention: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "receivingYards")?.retainedShare ?? null,
+      },
+    };
+  });
+}
+
+function reasonCategoryForUnresolved(entry) {
+  if (entry.resolutionStatus === "conflicted") return IDENTITY_REASON_CATEGORIES.providerIdConflict;
+  if (entry.warnings.includes("unresolved PFR-only snap identity")) return IDENTITY_REASON_CATEGORIES.pfrOnlySnapIdentity;
+  if (entry.warnings.includes("snap player missing from target roster")) return IDENTITY_REASON_CATEGORIES.snapsMissingRoster;
+  if (entry.warnings.includes("stats player missing from target roster")) return IDENTITY_REASON_CATEGORIES.statsMissingRoster;
+  return IDENTITY_REASON_CATEGORIES.insufficientEvidence;
+}
+
+function buildRankedUnresolvedQueue({ teams, crosswalk, identityAttributionAccounting }) {
+  const conflictKeys = providerConflictKeys(crosswalk.conflicts);
+  const teamAbbrById = new Map(teams.map((team) => [team.teamId, team.abbr]));
+  const rows = [];
+  for (const entry of crosswalk.entries) {
+    if (attributionStatusForEntry(entry, conflictKeys) !== "unresolved_excluded") continue;
+    for (const row of entry.sourceRows ?? []) {
+      for (const [sourceMetric, quantity] of Object.entries(row.metrics ?? {})) {
+        if (!quantity) continue;
+        const metric = SOURCE_METRIC_TO_AUDIT_METRIC[sourceMetric];
+        if (!metric) continue;
+        const group = OFFENSIVE_PRODUCTION_METRICS.includes(metric) ? "offensiveProduction" : metric;
+        const denominator = attributionMetricForTeam(identityAttributionAccounting, row.teamId, metric)?.totalSourceDenominator ?? 0;
+        const mandatoryImpact = MANDATORY_IDENTITY_METRICS.includes(group) || OFFENSIVE_PRODUCTION_METRICS.includes(metric);
+        rows.push({
+          team: teamAbbrById.get(row.teamId) ?? row.teamAbbr,
+          sourcePlayerName: row.playerName,
+          providerIds: row.providerIds,
+          position: row.position,
+          category: group,
+          metric,
+          unresolvedQuantity: quantity,
+          denominatorShare: ratio(quantity, denominator),
+          reasonCategory: reasonCategoryForUnresolved(entry),
+          candidateMappings: priorRosterFallbackMatches(crosswalk, row).map((candidate) => ({
+            sourcePlayerName: candidate.playerName,
+            providerIds: candidate.providerIds,
+            position: candidate.position,
+            sourceRowId: candidate.rowId,
+          })).slice(0, 10),
+          sourceReferences: [{ sourceId: row.sourceId, rowId: row.rowId }],
+          recommendedNextAction: row.providerIds?.pfrId
+            ? "review provider-backed nflverse players mapping or add a human-reviewed override only after source evidence"
+            : "review source row identity evidence; do not approve by fuzzy name alone",
+          automaticMayResolve: false,
+          providerBasedMayResolve: Boolean(row.providerIds?.pfrId),
+          humanReviewMayResolve: true,
+          stableTieBreaker: `${row.teamAbbr}:${metric}:${row.playerName}:${row.rowId}`,
+          mandatoryImpact,
+        });
+      }
+    }
+  }
+  return rows.sort((a, b) =>
+    Number(b.mandatoryImpact) - Number(a.mandatoryImpact) ||
+    (b.denominatorShare ?? -1) - (a.denominatorShare ?? -1) ||
+    b.unresolvedQuantity - a.unresolvedQuantity ||
+    a.stableTieBreaker.localeCompare(b.stableTieBreaker),
+  );
+}
+
+function buildProviderConflictReview({ identityReview, reviewedOverridesSummary, crosswalk }) {
+  const supplementalRejected = crosswalk.supplementalPlayerMappings?.rejectedMappings ?? [];
+  const rejectedOverrides = reviewedOverridesSummary?.applications?.filter((decision) => decision.considered && !decision.applied) ?? [];
+  return {
+    criticalConflicts: identityReview.criticalConflicts,
+    pfrToMultipleGsis: identityReview.criticalConflicts.filter((conflict) =>
+      conflict.providerName === "pfrId" && (conflict.gsisIds?.length ?? 0) > 1,
+    ),
+    gsisToIncompatibleIdentities: identityReview.criticalConflicts.filter((conflict) =>
+      conflict.providerName === "gsisId" || String(conflict.message ?? "").includes("multiple GSIS IDs"),
+    ),
+    sameDateTeamContradictions: identityReview.criticalConflicts.filter((conflict) =>
+      String(conflict.message ?? "").includes("multiple teams at target roster cutoff"),
+    ),
+    competingSameNameIdentities: identityReview.unresolvedIdentities.filter((record) =>
+      record.reasonCategories?.includes(IDENTITY_REASON_CATEGORIES.sameNameDistinctPeople),
+    ),
+    conflictingProviderRows: identityReview.criticalConflicts,
+    reviewedOverrideRejectedByHigherPriorityEvidence: rejectedOverrides,
+    supplementalPlayersRejectedMappings: supplementalRejected,
+  };
+}
+
+function sumMetric(identityAttributionAccounting, metric, fieldName) {
+  return Object.values(identityAttributionAccounting)
+    .reduce((sum, team) => sum + (attributionMetricForTeam(identityAttributionAccounting, team.teamId, metric)?.[fieldName] ?? 0), 0);
+}
+
+function buildSourceCompletenessSummary({ sourceManifests, identityAttributionAccounting }) {
+  return {
+    sources: sourceManifests.map((source) => ({
+      dataset: source.dataset,
+      sourceId: NFLVERSE_DATASETS[source.dataset]?.sourceId ?? source.dataset,
+      rowCount: source.rowCount,
+      byteSize: source.byteSize,
+      sha256: source.sha256,
+      sourceUpdatedAt: source.sourceUpdatedAt,
+      retrievedAt: source.retrievedAt,
+      cachePath: source.cachePath,
+      inputPath: source.inputPath,
+      pfrDerived: source.pfrDerived,
+    })),
+    mandatoryMetricCompleteness: Object.fromEntries(
+      MANDATORY_IDENTITY_METRICS.map((metric) => [
+        metric,
+        Object.values(identityAttributionAccounting).every((team) =>
+          attributionMetricForTeam(identityAttributionAccounting, team.teamId, metric)?.sourceCoverageComplete === true,
+        ),
+      ]),
+    ),
+    advisoryMetricCompleteness: Object.fromEntries(
+      ADVISORY_IDENTITY_METRICS.map((metric) => [
+        metric,
+        Object.values(identityAttributionAccounting).every((team) =>
+          attributionMetricForTeam(identityAttributionAccounting, team.teamId, metric)?.sourceCoverageComplete === true,
+        ),
+      ]),
+    ),
+  };
+}
+
+function buildLeagueAuditSummary({ dataset, teams, identityAttributionAccounting, identityReview, sourceManifests, rankedUnresolvedQueue }) {
+  const gateEvaluation = identityReview.all32ExpansionGateEvaluation;
+  const attributionValues = (metric) => Object.values(identityAttributionAccounting)
+    .map((team) => attributionMetricForTeam(identityAttributionAccounting, team.teamId, metric)?.resolvedAttributionCoverage ?? null);
+  const sourceContribution = Object.values(dataset.snapResolutionDiagnostics?.sourceContributionByTeamAndSnapType ?? {})
+    .reduce((totals, record) => {
+      for (const key of [
+        "directRosterPfrMappingQuantity",
+        "reviewedOverrideQuantity",
+        "nflversePlayersMappingQuantity",
+        "otherProviderMappingQuantity",
+        "deterministicFallbackQuantity",
+        "unresolvedExcludedQuantity",
+        "totalSourceDenominator",
+      ]) {
+        totals[key] = (totals[key] ?? 0) + (record[key] ?? 0);
+      }
+      return totals;
+    }, {});
+  return {
+    schemaVersion: "nflverse-personnel-all-32-summary-v0.1",
+    auditOnly: true,
+    generatedAt: dataset.generatedAt,
+    sourceCutoff: dataset.sourceCutoff,
+    targetSeason: dataset.targetSeason,
+    priorSeason: dataset.priorSeason,
+    teamScope: dataset.teamScope,
+    teamsIncluded: teams.map((team) => team.abbr),
+    teamsPassingMandatoryGates: gateEvaluation.teamsPassingMandatoryGates,
+    teamsFailingMandatoryGates: gateEvaluation.teamsFailingMandatoryGates,
+    failureCountByGate: gateEvaluation.failureCountByGate,
+    attribution: {
+      offensiveProduction: {
+        median: median(attributionValues("offensiveProduction")),
+        minimum: minimum(attributionValues("offensiveProduction")),
+      },
+      offensiveSnaps: {
+        median: median(attributionValues("offensiveSnaps")),
+        minimum: minimum(attributionValues("offensiveSnaps")),
+      },
+      defensiveSnaps: {
+        median: median(attributionValues("defensiveSnaps")),
+        minimum: minimum(attributionValues("defensiveSnaps")),
+      },
+      specialTeamsSnaps: {
+        median: median(attributionValues("specialTeamsSnaps")),
+        minimum: minimum(attributionValues("specialTeamsSnaps")),
+        advisoryOnly: true,
+      },
+    },
+    unresolvedTotals: {
+      offensiveProduction: sumMetric(identityAttributionAccounting, "offensiveProduction", "unresolvedQuantity"),
+      offensiveSnaps: sumMetric(identityAttributionAccounting, "offensiveSnaps", "unresolvedQuantity"),
+      defensiveSnaps: sumMetric(identityAttributionAccounting, "defensiveSnaps", "unresolvedQuantity"),
+      specialTeamsSnaps: sumMetric(identityAttributionAccounting, "specialTeamsSnaps", "unresolvedQuantity"),
+    },
+    totalCriticalConflicts: identityReview.criticalConflicts.length,
+    resolutionMethodContribution: {
+      snapQuantities: sourceContribution,
+      identityPersons: {
+        gsisResolved: Object.values(identityReview.identityQualityByTeam).reduce((sum, team) => sum + team.gsisResolved, 0),
+        priorRosterPfrMappings: Object.values(identityReview.identityQualityByTeam).reduce((sum, team) => sum + team.priorRosterPfrMappings, 0),
+        approvedReviewedOverrides: Object.values(identityReview.identityQualityByTeam).reduce((sum, team) => sum + team.approvedReviewedOverrides, 0),
+        nflversePlayersMappings: Object.values(identityReview.identityQualityByTeam).reduce((sum, team) => sum + team.nflversePlayersMappings, 0),
+        otherProviderMappings: Object.values(identityReview.identityQualityByTeam).reduce((sum, team) => sum + team.otherProviderMappings, 0),
+        deterministicFallbacks: Object.values(identityReview.identityQualityByTeam).reduce((sum, team) => sum + team.deterministicFallbackResolved, 0),
+      },
+    },
+    sourceCompletenessSummary: buildSourceCompletenessSummary({ sourceManifests, identityAttributionAccounting }),
+    returningProduction: Object.fromEntries(teams.map((team) => [
+      team.abbr,
+      {
+        offensiveSnapRetention: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "offensiveSnaps")?.retainedShare ?? null,
+        defensiveSnapRetention: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "defensiveSnaps")?.retainedShare ?? null,
+        specialTeamsSnapRetention: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "specialTeamsSnaps")?.retainedShare ?? null,
+        passAttemptRetention: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "qbPassAttempts")?.retainedShare ?? null,
+        rushingRetention: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "carries")?.retainedShare ?? null,
+        receivingRetention: attributionMetricForTeam(identityAttributionAccounting, team.teamId, "receivingYards")?.retainedShare ?? null,
+      },
+    ])),
+    topUnresolvedIdentities: rankedUnresolvedQueue.slice(0, 25),
+    reconciliation: {
+      compactSummaryReproducibleFromFullAudit: true,
+      arithmeticReconciled: Object.values(identityAttributionAccounting).every((team) =>
+        Object.values(team.metrics).every((metric) => metric.arithmeticReconciled === true),
+      ),
+    },
+    sourceLineageCautions: identityReview.sourceLineageCautions,
+    promotionAssessment: {
+      safeToPromoteIdentityInfrastructure: gateEvaluation.safeForAll32IdentityExpansion,
+      reason: gateEvaluation.safeForAll32IdentityExpansion
+        ? "all requested teams pass mandatory audit-only identity gates"
+        : "one or more requested teams fail mandatory audit-only identity gates",
+    },
+  };
+}
+
+function impactForProviderConflict(conflict, crosswalk, teamsById) {
+  if (!conflict.providerName || !conflict.providerId) return [];
+  const seen = new Set();
+  return crosswalk.entries
+    .filter((entry) => (entry.providerIds?.[conflict.providerName] ?? []).includes(conflict.providerId))
+    .flatMap((entry) => metricImpactForEntry(entry, teamsById))
+    .filter((impact) => {
+      const key = `${impact.sourceRowId}:${impact.affectedMetric}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) =>
+      a.teamAbbr.localeCompare(b.teamAbbr) ||
+      a.affectedMetric.localeCompare(b.affectedMetric) ||
+      a.sourceRowId.localeCompare(b.sourceRowId),
+    );
+}
+
+function buildPendingOverrideSimulation({ crosswalk, teams, reviewedOverrides, targetSeason }) {
+  const pendingByProvider = overrideIndex(reviewedOverrides, { includePending: true });
+  const teamsById = new Map(teams.map((team) => [team.teamId, team]));
+  const simulatedDecisions = crosswalk.conflicts
+    .map((conflict) => diagnoseProviderConflict(conflict, crosswalk))
+    .map((diagnosed) => {
+      if (!diagnosed.providerName || !diagnosed.providerId) return null;
+      const decision = matchingOverrideDecision({
+        providerName: diagnosed.providerName,
+        providerId: diagnosed.providerId,
+        rows: diagnosed.sourceRows ?? [],
+        overridesByProvider: pendingByProvider,
+        targetSeason,
+      });
+      return {
+        ...decision,
+        simulationOnly: true,
+        wouldClearCriticalConflict: Boolean(decision.applied),
+        affectedProduction: impactForProviderConflict(diagnosed, crosswalk, teamsById),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) =>
+      String(a.providerName).localeCompare(String(b.providerName)) ||
+      String(a.providerId).localeCompare(String(b.providerId)) ||
+      String(a.overrideId ?? "").localeCompare(String(b.overrideId ?? "")),
+    );
+  const wouldClear = simulatedDecisions.filter((decision) => decision.wouldClearCriticalConflict).length;
+  return {
+    enabled: true,
+    simulationOnly: true,
+    pendingOverrideCount: (reviewedOverrides?.overrides ?? []).filter((record) => record.status === "pending").length,
+    criticalConflictCountBefore: crosswalk.conflicts.length,
+    criticalConflictCountAfterSimulation: Math.max(0, crosswalk.conflicts.length - wouldClear),
+    simulatedDecisions,
+    notes: [
+      "Pending override simulation is not applied to normal audit results.",
+      "Simulation does not change production artifacts or automatic identity policy.",
+    ],
+  };
+}
+
+function buildReviewedOverridesSummary({ reviewedOverrides, validation, crosswalk, teams, targetSeason, simulatePendingOverrides }) {
+  const records = reviewedOverrides?.overrides ?? [];
+  const appliedOverrideIds = new Set(
+    crosswalk.overrideApplications
+      .filter((decision) => decision.applied && decision.overrideId)
+      .map((decision) => decision.overrideId),
+  );
+  return {
+    schemaVersion: reviewedOverrides?.schemaVersion ?? REVIEWED_IDENTITY_OVERRIDES_SCHEMA_VERSION,
+    provided: Boolean(reviewedOverrides),
+    validation: validation ?? { valid: true, errors: [], warnings: [] },
+    counts: {
+      total: records.length,
+      approved: records.filter((record) => record.status === "approved").length,
+      pending: records.filter((record) => record.status === "pending").length,
+      rejected: records.filter((record) => record.status === "rejected").length,
+      superseded: records.filter((record) => record.status === "superseded").length,
+      applied: appliedOverrideIds.size,
+      rejectedAtApplication: crosswalk.overrideApplications.filter((decision) => decision.considered && !decision.applied).length,
+    },
+    resolutionPriority: [
+      "stable GSIS identity",
+      "unambiguous provider crosswalk",
+      "approved reviewed override",
+      "deterministic fallback with warning",
+      "unresolved/excluded",
+    ],
+    applications: crosswalk.overrideApplications,
+    pendingSimulation: simulatePendingOverrides
+      ? buildPendingOverrideSimulation({ crosswalk, teams, reviewedOverrides, targetSeason })
+      : { enabled: false, simulationOnly: true },
+  };
+}
+
+function buildIdentityReview({ dataset, crosswalk, teams, identityAttributionAccounting, snapResolutionDiagnostics = null, pfrToGsisCrosswalkCoverage = null, reviewedOverridesSummary = null }) {
+  const conflictKeys = providerConflictKeys(crosswalk.conflicts);
+  const teamsById = new Map(teams.map((team) => [team.teamId, team]));
+  const reviewRecords = crosswalk.entries
+    .map((entry) => {
+      const record = buildReviewRecord(entry, conflictKeys);
+      return {
+        ...record,
+        affectedProduction: metricImpactForEntry(entry, teamsById),
+      };
+    })
+    .filter((record) => record.severity !== "info" || record.reasonCategories.some((category) => category !== IDENTITY_REASON_CATEGORIES.other))
+    .sort((a, b) => a.severity.localeCompare(b.severity) || a.canonicalPersonId.localeCompare(b.canonicalPersonId));
+  const criticalConflicts = crosswalk.conflicts.map((conflict) => diagnoseProviderConflict(conflict, crosswalk));
+  const identityQualityByTeam = buildIdentityQualitySummary({ teams, reviewRecords, crosswalk, identityAttributionAccounting });
+  return {
+    schemaVersion: "nflverse-identity-review-v0.2",
+    auditOnly: true,
+    auditLabel: "Phase 5C-2F nflverse identity review",
+    generatedAt: dataset.generatedAt,
+    sourceCutoff: dataset.sourceCutoff,
+    targetSeason: dataset.targetSeason,
+    priorSeason: dataset.priorSeason,
+    teamScope: dataset.teamScope,
+    sampleTeams: teams.map((team) => team.abbr),
+    reasonTaxonomy: IDENTITY_REASON_CATEGORIES,
+    resolutionPolicy: IDENTITY_RESOLUTION_POLICY,
+    unresolvedIdentities: reviewRecords.filter((record) => record.resolutionStatus === "excluded" || record.severity === "critical"),
+    warningLevelIdentities: reviewRecords.filter((record) => record.resolutionStatus === "warning_included"),
+    automaticallyResolvedIdentities: reviewRecords.filter((record) => record.resolutionStatus === "automatically_resolved"),
+    criticalConflicts,
+    reviewedIdentityOverrides: reviewedOverridesSummary,
+    providerCrosswalkDiagnostics: buildProviderCrosswalkDiagnostics(crosswalk),
+    identityAttributionAccounting,
+    snapResolutionDiagnostics,
+    pfrToGsisCrosswalkCoverage,
+    productionImpactByTeam: summarizeImpactsByTeam(reviewRecords),
+    identityQualityByTeam,
+    all32ExpansionGateEvaluation: buildExpansionGateEvaluation(identityQualityByTeam, criticalConflicts.length),
+    migrationNotes: [
+      "v0.2 separates retained share from identity-attribution coverage.",
+      "Retained share is descriptive roster continuity and is not used by identity expansion gates.",
+      "Resolved attribution, accounted-for coverage, unresolved share, and source completeness are reported separately.",
+      "Phase 5C-2G adds snap-resolution funnel diagnostics and PFR-to-GSIS coverage without lowering thresholds.",
+    ],
+    sourceLineageCautions: [
+      "nflverse snap_counts are PFR-derived; review redistribution terms before production use.",
+      "No fuzzy matching is used to override provider-ID conflicts.",
+    ],
+  };
+}
+
+function sourceRecord(dataset, source) {
+  const meta = NFLVERSE_DATASETS[dataset];
+  return {
+    sourceId: meta.sourceId,
+    sourceName: meta.sourceName,
+    sourceType: "public_source",
+    sourcePath: source.cachePath ?? source.inputPath ?? source.filename,
+    cachePath: source.cachePath,
+    sourceUpdatedAt: source.sourceUpdatedAt,
+    retrievedAt: source.retrievedAt,
+    sourceUrl: source.sourceUrl,
+    providerVersion: null,
+    verified: true,
+    redistributionStatus: source.pfrDerived ? "PFR-derived via nflverse; review redistribution terms before public production use." : "Public nflverse release; attribution required.",
+    usageNotes: source.pfrDerived ? "Snap counts are PFR-derived according to nflreadr documentation." : "Read-only nflverse public release.",
+  };
+}
+
+function compareManualEvidence({ team, rosterRows, manualDataset }) {
+  const manual = manualDataset?.records?.find((record) => record.teamId === team.id || record.abbr === team.abbr);
+  if (!manual) {
+    return { corroboratedFacts: [], generatedFactsAbsentFromManual: [], manualFactsNotCoveredByNflverse: ["manual offseason record unavailable"], conflicts: [], unsupportedCategories: [] };
+  }
+  const rosterNames = new Set(rosterRows.map((row) => row.normalizedName));
+  const corroboratedFacts = [];
+  const manualFactsNotCoveredByNflverse = [];
+  const conflicts = [];
+  for (const item of manual.personnel ?? []) {
+    if (rosterNames.has(item.normalizedPlayerName)) {
+      corroboratedFacts.push(`${item.playerName} appears on nflverse target roster; transaction type ${item.kind} not independently validated`);
+    } else {
+      manualFactsNotCoveredByNflverse.push(`${item.playerName} ${item.kind} not present in nflverse target roster sample`);
+    }
+  }
+  const manualNames = new Set((manual.personnel ?? []).map((item) => item.normalizedPlayerName));
+  const generatedFactsAbsentFromManual = rosterRows
+    .filter((row) => !manualNames.has(row.normalizedName))
+    .slice(0, 12)
+    .map((row) => `${row.name} present on nflverse target roster`);
+  return {
+    corroboratedFacts: corroboratedFacts.sort(),
+    generatedFactsAbsentFromManual: generatedFactsAbsentFromManual.sort(),
+    manualFactsNotCoveredByNflverse: [
+      ...manualFactsNotCoveredByNflverse,
+      "coaching continuity cannot be validated by approved nflverse 5C-2A inputs",
+      "transaction method/date cannot be validated by approved nflverse 5C-2A inputs",
+    ].sort(),
+    conflicts,
+    unsupportedCategories: ["coaching", "complete transaction log", "injury returns", "official QB starter status"],
+  };
+}
+
+export async function buildNflverseFourTeamAudit({
+  season,
+  priorSeason,
+  generatedAt,
+  sourceCutoff,
+  rosterSourcePath = null,
+  priorRosterSourcePath = null,
+  playerStatsSourcePath = null,
+  snapCountsSourcePath = null,
+  playersSourcePath = null,
+  rosterSourceUrl = null,
+  priorRosterSourceUrl = null,
+  playerStatsSourceUrl = null,
+  snapCountsSourceUrl = null,
+  playersSourceUrl = null,
+  cacheDir = null,
+  teamsJson,
+  teamAbbrs = null,
+  allTeams = false,
+  manualDataset = null,
+  reviewedIdentityOverrides = null,
+  simulatePendingOverrides = false,
+}) {
+  requireSeason(season, "season");
+  requireSeason(priorSeason, "priorSeason");
+  if (priorSeason !== season - 1) throw new Error("priorSeason must equal season - 1");
+  if (!generatedAt || Number.isNaN(Date.parse(generatedAt))) throw new Error("--generated-at must be a valid ISO timestamp");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(sourceCutoff)) throw new Error("--source-cutoff must be YYYY-MM-DD");
+
+  const cacheRoot = cacheDir ? resolve(cacheDir) : null;
+  const loadOptions = { retrievedAt: generatedAt };
+  const rosters = await loadNflverseDataset({
+    ...loadOptions,
+    dataset: "rosters",
+    season,
+    sourcePath: rosterSourcePath,
+    sourceUrl: rosterSourceUrl,
+    cacheDir: cacheRoot,
+  });
+  const priorRosters = await loadNflverseDataset({
+    ...loadOptions,
+    dataset: "priorRosters",
+    season: priorSeason,
+    sourcePath: priorRosterSourcePath,
+    sourceUrl: priorRosterSourceUrl,
+    cacheDir: cacheRoot,
+  });
+  const playerStats = await loadNflverseDataset({
+    ...loadOptions,
+    dataset: "playerStats",
+    season: priorSeason,
+    sourcePath: playerStatsSourcePath,
+    sourceUrl: playerStatsSourceUrl,
+    cacheDir: cacheRoot,
+  });
+  const snapCounts = await loadNflverseDataset({
+    ...loadOptions,
+    dataset: "snapCounts",
+    season: priorSeason,
+    sourcePath: snapCountsSourcePath,
+    sourceUrl: snapCountsSourceUrl,
+    cacheDir: cacheRoot,
+  });
+  const players = playersSourcePath || playersSourceUrl
+    ? await loadNflverseDataset({
+        ...loadOptions,
+        dataset: "players",
+        season: priorSeason,
+        sourcePath: playersSourcePath,
+        sourceUrl: playersSourceUrl,
+        cacheDir: cacheRoot,
+      })
+    : null;
+
+  const maps = canonicalMaps(teamsJson);
+  const teamScope = resolveNflverseAuditTeamScope({ teamsJson, teamAbbrs, allTeams });
+  const auditTeams = teamScope.teamAbbrs.map((abbr) => maps.byAbbr.get(abbr));
+  if (auditTeams.some((team) => !team)) throw new Error("teams.json is missing an audit team");
+  const rosterRows = normalizeNflverseRosterRows(rosters.rows, {
+    teamsJson,
+    allowedTeamAbbrs: teamScope.teamAbbrs,
+    season,
+    sourceId: NFLVERSE_DATASETS.rosters.sourceId,
+  });
+  const priorRosterRows = normalizeNflverseRosterRows(priorRosters.rows, {
+    teamsJson,
+    allowedTeamAbbrs: teamScope.teamAbbrs,
+    season: priorSeason,
+    sourceId: NFLVERSE_DATASETS.priorRosters.sourceId,
+  });
+  const statRows = normalizeNflversePlayerStatRows(playerStats.rows, {
+    teamsJson,
+    allowedTeamAbbrs: teamScope.teamAbbrs,
+    season: priorSeason,
+    sourceId: NFLVERSE_DATASETS.playerStats.sourceId,
+  });
+  const snapRows = normalizeNflverseSnapRows(snapCounts.rows, {
+    teamsJson,
+    allowedTeamAbbrs: teamScope.teamAbbrs,
+    season: priorSeason,
+    sourceId: NFLVERSE_DATASETS.snapCounts.sourceId,
+  });
+  const supplementalPlayerRows = players
+    ? normalizeNflversePlayerMappingRows(players.rows, {
+        teamsJson,
+        sourceId: NFLVERSE_DATASETS.players.sourceId,
+      })
+    : [];
+  const knownRowIds = new Set([...rosterRows, ...priorRosterRows, ...statRows, ...snapRows, ...supplementalPlayerRows].map((row) => row.rowId));
+  const overrideValidation = reviewedIdentityOverrides
+    ? validateReviewedIdentityOverrides(reviewedIdentityOverrides, {
+        targetSeason: season,
+        priorSeason,
+        sourceManifests: [rosters, priorRosters, playerStats, snapCounts, players].filter(Boolean),
+        knownRowIds,
+      })
+    : { valid: true, errors: [], warnings: [] };
+  if (!overrideValidation.valid) {
+    const detail = overrideValidation.errors.map((error) => `${error.code}: ${error.message}`).join("; ");
+    throw new Error(`reviewed identity overrides invalid: ${detail}`);
+  }
+
+  const diagnostics = identityDiagnostics(rosterRows);
+  const sourceIds = {
+    rosters: NFLVERSE_DATASETS.rosters.sourceId,
+    priorRosters: NFLVERSE_DATASETS.priorRosters.sourceId,
+    playerStats: NFLVERSE_DATASETS.playerStats.sourceId,
+    snapCounts: NFLVERSE_DATASETS.snapCounts.sourceId,
+    players: NFLVERSE_DATASETS.players.sourceId,
+  };
+  const crosswalk = buildIdentityCrosswalk({
+    targetRosterRows: rosterRows,
+    priorRosterRows,
+    statRows,
+    snapRows,
+    supplementalPlayerRows,
+    sourceIds,
+    reviewedOverrides: reviewedIdentityOverrides,
+    targetSeason: season,
+  });
+  const identityCoverageByTeam = buildIdentityCoverageByTeam({ teams: auditTeams, crosswalk });
+  const teams = auditTeams.map((team) =>
+    buildTeamRecord({
+      team,
+      rosterRows: rosterRows.filter((row) => row.teamId === team.id),
+      statRows,
+      snapRows,
+      sourceIds,
+      identityCoverage: identityCoverageByTeam[team.id],
+    }),
+  );
+  teams.forEach((team) => {
+    team.conflicts = [...diagnostics.conflicts, ...crosswalk.conflicts].filter((conflict) => conflict.message.includes(team.teamId));
+  });
+  const unmatchedProductionSummary = buildUnmatchedProductionSummary(teams);
+  const reviewedOverridesSummary = buildReviewedOverridesSummary({
+    reviewedOverrides: reviewedIdentityOverrides,
+    validation: overrideValidation,
+    crosswalk,
+    teams,
+    targetSeason: season,
+    simulatePendingOverrides,
+  });
+  const identityAttributionAccounting = buildIdentityAttributionAccounting({ teams, crosswalk });
+  const snapResolutionDiagnostics = buildSnapResolutionDiagnostics({ teams, crosswalk, identityAttributionAccounting });
+  const pfrToGsisCrosswalkCoverage = buildPfrToGsisCoverage({ teams, crosswalk });
+  const sourceManifests = [rosters, priorRosters, playerStats, snapCounts, players].filter(Boolean);
+
+  const dataset = {
+    schemaVersion: PERSONNEL_EVIDENCE_SCHEMA_VERSION,
+    nflverseAuditSchemaVersion: NFLVERSE_AUDIT_SCHEMA_VERSION,
+    auditOnly: true,
+    auditLabel: "Phase 5C-2I nflverse personnel identity-attribution audit",
+    targetSeason: season,
+    priorSeason,
+    generatedAt,
+    sourceCutoff,
+    teamScope,
+    rosterEffectiveAt: generatedAt,
+    rosterState: "offseason",
+    generatorVersion: `${PERSONNEL_EVIDENCE_GENERATOR_VERSION}+${NFLVERSE_AUDIT_GENERATOR_VERSION}`,
+    sources: [
+      sourceRecord("rosters", rosters),
+      sourceRecord("priorRosters", priorRosters),
+      sourceRecord("playerStats", playerStats),
+      sourceRecord("snapCounts", snapCounts),
+      players ? sourceRecord("players", players) : null,
+    ].filter(Boolean),
+    completeness: {},
+    playerStatSourceDiagnosis: buildPlayerStatSourceDiagnosis({ priorSeason, playerStats }),
+    identityMatchSummary: {
+      teamCount: teams.length,
+      targetRosterPlayers: rosterRows.length,
+      priorRosterPlayers: priorRosterRows.length,
+      priorSeasonStatPlayers: statRows.length,
+      priorSeasonSnapRows: snapRows.length,
+      supplementalPlayersRows: supplementalPlayerRows.length,
+      providerPriority: ["stable source GSIS", "unique prior-roster PFR-to-GSIS", "approved reviewed override", "unique nflverse players PFR-to-GSIS", "other documented provider ID", "prior-roster name/team/position-group fallback"],
+      ...buildIdentityCrosswalkSummary(crosswalk),
+      warnings: [...new Set([...diagnostics.warnings, ...crosswalk.warnings])].sort(),
+      conflicts: [...diagnostics.conflicts, ...crosswalk.conflicts].sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
+    },
+    identityCoverageByTeam,
+    identityCrosswalk: crosswalk.entries,
+    reviewedIdentityOverrides: reviewedOverridesSummary,
+    identityAttributionAccounting,
+    snapResolutionDiagnostics,
+    pfrToGsisCrosswalkCoverage,
+    nflverseIdMappingFeasibility: {
+      datasetFamily: "players",
+      releaseUrl: "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv",
+      dictionaryUrl: "https://nflreadr.nflverse.com/articles/dictionary_players.html",
+      status: players ? "ingested_as_optional_supplemental_identity_source" : "candidate_supplement_not_supplied",
+      sourceUpdatedAt: players?.sourceUpdatedAt ?? null,
+      retrievedAt: players?.retrievedAt ?? null,
+      rowCount: players?.rowCount ?? 0,
+      checksum: players?.sha256 ?? null,
+      expectedUsefulFields: ["gsis_id", "display_name", "common_first_name", "first_name", "last_name", "short_name", "football_name", "suffix", "pfr_id", "espn_id", "sportradar_id", "yahoo_id", "sleeper_id", "position", "position_group", "latest_team", "status"],
+      usageNotes: "nflreadr documents the players dictionary with GSIS as primary key and PFR/ESPN/Sportradar IDs. latest_team is supplemental context only and is not used as proof of prior-season team membership.",
+    },
+    unmatchedPlayerSummary: Object.fromEntries(
+      teams.map((team) => [
+        team.teamId,
+        Object.fromEntries(
+          Object.entries(team.returningProduction.advisory.unmatchedPlayers).map(([metric, rows]) => [metric, rows.length]),
+        ),
+      ]),
+    ),
+    unmatchedProductionSummary,
+    retentionUnmatchedProductionSummary: unmatchedProductionSummary,
+    manualEvidenceComparison: Object.fromEntries(
+      auditTeams.map((team) => [
+        team.id,
+        compareManualEvidence({
+          team,
+          rosterRows: rosterRows.filter((row) => row.teamId === team.id),
+          manualDataset,
+        }),
+      ]),
+    ),
+    warnings: [
+      "Audit-only artifact; not imported by production application code.",
+      "nflverse audit v0.2 separates retained share from identity-attribution coverage; retained share is not an identity expansion gate.",
+      "nflverse rosters prove roster presence at cutoff, not transaction method/date.",
+      "nflverse snap_counts are PFR-derived; review redistribution terms before production use.",
+      ...diagnostics.warnings,
+      ...crosswalk.warnings,
+      ...overrideValidation.warnings.map((warning) => warning.message),
+    ].sort(),
+    conflicts: [...diagnostics.conflicts, ...crosswalk.conflicts].sort((a, b) => a.conflictId.localeCompare(b.conflictId)),
+    teams,
+  };
+  dataset.completenessEvaluation = evaluatePersonnelCompleteness(dataset, teamsJson, {
+    asOfDate: sourceCutoff,
+    maxSourceAgeDays: 365,
+  });
+  dataset.identityReview = buildIdentityReview({
+    dataset,
+    crosswalk,
+    teams,
+    identityAttributionAccounting,
+    snapResolutionDiagnostics,
+    pfrToGsisCrosswalkCoverage,
+    reviewedOverridesSummary,
+  });
+  dataset.teamLevelAuditResults = buildTeamLevelAuditResults({
+    teams,
+    identityAttributionAccounting,
+    identityQualityByTeam: dataset.identityReview.identityQualityByTeam,
+    gateEvaluation: dataset.identityReview.all32ExpansionGateEvaluation,
+  });
+  dataset.rankedUnresolvedIdentityQueue = buildRankedUnresolvedQueue({ teams, crosswalk, identityAttributionAccounting });
+  dataset.providerConflictReview = buildProviderConflictReview({
+    identityReview: dataset.identityReview,
+    reviewedOverridesSummary,
+    crosswalk,
+  });
+  dataset.leagueSummary = buildLeagueAuditSummary({
+    dataset,
+    teams,
+    identityAttributionAccounting,
+    identityReview: dataset.identityReview,
+    sourceManifests,
+    rankedUnresolvedQueue: dataset.rankedUnresolvedIdentityQueue,
+  });
+  const validation = validatePersonnelEvidenceDataset(dataset, teamsJson, { requireAllTeams: false });
+  const summaryJson = toNflJsonFileString(dataset.leagueSummary);
+  return {
+    dataset,
+    validation,
+    sourceManifests,
+    json: toNflJsonFileString(dataset),
+    summary: dataset.leagueSummary,
+    summaryJson,
+    identityReview: dataset.identityReview,
+    identityReviewJson: toNflJsonFileString(dataset.identityReview),
+  };
+}
+
+export const buildNflversePersonnelAudit = buildNflverseFourTeamAudit;
+
+export function assertNonProductionOutput(outputPath, season) {
+  const normalized = resolve(outputPath).replace(/\\/g, "/").toLowerCase();
+  const forbidden = `/public/data/nfl/${season}/personnel-evidence.json`;
+  if (normalized.endsWith(forbidden) || normalized.includes("/public/data/nfl/")) {
+    throw new Error("refusing to write production NFL data from nflverse audit");
+  }
+}

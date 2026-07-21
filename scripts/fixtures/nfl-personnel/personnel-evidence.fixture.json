@@ -1,0 +1,1067 @@
+{
+  "schemaVersion": "nfl-personnel-evidence-v0.1",
+  "targetSeason": 2026,
+  "priorSeason": 2025,
+  "generatedAt": "2026-07-17T12:00:00.000Z",
+  "sourceCutoff": "2026-07-17",
+  "generatorVersion": "nfl-personnel-generator-v0.1",
+  "sources": [
+    {
+      "sourceId": "fixture-transactions",
+      "sourceName": "Synthetic fixture transactions",
+      "sourceType": "fixture",
+      "sourcePath": "scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json",
+      "sourceUpdatedAt": "2026-07-17",
+      "retrievedAt": null,
+      "sourceUrl": null,
+      "providerVersion": null,
+      "verified": true,
+      "redistributionStatus": "fixture-only",
+      "usageNotes": "Synthetic test data only; not production NFL evidence."
+    },
+    {
+      "sourceId": "fixture-production",
+      "sourceName": "Synthetic fixture returning production",
+      "sourceType": "fixture",
+      "sourcePath": "scripts/fixtures/nfl-personnel/personnel-evidence.fixture.json",
+      "sourceUpdatedAt": "2026-07-17",
+      "retrievedAt": null,
+      "sourceUrl": null,
+      "providerVersion": null,
+      "verified": true,
+      "redistributionStatus": "fixture-only",
+      "usageNotes": "Synthetic retained-production data only."
+    }
+  ],
+  "completeness": {
+    "teamCount": 3,
+    "transactionsThroughCutoff": false,
+    "returningProductionComplete": false
+  },
+  "warnings": [
+    "Synthetic fixture intentionally covers only three teams."
+  ],
+  "conflicts": [
+    {
+      "conflictId": "fixture-conflict-expected-role",
+      "severity": "warning",
+      "category": "transaction",
+      "message": "Fixture keeps conflicting expected-role context visible."
+    }
+  ],
+  "teams": [
+    {
+      "teamId": "nfl-buf",
+      "abbr": "buf",
+      "slug": "buffalo-bills",
+      "name": "Buffalo Bills",
+      "quarterbackContinuity": {
+        "status": "returning_starter",
+        "player": {
+          "playerId": "fixture-player-buf-qb",
+          "providerId": "fixture-player-buf-qb",
+          "playerName": "Fixture Quarterback Sr.",
+          "normalizedName": "fixture quarterback",
+          "position": "QB"
+        },
+        "effectiveDate": "2026-07-17",
+        "sourceRefs": [
+          {
+            "sourceId": "fixture-transactions",
+            "sourceRowId": "qb-buf"
+          }
+        ],
+        "evidenceStatus": "verified",
+        "notes": "Synthetic returning starter fixture."
+      },
+      "coachingContinuity": {
+        "headCoach": {
+          "status": "returning",
+          "coachName": "Fixture Head Coach",
+          "priorRole": "Head coach",
+          "effectiveDate": "2026-01-15",
+          "schemeChange": null,
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-buf-hc"
+            }
+          ],
+          "evidenceStatus": "verified"
+        },
+        "offensiveCoordinator": {
+          "status": "returning",
+          "coachName": "Fixture OC",
+          "priorRole": "Offensive coordinator",
+          "effectiveDate": "2026-01-15",
+          "schemeChange": null,
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-buf-oc"
+            }
+          ],
+          "evidenceStatus": "verified"
+        },
+        "defensiveCoordinator": {
+          "status": "returning",
+          "coachName": "Fixture DC",
+          "priorRole": "Defensive coordinator",
+          "effectiveDate": "2026-01-15",
+          "schemeChange": null,
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-buf-dc"
+            }
+          ],
+          "evidenceStatus": "verified"
+        }
+      },
+      "returningProduction": {
+        "metrics": {
+          "offensiveSnaps": {
+            "value": 0.8,
+            "numerator": 800,
+            "denominator": 1000,
+            "coverageComplete": true,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-off-snaps"
+              }
+            ],
+            "warnings": []
+          },
+          "defensiveSnaps": {
+            "value": null,
+            "numerator": 450,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-def-snaps"
+              }
+            ],
+            "warnings": [
+              "Synthetic fixture omits denominator."
+            ]
+          },
+          "starts": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-starts"
+              }
+            ],
+            "warnings": []
+          },
+          "qbPassAttempts": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-qb-attempts"
+              }
+            ],
+            "warnings": []
+          },
+          "carries": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-carries"
+              }
+            ],
+            "warnings": []
+          },
+          "rushingYards": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-rush-yards"
+              }
+            ],
+            "warnings": []
+          },
+          "targets": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-targets"
+              }
+            ],
+            "warnings": []
+          },
+          "receptions": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-receptions"
+              }
+            ],
+            "warnings": []
+          },
+          "receivingYards": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-receiving-yards"
+              }
+            ],
+            "warnings": []
+          },
+          "offensiveLineSnaps": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-ol-snaps"
+              }
+            ],
+            "warnings": []
+          },
+          "sacks": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-sacks"
+              }
+            ],
+            "warnings": []
+          },
+          "pressures": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-pressures"
+              }
+            ],
+            "warnings": []
+          },
+          "defensiveBackSnaps": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "buf-db-snaps"
+              }
+            ],
+            "warnings": []
+          }
+        }
+      },
+      "transactions": [
+        {
+          "transactionId": "fixture-trade-route-buf-departure",
+          "movementId": "fixture-multi-team-trade-route",
+          "type": "trade_departure",
+          "player": {
+            "playerId": "fixture-player-route",
+            "providerId": "fixture-player-route",
+            "playerName": "Route Player Jr.",
+            "normalizedName": "route player",
+            "position": "WR"
+          },
+          "position": "WR",
+          "fromTeamId": "nfl-buf",
+          "toTeamId": "nfl-mia",
+          "transactionDate": "2026-03-11",
+          "expectedRole": null,
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "trade-route-1"
+            }
+          ],
+          "notes": "Synthetic first leg of a multi-team trade."
+        },
+        {
+          "transactionId": "fixture-release-signing-buf-addition",
+          "type": "free_agent_signing",
+          "player": {
+            "playerId": "fixture-player-release",
+            "providerId": "fixture-player-release",
+            "playerName": "Released Later-Signed",
+            "normalizedName": "released later signed",
+            "position": "CB"
+          },
+          "position": "CB",
+          "fromTeamId": null,
+          "toTeamId": "nfl-buf",
+          "transactionDate": "2026-04-05",
+          "expectedRole": "depth",
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "release-sign-2"
+            }
+          ],
+          "notes": "Synthetic signing after prior release."
+        },
+        {
+          "transactionId": "fixture-samename-buf",
+          "type": "free_agent_signing",
+          "player": {
+            "playerId": "fixture-player-same-a",
+            "providerId": "fixture-player-same-a",
+            "playerName": "Alex Same",
+            "normalizedName": "alex same",
+            "position": "LB"
+          },
+          "position": "LB",
+          "fromTeamId": null,
+          "toTeamId": "nfl-buf",
+          "transactionDate": "2026-05-01",
+          "expectedRole": null,
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "same-name-a"
+            }
+          ],
+          "notes": "Same display name, protected by provider ID."
+        }
+      ],
+      "injuryReturns": [
+        {
+          "player": {
+            "playerId": "fixture-player-injury",
+            "providerId": "fixture-player-injury",
+            "playerName": "Availability Player",
+            "normalizedName": "availability player",
+            "position": "RB"
+          },
+          "position": "RB",
+          "priorTeamId": "nfl-buf",
+          "gamesMissed": 9,
+          "availabilityCategory": "injured_reserve",
+          "expectedReturnStatus": "unknown",
+          "priorRole": "rotation",
+          "evidenceStatus": "partially_verified",
+          "sourceDate": "2026-07-17",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "injury-return-1"
+            }
+          ],
+          "notes": "No medical readiness inferred."
+        }
+      ],
+      "completeness": {
+        "transactionsThroughCutoff": false
+      },
+      "warnings": [],
+      "conflicts": []
+    },
+    {
+      "teamId": "nfl-mia",
+      "abbr": "mia",
+      "slug": "miami-dolphins",
+      "name": "Miami Dolphins",
+      "quarterbackContinuity": {
+        "status": "open_competition",
+        "player": null,
+        "effectiveDate": "2026-07-17",
+        "sourceRefs": [
+          {
+            "sourceId": "fixture-transactions",
+            "sourceRowId": "qb-mia"
+          }
+        ],
+        "evidenceStatus": "verified",
+        "notes": "Synthetic open competition fixture."
+      },
+      "coachingContinuity": {
+        "headCoach": {
+          "status": "new",
+          "coachName": "Fixture New Coach",
+          "priorRole": "Fixture coordinator",
+          "effectiveDate": "2026-02-01",
+          "schemeChange": "Fixture source says offensive terminology changed.",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-mia-hc"
+            }
+          ],
+          "evidenceStatus": "verified"
+        },
+        "offensiveCoordinator": {
+          "status": "new",
+          "coachName": "Fixture New OC",
+          "priorRole": "Fixture QB coach",
+          "effectiveDate": "2026-02-01",
+          "schemeChange": "Fixture source says offensive terminology changed.",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-mia-oc"
+            }
+          ],
+          "evidenceStatus": "verified"
+        },
+        "defensiveCoordinator": {
+          "status": "returning",
+          "coachName": "Fixture Returning DC",
+          "priorRole": "Defensive coordinator",
+          "effectiveDate": "2026-02-01",
+          "schemeChange": null,
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-mia-dc"
+            }
+          ],
+          "evidenceStatus": "verified"
+        }
+      },
+      "returningProduction": {
+        "metrics": {
+          "offensiveSnaps": {
+            "value": 0.5,
+            "numerator": 500,
+            "denominator": 1000,
+            "coverageComplete": true,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-off-snaps"
+              }
+            ],
+            "warnings": []
+          },
+          "defensiveSnaps": {
+            "value": 0.7,
+            "numerator": 700,
+            "denominator": 1000,
+            "coverageComplete": true,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-def-snaps"
+              }
+            ],
+            "warnings": []
+          },
+          "starts": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-starts"
+              }
+            ],
+            "warnings": []
+          },
+          "qbPassAttempts": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-qb-attempts"
+              }
+            ],
+            "warnings": []
+          },
+          "carries": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-carries"
+              }
+            ],
+            "warnings": []
+          },
+          "rushingYards": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-rush-yards"
+              }
+            ],
+            "warnings": []
+          },
+          "targets": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-targets"
+              }
+            ],
+            "warnings": []
+          },
+          "receptions": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-receptions"
+              }
+            ],
+            "warnings": []
+          },
+          "receivingYards": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-receiving-yards"
+              }
+            ],
+            "warnings": []
+          },
+          "offensiveLineSnaps": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-ol-snaps"
+              }
+            ],
+            "warnings": []
+          },
+          "sacks": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-sacks"
+              }
+            ],
+            "warnings": []
+          },
+          "pressures": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-pressures"
+              }
+            ],
+            "warnings": []
+          },
+          "defensiveBackSnaps": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "mia-db-snaps"
+              }
+            ],
+            "warnings": []
+          }
+        }
+      },
+      "transactions": [
+        {
+          "transactionId": "fixture-trade-route-mia-addition",
+          "movementId": "fixture-multi-team-trade-route",
+          "type": "trade_addition",
+          "player": {
+            "playerId": "fixture-player-route",
+            "providerId": "fixture-player-route",
+            "playerName": "Route Player Jr.",
+            "normalizedName": "route player",
+            "position": "WR"
+          },
+          "position": "WR",
+          "fromTeamId": "nfl-buf",
+          "toTeamId": "nfl-mia",
+          "transactionDate": "2026-03-11",
+          "expectedRole": null,
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "trade-route-2"
+            }
+          ],
+          "notes": "Synthetic middle leg of a multi-team trade."
+        },
+        {
+          "transactionId": "fixture-trade-route-mia-departure",
+          "movementId": "fixture-multi-team-trade-route",
+          "type": "trade_departure",
+          "player": {
+            "playerId": "fixture-player-route",
+            "providerId": "fixture-player-route",
+            "playerName": "Route Player Jr.",
+            "normalizedName": "route player",
+            "position": "WR"
+          },
+          "position": "WR",
+          "fromTeamId": "nfl-mia",
+          "toTeamId": "nfl-ne",
+          "transactionDate": "2026-03-12",
+          "expectedRole": null,
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "trade-route-3"
+            }
+          ],
+          "notes": "Synthetic second leg of a multi-team trade."
+        },
+        {
+          "transactionId": "fixture-retirement-mia",
+          "type": "retirement",
+          "player": {
+            "playerId": "fixture-player-retire",
+            "providerId": "fixture-player-retire",
+            "playerName": "Retiring Player",
+            "normalizedName": "retiring player",
+            "position": "S"
+          },
+          "position": "S",
+          "fromTeamId": "nfl-mia",
+          "toTeamId": null,
+          "transactionDate": "2026-06-01",
+          "expectedRole": null,
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "retirement-1"
+            }
+          ],
+          "notes": "Synthetic retirement."
+        },
+        {
+          "transactionId": "fixture-samename-mia",
+          "type": "free_agent_signing",
+          "player": {
+            "playerId": "fixture-player-same-b",
+            "providerId": "fixture-player-same-b",
+            "playerName": "Alex Same",
+            "normalizedName": "alex same",
+            "position": "LB"
+          },
+          "position": "LB",
+          "fromTeamId": null,
+          "toTeamId": "nfl-mia",
+          "transactionDate": "2026-05-02",
+          "expectedRole": null,
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "same-name-b"
+            }
+          ],
+          "notes": "Same display name, separate provider ID."
+        }
+      ],
+      "injuryReturns": [],
+      "completeness": {
+        "transactionsThroughCutoff": false
+      },
+      "warnings": [],
+      "conflicts": []
+    },
+    {
+      "teamId": "nfl-ne",
+      "abbr": "ne",
+      "slug": "new-england-patriots",
+      "name": "New England Patriots",
+      "quarterbackContinuity": {
+        "status": "unknown",
+        "player": null,
+        "effectiveDate": null,
+        "sourceRefs": [
+          {
+            "sourceId": "fixture-transactions",
+            "sourceRowId": "qb-ne"
+          }
+        ],
+        "evidenceStatus": "unverified",
+        "notes": "Synthetic unknown QB state."
+      },
+      "coachingContinuity": {
+        "headCoach": {
+          "status": "returning",
+          "coachName": "Fixture NE Head Coach",
+          "priorRole": "Head coach",
+          "effectiveDate": "2026-01-15",
+          "schemeChange": null,
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-ne-hc"
+            }
+          ],
+          "evidenceStatus": "verified"
+        },
+        "offensiveCoordinator": {
+          "status": "unknown",
+          "coachName": null,
+          "priorRole": null,
+          "effectiveDate": null,
+          "schemeChange": null,
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-ne-oc"
+            }
+          ],
+          "evidenceStatus": "unverified"
+        },
+        "defensiveCoordinator": {
+          "status": "returning",
+          "coachName": "Fixture NE DC",
+          "priorRole": "Defensive coordinator",
+          "effectiveDate": "2026-01-15",
+          "schemeChange": null,
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "coach-ne-dc"
+            }
+          ],
+          "evidenceStatus": "verified"
+        }
+      },
+      "returningProduction": {
+        "metrics": {
+          "offensiveSnaps": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-off-snaps"
+              }
+            ],
+            "warnings": []
+          },
+          "defensiveSnaps": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-def-snaps"
+              }
+            ],
+            "warnings": []
+          },
+          "starts": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-starts"
+              }
+            ],
+            "warnings": []
+          },
+          "qbPassAttempts": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-qb-attempts"
+              }
+            ],
+            "warnings": []
+          },
+          "carries": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-carries"
+              }
+            ],
+            "warnings": []
+          },
+          "rushingYards": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-rush-yards"
+              }
+            ],
+            "warnings": []
+          },
+          "targets": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-targets"
+              }
+            ],
+            "warnings": []
+          },
+          "receptions": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-receptions"
+              }
+            ],
+            "warnings": []
+          },
+          "receivingYards": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-receiving-yards"
+              }
+            ],
+            "warnings": []
+          },
+          "offensiveLineSnaps": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-ol-snaps"
+              }
+            ],
+            "warnings": []
+          },
+          "sacks": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-sacks"
+              }
+            ],
+            "warnings": []
+          },
+          "pressures": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-pressures"
+              }
+            ],
+            "warnings": []
+          },
+          "defensiveBackSnaps": {
+            "value": null,
+            "numerator": null,
+            "denominator": null,
+            "coverageComplete": false,
+            "sourceRefs": [
+              {
+                "sourceId": "fixture-production",
+                "sourceRowId": "ne-db-snaps"
+              }
+            ],
+            "warnings": []
+          }
+        }
+      },
+      "transactions": [
+        {
+          "transactionId": "fixture-trade-route-ne-addition",
+          "movementId": "fixture-multi-team-trade-route",
+          "type": "trade_addition",
+          "player": {
+            "playerId": "fixture-player-route",
+            "providerId": "fixture-player-route",
+            "playerName": "Route Player Jr.",
+            "normalizedName": "route player",
+            "position": "WR"
+          },
+          "position": "WR",
+          "fromTeamId": "nfl-mia",
+          "toTeamId": "nfl-ne",
+          "transactionDate": "2026-03-12",
+          "expectedRole": "rotation",
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "trade-route-4"
+            },
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "trade-route-4"
+            }
+          ],
+          "notes": "Synthetic final leg with duplicate source ref."
+        },
+        {
+          "transactionId": "fixture-release-signing-ne-release",
+          "type": "release",
+          "player": {
+            "playerId": "fixture-player-release",
+            "providerId": "fixture-player-release",
+            "playerName": "Released Later-Signed",
+            "normalizedName": "released later signed",
+            "position": "CB"
+          },
+          "position": "CB",
+          "fromTeamId": "nfl-ne",
+          "toTeamId": null,
+          "transactionDate": "2026-03-20",
+          "expectedRole": null,
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "release-sign-1"
+            }
+          ],
+          "notes": "Synthetic release before later signing."
+        },
+        {
+          "transactionId": "fixture-draft-ne",
+          "type": "draft_selection",
+          "player": {
+            "playerId": "fixture-player-rookie",
+            "providerId": "fixture-player-rookie",
+            "playerName": "Drafted Rookie",
+            "normalizedName": "drafted rookie",
+            "position": "T"
+          },
+          "position": "T",
+          "fromTeamId": null,
+          "toTeamId": "nfl-ne",
+          "transactionDate": "2026-04-25",
+          "expectedRole": "developmental",
+          "evidenceStatus": "verified",
+          "sourceRefs": [
+            {
+              "sourceId": "fixture-transactions",
+              "sourceRowId": "draft-1"
+            }
+          ],
+          "notes": "Synthetic draft selection remains unproven."
+        }
+      ],
+      "injuryReturns": [],
+      "completeness": {
+        "transactionsThroughCutoff": false
+      },
+      "warnings": [],
+      "conflicts": []
+    }
+  ]
+}
