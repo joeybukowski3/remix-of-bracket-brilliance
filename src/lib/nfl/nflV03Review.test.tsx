@@ -160,20 +160,31 @@ describe("NFL v0.3 hidden route and public isolation", () => {
     }
   });
 
-  it("allows Stage-1 artifact filenames only in the dedicated internal loader", () => {
+  it("allows review-only Stage-1 filenames only in the dedicated internal loader", () => {
+    const reviewOnly = ["final-eight-team-metrics.json", "context-flags.json", "manual-adjustments.json"];
     const references = sourceFiles(join(ROOT, "src"))
       .filter((path) => !/\.test\.tsx?$/.test(path))
-      .filter((path) => FILENAMES.some((filename) => readFileSync(path, "utf8").includes(filename)))
+      .filter((path) => reviewOnly.some((filename) => readFileSync(path, "utf8").includes(filename)))
       .map((path) => basename(path));
     expect(references).toEqual(["useNflV03Artifacts.ts"]);
   });
 
-  it("leaves the public preseason source and all public NFL consumers untouched by the feature diff", () => {
-    const changed = readFileSync(join(ROOT, ".git"), "utf8");
-    expect(changed).toContain("gitdir:");
+  it("allows public preseason/full-season filenames only in internal review and the public power board", () => {
+    const publicFiles = ["preseason-power-ratings.json", "full-season-team-metrics.json"];
+    const allowed = new Set(["useNflV03Artifacts.ts", "publicPowerRatings.ts"]);
+    const references = sourceFiles(join(ROOT, "src"))
+      .filter((path) => !/\.test\.tsx?$/.test(path))
+      .filter((path) => publicFiles.some((filename) => readFileSync(path, "utf8").includes(filename)))
+      .map((path) => basename(path));
+    expect(new Set(references)).toEqual(allowed);
+  });
+
+  it("keeps the hidden review page isolated from the public NFL layout and legacy preseason board", () => {
     const page = readFileSync(join(ROOT, "src", "pages", "NflV03Review.tsx"), "utf8");
     expect(page).not.toContain("nflPreseason2026");
     expect(page).not.toContain("NflPlatformLayout");
+    expect(page).not.toContain("useNflV03PublicPowerRatings");
+    expect(page).not.toContain("NFL_POWER_RATINGS");
   });
 
   it("declares exact noindex/nofollow metadata, warning copy, and responsive containment", () => {

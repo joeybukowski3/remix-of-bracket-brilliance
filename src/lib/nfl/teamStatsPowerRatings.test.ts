@@ -314,9 +314,10 @@ describe("sanity report (v0.2)", () => {
 });
 
 describe("public isolation", () => {
-  it("power-ratings.json is not imported/read by any page, component or hook", () => {
+  it("v0.2 power-ratings.json is not imported/read by any page, component or hook", () => {
     const dirs = ["src/pages", "src/components", "src/hooks"];
-    const internalV03Allowlist = new Set(["src/hooks/useNflV03Artifacts.ts"]);
+    // Match the v0.2 artifact filename only — not preseason-power-ratings.json (v0.3 public board).
+    const v02PowerRatingsFile = /(^|[^a-z-])power-ratings\.json\b/;
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
@@ -324,7 +325,7 @@ describe("public isolation", () => {
         if (entry.isDirectory()) walk(rel);
         else if (/\.(ts|tsx)$/.test(entry.name)) {
           const source = readFileSync(join(ROOT, rel), "utf-8");
-          if (/power-ratings/.test(source) && !internalV03Allowlist.has(rel)) offenders.push(rel);
+          if (v02PowerRatingsFile.test(source)) offenders.push(rel);
         }
       }
     };
