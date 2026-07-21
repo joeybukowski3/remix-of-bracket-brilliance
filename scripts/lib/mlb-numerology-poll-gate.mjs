@@ -70,6 +70,34 @@ export function resolveNumerologyPollReadiness({ plays = [], snapshot }) {
   return { readiness, selection };
 }
 
+/**
+ * Should plan-mlb-numerology-delivery.mjs actually write an artifact for
+ * this attempt? Used by both the automated poll (forced=false, always) and
+ * the manual/rescue workflows (forced=true, via --force).
+ *
+ * `forced` only ever widens WHEN an artifact may be built (bypassing the
+ * first-pitch-relative phase gate, readiness.ready) -- it can never widen
+ * WHAT counts as confirmed. `selection.confirmedCount` already reflects
+ * only plays that independently passed live lineup confirmation
+ * (selectConfirmedNumerologyPlays); this function has no way to inflate
+ * that number, forced or not. If confirmedCount is 0, shouldBuildArtifact
+ * is false regardless of `forced`.
+ *
+ * @param {object} params
+ * @param {object} params.readiness        result of resolveNumerologyPollReadiness
+ * @param {number} params.confirmedCount   selection.confirmedCount from the same call
+ * @param {boolean} [params.forced]        true only for an explicit manual/rescue --force run
+ * @returns {{ shouldBuildArtifact: boolean, selectionStatus: string }}
+ */
+export function resolveForcedArtifactDecision({ readiness, confirmedCount = 0, forced = false }) {
+  const hasConfirmedSelection = confirmedCount > 0;
+  const shouldBuildArtifact = Boolean(readiness?.ready) || (forced && hasConfirmedSelection);
+  return {
+    shouldBuildArtifact,
+    selectionStatus: readiness?.ready ? readiness.finalStatus : "FORCED_CONFIRMED_SELECTION",
+  };
+}
+
 /** Pure plan composition, mirroring createMlbXPollPlan's shape but for numerology's single content type. */
 export function createNumerologyPollPlan({ slateDate, alreadyDelivered = false, readiness } = {}) {
   return {

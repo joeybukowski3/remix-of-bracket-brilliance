@@ -4,7 +4,7 @@ import path from "node:path";
 import process from "node:process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
-import { buildCaption, validatePreviewReady } from "./lib/mlb-numerology-x-post-core.mjs";
+import { assertLivePostConfirmed, buildCaption, validatePreviewReady } from "./lib/mlb-numerology-x-post-core.mjs";
 import { checkDailyPostingLock, getForceRepostOverride, savePostReceipt } from "./lib/mlb-x-daily-lock.mjs";
 import { assertScheduledLiveGateEnabled } from "./lib/mlb-numerology-scheduled-gate.mjs";
 
@@ -327,6 +327,15 @@ async function main() {
     logFinalStatus("SKIPPED_NO_ELIGIBLE_ROWS");
     return;
   }
+
+  // Fail closed: crosses the x-post-preview.json file boundary on purpose
+  // -- it does not matter which process wrote the file or whether an
+  // artifact was available when it was written, only whether the file
+  // itself carries confirmationStatus="confirmed" (see assertLivePostConfirmed
+  // / buildXPostPreviewFromArtifact). --dry-run/--verify-account/--post-key-
+  // only are unaffected. A daily-lock force-repost override cannot bypass
+  // this -- it is a wholly separate mechanism checked much later below.
+  assertLivePostConfirmed(preview, mode);
 
   const result = buildCaption(preview);
   if (result.skipped) {

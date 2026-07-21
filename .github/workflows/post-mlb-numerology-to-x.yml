@@ -124,11 +124,50 @@ jobs:
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "Resolved mode=$MODE for event=${{ github.event_name }}"
 
+      # post/post-text-only ONLY -- dry-run and verify-account are
+      # unaffected and keep screenshotting/checking against whatever
+      # data_source the operator picked, no artifact required. A live post
+      # always requires a fresh, forced confirmed-lineup artifact; see
+      # assertLivePostConfirmed in mlb-numerology-x-post-core.mjs, which
+      # post-mlb-numerology-to-x.mjs checks and refuses to post without.
+      # --force builds one at any time of day by bypassing the first-pitch-
+      # relative phase gate -- it can NEVER bypass live lineup confirmation
+      # itself (plan-mlb-numerology-delivery.mjs's own header comment), and
+      # it is a wholly separate mechanism from force_repost below, which
+      # only ever overrides the daily *duplicate-post* lock, never this.
+      - name: Build confirmed selection artifact
+        id: build_artifact
+        if: >-
+          steps.dst_gate.outputs.should_run == 'true' &&
+          (steps.resolve_mode.outputs.mode == 'post' || steps.resolve_mode.outputs.mode == 'post-text-only')
+        run: node scripts/plan-mlb-numerology-delivery.mjs --force --plan-path=artifacts/mlb-numerology-poll-plan.json --artifact-path=artifacts/mlb-numerology-selection-artifact.json
+
+      - name: Fail closed if no players are currently confirmed
+        if: steps.build_artifact.outcome == 'success' && steps.build_artifact.outputs.ready != 'true'
+        run: |
+          echo "::error::No live-confirmed qualifying numerology players are available right now. Refusing to post -- try again closer to first pitch, once official lineups are posted."
+          exit 1
+
+      - name: Generate X preview from the confirmed artifact
+        if: steps.build_artifact.outputs.ready == 'true'
+        env:
+          NUMEROLOGY_SELECTION_ARTIFACT_PATH: artifacts/mlb-numerology-selection-artifact.json
+        run: node scripts/generate-mlb-numerology-x-preview.mjs
+
+      # Bundles the just-written local x-post-preview.json (confirmationStatus
+      # "confirmed") into dist/, so the local preview server below serves
+      # the exact confirmed selection -- never a stale or not-yet-deployed
+      # production copy.
+      - name: Build site for local export render
+        if: steps.build_artifact.outputs.ready == 'true'
+        run: npm run build
+
       - name: Run mode
         if: steps.dst_gate.outputs.should_run == 'true'
         shell: bash
         env:
-          NUMEROLOGY_X_DATA_SOURCE: ${{ github.event_name == 'workflow_dispatch' && inputs.data_source || 'production' }}
+          NUMEROLOGY_X_DATA_SOURCE: ${{ steps.build_artifact.outputs.ready == 'true' && 'local' || (github.event_name == 'workflow_dispatch' && inputs.data_source || 'production') }}
+          NUMEROLOGY_SELECTION_ARTIFACT_PATH: ${{ steps.build_artifact.outputs.ready == 'true' && 'artifacts/mlb-numerology-selection-artifact.json' || '' }}
           NUMEROLOGY_X_SCREENSHOT_URL: ${{ inputs.screenshot_url }}
           X_ALLOW_LIVE_POST: "true"
           NUMEROLOGY_X_SCHEDULED_LIVE_ENABLED: "true"
@@ -136,7 +175,11 @@ jobs:
         run: |
           echo "Mode: ${{ steps.resolve_mode.outputs.mode }}"
           echo "Data source: $NUMEROLOGY_X_DATA_SOURCE"
-          node scripts/post-mlb-numerology-to-x.mjs "--${{ steps.resolve_mode.outputs.mode }}"
+          if [ "${{ steps.build_artifact.outputs.ready }}" = "true" ]; then
+            node scripts/run-numerology-x-post-locally.mjs "--${{ steps.resolve_mode.outputs.mode }}"
+          else
+            node scripts/post-mlb-numerology-to-x.mjs "--${{ steps.resolve_mode.outputs.mode }}"
+          fi
 
       - name: Save duplicate-post state
         if: always() && steps.dst_gate.outputs.should_run == 'true'

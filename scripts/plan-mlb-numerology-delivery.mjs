@@ -19,6 +19,16 @@
  *
  * Writes GITHUB_OUTPUT: ready, slate_date, x_should_run, email_should_run,
  * plan_path, artifact_path.
+ *
+ * --force (used by the manual/rescue workflows' post/post-text-only and
+ * send paths -- never by the automated schedule): skips the "both already
+ * delivered" short-circuit and the first-pitch-relative readiness/phase
+ * gate, so an operator can build a fresh artifact at any time of day. It
+ * does NOT and cannot bypass live lineup confirmation itself -- the
+ * artifact is still built from resolveNumerologyPollReadiness's
+ * confirmed-lineup selection, and is only written when that selection is
+ * non-empty; if zero players are actually confirmed right now, --force
+ * produces no artifact and `ready=false`, exactly like the unforced path.
  */
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -27,7 +37,12 @@ import { buildDailyNumerologyCard, getTodayEt, loadJsonSafe } from "./lib/mlb-nu
 import { buildConfirmationSnapshot } from "./lib/mlb-x-confirmation-snapshot.mjs";
 import { computeNumerologySlateTiming } from "./lib/mlb-x-slate-timing.mjs";
 import { buildNumerologyArtifact } from "./lib/mlb-x-selection-artifact.mjs";
-import { createNumerologyPollPlan, getNumerologyDeliveryState, resolveNumerologyPollReadiness } from "./lib/mlb-numerology-poll-gate.mjs";
+import {
+  createNumerologyPollPlan,
+  getNumerologyDeliveryState,
+  resolveForcedArtifactDecision,
+  resolveNumerologyPollReadiness,
+} from "./lib/mlb-numerology-poll-gate.mjs";
 
 const ROOT = process.cwd();
 const NUMEROLOGY_DAILY_PATH = path.join(ROOT, "public", "data", "mlb", "numerology-daily.json");
@@ -37,6 +52,10 @@ function arg(name, fallback) {
   const prefix = `--${name}=`;
   const found = process.argv.find((value) => value.startsWith(prefix));
   return found ? found.slice(prefix.length) : fallback;
+}
+
+function flag(name) {
+  return process.argv.includes(`--${name}`);
 }
 
 function writeJsonOutput(filePath, value) {
@@ -59,10 +78,11 @@ async function main() {
   const emailReceiptPath = path.resolve(arg("email-receipt-path", "public/data/mlb/numerology/email-send-state.json"));
   const planPath = arg("plan-path", "artifacts/mlb-numerology-poll-plan.json");
   const artifactPath = arg("artifact-path", "artifacts/mlb-numerology-selection-artifact.json");
+  const forced = flag("force");
 
   const deliveryState = getNumerologyDeliveryState({ slateDate, xStateDir, emailReceiptPath });
 
-  if (deliveryState.bothDelivered) {
+  if (deliveryState.bothDelivered && !forced) {
     const plan = createNumerologyPollPlan({ slateDate, alreadyDelivered: true });
     writeJsonOutput(planPath, plan);
     emit({
@@ -91,25 +111,36 @@ async function main() {
   const snapshot = await buildConfirmationSnapshot({ date: slateDate, now, computeTiming: computeNumerologySlateTiming });
   const { readiness, selection } = resolveNumerologyPollReadiness({ plays: card.plays, snapshot });
 
+  // Forced mode bypasses the first-pitch-relative phase gate (readiness.ready)
+  // but never the confirmation selection itself -- see resolveForcedArtifactDecision's
+  // own doc comment for why `forced` cannot inflate confirmedCount.
+  const { shouldBuildArtifact, selectionStatus } = resolveForcedArtifactDecision({
+    readiness,
+    confirmedCount: selection.confirmedCount,
+    forced,
+  });
+
   const plan = createNumerologyPollPlan({ slateDate, alreadyDelivered: false, readiness });
   const planPathOut = writeJsonOutput(planPath, plan);
 
   let artifactPathOut = "";
-  if (readiness.ready) {
+  if (shouldBuildArtifact) {
     const artifact = buildNumerologyArtifact({
       slateDate,
       snapshot,
       selectedRows: selection.selected,
-      selectionStatus: readiness.finalStatus,
+      selectionStatus,
     });
     artifactPathOut = writeJsonOutput(artifactPath, artifact);
+  } else if (forced) {
+    console.error(`[mlb-numerology-poll] --force requested, but zero players are currently live-confirmed (reason=${readiness.finalStatus}). No artifact produced.`);
   }
 
   emit({
     slate_date: slateDate,
-    ready: readiness.ready,
-    x_should_run: readiness.ready && !deliveryState.xDelivered,
-    email_should_run: readiness.ready && !deliveryState.emailDelivered,
+    ready: shouldBuildArtifact,
+    x_should_run: shouldBuildArtifact && (forced || !deliveryState.xDelivered),
+    email_should_run: shouldBuildArtifact && (forced || !deliveryState.emailDelivered),
     plan_path: planPathOut,
     artifact_path: artifactPathOut,
   });

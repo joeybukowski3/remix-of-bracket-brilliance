@@ -1,3 +1,5 @@
+import { assertNumerologyArtifactConfirmed } from "./mlb-x-selection-artifact.mjs";
+
 export const NUMEROLOGY_EMAIL_SCORE_THRESHOLD = 65;
 export const NUMEROLOGY_EMAIL_MINIMUM_PLAYS = 3;
 
@@ -65,6 +67,11 @@ export function selectNumerologyEmailPlays(card, {
       mode: aboveThreshold.length >= minimumPlays ? "all-above-threshold" : "top-minimum",
       aboveThresholdCount: aboveThreshold.length,
       selectedCount: emailSelectedPlays.length,
+      // Never eligible for a live send -- see generate-mlb-numerology-
+      // email.mjs, which refuses --send whenever no artifact was provided
+      // (the only way this policy is ever produced) and sendEmail's own
+      // defense-in-depth re-check of this exact field.
+      confirmationStatus: "unconfirmed-preview",
     },
   };
 }
@@ -78,16 +85,16 @@ export function selectNumerologyEmailPlays(card, {
  * -- it exists specifically so email and X can never diverge on which
  * players qualify (both read the same frozen artifact).
  *
- * Throws if the artifact's slate date doesn't match the card's -- delivering
- * against a stale/mismatched artifact must fail loudly, never silently.
+ * Strictly validated via assertNumerologyArtifactConfirmed -- throws on a
+ * missing/malformed artifact, a slate-date mismatch, zero rows, any row
+ * missing live confirmation, a duplicate identity, or a stale confirmation
+ * snapshot. This is intentionally unconditional (not just for live sends):
+ * an artifact that was explicitly provided should always be strictly valid,
+ * preview or not -- only the complete ABSENCE of an artifact falls back to
+ * the unconfirmed preview policy above.
  */
-export function selectNumerologyEmailPlaysFromArtifact(card, artifact) {
-  if (!artifact || !Array.isArray(artifact.rows)) {
-    throw new Error("Numerology delivery artifact is missing or malformed (no rows[]).");
-  }
-  if (artifact.slateDate !== card?.date) {
-    throw new Error(`Numerology delivery artifact slate date ${artifact.slateDate} does not match card date ${card?.date}.`);
-  }
+export function selectNumerologyEmailPlaysFromArtifact(card, artifact, { now } = {}) {
+  assertNumerologyArtifactConfirmed(artifact, { slateDate: card?.date, now });
 
   const emailSelectedPlays = artifact.rows.map((row, index) => ({ ...row, isTopPlay: index === 0 }));
   const topPlay = emailSelectedPlays[0] ?? null;
@@ -101,6 +108,24 @@ export function selectNumerologyEmailPlaysFromArtifact(card, artifact) {
       selectedCount: emailSelectedPlays.length,
       artifactSelectionStatus: artifact.selectionStatus ?? null,
       artifactConfirmationAsOf: artifact.confirmationAsOf ?? null,
+      confirmationStatus: "confirmed",
     },
   };
+}
+
+/**
+ * Fail-closed gate for the email send step: throws unless the built
+ * card/selection's confirmationStatus is exactly "confirmed" (produced
+ * only by selectNumerologyEmailPlaysFromArtifact from a validated
+ * confirmed-lineup artifact). Independent of, and a defense-in-depth
+ * backstop to, generate-mlb-numerology-email.mjs's earlier shouldSend/
+ * artifactPath check -- a daily-lock force-repost override cannot bypass
+ * this, it is a wholly separate mechanism.
+ */
+export function assertEmailSelectionConfirmed(emailSelectionPolicy) {
+  if (emailSelectionPolicy?.confirmationStatus !== "confirmed") {
+    throw new Error(
+      `Live email send blocked: selection is not confirmed (confirmationStatus="${emailSelectionPolicy?.confirmationStatus ?? "unknown"}"). Refusing to send.`,
+    );
+  }
 }

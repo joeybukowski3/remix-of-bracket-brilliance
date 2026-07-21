@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { selectNumerologyEmailPlays, selectNumerologyEmailPlaysFromArtifact } from "../../../scripts/lib/mlb-numerology-email-selection.mjs";
+import { assertEmailSelectionConfirmed, selectNumerologyEmailPlays, selectNumerologyEmailPlaysFromArtifact } from "../../../scripts/lib/mlb-numerology-email-selection.mjs";
+import { buildNumerologyArtifact } from "../../../scripts/lib/mlb-x-selection-artifact.mjs";
+
+function confirmedPlay(player: string, score: number, overrides: Record<string, unknown> = {}) {
+  return { player, playerId: overrides.playerId ?? player, team: overrides.team ?? "NYM", opponent: overrides.opponent ?? "LAD", numerologyScore: score, liveConfirmed: true, ...overrides };
+}
+
+function snapshot(asOf = new Date().toISOString()) {
+  return { asOf, timing: { phase: "FINAL_CUTOFF", minutesUntilFirstPitch: 50, earliestGameTime: null } };
+}
 
 function play(player, score, overrides = {}) {
   return {
@@ -79,39 +88,64 @@ describe("selectNumerologyEmailPlays", () => {
 
 describe("selectNumerologyEmailPlaysFromArtifact", () => {
   const baseCard = card([play("Ignored Score-Threshold Play", 90)]);
+  const cardWithDate = { ...baseCard, date: "2026-07-20" };
+
+  function validArtifact(rows = [confirmedPlay("Confirmed One", 55), confirmedPlay("Confirmed Two", 52)]) {
+    return buildNumerologyArtifact({ slateDate: "2026-07-20", snapshot: snapshot(), selectedRows: rows, selectionStatus: "READY_CONFIRMED_SELECTIONS" });
+  }
 
   it("uses exactly the artifact's rows -- not an independent re-derivation from the card", () => {
-    const artifact = {
-      slateDate: undefined,
-      selectionStatus: "READY_CONFIRMED_SELECTIONS",
-      confirmationAsOf: "2026-07-20T18:00:00.000Z",
-      rows: [play("Confirmed One", 55), play("Confirmed Two", 52)],
-    };
-    const cardWithDate = { ...baseCard, date: "2026-07-20" };
-    artifact.slateDate = "2026-07-20";
-    const selected = selectNumerologyEmailPlaysFromArtifact(cardWithDate, artifact);
-    expect(selected.emailSelectedPlays.map((entry) => entry.player)).toEqual(["Confirmed One", "Confirmed Two"]);
+    const selected = selectNumerologyEmailPlaysFromArtifact(cardWithDate, validArtifact());
+    expect(selected.emailSelectedPlays.map((entry: { player: string }) => entry.player)).toEqual(["Confirmed One", "Confirmed Two"]);
     expect(selected.topPlay?.player).toBe("Confirmed One");
     expect(selected.emailSelectionPolicy.mode).toBe("confirmed-lineup-artifact");
+    expect(selected.emailSelectionPolicy.confirmationStatus).toBe("confirmed");
   });
 
-  it("throws when the artifact's slate date does not match the card's (stale/mismatched artifact must fail loudly)", () => {
-    const cardWithDate = { ...baseCard, date: "2026-07-20" };
-    const staleArtifact = { slateDate: "2026-07-19", rows: [play("Stale Play", 60)] };
-    expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, staleArtifact)).toThrow(/slate date/i);
+  it("throws when the artifact's slate date does not match the card's (wrong-slate artifact must fail closed)", () => {
+    const wrongSlateArtifact = { ...validArtifact(), slateDate: "2026-07-19" };
+    expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, wrongSlateArtifact)).toThrow(/slate date/i);
+  });
+
+  it("throws when the artifact's confirmation snapshot is stale (must fail closed)", () => {
+    const staleAsOf = new Date(Date.now() - 60 * 60_000).toISOString();
+    const staleArtifact = buildNumerologyArtifact({ slateDate: "2026-07-20", snapshot: snapshot(staleAsOf), selectedRows: [confirmedPlay("Stale Play", 60)], selectionStatus: "READY_CONFIRMED_SELECTIONS" });
+    expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, staleArtifact)).toThrow(/stale/i);
   });
 
   it("throws when the artifact is missing or malformed", () => {
-    const cardWithDate = { ...baseCard, date: "2026-07-20" };
     expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, null)).toThrow(/missing or malformed/i);
     expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, {})).toThrow(/missing or malformed/i);
   });
 
-  it("produces an empty selection (no topPlay) when the artifact has zero confirmed rows", () => {
-    const cardWithDate = { ...baseCard, date: "2026-07-20" };
-    const emptyArtifact = { slateDate: "2026-07-20", rows: [] };
-    const selected = selectNumerologyEmailPlaysFromArtifact(cardWithDate, emptyArtifact);
-    expect(selected.emailSelectedPlays).toEqual([]);
-    expect(selected.topPlay).toBeNull();
+  it("throws when the artifact has zero rows (empty artifact must block live delivery)", () => {
+    expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, validArtifact([]))).toThrow(/zero confirmed rows/i);
+  });
+
+  it("throws when any row in the artifact is missing the live-confirmed marker (an unconfirmed player must block live delivery)", () => {
+    const unconfirmedRow = { player: "Snuck In Unconfirmed", team: "NYM", opponent: "LAD", numerologyScore: 70 }; // no liveConfirmed
+    const artifact = validArtifact([confirmedPlay("Legit", 80), unconfirmedRow]);
+    expect(() => selectNumerologyEmailPlaysFromArtifact(cardWithDate, artifact)).toThrow(/without live lineup confirmation/i);
+  });
+});
+
+describe("assertEmailSelectionConfirmed (production-safety gate)", () => {
+  it("live email send with no artifact fails -- the unconfirmed score-threshold fallback is never sendable", () => {
+    const unconfirmedSelection = selectNumerologyEmailPlays(card([play("One", 82), play("Two", 76), play("Three", 71)]));
+    expect(unconfirmedSelection.emailSelectionPolicy.confirmationStatus).toBe("unconfirmed-preview");
+    expect(() => assertEmailSelectionConfirmed(unconfirmedSelection.emailSelectionPolicy)).toThrow(/not confirmed/i);
+  });
+
+  it("manual email rescue uses the confirmed selection: a valid artifact-driven selection is allowed to send", () => {
+    const confirmedSelection = selectNumerologyEmailPlaysFromArtifact(
+      { ...card([]), date: "2026-07-20" },
+      buildNumerologyArtifact({
+        slateDate: "2026-07-20",
+        snapshot: snapshot(),
+        selectedRows: [confirmedPlay("Confirmed One", 55)],
+        selectionStatus: "FORCED_CONFIRMED_SELECTION",
+      }),
+    );
+    expect(() => assertEmailSelectionConfirmed(confirmedSelection.emailSelectionPolicy)).not.toThrow();
   });
 });

@@ -73,7 +73,13 @@ export function selectConfirmedNumerologyPlays({
       unconfirmedExcludedCount += 1;
       continue;
     }
-    confirmed.push(play);
+    // Stamped onto every selected row (and therefore onto every artifact
+    // row built from it -- see buildNumerologyArtifact) so a downstream
+    // consumer about to drive a LIVE delivery can independently re-verify
+    // "this row actually passed live confirmation" without having to trust
+    // that whatever produced the artifact did so correctly. See
+    // assertNumerologyArtifactConfirmed in mlb-x-selection-artifact.mjs.
+    confirmed.push({ ...play, liveConfirmed: true });
   }
 
   return {

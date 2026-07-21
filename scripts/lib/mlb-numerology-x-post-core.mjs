@@ -6,7 +6,11 @@
  * No Node-only imports here on purpose: this module is imported directly by
  * both the Node generator script and the React export component/tests, so a
  * table row can never drift out of sync with what the graphic renders.
+ * assertNumerologyArtifactConfirmed is imported from mlb-x-selection-
+ * artifact.mjs, which is itself already browser-safe (the frontend imports
+ * decodeArtifact from that same file), so this constraint still holds.
  */
+import { assertNumerologyArtifactConfirmed } from "./mlb-x-selection-artifact.mjs";
 
 const MAX_OTHERS_DISPLAYED = 10;
 
@@ -86,8 +90,14 @@ function formatDayNumberLabel(dailyProfile) {
  * card.allQualifiedPlaysOver50) and buildXPostPreviewFromArtifact
  * (confirmed-lineup policy, `qualified` = the shared delivery artifact's
  * rows) so the output shape can never drift between the two policies.
+ *
+ * `confirmationStatus` ("confirmed" | "unconfirmed-preview") is written
+ * into the output so it survives being written to and re-read from
+ * x-post-preview.json -- post-mlb-numerology-to-x.mjs checks this exact
+ * field before allowing a live post/post-text-only, independent of
+ * whichever process actually built the file.
  */
-function buildXPostPreviewFromPlays(card, qualified) {
+function buildXPostPreviewFromPlays(card, qualified, confirmationStatus) {
   const topThree = qualified.slice(0, 3).map((play) => buildPlayCardSummary(play, { chipLimit: 5 }));
   const remaining = qualified.slice(3);
   const othersOver50 = remaining.slice(0, MAX_OTHERS_DISPLAYED).map((play) => {
@@ -126,13 +136,20 @@ function buildXPostPreviewFromPlays(card, qualified) {
     othersOver50TotalCount: remaining.length,
     othersOver50TruncatedCount: Math.max(0, remaining.length - othersOver50.length),
     totalQualifiedCount: qualified.length,
+    confirmationStatus,
   };
 }
 
-/** Original score-threshold policy: qualified = every play over the card's score threshold, independent of lineup confirmation. */
+/**
+ * Original score-threshold policy: qualified = every play over the card's
+ * score threshold, independent of lineup confirmation. Never eligible for
+ * a live post -- post-mlb-numerology-to-x.mjs refuses mode=post/post-text-
+ * only whenever preview.confirmationStatus !== "confirmed", which this
+ * policy never produces.
+ */
 export function buildXPostPreview(card) {
   const qualified = Array.isArray(card?.allQualifiedPlaysOver50) ? card.allQualifiedPlaysOver50 : [];
-  return buildXPostPreviewFromPlays(card, qualified);
+  return buildXPostPreviewFromPlays(card, qualified, "unconfirmed-preview");
 }
 
 /**
@@ -142,17 +159,15 @@ export function buildXPostPreview(card) {
  * This is what the automated X delivery path uses, so its preview can never
  * diverge from what the email delivery used for the same slate.
  *
- * Throws if the artifact's slate date doesn't match the card's -- posting
- * against a stale/mismatched artifact must fail loudly, never silently.
+ * Strictly validated via assertNumerologyArtifactConfirmed -- throws on a
+ * missing/malformed artifact, a slate-date mismatch, zero rows, any row
+ * missing live confirmation, a duplicate identity, or a stale confirmation
+ * snapshot. Intentionally unconditional (not just for live posts): an
+ * artifact that was explicitly provided should always be strictly valid.
  */
-export function buildXPostPreviewFromArtifact(card, artifact) {
-  if (!artifact || !Array.isArray(artifact.rows)) {
-    throw new Error("Numerology delivery artifact is missing or malformed (no rows[]).");
-  }
-  if (artifact.slateDate !== card?.date) {
-    throw new Error(`Numerology delivery artifact slate date ${artifact.slateDate} does not match card date ${card?.date}.`);
-  }
-  return buildXPostPreviewFromPlays(card, artifact.rows);
+export function buildXPostPreviewFromArtifact(card, artifact, { now } = {}) {
+  assertNumerologyArtifactConfirmed(artifact, { slateDate: card?.date, now });
+  return buildXPostPreviewFromPlays(card, artifact.rows, "confirmed");
 }
 
 /** Checks the preview is genuinely today's data with a real top play -- mirrors the freshness/readiness gate used by the HR props X poster. */
@@ -162,6 +177,30 @@ export function validatePreviewReady(preview, todayEt) {
   if (!preview.topPlay) return "Skipping: no qualifying numerology play (score over threshold) for today's slate.";
   if (preview.topPlay.numerologyScore == null) return "Skipping: top play is missing a numerology score.";
   return "";
+}
+
+/** Live-post modes (post / post-text-only) that require a confirmed-lineup preview -- dry-run/verify-account/post-key-only never require one. */
+export const LIVE_POST_MODES = Object.freeze(["post", "post-text-only"]);
+
+/**
+ * Fail-closed gate: a live post/post-text-only must be built from a preview
+ * whose confirmationStatus is exactly "confirmed" (produced only by
+ * buildXPostPreviewFromArtifact from a validated confirmed-lineup
+ * artifact). Deliberately checks the FILE's own label rather than trusting
+ * whatever process wrote x-post-preview.json -- it does not matter how the
+ * file was produced, only what it claims. A daily-lock force-repost
+ * override is a completely separate mechanism (mlb-x-daily-lock.mjs) and
+ * can never satisfy this check; force can only skip an existing-receipt
+ * skip, never manufacture confirmation. Throws on failure; returns nothing
+ * on success. `mode` values outside LIVE_POST_MODES are always no-ops.
+ */
+export function assertLivePostConfirmed(preview, mode) {
+  if (!LIVE_POST_MODES.includes(mode)) return;
+  if (preview?.confirmationStatus !== "confirmed") {
+    throw new Error(
+      `Live posting blocked: preview is not confirmed (confirmationStatus="${preview?.confirmationStatus ?? "unknown"}"). Refusing to post from an unconfirmed/score-threshold preview.`,
+    );
+  }
 }
 
 function formatDateLabel(dateValue) {

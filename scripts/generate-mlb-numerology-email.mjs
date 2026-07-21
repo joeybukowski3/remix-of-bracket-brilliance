@@ -13,7 +13,7 @@ import {
   summarizePerformance,
   writeJson,
 } from "./lib/mlb-numerology-tracking.mjs";
-import { selectNumerologyEmailPlays, selectNumerologyEmailPlaysFromArtifact } from "./lib/mlb-numerology-email-selection.mjs";
+import { assertEmailSelectionConfirmed, selectNumerologyEmailPlays, selectNumerologyEmailPlaysFromArtifact } from "./lib/mlb-numerology-email-selection.mjs";
 import { assertValidNumerologyEmailHtml } from "./lib/mlb-numerology-email-validation.mjs";
 import { enrichCardPlaysWithContext } from "./lib/mlb-numerology-player-context.mjs";
 import { deliverNumerologyEmail } from "./lib/mlb-numerology-email-delivery.mjs";
@@ -69,12 +69,25 @@ async function main() {
   // artifact is provided (the normal automated path -- see
   // plan-mlb-numerology-delivery.mjs / poll-mlb-numerology-delivery.yml),
   // the email uses EXACTLY that artifact's confirmed-lineup selection, so it
-  // can never diverge from what the X post uses. Without one (manual/local
-  // preview runs), it falls back to the original score-threshold policy.
+  // can never diverge from what the X post uses. Without one, a LIVE send
+  // (--send) is refused outright -- the unconfirmed score-threshold
+  // fallback below is reachable ONLY for --draft/--preview, and its output
+  // is explicitly labeled emailSelectionPolicy.confirmationStatus =
+  // "unconfirmed-preview" so it can never be silently mistaken for a
+  // confirmed selection by a later step (see sendEmail's own re-check).
   const artifactPath = process.env.NUMEROLOGY_SELECTION_ARTIFACT_PATH;
+  if (shouldSend && !artifactPath) {
+    throw new Error(
+      "Live email send requires NUMEROLOGY_SELECTION_ARTIFACT_PATH (a confirmed-lineup selection artifact from plan-mlb-numerology-delivery.mjs). " +
+        "Refusing to send from the unconfirmed score-threshold fallback -- only --draft/--preview may use it.",
+    );
+  }
   const selectedEmailCard = artifactPath
     ? selectNumerologyEmailPlaysFromArtifact(card, loadJsonSafe(artifactPath, null))
     : selectNumerologyEmailPlays(card);
+  if (!artifactPath) {
+    console.warn("[mlb-numerology] UNCONFIRMED PREVIEW: no NUMEROLOGY_SELECTION_ARTIFACT_PATH provided; using the score-threshold fallback. This selection is NOT eligible for live delivery.");
+  }
   const emailCard = await enrichCardPlaysWithContext(selectedEmailCard);
   const html = injectRecentTopMatchesHtml(renderEmailHtml(emailCard, summary), performance);
   const text = injectRecentTopMatchesText(renderEmailText(emailCard, summary), performance);
@@ -97,6 +110,11 @@ async function main() {
 }
 
 async function sendEmail({ card, html, text }) {
+  // Defense-in-depth re-check, independent of the earlier shouldSend/
+  // artifactPath gate above -- sendEmail must never dispatch an unconfirmed
+  // selection even if some future call site reaches it a different way.
+  assertEmailSelectionConfirmed(card.emailSelectionPolicy);
+
   assertValidNumerologyEmailHtml(html, card);
 
   if (!sendGateEnabled) {

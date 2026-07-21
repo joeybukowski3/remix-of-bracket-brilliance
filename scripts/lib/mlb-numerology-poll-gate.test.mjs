@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import {
   createNumerologyPollPlan,
   getNumerologyDeliveryState,
+  resolveForcedArtifactDecision,
   resolveNumerologyPollReadiness,
 } from "./mlb-numerology-poll-gate.mjs";
 import { ReadinessStatus } from "./mlb-x-readiness.mjs";
@@ -155,5 +156,32 @@ describe("getNumerologyDeliveryState", () => {
       }),
     });
     assert.equal(state.bothDelivered, true);
+  });
+});
+
+describe("resolveForcedArtifactDecision (manual/rescue --force cannot bypass confirmation)", () => {
+  const readyResult = { ready: true, finalStatus: ReadinessStatus.READY_CONFIRMED_SELECTIONS };
+  const notReadyResult = { ready: false, finalStatus: ReadinessStatus.WAITING_FOR_POLLING_WINDOW };
+
+  it("unforced: mirrors readiness.ready exactly (automated polling behavior is unchanged)", () => {
+    assert.equal(resolveForcedArtifactDecision({ readiness: readyResult, confirmedCount: 5, forced: false }).shouldBuildArtifact, true);
+    assert.equal(resolveForcedArtifactDecision({ readiness: notReadyResult, confirmedCount: 5, forced: false }).shouldBuildArtifact, false);
+  });
+
+  it("forced with zero confirmed players: still refuses to build an artifact -- force cannot manufacture confirmation", () => {
+    const decision = resolveForcedArtifactDecision({ readiness: notReadyResult, confirmedCount: 0, forced: true });
+    assert.equal(decision.shouldBuildArtifact, false);
+  });
+
+  it("forced with at least one confirmed player: bypasses the phase gate and builds an artifact", () => {
+    const decision = resolveForcedArtifactDecision({ readiness: notReadyResult, confirmedCount: 1, forced: true });
+    assert.equal(decision.shouldBuildArtifact, true);
+    assert.equal(decision.selectionStatus, "FORCED_CONFIRMED_SELECTION");
+  });
+
+  it("forced never changes the outcome when readiness is already ready (no double effect)", () => {
+    const decision = resolveForcedArtifactDecision({ readiness: readyResult, confirmedCount: 5, forced: true });
+    assert.equal(decision.shouldBuildArtifact, true);
+    assert.equal(decision.selectionStatus, ReadinessStatus.READY_CONFIRMED_SELECTIONS);
   });
 });

@@ -133,13 +133,35 @@ jobs:
         if: steps.receipt.outputs.send == 'true'
         run: npx vitest run src/lib/mlb/mlbNumerologyTracking.test.ts
 
-      - name: Generate today's email payload
+      # A live send always requires a fresh, forced confirmed-lineup
+      # artifact -- see assertEmailSelectionConfirmed in mlb-numerology-
+      # email-selection.mjs, which sendEmail checks and refuses to send
+      # without. --force builds one at any time of day by bypassing the
+      # first-pitch-relative phase gate -- it can NEVER bypass live lineup
+      # confirmation itself (plan-mlb-numerology-delivery.mjs's own header
+      # comment): if zero players are actually confirmed right now, no
+      # artifact is produced and the next step fails this run closed.
+      - name: Build confirmed selection artifact
+        id: build_artifact
         if: steps.receipt.outputs.send == 'true'
+        run: node scripts/plan-mlb-numerology-delivery.mjs --force --plan-path=artifacts/mlb-numerology-poll-plan.json --artifact-path=artifacts/mlb-numerology-selection-artifact.json
+
+      - name: Fail closed if no players are currently confirmed
+        if: steps.receipt.outputs.send == 'true' && steps.build_artifact.outputs.ready != 'true'
+        run: |
+          echo "::error::No live-confirmed qualifying numerology players are available right now. Refusing to send -- try again closer to first pitch, once official lineups are posted."
+          exit 1
+
+      - name: Generate today's email payload from the confirmed artifact
+        if: steps.receipt.outputs.send == 'true' && steps.build_artifact.outputs.ready == 'true'
+        env:
+          NUMEROLOGY_SELECTION_ARTIFACT_PATH: artifacts/mlb-numerology-selection-artifact.json
         run: npm run mlb:numerology:email:preview
 
       - name: Send today's Buttondown email
-        if: steps.receipt.outputs.send == 'true'
+        if: steps.receipt.outputs.send == 'true' && steps.build_artifact.outputs.ready == 'true'
         env:
+          NUMEROLOGY_SELECTION_ARTIFACT_PATH: artifacts/mlb-numerology-selection-artifact.json
           NUMEROLOGY_EMAIL_LIVE: "true"
           NUMEROLOGY_EMAIL_WEBHOOK_URL: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_URL || vars.NUMEROLOGY_EMAIL_WEBHOOK_URL }}
           NUMEROLOGY_EMAIL_WEBHOOK_TOKEN: ${{ secrets.NUMEROLOGY_EMAIL_WEBHOOK_TOKEN }}
