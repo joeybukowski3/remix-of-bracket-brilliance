@@ -1,10 +1,10 @@
 {
   "date": "2026-07-21",
-  "generatedAt": "2026-07-21T14:31:19.055Z",
+  "generatedAt": "2026-07-21T15:59:11.553Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field leads the slate with a 1.4 park factor and two top-ranked hitters (Wood, Chaparro) facing Lorenzen, while Daikin Park and Yankee Stadium add secondary boosts. Favorable righty matchups against Phillips and Warren further elevate power odds for Alvarez and Valdez, with no major weather suppressors noted.",
-    "modelNote": "The model heavily weights park-adjusted barrel and hard-hit rates plus recent HR volume, elevating Coors and high-ISO names like Wood and Goodman despite modest last-7 output."
+    "slateOverview": "Coors Field leads the slate with a 1.4 park factor and Michael Lorenzen on the mound, creating a massive boost for James Wood, Andrés Chaparro, and Curtis Mead. Daikin Park and Yankee Stadium also offer elevated run environments, while Walker Buehler and Noah Schultz face lineups that can exploit their fly-ball tendencies.",
+    "modelNote": "The model is heavily weighting park factors and opposing pitcher HR vulnerability, elevating Coors hitters despite modest barrel rates, while still prioritizing recent power trends and hard-hit data for the top-ranked plays."
   },
   "bestBets": [
     {
@@ -19,7 +19,7 @@
       ],
       "bullets": [
         "barrel=22%",
-        "HH=59.6%"
+        "park=1.4"
       ],
       "hrOddsYes": "+198",
       "marketImpliedProbability": 0.33557046979865773,
@@ -38,7 +38,7 @@
       ],
       "bullets": [
         "barrel=19.3%",
-        "HH=53.4%"
+        "park=1.04"
       ],
       "hrOddsYes": "+225",
       "marketImpliedProbability": 0.3076923076923077,
@@ -57,7 +57,7 @@
       ],
       "bullets": [
         "barrel=15.2%",
-        "HH=52.2%"
+        "park=1.4"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -71,12 +71,12 @@
       "opposingPitcher": "Walker Buehler",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=59.5",
+        "Pitcher HR VS=59.2",
         "Hard Hit%=51.1"
       ],
       "bullets": [
         "HR score 72.4 (#4)",
-        "Pitcher HR VS 59.5 at park 1.03"
+        "Pitcher HR VS 59.2 at park 1.03"
       ],
       "hrOddsYes": "+470",
       "marketImpliedProbability": 0.17543859649122806,
@@ -90,15 +90,15 @@
       "opposingPitcher": "Tatsuya Imai",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=72.0",
+        "Pitcher HR VS=71.7",
         "Hard Hit%=53.4"
       ],
       "bullets": [
-        "HR score 71.0 (#5)",
-        "Pitcher HR VS 72.0 at park 1.04"
+        "HR score 70.9 (#5)",
+        "Pitcher HR VS 71.7 at park 1.04"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+370",
+      "marketImpliedProbability": 0.2127659574468085,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -116,7 +116,7 @@
       ],
       "bullets": [
         "barrel=15.6%",
-        "HH=51.1%"
+        "park=1.03"
       ],
       "hrOddsYes": "+470",
       "marketImpliedProbability": 0.17543859649122806,
@@ -135,29 +135,10 @@
       ],
       "bullets": [
         "barrel=15.5%",
-        "HH=53.4%"
+        "park=1.04"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Hunter Goodman",
-      "team": "COL",
-      "opponent": "WSH",
-      "opposingPitcher": "Miles Mikolas",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=17.5%",
-        "HH=46.2%"
-      ],
-      "bullets": [
-        "barrel=17.5%",
-        "HH=46.2%"
-      ],
-      "hrOddsYes": "+159",
-      "marketImpliedProbability": 0.3861003861003861,
+      "hrOddsYes": "+370",
+      "marketImpliedProbability": 0.2127659574468085,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -166,17 +147,17 @@
       "team": "TEX",
       "opponent": "CWS",
       "opposingPitcher": "Noah Schultz",
-      "hrScoreRank": 8,
+      "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=77.6",
-        "Hard Hit%=52.5"
+        "barrel=12.7%",
+        "HH=52.5%"
       ],
       "bullets": [
-        "HR score 67.5 (#8)",
-        "Pitcher HR VS 77.6 at park 0.99"
+        "barrel=12.7%",
+        "park=0.99"
       ],
-      "hrOddsYes": "+507",
-      "marketImpliedProbability": 0.16474464579901152,
+      "hrOddsYes": "+447",
+      "marketImpliedProbability": 0.18281535648994515,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -185,54 +166,54 @@
       "team": "PIT",
       "opponent": "NYY",
       "opposingPitcher": "Will Warren",
-      "hrScoreRank": 9,
+      "hrScoreRank": 8,
       "topStats": [
         "Hard Hit%=55.6",
         "Pitcher HR VS=51.5"
       ],
       "bullets": [
-        "HR score 67.1 (#9)",
+        "HR score 67.1 (#8)",
         "Pitcher HR VS 51.5 at park 1.18"
       ],
       "hrOddsYes": "+320",
       "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
+    },
+    {
+      "player": "Curtis Mead",
+      "team": "WSH",
+      "opponent": "COL",
+      "opposingPitcher": "Michael Lorenzen",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Pitcher HR VS=71.3",
+        "Hard Hit%=43.1"
+      ],
+      "bullets": [
+        "HR score 66.1 (#9)",
+        "Pitcher HR VS 71.3 at park 1.40"
+      ],
+      "hrOddsYes": "+370",
+      "marketImpliedProbability": 0.2127659574468085,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
     }
   ],
   "longshots": [
-    {
-      "player": "Brandon Nimmo",
-      "team": "TEX",
-      "opponent": "CWS",
-      "opposingPitcher": "Noah Schultz",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=12.7%",
-        "HH=52.5%"
-      ],
-      "bullets": [
-        "barrel=12.7%",
-        "HH=52.5%"
-      ],
-      "hrOddsYes": "+507",
-      "marketImpliedProbability": 0.16474464579901152,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "Esmerlyn Valdez",
       "team": "PIT",
       "opponent": "NYY",
       "opposingPitcher": "Will Warren",
-      "hrScoreRank": 9,
+      "hrScoreRank": 8,
       "topStats": [
         "barrel=28.6%",
         "HH=55.6%"
       ],
       "bullets": [
         "barrel=28.6%",
-        "HH=55.6%"
+        "park=1.18"
       ],
       "hrOddsYes": "+320",
       "marketImpliedProbability": 0.23809523809523808,
@@ -240,21 +221,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Riley Greene",
-      "team": "DET",
-      "opponent": "CHC",
-      "opposingPitcher": "David Peterson",
-      "hrScoreRank": 10,
+      "player": "Curtis Mead",
+      "team": "WSH",
+      "opponent": "COL",
+      "opposingPitcher": "Michael Lorenzen",
+      "hrScoreRank": 9,
       "topStats": [
-        "Pitcher HR VS=53.8",
-        "Hard Hit%=50.2"
+        "barrel=11.2%",
+        "HH=43.1%"
       ],
       "bullets": [
-        "HR score 66.4 (#10)",
-        "Pitcher HR VS 53.8 at park 1.00"
+        "barrel=11.2%",
+        "park=1.4"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+370",
+      "marketImpliedProbability": 0.2127659574468085,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,14 +244,33 @@
       "team": "SD",
       "opponent": "ATL",
       "opposingPitcher": "Reynaldo López",
-      "hrScoreRank": 19,
+      "hrScoreRank": 18,
       "topStats": [
         "Hard Hit%=49.7",
-        "Pitcher HR VS=46.2"
+        "Pitcher HR VS=46.3"
       ],
       "bullets": [
-        "HR score 63.3 (#19)",
-        "Pitcher HR VS 46.2 at park 1.03"
+        "HR score 63.3 (#18)",
+        "Pitcher HR VS 46.3 at park 1.03"
+      ],
+      "hrOddsYes": "+520",
+      "marketImpliedProbability": 0.16129032258064516,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Riley Greene",
+      "team": "DET",
+      "opponent": "CHC",
+      "opposingPitcher": "David Peterson",
+      "hrScoreRank": 12,
+      "topStats": [
+        "Pitcher HR VS=53.8",
+        "Hard Hit%=50.2"
+      ],
+      "bullets": [
+        "HR score 66.1 (#12)",
+        "Pitcher HR VS 53.8 at park 1.00"
       ],
       "hrOddsYes": "+500",
       "marketImpliedProbability": 0.16666666666666666,
