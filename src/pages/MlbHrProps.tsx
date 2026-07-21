@@ -1,4 +1,4 @@
-﻿import { Fragment, useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
+﻿import { Fragment, useCallback, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
 import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
@@ -10,6 +10,7 @@ import { usePitcherRegression } from "@/hooks/usePitcherRegression";
 import { evaluateSinCityHitter } from "@/lib/mlb/mlbHrFilter";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { keyForBvpRow, useMlbBvpHistory } from "@/hooks/useMlbBvpHistory";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import MlbBvpHistoryPanel, { AvgVsPitcherCell, MlbBvpHistoryPanelLoading, MlbBvpHistoryPanelUnavailable } from "@/components/mlb/MlbBvpHistoryPanel";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
@@ -384,6 +385,8 @@ export const DEFAULT_TAB: TabKey = "batters";
 export const DEFAULT_PITCHER_SORT = { key: "hrVs" as PitcherSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_BATTER_SORT = { key: "hrScore" as BatterSortKey, direction: "desc" as SortDirection };
 export const DEFAULT_MATCHUP_SORT = { key: "bestMatchupScore" as MatchupSortKey, direction: "desc" as SortDirection };
+/** Batter View incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. */
+export const BATTER_PAGE_SIZE = 50;
 
 const DASH = "--";
 const ESPN_TEAM_ABBR: Record<string, string> = {
@@ -1674,6 +1677,47 @@ function HeaderHelp({ label, description }: { label: string; description: string
 
 // ââ main component âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
+/** Shared xERA color-tier lookup -- used by both the desktop table cell and the mobile metric grid so the thresholds never drift apart. */
+function getXeraToneStyle(x: number): { bg: string; text: string } {
+  if (x <= 3.0) return { bg: "#172554", text: "#60a5fa" };
+  if (x <= 3.5) return { bg: "#1e3a8a", text: "#93c5fd" };
+  if (x <= 4.0) return { bg: "#dbeafe", text: "#1d4ed8" };
+  if (x <= 4.5) return { bg: "#f1f5f9", text: "#64748b" };
+  if (x <= 5.0) return { bg: "#dcfce7", text: "#15803d" };
+  if (x <= 5.5) return { bg: "#166534", text: "#86efac" };
+  return { bg: "#14532d", text: "#bbf7d0" };
+}
+
+/** Shared pitcher-regression color-tier lookup -- used by both the desktop table cell and the mobile metric grid so the thresholds never drift apart. */
+function getRegressionToneStyle(s: number): { bg: string; text: string; label: string } {
+  if (s >= 3) return { bg: "#14532d", text: "#bbf7d0", label: "↑" };
+  if (s >= 0.5) return { bg: "#dcfce7", text: "#15803d", label: "↑" };
+  if (s > -0.5) return { bg: "#f1f5f9", text: "#64748b", label: "—" };
+  if (s > -3) return { bg: "#dbeafe", text: "#1d4ed8", label: "↓" };
+  return { bg: "#1e3a8a", text: "#93c5fd", label: "↓↓" };
+}
+
+/** Shared batter angle-tag fallback -- used by both the desktop table cell and the mobile metric grid so the thresholds never drift apart. */
+function getBatterAngleTags(row: Pick<HrDashboardBatter, "angleTags" | "barrelRate" | "hardHitRate" | "last7HR" | "last30HR" | "opposingPitcherHrVs">): string[] {
+  if (row.angleTags.length) return row.angleTags;
+  if (row.barrelRate != null && row.barrelRate >= 15) return ["Barrel edge"];
+  if (row.hardHitRate != null && row.hardHitRate >= 52) return ["Hard hit edge"];
+  if (row.last7HR != null && row.last7HR >= 2) return ["Hot streak"];
+  if (row.last30HR != null && row.last30HR >= 6) return ["Power trend"];
+  if (row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 65) return ["Weak arm"];
+  return [];
+}
+
+/** Compact labeled tile for the mobile "HR Model Metrics" expand grid -- mirrors MlbBvpHistoryPanel's StatTile styling for visual consistency between the two expanded grids. */
+function MetricTile({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+      <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="mt-0.5 flex items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
 export default function MlbHrProps() {
   usePageSeo(getSeoMeta("mlb-hr-props"));
   // Use the shared hook so HR/K/hit tables and game matchups always read from
@@ -1685,7 +1729,11 @@ export default function MlbHrProps() {
   const { loading: bvpHistoryLoading, fileUnavailable: bvpHistoryUnavailable, historyByKey: bvpHistoryByKey } = useMlbBvpHistory();
   const [bvpExpandedBatterKey, setBvpExpandedBatterKey] = useState<string | null>(null);
   const [bvpExpandedMatchupKey, setBvpExpandedMatchupKey] = useState<string | null>(null);
+  /** Mobile-only expand toggle for the Strikeout Matchup lens's compact rows -- there is no batter-vs-pitcher panel for a team-level strikeout row, so this tracks expansion locally instead of reusing bvpExpandedMatchupKey. */
+  const [expandedStrikeoutRowKey, setExpandedStrikeoutRowKey] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  /** Below the `lg` breakpoint (1024px): compact expandable-row layout instead of the desktop data tables. Resolved synchronously via matchMedia (see useIsCompactLayout) so the first render already reflects the real viewport, and rendered via JS branch (not CSS display toggling) so only one copy of each row ever sits in the DOM. */
+  const isCompactLayout = useIsCompactLayout();
   const [activeTab, setActiveTab] = useState<TabKey>(DEFAULT_TAB);
   const [activeMatchupLens, setActiveMatchupLens] = useState<MatchupLens>("best");
   const [pitcherSortKey, setPitcherSortKey] = useState<PitcherSortKey>(DEFAULT_PITCHER_SORT.key);
@@ -1703,6 +1751,15 @@ export default function MlbHrProps() {
   const [batterGameFilter, setBatterGameFilter] = useState("all");
   const [matchupGameFilter, setMatchupGameFilter] = useState("all");
   const [hrFilterActive, setHrFilterActive] = useState(false);
+  /** How many already-sorted/filtered batter rows are currently rendered -- "Show 50 more" grows this, a materially-changed filter/tab resets it. Never affects ranking order or which rows pass the filters, only how many of them are on screen. */
+  const [visibleBatterCount, setVisibleBatterCount] = useState(BATTER_PAGE_SIZE);
+  /** Mobile/tablet-only show-all toggles for the Overdue Batters and Biggest Mismatches insight cards -- desktop always shows the full (already-capped-at-8) list. */
+  const [showAllOverdue, setShowAllOverdue] = useState(false);
+  const [showAllMismatches, setShowAllMismatches] = useState(false);
+  /** Mobile/tablet-only expand toggles for sections that collapse to a single preview row/line below lg -- desktop always shows the full content, unchanged. */
+  const [topHrEnvironmentsExpanded, setTopHrEnvironmentsExpanded] = useState(false);
+  const [howToReadExpanded, setHowToReadExpanded] = useState(false);
+  const [slateNoteExpanded, setSlateNoteExpanded] = useState(false);
 
   usePageSeo({
     title: "MLB HR Props Today 2026 — Home Run Model & Rankings | Joe Knows Ball",
@@ -1747,6 +1804,10 @@ export default function MlbHrProps() {
     window.addEventListener("resize", syncMobile);
     return () => window.removeEventListener("resize", syncMobile);
   }, []);
+
+  useEffect(() => {
+    setVisibleBatterCount(BATTER_PAGE_SIZE);
+  }, [activeTab, batterSearch, batterGameFilter, hrFilterActive, batterSortKey, batterSortDirection]);
 
   const allGames = dashboard?.games ?? [];
   const allPitchers = dashboard?.pitchers ?? [];
@@ -1871,6 +1932,11 @@ export default function MlbHrProps() {
     });
     return sortBatters(rows, batterSortKey, batterSortDirection);
   }, [applyHrFilter, batterGameFilter, batterSearch, batterSortDirection, batterSortKey, batters]);
+
+  const visibleBatters = useMemo(
+    () => filteredBatters.slice(0, visibleBatterCount),
+    [filteredBatters, visibleBatterCount],
+  );
 
   const filteredMatchups = useMemo(() => {
     const query = matchupSearch.trim().toLowerCase();
@@ -2012,7 +2078,14 @@ export default function MlbHrProps() {
 
                 <FreshnessStatus status={status} />
 
-                <MlbParkFactorsStrip parks={parkRows} perspective="hitter" subtitle="Today's park and weather context" />
+                <MlbParkFactorsStrip
+                  parks={parkRows}
+                  perspective="hitter"
+                  subtitle="Today's park and weather context"
+                  collapsedPreviewCount={isCompactLayout ? 1 : undefined}
+                  expandLabel={isCompactLayout ? "Click to expand" : undefined}
+                  collapseLabel={isCompactLayout ? "Show less" : undefined}
+                />
 
                 <div className="rounded-[24px] border border-sky-200 bg-sky-50 px-4 py-3 shadow-sm">
                   <div className="grid gap-3 md:grid-cols-3">
@@ -2031,25 +2104,35 @@ export default function MlbHrProps() {
                   </div>
                   {bestBets?.slatePreview ? (
                     <div className="mt-3 border-t border-sky-200 pt-3 text-sm text-slate-600">
-                      <span className="font-semibold text-slate-800">📝 Slate note:</span> {bestBets.slatePreview.slateOverview}
+                      <span className="font-semibold text-slate-800">📝 Slate note:</span>{" "}
+                      {isCompactLayout && !slateNoteExpanded ? (
+                        <>
+                          <span className="line-clamp-1 align-bottom">{bestBets.slatePreview.slateOverview}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSlateNoteExpanded(true)}
+                            className="mt-0.5 block font-semibold text-sky-700 underline underline-offset-2"
+                          >
+                            Click to expand
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span>{bestBets.slatePreview.slateOverview}</span>
+                          {isCompactLayout && (
+                            <button
+                              type="button"
+                              onClick={() => setSlateNoteExpanded(false)}
+                              className="ml-1 font-semibold text-sky-700 underline underline-offset-2"
+                            >
+                              Show less
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   ) : null}
                 </div>
-
-                <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  <p className="max-w-4xl text-sm leading-7 text-slate-600">
-                    This board ranks today&apos;s batters by HR Quality Score — a relative measure of home-run matchup strength built from barrel rate, hard-hit rate, recent power, and the opposing pitcher&apos;s HR vulnerability. It&apos;s a ranking tool for research, not a prediction of who will homer or a guaranteed pick.
-                  </p>
-                  <div className="mt-3 border-t border-slate-200 pt-3">
-                    <h2 className="text-base font-bold text-slate-900">How to read this page</h2>
-                    <dl className="mt-2 grid gap-x-5 gap-y-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
-                      <div><dt className="inline font-bold text-slate-900">HR Score — </dt><dd className="inline">Higher scores indicate stronger relative home-run matchups today. It is not a probability.</dd></div>
-                      <div><dt className="inline font-bold text-slate-900">HR Odds — </dt><dd className="inline">Current sportsbook anytime-home-run price when available.</dd></div>
-                      <div><dt className="inline font-bold text-slate-900">Market % — </dt><dd className="inline">Raw implied probability from the sportsbook odds. It is not adjusted for vig and is not a model estimate.</dd></div>
-                      <div><dt className="inline font-bold text-slate-900">Use both together — </dt><dd className="inline">Compare matchup strength with the available market price to identify research opportunities.</dd></div>
-                    </dl>
-                  </div>
-                </section>
 
                 <div className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
                   <div className="border-b border-slate-200 px-4">
@@ -2213,40 +2296,74 @@ export default function MlbHrProps() {
                                     <h3 className="text-base font-extrabold text-amber-900">⏳ Overdue Batters</h3>
                                     <p className="text-xs text-amber-700 mt-0.5">Strong HR score + good power metrics, but 0–1 HRs in last 7 days. Due for a breakout.</p>
                                   </div>
-                                  <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[400px] text-xs">
-                                      <thead>
-                                        <tr className="text-[10px] font-bold uppercase tracking-wide text-amber-700 border-b border-amber-200">
-                                          <th className="pb-1.5 text-left">Batter</th>
-                                          <th className="pb-1.5 text-center">Score</th>
-                                          <th className="pb-1.5 text-center">Barrel%</th>
-                                          <th className="pb-1.5 text-center">L7</th>
-                                          <th className="pb-1.5 text-center">L30</th>
-                                          <th className="pb-1.5 text-center">xERA</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {overdue.map((row) => (
-                                          <tr key={`od-${row.player}-${row.team}`} className="border-b border-amber-100 last:border-0">
-                                            <td className="py-1.5 pr-2">
-                                              <div className="flex items-center gap-1.5">
-                                                <TeamLogoBadge team={row.team} size={13} showLabel={false} />
-                                                <span className="font-semibold text-slate-900 text-[11px]">{row.player}</span>
-                                              </div>
-                                              <div className="text-[9px] text-slate-400">vs {row.opposingPitcher}</div>
-                                            </td>
-                                            <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
-                                            <td className="py-1.5 text-center font-semibold text-slate-700">{row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}</td>
-                                            <td className="py-1.5 text-center">
-                                              <span className="rounded-full bg-amber-200 px-2 py-0.5 font-black text-amber-900">{row.last7HR ?? "—"}</span>
-                                            </td>
-                                            <td className="py-1.5 text-center font-semibold text-slate-600">{row.last30HR ?? "—"}</td>
-                                            <td className="py-1.5 text-center font-semibold text-slate-600">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</td>
+                                  {isCompactLayout ? (
+                                    /* Mobile/tablet (below lg): stacked rows -- no table, no horizontal scroll. */
+                                    <div className="space-y-2">
+                                      {(showAllOverdue ? overdue : overdue.slice(0, 3)).map((row) => (
+                                        <div key={`od-m-${row.player}-${row.team}`} className="rounded-lg border border-amber-100 bg-white/60 px-2 py-1.5">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <div className="flex min-w-0 items-center gap-1.5">
+                                              <TeamLogoBadge team={row.team} size={13} showLabel={false} />
+                                              <span className="truncate font-semibold text-slate-900 text-[11px]">{row.player}</span>
+                                            </div>
+                                            <StatScorePill value={row.hrScore} />
+                                          </div>
+                                          <div className="mt-1 text-[9px] text-slate-400">vs {row.opposingPitcher}</div>
+                                          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
+                                            <span className="text-slate-500">Barrel% <b className="text-slate-700">{row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}</b></span>
+                                            <span className="text-slate-500">L7 <b className="rounded-full bg-amber-200 px-1.5 py-0.5 text-amber-900">{row.last7HR ?? "—"}</b></span>
+                                            <span className="text-slate-500">L30 <b className="text-slate-700">{row.last30HR ?? "—"}</b></span>
+                                            <span className="text-slate-500">xERA <b className="text-slate-700">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</b></span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {overdue.length > 3 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowAllOverdue((v) => !v)}
+                                          className="w-full rounded-lg border border-amber-200 bg-white/60 px-2 py-1.5 text-center text-[11px] font-semibold text-amber-800 transition hover:bg-white"
+                                        >
+                                          {showAllOverdue ? "Show top 3" : "Click to show all matches"}
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    /* Desktop (lg and above): existing table, unchanged. */
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full min-w-[400px] text-xs">
+                                        <thead>
+                                          <tr className="text-[10px] font-bold uppercase tracking-wide text-amber-700 border-b border-amber-200">
+                                            <th className="pb-1.5 text-left">Batter</th>
+                                            <th className="pb-1.5 text-center">Score</th>
+                                            <th className="pb-1.5 text-center">Barrel%</th>
+                                            <th className="pb-1.5 text-center">L7</th>
+                                            <th className="pb-1.5 text-center">L30</th>
+                                            <th className="pb-1.5 text-center">xERA</th>
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
+                                        </thead>
+                                        <tbody>
+                                          {overdue.map((row) => (
+                                            <tr key={`od-${row.player}-${row.team}`} className="border-b border-amber-100 last:border-0">
+                                              <td className="py-1.5 pr-2">
+                                                <div className="flex items-center gap-1.5">
+                                                  <TeamLogoBadge team={row.team} size={13} showLabel={false} />
+                                                  <span className="font-semibold text-slate-900 text-[11px]">{row.player}</span>
+                                                </div>
+                                                <div className="text-[9px] text-slate-400">vs {row.opposingPitcher}</div>
+                                              </td>
+                                              <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
+                                              <td className="py-1.5 text-center font-semibold text-slate-700">{row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : "—"}</td>
+                                              <td className="py-1.5 text-center">
+                                                <span className="rounded-full bg-amber-200 px-2 py-0.5 font-black text-amber-900">{row.last7HR ?? "—"}</span>
+                                              </td>
+                                              <td className="py-1.5 text-center font-semibold text-slate-600">{row.last30HR ?? "—"}</td>
+                                              <td className="py-1.5 text-center font-semibold text-slate-600">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
@@ -2257,91 +2374,90 @@ export default function MlbHrProps() {
                                     <h3 className="text-base font-extrabold text-red-900">⚔️ Biggest Mismatches</h3>
                                     <p className="text-xs text-red-700 mt-0.5">Elite HR score vs a vulnerable pitcher — high HR VS + weak xERA or regression risk.</p>
                                   </div>
-                                  <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[400px] text-xs">
-                                      <thead>
-                                        <tr className="text-[10px] font-bold uppercase tracking-wide text-red-700 border-b border-red-200">
-                                          <th className="pb-1.5 text-left">Batter</th>
-                                          <th className="pb-1.5 text-center">Score</th>
-                                          <th className="pb-1.5 text-center">HR VS</th>
-                                          <th className="pb-1.5 text-center">xERA</th>
-                                          <th className="pb-1.5 text-center">Regr</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {mismatches.map((row) => (
-                                          <tr key={`mm-${row.player}-${row.team}`} className="border-b border-red-100 last:border-0">
-                                            <td className="py-1.5 pr-2">
-                                              <div className="flex items-center gap-1.5">
-                                                <TeamLogoBadge team={row.team} size={13} showLabel={false} />
-                                                <span className="font-semibold text-slate-900 text-[11px]">{row.player}</span>
-                                              </div>
-                                              <div className="text-[9px] text-slate-400">vs {row.opposingPitcher}</div>
-                                            </td>
-                                            <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
-                                            <td className="py-1.5 text-center">
-                                              <span className="rounded-full bg-red-200 px-2 py-0.5 font-black text-red-900">{row.opposingPitcherHrVs?.toFixed(1) ?? "—"}</span>
-                                            </td>
-                                            <td className="py-1.5 text-center font-semibold text-slate-700">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</td>
-                                            <td className="py-1.5 text-center">
+                                  {isCompactLayout ? (
+                                    /* Mobile/tablet (below lg): stacked rows -- no table, no horizontal scroll. */
+                                    <div className="space-y-2">
+                                      {(showAllMismatches ? mismatches : mismatches.slice(0, 3)).map((row) => (
+                                        <div key={`mm-m-${row.player}-${row.team}`} className="rounded-lg border border-red-100 bg-white/60 px-2 py-1.5">
+                                          <div className="flex items-center justify-between gap-2">
+                                            <div className="flex min-w-0 items-center gap-1.5">
+                                              <TeamLogoBadge team={row.team} size={13} showLabel={false} />
+                                              <span className="truncate font-semibold text-slate-900 text-[11px]">{row.player}</span>
+                                            </div>
+                                            <StatScorePill value={row.hrScore} />
+                                          </div>
+                                          <div className="mt-1 text-[9px] text-slate-400">vs {row.opposingPitcher}</div>
+                                          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
+                                            <span className="text-slate-500">HR VS <b className="rounded-full bg-red-200 px-1.5 py-0.5 text-red-900">{row.opposingPitcherHrVs?.toFixed(1) ?? "—"}</b></span>
+                                            <span className="text-slate-500">xERA <b className="text-slate-700">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</b></span>
+                                            <span className="text-slate-500">
+                                              Regr{" "}
                                               {row.pitcherRegressionScore != null ? (
-                                                <span className={`font-bold ${row.pitcherRegressionScore > 2 ? "text-red-700" : "text-slate-500"}`}>
+                                                <b className={row.pitcherRegressionScore > 2 ? "text-red-700" : "text-slate-700"}>
                                                   {row.pitcherRegressionScore > 0 ? `+${row.pitcherRegressionScore.toFixed(1)}` : row.pitcherRegressionScore.toFixed(1)}
-                                                </span>
-                                              ) : "—"}
-                                            </td>
+                                                </b>
+                                              ) : <b className="text-slate-700">—</b>}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {mismatches.length > 3 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => setShowAllMismatches((v) => !v)}
+                                          className="w-full rounded-lg border border-red-200 bg-white/60 px-2 py-1.5 text-center text-[11px] font-semibold text-red-800 transition hover:bg-white"
+                                        >
+                                          {showAllMismatches ? "Show top 3" : "Click to show all matches"}
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    /* Desktop (lg and above): existing table, unchanged. */
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full min-w-[400px] text-xs">
+                                        <thead>
+                                          <tr className="text-[10px] font-bold uppercase tracking-wide text-red-700 border-b border-red-200">
+                                            <th className="pb-1.5 text-left">Batter</th>
+                                            <th className="pb-1.5 text-center">Score</th>
+                                            <th className="pb-1.5 text-center">HR VS</th>
+                                            <th className="pb-1.5 text-center">xERA</th>
+                                            <th className="pb-1.5 text-center">Regr</th>
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
+                                        </thead>
+                                        <tbody>
+                                          {mismatches.map((row) => (
+                                            <tr key={`mm-${row.player}-${row.team}`} className="border-b border-red-100 last:border-0">
+                                              <td className="py-1.5 pr-2">
+                                                <div className="flex items-center gap-1.5">
+                                                  <TeamLogoBadge team={row.team} size={13} showLabel={false} />
+                                                  <span className="font-semibold text-slate-900 text-[11px]">{row.player}</span>
+                                                </div>
+                                                <div className="text-[9px] text-slate-400">vs {row.opposingPitcher}</div>
+                                              </td>
+                                              <td className="py-1.5 text-center"><StatScorePill value={row.hrScore} /></td>
+                                              <td className="py-1.5 text-center">
+                                                <span className="rounded-full bg-red-200 px-2 py-0.5 font-black text-red-900">{row.opposingPitcherHrVs?.toFixed(1) ?? "—"}</span>
+                                              </td>
+                                              <td className="py-1.5 text-center font-semibold text-slate-700">{row.pitcherXera != null ? row.pitcherXera.toFixed(2) : "—"}</td>
+                                              <td className="py-1.5 text-center">
+                                                {row.pitcherRegressionScore != null ? (
+                                                  <span className={`font-bold ${row.pitcherRegressionScore > 2 ? "text-red-700" : "text-slate-500"}`}>
+                                                    {row.pitcherRegressionScore > 0 ? `+${row.pitcherRegressionScore.toFixed(1)}` : row.pitcherRegressionScore.toFixed(1)}
+                                                  </span>
+                                                ) : "—"}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
                             </div>
                           );
                         })()}
-
-                        {/* Top HR Environments — game-level, informational only, never affects player ranking */}
-                        {gameEnvironments.length > 0 && (
-                          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-                            <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">🌡️ Top HR Environments</h2>
-                            <p className="mt-1 text-xs text-slate-500">Park, weather, and starter vulnerability combined into a game-level score. Does not affect individual player rankings.</p>
-                            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                              {gameEnvironments.slice(0, 6).map((g) => (
-                                <div key={g.gameKey} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="truncate text-sm font-semibold text-slate-900" title={g.matchup}>{g.matchup}</span>
-                                    <span className={cn(
-                                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
-                                      (g.gameHrEnvironmentScore ?? 0) >= 70 ? "bg-emerald-100 text-emerald-800" :
-                                      (g.gameHrEnvironmentScore ?? 0) >= 50 ? "bg-amber-100 text-amber-800" :
-                                      "bg-slate-200 text-slate-600",
-                                    )}>
-                                      {g.gameHrEnvironmentScore != null ? g.gameHrEnvironmentScore.toFixed(0) : "—"}
-                                    </span>
-                                  </div>
-                                  <div className="mt-1 truncate text-[11px] text-slate-400">{g.ballpark}</div>
-                                  <div className="mt-2 grid grid-cols-3 gap-1 text-center text-[10px]">
-                                    <div className="rounded bg-white px-1 py-1">
-                                      <div className="text-slate-400">Park</div>
-                                      <div className="font-semibold text-slate-700">{g.parkFactor != null ? g.parkFactor.toFixed(2) : "—"}</div>
-                                    </div>
-                                    <div className="rounded bg-white px-1 py-1">
-                                      <div className="text-slate-400">Weather</div>
-                                      <div className="font-semibold text-slate-700">{g.weatherEffect != null ? (g.weatherEffect > 0 ? "+" : "") + g.weatherEffect.toFixed(1) : "—"}</div>
-                                    </div>
-                                    <div className="rounded bg-white px-1 py-1">
-                                      <div className="text-slate-400">Starter Vuln</div>
-                                      <div className="font-semibold text-slate-700">{g.starterVulnerability != null ? g.starterVulnerability.toFixed(0) : "—"}</div>
-                                    </div>
-                                  </div>
-                                  <div className="mt-1.5 text-[10px] text-slate-400">{g.qualifyingHitterCount} qualifying bat{g.qualifyingHitterCount === 1 ? "" : "s"}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                           <div>
@@ -2373,7 +2489,137 @@ export default function MlbHrProps() {
                           </div>
                         </div>
                         <DataLegend />
-                        <div data-x-export="mlb-hr-props" className="overflow-x-auto rounded-xl border border-slate-200" style={{ WebkitOverflowScrolling: "touch" }}>
+                        <div data-x-export="mlb-hr-props" className="rounded-xl border border-slate-200">
+                          {isCompactLayout ? (
+                          /* Mobile/tablet (below lg): compact expandable rows. */
+                          <div className="divide-y divide-slate-100">
+                            {visibleBatters.length ? visibleBatters.map((row, i) => {
+                              const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
+                              const isBvpExpanded = bvpExpandedBatterKey === bvpKey;
+                              const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
+                              const bvpRowLabel = `${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`;
+                              const onBvpRowKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  toggleBvpBatterRow(row);
+                                }
+                              };
+                              const angleTags = getBatterAngleTags(row);
+                              return (
+                                <div key={`m-${row.player}-${row.team}-${row.opponent}`} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                                  <div
+                                    onClick={() => toggleBvpBatterRow(row)}
+                                    onKeyDown={onBvpRowKeyDown}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={isBvpExpanded}
+                                    aria-label={bvpRowLabel}
+                                    className="flex cursor-pointer items-center gap-2 px-3 py-2.5 transition-colors active:bg-slate-100"
+                                  >
+                                    <span aria-hidden="true" className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
+                                    <TeamLogoBadge team={row.team} size={22} showLabel={false} />
+                                    <div className="min-w-0 flex-1">
+                                      <div className="truncate text-[13px] font-semibold text-slate-900">{row.player}</div>
+                                      <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
+                                    </div>
+                                    <div className="flex shrink-0 flex-col items-end gap-1">
+                                      {hasHrOdds && row.hrOddsYes != null ? (
+                                        <span className="whitespace-nowrap rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">Y {row.hrOddsYes}</span>
+                                      ) : null}
+                                      <StatScorePill value={row.hrScore} />
+                                    </div>
+                                  </div>
+                                  {isBvpExpanded && (
+                                    <div className="space-y-3 bg-slate-50 px-3 pb-3 pt-1">
+                                      <div>
+                                        <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Career vs Pitcher</div>
+                                        <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                      </div>
+                                      <div>
+                                        <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">HR Model Metrics</div>
+                                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                          {hasHrOdds && (
+                                            <MetricTile label="HR Odds">
+                                              {row.hrOddsYes != null ? (
+                                                <div className="flex flex-col gap-0">
+                                                  <span className="text-[11px] font-bold text-slate-700">Y {row.hrOddsYes}{row.hrOddsNo ? <span className="ml-1 font-normal text-slate-400">N {row.hrOddsNo}</span> : null}</span>
+                                                  {row.marketImpliedProbability != null && (
+                                                    <span className="text-[9px] text-slate-400">{(row.marketImpliedProbability * 100).toFixed(1)}% mkt</span>
+                                                  )}
+                                                </div>
+                                              ) : <span className="text-[11px] text-slate-300">No odds posted</span>}
+                                            </MetricTile>
+                                          )}
+                                          <MetricTile label="Barrel%">
+                                            {row.barrelRate != null && row.barrelRate >= 18 ? <span>💣</span> : null}
+                                            <GradCell value={row.barrelRate} display={formatPercent(row.barrelRate)} avg={8.0} spread={10} />
+                                          </MetricTile>
+                                          <MetricTile label="HH%">
+                                            {row.hardHitRate != null && row.hardHitRate >= 55 ? <span>💥</span> : null}
+                                            <GradCell value={row.hardHitRate} display={formatPercent(row.hardHitRate)} avg={46.5} spread={10} />
+                                          </MetricTile>
+                                          <MetricTile label="L7 HR">
+                                            {row.last7HR != null && row.last7HR >= 3 ? <span>📈</span> : null}
+                                            <GradCell value={row.last7HR} display={formatNumber(row.last7HR, 0)} avg={0.3} spread={2.0} />
+                                          </MetricTile>
+                                          <MetricTile label="L30 HR">
+                                            {row.last30HR != null && row.last30HR >= 7 ? <span>👑</span> : null}
+                                            <GradCell value={row.last30HR} display={formatNumber(row.last30HR, 0)} avg={2.0} spread={4.5} />
+                                          </MetricTile>
+                                          <MetricTile label="Ptch HR VS">
+                                            {row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 ? <span>⚔️</span> : null}
+                                            <StatScorePill value={row.opposingPitcherHrVs} />
+                                          </MetricTile>
+                                          <MetricTile label="Ptch xERA">
+                                            {row.pitcherXera != null ? (() => {
+                                              const style = getXeraToneStyle(row.pitcherXera);
+                                              return (
+                                                <span className="rounded px-1 py-0.5 text-[11px] font-bold" style={{ backgroundColor: style.bg, color: style.text }}>
+                                                  {row.pitcherXera.toFixed(2)}
+                                                </span>
+                                              );
+                                            })() : <span className="text-[11px] text-slate-300">—</span>}
+                                          </MetricTile>
+                                          <MetricTile label="Ptch FB%">
+                                            {row.pitcherFlyBallRate != null
+                                              ? <span className="text-[11px] font-semibold text-slate-600">{row.pitcherFlyBallRate.toFixed(1)}%</span>
+                                              : <span className="text-[11px] text-slate-300">—</span>}
+                                          </MetricTile>
+                                          <MetricTile label="Pitcher Trend">
+                                            {row.pitcherRegressionScore != null ? (() => {
+                                              const s = row.pitcherRegressionScore;
+                                              const style = getRegressionToneStyle(s);
+                                              return (
+                                                <span className="rounded px-1 py-0.5 text-[11px] font-bold" style={{ backgroundColor: style.bg, color: style.text }}>
+                                                  {s > 0 ? "+" : ""}{s.toFixed(1)} {style.label}
+                                                </span>
+                                              );
+                                            })() : <span className="text-[11px] text-slate-300">—</span>}
+                                          </MetricTile>
+                                          <MetricTile label="Angle">
+                                            {angleTags.length ? (
+                                              <div className="flex flex-wrap gap-1">
+                                                {angleTags.map((tag) => (
+                                                  <span key={`${row.player}-m-${tag}`} className="whitespace-nowrap rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tag}</span>
+                                                ))}
+                                              </div>
+                                            ) : <span className="text-[11px] text-slate-300">{DASH}</span>}
+                                          </MetricTile>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }) : (
+                              <div className="px-3 py-6 text-center text-sm text-slate-500">
+                                {hrFilterActive ? "No Sin City batters match the current filters." : "No batters match the current search or game filter."}
+                              </div>
+                            )}
+                          </div>
+                          ) : (
+                          /* Desktop (lg and above): existing table, unchanged. */
+                          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                           <table className="min-w-full border-separate border-spacing-0 text-xs">
                             <thead className="sticky top-0 z-20">
                               <tr className="text-[9px] sm:text-[10px] uppercase tracking-[0.08em] sm:tracking-[0.12em] text-slate-500">
@@ -2458,7 +2704,7 @@ export default function MlbHrProps() {
                               </tr>
                             </thead>
                             <tbody>
-                              {filteredBatters.length ? filteredBatters.map((row, i) => {
+                              {visibleBatters.length ? visibleBatters.map((row, i) => {
                                 const rowBg = i % 2 === 0 ? "bg-white" : "bg-slate-50/70";
                                 const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
                                 const isBvpExpanded = bvpExpandedBatterKey === bvpKey;
@@ -2558,13 +2804,7 @@ export default function MlbHrProps() {
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       {row.pitcherXera != null ? (() => {
                                         const x = row.pitcherXera;
-                                        const style = x <= 3.0 ? { bg: "#172554", text: "#60a5fa" }
-                                          : x <= 3.5 ? { bg: "#1e3a8a", text: "#93c5fd" }
-                                          : x <= 4.0 ? { bg: "#dbeafe", text: "#1d4ed8" }
-                                          : x <= 4.5 ? { bg: "#f1f5f9", text: "#64748b" }
-                                          : x <= 5.0 ? { bg: "#dcfce7", text: "#15803d" }
-                                          : x <= 5.5 ? { bg: "#166534", text: "#86efac" }
-                                          : { bg: "#14532d", text: "#bbf7d0" };
+                                        const style = getXeraToneStyle(x);
                                         return (
                                           <span className="rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap"
                                             style={{ backgroundColor: style.bg, color: style.text }}>
@@ -2583,11 +2823,7 @@ export default function MlbHrProps() {
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       {row.pitcherRegressionScore != null ? (() => {
                                         const s = row.pitcherRegressionScore;
-                                        const style = s >= 3 ? { bg: "#14532d", text: "#bbf7d0", label: "↑" }
-                                          : s >= 0.5 ? { bg: "#dcfce7", text: "#15803d", label: "↑" }
-                                          : s > -0.5 ? { bg: "#f1f5f9", text: "#64748b", label: "—" }
-                                          : s > -3 ? { bg: "#dbeafe", text: "#1d4ed8", label: "↓" }
-                                          : { bg: "#1e3a8a", text: "#93c5fd", label: "↓↓" };
+                                        const style = getRegressionToneStyle(s);
                                         return (
                                           <span className="rounded px-1 py-0.5 text-[9px] sm:text-[10px] font-bold whitespace-nowrap"
                                             style={{ backgroundColor: style.bg, color: style.text }}>
@@ -2600,15 +2836,7 @@ export default function MlbHrProps() {
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
                                       <div className="flex flex-wrap gap-0.5 sm:gap-1">
                                         {(() => {
-                                          const tags = row.angleTags.length ? row.angleTags : (() => {
-                                            const best: string[] = [];
-                                            if (row.barrelRate != null && row.barrelRate >= 15) best.push("Barrel edge");
-                                            else if (row.hardHitRate != null && row.hardHitRate >= 52) best.push("Hard hit edge");
-                                            else if (row.last7HR != null && row.last7HR >= 2) best.push("Hot streak");
-                                            else if (row.last30HR != null && row.last30HR >= 6) best.push("Power trend");
-                                            else if (row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 65) best.push("Weak arm");
-                                            return best;
-                                          })();
+                                          const tags = getBatterAngleTags(row);
                                           return tags.length
                                             ? tags.map((tag) => (
                                                 <span key={`${row.player}-${tag}`} className="rounded-full bg-slate-100 px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-slate-600 whitespace-nowrap">{tag}</span>
@@ -2640,7 +2868,78 @@ export default function MlbHrProps() {
                               )}
                             </tbody>
                           </table>
+                          </div>
+                          )}
                         </div>
+                        {filteredBatters.length > 0 && (
+                          <div className="flex items-center justify-between gap-3 px-1 text-xs text-slate-500">
+                            <span>{visibleBatters.length} of {filteredBatters.length} batters</span>
+                            {visibleBatterCount < filteredBatters.length && (
+                              <button
+                                type="button"
+                                onClick={() => setVisibleBatterCount((count) => count + BATTER_PAGE_SIZE)}
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-800"
+                              >
+                                Show 50 more
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Top HR Environments -- game-level, informational only, never affects player ranking */}
+                        {gameEnvironments.length > 0 && (
+                          <div data-testid="top-hr-environments-section" className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h2 className="text-lg font-semibold tracking-[-0.02em] text-slate-900">🌡️ Top HR Environments</h2>
+                                <p className="mt-1 text-xs text-slate-500">Park, weather, and starter vulnerability combined into a game-level score. Does not affect individual player rankings.</p>
+                              </div>
+                              {isCompactLayout && (
+                                <button
+                                  type="button"
+                                  onClick={() => setTopHrEnvironmentsExpanded((v) => !v)}
+                                  aria-expanded={topHrEnvironmentsExpanded}
+                                  className="shrink-0 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-800"
+                                >
+                                  {topHrEnvironmentsExpanded ? "Show less" : "Click to expand"}
+                                </button>
+                              )}
+                            </div>
+                            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              {(isCompactLayout && !topHrEnvironmentsExpanded ? gameEnvironments.slice(0, 1) : gameEnvironments.slice(0, 6)).map((g) => (
+                                <div key={g.gameKey} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="truncate text-sm font-semibold text-slate-900" title={g.matchup}>{g.matchup}</span>
+                                    <span className={cn(
+                                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
+                                      (g.gameHrEnvironmentScore ?? 0) >= 70 ? "bg-emerald-100 text-emerald-800" :
+                                      (g.gameHrEnvironmentScore ?? 0) >= 50 ? "bg-amber-100 text-amber-800" :
+                                      "bg-slate-200 text-slate-600",
+                                    )}>
+                                      {g.gameHrEnvironmentScore != null ? g.gameHrEnvironmentScore.toFixed(0) : "—"}
+                                    </span>
+                                  </div>
+                                  <div className="mt-1 truncate text-[11px] text-slate-400">{g.ballpark}</div>
+                                  <div className="mt-2 grid grid-cols-3 gap-1 text-center text-[10px]">
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Park</div>
+                                      <div className="font-semibold text-slate-700">{g.parkFactor != null ? g.parkFactor.toFixed(2) : "—"}</div>
+                                    </div>
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Weather</div>
+                                      <div className="font-semibold text-slate-700">{g.weatherEffect != null ? (g.weatherEffect > 0 ? "+" : "") + g.weatherEffect.toFixed(1) : "—"}</div>
+                                    </div>
+                                    <div className="rounded bg-white px-1 py-1">
+                                      <div className="text-slate-400">Starter Vuln</div>
+                                      <div className="font-semibold text-slate-700">{g.starterVulnerability != null ? g.starterVulnerability.toFixed(0) : "—"}</div>
+                                    </div>
+                                  </div>
+                                  <div className="mt-1.5 text-[10px] text-slate-400">{g.qualifyingHitterCount} qualifying bat{g.qualifyingHitterCount === 1 ? "" : "s"}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </section>
                     ) : null}
 
@@ -2781,7 +3080,147 @@ export default function MlbHrProps() {
                         </div>
 
                         <DataLegend />
-                        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+                        <div className="rounded-xl border border-slate-200">
+                          {isCompactLayout ? (
+                          /* Mobile/tablet (below lg): compact expandable rows, mirroring the Batter View card pattern. */
+                          <div className="divide-y divide-slate-100">
+                            {activeMatchupLens === "strikeout" ? (
+                              filteredStrikeoutRows.length ? filteredStrikeoutRows.map((row, i) => {
+                                const rowKey = `${row.rank}-${row.pitcher}-${row.opponent}`;
+                                const isExpanded = expandedStrikeoutRowKey === rowKey;
+                                const toggle = () => setExpandedStrikeoutRowKey(isExpanded ? null : rowKey);
+                                const onRowKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                                  if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); }
+                                };
+                                return (
+                                  <div key={`m-${rowKey}`} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                                    <div
+                                      onClick={toggle}
+                                      onKeyDown={onRowKeyDown}
+                                      role="button"
+                                      tabIndex={0}
+                                      aria-expanded={isExpanded}
+                                      aria-label={`${isExpanded ? "Hide" : "Show"} strikeout matchup detail for ${row.pitcher} vs ${row.opponent}`}
+                                      className="flex cursor-pointer items-center gap-2 px-3 py-2.5 transition-colors active:bg-slate-100"
+                                    >
+                                      <span aria-hidden="true" className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isExpanded && "rotate-90")}>▶</span>
+                                      <TeamLogoBadge team={row.team} size={22} showLabel={false} />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="truncate text-[13px] font-semibold text-slate-900">{row.pitcher}</div>
+                                        <div className="truncate text-[11px] text-slate-400">{row.team} vs {row.opponent}</div>
+                                      </div>
+                                      <ScorePill value={row.strikeoutMatchupScore} />
+                                    </div>
+                                    {isExpanded && (
+                                      <div className="space-y-1.5 bg-slate-50 px-3 pb-3 pt-1">
+                                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                          <MetricTile label="Park">
+                                            <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
+                                          </MetricTile>
+                                          <MetricTile label="Pitcher K%"><span style={getStrikeoutTableHeatStyle("pitcherKRate", row.pitcherKRate, strikeoutHeat)} className="rounded px-1 py-0.5 text-[11px] font-bold">{formatPercent(row.pitcherKRate)}</span></MetricTile>
+                                          <MetricTile label="Pitcher Whiff%"><span style={getStrikeoutTableHeatStyle("pitcherWhiffRate", row.pitcherWhiffRate, strikeoutHeat)} className="rounded px-1 py-0.5 text-[11px] font-bold">{formatPercent(row.pitcherWhiffRate)}</span></MetricTile>
+                                          <MetricTile label="Pitcher K VS"><ScorePill value={row.pitcherKVs} /></MetricTile>
+                                          <MetricTile label="Opp Team K%"><span style={getStrikeoutTableHeatStyle("opponentTeamKRate", row.opponentTeamKRate, strikeoutHeat)} className="rounded px-1 py-0.5 text-[11px] font-bold">{formatPercent(row.opponentTeamKRate)}</span></MetricTile>
+                                          <MetricTile label="Opp Whiff%"><span style={getStrikeoutTableHeatStyle("opponentTeamWhiffRate", row.opponentTeamWhiffRate, strikeoutHeat)} className="rounded px-1 py-0.5 text-[11px] font-bold">{formatPercent(row.opponentTeamWhiffRate)}</span></MetricTile>
+                                          <MetricTile label="Opp xBA"><span style={getStrikeoutTableHeatStyle("opponentTeamXba", row.opponentTeamXba, strikeoutHeat)} className="rounded px-1 py-0.5 text-[11px] font-bold">{formatDecimal(row.opponentTeamXba, 3)}</span></MetricTile>
+                                        </div>
+                                        <p className="text-[11px] leading-4 text-slate-500">{row.whyItRanksWell}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              }) : (
+                                <div className="px-3 py-6 text-center text-sm text-slate-500">No matchup rows match the current search or game filter.</div>
+                              )
+                            ) : (
+                              filteredMatchups.length ? filteredMatchups.map((row, i) => {
+                                const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
+                                const isBvpExpanded = bvpExpandedMatchupKey === bvpKey;
+                                const bvpRowLabel = `${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`;
+                                const onRowKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+                                  if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggleBvpMatchupRow(row); }
+                                };
+                                const primaryScore = activeMatchupLens === "best" ? row.bestMatchupScore : row.hrTargetScore;
+                                return (
+                                  <div key={`m-${row.rank}-${row.player}-${row.opposingPitcher}`} className={i % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                                    <div
+                                      onClick={() => toggleBvpMatchupRow(row)}
+                                      onKeyDown={onRowKeyDown}
+                                      role="button"
+                                      tabIndex={0}
+                                      aria-expanded={isBvpExpanded}
+                                      aria-label={bvpRowLabel}
+                                      className="flex cursor-pointer items-center gap-2 px-3 py-2.5 transition-colors active:bg-slate-100"
+                                    >
+                                      <span aria-hidden="true" className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
+                                      <TeamLogoBadge team={row.team} size={22} showLabel={false} />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="truncate text-[13px] font-semibold text-slate-900">{row.player}</div>
+                                        <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
+                                      </div>
+                                      <ScorePill value={primaryScore} />
+                                    </div>
+                                    {isBvpExpanded && (
+                                      <div className="space-y-3 bg-slate-50 px-3 pb-3 pt-1">
+                                        <div>
+                                          <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Career vs Pitcher</div>
+                                          <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                        </div>
+                                        <div>
+                                          <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Matchup Metrics</div>
+                                          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                            <MetricTile label="Park">
+                                              <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", getParkFactorTone(row.parkFactor))}>{row.parkFactor.toFixed(2)}</span>
+                                            </MetricTile>
+                                            <MetricTile label="Batter HR"><ScorePill value={row.hrScore} /></MetricTile>
+                                            {activeMatchupLens === "best" ? (
+                                              <>
+                                                <MetricTile label="Pitcher Hits VS">
+                                                  {row.opposingPitcherHitsVs != null && row.opposingPitcherHitsVs >= 70 ? <span>⚔️</span> : null}
+                                                  <ScorePill value={row.opposingPitcherHitsVs} />
+                                                </MetricTile>
+                                                <MetricTile label="Pitcher HR VS">
+                                                  {row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 ? <span>⚔️</span> : null}
+                                                  <ScorePill value={row.opposingPitcherHrVs} />
+                                                </MetricTile>
+                                                <MetricTile label="Balanced Matchup"><ScorePill value={row.bestMatchupScore} /></MetricTile>
+                                                <MetricTile label="xBA"><span className="text-[11px] font-semibold text-slate-700">{formatDecimal(row.xba, 3)}</span></MetricTile>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <MetricTile label="Pitcher HR VS">
+                                                  {row.opposingPitcherHrVs != null && row.opposingPitcherHrVs >= 70 ? <span>⚔️</span> : null}
+                                                  <ScorePill value={row.opposingPitcherHrVs} />
+                                                </MetricTile>
+                                                <MetricTile label="HR Target Score"><ScorePill value={row.hrTargetScore} /></MetricTile>
+                                                <MetricTile label="Barrel%"><span className="text-[11px] font-semibold text-slate-700">{formatPercent(row.barrelRate)}</span></MetricTile>
+                                                <MetricTile label="Hard Hit%"><span className="text-[11px] font-semibold text-slate-700">{formatPercent(row.hardHitRate)}</span></MetricTile>
+                                                <MetricTile label="xBA"><span className="text-[11px] font-semibold text-slate-700">{formatDecimal(row.xba, 3)}</span></MetricTile>
+                                              </>
+                                            )}
+                                            <MetricTile label="Angle">
+                                              {row.angleTags.length ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                  {row.angleTags.map((tag) => (
+                                                    <span key={`${row.player}-m-${tag}`} className="whitespace-nowrap rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">{tag}</span>
+                                                  ))}
+                                                </div>
+                                              ) : <span className="text-[11px] text-slate-300">{DASH}</span>}
+                                            </MetricTile>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              }) : (
+                                <div className="px-3 py-6 text-center text-sm text-slate-500">No matchup rows match the current search or game filter.</div>
+                              )
+                            )}
+                          </div>
+                          ) : (
+                          /* Desktop (lg and above): existing table, unchanged. */
+                          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                           <table className="min-w-full border-separate border-spacing-0 text-sm">
                             <thead className="sticky top-0 z-10 bg-white">
                               <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
@@ -2986,6 +3425,8 @@ export default function MlbHrProps() {
                               )}
                             </tbody>
                           </table>
+                          </div>
+                          )}
                         </div>
                       </section>
                     ) : null}
@@ -3044,6 +3485,40 @@ export default function MlbHrProps() {
                     </div>
                   </section>
                 ) : null}
+
+                <section className="rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900">How to read this page</h2>
+                      <p className="mt-0.5 text-xs text-slate-400">Terminology and Model Explanation</p>
+                    </div>
+                    {isCompactLayout && (
+                      <button
+                        type="button"
+                        onClick={() => setHowToReadExpanded((v) => !v)}
+                        aria-expanded={howToReadExpanded}
+                        className="shrink-0 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-800"
+                      >
+                        {howToReadExpanded ? "Show less" : "Click to expand"}
+                      </button>
+                    )}
+                  </div>
+                  {(!isCompactLayout || howToReadExpanded) && (
+                    <>
+                      <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
+                        This board ranks today&apos;s batters by HR Quality Score — a relative measure of home-run matchup strength built from barrel rate, hard-hit rate, recent power, and the opposing pitcher&apos;s HR vulnerability. It&apos;s a ranking tool for research, not a prediction of who will homer or a guaranteed pick.
+                      </p>
+                      <div className="mt-3 border-t border-slate-200 pt-3">
+                        <dl className="grid gap-x-5 gap-y-2 text-xs leading-5 text-slate-600 sm:grid-cols-2">
+                          <div><dt className="inline font-bold text-slate-900">HR Score — </dt><dd className="inline">Higher scores indicate stronger relative home-run matchups today. It is not a probability.</dd></div>
+                          <div><dt className="inline font-bold text-slate-900">HR Odds — </dt><dd className="inline">Current sportsbook anytime-home-run price when available.</dd></div>
+                          <div><dt className="inline font-bold text-slate-900">Market % — </dt><dd className="inline">Raw implied probability from the sportsbook odds. It is not adjusted for vig and is not a model estimate.</dd></div>
+                          <div><dt className="inline font-bold text-slate-900">Use both together — </dt><dd className="inline">Compare matchup strength with the available market price to identify research opportunities.</dd></div>
+                        </dl>
+                      </div>
+                    </>
+                  )}
+                </section>
 
                 <RelatedTools currentToolId="hr-props" />
               </section>
