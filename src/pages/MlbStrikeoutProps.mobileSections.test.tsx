@@ -342,3 +342,147 @@ describe("How to use this page / Understanding Edge -- collapsed by default belo
     expect(screen.queryByRole("button", { name: "Click to expand" })).not.toBeInTheDocument();
   }, SLOW_RENDER_TIMEOUT_MS);
 });
+
+describe("Compact row accessibility -- aria-controls, visible expand label, keyboard, single-open", () => {
+  it("main table: aria-controls points to an existing element once expanded", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData([makeRow({ pitcher: "Aria Guy" })]);
+    await renderPage();
+
+    const trigger = await screen.findByRole("button", { name: /Show recent strikeout details for Aria Guy/ });
+    const panelId = trigger.getAttribute("aria-controls");
+    expect(panelId).toBeTruthy();
+    // Collapsed: the id is declared but the panel isn't mounted yet (a valid ARIA disclosure pattern).
+    expect(document.getElementById(panelId as string)).toBeNull();
+
+    fireEvent.click(trigger);
+    expect(trigger.getAttribute("aria-controls")).toBe(panelId);
+    expect(document.getElementById(panelId as string)).not.toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("main table: shows a visible 'Click to expand' label that becomes 'Show less' once expanded", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData([makeRow({ pitcher: "Label Guy" })]);
+    await renderPage();
+
+    const trigger = await screen.findByRole("button", { name: /Show recent strikeout details for Label Guy/ });
+    expect(within(trigger).getByText("Click to expand")).toBeInTheDocument();
+
+    fireEvent.click(trigger);
+    expect(within(trigger).getByText("Show less")).toBeInTheDocument();
+    expect(within(trigger).queryByText("Click to expand")).not.toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("main table: preserves aria-expanded and keyboard activation still works (real <button>, focusable, native Enter/Space semantics apply)", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData([makeRow({ pitcher: "Keyboard Guy" })]);
+    await renderPage();
+
+    const trigger = await screen.findByRole("button", { name: /Show recent strikeout details for Keyboard Guy/ });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    // A native <button> (not a div/span with an onClick) is inherently keyboard-operable --
+    // real browsers fire a click on Enter/Space automatically, which jsdom does not simulate.
+    // Asserting it's a genuine, focusable button element is what actually proves keyboard
+    // activation works for a user, rather than faking a keydown-to-click bridge in the test.
+    expect(trigger.tagName).toBe("BUTTON");
+    expect(trigger).not.toHaveAttribute("tabindex", "-1");
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(within(trigger).getByText("Show less")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("main table: only one pitcher is expanded at a time", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData([makeRow({ pitcher: "First Guy" }), makeRow({ pitcher: "Second Guy", team: "NYY", opponent: "BOS", gameKey: "NYY@BOS" })]);
+    await renderPage();
+
+    const firstTrigger = await screen.findByRole("button", { name: /Show recent strikeout details for First Guy/ });
+    const secondTrigger = screen.getByRole("button", { name: /Show recent strikeout details for Second Guy/ });
+
+    fireEvent.click(firstTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(secondTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("main table: does not overflow the viewport at 320px", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData([makeRow({ pitcher: "Narrow Viewport Guy" })]);
+    const { container } = await renderPage();
+
+    const trigger = await screen.findByRole("button", { name: /Show recent strikeout details for Narrow Viewport Guy/ });
+    fireEvent.click(trigger);
+
+    const label = within(trigger).getByText("Show less");
+    expect(label.className).not.toMatch(/whitespace-nowrap/);
+    // The row stays a block-level flex column (chevron/logo/name/odds row, then the label on its own line)
+    // rather than forcing the label onto the same horizontal line as the odds/score content.
+    expect(trigger.className).toMatch(/flex-col/);
+    expect(container.querySelector('[data-x-export="mlb-strikeout-props"]')?.className).not.toMatch(/overflow-x-auto/);
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("Low Confidence: aria-controls points to an existing element once expanded, with a visible label", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    mockPropsData([makeRow(), lowConfidenceRow]);
+    await renderPage();
+
+    const trigger = await screen.findByRole("button", { name: new RegExp(`Show recent strikeout details for ${lowConfidenceRow.pitcher}`) });
+    expect(within(trigger).getByText("Click to expand")).toBeInTheDocument();
+
+    const panelId = trigger.getAttribute("aria-controls");
+    expect(panelId).toBeTruthy();
+    expect(document.getElementById(panelId as string)).toBeNull();
+
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(within(trigger).getByText("Show less")).toBeInTheDocument();
+    expect(document.getElementById(panelId as string)).not.toBeNull();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("Low Confidence: only one row is expanded at a time, independent of the main table", async () => {
+    stubMatchMedia(true);
+    vi.resetModules();
+    const secondLowConfidence = makeRow({
+      rank: 201,
+      pitcher: "Second Uncertain Arm",
+      team: "PHI",
+      opponent: "ATL",
+      gameKey: "ATL@PHI",
+      pitcherKRate: null,
+      pitcherWhiffRate: null,
+      workloadConfidenceGrade: "D",
+      workloadConfidenceScore: 0.2,
+      workloadFlags: ["NO_STARTS_AVAILABLE"],
+    });
+    mockPropsData([makeRow(), lowConfidenceRow, secondLowConfidence]);
+    await renderPage();
+
+    // Expand the Low Confidence <details> so its compact rows are in the DOM.
+    const summary = screen.getByText("Low Confidence", { exact: false }).closest("summary") as HTMLElement;
+    fireEvent.click(summary);
+
+    const firstTrigger = await screen.findByRole("button", { name: new RegExp(`Show recent strikeout details for ${lowConfidenceRow.pitcher}`) });
+    const secondTrigger = screen.getByRole("button", { name: /Show recent strikeout details for Second Uncertain Arm/ });
+
+    fireEvent.click(firstTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(secondTrigger);
+    expect(firstTrigger).toHaveAttribute("aria-expanded", "false");
+    expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+  }, SLOW_RENDER_TIMEOUT_MS);
+});

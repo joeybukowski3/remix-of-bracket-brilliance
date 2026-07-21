@@ -95,6 +95,11 @@ function makeSortIndicator(active: boolean, direction: SortDirection) {
   return active ? (direction === "asc" ? " ↑" : " ↓") : "";
 }
 
+/** Turns a keyForStrikeoutPropRow() key (e.g. "dean-kremer|bal|chc|2026-07-08") into a stable, DOM-safe id for a compact row's expand panel + aria-controls pair. Prefixed per call site so the main table and Low Confidence rows never collide even if a key were ever reused. */
+function compactRowPanelId(prefix: string, rowKey: string) {
+  return `${prefix}-${rowKey.replace(/[^a-zA-Z0-9-]/g, "-")}`;
+}
+
 function StatScorePill({ value }: { value: number | null | undefined }) {
   if (value == null || !Number.isFinite(value)) return <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-400">{DASH}</span>;
   const number = Number(value);
@@ -454,6 +459,7 @@ export default function MlbStrikeoutProps() {
                     {visibleRows.length ? visibleRows.map((row) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
                       const isExpanded = expandedRowKey === rowKey;
+                      const panelId = compactRowPanelId("strikeout-row-detail", rowKey);
                       const edgeInfo = getProjectionEdgeInfo(row);
                       const hasPostedLine = row.kLine != null && row.kLine > 0;
                       const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
@@ -464,27 +470,33 @@ export default function MlbStrikeoutProps() {
                             type="button"
                             onClick={() => toggleRow(row)}
                             aria-expanded={isExpanded}
+                            aria-controls={panelId}
                             aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
-                            className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+                            className="flex w-full flex-col gap-1 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
                           >
-                            <span className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
-                            <MlbTeamLogo team={row.team} size={28} />
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate text-[13px] font-black text-slate-900">{row.pitcher}</div>
-                              <div className="truncate text-[11px] text-slate-400">vs {row.opponent}</div>
+                            <div className="flex items-center gap-2">
+                              <span className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                              <MlbTeamLogo team={row.team} size={28} />
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-[13px] font-black text-slate-900">{row.pitcher}</div>
+                                <div className="truncate text-[11px] text-slate-400">vs {row.opponent}</div>
+                              </div>
+                              <div className="flex shrink-0 flex-col items-end gap-1">
+                                {hasKOdds && (
+                                  <span className="whitespace-nowrap text-[10px] font-bold text-slate-600">
+                                    {hasPostedLine ? `${fmt(row.kLine)} K` : "No line yet"}
+                                    {hasPostedOdds && <span className="ml-1 text-slate-400">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span>}
+                                  </span>
+                                )}
+                                <PropScoreBadge score={row.strikeoutMatchupScore} />
+                              </div>
                             </div>
-                            <div className="flex shrink-0 flex-col items-end gap-1">
-                              {hasKOdds && (
-                                <span className="whitespace-nowrap text-[10px] font-bold text-slate-600">
-                                  {hasPostedLine ? `${fmt(row.kLine)} K` : "No line yet"}
-                                  {hasPostedOdds && <span className="ml-1 text-slate-400">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span>}
-                                </span>
-                              )}
-                              <PropScoreBadge score={row.strikeoutMatchupScore} />
-                            </div>
+                            <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
+                              {isExpanded ? "Show less" : "Click to expand"}
+                            </span>
                           </button>
                           {isExpanded && (
-                            <div className="space-y-3 border-t border-slate-100 bg-slate-50 px-3 pb-3 pt-2">
+                            <div id={panelId} className="space-y-3 border-t border-slate-100 bg-slate-50 px-3 pb-3 pt-2">
                               <div>
                                 <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">K Model Metrics</div>
                                 <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
@@ -630,25 +642,32 @@ export default function MlbStrikeoutProps() {
                       {lowConfidenceRows.map((row) => {
                         const rowKey = keyForStrikeoutPropRow(row, slateDate);
                         const isExpanded = expandedRowKey === rowKey;
+                        const panelId = compactRowPanelId("strikeout-lowconf-detail", rowKey);
                         return (
                           <article key={`mobile-low-confidence-${row.rank}-${row.pitcher}`} className="overflow-hidden rounded-xl border border-amber-100 bg-amber-50/20 shadow-sm">
                             <button
                               type="button"
                               onClick={() => toggleRow(row)}
                               aria-expanded={isExpanded}
+                              aria-controls={panelId}
                               aria-label={`${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`}
-                              className="flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-amber-50"
+                              className="flex w-full flex-col gap-1 px-3 py-2.5 text-left transition-colors hover:bg-amber-50"
                             >
-                              <span className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
-                              <MlbTeamLogo team={row.team} size={28} />
-                              <div className="min-w-0 flex-1">
-                                <div className="truncate text-[13px] font-black text-slate-900">{row.pitcher}</div>
-                                <div className="truncate text-[11px] text-slate-400">vs {row.opponent}</div>
+                              <div className="flex items-center gap-2">
+                                <span className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                                <MlbTeamLogo team={row.team} size={28} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-[13px] font-black text-slate-900">{row.pitcher}</div>
+                                  <div className="truncate text-[11px] text-slate-400">vs {row.opponent}</div>
+                                </div>
+                                <div className="shrink-0"><LowConfidenceStatusBadge row={row} compact /></div>
                               </div>
-                              <div className="shrink-0"><LowConfidenceStatusBadge row={row} compact /></div>
+                              <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
+                                {isExpanded ? "Show less" : "Click to expand"}
+                              </span>
                             </button>
                             {isExpanded && (
-                              <div className="space-y-3 border-t border-amber-100 bg-amber-50/40 px-3 pb-3 pt-2">
+                              <div id={panelId} className="space-y-3 border-t border-amber-100 bg-amber-50/40 px-3 pb-3 pt-2">
                                 <div>
                                   <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Exclusion Reason</div>
                                   <LowConfidenceStatusBadge row={row} />
