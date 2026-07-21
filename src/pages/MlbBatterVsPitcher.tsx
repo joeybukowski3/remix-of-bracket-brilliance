@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
+import { Fragment, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
@@ -6,6 +6,7 @@ import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
 import { MlbParkFactorsStrip } from "@/components/mlb/MlbParkFactorsStrip";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
+import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import {
   formatPropNumber,
   getGameCount,
@@ -16,6 +17,7 @@ import {
   PropScoreBadge,
   TeamLogoText,
 } from "@/components/mlb/MlbPropModelComponents";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import {
   buildParkSidebarRows,
@@ -26,6 +28,8 @@ import MlbBvpHistoryPanel, { AvgVsPitcherCell, MlbBvpHistoryPanelLoading, MlbBvp
 import { cn } from "@/lib/utils";
 
 const DASH = "—";
+/** The main table incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. Mirrors MlbHrProps.tsx's Batter View and MlbStrikeoutProps.tsx's main table. */
+const PAGE_SIZE = 50;
 
 type SortKey = "rank" | "player" | "team" | "opposingPitcher" | "bestMatchupScore" | "batterPowerScore" | "opposingPitcherHitsVs" | "pitcherVulnerabilityScore" | "xba" | "hardHitRate" | "barrelRate";
 type SortDirection = "asc" | "desc";
@@ -79,6 +83,21 @@ function makeSortIndicator(active: boolean, dir: SortDirection) {
   return active ? (dir === "asc" ? " ↑" : " ↓") : "";
 }
 
+/** Turns a keyForBvpRow() key into a stable, DOM-safe id for a compact row's expand panel + aria-controls pair. Mirrors MlbStrikeoutProps.tsx's compactRowPanelId(). */
+function compactRowPanelId(key: string) {
+  return `bvp-row-detail-${key.replace(/[^a-zA-Z0-9-]/g, "-")}`;
+}
+
+/** Compact labeled tile for the mobile "Matchup Metrics" expand grid -- mirrors MlbHrProps.tsx's and MlbStrikeoutProps.tsx's MetricTile for visual consistency across all three mobile redesigns. */
+function MetricTile({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+      <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="mt-0.5 flex items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
 function BvpPageGuide() {
   return (
     <section aria-labelledby="bvp-page-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
@@ -106,6 +125,12 @@ export default function MlbBatterVsPitcher() {
   const [confidenceFilter, setConfidenceFilter] = useState("All tiers");
   const [sortKey, setSortKey] = useState<SortKey>("bestMatchupScore");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  /** Below the `lg` breakpoint (1024px): compact expandable-row layout instead of the desktop table. Resolved synchronously via matchMedia (see useIsCompactLayout) so the first render already reflects the real viewport, and rendered via JS branch (not CSS display toggling) so only one copy of each row ever sits in the DOM. Mirrors MlbHrProps.tsx and MlbStrikeoutProps.tsx. */
+  const isCompactLayout = useIsCompactLayout();
+  /** How many already-sorted/filtered rows are currently rendered -- "Show 50 more" grows this, a materially-changed filter/sort resets it. */
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  /** Mobile/tablet-only expand toggle for the relocated "How to read this page" section -- collapsed by default below lg, always open at lg and above. */
+  const [howToReadExpanded, setHowToReadExpanded] = useState(false);
 
   const toggleBvpRow = (row: PitcherVsBatterRow) => {
     const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
@@ -170,6 +195,12 @@ export default function MlbBatterVsPitcher() {
     });
     return sortRows(rows, sortKey, sortDir);
   }, [batterVsPitcherRows, confidenceFilter, gameFilter, search, sortDir, sortKey, teamFilter]);
+
+  const visibleRows = useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount]);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, teamFilter, gameFilter, confidenceFilter, sortKey, sortDir]);
 
   const handleSort = (key: SortKey) => {
     setSortDir((cur) => (sortKey === key ? (cur === "asc" ? "desc" : "asc") : ["player", "team", "opposingPitcher"].includes(key) ? "asc" : "desc"));
@@ -275,10 +306,16 @@ export default function MlbBatterVsPitcher() {
               { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" },
             ]}
           />
-          <BvpPageGuide />
           <FreshnessStatus status={status} />
 
-          <MlbParkFactorsStrip parks={parkRows} perspective="hitter" subtitle="Hitter-friendly order" />
+          <MlbParkFactorsStrip
+            parks={parkRows}
+            perspective="hitter"
+            subtitle="Hitter-friendly order"
+            collapsedPreviewCount={isCompactLayout ? 1 : undefined}
+            expandLabel={isCompactLayout ? "Click to expand" : undefined}
+            collapseLabel={isCompactLayout ? "Show less" : undefined}
+          />
 
           <div className="space-y-4">
               {/* Filters */}
@@ -305,7 +342,84 @@ export default function MlbBatterVsPitcher() {
 
               {/* Table */}
               <section className="rounded-[20px] border border-slate-200 bg-white shadow-sm overflow-hidden">
-                <div className="hidden overflow-x-auto md:block" style={{ WebkitOverflowScrolling: "touch" }}>
+                {isCompactLayout ? (
+                  /* Mobile/tablet (below lg): compact expandable rows, mirroring MlbHrProps.tsx's Batter View and MlbStrikeoutProps.tsx's main table. */
+                  <div className="grid gap-2 p-3">
+                    {visibleRows.length ? visibleRows.map((row) => {
+                      const pitcherTeam = getPitcherTeamForBatter(row, pitchers);
+                      const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
+                      const isBvpExpanded = bvpExpandedKey === bvpKey;
+                      const panelId = compactRowPanelId(bvpKey ?? `${row.rank}-${row.player}`);
+                      return (
+                        <article key={`m-${row.rank}-${row.player}`} className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+                          <button
+                            type="button"
+                            onClick={() => toggleBvpRow(row)}
+                            aria-expanded={isBvpExpanded}
+                            aria-controls={panelId}
+                            aria-label={`${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`}
+                            className="flex w-full flex-col gap-1 px-3 py-2.5 text-left transition-colors hover:bg-slate-50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className={cn("shrink-0 text-[10px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")} aria-hidden="true">▶</span>
+                              <MlbTeamLogo team={row.team} size={28} />
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-[13px] font-black text-slate-900">{row.player}</div>
+                                <div className="truncate text-[11px] text-slate-400">vs {row.opposingPitcher}</div>
+                              </div>
+                              <PropScoreBadge score={row.bestMatchupScore} />
+                            </div>
+                            <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
+                              {isBvpExpanded ? "Show less" : "Click to expand"}
+                            </span>
+                          </button>
+                          {isBvpExpanded && (
+                            <div id={panelId} className="space-y-3 border-t border-slate-100 bg-slate-50 px-3 pb-3 pt-2">
+                              <div>
+                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Career vs Pitcher</div>
+                                <BvpDetailPanel row={row} />
+                              </div>
+                              <div>
+                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Matchup Metrics</div>
+                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                                  <MetricTile label="xBA">
+                                    {row.xba != null && row.xba >= 0.310 ? <span>🎯</span> : null}
+                                    <GradCell value={row.xba} display={row.xba != null ? row.xba.toFixed(3) : DASH} avg={0.258} spread={0.030} />
+                                  </MetricTile>
+                                  <MetricTile label="Hard Hit%">
+                                    {row.hardHitRate != null && row.hardHitRate >= 55 ? <span>💥</span> : null}
+                                    <GradCell value={row.hardHitRate} display={row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : DASH} avg={46.5} spread={7} />
+                                  </MetricTile>
+                                  <MetricTile label="Barrel%">
+                                    {row.barrelRate != null && row.barrelRate >= 18 ? <span>💣</span> : null}
+                                    <GradCell value={row.barrelRate} display={row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : DASH} avg={8.0} spread={5} />
+                                  </MetricTile>
+                                  <MetricTile label="Batter Quality"><StatScorePill value={row.batterPowerScore} /></MetricTile>
+                                  <MetricTile label="Pitcher Contact Allowed">
+                                    {row.opposingPitcherHitsVs != null && row.opposingPitcherHitsVs >= 70 ? <span>⚔️</span> : null}
+                                    <StatScorePill value={row.opposingPitcherHitsVs} />
+                                  </MetricTile>
+                                  <MetricTile label="Pitcher Power Risk">
+                                    <GradCell value={row.pitcherVulnerabilityScore} display={fmt(row.pitcherVulnerabilityScore)} avg={50} spread={20} />
+                                  </MetricTile>
+                                  <MetricTile label="Matchup">
+                                    <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700">
+                                      <TeamLogoText team={row.team} size={13} /> vs <TeamLogoText team={pitcherTeam} size={13} />
+                                    </span>
+                                  </MetricTile>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    }) : (
+                      <div className="px-3 py-6 text-center text-sm text-slate-500">No batters match the current filters.</div>
+                    )}
+                  </div>
+                ) : (
+                  /* Desktop (lg and above): existing table, unchanged. */
+                  <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
                   <table className="min-w-full border-separate border-spacing-0 text-xs">
                     <thead className="sticky top-0 z-20">
                       <tr className="text-[10px] uppercase tracking-[0.12em] text-slate-500">
@@ -328,7 +442,7 @@ export default function MlbBatterVsPitcher() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRows.length ? filteredRows.map((row, i) => {
+                      {visibleRows.length ? visibleRows.map((row, i) => {
                         const pitcherTeam = getPitcherTeamForBatter(row, pitchers);
                         const bg = i % 2 === 0 ? "bg-white" : "bg-slate-50/70";
                         const sbg = i % 2 === 0 ? "bg-white" : "bg-slate-50";
@@ -407,69 +521,24 @@ export default function MlbBatterVsPitcher() {
                       )}
                     </tbody>
                   </table>
-                </div>
-
-                {/* Mobile cards */}
-                <div className="grid gap-2 p-3 md:hidden">
-                  {filteredRows.slice(0, 50).map((row) => {
-                    const pitcherTeam = getPitcherTeamForBatter(row, pitchers);
-                    const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
-                    const isBvpExpanded = bvpExpandedKey === bvpKey;
-                    const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
-                    return (
-                      <article key={`m-${row.rank}-${row.player}`} className="rounded-xl border border-slate-100 overflow-hidden shadow-sm bg-white">
-                        <button
-                          type="button"
-                          onClick={() => toggleBvpRow(row)}
-                          aria-expanded={isBvpExpanded}
-                          aria-label={`${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`}
-                          className="flex w-full items-center justify-between gap-2 px-3 py-2 bg-slate-50 border-b border-slate-100 text-left hover:bg-slate-100"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span aria-hidden="true" className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isBvpExpanded && "rotate-90")}>▶</span>
-                            <span className="text-[10px] font-black text-slate-300">#{row.rank}</span>
-                            <span className="font-black text-slate-900 text-sm truncate">{row.player}</span>
-                          </div>
-                          <PropScoreBadge score={row.bestMatchupScore} />
-                        </button>
-                        <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] border-b border-slate-100">
-                          <TeamLogoText team={row.team} size={13} />
-                          <span className="text-slate-300">vs</span>
-                          <TeamLogoText team={pitcherTeam} size={13} />
-                          <span className="text-slate-500 truncate">{row.opposingPitcher}</span>
-                        </div>
-                        <div className="grid grid-cols-5 divide-x divide-slate-100 text-center text-[10px]">
-                          <div className="bg-sky-50/60 px-1 py-2">
-                            <div className="text-[9px] font-black uppercase tracking-wide text-sky-500 mb-1">xBA</div>
-                            <div className="font-black text-slate-800">{row.xba != null ? row.xba.toFixed(3) : DASH}</div>
-                          </div>
-                          <div className="bg-sky-50/60 px-1 py-2">
-                            <div className="text-[9px] font-black uppercase tracking-wide text-sky-500 mb-1">Batter</div>
-                            <div className="font-black text-slate-800">{fmt(row.batterPowerScore)}</div>
-                          </div>
-                          <div className="bg-rose-50/60 px-1 py-2">
-                            <div className="text-[9px] font-black uppercase tracking-wide text-rose-500 mb-1">Pitcher</div>
-                            <div className="font-black text-slate-800">{fmt(row.opposingPitcherHitsVs)}</div>
-                          </div>
-                          <div className="bg-violet-50/60 px-1 py-2">
-                            <div className="text-[9px] font-black uppercase tracking-wide text-violet-500 mb-1">Pwr Risk</div>
-                            <div className="font-black text-slate-800">{fmt(row.pitcherVulnerabilityScore)}</div>
-                          </div>
-                          <div className="bg-slate-50 px-1 py-2">
-                            <div className="text-[9px] font-black uppercase tracking-wide text-slate-500 mb-1">AVG vs P</div>
-                            <div className="font-black text-slate-800"><AvgVsPitcherCell entry={bvpEntry} loading={bvpHistoryLoading} /></div>
-                          </div>
-                        </div>
-                        {isBvpExpanded && (
-                          <div className="border-t border-slate-100 p-2">
-                            <BvpDetailPanel row={row} />
-                          </div>
-                        )}
-                      </article>
-                    );
-                  })}
-                </div>
+                  </div>
+                )}
               </section>
+
+              {filteredRows.length > 0 && (
+                <div className="flex items-center justify-between gap-3 px-1 text-xs text-slate-500">
+                  <span>{visibleRows.length} of {filteredRows.length} matchups</span>
+                  {visibleCount < filteredRows.length && (
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-800"
+                    >
+                      Show 50 more
+                    </button>
+                  )}
+                </div>
+              )}
 
               <section aria-labelledby="bvp-signal-legend-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
                 <h2 id="bvp-signal-legend-title" className="text-xs font-black uppercase tracking-widest text-slate-500">Signal legend</h2>
@@ -479,6 +548,32 @@ export default function MlbBatterVsPitcher() {
                   <span>💣 Elite barrel rate</span>
                   <span>⚔️ Vulnerable opposing pitcher</span>
                 </div>
+              </section>
+
+              <section aria-labelledby="bvp-page-guide-title" className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h2 id="bvp-page-guide-title" className="text-base font-black text-slate-900">How to read this page</h2>
+                    <p className="mt-0.5 text-xs text-slate-400">Terminology and Model Explanation</p>
+                  </div>
+                  {isCompactLayout && (
+                    <button
+                      type="button"
+                      onClick={() => setHowToReadExpanded((v) => !v)}
+                      aria-expanded={howToReadExpanded}
+                      className="shrink-0 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-sky-300 hover:text-sky-800"
+                    >
+                      {howToReadExpanded ? "Show less" : "Click to expand"}
+                    </button>
+                  )}
+                </div>
+                {(!isCompactLayout || howToReadExpanded) && (
+                  <div className="mt-2 space-y-1.5 text-sm leading-6 text-slate-600">
+                    <p>Matchup Score ranks today&apos;s batter vs. pitcher matchups against each other using current-season Statcast contact quality, opposing-pitcher vulnerability, and park and weather context.</p>
+                    <p>Traditional batter-vs-pitcher history usually contains very small samples. Joe Knows Ball instead evaluates today&apos;s matchup using current-season contact quality, pitcher tendencies, and game context.</p>
+                    <p>This is a research tool designed to compare matchups. It is not a betting recommendation.</p>
+                  </div>
+                )}
               </section>
 
               <RelatedTools currentToolId="batter-vs-pitcher" />
