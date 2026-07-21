@@ -1,56 +1,455 @@
 {
   "tournament": "3M Open",
   "course": "TPC Twin Cities",
-  "generatedAt": "2026-07-21T14:07:09.457Z",
+  "generatedAt": "2026-07-21T21:01:11.503Z",
   "preview": {
-    "tournamentOverview": "TPC Twin Cities is a parkland layout that places a premium on approach play and total strokes gained. The course rewards players who hit greens from distance and avoid big numbers rather than pure distance off the tee. This event matters as a mid-summer stop where form and course fit can separate contenders from the field.",
-    "modelExplainer": "SG Approach (25.8%) and SG Total (22.8%) carry the heaviest weight, followed by SG Putting (16.8%) and SG Around the Green (13.3%). Driving accuracy and bogey avoidance each sit at 3.9% and 3.0%, underscoring the importance of precision and clean scoring over raw power. The model tilts toward players who excel on approach and maintain steady ball-striking.",
-    "pickApproach": "We tier bets by combining tournament rank and power rank to identify value. Top-tier names like Jake Knapp and Scottie Scheffler lead our outright and top-10 lists. Mid-tier plays focus on players with strong SG Approach or SG Total marks who sit outside the top 20 in power rank, offering price upside."
+    "tournamentOverview": "TPC Twin Cities is a parkland layout that rewards ball-striking and short-game control over raw distance. Approach play (25.8%) and total strokes gained (22.8%) carry the heaviest course weights, while putting (16.8%) and around-the-green (13.3%) remain critical for scrambling on firm, undulating greens. The 3M Open offers a strong field and solid FedExCup points, making it a key stop for players looking to climb the standings before the playoffs.",
+    "modelExplainer": "Our model weights approach play most heavily at 25.8%, followed by total SG at 22.8% and putting at 16.8%, reflecting the course's demand for precision iron play and reliable scoring. Off-the-tee (11.4%) and around-the-green (13.3%) receive moderate emphasis, while driving accuracy (3.9%) and bogey avoidance (3.0%) are deprioritized. This weighting structure favors players who consistently hit greens and convert putts rather than pure bombers.",
+    "pickApproach": "We tier selections by blending tournament-specific SG ranks with baseline power rankings to identify value. Top-tier bets target players with elite approach and total SG marks who also rank inside the top 30 in power. Mid-tier and long-shot wagers focus on golfers whose course-fit SG spikes outweigh weaker overall rankings, seeking mispriced upside in outrights and top-20 markets."
   },
   "valueBets": [],
-  "outrights": [],
-  "top5": [],
-  "top10": [],
-  "top20": [],
+  "outrights": [
+    {
+      "player": "Scottie Scheffler",
+      "tournamentRank": 2,
+      "powerRank": 2,
+      "topStats": [
+        "sgTotal=1.868",
+        "sgOTT=0.623"
+      ],
+      "bullets": [
+        "Model ranks Scheffler #2 with sgTotal=1.868, second only to Knapp.",
+        "Strong SG OTT=0.623 and SG ATG=0.618 align with course weights of SG OTT 11.4% and SG ATG 13.3%.",
+        "Recent form shows Top 5 at The Open and 6 rounds in two weeks, yet model still places him #2 overall.",
+        "Price looks like value given powerRank=2 and sgTotal=1.868 versus market pricing."
+      ],
+      "risk": "Heavy recent workload of 6 rounds in two weeks could impact stamina.",
+      "angles": [
+        "FedExCup rank #1 provides motivation despite Top 5 Open finish."
+      ],
+      "odds": null
+    },
+    {
+      "player": "Hideki Matsuyama",
+      "tournamentRank": 4,
+      "powerRank": 16,
+      "topStats": [
+        "sgApp=0.635",
+        "sgAtG=0.39"
+      ],
+      "bullets": [
+        "Model ranks Matsuyama #4 with sgApp=0.635, highest among top 10.",
+        "SG APP 25.8% course weight favors his 0.635 approach game.",
+        "11-20 Open finish and skipped Scottish Open kept workload at 4 rounds.",
+        "PowerRank=16 suggests price may be generous relative to tournamentRank=4."
+      ],
+      "risk": "SG OTT=-0.099 could struggle on a course with 11.4% OTT weight.",
+      "angles": [
+        "FedExCup rank #37 keeps him safe without added pressure."
+      ],
+      "odds": null
+    },
+    {
+      "player": "Rasmus Højgaard",
+      "tournamentRank": 10,
+      "powerRank": 29,
+      "topStats": [
+        "sgTotal=0.823",
+        "sgPutt=0.59"
+      ],
+      "bullets": [
+        "Model ranks Højgaard #10 with sgTotal=0.823 and sgPutt=0.59.",
+        "SG PUT 16.8% course weight supports his putting value of 0.59.",
+        "Missed cut at The Open but made cut at Scottish Open with 6 rounds workload.",
+        "PowerRank=29 indicates price could offer value versus tournamentRank=10."
+      ],
+      "risk": "SG ATG=-0.273 is a weakness against 13.3% course weight.",
+      "angles": [
+        "FedExCup rank #123 means he is chasing and motivated."
+      ],
+      "odds": null
+    },
+    {
+      "player": "Jason Day",
+      "tournamentRank": 11,
+      "powerRank": 40,
+      "topStats": [
+        "sgAtG=0.457",
+        "sgPutt=0.482"
+      ],
+      "bullets": [
+        "Model ranks Day #11 with sgAtG=0.457 and sgPutt=0.482.",
+        "SG ATG 13.3% and SG PUT 16.8% weights align with his around-the-green and putting numbers.",
+        "Missed cut at The Open but workload limited to 2 rounds after skipping Scottish Open.",
+        "PowerRank=40 suggests price may be generous relative to tournamentRank=11."
+      ],
+      "risk": "SG APP=-0.352 is a clear weakness against 25.8% course weight.",
+      "angles": [
+        "FedExCup rank #72 places him on the bubble with motivation."
+      ],
+      "odds": null
+    }
+  ],
+  "top5": [
+    {
+      "player": "Jake Knapp",
+      "tournamentRank": 1,
+      "powerRank": 1,
+      "topStats": [
+        "sgTotal=2.002",
+        "sgPutt=1.285"
+      ],
+      "bullets": [
+        "Model ranks Knapp #1 with sgTotal=2.002 and sgPutt=1.285.",
+        "SG PUT 16.8% course weight strongly favors his elite putting value.",
+        "Missed cut at The Open with only 4 rounds in two weeks keeps him fresh."
+      ],
+      "risk": "SG OTT=0.264 is modest against 11.4% course weight.",
+      "angles": [],
+      "odds": null
+    },
+    {
+      "player": "Scottie Scheffler",
+      "tournamentRank": 2,
+      "powerRank": 2,
+      "topStats": [
+        "sgTotal=1.868",
+        "sgOTT=0.623"
+      ],
+      "bullets": [
+        "Model ranks Scheffler #2 with sgTotal=1.868 and sgOTT=0.623.",
+        "SG OTT 11.4% course weight supports his off-the-tee strength.",
+        "Top 5 Open finish and 6 rounds workload still yields powerRank=2."
+      ],
+      "risk": "Heavy recent workload of 6 rounds in two weeks could impact stamina.",
+      "angles": [],
+      "odds": null
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "tournamentRank": 3,
+      "powerRank": 18,
+      "topStats": [
+        "sgTotal=1.34",
+        "sgApp=0.474"
+      ],
+      "bullets": [
+        "Model ranks Yellamaraju #3 with sgTotal=1.34 and sgApp=0.474.",
+        "SG APP 25.8% course weight aligns with his approach game value.",
+        "Made cut at Scottish Open with 4 rounds workload and FedExCup rank #52."
+      ],
+      "risk": "SG ATG=-0.188 is a weakness against 13.3% course weight.",
+      "angles": [],
+      "odds": null
+    },
+    {
+      "player": "Hideki Matsuyama",
+      "tournamentRank": 4,
+      "powerRank": 16,
+      "topStats": [
+        "sgApp=0.635",
+        "sgAtG=0.39"
+      ],
+      "bullets": [
+        "Model ranks Matsuyama #4 with sgApp=0.635 and sgAtG=0.39.",
+        "SG APP 25.8% course weight favors his approach game strength.",
+        "11-20 Open finish and skipped Scottish Open kept workload at 4 rounds."
+      ],
+      "risk": "SG OTT=-0.099 could struggle on a course with 11.4% OTT weight.",
+      "angles": [],
+      "odds": null
+    },
+    {
+      "player": "David Lipsky",
+      "tournamentRank": 5,
+      "powerRank": 20,
+      "topStats": [
+        "sgTotal=0.89",
+        "sgAtG=0.524"
+      ],
+      "bullets": [
+        "Model ranks Lipsky #5 with sgTotal=0.89 and sgAtG=0.524.",
+        "SG ATG 13.3% course weight supports his around-the-green value.",
+        "Did not play The Open and skipped Scottish Open with 0 rounds workload."
+      ],
+      "risk": "SG OTT=-0.31 is a weakness against 11.4% course weight.",
+      "angles": [],
+      "odds": null
+    }
+  ],
+  "top10": [
+    {
+      "player": "Jake Knapp",
+      "tournamentRank": 1,
+      "powerRank": 1,
+      "topStats": [
+        "sgPutt=1.285",
+        "sgTotal=2.002"
+      ],
+      "bullets": [
+        "tournamentRank 1 and powerRank 1 with sgTotal 2.002",
+        "sgPutt 1.285 leads the model and pairs with SG Total weight 22.8%",
+        "top-10 bet preferred over outright because sgPutt variance is lower than needing multiple wins"
+      ],
+      "risk": "Putting regression from 1.285 could drop him outside top-10 despite elite sgTotal.",
+      "angles": [
+        "Missed Cut at The Open with only 4 rounds in two weeks and FedExCup rank #39"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Scottie Scheffler",
+      "tournamentRank": 2,
+      "powerRank": 2,
+      "topStats": [
+        "sgOTT=0.623",
+        "sgAtG=0.618"
+      ],
+      "bullets": [
+        "tournamentRank 2 and powerRank 2 with sgOTT 0.623",
+        "sgAtG 0.618 and SG Total weight 22.8% support consistent top-10",
+        "top-10 bet preferred over outright because tee-to-green floor reduces outright variance"
+      ],
+      "risk": "sgApp 0.08 is the lowest among top-5 and could limit scoring upside.",
+      "angles": [
+        "Top 5 at The Open with 6 rounds in two weeks and FedExCup rank #1"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "tournamentRank": 3,
+      "powerRank": 18,
+      "topStats": [
+        "sgApp=0.474",
+        "sgTotal=1.34"
+      ],
+      "bullets": [
+        "tournamentRank 3 with sgApp 0.474 and SG APP weight 25.8%",
+        "sgTotal 1.34 and powerRank 18 show ceiling for top-10",
+        "top-10 bet preferred over outright because approach play provides floor over outright variance"
+      ],
+      "risk": "sgAtG -0.188 is negative and may hurt scoring consistency.",
+      "angles": [
+        "Did Not Play The Open with 4 rounds in two weeks and FedExCup rank #52"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Hideki Matsuyama",
+      "tournamentRank": 4,
+      "powerRank": 16,
+      "topStats": [
+        "sgApp=0.635",
+        "sgAtG=0.39"
+      ],
+      "bullets": [
+        "tournamentRank 4 with sgApp 0.635 and SG APP weight 25.8%",
+        "sgAtG 0.39 and powerRank 16 support top-10 path",
+        "top-10 bet preferred over outright because approach and around-the-green numbers reduce variance"
+      ],
+      "risk": "sgOTT -0.099 is negative and could limit driving distance on this layout.",
+      "angles": [
+        "11-20 at The Open with 4 rounds in two weeks and FedExCup rank #37"
+      ],
+      "odds": null
+    },
+    {
+      "player": "David Lipsky",
+      "tournamentRank": 5,
+      "powerRank": 20,
+      "topStats": [
+        "sgAtG=0.524",
+        "sgPutt=0.485"
+      ],
+      "bullets": [
+        "tournamentRank 5 with sgAtG 0.524 and SG ATG weight 13.3%",
+        "sgPutt 0.485 and powerRank 20 give top-10 ceiling",
+        "top-10 bet preferred over outright because around-the-green and putting floor lowers variance"
+      ],
+      "risk": "sgOTT -0.31 is the lowest in top-10 and may hurt tee-to-green stability.",
+      "angles": [
+        "Did Not Play The Open with 0 rounds in two weeks and FedExCup rank #76"
+      ],
+      "odds": null
+    }
+  ],
+  "top20": [
+    {
+      "player": "Maverick McNealy",
+      "tournamentRank": 6,
+      "powerRank": 22,
+      "topStats": [
+        "sgOTT=0.31",
+        "sgTotal=0.994"
+      ],
+      "bullets": [
+        "tournamentRank 6 with sgOTT 0.31 and SG OTT weight 11.4%",
+        "sgTotal 0.994 and powerRank 22 support cut-making floor",
+        "top-20 bet fits because reliable OTT and total SG reduce missed-cut risk"
+      ],
+      "risk": "sgPutt 0.286 is modest and may limit scoring if putting cools.",
+      "angles": [
+        "Missed Cut at The Open with 2 rounds in two weeks and FedExCup rank #50"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Austin Smotherman",
+      "tournamentRank": 7,
+      "powerRank": 37,
+      "topStats": [
+        "sgApp=0.874",
+        "sgOTT=0.479"
+      ],
+      "bullets": [
+        "tournamentRank 7 with sgApp 0.874 and SG APP weight 25.8%",
+        "sgOTT 0.479 and powerRank 37 give strong approach and driving for top-20",
+        "top-20 bet fits because tee-to-green numbers support cut-making reliability"
+      ],
+      "risk": "sgPutt -0.494 is the lowest in top-10 and could cause weekend volatility.",
+      "angles": [
+        "Did Not Play The Open with 2 rounds in two weeks and FedExCup rank #78"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Andrew Putnam",
+      "tournamentRank": 8,
+      "powerRank": 35,
+      "topStats": [
+        "sgAtG=0.515",
+        "sgTotal=0.479"
+      ],
+      "bullets": [
+        "tournamentRank 8 with sgAtG 0.515 and SG ATG weight 13.3%",
+        "sgTotal 0.479 and powerRank 35 provide around-the-green stability for top-20",
+        "top-20 bet fits because around-the-green floor supports consistent cuts"
+      ],
+      "risk": "sgOTT -0.341 is negative and may limit driving accuracy on this course.",
+      "angles": [
+        "Did Not Play The Open with 4 rounds in two weeks and FedExCup rank #68"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Sam Stevens",
+      "tournamentRank": 9,
+      "powerRank": 45,
+      "topStats": [
+        "sgOTT=0.545",
+        "sgApp=0.328"
+      ],
+      "bullets": [
+        "tournamentRank 9 with sgOTT 0.545 and SG OTT weight 11.4%",
+        "sgApp 0.328 and powerRank 45 give tee-to-green profile for top-20",
+        "top-20 bet fits because OTT and approach numbers reduce missed-cut risk"
+      ],
+      "risk": "sgPutt -0.218 is negative and may limit scoring upside.",
+      "angles": [
+        "Missed Cut at The Open with 4 rounds in two weeks and FedExCup rank #53"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Rasmus Højgaard",
+      "tournamentRank": 10,
+      "powerRank": 29,
+      "topStats": [
+        "sgPutt=0.59",
+        "sgTotal=0.823"
+      ],
+      "bullets": [
+        "tournamentRank 10 with sgPutt 0.59 and SG PUTT weight 16.8%",
+        "sgTotal 0.823 and powerRank 29 support putting-driven top-20 floor",
+        "top-20 bet fits because putting and total SG reduce cut-making variance"
+      ],
+      "risk": "sgAtG -0.273 is negative and may hurt scrambling consistency.",
+      "angles": [
+        "Missed Cut at The Open with 6 rounds in two weeks and FedExCup rank #123"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Jason Day",
+      "tournamentRank": 11,
+      "powerRank": 40,
+      "topStats": [
+        "sgAtG=0.457",
+        "sgPutt=0.482"
+      ],
+      "bullets": [
+        "tournamentRank 11 with sgAtG 0.457 and SG ATG weight 13.3%",
+        "sgPutt 0.482 and powerRank 40 give around-the-green and putting for top-20",
+        "top-20 bet fits because ATG and putting floor support cut-making reliability"
+      ],
+      "risk": "sgApp -0.352 is negative and may limit approach consistency.",
+      "angles": [
+        "Missed Cut at The Open with 2 rounds in two weeks and FedExCup rank #72"
+      ],
+      "odds": null
+    },
+    {
+      "player": "Gary Woodland",
+      "tournamentRank": 15,
+      "powerRank": 46,
+      "topStats": [
+        "sgOTT=0.678",
+        "sgTotal=0.682"
+      ],
+      "bullets": [
+        "tournamentRank 15 with sgOTT 0.678 and SG OTT weight 11.4%",
+        "sgTotal 0.682 and powerRank 46 give driving and total SG for top-20",
+        "top-20 bet fits because OTT and total SG reduce missed-cut risk"
+      ],
+      "risk": "sgAtG -0.397 is the lowest in top-20 and may hurt scrambling.",
+      "angles": [
+        "Missed Cut at The Open with 2 rounds in two weeks and FedExCup rank #29"
+      ],
+      "odds": null
+    }
+  ],
   "article": {
     "title": "3M Open Model Targets at TPC Twin Cities",
-    "dek": "Model ranks Jake Knapp first with 2.002 SG total while Scheffler sits second at 1.868 SG total entering the 144-player field.",
-    "introduction": "The tournament model places heavy emphasis on SG APP (25.8%) and SG Total (22.8%) at TPC Twin Cities. Jake Knapp leads the rankings with 2.002 SG total and 1.285 SG putting, ahead of Scottie Scheffler at 1.868 SG total. No outright, top-10, or top-20 targets were generated this week.",
+    "dek": "Model ranks Scheffler, Matsuyama, and Højgaard as primary outright options while Knapp leads the field in sgTotal at 2.002.",
+    "introduction": "The tournament model places Jake Knapp at rank 1 with sgTotal 2.002 and Scottie Scheffler at rank 2 with sgTotal 1.868. Course weights emphasize SG APP at 25.8% and SG Total at 22.8%. Post-Open workload and FedExCup context are factored for the 144-player field starting 2026-07-23.",
     "sections": [
       {
         "heading": "Tournament Overview",
-        "body": "The 3M Open at TPC Twin Cities features a 144-player field with course weights favoring SG APP at 25.8% and SG Total at 22.8%. Jake Knapp ranks first in the model with 2.002 SG total while Scottie Scheffler ranks second at 1.868 SG total."
+        "body": "The model ranks the top 20 players by combined power and tournament rank, with Jake Knapp at tournamentRank 1 and powerRank 1, followed by Scottie Scheffler at tournamentRank 2 and powerRank 2."
       },
       {
         "heading": "Course Factors",
-        "body": "SG APP carries the highest weight at 25.8%, followed by SG Total at 22.8% and SG PUT at 16.8%. Austin Smotherman ranks seventh with 0.874 SG APP, while Hideki Matsuyama ranks fourth with 0.635 SG APP."
-      },
-      {
-        "heading": "Weekly Betting Angles",
-        "body": "Sudarshan Yellamaraju ranks third with 1.34 SG total and 0.474 SG APP. David Lipsky ranks fifth with 0.89 SG total and 0.524 SG ATG. Maverick McNealy ranks sixth with 0.994 SG total and 0.31 SG OTT."
+        "body": "TPC Twin Cities weights SG APP at 25.8%, SG Total at 22.8%, SG PUT at 16.8%, and SG ATG at 13.3%, with SG OTT at 11.4% and Driving Accuracy at 3.9%."
       },
       {
         "heading": "Post-Open Workload and Motivation",
-        "body": "Jake Knapp enters with 4 rounds over two weeks and FedExCup rank #39 after missing the cut at The Open. Scottie Scheffler played 6 rounds over two weeks with FedExCup rank #1 after a top-5 Open finish. Kurt Kitayama logged 8 rounds over two weeks with FedExCup rank #32."
+        "body": "Scottie Scheffler logged six rounds in two weeks after a top-5 Open finish and holds FedExCup rank 1. Kurt Kitayama played eight rounds and sits at FedExCup rank 32. Jordan Smith and Corey Conners each logged eight rounds with FedExCup ranks 66 and 58."
       },
       {
         "heading": "Outright Targets",
-        "body": "No outright targets were generated this week."
+        "body": "Scottie Scheffler (rank 2) carries heavy recent workload of six rounds in two weeks. Hideki Matsuyama (rank 4) shows SG OTT -0.099. Rasmus Højgaard (rank 10) posts SG ATG -0.273. Jason Day (rank 11) records SG APP -0.352."
       },
       {
         "heading": "Top-10 Targets",
-        "body": "No top-10 targets were generated this week."
+        "body": "Jake Knapp (rank 1) leads with sgTotal 2.002 but faces putting regression risk from 1.285. Scottie Scheffler (rank 2) shows sgApp 0.08. Sudarshan Yellamaraju (rank 3) posts sgAtG -0.188. Hideki Matsuyama (rank 4) has sgOTT -0.099. David Lipsky (rank 5) records sgOTT -0.31."
       },
       {
         "heading": "Top-20 Targets",
-        "body": "No top-20 targets were generated this week."
+        "body": "Maverick McNealy (rank 6) carries sgPutt 0.286. Austin Smotherman (rank 7) shows sgPutt -0.494. Andrew Putnam (rank 8) posts sgOTT -0.341. Sam Stevens (rank 9) records sgPutt -0.218. Rasmus Højgaard (rank 10) has sgAtG -0.273. Jason Day (rank 11) shows sgApp -0.352. Gary Woodland (rank 15) posts sgAtG -0.397."
       },
       {
         "heading": "Players to Approach Cautiously",
-        "body": "Rasmus Højgaard ranks tenth with 0.823 SG total but logged 6 rounds over two weeks and sits at FedExCup rank #123. Jordan Smith ranks seventeenth with 0.465 SG total after 8 rounds over two weeks and FedExCup rank #66."
+        "body": "Austin Smotherman (rank 7) enters with sgPutt -0.494. Gary Woodland (rank 15) shows sgAtG -0.397. These negative strokes-gained figures sit among the lowest in the top-20 model rows."
       }
     ],
-    "conclusion": "Model data shows no outright, top-10, or top-20 targets this week. Jake Knapp leads with 2.002 SG total and Scottie Scheffler follows at 1.868 SG total as the primary model-supported names."
+    "conclusion": "Primary outright tier: Scottie Scheffler, Hideki Matsuyama. Primary top-10 tier: Jake Knapp, Scottie Scheffler. Primary top-20 tier: Maverick McNealy, Andrew Putnam."
+  },
+  "sourceStatus": {
+    "model": "available",
+    "grok": "available",
+    "odds": "unavailable",
+    "article": "available"
   },
   "methodologyNotes": [
     "Picks are generated from a course-weighted strokes-gained model, cross-checked against the official PGA TOUR field.",
@@ -62,19 +461,13 @@
   "schemaVersion": 2,
   "tournamentId": "R2026525",
   "localScheduleId": "three-m-open-2026",
-  "status": "unavailable",
-  "reason": "NO_VALID_PICKS",
-  "sourceStatus": {
-    "model": "available",
-    "grok": "invalid-response",
-    "odds": "unavailable",
-    "article": "available"
-  },
+  "status": "available",
+  "reason": null,
   "sectionStatus": {
-    "outrights": 0,
-    "top5": 0,
-    "top10": 0,
-    "top20": 0,
+    "outrights": 4,
+    "top5": 5,
+    "top10": 5,
+    "top20": 7,
     "article": 1
   }
 }
