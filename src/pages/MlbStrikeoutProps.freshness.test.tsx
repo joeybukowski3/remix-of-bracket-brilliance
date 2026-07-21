@@ -316,7 +316,7 @@ describe("MlbStrikeoutProps — freshness status integration", () => {
     await renderPage();
 
     const lowConfidenceHeading = screen.getByText("Low Confidence");
-    const lowConfidenceSection = lowConfidenceHeading.closest("section") as HTMLElement;
+    const lowConfidenceSection = lowConfidenceHeading.closest("details") as HTMLElement;
     expect(within(lowConfidenceSection).getAllByText("Patrick Sandoval").length).toBeGreaterThan(0);
     expect(within(lowConfidenceSection).getAllByText(/Insufficient data/i).length).toBeGreaterThan(0);
   }, SLOW_RENDER_TIMEOUT_MS);
