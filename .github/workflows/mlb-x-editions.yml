@@ -21,10 +21,9 @@ on:
     # actually inside the window, so an out-of-season candidate is a routine
     # NOT_DUE/MISSED_WINDOW, not a bug.
     - cron: "45 13 * * *"  # 09:45 EDT
-    - cron: "45 14 * * *"  # 09:45 EST
+    - cron: "45 14 * * *"  # 10:45 EDT / 09:45 EST
     - cron: "15 14 * * *"  # 10:15 EDT
     - cron: "15 15 * * *"  # 10:15 EST
-    - cron: "45 14 * * *"  # 10:45 EDT
     - cron: "45 15 * * *"  # 10:45 EST
     - cron: "10 15 * * *"  # 11:10 EDT
     - cron: "10 16 * * *"  # 11:10 EST
