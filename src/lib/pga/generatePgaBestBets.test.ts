@@ -129,7 +129,10 @@ describe("validateArticle", () => {
   };
 
   it("accepts a well-formed article with at least 3 sections", () => {
-    expect(validateArticle(validArticle)).toEqual(validArticle);
+    // keyTakeaways/playersToApproachCautiously are additive and optional --
+    // a legacy article without them still validates and defaults to empty.
+    expect(validateArticle(validArticle)).toMatchObject(validArticle);
+    expect(validateArticle(validArticle)).toMatchObject({ keyTakeaways: [], playersToApproachCautiously: [] });
   });
 
   it("rejects a missing/malformed article", () => {
