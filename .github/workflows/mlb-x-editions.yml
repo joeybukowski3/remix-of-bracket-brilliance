@@ -112,7 +112,12 @@ jobs:
             --hr-data-source=production \
             $LIVE_FLAG
         env:
-          MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
           X_ALLOW_LIVE_POST: "true"
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
@@ -177,7 +182,12 @@ jobs:
             --lease-directory=artifacts/mlb-x-leases \
             --state-work-dir=.mlb-x-state-work
         env:
-          MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           # workflow_dispatch's chosen mode -- empty for schedule/workflow_run.
@@ -226,7 +236,12 @@ jobs:
             --lease-directory=artifacts/mlb-x-leases \
             --state-work-dir=.mlb-x-state-work
         env:
-          MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
@@ -268,7 +283,12 @@ jobs:
             --lease-directory=artifacts/mlb-x-leases \
             --state-work-dir=.mlb-x-state-work
         env:
-          MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
@@ -310,7 +330,12 @@ jobs:
             --lease-directory=artifacts/mlb-x-leases \
             --state-work-dir=.mlb-x-state-work
         env:
-          MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
@@ -368,7 +393,12 @@ jobs:
             --state-work-dir=.mlb-x-state-work-audit \
             --plan-directory=artifacts/mlb-x-plans
         env:
-          MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
 
   # Twice daily, well after the morning and confirmed windows have had a
   # chance to close, so the audit reflects a settled slate rather than a
@@ -392,4 +422,9 @@ jobs:
             --slate-date="${{ steps.et_date.outputs.date }}" \
             --state-work-dir=.mlb-x-state-work-audit-eod
         env:
-          MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
