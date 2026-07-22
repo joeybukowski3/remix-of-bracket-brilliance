@@ -568,21 +568,39 @@ export function validateArticle(value) {
  * also contain -- see the "article recommendations match the structured
  * cards" validation requirement.
  */
-async function generateArticle(apiKey, { tournamentName, courseName, startDate, fieldSize, summary, postOpenContext, picks, researchContext, hasAnyOdds, dataLimitations }) {
-  const pickLines = (label, list) =>
-    list.length
-      ? `${label}: ${list.map((p) => `${p.player} (rank #${p.tournamentRank}${p.risk ? `, risk: ${p.risk}` : ""})`).join("; ")}`
+/**
+ * Frozen-selection summary handed to the article.
+ *
+ * Odds are resolved per recommendation, per market, through the same
+ * marketOddsFor that enforceOddsLanguage uses -- a Top-10 price must never
+ * imply the same player's Top-20 recommendation is priced. Every line is marked
+ * explicitly (a real value, or odds=UNAVAILABLE) so a partially priced slate
+ * tells the model exactly which individual recommendations may discuss market
+ * value. Top-5 is included even though the editorial emphasis stays on
+ * outright/top-10/top-20, so a selected top-5 player is never treated as an
+ * outside name.
+ */
+export function buildPicksSummary(picks) {
+  const pickLines = (label, list, market) =>
+    (list ?? []).length
+      ? `${label}: ${list
+          .map((p) => {
+            const odds = marketOddsFor(p, market);
+            return `${p.player} (rank #${p.tournamentRank}, odds=${odds ?? "UNAVAILABLE"}${p.risk ? `, risk: ${p.risk}` : ""})`;
+          })
+          .join("; ")}`
       : `${label}: none generated this week.`;
 
-  // Top-5 is included in the frozen selection supplied to the article even
-  // though the editorial emphasis stays on outright/top-10/top-20, so the
-  // article can never treat a selected top-5 player as an outside name.
-  const picksSummary = [
-    pickLines("Outright targets", picks.outrights),
-    pickLines("Top-5 targets", picks.top5 ?? []),
-    pickLines("Top-10 targets", picks.top10),
-    pickLines("Top-20 targets", picks.top20),
+  return [
+    pickLines("Outright targets", picks.outrights, "outrights"),
+    pickLines("Top-5 targets", picks.top5, "top5"),
+    pickLines("Top-10 targets", picks.top10, "top10"),
+    pickLines("Top-20 targets", picks.top20, "top20"),
   ].join("\n");
+}
+
+async function generateArticle(apiKey, { tournamentName, courseName, startDate, fieldSize, summary, picks, researchContext, hasAnyOdds, dataLimitations }) {
+  const picksSummary = buildPicksSummary(picks);
 
   const researchLines = Object.values(researchContext ?? {}).map((entry) => {
     const parts = [
@@ -614,7 +632,11 @@ async function generateArticle(apiKey, { tournamentName, courseName, startDate, 
     "",
     "Tournament model data (top rows, ranks, strokes-gained categories, course weights):",
     summary,
-    postOpenContext ? `\n${postOpenContext}` : "",
+    // The top-25 postOpenContext block is deliberately NOT sent here. It is
+    // built from tournamentData.rows.slice(0, 25) for PICK SELECTION, before a
+    // selection exists. Sending it to the article too would push classifications
+    // for players who were never recommended, contradicting the selected-player
+    // scope researchBlock establishes below.
     researchBlock,
     "",
     "These are the picks already selected for this week's cards -- your article must discuss these exact players and must not introduce a different outright/top-5/top-10/top-20 recommendation than what's listed:",
@@ -625,9 +647,10 @@ async function generateArticle(apiKey, { tournamentName, courseName, startDate, 
     DATA_DISCIPLINE_RULES,
     "For every recommendation, cite at least two supplied factors, and at least one must come from either the model context or the post-Open research classifications above.",
     "Distinguish clearly between model strength, contextual research, market price, and risk. Never present a contextual research classification as proof of a result.",
+    "Market-value analysis is permitted only for a recommendation whose supplied line contains a real odds value. A recommendation marked odds=UNAVAILABLE must not include price, market-value, mispricing, overlay, or value-at-the-number claims.",
     hasAnyOdds
-      ? "Where a price is supplied for a pick you may discuss market value. Where no price is supplied for that pick, do not."
-      : "NO market prices are available this week. You must NOT claim price value, market value, mispricing, or value at the current number for ANY pick. Describe model strength, ranking differential, model-supported targets, course fit, and contextual research instead.",
+      ? "Some recommendations are priced and some are not -- check each individual line's odds= marker before making any market claim about that recommendation. A price on one market for a player says nothing about that player's other markets."
+      : "NO market prices are available this week: every recommendation is marked odds=UNAVAILABLE. You must NOT claim price value, market value, mispricing, overlay, or value at the current number for ANY pick. Describe model strength, ranking differential, model-supported targets, course fit, and contextual research instead.",
     "Tone: direct, confident but not absolute, analytical, concise, specific. No fake insider language. No 'lock', 'guarantee', or 'can't miss' claims. No generic AI phrases. No unnecessary explanation of basic golf concepts.",
     "Distinguish strong model-supported bets from secondary value plays and speculative long shots -- say explicitly which tier each pick belongs to.",
     "Include a short paragraph naming 1-3 players to approach cautiously (e.g. inflated price off one big result, weak underlying data) -- only if the data above actually supports a caution, otherwise omit this section.",
@@ -915,7 +938,7 @@ const PRICE_CLAIM_PATTERNS = [
 ];
 
 const UNPRICED_FALLBACK_BULLET =
-  "Model-supported target: no market price was available this week, so this case rests on model rank and course fit rather than the number.";
+  "Model-supported target: no market price was available this week, so this case rests on course-weighted model rank rather than the number.";
 
 function marketOddsFor(pick, market) {
   const odds = pick?.odds;
@@ -1194,7 +1217,6 @@ async function main() {
       startDate: currentField.startDate ?? null,
       fieldSize: currentField.players.length,
       summary: previewSummary,
-      postOpenContext,
       // Frozen selection, all four markets including top5.
       picks: { outrights, top5, top10, top20 },
       researchContext,
@@ -1203,16 +1225,21 @@ async function main() {
     });
 
     if (article) {
-      const { valid, violations } = validateArticleRecommendations(article, { selectedPlayers });
+      // Caution entries are restricted to the frozen selection too. Passing no
+      // cautionCandidates would leave playersToApproachCautiously unvalidated.
+      const { valid, violations } = validateArticleRecommendations(article, {
+        selectedPlayers,
+        cautionCandidates: selectedPlayers,
+      });
       if (!valid) {
         console.warn(`::warning title=PGA article recommendation mismatch::${violations.join("; ")}`);
-        // Drop only the offending structured surfaces; the editorial prose and
+        const isSelected = (player) => selectedPlayers.some((selected) => normalizeName(selected) === normalizeName(player));
+        // Drop only the offending structured entries; the editorial prose and
         // sections are still valid and are kept rather than losing the article.
         article = {
           ...article,
-          keyTakeaways: article.keyTakeaways.filter((takeaway) =>
-            (takeaway.players ?? []).every((player) =>
-              selectedPlayers.some((selected) => normalizeName(selected) === normalizeName(player)))),
+          keyTakeaways: article.keyTakeaways.filter((takeaway) => (takeaway.players ?? []).every(isSelected)),
+          playersToApproachCautiously: article.playersToApproachCautiously.filter((entry) => isSelected(entry.player)),
         };
       }
     }

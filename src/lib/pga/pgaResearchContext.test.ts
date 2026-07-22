@@ -16,6 +16,7 @@ import {
   ScottishOpenParticipation,
 } from "../../../scripts/lib/pga-post-open-angles.mjs";
 import {
+  buildPicksSummary,
   buildResearchContext,
   collectSelectedPlayers,
   enforceOddsLanguage,
@@ -290,6 +291,78 @@ describe("article validation", () => {
   });
 });
 
+describe("cautious-player validation", () => {
+  const base = {
+    title: "T", introduction: "I", conclusion: "C",
+    sections: [{ heading: "A", body: "a" }, { heading: "B", body: "b" }, { heading: "C", body: "c" }],
+  };
+  const withCaution = (entries: Array<{ player: string; reason: string }>) =>
+    validateArticle({ ...base, playersToApproachCautiously: entries });
+
+  it("rejects a cautious player outside the frozen selection", () => {
+    const article = withCaution([{ player: "Outsider", reason: "Weak data." }]);
+    const { valid, violations } = validateArticleRecommendations(article, {
+      selectedPlayers: ["Jake Knapp"],
+      cautionCandidates: ["Jake Knapp"],
+    });
+    expect(valid).toBe(false);
+    expect(violations[0]).toMatch(/caution list contains unsupported player: Outsider/);
+  });
+
+  it("accepts a cautious player that is part of the frozen selection", () => {
+    const article = withCaution([{ player: "Jake Knapp", reason: "Heavy workload." }]);
+    expect(validateArticleRecommendations(article, {
+      selectedPlayers: ["Jake Knapp"],
+      cautionCandidates: ["Jake Knapp"],
+    }).valid).toBe(true);
+  });
+
+  it("flags every invalid entry in a mixed caution list", () => {
+    const article = withCaution([
+      { player: "Jake Knapp", reason: "Heavy workload." },
+      { player: "Outsider", reason: "Not selected." },
+      { player: "Another Outsider", reason: "Also not selected." },
+    ]);
+    const { valid, violations } = validateArticleRecommendations(article, {
+      selectedPlayers: ["Jake Knapp"],
+      cautionCandidates: ["Jake Knapp"],
+    });
+    expect(valid).toBe(false);
+    expect(violations).toHaveLength(2);
+  });
+});
+
+describe("per-recommendation odds visibility in the article prompt", () => {
+  const pick = (player: string, odds: Record<string, string> | null = null) => ({
+    player, tournamentRank: 3, powerRank: 8, topStats: [], bullets: ["b"], risk: "Variance.", odds,
+  });
+
+  it("marks every recommendation unavailable on a fully unpriced slate", () => {
+    const summary = buildPicksSummary({
+      outrights: [pick("Alpha")], top5: [pick("Bravo")], top10: [pick("Charlie")], top20: [pick("Delta")],
+    });
+    expect(summary.match(/odds=UNAVAILABLE/g)).toHaveLength(4);
+    expect(summary).not.toMatch(/odds=[+-]\d/);
+  });
+
+  it("identifies the exact priced recommendation and market on a partial slate", () => {
+    const summary = buildPicksSummary({
+      outrights: [pick("Alpha", { outright: "+2500" })],
+      top5: [], top10: [pick("Charlie")], top20: [],
+    });
+    expect(summary).toContain("Outright targets: Alpha (rank #3, odds=+2500");
+    expect(summary).toContain("Top-10 targets: Charlie (rank #3, odds=UNAVAILABLE");
+    expect(summary).toContain("Top-5 targets: none generated this week.");
+  });
+
+  it("does not let a priced Top-10 imply the same player's Top-20 is priced", () => {
+    const priced = pick("Charlie", { top10: "-120" });
+    const summary = buildPicksSummary({ outrights: [], top5: [], top10: [priced], top20: [priced] });
+    expect(summary).toContain("Top-10 targets: Charlie (rank #3, odds=-120");
+    expect(summary).toContain("Top-20 targets: Charlie (rank #3, odds=UNAVAILABLE");
+  });
+});
+
 describe("generator end-to-end (dry run, stored fixture)", () => {
   it("includes top5 in article inputs, persists context, and leaves production data untouched", () => {
     const repoRoot = process.cwd();
@@ -332,6 +405,26 @@ describe("generator end-to-end (dry run, stored fixture)", () => {
     writeFileSync(fixturePath, JSON.stringify({
       "combined-picks-1": { outrights: [mkPick("Alpha One")], top5: [mkPick("Charlie Three")] },
       "combined-picks-2": { top10: [mkPick("Bravo Two")], top20: [mkPick("Delta Four")] },
+      article: {
+        title: "Test Open Model Targets",
+        dek: "Model-led card.",
+        introduction: "Intro.",
+        // One valid + one unselected entry on each structured surface.
+        keyTakeaways: [
+          { text: "Alpha One leads.", players: ["Alpha One"] },
+          { text: "Back Outsider too.", players: ["Outsider Nine"] },
+        ],
+        playersToApproachCautiously: [
+          { player: "Delta Four", reason: "No tracked rounds." },
+          { player: "Outsider Nine", reason: "Not selected at all." },
+        ],
+        sections: [
+          { heading: "Tournament Overview", body: "Body." },
+          { heading: "Course Fit", body: "Body." },
+          { heading: "Outright Targets", body: "Body." },
+        ],
+        conclusion: "Conclusion.",
+      },
     }));
 
     try {
@@ -363,6 +456,27 @@ describe("generator end-to-end (dry run, stored fixture)", () => {
       expect(payload.researchContext["alpha one"].majorSwingWorkload.bucket).toBe(MajorSwingWorkloadBucket.TWO_ROUNDS);
       expect(payload.researchContext["delta four"].majorSwingWorkload.bucket).toBe(MajorSwingWorkloadBucket.NO_TRACKED_ROUNDS);
       expect(payload.dataLimitations.join(" ")).toMatch(/does not necessarily mean the player rested/);
+
+      // Every recommendation line carries an explicit odds marker, and the
+      // per-recommendation restriction is stated.
+      expect(articlePrompt).toContain("odds=UNAVAILABLE");
+      expect(articlePrompt).toMatch(/Market-value analysis is permitted only for a recommendation whose supplied line contains a real odds value/);
+      expect(articlePrompt).toMatch(/must not include price, market-value, mispricing, overlay, or value-at-the-number claims/);
+
+      // The arbitrary top-25 selection block must not reach the article.
+      expect(articlePrompt).not.toMatch(/Post-Open workload, motivation, and FedExCup context for the top model rows/);
+      expect(articlePrompt).not.toContain("twoWeekWorkloadRounds=");
+
+      // Unselected entries are stripped from BOTH structured surfaces; valid
+      // entries and the editorial prose survive.
+      expect(payload.article.playersToApproachCautiously).toEqual([
+        { player: "Delta Four", reason: "No tracked rounds." },
+      ]);
+      expect(payload.article.keyTakeaways).toEqual([
+        { text: "Alpha One leads.", players: ["Alpha One"] },
+      ]);
+      expect(payload.article.sections).toHaveLength(3);
+      expect(payload.article.title).toBe("Test Open Model Targets");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
