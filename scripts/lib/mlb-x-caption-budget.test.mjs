@@ -13,7 +13,8 @@ import {
   X_CHARACTER_LIMIT,
 } from "./mlb-x-caption-budget.mjs";
 import { buildKEditionCaption, K_CANONICAL_LINK, K_HASHTAGS } from "./mlb-k-caption-core.mjs";
-import { buildHrEditionCaption, HR_CANONICAL_LINK } from "./mlb-x-artifact-caption.mjs";
+import { buildHrEditionCaption, classifyHrRows, hrCategoryOf, HR_CANONICAL_LINK } from "./mlb-x-artifact-caption.mjs";
+import { assertSlateDateAgreement } from "./mlb-x-edition-publication.mjs";
 
 const SLATE = "2026-07-22";
 
@@ -224,5 +225,94 @@ describe("name compaction", () => {
 
   it("leaves a single-token name intact", () => {
     assert.equal(compactPlayerName("Ichiro"), "Ichiro");
+  });
+});
+
+describe("HR category fallback is surfaced, never silent", () => {
+  it("reports zero heuristic use when the plan carries explicit categories", () => {
+    const rows = [
+      { player: "Aaron Judge", team: "NYY", hrOddsYes: "+210", category: "model" },
+      { player: "Joey Bart", team: "NYY", hrOddsYes: "+450", category: "longshot" },
+    ];
+    const result = buildHrEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    assert.equal(result.diagnostics.usedCategoryHeuristic, false);
+    assert.equal(result.diagnostics.categoryHeuristicCount, 0);
+    assert.deepEqual(result.diagnostics.categoryHeuristicPlayers, []);
+  });
+
+  it("flags every row that needed the legacy +350 price fallback", () => {
+    const rows = [
+      { player: "Aaron Judge", team: "NYY", hrOddsYes: "+210" },            // no category
+      { player: "Joey Bart", team: "NYY", hrOddsYes: "+450" },              // no category
+      { player: "Pete Alonso", team: "NYM", hrOddsYes: "+260", category: "model" },
+    ];
+    const result = buildHrEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    assert.equal(result.diagnostics.usedCategoryHeuristic, true);
+    assert.equal(result.diagnostics.categoryHeuristicCount, 2);
+    assert.deepEqual(result.diagnostics.categoryHeuristicPlayers.sort(), ["Aaron Judge", "Joey Bart"]);
+  });
+
+  it("classifies by the model's own category rather than price when both disagree", () => {
+    const { classified, heuristicCount } = classifyHrRows([
+      { player: "Cheap Longshot", hrOddsYes: "+120", category: "longshot" },
+      { player: "Pricey Model", hrOddsYes: "+900", category: "model" },
+    ]);
+    assert.equal(heuristicCount, 0);
+    assert.equal(classified[0].category, "longshot", "explicit category wins over a short price");
+    assert.equal(classified[1].category, "model", "explicit category wins over a long price");
+  });
+
+  it("hrCategoryOf reports the heuristic flag per row", () => {
+    assert.deepEqual(hrCategoryOf({ hrOddsYes: "+450", category: "model" }), { category: "model", heuristic: false });
+    assert.deepEqual(hrCategoryOf({ hrOddsYes: "+450" }), { category: "longshot", heuristic: true });
+    assert.deepEqual(hrCategoryOf({ hrOddsYes: "+200" }), { category: "model", heuristic: true });
+  });
+});
+
+describe("four-way slate-date agreement", () => {
+  const base = {
+    plannerSlateDate: "2026-07-22",
+    cliSlateDate: "2026-07-22",
+    planSlateDate: "2026-07-22",
+    receiptKey: "mlb-k-2026-07-22-morning",
+    imageSlateDate: "2026-07-22",
+  };
+
+  it("agrees when all four carriers match the planner", () => {
+    const result = assertSlateDateAgreement(base);
+    assert.equal(result.agreed, true);
+    assert.equal(result.detail.slateDate, "2026-07-22");
+  });
+
+  it("rejects a disagreeing CLI, plan, receipt key or image", () => {
+    const cases = [
+      ["cli", { cliSlateDate: "2026-07-21" }],
+      ["plan", { planSlateDate: "2026-07-21" }],
+      ["receiptKey", { receiptKey: "mlb-k-2026-07-21-morning" }],
+      ["image", { imageSlateDate: "2026-07-21" }],
+    ];
+    for (const [source, override] of cases) {
+      const result = assertSlateDateAgreement({ ...base, ...override });
+      assert.equal(result.agreed, false, `${source} mismatch must be rejected`);
+      assert.equal(result.reason, "SLATE_DATE_MISMATCH");
+      assert.ok(result.detail.disagreements.some((d) => d.source === source));
+    }
+  });
+
+  it("reports every disagreeing source at once", () => {
+    const result = assertSlateDateAgreement({ ...base, cliSlateDate: "2026-07-21", imageSlateDate: "2026-07-20" });
+    assert.equal(result.agreed, false);
+    assert.equal(result.detail.disagreements.length, 2);
+  });
+
+  it("rejects a malformed planner date or unparsable receipt key", () => {
+    assert.equal(assertSlateDateAgreement({ ...base, plannerSlateDate: "7/22/26" }).reason, "PLANNER_SLATE_DATE_INVALID");
+    assert.equal(assertSlateDateAgreement({ ...base, receiptKey: "mlb-k-props-2026-07-22" }).reason, "RECEIPT_KEY_UNPARSABLE");
+  });
+
+  it("tolerates an image slate date that is not known yet", () => {
+    // Before a bundle is validated there is nothing to compare; the check runs
+    // again with the real value once the image exists.
+    assert.equal(assertSlateDateAgreement({ ...base, imageSlateDate: null }).agreed, true);
   });
 });

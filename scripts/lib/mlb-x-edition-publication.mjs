@@ -14,7 +14,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { buildEditionReceiptKey } from "./mlb-x-edition-receipts.mjs";
+import { buildEditionReceiptKey, parseEditionReceiptKey } from "./mlb-x-edition-receipts.mjs";
 import { PLAN_VERSION, planFileName, validatePlan } from "./mlb-x-edition-plan.mjs";
 
 export const ReplyStatus = Object.freeze({
@@ -202,3 +202,45 @@ export function assertRowConsistency({ planRows, captionRows, renderedRows }) {
 }
 
 export { PLAN_VERSION, buildEditionReceiptKey };
+
+/**
+ * Four-way slate-date agreement.
+ *
+ * The planner's resolved Eastern slate date is authoritative. Every other
+ * carrier of a slate date must agree with it before a single X call is made:
+ * the CLI target, the frozen plan, the receipt key embedded in the plan's
+ * readiness, and the image bundle actually about to be posted.
+ *
+ * A job straddling midnight ET, a stale plan artifact from a previous run, or
+ * a leftover image bundle each show up here as a disagreement rather than as a
+ * post describing the wrong day's games.
+ */
+export function assertSlateDateAgreement({ plannerSlateDate, cliSlateDate, planSlateDate, receiptKey, imageSlateDate }) {
+  const parsed = parseEditionReceiptKey(receiptKey);
+  const sources = [
+    ["planner", plannerSlateDate],
+    ["cli", cliSlateDate],
+    ["plan", planSlateDate],
+    ["receiptKey", parsed?.slateDate ?? null],
+    ["image", imageSlateDate],
+  ];
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(plannerSlateDate ?? ""))) {
+    return { agreed: false, reason: "PLANNER_SLATE_DATE_INVALID", detail: { plannerSlateDate } };
+  }
+  if (!parsed) {
+    return { agreed: false, reason: "RECEIPT_KEY_UNPARSABLE", detail: { receiptKey } };
+  }
+
+  // An absent image slate date is not agreement -- it is simply not yet known,
+  // and callers must only pass one once a bundle has been validated.
+  const disagreements = sources
+    .filter(([name, value]) => name !== "image" || value != null)
+    .filter(([, value]) => value !== plannerSlateDate)
+    .map(([name, value]) => ({ source: name, value }));
+
+  if (disagreements.length) {
+    return { agreed: false, reason: "SLATE_DATE_MISMATCH", detail: { plannerSlateDate, disagreements } };
+  }
+  return { agreed: true, reason: null, detail: { slateDate: plannerSlateDate } };
+}

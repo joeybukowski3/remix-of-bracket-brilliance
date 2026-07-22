@@ -131,13 +131,43 @@ function isEligibleHrRow(row) {
   return Boolean(player) && /^[+-]\d+$/.test(odds);
 }
 
-function hrCategory(row) {
+export const HR_LONGSHOT_ODDS_FLOOR = 350;
+
+/**
+ * Category for one HR row, and whether the legacy price heuristic was needed.
+ *
+ * A frozen plan row normally carries an explicit `category` from
+ * buildHrPropBestBets. The +350 price threshold is a legacy fallback for rows
+ * that predate that field -- it is NOT the normal path, and a plan that relies
+ * on it is silently classifying picks by price rather than by the model's own
+ * decision. Callers surface heuristicCount so that never passes unnoticed.
+ */
+export function hrCategoryOf(row) {
   const explicit = normalizeText(row?.category).toLowerCase();
-  if (explicit === "longshot" || explicit === "model") return explicit;
-  // Fall back to the same price threshold the product already uses for a
-  // longshot; never guess beyond that.
+  if (explicit === "longshot" || explicit === "model") {
+    return { category: explicit, heuristic: false };
+  }
   const odds = Number(String(row?.hrOddsYes ?? row?.odds ?? "").replace("+", ""));
-  return Number.isFinite(odds) && odds >= 350 ? "longshot" : "model";
+  const category = Number.isFinite(odds) && odds >= HR_LONGSHOT_ODDS_FLOOR ? "longshot" : "model";
+  return { category, heuristic: true };
+}
+
+/** Classifies a row set and reports any reliance on the legacy heuristic. */
+export function classifyHrRows(rows = []) {
+  const classified = rows.map((row) => ({ row, ...hrCategoryOf(row) }));
+  const heuristicRows = classified.filter((entry) => entry.heuristic);
+  return {
+    classified,
+    modelPlays: classified.filter((e) => e.category === "model").map((e) => e.row),
+    longshots: classified.filter((e) => e.category === "longshot").map((e) => e.row),
+    heuristicCount: heuristicRows.length,
+    heuristicPlayers: heuristicRows.map((e) => normalizeText(e.row?.player)).filter(Boolean),
+    usedHeuristic: heuristicRows.length > 0,
+  };
+}
+
+function hrCategory(row) {
+  return hrCategoryOf(row).category;
 }
 
 /**
@@ -151,8 +181,8 @@ export function buildHrEditionCaption({ rows = [], languageMode, slateDate }) {
     return { skipped: true, reason: "Skipping: no eligible HR rows are available.", caption: "", captionRows: [], diagnostics: null };
   }
 
-  const modelPlays = eligible.filter((row) => hrCategory(row) === "model");
-  const longshots = eligible.filter((row) => hrCategory(row) === "longshot");
+  const classification = classifyHrRows(eligible);
+  const { modelPlays, longshots } = classification;
   const dateLabel = formatDateLabel(slateDate);
   const sentence = editionSentenceFor(languageMode);
 
@@ -191,6 +221,14 @@ export function buildHrEditionCaption({ rows = [], languageMode, slateDate }) {
     captionRows: [...fitted.rowsA, ...fitted.rowsB],
     omittedRows: [...modelPlays.slice(fitted.rowsA.length), ...longshots.slice(fitted.rowsB.length)],
     languageMode,
-    diagnostics: { ...fitted.diagnostics, weightedLength: weightedLength(fitted.caption) },
+    diagnostics: {
+      ...fitted.diagnostics,
+      weightedLength: weightedLength(fitted.caption),
+      // Non-zero means the plan did not carry explicit categories and picks
+      // were grouped by price instead. Normal frozen plans must report 0.
+      categoryHeuristicCount: classification.heuristicCount,
+      categoryHeuristicPlayers: classification.heuristicPlayers,
+      usedCategoryHeuristic: classification.usedHeuristic,
+    },
   };
 }
