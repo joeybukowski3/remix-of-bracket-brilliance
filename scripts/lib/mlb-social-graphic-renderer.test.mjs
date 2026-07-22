@@ -179,8 +179,14 @@ describe("deterministic production SVG", () => {
     expect(extractRenderedRowsFromSvg(svg)).toHaveLength(5);
   });
 
-  it("rejects a non-five-row render instead of padding fabricated plays", () => {
-    expect(() => renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows: fiveHrRows().slice(0, 4) })).toThrow(/exactly 5 rows/i);
+  it("rejects zero rows before rendering anything", () => {
+    expect(() => renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows: [] })).toThrow(/at least 1 row/i);
+    expect(() => renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows: [] })).toThrow(/at least 1 row/i);
+  });
+
+  it("rejects more than the maximum rather than silently truncating real picks", () => {
+    const sixRows = [1, 2, 3, 4, 5, 6].map((index) => hrRow(index));
+    expect(() => renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows: sixRows })).toThrow(/at most 5 rows/i);
   });
 
   it("contains no legacy signals column or demo labeling", () => {
@@ -341,6 +347,69 @@ describe("deterministic production SVG", () => {
     const before = structuredClone(rows);
     expect(normalizeHomeRunRows(rows)).toHaveLength(5);
     expect(rows).toEqual(before);
+  });
+});
+
+// A frozen K (or HR) selection may legitimately return fewer than the
+// maximum -- e.g. only 2 K props qualified on a thin slate -- and the
+// social graphic must still render that real selection rather than
+// refusing to post at all. Real GitHub Actions dry runs against a live
+// slate with only 2 qualifying K rows surfaced exactly this failure before
+// this fix existed.
+describe("K social graphic renders 1-5 rows without padding, truncating, or duplicating", () => {
+  for (let count = 1; count <= 5; count += 1) {
+    it(`renders exactly ${count} K row(s)`, () => {
+      const rows = Array.from({ length: count }, (_, i) => kRow(i + 1));
+      const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+      expect(extractRenderedRowsFromSvg(svg)).toHaveLength(count);
+    });
+  }
+
+  it("five rows preserve the existing layout exactly -- same row positions as before this change", () => {
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows: fiveKRows() });
+    expect(svg).toContain('<rect x="56" y="196" width="1488" height="112"'); // row 0: legacy rowTop
+    expect(svg).toContain('<rect x="56" y="420" width="1488" height="112"'); // row 2: legacy rowTop + 2*rowHeight
+  });
+
+  it("never introduces a placeholder or fabricated row -- rendered identities are exactly the input rows, in order", () => {
+    const rows = [kRow(1, { pitcher: "Solo Starter" }), kRow(2, { pitcher: "Second Starter" })];
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+    const rendered = extractRenderedRowsFromSvg(svg);
+    expect(rendered.map((r) => r.pitcher)).toEqual(["Solo Starter", "Second Starter"]);
+  });
+
+  it("never duplicates a row when the count is below the maximum", () => {
+    const rows = [kRow(1, { pitcher: "Only Starter" })];
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+    expect(extractRenderedRowsFromSvg(svg)).toHaveLength(1);
+    expect(svg.match(/data-social-row="/g)).toHaveLength(1);
+  });
+
+  it("rendered row identities exactly match the frozen plan rows -- the assertRowConsistency contract this feeds", () => {
+    const rows = [
+      kRow(1, { pitcherId: 501, gameId: 9001 }),
+      kRow(2, { pitcherId: 502, gameId: 9002 }),
+      kRow(3, { pitcherId: 503, gameId: 9003 }),
+    ];
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+    const rendered = extractRenderedRowsFromSvg(svg);
+    expect(rendered.map((r) => String(r.pitcherId))).toEqual(["501", "502", "503"]);
+    expect(rendered.map((r) => String(r.gameId))).toEqual(["9001", "9002", "9003"]);
+  });
+
+  it("distributes fewer rows across the same rowTop..footerTop band -- not stranded at the legacy fixed positions", () => {
+    const oneRowSvg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows: [kRow(1)] });
+    // A single row is centered within the full band, not pinned to the
+    // legacy top-row position.
+    expect(oneRowSvg).not.toContain('<rect x="56" y="196" width="1488" height="112"');
+  });
+
+  it("HR rendering is unaffected -- same row-count acceptance, same legacy 5-row layout", () => {
+    for (let count = 1; count <= 5; count += 1) {
+      const rows = Array.from({ length: count }, (_, i) => hrRow(i + 1));
+      const svg = renderMlbSocialSvg({ kind: "hr", slateDate: "2026-07-13", rows });
+      expect(extractRenderedRowsFromSvg(svg)).toHaveLength(count);
+    }
   });
 });
 

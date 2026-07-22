@@ -381,6 +381,27 @@ function renderHeader(kind, slateDate, url) {
   return svg;
 }
 
+/**
+ * Deterministic vertical position for each of 1..rowCount rows, within the
+ * SAME band the fixed 5-row layout always used (rowTop..footerTop). The
+ * legacy 5-row case returns byte-identical positions to the original fixed
+ * geometry (rowTop + index*rowHeight) -- nothing about that layout changes.
+ * Fewer rows keep the exact same 112px-tall row design (same font sizes,
+ * same badge/icon positions -- renderHomeRunRow/renderStrikeoutRow are
+ * otherwise untouched) but are centered within an evenly-sized slot of the
+ * same band, so 1-4 rows get proportionally more breathing room instead of
+ * being stranded at the top with a large empty gap below.
+ */
+function computeRowTops(rowCount) {
+  const { rowTop, rowHeight, footerTop, rowCount: legacyCount } = SOCIAL_GRAPHIC_GEOMETRY;
+  if (rowCount === legacyCount) {
+    return Array.from({ length: rowCount }, (_, index) => rowTop + index * rowHeight);
+  }
+  const slotHeight = (footerTop - rowTop) / rowCount;
+  const verticalPadding = (slotHeight - rowHeight) / 2;
+  return Array.from({ length: rowCount }, (_, index) => rowTop + index * slotHeight + verticalPadding);
+}
+
 function renderColumnLabels(kind) {
   const labels =
     kind === "hr"
@@ -394,8 +415,7 @@ function renderColumnLabels(kind) {
   return svg;
 }
 
-function renderHomeRunRow(row, index, resolveLogo) {
-  const top = SOCIAL_GRAPHIC_GEOMETRY.rowTop + index * SOCIAL_GRAPHIC_GEOMETRY.rowHeight;
+function renderHomeRunRow(row, index, resolveLogo, top) {
   const middle = top + SOCIAL_GRAPHIC_GEOMETRY.rowHeight / 2;
   const indicators = new Set(getHomeRunIndicators(row));
   let svg = rowMetadata("hr", row, index);
@@ -425,8 +445,7 @@ function renderHomeRunRow(row, index, resolveLogo) {
   return `${svg}</g>`;
 }
 
-function renderStrikeoutRow(row, index, resolveLogo) {
-  const top = SOCIAL_GRAPHIC_GEOMETRY.rowTop + index * SOCIAL_GRAPHIC_GEOMETRY.rowHeight;
+function renderStrikeoutRow(row, index, resolveLogo, top) {
   const middle = top + SOCIAL_GRAPHIC_GEOMETRY.rowHeight / 2;
   const indicators = new Set(getStrikeoutIndicators(row));
   const difference = row.projectionDifference;
@@ -486,17 +505,31 @@ function renderFooter(kind, url) {
 
 export function renderMlbSocialSvg({ kind, slateDate, rows, resolveLogo = createLocalMlbLogoResolver() }) {
   if (kind !== "hr" && kind !== "k") throw new Error(`Unsupported MLB social graphic kind: ${kind}`);
-  const normalizedRows = kind === "hr" ? normalizeHomeRunRows(rows) : normalizeStrikeoutRows(rows);
-  if (normalizedRows.length !== SOCIAL_GRAPHIC_GEOMETRY.rowCount) {
-    throw new Error(`MLB ${kind.toUpperCase()} social graphic requires exactly ${SOCIAL_GRAPHIC_GEOMETRY.rowCount} rows; received ${normalizedRows.length}.`);
+  // A frozen edition plan may legitimately select fewer than the maximum --
+  // e.g. only 2 K props qualified today -- and that must still render, not
+  // fail the whole post. 0 rows means there is nothing to show (a caller
+  // should never reach here with an empty selection: NO_VALID_PICKS is
+  // decided upstream). More than the max is a genuine plan-contract
+  // violation -- the planner's own selection cap
+  // (mlb-x-edition-selection.mjs's *_MAX_TABLE_SIZE) should make this
+  // unreachable, so it fails loudly here rather than silently truncating
+  // real picks.
+  const rawCount = Array.isArray(rows) ? rows.length : 0;
+  if (rawCount < 1) {
+    throw new Error(`MLB ${kind.toUpperCase()} social graphic requires at least 1 row; received 0.`);
   }
+  if (rawCount > SOCIAL_GRAPHIC_GEOMETRY.rowCount) {
+    throw new Error(`MLB ${kind.toUpperCase()} social graphic accepts at most ${SOCIAL_GRAPHIC_GEOMETRY.rowCount} rows; received ${rawCount}.`);
+  }
+  const normalizedRows = kind === "hr" ? normalizeHomeRunRows(rows) : normalizeStrikeoutRows(rows);
+  const rowTops = computeRowTops(normalizedRows.length);
   const url = kind === "hr" ? "JoeKnowsBall.com/mlb/hr-props" : "JoeKnowsBall.com/mlb/strikeout-props";
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" font-family="${FONT_STACK}" data-social-kind="${kind}" data-slate-date="${escapeXml(slateDate)}">`;
   svg += '<rect width="1600" height="900" fill="#fff"/>';
   svg += renderHeader(kind, slateDate, url);
   svg += renderColumnLabels(kind);
   for (const [index, row] of normalizedRows.entries()) {
-    svg += kind === "hr" ? renderHomeRunRow(row, index, resolveLogo) : renderStrikeoutRow(row, index, resolveLogo);
+    svg += kind === "hr" ? renderHomeRunRow(row, index, resolveLogo, rowTops[index]) : renderStrikeoutRow(row, index, resolveLogo, rowTops[index]);
   }
   svg += renderFooter(kind, url);
   svg += "</svg>";
