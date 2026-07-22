@@ -361,6 +361,40 @@ describe("per-recommendation odds visibility in the article prompt", () => {
     expect(summary).toContain("Top-10 targets: Charlie (rank #3, odds=-120");
     expect(summary).toContain("Top-20 targets: Charlie (rank #3, odds=UNAVAILABLE");
   });
+
+  it("never treats an outright price as a placement-market price", () => {
+    const outrightOnly = pick("Alpha", { outright: "+2500" });
+    const summary = buildPicksSummary({
+      outrights: [outrightOnly], top5: [outrightOnly], top10: [outrightOnly], top20: [outrightOnly],
+    });
+    // Real price only on the market it actually belongs to.
+    expect(summary).toContain("Outright targets: Alpha (rank #3, odds=+2500");
+    expect(summary).toContain("Top-5 targets: Alpha (rank #3, odds=UNAVAILABLE");
+    expect(summary).toContain("Top-10 targets: Alpha (rank #3, odds=UNAVAILABLE");
+    expect(summary).toContain("Top-20 targets: Alpha (rank #3, odds=UNAVAILABLE");
+
+    // And the language guard agrees: priced outright, unpriced Top-20.
+    const withClaim = { ...outrightOnly, bullets: ["the price looks like value here", "Ranks third in the model."] };
+    expect(enforceOddsLanguage([withClaim], "outrights")[0].bullets).toEqual(withClaim.bullets);
+    expect(enforceOddsLanguage([withClaim], "top20")[0].bullets).toEqual(["Ranks third in the model."]);
+  });
+
+  it("shows each market its own price when a pick is priced in several", () => {
+    const bothPriced = pick("Bravo", { outright: "+1800", top20: "-140" });
+    const summary = buildPicksSummary({
+      outrights: [bothPriced], top5: [], top10: [bothPriced], top20: [bothPriced],
+    });
+    expect(summary).toContain("Outright targets: Bravo (rank #3, odds=+1800");
+    expect(summary).toContain("Top-20 targets: Bravo (rank #3, odds=-140");
+    // Top-10 was never priced and must not borrow either number.
+    expect(summary).toContain("Top-10 targets: Bravo (rank #3, odds=UNAVAILABLE");
+
+    // Both genuinely priced markets stay eligible for market-value language.
+    const withClaim = { ...bothPriced, bullets: ["the price looks like value here"] };
+    expect(enforceOddsLanguage([withClaim], "outrights")[0].bullets).toEqual(withClaim.bullets);
+    expect(enforceOddsLanguage([withClaim], "top20")[0].bullets).toEqual(withClaim.bullets);
+    expect(enforceOddsLanguage([withClaim], "top10")[0].bullets[0]).toMatch(/no market price was available/i);
+  });
 });
 
 describe("generator end-to-end (dry run, stored fixture)", () => {

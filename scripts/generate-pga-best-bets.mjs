@@ -940,11 +940,27 @@ const PRICE_CLAIM_PATTERNS = [
 const UNPRICED_FALLBACK_BULLET =
   "Model-supported target: no market price was available this week, so this case rests on course-weighted model rank rather than the number.";
 
+/**
+ * Price for one pick in one specific market, with NO cross-market fallback.
+ *
+ * An outright price is not a Top-5/Top-10/Top-20 price. Falling back to it
+ * would let both the article prompt and enforceOddsLanguage treat an unpriced
+ * placement market as priced, and publish market-value language about a number
+ * that does not exist for that market.
+ *
+ * Deliberately independent of filterByValueAndOdds, which keeps its own
+ * outright fallback for value ranking -- this function governs only truthful
+ * per-market language and prompt construction.
+ */
 function marketOddsFor(pick, market) {
   const odds = pick?.odds;
   if (!odds) return null;
-  if (market === "outrights") return odds.outright ?? null;
-  return odds[market] ?? odds.outright ?? null;
+
+  if (market === "outrights") {
+    return odds.outright ?? null;
+  }
+
+  return odds[market] ?? null;
 }
 
 /**
