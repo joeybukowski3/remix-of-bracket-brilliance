@@ -183,18 +183,41 @@ export function rowIdentities(rows) {
 /**
  * Blocks a post whose caption or graphic drifted from the frozen plan.
  *
- * Order-insensitive but multiset-exact: a duplicated or dropped row is a
- * mismatch even when the set of names matches.
+ * The image must show every selected row: renderedRows is checked for an
+ * exact multiset match against planRows, so a duplicated, dropped, or
+ * substituted row in the graphic is always a mismatch.
+ *
+ * The caption is different on purpose. The caption-budget layer
+ * (mlb-x-caption-budget.mjs) deliberately omits rows that do not fit in 280
+ * weighted characters rather than skip the whole post -- an exact-match rule
+ * here would make every caption that omits anything for space a ROW_MISMATCH,
+ * silently defeating that feature. So captionRows only has to be a SUBSET of
+ * planRows (nothing fabricated or substituted), and every row not in the
+ * caption must be accounted for in omittedRows (nothing vanishes silently).
+ * A row appearing in both is also a mismatch -- that would double-count it.
  */
-export function assertRowConsistency({ planRows, captionRows, renderedRows }) {
+export function assertRowConsistency({ planRows, captionRows, omittedRows = [], renderedRows }) {
   const plan = rowIdentities(planRows).sort();
-  const caption = rowIdentities(captionRows).sort();
+  const planSet = new Set(plan);
+  const caption = rowIdentities(captionRows);
+  const omitted = rowIdentities(omittedRows);
   const rendered = rowIdentities(renderedRows).sort();
 
   const mismatches = [];
-  if (caption.length !== plan.length || caption.some((id, i) => id !== plan[i])) {
-    mismatches.push(`caption rows differ from plan rows (plan=${plan.length}, caption=${caption.length})`);
+
+  const foreignCaptionRows = caption.filter((id) => !planSet.has(id));
+  if (foreignCaptionRows.length) {
+    mismatches.push(`caption includes row(s) not present in the plan: ${foreignCaptionRows.join(", ")}`);
   }
+  const doubleCounted = caption.filter((id) => omitted.includes(id));
+  if (doubleCounted.length) {
+    mismatches.push(`row(s) appear in both the caption and omittedRows: ${doubleCounted.join(", ")}`);
+  }
+  const accounted = [...caption, ...omitted].sort();
+  if (accounted.length !== plan.length || accounted.some((id, i) => id !== plan[i])) {
+    mismatches.push(`caption plus omittedRows (${accounted.length}) do not reconstruct the full plan (${plan.length})`);
+  }
+
   if (rendered.length !== plan.length || rendered.some((id, i) => id !== plan[i])) {
     mismatches.push(`rendered rows differ from plan rows (plan=${plan.length}, rendered=${rendered.length})`);
   }

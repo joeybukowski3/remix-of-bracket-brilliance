@@ -114,12 +114,15 @@ export async function runEditionPost({
     }
 
     // ── 7. Caption from frozen rows + plan languageMode. ──────────────────
-    const { caption, captionRows } = await buildCaption({ rows: plan.selectedRows, languageMode: plan.readiness.languageMode, plan });
+    // omittedRows are valid plan rows the caption's 280-char budget could not
+    // fit -- see assertRowConsistency for why that is allowed, not a mismatch.
+    const { caption, captionRows, omittedRows = [] } = await buildCaption({ rows: plan.selectedRows, languageMode: plan.readiness.languageMode, plan });
 
     // ── 8. Plan / caption / graphic must describe the same players. ───────
     const consistency = assertRowConsistency({
       planRows: plan.selectedRows,
       captionRows,
+      omittedRows,
       renderedRows: bundle.renderedRows ?? plan.selectedRows,
     });
     if (!consistency.consistent) {

@@ -175,6 +175,33 @@ describe("row consistency", () => {
       assert.equal(h.calls.primary, 0);
     });
   });
+
+  it("posts successfully when a caption omits a row for space and declares it in omittedRows", async () => {
+    // The caption-budget feature: a row dropped from the caption for length
+    // is NOT a mismatch as long as it is accounted for as omitted. The image
+    // still shows every plan row (bundle() defaults to all of ROWS).
+    await withTempDir(async (dir) => {
+      writePlans(dir);
+      const h = harness(dir, {
+        buildCaption: async ({ rows }) => ({ caption: "c", captionRows: rows.slice(0, 1), omittedRows: rows.slice(1) }),
+      });
+      const r = await h.run();
+      assert.equal(r.outcome, PostOutcome.POSTED);
+      assert.equal(h.calls.primary, 1);
+    });
+  });
+
+  it("still blocks when a row is silently missing from both the caption and omittedRows", async () => {
+    await withTempDir(async (dir) => {
+      writePlans(dir);
+      const h = harness(dir, {
+        buildCaption: async ({ rows }) => ({ caption: "c", captionRows: rows.slice(0, 1), omittedRows: [] }),
+      });
+      const r = await h.run();
+      assert.equal(r.outcome, PostOutcome.ROW_MISMATCH);
+      assert.equal(h.calls.primary, 0);
+    });
+  });
 });
 
 describe("image handling", () => {

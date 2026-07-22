@@ -284,10 +284,30 @@ describe("row consistency", () => {
     assert.deepEqual(result.mismatches, []);
   });
 
-  it("blocks a caption that dropped a row", () => {
+  it("blocks a caption that silently dropped a row (not declared in omittedRows)", () => {
     const result = assertRowConsistency({ planRows: rows, captionRows: rows.slice(0, 2), renderedRows: rows });
     assert.equal(result.consistent, false);
-    assert.match(result.mismatches[0], /caption rows differ/);
+    assert.match(result.mismatches[0], /do not reconstruct the full plan/);
+  });
+
+  it("allows a caption that omits a row for space, as long as omittedRows accounts for it", () => {
+    // This is the caption-budget feature working as designed: a row that does
+    // not fit in 280 characters is dropped from the caption, not the post.
+    const result = assertRowConsistency({ planRows: rows, captionRows: rows.slice(0, 2), omittedRows: [rows[2]], renderedRows: rows });
+    assert.equal(result.consistent, true);
+  });
+
+  it("blocks a caption row that is not a genuine plan row, even if declared omitted elsewhere", () => {
+    const foreign = row("Foreign", 99);
+    const result = assertRowConsistency({ planRows: rows, captionRows: [rows[0], rows[1], foreign], omittedRows: [rows[2]], renderedRows: rows });
+    assert.equal(result.consistent, false);
+    assert.match(result.mismatches[0], /not present in the plan/);
+  });
+
+  it("blocks a row double-counted as both included and omitted", () => {
+    const result = assertRowConsistency({ planRows: rows, captionRows: [rows[0], rows[1]], omittedRows: [rows[1], rows[2]], renderedRows: rows });
+    assert.equal(result.consistent, false);
+    assert.match(result.mismatches[0], /both the caption and omittedRows/);
   });
 
   it("blocks a graphic that rendered a different player", () => {
