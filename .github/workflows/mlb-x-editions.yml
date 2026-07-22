@@ -1,0 +1,43 @@
+name: MLB X Editions
+run-name: MLB X Editions • ${{ github.event_name }} • ${{ github.ref_name }}
+
+# BOOTSTRAP PLACEHOLDER -- this file exists only to register the "MLB X
+# Editions" workflow with GitHub Actions, which requires a workflow_dispatch
+# workflow to be present on the default branch before it can be dispatched
+# against ANY ref (including a feature branch). It intentionally does
+# nothing: no schedule, no workflow_run, no poster jobs, no state-branch
+# access, no X credentials, no contents: write. Real diagnostic-only,
+# dry-run and live behavior is validated by dispatching this same workflow
+# file against the feature branch's ref (fix/mlb-x-edition-receipts), whose
+# version of this file is the full four-job pipeline -- GitHub Actions runs
+# whichever ref's copy of the workflow file the dispatch targets.
+#
+# This placeholder is superseded in full once the feature branch merges to
+# main; nothing about schedule/workflow_run triggers is added here ahead of
+# that merge.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode (bootstrap: informational only, does not execute anything)"
+        required: true
+        default: "diagnostic-only"
+        type: choice
+        options:
+          - diagnostic-only
+          - morning-dry-run
+          - confirmed-dry-run
+          - morning-live
+          - confirmed-live
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap notice
+        run: |
+          echo "MLB X Editions workflow bootstrap. Run against the feature branch for full diagnostic validation."
+          echo "Selected mode: ${{ github.event.inputs.mode }} (not executed by this placeholder)."
