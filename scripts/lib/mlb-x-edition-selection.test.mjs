@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildHrEditionSelection, buildKEditionSelection } from "./mlb-x-edition-selection.mjs";
+import { selectHrPropsAnyLineupStatus } from "./mlb-hr-x-selection-core.mjs";
 
 const RAW_FIXTURE = JSON.parse(
   readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "__fixtures__", "mlb-x-hr-lineup-2026-07-21.json"), "utf8"),
@@ -94,5 +95,61 @@ describe("buildHrEditionSelection", () => {
       batters: FIXTURE.batters, isGameStarted: (row) => started.has(row.gameId), liveConfirm: () => null,
     });
     assert.ok(selectedRows.every((r) => r.gameId !== FIXTURE.batters[0].gameId));
+  });
+});
+
+// Blocker 2: canonical HR category is stamped onto every selected row here --
+// the same +350 price threshold hrPropBestBets.ts (the website's HR Best
+// Bets cards) uses, via hrCategoryOf (mlb-x-artifact-caption.mjs), reused
+// rather than reimplemented. See buildHrEditionSelection's docstring.
+describe("buildHrEditionSelection: canonical HR category", () => {
+  const hrBatter = (player, gameId, hrOddsYes, overrides = {}) => ({
+    player, team: "NYY", opponent: "BOS", gameId, hrOddsYes, hrScore: 60, hrScoreRank: 1, ...overrides,
+  });
+
+  it("stamps an explicit category on every selected row of a normal current-shaped plan (no category on the raw feed)", () => {
+    const { selectedRows } = buildHrEditionSelection({
+      batters: [hrBatter("A", 1, "-150"), hrBatter("B", 2, "+450")],
+      liveConfirm: () => null,
+    });
+    assert.ok(selectedRows.length > 0);
+    assert.ok(selectedRows.every((row) => row.category === "model" || row.category === "longshot"));
+  });
+
+  it("classifies a short-priced pick as a model play", () => {
+    const { selectedRows } = buildHrEditionSelection({ batters: [hrBatter("A", 1, "-150")], liveConfirm: () => null });
+    assert.equal(selectedRows[0].category, "model");
+  });
+
+  it("classifies a +350-or-longer pick as a longshot", () => {
+    const { selectedRows } = buildHrEditionSelection({ batters: [hrBatter("A", 1, "+400")], liveConfirm: () => null });
+    assert.equal(selectedRows[0].category, "longshot");
+  });
+
+  it("an explicit longshot category overrides a short price that would otherwise heuristically read as a model play", () => {
+    const { selectedRows } = buildHrEditionSelection({
+      batters: [hrBatter("A", 1, "-150", { category: "longshot" })], liveConfirm: () => null,
+    });
+    assert.equal(selectedRows[0].category, "longshot", "a low-priced longshot stays a longshot when canonically classified that way");
+  });
+
+  it("an explicit model category overrides a long price that would otherwise heuristically read as a longshot", () => {
+    const { selectedRows } = buildHrEditionSelection({
+      batters: [hrBatter("A", 1, "+500", { category: "model" })], liveConfirm: () => null,
+    });
+    assert.equal(selectedRows[0].category, "model", "a high-priced model play stays a model play when canonically classified that way");
+  });
+
+  it("does not change which players qualify or their order -- only stamps category onto the same rows selectHrPropsAnyLineupStatus already chose", () => {
+    const batters = FIXTURE.batters;
+    const direct = selectHrPropsAnyLineupStatus({ batters, maxTableSize: 10 });
+    const { selectedRows } = buildHrEditionSelection({ batters, liveConfirm: () => null, maxTableSize: 10 });
+    assert.deepEqual(selectedRows.map((r) => r.player), direct.selected.map((r) => r.player));
+    assert.equal(selectedRows.length, direct.selected.length);
+    // Every field the deterministic core produced survives untouched; category is additive.
+    for (let i = 0; i < selectedRows.length; i += 1) {
+      const { category, ...rest } = selectedRows[i];
+      assert.deepEqual(rest, direct.selected[i]);
+    }
   });
 });

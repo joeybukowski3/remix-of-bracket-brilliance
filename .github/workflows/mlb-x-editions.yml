@@ -169,21 +169,26 @@ jobs:
 
       - name: Post K morning
         run: |
-          DRY_RUN_FLAG="--dry-run"
-          if [ "${{ github.event.inputs.mode || '' }}" = "morning-live" ]; then DRY_RUN_FLAG=""; fi
           node scripts/post-mlb-x-edition.mjs \
             --market=k --edition=morning \
             --slate-date="${{ needs.plan.outputs.slate_date }}" \
             --plan-directory=artifacts/mlb-x-plans \
             --image-directory=artifacts/mlb-x-images \
             --lease-directory=artifacts/mlb-x-leases \
-            --state-work-dir=.mlb-x-state-work \
-            $DRY_RUN_FLAG
+            --state-work-dir=.mlb-x-state-work
         env:
           MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          X_ALLOW_LIVE_POST: "true"
+          # workflow_dispatch's chosen mode -- empty for schedule/workflow_run.
+          # resolveEventMode (mlb-x-event-mode.mjs) is the sole authority on
+          # dry-run vs. live-capable; nothing here computes that decision.
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          # Independent kill switch: a repository variable a human sets
+          # explicitly, separate from any code change or merge. Unset (the
+          # default) fails closed -- assertLivePostAllowed requires exactly
+          # "true" -- even on a live-capable event/mode.
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
@@ -213,21 +218,19 @@ jobs:
 
       - name: Post HR morning
         run: |
-          DRY_RUN_FLAG="--dry-run"
-          if [ "${{ github.event.inputs.mode || '' }}" = "morning-live" ]; then DRY_RUN_FLAG=""; fi
           node scripts/post-mlb-x-edition.mjs \
             --market=hr --edition=morning \
             --slate-date="${{ needs.plan.outputs.slate_date }}" \
             --plan-directory=artifacts/mlb-x-plans \
             --image-directory=artifacts/mlb-x-images \
             --lease-directory=artifacts/mlb-x-leases \
-            --state-work-dir=.mlb-x-state-work \
-            $DRY_RUN_FLAG
+            --state-work-dir=.mlb-x-state-work
         env:
           MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          X_ALLOW_LIVE_POST: "true"
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
@@ -257,21 +260,19 @@ jobs:
 
       - name: Post K confirmed
         run: |
-          DRY_RUN_FLAG="--dry-run"
-          if [ "${{ github.event.inputs.mode || '' }}" = "confirmed-live" ]; then DRY_RUN_FLAG=""; fi
           node scripts/post-mlb-x-edition.mjs \
             --market=k --edition=confirmed \
             --slate-date="${{ needs.plan.outputs.slate_date }}" \
             --plan-directory=artifacts/mlb-x-plans \
             --image-directory=artifacts/mlb-x-images \
             --lease-directory=artifacts/mlb-x-leases \
-            --state-work-dir=.mlb-x-state-work \
-            $DRY_RUN_FLAG
+            --state-work-dir=.mlb-x-state-work
         env:
           MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          X_ALLOW_LIVE_POST: "true"
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
@@ -301,21 +302,19 @@ jobs:
 
       - name: Post HR confirmed
         run: |
-          DRY_RUN_FLAG="--dry-run"
-          if [ "${{ github.event.inputs.mode || '' }}" = "confirmed-live" ]; then DRY_RUN_FLAG=""; fi
           node scripts/post-mlb-x-edition.mjs \
             --market=hr --edition=confirmed \
             --slate-date="${{ needs.plan.outputs.slate_date }}" \
             --plan-directory=artifacts/mlb-x-plans \
             --image-directory=artifacts/mlb-x-images \
             --lease-directory=artifacts/mlb-x-leases \
-            --state-work-dir=.mlb-x-state-work \
-            $DRY_RUN_FLAG
+            --state-work-dir=.mlb-x-state-work
         env:
           MLB_X_STATE_REMOTE_URL: ${{ github.server_url }}/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          X_ALLOW_LIVE_POST: "true"
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}

@@ -14,6 +14,7 @@ import { classifyHitterConfirmation, ConfirmationStatus } from "./mlb-x-confirma
 import { selectConfirmedKRows } from "./mlb-k-x-selection-core.mjs";
 import { selectHrPropsAnyLineupStatus } from "./mlb-hr-x-selection-core.mjs";
 import { buildSelectedLineupStatus } from "./mlb-x-edition-plan.mjs";
+import { hrCategoryOf } from "./mlb-x-artifact-caption.mjs";
 
 const K_MAX_TABLE_SIZE = 5;
 const HR_MAX_TABLE_SIZE = 5;
@@ -45,10 +46,21 @@ export function buildKEditionSelection({ rows, maxTableSize = K_MAX_TABLE_SIZE }
  * classify-then-live-promote rule selectConfirmedHrProps uses, so the
  * confirmed edition sees the same promoted-from-live confirmation the fixed
  * 2026-07-21 defect relies on.
+ *
+ * Every selected row is stamped with its canonical model/longshot category
+ * here, via hrCategoryOf (the SAME +350 price threshold the website's HR
+ * Best Bets cards use in hrPropBestBets.ts -- not a second, independently
+ * maintained copy of that rule). The production hr-props-raw.json artifact
+ * carries no category field today, so this is the only place a category is
+ * ever assigned; the frozen row is the single downstream carrier of it, and
+ * buildHrEditionCaption's own heuristic branch exists only for a legacy row
+ * that predates this and never reaches this function. Selection and ranking
+ * are untouched -- this only stamps a field onto rows already chosen by
+ * selectHrPropsAnyLineupStatus, in the same order.
  */
 export function buildHrEditionSelection({ batters, isGameStarted, liveConfirm, maxTableSize = HR_MAX_TABLE_SIZE }) {
   const selection = selectHrPropsAnyLineupStatus({ batters, isGameStarted, maxTableSize });
-  const selectedRows = selection.selected;
+  const selectedRows = selection.selected.map((row) => ({ ...row, category: hrCategoryOf(row).category }));
 
   let promotedFromLiveCount = 0;
   const isConfirmed = (row) => {

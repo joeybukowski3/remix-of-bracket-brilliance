@@ -21,6 +21,8 @@ import {
 import { Decision, ReadinessStatus } from "./mlb-x-edition-readiness.mjs";
 import { ReceiptOutcome } from "./mlb-x-edition-receipts.mjs";
 import { selectConfirmedHrProps } from "./mlb-hr-x-selection-core.mjs";
+import { buildHrEditionSelection } from "./mlb-x-edition-selection.mjs";
+import { buildHrEditionCaption } from "./mlb-x-artifact-caption.mjs";
 
 const SLATE = "2026-07-21";
 const FIRST_PITCH = "2026-07-21T22:40:00Z";
@@ -396,5 +398,65 @@ describe("planner stays lightweight", () => {
     let reads = 0;
     plans({ readReceipt: () => { reads += 1; return null; } });
     assert.equal(reads, 4, "one receipt read per target");
+  });
+});
+
+// Blocker 2: the frozen HR plan is where an explicit model/longshot category
+// must live, sourced once from buildHrEditionSelection (the canonical +350
+// threshold from hrPropBestBets.ts, ported into hrCategoryOf) and consumed
+// downstream without re-classification -- proves the full
+// selection -> frozen row -> caption flow, not just one link of it.
+describe("Blocker 2: canonical HR category flows through the frozen plan", () => {
+  const productionShapedBatter = (player, gameId, hrOddsYes) => ({
+    player, team: "NYY", opponent: "BOS", opposingPitcher: "TBD", gameId,
+    hrOddsYes, hrScore: 60, hrScoreRank: 1, lineupStatus: "projected", battingOrder: null,
+    // No `category` field -- matches normalizeHrBatter's shape for the real
+    // hr-props-raw.json feed, which does not carry one today.
+  });
+
+  it("a current production-shaped plan reports zero category heuristic use end to end", () => {
+    const batters = [productionShapedBatter("Model Play", 1, "-150"), productionShapedBatter("Longshot Play", 2, "+400")];
+    const { selectedRows } = buildHrEditionSelection({ batters, liveConfirm: () => null });
+    const caption = buildHrEditionCaption({ rows: selectedRows, languageMode: "morning", slateDate: SLATE });
+    assert.equal(caption.diagnostics.categoryHeuristicCount, 0);
+    assert.equal(caption.diagnostics.usedCategoryHeuristic, false);
+    assert.deepEqual(caption.diagnostics.categoryHeuristicPlayers, []);
+  });
+
+  it("a legacy frozen row with no category still posts via the price fallback, and it is never silent -- diagnostics name the affected player", () => {
+    // Shaped like a plan frozen before this fix: no category field at all.
+    const legacyRow = { player: "Old Plan Player", team: "NYY", hrOddsYes: "+400" };
+    const caption = buildHrEditionCaption({ rows: [legacyRow], languageMode: "morning", slateDate: SLATE });
+    assert.equal(caption.diagnostics.usedCategoryHeuristic, true);
+    assert.equal(caption.diagnostics.categoryHeuristicCount, 1);
+    assert.deepEqual(caption.diagnostics.categoryHeuristicPlayers, ["Old Plan Player"]);
+  });
+
+  it("morning and confirmed HR plans carry the identical canonical category per player -- one frozen selection, shared by both editions", () => {
+    const hrRowsWithCategory = [
+      { player: "Model Play", gameId: 1, category: "model", hrOddsYes: "-150" },
+      { player: "Longshot Play", gameId: 2, category: "longshot", hrOddsYes: "+400" },
+    ];
+    const all = plans({ markets: { k: marketInput({ rows: [] }), hr: marketInput({ rows: hrRowsWithCategory }) } });
+    const morning = find(all, "hr", "morning").selectedRows;
+    const confirmed = find(all, "hr", "confirmed").selectedRows;
+    assert.equal(morning, confirmed, "both editions share the identical frozen array, not two independently-classified copies");
+    assert.deepEqual(morning.map((r) => [r.player, r.category]), [["Model Play", "model"], ["Longshot Play", "longshot"]]);
+  });
+
+  it("the HR caption groups picks by the category the frozen plan already assigned -- no independent re-classification at render time", () => {
+    const batters = [
+      productionShapedBatter("Model One", 1, "-150"),
+      productionShapedBatter("Model Two", 2, "-200"),
+      productionShapedBatter("Longshot One", 3, "+400"),
+    ];
+    const { selectedRows } = buildHrEditionSelection({ batters, liveConfirm: () => null, maxTableSize: 10 });
+    const caption = buildHrEditionCaption({ rows: selectedRows, languageMode: "morning", slateDate: SLATE });
+    const frozenCategoryOf = new Map(selectedRows.map((r) => [r.player, r.category]));
+    assert.ok(caption.captionRows.length > 0);
+    for (const row of caption.captionRows) {
+      assert.equal(row.category, frozenCategoryOf.get(row.player), `${row.player} must render under the category the frozen plan assigned`);
+    }
+    assert.equal(caption.diagnostics.usedCategoryHeuristic, false);
   });
 });

@@ -16,6 +16,18 @@
  * its readiness, and any already-published image bundle) must agree with it
  * before anything is rendered or posted; a disagreement is a CONFIGURATION_ERROR
  * with zero X calls, checked before runEditionPost is ever invoked.
+ *
+ * Whether this run is dry-run or live-capable is resolved from
+ * GITHUB_EVENT_NAME (and, for workflow_dispatch, MLB_X_DISPATCH_MODE) via
+ * resolveEventMode (mlb-x-event-mode.mjs) -- NOT from a --dry-run flag the
+ * workflow computes with shell conditionals. A --dry-run flag can still be
+ * passed explicitly (e.g. for local/manual testing outside Actions) and can
+ * only make a run safer: it forces a dry run regardless of what the event
+ * resolves to. Nothing can make an unrecognized event or dispatch mode
+ * live-capable; that fails closed as CONFIGURATION_ERROR before anything
+ * else runs. Even a live-capable run still requires X_ALLOW_LIVE_POST=true,
+ * real credentials, and account verification (assertLivePostAllowed) before
+ * a single X call.
  */
 import path from "node:path";
 import process from "node:process";
@@ -24,6 +36,7 @@ import { spawnSync } from "node:child_process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
 import { buildDiagnosticRecord, DIAGNOSTIC_OUTCOMES } from "./lib/mlb-x-edition-diagnostics.mjs";
+import { resolveEventMode } from "./lib/mlb-x-event-mode.mjs";
 import { PostOutcome, runEditionPost } from "./lib/mlb-x-edition-poster.mjs";
 import { assertSlateDateAgreement, loadPlanForTarget } from "./lib/mlb-x-edition-publication.mjs";
 import { acquirePublicationLease } from "./lib/mlb-x-publication-lease.mjs";
@@ -219,6 +232,27 @@ async function main() {
       log(market, edition, `diagnostic write failed (non-fatal): ${error instanceof Error ? error.message : error}`);
     }
   };
+
+  // ── Event-mode resolution: decides dry-run vs. live-capable from the real
+  // GitHub Actions trigger, not from a fragile shell conditional in the
+  // workflow (see mlb-x-event-mode.mjs for why that shape of bug happened
+  // before). An explicit --dry-run CLI flag can only make this run SAFER --
+  // it forces a dry run regardless of what the event resolves to -- but
+  // nothing can make an unrecognized event or dispatch mode live-capable.
+  // Zero X calls, zero image render, zero caption build before this passes.
+  const eventMode = resolveEventMode({
+    eventName: process.env.GITHUB_EVENT_NAME ?? "",
+    dispatchMode: process.env.MLB_X_DISPATCH_MODE ?? null,
+  });
+  if (!args.dryRun && !eventMode.ok) {
+    console.error(`[post-mlb-x-edition:${market}-${edition}] cannot resolve a safe run mode: ${eventMode.reason}`);
+    writeDiag(PostOutcome.CONFIGURATION_ERROR, { reason: `event-mode resolution failed: ${eventMode.reason}` });
+    logFinal(market, edition, PostOutcome.CONFIGURATION_ERROR);
+    process.exitCode = 1;
+    return;
+  }
+  args.dryRun = args.dryRun || !eventMode.liveCapable;
+  log(market, edition, `eventMode=${eventMode.mode} liveCapable=${eventMode.liveCapable} resolvedDryRun=${args.dryRun}`);
 
   // ── Pre-flight slate-date agreement: CLI, plan, receipt key. Zero X calls before this passes. ──
   const preflightPlan = loadPlanForTarget({ directory: args.planDirectory, market, edition, slateDate });
