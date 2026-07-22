@@ -1,32 +1,53 @@
 import { useMemo } from "react";
+import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { buildHrPropBestBets, type HrBestBet } from "@/lib/mlb/hrPropBestBets";
 import { cn } from "@/lib/utils";
 
 function BetCard({ bet, compact = false }: { bet: HrBestBet; compact?: boolean }) {
   const longshot = bet.category === "longshot";
+  // bet.team is the hitter's own team (HrBestBet maps it straight off the
+  // batter row), never the opponent. MlbTeamLogo already degrades to a
+  // colored-initials badge for teams missing from the canonical map, so the
+  // only case left to guard is an absent/blank abbreviation -- there we drop
+  // the container entirely rather than render an empty box.
+  const teamAbbr = bet.team?.trim() ?? "";
+  const logoSize = compact ? 54 : 64;
+
   return (
     <article className={cn(
       "rounded-2xl border bg-white text-slate-900 shadow-sm",
       longshot ? "border-amber-200" : "border-rose-200",
       compact ? "p-3" : "p-4",
     )}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider", longshot ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800")}>
-              {longshot ? "Longshot" : "Top Model Play"}
-            </span>
-            <span className="text-[10px] font-bold text-slate-400">{bet.team} vs {bet.opponent}</span>
+      <div className="flex items-start gap-3">
+        {teamAbbr && (
+          <div className={cn(
+            "flex shrink-0 items-center justify-center rounded-2xl border bg-slate-50 shadow-inner",
+            longshot ? "border-amber-100" : "border-rose-100",
+            compact ? "h-16 w-16" : "h-[72px] w-[72px]",
+          )}>
+            <MlbTeamLogo team={teamAbbr} size={logoSize} className="drop-shadow-sm" />
           </div>
-          <div className="mt-1 truncate text-sm font-black text-slate-950">{bet.player}</div>
-          <div className="mt-1 text-xs text-slate-600">
-            Anytime HR <span className="font-black text-slate-950">{bet.odds}</span>
+        )}
+
+        <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider", longshot ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800")}>
+                {longshot ? "Longshot" : "Top Model Play"}
+              </span>
+              <span className="text-[10px] font-bold text-slate-400">{bet.team} vs {bet.opponent}</span>
+            </div>
+            <div className="mt-1 truncate text-sm font-black text-slate-950">{bet.player}</div>
+            <div className="mt-1 text-xs text-slate-600">
+              Anytime HR <span className="font-black text-slate-950">{bet.odds}</span>
+            </div>
           </div>
-        </div>
-        <div className="shrink-0 text-right">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">HR Score</div>
-          <div className="text-lg font-black tabular-nums text-slate-950">{bet.hrScore.toFixed(1)}</div>
+          <div className="shrink-0 text-right">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">HR Score</div>
+            <div className="text-lg font-black tabular-nums text-slate-950">{bet.hrScore.toFixed(1)}</div>
+          </div>
         </div>
       </div>
       {!compact && (
