@@ -77,17 +77,41 @@ export function selectConfirmedHrProps({
   let projectedExcludedCount = 0;
   let unconfirmedExcludedCount = 0;
   let startedExcludedCount = 0;
+  let promotedFromLiveCount = 0;
 
   const confirmed = [];
   for (const row of batters) {
-    const status = classifyHitterConfirmation(row);
+    let status = classifyHitterConfirmation(row);
+    const live = liveConfirm(row);
+
+    // Live boxscore promotion.
+    //
+    // The generated artifact stamps lineupStatus once, when it is built, and
+    // never re-stamps it as orders post. On 2026-07-21 it was generated at
+    // 12:59 ET and every one of its 270 batter rows read "projected" -- while
+    // the live poll snapshot taken at 15:48 ET (171 minutes before first
+    // pitch) already carried a confirmed 9-deep batting order for 6 of the 15
+    // games. Because a PROJECTED row exited at the first branch below, live
+    // data could only ever veto a row, never confirm one, so
+    // confirmedGameCount was structurally pinned at 0 for the entire slate and
+    // HR could not post no matter how many lineups were actually posted.
+    //
+    // The live boxscore is both more current and more authoritative than the
+    // stamp, so an explicit live `true` promotes. Anything short of an
+    // explicit `true` leaves the generated status alone, keeping the gate
+    // fail-closed: absent or unknown live data still confirms nothing.
+    if (status === ConfirmationStatus.PROJECTED && live === true) {
+      status = ConfirmationStatus.CONFIRMED_LINEUP;
+      promotedFromLiveCount += 1;
+    }
 
     if (status === ConfirmationStatus.PROJECTED) {
       projectedExcludedCount += 1;
       continue;
     }
     if (status !== ConfirmationStatus.CONFIRMED_LINEUP) {
-      // OUT / UNCONFIRMED
+      // OUT / UNCONFIRMED -- a scratched hitter is rejected here, before the
+      // promotion above can ever apply to them.
       unconfirmedExcludedCount += 1;
       continue;
     }
@@ -97,7 +121,7 @@ export function selectConfirmedHrProps({
     }
     // Fail-closed live re-confirmation: an explicit `false` vetoes a row that
     // the generated data called confirmed but live boxscore data does not.
-    if (liveConfirm(row) === false) {
+    if (live === false) {
       unconfirmedExcludedCount += 1;
       continue;
     }
@@ -132,6 +156,10 @@ export function selectConfirmedHrProps({
     confirmedGameCount: gameIdentities.size,
     confirmedRowsWithoutGameIdentity,
     projectedExcludedCount,
+    // Rows the live boxscore confirmed that the generated stamp still called
+    // projected. Surfaced so a slate where this is high is visibly relying on
+    // live promotion rather than a fresh artifact.
+    promotedFromLiveCount,
     unconfirmedExcludedCount,
     startedExcludedCount,
   };

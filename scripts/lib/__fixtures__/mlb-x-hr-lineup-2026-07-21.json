@@ -1,0 +1,201 @@
+{
+  "_source": "Real production data, MLB slate 2026-07-21. Generated artifact public/data/mlb/hr-props-raw.json @ commit b84caa6 (generatedAt 2026-07-21T16:59:28.877Z = 12:59 ET); live poll snapshot from workflow run 29863066243 (asOf 2026-07-21T19:48:32.728Z = 15:48 ET, 171 min before first pitch).",
+  "_why": "All 270 generated batter rows were stamped lineupStatus \"projected\": the generator ran before any batting order posted and never re-ran. The live snapshot 171 minutes before first pitch already carried a confirmed 9-deep order for 6 of 15 games. Chase DeLauter is projected/order 4 in the generated artifact and confirmed/order 3 in the live boxscore.",
+  "generatedAt": "2026-07-21T16:59:28.877Z",
+  "slateDate": "2026-07-21",
+  "asOf": "2026-07-21T19:48:32.728Z",
+  "batters": [
+    {
+      "player": "Chase DeLauter",
+      "playerId": 800050,
+      "gameId": 824409,
+      "teamId": 114,
+      "officialGameDate": "2026-07-21",
+      "lineupStatus": "projected",
+      "battingOrder": 4,
+      "starterConfirmed": true,
+      "team": "CLE",
+      "opponent": "MIN",
+      "opposingPitcher": "Kendry Rojas",
+      "gameKey": "MIN@CLE",
+      "hrScore": 43.4,
+      "hrScoreRank": 102
+    },
+    {
+      "player": "Rhys Hoskins",
+      "playerId": 656555,
+      "gameId": 824409,
+      "teamId": 114,
+      "officialGameDate": "2026-07-21",
+      "lineupStatus": "projected",
+      "battingOrder": 6,
+      "starterConfirmed": true,
+      "team": "CLE",
+      "opponent": "MIN",
+      "opposingPitcher": "Kendry Rojas",
+      "gameKey": "MIN@CLE",
+      "hrScore": 39.4,
+      "hrScoreRank": 125
+    },
+    {
+      "player": "Kyle Manzardo",
+      "playerId": 700932,
+      "gameId": 824409,
+      "teamId": 114,
+      "officialGameDate": "2026-07-21",
+      "lineupStatus": "projected",
+      "battingOrder": 2,
+      "starterConfirmed": true,
+      "team": "CLE",
+      "opponent": "MIN",
+      "opposingPitcher": "Kendry Rojas",
+      "gameKey": "MIN@CLE",
+      "hrScore": 33.6,
+      "hrScoreRank": 170
+    },
+    {
+      "player": "Kody Clemens",
+      "playerId": 665019,
+      "gameId": 824409,
+      "teamId": 142,
+      "officialGameDate": "2026-07-21",
+      "lineupStatus": "projected",
+      "battingOrder": 4,
+      "starterConfirmed": true,
+      "team": "MIN",
+      "opponent": "CLE",
+      "opposingPitcher": "Parker Messick",
+      "gameKey": "MIN@CLE",
+      "hrScore": 47.2,
+      "hrScoreRank": 71
+    },
+    {
+      "player": "Byron Buxton",
+      "playerId": 621439,
+      "gameId": 824409,
+      "teamId": 142,
+      "officialGameDate": "2026-07-21",
+      "lineupStatus": "projected",
+      "battingOrder": 2,
+      "starterConfirmed": true,
+      "team": "MIN",
+      "opponent": "CLE",
+      "opposingPitcher": "Parker Messick",
+      "gameKey": "MIN@CLE",
+      "hrScore": 42.4,
+      "hrScoreRank": 107
+    },
+    {
+      "player": "Riley Greene",
+      "playerId": 682985,
+      "gameId": 824652,
+      "teamId": 116,
+      "officialGameDate": "2026-07-21",
+      "lineupStatus": "projected",
+      "battingOrder": 6,
+      "starterConfirmed": true,
+      "team": "DET",
+      "opponent": "CHC",
+      "opposingPitcher": "David Peterson",
+      "gameKey": "DET@CHC",
+      "hrScore": 66.1,
+      "hrScoreRank": 12
+    },
+    {
+      "player": "Dillon Dingler",
+      "playerId": 693307,
+      "gameId": 824652,
+      "teamId": 116,
+      "officialGameDate": "2026-07-21",
+      "lineupStatus": "projected",
+      "battingOrder": 7,
+      "starterConfirmed": true,
+      "team": "DET",
+      "opponent": "CHC",
+      "opposingPitcher": "David Peterson",
+      "gameKey": "DET@CHC",
+      "hrScore": 63,
+      "hrScoreRank": 20
+    }
+  ],
+  "games": [
+    {
+      "gamePk": 824409,
+      "gameDate": "2026-07-21T22:40:00Z",
+      "started": false,
+      "excluded": false,
+      "awayAbbr": "MIN",
+      "homeAbbr": "CLE",
+      "awayLineup": {
+        "confirmed": false,
+        "batters": []
+      },
+      "homeLineup": {
+        "confirmed": true,
+        "batters": [
+          {
+            "id": 680757,
+            "name": "Steven Kwan",
+            "battingOrder": 1
+          },
+          {
+            "id": 677587,
+            "name": "Brayan Rocchio",
+            "battingOrder": 2
+          },
+          {
+            "id": 800050,
+            "name": "Chase DeLauter",
+            "battingOrder": 3
+          },
+          {
+            "id": 656555,
+            "name": "Rhys Hoskins",
+            "battingOrder": 4
+          },
+          {
+            "id": 681807,
+            "name": "David Fry",
+            "battingOrder": 5
+          },
+          {
+            "id": 683953,
+            "name": "Travis Bazzana",
+            "battingOrder": 6
+          },
+          {
+            "id": 672356,
+            "name": "Gabriel Arias",
+            "battingOrder": 7
+          },
+          {
+            "id": 595978,
+            "name": "Austin Hedges",
+            "battingOrder": 8
+          },
+          {
+            "id": 690984,
+            "name": "Petey Halpin",
+            "battingOrder": 9
+          }
+        ]
+      }
+    },
+    {
+      "gamePk": 824652,
+      "gameDate": "2026-07-22T00:05:00Z",
+      "started": false,
+      "excluded": false,
+      "awayAbbr": "DET",
+      "homeAbbr": "CHC",
+      "awayLineup": {
+        "confirmed": false,
+        "batters": []
+      },
+      "homeLineup": {
+        "confirmed": false,
+        "batters": []
+      }
+    }
+  ]
+}
