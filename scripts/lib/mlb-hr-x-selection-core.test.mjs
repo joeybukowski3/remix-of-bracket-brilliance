@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { getConfirmedGameIdentity, selectConfirmedHrProps } from "./mlb-hr-x-selection-core.mjs";
+import { getConfirmedGameIdentity, selectConfirmedHrProps, selectHrPropsAnyLineupStatus } from "./mlb-hr-x-selection-core.mjs";
 import { resolvePostingReadiness } from "./mlb-x-readiness.mjs";
 
 function batter(overrides = {}) {
@@ -375,5 +375,64 @@ describe("selectConfirmedHrProps live promotion (2026-07-21 regression)", () => 
     const result = selectConfirmedHrProps({ batters: [{ ...FIXTURE.batters[0], lineupStatus: "out" }], liveConfirm: () => true });
     assert.equal(result.confirmedCount, 0);
     assert.equal(result.promotedFromLiveCount, 0);
+  });
+});
+
+describe("selectHrPropsAnyLineupStatus (morning edition: no confirmation required)", () => {
+  it("selects projected-only hitters -- the 2026-07-21 case would have zero rows without this", () => {
+    const batters = [
+      batter({ player: "Alpha", hrScore: 80, lineupStatus: "projected", battingOrder: null , hrOddsYes: "+300"}),
+      batter({ player: "Bravo", hrScore: 70, lineupStatus: "projected", battingOrder: null , hrOddsYes: "+300"}),
+    ];
+    const result = selectHrPropsAnyLineupStatus({ batters });
+    assert.equal(result.selected.length, 2);
+    assert.deepEqual(result.selected.map((r) => r.player), ["Alpha", "Bravo"]);
+  });
+
+  it("uses the identical ranking as selectConfirmedHrProps -- highest hrScore first, hrScoreRank tiebreak", () => {
+    const batters = [
+      batter({ player: "Low", hrScore: 40, lineupStatus: "confirmed", battingOrder: 1 , hrOddsYes: "+300"}),
+      batter({ player: "High", hrScore: 90, lineupStatus: "confirmed", battingOrder: 2 , hrOddsYes: "+300"}),
+      batter({ player: "Mid", hrScore: 65, lineupStatus: "confirmed", battingOrder: 3 , hrOddsYes: "+300"}),
+    ];
+    const anyStatus = selectHrPropsAnyLineupStatus({ batters }).selected.map((r) => r.player);
+    const confirmedOnly = selectConfirmedHrProps({ batters }).selected.map((r) => r.player);
+    assert.deepEqual(anyStatus, ["High", "Mid", "Low"]);
+    assert.deepEqual(anyStatus, confirmedOnly, "ranking must be identical when every row is already confirmed");
+  });
+
+  it("excludes a row with no player name or no usable price rather than fabricating one", () => {
+    const batters = [
+      batter({ player: "", hrScore: 90 , hrOddsYes: "+300"}),
+      batter({ player: "No Price", hrScore: 85, hrOddsYes: null }),
+      batter({ player: "Bad Price", hrScore: 84, hrOddsYes: "TBD" }),
+      batter({ player: "Good", hrScore: 80, hrOddsYes: "+300" }),
+    ];
+    const result = selectHrPropsAnyLineupStatus({ batters });
+    assert.equal(result.selected.length, 1);
+    assert.equal(result.selected[0].player, "Good");
+    assert.equal(result.invalidExcludedCount, 3);
+  });
+
+  it("still excludes a game that has already started", () => {
+    const batters = [batter({ player: "Started", hrScore: 90, gameId: 1 , hrOddsYes: "+300"})];
+    const result = selectHrPropsAnyLineupStatus({ batters, isGameStarted: () => true });
+    assert.equal(result.selected.length, 0);
+    assert.equal(result.startedExcludedCount, 1);
+  });
+
+  it("respects maxTableSize", () => {
+    const batters = Array.from({ length: 6 }, (_, i) => batter({ player: `P${i}`, hrScore: 90 - i, gameId: i, hrOddsYes: "+300" }));
+    assert.equal(selectHrPropsAnyLineupStatus({ batters, maxTableSize: 3 }).selected.length, 3);
+  });
+
+  it("computes game-count diagnostics the same way as the confirmed selector", () => {
+    const batters = [
+      batter({ player: "A", hrScore: 90, gameId: 1 , hrOddsYes: "+300"}),
+      batter({ player: "B", hrScore: 80, gameId: 1 , hrOddsYes: "+300"}),
+      batter({ player: "C", hrScore: 70, gameId: 2 , hrOddsYes: "+300"}),
+    ];
+    const result = selectHrPropsAnyLineupStatus({ batters, maxTableSize: 10 });
+    assert.equal(result.eligibleGameCount, 2);
   });
 });

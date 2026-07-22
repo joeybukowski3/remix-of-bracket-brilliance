@@ -54,6 +54,13 @@ export function getConfirmedGameIdentity(row) {
   return gameId == null ? null : `game:${gameId}`;
 }
 
+/** The single ranking both selection functions below use: highest HR score first, hrScoreRank as tiebreak. */
+export function compareByHrScore(left, right) {
+  const scoreDelta = (toFiniteNumber(right.hrScore) ?? -Infinity) - (toFiniteNumber(left.hrScore) ?? -Infinity);
+  if (scoreDelta !== 0) return scoreDelta;
+  return (toFiniteNumber(left.hrScoreRank) ?? Infinity) - (toFiniteNumber(right.hrScoreRank) ?? Infinity);
+}
+
 /**
  * Rebuild the HR X table from confirmed-eligible hitters, highest HR score
  * first, backfilling down the confirmed pool.
@@ -128,11 +135,7 @@ export function selectConfirmedHrProps({
     confirmed.push(row);
   }
 
-  confirmed.sort((left, right) => {
-    const scoreDelta = (toFiniteNumber(right.hrScore) ?? -Infinity) - (toFiniteNumber(left.hrScore) ?? -Infinity);
-    if (scoreDelta !== 0) return scoreDelta;
-    return (toFiniteNumber(left.hrScoreRank) ?? Infinity) - (toFiniteNumber(right.hrScoreRank) ?? Infinity);
-  });
+  confirmed.sort(compareByHrScore);
 
   // Distinct games represented in the FULL confirmed pool (before slicing to
   // maxTableSize) -- lets the caller's readiness gate require the confirmed
@@ -161,6 +164,63 @@ export function selectConfirmedHrProps({
     // live promotion rather than a fresh artifact.
     promotedFromLiveCount,
     unconfirmedExcludedCount,
+    startedExcludedCount,
+  };
+}
+
+/**
+ * Selects HR rows for the morning edition, which explicitly does not require
+ * lineup confirmation. Reuses the exact ranking selectConfirmedHrProps uses
+ * (compareByHrScore) and the exact per-game identity accounting, so the only
+ * difference from selectConfirmedHrProps is that lineupStatus/confirmation is
+ * never consulted -- no ranking or threshold changes.
+ *
+ * A row is excluded only when it cannot be shown truthfully: no player name,
+ * no usable price (a caption can never post a fabricated price), or a game
+ * already under way.
+ *
+ * @param {object} params
+ * @param {Array<object>} params.batters normalized HR rows
+ * @param {(row:object)=>boolean} [params.isGameStarted]
+ * @param {number} [params.maxTableSize]
+ * @returns {{ selected: Array<object>, eligibleCount: number, eligibleGameCount: number,
+ *             rowsWithoutGameIdentity: number, invalidExcludedCount: number, startedExcludedCount: number }}
+ */
+export function selectHrPropsAnyLineupStatus({ batters = [], isGameStarted = () => false, maxTableSize = DEFAULT_MAX_TABLE_SIZE } = {}) {
+  let invalidExcludedCount = 0;
+  let startedExcludedCount = 0;
+
+  const eligible = [];
+  for (const row of batters) {
+    const hasPlayer = Boolean(String(row?.player ?? "").trim());
+    const hasUsablePrice = /^[+-]\d+$/.test(String(row?.hrOddsYes ?? "").trim());
+    if (!hasPlayer || !hasUsablePrice) {
+      invalidExcludedCount += 1;
+      continue;
+    }
+    if (isGameStarted(row)) {
+      startedExcludedCount += 1;
+      continue;
+    }
+    eligible.push(row);
+  }
+
+  eligible.sort(compareByHrScore);
+
+  const gameIdentities = new Set();
+  let rowsWithoutGameIdentity = 0;
+  for (const row of eligible) {
+    const identity = getConfirmedGameIdentity(row);
+    if (identity == null) rowsWithoutGameIdentity += 1;
+    else gameIdentities.add(identity);
+  }
+
+  return {
+    selected: eligible.slice(0, maxTableSize),
+    eligibleCount: eligible.length,
+    eligibleGameCount: gameIdentities.size,
+    rowsWithoutGameIdentity,
+    invalidExcludedCount,
     startedExcludedCount,
   };
 }
