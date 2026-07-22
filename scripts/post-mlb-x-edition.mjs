@@ -23,6 +23,7 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "no
 import { spawnSync } from "node:child_process";
 import { chromium } from "@playwright/test";
 import { TwitterApi } from "twitter-api-v2";
+import { buildDiagnosticRecord, DIAGNOSTIC_OUTCOMES } from "./lib/mlb-x-edition-diagnostics.mjs";
 import { PostOutcome, runEditionPost } from "./lib/mlb-x-edition-poster.mjs";
 import { assertSlateDateAgreement, loadPlanForTarget } from "./lib/mlb-x-edition-publication.mjs";
 import { acquirePublicationLease } from "./lib/mlb-x-publication-lease.mjs";
@@ -116,6 +117,22 @@ function toOrchestratorStateStore(store, args) {
         mkdirSync(args.leaseDirectory, { recursive: true });
         writeFileSync(recoveryPath, `${JSON.stringify({ receipt, pushResult: result, at: new Date().toISOString() }, null, 2)}\n`);
         log(args.market, args.edition, `STATE_PERSISTENCE_FAILED: receipt committed locally but not pushed -- recovery artifact at ${recoveryPath}`);
+        // Best-effort: the primary post already succeeded by this point (this
+        // branch only fires on a receipt push failure), so a diagnostic-write
+        // failure here must never mask that success or throw out of the caller.
+        try {
+          const diagResult = store.writeDiagnostic({
+            slateDate, market, edition,
+            diagnostic: buildDiagnosticRecord({
+              market, edition, slateDate,
+              latestOutcome: "STATE_PERSISTENCE_FAILED",
+              reason: `receipt push failed after ${result.attempts ?? "?"} attempt(s); recovery artifact at ${recoveryPath}`,
+            }),
+          });
+          if (diagResult.pushed) log(args.market, args.edition, "diagnostic recorded (STATE_PERSISTENCE_FAILED)");
+        } catch (diagError) {
+          log(args.market, args.edition, `diagnostic write failed (non-fatal): ${diagError instanceof Error ? diagError.message : diagError}`);
+        }
       }
       return result;
     },
@@ -183,10 +200,31 @@ async function main() {
     return;
   }
 
+  // ── Diagnostic state: created and synced before any exit point below so
+  // every CONFIGURATION_ERROR from here on -- not only the ones inside
+  // runEditionPost -- can be persisted to the one rolling diagnostic for this
+  // edition. Best-effort throughout: a diagnostic write never overrides the
+  // real outcome or throws out of this script.
+  const rawStore = makeStateStore(args.stateWorkDir);
+  rawStore.sync();
+  const writeDiag = (latestOutcome, { reason = "", windowClosesAt = null } = {}) => {
+    if (!DIAGNOSTIC_OUTCOMES.includes(latestOutcome)) return;
+    try {
+      const written = rawStore.writeDiagnostic({
+        slateDate, market, edition,
+        diagnostic: buildDiagnosticRecord({ market, edition, slateDate, latestOutcome, reason, windowClosesAt }),
+      });
+      if (written.pushed) log(market, edition, `diagnostic recorded (${latestOutcome})`);
+    } catch (error) {
+      log(market, edition, `diagnostic write failed (non-fatal): ${error instanceof Error ? error.message : error}`);
+    }
+  };
+
   // ── Pre-flight slate-date agreement: CLI, plan, receipt key. Zero X calls before this passes. ──
   const preflightPlan = loadPlanForTarget({ directory: args.planDirectory, market, edition, slateDate });
   if (!preflightPlan.ok) {
     console.error(`[post-mlb-x-edition:${market}-${edition}] plan invalid: ${preflightPlan.error} ${JSON.stringify(preflightPlan.detail ?? {})}`);
+    writeDiag(PostOutcome.CONFIGURATION_ERROR, { reason: `plan invalid: ${preflightPlan.error}` });
     logFinal(market, edition, PostOutcome.CONFIGURATION_ERROR);
     process.exitCode = 1;
     return;
@@ -200,6 +238,7 @@ async function main() {
   });
   if (!agreement.agreed) {
     console.error(`[post-mlb-x-edition:${market}-${edition}] slate date disagreement: ${JSON.stringify(agreement.detail)}`);
+    writeDiag(PostOutcome.CONFIGURATION_ERROR, { reason: `slate date disagreement: ${JSON.stringify(agreement.detail)}` });
     logFinal(market, edition, PostOutcome.CONFIGURATION_ERROR);
     process.exitCode = 1;
     return;
@@ -212,6 +251,7 @@ async function main() {
   const existingBundle = validateImageBundle({ kind: imageKindForMarket(market), slateDate, directory: args.imageDirectory });
   if (!existingBundle.valid && existingBundle.reason === "SLATE_MISMATCH") {
     console.error(`[post-mlb-x-edition:${market}-${edition}] existing image bundle is for a different slate.`);
+    writeDiag(PostOutcome.CONFIGURATION_ERROR, { reason: "existing image bundle is for a different slate" });
     logFinal(market, edition, PostOutcome.CONFIGURATION_ERROR);
     process.exitCode = 1;
     return;
@@ -224,13 +264,13 @@ async function main() {
       assertLivePostAllowed({ eventName: process.env.GITHUB_EVENT_NAME ?? "", allowLivePost: process.env.X_ALLOW_LIVE_POST });
     } catch (error) {
       console.error(`[post-mlb-x-edition:${market}-${edition}] ${error.message}`);
+      writeDiag(PostOutcome.CONFIGURATION_ERROR, { reason: error.message });
       logFinal(market, edition, PostOutcome.CONFIGURATION_ERROR);
       process.exitCode = 1;
       return;
     }
   }
 
-  const rawStore = makeStateStore(args.stateWorkDir);
   const stateStore = toOrchestratorStateStore(rawStore, args);
   const acquireLease = (receiptKey) => acquirePublicationLease({ receiptKey, leaseDir: args.leaseDirectory });
 
@@ -284,6 +324,21 @@ async function main() {
     const secrets = secretsFromEnv(process.env);
     console.log(JSON.stringify({ market, edition, slateDate, ...result }, null, 2).split("\n").map((l) => sanitizeLogValue(l, secrets)).join("\n"));
     logFinal(market, edition, result.status ?? result.outcome);
+
+    // Persist a diagnostic for any non-post outcome runEditionPost returned
+    // (IMAGE_FAILED, X_API_FAILED, ROW_MISMATCH, CONFIGURATION_ERROR from a
+    // check inside the orchestrator itself, or a MISSED_WINDOW/NOT_DUE that
+    // only became true on revalidation, after the plan said READY). A
+    // posted-shaped outcome (POSTED, FALLBACK_POSTED, REPLY_RECOVERED,
+    // ALREADY_POSTED, DRY_RUN, SKIPPED, LEASE_UNAVAILABLE) is not in the
+    // allowlist, so writeDiag is a no-op for those -- the receipt already
+    // speaks for a real publication.
+    if (DIAGNOSTIC_OUTCOMES.includes(result.outcome)) {
+      const reason = result.detail
+        ? (typeof result.detail === "string" ? result.detail : JSON.stringify(result.detail))
+        : (result.status ?? result.outcome);
+      writeDiag(result.outcome, { reason });
+    }
 
     const failureOutcomes = new Set([PostOutcome.X_API_FAILED, PostOutcome.IMAGE_FAILED, PostOutcome.CONFIGURATION_ERROR, PostOutcome.ROW_MISMATCH]);
     if (failureOutcomes.has(result.outcome)) process.exitCode = 1;

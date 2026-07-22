@@ -197,7 +197,8 @@ export function toWorkflowOutputs(plans) {
   return outputs;
 }
 
-function conciseReason(plan) {
+/** Exported so diagnostic persistence (plan-mlb-x-editions.mjs, post-mlb-x-edition.mjs) reuses the same reason text as the workflow outputs, rather than building a second version of it. */
+export function conciseReason(plan) {
   const r = plan.readiness;
   if (r.status === "READY_TO_POST" || r.status === "READY_TO_FALLBACK_POST") {
     return `${plan.selectedRows.length} picks; ${r.confirmationComplete ? "confirmed" : "unconfirmed"} lineups`;

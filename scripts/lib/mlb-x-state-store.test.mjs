@@ -14,10 +14,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   createGitStateStore,
+  diagnosticPathFor,
   receiptCommitMessage,
   receiptPathFor,
   STATE_BRANCH,
 } from "./mlb-x-state-store.mjs";
+import { buildDiagnosticRecord } from "./mlb-x-edition-diagnostics.mjs";
+import { isPostedReceipt } from "./mlb-x-edition-receipts.mjs";
 
 const SLATE = "2026-07-21";
 
@@ -256,6 +259,166 @@ describe("resilience", () => {
       const result = store.sync();
       assert.equal(result.syncedRemote, false);
       assert.equal(store.writeReceipt({ ...target("k", "morning"), receipt: receipt("111") }).pushed, true);
+    });
+  });
+});
+
+const diag = (latestOutcome, extra = {}) =>
+  buildDiagnosticRecord({ market: "k", edition: "morning", slateDate: SLATE, latestOutcome, reason: "r", ...extra });
+
+function commitCount(bare, branch = STATE_BRANCH) {
+  return git(["log", "--format=%H", branch], { cwd: bare }).stdout.trim().split("\n").filter(Boolean).length;
+}
+
+describe("diagnostic paths", () => {
+  it("lives at a structurally distinct path from the receipt", () => {
+    const receiptPath = receiptPathFor(target("k", "morning"));
+    const diagnosticPath = diagnosticPathFor(target("k", "morning"));
+    assert.equal(receiptPath, "mlb-x/2026-07-21/k-morning.json");
+    assert.equal(diagnosticPath, "mlb-x/2026-07-21/diagnostics/k-morning.json");
+    assert.notEqual(receiptPath, diagnosticPath);
+  });
+
+  it("rejects a malformed slate, market or edition, same as receiptPathFor", () => {
+    assert.throws(() => diagnosticPathFor({ slateDate: "7/21/26", market: "k", edition: "morning" }), /slate date/i);
+    assert.throws(() => diagnosticPathFor({ slateDate: SLATE, market: "nfl", edition: "morning" }), /market/i);
+    assert.throws(() => diagnosticPathFor({ slateDate: SLATE, market: "k", edition: "evening" }), /edition/i);
+  });
+});
+
+describe("diagnostic persistence: overwrite, not append", () => {
+  it("creates the diagnostic on first write and reads it back", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      assert.equal(store.readDiagnostic(target("k", "morning")), null);
+      const result = store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") });
+      assert.equal(result.pushed, true);
+      assert.equal(store.readDiagnostic(target("k", "morning")).latestOutcome, "NOT_DUE");
+    });
+  });
+
+  it("a real state transition overwrites in place -- exactly one file exists, not two", () => {
+    withRemote(1, ([store], { bare }) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") });
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("IMAGE_FAILED") });
+      const files = git(["ls-tree", "-r", "--name-only", STATE_BRANCH], { cwd: bare }).stdout.trim().split("\n");
+      const matches = files.filter((f) => f.includes("diagnostics/k-morning"));
+      assert.equal(matches.length, 1, "overwritten in place, not appended");
+      assert.equal(store.readDiagnostic(target("k", "morning")).latestOutcome, "IMAGE_FAILED");
+    });
+  });
+
+  it("a repeated identical diagnostic produces zero new commits -- the routine-poll case", () => {
+    withRemote(1, ([store], { bare }) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") });
+      const afterFirst = commitCount(bare);
+      // Same meaningful content, fresh updatedAt/windowClosesAt -- as a real
+      // pregame poll would produce every 20 minutes for hours.
+      for (let i = 0; i < 5; i += 1) {
+        const result = store.writeDiagnostic({
+          ...target("k", "morning"),
+          diagnostic: diag("NOT_DUE", { at: new Date(Date.now() + i * 60_000).toISOString(), windowClosesAt: `2026-07-21T${15 + i}:00:00.000Z` }),
+        });
+        assert.equal(result.unchanged, true);
+        assert.equal(result.pushed, false);
+      }
+      assert.equal(commitCount(bare), afterFirst, "no new commits from five routine repeats");
+    });
+  });
+
+  it("a genuine transition still commits exactly once per transition", () => {
+    withRemote(1, ([store], { bare }) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") });
+      const afterFirst = commitCount(bare);
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") }); // repeat, no commit
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("WAITING_FOR_SELECTED_LINEUPS") }); // real transition
+      assert.equal(commitCount(bare), afterFirst + 1);
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("IMAGE_FAILED") }); // another real transition
+      assert.equal(commitCount(bare), afterFirst + 2);
+    });
+  });
+
+  it("ignores updatedAt/windowClosesAt drift when deciding whether to commit, but still persists the fresh values", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE", { at: "2026-07-21T15:00:00.000Z" }) });
+      const result = store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE", { at: "2026-07-21T15:20:00.000Z" }) });
+      assert.equal(result.unchanged, true, "not a commit-worthy change");
+      // The committed file is not rewritten on an unchanged write -- it still
+      // reflects the first write's timestamp, which is correct: nothing new
+      // happened, so nothing new should be recorded as having happened.
+      assert.equal(store.readDiagnostic(target("k", "morning")).updatedAt, "2026-07-21T15:00:00.000Z");
+    });
+  });
+});
+
+describe("diagnostics never count as posted", () => {
+  it("writing a diagnostic does not make readReceipt or isPostedReceipt see a publication", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("IMAGE_FAILED") });
+      assert.equal(store.readReceipt(target("k", "morning")), null);
+      assert.equal(isPostedReceipt(store.readDiagnostic(target("k", "morning"))), false);
+    });
+  });
+
+  it("a real receipt and a diagnostic for the same edition coexist independently", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("IMAGE_FAILED") });
+      store.writeReceipt({ ...target("k", "morning"), receipt: receipt("999") });
+      assert.equal(isPostedReceipt(store.readReceipt(target("k", "morning"))), true);
+      assert.equal(store.readDiagnostic(target("k", "morning")).latestOutcome, "IMAGE_FAILED");
+    });
+  });
+});
+
+describe("diagnostic edition and market isolation", () => {
+  it("keeps all four editions' diagnostics independent", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      store.writeDiagnostic({ slateDate: SLATE, market: "k", edition: "morning", diagnostic: buildDiagnosticRecord({ market: "k", edition: "morning", slateDate: SLATE, latestOutcome: "NOT_DUE" }) });
+      store.writeDiagnostic({ slateDate: SLATE, market: "hr", edition: "morning", diagnostic: buildDiagnosticRecord({ market: "hr", edition: "morning", slateDate: SLATE, latestOutcome: "IMAGE_FAILED" }) });
+      store.writeDiagnostic({ slateDate: SLATE, market: "k", edition: "confirmed", diagnostic: buildDiagnosticRecord({ market: "k", edition: "confirmed", slateDate: SLATE, latestOutcome: "WAITING_FOR_SELECTED_LINEUPS" }) });
+      assert.equal(store.readDiagnostic(target("k", "morning")).latestOutcome, "NOT_DUE");
+      assert.equal(store.readDiagnostic(target("hr", "morning")).latestOutcome, "IMAGE_FAILED");
+      assert.equal(store.readDiagnostic(target("k", "confirmed")).latestOutcome, "WAITING_FOR_SELECTED_LINEUPS");
+      assert.equal(store.readDiagnostic(target("hr", "confirmed")), null);
+    });
+  });
+});
+
+describe("diagnostic resilience", () => {
+  it("treats an unparsable diagnostic as absent rather than throwing", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      const p = path.join(store.workDir, diagnosticPathFor(target("k", "morning")));
+      mkdirSync(path.dirname(p), { recursive: true });
+      writeFileSync(p, "{ not json");
+      assert.equal(store.readDiagnostic(target("k", "morning")), null);
+    });
+  });
+
+  it("marks diagnostic commits with [skip ci], same as receipts", () => {
+    withRemote(1, ([store], { bare }) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") });
+      const message = git(["log", "-1", "--format=%B", STATE_BRANCH], { cwd: bare }).stdout;
+      assert.match(message, /\[skip ci\]/);
+    });
+  });
+
+  it("never force-pushes: a diagnostic commit stays an ancestor of later commits", () => {
+    withRemote(1, ([store], { bare }) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") });
+      const first = git(["rev-parse", STATE_BRANCH], { cwd: bare }).stdout.trim();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("IMAGE_FAILED") });
+      const log = git(["log", "--format=%H", STATE_BRANCH], { cwd: bare }).stdout.trim().split("\n");
+      assert.ok(log.includes(first));
     });
   });
 });

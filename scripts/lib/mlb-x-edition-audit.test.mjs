@@ -45,7 +45,7 @@ describe("missing editions", () => {
     const report = auditSlate({
       slateDate: SLATE, now: EVENING, firstGameTime: FIRST_PITCH,
       readReceipt: receiptFor({ "k-morning": posted("1"), "hr-morning": posted("2"), "k-confirmed": posted("3") }),
-      readDiagnostic: () => ({ status: "IMAGE_FAILED", reason: "render timed out" }),
+      readDiagnostic: () => ({ latestOutcome: "IMAGE_FAILED", reason: "render timed out" }),
     });
     assert.equal(report.postedCount, 3);
     assert.equal(report.missed.length, 1);
@@ -58,7 +58,7 @@ describe("missing editions", () => {
     const report = auditSlate({
       slateDate: SLATE, now: EVENING, firstGameTime: FIRST_PITCH,
       readReceipt: () => null,
-      readDiagnostic: () => ({ status: "WAITING_FOR_SELECTED_LINEUPS", reason: "0/5 selected picks confirmed" }),
+      readDiagnostic: () => ({ latestOutcome: "WAITING_FOR_SELECTED_LINEUPS", reason: "0/5 selected picks confirmed" }),
     });
     assert.equal(report.postedCount, 0);
     assert.equal(report.missed.length, 4);
@@ -76,7 +76,7 @@ describe("exit code policy", () => {
     for (const status of ["IMAGE_FAILED", "X_API_FAILED", "CONFIGURATION_ERROR", "ROW_MISMATCH"]) {
       const report = auditSlate({
         slateDate: SLATE, now: EVENING, firstGameTime: FIRST_PITCH,
-        readReceipt: () => null, readDiagnostic: () => ({ status, reason: status }),
+        readReceipt: () => null, readDiagnostic: () => ({ latestOutcome: status, reason: status }),
       });
       assert.equal(report.exitCode, 1, `${status} must fail the audit`);
       assert.equal(report.technicalMisses.length, 4);
@@ -87,7 +87,7 @@ describe("exit code policy", () => {
     for (const status of ["NO_GAMES", "NO_VALID_PICKS", "INVALID_SLATE"]) {
       const report = auditSlate({
         slateDate: SLATE, now: EVENING, firstGameTime: FIRST_PITCH,
-        readReceipt: () => null, readDiagnostic: () => ({ status, reason: status }),
+        readReceipt: () => null, readDiagnostic: () => ({ latestOutcome: status, reason: status }),
       });
       assert.equal(report.exitCode, 0, `${status} must not fail the audit`);
       assert.equal(report.technicalMisses.length, 0);
@@ -99,7 +99,7 @@ describe("exit code policy", () => {
   it("exits zero when a window is still open", () => {
     const report = auditSlate({
       slateDate: SLATE, now: MID_MORNING, firstGameTime: FIRST_PITCH,
-      readReceipt: () => null, readDiagnostic: () => ({ status: "IMAGE_FAILED", reason: "not yet" }),
+      readReceipt: () => null, readDiagnostic: () => ({ latestOutcome: "IMAGE_FAILED", reason: "not yet" }),
     });
     // Morning is open at 10:00 ET, so nothing is a miss yet.
     const morning = report.editions.filter((e) => e.edition === "morning");
@@ -135,7 +135,7 @@ describe("summary rendering", () => {
     const report = auditSlate({
       slateDate: SLATE, now: EVENING, firstGameTime: FIRST_PITCH,
       readReceipt: receiptFor({ "k-morning": posted("111"), "hr-morning": posted("222") }),
-      readDiagnostic: () => ({ status: "NO_VALID_PICKS", reason: "no qualifying picks" }),
+      readDiagnostic: () => ({ latestOutcome: "NO_VALID_PICKS", reason: "no qualifying picks" }),
     });
     const summary = renderAuditSummary(report);
     assert.match(summary, /MLB X editions — 2026-07-21/);
@@ -149,7 +149,7 @@ describe("summary rendering", () => {
   it("calls out technical misses explicitly", () => {
     const report = auditSlate({
       slateDate: SLATE, now: EVENING, firstGameTime: FIRST_PITCH,
-      readReceipt: () => null, readDiagnostic: () => ({ status: "X_API_FAILED", reason: "429" }),
+      readReceipt: () => null, readDiagnostic: () => ({ latestOutcome: "X_API_FAILED", reason: "429" }),
     });
     assert.match(renderAuditSummary(report), /4 technical miss\(es\)/);
   });

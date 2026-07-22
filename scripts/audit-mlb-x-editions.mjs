@@ -7,16 +7,11 @@
  *   node scripts/audit-mlb-x-editions.mjs --slate-date=YYYY-MM-DD
  *     [--first-game-time=<ISO>] [--state-work-dir=<path>]
  *
- * Known gap, reported here rather than silently worked around: runEditionPost
- * does not currently persist a diagnostic breadcrumb for a non-posted outcome
- * (NOT_DUE, IMAGE_FAILED, etc.) to the state branch -- only a genuine POSTED
- * receipt is written. This audit therefore reports POSTED-or-MISSING and the
- * correct exit-code policy reliably (the property that matters most: did the
- * edition publish), but "latest diagnostic reason" for a miss is reported as
- * unavailable rather than fabricated. Adding durable per-run diagnostics would
- * need a rolling, overwritten (not appended) record to avoid state-branch
- * churn from frequent pregame-poll misses -- left for a follow-up rather than
- * rushed into this integration.
+ * Reads the rolling per-edition diagnostic (mlb-x-edition-diagnostics.mjs)
+ * alongside the receipt for a miss's reason and technical/benign
+ * classification. A miss with no diagnostic yet recorded (e.g. before the
+ * planner or poster ever ran for this edition) still reports as MISSING
+ * rather than fabricating a reason.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -67,7 +62,7 @@ function main() {
     now,
     firstGameTime: args.firstGameTime,
     readReceipt: ({ slateDate, market, edition }) => store.readReceipt({ slateDate, market, edition }),
-    readDiagnostic: () => null, // see module header: no durable diagnostic feed yet
+    readDiagnostic: ({ slateDate, market, edition }) => store.readDiagnostic({ slateDate, market, edition }),
   });
 
   console.log(`[audit-mlb-x-editions] slateDate=${args.slateDate} postedCount=${report.postedCount}/4`);

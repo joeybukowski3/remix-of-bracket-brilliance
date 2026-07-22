@@ -13,12 +13,19 @@ import {
   MORNING_WINDOW_CLOSE_ET,
 } from "./mlb-x-edition-readiness.mjs";
 
-/** Statuses that mean the pipeline broke, as opposed to having nothing to say. */
+/**
+ * Statuses that mean the pipeline broke, as opposed to having nothing to say.
+ * Single source of truth for "is this a real failure" -- reused by
+ * mlb-x-edition-diagnostics.mjs's technicalFailure flag, so the audit's
+ * exit-code policy and the persisted diagnostic's failure flag can never
+ * disagree about which outcomes are technical.
+ */
 export const TECHNICAL_MISS_STATUSES = Object.freeze([
   "IMAGE_FAILED",
   "X_API_FAILED",
   "CONFIGURATION_ERROR",
   "ROW_MISMATCH",
+  "STATE_PERSISTENCE_FAILED",
 ]);
 
 /** Statuses that are legitimate reasons not to have posted. */
@@ -26,6 +33,9 @@ export const BENIGN_MISS_STATUSES = Object.freeze([
   "NO_GAMES",
   "NO_VALID_PICKS",
   "INVALID_SLATE",
+  "NOT_DUE",
+  "MISSED_WINDOW",
+  "WAITING_FOR_SELECTED_LINEUPS",
 ]);
 
 const MS_PER_MINUTE = 60_000;
@@ -45,7 +55,8 @@ function confirmedWindowClosed(now, firstGameTime) {
 /**
  * @param {object} params
  * @param {Function} params.readReceipt ({slateDate, market, edition}) -> receipt|null
- * @param {Function} [params.readDiagnostic] ({market, edition}) -> {status, reason}|null
+ * @param {Function} [params.readDiagnostic] ({market, edition, slateDate}) -> {latestOutcome, reason}|null
+ *        matches the rolling diagnostic record shape from mlb-x-edition-diagnostics.mjs
  */
 export function auditSlate({
   slateDate,
@@ -64,14 +75,14 @@ export function auditSlate({
       ? morningWindowClosed(now, timeZone)
       : confirmedWindowClosed(now, firstGameTime);
 
-    const status = posted ? "POSTED" : diagnostic?.status ?? "MISSING";
+    const status = posted ? "POSTED" : diagnostic?.latestOutcome ?? "MISSING";
     return {
       key, market, edition, posted,
       postId: posted ? String(postId).trim() : null,
       replyStatus: receipt?.replyStatus ?? null,
       replyPostId: receipt?.replyPostId ?? null,
       status,
-      reason: posted ? null : diagnostic?.reason ?? diagnostic?.status ?? "no receipt and no diagnostic recorded",
+      reason: posted ? null : diagnostic?.reason ?? diagnostic?.latestOutcome ?? "no receipt and no diagnostic recorded",
       windowClosed,
       // Only a closed window makes a missing edition a real miss; an open one
       // may still publish.

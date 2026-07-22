@@ -67,9 +67,16 @@ env:
 
 jobs:
   plan:
-    # Read-only: fetches automation/mlb-x-state, never pushes.
+    # Fetches automation/mlb-x-state and now also pushes to it, but only ever
+    # a diagnostic (mlb-x/{date}/diagnostics/{market}-{edition}.json) for a
+    # planner-decided non-post status (NOT_DUE, MISSED_WINDOW,
+    # WAITING_FOR_SELECTED_LINEUPS, NO_VALID_PICKS, INVALID_SLATE) -- statuses
+    # for which the corresponding poster job never launches (see the
+    # per-edition `if:` below), so the planner is the only place they can ever
+    # be recorded. It never calls writeReceipt; contents: write is scoped to
+    # that diagnostics-only write path, not to publication.
     permissions:
-      contents: read
+      contents: write
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     outputs:
