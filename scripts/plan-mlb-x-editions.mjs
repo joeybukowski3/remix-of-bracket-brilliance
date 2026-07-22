@@ -50,6 +50,7 @@ function parseArgs(argv) {
     else if (raw.startsWith("--state-work-dir=")) args.stateWorkDir = raw.slice("--state-work-dir=".length);
     else if (raw.startsWith("--hr-data-source=")) args.hrDataSource = raw.slice("--hr-data-source=".length);
     else if (raw.startsWith("--slate-date=")) args.slateDate = raw.slice("--slate-date=".length);
+    else if (raw.startsWith("--now=")) args.now = raw.slice("--now=".length); // test-only clock override
   }
   args.planDirectory = args.planDirectory ?? path.join(ROOT, "artifacts", "mlb-x-plans");
   args.imageDirectory = args.imageDirectory ?? path.join(ROOT, "artifacts");
@@ -109,7 +110,7 @@ function writeGithubOutput(pairs) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const now = new Date();
+  const now = args.now ? new Date(args.now) : new Date();
   const slateDate = args.slateDate ?? getEtSlateDate(now);
   console.log(`[plan-mlb-x-editions] slateDate=${slateDate} liveMode=${args.liveMode}`);
 

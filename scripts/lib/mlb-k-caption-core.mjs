@@ -158,7 +158,16 @@ export const K_HASHTAGS = "#MLB #StrikeoutProps";
  * @param {string}   params.languageMode morning | confirmed | pregame_fallback
  */
 export function buildKEditionCaption({ rows = [], languageMode, slateDate }) {
-  const eligible = rows.filter((row) => !validateRows([row]));
+  // selectConfirmedKRows (mlb-k-x-selection-core.mjs) produces direction as
+  // "OVER"/"UNDER" (see getKValueEdgeInfo), but validateRows/getFavoredOdds
+  // above were written against a lowercase "over"/"under" convention. That
+  // mismatch was never exercised in production -- this module was not
+  // actually imported by the K poster before this integration -- and surfaced
+  // only under a real end-to-end dry run against live scraped data, where it
+  // silently rejected every row. Normalized once, at the boundary, rather
+  // than changing validateRows/getFavoredOdds/selectConfirmedKRows.
+  const normalized = rows.map((row) => ({ ...row, direction: String(row?.direction ?? "").toLowerCase() }));
+  const eligible = normalized.filter((row) => !validateRows([row]));
   if (eligible.length < 1) {
     return { skipped: true, reason: "Skipping: no eligible K prop rows are available.", caption: "", captionRows: [], diagnostics: null };
   }
