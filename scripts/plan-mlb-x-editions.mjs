@@ -34,6 +34,7 @@ import { isPostedReceipt, parseEditionReceiptKey } from "./lib/mlb-x-edition-rec
 import { scrapeKPageRows } from "./lib/mlb-x-k-page-scrape.mjs";
 import { createGitStateStore, STATE_BRANCH } from "./lib/mlb-x-state-store.mjs";
 import { getEtSlateDate } from "./lib/mlb-x-slate-timing.mjs";
+import { resolveEventMode } from "./lib/mlb-x-event-mode.mjs";
 
 const ROOT = process.cwd();
 const PRODUCTION_HR_URL = "https://www.joeknowsball.com/data/mlb/hr-props-raw.json";
@@ -115,7 +116,29 @@ async function main() {
   const slateDate = args.slateDate ?? getEtSlateDate(now);
   console.log(`[plan-mlb-x-editions] slateDate=${slateDate} liveMode=${args.liveMode}`);
 
-  const snapshot = await buildConfirmationSnapshot({ date: slateDate, now });
+  // Best-effort readiness preview: a dry-run/diagnostic-only simulated clock
+  // (same resolveEventMode the poster uses) overrides the window/confirmation
+  // -timing `now` used below, but NEVER the slate date above -- that stays
+  // locked to the real clock regardless. A bad or inapplicable simulation_now
+  // never fails the planner (its "always produces a plan" property holds
+  // unconditionally); the poster is the hard CONFIGURATION_ERROR gate for
+  // that. This is a preview only -- shouldRunPoster still requires the
+  // poster's own, separately-computed revalidation to agree before any post.
+  const eventMode = resolveEventMode({
+    eventName: process.env.GITHUB_EVENT_NAME ?? "",
+    dispatchMode: process.env.MLB_X_DISPATCH_MODE ?? null,
+    simulationNow: process.env.MLB_X_SIMULATION_NOW ?? null,
+    slateDate,
+  });
+  if (process.env.MLB_X_SIMULATION_NOW && !eventMode.simulated) {
+    console.warn(`[plan-mlb-x-editions] simulation_now requested but rejected (${eventMode.reason}); using the real clock`);
+  }
+  const readinessNow = eventMode.simulated ? new Date(eventMode.simulationNow) : now;
+  if (eventMode.simulated) {
+    console.log(`[plan-mlb-x-editions] SIMULATED TIME: readiness computed against simulation_now=${eventMode.simulationNow} (slate date resolved from the real clock: ${slateDate})`);
+  }
+
+  const snapshot = await buildConfirmationSnapshot({ date: slateDate, now: readinessNow });
   const firstGameTime = snapshot.timing.earliestGameTime;
   const gamesScheduled = snapshot.timing.gameCount;
   console.log(`[plan-mlb-x-editions] snapshotOk=${snapshot.ok} gamesScheduled=${gamesScheduled} firstGameTime=${firstGameTime ?? "n/a"}`);
@@ -211,7 +234,7 @@ async function main() {
   };
 
   const plans = buildEditionPlans({
-    now,
+    now: readinessNow,
     slateDate,
     firstGameTime,
     gamesScheduled,

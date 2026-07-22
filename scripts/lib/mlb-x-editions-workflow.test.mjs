@@ -56,7 +56,7 @@ describe("simulation_now is wired end to end", () => {
     assert.equal(inputs.simulation_now.required, false);
   });
 
-  for (const job of [...POSTER_JOBS, "diagnostic"]) {
+  for (const job of ["plan", ...POSTER_JOBS, "diagnostic"]) {
     it(`${job} forwards simulation_now to the script as MLB_X_SIMULATION_NOW`, () => {
       const env = stepEnv(job, "MLB_X_SIMULATION_NOW");
       assert.ok(env, `${job} must forward simulation_now`);

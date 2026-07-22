@@ -129,6 +129,12 @@ jobs:
           # a private repo, even read) access. github.token is masked in
           # logs the same as any secret; never echo this URL.
           MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          # Forwarded so the planner's own resolveEventMode call can decide
+          # whether simulation_now applies to its readiness preview -- the
+          # planner never uses it for slate-date resolution, only window
+          # timing, and silently falls back to the real clock if rejected.
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
           # Read (never hardcoded) so the FROZEN plan's own readiness/
           # diagnostic correctly reflects whether live posting is actually
           # allowed -- resolveEditionReadiness genuinely consumes this value.
