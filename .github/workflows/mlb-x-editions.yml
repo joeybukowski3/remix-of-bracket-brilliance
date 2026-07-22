@@ -55,6 +55,17 @@ on:
           - morning-live
           - confirmed-live
           - diagnostic-only
+      simulation_now:
+        description: >-
+          Dry-run-only simulated clock, format YYYY-MM-DDTHH:mm:ssZ. Only
+          accepted for morning-dry-run, confirmed-dry-run or diagnostic-only,
+          and only when it names the same Eastern slate date the planner
+          resolves for real -- resolveEventMode (mlb-x-event-mode.mjs)
+          rejects it as CONFIGURATION_ERROR otherwise, including for
+          morning-live/confirmed-live. Never used for a live post; leave
+          blank to use the real clock.
+        required: false
+        type: string
 
 # Deliberately no workflow-wide concurrency group: the four editions must be
 # able to run independently. Each poster job below sets its own.
@@ -118,7 +129,11 @@ jobs:
           # a private repo, even read) access. github.token is masked in
           # logs the same as any secret; never echo this URL.
           MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
-          X_ALLOW_LIVE_POST: "true"
+          # Read (never hardcoded) so the FROZEN plan's own readiness/
+          # diagnostic correctly reflects whether live posting is actually
+          # allowed -- resolveEditionReadiness genuinely consumes this value.
+          # Unset (the default) is fail-closed, the same as the poster jobs.
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
@@ -194,6 +209,7 @@ jobs:
           # resolveEventMode (mlb-x-event-mode.mjs) is the sole authority on
           # dry-run vs. live-capable; nothing here computes that decision.
           MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
           # Independent kill switch: a repository variable a human sets
           # explicitly, separate from any code change or merge. Unset (the
           # default) fails closed -- assertLivePostAllowed requires exactly
@@ -245,6 +261,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
           X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
@@ -292,6 +309,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
           X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
@@ -339,6 +357,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
           X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
@@ -369,6 +388,8 @@ jobs:
               --plan-directory=artifacts/mlb-x-plans --diagnostic-only
           done
         env:
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
           JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
           JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}

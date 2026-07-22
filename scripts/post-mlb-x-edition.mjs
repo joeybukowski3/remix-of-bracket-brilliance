@@ -187,13 +187,46 @@ function replyBuilderForMarket(market, client) {
   };
 }
 
+/** GH Actions recognizes a `::notice::` line anywhere in step output. */
+function logSimulatedBanner(market, edition, eventMode) {
+  if (!eventMode.simulated) return;
+  const banner = `SIMULATED TIME: this run uses simulation_now=${eventMode.simulationNow} instead of the real clock -- dry-run/diagnostic only, never live.`;
+  log(market, edition, banner);
+  console.log(`::notice title=MLB X simulated clock::${market}-${edition} ${banner}`);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const { market, edition, slateDate } = args;
   console.log(`[post-mlb-x-edition:${market}-${edition}] slateDate=${slateDate} dryRun=${args.dryRun} diagnosticOnly=${args.diagnosticOnly}`);
 
-  // ── Diagnostic-only: load + validate the plan and check the account. Never touches image/caption/lease/X. ──
+  // ── Event-mode resolution: decides dry-run vs. live-capable from the real
+  // GitHub Actions trigger, not from a fragile shell conditional in the
+  // workflow (see mlb-x-event-mode.mjs for why that shape of bug happened
+  // before). An explicit --dry-run CLI flag can only make this run SAFER --
+  // it forces a dry run regardless of what the event resolves to -- but
+  // nothing can make an unrecognized event or dispatch mode live-capable.
+  // simulation_now (a dry-run/diagnostic-only simulated clock) is resolved
+  // and validated here too: wrong mode, malformed timestamp, or a slate date
+  // that disagrees with the planner's own resolution all fail eventMode.ok,
+  // exactly like an unrecognized event/mode does. Computed once, before
+  // either branch below, so both obey the identical rule.
+  const eventMode = resolveEventMode({
+    eventName: process.env.GITHUB_EVENT_NAME ?? "",
+    dispatchMode: process.env.MLB_X_DISPATCH_MODE ?? null,
+    simulationNow: process.env.MLB_X_SIMULATION_NOW ?? null,
+    slateDate,
+  });
+
+  // ── Diagnostic-only: load + validate the plan and check the account. Never touches image/caption/lease/X or state. ──
   if (args.diagnosticOnly) {
+    if (!eventMode.ok) {
+      console.error(`[post-mlb-x-edition:${market}-${edition}] cannot resolve a safe run mode: ${eventMode.reason}`);
+      logFinal(market, edition, PostOutcome.CONFIGURATION_ERROR);
+      process.exitCode = 1;
+      return;
+    }
+    logSimulatedBanner(market, edition, eventMode);
     const loaded = loadPlanForTarget({ directory: args.planDirectory, market, edition, slateDate });
     if (!loaded.ok) {
       console.error(`[post-mlb-x-edition:${market}-${edition}] plan invalid: ${loaded.error} ${JSON.stringify(loaded.detail ?? {})}`);
@@ -233,17 +266,9 @@ async function main() {
     }
   };
 
-  // ── Event-mode resolution: decides dry-run vs. live-capable from the real
-  // GitHub Actions trigger, not from a fragile shell conditional in the
-  // workflow (see mlb-x-event-mode.mjs for why that shape of bug happened
-  // before). An explicit --dry-run CLI flag can only make this run SAFER --
-  // it forces a dry run regardless of what the event resolves to -- but
-  // nothing can make an unrecognized event or dispatch mode live-capable.
-  // Zero X calls, zero image render, zero caption build before this passes.
-  const eventMode = resolveEventMode({
-    eventName: process.env.GITHUB_EVENT_NAME ?? "",
-    dispatchMode: process.env.MLB_X_DISPATCH_MODE ?? null,
-  });
+  // eventMode was already resolved above (before the diagnostic-only
+  // branch), so both paths obey the identical rule. Zero X calls, zero
+  // image render, zero caption build before this passes.
   if (!args.dryRun && !eventMode.ok) {
     console.error(`[post-mlb-x-edition:${market}-${edition}] cannot resolve a safe run mode: ${eventMode.reason}`);
     writeDiag(PostOutcome.CONFIGURATION_ERROR, { reason: `event-mode resolution failed: ${eventMode.reason}` });
@@ -252,7 +277,13 @@ async function main() {
     return;
   }
   args.dryRun = args.dryRun || !eventMode.liveCapable;
+  // A simulated clock only ever reaches a dry-run/diagnostic-only mode
+  // (enforced by resolveEventMode itself), so it is safe to fold into the
+  // existing --now override unconditionally here -- an explicit --now CLI
+  // flag still wins, matching the --dry-run override precedent above.
+  args.now = args.now || eventMode.simulationNow || undefined;
   log(market, edition, `eventMode=${eventMode.mode} liveCapable=${eventMode.liveCapable} resolvedDryRun=${args.dryRun}`);
+  logSimulatedBanner(market, edition, eventMode);
 
   // ── Pre-flight slate-date agreement: CLI, plan, receipt key. Zero X calls before this passes. ──
   const preflightPlan = loadPlanForTarget({ directory: args.planDirectory, market, edition, slateDate });
