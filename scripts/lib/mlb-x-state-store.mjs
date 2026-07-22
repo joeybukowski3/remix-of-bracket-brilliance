@@ -108,8 +108,21 @@ export function createGitStateStore({
     return result;
   };
 
+  /**
+   * A CI runner (unlike a developer machine) carries no global git identity,
+   * and this working directory is a scratch clone dedicated to state, never
+   * the checked-out repo -- so every commit here needs its own local
+   * identity or `git commit` fails with "empty ident name". Set once, before
+   * the first fetch/checkout, so every caller's first sync() covers it.
+   */
+  function ensureCommitIdentity() {
+    run(["config", "user.email", "mlb-x-automation@joeknowsball.com"]);
+    run(["config", "user.name", "mlb-x-automation"]);
+  }
+
   /** Fetches and hard-syncs the local state branch to the remote tip. */
   function sync() {
+    ensureCommitIdentity();
     run(["fetch", remote, branch, "--quiet"], { allowFailure: true });
     const remoteRef = `${remote}/${branch}`;
     const hasRemote = run(["rev-parse", "--verify", "--quiet", remoteRef], { allowFailure: true }).status === 0;
