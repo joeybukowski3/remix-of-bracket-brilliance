@@ -1,28 +1,66 @@
 {
-  "date": "2026-07-21",
-  "generatedAt": "2026-07-21T16:59:49.221Z",
+  "date": "2026-07-22",
+  "generatedAt": "2026-07-22T09:42:45.069Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field leads the slate with a 1.4 park factor and Michael Lorenzen on the mound, creating a prime environment for power. Daikin Park and Yankee Stadium also elevate fly-ball outcomes, while Walker Buehler and Noah Schultz face lineups that can exploit their recent HR vulnerability.",
-    "modelNote": "The model heavily weights park factor and opposing pitcher HR rates, elevating Coors and high-ISO bats like Wood and Alvarez despite recent cold streaks."
+    "slateOverview": "Kauffman Stadium and Yankee Stadium stand out as the primary power venues today with park factors of 0.96 and 1.18 respectively, while Seth Lugo and Mitch Keller present favorable right-handed matchups for lefty power bats. Chase Field and Daikin Park offer neutral-to-slightly favorable conditions with Merrill Kelly and Sandy Alcantara on the mound, creating a concentrated set of exploitable HR environments across the top of the slate.",
+    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and recent HR volume while applying a significant boost to players facing Lugo and Keller in power-friendly parks, with Bryce Eldridge and Heliot Ramos emerging as the clearest edges due to their elite batted-ball profiles and top hrScore rankings."
   },
   "bestBets": [
     {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "COL",
-      "opposingPitcher": "Michael Lorenzen",
+      "player": "Bryce Eldridge",
+      "team": "SF",
+      "opponent": "KC",
+      "opposingPitcher": "Seth Lugo",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=22%",
-        "HH=59.6%"
+        "barrel=13.2%",
+        "HH=54.9%"
       ],
       "bullets": [
-        "barrel=22%",
-        "park=1.4"
+        "barrel=13.2%",
+        "HH=54.9%"
       ],
-      "hrOddsYes": "+198",
-      "marketImpliedProbability": 0.33557046979865773,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Heliot Ramos",
+      "team": "SF",
+      "opponent": "KC",
+      "opposingPitcher": "Seth Lugo",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=16%",
+        "HH=50.6%"
+      ],
+      "bullets": [
+        "barrel=16%",
+        "HH=50.6%"
+      ],
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Shea Langeliers",
+      "team": "ATH",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=15%",
+        "HH=45.1%"
+      ],
+      "bullets": [
+        "barrel=15%",
+        "HH=45.1%"
+      ],
+      "hrOddsYes": "+440",
+      "marketImpliedProbability": 0.18518518518518517,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -30,231 +68,117 @@
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "MIA",
-      "opposingPitcher": "Tyler Phillips",
-      "hrScoreRank": 2,
+      "opposingPitcher": "Sandy Alcantara",
+      "hrScoreRank": 4,
       "topStats": [
-        "barrel=19.3%",
-        "HH=53.4%"
+        "Hard Hit%=53.4",
+        "Pitcher HR VS=31.5"
       ],
       "bullets": [
-        "barrel=19.3%",
-        "park=1.04"
+        "HR score 69.9 (#4)",
+        "Pitcher HR VS 31.5 at park 1.04"
       ],
-      "hrOddsYes": "+225",
-      "marketImpliedProbability": 0.3076923076923077,
+      "hrOddsYes": "+210",
+      "marketImpliedProbability": 0.3225806451612903,
       "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Andrés Chaparro",
-      "team": "WSH",
-      "opponent": "COL",
-      "opposingPitcher": "Michael Lorenzen",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=15.2%",
-        "HH=52.2%"
-      ],
-      "bullets": [
-        "barrel=15.2%",
-        "park=1.4"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
       "player": "Drake Baldwin",
       "team": "ATL",
       "opponent": "SD",
-      "opposingPitcher": "Walker Buehler",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=59.2",
-        "Hard Hit%=51.1"
-      ],
-      "bullets": [
-        "HR score 72.4 (#4)",
-        "Pitcher HR VS 59.2 at park 1.03"
-      ],
-      "hrOddsYes": "+470",
-      "marketImpliedProbability": 0.17543859649122806,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Griffin Conine",
-      "team": "MIA",
-      "opponent": "HOU",
-      "opposingPitcher": "Tatsuya Imai",
+      "opposingPitcher": "Michael King",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=71.7",
-        "Hard Hit%=53.4"
+        "Hard Hit%=51.1",
+        "Pitcher HR VS=46.5"
       ],
       "bullets": [
-        "HR score 70.9 (#5)",
-        "Pitcher HR VS 71.7 at park 1.04"
+        "HR score 69.1 (#5)",
+        "Pitcher HR VS 46.5 at park 1.03"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "MIA",
+      "opposingPitcher": "Sandy Alcantara",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=19.3%",
+        "HH=53.4%"
+      ],
+      "bullets": [
+        "barrel=19.3%",
+        "HH=53.4%"
+      ],
+      "hrOddsYes": "+210",
+      "marketImpliedProbability": 0.3225806451612903,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Drake Baldwin",
       "team": "ATL",
       "opponent": "SD",
-      "opposingPitcher": "Walker Buehler",
-      "hrScoreRank": 4,
+      "opposingPitcher": "Michael King",
+      "hrScoreRank": 5,
       "topStats": [
         "barrel=15.6%",
         "HH=51.1%"
       ],
       "bullets": [
         "barrel=15.6%",
-        "park=1.03"
+        "HH=51.1%"
       ],
-      "hrOddsYes": "+470",
-      "marketImpliedProbability": 0.17543859649122806,
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Griffin Conine",
-      "team": "MIA",
-      "opponent": "HOU",
-      "opposingPitcher": "Tatsuya Imai",
-      "hrScoreRank": 5,
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "PIT",
+      "opposingPitcher": "Mitch Keller",
+      "hrScoreRank": 6,
       "topStats": [
-        "barrel=15.5%",
-        "HH=53.4%"
+        "Pitcher HR VS=64.1",
+        "Hard Hit%=48.5"
       ],
       "bullets": [
-        "barrel=15.5%",
-        "park=1.04"
+        "HR score 68.4 (#6)",
+        "Pitcher HR VS 64.1 at park 1.18"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Brandon Nimmo",
-      "team": "TEX",
-      "opponent": "CWS",
-      "opposingPitcher": "Noah Schultz",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=12.7%",
-        "HH=52.5%"
-      ],
-      "bullets": [
-        "barrel=12.7%",
-        "park=0.99"
-      ],
-      "hrOddsYes": "+507",
-      "marketImpliedProbability": 0.16474464579901152,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Esmerlyn Valdez",
-      "team": "PIT",
-      "opponent": "NYY",
-      "opposingPitcher": "Will Warren",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=55.6",
-        "Pitcher HR VS=51.8"
-      ],
-      "bullets": [
-        "HR score 67.1 (#8)",
-        "Pitcher HR VS 51.8 at park 1.18"
-      ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Curtis Mead",
-      "team": "WSH",
-      "opponent": "COL",
-      "opposingPitcher": "Michael Lorenzen",
-      "hrScoreRank": 9,
-      "topStats": [
-        "Pitcher HR VS=71.3",
-        "Hard Hit%=43.1"
-      ],
-      "bullets": [
-        "HR score 66.1 (#9)",
-        "Pitcher HR VS 71.3 at park 1.40"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+250",
+      "marketImpliedProbability": 0.2857142857142857,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Esmerlyn Valdez",
-      "team": "PIT",
-      "opponent": "NYY",
-      "opposingPitcher": "Will Warren",
-      "hrScoreRank": 8,
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "CHC",
+      "opposingPitcher": "Colin Rea",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=28.6%",
-        "HH=55.6%"
+        "barrel=11.1%",
+        "HH=46.8%"
       ],
       "bullets": [
-        "barrel=28.6%",
-        "park=1.18"
+        "barrel=11.1%",
+        "HH=46.8%"
       ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Curtis Mead",
-      "team": "WSH",
-      "opponent": "COL",
-      "opposingPitcher": "Michael Lorenzen",
-      "hrScoreRank": 9,
-      "topStats": [
-        "barrel=11.2%",
-        "HH=43.1%"
-      ],
-      "bullets": [
-        "barrel=11.2%",
-        "park=1.4"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ty France",
-      "team": "SD",
-      "opponent": "ATL",
-      "opposingPitcher": "Reynaldo López",
-      "hrScoreRank": 18,
-      "topStats": [
-        "Hard Hit%=49.7",
-        "Pitcher HR VS=46.0"
-      ],
-      "bullets": [
-        "HR score 63.3 (#18)",
-        "Pitcher HR VS 46.0 at park 1.03"
-      ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -262,15 +186,53 @@
       "player": "Riley Greene",
       "team": "DET",
       "opponent": "CHC",
-      "opposingPitcher": "David Peterson",
+      "opposingPitcher": "Colin Rea",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=14.5%",
+        "HH=50.2%"
+      ],
+      "bullets": [
+        "barrel=14.5%",
+        "HH=50.2%"
+      ],
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Tyler Soderstrom",
+      "team": "ATH",
+      "opponent": "AZ",
+      "opposingPitcher": "Merrill Kelly",
+      "hrScoreRank": 11,
+      "topStats": [
+        "Pitcher HR VS=89.7",
+        "Hard Hit%=44.8"
+      ],
+      "bullets": [
+        "HR score 66.2 (#11)",
+        "Pitcher HR VS 89.7 at park 1.01"
+      ],
+      "hrOddsYes": "+600",
+      "marketImpliedProbability": 0.14285714285714285,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Brandon Nimmo",
+      "team": "TEX",
+      "opponent": "CWS",
+      "opposingPitcher": "Anthony Kay",
       "hrScoreRank": 12,
       "topStats": [
-        "Pitcher HR VS=53.8",
-        "Hard Hit%=50.2"
+        "Pitcher HR VS=62.0",
+        "Hard Hit%=52.5"
       ],
       "bullets": [
         "HR score 66.1 (#12)",
-        "Pitcher HR VS 53.8 at park 1.00"
+        "Pitcher HR VS 62.0 at park 0.99"
       ],
       "hrOddsYes": "+500",
       "marketImpliedProbability": 0.16666666666666666,
