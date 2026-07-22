@@ -54,6 +54,13 @@ export function getConfirmedGameIdentity(row) {
   return gameId == null ? null : `game:${gameId}`;
 }
 
+/** The single ranking both selection functions below use: highest HR score first, hrScoreRank as tiebreak. */
+export function compareByHrScore(left, right) {
+  const scoreDelta = (toFiniteNumber(right.hrScore) ?? -Infinity) - (toFiniteNumber(left.hrScore) ?? -Infinity);
+  if (scoreDelta !== 0) return scoreDelta;
+  return (toFiniteNumber(left.hrScoreRank) ?? Infinity) - (toFiniteNumber(right.hrScoreRank) ?? Infinity);
+}
+
 /**
  * Rebuild the HR X table from confirmed-eligible hitters, highest HR score
  * first, backfilling down the confirmed pool.
@@ -77,17 +84,41 @@ export function selectConfirmedHrProps({
   let projectedExcludedCount = 0;
   let unconfirmedExcludedCount = 0;
   let startedExcludedCount = 0;
+  let promotedFromLiveCount = 0;
 
   const confirmed = [];
   for (const row of batters) {
-    const status = classifyHitterConfirmation(row);
+    let status = classifyHitterConfirmation(row);
+    const live = liveConfirm(row);
+
+    // Live boxscore promotion.
+    //
+    // The generated artifact stamps lineupStatus once, when it is built, and
+    // never re-stamps it as orders post. On 2026-07-21 it was generated at
+    // 12:59 ET and every one of its 270 batter rows read "projected" -- while
+    // the live poll snapshot taken at 15:48 ET (171 minutes before first
+    // pitch) already carried a confirmed 9-deep batting order for 6 of the 15
+    // games. Because a PROJECTED row exited at the first branch below, live
+    // data could only ever veto a row, never confirm one, so
+    // confirmedGameCount was structurally pinned at 0 for the entire slate and
+    // HR could not post no matter how many lineups were actually posted.
+    //
+    // The live boxscore is both more current and more authoritative than the
+    // stamp, so an explicit live `true` promotes. Anything short of an
+    // explicit `true` leaves the generated status alone, keeping the gate
+    // fail-closed: absent or unknown live data still confirms nothing.
+    if (status === ConfirmationStatus.PROJECTED && live === true) {
+      status = ConfirmationStatus.CONFIRMED_LINEUP;
+      promotedFromLiveCount += 1;
+    }
 
     if (status === ConfirmationStatus.PROJECTED) {
       projectedExcludedCount += 1;
       continue;
     }
     if (status !== ConfirmationStatus.CONFIRMED_LINEUP) {
-      // OUT / UNCONFIRMED
+      // OUT / UNCONFIRMED -- a scratched hitter is rejected here, before the
+      // promotion above can ever apply to them.
       unconfirmedExcludedCount += 1;
       continue;
     }
@@ -97,18 +128,14 @@ export function selectConfirmedHrProps({
     }
     // Fail-closed live re-confirmation: an explicit `false` vetoes a row that
     // the generated data called confirmed but live boxscore data does not.
-    if (liveConfirm(row) === false) {
+    if (live === false) {
       unconfirmedExcludedCount += 1;
       continue;
     }
     confirmed.push(row);
   }
 
-  confirmed.sort((left, right) => {
-    const scoreDelta = (toFiniteNumber(right.hrScore) ?? -Infinity) - (toFiniteNumber(left.hrScore) ?? -Infinity);
-    if (scoreDelta !== 0) return scoreDelta;
-    return (toFiniteNumber(left.hrScoreRank) ?? Infinity) - (toFiniteNumber(right.hrScoreRank) ?? Infinity);
-  });
+  confirmed.sort(compareByHrScore);
 
   // Distinct games represented in the FULL confirmed pool (before slicing to
   // maxTableSize) -- lets the caller's readiness gate require the confirmed
@@ -132,7 +159,68 @@ export function selectConfirmedHrProps({
     confirmedGameCount: gameIdentities.size,
     confirmedRowsWithoutGameIdentity,
     projectedExcludedCount,
+    // Rows the live boxscore confirmed that the generated stamp still called
+    // projected. Surfaced so a slate where this is high is visibly relying on
+    // live promotion rather than a fresh artifact.
+    promotedFromLiveCount,
     unconfirmedExcludedCount,
+    startedExcludedCount,
+  };
+}
+
+/**
+ * Selects HR rows for the morning edition, which explicitly does not require
+ * lineup confirmation. Reuses the exact ranking selectConfirmedHrProps uses
+ * (compareByHrScore) and the exact per-game identity accounting, so the only
+ * difference from selectConfirmedHrProps is that lineupStatus/confirmation is
+ * never consulted -- no ranking or threshold changes.
+ *
+ * A row is excluded only when it cannot be shown truthfully: no player name,
+ * no usable price (a caption can never post a fabricated price), or a game
+ * already under way.
+ *
+ * @param {object} params
+ * @param {Array<object>} params.batters normalized HR rows
+ * @param {(row:object)=>boolean} [params.isGameStarted]
+ * @param {number} [params.maxTableSize]
+ * @returns {{ selected: Array<object>, eligibleCount: number, eligibleGameCount: number,
+ *             rowsWithoutGameIdentity: number, invalidExcludedCount: number, startedExcludedCount: number }}
+ */
+export function selectHrPropsAnyLineupStatus({ batters = [], isGameStarted = () => false, maxTableSize = DEFAULT_MAX_TABLE_SIZE } = {}) {
+  let invalidExcludedCount = 0;
+  let startedExcludedCount = 0;
+
+  const eligible = [];
+  for (const row of batters) {
+    const hasPlayer = Boolean(String(row?.player ?? "").trim());
+    const hasUsablePrice = /^[+-]\d+$/.test(String(row?.hrOddsYes ?? "").trim());
+    if (!hasPlayer || !hasUsablePrice) {
+      invalidExcludedCount += 1;
+      continue;
+    }
+    if (isGameStarted(row)) {
+      startedExcludedCount += 1;
+      continue;
+    }
+    eligible.push(row);
+  }
+
+  eligible.sort(compareByHrScore);
+
+  const gameIdentities = new Set();
+  let rowsWithoutGameIdentity = 0;
+  for (const row of eligible) {
+    const identity = getConfirmedGameIdentity(row);
+    if (identity == null) rowsWithoutGameIdentity += 1;
+    else gameIdentities.add(identity);
+  }
+
+  return {
+    selected: eligible.slice(0, maxTableSize),
+    eligibleCount: eligible.length,
+    eligibleGameCount: gameIdentities.size,
+    rowsWithoutGameIdentity,
+    invalidExcludedCount,
     startedExcludedCount,
   };
 }

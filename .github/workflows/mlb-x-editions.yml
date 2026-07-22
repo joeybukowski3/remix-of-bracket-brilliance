@@ -1,43 +1,456 @@
 name: MLB X Editions
 run-name: MLB X Editions • ${{ github.event_name }} • ${{ github.ref_name }}
 
-# BOOTSTRAP PLACEHOLDER -- this file exists only to register the "MLB X
-# Editions" workflow with GitHub Actions, which requires a workflow_dispatch
-# workflow to be present on the default branch before it can be dispatched
-# against ANY ref (including a feature branch). It intentionally does
-# nothing: no schedule, no workflow_run, no poster jobs, no state-branch
-# access, no X credentials, no contents: write. Real diagnostic-only,
-# dry-run and live behavior is validated by dispatching this same workflow
-# file against the feature branch's ref (fix/mlb-x-edition-receipts), whose
-# version of this file is the full four-job pipeline -- GitHub Actions runs
-# whichever ref's copy of the workflow file the dispatch targets.
-#
-# This placeholder is superseded in full once the feature branch merges to
-# main; nothing about schedule/workflow_run triggers is added here ahead of
-# that merge.
+# Four independent publication targets per MLB slate: k-morning, hr-morning,
+# k-confirmed, hr-confirmed. Each run is self-sufficient -- inside an open
+# window with everything it needs, the answer is POST, not "wait for a better
+# run" (see scripts/lib/mlb-x-edition-readiness.mjs). The plan job is
+# lightweight (no browser except the one unavoidable live K-market scrape, no
+# X call, no successful receipt write) and hands each poster job one frozen,
+# validated plan. Duplicate protection is layered: this workflow's four
+# concurrency groups serialize same-edition runs across separate runners
+# (which do not share a filesystem), the in-process publication lease guards
+# the exact publish sequence, and the git-backed receipt on
+# automation/mlb-x-state is re-read under that lease and remains authoritative
+# after any queued run resumes.
 on:
+  schedule:
+    # Morning edition: four attempts covering 09:45-11:15 ET. Both EDT (UTC-4)
+    # and EST (UTC-5) candidates are scheduled; the America/New_York-based
+    # readiness module is the sole authority on whether a given firing is
+    # actually inside the window, so an out-of-season candidate is a routine
+    # NOT_DUE/MISSED_WINDOW, not a bug.
+    - cron: "45 13 * * *"  # 09:45 EDT
+    - cron: "45 14 * * *"  # 10:45 EDT / 09:45 EST
+    - cron: "15 14 * * *"  # 10:15 EDT
+    - cron: "15 15 * * *"  # 10:15 EST
+    - cron: "45 15 * * *"  # 10:45 EST
+    - cron: "10 15 * * *"  # 11:10 EDT
+    - cron: "10 16 * * *"  # 11:10 EST
+    # Confirmed/pregame edition: every 20 minutes across the likely MLB
+    # pregame period (roughly noon-1:30 AM ET across the season and both
+    # offsets). resolveEditionReadiness's minutes-before-first-pitch window
+    # (2h20m-1h15m) decides eligibility on every firing; most firings outside
+    # a slate's actual pregame window are a routine NOT_DUE.
+    - cron: "*/20 16-23,0-5 * * *"
+  workflow_run:
+    # Fires after the canonical data-generation workflow succeeds on main.
+    # Still obeys every edition window, receipt, image and live-post check --
+    # this is an additional opportunity to catch an eligible window promptly
+    # after fresh data lands, never a bypass of any of them.
+    workflows: ["Generate MLB Data"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       mode:
-        description: "Run mode (bootstrap: informational only, does not execute anything)"
+        description: "Run mode"
         required: true
-        default: "diagnostic-only"
+        default: "morning-dry-run"
         type: choice
         options:
-          - diagnostic-only
           - morning-dry-run
           - confirmed-dry-run
           - morning-live
           - confirmed-live
+          - diagnostic-only
+      simulation_now:
+        description: >-
+          Dry-run-only simulated clock, format YYYY-MM-DDTHH:mm:ssZ. Only
+          accepted for morning-dry-run, confirmed-dry-run or diagnostic-only,
+          and only when it names the same Eastern slate date the planner
+          resolves for real -- resolveEventMode (mlb-x-event-mode.mjs)
+          rejects it as CONFIGURATION_ERROR otherwise, including for
+          morning-live/confirmed-live. Never used for a live post; leave
+          blank to use the real clock.
+        required: false
+        type: string
 
+# Deliberately no workflow-wide concurrency group: the four editions must be
+# able to run independently. Each poster job below sets its own.
 permissions:
   contents: read
 
+env:
+  X_EXPECTED_USERNAME: _joeknowsball_
+  MLB_X_STATE_BRANCH: automation/mlb-x-state
+
 jobs:
-  bootstrap:
+  plan:
+    # Fetches automation/mlb-x-state and now also pushes to it, but only ever
+    # a diagnostic (mlb-x/{date}/diagnostics/{market}-{edition}.json) for a
+    # planner-decided non-post status (NOT_DUE, MISSED_WINDOW,
+    # WAITING_FOR_SELECTED_LINEUPS, NO_VALID_PICKS, INVALID_SLATE) -- statuses
+    # for which the corresponding poster job never launches (see the
+    # per-edition `if:` below), so the planner is the only place they can ever
+    # be recorded. It never calls writeReceipt; contents: write is scoped to
+    # that diagnostics-only write path, not to publication.
+    permissions:
+      contents: write
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    outputs:
+      slate_date: ${{ steps.plan.outputs.slate_date }}
+      first_game_time: ${{ steps.plan.outputs.first_game_time }}
+      k_morning_should_run: ${{ steps.plan.outputs.k_morning_should_run }}
+      hr_morning_should_run: ${{ steps.plan.outputs.hr_morning_should_run }}
+      k_confirmed_should_run: ${{ steps.plan.outputs.k_confirmed_should_run }}
+      hr_confirmed_should_run: ${{ steps.plan.outputs.hr_confirmed_should_run }}
+      k_morning_status: ${{ steps.plan.outputs.k_morning_status }}
+      hr_morning_status: ${{ steps.plan.outputs.hr_morning_status }}
+      k_confirmed_status: ${{ steps.plan.outputs.k_confirmed_status }}
+      hr_confirmed_status: ${{ steps.plan.outputs.hr_confirmed_status }}
     steps:
-      - name: Bootstrap notice
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright (K market-data scrape only)
+        run: npx playwright install --with-deps chromium
+
+      - name: Build four edition plans
+        id: plan
         run: |
-          echo "MLB X Editions workflow bootstrap. Run against the feature branch for full diagnostic validation."
-          echo "Selected mode: ${{ github.event.inputs.mode }} (not executed by this placeholder)."
+          MODE="${{ github.event.inputs.mode || '' }}"
+          LIVE_FLAG=""
+          if [ "$MODE" = "morning-live" ] || [ "$MODE" = "confirmed-live" ]; then LIVE_FLAG="--live-mode"; fi
+          node scripts/plan-mlb-x-editions.mjs \
+            --plan-directory=artifacts/mlb-x-plans \
+            --image-directory=artifacts/mlb-x-images \
+            --state-work-dir=.mlb-x-state-work \
+            --hr-data-source=production \
+            $LIVE_FLAG
+        env:
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          # Forwarded so the planner's own resolveEventMode call can decide
+          # whether simulation_now applies to its readiness preview -- the
+          # planner never uses it for slate-date resolution, only window
+          # timing, and silently falls back to the real clock if rejected.
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
+          # Read (never hardcoded) so the FROZEN plan's own readiness/
+          # diagnostic correctly reflects whether live posting is actually
+          # allowed -- resolveEditionReadiness genuinely consumes this value.
+          # Unset (the default) is fail-closed, the same as the poster jobs.
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+      - name: Upload frozen plans
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-x-plans-${{ github.run_id }}
+          path: artifacts/mlb-x-plans
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## MLB X plan — ${{ steps.plan.outputs.slate_date }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "first pitch: ${{ steps.plan.outputs.first_game_time || 'n/a' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Target | Should run | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| K morning | ${{ steps.plan.outputs.k_morning_should_run }} | ${{ steps.plan.outputs.k_morning_status }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| HR morning | ${{ steps.plan.outputs.hr_morning_should_run }} | ${{ steps.plan.outputs.hr_morning_status }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| K confirmed | ${{ steps.plan.outputs.k_confirmed_should_run }} | ${{ steps.plan.outputs.k_confirmed_status }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| HR confirmed | ${{ steps.plan.outputs.hr_confirmed_should_run }} | ${{ steps.plan.outputs.hr_confirmed_status }} |" >> "$GITHUB_STEP_SUMMARY"
+
+  post-k-morning:
+    needs: plan
+    if: |
+      github.event.inputs.mode == 'morning-dry-run' || github.event.inputs.mode == 'morning-live' ||
+      (github.event.inputs.mode == '' && needs.plan.outputs.k_morning_should_run == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mlb-x-k-morning
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-x-plans-${{ github.run_id }}
+          path: artifacts/mlb-x-plans
+        # A queued run that resumes after a same-edition run already completed
+        # downloads the SAME plan job's artifact -- runEditionPost re-syncs and
+        # re-reads the receipt under its own lease regardless, so a stale plan
+        # here still cannot cause a duplicate post; it can only cause a
+        # (harmless) ALREADY_POSTED.
+
+      - name: Post K morning
+        run: |
+          node scripts/post-mlb-x-edition.mjs \
+            --market=k --edition=morning \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --plan-directory=artifacts/mlb-x-plans \
+            --image-directory=artifacts/mlb-x-images \
+            --lease-directory=artifacts/mlb-x-leases \
+            --state-work-dir=.mlb-x-state-work
+        env:
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          # workflow_dispatch's chosen mode -- empty for schedule/workflow_run.
+          # resolveEventMode (mlb-x-event-mode.mjs) is the sole authority on
+          # dry-run vs. live-capable; nothing here computes that decision.
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
+          # Independent kill switch: a repository variable a human sets
+          # explicitly, separate from any code change or merge. Unset (the
+          # default) fails closed -- assertLivePostAllowed requires exactly
+          # "true" -- even on a live-capable event/mode.
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+  post-hr-morning:
+    needs: plan
+    if: |
+      github.event.inputs.mode == 'morning-dry-run' || github.event.inputs.mode == 'morning-live' ||
+      (github.event.inputs.mode == '' && needs.plan.outputs.hr_morning_should_run == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mlb-x-hr-morning
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-x-plans-${{ github.run_id }}
+          path: artifacts/mlb-x-plans
+
+      - name: Post HR morning
+        run: |
+          node scripts/post-mlb-x-edition.mjs \
+            --market=hr --edition=morning \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --plan-directory=artifacts/mlb-x-plans \
+            --image-directory=artifacts/mlb-x-images \
+            --lease-directory=artifacts/mlb-x-leases \
+            --state-work-dir=.mlb-x-state-work
+        env:
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+  post-k-confirmed:
+    needs: plan
+    if: |
+      github.event.inputs.mode == 'confirmed-dry-run' || github.event.inputs.mode == 'confirmed-live' ||
+      (github.event.inputs.mode == '' && needs.plan.outputs.k_confirmed_should_run == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mlb-x-k-confirmed
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-x-plans-${{ github.run_id }}
+          path: artifacts/mlb-x-plans
+
+      - name: Post K confirmed
+        run: |
+          node scripts/post-mlb-x-edition.mjs \
+            --market=k --edition=confirmed \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --plan-directory=artifacts/mlb-x-plans \
+            --image-directory=artifacts/mlb-x-images \
+            --lease-directory=artifacts/mlb-x-leases \
+            --state-work-dir=.mlb-x-state-work
+        env:
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+  post-hr-confirmed:
+    needs: plan
+    if: |
+      github.event.inputs.mode == 'confirmed-dry-run' || github.event.inputs.mode == 'confirmed-live' ||
+      (github.event.inputs.mode == '' && needs.plan.outputs.hr_confirmed_should_run == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mlb-x-hr-confirmed
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-x-plans-${{ github.run_id }}
+          path: artifacts/mlb-x-plans
+
+      - name: Post HR confirmed
+        run: |
+          node scripts/post-mlb-x-edition.mjs \
+            --market=hr --edition=confirmed \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --plan-directory=artifacts/mlb-x-plans \
+            --image-directory=artifacts/mlb-x-images \
+            --lease-directory=artifacts/mlb-x-leases \
+            --state-work-dir=.mlb-x-state-work
+        env:
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+  diagnostic:
+    needs: plan
+    if: github.event.inputs.mode == 'diagnostic-only'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: mlb-x-plans-${{ github.run_id }}
+          path: artifacts/mlb-x-plans
+      - name: Diagnostic check, all four targets
+        run: |
+          for target in "k morning" "hr morning" "k confirmed" "hr confirmed"; do
+            set -- $target
+            node scripts/post-mlb-x-edition.mjs --market="$1" --edition="$2" \
+              --slate-date="${{ needs.plan.outputs.slate_date }}" \
+              --plan-directory=artifacts/mlb-x-plans --diagnostic-only
+          done
+        env:
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+  audit:
+    needs: [plan, post-k-morning, post-hr-morning, post-k-confirmed, post-hr-confirmed]
+    if: always() && needs.plan.result == 'success' && github.event.inputs.mode != 'diagnostic-only'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Audit all four editions
+        run: |
+          node scripts/audit-mlb-x-editions.mjs \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --first-game-time="${{ needs.plan.outputs.first_game_time }}" \
+            --state-work-dir=.mlb-x-state-work-audit \
+            --plan-directory=artifacts/mlb-x-plans
+        env:
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+
+  # Twice daily, well after the morning and confirmed windows have had a
+  # chance to close, so the audit reflects a settled slate rather than a
+  # still-open window.
+  audit-eod:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Resolve today's ET slate date
+        id: et_date
+        run: echo "date=$(TZ=America/New_York date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+      - name: Audit all four editions (end of day)
+        run: |
+          node scripts/audit-mlb-x-editions.mjs \
+            --slate-date="${{ steps.et_date.outputs.date }}" \
+            --state-work-dir=.mlb-x-state-work-audit-eod
+        env:
+          # The state-work directory is a SEPARATE git clone from the
+          # checked-out repo, so it does not inherit actions/checkout's
+          # credential config -- a plain https URL here has no push (or, on
+          # a private repo, even read) access. github.token is masked in
+          # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}

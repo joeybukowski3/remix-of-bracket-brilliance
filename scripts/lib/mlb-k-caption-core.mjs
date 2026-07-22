@@ -133,3 +133,91 @@ export function buildCaption({ date, rows }) {
 
   return { skipped: false, reason: "", caption, topProps };
 }
+
+// ─── Edition captions ────────────────────────────────────────────────────────
+
+import { compactPlayerName, editionSentenceFor, fitCaption, weightedLength } from "./mlb-x-caption-budget.mjs";
+
+export const K_CANONICAL_LINK = "joeknowsball.com/mlb/strikeout-props";
+export const K_HASHTAGS = "#MLB #StrikeoutProps";
+
+/**
+ * Edition caption built from FROZEN plan rows.
+ *
+ * Replaces the old all-or-nothing builder for edition posts: that one skipped
+ * the entire post once the caption exceeded 280, which measurably happened at
+ * four or more rows, so a 3-over/3-under edition could never publish. Here the
+ * pick set is reduced until it fits -- 3+3, then 3+2, then 2+2, and so on --
+ * while the title, edition sentence, canonical link and hashtags are always
+ * retained. The attached graphic still carries the full board.
+ *
+ * Nothing is fabricated and no betting line is abbreviated: a row missing a
+ * side, line or price is dropped by validateRows before it can reach a caption.
+ *
+ * @param {object[]} params.rows frozen selected rows
+ * @param {string}   params.languageMode morning | confirmed | pregame_fallback
+ */
+export function buildKEditionCaption({ rows = [], languageMode, slateDate }) {
+  // selectConfirmedKRows (mlb-k-x-selection-core.mjs) produces direction as
+  // "OVER"/"UNDER" (see getKValueEdgeInfo), but validateRows/getFavoredOdds
+  // above were written against a lowercase "over"/"under" convention. That
+  // mismatch was never exercised in production -- this module was not
+  // actually imported by the K poster before this integration -- and surfaced
+  // only under a real end-to-end dry run against live scraped data, where it
+  // silently rejected every row. Normalized once, at the boundary, rather
+  // than changing validateRows/getFavoredOdds/selectConfirmedKRows.
+  const normalized = rows.map((row) => ({ ...row, direction: String(row?.direction ?? "").toLowerCase() }));
+  const eligible = normalized.filter((row) => !validateRows([row]));
+  if (eligible.length < 1) {
+    return { skipped: true, reason: "Skipping: no eligible K prop rows are available.", caption: "", captionRows: [], diagnostics: null };
+  }
+
+  const overs = eligible.filter((row) => row.direction === "over");
+  const unders = eligible.filter((row) => row.direction === "under");
+  const dateLabel = formatDateLabel(slateDate);
+  const sentence = editionSentenceFor(languageMode);
+
+  // Richest to leanest: drop the team tag before ever dropping a pick.
+  const variants = [
+    { name: true, team: true },
+    { name: true, team: false },
+    { name: false, team: false },
+  ];
+
+  const line = (row, variant) => {
+    const who = variant.name ? row.pitcher : compactPlayerName(row.pitcher);
+    const team = variant.team ? ` (${row.team})` : "";
+    const side = row.direction === "under" ? "U" : "O";
+    return `• ${who}${team} ${side}${formatPropLine(row.kLine)} Ks ${getFavoredOdds(row)}`;
+  };
+
+  const render = ({ rowsA, rowsB, variant }) => {
+    const blocks = [];
+    if (rowsA.length) blocks.push("", "Overs", ...rowsA.map((row) => line(row, variant)));
+    if (rowsB.length) blocks.push("", "Unders", ...rowsB.map((row) => line(row, variant)));
+    return [`⚾ MLB K Props — ${dateLabel}`, ...blocks, "", sentence, K_CANONICAL_LINK, K_HASHTAGS].join("\n");
+  };
+
+  const fitted = fitCaption({ groupA: overs, groupB: unders, render, variants });
+  if (!fitted.ok) {
+    return {
+      skipped: true,
+      reason: `Skipping: even a single K pick exceeds the ${280} character budget (weighted ${fitted.diagnostics.weightedLength}).`,
+      caption: "", captionRows: [], diagnostics: fitted.diagnostics,
+    };
+  }
+
+  return {
+    skipped: false,
+    reason: "",
+    caption: fitted.caption,
+    // Exactly the rows the caption names, for the plan/caption/image check.
+    captionRows: [...fitted.rowsA, ...fitted.rowsB],
+    omittedRows: [
+      ...overs.slice(fitted.rowsA.length),
+      ...unders.slice(fitted.rowsB.length),
+    ],
+    languageMode,
+    diagnostics: { ...fitted.diagnostics, weightedLength: weightedLength(fitted.caption) },
+  };
+}

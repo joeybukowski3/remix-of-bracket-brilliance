@@ -6,7 +6,10 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { getConfirmedGameIdentity, selectConfirmedHrProps } from "./mlb-hr-x-selection-core.mjs";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { getConfirmedGameIdentity, selectConfirmedHrProps, selectHrPropsAnyLineupStatus } from "./mlb-hr-x-selection-core.mjs";
 import { resolvePostingReadiness } from "./mlb-x-readiness.mjs";
 
 function batter(overrides = {}) {
@@ -301,5 +304,135 @@ describe("selectConfirmedHrProps", () => {
       assert.equal(readiness.ready, true);
       assert.equal(readiness.selectedCount, 5);
     });
+  });
+});
+
+/**
+ * 2026-07-21 regression: live boxscore promotion.
+ *
+ * Built on real production data (see __fixtures__/mlb-x-hr-lineup-2026-07-21.json).
+ * The generated artifact stamped all 270 batter rows "projected" -- it was built
+ * at 12:59 ET and never re-run -- while the live poll snapshot at 15:48 ET
+ * already carried confirmed 9-deep orders for 6 of 15 games. HR published
+ * nothing all day because a PROJECTED row exited before liveConfirm was ever
+ * consulted, pinning confirmedGameCount at 0.
+ */
+describe("selectConfirmedHrProps live promotion (2026-07-21 regression)", () => {
+  const fixturePath = path.join(path.dirname(fileURLToPath(import.meta.url)), "__fixtures__", "mlb-x-hr-lineup-2026-07-21.json");
+  const FIXTURE = JSON.parse(readFileSync(fixturePath, "utf8"));
+
+  /** Live confirmation expressed exactly as the poll snapshot stores it. */
+  function liveConfirmFromSnapshot(row) {
+    const game = FIXTURE.games.find((g) => g.gamePk === row.gameId);
+    if (!game) return null;
+    const side = game.homeAbbr === row.team ? game.homeLineup : game.awayAbbr === row.team ? game.awayLineup : null;
+    if (!side) return null;
+    if (!side.confirmed) return null; // no opinion -- explicitly not a veto
+    return side.batters.some((b) => b.id === row.playerId);
+  }
+
+  it("the real generated artifact carried zero confirmed rows", () => {
+    assert.deepEqual([...new Set(FIXTURE.batters.map((b) => b.lineupStatus))], ["projected"]);
+  });
+
+  it("without live promotion the whole slate is unpostable -- the actual bug", () => {
+    const result = selectConfirmedHrProps({ batters: FIXTURE.batters, liveConfirm: () => null });
+    assert.equal(result.confirmedCount, 0);
+    assert.equal(result.confirmedGameCount, 0, "matches the confirmedGameCount=0 the plan reported all day");
+    assert.equal(result.projectedExcludedCount, FIXTURE.batters.length);
+  });
+
+  it("live boxscore promotion recovers the confirmed CLE side", () => {
+    const result = selectConfirmedHrProps({ batters: FIXTURE.batters, liveConfirm: liveConfirmFromSnapshot });
+    assert.ok(result.confirmedCount > 0, "at least one hitter is recoverable from live data");
+    assert.equal(result.confirmedGameCount, 1, "only MIN@CLE had a confirmed side in the snapshot");
+    assert.equal(result.promotedFromLiveCount, result.confirmedCount);
+    assert.ok(result.selected.every((r) => r.team === "CLE"));
+  });
+
+  it("does not promote a side the live snapshot has not confirmed", () => {
+    const result = selectConfirmedHrProps({ batters: FIXTURE.batters, liveConfirm: liveConfirmFromSnapshot });
+    assert.ok(result.selected.every((r) => r.team !== "MIN" && r.team !== "DET"));
+  });
+
+  it("stays fail-closed: only an explicit true promotes", () => {
+    for (const live of [null, undefined, false, 0, "", "true"]) {
+      const result = selectConfirmedHrProps({ batters: FIXTURE.batters, liveConfirm: () => live });
+      assert.equal(result.confirmedCount, 0, `live=${JSON.stringify(live)} must not confirm anything`);
+      assert.equal(result.promotedFromLiveCount, 0);
+    }
+  });
+
+  it("still lets a live veto override a generated confirmed stamp", () => {
+    const confirmedRow = { ...FIXTURE.batters[0], lineupStatus: "confirmed", battingOrder: 3 };
+    assert.equal(selectConfirmedHrProps({ batters: [confirmedRow], liveConfirm: () => null }).confirmedCount, 1);
+    const vetoed = selectConfirmedHrProps({ batters: [confirmedRow], liveConfirm: () => false });
+    assert.equal(vetoed.confirmedCount, 0);
+    assert.equal(vetoed.unconfirmedExcludedCount, 1);
+  });
+
+  it("never promotes a scratched hitter", () => {
+    const result = selectConfirmedHrProps({ batters: [{ ...FIXTURE.batters[0], lineupStatus: "out" }], liveConfirm: () => true });
+    assert.equal(result.confirmedCount, 0);
+    assert.equal(result.promotedFromLiveCount, 0);
+  });
+});
+
+describe("selectHrPropsAnyLineupStatus (morning edition: no confirmation required)", () => {
+  it("selects projected-only hitters -- the 2026-07-21 case would have zero rows without this", () => {
+    const batters = [
+      batter({ player: "Alpha", hrScore: 80, lineupStatus: "projected", battingOrder: null , hrOddsYes: "+300"}),
+      batter({ player: "Bravo", hrScore: 70, lineupStatus: "projected", battingOrder: null , hrOddsYes: "+300"}),
+    ];
+    const result = selectHrPropsAnyLineupStatus({ batters });
+    assert.equal(result.selected.length, 2);
+    assert.deepEqual(result.selected.map((r) => r.player), ["Alpha", "Bravo"]);
+  });
+
+  it("uses the identical ranking as selectConfirmedHrProps -- highest hrScore first, hrScoreRank tiebreak", () => {
+    const batters = [
+      batter({ player: "Low", hrScore: 40, lineupStatus: "confirmed", battingOrder: 1 , hrOddsYes: "+300"}),
+      batter({ player: "High", hrScore: 90, lineupStatus: "confirmed", battingOrder: 2 , hrOddsYes: "+300"}),
+      batter({ player: "Mid", hrScore: 65, lineupStatus: "confirmed", battingOrder: 3 , hrOddsYes: "+300"}),
+    ];
+    const anyStatus = selectHrPropsAnyLineupStatus({ batters }).selected.map((r) => r.player);
+    const confirmedOnly = selectConfirmedHrProps({ batters }).selected.map((r) => r.player);
+    assert.deepEqual(anyStatus, ["High", "Mid", "Low"]);
+    assert.deepEqual(anyStatus, confirmedOnly, "ranking must be identical when every row is already confirmed");
+  });
+
+  it("excludes a row with no player name or no usable price rather than fabricating one", () => {
+    const batters = [
+      batter({ player: "", hrScore: 90 , hrOddsYes: "+300"}),
+      batter({ player: "No Price", hrScore: 85, hrOddsYes: null }),
+      batter({ player: "Bad Price", hrScore: 84, hrOddsYes: "TBD" }),
+      batter({ player: "Good", hrScore: 80, hrOddsYes: "+300" }),
+    ];
+    const result = selectHrPropsAnyLineupStatus({ batters });
+    assert.equal(result.selected.length, 1);
+    assert.equal(result.selected[0].player, "Good");
+    assert.equal(result.invalidExcludedCount, 3);
+  });
+
+  it("still excludes a game that has already started", () => {
+    const batters = [batter({ player: "Started", hrScore: 90, gameId: 1 , hrOddsYes: "+300"})];
+    const result = selectHrPropsAnyLineupStatus({ batters, isGameStarted: () => true });
+    assert.equal(result.selected.length, 0);
+    assert.equal(result.startedExcludedCount, 1);
+  });
+
+  it("respects maxTableSize", () => {
+    const batters = Array.from({ length: 6 }, (_, i) => batter({ player: `P${i}`, hrScore: 90 - i, gameId: i, hrOddsYes: "+300" }));
+    assert.equal(selectHrPropsAnyLineupStatus({ batters, maxTableSize: 3 }).selected.length, 3);
+  });
+
+  it("computes game-count diagnostics the same way as the confirmed selector", () => {
+    const batters = [
+      batter({ player: "A", hrScore: 90, gameId: 1 , hrOddsYes: "+300"}),
+      batter({ player: "B", hrScore: 80, gameId: 1 , hrOddsYes: "+300"}),
+      batter({ player: "C", hrScore: 70, gameId: 2 , hrOddsYes: "+300"}),
+    ];
+    const result = selectHrPropsAnyLineupStatus({ batters, maxTableSize: 10 });
+    assert.equal(result.eligibleGameCount, 2);
   });
 });
