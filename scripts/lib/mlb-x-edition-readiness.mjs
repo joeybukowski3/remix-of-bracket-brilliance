@@ -26,6 +26,8 @@
  * Pure: no clock, no filesystem, no network. `now` is injected.
  */
 
+import { buildEditionReceiptKey } from "./mlb-x-edition-receipts.mjs";
+
 export const Decision = Object.freeze({
   POST: "POST",
   WAIT: "WAIT",
@@ -34,32 +36,44 @@ export const Decision = Object.freeze({
 });
 
 export const ReadinessStatus = Object.freeze({
-  READY_MORNING: "READY_MORNING",
-  READY_CONFIRMED_SELECTIONS: "READY_CONFIRMED_SELECTIONS",
-  READY_FALLBACK_INCOMPLETE_LINEUPS: "READY_FALLBACK_INCOMPLETE_LINEUPS",
-
-  ALREADY_POSTED: "ALREADY_POSTED",
-
-  BEFORE_WINDOW: "BEFORE_WINDOW",
-  AFTER_WINDOW: "AFTER_WINDOW",
-  FIRST_GAME_STARTED: "FIRST_GAME_STARTED",
-  NO_GAMES_SCHEDULED: "NO_GAMES_SCHEDULED",
-  NO_FIRST_GAME_TIME: "NO_FIRST_GAME_TIME",
-
-  STALE_ARTIFACT_SLATE: "STALE_ARTIFACT_SLATE",
-  NO_VALID_PICKS: "NO_VALID_PICKS",
-  IMAGE_MISSING: "IMAGE_MISSING",
-  IMAGE_WRONG_SLATE: "IMAGE_WRONG_SLATE",
-  IMAGE_UNUSABLE: "IMAGE_UNUSABLE",
-  X_CONFIG_INVALID: "X_CONFIG_INVALID",
-
+  READY_TO_POST: "READY_TO_POST",
+  READY_TO_FALLBACK_POST: "READY_TO_FALLBACK_POST",
   WAITING_FOR_SELECTED_LINEUPS: "WAITING_FOR_SELECTED_LINEUPS",
+  ALREADY_POSTED: "ALREADY_POSTED",
+  NOT_DUE: "NOT_DUE",
+  NO_GAMES: "NO_GAMES",
+  INVALID_SLATE: "INVALID_SLATE",
+  NO_VALID_PICKS: "NO_VALID_PICKS",
+  MISSED_WINDOW: "MISSED_WINDOW",
+  IMAGE_FAILED: "IMAGE_FAILED",
+  CONFIGURATION_ERROR: "CONFIGURATION_ERROR",
+  FIRST_GAME_STARTED: "FIRST_GAME_STARTED",
 });
 
-/** Which sub-stage of the confirmed window a decision was made in. */
-export const ConfirmedStage = Object.freeze({
-  PREFERRED: "PREFERRED",
-  FALLBACK: "FALLBACK",
+/**
+ * Terminal statuses the POSTING layer may add once it has acted. The decision
+ * module never returns these -- it cannot know whether the X API succeeded.
+ */
+export const PostingStatus = Object.freeze({
+  POSTED: "POSTED",
+  FALLBACK_POSTED: "FALLBACK_POSTED",
+  X_API_FAILED: "X_API_FAILED",
+});
+
+/** Caption register. Drives which fixed string a poster is permitted to use. */
+export const LanguageMode = Object.freeze({
+  MORNING: "morning",
+  CONFIRMED: "confirmed",
+  PREGAME_FALLBACK: "pregame_fallback",
+});
+
+/** Where in the edition lifecycle the decision was taken. */
+export const Stage = Object.freeze({
+  BEFORE_WINDOW: "before_window",
+  MORNING: "morning",
+  PREFERRED: "preferred",
+  FALLBACK: "fallback",
+  AFTER_WINDOW: "after_window",
 });
 
 export const MORNING_WINDOW_OPEN_ET = { hour: 9, minute: 45 };
@@ -128,22 +142,40 @@ function normalizeSelectedLineupStatus(value) {
   return { total: 0, confirmed: 0, known: false };
 }
 
-function buildResult({ decision, status, stage = null, caption = null, confirmationComplete = null, warnings, blockers, detail = {} }) {
+function buildResult({
+  decision, status, stage = null, languageMode = null, caption = null,
+  confirmationComplete = null, warnings, blockers, detail = {},
+  receiptKey = null, nextEligibleAt = null, windowClosesAt = null,
+}) {
   return {
     decision,
     status,
     stage,
+    languageMode,
     caption,
     confirmationComplete,
     shouldPost: decision === Decision.POST,
     // The planner reads this to decide whether to launch a heavy posting job.
-    // It is the SAME value the poster will compute, which is the property
-    // that makes a planner READY / poster WAITING split impossible.
+    // It is the SAME value the poster will compute, which is the property that
+    // makes a planner READY / poster WAITING split impossible.
     shouldRunPoster: decision === Decision.POST,
     warnings,
     blockers,
     detail,
+    receiptKey,
+    // When this edition could next become eligible, and when its window shuts.
+    // Null where not meaningful (already posted, no games, missed window).
+    nextEligibleAt,
+    windowClosesAt,
   };
+}
+
+/** ISO instant for an ET wall-clock time on the ET calendar date of `now`. */
+function etWallClockToIso(now, timeZone, { hour, minute }) {
+  const base = new Date(now).getTime();
+  const cur = easternParts(now, timeZone);
+  const deltaMinutes = (hour * 60 + minute) - cur.minutesOfDay;
+  return new Date(base + deltaMinutes * MS_PER_MINUTE).toISOString();
 }
 
 /**
@@ -184,9 +216,33 @@ export function resolveEditionReadiness(input) {
     slateDate, market, edition,
   };
 
+  // Computed once so every decision below reports the same identity and
+  // window bounds, whichever branch it exits through.
+  let stage = null;
+  let receiptKey = null;
+  try {
+    receiptKey = buildEditionReceiptKey({ market, slateDate, edition });
+  } catch {
+    receiptKey = null; // surfaced as CONFIGURATION_ERROR below
+  }
+
+  const firstMsRaw = firstGameTime ? new Date(firstGameTime).getTime() : Number.NaN;
+  const hasFirstPitch = Number.isFinite(firstMsRaw);
+  const windowClosesAt = edition === "morning"
+    ? etWallClockToIso(now, timeZone, MORNING_WINDOW_CLOSE_ET)
+    : hasFirstPitch
+      ? new Date(firstMsRaw - CONFIRMED_WINDOW_CLOSE_MINUTES * MS_PER_MINUTE).toISOString()
+      : null;
+  const windowOpensAt = edition === "morning"
+    ? etWallClockToIso(now, timeZone, MORNING_WINDOW_OPEN_ET)
+    : hasFirstPitch
+      ? new Date(firstMsRaw - CONFIRMED_WINDOW_OPEN_MINUTES * MS_PER_MINUTE).toISOString()
+      : null;
+  const common = { receiptKey, windowClosesAt };
+
   const fail = (status, extra = {}) => {
     blockers.push(status);
-    return buildResult({ decision: Decision.BLOCKED, status, warnings, blockers, detail: { ...detail, ...extra } });
+    return buildResult({ ...common, decision: Decision.BLOCKED, status, stage, warnings, blockers, detail: { ...detail, ...extra } });
   };
 
   // ── Already published ────────────────────────────────────────────────────
@@ -194,6 +250,7 @@ export function resolveEditionReadiness(input) {
   // record must leave this edition eligible for a retry.
   if (receipt?.exists && receipt.outcome === "POSTED" && String(receipt.postId ?? "").trim()) {
     return buildResult({
+      ...common,
       decision: Decision.SKIP, status: ReadinessStatus.ALREADY_POSTED,
       warnings, blockers, detail: { ...detail, postId: receipt.postId },
     });
@@ -201,10 +258,10 @@ export function resolveEditionReadiness(input) {
 
   // ── Slate validity. Prior-slate data is a hard blocker for both editions ──
   if (!gamesScheduled) {
-    return buildResult({ decision: Decision.SKIP, status: ReadinessStatus.NO_GAMES_SCHEDULED, warnings, blockers, detail });
+    return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.NO_GAMES, stage, warnings, blockers, detail });
   }
   if (artifactSlateDate && artifactSlateDate !== slateDate) {
-    return fail(ReadinessStatus.STALE_ARTIFACT_SLATE, { artifactSlateDate });
+    return fail(ReadinessStatus.INVALID_SLATE, { artifactSlateDate });
   }
   // Freshness beyond the slate-date match is advisory: a current-slate artifact
   // flagged merely "stale" still describes today's games.
@@ -213,27 +270,29 @@ export function resolveEditionReadiness(input) {
   }
 
   // ── Timing window ────────────────────────────────────────────────────────
-  let stage = null;
   if (edition === "morning") {
     const openAt = asMinutes(MORNING_WINDOW_OPEN_ET);
     const closeAt = asMinutes(MORNING_WINDOW_CLOSE_ET);
     detail.windowEt = "09:45-11:15";
+    stage = Stage.MORNING;
     if (et.date !== slateDate) {
-      return buildResult({ decision: Decision.SKIP, status: ReadinessStatus.AFTER_WINDOW, warnings, blockers, detail });
+      return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.MISSED_WINDOW, stage, warnings, blockers, detail });
     }
     if (et.minutesOfDay < openAt) {
-      return buildResult({ decision: Decision.WAIT, status: ReadinessStatus.BEFORE_WINDOW, warnings, blockers, detail });
+      stage = Stage.BEFORE_WINDOW;
+      return buildResult({ ...common, decision: Decision.WAIT, status: ReadinessStatus.NOT_DUE, stage, nextEligibleAt: windowOpensAt, warnings, blockers, detail });
     }
     if (et.minutesOfDay > closeAt) {
-      return buildResult({ decision: Decision.SKIP, status: ReadinessStatus.AFTER_WINDOW, warnings, blockers, detail });
+      stage = Stage.AFTER_WINDOW;
+      return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.MISSED_WINDOW, stage, warnings, blockers, detail });
     }
   } else if (edition === "confirmed") {
     if (!firstGameTime) {
-      return buildResult({ decision: Decision.SKIP, status: ReadinessStatus.NO_FIRST_GAME_TIME, warnings, blockers, detail });
+      return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.NO_GAMES, stage, warnings, blockers, detail });
     }
     const firstMs = new Date(firstGameTime).getTime();
     if (!Number.isFinite(firstMs)) {
-      return buildResult({ decision: Decision.SKIP, status: ReadinessStatus.NO_FIRST_GAME_TIME, warnings, blockers, detail });
+      return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.NO_GAMES, stage, warnings, blockers, detail });
     }
     const minutesUntilFirstPitch = Math.round((firstMs - nowMs) / MS_PER_MINUTE);
     detail.minutesUntilFirstPitch = minutesUntilFirstPitch;
@@ -241,20 +300,23 @@ export function resolveEditionReadiness(input) {
 
     // Never publish this edition once the earliest game is under way.
     if (minutesUntilFirstPitch <= 0) {
-      return buildResult({ decision: Decision.SKIP, status: ReadinessStatus.FIRST_GAME_STARTED, warnings, blockers, detail });
+      stage = Stage.AFTER_WINDOW;
+      return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.FIRST_GAME_STARTED, stage, warnings, blockers, detail });
     }
     if (minutesUntilFirstPitch > CONFIRMED_WINDOW_OPEN_MINUTES) {
-      return buildResult({ decision: Decision.WAIT, status: ReadinessStatus.BEFORE_WINDOW, warnings, blockers, detail });
+      stage = Stage.BEFORE_WINDOW;
+      return buildResult({ ...common, decision: Decision.WAIT, status: ReadinessStatus.NOT_DUE, stage, nextEligibleAt: windowOpensAt, warnings, blockers, detail });
     }
     if (minutesUntilFirstPitch < CONFIRMED_WINDOW_CLOSE_MINUTES) {
-      return buildResult({ decision: Decision.SKIP, status: ReadinessStatus.AFTER_WINDOW, warnings, blockers, detail });
+      stage = Stage.AFTER_WINDOW;
+      return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.MISSED_WINDOW, stage, warnings, blockers, detail });
     }
     stage = minutesUntilFirstPitch >= CONFIRMED_PREFERRED_END_MINUTES
-      ? ConfirmedStage.PREFERRED
-      : ConfirmedStage.FALLBACK;
+      ? Stage.PREFERRED
+      : Stage.FALLBACK;
     detail.stage = stage;
   } else {
-    return fail(ReadinessStatus.X_CONFIG_INVALID, { reason: `unknown edition "${edition}"` });
+    return fail(ReadinessStatus.CONFIGURATION_ERROR, { reason: `unknown edition "${edition}"` });
   }
 
   // ── Required content ─────────────────────────────────────────────────────
@@ -264,19 +326,19 @@ export function resolveEditionReadiness(input) {
   }
   if (validPicks < 3) warnings.push("FEWER_THAN_THREE_PICKS");
 
-  if (!image?.exists) return fail(ReadinessStatus.IMAGE_MISSING);
+  if (!image?.exists) return fail(ReadinessStatus.IMAGE_FAILED);
   if (image.slateDate && image.slateDate !== slateDate) {
-    return fail(ReadinessStatus.IMAGE_WRONG_SLATE, { imageSlateDate: image.slateDate });
+    return fail(ReadinessStatus.IMAGE_FAILED, { imageSlateDate: image.slateDate });
   }
   if (!image.slateDate) warnings.push("IMAGE_SLATE_DATE_UNKNOWN");
   const w = Number(image.width); const h = Number(image.height);
   if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
-    return fail(ReadinessStatus.IMAGE_UNUSABLE, { width: image.width, height: image.height });
+    return fail(ReadinessStatus.IMAGE_FAILED, { width: image.width, height: image.height });
   }
 
   // ── Live posting configuration ───────────────────────────────────────────
   if (liveMode && !(allowLivePost && credentialsPresent && verifiedAccount)) {
-    return fail(ReadinessStatus.X_CONFIG_INVALID, { allowLivePost, credentialsPresent, verifiedAccount });
+    return fail(ReadinessStatus.CONFIGURATION_ERROR, { allowLivePost, credentialsPresent, verifiedAccount });
   }
 
   // ── Edition policy ───────────────────────────────────────────────────────
@@ -285,8 +347,11 @@ export function resolveEditionReadiness(input) {
     // orders for HR. The caption says to check lineups precisely because this
     // edition does not claim them.
     return buildResult({
+      ...common,
       decision: Decision.POST,
-      status: ReadinessStatus.READY_MORNING,
+      status: ReadinessStatus.READY_TO_POST,
+      stage,
+      languageMode: LanguageMode.MORNING,
       caption: market === "k" ? Caption.MORNING_K : Caption.MORNING_HR,
       confirmationComplete: false,
       warnings, blockers, detail,
@@ -304,21 +369,29 @@ export function resolveEditionReadiness(input) {
 
   if (complete) {
     return buildResult({
+      ...common,
       decision: Decision.POST,
-      status: ReadinessStatus.READY_CONFIRMED_SELECTIONS,
-      stage, caption: Caption.CONFIRMED_COMPLETE, confirmationComplete: true,
+      status: ReadinessStatus.READY_TO_POST,
+      stage, languageMode: LanguageMode.CONFIRMED,
+      caption: Caption.CONFIRMED_COMPLETE, confirmationComplete: true,
       warnings, blockers, detail,
     });
   }
 
-  if (stage === ConfirmedStage.PREFERRED) {
+  if (stage === Stage.PREFERRED) {
     // Still time for orders to post; keep waiting, but only within the
     // preferred stage -- the fallback stage below guarantees this cannot
     // defer indefinitely the way the old design did.
     return buildResult({
+      ...common,
       decision: Decision.WAIT,
       status: ReadinessStatus.WAITING_FOR_SELECTED_LINEUPS,
-      stage, confirmationComplete: false, warnings, blockers, detail,
+      stage, confirmationComplete: false,
+      // Guaranteed publication point: the fallback stage cannot defer further.
+      nextEligibleAt: hasFirstPitch
+        ? new Date(firstMsRaw - CONFIRMED_PREFERRED_END_MINUTES * MS_PER_MINUTE).toISOString()
+        : null,
+      warnings, blockers, detail,
     });
   }
 
@@ -327,9 +400,11 @@ export function resolveEditionReadiness(input) {
   // must not claim lineups are confirmed.
   warnings.push("SELECTED_LINEUP_CONFIRMATION_INCOMPLETE");
   return buildResult({
+    ...common,
     decision: Decision.POST,
-    status: ReadinessStatus.READY_FALLBACK_INCOMPLETE_LINEUPS,
-    stage, caption: Caption.CONFIRMED_INCOMPLETE, confirmationComplete: false,
+    status: ReadinessStatus.READY_TO_FALLBACK_POST,
+    stage, languageMode: LanguageMode.PREGAME_FALLBACK,
+    caption: Caption.CONFIRMED_INCOMPLETE, confirmationComplete: false,
     warnings, blockers, detail,
   });
 }

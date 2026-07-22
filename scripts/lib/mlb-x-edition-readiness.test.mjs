@@ -6,7 +6,8 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   Caption,
-  ConfirmedStage,
+  LanguageMode,
+  Stage,
   Decision,
   easternParts,
   ReadinessStatus,
@@ -64,7 +65,7 @@ describe("morning edition window", () => {
   it("waits before 09:45 ET", () => {
     const r = resolveEditionReadiness(input({ now: "2026-07-21T13:30:00Z" })); // 09:30 ET
     assert.equal(r.decision, Decision.WAIT);
-    assert.equal(r.status, ReadinessStatus.BEFORE_WINDOW);
+    assert.equal(r.status, ReadinessStatus.NOT_DUE);
   });
 
   it("posts at the 09:45 ET boundary", () => {
@@ -84,7 +85,7 @@ describe("morning edition window", () => {
   it("skips after 11:15 ET", () => {
     const r = resolveEditionReadiness(input({ now: "2026-07-21T15:16:00Z" }));
     assert.equal(r.decision, Decision.SKIP);
-    assert.equal(r.status, ReadinessStatus.AFTER_WINDOW);
+    assert.equal(r.status, ReadinessStatus.MISSED_WINDOW);
   });
 
   it("holds the window in EST as well as EDT", () => {
@@ -102,7 +103,7 @@ describe("morning edition requires no lineup confirmation", () => {
   it("posts K with no opposing batting orders at all", () => {
     const r = resolveEditionReadiness(input({ market: "k", selectedLineupStatus: null }));
     assert.equal(r.decision, Decision.POST);
-    assert.equal(r.status, ReadinessStatus.READY_MORNING);
+    assert.equal(r.status, ReadinessStatus.READY_TO_POST);
     assert.equal(r.caption, Caption.MORNING_K);
   });
 
@@ -134,20 +135,20 @@ describe("confirmed edition window", () => {
   it("waits earlier than 2h20m out", () => {
     const r = resolveEditionReadiness(confirmed({ now: minsOut(141) }));
     assert.equal(r.decision, Decision.WAIT);
-    assert.equal(r.status, ReadinessStatus.BEFORE_WINDOW);
+    assert.equal(r.status, ReadinessStatus.NOT_DUE);
   });
 
   it("opens at exactly 2h20m out, in the preferred stage", () => {
     const r = resolveEditionReadiness(confirmed({ now: minsOut(140), selectedLineupStatus: [{ confirmed: true }] }));
     assert.equal(r.decision, Decision.POST);
-    assert.equal(r.stage, ConfirmedStage.PREFERRED);
+    assert.equal(r.stage, Stage.PREFERRED);
   });
 
   it("switches to the fallback stage below 1h40m out", () => {
     const pref = resolveEditionReadiness(confirmed({ now: minsOut(100), selectedLineupStatus: [{ confirmed: false }] }));
-    assert.equal(pref.stage, ConfirmedStage.PREFERRED);
+    assert.equal(pref.stage, Stage.PREFERRED);
     const fb = resolveEditionReadiness(confirmed({ now: minsOut(99), selectedLineupStatus: [{ confirmed: false }] }));
-    assert.equal(fb.stage, ConfirmedStage.FALLBACK);
+    assert.equal(fb.stage, Stage.FALLBACK);
   });
 
   it("closes at 1h15m out", () => {
@@ -155,7 +156,7 @@ describe("confirmed edition window", () => {
     assert.equal(open.decision, Decision.POST);
     const closed = resolveEditionReadiness(confirmed({ now: minsOut(74), selectedLineupStatus: [{ confirmed: false }] }));
     assert.equal(closed.decision, Decision.SKIP);
-    assert.equal(closed.status, ReadinessStatus.AFTER_WINDOW);
+    assert.equal(closed.status, ReadinessStatus.MISSED_WINDOW);
   });
 
   it("never publishes once the first game has started", () => {
@@ -166,7 +167,7 @@ describe("confirmed edition window", () => {
 
   it("skips cleanly with no first game time", () => {
     const r = resolveEditionReadiness(confirmed({ firstGameTime: null }));
-    assert.equal(r.status, ReadinessStatus.NO_FIRST_GAME_TIME);
+    assert.equal(r.status, ReadinessStatus.NO_GAMES);
   });
 });
 
@@ -177,7 +178,7 @@ describe("confirmed edition lineup policy", () => {
       selectedLineupStatus: [{ confirmed: true }, { confirmed: true }, { confirmed: true }],
     }));
     assert.equal(r.decision, Decision.POST);
-    assert.equal(r.status, ReadinessStatus.READY_CONFIRMED_SELECTIONS);
+    assert.equal(r.status, ReadinessStatus.READY_TO_POST);
     assert.equal(r.confirmationComplete, true);
     assert.equal(r.caption, Caption.CONFIRMED_COMPLETE);
   });
@@ -209,7 +210,7 @@ describe("confirmed edition lineup policy", () => {
       selectedLineupStatus: [{ confirmed: true }, { confirmed: false }],
     }));
     assert.equal(r.decision, Decision.POST);
-    assert.equal(r.status, ReadinessStatus.READY_FALLBACK_INCOMPLETE_LINEUPS);
+    assert.equal(r.status, ReadinessStatus.READY_TO_FALLBACK_POST);
     assert.equal(r.confirmationComplete, false);
     assert.equal(r.caption, Caption.CONFIRMED_INCOMPLETE);
     assert.ok(r.warnings.includes("SELECTED_LINEUP_CONFIRMATION_INCOMPLETE"));
@@ -267,7 +268,7 @@ describe("hard blockers", () => {
   it("blocks prior-slate artifact data", () => {
     const r = resolveEditionReadiness(input({ artifactSlateDate: "2026-07-20" }));
     assert.equal(r.decision, Decision.BLOCKED);
-    assert.equal(r.status, ReadinessStatus.STALE_ARTIFACT_SLATE);
+    assert.equal(r.status, ReadinessStatus.INVALID_SLATE);
   });
 
   it("blocks zero valid picks but allows fewer than three", () => {
@@ -278,21 +279,21 @@ describe("hard blockers", () => {
   });
 
   it("blocks a missing, wrong-slate, or unusable image", () => {
-    assert.equal(resolveEditionReadiness(input({ image: { exists: false } })).status, ReadinessStatus.IMAGE_MISSING);
+    assert.equal(resolveEditionReadiness(input({ image: { exists: false } })).status, ReadinessStatus.IMAGE_FAILED);
     assert.equal(
       resolveEditionReadiness(input({ image: { exists: true, slateDate: "2026-07-20", width: 1200, height: 675 } })).status,
-      ReadinessStatus.IMAGE_WRONG_SLATE,
+      ReadinessStatus.IMAGE_FAILED,
     );
     assert.equal(
       resolveEditionReadiness(input({ image: { exists: true, slateDate: SLATE, width: 0, height: 0 } })).status,
-      ReadinessStatus.IMAGE_UNUSABLE,
+      ReadinessStatus.IMAGE_FAILED,
     );
   });
 
   it("blocks invalid X configuration only in live mode", () => {
-    assert.equal(resolveEditionReadiness(input({ liveMode: true, verifiedAccount: false })).status, ReadinessStatus.X_CONFIG_INVALID);
-    assert.equal(resolveEditionReadiness(input({ liveMode: true, credentialsPresent: false })).status, ReadinessStatus.X_CONFIG_INVALID);
-    assert.equal(resolveEditionReadiness(input({ liveMode: true, allowLivePost: false })).status, ReadinessStatus.X_CONFIG_INVALID);
+    assert.equal(resolveEditionReadiness(input({ liveMode: true, verifiedAccount: false })).status, ReadinessStatus.CONFIGURATION_ERROR);
+    assert.equal(resolveEditionReadiness(input({ liveMode: true, credentialsPresent: false })).status, ReadinessStatus.CONFIGURATION_ERROR);
+    assert.equal(resolveEditionReadiness(input({ liveMode: true, allowLivePost: false })).status, ReadinessStatus.CONFIGURATION_ERROR);
     // Dry runs need no credentials.
     assert.equal(
       resolveEditionReadiness(input({ liveMode: false, allowLivePost: false, credentialsPresent: false, verifiedAccount: false })).decision,
@@ -301,7 +302,7 @@ describe("hard blockers", () => {
   });
 
   it("skips when no games are scheduled", () => {
-    assert.equal(resolveEditionReadiness(input({ gamesScheduled: 0 })).status, ReadinessStatus.NO_GAMES_SCHEDULED);
+    assert.equal(resolveEditionReadiness(input({ gamesScheduled: 0 })).status, ReadinessStatus.NO_GAMES);
   });
 });
 
@@ -336,5 +337,51 @@ describe("edition receipts", () => {
     ]) {
       assert.equal(resolveEditionReadiness(input({ receipt })).decision, Decision.POST);
     }
+  });
+});
+
+describe("approved contract shape", () => {
+  it("returns every documented field", () => {
+    const r = resolveEditionReadiness(input());
+    for (const key of [
+      "decision", "status", "stage", "languageMode", "caption", "confirmationComplete",
+      "shouldPost", "shouldRunPoster", "warnings", "blockers", "detail",
+      "receiptKey", "nextEligibleAt", "windowClosesAt",
+    ]) {
+      assert.ok(key in r, `missing field: ${key}`);
+    }
+  });
+
+  it("carries the edition receipt key on every decision", () => {
+    assert.equal(resolveEditionReadiness(input()).receiptKey, "mlb-k-2026-07-21-morning");
+    assert.equal(resolveEditionReadiness(confirmed({ market: "hr", now: minsOut(130) })).receiptKey, "mlb-hr-2026-07-21-confirmed");
+    // Present even on a blocked decision.
+    assert.equal(resolveEditionReadiness(input({ validPicks: 0 })).receiptKey, "mlb-k-2026-07-21-morning");
+  });
+
+  it("reports the lifecycle stage", () => {
+    assert.equal(resolveEditionReadiness(input({ now: "2026-07-21T13:30:00Z" })).stage, Stage.BEFORE_WINDOW);
+    assert.equal(resolveEditionReadiness(input()).stage, Stage.MORNING);
+    assert.equal(resolveEditionReadiness(input({ now: "2026-07-21T15:16:00Z" })).stage, Stage.AFTER_WINDOW);
+    assert.equal(resolveEditionReadiness(confirmed({ now: minsOut(130), selectedLineupStatus: [{ confirmed: true }] })).stage, Stage.PREFERRED);
+    assert.equal(resolveEditionReadiness(confirmed({ now: minsOut(90), selectedLineupStatus: [{ confirmed: false }] })).stage, Stage.FALLBACK);
+  });
+
+  it("reports languageMode consistently with the caption", () => {
+    assert.equal(resolveEditionReadiness(input()).languageMode, LanguageMode.MORNING);
+    assert.equal(resolveEditionReadiness(confirmed({ now: minsOut(130), selectedLineupStatus: [{ confirmed: true }] })).languageMode, LanguageMode.CONFIRMED);
+    assert.equal(resolveEditionReadiness(confirmed({ now: minsOut(90), selectedLineupStatus: [{ confirmed: false }] })).languageMode, LanguageMode.PREGAME_FALLBACK);
+    // No caption, no language mode.
+    assert.equal(resolveEditionReadiness(confirmed({ now: minsOut(130), selectedLineupStatus: [{ confirmed: false }] })).languageMode, null);
+  });
+
+  it("reports windowClosesAt and nextEligibleAt", () => {
+    const early = resolveEditionReadiness(input({ now: "2026-07-21T13:30:00Z" }));
+    assert.equal(early.windowClosesAt, "2026-07-21T15:15:00.000Z"); // 11:15 ET
+    assert.equal(early.nextEligibleAt, "2026-07-21T13:45:00.000Z"); // 09:45 ET
+    // Waiting on lineups points at the guaranteed fallback publication point.
+    const waiting = resolveEditionReadiness(confirmed({ now: minsOut(130), selectedLineupStatus: [{ confirmed: false }] }));
+    assert.equal(waiting.nextEligibleAt, new Date(Date.parse("2026-07-21T22:40:00Z") - 100 * 60_000).toISOString());
+    assert.equal(waiting.windowClosesAt, new Date(Date.parse("2026-07-21T22:40:00Z") - 75 * 60_000).toISOString());
   });
 });
