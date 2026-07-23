@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { projectStrikeoutsV2 } from "./kProjectionV2";
 // @ts-expect-error -- plain JS module, no type declarations
 import { buildKPropsShadowArtifact } from "../../../scripts/lib/mlb-k-props-v2-shadow-core.mjs";
+// @ts-expect-error -- plain JS module, no type declarations
+import { validateKPropsV2ShadowArtifact } from "../../../scripts/lib/mlb-k-props-v2-shadow-validator.mjs";
 
 const rawPayload = {
   date: "2026-07-23",
@@ -157,6 +159,7 @@ describe("buildKPropsShadowArtifact", () => {
     expect(row.inputs.v2Input.pitcher.projectedBattersFaced).toBe(24);
     expect(row.inputs.lineup.projectedLineupKRate).toBe(26);
     expect(row.game.pitcherIsHome).toBe(true);
+    expect(validateKPropsV2ShadowArtifact(artifact)).toEqual({ ok: true, errors: [] });
   });
 
   it("does not mutate source payloads", () => {
@@ -183,5 +186,74 @@ describe("buildKPropsShadowArtifact", () => {
     });
 
     expect(artifact.diagnostics.warnings).toContain("Workload shadow date 2026-07-22 does not match slate date 2026-07-23.");
+  });
+
+  it("rejects duplicate pitcher/game identities", () => {
+    const artifact = buildKPropsShadowArtifact({
+      rawPayload: {
+        ...rawPayload,
+        pitchers: [rawPayload.pitchers[0], { ...rawPayload.pitchers[0] }],
+      },
+      workloadPayload,
+      detailsPayload,
+      projectStrikeoutsV2,
+      generatedAt: "2026-07-23T12:00:00.000Z",
+    });
+
+    const result = validateKPropsV2ShadowArtifact(artifact);
+
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((error: string) => error.includes("duplicate pitcher/game identity"))).toBe(true);
+  });
+
+  it("rejects diagnostics that do not reconcile with rows", () => {
+    const artifact = buildKPropsShadowArtifact({
+      rawPayload,
+      workloadPayload,
+      detailsPayload,
+      projectStrikeoutsV2,
+      generatedAt: "2026-07-23T12:00:00.000Z",
+    });
+
+    const result = validateKPropsV2ShadowArtifact({
+      ...artifact,
+      diagnostics: {
+        ...artifact.diagnostics,
+        totalRows: 99,
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain("diagnostics.totalRows=99 does not reconcile with actual 2.");
+  });
+
+  it("rejects sportsbook fields inside V2 inputs", () => {
+    const artifact = buildKPropsShadowArtifact({
+      rawPayload,
+      workloadPayload,
+      detailsPayload,
+      projectStrikeoutsV2,
+      generatedAt: "2026-07-23T12:00:00.000Z",
+    });
+
+    const result = validateKPropsV2ShadowArtifact({
+      ...artifact,
+      rows: [
+        {
+          ...artifact.rows[0],
+          inputs: {
+            ...artifact.rows[0].inputs,
+            v2Input: {
+              ...artifact.rows[0].inputs.v2Input,
+              sportsbook: "draftkings",
+            },
+          },
+        },
+        artifact.rows[1],
+      ],
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((error: string) => error.includes("sportsbook/market field"))).toBe(true);
   });
 });

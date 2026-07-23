@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import ts from "typescript";
 
 import { buildKPropsShadowArtifact } from "./lib/mlb-k-props-v2-shadow-core.mjs";
+import { assertValidKPropsV2ShadowArtifact } from "./lib/mlb-k-props-v2-shadow-validator.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -69,6 +70,7 @@ export async function generateKPropsV2ShadowArtifact({
     detailsPayload,
     projectStrikeoutsV2,
   });
+  assertValidKPropsV2ShadowArtifact(artifact);
 
   if (write) {
     writeJsonAtomic(outputPath, artifact);

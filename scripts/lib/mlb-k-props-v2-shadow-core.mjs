@@ -3,6 +3,18 @@ import { buildStrikeoutPropDetailKey } from "./mlb-strikeout-prop-details-core.m
 export const K_PROPS_V2_SHADOW_SCHEMA_VERSION = 1;
 export const K_PROPS_V2_SHADOW_MODE = "shadow";
 
+function compareRows(a, b) {
+  const aGameId = toFiniteNumber(a?.game?.gameId, Number.MAX_SAFE_INTEGER);
+  const bGameId = toFiniteNumber(b?.game?.gameId, Number.MAX_SAFE_INTEGER);
+  if (aGameId !== bGameId) return aGameId - bGameId;
+
+  const aPitcherId = toFiniteNumber(a?.pitcher?.id, Number.MAX_SAFE_INTEGER);
+  const bPitcherId = toFiniteNumber(b?.pitcher?.id, Number.MAX_SAFE_INTEGER);
+  if (aPitcherId !== bPitcherId) return aPitcherId - bPitcherId;
+
+  return String(a?.key ?? "").localeCompare(String(b?.key ?? ""));
+}
+
 function toFiniteNumber(value, fallback = null) {
   if (value === null || value === undefined || value === "") return fallback;
   const parsed = Number(value);
@@ -398,7 +410,7 @@ export function buildKPropsShadowArtifact({
           },
       },
     };
-  });
+  }).sort(compareRows);
 
   const diagnostics = {
     totalRows: rows.length,
