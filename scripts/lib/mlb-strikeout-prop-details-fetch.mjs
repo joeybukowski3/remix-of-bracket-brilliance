@@ -114,9 +114,22 @@ export async function fetchPitcherSeasonStarts(pitcherId, season, beforeDate, te
   }
 }
 
-/** Backward-compatible alias. The complete starter log is returned; callers select recent rows. */
+/**
+ * Backward-compatible main-branch interface: returns the five most recent
+ * starts by default and keeps the original compact row shape.
+ */
 export async function fetchPitcherRecentStarts(pitcherId, season, beforeDate, teamAbbrById, options = {}) {
-  return fetchPitcherSeasonStarts(pitcherId, season, beforeDate, teamAbbrById, options);
+  const limit = options.limit ?? 5;
+  const result = await fetchPitcherSeasonStarts(pitcherId, season, beforeDate, teamAbbrById, options);
+  return {
+    ...result,
+    starts: result.starts.slice(0, limit).map((start) => ({
+      date: start.date,
+      opponentAbbr: start.opponentAbbr,
+      inningsPitched: start.inningsPitched,
+      strikeouts: start.strikeouts,
+    })),
+  };
 }
 
 function isCompletedRegularSeasonGame(game) {

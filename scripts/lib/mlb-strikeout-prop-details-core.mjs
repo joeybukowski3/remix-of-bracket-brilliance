@@ -1,4 +1,4 @@
-import { mlbInningsToOuts, outsToMlbInnings } from "../../src/lib/mlb/baseballInnings.ts";
+import { mlbInningsToOuts, outsToMlbInnings } from "./mlb-baseball-innings.mjs";
 
 function normalizeKeySegment(value) {
   return String(value ?? "")
@@ -13,14 +13,29 @@ export function buildStrikeoutPropDetailKey({ pitcher, team, opponent, gameDate 
   return [pitcher, team, opponent, gameDate].map(normalizeKeySegment).join("|");
 }
 
-export function buildStrikeoutPropStableKey({ slateDate, gamePk, pitcherId, teamId, opponentId }) {
-  if (slateDate && Number.isFinite(Number(gamePk)) && Number.isFinite(Number(pitcherId))) {
-    return `${slateDate}|${Number(gamePk)}|${Number(pitcherId)}`;
+function stableId(value) {
+  if (value == null || value === "") return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+export function buildStrikeoutPropStableKeys({ slateDate, gamePk, pitcherId, teamId, opponentId }) {
+  const keys = [];
+  const normalizedGamePk = stableId(gamePk);
+  const normalizedPitcherId = stableId(pitcherId);
+  const normalizedTeamId = stableId(teamId);
+  const normalizedOpponentId = stableId(opponentId);
+  if (slateDate && normalizedGamePk != null && normalizedPitcherId != null) {
+    keys.push(`${slateDate}|${normalizedGamePk}|${normalizedPitcherId}`);
   }
-  if (slateDate && Number.isFinite(Number(pitcherId)) && Number.isFinite(Number(teamId)) && Number.isFinite(Number(opponentId))) {
-    return `${slateDate}|${Number(pitcherId)}|${Number(teamId)}|${Number(opponentId)}`;
+  if (slateDate && normalizedPitcherId != null && normalizedTeamId != null && normalizedOpponentId != null) {
+    keys.push(`${slateDate}|${normalizedPitcherId}|${normalizedTeamId}|${normalizedOpponentId}`);
   }
-  return null;
+  return keys;
+}
+
+export function buildStrikeoutPropStableKey(identifiers) {
+  return buildStrikeoutPropStableKeys(identifiers)[0] ?? null;
 }
 
 function finite(value) {
@@ -38,6 +53,16 @@ function inningsString(value) {
   if (value == null || value === "") return null;
   const text = String(value);
   return mlbInningsToOuts(text) == null ? null : text;
+}
+
+/** Preserve the compact main-branch fallback shape for legacy callers/artifacts. */
+export function buildPitcherLastFiveStarts(starts) {
+  return (starts ?? []).map((start) => ({
+    date: start?.date ?? null,
+    opponent: start?.opponentAbbr ?? null,
+    inningsPitched: start?.inningsPitched == null || start.inningsPitched === "" ? null : String(start.inningsPitched),
+    strikeouts: finite(start?.strikeouts),
+  }));
 }
 
 function sumNullable(rows, key) {
@@ -132,7 +157,7 @@ export function buildPitcherVenueSplit(site, currentSeasonStarts) {
 export function buildPitcherDetails(starts, { pitcherId = null, season = null } = {}) {
   const { rows, duplicateKeys } = dedupePitcherStarts(starts, pitcherId);
   const currentSeasonStarts = rows
-    .filter((row) => season == null || row.season === season)
+    .filter((row) => season == null || row.season == null || row.season === season)
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const recentStarts = currentSeasonStarts.slice(0, 5);
   const warnings = [];
@@ -196,10 +221,12 @@ export function buildStrikeoutPropDetail({
     season: Number(String(slateDate).slice(0, 4)),
   });
   const legacyKey = buildStrikeoutPropDetailKey({ pitcher, team, opponent, gameDate: slateDate });
+  const stableKeys = buildStrikeoutPropStableKeys({ slateDate, gamePk, pitcherId, teamId, opponentId });
   return {
     key: legacyKey,
     legacyKey,
-    stableKey: buildStrikeoutPropStableKey({ slateDate, gamePk, pitcherId, teamId, opponentId }),
+    stableKey: stableKeys[0] ?? null,
+    stableKeys,
     slateDate: slateDate ?? null,
     gamePk: integer(gamePk),
     pitcherId: integer(pitcherId),

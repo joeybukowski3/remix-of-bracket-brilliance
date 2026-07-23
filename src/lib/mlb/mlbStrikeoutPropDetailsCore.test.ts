@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   buildOpponentLastFiveGames,
+  buildPitcherDetails,
   buildPitcherLastFiveStarts,
   buildStrikeoutPropDetail,
   buildStrikeoutPropDetailKey,
+  buildStrikeoutPropStableKeys,
+  normalizePitcherStart,
   // @ts-expect-error -- plain JS module, no type declarations
 } from "../../../scripts/lib/mlb-strikeout-prop-details-core.mjs";
+import {
+  buildTeamAbbrById,
+  normalizePitcherGameLogSplit,
+  // @ts-expect-error -- plain JS module, no type declarations
+} from "../../../scripts/lib/mlb-strikeout-prop-details-fetch.mjs";
+import { pitcherGameLogSplitsFixture } from "@/lib/mlb/fixtures/mlbPitcherGameLog.fixture";
 
 describe("buildStrikeoutPropDetailKey", () => {
   it("builds a stable, normalized key from pitcher/team/opponent/date", () => {
@@ -61,6 +70,65 @@ describe("buildPitcherLastFiveStarts", () => {
   it("nulls out fields it cannot resolve instead of fabricating them", () => {
     const rows = buildPitcherLastFiveStarts([{ date: "2026-07-03", opponentAbbr: null, inningsPitched: null, strikeouts: null }]);
     expect(rows[0]).toEqual({ date: "2026-07-03", opponent: null, inningsPitched: null, strikeouts: null });
+  });
+});
+
+describe("enriched pitcher start details", () => {
+  const teamAbbrById = buildTeamAbbrById([
+    { id: 111, abbreviation: "BAL" },
+    { id: 147, abbreviation: "NYY" },
+  ]);
+  const preSlateStarts = pitcherGameLogSplitsFixture
+    .map((split) => normalizePitcherGameLogSplit(split, 2026, teamAbbrById))
+    .filter((start: { date: string | null }) => start.date && start.date < "2026-07-23");
+
+  it("converts MLB innings notation to outs", () => {
+    expect(normalizePitcherStart({ inningsPitched: "5.2" }).outsRecorded).toBe(17);
+    expect(normalizePitcherStart({ inningsPitched: "6.1" }).outsRecorded).toBe(19);
+  });
+
+  it("calculates recent H/9 and K/9 after duplicate game removal", () => {
+    const details = buildPitcherDetails(preSlateStarts, { pitcherId: 669456, season: 2026 });
+    expect(details.recentStarts.map((start: { gamePk: number | null }) => start.gamePk)).toEqual([1001, 1002, 1003, 1004, 1005]);
+    expect(details.recentSummary.totalOuts).toBe(91);
+    expect(details.recentSummary.hitsPerNine).toBeCloseTo((21 * 27) / 91, 8);
+    expect(details.recentSummary.strikeoutsPerNine).toBeCloseTo((34 * 27) / 91, 8);
+    expect(details.recentSummary.averagePitchCount).toBeCloseTo(94.2, 8);
+    expect(details.diagnostics.duplicateGameLogs).toBe(1);
+  });
+
+  it("builds season and five-most-recent Home/Away totals independently", () => {
+    const { venueSplits, diagnostics } = buildPitcherDetails(preSlateStarts, { pitcherId: 669456, season: 2026 });
+    expect(venueSplits.home.season).toMatchObject({ gamesUsed: 6, totalOuts: 104, inningsPitched: "34.2", strikeouts: 38, hitsAllowed: 29 });
+    expect(venueSplits.home.lastFiveAtSite).toMatchObject({ gamesUsed: 5, totalOuts: 90, inningsPitched: "30.0", strikeouts: 35, hitsAllowed: 22 });
+    expect(venueSplits.away.season).toMatchObject({ gamesUsed: 6, totalOuts: 111, inningsPitched: "37.0", strikeouts: 40, hitsAllowed: 27 });
+    expect(venueSplits.away.lastFiveAtSite).toMatchObject({ gamesUsed: 5, totalOuts: 91, inningsPitched: "30.1", strikeouts: 32, hitsAllowed: 23 });
+    expect(diagnostics).toMatchObject({ homeLastFiveGames: 5, awayLastFiveGames: 5 });
+  });
+});
+
+describe("stable detail keys", () => {
+  it("returns game/pitcher first and team/opponent identity second", () => {
+    expect(buildStrikeoutPropStableKeys({
+      slateDate: "2026-07-23",
+      gamePk: 822785,
+      pitcherId: 669456,
+      teamId: 141,
+      opponentId: 139,
+    })).toEqual([
+      "2026-07-23|822785|669456",
+      "2026-07-23|669456|141|139",
+    ]);
+  });
+
+  it("does not turn missing ids into synthetic zero ids", () => {
+    expect(buildStrikeoutPropStableKeys({
+      slateDate: "2026-07-23",
+      gamePk: null,
+      pitcherId: 669456,
+      teamId: null,
+      opponentId: null,
+    })).toEqual([]);
   });
 });
 

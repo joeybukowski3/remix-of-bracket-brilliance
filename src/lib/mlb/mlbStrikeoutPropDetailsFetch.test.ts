@@ -7,9 +7,15 @@ import {
   fetchBoxscoreCached,
   fetchOpponentLastFiveGamesDetail,
   fetchPitcherRecentStarts,
+  fetchPitcherSeasonStarts,
   fetchTeamRecentCompletedGames,
+  normalizePitcherGameLogSplit,
   // @ts-expect-error -- plain JS module, no type declarations
 } from "../../../scripts/lib/mlb-strikeout-prop-details-fetch.mjs";
+import {
+  pitcherGameLogResponseFixture,
+  pitcherGameLogSplitsFixture,
+} from "@/lib/mlb/fixtures/mlbPitcherGameLog.fixture";
 
 function jsonResponse(payload: unknown, status = 200) {
   return { ok: status >= 200 && status < 300, status, json: async () => payload };
@@ -70,6 +76,45 @@ describe("fetchPitcherRecentStarts", () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ stats: [{ splits }] }));
     const { starts } = await fetchPitcherRecentStarts(1, 2026, "2026-07-08", teamAbbrById, { fetchImpl });
     expect(starts[0].opponentAbbr).toBeNull();
+  });
+});
+
+describe("pitcher game-log field normalization", () => {
+  const teamAbbrById = buildTeamAbbrById(TEAMS);
+
+  it("reads the official game, opponent, home-site, pitching, hits, pitch-count, and workload paths", () => {
+    const row = normalizePitcherGameLogSplit(pitcherGameLogSplitsFixture[1], 2026, teamAbbrById);
+    expect(row).toMatchObject({
+      gamePk: 1001,
+      season: 2026,
+      date: "2026-07-20",
+      opponentId: 147,
+      opponentAbbr: "NYY",
+      isHome: true,
+      site: "home",
+      inningsPitched: "5.2",
+      strikeouts: 8,
+      hitsAllowed: 4,
+      pitchCount: 95,
+      battersFaced: 24,
+      gamesStarted: 1,
+    });
+  });
+
+  it("maps away site and uses pitchesThrown only when numberOfPitches is absent", () => {
+    const row = normalizePitcherGameLogSplit(pitcherGameLogSplitsFixture[4], 2026, teamAbbrById);
+    expect(row.isHome).toBe(false);
+    expect(row.site).toBe("away");
+    expect(row.pitchCount).toBe(87);
+  });
+
+  it("returns the complete pre-slate starter log while excluding same-day starts", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(pitcherGameLogResponseFixture));
+    const { starts, error } = await fetchPitcherSeasonStarts(669456, 2026, "2026-07-23", teamAbbrById, { fetchImpl });
+    expect(error).toBeNull();
+    expect(starts).toHaveLength(13);
+    expect(starts[0].gamePk).toBe(1001);
+    expect(starts.some((start: { gamePk: number | null }) => start.gamePk === 1000)).toBe(false);
   });
 });
 

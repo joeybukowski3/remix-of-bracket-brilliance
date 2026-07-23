@@ -34,12 +34,18 @@ function dedupePitcherRows(pitchers) {
   const rows = [];
   for (const pitcher of pitchers ?? []) {
     if (!pitcher?.pitcherId || !pitcher?.pitcher || !pitcher?.team || !pitcher?.opponent) continue;
-    const dedupeKey = `${pitcher.gamePk ?? pitcher.gameKey}|${pitcher.pitcherId}`;
+    const dedupeKey = `${pitcher.gamePk ?? pitcher.gameId ?? pitcher.gameKey}|${pitcher.pitcherId}`;
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
     rows.push(pitcher);
   }
   return rows;
+}
+
+function positiveId(value) {
+  if (value == null || value === "") return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 async function main() {
@@ -73,8 +79,13 @@ async function main() {
   let partialCount = 0;
 
   for (const pitcher of pitcherRows) {
-    const teamId = Number.isFinite(Number(pitcher.teamId)) ? Number(pitcher.teamId) : teamIdByAbbr.get(pitcher.team) ?? null;
-    const opponentId = Number.isFinite(Number(pitcher.opponentId)) ? Number(pitcher.opponentId) : teamIdByAbbr.get(pitcher.opponent) ?? null;
+    const gamePk = positiveId(pitcher.gamePk ?? pitcher.gameId);
+    const teamId = positiveId(pitcher.teamId) ?? teamIdByAbbr.get(pitcher.team) ?? null;
+    const opponentId = positiveId(pitcher.opponentId) ?? teamIdByAbbr.get(pitcher.opponent) ?? null;
+    const sourceWarnings = [];
+    if (gamePk == null) sourceWarnings.push("GAME_PK_UNRESOLVED");
+    if (teamId == null) sourceWarnings.push("TEAM_ID_UNRESOLVED");
+    if (opponentId == null) sourceWarnings.push("OPPONENT_ID_UNRESOLVED");
 
     if (!pitcherStartsCache.has(pitcher.pitcherId)) {
       pitcherStartsCache.set(
@@ -83,10 +94,9 @@ async function main() {
       );
     }
     const { starts, error: startsError } = await pitcherStartsCache.get(pitcher.pitcherId);
-    const sourceWarnings = [];
     if (startsError) {
       sourceWarnings.push("API_REQUEST_FAILED");
-      warnings.push(`${pitcher.pitcher}: pitcher game log unavailable (${startsError.message})`);
+      warnings.push(`${pitcher.pitcher}: pitcher last-5-starts unavailable (${startsError.message})`);
     }
 
     let opponentGameRows = [];
@@ -104,7 +114,10 @@ async function main() {
         );
       }
       const { rows, error: opponentError } = await opponentGamesCache.get(pitcher.opponent);
-      if (opponentError) warnings.push(`${pitcher.opponent}: opponent last-5-games unavailable (${opponentError.message})`);
+      if (opponentError) {
+        sourceWarnings.push("OPPONENT_API_REQUEST_FAILED");
+        warnings.push(`${pitcher.opponent}: opponent last-5-games unavailable (${opponentError.message})`);
+      }
       opponentGameRows = rows;
     }
 
@@ -114,7 +127,7 @@ async function main() {
       opponent: pitcher.opponent,
       slateDate,
       gameDate: slateDate,
-      gamePk: pitcher.gamePk ?? null,
+      gamePk,
       pitcherId: pitcher.pitcherId,
       teamId,
       opponentId,
