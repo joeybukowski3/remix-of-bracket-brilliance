@@ -18,6 +18,8 @@ import {
   receiptCommitMessage,
   receiptPathFor,
   STATE_BRANCH,
+  STATE_BRANCH_VERCEL_CONFIG_PATH,
+  stateBranchVercelIgnoreConfig,
 } from "./mlb-x-state-store.mjs";
 import { buildDiagnosticRecord } from "./mlb-x-edition-diagnostics.mjs";
 import { isPostedReceipt } from "./mlb-x-edition-receipts.mjs";
@@ -123,6 +125,41 @@ describe("single runner", () => {
       const log = git(["log", "--format=%H", STATE_BRANCH], { cwd: bare }).stdout.trim().split("\n");
       assert.ok(log.includes(first), "the earlier commit is still an ancestor");
       assert.equal(log.length, 2);
+    });
+  });
+});
+
+describe("Vercel preview suppression for state-only branch", () => {
+  it("state commits carry a branch-scoped Vercel ignore config", () => {
+    withRemote(1, ([store], { bare }) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") });
+
+      const files = git(["ls-tree", "-r", "--name-only", STATE_BRANCH], { cwd: bare }).stdout.trim().split("\n");
+      assert.ok(files.includes(STATE_BRANCH_VERCEL_CONFIG_PATH));
+      assert.ok(files.includes("mlb-x/2026-07-21/diagnostics/k-morning.json"));
+      assert.equal(files.includes("package.json"), false, "state branch remains state-only, not a deployable app tree");
+
+      const config = JSON.parse(git(["show", `${STATE_BRANCH}:${STATE_BRANCH_VERCEL_CONFIG_PATH}`], { cwd: bare }).stdout);
+      assert.deepEqual(config, stateBranchVercelIgnoreConfig());
+      assert.match(config.ignoreCommand, /automation\/mlb-x-state/);
+    });
+  });
+
+  it("repairs an existing state branch that predates the Vercel ignore config", () => {
+    withRemote(1, ([store], { bare }) => {
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("NOT_DUE") });
+      git(["checkout", STATE_BRANCH], { cwd: store.workDir });
+      git(["rm", STATE_BRANCH_VERCEL_CONFIG_PATH], { cwd: store.workDir });
+      git(["commit", "-m", "simulate legacy state branch without vercel config", "--quiet"], { cwd: store.workDir });
+      git(["push", "origin", `${STATE_BRANCH}:${STATE_BRANCH}`, "--quiet"], { cwd: store.workDir });
+
+      store.sync();
+      store.writeDiagnostic({ ...target("k", "morning"), diagnostic: diag("IMAGE_FAILED") });
+
+      const files = git(["ls-tree", "-r", "--name-only", STATE_BRANCH], { cwd: bare }).stdout.trim().split("\n");
+      assert.ok(files.includes(STATE_BRANCH_VERCEL_CONFIG_PATH), "next real state transition restores Vercel ignore config");
     });
   });
 });
