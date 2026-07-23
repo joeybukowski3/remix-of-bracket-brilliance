@@ -277,7 +277,7 @@ export function buildKPropsShadowArtifact({
     throw new TypeError("buildKPropsShadowArtifact requires projectStrikeoutsV2");
   }
 
-  const warnings = [];
+  const warnings = [...(sourceIntegrity?.warnings ?? [])];
   const slateDate = rawPayload?.date ?? workloadPayload?.date ?? detailsPayload?.date ?? null;
   if (!slateDate) throw new Error("Unable to build K props shadow artifact without slate date");
   if (!Array.isArray(rawPayload?.pitchers)) throw new Error("rawPayload.pitchers is required");
