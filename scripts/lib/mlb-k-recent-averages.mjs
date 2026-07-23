@@ -113,6 +113,7 @@ export function summarizeOpponentLastFiveVsStarters(games = []) {
       plateAppearances: paRows.length,
       whiffRate: whiffRows.length,
     },
+    totalOpposingStarterOuts: validRows.length ? totalOuts : null,
     averageOpposingStarterInnings: validRows.length ? outsToDecimalInnings(totalOuts) / validRows.length : null,
     averageOpposingStarterStrikeouts: validRows.length ? totalStarterKs / validRows.length : null,
     averageTeamStrikeouts: average(teamStrikeoutRows.map((row) => row.teamStrikeouts)),

@@ -50,12 +50,14 @@ function MiniTable({
   rows,
   emptyMessage,
   footRows = [],
+  columnWidths,
 }: {
   title: string;
   columns: string[];
   rows: ReactNode[][];
   emptyMessage: string;
   footRows?: ReactNode[][];
+  columnWidths?: string[];
 }) {
   return (
     <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -64,6 +66,13 @@ function MiniTable({
       </div>
       <div className="hidden sm:block">
         <table className="w-full table-fixed text-[11px]">
+          {columnWidths && (
+            <colgroup>
+              {columnWidths.map((width, index) => (
+                <col key={`col-${index}`} style={{ width }} />
+              ))}
+            </colgroup>
+          )}
           <thead>
             <tr className="text-[9px] uppercase tracking-wide text-slate-400">
               {columns.map((column) => (
@@ -461,9 +470,6 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     getNumber(game, "opposingStarterOuts") != null ? fmtOutsIp(getNumber(game, "opposingStarterOuts")) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined),
     fmtNumber(getNumber(game, "opposingStarterStrikeouts")),
     fmtNumber(getNumber(game, "teamStrikeouts")),
-    fmtNumber(getNumber(game, "plateAppearances")),
-    fmtRate(getNumber(game, "plateAppearances") != null && getNumber(game, "teamStrikeouts") != null && (getNumber(game, "plateAppearances") ?? 0) > 0 ? (getNumber(game, "teamStrikeouts") ?? 0) / (getNumber(game, "plateAppearances") ?? 1) : null),
-    fmtRate(getNumber(game, "whiffRate")),
   ]);
 
   const opponentAvg: ReactNode[][] = [[
@@ -473,9 +479,6 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     formatAverageIp(opponentSummary, "totalOpposingStarterOuts"),
     fmtFixed(getNumber(opponentSummary, "averageOpposingStarterStrikeouts")),
     fmtFixed(getNumber(opponentSummary, "averageTeamStrikeouts")),
-    DASH,
-    fmtRate(getNumber(opponentSummary, "recentTeamKRate")),
-    fmtRate(getNumber(opponentSummary, "recentWhiffRate")),
   ]];
 
   return (
@@ -485,7 +488,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     >
       <section>
         <h3 className="mb-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Recent Performance</h3>
-        <div className="grid min-w-0 gap-2 lg:grid-cols-2">
+        <div className="grid min-w-0 gap-2 lg:grid-cols-[3fr_2fr]">
           <div className="grid min-w-0 gap-2">
             <MiniTable
               title={`${detail.pitcher} — Last 5 Starts`}
@@ -498,6 +501,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
               <MiniTable
                 title={`${detail.pitcher} — Home/Away Splits`}
                 columns={["Site", "IP / Season", "K", "Hits Allowed", "IP / Last 5", "K / Last 5", "Hits Allowed / Last 5"]}
+                columnWidths={["10%", "16%", "9%", "20%", "16%", "9%", "20%"]}
                 rows={pitcherVenueRows}
                 emptyMessage="No venue splits available."
               />
@@ -505,7 +509,8 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
           </div>
           <MiniTable
             title={`${detail.opponent} — last 5 games vs SP`}
-            columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "Team K", "Team PA", "Team K%", "Whiff%"]}
+            columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "Game K"]}
+            columnWidths={["14%", "12%", "34%", "14%", "12%", "14%"]}
             rows={opponentRows}
             footRows={opponentAvg}
             emptyMessage="No recent games available."
