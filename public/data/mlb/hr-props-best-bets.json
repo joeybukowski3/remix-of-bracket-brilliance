@@ -1,10 +1,10 @@
 {
   "date": "2026-07-23",
-  "generatedAt": "2026-07-23T14:39:28.511Z",
+  "generatedAt": "2026-07-23T15:44:37.735Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rogers Centre (1.08) and Truist Park (1.03) are the only two parks above neutral today, and both feature right-handed pitchers who have surrendered 83.5 and 38.3 HRs respectively. The top three model scores all land in those two venues, with Caminero facing Bieber in the most favorable environment and the two Detroit bats stacked against Dobnak in a neutral park that still offers a favorable matchup.",
-    "modelNote": "The model is heavily weighting park factor and opposing pitcher HR vulnerability, which is why the top five scores are concentrated in the two elevated parks against the two worst fly-ball pitchers on the slate."
+    "slateOverview": "Rogers Centre's 1.08 park factor and Shane Bieber's 84.4 HR/9 rate create the day's clearest power edge for Tampa Bay bats, while Comerica Park's 0.95 factor and Randy Dobnak's 58.1 HR/9 rate still offer value for Detroit's middle order. Busch Stadium's 0.92 factor and Michael McGreevy's 64.7 HR/9 rate suppress Arizona power, pushing Ketel Marte down the list despite strong pull and barrel metrics.",
+    "modelNote": "The model is overweighting opposing pitcher HR vulnerability and park factor, elevating Caminero and the Rays stack while discounting Greene and Torkelson despite their recent HR volume."
   },
   "bestBets": [
     {
@@ -19,10 +19,10 @@
       ],
       "bullets": [
         "park=1.08",
-        "hrScore=84.2"
+        "hrScore=84.1"
       ],
-      "hrOddsYes": "+235",
-      "marketImpliedProbability": 0.29850746268656714,
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -38,7 +38,7 @@
       ],
       "bullets": [
         "park=0.95",
-        "hrScore=69.8"
+        "hrScore=69.7"
       ],
       "hrOddsYes": "+560",
       "marketImpliedProbability": 0.15151515151515152,
@@ -57,7 +57,7 @@
       ],
       "bullets": [
         "park=0.95",
-        "hrScore=68.5"
+        "hrScore=68.6"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -71,12 +71,12 @@
       "opposingPitcher": "Shane Bieber",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=83.5",
+        "Pitcher HR VS=84.4",
         "Hard Hit%=47.6"
       ],
       "bullets": [
-        "HR score 67.0 (#4)",
-        "Pitcher HR VS 83.5 at park 1.08"
+        "HR score 67.2 (#4)",
+        "Pitcher HR VS 84.4 at park 1.08"
       ],
       "hrOddsYes": "+560",
       "marketImpliedProbability": 0.15151515151515152,
@@ -90,12 +90,12 @@
       "opposingPitcher": "Shane Bieber",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=83.5",
+        "Pitcher HR VS=84.4",
         "Hard Hit%=38.5"
       ],
       "bullets": [
         "HR score 66.8 (#5)",
-        "Pitcher HR VS 83.5 at park 1.08"
+        "Pitcher HR VS 84.4 at park 1.08"
       ],
       "hrOddsYes": "+520",
       "marketImpliedProbability": 0.16129032258064516,
@@ -116,7 +116,7 @@
       ],
       "bullets": [
         "park=1.08",
-        "hrScore=67"
+        "hrScore=67.2"
       ],
       "hrOddsYes": "+560",
       "marketImpliedProbability": 0.15151515151515152,
@@ -154,29 +154,10 @@
       ],
       "bullets": [
         "park=1.03",
-        "hrScore=63.9"
+        "hrScore=64.6"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ketel Marte",
-      "team": "AZ",
-      "opponent": "STL",
-      "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=63.8",
-        "Hard Hit%=44.6"
-      ],
-      "bullets": [
-        "HR score 61.4 (#7)",
-        "Pitcher HR VS 63.8 at park 0.92"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -185,47 +166,47 @@
       "team": "DET",
       "opponent": "KC",
       "opposingPitcher": "Randy Dobnak",
-      "hrScoreRank": 8,
+      "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=57.2",
+        "Pitcher HR VS=58.1",
         "Hard Hit%=42.5"
       ],
       "bullets": [
-        "HR score 61.4 (#8)",
-        "Pitcher HR VS 57.2 at park 0.95"
+        "HR score 61.4 (#7)",
+        "Pitcher HR VS 58.1 at park 0.95"
       ],
       "hrOddsYes": "+480",
       "marketImpliedProbability": 0.1724137931034483,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ketel Marte",
+      "team": "AZ",
+      "opponent": "STL",
+      "opposingPitcher": "Michael McGreevy",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=64.7",
+        "Hard Hit%=44.6"
+      ],
+      "bullets": [
+        "HR score 61.3 (#8)",
+        "Pitcher HR VS 64.7 at park 0.92"
+      ],
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Ketel Marte",
-      "team": "AZ",
-      "opponent": "STL",
-      "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=10.5%",
-        "HH=44.6%"
-      ],
-      "bullets": [
-        "park=0.92",
-        "hrScore=61.4"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Spencer Torkelson",
       "team": "DET",
       "opponent": "KC",
       "opposingPitcher": "Randy Dobnak",
-      "hrScoreRank": 8,
+      "hrScoreRank": 7,
       "topStats": [
         "barrel=14.7%",
         "HH=42.5%"
@@ -240,21 +221,40 @@
       "hrValueEdge": null
     },
     {
+      "player": "Ketel Marte",
+      "team": "AZ",
+      "opponent": "STL",
+      "opposingPitcher": "Michael McGreevy",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=10.5%",
+        "HH=44.6%"
+      ],
+      "bullets": [
+        "park=0.92",
+        "hrScore=61.3"
+      ],
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Gabriel Moreno",
       "team": "AZ",
       "opponent": "STL",
       "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 18,
+      "hrScoreRank": 20,
       "topStats": [
-        "Pitcher HR VS=63.8",
+        "Pitcher HR VS=64.7",
         "Hard Hit%=41.2"
       ],
       "bullets": [
-        "HR score 52.6 (#18)",
-        "Pitcher HR VS 63.8 at park 0.92"
+        "HR score 52.7 (#20)",
+        "Pitcher HR VS 64.7 at park 0.92"
       ],
-      "hrOddsYes": "+870",
-      "marketImpliedProbability": 0.10309278350515463,
+      "hrOddsYes": "+900",
+      "marketImpliedProbability": 0.1,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,14 +263,14 @@
       "team": "DET",
       "opponent": "KC",
       "opposingPitcher": "Randy Dobnak",
-      "hrScoreRank": 20,
+      "hrScoreRank": 22,
       "topStats": [
-        "Pitcher HR VS=57.2",
+        "Pitcher HR VS=58.1",
         "Hard Hit%=42.5"
       ],
       "bullets": [
-        "HR score 52.0 (#20)",
-        "Pitcher HR VS 57.2 at park 0.95"
+        "HR score 52.1 (#22)",
+        "Pitcher HR VS 58.1 at park 0.95"
       ],
       "hrOddsYes": "+800",
       "marketImpliedProbability": 0.1111111111111111,
