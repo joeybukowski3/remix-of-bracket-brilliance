@@ -35,6 +35,14 @@ import path from "node:path";
 
 export const STATE_BRANCH = "automation/mlb-x-state";
 export const STATE_ROOT = "mlb-x";
+export const STATE_BRANCH_VERCEL_CONFIG_PATH = "vercel.json";
+
+export function stateBranchVercelIgnoreConfig(branch = STATE_BRANCH) {
+  return {
+    $schema: "https://openapi.vercel.sh/vercel.json",
+    ignoreCommand: `node -e "process.exit((process.env.VERCEL_GIT_COMMIT_REF||'')==='${branch}'?0:1)"`,
+  };
+}
 
 /** `mlb-x/YYYY-MM-DD/{market}-{edition}.json` */
 export function receiptPathFor({ slateDate, market, edition }) {
@@ -146,6 +154,13 @@ export function createGitStateStore({
     }
   }
 
+  function ensureStateBranchVercelIgnore() {
+    const absolute = path.join(workDir, STATE_BRANCH_VERCEL_CONFIG_PATH);
+    const expected = `${JSON.stringify(stateBranchVercelIgnoreConfig(branch), null, 2)}\n`;
+    if (fileExists(absolute) && readFile(absolute) === expected) return;
+    writeFile(absolute, expected);
+  }
+
   function readReceipt({ slateDate, market, edition }) {
     return readJsonFile(receiptPathFor({ slateDate, market, edition }));
   }
@@ -163,7 +178,8 @@ export function createGitStateStore({
     for (let attempt = 1; attempt <= maxPushAttempts; attempt += 1) {
       ensureDir(path.dirname(absolute));
       writeFile(absolute, `${JSON.stringify(value, null, 2)}\n`);
-      run(["add", relative]);
+      ensureStateBranchVercelIgnore();
+      run(["add", relative, STATE_BRANCH_VERCEL_CONFIG_PATH]);
 
       const staged = run(["diff", "--cached", "--quiet"], { allowFailure: true });
       if (staged.status === 0) return { pushed: false, unchanged: true, path: relative, attempts: attempt };
