@@ -58,6 +58,31 @@ describe("strikeout detail stable matching", () => {
     expect(index.get("2026-07-23|669456|141|139")).toBe(row);
   });
 
+  it("preserves opponentLastFiveVsStartersSummary through indexing (hook normalization does not strip it)", () => {
+    const row = detail({
+      opponentLastFiveVsStartersSummary: {
+        gamesAvailable: 5,
+        gamesUsed: 5,
+        totalOpposingStarterOuts: 65,
+        averageOpposingStarterInnings: 4.333333333333334,
+        averageOpposingStarterStrikeouts: 3.8,
+        averageTeamStrikeouts: 8,
+        recentTeamKRate: null,
+        recentWhiffRate: null,
+      },
+    });
+    const index = buildStrikeoutPropDetailsByKey([row]);
+    const indexed = index.get("2026-07-23|822785|669456");
+    expect(indexed?.opponentLastFiveVsStartersSummary).toEqual(row.opponentLastFiveVsStartersSummary);
+  });
+
+  it("remains usable without opponentLastFiveVsStartersSummary (older generated artifacts)", () => {
+    const row = detail();
+    expect(row.opponentLastFiveVsStartersSummary).toBeUndefined();
+    const index = buildStrikeoutPropDetailsByKey([row]);
+    expect(index.get("2026-07-23|822785|669456")).toBe(row);
+  });
+
   it("uses a legacy key only when it is unambiguous", () => {
     const legacyKey = "shane-bieber|tor|tb|2026-07-23";
     const first = detail();

@@ -17,6 +17,19 @@ const totals = {
   completeAwaySeasonSplits: 0,
   pitchersWithFiveHomeStarts: 0,
   pitchersWithFiveAwayStarts: 0,
+  homeSeasonBattersFacedComplete: 0,
+  awaySeasonBattersFacedComplete: 0,
+  homeRecentBattersFacedComplete: 0,
+  awayRecentBattersFacedComplete: 0,
+  homeSeasonKRateComplete: 0,
+  awaySeasonKRateComplete: 0,
+  homeSeasonHitRateComplete: 0,
+  awaySeasonHitRateComplete: 0,
+  homeRecentKRateComplete: 0,
+  awayRecentKRateComplete: 0,
+  homeRecentHitRateComplete: 0,
+  awayRecentHitRateComplete: 0,
+  opponentAvgFooterPopulated: 0,
   unmatchedPitcherIds: 0,
   duplicateGameLogs: 0,
   duplicateRecentStarts: 0,
@@ -97,6 +110,8 @@ for (const detail of details) {
   const away = detail.pitcherVenueSplits?.away;
   const homeSeasonGames = home?.season?.gamesUsed ?? 0;
   const awaySeasonGames = away?.season?.gamesUsed ?? 0;
+  const homeRecentGames = home?.lastFiveAtSite?.gamesUsed ?? 0;
+  const awayRecentGames = away?.lastFiveAtSite?.gamesUsed ?? 0;
   if (home?.season?.totalOuts != null && home.season.strikeouts != null && home.season.hitsAllowed != null) totals.completeHomeSeasonSplits += 1;
   else if (homeSeasonGames === 0) addReason("home split: no starts");
   else addReason("home split: incomplete source totals");
@@ -107,6 +122,44 @@ for (const detail of details) {
   else if (homeSeasonGames > 0) addReason("home split: fewer than five starts");
   if ((away?.lastFiveAtSite?.gamesUsed ?? 0) >= 5) totals.pitchersWithFiveAwayStarts += 1;
   else if (awaySeasonGames > 0) addReason("away split: fewer than five starts");
+
+  // Batters-faced and K%/Hit% completeness -- a zero-start sample (no starts at that site yet) is a
+  // legitimate empty sample, not missing source data, so it is only flagged when starts exist.
+  if (home?.season?.battersFaced != null) totals.homeSeasonBattersFacedComplete += 1;
+  else if (homeSeasonGames > 0) addReason("home season BF: source field absent");
+  if (away?.season?.battersFaced != null) totals.awaySeasonBattersFacedComplete += 1;
+  else if (awaySeasonGames > 0) addReason("away season BF: source field absent");
+  if (home?.lastFiveAtSite?.battersFaced != null) totals.homeRecentBattersFacedComplete += 1;
+  else if (homeRecentGames > 0) addReason("home recent BF: source field absent");
+  if (away?.lastFiveAtSite?.battersFaced != null) totals.awayRecentBattersFacedComplete += 1;
+  else if (awayRecentGames > 0) addReason("away recent BF: source field absent");
+
+  if (home?.season?.strikeoutRate != null) totals.homeSeasonKRateComplete += 1;
+  else if (homeSeasonGames > 0) addReason("home season K%: batters faced unavailable");
+  if (away?.season?.strikeoutRate != null) totals.awaySeasonKRateComplete += 1;
+  else if (awaySeasonGames > 0) addReason("away season K%: batters faced unavailable");
+  if (home?.season?.hitRate != null) totals.homeSeasonHitRateComplete += 1;
+  else if (homeSeasonGames > 0) addReason("home season Hit%: batters faced unavailable");
+  if (away?.season?.hitRate != null) totals.awaySeasonHitRateComplete += 1;
+  else if (awaySeasonGames > 0) addReason("away season Hit%: batters faced unavailable");
+
+  if (home?.lastFiveAtSite?.strikeoutRate != null) totals.homeRecentKRateComplete += 1;
+  else if (homeRecentGames > 0) addReason("home recent K%: batters faced unavailable");
+  if (away?.lastFiveAtSite?.strikeoutRate != null) totals.awayRecentKRateComplete += 1;
+  else if (awayRecentGames > 0) addReason("away recent K%: batters faced unavailable");
+  if (home?.lastFiveAtSite?.hitRate != null) totals.homeRecentHitRateComplete += 1;
+  else if (homeRecentGames > 0) addReason("home recent Hit%: batters faced unavailable");
+  if (away?.lastFiveAtSite?.hitRate != null) totals.awayRecentHitRateComplete += 1;
+  else if (awayRecentGames > 0) addReason("away recent Hit%: batters faced unavailable");
+
+  const opponentSummary = detail.opponentLastFiveVsStartersSummary;
+  const opponentGamesUsed = opponentSummary?.gamesUsed ?? 0;
+  if (opponentGamesUsed > 0 && opponentSummary?.totalOpposingStarterOuts != null && opponentSummary?.averageOpposingStarterStrikeouts != null) {
+    totals.opponentAvgFooterPopulated += 1;
+  } else if (opponentGamesUsed > 0) {
+    addReason("opponent AVG footer: incomplete canonical summary");
+  }
+
   for (const warning of detail.sourceWarnings ?? []) addReason(String(warning).toLowerCase().replaceAll("_", " "));
 }
 

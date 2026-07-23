@@ -45,6 +45,9 @@ export type PitcherVenueTotals = {
   inningsPitched: string | null;
   strikeouts: number | null;
   hitsAllowed: number | null;
+  battersFaced?: number | null;
+  strikeoutRate?: number | null;
+  hitRate?: number | null;
 };
 
 export type PitcherVenueSplit = {
@@ -76,6 +79,18 @@ export type StrikeoutPropOpponentGameRow = {
   teamTotalStrikeouts: number | null;
 };
 
+export type OpponentLastFiveVsStartersSummary = {
+  gamesAvailable: number;
+  gamesUsed: number;
+  totalOpposingStarterOuts: number | null;
+  averageOpposingStarterInnings: number | null;
+  averageOpposingStarterStrikeouts: number | null;
+  averageTeamStrikeouts: number | null;
+  recentTeamKRate: number | null;
+  recentWhiffRate: number | null;
+  rows?: unknown[];
+};
+
 export type StrikeoutPropDetail = {
   key: string;
   legacyKey?: string;
@@ -95,6 +110,7 @@ export type StrikeoutPropDetail = {
   pitcherLastFiveSummary?: PitcherLastFiveSummary | null;
   pitcherVenueSplits?: { home: PitcherVenueSplit; away: PitcherVenueSplit } | null;
   opponentLastFiveGames: StrikeoutPropOpponentGameRow[];
+  opponentLastFiveVsStartersSummary?: OpponentLastFiveVsStartersSummary | null;
   sourceWarnings?: string[];
   completeness?: StrikeoutDetailCompleteness | null;
   generatedAt: string;

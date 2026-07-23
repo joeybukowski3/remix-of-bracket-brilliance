@@ -53,6 +53,7 @@ describe("MLB K recent-average helpers", () => {
     ]);
 
     expect(summary.gamesUsed).toBe(2);
+    expect(summary.totalOpposingStarterOuts).toBe(34);
     expect(summary.averageOpposingStarterInnings).toBeCloseTo(34 / 3 / 2, 8);
     expect(summary.averageOpposingStarterStrikeouts).toBe(6.5);
     expect(summary.averageTeamStrikeouts).toBe(9);

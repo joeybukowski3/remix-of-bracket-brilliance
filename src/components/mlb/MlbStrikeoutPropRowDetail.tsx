@@ -20,6 +20,10 @@ function fmtRate(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return DASH;
   return `${(value > 1 ? value : value * 100).toFixed(1)}%`;
 }
+/** Formats a value that is already a 0-100 percentage (not a 0-1 fraction), e.g. K%/Hit% derived from batters faced. */
+function fmtPercent(value: number | null | undefined) {
+  return value == null || !Number.isFinite(value) ? DASH : `${value.toFixed(1)}%`;
+}
 function fmtIp(value: number | string | null | undefined) {
   return value == null || value === "" ? DASH : String(value);
 }
@@ -51,6 +55,9 @@ function MiniTable({
   emptyMessage,
   footRows = [],
   columnWidths,
+  headerGroups,
+  leadingUngroupedColumns = 0,
+  mobileLabels,
 }: {
   title: string;
   columns: string[];
@@ -58,7 +65,14 @@ function MiniTable({
   emptyMessage: string;
   footRows?: ReactNode[][];
   columnWidths?: string[];
+  /** Optional second-tier group labels (e.g. "Season", "Last 5 at Site") spanning the columns after leadingUngroupedColumns. */
+  headerGroups?: { label: string; span: number }[];
+  /** Number of leading columns (e.g. "Site") that sit outside any group and span both header rows. */
+  leadingUngroupedColumns?: number;
+  /** Mobile card field labels, when the desktop column headers (e.g. grouped "IP"/"IP") are ambiguous without their group context. Defaults to `columns`. */
+  mobileLabels?: string[];
 }) {
+  const cardLabels = mobileLabels ?? columns;
   return (
     <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500">
@@ -74,9 +88,23 @@ function MiniTable({
             </colgroup>
           )}
           <thead>
+            {headerGroups && (
+              <tr className="text-[9px] uppercase tracking-wide text-slate-400">
+                {columns.slice(0, leadingUngroupedColumns).map((column, index) => (
+                  <th key={`lead-${index}`} rowSpan={2} className="border-b border-slate-100 px-2 py-1 text-left font-bold align-bottom">
+                    {column}
+                  </th>
+                ))}
+                {headerGroups.map((group, index) => (
+                  <th key={`group-${index}`} colSpan={group.span} className="border-b border-slate-100 px-2 py-1 text-left font-bold">
+                    {group.label}
+                  </th>
+                ))}
+              </tr>
+            )}
             <tr className="text-[9px] uppercase tracking-wide text-slate-400">
-              {columns.map((column) => (
-                <th key={column} className="border-b border-slate-100 px-2 py-1 text-left font-bold">
+              {columns.slice(headerGroups ? leadingUngroupedColumns : 0).map((column, index) => (
+                <th key={`col-${index}`} className="border-b border-slate-100 px-2 py-1 text-left font-bold">
                   {column}
                 </th>
               ))}
@@ -119,9 +147,9 @@ function MiniTable({
       <div className="grid gap-1.5 p-2 sm:hidden">
         {rows.length ? rows.map((row, index) => (
           <div key={index} className="rounded-lg border border-slate-100 bg-white p-2">
-            {columns.map((column, cellIndex) => (
-              <div key={column} className="flex min-w-0 items-start justify-between gap-2 py-0.5 text-[11px]">
-                <span className="shrink-0 font-black uppercase tracking-wide text-slate-400">{column}</span>
+            {cardLabels.map((label, cellIndex) => (
+              <div key={`${label}-${cellIndex}`} className="flex min-w-0 items-start justify-between gap-2 py-0.5 text-[11px]">
+                <span className="shrink-0 font-black uppercase tracking-wide text-slate-400">{label}</span>
                 <span className="min-w-0 text-right font-semibold text-slate-700">{row[cellIndex]}</span>
               </div>
             ))}
@@ -131,9 +159,9 @@ function MiniTable({
         )}
         {footRows.map((row, index) => (
           <div key={`foot-card-${index}`} data-testid="strikeout-recent-avg-row" className="rounded-lg border border-slate-200 bg-slate-100 p-2">
-            {columns.map((column, cellIndex) => (
-              <div key={column} className="flex min-w-0 items-start justify-between gap-2 py-0.5 text-[11px]">
-                <span className="shrink-0 font-black uppercase tracking-wide text-slate-500">{cellIndex === 0 ? String(row[cellIndex]) : column}</span>
+            {cardLabels.map((label, cellIndex) => (
+              <div key={`${label}-${cellIndex}`} className="flex min-w-0 items-start justify-between gap-2 py-0.5 text-[11px]">
+                <span className="shrink-0 font-black uppercase tracking-wide text-slate-500">{cellIndex === 0 ? String(row[cellIndex]) : label}</span>
                 {cellIndex > 0 && <span className="min-w-0 text-right font-black text-slate-800">{row[cellIndex]}</span>}
               </div>
             ))}
@@ -230,6 +258,12 @@ function formatAverageIp(summary: Record<string, unknown> | null, totalOutsKey: 
   return fmtOutsIp(Math.round(totalOuts / gamesUsed));
 }
 
+/** "N used" only when a valid (possibly zero) games-used count exists; DASH when the summary itself is missing -- never "N/A used". */
+function formatGamesUsedLabel(summary: Record<string, unknown> | null, gamesUsedKey = "gamesUsed") {
+  const gamesUsed = getNumber(summary, gamesUsedKey);
+  return gamesUsed == null ? DASH : `${gamesUsed} used`;
+}
+
 function formatVenueInnings(totals: PitcherVenueSplit["season"] | undefined) {
   if (!totals) return DASH;
   const innings = totals.totalOuts != null ? fmtOutsIp(totals.totalOuts) : fmtIp(totals.inningsPitched);
@@ -242,10 +276,14 @@ function pitcherVenueRow(split: PitcherVenueSplit, label: string): ReactNode[] {
     label,
     formatVenueInnings(split.season),
     fmtNumber(split.season.strikeouts),
+    fmtPercent(split.season.strikeoutRate),
     fmtNumber(split.season.hitsAllowed),
+    fmtPercent(split.season.hitRate),
     formatVenueInnings(split.lastFiveAtSite),
     fmtNumber(split.lastFiveAtSite.strikeouts),
+    fmtPercent(split.lastFiveAtSite.strikeoutRate),
     fmtNumber(split.lastFiveAtSite.hitsAllowed),
+    fmtPercent(split.lastFiveAtSite.hitRate),
   ];
 }
 
@@ -396,7 +434,12 @@ function SourceIntegrityPanel({ artifact, publicSlateDate }: { artifact: KPropsV
 export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, shadowArtifact = null, showV2Shadow = false, publicSlateDate = null }: { detail: StrikeoutPropDetail; shadowRow?: KPropsV2ShadowRow | null; shadowArtifact?: KPropsV2ShadowArtifact | null; showV2Shadow?: boolean; publicSlateDate?: string | null }) {
   const detailsInput = getNestedRecord(shadowRow?.inputs ?? {}, ["details"]);
   const pitcherSummary = getNestedRecord(detailsInput ?? {}, ["pitcherLastFiveSummary"]);
-  const opponentSummary = getNestedRecord(detailsInput ?? {}, ["opponentLastFiveVsStartersSummary"]);
+  // Canonical summary lives on the generated detail artifact itself; the shadow debug artifact's
+  // copy is a legacy fallback for older details files that predate this field, and the debug
+  // artifact is only ever fetched when V2 shadow debugging is enabled (never for public users).
+  const canonicalOpponentSummary = getRecord(detail.opponentLastFiveVsStartersSummary ?? null);
+  const shadowOpponentSummary = getNestedRecord(detailsInput ?? {}, ["opponentLastFiveVsStartersSummary"]);
+  const opponentSummary = canonicalOpponentSummary ?? shadowOpponentSummary;
   const pitcherSummaryRows = getArray(pitcherSummary, "rows").map((row) => getRecord(row)).filter((row): row is Record<string, unknown> => Boolean(row));
   const opponentSummaryRows = getArray(opponentSummary, "rows").map((row) => getRecord(row)).filter((row): row is Record<string, unknown> => Boolean(row));
 
@@ -413,7 +456,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
 
   const fallbackStartAvg: ReactNode[][] = [[
     "AVG",
-    `${fmtNumber(getNumber(pitcherSummary, "gamesUsed"))} used`,
+    formatGamesUsedLabel(pitcherSummary),
     formatAverageIp(pitcherSummary, "totalOuts"),
     fmtFixed(getNumber(pitcherSummary, "averageStrikeouts")),
     fmtFixed(getNumber(pitcherSummary, "averageBattersFaced")),
@@ -474,7 +517,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
 
   const opponentAvg: ReactNode[][] = [[
     "AVG",
-    `${fmtNumber(getNumber(opponentSummary, "gamesUsed"))} used`,
+    formatGamesUsedLabel(opponentSummary),
     DASH,
     formatAverageIp(opponentSummary, "totalOpposingStarterOuts"),
     fmtFixed(getNumber(opponentSummary, "averageOpposingStarterStrikeouts")),
@@ -500,8 +543,11 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
             {detail.pitcherVenueSplits && (
               <MiniTable
                 title={`${detail.pitcher} — Home/Away Splits`}
-                columns={["Site", "IP / Season", "K", "Hits Allowed", "IP / Last 5", "K / Last 5", "Hits Allowed / Last 5"]}
-                columnWidths={["10%", "16%", "9%", "20%", "16%", "9%", "20%"]}
+                columns={["Site", "IP", "K", "K%", "Hits", "Hit%", "IP", "K", "K%", "Hits", "Hit%"]}
+                columnWidths={["8%", "11%", "7%", "9%", "10%", "9%", "11%", "7%", "9%", "10%", "9%"]}
+                headerGroups={[{ label: "Season", span: 5 }, { label: "Last 5 at Site", span: 5 }]}
+                leadingUngroupedColumns={1}
+                mobileLabels={["Site", "Season IP", "Season K", "Season K%", "Season Hits", "Season Hit%", "Last 5 IP", "Last 5 K", "Last 5 K%", "Last 5 Hits", "Last 5 Hit%"]}
                 rows={pitcherVenueRows}
                 emptyMessage="No venue splits available."
               />

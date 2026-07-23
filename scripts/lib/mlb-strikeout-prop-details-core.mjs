@@ -1,4 +1,5 @@
 import { mlbInningsToOuts, outsToMlbInnings } from "./mlb-baseball-innings.mjs";
+import { summarizeOpponentLastFiveVsStarters } from "./mlb-k-recent-averages.mjs";
 
 function normalizeKeySegment(value) {
   return String(value ?? "")
@@ -134,14 +135,27 @@ export function buildPitcherLastFiveSummary(starts) {
   };
 }
 
+/** Rate (0-100) from batters faced: only rows with both a valid BF and a valid numerator count, so a missing metric on one row doesn't skew the denominator for another. */
+function rateFromBattersFaced(rows, numeratorKey) {
+  const eligible = rows.filter((row) => row.battersFaced != null && row.battersFaced > 0 && row[numeratorKey] != null);
+  if (!eligible.length) return null;
+  const totalNumerator = eligible.reduce((sum, row) => sum + row[numeratorKey], 0);
+  const totalBattersFaced = eligible.reduce((sum, row) => sum + row.battersFaced, 0);
+  return totalBattersFaced > 0 ? (totalNumerator / totalBattersFaced) * 100 : null;
+}
+
 function buildVenueTotals(rows) {
   const totalOuts = sumNullable(rows, "outsRecorded");
+  const battersFacedRows = rows.filter((row) => row.battersFaced != null);
   return {
     gamesUsed: rows.length,
     totalOuts,
     inningsPitched: totalOuts == null ? null : outsToMlbInnings(totalOuts),
     strikeouts: sumNullable(rows, "strikeouts"),
     hitsAllowed: sumNullable(rows, "hitsAllowed"),
+    battersFaced: battersFacedRows.length ? battersFacedRows.reduce((sum, row) => sum + row.battersFaced, 0) : null,
+    strikeoutRate: rateFromBattersFaced(rows, "strikeouts"),
+    hitRate: rateFromBattersFaced(rows, "hitsAllowed"),
   };
 }
 
@@ -222,6 +236,7 @@ export function buildStrikeoutPropDetail({
   });
   const legacyKey = buildStrikeoutPropDetailKey({ pitcher, team, opponent, gameDate: slateDate });
   const stableKeys = buildStrikeoutPropStableKeys({ slateDate, gamePk, pitcherId, teamId, opponentId });
+  const normalizedOpponentLastFiveGames = buildOpponentLastFiveGames(opponentLastFiveGames);
   return {
     key: legacyKey,
     legacyKey,
@@ -240,7 +255,8 @@ export function buildStrikeoutPropDetail({
     pitcherRecentStarts: pitcherDetails.recentStarts,
     pitcherLastFiveSummary: pitcherDetails.recentSummary,
     pitcherVenueSplits: pitcherDetails.venueSplits,
-    opponentLastFiveGames: buildOpponentLastFiveGames(opponentLastFiveGames),
+    opponentLastFiveGames: normalizedOpponentLastFiveGames,
+    opponentLastFiveVsStartersSummary: summarizeOpponentLastFiveVsStarters(normalizedOpponentLastFiveGames),
     sourceWarnings: [...sourceWarnings, ...pitcherDetails.diagnostics.warnings],
     completeness: pitcherDetails.diagnostics,
     generatedAt,
