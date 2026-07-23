@@ -139,7 +139,8 @@ describe("projectStrikeoutsV2", () => {
     });
 
     expect(result.projectedStrikeouts).not.toBeNull();
-    expect(result.components.some((entry) => entry.key === "pitcher.recentSkillRate")).toBe(true);
+    expect(result.components.some((entry) => entry.key === "pitcher.recentSkillRate")).toBe(false);
+    expect(result.components.some((entry) => entry.key === "opponent.recentKRate")).toBe(false);
     expect(result.warnings).toEqual([]);
   });
 

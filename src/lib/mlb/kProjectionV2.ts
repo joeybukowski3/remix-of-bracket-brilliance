@@ -190,14 +190,17 @@ export function projectStrikeoutsV2(input: KProjectionInput): KProjectionResult 
     null,
     1,
   );
-  const recentSkillRate = blendRates(
-    [
-      { value: recentSkillRaw, weight: 0.35 },
-      { value: seasonSkillRate ?? leagueKRate, weight: 0.65 },
-    ],
-    null,
-    1,
-  );
+  const recentSkillRate =
+    recentSkillRaw == null
+      ? null
+      : blendRates(
+        [
+          { value: recentSkillRaw, weight: 0.35 },
+          { value: seasonSkillRate ?? leagueKRate, weight: 0.65 },
+        ],
+        null,
+        1,
+      );
 
   const pitcherLocationKRate = input.context.pitcherIsHome
     ? readRate(input.pitcher.homeKRate, "pitcher.homeKRate", sanitizeContext)
@@ -250,14 +253,17 @@ export function projectStrikeoutsV2(input: KProjectionInput): KProjectionResult 
   const opponentRecentRaw =
     readRate(input.opponent.recentKRate, "opponent.recentKRate", sanitizeContext) ??
     deriveOpponentRecentStarterKRate(input.opponent.recentVsStarters, sanitizeContext);
-  const opponentRecentKRate = blendRates(
-    [
-      { value: opponentRecentRaw, weight: 0.35 },
-      { value: opponentSeasonKRate ?? leagueKRate, weight: 0.65 },
-    ],
-    null,
-    1,
-  );
+  const opponentRecentKRate =
+    opponentRecentRaw == null
+      ? null
+      : blendRates(
+        [
+          { value: opponentRecentRaw, weight: 0.35 },
+          { value: opponentSeasonKRate ?? leagueKRate, weight: 0.65 },
+        ],
+        null,
+        1,
+      );
   const opponentWhiffRate =
     readRate(input.opponent.recentWhiffRate, "opponent.recentWhiffRate", sanitizeContext) ??
     readRate(input.opponent.seasonWhiffRate, "opponent.seasonWhiffRate", sanitizeContext) ??
