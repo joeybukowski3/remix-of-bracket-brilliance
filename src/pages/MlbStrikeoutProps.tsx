@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
 import { FreshnessStatus } from "@/components/mlb/FreshnessStatus";
@@ -25,6 +25,7 @@ import { getProjectionEdgeInfo, sortByAbsoluteProjectionEdge, sortByProjectedKs 
 import { describeKPropStatusReasons, resolveKPropStatus } from "@/lib/mlb/kPropStatus";
 import { cn } from "@/lib/utils";
 import { keyForStrikeoutPropRow, useMlbStrikeoutPropDetails } from "@/hooks/useMlbStrikeoutPropDetails";
+import { useMlbKPropsV2Shadow, type KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
 import MlbStrikeoutPropRowDetail, {
   MlbStrikeoutPropDetailsStaleBanner,
   MlbStrikeoutPropRowDetailLoading,
@@ -91,6 +92,19 @@ function fmt(value: number | null | undefined, digits = 1) {
   return value.toFixed(digits);
 }
 
+function fmtSigned(value: number | null | undefined, digits = 1) {
+  if (value == null || !Number.isFinite(value)) return DASH;
+  return `${value > 0 ? "+" : ""}${value.toFixed(digits)}`;
+}
+
+function resolveVenueIndicator(row: PitcherStrikeoutTeamRow) {
+  const [away, home] = String(row.gameKey ?? "").split("@").map((team) => team.trim().toUpperCase());
+  const team = row.team.trim().toUpperCase();
+  if (team && home && team === home) return "Home";
+  if (team && away && team === away) return "Away";
+  return "N/A";
+}
+
 function makeSortIndicator(active: boolean, direction: SortDirection) {
   return active ? (direction === "asc" ? " ↑" : " ↓") : "";
 }
@@ -113,6 +127,24 @@ function MetricTile({ label, children }: { label: string; children: ReactNode })
     <div className="rounded-lg border border-slate-200 bg-white px-2 py-1.5">
       <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">{label}</div>
       <div className="mt-0.5 flex items-center gap-1">{children}</div>
+    </div>
+  );
+}
+
+function KShadowDebugComparison({ shadowRow }: { shadowRow: KPropsV2ShadowRow }) {
+  const fallbackCount = shadowRow.v2.fallbacks.length;
+  const warningCount = shadowRow.v2.warnings.length;
+  return (
+    <div data-testid="k-v2-shadow-row-comparison" className="flex min-w-0 flex-wrap items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50/70 px-2 py-1.5 text-[10px] font-bold text-slate-700">
+      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-700">Legacy {fmt(shadowRow.legacy.projectedKs)}</span>
+      <span className="rounded-full border border-sky-200 bg-white px-2 py-0.5 text-slate-700">V2 Shadow {fmt(shadowRow.v2.projectedStrikeouts)}</span>
+      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-700">Delta {fmtSigned(shadowRow.comparison.v2MinusLegacyKs)}</span>
+      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{shadowRow.v2.confidence} confidence</span>
+      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-800">Experimental</span>
+      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-500">{shadowRow.v2.modelVersion}</span>
+      {(fallbackCount > 0 || warningCount > 0) && (
+        <span className="rounded-full border border-amber-300 bg-white px-2 py-0.5 text-amber-800">Incomplete inputs</span>
+      )}
     </div>
   );
 }
@@ -260,6 +292,7 @@ function KBestBetsSection({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
 
 export default function MlbStrikeoutProps() {
   usePageSeo(getSeoMeta("mlb-strikeout-props"));
+  const location = useLocation();
   const { dashboard, games, status, strikeoutDetailRows } = useMlbPropsData();
   const { loading: detailsLoading, fileUnavailable: detailsUnavailable, detailsByKey, detailsDate } = useMlbStrikeoutPropDetails();
   const [search, setSearch] = useState("");
@@ -276,6 +309,8 @@ export default function MlbStrikeoutProps() {
   /** Mobile/tablet-only expand toggle for the relocated "How to read this page" section -- collapsed by default below lg, always open at lg and above. */
   const [howToReadExpanded, setHowToReadExpanded] = useState(false);
   const slateDate = dashboard?.date ?? null;
+  const showKProjectionV2Debug = new URLSearchParams(location.search).get("debug") === "k-v2";
+  const kV2Shadow = useMlbKPropsV2Shadow(showKProjectionV2Debug, slateDate);
   // A details file loaded successfully but generated for a different slate
   // than the page is currently showing (e.g. yesterday's committed data
   // still deployed on today's slate). Every row key will fail to match in
@@ -290,12 +325,13 @@ export default function MlbStrikeoutProps() {
 
   function RowDetailPanel({ row }: { row: PitcherStrikeoutTeamRow }) {
     const key = keyForStrikeoutPropRow(row, slateDate);
+    const shadowRow = showKProjectionV2Debug ? kV2Shadow.findShadowRow(row) : null;
     if (detailsLoading) return <MlbStrikeoutPropRowDetailLoading />;
     if (detailsUnavailable) return <MlbStrikeoutPropRowDetailUnavailable pitcher={row.pitcher} />;
     if (isDetailsStale) return <MlbStrikeoutPropRowDetailStale />;
     const detail = detailsByKey.get(key);
     if (!detail) return <MlbStrikeoutPropRowDetailUnavailable pitcher={row.pitcher} />;
-    return <MlbStrikeoutPropRowDetail detail={detail} />;
+    return <MlbStrikeoutPropRowDetail detail={detail} shadowRow={shadowRow} shadowArtifact={kV2Shadow.artifact} showV2Shadow={showKProjectionV2Debug} publicSlateDate={slateDate} />;
   }
 
   // Rows whose projection status disqualifies them from ranking/
@@ -403,6 +439,24 @@ export default function MlbStrikeoutProps() {
           <ModelSummaryHeader eyebrow="Pitcher prop model" title="MLB Strikeout Prop Model" description="Ranks probable starters by strikeout skill, whiff profile, and opponent lineup strikeout tendency using the current MLB props data." generatedAt={dashboard?.generatedAt} gamesCount={getGameCount(games)} rowsCount={strikeoutDetailRows.length} bestScore={bestScore} showUpdatedAt={false} siblingLinks={[{ label: "HR Props", to: "/mlb/hr-props", icon: "🔥", color: "#0ea5e9" }, { label: "Batter vs Pitcher", to: "/mlb/batter-vs-pitcher", icon: "⚔️", color: "#8b5cf6" }, { label: "MLB Hub", to: "/mlb", icon: "🏠", color: "rgba(255,255,255,0.15)" }]} />
           <FreshnessStatus status={status} />
           {isDetailsStale && <MlbStrikeoutPropDetailsStaleBanner detailsDate={detailsDate} slateDate={slateDate} />}
+          {showKProjectionV2Debug && (
+            <div data-testid="k-v2-shadow-debug-status" role="status" className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-slate-700">
+              <div className="flex flex-wrap items-center gap-1.5 font-black uppercase tracking-wide">
+                <span className="rounded-full border border-sky-200 bg-white px-2 py-0.5 text-sky-800">V2 Shadow</span>
+                <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-800">Experimental</span>
+                <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">Not production</span>
+                <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">Not historically validated</span>
+              </div>
+              <p className="mt-1 leading-5">
+                Public Proj K, sorting, odds display, and X export attributes still use the legacy projection. Shadow status: {kV2Shadow.status}.
+              </p>
+              {kV2Shadow.warnings.length > 0 && (
+                <ul className="mt-1 space-y-0.5 text-[11px] font-semibold text-amber-800">
+                  {Array.from(new Set(kV2Shadow.warnings)).map((warning) => <li key={warning}>{warning}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
           <KBestBetsSection rows={strikeoutDetailRows} />
 
           <MlbParkFactorsStrip
@@ -464,6 +518,8 @@ export default function MlbStrikeoutProps() {
                       const hasPostedLine = row.kLine != null && row.kLine > 0;
                       const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
                       const tintClass = edgeInfo.direction === "over" ? "bg-orange-50/70" : edgeInfo.direction === "under" ? "bg-blue-50/70" : "bg-white";
+                      const shadowRow = showKProjectionV2Debug ? kV2Shadow.findShadowRow(row) : null;
+                      const venueIndicator = resolveVenueIndicator(row);
                       return (
                         <article key={`mobile-${row.rank}-${row.pitcher}`} className={cn("overflow-hidden rounded-xl border border-slate-100 shadow-sm", tintClass)}>
                           <button
@@ -479,7 +535,10 @@ export default function MlbStrikeoutProps() {
                               <MlbTeamLogo team={row.team} size={28} />
                               <div className="min-w-0 flex-1">
                                 <div className="truncate text-[13px] font-black text-slate-900">{row.pitcher}</div>
-                                <div className="truncate text-[11px] text-slate-400">vs {row.opponent}</div>
+                                <div className="truncate text-[11px] text-slate-400">
+                                  <span>vs {row.opponent}</span>
+                                  <span className="ml-1">· {venueIndicator}</span>
+                                </div>
                               </div>
                               <div className="flex shrink-0 flex-col items-end gap-1">
                                 {hasKOdds && (
@@ -494,6 +553,10 @@ export default function MlbStrikeoutProps() {
                             <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
                               {isExpanded ? "Show less" : "Click to expand"}
                             </span>
+                            {showKProjectionV2Debug && shadowRow && <KShadowDebugComparison shadowRow={shadowRow} />}
+                            {showKProjectionV2Debug && !shadowRow && (
+                              <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-800">No unambiguous V2 shadow match for this legacy row.</span>
+                            )}
                           </button>
                           {isExpanded && (
                             <div id={panelId} className="space-y-3 border-t border-slate-100 bg-slate-50 px-3 pb-3 pt-2">
@@ -518,6 +581,7 @@ export default function MlbStrikeoutProps() {
                                   <MetricTile label="Opp K%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.opponentTeamKRate)}%</span></MetricTile>
                                   <MetricTile label="Opp Whiff%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.opponentTeamWhiffRate)}%</span></MetricTile>
                                   <MetricTile label="Opp K Score"><StatScorePill value={row.opponentTeamStrikeoutScore} /></MetricTile>
+                                  <MetricTile label="Venue"><span className="text-[11px] font-semibold text-slate-700">{venueIndicator}</span></MetricTile>
                                   <MetricTile label="K/9"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedK9)}</span></MetricTile>
                                   <MetricTile label="Avg IP"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.projectedIP)}</span></MetricTile>
                                 </div>
@@ -545,7 +609,7 @@ export default function MlbStrikeoutProps() {
                       <th className="sticky left-8 z-30 min-w-[140px] border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">
                         <button type="button" onClick={() => handleSort("pitcher")} className="hover:text-slate-900">Pitcher{makeSortIndicator(sortKey === "pitcher", sortDir)}</button>
                       </th>
-                      {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">K/9</th><th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Avg IP</th>
+                      {hasKOdds && <th className="border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap">K Line</th>}{hasKOdds && <SortTh k="projectedKs" label="Proj K" />}{hasKOdds && <SortTh k="absoluteProjectionEdge" label="Edge" />}<SortTh k="strikeoutMatchupScore" label="K Score" /><SortTh k="pitcherKRate" label="K%" /><SortTh k="pitcherWhiffRate" label="Whiff%" /><SortTh k="pitcherKVs" label="K VS" /><SortTh k="pitcherKSkillScore" label="Pitcher K" /><SortTh k="opponentTeamKRate" label="Opp K%" /><SortTh k="opponentTeamWhiffRate" label="Opp Whiff%" /><SortTh k="opponentTeamStrikeoutScore" label="Opp K Score" /><th className="hidden border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 xl:table-cell">K/9</th><th className="hidden border-b border-slate-200 bg-slate-50 px-2 py-2 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 xl:table-cell">Avg IP</th>
                     </tr></thead>
                     <tbody>{visibleRows.length ? visibleRows.map((row, index) => {
                       const rowKey = keyForStrikeoutPropRow(row, slateDate);
@@ -555,6 +619,8 @@ export default function MlbStrikeoutProps() {
                       const hasPostedLine = row.kLine != null && row.kLine > 0;
                       const hasPostedOdds = Boolean(row.kOddsOver) || Boolean(row.kOddsUnder);
                       const rowLabel = `${isExpanded ? "Hide" : "Show"} recent strikeout details for ${row.pitcher}`;
+                      const shadowRow = showKProjectionV2Debug ? kV2Shadow.findShadowRow(row) : null;
+                      const venueIndicator = resolveVenueIndicator(row);
                       const onRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
@@ -573,9 +639,9 @@ export default function MlbStrikeoutProps() {
                         className={cn("cursor-pointer transition-colors hover:brightness-[0.98]", getRowTintClass(row, index))}
                       >
                       <td className={cn("sticky left-0 z-10 border-b border-r border-slate-100 px-2 py-1 text-[10px] font-black text-slate-400", getStickyRowTintClass(row, index))}>{row.rank}</td><td className={cn("sticky left-8 z-10 border-b border-r border-slate-100 px-2 py-1", getStickyRowTintClass(row, index))}>
-                        <span className="flex items-center gap-1">
+                        <span className="flex min-w-0 items-center gap-1">
                           <span className={cn("shrink-0 text-[9px] text-slate-400 transition-transform", isExpanded && "rotate-90")} aria-hidden="true">▶</span>
-                          <MlbTeamLogo team={row.team} size={16} /><span className="whitespace-nowrap text-[11px] font-semibold text-slate-900">{row.pitcher}</span><span className="text-[9px] text-slate-400">vs {row.opponent}</span>
+                          <MlbTeamLogo team={row.team} size={16} /><span className="min-w-0 truncate text-[11px] font-semibold text-slate-900">{row.pitcher}</span><span className="shrink-0 text-[9px] text-slate-400">vs {row.opponent}</span><span className="shrink-0 rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-slate-500">{venueIndicator}</span>
                         </span>
                       </td>
                       {hasKOdds && <td className="border-b border-slate-100 px-2 py-1"><div className="font-semibold text-slate-900">{hasPostedLine ? fmt(row.kLine) : "No line posted yet"}</div>{hasPostedOdds ? <div className="text-[9px] text-slate-500">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</div> : hasPostedLine ? <div className="max-w-[120px] text-[9px] leading-4 text-slate-500">Odds not yet available for this slate.</div> : null}</td>}
@@ -590,8 +656,15 @@ export default function MlbStrikeoutProps() {
                           </span>
                         </td>
                       )}
-                      <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKVs} /></td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKSkillScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.opponentTeamStrikeoutScore} /></td><td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(row.projectedK9)}</td><td className="border-b border-slate-100 px-2 py-1 font-semibold">{fmt(row.projectedIP)}</td>
+                      <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKVs} /></td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKSkillScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.opponentTeamStrikeoutScore} /></td><td className="hidden border-b border-slate-100 px-2 py-1 font-semibold xl:table-cell">{fmt(row.projectedK9)}</td><td className="hidden border-b border-slate-100 px-2 py-1 font-semibold xl:table-cell">{fmt(row.projectedIP)}</td>
                       </tr>
+                      {showKProjectionV2Debug && (
+                        <tr>
+                          <td colSpan={desktopColumnCount} className="border-b border-slate-100 bg-slate-50 px-2 py-1.5">
+                            {shadowRow ? <KShadowDebugComparison shadowRow={shadowRow} /> : <div className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-800">No unambiguous V2 shadow match for {row.pitcher}. Legacy row remains usable.</div>}
+                          </td>
+                        </tr>
+                      )}
                       {isExpanded && (
                         <tr>
                           <td colSpan={desktopColumnCount} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
