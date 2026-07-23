@@ -1,4 +1,4 @@
-import { inningsToOuts, outsToMlbInnings } from "../../src/lib/mlb/baseballInnings.ts";
+import { mlbInningsToOuts, outsToMlbInnings } from "../../src/lib/mlb/baseballInnings.ts";
 
 function normalizeKeySegment(value) {
   return String(value ?? "")
@@ -37,7 +37,7 @@ function integer(value) {
 function inningsString(value) {
   if (value == null || value === "") return null;
   const text = String(value);
-  return inningsToOuts(text) == null ? null : text;
+  return mlbInningsToOuts(text) == null ? null : text;
 }
 
 function sumNullable(rows, key) {
@@ -51,7 +51,7 @@ function ratePerNine(total, totalOuts) {
 
 export function normalizePitcherStart(start) {
   const inningsPitched = inningsString(start?.inningsPitched);
-  const outsRecorded = integer(start?.outsRecorded ?? inningsToOuts(inningsPitched));
+  const outsRecorded = integer(start?.outsRecorded ?? mlbInningsToOuts(inningsPitched));
   const isHome = typeof start?.isHome === "boolean" ? start.isHome : null;
   return {
     gamePk: integer(start?.gamePk),
