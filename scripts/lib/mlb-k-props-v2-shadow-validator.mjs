@@ -209,6 +209,7 @@ export function validateKPropsV2ShadowArtifact(payload) {
   if (typeof payload.modelVersion !== "string" || !payload.modelVersion) add(errors, "modelVersion is required.");
   if (!isValidDate(payload.slateDate)) add(errors, "slateDate must be valid YYYY-MM-DD.");
   if (!isValidIsoTimestamp(payload.generatedAt)) add(errors, "generatedAt must be a valid ISO timestamp.");
+  if (payload.sourceDates != null && !isPlainObject(payload.sourceDates)) add(errors, "sourceDates must be an object or null.");
   if (!Array.isArray(payload.rows)) {
     add(errors, "rows must be an array.");
   } else {

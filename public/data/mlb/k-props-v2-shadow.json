@@ -1,7 +1,16 @@
 {
   "schemaVersion": 1,
   "slateDate": "2026-07-23",
-  "generatedAt": "2026-07-23T12:42:29.105Z",
+  "generatedAt": "2026-07-23T13:04:42.224Z",
+  "sourceDates": {
+    "hr-props-raw.json": "2026-07-23",
+    "k-workload-shadow.json": "2026-07-23",
+    "strikeout-prop-details.json": "2026-07-23",
+    "output slateDate": "2026-07-23",
+    "hr-props-raw.json pitcher K odds": "2026-07-23",
+    "hr-props-raw.json games": "2026-07-23",
+    "hr-props-raw.json lineup": "2026-07-23"
+  },
   "modelVersion": "mlb-k-projection-v2-shadow",
   "projectionMode": "shadow",
   "rows": [
@@ -378,7 +387,164 @@
               "opposingStarterStrikeouts": 5,
               "teamTotalStrikeouts": 7
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 71,
+            "averageInnings": 4.733333333333333,
+            "averageStrikeouts": 3.8,
+            "recentK9": 7.225352112676056,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-18",
+                "opponent": "CWS",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-10",
+                "opponent": "SD",
+                "outs": 14,
+                "innings": 4.666666666666667,
+                "strikeouts": 4,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-04",
+                "opponent": "SEA",
+                "outs": 12,
+                "innings": 4,
+                "strikeouts": 3,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-06-28",
+                "opponent": "TEX",
+                "outs": 16,
+                "innings": 5.333333333333333,
+                "strikeouts": 4,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-06-23",
+                "opponent": "HOU",
+                "outs": 11,
+                "innings": 3.6666666666666665,
+                "strikeouts": 2,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 4.333333333333334,
+            "averageOpposingStarterStrikeouts": 3.8,
+            "averageTeamStrikeouts": 8,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "TOR",
+                "opposingStartingPitcher": "Braydon Fisher",
+                "opposingStarterOuts": 4,
+                "opposingStarterInnings": 1.3333333333333333,
+                "opposingStarterStrikeouts": 1,
+                "teamStrikeouts": 9,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "TOR",
+                "opposingStartingPitcher": "Kevin Gausman",
+                "opposingStarterOuts": 10,
+                "opposingStarterInnings": 3.3333333333333335,
+                "opposingStarterStrikeouts": 1,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "TOR",
+                "opposingStartingPitcher": "Dylan Cease",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 7,
+                "teamStrikeouts": 9,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "BOS",
+                "opposingStartingPitcher": "Sonny Gray",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 8,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "BOS",
+                "opposingStartingPitcher": "Patrick Sandoval",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -754,7 +920,164 @@
               "opposingStarterStrikeouts": 5,
               "teamTotalStrikeouts": 6
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 68,
+            "averageInnings": 4.533333333333333,
+            "averageStrikeouts": 6.2,
+            "recentK9": 12.308823529411764,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-18",
+                "opponent": "BOS",
+                "outs": 9,
+                "innings": 3,
+                "strikeouts": 4,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-12",
+                "opponent": "SEA",
+                "outs": 10,
+                "innings": 3.3333333333333335,
+                "strikeouts": 3,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-07",
+                "opponent": "NYY",
+                "outs": 16,
+                "innings": 5.333333333333333,
+                "strikeouts": 12,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-02",
+                "opponent": "KC",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 8,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-06-20",
+                "opponent": "WSH",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 4,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 5.866666666666666,
+            "averageOpposingStarterStrikeouts": 4,
+            "averageTeamStrikeouts": 5.6,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "TB",
+                "opposingStartingPitcher": "Griffin Jax",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 8,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "TB",
+                "opposingStartingPitcher": "Drew Rasmussen",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 6,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "TB",
+                "opposingStartingPitcher": "Nick Martinez",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 0,
+                "teamStrikeouts": 2,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "CWS",
+                "opposingStartingPitcher": "Sean Burke",
+                "opposingStarterOuts": 20,
+                "opposingStarterInnings": 6.666666666666667,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 6,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "CWS",
+                "opposingStartingPitcher": "Davis Martin",
+                "opposingStarterOuts": 17,
+                "opposingStarterInnings": 5.666666666666667,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 6,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -1130,7 +1453,164 @@
               "opposingStarterStrikeouts": 3,
               "teamTotalStrikeouts": 7
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 81,
+            "averageInnings": 5.4,
+            "averageStrikeouts": 3.8,
+            "recentK9": 6.333333333333334,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-18",
+                "opponent": "STL",
+                "outs": 16,
+                "innings": 5.333333333333333,
+                "strikeouts": 3,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-11",
+                "opponent": "LAD",
+                "outs": 16,
+                "innings": 5.333333333333333,
+                "strikeouts": 2,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-06",
+                "opponent": "SD",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-06-30",
+                "opponent": "SF",
+                "outs": 16,
+                "innings": 5.333333333333333,
+                "strikeouts": 2,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-04-11",
+                "opponent": "PHI",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 5.266666666666667,
+            "averageOpposingStarterStrikeouts": 4.8,
+            "averageTeamStrikeouts": 9.2,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "LAA",
+                "opposingStartingPitcher": "Reid Detmers",
+                "opposingStarterOuts": 16,
+                "opposingStarterInnings": 5.333333333333333,
+                "opposingStarterStrikeouts": 6,
+                "teamStrikeouts": 10,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "LAA",
+                "opposingStartingPitcher": "Walbert Ureña",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 11,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "LAA",
+                "opposingStartingPitcher": "José Soriano",
+                "opposingStarterOuts": 21,
+                "opposingStarterInnings": 7,
+                "opposingStarterStrikeouts": 7,
+                "teamStrikeouts": 11,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "AZ",
+                "opposingStartingPitcher": "Eduardo Rodriguez",
+                "opposingStarterOuts": 8,
+                "opposingStarterInnings": 2.6666666666666665,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "AZ",
+                "opposingStartingPitcher": "Brandon Pfaadt",
+                "opposingStarterOuts": 16,
+                "opposingStarterInnings": 5.333333333333333,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -1167,11 +1647,11 @@
       },
       "v2": {
         "modelVersion": "mlb-k-projection-v2-shadow",
-        "projectedStrikeouts": 3.6927321388944874,
-        "projectedKRate": 0.15951326733885476,
+        "projectedStrikeouts": 3.692732138894487,
+        "projectedKRate": 0.15951326733885474,
         "projectedBattersFaced": 23.15,
         "projectedInnings": 5.922,
-        "pitcherSkillRate": 0.16889142202635476,
+        "pitcherSkillRate": 0.16889142202635474,
         "opponentEnvironmentRate": 0.19005965625,
         "matchupAdjustment": -0.009378154687500008,
         "confidence": "high",
@@ -1190,10 +1670,10 @@
             "key": "pitcher.recentSkillRate",
             "label": "Pitcher recent K skill regressed",
             "group": "pitcher",
-            "value": 0.1644343930739923,
+            "value": 0.16443439307399227,
             "weight": 0.24,
             "normalizedWeight": 0.26666666666666666,
-            "contribution": 0.04384917148639794,
+            "contribution": 0.043849171486397935,
             "source": "derived"
           },
           {
@@ -1252,7 +1732,7 @@
             "seasonKPer9": 5.9,
             "seasonWhiffRate": 19.1,
             "recentKRate": 0.1549,
-            "recentKPer9": 6.067415730337079,
+            "recentKPer9": 6.067415730337078,
             "recentWhiffRate": null,
             "homeKRate": null,
             "awayKRate": null,
@@ -1506,7 +1986,164 @@
               "opposingStarterStrikeouts": 6,
               "teamTotalStrikeouts": 8
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 89,
+            "averageInnings": 5.933333333333334,
+            "averageStrikeouts": 4,
+            "recentK9": 6.067415730337078,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-17",
+                "opponent": "AZ",
+                "outs": 19,
+                "innings": 6.333333333333333,
+                "strikeouts": 5,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-08",
+                "opponent": "MIL",
+                "outs": 19,
+                "innings": 6.333333333333333,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-01",
+                "opponent": "ATL",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 3,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-06-26",
+                "opponent": "MIA",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 4,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-06-19",
+                "opponent": "KC",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 2,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 5,
+            "averageOpposingStarterStrikeouts": 4,
+            "averageTeamStrikeouts": 7.6,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "ATH",
+                "opposingStartingPitcher": "Gage Jump",
+                "opposingStarterOuts": 14,
+                "opposingStarterInnings": 4.666666666666667,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 8,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "ATH",
+                "opposingStartingPitcher": "Jack Perkins",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 4,
+                "teamStrikeouts": 8,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "ATH",
+                "opposingStartingPitcher": "Jeffrey Springs",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 2,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "STL",
+                "opposingStartingPitcher": "Andre Pallante",
+                "opposingStarterOuts": 16,
+                "opposingStarterInnings": 5.333333333333333,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "STL",
+                "opposingStartingPitcher": "Dustin May",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 6,
+                "teamStrikeouts": 8,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -1882,7 +2519,164 @@
               "opposingStarterStrikeouts": 4,
               "teamTotalStrikeouts": 8
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 88,
+            "averageInnings": 5.866666666666666,
+            "averageStrikeouts": 7.2,
+            "recentK9": 11.045454545454545,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-17",
+                "opponent": "LAA",
+                "outs": 17,
+                "innings": 5.666666666666667,
+                "strikeouts": 9,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-08",
+                "opponent": "ATH",
+                "outs": 16,
+                "innings": 5.333333333333333,
+                "strikeouts": 9,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-01",
+                "opponent": "NYY",
+                "outs": 19,
+                "innings": 6.333333333333333,
+                "strikeouts": 7,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-06-25",
+                "opponent": "HOU",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-06-20",
+                "opponent": "CWS",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 5,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 4.333333333333334,
+            "averageOpposingStarterStrikeouts": 4,
+            "averageTeamStrikeouts": 7.2,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "SF",
+                "opposingStartingPitcher": "Landen Roupp",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 7,
+                "teamStrikeouts": 8,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "SF",
+                "opposingStartingPitcher": "Tyler Mahle",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 4,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "SF",
+                "opposingStartingPitcher": "Trevor McDonald",
+                "opposingStarterOuts": 12,
+                "opposingStarterInnings": 4,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 6,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "SD",
+                "opposingStartingPitcher": "Germán Márquez",
+                "opposingStarterOuts": 9,
+                "opposingStarterInnings": 3,
+                "opposingStarterStrikeouts": 2,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "SD",
+                "opposingStartingPitcher": "Griffin Canning",
+                "opposingStarterOuts": 11,
+                "opposingStarterInnings": 3.6666666666666665,
+                "opposingStarterStrikeouts": 4,
+                "teamStrikeouts": 8,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -2212,7 +3006,120 @@
               "opposingStarterStrikeouts": 3,
               "teamTotalStrikeouts": 7
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 1,
+            "gamesUsed": 1,
+            "sampleCounts": {
+              "innings": 1,
+              "strikeouts": 1,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 13,
+            "averageInnings": 4.333333333333333,
+            "averageStrikeouts": 3,
+            "recentK9": 6.230769230769232,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-18",
+                "opponent": "SD",
+                "outs": 13,
+                "innings": 4.333333333333333,
+                "strikeouts": 3,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 5,
+            "averageOpposingStarterStrikeouts": 4.6,
+            "averageTeamStrikeouts": 8.6,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "CHC",
+                "opposingStartingPitcher": "Colin Rea",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 12,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "CHC",
+                "opposingStartingPitcher": "David Peterson",
+                "opposingStarterOuts": 20,
+                "opposingStarterInnings": 6.666666666666667,
+                "opposingStarterStrikeouts": 4,
+                "teamStrikeouts": 6,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "CHC",
+                "opposingStartingPitcher": "Jameson Taillon",
+                "opposingStarterOuts": 13,
+                "opposingStarterInnings": 4.333333333333333,
+                "opposingStarterStrikeouts": 6,
+                "teamStrikeouts": 11,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "LAA",
+                "opposingStartingPitcher": "Ryan Johnson",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "LAA",
+                "opposingStartingPitcher": "Grayson Rodriguez",
+                "opposingStarterOuts": 12,
+                "opposingStarterInnings": 4,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -2588,7 +3495,164 @@
               "opposingStarterStrikeouts": 4,
               "teamTotalStrikeouts": 7
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 83,
+            "averageInnings": 5.533333333333333,
+            "averageStrikeouts": 8.4,
+            "recentK9": 13.662650602409638,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-18",
+                "opponent": "PIT",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 11,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-09",
+                "opponent": "MIN",
+                "outs": 21,
+                "innings": 7,
+                "strikeouts": 11,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-03",
+                "opponent": "CWS",
+                "outs": 14,
+                "innings": 4.666666666666667,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-06-28",
+                "opponent": "SEA",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-06-22",
+                "opponent": "CWS",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 8,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 5.866666666666666,
+            "averageOpposingStarterStrikeouts": 4.8,
+            "averageTeamStrikeouts": 7.6,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "CLE",
+                "opposingStartingPitcher": "Slade Cecconi",
+                "opposingStarterOuts": 14,
+                "opposingStarterInnings": 4.666666666666667,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 9,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "CLE",
+                "opposingStartingPitcher": "Parker Messick",
+                "opposingStarterOuts": 17,
+                "opposingStarterInnings": 5.666666666666667,
+                "opposingStarterStrikeouts": 6,
+                "teamStrikeouts": 9,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "CLE",
+                "opposingStartingPitcher": "Tanner Bibee",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 5,
+                "teamStrikeouts": 9,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "CHC",
+                "opposingStartingPitcher": "Shota Imanaga",
+                "opposingStarterOuts": 21,
+                "opposingStarterInnings": 7,
+                "opposingStarterStrikeouts": 4,
+                "teamStrikeouts": 4,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "CHC",
+                "opposingStartingPitcher": "Matthew Boyd",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 4,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -2964,7 +4028,164 @@
               "opposingStarterStrikeouts": 9,
               "teamTotalStrikeouts": 13
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 93,
+            "averageInnings": 6.2,
+            "averageStrikeouts": 8,
+            "recentK9": 11.612903225806452,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-18",
+                "opponent": "CHC",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-12",
+                "opponent": "LAA",
+                "outs": 21,
+                "innings": 7,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-07",
+                "opponent": "CLE",
+                "outs": 21,
+                "innings": 7,
+                "strikeouts": 10,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-01",
+                "opponent": "HOU",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 11,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-06-26",
+                "opponent": "COL",
+                "outs": 21,
+                "innings": 7,
+                "strikeouts": 7,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 4.466666666666667,
+            "averageOpposingStarterStrikeouts": 4.8,
+            "averageTeamStrikeouts": 7.8,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "MIN",
+                "opposingStartingPitcher": "Bailey Ober",
+                "opposingStarterOuts": 12,
+                "opposingStarterInnings": 4,
+                "opposingStarterStrikeouts": 2,
+                "teamStrikeouts": 5,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "MIN",
+                "opposingStartingPitcher": "Kendry Rojas",
+                "opposingStarterOuts": 7,
+                "opposingStarterInnings": 2.3333333333333335,
+                "opposingStarterStrikeouts": 2,
+                "teamStrikeouts": 3,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "MIN",
+                "opposingStartingPitcher": "Joe Ryan",
+                "opposingStarterOuts": 12,
+                "opposingStarterInnings": 4,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 7,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "PIT",
+                "opposingStartingPitcher": "Paul Skenes",
+                "opposingStarterOuts": 21,
+                "opposingStarterInnings": 7,
+                "opposingStarterStrikeouts": 8,
+                "teamStrikeouts": 11,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "PIT",
+                "opposingStartingPitcher": "Jared Jones",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 9,
+                "teamStrikeouts": 13,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -3340,7 +4561,164 @@
               "opposingStarterStrikeouts": 3,
               "teamTotalStrikeouts": 5
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 80,
+            "averageInnings": 5.333333333333334,
+            "averageStrikeouts": 6.2,
+            "recentK9": 10.462499999999999,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-17",
+                "opponent": "TEX",
+                "outs": 21,
+                "innings": 7,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-10",
+                "opponent": "STL",
+                "outs": 9,
+                "innings": 3,
+                "strikeouts": 5,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-04",
+                "opponent": "NYM",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 3,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-06-28",
+                "opponent": "SF",
+                "outs": 18,
+                "innings": 6,
+                "strikeouts": 10,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-06-20",
+                "opponent": "MIL",
+                "outs": 17,
+                "innings": 5.666666666666667,
+                "strikeouts": 7,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 4.733333333333333,
+            "averageOpposingStarterStrikeouts": 3.4,
+            "averageTeamStrikeouts": 7,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "ATL",
+                "opposingStartingPitcher": "Martín Pérez",
+                "opposingStarterOuts": 12,
+                "opposingStarterInnings": 4,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 10,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "ATL",
+                "opposingStartingPitcher": "Reynaldo López",
+                "opposingStarterOuts": 13,
+                "opposingStarterInnings": 4.333333333333333,
+                "opposingStarterStrikeouts": 6,
+                "teamStrikeouts": 11,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "ATL",
+                "opposingStartingPitcher": "Bryce Elder",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 4,
+                "teamStrikeouts": 5,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "KC",
+                "opposingStartingPitcher": "Noah Cameron",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 1,
+                "teamStrikeouts": 4,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "KC",
+                "opposingStartingPitcher": "Randy Dobnak",
+                "opposingStarterOuts": 13,
+                "opposingStarterInnings": 4.333333333333333,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 5,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     },
@@ -3716,7 +5094,164 @@
               "opposingStarterStrikeouts": 7,
               "teamTotalStrikeouts": 9
             }
-          ]
+          ],
+          "pitcherLastFiveSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "innings": 5,
+              "strikeouts": 5,
+              "battersFaced": 0,
+              "pitchCount": 0
+            },
+            "totalOuts": 68,
+            "averageInnings": 4.533333333333333,
+            "averageStrikeouts": 4.8,
+            "recentK9": 9.529411764705882,
+            "recentKRate": null,
+            "averageBattersFaced": null,
+            "averagePitchCount": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-18",
+                "opponent": "KC",
+                "outs": 11,
+                "innings": 3.6666666666666665,
+                "strikeouts": 4,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-09",
+                "opponent": "AZ",
+                "outs": 14,
+                "innings": 4.666666666666667,
+                "strikeouts": 5,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-06-29",
+                "opponent": "CHC",
+                "outs": 13,
+                "innings": 4.333333333333333,
+                "strikeouts": 3,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-06-12",
+                "opponent": "BAL",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-06-06",
+                "opponent": "NYM",
+                "outs": 15,
+                "innings": 5,
+                "strikeouts": 6,
+                "battersFaced": null,
+                "pitchCount": null,
+                "valid": true
+              }
+            ]
+          },
+          "opponentLastFiveVsStartersSummary": {
+            "gamesAvailable": 5,
+            "gamesUsed": 5,
+            "sampleCounts": {
+              "opposingStarterInnings": 5,
+              "opposingStarterStrikeouts": 5,
+              "teamStrikeouts": 5,
+              "plateAppearances": 0,
+              "whiffRate": 0
+            },
+            "averageOpposingStarterInnings": 5.266666666666667,
+            "averageOpposingStarterStrikeouts": 4.4,
+            "averageTeamStrikeouts": 9,
+            "recentTeamKRate": null,
+            "recentWhiffRate": null,
+            "rows": [
+              {
+                "index": 0,
+                "date": "2026-07-22",
+                "opponent": "SD",
+                "opposingStartingPitcher": "Michael King",
+                "opposingStarterOuts": 18,
+                "opposingStarterInnings": 6,
+                "opposingStarterStrikeouts": 7,
+                "teamStrikeouts": 10,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 1,
+                "date": "2026-07-21",
+                "opponent": "SD",
+                "opposingStartingPitcher": "Walker Buehler",
+                "opposingStarterOuts": 17,
+                "opposingStarterInnings": 5.666666666666667,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 9,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 2,
+                "date": "2026-07-20",
+                "opponent": "SD",
+                "opposingStartingPitcher": "JP Sears",
+                "opposingStarterOuts": 15,
+                "opposingStarterInnings": 5,
+                "opposingStarterStrikeouts": 3,
+                "teamStrikeouts": 8,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 3,
+                "date": "2026-07-19",
+                "opponent": "TEX",
+                "opposingStartingPitcher": "Nathan Eovaldi",
+                "opposingStarterOuts": 12,
+                "opposingStarterInnings": 4,
+                "opposingStarterStrikeouts": 2,
+                "teamStrikeouts": 9,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              },
+              {
+                "index": 4,
+                "date": "2026-07-18",
+                "opponent": "TEX",
+                "opposingStartingPitcher": "MacKenzie Gore",
+                "opposingStarterOuts": 17,
+                "opposingStarterInnings": 5.666666666666667,
+                "opposingStarterStrikeouts": 7,
+                "teamStrikeouts": 9,
+                "plateAppearances": null,
+                "whiffRate": null,
+                "valid": true
+              }
+            ]
+          }
         }
       }
     }

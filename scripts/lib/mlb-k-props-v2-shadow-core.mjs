@@ -1,4 +1,9 @@
 import { buildStrikeoutPropDetailKey } from "./mlb-strikeout-prop-details-core.mjs";
+import { outsToDecimalInnings } from "./mlb-baseball-innings.mjs";
+import {
+  summarizeOpponentLastFiveVsStarters,
+  summarizePitcherLastFiveStarts,
+} from "./mlb-k-recent-averages.mjs";
 
 export const K_PROPS_V2_SHADOW_SCHEMA_VERSION = 1;
 export const K_PROPS_V2_SHADOW_MODE = "shadow";
@@ -29,15 +34,6 @@ function normalizeTeam(value) {
 function normalizeHand(value) {
   const hand = String(value ?? "").trim().toUpperCase();
   return hand.startsWith("L") ? "L" : hand.startsWith("R") ? "R" : null;
-}
-
-function parseMlbInnings(value) {
-  if (value === null || value === undefined || value === "") return null;
-  const [wholeText, partialText = "0"] = String(value).split(".");
-  const whole = Number(wholeText);
-  const partial = Number(partialText);
-  if (!Number.isFinite(whole) || !Number.isFinite(partial) || partial < 0 || partial > 2) return null;
-  return whole + partial / 3;
 }
 
 function average(values) {
@@ -112,37 +108,21 @@ function findDetail(detailsIndex, row, slateDate) {
   return detailsIndex.get(key) ?? null;
 }
 
-function deriveRecentKPer9FromDetails(detail) {
-  const starts = detail?.pitcherLastFiveStarts ?? [];
-  let strikeouts = 0;
-  let innings = 0;
-
-  for (const start of starts) {
-    const ks = toFiniteNumber(start?.strikeouts);
-    const ip = parseMlbInnings(start?.inningsPitched);
-    if (ks == null || ks < 0 || ip == null || ip <= 0) continue;
-    strikeouts += ks;
-    innings += ip;
-  }
-
-  return innings > 0 ? (strikeouts / innings) * 9 : null;
-}
-
-function buildRecentStartsForV2(detail) {
-  return (detail?.pitcherLastFiveStarts ?? []).map((start) => ({
-    strikeouts: toFiniteNumber(start?.strikeouts),
-    inningsPitched: parseMlbInnings(start?.inningsPitched),
-    battersFaced: null,
-    pitchCount: null,
+function buildRecentStartsForV2(summary) {
+  return (summary?.rows ?? []).map((row) => ({
+    strikeouts: row.strikeouts,
+    inningsPitched: row.outs == null ? null : outsToDecimalInnings(row.outs),
+    battersFaced: row.battersFaced,
+    pitchCount: row.pitchCount,
   }));
 }
 
-function buildRecentVsStartersForV2(detail) {
-  return (detail?.opponentLastFiveGames ?? []).map((game) => ({
-    opposingStarterStrikeouts: toFiniteNumber(game?.opposingStarterStrikeouts),
-    opposingStarterInningsPitched: parseMlbInnings(game?.opposingStarterInningsPitched),
-    teamPlateAppearances: null,
-    teamTotalStrikeouts: toFiniteNumber(game?.teamTotalStrikeouts),
+function buildRecentVsStartersForV2(summary) {
+  return (summary?.rows ?? []).map((row) => ({
+    opposingStarterStrikeouts: row.opposingStarterStrikeouts,
+    opposingStarterInningsPitched: row.opposingStarterOuts == null ? null : outsToDecimalInnings(row.opposingStarterOuts),
+    teamPlateAppearances: row.plateAppearances,
+    teamTotalStrikeouts: row.teamStrikeouts,
   }));
 }
 
@@ -220,12 +200,12 @@ function buildAvailability({ rawPitcher, workloadRow, lineupSummary, detail, v2I
   };
 }
 
-function buildV2Input({ rawPitcher, workloadRow, lineupSummary, detail, leagueContext, isHome }) {
+function buildV2Input({ rawPitcher, workloadRow, lineupSummary, pitcherRecentSummary, opponentRecentSummary, leagueContext, isHome }) {
   const expectedBF = toFiniteNumber(workloadRow?.projection?.expectedBF);
   const expectedInnings = toFiniteNumber(workloadRow?.projection?.expectedInnings);
   const legacyIp = toFiniteNumber(rawPitcher?.legacyProjectedIP ?? rawPitcher?.projectedIP);
   const legacyK9 = toFiniteNumber(rawPitcher?.legacyProjectedK9 ?? rawPitcher?.projectedK9);
-  const recentKPer9 = deriveRecentKPer9FromDetails(detail);
+  const recentKPer9 = pitcherRecentSummary?.recentK9 ?? null;
   const bfPerInning = expectedBF != null && expectedInnings != null && expectedInnings > 0
     ? expectedBF / expectedInnings
     : null;
@@ -248,7 +228,7 @@ function buildV2Input({ rawPitcher, workloadRow, lineupSummary, detail, leagueCo
       averageBattersFacedPerInning: bfPerInning,
       pitchCountTrend: workloadRow?.inputs?.recentPitchAverage ?? null,
       pitcherKScore: null,
-      recentStarts: buildRecentStartsForV2(detail),
+      recentStarts: buildRecentStartsForV2(pitcherRecentSummary),
     },
     opponent: {
       seasonKRate: workloadRow?.opponentContext?.seasonKRate ?? null,
@@ -264,7 +244,7 @@ function buildV2Input({ rawPitcher, workloadRow, lineupSummary, detail, leagueCo
       projectedLineupKRate: lineupSummary.projectedLineupKRate,
       opponentKScore: null,
       matchupRating: null,
-      recentVsStarters: buildRecentVsStartersForV2(detail),
+      recentVsStarters: buildRecentVsStartersForV2(opponentRecentSummary),
     },
     context: {
       pitcherIsHome: Boolean(isHome),
@@ -289,6 +269,7 @@ export function buildKPropsShadowArtifact({
   rawPayload,
   workloadPayload = null,
   detailsPayload = null,
+  sourceIntegrity = null,
   projectStrikeoutsV2,
   generatedAt = new Date().toISOString(),
 } = {}) {
@@ -317,12 +298,15 @@ export function buildKPropsShadowArtifact({
     const lineupRows = findLineupRows(lineupIndex, rawPitcher);
     const lineupSummary = buildLineupSummary(lineupRows);
     const detail = findDetail(detailsIndex, rawPitcher, slateDate);
+    const pitcherRecentSummary = summarizePitcherLastFiveStarts(detail?.pitcherLastFiveStarts ?? []);
+    const opponentRecentSummary = summarizeOpponentLastFiveVsStarters(detail?.opponentLastFiveGames ?? []);
     const isHome = workloadRow?.isHome ?? null;
     const v2Input = buildV2Input({
       rawPitcher,
       workloadRow,
       lineupSummary,
-      detail,
+      pitcherRecentSummary,
+      opponentRecentSummary,
       leagueContext: workloadPayload?.leagueContext ?? null,
       isHome,
     });
@@ -407,6 +391,8 @@ export function buildKPropsShadowArtifact({
           : {
             pitcherLastFiveStarts: detail.pitcherLastFiveStarts ?? [],
             opponentLastFiveGames: detail.opponentLastFiveGames ?? [],
+            pitcherLastFiveSummary: pitcherRecentSummary,
+            opponentLastFiveVsStartersSummary: opponentRecentSummary,
           },
       },
     };
@@ -426,6 +412,7 @@ export function buildKPropsShadowArtifact({
     schemaVersion: K_PROPS_V2_SHADOW_SCHEMA_VERSION,
     slateDate,
     generatedAt,
+    sourceDates: sourceIntegrity?.sourceDates ?? null,
     modelVersion: rows.find((row) => row.v2.modelVersion)?.v2.modelVersion ?? "mlb-k-projection-v2-shadow",
     projectionMode: K_PROPS_V2_SHADOW_MODE,
     rows,
