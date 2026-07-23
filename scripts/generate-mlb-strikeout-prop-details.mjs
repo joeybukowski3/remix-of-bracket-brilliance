@@ -1,32 +1,4 @@
-/**
- * Generate public/data/mlb/strikeout-prop-details.json — per-pitcher row
- * detail data for the /mlb/strikeout-props expandable row feature
- * (test/mlb-strikeout-prop-row-details).
- *
- * Reads the already-generated public/data/mlb/hr-props-raw.json (the same
- * payload the strikeout props page/table already consumes) and, for each
- * pitcher row, fetches from the free MLB StatsAPI:
- *   - that pitcher's last 5 starts before the slate date
- *   - the opponent team's last 5 completed games before the slate date,
- *     including the opposing starter faced, that starter's IP/Ks, and the
- *     opponent's own total strikeouts in the game
- *
- * Efficiency: team-recent-games lookups are cached per opponent team (many
- * pitchers can share the same opponent on a slate) and boxscore lookups
- * are cached per gamePk across the whole run, so overlapping games are
- * only fetched once regardless of how many pitchers reference them.
- *
- * Fails softly per pitcher/opponent (never fabricates data — missing
- * fields stay null and a warning is logged) but hard-fails only if the
- * input file is missing/malformed or the team list cannot be resolved,
- * since those are required for every row.
- *
- * Usage:
- *   node scripts/generate-mlb-strikeout-prop-details.mjs
- *   node scripts/generate-mlb-strikeout-prop-details.mjs --dry-run
- *   node scripts/generate-mlb-strikeout-prop-details.mjs --input=path/to/hr-props-raw.json
- */
-
+/** Generate per-pitcher strikeout prop detail data. */
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,7 +8,7 @@ import {
   buildTeamIdByAbbr,
   fetchAllTeams,
   fetchOpponentLastFiveGamesDetail,
-  fetchPitcherRecentStarts,
+  fetchPitcherSeasonStarts,
   fetchTeamRecentCompletedGames,
 } from "./lib/mlb-strikeout-prop-details-fetch.mjs";
 
@@ -46,6 +18,8 @@ const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const DEFAULT_INPUT_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const OUTPUT_PATH = path.join(DATA_DIR, "strikeout-prop-details.json");
 const SOURCE_LABEL = "mlb_stats_api";
+const OPPONENT_RECENT_GAMES_LIMIT = 10;
+const OPPONENT_RECENT_GAMES_LOOKBACK_DAYS = 45;
 
 function parseArgs(argv) {
   const args = { dryRun: false, input: DEFAULT_INPUT_PATH };
@@ -62,7 +36,7 @@ function dedupePitcherRows(pitchers) {
   const rows = [];
   for (const pitcher of pitchers ?? []) {
     if (!pitcher?.pitcherId || !pitcher?.pitcher || !pitcher?.team || !pitcher?.opponent) continue;
-    const dedupeKey = `${pitcher.gameKey}|${pitcher.pitcherId}`;
+    const dedupeKey = `${pitcher.gamePk ?? pitcher.gameId ?? pitcher.gameKey}|${pitcher.pitcherId}`;
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
     rows.push(pitcher);
@@ -70,15 +44,21 @@ function dedupePitcherRows(pitchers) {
   return rows;
 }
 
+function positiveId(value) {
+  if (value == null || value === "") return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-
   let raw;
   try {
     raw = JSON.parse(readFileSync(args.input, "utf8"));
   } catch (error) {
     throw new Error(`Could not read/parse ${args.input}: ${error.message}`);
   }
+
   const slateDate = raw?.date;
   if (!slateDate) throw new Error(`${args.input} is missing a "date" field — cannot determine slate date.`);
   const season = Number(String(slateDate).slice(0, 4));
@@ -93,43 +73,56 @@ async function main() {
   const teamIdByAbbr = buildTeamIdByAbbr(teams);
 
   const boxscoreCache = new Map();
-  const pitcherStartsCache = new Map(); // pitcherId -> Promise<starts>
-  const opponentGamesCache = new Map(); // opponentAbbr -> Promise<{ games, detail }>
-
+  const pitcherStartsCache = new Map();
+  const opponentGamesCache = new Map();
   const details = [];
+  const warnings = [];
   let successCount = 0;
   let partialCount = 0;
-  const warnings = [];
 
   for (const pitcher of pitcherRows) {
-    const opponentTeamId = teamIdByAbbr.get(pitcher.opponent);
+    const gamePk = positiveId(pitcher.gamePk ?? pitcher.gameId);
+    const teamId = positiveId(pitcher.teamId) ?? teamIdByAbbr.get(pitcher.team) ?? null;
+    const opponentId = positiveId(pitcher.opponentId) ?? teamIdByAbbr.get(pitcher.opponent) ?? null;
+    const sourceWarnings = [];
+    if (gamePk == null) sourceWarnings.push("GAME_PK_UNRESOLVED");
+    if (teamId == null) sourceWarnings.push("TEAM_ID_UNRESOLVED");
+    if (opponentId == null) sourceWarnings.push("OPPONENT_ID_UNRESOLVED");
 
     if (!pitcherStartsCache.has(pitcher.pitcherId)) {
       pitcherStartsCache.set(
         pitcher.pitcherId,
-        fetchPitcherRecentStarts(pitcher.pitcherId, season, slateDate, teamAbbrById)
+        fetchPitcherSeasonStarts(pitcher.pitcherId, season, slateDate, teamAbbrById),
       );
     }
     const { starts, error: startsError } = await pitcherStartsCache.get(pitcher.pitcherId);
-    if (startsError) warnings.push(`${pitcher.pitcher}: pitcher last-5-starts unavailable (${startsError.message})`);
+    if (startsError) {
+      sourceWarnings.push("API_REQUEST_FAILED");
+      warnings.push(`${pitcher.pitcher}: pitcher last-5-starts unavailable (${startsError.message})`);
+    }
 
     let opponentGameRows = [];
-    if (opponentTeamId == null) {
+    if (opponentId == null) {
       warnings.push(`${pitcher.pitcher}: could not resolve team id for opponent "${pitcher.opponent}"`);
     } else {
       if (!opponentGamesCache.has(pitcher.opponent)) {
         opponentGamesCache.set(
           pitcher.opponent,
           (async () => {
-            const { games, error } = await fetchTeamRecentCompletedGames(opponentTeamId, slateDate);
+            const { games, error } = await fetchTeamRecentCompletedGames(opponentId, slateDate, {
+              limit: OPPONENT_RECENT_GAMES_LIMIT,
+              lookbackDays: OPPONENT_RECENT_GAMES_LOOKBACK_DAYS,
+            });
             if (error) return { rows: [], error };
-            const rows = await fetchOpponentLastFiveGamesDetail(opponentTeamId, games, boxscoreCache);
-            return { rows, error: null };
-          })()
+            return { rows: await fetchOpponentLastFiveGamesDetail(opponentId, games, boxscoreCache), error: null };
+          })(),
         );
       }
       const { rows, error: opponentError } = await opponentGamesCache.get(pitcher.opponent);
-      if (opponentError) warnings.push(`${pitcher.opponent}: opponent last-5-games unavailable (${opponentError.message})`);
+      if (opponentError) {
+        sourceWarnings.push("OPPONENT_API_REQUEST_FAILED");
+        warnings.push(`${pitcher.opponent}: opponent last-5-games unavailable (${opponentError.message})`);
+      }
       opponentGameRows = rows;
     }
 
@@ -137,28 +130,33 @@ async function main() {
       pitcher: pitcher.pitcher,
       team: pitcher.team,
       opponent: pitcher.opponent,
+      slateDate,
       gameDate: slateDate,
-      pitcherLastFiveStarts: starts,
+      gamePk,
+      pitcherId: pitcher.pitcherId,
+      teamId,
+      opponentId,
+      pitcherStarts: starts,
       opponentLastFiveGames: opponentGameRows,
+      sourceWarnings,
       generatedAt: new Date().toISOString(),
       source: SOURCE_LABEL,
     });
     details.push(detail);
 
-    if (detail.pitcherLastFiveStarts.length > 0 && detail.opponentLastFiveGames.length > 0) successCount += 1;
+    if (detail.pitcherRecentStarts.length > 0 && detail.opponentLastFiveGames.length > 0) successCount += 1;
     else partialCount += 1;
   }
 
   const payload = {
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     source: SOURCE_LABEL,
     date: slateDate,
     details,
   };
 
-  console.log(
-    `[strikeout-prop-details] built ${details.length} detail records (${successCount} full, ${partialCount} partial/unavailable)`
-  );
+  console.log(`[strikeout-prop-details] built ${details.length} detail records (${successCount} full, ${partialCount} partial/unavailable)`);
   if (warnings.length) {
     console.warn(`[strikeout-prop-details] ${warnings.length} warning(s):`);
     for (const warning of warnings.slice(0, 25)) console.warn(`  - ${warning}`);
@@ -169,7 +167,6 @@ async function main() {
     console.log("[strikeout-prop-details] --dry-run: not writing output file.");
     return;
   }
-
   writeFileSync(OUTPUT_PATH, `${JSON.stringify(payload, null, 2)}\n`);
   console.log(`[strikeout-prop-details] wrote ${OUTPUT_PATH}`);
 }

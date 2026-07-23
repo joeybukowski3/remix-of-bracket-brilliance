@@ -7,9 +7,15 @@ import {
   fetchBoxscoreCached,
   fetchOpponentLastFiveGamesDetail,
   fetchPitcherRecentStarts,
+  fetchPitcherSeasonStarts,
   fetchTeamRecentCompletedGames,
+  normalizePitcherGameLogSplit,
   // @ts-expect-error -- plain JS module, no type declarations
 } from "../../../scripts/lib/mlb-strikeout-prop-details-fetch.mjs";
+import {
+  pitcherGameLogResponseFixture,
+  pitcherGameLogSplitsFixture,
+} from "@/lib/mlb/fixtures/mlbPitcherGameLog.fixture";
 
 function jsonResponse(payload: unknown, status = 200) {
   return { ok: status >= 200 && status < 300, status, json: async () => payload };
@@ -73,6 +79,45 @@ describe("fetchPitcherRecentStarts", () => {
   });
 });
 
+describe("pitcher game-log field normalization", () => {
+  const teamAbbrById = buildTeamAbbrById(TEAMS);
+
+  it("reads the official game, opponent, home-site, pitching, hits, pitch-count, and workload paths", () => {
+    const row = normalizePitcherGameLogSplit(pitcherGameLogSplitsFixture[1], 2026, teamAbbrById);
+    expect(row).toMatchObject({
+      gamePk: 1001,
+      season: 2026,
+      date: "2026-07-20",
+      opponentId: 147,
+      opponentAbbr: "NYY",
+      isHome: true,
+      site: "home",
+      inningsPitched: "5.2",
+      strikeouts: 8,
+      hitsAllowed: 4,
+      pitchCount: 95,
+      battersFaced: 24,
+      gamesStarted: 1,
+    });
+  });
+
+  it("maps away site and uses pitchesThrown only when numberOfPitches is absent", () => {
+    const row = normalizePitcherGameLogSplit(pitcherGameLogSplitsFixture[4], 2026, teamAbbrById);
+    expect(row.isHome).toBe(false);
+    expect(row.site).toBe("away");
+    expect(row.pitchCount).toBe(87);
+  });
+
+  it("returns the complete pre-slate starter log while excluding same-day starts", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(pitcherGameLogResponseFixture));
+    const { starts, error } = await fetchPitcherSeasonStarts(669456, 2026, "2026-07-23", teamAbbrById, { fetchImpl });
+    expect(error).toBeNull();
+    expect(starts).toHaveLength(13);
+    expect(starts[0].gamePk).toBe(1001);
+    expect(starts.some((start: { gamePk: number | null }) => start.gamePk === 1000)).toBe(false);
+  });
+});
+
 describe("fetchTeamRecentCompletedGames", () => {
   it("filters to completed regular-season games and limits to 5, most recent first", async () => {
     const dates = [
@@ -91,6 +136,26 @@ describe("fetchTeamRecentCompletedGames", () => {
     const { games, error } = await fetchTeamRecentCompletedGames(112, "2026-07-08", { fetchImpl, retries: 0 });
     expect(games).toEqual([]);
     expect(error).toBeInstanceOf(Error);
+  });
+
+  it("supports a custom limit (e.g. 10 for the opponent Last 10 sample) instead of the default 5", async () => {
+    const dates = Array.from({ length: 12 }, (_, i) => ({
+      games: [{ gamePk: i + 1, officialDate: `2026-06-${String(i + 1).padStart(2, "0")}`, gameType: "R", status: { codedGameState: "F", abstractGameState: "Final" } }],
+    }));
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ dates }));
+    const { games, error } = await fetchTeamRecentCompletedGames(112, "2026-07-08", { fetchImpl, limit: 10 });
+    expect(error).toBeNull();
+    expect(games).toHaveLength(10);
+    // Most recent first: game 12 (2026-06-12) down through game 3 (2026-06-03).
+    expect(games.map((g: { gamePk: number }) => g.gamePk)).toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3]);
+  });
+
+  it("never queries a date range including or after the slate date (same-day exclusion)", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ dates: [] }));
+    await fetchTeamRecentCompletedGames(112, "2026-07-08", { fetchImpl });
+    const requestedUrl = fetchImpl.mock.calls[0][0] as string;
+    expect(requestedUrl).toContain("endDate=2026-07-07");
+    expect(requestedUrl).not.toContain("endDate=2026-07-08");
   });
 
   it("excludes postponed games even though MLB StatsAPI marks abstractGameState Final for them", async () => {

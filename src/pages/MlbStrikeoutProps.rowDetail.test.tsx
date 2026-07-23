@@ -146,8 +146,8 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
     fireEvent.click(trigger);
 
     await waitFor(() => expect(screen.getAllByTestId("strikeout-prop-detail").length).toBeGreaterThan(0));
-    expect(screen.getAllByText("Dean Kremer — last 5 starts").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("CHC — last 5 games vs SP").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Dean Kremer — Last 5 Starts").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("CHC — Last 10 Games vs SP").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Shane Baz").length).toBeGreaterThan(0);
     expect(screen.getAllByText("6.0").length).toBeGreaterThan(0);
 
@@ -194,7 +194,7 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
     });
     // Kremer's row collapsed (its detail panel is gone) once Gallen's row expanded.
     expect(screen.queryAllByTestId("strikeout-prop-detail").length).toBe(0);
-    expect(screen.queryAllByText("Dean Kremer — last 5 starts").length).toBe(0);
+    expect(screen.queryAllByText("Dean Kremer — Last 5 Starts").length).toBe(0);
     expect(screen.getAllByTestId("strikeout-prop-detail-unavailable").length).toBeGreaterThan(0);
   }, SLOW_RENDER_TIMEOUT_MS);
 
