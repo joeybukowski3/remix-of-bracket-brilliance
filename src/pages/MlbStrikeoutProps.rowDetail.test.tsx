@@ -147,7 +147,7 @@ describe("MlbStrikeoutProps row-detail expansion", () => {
 
     await waitFor(() => expect(screen.getAllByTestId("strikeout-prop-detail").length).toBeGreaterThan(0));
     expect(screen.getAllByText("Dean Kremer — Last 5 Starts").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("CHC — last 5 games vs SP").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("CHC — Last 10 Games vs SP").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Shane Baz").length).toBeGreaterThan(0);
     expect(screen.getAllByText("6.0").length).toBeGreaterThan(0);
 

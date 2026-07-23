@@ -1,9 +1,17 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { PitcherVenueSplit, StrikeoutPropDetail } from "@/hooks/useMlbStrikeoutPropDetails";
 import type { KPropsV2ShadowArtifact, KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { outsToMlbInnings } from "@/lib/mlb/baseballInnings";
+import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { cn } from "@/lib/utils";
+
+// League-average pitcher K% comes from the shared MLB_LEAGUE_AVERAGES constant (kPct).
+// No repo-wide "hits allowed per batter faced" constant exists -- the closest canonical
+// value is batting-average-against (avg: .243, hits/AB, not hits/BF). Derived here as
+// avg * (1 - bbPct) to approximate AB/BF share; flagged as an estimate, not an official figure.
+const PITCHER_LEAGUE_AVG_K_PCT = MLB_LEAGUE_AVERAGES.kPct;
+const PITCHER_LEAGUE_AVG_HIT_PCT = Number((MLB_LEAGUE_AVERAGES.avg * (1 - MLB_LEAGUE_AVERAGES.bbPct / 100) * 100).toFixed(1));
 
 const DASH = "N/A";
 
@@ -271,19 +279,47 @@ function formatVenueInnings(totals: PitcherVenueSplit["season"] | undefined) {
   return `${innings} (${totals.gamesUsed} ${totals.gamesUsed === 1 ? "start" : "starts"})`;
 }
 
+// Bounded diverging scale: +/- this many percentage points from league average reaches full saturation,
+// so one extreme outlier can't blow out the whole column. Below the neutral threshold, cells get a
+// faint neutral tint (distinct from N/A, which gets no gradient at all).
+const GRADIENT_BOUND_PP = 6;
+const GRADIENT_NEUTRAL_THRESHOLD_T = 0.12;
+const GRADIENT_MAX_ALPHA = 0.32;
+const GRADIENT_NEUTRAL_ALPHA = 0.07;
+
+/** Higher-is-red diverging background for a 0-100 percentage vs. a league-average baseline. Returns undefined (no gradient) for N/A. */
+function percentGradientStyle(value: number | null | undefined, leagueAverage: number): CSSProperties | undefined {
+  if (value == null || !Number.isFinite(value)) return undefined;
+  const t = Math.max(-1, Math.min(1, (value - leagueAverage) / GRADIENT_BOUND_PP));
+  if (Math.abs(t) < GRADIENT_NEUTRAL_THRESHOLD_T) {
+    return { backgroundColor: `rgba(100, 116, 139, ${GRADIENT_NEUTRAL_ALPHA})` }; // slate-500: near league average
+  }
+  const alpha = GRADIENT_NEUTRAL_ALPHA + (GRADIENT_MAX_ALPHA - GRADIENT_NEUTRAL_ALPHA) * ((Math.abs(t) - GRADIENT_NEUTRAL_THRESHOLD_T) / (1 - GRADIENT_NEUTRAL_THRESHOLD_T));
+  const rgb = t > 0 ? "220, 38, 38" : "37, 99, 235"; // red-600 above average, blue-600 below
+  return { backgroundColor: `rgba(${rgb}, ${alpha.toFixed(3)})` };
+}
+
+function GradientPercentCell({ value, leagueAverage }: { value: number | null | undefined; leagueAverage: number }) {
+  return (
+    <span className="inline-block rounded px-1.5 py-0.5" style={percentGradientStyle(value, leagueAverage)}>
+      {fmtPercent(value)}
+    </span>
+  );
+}
+
 function pitcherVenueRow(split: PitcherVenueSplit, label: string): ReactNode[] {
   return [
     label,
     formatVenueInnings(split.season),
     fmtNumber(split.season.strikeouts),
-    fmtPercent(split.season.strikeoutRate),
+    <GradientPercentCell key="season-k-pct" value={split.season.strikeoutRate} leagueAverage={PITCHER_LEAGUE_AVG_K_PCT} />,
     fmtNumber(split.season.hitsAllowed),
-    fmtPercent(split.season.hitRate),
+    <GradientPercentCell key="season-hit-pct" value={split.season.hitRate} leagueAverage={PITCHER_LEAGUE_AVG_HIT_PCT} />,
     formatVenueInnings(split.lastFiveAtSite),
     fmtNumber(split.lastFiveAtSite.strikeouts),
-    fmtPercent(split.lastFiveAtSite.strikeoutRate),
+    <GradientPercentCell key="last5-k-pct" value={split.lastFiveAtSite.strikeoutRate} leagueAverage={PITCHER_LEAGUE_AVG_K_PCT} />,
     fmtNumber(split.lastFiveAtSite.hitsAllowed),
-    fmtPercent(split.lastFiveAtSite.hitRate),
+    <GradientPercentCell key="last5-hit-pct" value={split.lastFiveAtSite.hitRate} leagueAverage={PITCHER_LEAGUE_AVG_HIT_PCT} />,
   ];
 }
 
@@ -518,7 +554,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const opponentAvg: ReactNode[][] = [[
     "AVG",
     formatGamesUsedLabel(opponentSummary),
-    DASH,
+    "",
     formatAverageIp(opponentSummary, "totalOpposingStarterOuts"),
     fmtFixed(getNumber(opponentSummary, "averageOpposingStarterStrikeouts")),
     fmtFixed(getNumber(opponentSummary, "averageTeamStrikeouts")),
@@ -554,7 +590,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
             )}
           </div>
           <MiniTable
-            title={`${detail.opponent} — last 5 games vs SP`}
+            title={`${detail.opponent} — Last 10 Games vs SP`}
             columns={["Date", "Opp", "Opposing SP", "SP IP", "SP K", "Game K"]}
             columnWidths={["14%", "12%", "34%", "14%", "12%", "14%"]}
             rows={opponentRows}

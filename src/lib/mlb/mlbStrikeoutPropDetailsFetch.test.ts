@@ -138,6 +138,26 @@ describe("fetchTeamRecentCompletedGames", () => {
     expect(error).toBeInstanceOf(Error);
   });
 
+  it("supports a custom limit (e.g. 10 for the opponent Last 10 sample) instead of the default 5", async () => {
+    const dates = Array.from({ length: 12 }, (_, i) => ({
+      games: [{ gamePk: i + 1, officialDate: `2026-06-${String(i + 1).padStart(2, "0")}`, gameType: "R", status: { codedGameState: "F", abstractGameState: "Final" } }],
+    }));
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ dates }));
+    const { games, error } = await fetchTeamRecentCompletedGames(112, "2026-07-08", { fetchImpl, limit: 10 });
+    expect(error).toBeNull();
+    expect(games).toHaveLength(10);
+    // Most recent first: game 12 (2026-06-12) down through game 3 (2026-06-03).
+    expect(games.map((g: { gamePk: number }) => g.gamePk)).toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3]);
+  });
+
+  it("never queries a date range including or after the slate date (same-day exclusion)", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ dates: [] }));
+    await fetchTeamRecentCompletedGames(112, "2026-07-08", { fetchImpl });
+    const requestedUrl = fetchImpl.mock.calls[0][0] as string;
+    expect(requestedUrl).toContain("endDate=2026-07-07");
+    expect(requestedUrl).not.toContain("endDate=2026-07-08");
+  });
+
   it("excludes postponed games even though MLB StatsAPI marks abstractGameState Final for them", async () => {
     // Regression: a real postponed CHC game (gamePk 824664) was returned by
     // the live API with abstractGameState "Final" but codedGameState "D"

@@ -206,6 +206,77 @@ describe("opponent AVG footer", () => {
     expect(within(detailPanel).getAllByText("5 used").length).toBeGreaterThan(0);
     expect(within(detailPanel).queryAllByText("1 used")).toHaveLength(0);
   });
+
+  it("leaves the Opposing SP AVG cell blank instead of showing N/A", () => {
+    render(<MlbStrikeoutPropRowDetail detail={fiveGameDetail} />);
+    const avgCards = screen.getAllByTestId("strikeout-recent-avg-row");
+    const opponentAvgCard = avgCards[avgCards.length - 1];
+    const opposingSpLabel = within(opponentAvgCard).getByText("Opposing SP");
+    const opposingSpValue = opposingSpLabel.nextElementSibling;
+    expect(opposingSpValue).not.toBeNull();
+    expect(opposingSpValue?.textContent).toBe("");
+    expect(within(opponentAvgCard).queryByText("N/A")).not.toBeInTheDocument();
+  });
+});
+
+describe("opponent Last 10 games", () => {
+  const tenGames = Array.from({ length: 10 }, (_, i) => ({
+    date: `2026-07-${String(22 - i).padStart(2, "0")}`,
+    opponent: i % 2 === 0 ? "TOR" : "BOS",
+    opposingStartingPitcher: `Pitcher ${i}`,
+    opposingStarterInningsPitched: "6.0",
+    opposingStarterStrikeouts: 5,
+    teamTotalStrikeouts: 8,
+  }));
+  const tenGameDetail: StrikeoutPropDetail = {
+    ...detail,
+    opponentLastFiveGames: tenGames,
+    opponentLastFiveVsStartersSummary: {
+      gamesAvailable: 10,
+      gamesUsed: 10,
+      totalOpposingStarterOuts: 180,
+      averageOpposingStarterInnings: 6,
+      averageOpposingStarterStrikeouts: 5,
+      averageTeamStrikeouts: 8,
+      recentTeamKRate: null,
+      recentWhiffRate: null,
+    },
+  };
+
+  it('renders the "Last 10 Games vs SP" heading', () => {
+    render(<MlbStrikeoutPropRowDetail detail={tenGameDetail} />);
+    expect(screen.getAllByText("TB — Last 10 Games vs SP").length).toBeGreaterThan(0);
+  });
+
+  it("shows the correct games-used count and averages for a full 10-game sample", () => {
+    render(<MlbStrikeoutPropRowDetail detail={tenGameDetail} />);
+    const detailPanel = screen.getByTestId("strikeout-prop-detail");
+    expect(within(detailPanel).getAllByText("10 used").length).toBeGreaterThan(0);
+    expect(within(detailPanel).getAllByText("6.0").length).toBeGreaterThan(0); // 180 outs / 10 games = 18 outs = 6.0 IP
+    expect(within(detailPanel).getAllByText("5.0").length).toBeGreaterThan(0); // avg SP K
+    expect(within(detailPanel).getAllByText("8.0").length).toBeGreaterThan(0); // avg Game K
+  });
+
+  it("shows the actual sample count when fewer than 10 games exist", () => {
+    const fewerGamesDetail: StrikeoutPropDetail = {
+      ...detail,
+      opponentLastFiveGames: tenGames.slice(0, 3),
+      opponentLastFiveVsStartersSummary: {
+        gamesAvailable: 3,
+        gamesUsed: 3,
+        totalOpposingStarterOuts: 54,
+        averageOpposingStarterInnings: 6,
+        averageOpposingStarterStrikeouts: 5,
+        averageTeamStrikeouts: 8,
+        recentTeamKRate: null,
+        recentWhiffRate: null,
+      },
+    };
+    render(<MlbStrikeoutPropRowDetail detail={fewerGamesDetail} />);
+    const detailPanel = screen.getByTestId("strikeout-prop-detail");
+    expect(within(detailPanel).getAllByText("3 used").length).toBeGreaterThan(0);
+    expect(within(detailPanel).queryAllByText("10 used")).toHaveLength(0);
+  });
 });
 
 describe("pitcher Home/Away split K%/Hit%", () => {
@@ -275,5 +346,54 @@ describe("pitcher Home/Away split K%/Hit%", () => {
     expect(within(detailPanel).getAllByText("6").length).toBeGreaterThan(0);
     expect(within(detailPanel).getAllByText("N/A").length).toBeGreaterThan(0);
     expect(detailPanel.textContent).not.toMatch(/NaN|Infinity/);
+  });
+
+  it("colors K%/Hit% red when above league average (desktop + mobile match)", () => {
+    render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
+    // Home season K% 26.4% is above the ~22.2% league average.
+    const cells = screen.getAllByText("26.4%");
+    expect(cells.length).toBeGreaterThanOrEqual(2); // desktop td + mobile card
+    for (const cell of cells) expect(cell.style.backgroundColor).toContain("220, 38, 38");
+  });
+
+  it("colors K%/Hit% blue when below league average", () => {
+    render(<MlbStrikeoutPropRowDetail detail={venueDetail} />);
+    // Away season K% 16.3% is well below the ~22.2% league average.
+    const cells = screen.getAllByText("16.3%");
+    expect(cells.length).toBeGreaterThan(0);
+    for (const cell of cells) expect(cell.style.backgroundColor).toContain("37, 99, 235");
+  });
+
+  it("uses a neutral tint (not red or blue) when a rate is near league average", () => {
+    const nearAverageDetail: StrikeoutPropDetail = {
+      ...detail,
+      pitcherVenueSplits: {
+        home: { site: "home", season: { gamesUsed: 6, totalOuts: 104, inningsPitched: "34.2", strikeouts: 32, hitsAllowed: 32, battersFaced: 144, strikeoutRate: 22.4, hitRate: 22.2 }, lastFiveAtSite: { gamesUsed: 6, totalOuts: 104, inningsPitched: "34.2", strikeouts: 32, hitsAllowed: 32, battersFaced: 144, strikeoutRate: 22.4, hitRate: 22.2 } },
+        away: { site: "away", season: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null }, lastFiveAtSite: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null } },
+      },
+    };
+    render(<MlbStrikeoutPropRowDetail detail={nearAverageDetail} />);
+    const kCells = screen.getAllByText("22.4%");
+    expect(kCells.length).toBeGreaterThan(0);
+    for (const cell of kCells) {
+      expect(cell.style.backgroundColor).toContain("100, 116, 139");
+      expect(cell.style.backgroundColor).not.toContain("220, 38, 38");
+      expect(cell.style.backgroundColor).not.toContain("37, 99, 235");
+    }
+  });
+
+  it("applies no gradient (no background color) to N/A K%/Hit% cells", () => {
+    const zeroBfDetail: StrikeoutPropDetail = {
+      ...detail,
+      pitcherVenueSplits: {
+        home: { site: "home", season: { gamesUsed: 1, totalOuts: 18, inningsPitched: "6.0", strikeouts: 6, hitsAllowed: 3, battersFaced: 0, strikeoutRate: null, hitRate: null }, lastFiveAtSite: { gamesUsed: 1, totalOuts: 18, inningsPitched: "6.0", strikeouts: 6, hitsAllowed: 3, battersFaced: 0, strikeoutRate: null, hitRate: null } },
+        away: { site: "away", season: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null }, lastFiveAtSite: { gamesUsed: 0, totalOuts: null, inningsPitched: null, strikeouts: null, hitsAllowed: null, battersFaced: null, strikeoutRate: null, hitRate: null } },
+      },
+    };
+    render(<MlbStrikeoutPropRowDetail detail={zeroBfDetail} />);
+    const detailPanel = screen.getByTestId("strikeout-prop-detail");
+    const naCells = within(detailPanel).getAllByText("N/A");
+    expect(naCells.length).toBeGreaterThan(0);
+    for (const cell of naCells) expect(cell.style.backgroundColor).toBe("");
   });
 });

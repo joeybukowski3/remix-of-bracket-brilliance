@@ -18,6 +18,8 @@ const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
 const DEFAULT_INPUT_PATH = path.join(DATA_DIR, "hr-props-raw.json");
 const OUTPUT_PATH = path.join(DATA_DIR, "strikeout-prop-details.json");
 const SOURCE_LABEL = "mlb_stats_api";
+const OPPONENT_RECENT_GAMES_LIMIT = 10;
+const OPPONENT_RECENT_GAMES_LOOKBACK_DAYS = 45;
 
 function parseArgs(argv) {
   const args = { dryRun: false, input: DEFAULT_INPUT_PATH };
@@ -107,7 +109,10 @@ async function main() {
         opponentGamesCache.set(
           pitcher.opponent,
           (async () => {
-            const { games, error } = await fetchTeamRecentCompletedGames(opponentId, slateDate);
+            const { games, error } = await fetchTeamRecentCompletedGames(opponentId, slateDate, {
+              limit: OPPONENT_RECENT_GAMES_LIMIT,
+              lookbackDays: OPPONENT_RECENT_GAMES_LOOKBACK_DAYS,
+            });
             if (error) return { rows: [], error };
             return { rows: await fetchOpponentLastFiveGamesDetail(opponentId, games, boxscoreCache), error: null };
           })(),
