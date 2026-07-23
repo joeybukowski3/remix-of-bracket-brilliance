@@ -425,6 +425,17 @@ jobs:
         continue-on-error: true
         run: node scripts/generate-mlb-strikeout-prop-details.mjs
 
+      - name: Generate K projection V2 shadow artifact
+        id: generate_k_props_v2_shadow
+        continue-on-error: true
+        run: npm run mlb:k-props-v2-shadow
+
+      - name: Validate K projection V2 shadow artifact
+        id: validate_k_props_v2_shadow
+        if: steps.generate_k_props_v2_shadow.outcome == 'success'
+        continue-on-error: true
+        run: npm run mlb:k-props-v2-shadow:validate
+
       # feat/mlb-bvp-history-context: generates display-only career and
       # trailing-5-year batter-vs-pitcher history for the "AVG vs P" column
       # and expandable history panel on /mlb/hr-props and
@@ -442,8 +453,13 @@ jobs:
           echo "inject_hr_odds=${{ steps.inject_hr_odds.outcome }}"
           echo "inject_k_odds=${{ steps.inject_k_odds.outcome }}"
           echo "validate_prop_odds=${{ steps.validate_prop_odds.outcome }}"
+          echo "generate_k_props_v2_shadow=${{ steps.generate_k_props_v2_shadow.outcome }}"
+          echo "validate_k_props_v2_shadow=${{ steps.validate_k_props_v2_shadow.outcome || 'skipped' }}"
           if [ "${{ steps.validate_prop_odds.outcome }}" != "success" ]; then
             echo "::warning::MLB model generation will continue, but HR/K social posts must wait for complete odds enrichment."
+          fi
+          if [ "${{ steps.generate_k_props_v2_shadow.outcome }}" != "success" ] || [ "${{ steps.validate_k_props_v2_shadow.outcome || 'skipped' }}" != "success" ]; then
+            echo "::warning::K projection V2 shadow artifact was not refreshed; prior valid artifact is preserved."
           fi
 
       - name: Generate pitcher regression
