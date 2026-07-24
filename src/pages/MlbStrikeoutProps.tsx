@@ -131,16 +131,36 @@ function MetricTile({ label, children }: { label: string; children: ReactNode })
   );
 }
 
-function KShadowDebugComparison({ shadowRow }: { shadowRow: KPropsV2ShadowRow }) {
+/**
+ * Debug-only projection comparison. Shows the value the page actually
+ * publishes (`row.projectedKs`, already resolved at generation time) next to
+ * both underlying projections, so a mismatch between "what shipped" and
+ * "which source claims to have produced it" is visible rather than inferred.
+ */
+function KShadowDebugComparison({ shadowRow, row }: { shadowRow: KPropsV2ShadowRow; row?: PitcherStrikeoutTeamRow }) {
   const fallbackCount = shadowRow.v2.fallbacks.length;
   const warningCount = shadowRow.v2.warnings.length;
+  const source = row?.projectionSource ?? null;
+  const isV2Source = source === "v2";
   return (
     <div data-testid="k-v2-shadow-row-comparison" className="flex min-w-0 flex-wrap items-center gap-1.5 rounded-lg border border-sky-100 bg-sky-50/70 px-2 py-1.5 text-[10px] font-bold text-slate-700">
-      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-700">Legacy {fmt(shadowRow.legacy.projectedKs)}</span>
-      <span className="rounded-full border border-sky-200 bg-white px-2 py-0.5 text-slate-700">V2 Shadow {fmt(shadowRow.v2.projectedStrikeouts)}</span>
+      <span
+        data-testid="k-v2-resolved-projection"
+        className={cn(
+          "rounded-full border px-2 py-0.5",
+          isV2Source ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-slate-300 bg-white text-slate-900",
+        )}
+      >
+        Resolved {fmt(row?.projectedKs ?? null)}
+      </span>
+      {source && <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">Source {source}</span>}
+      {row?.projectionFallbackReason && (
+        <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-800">Fallback {row.projectionFallbackReason}</span>
+      )}
+      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-700">Legacy {fmt(row?.legacyProjectedKs ?? shadowRow.legacy.projectedKs)}</span>
+      <span className="rounded-full border border-sky-200 bg-white px-2 py-0.5 text-slate-700">V2 {fmt(shadowRow.v2.projectedStrikeouts)}</span>
       <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-700">Delta {fmtSigned(shadowRow.comparison.v2MinusLegacyKs)}</span>
       <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{shadowRow.v2.confidence} confidence</span>
-      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-800">Experimental</span>
       <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-500">{shadowRow.v2.modelVersion}</span>
       {(fallbackCount > 0 || warningCount > 0) && (
         <span className="rounded-full border border-amber-300 bg-white px-2 py-0.5 text-amber-800">Incomplete inputs</span>
@@ -156,6 +176,7 @@ function StrikeoutPageGuide() {
       <div className="mt-2 space-y-1.5 text-sm leading-6 text-slate-600">
         <p>This board ranks today&apos;s probable starters by K Score, a matchup-strength rating built from pitcher strikeout ability and the opposing lineup&apos;s strikeout tendencies.</p>
         <p>When sportsbook strikeout lines are available, the page also compares our projected strikeouts against the market line.</p>
+        <p>Projected strikeouts combine pitcher strikeout skill, recent workload, expected batters faced and innings, whiff rate, opponent lineup strikeout tendencies, venue, handedness, and lineup context when available.</p>
         <p>This is a research tool designed to compare pitchers and prices. It is not a guarantee of results or a betting recommendation.</p>
       </div>
     </section>
@@ -442,13 +463,14 @@ export default function MlbStrikeoutProps() {
           {showKProjectionV2Debug && (
             <div data-testid="k-v2-shadow-debug-status" role="status" className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-slate-700">
               <div className="flex flex-wrap items-center gap-1.5 font-black uppercase tracking-wide">
-                <span className="rounded-full border border-sky-200 bg-white px-2 py-0.5 text-sky-800">V2 Shadow</span>
-                <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-800">Experimental</span>
-                <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">Not production</span>
-                <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">Not historically validated</span>
+                <span className="rounded-full border border-sky-200 bg-white px-2 py-0.5 text-sky-800">K Projection V2</span>
+                <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-emerald-800">Production</span>
+                <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">Legacy = fail-safe fallback</span>
               </div>
               <p className="mt-1 leading-5">
-                Public Proj K, sorting, odds display, and X export attributes still use the legacy projection. Shadow status: {kV2Shadow.status}.
+                Public Proj K, edge, direction, sorting, best bets and X export attributes all use the resolved production projection
+                (V2 when the artifact, row identity and confidence all pass; otherwise the stored legacy projection). This panel compares
+                the two; it never changes what the page publishes. Artifact status: {kV2Shadow.status}.
               </p>
               {kV2Shadow.warnings.length > 0 && (
                 <ul className="mt-1 space-y-0.5 text-[11px] font-semibold text-amber-800">
@@ -553,7 +575,7 @@ export default function MlbStrikeoutProps() {
                             <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
                               {isExpanded ? "Show less" : "Click to expand"}
                             </span>
-                            {showKProjectionV2Debug && shadowRow && <KShadowDebugComparison shadowRow={shadowRow} />}
+                            {showKProjectionV2Debug && shadowRow && <KShadowDebugComparison shadowRow={shadowRow} row={row} />}
                             {showKProjectionV2Debug && !shadowRow && (
                               <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-800">No unambiguous V2 shadow match for this legacy row.</span>
                             )}
@@ -661,7 +683,7 @@ export default function MlbStrikeoutProps() {
                       {showKProjectionV2Debug && (
                         <tr>
                           <td colSpan={desktopColumnCount} className="border-b border-slate-100 bg-slate-50 px-2 py-1.5">
-                            {shadowRow ? <KShadowDebugComparison shadowRow={shadowRow} /> : <div className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-800">No unambiguous V2 shadow match for {row.pitcher}. Legacy row remains usable.</div>}
+                            {shadowRow ? <KShadowDebugComparison shadowRow={shadowRow} row={row} /> : <div className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] font-semibold text-amber-800">No unambiguous V2 shadow match for {row.pitcher}. Legacy row remains usable.</div>}
                           </td>
                         </tr>
                       )}
@@ -863,6 +885,7 @@ export default function MlbStrikeoutProps() {
                   <div className="mt-2 space-y-1.5 text-sm leading-6 text-slate-600">
                     <p>This board ranks today&apos;s probable starters by K Score, a matchup-strength rating built from pitcher strikeout ability and the opposing lineup&apos;s strikeout tendencies.</p>
                     <p>When sportsbook strikeout lines are available, the page also compares our projected strikeouts against the market line.</p>
+                    <p>Projected strikeouts combine pitcher strikeout skill, recent workload, expected batters faced and innings, whiff rate, opponent lineup strikeout tendencies, venue, handedness, and lineup context when available.</p>
                     <p>This is a research tool designed to compare pitchers and prices. It is not a guarantee of results or a betting recommendation.</p>
                   </div>
                 )}

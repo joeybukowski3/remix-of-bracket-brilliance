@@ -73,6 +73,10 @@ export type HrDashboardPitcher = {
   candidateProjectedKs?: number | null;
   effectiveProjectedIP?: number | null;
   effectiveProjectedKs?: number | null;
+  /** Raw K Projection V2 output, kept for debug comparison whether or not it was promoted. */
+  v2ProjectedKs?: number | null;
+  v2Confidence?: string | null;
+  v2ModelVersion?: string | null;
   workloadConfidenceGrade?: string | null;
   workloadConfidenceScore?: number | null;
   workloadFlags?: string[];
@@ -364,6 +368,10 @@ export type PitcherStrikeoutTeamRow = {
   candidateProjectedKs?: number | null;
   effectiveProjectedIP?: number | null;
   effectiveProjectedKs?: number | null;
+  /** Raw K Projection V2 output, kept for debug comparison whether or not it was promoted. */
+  v2ProjectedKs?: number | null;
+  v2Confidence?: string | null;
+  v2ModelVersion?: string | null;
   workloadConfidenceGrade?: string | null;
   workloadConfidenceScore?: number | null;
   workloadFlags?: string[];
@@ -503,6 +511,9 @@ function normalizePitcher(entry: unknown): HrDashboardPitcher | null {
     candidateProjectedKs: normalizeNumber(entry.candidateProjectedKs),
     effectiveProjectedIP: normalizeNumber(entry.effectiveProjectedIP),
     effectiveProjectedKs: normalizeNumber(entry.effectiveProjectedKs),
+    v2ProjectedKs: normalizeNumber(entry.v2ProjectedKs),
+    v2Confidence: normalizeText(entry.v2Confidence) || null,
+    v2ModelVersion: normalizeText(entry.v2ModelVersion) || null,
     workloadConfidenceGrade: normalizeText(entry.workloadConfidenceGrade) || null,
     workloadConfidenceScore: normalizeNumber(entry.workloadConfidenceScore),
     workloadFlags: normalizeStringList(entry.workloadFlags),
@@ -1313,6 +1324,9 @@ export function buildPitcherStrikeoutRows(
         candidateProjectedKs: pitcher.candidateProjectedKs ?? null,
         effectiveProjectedIP: pitcher.effectiveProjectedIP ?? null,
         effectiveProjectedKs: pitcher.effectiveProjectedKs ?? null,
+        v2ProjectedKs: pitcher.v2ProjectedKs ?? null,
+        v2Confidence: pitcher.v2Confidence ?? null,
+        v2ModelVersion: pitcher.v2ModelVersion ?? null,
         workloadConfidenceGrade: pitcher.workloadConfidenceGrade ?? null,
         workloadConfidenceScore: pitcher.workloadConfidenceScore ?? null,
         workloadFlags: pitcher.workloadFlags ?? [],
