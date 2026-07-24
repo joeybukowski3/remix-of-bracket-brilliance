@@ -162,6 +162,11 @@ async function scrapeKPageRows(page) {
       projectionEdge: el.getAttribute("data-k-projection-edge") || "",
       projectedIP: el.getAttribute("data-k-projected-ip") || "",
       strikeoutScore: el.getAttribute("data-k-score") || "",
+      legacyProjectedKs: el.getAttribute("data-k-legacy-projected-ks") || "",
+      v2ProjectedKs: el.getAttribute("data-k-v2-projected-ks") || "",
+      projectionSource: el.getAttribute("data-k-projection-source") || "",
+      projectionFallbackReason: el.getAttribute("data-k-projection-fallback-reason") || "",
+      v2Confidence: el.getAttribute("data-k-v2-confidence") || "",
     }));
     rows.push({
       pitcher: normalizeText(data.pitcher),
@@ -177,6 +182,13 @@ async function scrapeKPageRows(page) {
       projectionEdge: toFiniteNumber(data.projectionEdge),
       projectedIP: toFiniteNumber(data.projectedIP),
       strikeoutScore: toFiniteNumber(data.strikeoutScore),
+      // Resolution provenance for the projection above -- recorded, never
+      // used to re-select, re-rank or recompute anything.
+      legacyProjectedKs: toFiniteNumber(data.legacyProjectedKs),
+      v2ProjectedKs: toFiniteNumber(data.v2ProjectedKs),
+      projectionSource: normalizeText(data.projectionSource) || null,
+      projectionFallbackReason: normalizeText(data.projectionFallbackReason) || null,
+      v2Confidence: normalizeText(data.v2Confidence) || null,
     });
   }
 

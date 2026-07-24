@@ -163,6 +163,15 @@ export function buildKArtifact({ slateDate, snapshot, selectedRows = [], selecti
       projectionDifference,
       strikeoutScore: toFiniteNumber(row.strikeoutScore ?? row.kScore),
       bookmaker: normalizeText(row.bookmaker) || null,
+      // Frozen resolution provenance. `projectedKs` above is already THE
+      // resolved production projection (the page publishes nothing else), so
+      // these are the record of which model produced it -- posters and
+      // renderers read the frozen values and never re-resolve.
+      legacyProjectedKs: toFiniteNumber(row.legacyProjectedKs),
+      v2ProjectedKs: toFiniteNumber(row.v2ProjectedKs),
+      projectionSource: normalizeText(row.projectionSource) || null,
+      projectionFallbackReason: normalizeText(row.projectionFallbackReason) || null,
+      v2Confidence: normalizeText(row.v2Confidence) || null,
     };
   });
   return artifact;

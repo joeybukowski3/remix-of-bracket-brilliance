@@ -80,6 +80,11 @@ export async function scrapeKPageRows(page, { url = STRIKEOUT_PROPS_URL } = {}) 
       projectionEdge: el.getAttribute("data-k-projection-edge") || "",
       projectedIP: el.getAttribute("data-k-projected-ip") || "",
       strikeoutScore: el.getAttribute("data-k-score") || "",
+      legacyProjectedKs: el.getAttribute("data-k-legacy-projected-ks") || "",
+      v2ProjectedKs: el.getAttribute("data-k-v2-projected-ks") || "",
+      projectionSource: el.getAttribute("data-k-projection-source") || "",
+      projectionFallbackReason: el.getAttribute("data-k-projection-fallback-reason") || "",
+      v2Confidence: el.getAttribute("data-k-v2-confidence") || "",
     }));
     rows.push({
       pitcher: normalizeText(data.pitcher),
@@ -95,6 +100,14 @@ export async function scrapeKPageRows(page, { url = STRIKEOUT_PROPS_URL } = {}) 
       projectionEdge: toFiniteNumber(data.projectionEdge),
       projectedIP: toFiniteNumber(data.projectedIP),
       strikeoutScore: toFiniteNumber(data.strikeoutScore),
+      // Resolution provenance, scraped alongside the projection it explains
+      // so the frozen edition plan records WHICH projection was posted, not
+      // just its value. Never used to re-select, re-rank or recompute.
+      legacyProjectedKs: toFiniteNumber(data.legacyProjectedKs),
+      v2ProjectedKs: toFiniteNumber(data.v2ProjectedKs),
+      projectionSource: normalizeText(data.projectionSource) || null,
+      projectionFallbackReason: normalizeText(data.projectionFallbackReason) || null,
+      v2Confidence: normalizeText(data.v2Confidence) || null,
     });
   }
 

@@ -28,9 +28,15 @@ export interface KArtifactRow {
   side: string;
   kLine: number | null;
   odds: string | null;
+  /** THE resolved production projection that was frozen for this attempt. */
   projectedKs: number | null;
   projectionEdge: number | null;
   bookmaker: string | null;
+  legacyProjectedKs?: number | null;
+  v2ProjectedKs?: number | null;
+  projectionSource?: string | null;
+  projectionFallbackReason?: string | null;
+  v2Confidence?: string | null;
 }
 
 export interface SelectionArtifact<Row = HrArtifactRow | KArtifactRow> {
