@@ -1,10 +1,10 @@
 {
   "date": "2026-07-24",
-  "generatedAt": "2026-07-24T09:39:07.914Z",
+  "generatedAt": "2026-07-24T11:18:35.133Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field and Citizens Bank Park stand out as the two highest-leverage venues, with park factors of 1.07 and 1.17 respectively, while Oracle Park (0.85) and PNC Park (0.9) suppress power. Davis Martin’s 52.8 HR/9 rate against lefties and Eduardo Rodriguez’s 61.7 HR/9 against righties create favorable platoon edges for Alvarez and Wood, respectively, and the model is also keying on the Coors-like altitude boost at American Family Field (1.10) for Bauers and Chourio.",
-    "modelNote": "The model is overweighting barrel rate and recent HR/FB spikes—Alvarez’s 19.2 barrel rate and 9.1 HR/FB lead the slate—while discounting small-sample outliers like De La Cruz’s 100 barrel rate on just three batted balls."
+    "slateOverview": "Rate Field (1.07) and Citizens Bank Park (1.17) are the only true hitter-friendly parks on the slate, while Oracle Park (0.85) and PNC Park (0.90) suppress power. Davis Martin and Grayson Rodriguez both carry HR-allowed rates above 50, setting up favorable matchups for Alvarez and the Giants trio, whereas Eduardo Rodriguez and Matthew Boyd present tougher lefty-on-lefty tests.",
+    "modelNote": "The model is overweighting barrel rate and recent HR volume, pushing Alvarez to the top despite a neutral park, while penalizing Ramos and Eldridge for the Oracle Park factor despite strong opposing-pitcher metrics."
   },
   "bestBets": [
     {
@@ -19,7 +19,7 @@
       ],
       "bullets": [
         "park=1.07",
-        "hrScore=81.2"
+        "barrel=19.2%"
       ],
       "hrOddsYes": "+220",
       "marketImpliedProbability": 0.3125,
@@ -38,10 +38,29 @@
       ],
       "bullets": [
         "park=0.85",
-        "hrScore=75.1"
+        "barrel=16.1%"
       ],
       "hrOddsYes": "+475",
       "marketImpliedProbability": 0.17391304347826086,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Bryce Eldridge",
+      "team": "SF",
+      "opponent": "LAA",
+      "opposingPitcher": "Grayson Rodriguez",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=12.8%",
+        "HH=55%"
+      ],
+      "bullets": [
+        "park=0.85",
+        "HH=55%"
+      ],
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -50,14 +69,14 @@
       "team": "WSH",
       "opponent": "AZ",
       "opposingPitcher": "Eduardo Rodriguez",
-      "hrScoreRank": 3,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=22.1%",
         "HH=59.3%"
       ],
       "bullets": [
         "park=0.98",
-        "hrScore=74.6"
+        "barrel=22.1%"
       ],
       "hrOddsYes": "+265",
       "marketImpliedProbability": 0.273972602739726,
@@ -69,57 +88,57 @@
       "team": "PIT",
       "opponent": "CHC",
       "opposingPitcher": "Matthew Boyd",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=67.3",
-        "Hard Hit%=56.3"
-      ],
-      "bullets": [
-        "HR score 72.7 (#4)",
-        "Pitcher HR VS 67.3 at park 0.90"
-      ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Bryce Eldridge",
-      "team": "SF",
-      "opponent": "LAA",
-      "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=91.8",
-        "Hard Hit%=55.0"
-      ],
-      "bullets": [
-        "HR score 72.6 (#5)",
-        "Pitcher HR VS 91.8 at park 0.85"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Esmerlyn Valdez",
-      "team": "PIT",
-      "opponent": "CHC",
-      "opposingPitcher": "Matthew Boyd",
-      "hrScoreRank": 4,
       "topStats": [
         "barrel=29.7%",
         "HH=56.3%"
       ],
       "bullets": [
         "park=0.9",
-        "hrScore=72.7"
+        "barrel=29.7%"
       ],
       "hrOddsYes": "+280",
       "marketImpliedProbability": 0.2631578947368421,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "CWS",
+      "opposingPitcher": "Davis Martin",
+      "hrScoreRank": 1,
+      "topStats": [
+        "barrel=19.2%",
+        "HH=53.2%"
+      ],
+      "bullets": [
+        "park=1.07",
+        "barrel=19.2%"
+      ],
+      "hrOddsYes": "+220",
+      "marketImpliedProbability": 0.3125,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Heliot Ramos",
+      "team": "SF",
+      "opponent": "LAA",
+      "opposingPitcher": "Grayson Rodriguez",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=16.1%",
+        "HH=50.8%"
+      ],
+      "bullets": [
+        "park=0.85",
+        "barrel=16.1%"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -128,17 +147,17 @@
       "team": "SF",
       "opponent": "LAA",
       "opposingPitcher": "Grayson Rodriguez",
-      "hrScoreRank": 5,
+      "hrScoreRank": 3,
       "topStats": [
         "barrel=12.8%",
         "HH=55%"
       ],
       "bullets": [
         "park=0.85",
-        "hrScore=72.6"
+        "HH=55%"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,12 +168,12 @@
       "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=12.4%",
-        "HH=44.3%"
+        "Pitcher HR VS=91.8",
+        "Hard Hit%=44.3"
       ],
       "bullets": [
-        "park=0.85",
-        "hrScore=70"
+        "HR score 70.4 (#6)",
+        "Pitcher HR VS 91.8 at park 0.85"
       ],
       "hrOddsYes": "+425",
       "marketImpliedProbability": 0.19047619047619047,
@@ -172,7 +191,7 @@
         "Hard Hit%=53.0"
       ],
       "bullets": [
-        "HR score 68.8 (#8)",
+        "HR score 67.3 (#8)",
         "Pitcher HR VS 89.5 at park 1.10"
       ],
       "hrOddsYes": "+320",
@@ -181,80 +200,61 @@
       "hrValueEdge": null
     },
     {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 10,
+      "player": "Jordan Walker",
+      "team": "STL",
+      "opponent": "CIN",
+      "opposingPitcher": "Rhett Lowder",
+      "hrScoreRank": 9,
       "topStats": [
-        "Pitcher HR VS=89.5",
-        "Hard Hit%=46.6"
+        "Pitcher HR VS=66.3",
+        "Hard Hit%=50.5"
       ],
       "bullets": [
-        "HR score 65.8 (#10)",
-        "Pitcher HR VS 89.5 at park 1.10"
+        "HR score 65.5 (#9)",
+        "Pitcher HR VS 66.3 at park 0.92"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 8,
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "CWS",
+      "opposingPitcher": "Davis Martin",
+      "hrScoreRank": 1,
       "topStats": [
-        "barrel=13.6%",
-        "HH=53%"
+        "barrel=19.2%",
+        "HH=53.2%"
       ],
       "bullets": [
-        "park=1.1",
-        "hrScore=68.8"
+        "park=1.07",
+        "barrel=19.2%"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+220",
+      "marketImpliedProbability": 0.3125,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 10,
+      "player": "Heliot Ramos",
+      "team": "SF",
+      "opponent": "LAA",
+      "opposingPitcher": "Grayson Rodriguez",
+      "hrScoreRank": 2,
       "topStats": [
-        "barrel=13.2%",
-        "HH=46.6%"
+        "barrel=16.1%",
+        "HH=50.8%"
       ],
       "bullets": [
-        "park=1.1",
-        "hrScore=65.8"
+        "park=0.85",
+        "barrel=16.1%"
       ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Lars Nootbaar",
-      "team": "STL",
-      "opponent": "CIN",
-      "opposingPitcher": "Rhett Lowder",
-      "hrScoreRank": 24,
-      "topStats": [
-        "Pitcher HR VS=66.3",
-        "Hard Hit%=51.1"
-      ],
-      "bullets": [
-        "HR score 58.8 (#24)",
-        "Pitcher HR VS 66.3 at park 0.92"
-      ],
-      "hrOddsYes": "+525",
-      "marketImpliedProbability": 0.16,
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,17 +263,36 @@
       "team": "MIL",
       "opponent": "COL",
       "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 20,
+      "hrScoreRank": 24,
       "topStats": [
         "Pitcher HR VS=89.5",
         "Hard Hit%=42.2"
       ],
       "bullets": [
-        "HR score 59.3 (#20)",
+        "HR score 58.1 (#24)",
         "Pitcher HR VS 89.5 at park 1.10"
       ],
       "hrOddsYes": "+520",
       "marketImpliedProbability": 0.16129032258064516,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Tyler Locklear",
+      "team": "AZ",
+      "opponent": "WSH",
+      "opposingPitcher": "Carson Palmquist",
+      "hrScoreRank": 20,
+      "topStats": [
+        "Pitcher HR VS=37.7",
+        "Hard Hit%=36.4"
+      ],
+      "bullets": [
+        "HR score 60.6 (#20)",
+        "Pitcher HR VS 37.7 at park 0.98"
+      ],
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
