@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useJkbTrendRankings, type JkbTrendRanking } from "@/hooks/useJkbTrendRankings";
 import { normalizePlayerKey, type PgaHistoryResult, type PgaTournamentModelRow } from "@/lib/pga/historyModel";
 import { percentileHeatClass } from "@/lib/pga/pgaHeatColors";
@@ -16,6 +16,7 @@ const statLabels = ["SG Total", "SG App", "SG Putt", "SG ARG", "Drive Acc.", "Dr
 
 export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLabel }: Props) {
   const { payload: trendPayload, rankingMap, error: trendError } = useJkbTrendRankings();
+  const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
 
   return (
     <>
@@ -28,8 +29,8 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
         <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] text-amber-900">JKB Trend Rank is temporarily unavailable; the previous finish-based trend is shown.</div>
       ) : null}
 
-      <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:block">
-        <table className="w-full table-fixed text-center text-[12px] leading-tight">
+      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm lg:block">
+        <table className="w-full min-w-[1180px] table-fixed text-center text-[12px] leading-tight">
           <DesktopColumnWidths isMajor={isMajor} />
           <thead>
             <tr className="bg-slate-900 text-[11px] font-black uppercase tracking-[0.08em] text-white">
@@ -82,17 +83,22 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
         </table>
       </div>
 
-      <div className="space-y-3 lg:hidden">
-        {rows.map((row) => (
-          <MobileCard
-            key={row.player}
-            row={row}
-            statView={statView}
-            isMajor={isMajor}
-            eventLabel={eventLabel}
-            trendRanking={rankingMap.get(normalizePlayerKey(row.player)) ?? null}
-          />
-        ))}
+      <div className="space-y-2 lg:hidden">
+        {rows.map((row) => {
+          const isExpanded = expandedPlayer === row.player;
+          return (
+            <MobileCard
+              key={row.player}
+              row={row}
+              statView={statView}
+              isMajor={isMajor}
+              eventLabel={eventLabel}
+              trendRanking={rankingMap.get(normalizePlayerKey(row.player)) ?? null}
+              expanded={isExpanded}
+              onToggle={() => setExpandedPlayer(isExpanded ? null : row.player)}
+            />
+          );
+        })}
       </div>
     </>
   );
@@ -101,15 +107,15 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
 function DesktopColumnWidths({ isMajor }: { isMajor: boolean }) {
   return (
     <colgroup>
-      <col style={{ width: "2.5%" }} />
-      <col style={{ width: "11.5%" }} />
-      <col style={{ width: "5%" }} />
-      {statKeys.map((key) => <col key={key} style={{ width: "4.6%" }} />)}
-      <col style={{ width: "4.5%" }} />
-      <col style={{ width: "5.5%" }} />
-      <col style={{ width: isMajor ? "18%" : "21%" }} />
-      <col style={{ width: isMajor ? "11%" : "22.4%" }} />
-      {isMajor ? <col style={{ width: "14.4%" }} /> : null}
+      <col style={{ width: "34px" }} />
+      <col data-testid="pga-player-column" style={{ width: "210px", minWidth: "210px" }} />
+      <col style={{ width: "64px" }} />
+      {statKeys.map((key) => <col key={key} style={{ width: "58px" }} />)}
+      <col style={{ width: "58px" }} />
+      <col style={{ width: "74px" }} />
+      <col style={{ width: isMajor ? "220px" : "240px" }} />
+      <col style={{ width: isMajor ? "150px" : "250px" }} />
+      {isMajor ? <col style={{ width: "200px" }} /> : null}
     </colgroup>
   );
 }
@@ -126,7 +132,7 @@ function DesktopRow({ row, index, statView, isMajor, trendRanking }: {
   return (
     <tr className={`${bg} hover:bg-emerald-50/40`}>
       <td className="border-b border-slate-100 px-1 py-2.5 text-[11px] font-bold tabular-nums text-slate-500">{row.modelRank}</td>
-      <td className="truncate border-b border-r border-slate-100 px-2 py-2.5 text-left text-[13px] font-black text-slate-900" title={row.player}>{row.player}</td>
+      <td className="whitespace-nowrap border-b border-r border-slate-100 px-2 py-2.5 text-left text-[13px] font-black text-slate-900" title={row.player}>{row.player}</td>
       <td className="border-b border-r border-slate-100 px-1 py-2.5"><Score value={row.modelScore} /></td>
 
       {statKeys.map((key, statIndex) => (
@@ -153,50 +159,80 @@ function DesktopRow({ row, index, statView, isMajor, trendRanking }: {
   );
 }
 
-function MobileCard({ row, statView, isMajor, eventLabel, trendRanking }: {
+function MobileCard({ row, statView, isMajor, eventLabel, trendRanking, expanded, onToggle }: {
   row: PgaTournamentModelRow;
   statView: "percentile" | "raw";
   isMajor: boolean;
   eventLabel: string;
   trendRanking: JkbTrendRanking | null;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
+  const panelId = `pga-player-details-${normalizePlayerKey(row.player)}`;
+
   return (
-    <article className="rounded-xl border bg-white p-3 shadow-sm">
-      <div className="flex justify-between gap-3">
-        <div>
-          <div className="text-[11px] font-black tabular-nums text-slate-500">#{row.modelRank}</div>
-          <div className="text-[14px] font-black">{row.player}</div>
-        </div>
+    <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <button
+        type="button"
+        className="flex w-full min-w-0 items-center gap-2 px-3 py-3 text-left"
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        onClick={onToggle}
+      >
+        <span className="w-8 shrink-0 text-[11px] font-black tabular-nums text-slate-500">#{row.modelRank}</span>
+        <span className="min-w-0 flex-1 whitespace-normal text-[14px] font-black leading-tight text-slate-900">{row.player}</span>
         <Score value={row.modelScore} />
-      </div>
+        <span aria-hidden="true" className="w-4 shrink-0 text-center text-sm font-black text-slate-500">{expanded ? "▲" : "▼"}</span>
+        <span className="sr-only">{expanded ? "Hide details" : "View details"}</span>
+      </button>
 
-      <div className="mt-3 grid grid-cols-3 gap-1.5">
-        {statKeys.map((key, index) => (
-          <Metric key={key} label={statLabels[index]} value={statView === "percentile" ? pct(row.displayPercentiles[key] ?? null) : raw(row, key)} />
-        ))}
-      </div>
+      {expanded ? (
+        <div id={panelId} className="border-t border-slate-100 px-3 pb-3">
+          <MobileSection title="Player Stats">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              {statKeys.map((key, index) => (
+                statView === "percentile"
+                  ? <PercentileMetric key={key} label={statLabels[index]} value={row.displayPercentiles[key] ?? null} />
+                  : <Metric key={key} label={statLabels[index]} value={raw(row, key)} />
+              ))}
+            </div>
+          </MobileSection>
 
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Metric label="Course Fit" value={row.courseFit == null ? "—" : String(Math.round(row.courseFit))} />
-        <Metric label="JKB Trend" value={trendMetric(trendRanking, row.trend.label)} />
-      </div>
+          <MobileSection title="Model">
+            <div className="grid grid-cols-2 gap-2">
+              <PercentileMetric label="Course Fit" value={row.courseFit} plainValue />
+              <Metric label="JKB Trend" value={trendMetric(trendRanking, row.trend.label)} />
+            </div>
+          </MobileSection>
 
-      <Strip label="Last 5 Starts" values={row.recentResults} count={RECENT_START_COUNT} trendStyle />
+          <MobileSection title="Last 5 Starts">
+            <FinishStrip values={row.recentResults} count={RECENT_START_COUNT} trendStyle />
+          </MobileSection>
 
-      <details className="mt-3 rounded-lg bg-slate-50 px-3 py-2">
-        <summary className="cursor-pointer text-[11px] font-bold">Tournament history</summary>
-        <div className="mt-3 space-y-3">
-          {isMajor ? (
-            <>
-              <Strip label="Specific major" values={row.specificMajorResults} count={4} />
-              <Strip label="Last 8 majors" values={row.allMajorResults} count={8} />
-            </>
-          ) : (
-            <Strip label={`${eventLabel} history`} values={row.eventResults} count={4} />
-          )}
+          <MobileSection title="Tournament History">
+            <div className="space-y-3">
+              {isMajor ? (
+                <>
+                  <Strip label="Specific major" values={row.specificMajorResults} count={4} />
+                  <Strip label="Last 8 majors" values={row.allMajorResults} count={8} />
+                </>
+              ) : (
+                <Strip label={`${eventLabel} history`} values={row.eventResults} count={4} />
+              )}
+            </div>
+          </MobileSection>
         </div>
-      </details>
+      ) : null}
     </article>
+  );
+}
+
+function MobileSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="mt-3">
+      <h3 className="mb-1.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{title}</h3>
+      {children}
+    </section>
   );
 }
 
@@ -267,7 +303,7 @@ function Finish({ value, trendStyle = false, dense = false }: {
 }
 
 function Percentile({ value }: { value: number | null | undefined }) {
-  if (value == null) return <div className="flex h-9 items-center justify-center text-slate-300">—</div>;
+  if (value == null) return <div className="flex h-9 items-center justify-center bg-slate-100 text-slate-400">—</div>;
   return (
     <div className={`flex h-9 items-center justify-center px-0.5 text-[13px] font-bold tabular-nums ${percentileHeatClass(value)}`}>
       {Math.round(value)}
@@ -280,7 +316,7 @@ function Raw({ value }: { value: string }) {
 }
 
 function Score({ value }: { value: number }) {
-  return <span className="inline-flex min-w-0 justify-center rounded-full bg-emerald-700 px-2 py-1 text-[12px] font-black tabular-nums text-white">{value.toFixed(1)}</span>;
+  return <span className="inline-flex min-w-0 shrink-0 justify-center rounded-full bg-emerald-700 px-2 py-1 text-[12px] font-black tabular-nums text-white">{value.toFixed(1)}</span>;
 }
 
 function Trend({ ranking, direction, label }: {
@@ -317,6 +353,17 @@ function Metric({ label, value }: { label: string; value: string }) {
   return <div className="rounded-lg border bg-white px-2 py-2"><div className="text-[10px] font-black uppercase text-slate-500">{label}</div><div className="text-[13px] font-black tabular-nums">{value}</div></div>;
 }
 
+function PercentileMetric({ label, value, plainValue = false }: { label: string; value: number | null | undefined; plainValue?: boolean }) {
+  const className = value == null ? "pga-heat-missing bg-slate-100 text-slate-500" : percentileHeatClass(value);
+  const display = value == null ? "—" : plainValue ? String(Math.round(value)) : pct(value);
+  return (
+    <div className={`rounded-lg border border-white/70 px-2 py-2 font-bold tabular-nums ${className}`}>
+      <div className="text-[10px] font-black uppercase opacity-75">{label}</div>
+      <div className="text-[13px] font-black">{display}</div>
+    </div>
+  );
+}
+
 function Strip({ label, values, count, trendStyle = false }: {
   label: string;
   values: PgaHistoryResult[];
@@ -324,7 +371,7 @@ function Strip({ label, values, count, trendStyle = false }: {
   trendStyle?: boolean;
 }) {
   return (
-    <div className="mt-3">
+    <div className="mt-3 first:mt-0">
       <div className="mb-1 text-[9px] font-black uppercase text-slate-400">{label}</div>
       <FinishStrip values={values} count={count} trendStyle={trendStyle} dense={count === 8} />
     </div>
