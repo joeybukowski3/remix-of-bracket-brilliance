@@ -50,6 +50,7 @@ import { writeMlbSocialGraphic } from "./lib/mlb-social-graphic-renderer.mjs";
 import {
   assertLivePostAllowed,
   createXClientFromEnv,
+  normalizeAllowLivePostFlag,
   postPrimaryTextOnly,
   postPrimaryTweet,
   postReplyTweet,
@@ -326,7 +327,11 @@ async function main() {
   const liveMode = !args.dryRun;
   if (liveMode) {
     try {
-      assertLivePostAllowed({ eventName: process.env.GITHUB_EVENT_NAME ?? "", allowLivePost: process.env.X_ALLOW_LIVE_POST });
+      assertLivePostAllowed({
+        eventName: process.env.GITHUB_EVENT_NAME ?? "",
+        allowLivePost: process.env.X_ALLOW_LIVE_POST,
+        log: (m) => log(market, edition, m),
+      });
     } catch (error) {
       console.error(`[post-mlb-x-edition:${market}-${edition}] ${error.message}`);
       writeDiag(PostOutcome.CONFIGURATION_ERROR, { reason: error.message });
@@ -377,7 +382,7 @@ async function main() {
         return verify.ok;
       },
       dryRun: args.dryRun,
-      liveConfig: { liveMode, allowLivePost: process.env.X_ALLOW_LIVE_POST === "true", credentialsPresent, verifiedAccount: true },
+      liveConfig: { liveMode, allowLivePost: normalizeAllowLivePostFlag(process.env.X_ALLOW_LIVE_POST).enabled, credentialsPresent, verifiedAccount: true },
       log: (m) => log(market, edition, m),
       // Test-only: lets a dry run exercise a specific window (preferred,
       // fallback, after-window) against real scraped data without waiting for

@@ -35,6 +35,7 @@ import { scrapeKPageRows } from "./lib/mlb-x-k-page-scrape.mjs";
 import { createGitStateStore, STATE_BRANCH } from "./lib/mlb-x-state-store.mjs";
 import { getEtSlateDate } from "./lib/mlb-x-slate-timing.mjs";
 import { resolveEventMode } from "./lib/mlb-x-event-mode.mjs";
+import { normalizeAllowLivePostFlag } from "./lib/mlb-x-post-client.mjs";
 
 const ROOT = process.cwd();
 const PRODUCTION_HR_URL = "https://www.joeknowsball.com/data/mlb/hr-props-raw.json";
@@ -233,6 +234,9 @@ async function main() {
     return result.valid ? result : null;
   };
 
+  const allowLivePostFlag = normalizeAllowLivePostFlag(process.env.X_ALLOW_LIVE_POST);
+  console.log(`[plan-mlb-x-editions] X_ALLOW_LIVE_POST present=${allowLivePostFlag.present} enabled=${allowLivePostFlag.enabled}`);
+
   const plans = buildEditionPlans({
     now: readinessNow,
     slateDate,
@@ -259,7 +263,7 @@ async function main() {
     readReceipt,
     imageBundleFor,
     liveMode: args.liveMode,
-    allowLivePost: process.env.X_ALLOW_LIVE_POST === "true",
+    allowLivePost: allowLivePostFlag.enabled,
     credentialsPresent: Boolean(process.env.JKB_X_API_KEY && process.env.JKB_X_API_SECRET && process.env.JKB_X_ACCESS_TOKEN && process.env.JKB_X_ACCESS_SECRET),
     verifiedAccount: true, // the poster performs the real verification; the planner does not authenticate
   });
