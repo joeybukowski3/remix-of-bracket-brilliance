@@ -182,11 +182,11 @@ describe("MlbStrikeoutProps V2 shadow UI gate", () => {
 
     const main = within(document.querySelector('[data-x-export="mlb-strikeout-props"]') as HTMLElement);
     expect(main.getByText("3.8")).toBeInTheDocument();
-    expect(main.queryByText(/V2 Shadow/i)).not.toBeInTheDocument();
+    expect(main.queryByText(/Resolved |Raw V2/i)).not.toBeInTheDocument();
     expect(screen.queryByTestId("k-v2-shadow-debug-status")).not.toBeInTheDocument();
   });
 
-  it("shows shadow comparison only under ?debug=k-v2 with experimental labels and signed difference", async () => {
+  it("shows the projection comparison only under ?debug=k-v2, with the resolved value and signed difference", async () => {
     stubMatchMedia(false);
     const publicRow = makeRow();
     mockPropsData([publicRow]);
@@ -197,9 +197,10 @@ describe("MlbStrikeoutProps V2 shadow UI gate", () => {
     expect(await screen.findByTestId("k-v2-shadow-debug-status")).toBeInTheDocument();
     const comparison = screen.getByTestId("k-v2-shadow-row-comparison");
     expect(within(comparison).getByText("Legacy 3.8")).toBeInTheDocument();
-    expect(within(comparison).getByText("V2 Shadow 4.0")).toBeInTheDocument();
+    expect(within(comparison).getByText("V2 4.0")).toBeInTheDocument();
     expect(within(comparison).getByText("Delta +0.2")).toBeInTheDocument();
-    expect(within(comparison).getByText("Experimental")).toBeInTheDocument();
+    // The resolved production value the page actually publishes.
+    expect(within(comparison).getByTestId("k-v2-resolved-projection")).toBeInTheDocument();
     expect(comparison.textContent).not.toMatch(/recommended|more accurate/i);
   });
 

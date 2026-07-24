@@ -102,12 +102,13 @@ describe("MlbStrikeoutPropRowDetail", () => {
     expect(detailPanel.textContent).not.toMatch(/NaN|Infinity/);
   });
 
-  it("renders internal projection comparison, labels V2 as shadow experimental, and avoids accuracy claims", () => {
+  it("renders the projection comparison with the resolved production block and avoids accuracy claims", () => {
     render(<MlbStrikeoutPropRowDetail detail={detail} shadowRow={shadowRow} shadowArtifact={artifact} showV2Shadow publicSlateDate="2026-07-23" />);
     const panels = screen.getByTestId("strikeout-v2-debug-panels");
     expect(within(panels).getByText("Projection Comparison")).toBeInTheDocument();
-    expect(within(panels).getAllByText(/V2 Shadow/i).length).toBeGreaterThan(0);
-    expect(within(panels).getAllByText(/Experimental/i).length).toBeGreaterThan(0);
+    expect(within(panels).getByTestId("k-v2-resolved-production")).toBeInTheDocument();
+    expect(panels.textContent).toMatch(/Public resolved/);
+    expect(panels.textContent).toMatch(/Fallback reason/);
     expect(panels.textContent).not.toMatch(/more accurate|recommended/i);
   });
 
@@ -126,7 +127,7 @@ describe("MlbStrikeoutPropRowDetail", () => {
   it("does not render V2 debug panels outside shadow mode", () => {
     render(<MlbStrikeoutPropRowDetail detail={detail} />);
     expect(screen.queryByTestId("strikeout-v2-debug-panels")).not.toBeInTheDocument();
-    expect(screen.queryByText(/V2 Shadow/i)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("k-v2-resolved-production")).not.toBeInTheDocument();
   });
 });
 

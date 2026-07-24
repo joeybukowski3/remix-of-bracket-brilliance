@@ -34,16 +34,15 @@ function priceBonus(odds: string | null | undefined) {
   return -3;
 }
 
+/**
+ * The card's projection is the row's canonical resolved `projectedKs` and
+ * nothing else. There is deliberately no IP x K/9 re-derivation here: that
+ * was a third projection path, so a card could show a different number than
+ * the table's Proj K cell for the same pitcher. The table and the card must
+ * always agree on projection, line, edge, direction and odds.
+ */
 function resolveProjectedKs(row: PitcherStrikeoutTeamRow) {
   if (row.projectedKs != null && Number.isFinite(row.projectedKs)) return row.projectedKs;
-  if (
-    row.projectedIP != null
-    && row.projectedK9 != null
-    && Number.isFinite(row.projectedIP)
-    && Number.isFinite(row.projectedK9)
-  ) {
-    return Number(((row.projectedIP * row.projectedK9) / 9).toFixed(1));
-  }
   return null;
 }
 

@@ -436,6 +436,20 @@ jobs:
         continue-on-error: true
         run: npm run mlb:k-props-v2-shadow:validate
 
+      # Resolves THE production strikeout projection into hr-props-raw.json.
+      # Must run after V2 generation + validation (it reads that artifact) and
+      # before the site build and any X edition planning, which both consume
+      # the resolved `projectedKs`. Deliberately NOT continue-on-error: the
+      # script already degrades every row to legacy when V2 is missing, stale
+      # or schema-invalid, so a hard failure here means the public payload
+      # itself is unusable and must not be published.
+      - name: Resolve production K projection
+        run: npm run mlb:k-production-projection
+
+      - name: Audit production K projection
+        continue-on-error: true
+        run: npm run mlb:k-v2-public:audit
+
       # feat/mlb-bvp-history-context: generates display-only career and
       # trailing-5-year batter-vs-pitcher history for the "AVG vs P" column
       # and expandable history panel on /mlb/hr-props and

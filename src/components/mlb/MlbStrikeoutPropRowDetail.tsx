@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { PitcherVenueSplit, StrikeoutPropDetail } from "@/hooks/useMlbStrikeoutPropDetails";
 import type { KPropsV2ShadowArtifact, KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
+import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { outsToMlbInnings } from "@/lib/mlb/baseballInnings";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
@@ -333,13 +334,20 @@ function PanelCard({ title, children, tone = "slate" }: { title: string; childre
   );
 }
 
-function SummaryPills({ shadowRow }: { shadowRow: KPropsV2ShadowRow }) {
+function SummaryPills({ shadowRow, row }: { shadowRow: KPropsV2ShadowRow; row?: PitcherStrikeoutTeamRow | null }) {
   const fallbackCount = shadowRow.v2.fallbacks.length;
   const warningCount = shadowRow.v2.warnings.length;
+  const source = row?.projectionSource ?? null;
   return (
     <div className="flex flex-wrap gap-1.5 text-[10px] font-black uppercase tracking-wide">
-      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">Shadow</span>
-      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-800">Experimental</span>
+      <span
+        className={cn(
+          "rounded-full border px-2 py-0.5",
+          source === "v2" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-600",
+        )}
+      >
+        {source ? `Source ${source}` : "Source unknown"}
+      </span>
       <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-slate-600">{shadowRow.v2.confidence} confidence</span>
       {(fallbackCount > 0 || warningCount > 0) && (
         <span className="rounded-full border border-amber-300 bg-white px-2 py-0.5 text-amber-800">Incomplete inputs</span>
@@ -348,7 +356,7 @@ function SummaryPills({ shadowRow }: { shadowRow: KPropsV2ShadowRow }) {
   );
 }
 
-function ProjectionComparison({ detail, shadowRow }: { detail: StrikeoutPropDetail; shadowRow: KPropsV2ShadowRow }) {
+function ProjectionComparison({ detail, shadowRow, row }: { detail: StrikeoutPropDetail; shadowRow: KPropsV2ShadowRow; row?: PitcherStrikeoutTeamRow | null }) {
   const legacyKRate = shadowRow.legacy.projectedKs != null && shadowRow.v2.projectedBattersFaced ? shadowRow.legacy.projectedKs / shadowRow.v2.projectedBattersFaced : null;
   const rows = [
     ["Projected Ks", fmtFixed(shadowRow.legacy.projectedKs), fmtFixed(shadowRow.v2.projectedStrikeouts)],
@@ -360,12 +368,12 @@ function ProjectionComparison({ detail, shadowRow }: { detail: StrikeoutPropDeta
   return (
     <PanelCard title="Projection Comparison" tone="sky">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <SummaryPills shadowRow={shadowRow} />
+        <SummaryPills shadowRow={shadowRow} row={row} />
         <span className="text-[10px] font-semibold text-slate-500">{detail.pitcher} vs {detail.opponent}</span>
       </div>
       <div className="overflow-hidden rounded-lg border border-sky-100 bg-white">
         <table className="w-full table-fixed text-[11px]">
-          <thead><tr className="bg-sky-50 text-[9px] uppercase tracking-wide text-slate-500"><th className="px-2 py-1 text-left">Metric</th><th className="px-2 py-1 text-left">Legacy</th><th className="px-2 py-1 text-left">V2 Shadow</th></tr></thead>
+          <thead><tr className="bg-sky-50 text-[9px] uppercase tracking-wide text-slate-500"><th className="px-2 py-1 text-left">Metric</th><th className="px-2 py-1 text-left">Legacy</th><th className="px-2 py-1 text-left">V2</th></tr></thead>
           <tbody>{rows.map(([metric, legacy, v2]) => <tr key={metric}><td className="border-t border-slate-100 px-2 py-1 font-semibold text-slate-600">{metric}</td><td className="border-t border-slate-100 px-2 py-1 text-slate-700">{legacy}</td><td className="border-t border-slate-100 px-2 py-1 text-slate-700">{v2}</td></tr>)}</tbody>
         </table>
       </div>
@@ -376,7 +384,15 @@ function ProjectionComparison({ detail, shadowRow }: { detail: StrikeoutPropDeta
         <div className="rounded-lg bg-white px-2 py-1"><span className="text-slate-400">Fallbacks </span><span className="font-black text-slate-800">{shadowRow.v2.fallbacks.length}</span></div>
         <div className="rounded-lg bg-white px-2 py-1"><span className="text-slate-400">Warnings </span><span className="font-black text-slate-800">{shadowRow.v2.warnings.length}</span></div>
       </div>
-      <p className="mt-2 text-[10px] font-semibold text-slate-500">V2 Shadow is experimental and not historically validated. This panel does not recommend replacing the production projection.</p>
+      <div data-testid="k-v2-resolved-production" className="mt-2 grid gap-1.5 text-[11px] sm:grid-cols-3">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-2 py-1"><span className="text-slate-500">Public resolved </span><span className="font-black text-slate-900">{fmtFixed(row?.projectedKs ?? null)}</span></div>
+        <div className="rounded-lg bg-white px-2 py-1"><span className="text-slate-400">Source </span><span className="font-black text-slate-800">{row?.projectionSource ?? DASH}</span></div>
+        <div className="rounded-lg bg-white px-2 py-1"><span className="text-slate-400">Fallback reason </span><span className="font-black text-slate-800">{row?.projectionFallbackReason ?? DASH}</span></div>
+        <div className="rounded-lg bg-white px-2 py-1"><span className="text-slate-400">Legacy </span><span className="font-black text-slate-800">{fmtFixed(row?.legacyProjectedKs ?? shadowRow.legacy.projectedKs)}</span></div>
+        <div className="rounded-lg bg-white px-2 py-1"><span className="text-slate-400">Raw V2 </span><span className="font-black text-slate-800">{fmtFixed(shadowRow.v2.projectedStrikeouts)}</span></div>
+        <div className="rounded-lg bg-white px-2 py-1"><span className="text-slate-400">Confidence </span><span className="font-black text-slate-800">{row?.v2Confidence ?? shadowRow.v2.confidence}</span></div>
+      </div>
+      <p className="mt-2 text-[10px] font-semibold text-slate-500">Legacy remains stored as the deterministic fail-safe fallback and as this comparison value. The two projections are never blended.</p>
     </PanelCard>
   );
 }
@@ -467,7 +483,7 @@ function SourceIntegrityPanel({ artifact, publicSlateDate }: { artifact: KPropsV
   );
 }
 
-export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, shadowArtifact = null, showV2Shadow = false, publicSlateDate = null }: { detail: StrikeoutPropDetail; shadowRow?: KPropsV2ShadowRow | null; shadowArtifact?: KPropsV2ShadowArtifact | null; showV2Shadow?: boolean; publicSlateDate?: string | null }) {
+export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, shadowArtifact = null, showV2Shadow = false, publicSlateDate = null, row = null }: { detail: StrikeoutPropDetail; shadowRow?: KPropsV2ShadowRow | null; shadowArtifact?: KPropsV2ShadowArtifact | null; showV2Shadow?: boolean; publicSlateDate?: string | null; row?: PitcherStrikeoutTeamRow | null }) {
   const detailsInput = getNestedRecord(shadowRow?.inputs ?? {}, ["details"]);
   const pitcherSummary = getNestedRecord(detailsInput ?? {}, ["pitcherLastFiveSummary"]);
   // Canonical summary lives on the generated detail artifact itself; the shadow debug artifact's
@@ -601,7 +617,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
       </section>
       {showV2Shadow && shadowRow && (
         <div data-testid="strikeout-v2-debug-panels" className="grid min-w-0 gap-2">
-          <ProjectionComparison detail={detail} shadowRow={shadowRow} />
+          <ProjectionComparison detail={detail} shadowRow={shadowRow} row={row} />
           <ModelBreakdown shadowRow={shadowRow} />
           <SplitAvailabilityPanel shadowRow={shadowRow} />
           <SourceIntegrityPanel artifact={shadowArtifact} publicSlateDate={publicSlateDate} />
