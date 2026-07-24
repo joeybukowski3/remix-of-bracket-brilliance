@@ -29,12 +29,35 @@ export function secretsFromEnv(env = process.env) {
   return [env.JKB_X_API_KEY, env.JKB_X_API_SECRET, env.JKB_X_ACCESS_TOKEN, env.JKB_X_ACCESS_SECRET].filter(Boolean);
 }
 
+/**
+ * Normalizes the raw X_ALLOW_LIVE_POST env value. Trims surrounding
+ * whitespace (a repository Variable's value can pick up a trailing
+ * newline/space when pasted in the GitHub UI) and compares case-insensitively,
+ * so "true", "TRUE", and " true " all enable live posting the same way
+ * "false", unset, or any other value does not.
+ *
+ * `present` distinguishes "the variable resolved to an empty/unset value"
+ * from "the variable resolved to something, just not the string true" -- the
+ * two most common misconfigurations (kill switch left off vs. the value was
+ * set as a Secret instead of a Variable, so `vars.X_ALLOW_LIVE_POST` is
+ * always empty) look identical without it.
+ */
+export function normalizeAllowLivePostFlag(rawValue) {
+  const trimmed = typeof rawValue === "string" ? rawValue.trim() : "";
+  return { present: trimmed.length > 0, enabled: trimmed.toLowerCase() === "true" };
+}
+
 /** Same event/flag gate as both existing posters: workflow_dispatch, schedule, or workflow_run, plus an explicit opt-in. */
-export function assertLivePostAllowed({ eventName, allowLivePost }) {
+export function assertLivePostAllowed({ eventName, allowLivePost, log = () => {} }) {
   if (!["workflow_dispatch", "schedule", "workflow_run"].includes(eventName)) {
     throw new Error(`Live posting is blocked for event "${eventName}".`);
   }
-  if (allowLivePost !== "true") {
+  const flag = normalizeAllowLivePostFlag(allowLivePost);
+  // Never logs the raw value -- only whether it was present and how it
+  // normalized -- so this is safe to print even though X_ALLOW_LIVE_POST is
+  // sourced the same way secrets are (a workflow `env:` entry).
+  log(`X_ALLOW_LIVE_POST present=${flag.present} enabled=${flag.enabled}`);
+  if (!flag.enabled) {
     throw new Error("Live posting is blocked unless X_ALLOW_LIVE_POST=true is set by the workflow.");
   }
 }
