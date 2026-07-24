@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import PgaFreshnessStatusPanel, { type PgaFreshnessStatusPanelItem } from "@/components/pga/PgaFreshnessStatusPanel";
 import PgaHistoryModelTable from "@/components/pga/PgaHistoryModelTable";
+import PgaLatestArticlesCard from "@/components/pga/PgaLatestArticlesCard";
 import PgaPlayerHistoryRefreshNotice from "@/components/pga/PgaPlayerHistoryRefreshNotice";
+import PgaScheduleSidebarCard from "@/components/pga/PgaScheduleSidebarCard";
 import {
   findCourseWeightEntry,
   getCurrentAndNextEvents,
@@ -248,9 +250,16 @@ export default function PgaHistoryModel() {
       <div className="bg-gradient-to-br from-slate-900 to-slate-800 px-4 py-8 text-center text-white">
         <div className="mx-auto max-w-[1800px]"><div className="text-xs font-black uppercase tracking-widest text-emerald-400">Joe Knows Ball</div><h1 className="mt-1 text-3xl font-black">PGA Tournament Model</h1><p className="mt-1 text-sm text-slate-300">{eventName} · recent form, course history, course fit and trend</p></div>
       </div>
-      <div className="mx-auto flex w-full max-w-[1800px] gap-6 px-4 py-6 sm:px-6 xl:px-8">
-        <aside className="hidden w-60 shrink-0 lg:block"><div className="sticky top-4 overflow-hidden rounded-xl border bg-white shadow-sm"><div className="bg-slate-900 px-4 py-3 text-sm font-black text-white">2026 PGA Tour</div><div className="max-h-[72vh] divide-y overflow-y-auto">{schedule.filter((entry) => entry.startDate >= new Date().toISOString().slice(0, 10)).slice(0, 12).map((entry) => <div key={entry.id} className={`px-3 py-2 ${entry.id === event?.id ? "bg-emerald-50" : ""}`}><div className="text-xs font-bold">{entry.shortName || entry.name}</div><div className="text-[10px] text-slate-400">{entry.dateLabel}</div>{entry.dataFile && <Link to={`/pga/${entry.slug}/model`} className="mt-1 inline-block text-[10px] font-bold text-emerald-700">View model →</Link>}</div>)}</div></div></aside>
-        <main className="min-w-0 flex-1">
+      <div className="mx-auto grid w-full max-w-[1800px] grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(220px,240px)_minmax(0,1fr)] xl:px-8">
+        <aside className="order-2 min-w-0 space-y-4 lg:order-1 lg:sticky lg:top-4 lg:self-start" aria-label="PGA articles, schedule and partners">
+          <PgaLatestArticlesCard />
+          <PgaScheduleSidebarCard schedule={schedule} activeEventId={event?.id ?? null} />
+          <section className="rounded-xl border bg-white p-3 shadow-sm" aria-labelledby="pga-partners-heading">
+            <h2 id="pga-partners-heading" className="mb-2 text-[11px] font-black uppercase text-slate-500">Bet with our partners</h2>
+            <div className="space-y-1">{SPORTSBOOKS.map((book) => <a key={book.name} href={book.referralUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded px-2 py-1.5 text-[11px] font-bold" style={{ backgroundColor: book.bgColor, color: book.textColor }}>{book.name}</a>)}</div>
+          </section>
+        </aside>
+        <main className="order-1 min-w-0 lg:order-2">
           <div className="mb-4 flex flex-wrap gap-2"><Link to="/pga/best-bets" className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">Best Bets</Link><Link to="/pga/dfs" className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">DFS Upload</Link></div>
           <PgaFreshnessStatusPanel
             items={freshnessItems}
@@ -293,7 +302,6 @@ export default function PgaHistoryModel() {
           )}
           <p className="mt-3 text-[11px] text-slate-400">Regular events use core stats, the last five starts, course fit, same-event history and trend. Majors replace event history with the last four starts in that major plus the last eight major starts overall.</p>
         </main>
-        <aside className="hidden w-48 shrink-0 xl:block"><div className="sticky top-4 rounded-xl border bg-white p-3 shadow-sm"><div className="mb-2 text-[10px] font-black uppercase text-slate-500">Bet with our partners</div><div className="space-y-1">{SPORTSBOOKS.map((book) => <a key={book.name} href={book.referralUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded px-2 py-1.5 text-[11px] font-bold" style={{ backgroundColor: book.bgColor, color: book.textColor }}>{book.name}</a>)}</div></div></aside>
       </div>
     </SiteShell>
   );
