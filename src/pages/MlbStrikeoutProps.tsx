@@ -352,7 +352,7 @@ export default function MlbStrikeoutProps() {
     if (isDetailsStale) return <MlbStrikeoutPropRowDetailStale />;
     const detail = detailsByKey.get(key);
     if (!detail) return <MlbStrikeoutPropRowDetailUnavailable pitcher={row.pitcher} />;
-    return <MlbStrikeoutPropRowDetail detail={detail} shadowRow={shadowRow} shadowArtifact={kV2Shadow.artifact} showV2Shadow={showKProjectionV2Debug} publicSlateDate={slateDate} />;
+    return <MlbStrikeoutPropRowDetail detail={detail} shadowRow={shadowRow} shadowArtifact={kV2Shadow.artifact} showV2Shadow={showKProjectionV2Debug} publicSlateDate={slateDate} row={row} />;
   }
 
   // Rows whose projection status disqualifies them from ranking/
