@@ -4,16 +4,16 @@
   "teamKAdjustmentModelVersion": "team-k-adjustment-v1",
   "mode": "shadow",
   "date": "2026-07-24",
-  "generatedAt": "2026-07-24T15:51:23.608Z",
+  "generatedAt": "2026-07-24T17:09:58.417Z",
   "summary": {
     "gameCount": 15,
-    "pitcherCount": 28,
-    "successfulWorkloadFetches": 28,
-    "workloadOnlyKsAvailable": 28,
-    "teamAdjustedKsAvailable": 28,
-    "averageSignedKsChange": -0.007,
-    "averageAbsoluteKsChange": 0.168,
-    "generatedAt": "2026-07-24T15:51:23.608Z"
+    "pitcherCount": 29,
+    "successfulWorkloadFetches": 29,
+    "workloadOnlyKsAvailable": 29,
+    "teamAdjustedKsAvailable": 29,
+    "averageSignedKsChange": -0.006,
+    "averageAbsoluteKsChange": 0.163,
+    "generatedAt": "2026-07-24T17:09:58.417Z"
   },
   "leagueContext": {
     "pitchesPerPA": 3.884,
@@ -27,7 +27,7 @@
       "gamePk": 823759,
       "gameKey": "COL@MIL",
       "gameDate": "2026-07-24T20:10:00Z",
-      "gameStatus": "Scheduled",
+      "gameStatus": "Pre-Game",
       "venue": "American Family Field",
       "pitcherId": 608372,
       "pitcher": "Tomoyuki Sugano",
@@ -139,7 +139,7 @@
       "gamePk": 823759,
       "gameKey": "COL@MIL",
       "gameDate": "2026-07-24T20:10:00Z",
-      "gameStatus": "Scheduled",
+      "gameStatus": "Pre-Game",
       "venue": "American Family Field",
       "pitcherId": 675660,
       "pitcher": "Shane Drohan",
@@ -1249,6 +1249,121 @@
         "diagnostics": {
           "pitcherHand": null,
           "opponentKEnvironment": "favorable",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ]
+    },
+    {
+      "gamePk": 824812,
+      "gameKey": "ATL@BAL",
+      "gameDate": "2026-07-24T23:05:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "Oriole Park at Camden Yards",
+      "pitcherId": 669432,
+      "pitcher": "Trevor Rogers",
+      "teamId": 110,
+      "team": "BAL",
+      "opponentId": 144,
+      "opponent": "ATL",
+      "isHome": true,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.1883,
+        "seasonBattersFaced": 409,
+        "recentKRate": 0.2308,
+        "recentBattersFaced": 143,
+        "bbRate": 0.0782,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.893,
+        "recent14PitchesPerPA": 3.79,
+        "seasonPlateAppearances": 3863,
+        "recent14PlateAppearances": 352,
+        "seasonKRate": 0.213,
+        "recent14KRate": 0.2131,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 92.67,
+        "recentBfAverage": 24.14,
+        "recentIpAverage": 6.05,
+        "opponentPitchesPerPA": 3.867
+      },
+      "projection": {
+        "expectedPitchLimit": 90.8,
+        "expectedBF": 23.711,
+        "expectedInnings": 5.941,
+        "temporaryKRate": 0.2022,
+        "workloadOnlyProjectedKs": 4.794,
+        "teamAdjustedKRate": 0.2029,
+        "fullShadowProjectedKs": 4.811,
+        "teamAdjustmentKsDelta": 0.017
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2029,
+        "components": {
+          "leagueKRate": 0.2215,
+          "pitcher": {
+            "observedSeasonKRate": 0.1883,
+            "regressedSeasonKRate": 0.1992,
+            "recentAdjustment": 0.0063,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2055
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.213,
+            "regressedSeasonKRate": 0.2142,
+            "seasonAdjustment": -0.0026,
+            "recentAdjustment": -0.0001,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.2142,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0026,
+            "movementFromPitcherBaseline": -0.0026
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
           "hardBounds": [
             0.12,
             0.38

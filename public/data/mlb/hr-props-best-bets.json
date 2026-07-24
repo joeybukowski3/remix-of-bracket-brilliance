@@ -1,10 +1,10 @@
 {
   "date": "2026-07-24",
-  "generatedAt": "2026-07-24T15:52:19.615Z",
+  "generatedAt": "2026-07-24T17:11:18.363Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field's 1.07 park factor and Davis Martin's 52.5 HR/9 rate set up Yordan Alvarez for the day's clearest power edge, while Oracle Park's 0.85 factor is offset by Grayson Rodriguez's 91.8 HR/9 rate, creating a counterintuitive boost for Ramos, Eldridge, and Schmitt. Nationals Park and PNC Park sit near neutral, but Eduardo Rodriguez's 61.7 HR/9 and Matthew Boyd's 67.3 HR/9 still give Wood and Valdez viable spots despite the modest park factors.",
-    "modelNote": "The model is prioritizing barrel rate, opposing pitcher HR vulnerability, and recent HR volume over park suppression, which is why Alvarez, Ramos, and Eldridge occupy the top three ranks despite mixed park environments."
+    "slateOverview": "Rate Field's 1.07 park factor and Davis Martin's right-handed delivery create a favorable power environment for Yordan Alvarez, while Camden Yards (1.10) and American Family Field (1.10) offer additional boosts for ATL and MIL bats. Oracle Park's 0.85 factor suppresses SF power despite favorable opposing-pitcher HR rates, and Nationals Park sits neutral for James Wood versus Eduardo Rodriguez. Weather angles are minimal, so park and matchup edges dominate.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park factor over recent HR volume, elevating Alvarez to the top spot despite modest last-30 totals while pushing Ramos and Eldridge higher due to Rodriguez's 91.9 HR/600 rate despite Oracle's suppression."
   },
   "bestBets": [
     {
@@ -18,8 +18,8 @@
         "HH=53.2%"
       ],
       "bullets": [
-        "barrel=19.2%",
-        "park=1.07"
+        "park=1.07",
+        "hrScore=80"
       ],
       "hrOddsYes": "+220",
       "marketImpliedProbability": 0.3125,
@@ -37,8 +37,8 @@
         "HH=50.8%"
       ],
       "bullets": [
-        "barrel=16.1%",
-        "park=0.85"
+        "park=0.85",
+        "hrScore=75.4"
       ],
       "hrOddsYes": "+475",
       "marketImpliedProbability": 0.17391304347826086,
@@ -56,11 +56,11 @@
         "HH=55%"
       ],
       "bullets": [
-        "HH=55%",
-        "park=0.85"
+        "park=0.85",
+        "hrScore=72.9"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -71,12 +71,12 @@
       "opposingPitcher": "Eduardo Rodriguez",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=61.7",
+        "Pitcher HR VS=61.3",
         "Hard Hit%=59.3"
       ],
       "bullets": [
-        "HR score 72.7 (#4)",
-        "Pitcher HR VS 61.7 at park 0.98"
+        "HR score 72.6 (#4)",
+        "Pitcher HR VS 61.3 at park 0.98"
       ],
       "hrOddsYes": "+255",
       "marketImpliedProbability": 0.28169014084507044,
@@ -94,7 +94,7 @@
         "Hard Hit%=56.3"
       ],
       "bullets": [
-        "HR score 72.3 (#5)",
+        "HR score 72.4 (#5)",
         "Pitcher HR VS 67.3 at park 0.90"
       ],
       "hrOddsYes": "+280",
@@ -115,8 +115,8 @@
         "HH=59.3%"
       ],
       "bullets": [
-        "barrel=22.1%",
-        "HH=59.3%"
+        "park=0.98",
+        "hrScore=72.6"
       ],
       "hrOddsYes": "+255",
       "marketImpliedProbability": 0.28169014084507044,
@@ -134,8 +134,8 @@
         "HH=56.3%"
       ],
       "bullets": [
-        "barrel=29.7%",
-        "HH=56.3%"
+        "park=0.9",
+        "hrScore=72.4"
       ],
       "hrOddsYes": "+280",
       "marketImpliedProbability": 0.2631578947368421,
@@ -153,8 +153,8 @@
         "HH=44.3%"
       ],
       "bullets": [
-        "barrel=12.4%",
-        "park=0.85"
+        "park=0.85",
+        "hrScore=70.4"
       ],
       "hrOddsYes": "+425",
       "marketImpliedProbability": 0.19047619047619047,
@@ -162,58 +162,77 @@
       "hrValueEdge": null
     },
     {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "BAL",
+      "opposingPitcher": "Trevor Rogers",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Hard Hit%=50.4",
+        "Pitcher HR VS=49.1"
+      ],
+      "bullets": [
+        "HR score 68.2 (#7)",
+        "Pitcher HR VS 49.1 at park 1.10"
+      ],
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Jake Bauers",
       "team": "MIL",
       "opponent": "COL",
       "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
         "Pitcher HR VS=89.5",
         "Hard Hit%=53.0"
       ],
       "bullets": [
-        "HR score 67.3 (#7)",
+        "HR score 67.3 (#8)",
         "Pitcher HR VS 89.5 at park 1.10"
       ],
       "hrOddsYes": "+310",
       "marketImpliedProbability": 0.24390243902439024,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jordan Walker",
-      "team": "STL",
-      "opponent": "CIN",
-      "opposingPitcher": "Rhett Lowder",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=66.3",
-        "Hard Hit%=50.5"
-      ],
-      "bullets": [
-        "HR score 65.5 (#8)",
-        "Pitcher HR VS 66.3 at park 0.92"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "BAL",
+      "opposingPitcher": "Trevor Rogers",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=15%",
+        "HH=50.4%"
+      ],
+      "bullets": [
+        "park=1.1",
+        "hrScore=68.2"
+      ],
+      "hrOddsYes": "+420",
+      "marketImpliedProbability": 0.19230769230769232,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "Jake Bauers",
       "team": "MIL",
       "opponent": "COL",
       "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 7,
+      "hrScoreRank": 8,
       "topStats": [
         "barrel=13.6%",
         "HH=53%"
       ],
       "bullets": [
-        "barrel=13.6%",
-        "park=1.1"
+        "park=1.1",
+        "hrScore=67.3"
       ],
       "hrOddsYes": "+310",
       "marketImpliedProbability": 0.24390243902439024,
@@ -221,59 +240,40 @@
       "hrValueEdge": null
     },
     {
-      "player": "Jordan Walker",
-      "team": "STL",
-      "opponent": "CIN",
-      "opposingPitcher": "Rhett Lowder",
-      "hrScoreRank": 8,
+      "player": "Dillon Dingler",
+      "team": "DET",
+      "opponent": "KC",
+      "opposingPitcher": "Beck Way",
+      "hrScoreRank": 24,
       "topStats": [
-        "barrel=14.1%",
-        "HH=50.5%"
+        "Hard Hit%=46.5",
+        "Pitcher HR VS=31.9"
       ],
       "bullets": [
-        "barrel=14.1%",
-        "park=0.92"
+        "HR score 58.7 (#24)",
+        "Pitcher HR VS 31.9 at park 0.95"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
+      "hrOddsYes": "+520",
+      "marketImpliedProbability": 0.16129032258064516,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Tyler Locklear",
-      "team": "AZ",
-      "opponent": "WSH",
-      "opposingPitcher": "Carson Palmquist",
-      "hrScoreRank": 20,
+      "player": "CJ Abrams",
+      "team": "WSH",
+      "opponent": "AZ",
+      "opposingPitcher": "Eduardo Rodriguez",
+      "hrScoreRank": 16,
       "topStats": [
-        "Pitcher HR VS=37.7",
-        "Hard Hit%=36.4"
+        "Pitcher HR VS=61.3",
+        "Hard Hit%=42.7"
       ],
       "bullets": [
-        "HR score 60.6 (#20)",
-        "Pitcher HR VS 37.7 at park 0.98"
+        "HR score 63.7 (#16)",
+        "Pitcher HR VS 61.3 at park 0.98"
       ],
-      "hrOddsYes": "+525",
-      "marketImpliedProbability": 0.16,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "William Contreras",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 23,
-      "topStats": [
-        "Pitcher HR VS=89.5",
-        "Hard Hit%=42.2"
-      ],
-      "bullets": [
-        "HR score 58.1 (#23)",
-        "Pitcher HR VS 89.5 at park 1.10"
-      ],
-      "hrOddsYes": "+480",
-      "marketImpliedProbability": 0.1724137931034483,
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
