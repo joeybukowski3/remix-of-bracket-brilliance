@@ -1,10 +1,10 @@
 {
   "date": "2026-07-24",
-  "generatedAt": "2026-07-24T14:18:59.029Z",
+  "generatedAt": "2026-07-24T15:52:19.615Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field's 1.07 factor and Davis Martin's 52.5 HR/9 rate give Alvarez the clearest power edge, while Oracle Park's 0.85 factor suppresses Ramos, Eldridge, and Schmitt despite their high opposing-pitcher HR rates. Nationals Park and PNC Park sit near neutral, but Wood and Valdez carry elevated barrel and ISO marks that offset the modest park boosts.",
-    "modelNote": "The model is prioritizing barrel rate, ISO, and opposing-pitcher HR rate over park factor, which is why Alvarez ranks first despite a modest park and why Wood and Valdez crack the top five despite neutral or pitcher-friendly venues."
+    "slateOverview": "Rate Field's 1.07 park factor and Davis Martin's 52.5 HR/9 rate set up Yordan Alvarez for the day's clearest power edge, while Oracle Park's 0.85 factor is offset by Grayson Rodriguez's 91.8 HR/9 rate, creating a counterintuitive boost for Ramos, Eldridge, and Schmitt. Nationals Park and PNC Park sit near neutral, but Eduardo Rodriguez's 61.7 HR/9 and Matthew Boyd's 67.3 HR/9 still give Wood and Valdez viable spots despite the modest park factors.",
+    "modelNote": "The model is prioritizing barrel rate, opposing pitcher HR vulnerability, and recent HR volume over park suppression, which is why Alvarez, Ramos, and Eldridge occupy the top three ranks despite mixed park environments."
   },
   "bestBets": [
     {
@@ -18,11 +18,11 @@
         "HH=53.2%"
       ],
       "bullets": [
-        "park=1.07",
-        "barrel=19.2%"
+        "barrel=19.2%",
+        "park=1.07"
       ],
-      "hrOddsYes": "+215",
-      "marketImpliedProbability": 0.31746031746031744,
+      "hrOddsYes": "+220",
+      "marketImpliedProbability": 0.3125,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -37,8 +37,8 @@
         "HH=50.8%"
       ],
       "bullets": [
-        "park=0.85",
-        "barrel=16.1%"
+        "barrel=16.1%",
+        "park=0.85"
       ],
       "hrOddsYes": "+475",
       "marketImpliedProbability": 0.17391304347826086,
@@ -56,8 +56,8 @@
         "HH=55%"
       ],
       "bullets": [
-        "park=0.85",
-        "HH=55%"
+        "HH=55%",
+        "park=0.85"
       ],
       "hrOddsYes": "+390",
       "marketImpliedProbability": 0.20408163265306123,
@@ -115,8 +115,8 @@
         "HH=59.3%"
       ],
       "bullets": [
-        "park=0.98",
-        "barrel=22.1%"
+        "barrel=22.1%",
+        "HH=59.3%"
       ],
       "hrOddsYes": "+255",
       "marketImpliedProbability": 0.28169014084507044,
@@ -134,8 +134,8 @@
         "HH=56.3%"
       ],
       "bullets": [
-        "park=0.9",
-        "barrel=29.7%"
+        "barrel=29.7%",
+        "HH=56.3%"
       ],
       "hrOddsYes": "+280",
       "marketImpliedProbability": 0.2631578947368421,
@@ -153,8 +153,8 @@
         "HH=44.3%"
       ],
       "bullets": [
-        "park=0.85",
-        "barrel=12.4%"
+        "barrel=12.4%",
+        "park=0.85"
       ],
       "hrOddsYes": "+425",
       "marketImpliedProbability": 0.19047619047619047,
@@ -212,8 +212,8 @@
         "HH=53%"
       ],
       "bullets": [
-        "park=1.1",
-        "barrel=13.6%"
+        "barrel=13.6%",
+        "park=1.1"
       ],
       "hrOddsYes": "+310",
       "marketImpliedProbability": 0.24390243902439024,
@@ -231,11 +231,30 @@
         "HH=50.5%"
       ],
       "bullets": [
-        "park=0.92",
-        "barrel=14.1%"
+        "barrel=14.1%",
+        "park=0.92"
       ],
       "hrOddsYes": "+390",
       "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Tyler Locklear",
+      "team": "AZ",
+      "opponent": "WSH",
+      "opposingPitcher": "Carson Palmquist",
+      "hrScoreRank": 20,
+      "topStats": [
+        "Pitcher HR VS=37.7",
+        "Hard Hit%=36.4"
+      ],
+      "bullets": [
+        "HR score 60.6 (#20)",
+        "Pitcher HR VS 37.7 at park 0.98"
+      ],
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -253,27 +272,8 @@
         "HR score 58.1 (#23)",
         "Pitcher HR VS 89.5 at park 1.10"
       ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "CJ Abrams",
-      "team": "WSH",
-      "opponent": "AZ",
-      "opposingPitcher": "Eduardo Rodriguez",
-      "hrScoreRank": 14,
-      "topStats": [
-        "Pitcher HR VS=61.7",
-        "Hard Hit%=42.7"
-      ],
-      "bullets": [
-        "HR score 63.9 (#14)",
-        "Pitcher HR VS 61.7 at park 0.98"
-      ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+480",
+      "marketImpliedProbability": 0.1724137931034483,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
