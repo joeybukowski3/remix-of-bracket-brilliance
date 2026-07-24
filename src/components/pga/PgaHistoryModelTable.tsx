@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useJkbTrendRankings, type JkbTrendRanking } from "@/hooks/useJkbTrendRankings";
 import { normalizePlayerKey, type PgaHistoryResult, type PgaTournamentModelRow } from "@/lib/pga/historyModel";
+import { percentileHeatClass } from "@/lib/pga/pgaHeatColors";
 
 type Props = {
   rows: PgaTournamentModelRow[];
@@ -28,13 +29,13 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
       ) : null}
 
       <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:block">
-        <table className="w-full table-fixed text-center text-[9px] leading-tight">
+        <table className="w-full table-fixed text-center text-[12px] leading-tight">
           <DesktopColumnWidths isMajor={isMajor} />
           <thead>
-            <tr className="bg-slate-900 font-black uppercase tracking-[0.08em] text-white">
-              <th rowSpan={2} className="px-1 py-2">#</th>
-              <th rowSpan={2} className="px-2 py-2 text-left">Player</th>
-              <th rowSpan={2} className="px-1 py-2">Score</th>
+            <tr className="bg-slate-900 text-[11px] font-black uppercase tracking-[0.08em] text-white">
+              <th rowSpan={2} className="px-1 py-2.5">#</th>
+              <th rowSpan={2} className="px-2 py-2.5 text-left">Player</th>
+              <th rowSpan={2} className="px-1 py-2.5">Score</th>
               <Group count={6}>Player Stats</Group>
               <Group count={2}>Model</Group>
               <Group count={1}>Last 5 Starts</Group>
@@ -47,7 +48,7 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
                 <Group count={1}>{eventLabel} History</Group>
               )}
             </tr>
-            <tr className="border-b border-slate-200 bg-slate-50 font-black uppercase text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-600">
               {statLabels.map((label, index) => (
                 <th key={label} className={`${index === 0 ? "border-l border-slate-200" : ""} px-0.5 py-2`}>
                   {compactStatLabel(label)}
@@ -55,14 +56,14 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
               ))}
               <th className="border-l border-slate-200 px-0.5 py-2">Fit</th>
               <th className="px-0.5 py-2">JKB Trend</th>
-              <th className="border-l border-slate-200 px-1 py-2 text-[8px] text-slate-400">Latest → Older</th>
+              <th className="border-l border-slate-200 px-1 py-2 text-slate-500">Latest → Older</th>
               {isMajor ? (
                 <>
-                  <th className="border-l border-slate-200 px-1 py-2 text-[8px] text-slate-400">Latest 4</th>
-                  <th className="border-l border-slate-200 px-1 py-2 text-[8px] text-slate-400">Latest 8</th>
+                  <th className="border-l border-slate-200 px-1 py-2 text-slate-500">Latest 4</th>
+                  <th className="border-l border-slate-200 px-1 py-2 text-slate-500">Latest 8</th>
                 </>
               ) : (
-                <th className="border-l border-slate-200 px-1 py-2 text-[8px] text-slate-400">Latest 4</th>
+                <th className="border-l border-slate-200 px-1 py-2 text-slate-500">Latest 4</th>
               )}
             </tr>
           </thead>
@@ -124,9 +125,9 @@ function DesktopRow({ row, index, statView, isMajor, trendRanking }: {
 
   return (
     <tr className={`${bg} hover:bg-emerald-50/40`}>
-      <td className="border-b border-slate-100 px-1 py-1.5 font-bold text-slate-400">{row.modelRank}</td>
-      <td className="truncate border-b border-r border-slate-100 px-2 py-1.5 text-left font-black text-slate-900" title={row.player}>{row.player}</td>
-      <td className="border-b border-r border-slate-100 px-1 py-1.5"><Score value={row.modelScore} /></td>
+      <td className="border-b border-slate-100 px-1 py-2.5 text-[11px] font-bold tabular-nums text-slate-500">{row.modelRank}</td>
+      <td className="truncate border-b border-r border-slate-100 px-2 py-2.5 text-left text-[13px] font-black text-slate-900" title={row.player}>{row.player}</td>
+      <td className="border-b border-r border-slate-100 px-1 py-2.5"><Score value={row.modelScore} /></td>
 
       {statKeys.map((key, statIndex) => (
         <td key={key} className={`${statIndex === 0 ? "border-l" : ""} border-b border-slate-100 p-0`}>
@@ -137,16 +138,16 @@ function DesktopRow({ row, index, statView, isMajor, trendRanking }: {
       ))}
 
       <td className="border-b border-l border-slate-100 p-0"><Percentile value={row.courseFit} /></td>
-      <td className="border-b border-slate-100 px-1 py-1"><Trend ranking={trendRanking} direction={row.trend.direction} label={row.trend.label} /></td>
-      <td className="border-b border-l border-slate-100 px-1 py-1"><FinishStrip values={row.recentResults} count={RECENT_START_COUNT} trendStyle /></td>
+      <td className="border-b border-slate-100 px-1 py-1.5"><Trend ranking={trendRanking} direction={row.trend.direction} label={row.trend.label} /></td>
+      <td className="border-b border-l border-slate-100 px-1 py-1.5"><FinishStrip values={row.recentResults} count={RECENT_START_COUNT} trendStyle /></td>
 
       {isMajor ? (
         <>
-          <td className="border-b border-l border-slate-100 px-1 py-1"><FinishStrip values={row.specificMajorResults} count={4} /></td>
-          <td className="border-b border-l border-slate-100 px-1 py-1"><FinishStrip values={row.allMajorResults} count={8} dense /></td>
+          <td className="border-b border-l border-slate-100 px-1 py-1.5"><FinishStrip values={row.specificMajorResults} count={4} /></td>
+          <td className="border-b border-l border-slate-100 px-1 py-1.5"><FinishStrip values={row.allMajorResults} count={8} dense /></td>
         </>
       ) : (
-        <td className="border-b border-l border-slate-100 px-1 py-1"><FinishStrip values={row.eventResults} count={4} /></td>
+        <td className="border-b border-l border-slate-100 px-1 py-1.5"><FinishStrip values={row.eventResults} count={4} /></td>
       )}
     </tr>
   );
@@ -163,8 +164,8 @@ function MobileCard({ row, statView, isMajor, eventLabel, trendRanking }: {
     <article className="rounded-xl border bg-white p-3 shadow-sm">
       <div className="flex justify-between gap-3">
         <div>
-          <div className="text-[10px] font-black text-slate-400">#{row.modelRank}</div>
-          <div className="font-black">{row.player}</div>
+          <div className="text-[11px] font-black tabular-nums text-slate-500">#{row.modelRank}</div>
+          <div className="text-[14px] font-black">{row.player}</div>
         </div>
         <Score value={row.modelScore} />
       </div>
@@ -224,7 +225,7 @@ function Finish({ value, trendStyle = false, dense = false }: {
   dense?: boolean;
 }) {
   if (!value) {
-    return <div className="flex h-7 min-w-0 items-center justify-center text-[8px] text-slate-300">—</div>;
+    return <div className="flex h-7 min-w-0 items-center justify-center text-[11px] text-slate-300">—</div>;
   }
 
   const position = value.finishPosition ?? 999;
@@ -234,8 +235,8 @@ function Finish({ value, trendStyle = false, dense = false }: {
     ? "border-amber-500 bg-gradient-to-b from-amber-300 to-amber-400 text-amber-950 shadow-sm"
     : !value.madeCut
       ? value.status === "missed_cut"
-        ? "border-slate-300 bg-slate-100 text-slate-600"
-        : "border-red-300 bg-red-100 text-red-700"
+        ? "border-slate-300 bg-slate-100 text-slate-700"
+        : "border-rose-300 bg-rose-100 text-rose-900"
       : position <= 5
         ? "border-emerald-400 bg-emerald-200 text-emerald-950"
         : position <= 10
@@ -258,7 +259,7 @@ function Finish({ value, trendStyle = false, dense = false }: {
   return (
     <div title={title} className="flex min-w-0 flex-col items-center justify-center gap-0.5">
       {trendStyle ? <span className={`h-1 w-1 rounded-full ${dotClass}`} /> : null}
-      <span className={`flex h-5 w-full min-w-0 items-center justify-center rounded border px-0.5 font-black ${dense ? "text-[7px]" : "text-[8px]"} ${badgeClass}`}>
+      <span className={`flex h-6 w-full min-w-0 items-center justify-center rounded border px-0.5 font-black tabular-nums ${dense ? "text-[9px]" : "text-[11px]"} ${badgeClass}`}>
         {isWin ? "1" : value.finishText}
       </span>
     </div>
@@ -266,18 +267,20 @@ function Finish({ value, trendStyle = false, dense = false }: {
 }
 
 function Percentile({ value }: { value: number | null | undefined }) {
-  if (value == null) return <div className="flex h-8 items-center justify-center text-slate-300">—</div>;
-  const bg = value >= 75 ? "#166534" : value >= 50 ? "#bbf7d0" : value <= 25 ? "#fecaca" : "#f8fafc";
-  const color = value >= 75 ? "white" : value <= 25 ? "#7f1d1d" : "#052e16";
-  return <div className="flex h-8 items-center justify-center px-0.5 font-black" style={{ backgroundColor: bg, color }}>{Math.round(value)}</div>;
+  if (value == null) return <div className="flex h-9 items-center justify-center text-slate-300">—</div>;
+  return (
+    <div className={`flex h-9 items-center justify-center px-0.5 text-[13px] font-bold tabular-nums ${percentileHeatClass(value)}`}>
+      {Math.round(value)}
+    </div>
+  );
 }
 
 function Raw({ value }: { value: string }) {
-  return <div className="flex h-8 items-center justify-center px-0.5 font-bold text-slate-700">{value}</div>;
+  return <div className="flex h-9 items-center justify-center px-0.5 text-[12px] font-semibold tabular-nums text-slate-800">{value}</div>;
 }
 
 function Score({ value }: { value: number }) {
-  return <span className="inline-flex min-w-0 justify-center rounded-full bg-emerald-600 px-1.5 py-1 text-[9px] font-black text-white">{value.toFixed(1)}</span>;
+  return <span className="inline-flex min-w-0 justify-center rounded-full bg-emerald-700 px-2 py-1 text-[12px] font-black tabular-nums text-white">{value.toFixed(1)}</span>;
 }
 
 function Trend({ ranking, direction, label }: {
@@ -297,8 +300,8 @@ function Trend({ ranking, direction, label }: {
     ].filter(Boolean).join(" · ");
     return (
       <div title={title} className="flex flex-col items-center leading-none">
-        <span className="text-[11px] font-black text-cyan-800">#{ranking.rank}{ranking.confidence === "provisional" ? "*" : ""}</span>
-        <span className={`mt-0.5 text-[8px] font-bold ${(ranking.vsBaseline ?? 0) > 0.15 ? "text-emerald-700" : (ranking.vsBaseline ?? 0) < -0.15 ? "text-red-600" : "text-slate-500"}`}>
+        <span className="text-[13px] font-black tabular-nums text-cyan-800">#{ranking.rank}{ranking.confidence === "provisional" ? "*" : ""}</span>
+        <span className={`mt-0.5 text-[11px] font-bold tabular-nums ${(ranking.vsBaseline ?? 0) > 0.15 ? "text-emerald-700" : (ranking.vsBaseline ?? 0) < -0.15 ? "text-rose-700" : "text-slate-600"}`}>
           {signed(ranking.recent20)}
         </span>
       </div>
@@ -306,12 +309,12 @@ function Trend({ ranking, direction, label }: {
   }
 
   const icon = direction === "up" ? "↑" : direction === "down" ? "↓" : direction === "flat" ? "→" : "";
-  const className = direction === "up" ? "text-emerald-700" : direction === "down" ? "text-red-600" : "text-slate-500";
-  return <span className={`whitespace-nowrap font-black ${className}`}>{icon} {label}</span>;
+  const className = direction === "up" ? "text-emerald-700" : direction === "down" ? "text-rose-700" : "text-slate-600";
+  return <span className={`whitespace-nowrap text-[12px] font-black ${className}`}>{icon} {label}</span>;
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-lg border bg-white px-2 py-2"><div className="text-[8px] font-black uppercase text-slate-400">{label}</div><div className="text-xs font-black">{value}</div></div>;
+  return <div className="rounded-lg border bg-white px-2 py-2"><div className="text-[10px] font-black uppercase text-slate-500">{label}</div><div className="text-[13px] font-black tabular-nums">{value}</div></div>;
 }
 
 function Strip({ label, values, count, trendStyle = false }: {

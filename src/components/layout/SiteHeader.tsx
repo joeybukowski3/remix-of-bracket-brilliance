@@ -8,7 +8,6 @@ const navItems = [
   { to: "/nfl/guide", label: "NFL" },
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
-  { to: "/pga/the-open-2026-picks-best-bets-odds", label: "The Open 2026" },
 ];
 
 function isActive(pathname: string, item: { to: string | null; label: string }) {
