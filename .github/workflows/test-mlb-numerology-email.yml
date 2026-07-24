@@ -1,0 +1,51 @@
+name: Test MLB Numerology Email
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/run-mlb-numerology-email.mjs"
+      - "public/data/mlb/numerology-pick-history.json"
+      - "public/data/mlb/numerology-tracker.json"
+      - ".github/workflows/send-mlb-numerology-email.yml"
+      - ".github/workflows/test-mlb-numerology-email.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check script syntax
+        run: node --check scripts/run-mlb-numerology-email.mjs
+
+      - name: Run deterministic grading and email fixture
+        run: node scripts/run-mlb-numerology-email.mjs --fixture --date 2026-07-04
+
+      - name: Validate initial tracker JSON
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          for (const file of [
+            'public/data/mlb/numerology-pick-history.json',
+            'public/data/mlb/numerology-tracker.json',
+          ]) {
+            JSON.parse(readFileSync(file, 'utf8'));
+          }
+          NODE
+
+      - name: Build application
+        run: npm run build
