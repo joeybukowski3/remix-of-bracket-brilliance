@@ -60,13 +60,25 @@ function toFiniteNumber(value) {
 }
 
 /**
+ * Published projections carry one decimal, matching the precision the legacy
+ * pipeline has always emitted and every display/export surface assumes. The
+ * raw V2 output is preserved separately at full precision.
+ */
+export const PUBLISHED_PROJECTION_DECIMALS = 1;
+
+/**
  * A projection is usable only when it is a finite number strictly greater
  * than zero. Zero, negative, NaN and Infinity are all rejected rather than
  * passed through -- a fabricated 0 would read as an enormous UNDER edge.
+ * Rounding happens here so the published value can never differ between two
+ * surfaces that round it at different moments.
  */
 function toUsableProjection(value) {
   const parsed = toFiniteNumber(value);
-  return parsed != null && parsed > 0 ? parsed : null;
+  if (parsed == null || parsed <= 0) return null;
+  const factor = 10 ** PUBLISHED_PROJECTION_DECIMALS;
+  const rounded = Math.round(parsed * factor) / factor;
+  return rounded > 0 ? rounded : null;
 }
 
 function isValidSlateDate(value) {

@@ -141,10 +141,14 @@ export function auditKProductionProjection({ rawPath = RAW_PATH, v2Path = V2_PAT
     }
 
     // -- structural: the value must match the source it claims --
-    if (source === K_PROJECTION_SOURCE.V2 && v2 != null && published != null && Math.abs(published - v2) > 1e-9) {
+    // Tolerance is half the published precision: the published value is the
+    // source value rounded to one decimal, so anything further apart than
+    // that means the two came from different numbers, not from rounding.
+    const ROUNDING_TOLERANCE = 0.05 + 1e-9;
+    if (source === K_PROJECTION_SOURCE.V2 && v2 != null && published != null && Math.abs(published - v2) > ROUNDING_TOLERANCE) {
       problems.push(`${label}: source=v2 but published ${published} != v2ProjectedKs ${v2}.`);
     }
-    if (source === K_PROJECTION_SOURCE.LEGACY_FALLBACK && legacy != null && published != null && Math.abs(published - legacy) > 1e-9) {
+    if (source === K_PROJECTION_SOURCE.LEGACY_FALLBACK && legacy != null && published != null && Math.abs(published - legacy) > ROUNDING_TOLERANCE) {
       problems.push(`${label}: source=legacy-fallback but published ${published} != legacyProjectedKs ${legacy}.`);
     }
     if (source === K_PROJECTION_SOURCE.V2 && !["high", "medium"].includes(row?.v2Confidence)) {
