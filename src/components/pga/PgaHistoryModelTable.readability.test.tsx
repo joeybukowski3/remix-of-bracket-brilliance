@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import PgaHistoryModelTable from "./PgaHistoryModelTable";
 import type { PgaHistoryResult, PgaTournamentModelRow } from "@/lib/pga/historyModel";
@@ -105,8 +105,26 @@ describe("PgaHistoryModelTable readability", () => {
 
   it("renders exactly the filtered rows it is given", () => {
     const { container } = renderTable([row({ player: "Only Golfer" })]);
-
     expect(desktopTable(container).querySelectorAll("tbody tr")).toHaveLength(1);
+  });
+
+  it("uses full one-line player names without truncation", () => {
+    const { container } = renderTable([row({ player: "Sudarshan Yellamaraju" })]);
+    const playerCell = desktopTable(container).querySelector("tbody tr td:nth-child(2)");
+
+    expect(playerCell?.textContent).toBe("Sudarshan Yellamaraju");
+    expect(playerCell?.className).toContain("whitespace-nowrap");
+    expect(playerCell?.className).not.toContain("truncate");
+    expect(playerCell?.className).not.toContain("text-ellipsis");
+  });
+
+  it("gives the desktop player column a content-friendly minimum width", () => {
+    const { container } = renderTable();
+    const playerColumn = container.querySelector('[data-testid="pga-player-column"]') as HTMLTableColElement | null;
+
+    expect(playerColumn).toBeTruthy();
+    expect(playerColumn?.style.width).toBe("210px");
+    expect(playerColumn?.style.minWidth).toBe("210px");
   });
 
   it("uses larger bold player names and semibold tabular numerics", () => {
@@ -134,8 +152,64 @@ describe("PgaHistoryModelTable readability", () => {
   it("adds vertical row padding without changing row content", () => {
     const { container } = renderTable();
     const firstCell = desktopTable(container).querySelector("tbody tr td:nth-child(1)");
-
     expect(firstCell?.className).toContain("py-2.5");
+  });
+});
+
+describe("PgaHistoryModelTable mobile rows", () => {
+  it("renders one compact accessible button per player with details hidden initially", () => {
+    renderTable([row({ player: "Sudarshan Yellamaraju" }), row({ player: "Thorbjørn Olesen", modelRank: 2 })]);
+
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0]).toHaveAttribute("aria-expanded", "false");
+    expect(buttons[0]).toHaveAttribute("aria-controls");
+    expect(buttons[0]).toHaveTextContent("Sudarshan Yellamaraju");
+    expect(screen.queryByRole("heading", { name: "Player Stats" })).not.toBeInTheDocument();
+  });
+
+  it("expands a player and exposes all four detail sections", () => {
+    renderTable([row({ player: "Sudarshan Yellamaraju" })]);
+    const button = screen.getByRole("button", { name: /Sudarshan Yellamaraju/i });
+
+    fireEvent.click(button);
+
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    const panelId = button.getAttribute("aria-controls");
+    expect(panelId).toBeTruthy();
+    expect(document.getElementById(panelId!)).toBeInTheDocument();
+    ["Player Stats", "Model", "Last 5 Starts", "Tournament History"].forEach((heading) => {
+      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    });
+    expect(screen.getByText("3M Open history")).toBeInTheDocument();
+  });
+
+  it("keeps only one player expanded at a time", () => {
+    renderTable([row({ player: "First Golfer" }), row({ player: "Second Golfer", modelRank: 2 })]);
+    const first = screen.getByRole("button", { name: /First Golfer/i });
+    const second = screen.getByRole("button", { name: /Second Golfer/i });
+
+    fireEvent.click(first);
+    expect(first).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(second);
+
+    expect(first).toHaveAttribute("aria-expanded", "false");
+    expect(second).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("uses the desktop heat classifier for mobile percentile tiles including missing values", () => {
+    const { container } = renderTable([row({
+      displayPercentiles: { sgTotal: 88, sgApp: 62, sgPutt: 18, sgAtG: 40, drivingAccuracy: null, drivingDistance: 71 },
+    })]);
+    fireEvent.click(screen.getByRole("button", { name: /Sample Golfer/i }));
+
+    expect(container.querySelectorAll(".pga-heat-strong").length).toBeGreaterThan(1);
+    expect(container.querySelectorAll(".pga-heat-good").length).toBeGreaterThan(1);
+    expect(container.querySelectorAll(".pga-heat-neutral").length).toBeGreaterThan(1);
+    expect(container.querySelectorAll(".pga-heat-low").length).toBeGreaterThan(1);
+    expect(container.querySelector(".pga-heat-missing")).toHaveTextContent("—");
+    expect(screen.getByText("88th")).toBeInTheDocument();
+    expect(screen.getByText("62th")).toBeInTheDocument();
   });
 });
 
@@ -187,16 +261,8 @@ describe("PgaHistoryModelTable heatmap cells", () => {
 
   it("renders positive and negative percentiles with their respective treatments", () => {
     const { container } = renderTable();
-
     expect(container.querySelector(".pga-heat-strong")).toBeTruthy();
     expect(container.querySelector(".pga-heat-good")).toBeTruthy();
     expect(container.querySelector(".pga-heat-low")).toBeTruthy();
-  });
-
-  it("keeps a mobile stacked card alongside the desktop table", () => {
-    renderTable();
-
-    expect(screen.getAllByText("Sample Golfer").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText("Tournament history")).toBeInTheDocument();
   });
 });
