@@ -13,6 +13,11 @@ import { getPhase2Flags } from "./lib/mlb-phase2-flags.mjs";
 import { computeHrPhase2Shadow } from "./lib/mlb-hr-phase2-shadow.mjs";
 import { computeShadowRanks } from "./lib/mlb-phase2-shadow-comparison.mjs";
 import { resolveOddsSlateDate } from "./lib/mlb-prop-odds-core.mjs";
+import {
+  HAND_FREQ_SCORE_WEIGHT,
+  selectHandednessHrFrequency,
+  toPersistedHandednessFrequencyFields,
+} from "./lib/mlb-hr-handedness-frequency.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -856,6 +861,9 @@ function computeWeatherBoost(gameContext) {
 }
 
 export function computeBatterHrScore(batter, contexts) {
+  // Handedness HR frequency is a modest add-on (10%). When split data or
+  // pitcher hand is missing, splitHrFrequencyScore is null and
+  // computeWeightedScore drops the component (neutral / renormalize).
   return roundNumber(computeWeightedScore([
     { value: blendRawAndPercentile(batter.barrelRate, contexts.barrelValues, 3, 20), weight: 0.22 },
     { value: blendRawAndPercentile(batter.hardHitRate, contexts.hardHitValues, 25, 60), weight: 0.18 },
@@ -866,6 +874,8 @@ export function computeBatterHrScore(batter, contexts) {
     { value: batter.opposingPitcherHrVs, weight: 0.15 },
     { value: normalizeMetric(contexts.parkValues, batter.parkFactor), weight: 0.03 },
     { value: scaleToRange((batter.weatherBoost ?? 0) + 10, 0, 20), weight: 0.02 },
+    // Use Number.isFinite directly: toFiniteNumber(null) is 0 (Number(null)===0).
+    { value: Number.isFinite(batter.splitHrFrequencyScore) ? batter.splitHrFrequencyScore : null, weight: HAND_FREQ_SCORE_WEIGHT },
   ]), 1);
 }
 
@@ -963,6 +973,13 @@ function validateBatterRows(rows) {
       pitcherXera: toFiniteNumber(row.pitcherXera) ?? null,
       pitcherRegressionScore: toFiniteNumber(row.pitcherRegressionScore) ?? null,
       pitcherFlyBallRate: toFiniteNumber(row.pitcherFlyBallRate) ?? null,
+      splitSide: normalizeText(row.splitSide) || null,
+      splitAtBats: toFiniteNumber(row.splitAtBats) ?? null,
+      splitHomeRuns: toFiniteNumber(row.splitHomeRuns) ?? null,
+      splitAbPerHr: toFiniteNumber(row.splitAbPerHr) ?? null,
+      splitStatus: normalizeText(row.splitStatus) || null,
+      splitHandLabel: normalizeText(row.splitHandLabel) || null,
+      splitHrFrequencyScore: toFiniteNumber(row.splitHrFrequencyScore) ?? null,
       // Phase 2 shadow: passed through only when present (omitted entirely
       // otherwise, never written as null) -- this whitelist-style rebuild
       // would silently drop it like every other unlisted field without
@@ -1741,11 +1758,17 @@ async function main() {
 
   const scored = dedupedPool.map((player) => {
     const opposingPitcher = pitcherLookup.get(String(player.opposingPitcherId ?? ""));
+    const handFreq = selectHandednessHrFrequency({
+      pitcherHand: player.pitcherHand,
+      batterHandSplits: handSplitCache?.players?.[String(player.playerId)] ?? null,
+    });
+    const handFreqFields = toPersistedHandednessFrequencyFields(handFreq);
     const enriched = {
       ...player,
       opposingPitcherHrVs: opposingPitcher?.hrVs ?? normalizeMetric(dedupedPool.map((entry) => entry.opposingPitcherHr9), player.opposingPitcherHr9),
       opposingPitcherHitsVs: opposingPitcher?.hitsVs ?? 50,
       opposingPitcherKVs: opposingPitcher?.kVs ?? 50,
+      ...handFreqFields,
     };
     const baseHrScore = computeBatterHrScore(enriched, batterContexts);
 
@@ -1835,6 +1858,13 @@ async function main() {
       pitcherXera: player.pitcherXera ?? null,
       pitcherRegressionScore: player.pitcherRegressionScore ?? null,
       pitcherFlyBallRate: player.pitcherFlyBallRate ?? null,
+      splitSide: player.splitSide ?? null,
+      splitAtBats: player.splitAtBats ?? null,
+      splitHomeRuns: player.splitHomeRuns ?? null,
+      splitAbPerHr: player.splitAbPerHr ?? null,
+      splitStatus: player.splitStatus ?? null,
+      splitHandLabel: player.splitHandLabel ?? null,
+      splitHrFrequencyScore: player.splitHrFrequencyScore ?? null,
       ...(player.phase2Shadow !== undefined ? { phase2Shadow: player.phase2Shadow } : {}),
     }));
 

@@ -125,6 +125,14 @@ export type HrDashboardBatter = {
   pitcherXera?: number | null;
   pitcherRegressionScore?: number | null;
   pitcherFlyBallRate?: number | null;
+  /** Handedness-specific HR frequency (season AB/HR vs opposing starter hand). */
+  splitSide?: string | null;
+  splitAtBats?: number | null;
+  splitHomeRuns?: number | null;
+  splitAbPerHr?: number | null;
+  splitStatus?: string | null;
+  splitHandLabel?: string | null;
+  splitHrFrequencyScore?: number | null;
   bats?: "L" | "R" | "S" | null;
   hrLine?: number | null;
   hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
@@ -579,6 +587,13 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     pitcherXera: normalizeNumber(entry.pitcherXera) ?? null,
     pitcherRegressionScore: normalizeNumber(entry.pitcherRegressionScore) ?? null,
     pitcherFlyBallRate: normalizeNumber(entry.pitcherFlyBallRate) ?? null,
+    splitSide: normalizeText(entry.splitSide) || null,
+    splitAtBats: normalizeNumber(entry.splitAtBats),
+    splitHomeRuns: normalizeNumber(entry.splitHomeRuns),
+    splitAbPerHr: normalizeNumber(entry.splitAbPerHr),
+    splitStatus: normalizeText(entry.splitStatus) || null,
+    splitHandLabel: normalizeText(entry.splitHandLabel) || null,
+    splitHrFrequencyScore: normalizeNumber(entry.splitHrFrequencyScore),
     bats: (["L","R","S"].includes(String(entry.bats ?? "")) ? String(entry.bats) as "L"|"R"|"S" : null),
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
@@ -1732,6 +1747,44 @@ function MetricTile({ label, children }: { label: string; children: ReactNode })
   );
 }
 
+/** Handedness-specific HR frequency tile for expanded batter detail only. */
+export function HandednessHrFrequencyTile({ row }: { row: Pick<HrDashboardBatter, "splitStatus" | "splitHandLabel" | "splitAbPerHr" | "splitAtBats" | "splitHomeRuns" | "pitcherHand"> }) {
+  const status = row.splitStatus ?? "split_unavailable";
+  const handLabel =
+    row.splitHandLabel === "LHP" || row.splitHandLabel === "RHP"
+      ? row.splitHandLabel
+      : row.pitcherHand?.toUpperCase().startsWith("L")
+        ? "LHP"
+        : row.pitcherHand?.toUpperCase().startsWith("R")
+          ? "RHP"
+          : null;
+  const label = handLabel ? `HR FREQUENCY VS ${handLabel}` : "HR FREQUENCY VS HAND";
+
+  let primary: string;
+  let secondary: string | null = null;
+  if (status === "pitcher_hand_unavailable" || !handLabel) {
+    primary = "Pitcher hand unavailable";
+  } else if (status === "split_unavailable") {
+    primary = "Split unavailable";
+  } else if (status === "zero_hr" && row.splitAtBats != null) {
+    primary = `0 HR in ${row.splitAtBats} AB`;
+  } else if (status === "ok" && row.splitAbPerHr != null && row.splitHomeRuns != null && row.splitAtBats != null) {
+    primary = `1 HR / ${row.splitAbPerHr.toFixed(1)} AB`;
+    secondary = `${row.splitHomeRuns} HR in ${row.splitAtBats} AB`;
+  } else {
+    primary = "Split unavailable";
+  }
+
+  return (
+    <MetricTile label={label}>
+      <div className="min-w-0 flex flex-col gap-0" data-testid="handedness-hr-frequency-tile">
+        <span className="text-[11px] font-bold text-slate-800 leading-tight break-words">{primary}</span>
+        {secondary ? <span className="text-[9px] text-slate-400 leading-tight">{secondary}</span> : null}
+      </div>
+    </MetricTile>
+  );
+}
+
 export default function MlbHrProps() {
   usePageSeo(getSeoMeta("mlb-hr-props"));
   // Use the shared hook so HR/K/hit tables and game matchups always read from
@@ -2619,6 +2672,7 @@ export default function MlbHrProps() {
                                               </div>
                                             ) : <span className="text-[11px] text-slate-300">{DASH}</span>}
                                           </MetricTile>
+                                          <HandednessHrFrequencyTile row={row} />
                                         </div>
                                       </div>
                                     </div>
@@ -2867,7 +2921,15 @@ export default function MlbHrProps() {
                                   {isBvpExpanded && (
                                     <tr>
                                       <td colSpan={10} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
-                                        <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                        <div className="space-y-3">
+                                          <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                          <div>
+                                            <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">HR Model Metrics</div>
+                                            <div className="grid max-w-sm grid-cols-1 gap-1.5 sm:grid-cols-2">
+                                              <HandednessHrFrequencyTile row={row} />
+                                            </div>
+                                          </div>
+                                        </div>
                                       </td>
                                     </tr>
                                   )}

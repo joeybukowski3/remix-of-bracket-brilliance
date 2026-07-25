@@ -61,7 +61,37 @@ describe("scoring formulas remain unchanged", () => {
       parkValues: [0.9, 1.1, 1.3],
     };
 
+    // Missing handedness frequency remains neutral (component omitted).
     assert.equal(computeBatterHrScore(batter, contexts), 55.6);
     assert.equal(computeCandidateHrScore(batter).candidateHrQualityScore, 57.4);
+  });
+
+  it("handedness frequency is a modest bounded add-on when present", () => {
+    const base = {
+      barrelRate: 12,
+      hardHitRate: 45,
+      iso: 0.22,
+      xba: 0.27,
+      whiffRate: 22,
+      last7HR: 2,
+      last30HR: 6,
+      opposingPitcherHrVs: 65,
+      parkFactor: 1.1,
+      weatherBoost: 2,
+    };
+    const contexts = {
+      barrelValues: [8, 12, 16],
+      hardHitValues: [35, 45, 55],
+      xbaValues: [0.22, 0.27, 0.31],
+      whiffValues: [18, 22, 28],
+      last7Values: [0, 2, 4],
+      last30Values: [1, 6, 10],
+      parkValues: [0.9, 1.1, 1.3],
+    };
+    const without = computeBatterHrScore(base, contexts);
+    const withFreq = computeBatterHrScore({ ...base, splitHrFrequencyScore: 80 }, contexts);
+    assert.ok(withFreq >= 0 && withFreq <= 100);
+    assert.notEqual(withFreq, without);
+    assert.equal(computeBatterHrScore({ ...base, splitHrFrequencyScore: 80 }, contexts), withFreq);
   });
 });
