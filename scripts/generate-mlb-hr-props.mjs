@@ -18,6 +18,10 @@ import {
   selectHandednessHrFrequency,
   toPersistedHandednessFrequencyFields,
 } from "./lib/mlb-hr-handedness-frequency.mjs";
+import {
+  refreshHandSplitCacheForPlayerIds,
+  writeHandSplitCacheFile,
+} from "./lib/mlb-hr-hand-split-cache-refresh.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -1748,13 +1752,43 @@ async function main() {
     console.warn("Could not load pitcher-regression.json — skipping pitcher adjustment:", err.message);
   }
 
-  // Loaded ONCE per run (not per batter) -- Phase 2 shadow inputs only.
-  // Missing/malformed cache safely falls back to an empty structure; the
-  // shadow calculators themselves treat a missing per-team/per-player
-  // entry as "unavailable" and fail neutral.
+  // Loaded ONCE per run (not per batter). Used by live handedness HR
+  // frequency scoring and by Phase 2 hand-split shadow when enabled.
+  // Missing/malformed cache safely falls back to an empty structure.
   const phase2Flags = getPhase2Flags();
   const bullpenCache = loadJsonSafe(BULLPEN_CACHE_PATH, { teams: {} });
-  const handSplitCache = loadJsonSafe(HAND_SPLIT_CACHE_PATH, { players: {} });
+  let handSplitCache = loadJsonSafe(HAND_SPLIT_CACHE_PATH, { players: {} });
+
+  // Refresh only current-slate batter ids before scoring so scheduled
+  // production (and local `npm run mlb:hr-props`) populate the cache in
+  // the same run. Failures never block HR generation — scoring treats
+  // missing splits as neutral / "Split unavailable".
+  try {
+    const slatePlayerIds = dedupedPool.map((player) => player.playerId);
+    const refreshResult = await refreshHandSplitCacheForPlayerIds(handSplitCache, slatePlayerIds, {
+      season: ACTIVE_SEASON,
+    });
+    handSplitCache = refreshResult.cache;
+    console.log(
+      `[hr-props] hand-split cache refresh: requested=${refreshResult.stats.requested}` +
+        ` needingRefresh=${refreshResult.stats.needingRefresh}` +
+        ` ok=${refreshResult.stats.refreshedOk}` +
+        ` failed=${refreshResult.stats.refreshedFailed}` +
+        ` skippedFresh=${refreshResult.stats.skippedFresh}`,
+    );
+    try {
+      writeHandSplitCacheFile(HAND_SPLIT_CACHE_PATH, handSplitCache);
+      console.log(`[hr-props] wrote ${HAND_SPLIT_CACHE_PATH}`);
+    } catch (writeErr) {
+      console.warn(
+        `[hr-props] could not write hand-split cache (continuing with in-memory): ${writeErr instanceof Error ? writeErr.message : writeErr}`,
+      );
+    }
+  } catch (refreshErr) {
+    console.warn(
+      `[hr-props] hand-split cache refresh failed; continuing with loaded/empty cache: ${refreshErr instanceof Error ? refreshErr.message : refreshErr}`,
+    );
+  }
 
   const scored = dedupedPool.map((player) => {
     const opposingPitcher = pitcherLookup.get(String(player.opposingPitcherId ?? ""));
