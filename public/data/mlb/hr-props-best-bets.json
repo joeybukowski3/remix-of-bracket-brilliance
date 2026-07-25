@@ -1,10 +1,10 @@
 {
   "date": "2026-07-25",
-  "generatedAt": "2026-07-25T15:34:51.457Z",
+  "generatedAt": "2026-07-25T16:30:12.357Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field (1.07) and Camden Yards (1.10) are the two strongest HR environments on the slate, while loanDepot park (0.88) is a clear drag. The top two model plays—Alvarez vs Burke and Wood vs Bratt—both land in neutral-to-favorable parks against right-handers with HR rates above 40 percent, and Baldwin benefits from the Camden boost despite a modest park factor for ATL. No major weather overlays are in play.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over park factor alone, which is why Alvarez (77.7) and Wood (77.4) sit 1-2 despite one neutral park and one pitcher-friendly park."
+    "slateOverview": "Rate Field (1.07) and Camden Yards (1.10) are the only true hitter havens on the slate, while loanDepot park (0.88) is a drag. The top two HR scores belong to Yordan Alvarez against Sean Burke and James Wood against Mitch Bratt, both right-handed pitchers who have surrendered 42.9 and 68.1 HR/PA respectively. Warm, low-wind conditions are expected at both venues, amplifying the park and matchup edges.",
+    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and opposing pitcher HR vulnerability, which is why Alvarez and Wood sit atop the board despite Wood’s elevated strikeout rate."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Sean Burke",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=19%",
-        "HH=53.3%"
+        "hrScore=77.8",
+        "barrel=19%"
       ],
       "bullets": [
-        "park=1.07",
-        "hrScore=77.7"
+        "hrScore=77.8",
+        "park=1.07"
       ],
-      "hrOddsYes": "+235",
-      "marketImpliedProbability": 0.29850746268656714,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Mitch Bratt",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=21.9%",
+        "hrScore=77.5",
         "HH=58.8%"
       ],
       "bullets": [
-        "park=0.98",
-        "hrScore=77.4"
+        "hrScore=77.5",
+        "barrel=21.9%"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,35 +52,16 @@
       "opposingPitcher": "Randy Vásquez",
       "hrScoreRank": 3,
       "topStats": [
-        "Pitcher HR VS=92.4",
-        "Hard Hit%=54.5"
+        "hrScore=72.6",
+        "HH=54.5%"
       ],
       "bullets": [
-        "HR score 73.9 (#3)",
-        "Pitcher HR VS 92.4 at park 0.88"
+        "hrScore=72.6",
+        "barrel=16.7%"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Heriberto Hernández",
-      "team": "MIA",
-      "opponent": "SD",
-      "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=92.4",
-        "Hard Hit%=51.8"
-      ],
-      "bullets": [
-        "HR score 72.7 (#4)",
-        "Pitcher HR VS 92.4 at park 0.88"
-      ],
-      "hrOddsYes": "+360",
-      "marketImpliedProbability": 0.21739130434782608,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -88,212 +69,136 @@
       "team": "ATL",
       "opponent": "BAL",
       "opposingPitcher": "Brandon Young",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=50.5",
-        "Hard Hit%=50.4"
+        "hrScore=72.3",
+        "park=1.1"
       ],
       "bullets": [
-        "HR score 72.2 (#5)",
-        "Pitcher HR VS 50.5 at park 1.10"
+        "hrScore=72.3",
+        "HH=50.4%"
       ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Heriberto Hernández",
+      "team": "MIA",
+      "opponent": "SD",
+      "opposingPitcher": "Randy Vásquez",
+      "hrScoreRank": 5,
+      "topStats": [
+        "hrScore=71.3",
+        "HH=51.8%"
+      ],
+      "bullets": [
+        "hrScore=71.3",
+        "barrel=13.7%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 1,
+      "topStats": [
+        "hrScore=77.8",
+        "barrel=19%"
+      ],
+      "bullets": [
+        "hrScore=77.8",
+        "park=1.07"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
+      "team": "WSH",
+      "opponent": "AZ",
+      "opposingPitcher": "Mitch Bratt",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=77.5",
+        "HH=58.8%"
+      ],
+      "bullets": [
+        "hrScore=77.5",
+        "barrel=21.9%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
       "player": "Griffin Conine",
       "team": "MIA",
       "opponent": "SD",
       "opposingPitcher": "Randy Vásquez",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=16.7%",
+        "hrScore=72.6",
         "HH=54.5%"
       ],
       "bullets": [
-        "park=0.88",
-        "hrScore=73.9"
+        "hrScore=72.6",
+        "barrel=16.7%"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Heriberto Hernández",
-      "team": "MIA",
-      "opponent": "SD",
-      "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=13.7%",
-        "HH=51.8%"
-      ],
-      "bullets": [
-        "park=0.88",
-        "hrScore=72.7"
-      ],
-      "hrOddsYes": "+360",
-      "marketImpliedProbability": 0.21739130434782608,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Drake Baldwin",
-      "team": "ATL",
-      "opponent": "BAL",
-      "opposingPitcher": "Brandon Young",
-      "hrScoreRank": 5,
-      "topStats": [
-        "barrel=15.3%",
-        "HH=50.4%"
-      ],
-      "bullets": [
-        "park=1.1",
-        "hrScore=72.2"
-      ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "CJ Abrams",
-      "team": "WSH",
-      "opponent": "AZ",
-      "opposingPitcher": "Mitch Bratt",
-      "hrScoreRank": 6,
-      "topStats": [
-        "Pitcher HR VS=68.1",
-        "Hard Hit%=42.2"
-      ],
-      "bullets": [
-        "HR score 67.7 (#6)",
-        "Pitcher HR VS 68.1 at park 0.98"
-      ],
-      "hrOddsYes": "+425",
-      "marketImpliedProbability": 0.19047619047619047,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=73.7",
-        "Hard Hit%=53.2"
-      ],
-      "bullets": [
-        "HR score 67.1 (#7)",
-        "Pitcher HR VS 73.7 at park 1.10"
-      ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Andrés Chaparro",
-      "team": "WSH",
-      "opponent": "AZ",
-      "opposingPitcher": "Mitch Bratt",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=68.1",
-        "Hard Hit%=50.0"
-      ],
-      "bullets": [
-        "HR score 66.1 (#8)",
-        "Pitcher HR VS 68.1 at park 0.98"
-      ],
-      "hrOddsYes": "+370",
-      "marketImpliedProbability": 0.2127659574468085,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "CJ Abrams",
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 1,
+      "topStats": [
+        "hrScore=77.8",
+        "barrel=19%"
+      ],
+      "bullets": [
+        "hrScore=77.8",
+        "park=1.07"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "James Wood",
       "team": "WSH",
       "opponent": "AZ",
       "opposingPitcher": "Mitch Bratt",
-      "hrScoreRank": 6,
+      "hrScoreRank": 2,
       "topStats": [
-        "barrel=10.8%",
-        "HH=42.2%"
+        "hrScore=77.5",
+        "HH=58.8%"
       ],
       "bullets": [
-        "park=0.98",
-        "hrScore=67.7"
+        "hrScore=77.5",
+        "barrel=21.9%"
       ],
-      "hrOddsYes": "+425",
-      "marketImpliedProbability": 0.19047619047619047,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=13.4%",
-        "HH=53.2%"
-      ],
-      "bullets": [
-        "park=1.1",
-        "hrScore=67.1"
-      ],
-      "hrOddsYes": "+350",
-      "marketImpliedProbability": 0.2222222222222222,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ty France",
-      "team": "SD",
-      "opponent": "MIA",
-      "opposingPitcher": "Eury Pérez",
-      "hrScoreRank": 12,
-      "topStats": [
-        "Pitcher HR VS=63.6",
-        "Hard Hit%=50.6"
-      ],
-      "bullets": [
-        "HR score 64.2 (#12)",
-        "Pitcher HR VS 63.6 at park 0.88"
-      ],
-      "hrOddsYes": "+560",
-      "marketImpliedProbability": 0.15151515151515152,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Brice Turang",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 19,
-      "topStats": [
-        "Pitcher HR VS=73.7",
-        "Hard Hit%=44.0"
-      ],
-      "bullets": [
-        "HR score 61.6 (#19)",
-        "Pitcher HR VS 73.7 at park 1.10"
-      ],
-      "hrOddsYes": "+560",
-      "marketImpliedProbability": 0.15151515151515152,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ]

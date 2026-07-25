@@ -4,16 +4,16 @@
   "teamKAdjustmentModelVersion": "team-k-adjustment-v1",
   "mode": "shadow",
   "date": "2026-07-25",
-  "generatedAt": "2026-07-25T15:34:26.856Z",
+  "generatedAt": "2026-07-25T16:29:49.339Z",
   "summary": {
     "gameCount": 15,
     "pitcherCount": 28,
     "successfulWorkloadFetches": 28,
     "workloadOnlyKsAvailable": 28,
     "teamAdjustedKsAvailable": 28,
-    "averageSignedKsChange": -0.002,
-    "averageAbsoluteKsChange": 0.213,
-    "generatedAt": "2026-07-25T15:34:26.856Z"
+    "averageSignedKsChange": -0.014,
+    "averageAbsoluteKsChange": 0.202,
+    "generatedAt": "2026-07-25T16:29:49.339Z"
   },
   "leagueContext": {
     "pitchesPerPA": 3.884,
@@ -251,7 +251,7 @@
       "gamePk": 822704,
       "gameKey": "ARI@WSH",
       "gameDate": "2026-07-25T20:05:00Z",
-      "gameStatus": "Scheduled",
+      "gameStatus": "Pre-Game",
       "venue": "Nationals Park",
       "pitcherId": 683352,
       "pitcher": "Mitch Bratt",
@@ -366,7 +366,7 @@
       "gamePk": 822704,
       "gameKey": "ARI@WSH",
       "gameDate": "2026-07-25T20:05:00Z",
-      "gameStatus": "Scheduled",
+      "gameStatus": "Pre-Game",
       "venue": "Nationals Park",
       "pitcherId": 656492,
       "pitcher": "Foster Griffin",
@@ -478,7 +478,7 @@
       "gamePk": 823197,
       "gameKey": "LAA@SF",
       "gameDate": "2026-07-25T20:05:00Z",
-      "gameStatus": "Scheduled",
+      "gameStatus": "Pre-Game",
       "venue": "Oracle Park",
       "pitcherId": 696270,
       "pitcher": "Ryan Johnson",
@@ -590,7 +590,7 @@
       "gamePk": 823197,
       "gameKey": "LAA@SF",
       "gameDate": "2026-07-25T20:05:00Z",
-      "gameStatus": "Scheduled",
+      "gameStatus": "Pre-Game",
       "venue": "Oracle Park",
       "pitcherId": 592662,
       "pitcher": "Robbie Ray",
@@ -926,7 +926,7 @@
       "gamePk": 823841,
       "gameKey": "SD@MIA",
       "gameDate": "2026-07-25T20:10:00Z",
-      "gameStatus": "Scheduled",
+      "gameStatus": "Pre-Game",
       "venue": "loanDepot park",
       "pitcherId": 681190,
       "pitcher": "Randy Vásquez",
@@ -938,15 +938,15 @@
       "workloadFetchOk": true,
       "workloadFetchError": null,
       "pitcherContext": {
-        "seasonKRate": 0.1686,
+        "seasonKRate": 0.163,
         "seasonBattersFaced": 350,
         "recentKRate": 0.1111,
         "recentBattersFaced": 126,
-        "bbRate": 0.0743,
-        "whiffRate": null,
-        "xera": null,
-        "hand": null,
-        "source": "starter-game-log-derived"
+        "bbRate": 0.07,
+        "whiffRate": 0.203,
+        "xera": 6.77,
+        "hand": "R",
+        "source": "hr-props-raw"
       },
       "opponentContext": {
         "seasonPitchesPerPA": 3.808,
@@ -973,11 +973,11 @@
         "expectedPitchLimit": 77.02,
         "expectedBF": 20.075,
         "expectedInnings": 4.19,
-        "temporaryKRate": 0.1613,
-        "workloadOnlyProjectedKs": 3.238,
-        "teamAdjustedKRate": 0.1841,
-        "fullShadowProjectedKs": 3.696,
-        "teamAdjustmentKsDelta": 0.458
+        "temporaryKRate": 0.1634,
+        "workloadOnlyProjectedKs": 3.281,
+        "teamAdjustedKRate": 0.1759,
+        "fullShadowProjectedKs": 3.531,
+        "teamAdjustmentKsDelta": 0.25
       },
       "confidence": {
         "score": 1,
@@ -985,20 +985,19 @@
         "publicEligible": true
       },
       "flags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ],
       "teamKAdjustment": {
         "modelVersion": "team-k-adjustment-v1",
-        "adjustedKRate": 0.1841,
+        "adjustedKRate": 0.1759,
         "components": {
           "leagueKRate": 0.2217,
           "pitcher": {
-            "observedSeasonKRate": 0.1686,
-            "regressedSeasonKRate": 0.1879,
+            "observedSeasonKRate": 0.163,
+            "regressedSeasonKRate": 0.1843,
             "recentAdjustment": -0.008,
-            "whiffAdjustment": 0,
-            "baselineKRate": 0.1799
+            "whiffAdjustment": -0.0047,
+            "baselineKRate": 0.1717
           },
           "opponent": {
             "observedSeasonKRate": 0.2179,
@@ -1015,7 +1014,7 @@
           }
         },
         "diagnostics": {
-          "pitcherHand": null,
+          "pitcherHand": "R",
           "opponentKEnvironment": "favorable",
           "hardBounds": [
             0.12,
@@ -1027,21 +1026,19 @@
           "grade": "A"
         },
         "flags": [
-          "PITCHER_WHIFF_RATE_MISSING",
-          "PITCHER_HAND_MISSING"
+          "HAND_SPLIT_UNAVAILABLE"
         ]
       },
       "workloadFlags": [],
       "teamKFlags": [
-        "PITCHER_WHIFF_RATE_MISSING",
-        "PITCHER_HAND_MISSING"
+        "HAND_SPLIT_UNAVAILABLE"
       ]
     },
     {
       "gamePk": 823841,
       "gameKey": "SD@MIA",
       "gameDate": "2026-07-25T20:10:00Z",
-      "gameStatus": "Scheduled",
+      "gameStatus": "Pre-Game",
       "venue": "loanDepot park",
       "pitcherId": 691587,
       "pitcher": "Eury Pérez",
@@ -1942,8 +1939,8 @@
       "gameDate": "2026-07-25T23:10:00Z",
       "gameStatus": "Scheduled",
       "venue": "Target Field",
-      "pitcherId": 686930,
-      "pitcher": "Mason Barnett",
+      "pitcherId": 669620,
+      "pitcher": "Brady Basso",
       "teamId": 133,
       "team": "ATH",
       "opponentId": 142,
@@ -1975,23 +1972,23 @@
       "role": "reliever",
       "inputs": {
         "role": "reliever",
-        "recentSamples": 8,
+        "recentSamples": 7,
         "recentStarts": 0,
-        "recentAppearances": 8,
-        "recentPitchAverage": 26.06,
-        "recentBfAverage": 6.33,
-        "recentIpAverage": 1.27,
+        "recentAppearances": 7,
+        "recentPitchAverage": 22.04,
+        "recentBfAverage": 6.14,
+        "recentIpAverage": 1.29,
         "opponentPitchesPerPA": 3.892
       },
       "projection": {
-        "expectedPitchLimit": 24.92,
-        "expectedBF": 6.379,
-        "expectedInnings": 1.347,
-        "temporaryKRate": 0.1732,
-        "workloadOnlyProjectedKs": 1.105,
+        "expectedPitchLimit": 22.03,
+        "expectedBF": 5.829,
+        "expectedInnings": 1.32,
+        "temporaryKRate": 0.1877,
+        "workloadOnlyProjectedKs": 1.094,
         "teamAdjustedKRate": 0.2204,
-        "fullShadowProjectedKs": 1.406,
-        "teamAdjustmentKsDelta": 0.301
+        "fullShadowProjectedKs": 1.285,
+        "teamAdjustmentKsDelta": 0.191
       },
       "confidence": {
         "score": 1,
