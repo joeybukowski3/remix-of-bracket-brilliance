@@ -6,7 +6,7 @@
  * current-slate player ids; never fabricates splits. Failures keep last-valid
  * cache entries (or mark missing) so scoring can fail neutral.
  */
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync, renameSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { selectPlayersNeedingRefresh, mergePlayerCacheEntry } from "./mlb-hand-split-cache.mjs";
 import { fetchAndBuildPlayerHandSplits, SCHEMA_VERSION } from "./mlb-batter-hand-splits.mjs";
@@ -93,12 +93,42 @@ export async function refreshHandSplitCacheForPlayerIds(cache, playerIds, option
 }
 
 /**
- * Persist cache to disk. Best-effort — callers should catch failures.
+ * Same-directory temporary path for atomic publication.
+ * Includes pid + high-resolution time so overlapping processes do not collide
+ * on a fixed `.tmp` name.
+ * @param {string} filePath
+ * @returns {string}
+ */
+export function handSplitCacheTempPath(filePath) {
+  const dir = path.dirname(filePath);
+  const base = path.basename(filePath);
+  const unique = `${process.pid}.${process.hrtime.bigint().toString()}`;
+  return path.join(dir, `.${base}.${unique}.tmp`);
+}
+
+/**
+ * Persist cache to disk via same-directory atomic write+rename.
+ * On failure, attempts to remove the temporary file, then rethrows so the
+ * generator's best-effort catch remains authoritative.
  * @param {string} filePath
  * @param {object} cache
  */
 export function writeHandSplitCacheFile(filePath, cache) {
   const dir = path.dirname(filePath);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(filePath, `${JSON.stringify(cache, null, 2)}\n`);
+
+  const payload = `${JSON.stringify(cache, null, 2)}\n`;
+  const tmpPath = handSplitCacheTempPath(filePath);
+
+  try {
+    writeFileSync(tmpPath, payload);
+    renameSync(tmpPath, filePath);
+  } catch (error) {
+    try {
+      if (existsSync(tmpPath)) unlinkSync(tmpPath);
+    } catch {
+      // Best-effort cleanup only; original error is authoritative.
+    }
+    throw error;
+  }
 }

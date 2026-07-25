@@ -1769,13 +1769,19 @@ async function main() {
       season: ACTIVE_SEASON,
     });
     handSplitCache = refreshResult.cache;
-    console.log(
+    const refreshSummary =
       `[hr-props] hand-split cache refresh: requested=${refreshResult.stats.requested}` +
-        ` needingRefresh=${refreshResult.stats.needingRefresh}` +
-        ` ok=${refreshResult.stats.refreshedOk}` +
-        ` failed=${refreshResult.stats.refreshedFailed}` +
-        ` skippedFresh=${refreshResult.stats.skippedFresh}`,
-    );
+      ` needingRefresh=${refreshResult.stats.needingRefresh}` +
+      ` ok=${refreshResult.stats.refreshedOk}` +
+      ` failed=${refreshResult.stats.refreshedFailed}` +
+      ` skippedFresh=${refreshResult.stats.skippedFresh}`;
+    // Partial player-level refresh failures stay nonfatal; surface them as a
+    // single summary warn (no per-player dump, no API payloads).
+    if (refreshResult.stats.refreshedFailed > 0) {
+      console.warn(refreshSummary);
+    } else {
+      console.log(refreshSummary);
+    }
     try {
       writeHandSplitCacheFile(HAND_SPLIT_CACHE_PATH, handSplitCache);
       console.log(`[hr-props] wrote ${HAND_SPLIT_CACHE_PATH}`);
