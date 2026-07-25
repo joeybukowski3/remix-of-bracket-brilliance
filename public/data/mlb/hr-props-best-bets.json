@@ -1,10 +1,10 @@
 {
   "date": "2026-07-25",
-  "generatedAt": "2026-07-25T09:15:50.648Z",
+  "generatedAt": "2026-07-25T14:08:00.615Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field (1.07) and Camden Yards (1.10) are the two strongest HR environments on the slate, while Nationals Park (0.98) and Tropicana (0.98) are neutral. The top three model plays all face right-handers in plus parks, and Mitch Bratt’s 68.9 HR/9 rate against lefties creates a secondary pocket of value for the three Washington bats.",
-    "modelNote": "The model is overweighting barrel rate and park factor while discounting recent HR volume, which is why Yordan Alvarez (19.2 barrel, 1.07 park) leads despite only three HR in his last seven games."
+    "slateOverview": "Rate Field and Camden Yards lead the park factors at 1.07-1.10, while Coors-influenced American Family Field (1.10) and Nationals Park (0.98) create favorable conditions. Sean Burke and Mitch Bratt are the primary right-handed and left-handed pitchers facing the top HR candidates, with Burke's 43.2 HR/9 rate against lefties and Bratt's 68.8 HR/9 rate against righties both signaling elevated power risk. Weather angles appear neutral across the slate.",
+    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and opposing pitcher HR vulnerability, with Yordan Alvarez's 19% barrel rate and 53.3% hard-hit rate against Burke's 43.2 HR/9 rate driving his top ranking despite the 1.07 park factor."
   },
   "bestBets": [
     {
@@ -14,12 +14,12 @@
       "opposingPitcher": "Sean Burke",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=19.2%",
-        "HH=53.2%"
+        "barrel=19%",
+        "HH=53.3%"
       ],
       "bullets": [
-        "barrel=19.2%",
-        "park=1.07"
+        "park=1.07",
+        "hrScore=77.8"
       ],
       "hrOddsYes": "+230",
       "marketImpliedProbability": 0.30303030303030304,
@@ -33,15 +33,15 @@
       "opposingPitcher": "Mitch Bratt",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=22.1%",
-        "HH=59.3%"
+        "barrel=21.9%",
+        "HH=58.8%"
       ],
       "bullets": [
-        "barrel=22.1%",
-        "HH=59.3%"
+        "park=0.98",
+        "hrScore=77.5"
       ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
+      "hrOddsYes": "+265",
+      "marketImpliedProbability": 0.273972602739726,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,12 +52,12 @@
       "opposingPitcher": "Brandon Young",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=15%",
-        "HH=50.4%"
+        "Pitcher HR VS=50.5",
+        "Hard Hit%=50.4"
       ],
       "bullets": [
-        "park=1.1",
-        "HH=50.4%"
+        "HR score 72.2 (#3)",
+        "Pitcher HR VS 50.5 at park 1.10"
       ],
       "hrOddsYes": "+300",
       "marketImpliedProbability": 0.25,
@@ -71,15 +71,15 @@
       "opposingPitcher": "Mitch Bratt",
       "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=68.9",
-        "Hard Hit%=42.7"
+        "Pitcher HR VS=68.8",
+        "Hard Hit%=42.2"
       ],
       "bullets": [
-        "HR score 68.1 (#4)",
-        "Pitcher HR VS 68.9 at park 0.98"
+        "HR score 67.8 (#4)",
+        "Pitcher HR VS 68.8 at park 0.98"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -90,12 +90,12 @@
       "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=74.2",
-        "Hard Hit%=53.0"
+        "Pitcher HR VS=74.1",
+        "Hard Hit%=53.2"
       ],
       "bullets": [
-        "HR score 67.4 (#5)",
-        "Pitcher HR VS 74.2 at park 1.10"
+        "HR score 67.1 (#5)",
+        "Pitcher HR VS 74.1 at park 1.10"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -105,21 +105,40 @@
   ],
   "valueBets": [
     {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "BAL",
+      "opposingPitcher": "Brandon Young",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=15.3%",
+        "HH=50.4%"
+      ],
+      "bullets": [
+        "park=1.1",
+        "hrScore=72.2"
+      ],
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
       "player": "CJ Abrams",
       "team": "WSH",
       "opponent": "AZ",
       "opposingPitcher": "Mitch Bratt",
       "hrScoreRank": 4,
       "topStats": [
-        "barrel=10.9%",
-        "HH=42.7%"
+        "barrel=10.8%",
+        "HH=42.2%"
       ],
       "bullets": [
-        "barrel=10.9%",
-        "park=0.98"
+        "park=0.98",
+        "hrScore=67.8"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -130,12 +149,12 @@
       "opposingPitcher": "Ryan Feltner",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=13.6%",
-        "HH=53%"
+        "barrel=13.4%",
+        "HH=53.2%"
       ],
       "bullets": [
-        "HH=53%",
-        "park=1.1"
+        "park=1.1",
+        "hrScore=67.1"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -149,15 +168,15 @@
       "opposingPitcher": "Mitch Bratt",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=14.9%",
-        "HH=51.1%"
+        "Pitcher HR VS=68.8",
+        "Hard Hit%=50.0"
       ],
       "bullets": [
-        "barrel=14.9%",
-        "HH=51.1%"
+        "HR score 66.2 (#6)",
+        "Pitcher HR VS 68.8 at park 0.98"
       ],
-      "hrOddsYes": "+330",
-      "marketImpliedProbability": 0.23255813953488372,
+      "hrOddsYes": "+370",
+      "marketImpliedProbability": 0.2127659574468085,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -168,12 +187,12 @@
       "opposingPitcher": "Tanner Bibee",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=61.0",
-        "Hard Hit%=51.5"
+        "Pitcher HR VS=60.9",
+        "Hard Hit%=51.6"
       ],
       "bullets": [
-        "HR score 65.2 (#7)",
-        "Pitcher HR VS 61.0 at park 0.98"
+        "HR score 64.9 (#7)",
+        "Pitcher HR VS 60.9 at park 0.98"
       ],
       "hrOddsYes": "+235",
       "marketImpliedProbability": 0.29850746268656714,
@@ -181,21 +200,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Michael Harris II",
-      "team": "ATL",
-      "opponent": "BAL",
-      "opposingPitcher": "Brandon Young",
-      "hrScoreRank": 9,
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=50.6",
-        "Hard Hit%=50.3"
+        "Pitcher HR VS=74.1",
+        "Hard Hit%=46.2"
       ],
       "bullets": [
-        "HR score 64.5 (#9)",
-        "Pitcher HR VS 50.6 at park 1.10"
+        "HR score 64.3 (#8)",
+        "Pitcher HR VS 74.1 at park 1.10"
       ],
-      "hrOddsYes": "+285",
-      "marketImpliedProbability": 0.2597402597402597,
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -208,12 +227,12 @@
       "opposingPitcher": "Tanner Bibee",
       "hrScoreRank": 7,
       "topStats": [
-        "barrel=13.4%",
-        "HH=51.5%"
+        "barrel=13.2%",
+        "HH=51.6%"
       ],
       "bullets": [
-        "barrel=13.4%",
-        "park=0.98"
+        "park=0.98",
+        "hrScore=64.9"
       ],
       "hrOddsYes": "+235",
       "marketImpliedProbability": 0.29850746268656714,
@@ -221,40 +240,21 @@
       "hrValueEdge": null
     },
     {
-      "player": "Michael Harris II",
-      "team": "ATL",
-      "opponent": "BAL",
-      "opposingPitcher": "Brandon Young",
-      "hrScoreRank": 9,
-      "topStats": [
-        "barrel=12.4%",
-        "HH=50.3%"
-      ],
-      "bullets": [
-        "barrel=12.4%",
-        "park=1.1"
-      ],
-      "hrOddsYes": "+285",
-      "marketImpliedProbability": 0.2597402597402597,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Brice Turang",
+      "player": "Jackson Chourio",
       "team": "MIL",
       "opponent": "COL",
       "opposingPitcher": "Ryan Feltner",
-      "hrScoreRank": 23,
+      "hrScoreRank": 8,
       "topStats": [
-        "Pitcher HR VS=74.2",
-        "Hard Hit%=43.8"
+        "barrel=13%",
+        "HH=46.2%"
       ],
       "bullets": [
-        "HR score 60.0 (#23)",
-        "Pitcher HR VS 74.2 at park 1.10"
+        "park=1.1",
+        "hrScore=64.3"
       ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
+      "hrOddsYes": "+360",
+      "marketImpliedProbability": 0.21739130434782608,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,17 +263,36 @@
       "team": "SD",
       "opponent": "MIA",
       "opposingPitcher": "Eury Pérez",
-      "hrScoreRank": 11,
+      "hrScoreRank": 9,
       "topStats": [
-        "Pitcher HR VS=64.4",
-        "Hard Hit%=50.0"
+        "Pitcher HR VS=64.3",
+        "Hard Hit%=50.6"
       ],
       "bullets": [
-        "HR score 64.1 (#11)",
-        "Pitcher HR VS 64.4 at park 0.88"
+        "HR score 64.3 (#9)",
+        "Pitcher HR VS 64.3 at park 0.88"
       ],
       "hrOddsYes": "+600",
       "marketImpliedProbability": 0.14285714285714285,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Brice Turang",
+      "team": "MIL",
+      "opponent": "COL",
+      "opposingPitcher": "Ryan Feltner",
+      "hrScoreRank": 19,
+      "topStats": [
+        "Pitcher HR VS=74.1",
+        "Hard Hit%=44.0"
+      ],
+      "bullets": [
+        "HR score 61.6 (#19)",
+        "Pitcher HR VS 74.1 at park 1.10"
+      ],
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
