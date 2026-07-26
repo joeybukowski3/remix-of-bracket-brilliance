@@ -31,17 +31,30 @@ export type PercentileTier = {
 };
 
 /**
+ * Sample floors for strong (non-neutral) percentile coloring.
+ * Missing sample fields never coerce to zero — they block strong color.
+ */
+export const SAMPLE_MINIMUMS = {
+  /** Nearest validated sample for xBA / Hard Hit% / Barrel% (AB when BBE unavailable). */
+  contactQuality: 20,
+  /** Season rate metrics (PA when available; AB as nearest fallback). */
+  seasonRate: 30,
+  /** Batter-vs-pitcher rate coloring (PA or AB). */
+  bvpRate: 5,
+} as const;
+
+/**
  * Ordered high → low favorable. Used by cells and legend (same source of truth).
  *
- * Higher-is-better favorable percentile bands:
- * 95–100 Elite Gold, 90–94.9 Dark Emerald, 75–89.9 Emerald, 60–74.9 Light Green,
- * 40–59.9 Neutral Slate, 25–39.9 Light Blue, 10–24.9 Medium Blue, 0–9.9 Deep Blue.
+ * Favorable percentile bands (after direction mapping):
+ * >=98 Elite Gold, >=95 Excellent, >=80 Great, >=60 Above Average,
+ * >=40 Average, >=25 Below Average, >=10 Weak, <10 Poor.
  */
 export const PERCENTILE_TIERS: readonly PercentileTier[] = [
   {
     id: "elite",
     label: "Elite",
-    minFavorablePercentile: 95,
+    minFavorablePercentile: 98,
     style: {
       // Warm muted gold — not neon yellow/orange
       backgroundColor: "#e8d5a8",
@@ -52,7 +65,7 @@ export const PERCENTILE_TIERS: readonly PercentileTier[] = [
   {
     id: "excellent",
     label: "Excellent",
-    minFavorablePercentile: 90,
+    minFavorablePercentile: 95,
     style: {
       backgroundColor: "#047857",
       color: "#ffffff",
@@ -62,7 +75,7 @@ export const PERCENTILE_TIERS: readonly PercentileTier[] = [
   {
     id: "great",
     label: "Great",
-    minFavorablePercentile: 75,
+    minFavorablePercentile: 80,
     style: {
       backgroundColor: "#10b981",
       color: "#ffffff",
@@ -126,6 +139,7 @@ export const PERCENTILE_TIER_LEGEND = PERCENTILE_TIERS.map((tier) => ({
   id: tier.id,
   label: tier.label,
   style: tier.style,
+  minFavorablePercentile: tier.minFavorablePercentile,
 }));
 
 /**
@@ -147,10 +161,27 @@ export function getPercentileTier(
 }
 
 /**
+ * Whether sample size qualifies for strong tier coloring.
+ * null / undefined / non-finite sample → not sufficient (never treat as 0).
+ */
+export function isSampleSufficientForStrongColor(
+  sampleSize: number | null | undefined,
+  minimum: number,
+): boolean {
+  if (sampleSize == null || !Number.isFinite(sampleSize)) return false;
+  if (!(minimum > 0) || !Number.isFinite(minimum)) return false;
+  return sampleSize >= minimum;
+}
+
+/**
  * Percentile ranks for a population of values (same length as input).
+ *
+ * Conservative tie handling: percentile = (count of valid values strictly
+ * worse/less than this value) / n × 100. Identical values share the same
+ * percentile; large top ties do not inflate into Elite.
+ *
  * Higher raw value → higher percentile in [0, 100].
- * Null / non-finite inputs yield null. Ties share the mid-rank percentile.
- * Single finite value → 50 (neutral; no peers to rank against).
+ * Null / non-finite inputs yield null. Single finite value → 50.
  */
 export function computePercentileRanks(
   values: ReadonlyArray<number | null | undefined>,
@@ -178,9 +209,9 @@ export function computePercentileRanks(
   while (i < finiteCount) {
     let j = i + 1;
     while (j < finiteCount && indexed[j].value === indexed[i].value) j += 1;
-    // Mid-rank among 0..finiteCount-1 for ties
-    const midRank = (i + (j - 1)) / 2;
-    const percentile = (midRank / (finiteCount - 1)) * 100;
+    // Strictly fewer (worse for higher-is-better ranking base)
+    const countStrictlyLess = i;
+    const percentile = (countStrictlyLess / finiteCount) * 100;
     for (let k = i; k < j; k += 1) {
       result[indexed[k].index] = percentile;
     }
@@ -213,4 +244,31 @@ export function lookupPercentile(
 ): number | null {
   if (value == null || !Number.isFinite(value)) return null;
   return lookup.get(value) ?? null;
+}
+
+/**
+ * Resolve tier for display: missing metric / missing percentile / insufficient
+ * sample → null (neutral cell). Qualifying sample + percentile → tier.
+ */
+export function resolvePercentileTierForDisplay(input: {
+  value: number | null | undefined;
+  percentile: number | null | undefined;
+  direction?: PercentileDirection;
+  sampleSize?: number | null | undefined;
+  sampleMinimum?: number | null | undefined;
+  /** When true, skip sample gate (model scores with internal protection). */
+  bypassSampleGate?: boolean;
+}): PercentileTier | null {
+  const { value, percentile, direction = "higherBetter" } = input;
+  if (value == null || !Number.isFinite(value)) return null;
+  if (percentile == null || !Number.isFinite(percentile)) return null;
+
+  if (!input.bypassSampleGate) {
+    const minimum = input.sampleMinimum;
+    if (minimum != null && Number.isFinite(minimum)) {
+      if (!isSampleSufficientForStrongColor(input.sampleSize, minimum)) return null;
+    }
+  }
+
+  return getPercentileTier(percentile, direction);
 }

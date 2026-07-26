@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 import MlbNavHero from "@/components/mlb/MlbNavHero";
 import RelatedTools from "@/components/mlb/RelatedTools";
@@ -21,15 +21,17 @@ import {
   type PitcherVsBatterRow,
 } from "@/pages/MlbHrProps";
 import { keyForBvpRow, useMlbBvpHistory } from "@/hooks/useMlbBvpHistory";
-import MlbBvpHistoryPanel, { AvgVsPitcherCell, MlbBvpHistoryPanelLoading, MlbBvpHistoryPanelUnavailable } from "@/components/mlb/MlbBvpHistoryPanel";
+import { AvgVsPitcherCell } from "@/components/mlb/MlbBvpHistoryPanel";
 import { cn } from "@/lib/utils";
 import {
   PERCENTILE_TIER_LEGEND,
+  SAMPLE_MINIMUMS,
   buildPercentileLookup,
-  getPercentileTier,
   lookupPercentile,
+  resolvePercentileTierForDisplay,
   type PercentileDirection,
 } from "@/lib/mlb/percentileColorScale";
+import type { BvpHistoryEntry } from "@/hooks/useMlbBvpHistory";
 
 const DASH = "—";
 /** The main table incrementally loads in pages of this size -- ranking/filtering is unaffected, this only limits how many already-sorted rows render at once. Mirrors MlbHrProps.tsx's Batter View and MlbStrikeoutProps.tsx's main table. */
@@ -58,6 +60,9 @@ const BVP_PERCENTILE_METRICS: BvpPercentileMetric[] = [
   "pitcherVulnerabilityScore",
 ];
 
+/** Contact-quality metrics require a qualifying AB sample for strong color. */
+const CONTACT_QUALITY_METRICS = new Set<BvpPercentileMetric>(["xba", "hardHitRate", "barrelRate"]);
+
 const confidenceOptions = ["All tiers", "Strong", "Positive", "Watch", "Neutral"];
 
 function sortRows(rows: PitcherVsBatterRow[], key: SortKey, dir: SortDirection) {
@@ -79,6 +84,22 @@ function buildBvpPercentileLookups(rows: PitcherVsBatterRow[]): PercentileLookup
   return lookups;
 }
 
+function sampleGateForMetric(row: PitcherVsBatterRow, metric: BvpPercentileMetric): {
+  sampleSize: number | null;
+  sampleMinimum: number | null;
+  bypassSampleGate: boolean;
+} {
+  if (CONTACT_QUALITY_METRICS.has(metric)) {
+    return {
+      sampleSize: row.atBats ?? null,
+      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
+      bypassSampleGate: false,
+    };
+  }
+  // Model scores already embed sample protection / composite context.
+  return { sampleSize: null, sampleMinimum: null, bypassSampleGate: true };
+}
+
 /**
  * Comparative metric cell using the shared 8-tier percentile scale.
  * Display-only — never affects scores, rankings, or filters.
@@ -89,20 +110,36 @@ function PercentileCell({
   percentile,
   direction = "higherBetter",
   strong = false,
+  sampleSize = null,
+  sampleMinimum = null,
+  bypassSampleGate = false,
 }: {
   value: number | null | undefined;
   display: string;
   percentile: number | null | undefined;
   direction?: PercentileDirection;
   strong?: boolean;
+  sampleSize?: number | null;
+  sampleMinimum?: number | null;
+  bypassSampleGate?: boolean;
 }) {
   if (value == null || !Number.isFinite(value)) {
     return <span className="text-[11px] text-slate-300">{DASH}</span>;
   }
-  const tier = getPercentileTier(percentile, direction);
+  const tier = resolvePercentileTierForDisplay({
+    value,
+    percentile,
+    direction,
+    sampleSize,
+    sampleMinimum,
+    bypassSampleGate,
+  });
   if (!tier) {
     return (
-      <span className={cn("inline-block rounded-md px-1.5 py-0.5 text-[11px] tabular-nums text-slate-700", strong ? "font-black" : "font-bold")}>
+      <span
+        className={cn("inline-block rounded-md px-1.5 py-0.5 text-[11px] tabular-nums text-slate-700", strong ? "font-black" : "font-bold")}
+        data-percentile-tier="neutral"
+      >
         {display}
       </span>
     );
@@ -149,10 +186,201 @@ function PercentileColorLegend() {
             ))}
           </div>
         </div>
-        <p className="shrink-0 text-[9px] leading-snug text-slate-400 sm:max-w-[14rem] sm:text-right">
-          Colors are percentile-based within the current slate and metric.
-        </p>
+        <div className="shrink-0 space-y-0.5 text-[9px] leading-snug text-slate-400 sm:max-w-[16rem] sm:text-right">
+          <p>Colors are percentile-based within the current slate and metric.</p>
+          <p title="Contact-quality cells need enough at-bats before strong green/gold tints apply.">
+            Strong colors require a qualifying sample.
+          </p>
+        </div>
       </div>
+    </div>
+  );
+}
+
+type SeasonMetricKey =
+  | "xba"
+  | "hardHitRate"
+  | "barrelRate"
+  | "kRate"
+  | "bbRate"
+  | "iso"
+  | "exitVelo"
+  | "last7HR"
+  | "last30HR"
+  | "atBats";
+
+type SeasonMetricDef = {
+  key: SeasonMetricKey;
+  label: string;
+  format: (value: number) => string;
+};
+
+const SEASON_METRIC_DEFS: SeasonMetricDef[] = [
+  { key: "atBats", label: "AB", format: (v) => String(Math.round(v)) },
+  { key: "xba", label: "xBA", format: (v) => v.toFixed(3).replace(/^0\./, ".") },
+  { key: "hardHitRate", label: "HH%", format: (v) => `${v.toFixed(1)}%` },
+  { key: "barrelRate", label: "Barrel%", format: (v) => `${v.toFixed(1)}%` },
+  { key: "kRate", label: "K%", format: (v) => `${v.toFixed(1)}%` },
+  { key: "bbRate", label: "BB%", format: (v) => `${v.toFixed(1)}%` },
+  { key: "iso", label: "ISO", format: (v) => v.toFixed(3).replace(/^0\./, ".") },
+  { key: "exitVelo", label: "EV", format: (v) => v.toFixed(1) },
+  { key: "last7HR", label: "L7 HR", format: (v) => String(Math.round(v)) },
+  { key: "last30HR", label: "L30 HR", format: (v) => String(Math.round(v)) },
+];
+
+function finiteMetric(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  return value;
+}
+
+function collectSeasonMetrics(row: PitcherVsBatterRow): Array<{ key: string; label: string; display: string }> {
+  const out: Array<{ key: string; label: string; display: string }> = [];
+  for (const def of SEASON_METRIC_DEFS) {
+    const raw = finiteMetric(row[def.key]);
+    if (raw == null) continue;
+    out.push({ key: def.key, label: def.label, display: def.format(raw) });
+  }
+  return out;
+}
+
+function collectBvpMetrics(entry: BvpHistoryEntry | undefined): Array<{ key: string; label: string; display: string }> | null {
+  if (!entry || entry.status === "no_matchups") return null;
+  const split = entry.career ?? entry.last5y;
+  if (!split) return null;
+  const pa = finiteMetric(split.pa);
+  // Require positive PA so we never show an empty/zero shell as a full row.
+  if (pa == null || pa <= 0) return null;
+
+  const metrics: Array<{ key: string; label: string; display: string }> = [];
+  metrics.push({ key: "pa", label: "PA", display: String(Math.round(pa)) });
+  const h = finiteMetric(split.h);
+  if (h != null) metrics.push({ key: "h", label: "H", display: String(Math.round(h)) });
+  const hr = finiteMetric(split.hr);
+  if (hr != null) metrics.push({ key: "hr", label: "HR", display: String(Math.round(hr)) });
+  const avg = finiteMetric(split.avg);
+  if (avg != null) metrics.push({ key: "avg", label: "AVG", display: avg.toFixed(3).replace(/^0\./, ".") });
+  return metrics;
+}
+
+function StatsMetricStrip({
+  metrics,
+  testId,
+  tone = "neutral",
+}: {
+  metrics: Array<{ key: string; label: string; display: string }>;
+  testId: string;
+  tone?: "neutral" | "sky";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap gap-1.5",
+        tone === "sky" && "gap-1.5",
+      )}
+      data-testid={testId}
+    >
+      {metrics.map((m) => (
+        <div
+          key={m.key}
+          className={cn(
+            "min-w-[3.25rem] rounded-md px-1.5 py-1 text-center",
+            tone === "sky" ? "bg-white/80" : "bg-slate-50",
+          )}
+        >
+          <div className={cn("text-[8px] font-black uppercase tracking-wide", tone === "sky" ? "text-sky-500" : "text-slate-400")}>
+            {m.label}
+          </div>
+          <div className={cn("text-[11px] font-bold tabular-nums", tone === "sky" ? "text-sky-900" : "text-slate-800")}>
+            {m.display}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Expanded panel: current-season stats + direct BvP history (when ABs exist).
+ * Does not re-render model scores from the main table.
+ */
+export function BvpExpandedSeasonMatchupStats({
+  row,
+  bvpEntry,
+  bvpLoading,
+}: {
+  row: PitcherVsBatterRow;
+  bvpEntry: BvpHistoryEntry | undefined;
+  bvpLoading: boolean;
+}) {
+  const seasonMetrics = collectSeasonMetrics(row);
+  const bvpMetrics = collectBvpMetrics(bvpEntry);
+  const showNoAbsNote = !bvpLoading && bvpEntry?.status === "no_matchups";
+
+  if (seasonMetrics.length === 0 && !bvpMetrics && !showNoAbsNote && !bvpLoading) {
+    return null;
+  }
+
+  return (
+    <div className="min-w-0 space-y-2 overflow-x-hidden" data-testid="bvp-expanded-season-matchup-stats">
+      <div className="text-[10px] font-black uppercase tracking-wide text-slate-400">Season vs Matchup</div>
+
+      {/* Desktop: two compact labeled rows */}
+      <div className="hidden space-y-1.5 sm:block" data-testid="bvp-expanded-stats-desktop">
+        {seasonMetrics.length > 0 ? (
+          <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2" data-testid="bvp-season-stats-row">
+            <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-600">2026 Season</div>
+            <StatsMetricStrip metrics={seasonMetrics} testId="bvp-season-stats-metrics" />
+          </div>
+        ) : null}
+        {bvpMetrics ? (
+          <div className="rounded-lg border border-sky-100 bg-sky-50/70 px-2.5 py-2" data-testid="bvp-pitcher-stats-row">
+            <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-sky-700">vs {row.opposingPitcher}</div>
+            <StatsMetricStrip metrics={bvpMetrics} testId="bvp-pitcher-stats-metrics" tone="sky" />
+          </div>
+        ) : null}
+      </div>
+
+      {/* Mobile ~390px: stacked cards, no page overflow */}
+      <div className="grid min-w-0 gap-2 sm:hidden" data-testid="bvp-expanded-stats-mobile">
+        {seasonMetrics.length > 0 ? (
+          <div className="rounded-lg border border-slate-200 bg-white px-2.5 py-2" data-testid="bvp-season-stats-card">
+            <div className="mb-1.5 text-[10px] font-black uppercase tracking-wide text-slate-500">2026 Season</div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {seasonMetrics.map((m) => (
+                <div key={m.key} className="rounded-md bg-slate-50 px-1.5 py-1 text-center">
+                  <div className="text-[8px] font-black uppercase tracking-wide text-slate-400">{m.label}</div>
+                  <div className="text-[11px] font-bold tabular-nums text-slate-800">{m.display}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {bvpMetrics ? (
+          <div className="rounded-lg border border-sky-100 bg-sky-50/60 px-2.5 py-2" data-testid="bvp-pitcher-stats-card">
+            <div className="mb-1.5 text-[10px] font-black uppercase tracking-wide text-sky-700">vs {row.opposingPitcher}</div>
+            <div className="grid grid-cols-4 gap-1.5">
+              {bvpMetrics.map((m) => (
+                <div key={m.key} className="rounded-md bg-white/80 px-1.5 py-1 text-center">
+                  <div className="text-[8px] font-black uppercase tracking-wide text-sky-500">{m.label}</div>
+                  <div className="text-[11px] font-bold tabular-nums text-sky-900">{m.display}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {showNoAbsNote ? (
+        <p className="text-[11px] text-slate-400" data-testid="bvp-no-abs-note">
+          No ABs vs this pitcher.
+        </p>
+      ) : null}
+      {bvpLoading && !bvpEntry ? (
+        <p className="text-[11px] text-slate-400">Loading matchup history…</p>
+      ) : null}
+      <p className="text-[9px] text-slate-400">
+        Season rates from current-slate payload. Matchup line uses career BvP history (PA/H/HR/AVG only). Not used in Matchup Score.
+      </p>
     </div>
   );
 }
@@ -168,16 +396,6 @@ function makeSortIndicator(active: boolean, dir: SortDirection) {
 /** Turns a keyForBvpRow() key into a stable, DOM-safe id for a compact row's expand panel + aria-controls pair. Mirrors MlbStrikeoutProps.tsx's compactRowPanelId(). */
 function compactRowPanelId(key: string) {
   return `bvp-row-detail-${key.replace(/[^a-zA-Z0-9-]/g, "-")}`;
-}
-
-/** Compact labeled tile for the mobile "Matchup Metrics" expand grid -- mirrors MlbHrProps.tsx's and MlbStrikeoutProps.tsx's MetricTile for visual consistency across all three mobile redesigns. */
-function MetricTile({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white px-2 py-1.5">
-      <div className="text-[9px] font-black uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="mt-0.5 flex items-center gap-1">{children}</div>
-    </div>
-  );
 }
 
 function BvpPageGuide() {
@@ -199,7 +417,7 @@ export default function MlbBatterVsPitcher() {
   // Display-only batter-vs-pitcher history (career + trailing-5Y PA/H/AVG/HR),
   // joined at render time by (batter id, opposing pitcher id). Never read by
   // Matchup Score, rankings, filters, confidence tiers, or sorting below.
-  const { loading: bvpHistoryLoading, fileUnavailable: bvpHistoryUnavailable, historyByKey: bvpHistoryByKey } = useMlbBvpHistory();
+  const { loading: bvpHistoryLoading, historyByKey: bvpHistoryByKey } = useMlbBvpHistory();
   const [bvpExpandedKey, setBvpExpandedKey] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
@@ -218,15 +436,6 @@ export default function MlbBatterVsPitcher() {
     const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
     setBvpExpandedKey((current) => (current === key ? null : key));
   };
-
-  function BvpDetailPanel({ row }: { row: PitcherVsBatterRow }) {
-    if (bvpHistoryLoading) return <MlbBvpHistoryPanelLoading />;
-    if (bvpHistoryUnavailable) return <MlbBvpHistoryPanelUnavailable batter={row.player} />;
-    const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
-    const entry = key ? bvpHistoryByKey.get(key) : undefined;
-    if (!entry) return <MlbBvpHistoryPanelUnavailable batter={row.player} />;
-    return <MlbBvpHistoryPanel entry={entry} batter={row.player} pitcher={row.opposingPitcher} />;
-  }
 
   usePageSeo({
     title: "MLB Batter vs Pitcher Today 2026 — Daily Matchup Model & Rankings | Joe Knows Ball",
@@ -460,6 +669,7 @@ export default function MlbBatterVsPitcher() {
                                 display={fmt(row.bestMatchupScore)}
                                 percentile={metricPercentile(row, "bestMatchupScore")}
                                 strong
+                                {...sampleGateForMetric(row, "bestMatchupScore")}
                               />
                             </div>
                             <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
@@ -468,42 +678,11 @@ export default function MlbBatterVsPitcher() {
                           </button>
                           {isBvpExpanded && (
                             <div id={panelId} className="space-y-3 border-t border-slate-100 bg-slate-50 px-3 pb-3 pt-2">
-                              <div>
-                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Career vs Pitcher</div>
-                                <BvpDetailPanel row={row} />
-                              </div>
-                              <div>
-                                <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Matchup Metrics</div>
-                                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                                  <MetricTile label="xBA">
-                                    {row.xba != null && row.xba >= 0.310 ? <span>🎯</span> : null}
-                                    <PercentileCell value={row.xba} display={row.xba != null ? row.xba.toFixed(3) : DASH} percentile={metricPercentile(row, "xba")} />
-                                  </MetricTile>
-                                  <MetricTile label="Hard Hit%">
-                                    {row.hardHitRate != null && row.hardHitRate >= 55 ? <span>💥</span> : null}
-                                    <PercentileCell value={row.hardHitRate} display={row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : DASH} percentile={metricPercentile(row, "hardHitRate")} />
-                                  </MetricTile>
-                                  <MetricTile label="Barrel%">
-                                    {row.barrelRate != null && row.barrelRate >= 18 ? <span>💣</span> : null}
-                                    <PercentileCell value={row.barrelRate} display={row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : DASH} percentile={metricPercentile(row, "barrelRate")} />
-                                  </MetricTile>
-                                  <MetricTile label="Batter Quality">
-                                    <PercentileCell value={row.batterPowerScore} display={fmt(row.batterPowerScore)} percentile={metricPercentile(row, "batterPowerScore")} strong />
-                                  </MetricTile>
-                                  <MetricTile label="Pitcher Contact Allowed">
-                                    {row.opposingPitcherHitsVs != null && row.opposingPitcherHitsVs >= 70 ? <span>⚔️</span> : null}
-                                    <PercentileCell value={row.opposingPitcherHitsVs} display={fmt(row.opposingPitcherHitsVs)} percentile={metricPercentile(row, "opposingPitcherHitsVs")} strong />
-                                  </MetricTile>
-                                  <MetricTile label="Pitcher Power Risk">
-                                    <PercentileCell value={row.pitcherVulnerabilityScore} display={fmt(row.pitcherVulnerabilityScore)} percentile={metricPercentile(row, "pitcherVulnerabilityScore")} />
-                                  </MetricTile>
-                                  <MetricTile label="Matchup">
-                                    <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-700">
-                                      <TeamLogoText team={row.team} size={13} /> vs <TeamLogoText team={pitcherTeam} size={13} />
-                                    </span>
-                                  </MetricTile>
-                                </div>
-                              </div>
+                              <BvpExpandedSeasonMatchupStats
+                                row={row}
+                                bvpEntry={bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined}
+                                bvpLoading={bvpHistoryLoading}
+                              />
                             </div>
                           )}
                         </article>
@@ -572,37 +751,37 @@ export default function MlbBatterVsPitcher() {
                               <div className="text-[10px] text-slate-400 truncate max-w-[140px] mt-0.5">vs {row.opposingPitcher}</div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1">
-                              <PercentileCell value={row.bestMatchupScore} display={fmt(row.bestMatchupScore)} percentile={metricPercentile(row, "bestMatchupScore")} strong />
+                              <PercentileCell value={row.bestMatchupScore} display={fmt(row.bestMatchupScore)} percentile={metricPercentile(row, "bestMatchupScore")} strong {...sampleGateForMetric(row, "bestMatchupScore")} />
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1">
                               <div className="flex items-center gap-1">
                                 {row.xba != null && row.xba >= 0.310 && <span className="text-[11px]">🎯</span>}
-                                <PercentileCell value={row.xba} display={row.xba != null ? row.xba.toFixed(3) : DASH} percentile={metricPercentile(row, "xba")} />
+                                <PercentileCell value={row.xba} display={row.xba != null ? row.xba.toFixed(3) : DASH} percentile={metricPercentile(row, "xba")} {...sampleGateForMetric(row, "xba")} />
                               </div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1">
                               <div className="flex items-center gap-1">
                                 {row.hardHitRate != null && row.hardHitRate >= 55 && <span className="text-[11px]">💥</span>}
-                                <PercentileCell value={row.hardHitRate} display={row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : DASH} percentile={metricPercentile(row, "hardHitRate")} />
+                                <PercentileCell value={row.hardHitRate} display={row.hardHitRate != null ? `${row.hardHitRate.toFixed(1)}%` : DASH} percentile={metricPercentile(row, "hardHitRate")} {...sampleGateForMetric(row, "hardHitRate")} />
                               </div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1">
                               <div className="flex items-center gap-1">
                                 {row.barrelRate != null && row.barrelRate >= 18 && <span className="text-[11px]">💣</span>}
-                                <PercentileCell value={row.barrelRate} display={row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : DASH} percentile={metricPercentile(row, "barrelRate")} />
+                                <PercentileCell value={row.barrelRate} display={row.barrelRate != null ? `${row.barrelRate.toFixed(1)}%` : DASH} percentile={metricPercentile(row, "barrelRate")} {...sampleGateForMetric(row, "barrelRate")} />
                               </div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1">
-                              <PercentileCell value={row.batterPowerScore} display={fmt(row.batterPowerScore)} percentile={metricPercentile(row, "batterPowerScore")} strong />
+                              <PercentileCell value={row.batterPowerScore} display={fmt(row.batterPowerScore)} percentile={metricPercentile(row, "batterPowerScore")} strong {...sampleGateForMetric(row, "batterPowerScore")} />
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1">
                               <div className="flex items-center gap-1">
                                 {row.opposingPitcherHitsVs != null && row.opposingPitcherHitsVs >= 70 && <span className="text-[11px]">⚔️</span>}
-                                <PercentileCell value={row.opposingPitcherHitsVs} display={fmt(row.opposingPitcherHitsVs)} percentile={metricPercentile(row, "opposingPitcherHitsVs")} strong />
+                                <PercentileCell value={row.opposingPitcherHitsVs} display={fmt(row.opposingPitcherHitsVs)} percentile={metricPercentile(row, "opposingPitcherHitsVs")} strong {...sampleGateForMetric(row, "opposingPitcherHitsVs")} />
                               </div>
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1">
-                              <PercentileCell value={row.pitcherVulnerabilityScore} display={fmt(row.pitcherVulnerabilityScore)} percentile={metricPercentile(row, "pitcherVulnerabilityScore")} />
+                              <PercentileCell value={row.pitcherVulnerabilityScore} display={fmt(row.pitcherVulnerabilityScore)} percentile={metricPercentile(row, "pitcherVulnerabilityScore")} {...sampleGateForMetric(row, "pitcherVulnerabilityScore")} />
                             </td>
                             <td className="border-b border-slate-100 px-2 py-1">
                               <AvgVsPitcherCell entry={bvpEntry} loading={bvpHistoryLoading} />
@@ -611,7 +790,11 @@ export default function MlbBatterVsPitcher() {
                           {isBvpExpanded && (
                             <tr>
                               <td colSpan={10} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
-                                <BvpDetailPanel row={row} />
+                                <BvpExpandedSeasonMatchupStats
+                                  row={row}
+                                  bvpEntry={bvpEntry}
+                                  bvpLoading={bvpHistoryLoading}
+                                />
                               </td>
                             </tr>
                           )}

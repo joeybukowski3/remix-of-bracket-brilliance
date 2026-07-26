@@ -354,6 +354,13 @@ export type PitcherVsBatterRow = {
   xba: number | null;
   kRate: number | null;
   whiffRate: number | null;
+  /** Display-only season context passthrough — never used in matchup scoring. */
+  atBats: number | null;
+  bbRate: number | null;
+  iso: number | null;
+  exitVelo: number | null;
+  last7HR: number | null;
+  last30HR: number | null;
   pitcherBarrelRate: number | null;
   pitcherHardHitRate: number | null;
   pitcherKRate: number | null;
@@ -1187,6 +1194,13 @@ export function buildPitcherVsBatterRows(
       pitcherVulnerabilityScore: Number(pitcherVulnerabilityScore.toFixed(1)),
       contextScore: Number(contextScore.toFixed(1)),
       barrelRate: b.barrelRate, hardHitRate: b.hardHitRate, xba: b.xba, kRate: b.kRate, whiffRate: b.whiffRate,
+      // Display-only season context for expanded Batter vs Pitcher panel (not scoring inputs).
+      atBats: b.atBats ?? null,
+      bbRate: b.bbRate ?? null,
+      iso: b.iso ?? null,
+      exitVelo: b.exitVelo ?? null,
+      last7HR: b.last7HR ?? null,
+      last30HR: b.last30HR ?? null,
       pitcherBarrelRate: pitcher?.barrelRate ?? null,
       pitcherHardHitRate: pitcher?.hardHitRate ?? null,
       pitcherKRate: pitcher?.kRate ?? null,
