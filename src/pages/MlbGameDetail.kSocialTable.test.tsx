@@ -14,7 +14,8 @@
  * portion of the Value tab) was empty on every production render.
  */
 import { describe, expect, it } from "vitest";
-import { getKRowsForSocial, selectTopKValuePlays } from "@/pages/MlbGameDetail";
+import { render, screen } from "@testing-library/react";
+import { getKRowsForSocial, selectTopKValuePlays, SocialTableK } from "@/pages/MlbGameDetail";
 import { selectTopSocialKRows } from "@/lib/mlb/kPropValueSorting";
 import { resolveKPropStatus } from "@/lib/mlb/kPropStatus";
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
@@ -132,6 +133,17 @@ describe("getKRowsForSocial", () => {
 
   it("returns an empty array when there is truly nothing to show (no rows, no pitchers)", () => {
     expect(getKRowsForSocial([], [], [], [], [])).toEqual([]);
+  });
+});
+
+describe("SocialTableK export contract", () => {
+  it("keeps the stable export root attached when no K rows are available", () => {
+    const { container } = render(<SocialTableK rows={[]} />);
+    const exportRoot = container.querySelector('[data-x-export="mlb-k-social"]');
+
+    expect(exportRoot).not.toBeNull();
+    expect(exportRoot).toHaveAttribute("data-k-row-count", "0");
+    expect(screen.getByText("Data Not Available")).toBeInTheDocument();
   });
 });
 

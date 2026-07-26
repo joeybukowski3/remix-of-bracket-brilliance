@@ -2015,11 +2015,23 @@ function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
 // OVER edge both rank highly here, matching how the main K props table's
 // "Best Value" sort mode works. Rows without a real projection/line are
 // excluded rather than shown with a fabricated edge.
-function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
+export function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
   const top = rows?.length ? selectTopSocialKRows(rows, 5) : [];
+  const todayEt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
   if (top.length === 0) {
     return (
-      <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>
+      <div
+        data-x-export="mlb-k-social"
+        data-k-date={todayEt}
+        data-k-generated-at={new Date().toISOString()}
+        data-k-row-count={0}
+        style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}
+      >
         Data Not Available
       </div>
     );
@@ -2036,13 +2048,6 @@ function SocialTableK({ rows }: { rows: PitcherStrikeoutTeamRow[] }) {
     if (direction === "over") return "#f97316";
     return "#64748b";
   }
-  const todayEt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-
   return (
     <div
       data-x-export="mlb-k-social"
@@ -3321,7 +3326,7 @@ export function SocialMediaTablesSection({
       <div style={{ padding: 14 }}>
         {activeTab === "ml"    && <SocialTableML games={games} detailPreviews={detailPreviews} pitcherRegressionData={pitcherRegressionData} mlbOdds={mlbOdds} polymarketGames={polymarketData?.games} />}
         {activeTab === "hr"    && <SocialTableHR batters={batters} />}
-        {activeTab === "k"     && (kRows.length ? <SocialTableK rows={kRows} /> : <div style={{ background: "#060d1a", borderRadius: 10, padding: "24px 14px", color: "#64748b", fontSize: 13, textAlign: "center" }}>Data Not Available</div>)}
+        {activeTab === "k"     && <SocialTableK rows={kRows} />}
         {activeTab === "hits"  && <SocialTableHits rows={batterVsPitcherRows} />}
         {activeTab === "value" && <SocialTableValue batters={batters} kRows={kRows} />}
       </div>

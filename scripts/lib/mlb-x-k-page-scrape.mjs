@@ -40,6 +40,31 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/**
+ * Acquires K page data without allowing a browser or scrape failure to abort
+ * planning for the independent HR market.
+ */
+export async function acquireKPageData({
+  launchBrowser,
+  scrape = scrapeKPageRows,
+  viewport = { width: 1080, height: 1400 },
+} = {}) {
+  let browser = null;
+  try {
+    browser = await launchBrowser();
+    const page = await browser.newPage({ viewport, deviceScaleFactor: 1 });
+    page.setDefaultTimeout(60000);
+    const pageData = await scrape(page);
+    return { available: true, pageData, error: null };
+  } catch (error) {
+    return { available: false, pageData: null, error };
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+  }
+}
+
 /** Scrapes the live K table for market/projection data. Requires a Playwright page. */
 export async function scrapeKPageRows(page, { url = STRIKEOUT_PROPS_URL } = {}) {
   await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
