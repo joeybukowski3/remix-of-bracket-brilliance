@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { BvpExpandedSeasonMatchupStats } from "@/pages/MlbBatterVsPitcher";
+import { buildSeasonProfilePercentileLookups } from "@/components/mlb/BatterExpandedDetails";
 import type { PitcherVsBatterRow } from "@/pages/MlbHrProps";
 import type { BvpHistoryEntry } from "@/hooks/useMlbBvpHistory";
 
@@ -70,7 +71,7 @@ describe("BvpExpandedSeasonMatchupStats", () => {
       <BvpExpandedSeasonMatchupStats row={baseRow()} bvpEntry={undefined} bvpLoading={false} />,
     );
     expect(screen.getByTestId("bvp-season-stats-row")).toBeInTheDocument();
-    expect(screen.getAllByText("2026 Season").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("2026 Season Profile").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("xBA").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("HH%").length).toBeGreaterThanOrEqual(1);
   });
@@ -145,5 +146,57 @@ describe("BvpExpandedSeasonMatchupStats", () => {
     expect(root?.className).toMatch(/min-w-0|overflow-x-hidden/);
     const mobile = screen.getByTestId("bvp-expanded-stats-mobile");
     expect(mobile.className).toMatch(/min-w-0|grid/);
+  });
+
+  it("colors eligible season values from the current-slate population and inverts K%", () => {
+    const row = baseRow({ xba: 0.32, kRate: 14, atBats: 120 });
+    const peers = Array.from({ length: 49 }, (_, index) => (
+      baseRow({
+        playerId: index + 2,
+        xba: 0.15 + index * 0.003,
+        kRate: 15 + index * 0.3,
+        atBats: 120,
+      })
+    ));
+    const lookups = buildSeasonProfilePercentileLookups([row, ...peers]);
+
+    render(
+      <BvpExpandedSeasonMatchupStats
+        row={row}
+        bvpEntry={bvpEntry()}
+        bvpLoading={false}
+        seasonPercentileLookups={lookups}
+      />,
+    );
+
+    for (const metric of ["xba", "kRate"]) {
+      const values = document.querySelectorAll(`[data-season-metric="${metric}"]`);
+      expect(values.length).toBeGreaterThanOrEqual(1);
+      expect(values[0]).toHaveAttribute("data-percentile-tier", "elite");
+      expect(values[0]).toHaveAttribute("data-sample-confidence", "qualified");
+    }
+    expect(document.querySelector('[data-season-metric="atBats"]')).toHaveAttribute("data-percentile-tier", "neutral");
+  });
+
+  it("keeps AB neutral and caps unavailable-sample color at Great", () => {
+    const row = baseRow({ xba: 0.32, atBats: null });
+    const peers = Array.from({ length: 49 }, (_, index) => (
+      baseRow({ playerId: index + 2, xba: 0.15 + index * 0.003, atBats: null })
+    ));
+    const lookups = buildSeasonProfilePercentileLookups([row, ...peers]);
+
+    render(
+      <BvpExpandedSeasonMatchupStats
+        row={row}
+        bvpEntry={bvpEntry()}
+        bvpLoading={false}
+        seasonPercentileLookups={lookups}
+      />,
+    );
+
+    const xba = document.querySelector('[data-season-metric="xba"]');
+    expect(xba).toHaveAttribute("data-percentile-tier", "great");
+    expect(xba).toHaveAttribute("data-sample-confidence", "sample-unavailable");
+    expect(screen.getByTestId("bvp-pitcher-stats-row").querySelector("[data-percentile-tier]")).toBeNull();
   });
 });

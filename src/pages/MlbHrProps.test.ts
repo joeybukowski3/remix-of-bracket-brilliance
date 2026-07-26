@@ -102,6 +102,7 @@ describe("MLB HR props dashboard guards", () => {
           pitcherHand: "R",
           ballpark: "Great American Ball Park",
           parkFactor: 1.25,
+          atBats: 240,
           barrelRate: 16,
           hardHitRate: 54,
           xba: 0.298,
@@ -116,6 +117,10 @@ describe("MLB HR props dashboard guards", () => {
           weatherBoost: 3.2,
           hrScore: 71.4,
           hrScoreRank: 1,
+          handednessSplits: {
+            vsLeft: { plateAppearances: 80, atBats: 70, hits: 21, homeRuns: 4, status: "ok" },
+            vsRight: { plateAppearances: 190, atBats: 170, hits: 51, homeRuns: 10, status: "ok" },
+          },
           angleTags: ["HR damage edge"],
         },
         {
@@ -131,6 +136,9 @@ describe("MLB HR props dashboard guards", () => {
     expect(payload?.pitchers).toHaveLength(1);
     expect(payload?.batters).toHaveLength(1);
     expect(payload?.batters[0].player).toBe("Yordan Alvarez");
+    expect(payload?.batters[0].atBats).toBe(240);
+    expect(payload?.batters[0].handednessSplits?.vsLeft.atBats).toBe(70);
+    expect(payload?.batters[0].handednessSplits?.vsRight.homeRuns).toBe(10);
     expect(payload?.games[0].windDirection).toBe("SW");
   });
 

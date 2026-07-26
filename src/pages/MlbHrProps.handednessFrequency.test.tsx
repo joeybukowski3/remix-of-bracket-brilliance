@@ -112,6 +112,8 @@ describe("HandednessSplitsTable", () => {
     expect(screen.getByTestId("handedness-row-vsRight")).toHaveAttribute("data-facing", "true");
     expect(screen.getByTestId("handedness-row-vsLeft")).toHaveAttribute("data-facing", "false");
     expect(screen.getByText("Today")).toBeInTheDocument();
+    const renderedRows = screen.getByTestId("handedness-splits-table").querySelectorAll("tbody tr");
+    expect(renderedRows[0]).toHaveAttribute("data-testid", "handedness-row-vsRight");
   });
 
   it("shows split unavailable when dual payload is missing", () => {

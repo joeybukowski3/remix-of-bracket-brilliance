@@ -188,7 +188,7 @@ describe("MlbHrProps — AVG vs P (Batters table)", () => {
     expect(screen.queryByText("11")).toBeNull();
   }, SLOW_RENDER_TIMEOUT_MS);
 
-  it("expanding the row reveals PA, H, HR, and the Career/Last 5Y toggle", async () => {
+  it("expanding the row reveals Season Profile, direct BvP, and handedness splits in order", async () => {
     vi.resetModules();
     mockPropsData();
     mockBvpHistory();
@@ -196,10 +196,15 @@ describe("MlbHrProps — AVG vs P (Batters table)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /batter-vs-pitcher history for Adley Rutschman/ }));
 
-    expect(screen.getByRole("button", { name: "Career" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Last 5Y" })).toBeInTheDocument();
-    expect(screen.getByText("59")).toBeInTheDocument();
-    expect(screen.getByText("11")).toBeInTheDocument();
+    expect(screen.getAllByText("2026 Season Profile").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("59").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("11").length).toBeGreaterThanOrEqual(1);
+
+    const profile = screen.getByTestId("batter-season-profile");
+    const matchup = screen.getByTestId("batter-vs-pitcher-summary");
+    const splits = screen.getByTestId("handedness-splits-table");
+    expect(profile.compareDocumentPosition(matchup) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(matchup.compareDocumentPosition(splits) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("shows an unavailable message when the history file failed to load", async () => {
@@ -210,6 +215,24 @@ describe("MlbHrProps — AVG vs P (Batters table)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /batter-vs-pitcher history for Adley Rutschman/ }));
     expect(screen.getByTestId("bvp-history-unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("batter-season-profile")).toBeInTheDocument();
+  }, SLOW_RENDER_TIMEOUT_MS);
+
+  it("keeps Season Profile visible and shows one no-AB note without an empty BvP stats row", async () => {
+    vi.resetModules();
+    mockPropsData();
+    mockBvpHistory({
+      historyByKey: new Map([[
+        "1|1",
+        { ...historyEntry, status: "no_matchups", career: null, last5y: null },
+      ]]),
+    });
+    await renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /batter-vs-pitcher history for Adley Rutschman/ }));
+    expect(screen.getByTestId("batter-season-profile")).toBeInTheDocument();
+    expect(screen.getAllByText("No ABs vs this pitcher.")).toHaveLength(1);
+    expect(screen.queryByTestId("bvp-pitcher-stats-row")).toBeNull();
   }, SLOW_RENDER_TIMEOUT_MS);
 
   it("does not change the default HR-Score-descending row order regardless of BvP history values", async () => {
@@ -246,7 +269,9 @@ describe("MlbHrProps — AVG vs P (Matchup Lenses table)", () => {
     expect(matchupHeaders.length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getAllByRole("button", { name: /batter-vs-pitcher history for Adley Rutschman/ })[0]);
-    expect(screen.getAllByRole("button", { name: "Career" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2026 Season Profile").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("batter-vs-pitcher-summary").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("handedness-splits-table").length).toBeGreaterThan(0);
   }, SLOW_RENDER_TIMEOUT_MS);
 });
 
