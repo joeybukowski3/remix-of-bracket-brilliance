@@ -199,6 +199,7 @@ export function scoreHandednessFrequency({ atBats, homeRuns, abPerHr }) {
 
 /**
  * Build the persisted row fields from a selection result.
+ * Scoring remains single-side (opposing starter hand only).
  * @param {ReturnType<typeof selectHandednessHrFrequency>} selected
  */
 export function toPersistedHandednessFrequencyFields(selected) {
@@ -211,5 +212,111 @@ export function toPersistedHandednessFrequencyFields(selected) {
     splitHandLabel: selected.splitHandLabel,
     // Score input only; consumers may omit from public UI.
     splitHrFrequencyScore: selected.scoreComponent,
+  };
+}
+
+function round3(value) {
+  if (value == null || !Number.isFinite(value)) return null;
+  return Math.round(value * 1000) / 1000;
+}
+
+function rateOrNull(numerator, denominator) {
+  const n = toNonNegFinite(numerator);
+  const d = toNonNegFinite(denominator);
+  if (n == null || d == null || d <= 0) return null;
+  return n / d;
+}
+
+/**
+ * Build one side of the dual-handedness display payload from a cache split
+ * record. Uses only raw season counts already present in the hand-split
+ * cache — never fabricates hard-hit or other Statcast metrics.
+ *
+ * @param {object|null|undefined} splitRecord
+ * @returns {object}
+ */
+export function buildHandednessSplitSide(splitRecord) {
+  const raw = splitRecord?.raw ?? null;
+  const plateAppearances = toNonNegFinite(raw?.plateAppearances ?? splitRecord?.plateAppearances);
+  const atBats = toNonNegFinite(raw?.atBats ?? splitRecord?.atBats);
+  const hits = toNonNegFinite(raw?.hits ?? splitRecord?.hits);
+  const homeRuns = toNonNegFinite(raw?.homeRuns ?? splitRecord?.homeRuns);
+  const walks = toNonNegFinite(raw?.walks ?? splitRecord?.walks);
+  const strikeouts = toNonNegFinite(raw?.strikeouts ?? splitRecord?.strikeouts);
+  const battingAverage = toNonNegFinite(raw?.battingAverage ?? splitRecord?.battingAverage);
+  const onBasePercentage = toNonNegFinite(raw?.onBasePercentage ?? splitRecord?.onBasePercentage);
+  const sluggingPercentage = toNonNegFinite(raw?.sluggingPercentage ?? splitRecord?.sluggingPercentage);
+  const ops = toNonNegFinite(raw?.ops ?? splitRecord?.ops);
+  const hrRateRaw = toNonNegFinite(raw?.hrRate ?? splitRecord?.hrRate);
+  const hrRate =
+    hrRateRaw != null
+      ? hrRateRaw
+      : plateAppearances != null && plateAppearances > 0 && homeRuns != null
+        ? homeRuns / plateAppearances
+        : null;
+
+  const sampleSizeTier =
+    typeof splitRecord?.sampleSizeTier === "string" && splitRecord.sampleSizeTier.trim()
+      ? splitRecord.sampleSizeTier
+      : null;
+
+  if (atBats == null || homeRuns == null || atBats <= 0 || homeRuns > atBats) {
+    return {
+      plateAppearances: plateAppearances ?? null,
+      atBats: null,
+      hits: null,
+      homeRuns: null,
+      walks: null,
+      strikeouts: null,
+      battingAverage: null,
+      onBasePercentage: null,
+      sluggingPercentage: null,
+      ops: null,
+      hrRate: null,
+      abPerHr: null,
+      strikeoutRate: null,
+      walkRate: null,
+      status: SPLIT_STATUS.SPLIT_UNAVAILABLE,
+      sampleSizeTier,
+    };
+  }
+
+  const status = homeRuns === 0 ? SPLIT_STATUS.ZERO_HR : SPLIT_STATUS.OK;
+  const abPerHr = homeRuns > 0 ? round1(atBats / homeRuns) : null;
+  const strikeoutRate = rateOrNull(strikeouts, plateAppearances);
+  const walkRate = rateOrNull(walks, plateAppearances);
+
+  return {
+    plateAppearances: plateAppearances ?? null,
+    atBats,
+    hits,
+    homeRuns,
+    walks,
+    strikeouts,
+    battingAverage: round3(battingAverage),
+    onBasePercentage: round3(onBasePercentage),
+    sluggingPercentage: round3(sluggingPercentage),
+    ops: round3(ops),
+    hrRate: hrRate != null && Number.isFinite(hrRate) ? hrRate : null,
+    abPerHr,
+    strikeoutRate: strikeoutRate != null && Number.isFinite(strikeoutRate) ? strikeoutRate : null,
+    walkRate: walkRate != null && Number.isFinite(walkRate) ? walkRate : null,
+    status,
+    sampleSizeTier,
+  };
+}
+
+/**
+ * Persist both platoon sides for expanded batter UI comparison.
+ * Independent of opposing pitcher hand — scoring still uses
+ * selectHandednessHrFrequency (single side only).
+ *
+ * @param {object|null|undefined} batterHandSplits
+ * @returns {{ vsLeft: object, vsRight: object }}
+ */
+export function buildHandednessSplits(batterHandSplits) {
+  return {
+    vsLeft: buildHandednessSplitSide(batterHandSplits?.splits?.vsLeft ?? null),
+    vsRight: buildHandednessSplitSide(batterHandSplits?.splits?.vsRight ?? null),
   };
 }

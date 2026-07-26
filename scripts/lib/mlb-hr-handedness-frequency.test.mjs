@@ -8,6 +8,8 @@ import {
   HAND_FREQ_SCORE_WEIGHT,
   selectHandednessHrFrequency,
   scoreHandednessFrequency,
+  buildHandednessSplitSide,
+  buildHandednessSplits,
   SPLIT_STATUS,
 } from "./mlb-hr-handedness-frequency.mjs";
 
@@ -20,14 +22,58 @@ function handSplits({ vsLeft = null, vsRight = null } = {}) {
         ? {
             atBats: vsLeft.atBats,
             homeRuns: vsLeft.homeRuns,
-            raw: { atBats: vsLeft.atBats, homeRuns: vsLeft.homeRuns, plateAppearances: vsLeft.atBats + 5 },
+            plateAppearances: vsLeft.plateAppearances ?? vsLeft.atBats + 5,
+            hits: vsLeft.hits ?? null,
+            walks: vsLeft.walks ?? null,
+            strikeouts: vsLeft.strikeouts ?? null,
+            battingAverage: vsLeft.battingAverage ?? null,
+            onBasePercentage: vsLeft.onBasePercentage ?? null,
+            sluggingPercentage: vsLeft.sluggingPercentage ?? null,
+            ops: vsLeft.ops ?? null,
+            hrRate: vsLeft.hrRate ?? null,
+            sampleSizeTier: vsLeft.sampleSizeTier ?? "medium",
+            raw: {
+              atBats: vsLeft.atBats,
+              homeRuns: vsLeft.homeRuns,
+              plateAppearances: vsLeft.plateAppearances ?? vsLeft.atBats + 5,
+              hits: vsLeft.hits ?? null,
+              walks: vsLeft.walks ?? null,
+              strikeouts: vsLeft.strikeouts ?? null,
+              battingAverage: vsLeft.battingAverage ?? null,
+              onBasePercentage: vsLeft.onBasePercentage ?? null,
+              sluggingPercentage: vsLeft.sluggingPercentage ?? null,
+              ops: vsLeft.ops ?? null,
+              hrRate: vsLeft.hrRate ?? null,
+            },
           }
         : null,
       vsRight: vsRight
         ? {
             atBats: vsRight.atBats,
             homeRuns: vsRight.homeRuns,
-            raw: { atBats: vsRight.atBats, homeRuns: vsRight.homeRuns, plateAppearances: vsRight.atBats + 5 },
+            plateAppearances: vsRight.plateAppearances ?? vsRight.atBats + 5,
+            hits: vsRight.hits ?? null,
+            walks: vsRight.walks ?? null,
+            strikeouts: vsRight.strikeouts ?? null,
+            battingAverage: vsRight.battingAverage ?? null,
+            onBasePercentage: vsRight.onBasePercentage ?? null,
+            sluggingPercentage: vsRight.sluggingPercentage ?? null,
+            ops: vsRight.ops ?? null,
+            hrRate: vsRight.hrRate ?? null,
+            sampleSizeTier: vsRight.sampleSizeTier ?? "medium",
+            raw: {
+              atBats: vsRight.atBats,
+              homeRuns: vsRight.homeRuns,
+              plateAppearances: vsRight.plateAppearances ?? vsRight.atBats + 5,
+              hits: vsRight.hits ?? null,
+              walks: vsRight.walks ?? null,
+              strikeouts: vsRight.strikeouts ?? null,
+              battingAverage: vsRight.battingAverage ?? null,
+              onBasePercentage: vsRight.onBasePercentage ?? null,
+              sluggingPercentage: vsRight.sluggingPercentage ?? null,
+              ops: vsRight.ops ?? null,
+              hrRate: vsRight.hrRate ?? null,
+            },
           }
         : null,
     },
@@ -187,5 +233,86 @@ describe("handedness HR frequency score component", () => {
 
   it("uses the approved 10% weight constant", () => {
     assert.equal(HAND_FREQ_SCORE_WEIGHT, 0.10);
+  });
+});
+
+describe("handednessSplits dual-side display payload", () => {
+  it("builds both vsLeft and vsRight from available raw metrics", () => {
+    const payload = buildHandednessSplits(
+      handSplits({
+        vsLeft: {
+          atBats: 120,
+          homeRuns: 4,
+          plateAppearances: 135,
+          hits: 32,
+          walks: 12,
+          strikeouts: 30,
+          battingAverage: 0.267,
+          onBasePercentage: 0.333,
+          sluggingPercentage: 0.5,
+          ops: 0.833,
+          hrRate: 4 / 135,
+          sampleSizeTier: "medium",
+        },
+        vsRight: {
+          atBats: 45,
+          homeRuns: 0,
+          plateAppearances: 50,
+          hits: 10,
+          walks: 4,
+          strikeouts: 12,
+          battingAverage: 0.222,
+          onBasePercentage: 0.28,
+          sluggingPercentage: 0.311,
+          ops: 0.591,
+          hrRate: 0,
+          sampleSizeTier: "low",
+        },
+      }),
+    );
+
+    assert.equal(payload.vsLeft.status, SPLIT_STATUS.OK);
+    assert.equal(payload.vsLeft.atBats, 120);
+    assert.equal(payload.vsLeft.homeRuns, 4);
+    assert.equal(payload.vsLeft.abPerHr, 30.0);
+    assert.equal(payload.vsLeft.plateAppearances, 135);
+    assert.equal(payload.vsLeft.hits, 32);
+    assert.equal(payload.vsLeft.walks, 12);
+    assert.equal(payload.vsLeft.strikeouts, 30);
+    assert.equal(payload.vsLeft.ops, 0.833);
+    assert.equal(payload.vsLeft.sampleSizeTier, "medium");
+    assert.ok(Math.abs(payload.vsLeft.strikeoutRate - 30 / 135) < 1e-9);
+    assert.ok(Math.abs(payload.vsLeft.walkRate - 12 / 135) < 1e-9);
+
+    assert.equal(payload.vsRight.status, SPLIT_STATUS.ZERO_HR);
+    assert.equal(payload.vsRight.atBats, 45);
+    assert.equal(payload.vsRight.homeRuns, 0);
+    assert.equal(payload.vsRight.abPerHr, null);
+    assert.equal(payload.vsRight.sampleSizeTier, "low");
+  });
+
+  it("marks missing sides unavailable without fabricating metrics", () => {
+    const side = buildHandednessSplitSide(null);
+    assert.equal(side.status, SPLIT_STATUS.SPLIT_UNAVAILABLE);
+    assert.equal(side.atBats, null);
+    assert.equal(side.homeRuns, null);
+    assert.equal(side.abPerHr, null);
+    assert.equal(side.hardHitRate, undefined);
+
+    const bothMissing = buildHandednessSplits(null);
+    assert.equal(bothMissing.vsLeft.status, SPLIT_STATUS.SPLIT_UNAVAILABLE);
+    assert.equal(bothMissing.vsRight.status, SPLIT_STATUS.SPLIT_UNAVAILABLE);
+  });
+
+  it("does not invent hard-hit rate", () => {
+    const side = buildHandednessSplitSide({
+      atBats: 100,
+      homeRuns: 5,
+      plateAppearances: 110,
+      raw: { atBats: 100, homeRuns: 5, plateAppearances: 110 },
+      sampleSizeTier: "medium",
+    });
+    assert.equal(Object.hasOwn(side, "hardHitRate"), false);
+    assert.equal(side.homeRuns, 5);
   });
 });

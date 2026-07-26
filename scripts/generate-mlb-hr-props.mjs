@@ -15,6 +15,7 @@ import { computeShadowRanks } from "./lib/mlb-phase2-shadow-comparison.mjs";
 import { resolveOddsSlateDate } from "./lib/mlb-prop-odds-core.mjs";
 import {
   HAND_FREQ_SCORE_WEIGHT,
+  buildHandednessSplits,
   selectHandednessHrFrequency,
   toPersistedHandednessFrequencyFields,
 } from "./lib/mlb-hr-handedness-frequency.mjs";
@@ -984,6 +985,8 @@ function validateBatterRows(rows) {
       splitStatus: normalizeText(row.splitStatus) || null,
       splitHandLabel: normalizeText(row.splitHandLabel) || null,
       splitHrFrequencyScore: toFiniteNumber(row.splitHrFrequencyScore) ?? null,
+      // Dual-side season splits for expanded batter UI only (not scoring).
+      ...(row.handednessSplits != null ? { handednessSplits: row.handednessSplits } : {}),
       // Phase 2 shadow: passed through only when present (omitted entirely
       // otherwise, never written as null) -- this whitelist-style rebuild
       // would silently drop it like every other unlisted field without
@@ -1798,17 +1801,20 @@ async function main() {
 
   const scored = dedupedPool.map((player) => {
     const opposingPitcher = pitcherLookup.get(String(player.opposingPitcherId ?? ""));
+    const batterHandSplits = handSplitCache?.players?.[String(player.playerId)] ?? null;
     const handFreq = selectHandednessHrFrequency({
       pitcherHand: player.pitcherHand,
-      batterHandSplits: handSplitCache?.players?.[String(player.playerId)] ?? null,
+      batterHandSplits,
     });
     const handFreqFields = toPersistedHandednessFrequencyFields(handFreq);
+    const handednessSplits = buildHandednessSplits(batterHandSplits);
     const enriched = {
       ...player,
       opposingPitcherHrVs: opposingPitcher?.hrVs ?? normalizeMetric(dedupedPool.map((entry) => entry.opposingPitcherHr9), player.opposingPitcherHr9),
       opposingPitcherHitsVs: opposingPitcher?.hitsVs ?? 50,
       opposingPitcherKVs: opposingPitcher?.kVs ?? 50,
       ...handFreqFields,
+      handednessSplits,
     };
     const baseHrScore = computeBatterHrScore(enriched, batterContexts);
 
@@ -1905,6 +1911,7 @@ async function main() {
       splitStatus: player.splitStatus ?? null,
       splitHandLabel: player.splitHandLabel ?? null,
       splitHrFrequencyScore: player.splitHrFrequencyScore ?? null,
+      handednessSplits: player.handednessSplits ?? null,
       ...(player.phase2Shadow !== undefined ? { phase2Shadow: player.phase2Shadow } : {}),
     }));
 
