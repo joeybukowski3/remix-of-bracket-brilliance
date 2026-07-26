@@ -11,7 +11,12 @@ import { evaluateSinCityHitter } from "@/lib/mlb/mlbHrFilter";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { keyForBvpRow, useMlbBvpHistory } from "@/hooks/useMlbBvpHistory";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
-import MlbBvpHistoryPanel, { AvgVsPitcherCell, MlbBvpHistoryPanelLoading, MlbBvpHistoryPanelUnavailable } from "@/components/mlb/MlbBvpHistoryPanel";
+import { AvgVsPitcherCell } from "@/components/mlb/MlbBvpHistoryPanel";
+import {
+  BatterSeasonProfile,
+  BatterVsPitcherSummary,
+  buildSeasonProfilePercentileLookups,
+} from "@/components/mlb/BatterExpandedDetails";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { cn } from "@/lib/utils";
 import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
@@ -354,6 +359,13 @@ export type PitcherVsBatterRow = {
   xba: number | null;
   kRate: number | null;
   whiffRate: number | null;
+  /** Display-only season context passthrough — never used in matchup scoring. */
+  atBats: number | null;
+  bbRate: number | null;
+  iso: number | null;
+  exitVelo: number | null;
+  last7HR: number | null;
+  last30HR: number | null;
   pitcherBarrelRate: number | null;
   pitcherHardHitRate: number | null;
   pitcherKRate: number | null;
@@ -1187,6 +1199,13 @@ export function buildPitcherVsBatterRows(
       pitcherVulnerabilityScore: Number(pitcherVulnerabilityScore.toFixed(1)),
       contextScore: Number(contextScore.toFixed(1)),
       barrelRate: b.barrelRate, hardHitRate: b.hardHitRate, xba: b.xba, kRate: b.kRate, whiffRate: b.whiffRate,
+      // Display-only season context for expanded Batter vs Pitcher panel (not scoring inputs).
+      atBats: b.atBats ?? null,
+      bbRate: b.bbRate ?? null,
+      iso: b.iso ?? null,
+      exitVelo: b.exitVelo ?? null,
+      last7HR: b.last7HR ?? null,
+      last30HR: b.last30HR ?? null,
       pitcherBarrelRate: pitcher?.barrelRate ?? null,
       pitcherHardHitRate: pitcher?.hardHitRate ?? null,
       pitcherKRate: pitcher?.kRate ?? null,
@@ -2041,7 +2060,7 @@ export function HandednessSplitsTable({
   const rows: Array<{ key: "vsLeft" | "vsRight"; label: string; side: HandednessSplitSide | null }> = [
     { key: "vsLeft", label: "vs LHP", side: splits?.vsLeft ?? null },
     { key: "vsRight", label: "vs RHP", side: splits?.vsRight ?? null },
-  ];
+  ].sort((left, right) => Number(right.key === facing) - Number(left.key === facing));
 
   return (
     <div className="w-full min-w-0" data-testid="handedness-splits-table">
@@ -2317,6 +2336,13 @@ export default function MlbHrProps() {
   const pitcherHeat = useMemo(() => buildPitcherHeatRanges(pitchers), [pitchers]);
   const batterHeat = useMemo(() => buildHeatStatRanges(batters), [batters]);
   const matchupRows = useMemo(() => buildPitcherVsBatterRows(batters, games, pitchers), [batters, games, pitchers]);
+  const batterByBvpKey = useMemo(() => {
+    const entries = batters.flatMap((row) => {
+      const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
+      return key ? [[key, row] as const] : [];
+    });
+    return new Map(entries);
+  }, [batters]);
   const matchupHeat = useMemo(() => buildMatchupHeatRanges(matchupRows), [matchupRows]);
   const strikeoutRows = useMemo(() => buildPitcherStrikeoutRows(batters, games, pitchers), [batters, games, pitchers]);
   const strikeoutHeat = useMemo(() => buildStrikeoutHeatRanges(strikeoutRows), [strikeoutRows]);
@@ -2394,6 +2420,10 @@ export default function MlbHrProps() {
 
   /** Same-hand peer distributions for split-table coloring (full current slate, not search-filtered). */
   const handednessPeerStats = useMemo(() => buildHandednessPeerStats(batters), [batters]);
+  const seasonPercentileLookups = useMemo(
+    () => buildSeasonProfilePercentileLookups(batters),
+    [batters],
+  );
 
   const visibleBatters = useMemo(
     () => filteredBatters.slice(0, visibleBatterCount),
@@ -2479,24 +2509,6 @@ export default function MlbHrProps() {
     const key = keyForBvpRow(row.playerId, row.opposingPitcherId);
     setBvpExpandedMatchupKey((current) => (current === key ? null : key));
   };
-
-  /**
-   * Shared batter-vs-pitcher history detail panel -- used by both the
-   * Batter View table and the Matchups table, since both row types carry
-   * the same (playerId, opposingPitcherId) identity pair. Display-only:
-   * this never reads or writes hrScore, matchup scores, rankings,
-   * recommendations, confidence, eligibility, or sorting.
-   */
-  function BvpDetailPanel({ playerId, opposingPitcherId, player, opposingPitcher }: {
-    playerId: number | null; opposingPitcherId: number | null; player: string; opposingPitcher: string;
-  }) {
-    if (bvpHistoryLoading) return <MlbBvpHistoryPanelLoading />;
-    if (bvpHistoryUnavailable) return <MlbBvpHistoryPanelUnavailable batter={player} />;
-    const key = keyForBvpRow(playerId, opposingPitcherId);
-    const entry = key ? bvpHistoryByKey.get(key) : undefined;
-    if (!entry) return <MlbBvpHistoryPanelUnavailable batter={player} />;
-    return <MlbBvpHistoryPanel entry={entry} batter={player} pitcher={opposingPitcher} />;
-  }
 
   return (
       <main className={cn("site-page bg-[#edf2f7] pb-12 pt-3 text-slate-900", isMobile ? "text-[14px]" : "")}>
@@ -2993,15 +3005,16 @@ export default function MlbHrProps() {
                                   </div>
                                   {isBvpExpanded && (
                                     <div className="space-y-3 bg-slate-50 px-3 pb-3 pt-1">
-                                      <div>
-                                        <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Career vs Pitcher</div>
-                                        <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
-                                      </div>
+                                      <BatterSeasonProfile row={row} percentileLookups={seasonPercentileLookups} />
+                                      <BatterVsPitcherSummary
+                                        opposingPitcher={row.opposingPitcher}
+                                        bvpEntry={bvpEntry}
+                                        bvpLoading={bvpHistoryLoading}
+                                        bvpUnavailable={bvpHistoryUnavailable}
+                                      />
+                                      <HandednessSplitsTable row={row} peerStats={handednessPeerStats} />
                                       <div>
                                         <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">HR Model Metrics</div>
-                                        <div className="mb-2">
-                                          <HandednessSplitsTable row={row} peerStats={handednessPeerStats} />
-                                        </div>
                                         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                           {hasHrOdds && (
                                             <MetricTile label="HR Odds">
@@ -3319,11 +3332,14 @@ export default function MlbHrProps() {
                                     <tr>
                                       <td colSpan={10} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
                                         <div className="space-y-3">
-                                          <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
-                                          <div>
-                                            <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">HR Model Metrics</div>
-                                            <HandednessSplitsTable row={row} peerStats={handednessPeerStats} />
-                                          </div>
+                                          <BatterSeasonProfile row={row} percentileLookups={seasonPercentileLookups} />
+                                          <BatterVsPitcherSummary
+                                            opposingPitcher={row.opposingPitcher}
+                                            bvpEntry={bvpEntry}
+                                            bvpLoading={bvpHistoryLoading}
+                                            bvpUnavailable={bvpHistoryUnavailable}
+                                          />
+                                          <HandednessSplitsTable row={row} peerStats={handednessPeerStats} />
                                         </div>
                                       </td>
                                     </tr>
@@ -3607,6 +3623,8 @@ export default function MlbHrProps() {
                               filteredMatchups.length ? filteredMatchups.map((row, i) => {
                                 const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
                                 const isBvpExpanded = bvpExpandedMatchupKey === bvpKey;
+                                const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
+                                const batterDetailRow = bvpKey ? batterByBvpKey.get(bvpKey) : undefined;
                                 const bvpRowLabel = `${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`;
                                 const onRowKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
                                   if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggleBvpMatchupRow(row); }
@@ -3633,10 +3651,16 @@ export default function MlbHrProps() {
                                     </div>
                                     {isBvpExpanded && (
                                       <div className="space-y-3 bg-slate-50 px-3 pb-3 pt-1">
-                                        <div>
-                                          <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Career vs Pitcher</div>
-                                          <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
-                                        </div>
+                                        <BatterSeasonProfile row={row} percentileLookups={seasonPercentileLookups} />
+                                        <BatterVsPitcherSummary
+                                          opposingPitcher={row.opposingPitcher}
+                                          bvpEntry={bvpEntry}
+                                          bvpLoading={bvpHistoryLoading}
+                                          bvpUnavailable={bvpHistoryUnavailable}
+                                        />
+                                        {batterDetailRow ? (
+                                          <HandednessSplitsTable row={batterDetailRow} peerStats={handednessPeerStats} />
+                                        ) : null}
                                         <div>
                                           <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Matchup Metrics</div>
                                           <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
@@ -3800,6 +3824,7 @@ export default function MlbHrProps() {
                                   const bvpKey = keyForBvpRow(row.playerId, row.opposingPitcherId);
                                   const isBvpExpanded = bvpExpandedMatchupKey === bvpKey;
                                   const bvpEntry = bvpKey ? bvpHistoryByKey.get(bvpKey) : undefined;
+                                  const batterDetailRow = bvpKey ? batterByBvpKey.get(bvpKey) : undefined;
                                   const bvpRowLabel = `${isBvpExpanded ? "Hide" : "Show"} batter-vs-pitcher history for ${row.player} vs ${row.opposingPitcher}`;
                                   const onBvpRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
                                     if (event.key === "Enter" || event.key === " ") {
@@ -3881,7 +3906,18 @@ export default function MlbHrProps() {
                                   {isBvpExpanded && (
                                     <tr>
                                       <td colSpan={activeMatchupLens === "hr" ? 13 : 12} className="border-b border-slate-100 bg-slate-50 px-4 py-2">
-                                        <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                        <div className="space-y-3">
+                                          <BatterSeasonProfile row={row} percentileLookups={seasonPercentileLookups} />
+                                          <BatterVsPitcherSummary
+                                            opposingPitcher={row.opposingPitcher}
+                                            bvpEntry={bvpEntry}
+                                            bvpLoading={bvpHistoryLoading}
+                                            bvpUnavailable={bvpHistoryUnavailable}
+                                          />
+                                          {batterDetailRow ? (
+                                            <HandednessSplitsTable row={batterDetailRow} peerStats={handednessPeerStats} />
+                                          ) : null}
+                                        </div>
                                       </td>
                                     </tr>
                                   )}

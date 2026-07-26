@@ -957,6 +957,8 @@ function validateBatterRows(rows) {
       pitcherHand: normalizeText(row.pitcherHand) || "R",
       ballpark: normalizeText(row.ballpark) || "Unknown Venue",
       parkFactor: toFiniteNumber(row.parkFactor),
+      // Display-only season sample context for the expanded profile.
+      atBats: row.atBats == null ? null : toFiniteNumber(row.atBats),
       barrelRate: toFiniteNumber(row.barrelRate),
       hardHitRate: toFiniteNumber(row.hardHitRate),
       exitVelo: toFiniteNumber(row.exitVelo),
@@ -1883,6 +1885,7 @@ async function main() {
       pitcherHand: player.pitcherHand,
       ballpark: player.ballpark,
       parkFactor: roundNumber(player.parkFactor, 2),
+      atBats: roundNumber(player.atBats, 0),
       barrelRate: roundNumber(player.barrelRate, 1),
       hardHitRate: roundNumber(player.hardHitRate, 1),
       exitVelo: roundNumber(player.exitVelo, 1),
