@@ -1,13 +1,13 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import SiteHeader from "./SiteHeader";
 
-const EXPECTED_ITEMS = ["Home", "MLB", "NCAA Football", "NFL", "NBA", "PGA"];
+const EXPECTED_ITEMS = ["Home", "MLB", "NCAA Football", "NFL", "NBA", "PGA", "Support the Site"];
 
-function renderHeader() {
+function renderHeader(path = "/pga") {
   return render(
-    <MemoryRouter initialEntries={["/pga"]}>
+    <MemoryRouter initialEntries={[path]}>
       <SiteHeader />
     </MemoryRouter>,
   );
@@ -37,6 +37,36 @@ describe("SiteHeader navigation", () => {
     EXPECTED_ITEMS.forEach((label) => {
       expect(within(container).getAllByRole("link", { name: label }).length).toBeGreaterThan(0);
     });
+  });
+
+  it("keeps Support the Site visible in the desktop primary navigation", () => {
+    const { container } = renderHeader();
+    const desktopNavigation = container.querySelector("nav");
+
+    expect(desktopNavigation).not.toBeNull();
+    expect(within(desktopNavigation as HTMLElement).getByRole("link", { name: "Support the Site" })).toHaveAttribute(
+      "href",
+      "/support",
+    );
+  });
+
+  it("includes Support the Site in the mobile navigation", () => {
+    const { container } = renderHeader();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    const navigations = container.querySelectorAll("nav");
+    const mobileNavigation = navigations[navigations.length - 1];
+
+    expect(within(mobileNavigation).getByRole("link", { name: "Support the Site" })).toHaveAttribute(
+      "href",
+      "/support",
+    );
+  });
+
+  it("uses the existing active-link treatment on the support route", () => {
+    renderHeader("/support");
+
+    expect(screen.getByRole("link", { name: "Support the Site" })).toHaveClass("bg-[#f0f0f0]", "font-semibold");
   });
 
   it("does not link anywhere to the expired Open route from the header", () => {

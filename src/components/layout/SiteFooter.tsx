@@ -49,7 +49,7 @@ const SECTIONS = [
     emoji: "🔗",
     links: [
       { label: "Home",             to: "/" },
-      { label: "Support the Site", to: "/donate" },
+      { label: "Support the Site", to: "/support" },
     ],
   },
 ];

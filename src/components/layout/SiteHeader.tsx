@@ -8,6 +8,7 @@ const navItems = [
   { to: "/nfl/guide", label: "NFL" },
   { to: "/nba", label: "NBA" },
   { to: "/pga", label: "PGA" },
+  { to: "/support", label: "Support the Site" },
 ];
 
 function isActive(pathname: string, item: { to: string | null; label: string }) {
