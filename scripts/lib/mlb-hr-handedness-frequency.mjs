@@ -26,10 +26,10 @@ export const HAND_FREQ_SCORE_WEIGHT = 0.10;
  * Missing sub-components are dropped and the remainder renormalized.
  */
 export const MATCHUP_COMPONENT_WEIGHTS = {
-  hrRate: 0.40,
-  iso: 0.30,
+  hrRate: 0.45,
+  iso: 0.35,
   kRate: 0.15,
-  bbRate: 0.15,
+  bbRate: 0.05,
 };
 
 /** Fixed scoring anchors (curve constants — not data fallbacks). */
@@ -50,6 +50,9 @@ export const SPLIT_STATUS = {
 };
 
 function toNonNegFinite(value) {
+  // Null/undefined must stay distinct from 0 (e.g. missing walks ≠ zero walks).
+  // Number(null) === 0 in JS — never coerce nullish into a count/rate.
+  if (value == null || value === "") return null;
   const n = Number(value);
   if (!Number.isFinite(n) || n < 0) return null;
   return n;

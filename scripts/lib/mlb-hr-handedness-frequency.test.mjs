@@ -252,7 +252,7 @@ describe("handedness matchup score component", () => {
     assert.ok(strong > weak);
   });
 
-  it("higher BB rate improves the matchup score when other inputs match", () => {
+  it("higher BB rate modestly improves the matchup score when other inputs match", () => {
     const base = {
       atBats: 120,
       homeRuns: 6,
@@ -265,6 +265,74 @@ describe("handedness matchup score component", () => {
     const highWalks = scoreHandednessMatchup({ ...base, walks: 22 });
     assert.ok(lowWalks != null && highWalks != null);
     assert.ok(highWalks > lowWalks);
+    // 0.05 weight: improvement is positive but small relative to the full 0–100 scale
+    assert.ok(highWalks - lowWalks < 8, `BB delta too large: ${highWalks - lowWalks}`);
+  });
+
+  it("extreme BB-rate difference has less influence than HR-rate or ISO difference", () => {
+    const base = {
+      atBats: 150,
+      homeRuns: 5,
+      plateAppearances: 170,
+      battingAverage: 0.26,
+      sluggingPercentage: 0.42,
+      strikeouts: 35,
+      walks: 10,
+    };
+    const bbDelta =
+      scoreHandednessMatchup({ ...base, walks: 25 }) -
+      scoreHandednessMatchup({ ...base, walks: 5 });
+    const hrDelta =
+      scoreHandednessMatchup({ ...base, homeRuns: 12 }) -
+      scoreHandednessMatchup({ ...base, homeRuns: 2 });
+    const isoDelta =
+      scoreHandednessMatchup({
+        ...base,
+        battingAverage: 0.26,
+        sluggingPercentage: 0.58,
+      }) -
+      scoreHandednessMatchup({
+        ...base,
+        battingAverage: 0.26,
+        sluggingPercentage: 0.34,
+      });
+    assert.ok(Number.isFinite(bbDelta) && Number.isFinite(hrDelta) && Number.isFinite(isoDelta));
+    assert.ok(bbDelta > 0 && hrDelta > 0 && isoDelta > 0);
+    assert.ok(bbDelta < hrDelta, `BB delta ${bbDelta} should be < HR delta ${hrDelta}`);
+    assert.ok(bbDelta < isoDelta, `BB delta ${bbDelta} should be < ISO delta ${isoDelta}`);
+  });
+
+  it("missing walks renormalize over remaining components (not treated as zero)", () => {
+    const withMissingWalks = {
+      atBats: 120,
+      homeRuns: 6,
+      plateAppearances: 140,
+      battingAverage: 0.28,
+      sluggingPercentage: 0.5,
+      strikeouts: 30,
+      walks: null,
+    };
+    const withZeroWalks = { ...withMissingWalks, walks: 0 };
+    const missingScore = scoreHandednessMatchup(withMissingWalks);
+    const zeroScore = scoreHandednessMatchup(withZeroWalks);
+    assert.ok(missingScore != null && zeroScore != null);
+    // Zero walks is valid data and scores the BB component poorly; missing omits it.
+    assert.ok(missingScore > zeroScore);
+    assert.notEqual(missingScore, zeroScore);
+  });
+
+  it("zero walks with valid PA is valid data", () => {
+    const score = scoreHandednessMatchup({
+      atBats: 100,
+      homeRuns: 5,
+      plateAppearances: 110,
+      battingAverage: 0.27,
+      sluggingPercentage: 0.48,
+      strikeouts: 25,
+      walks: 0,
+    });
+    assert.ok(score != null && Number.isFinite(score));
+    assert.ok(score >= 0 && score <= 100);
   });
 
   it("never uses the opposite hand in selection", () => {
@@ -336,6 +404,10 @@ describe("handedness matchup score component", () => {
 
   it("uses the approved 10% weight constant and component weights sum to 1", () => {
     assert.equal(HAND_FREQ_SCORE_WEIGHT, 0.10);
+    assert.equal(MATCHUP_COMPONENT_WEIGHTS.hrRate, 0.45);
+    assert.equal(MATCHUP_COMPONENT_WEIGHTS.iso, 0.35);
+    assert.equal(MATCHUP_COMPONENT_WEIGHTS.kRate, 0.15);
+    assert.equal(MATCHUP_COMPONENT_WEIGHTS.bbRate, 0.05);
     const sum =
       MATCHUP_COMPONENT_WEIGHTS.hrRate +
       MATCHUP_COMPONENT_WEIGHTS.iso +
