@@ -1,10 +1,10 @@
 {
   "date": "2026-07-26",
-  "generatedAt": "2026-07-26T09:27:44.219Z",
+  "generatedAt": "2026-07-26T14:06:11.572Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field (1.07) and Citizens Bank Park (1.17) are the two strongest HR environments on the slate, while Nationals Park (0.98) and Busch Stadium (0.92) are neutral-to-pitcher. The top three model targets all face Kohl Drake, a lefty with a 87 HR/9 rate allowed, creating a concentrated edge in Washington.",
-    "modelNote": "The model is overweighting barrel rate, hard-hit rate, and opposing pitcher HR vulnerability, which is why Alvarez, Wood, and García Jr. occupy the top three spots despite varying park factors."
+    "slateOverview": "Rate Field (1.07) and Camden Yards (1.10) are the two strongest HR environments today, while Nationals Park (0.98) and PNC Park (0.90) suppress power. Fedde, Drake, and Baz are all right-handers allowing elevated HR/FB rates, setting up left-handed power bats in the top spots.",
+    "modelNote": "The model is overweighting barrel rate, park factor, and recent HR volume, which is why Alvarez, Wood, and Valdez occupy the top three ranks despite varying opposing-pitcher HR rates."
   },
   "bestBets": [
     {
@@ -14,15 +14,15 @@
       "opposingPitcher": "Erick Fedde",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=19%",
+        "barrel=18.9%",
         "HH=53.3%"
       ],
       "bullets": [
-        "park=1.07",
-        "barrel=19%"
+        "hrScore=87.3",
+        "park=1.07"
       ],
-      "hrOddsYes": "+182",
-      "marketImpliedProbability": 0.3546099290780142,
+      "hrOddsYes": "+196",
+      "marketImpliedProbability": 0.33783783783783783,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -33,112 +33,34 @@
       "opposingPitcher": "Kohl Drake",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=21.9%",
-        "HH=58.8%"
+        "barrel=21.7%",
+        "HH=58.6%"
       ],
       "bullets": [
-        "HH=58.8%",
-        "barrel=21.9%"
+        "hrScore=78.4",
+        "park=0.98"
       ],
-      "hrOddsYes": "+305",
-      "marketImpliedProbability": 0.24691358024691357,
+      "hrOddsYes": "+280",
+      "marketImpliedProbability": 0.2631578947368421,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Luis García Jr.",
-      "team": "WSH",
-      "opponent": "AZ",
-      "opposingPitcher": "Kohl Drake",
+      "player": "Esmerlyn Valdez",
+      "team": "PIT",
+      "opponent": "CHC",
+      "opposingPitcher": "Jameson Taillon",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=11.2%",
-        "HH=45.8%"
+        "barrel=27.9%",
+        "HH=54.4%"
       ],
       "bullets": [
-        "park=0.98",
-        "HH=45.8%"
+        "hrScore=73.8",
+        "park=0.9"
       ],
-      "hrOddsYes": "+100",
-      "marketImpliedProbability": 0.5,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Christian Encarnacion-Strand",
-      "team": "BAL",
-      "opponent": "ATL",
-      "opposingPitcher": "Reynaldo López",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=23.5%",
-        "HH=47.1%"
-      ],
-      "bullets": [
-        "park=1.1",
-        "barrel=23.5%"
-      ],
-      "hrOddsYes": "+450",
-      "marketImpliedProbability": 0.18181818181818182,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "CJ Abrams",
-      "team": "WSH",
-      "opponent": "AZ",
-      "opposingPitcher": "Kohl Drake",
-      "hrScoreRank": 5,
-      "topStats": [
-        "barrel=10.8%",
-        "HH=42.2%"
-      ],
-      "bullets": [
-        "park=0.98",
-        "barrel=10.8%"
-      ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Brice Turang",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 22,
-      "topStats": [
-        "barrel=8.8%",
-        "HH=44%"
-      ],
-      "bullets": [
-        "park=1.1",
-        "HH=44%"
-      ],
-      "hrOddsYes": "+600",
-      "marketImpliedProbability": 0.14285714285714285,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Garrett Mitchell",
-      "team": "MIL",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 23,
-      "topStats": [
-        "barrel=13.8%",
-        "HH=48.9%"
-      ],
-      "bullets": [
-        "park=1.1",
-        "barrel=13.8%"
-      ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
+      "hrOddsYes": "+340",
+      "marketImpliedProbability": 0.22727272727272727,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,73 +69,113 @@
       "team": "CWS",
       "opponent": "HOU",
       "opposingPitcher": "Ronel Blanco",
-      "hrScoreRank": 6,
+      "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=100.0",
-        "Hard Hit%=45.8"
+        "barrel=14.5%",
+        "HH=45.7%"
       ],
       "bullets": [
-        "HR score 74.6 (#6)",
-        "Pitcher HR VS 100.0 at park 1.07"
+        "hrScore=73.5",
+        "park=1.07"
       ],
-      "hrOddsYes": "+285",
-      "marketImpliedProbability": 0.2597402597402597,
+      "hrOddsYes": "+290",
+      "marketImpliedProbability": 0.2564102564102564,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Christian Encarnacion-Strand",
+      "team": "BAL",
+      "opponent": "ATL",
+      "opposingPitcher": "Reynaldo López",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=21.1%",
+        "HH=47.4%"
+      ],
+      "bullets": [
+        "hrScore=72.2",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+370",
+      "marketImpliedProbability": 0.2127659574468085,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Garrett Mitchell",
+      "team": "MIL",
+      "opponent": "COL",
+      "opposingPitcher": "Kyle Freeland",
+      "hrScoreRank": 20,
+      "topStats": [
+        "barrel=14.2%",
+        "HH=49.5%"
+      ],
+      "bullets": [
+        "hrScore=61.6",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+520",
+      "marketImpliedProbability": 0.16129032258064516,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Luis García Jr.",
+      "team": "WSH",
+      "opponent": "AZ",
+      "opposingPitcher": "Kohl Drake",
+      "hrScoreRank": 6,
+      "topStats": [
+        "Pitcher HR VS=87.1",
+        "Hard Hit%=45.6"
+      ],
+      "bullets": [
+        "HR score 71.5 (#6)",
+        "Pitcher HR VS 87.1 at park 0.98"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "CJ Abrams",
+      "team": "WSH",
+      "opponent": "AZ",
+      "opposingPitcher": "Kohl Drake",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=87.1",
+        "Hard Hit%=42.3"
+      ],
+      "bullets": [
+        "HR score 70.7 (#7)",
+        "Pitcher HR VS 87.1 at park 0.98"
+      ],
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "CWS",
-      "opposingPitcher": "Erick Fedde",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrel=19%",
-        "HH=53.3%"
-      ],
-      "bullets": [
-        "park=1.07",
-        "barrel=19%"
-      ],
-      "hrOddsYes": "+182",
-      "marketImpliedProbability": 0.3546099290780142,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "James Wood",
-      "team": "WSH",
-      "opponent": "AZ",
-      "opposingPitcher": "Kohl Drake",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=21.9%",
-        "HH=58.8%"
-      ],
-      "bullets": [
-        "HH=58.8%",
-        "barrel=21.9%"
-      ],
-      "hrOddsYes": "+305",
-      "marketImpliedProbability": 0.24691358024691357,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Brice Turang",
       "team": "MIL",
       "opponent": "COL",
       "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 22,
+      "hrScoreRank": 25,
       "topStats": [
-        "Pitcher HR VS=74.7",
-        "Hard Hit%=44.0"
+        "barrel=8.7%",
+        "HH=43.5%"
       ],
       "bullets": [
-        "HR score 62.0 (#22)",
-        "Pitcher HR VS 74.7 at park 1.10"
+        "hrScore=60.3",
+        "park=1.1"
       ],
       "hrOddsYes": "+600",
       "marketImpliedProbability": 0.14285714285714285,
@@ -225,14 +187,14 @@
       "team": "MIL",
       "opponent": "COL",
       "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 23,
+      "hrScoreRank": 20,
       "topStats": [
-        "Pitcher HR VS=74.7",
-        "Hard Hit%=48.9"
+        "Pitcher HR VS=74.9",
+        "Hard Hit%=49.5"
       ],
       "bullets": [
-        "HR score 62.0 (#23)",
-        "Pitcher HR VS 74.7 at park 1.10"
+        "HR score 61.6 (#20)",
+        "Pitcher HR VS 74.9 at park 1.10"
       ],
       "hrOddsYes": "+520",
       "marketImpliedProbability": 0.16129032258064516,
