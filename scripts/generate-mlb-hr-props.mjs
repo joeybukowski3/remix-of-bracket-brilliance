@@ -13,6 +13,16 @@ import { getPhase2Flags } from "./lib/mlb-phase2-flags.mjs";
 import { computeHrPhase2Shadow } from "./lib/mlb-hr-phase2-shadow.mjs";
 import { computeShadowRanks } from "./lib/mlb-phase2-shadow-comparison.mjs";
 import { resolveOddsSlateDate } from "./lib/mlb-prop-odds-core.mjs";
+import {
+  HAND_FREQ_SCORE_WEIGHT,
+  buildHandednessSplits,
+  selectHandednessHrFrequency,
+  toPersistedHandednessFrequencyFields,
+} from "./lib/mlb-hr-handedness-frequency.mjs";
+import {
+  refreshHandSplitCacheForPlayerIds,
+  writeHandSplitCacheFile,
+} from "./lib/mlb-hr-hand-split-cache-refresh.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "mlb");
@@ -856,6 +866,10 @@ function computeWeatherBoost(gameContext) {
 }
 
 export function computeBatterHrScore(batter, contexts) {
+  // Handedness Matchup Score is a modest add-on (10%). When split data or
+  // pitcher hand is missing, splitHrFrequencyScore is null and
+  // computeWeightedScore drops the component (neutral / renormalize).
+  // Composite: HR/AB + ISO + K/PA + BB/PA for the facing hand only (see mlb-hr-handedness-frequency.mjs).
   return roundNumber(computeWeightedScore([
     { value: blendRawAndPercentile(batter.barrelRate, contexts.barrelValues, 3, 20), weight: 0.22 },
     { value: blendRawAndPercentile(batter.hardHitRate, contexts.hardHitValues, 25, 60), weight: 0.18 },
@@ -866,6 +880,8 @@ export function computeBatterHrScore(batter, contexts) {
     { value: batter.opposingPitcherHrVs, weight: 0.15 },
     { value: normalizeMetric(contexts.parkValues, batter.parkFactor), weight: 0.03 },
     { value: scaleToRange((batter.weatherBoost ?? 0) + 10, 0, 20), weight: 0.02 },
+    // Use Number.isFinite directly: toFiniteNumber(null) is 0 (Number(null)===0).
+    { value: Number.isFinite(batter.splitHrFrequencyScore) ? batter.splitHrFrequencyScore : null, weight: HAND_FREQ_SCORE_WEIGHT },
   ]), 1);
 }
 
@@ -963,6 +979,15 @@ function validateBatterRows(rows) {
       pitcherXera: toFiniteNumber(row.pitcherXera) ?? null,
       pitcherRegressionScore: toFiniteNumber(row.pitcherRegressionScore) ?? null,
       pitcherFlyBallRate: toFiniteNumber(row.pitcherFlyBallRate) ?? null,
+      splitSide: normalizeText(row.splitSide) || null,
+      splitAtBats: toFiniteNumber(row.splitAtBats) ?? null,
+      splitHomeRuns: toFiniteNumber(row.splitHomeRuns) ?? null,
+      splitAbPerHr: toFiniteNumber(row.splitAbPerHr) ?? null,
+      splitStatus: normalizeText(row.splitStatus) || null,
+      splitHandLabel: normalizeText(row.splitHandLabel) || null,
+      splitHrFrequencyScore: toFiniteNumber(row.splitHrFrequencyScore) ?? null,
+      // Dual-side season splits for expanded batter UI only (not scoring).
+      ...(row.handednessSplits != null ? { handednessSplits: row.handednessSplits } : {}),
       // Phase 2 shadow: passed through only when present (omitted entirely
       // otherwise, never written as null) -- this whitelist-style rebuild
       // would silently drop it like every other unlisted field without
@@ -1731,21 +1756,66 @@ async function main() {
     console.warn("Could not load pitcher-regression.json — skipping pitcher adjustment:", err.message);
   }
 
-  // Loaded ONCE per run (not per batter) -- Phase 2 shadow inputs only.
-  // Missing/malformed cache safely falls back to an empty structure; the
-  // shadow calculators themselves treat a missing per-team/per-player
-  // entry as "unavailable" and fail neutral.
+  // Loaded ONCE per run (not per batter). Used by live handedness HR
+  // frequency scoring and by Phase 2 hand-split shadow when enabled.
+  // Missing/malformed cache safely falls back to an empty structure.
   const phase2Flags = getPhase2Flags();
   const bullpenCache = loadJsonSafe(BULLPEN_CACHE_PATH, { teams: {} });
-  const handSplitCache = loadJsonSafe(HAND_SPLIT_CACHE_PATH, { players: {} });
+  let handSplitCache = loadJsonSafe(HAND_SPLIT_CACHE_PATH, { players: {} });
+
+  // Refresh only current-slate batter ids before scoring so scheduled
+  // production (and local `npm run mlb:hr-props`) populate the cache in
+  // the same run. Failures never block HR generation — scoring treats
+  // missing splits as neutral / "Split unavailable".
+  try {
+    const slatePlayerIds = dedupedPool.map((player) => player.playerId);
+    const refreshResult = await refreshHandSplitCacheForPlayerIds(handSplitCache, slatePlayerIds, {
+      season: ACTIVE_SEASON,
+    });
+    handSplitCache = refreshResult.cache;
+    const refreshSummary =
+      `[hr-props] hand-split cache refresh: requested=${refreshResult.stats.requested}` +
+      ` needingRefresh=${refreshResult.stats.needingRefresh}` +
+      ` ok=${refreshResult.stats.refreshedOk}` +
+      ` failed=${refreshResult.stats.refreshedFailed}` +
+      ` skippedFresh=${refreshResult.stats.skippedFresh}`;
+    // Partial player-level refresh failures stay nonfatal; surface them as a
+    // single summary warn (no per-player dump, no API payloads).
+    if (refreshResult.stats.refreshedFailed > 0) {
+      console.warn(refreshSummary);
+    } else {
+      console.log(refreshSummary);
+    }
+    try {
+      writeHandSplitCacheFile(HAND_SPLIT_CACHE_PATH, handSplitCache);
+      console.log(`[hr-props] wrote ${HAND_SPLIT_CACHE_PATH}`);
+    } catch (writeErr) {
+      console.warn(
+        `[hr-props] could not write hand-split cache (continuing with in-memory): ${writeErr instanceof Error ? writeErr.message : writeErr}`,
+      );
+    }
+  } catch (refreshErr) {
+    console.warn(
+      `[hr-props] hand-split cache refresh failed; continuing with loaded/empty cache: ${refreshErr instanceof Error ? refreshErr.message : refreshErr}`,
+    );
+  }
 
   const scored = dedupedPool.map((player) => {
     const opposingPitcher = pitcherLookup.get(String(player.opposingPitcherId ?? ""));
+    const batterHandSplits = handSplitCache?.players?.[String(player.playerId)] ?? null;
+    const handFreq = selectHandednessHrFrequency({
+      pitcherHand: player.pitcherHand,
+      batterHandSplits,
+    });
+    const handFreqFields = toPersistedHandednessFrequencyFields(handFreq);
+    const handednessSplits = buildHandednessSplits(batterHandSplits);
     const enriched = {
       ...player,
       opposingPitcherHrVs: opposingPitcher?.hrVs ?? normalizeMetric(dedupedPool.map((entry) => entry.opposingPitcherHr9), player.opposingPitcherHr9),
       opposingPitcherHitsVs: opposingPitcher?.hitsVs ?? 50,
       opposingPitcherKVs: opposingPitcher?.kVs ?? 50,
+      ...handFreqFields,
+      handednessSplits,
     };
     const baseHrScore = computeBatterHrScore(enriched, batterContexts);
 
@@ -1835,6 +1905,14 @@ async function main() {
       pitcherXera: player.pitcherXera ?? null,
       pitcherRegressionScore: player.pitcherRegressionScore ?? null,
       pitcherFlyBallRate: player.pitcherFlyBallRate ?? null,
+      splitSide: player.splitSide ?? null,
+      splitAtBats: player.splitAtBats ?? null,
+      splitHomeRuns: player.splitHomeRuns ?? null,
+      splitAbPerHr: player.splitAbPerHr ?? null,
+      splitStatus: player.splitStatus ?? null,
+      splitHandLabel: player.splitHandLabel ?? null,
+      splitHrFrequencyScore: player.splitHrFrequencyScore ?? null,
+      handednessSplits: player.handednessSplits ?? null,
       ...(player.phase2Shadow !== undefined ? { phase2Shadow: player.phase2Shadow } : {}),
     }));
 

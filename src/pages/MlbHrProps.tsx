@@ -18,6 +18,31 @@ import { getParkFactors } from "@/lib/mlb/mlbParkFactors";
 import { resolveKPropStatus, type KPropStatus } from "@/lib/mlb/kPropStatus";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+/** One platoon side of current-season batter splits (StatsAPI vl/vr raw metrics). */
+export type HandednessSplitSide = {
+  plateAppearances: number | null;
+  atBats: number | null;
+  hits: number | null;
+  homeRuns: number | null;
+  walks: number | null;
+  strikeouts: number | null;
+  battingAverage: number | null;
+  onBasePercentage: number | null;
+  sluggingPercentage: number | null;
+  ops: number | null;
+  hrRate: number | null;
+  abPerHr: number | null;
+  strikeoutRate: number | null;
+  walkRate: number | null;
+  status: string | null;
+  sampleSizeTier: string | null;
+};
+
+export type HandednessSplits = {
+  vsLeft: HandednessSplitSide;
+  vsRight: HandednessSplitSide;
+};
+
 export type HrDashboardGame = {
   gameKey: string;
   matchup: string;
@@ -125,6 +150,16 @@ export type HrDashboardBatter = {
   pitcherXera?: number | null;
   pitcherRegressionScore?: number | null;
   pitcherFlyBallRate?: number | null;
+  /** Handedness-specific HR frequency (season AB/HR vs opposing starter hand) — scoring only. */
+  splitSide?: string | null;
+  splitAtBats?: number | null;
+  splitHomeRuns?: number | null;
+  splitAbPerHr?: number | null;
+  splitStatus?: string | null;
+  splitHandLabel?: string | null;
+  splitHrFrequencyScore?: number | null;
+  /** Dual-side current-season splits for expanded batter UI comparison (not used in scoring). */
+  handednessSplits?: HandednessSplits | null;
   bats?: "L" | "R" | "S" | null;
   hrLine?: number | null;
   hrOddsYes?: string | null;     // sportsbook anytime HR odds e.g. "+350"
@@ -418,6 +453,55 @@ function normalizeStringList(v: unknown) {
   return Array.isArray(v) ? v.map((e) => normalizeText(e)).filter(Boolean) : [];
 }
 
+const EMPTY_HANDEDNESS_SPLIT_SIDE: HandednessSplitSide = {
+  plateAppearances: null,
+  atBats: null,
+  hits: null,
+  homeRuns: null,
+  walks: null,
+  strikeouts: null,
+  battingAverage: null,
+  onBasePercentage: null,
+  sluggingPercentage: null,
+  ops: null,
+  hrRate: null,
+  abPerHr: null,
+  strikeoutRate: null,
+  walkRate: null,
+  status: "split_unavailable",
+  sampleSizeTier: null,
+};
+
+function normalizeHandednessSplitSide(value: unknown): HandednessSplitSide {
+  if (!isRecord(value)) return { ...EMPTY_HANDEDNESS_SPLIT_SIDE };
+  return {
+    plateAppearances: normalizeNumber(value.plateAppearances),
+    atBats: normalizeNumber(value.atBats),
+    hits: normalizeNumber(value.hits),
+    homeRuns: normalizeNumber(value.homeRuns),
+    walks: normalizeNumber(value.walks),
+    strikeouts: normalizeNumber(value.strikeouts),
+    battingAverage: normalizeNumber(value.battingAverage),
+    onBasePercentage: normalizeNumber(value.onBasePercentage),
+    sluggingPercentage: normalizeNumber(value.sluggingPercentage),
+    ops: normalizeNumber(value.ops),
+    hrRate: normalizeNumber(value.hrRate),
+    abPerHr: normalizeNumber(value.abPerHr),
+    strikeoutRate: normalizeNumber(value.strikeoutRate),
+    walkRate: normalizeNumber(value.walkRate),
+    status: normalizeText(value.status) || "split_unavailable",
+    sampleSizeTier: normalizeText(value.sampleSizeTier) || null,
+  };
+}
+
+function normalizeHandednessSplits(value: unknown): HandednessSplits | null {
+  if (!isRecord(value)) return null;
+  return {
+    vsLeft: normalizeHandednessSplitSide(value.vsLeft),
+    vsRight: normalizeHandednessSplitSide(value.vsRight),
+  };
+}
+
 function isStarterPlaceholder(value: unknown) {
   const normalized = normalizeText(value).toUpperCase();
   return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "TO BE ANNOUNCED" || normalized === "TO BE DETERMINED";
@@ -579,6 +663,14 @@ function normalizeBatter(entry: unknown): HrDashboardBatter | null {
     pitcherXera: normalizeNumber(entry.pitcherXera) ?? null,
     pitcherRegressionScore: normalizeNumber(entry.pitcherRegressionScore) ?? null,
     pitcherFlyBallRate: normalizeNumber(entry.pitcherFlyBallRate) ?? null,
+    splitSide: normalizeText(entry.splitSide) || null,
+    splitAtBats: normalizeNumber(entry.splitAtBats),
+    splitHomeRuns: normalizeNumber(entry.splitHomeRuns),
+    splitAbPerHr: normalizeNumber(entry.splitAbPerHr),
+    splitStatus: normalizeText(entry.splitStatus) || null,
+    splitHandLabel: normalizeText(entry.splitHandLabel) || null,
+    splitHrFrequencyScore: normalizeNumber(entry.splitHrFrequencyScore),
+    handednessSplits: normalizeHandednessSplits(entry.handednessSplits),
     bats: (["L","R","S"].includes(String(entry.bats ?? "")) ? String(entry.bats) as "L"|"R"|"S" : null),
   };
   if (!b.player || !b.team || !b.opponent || b.hrScore == null || b.hrScoreRank == null) return null;
@@ -1732,6 +1824,359 @@ function MetricTile({ label, children }: { label: string; children: ReactNode })
   );
 }
 
+function formatSlashAvg(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  const body = value.toFixed(3);
+  return body.startsWith("0") ? body.slice(1) : body;
+}
+
+function formatRatePct(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatCount(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function formatAbPerHr(value: number | null | undefined, status: string | null | undefined): string {
+  if (status === "zero_hr") return "—";
+  if (value == null || !Number.isFinite(value)) return "—";
+  return value.toFixed(1);
+}
+
+/** HR / AB rate for display under AB/HR (not the PA-based hrRate field). */
+function hrPerAbRate(side: HandednessSplitSide | null | undefined): number | null {
+  if (!side || side.atBats == null || side.homeRuns == null || side.atBats <= 0) return null;
+  if (!Number.isFinite(side.atBats) || !Number.isFinite(side.homeRuns)) return null;
+  return side.homeRuns / side.atBats;
+}
+
+function facingHandSide(pitcherHand: string | null | undefined, splitSide: string | null | undefined): "vsLeft" | "vsRight" | null {
+  if (splitSide === "vsLeft" || splitSide === "vsRight") return splitSide;
+  const code = String(pitcherHand ?? "").trim().toUpperCase();
+  if (code === "L" || code.startsWith("L")) return "vsLeft";
+  if (code === "R" || code.startsWith("R")) return "vsRight";
+  return null;
+}
+
+type HandednessCompareMetric =
+  | "abPerHr"
+  | "battingAverage"
+  | "onBasePercentage"
+  | "sluggingPercentage"
+  | "ops"
+  | "strikeoutRate"
+  | "walkRate";
+
+type PeerStat = { mean: number; std: number; n: number };
+
+export type HandednessPeerStats = {
+  vsLeft: Partial<Record<HandednessCompareMetric, PeerStat>>;
+  vsRight: Partial<Record<HandednessCompareMetric, PeerStat>>;
+};
+
+const COMPARE_METRICS: HandednessCompareMetric[] = [
+  "abPerHr",
+  "battingAverage",
+  "onBasePercentage",
+  "sluggingPercentage",
+  "ops",
+  "strikeoutRate",
+  "walkRate",
+];
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function meanStd(values: number[]): PeerStat | null {
+  if (values.length < 3) return null;
+  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+  const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+  const std = Math.sqrt(variance);
+  if (!Number.isFinite(mean) || !Number.isFinite(std)) return null;
+  return { mean, std: std > 1e-9 ? std : 1e-9, n: values.length };
+}
+
+function collectSideMetric(sides: HandednessSplitSide[], metric: HandednessCompareMetric): number[] {
+  const out: number[] = [];
+  for (const side of sides) {
+    if (!side || side.status === "split_unavailable" || side.atBats == null) continue;
+    const raw = side[metric];
+    if (!isFiniteNumber(raw)) continue;
+    // Exclude non-finite / malformed already handled; skip absurd rates
+    if ((metric === "strikeoutRate" || metric === "walkRate") && (raw < 0 || raw > 1)) continue;
+    if (metric === "abPerHr" && raw <= 0) continue;
+    out.push(raw);
+  }
+  return out;
+}
+
+/**
+ * Build slate peer distributions per opposing-pitcher-hand side.
+ * LHP rows are never mixed with RHP rows.
+ */
+export function buildHandednessPeerStats(
+  batters: Array<{ handednessSplits?: HandednessSplits | null } | null | undefined>,
+): HandednessPeerStats {
+  const vsLeft: HandednessSplitSide[] = [];
+  const vsRight: HandednessSplitSide[] = [];
+  for (const batter of batters) {
+    const splits = batter?.handednessSplits;
+    if (!splits) continue;
+    if (splits.vsLeft && splits.vsLeft.atBats != null) vsLeft.push(splits.vsLeft);
+    if (splits.vsRight && splits.vsRight.atBats != null) vsRight.push(splits.vsRight);
+  }
+
+  const summarize = (sides: HandednessSplitSide[]) => {
+    const out: Partial<Record<HandednessCompareMetric, PeerStat>> = {};
+    for (const metric of COMPARE_METRICS) {
+      const stat = meanStd(collectSideMetric(sides, metric));
+      if (stat) out[metric] = stat;
+    }
+    return out;
+  };
+
+  return { vsLeft: summarize(vsLeft), vsRight: summarize(vsRight) };
+}
+
+/**
+ * Sample-aware comparative cell tone (green favorable, cool blue weaker).
+ * Opportunities: AB for AVG/SLG/AB-HR; PA for OBP/OPS/K%/BB%.
+ */
+export function handednessMetricCellStyle(
+  value: number | null | undefined,
+  peer: PeerStat | null | undefined,
+  options: {
+    higherBetter: boolean;
+    opportunities: number | null | undefined;
+  },
+): { backgroundColor?: string; color?: string } | undefined {
+  if (!isFiniteNumber(value) || !peer || peer.n < 3) return undefined;
+  const opportunities = options.opportunities;
+  if (!isFiniteNumber(opportunities) || opportunities < 20) return undefined;
+
+  const signed = ((value - peer.mean) / peer.std) * (options.higherBetter ? 1 : -1);
+  if (!Number.isFinite(signed)) return undefined;
+  const abs = Math.abs(signed);
+  // 20–49 AB/PA: only strong outliers get a very subtle tint
+  const subtle = opportunities < 50;
+  const softThreshold = subtle ? 1.1 : 0.55;
+  const strongThreshold = subtle ? 1.75 : 1.1;
+  if (abs < softThreshold) return undefined;
+
+  if (signed > 0) {
+    // Favorable → green
+    if (abs >= strongThreshold) {
+      return subtle
+        ? { backgroundColor: "rgba(22,163,74,0.12)", color: "#166534" }
+        : { backgroundColor: "rgba(22,163,74,0.22)", color: "#14532d" };
+    }
+    return subtle
+      ? { backgroundColor: "rgba(22,163,74,0.07)", color: "#166534" }
+      : { backgroundColor: "rgba(22,163,74,0.14)", color: "#15803d" };
+  }
+
+  // Weaker → cool blue
+  if (abs >= strongThreshold) {
+    return subtle
+      ? { backgroundColor: "rgba(37,99,235,0.10)", color: "#1e40af" }
+      : { backgroundColor: "rgba(37,99,235,0.20)", color: "#1e3a8a" };
+  }
+  return subtle
+    ? { backgroundColor: "rgba(37,99,235,0.06)", color: "#1e40af" }
+    : { backgroundColor: "rgba(37,99,235,0.12)", color: "#1d4ed8" };
+}
+
+function SplitMetricCell({
+  display,
+  value,
+  peer,
+  higherBetter,
+  opportunities,
+  emphasize = false,
+  secondary,
+}: {
+  display: string;
+  value: number | null | undefined;
+  peer: PeerStat | null | undefined;
+  higherBetter: boolean;
+  opportunities: number | null | undefined;
+  emphasize?: boolean;
+  secondary?: string | null;
+}) {
+  const style = handednessMetricCellStyle(value, peer, { higherBetter, opportunities });
+  return (
+    <td className="px-1.5 py-1.5 tabular-nums">
+      <span
+        className={cn(
+          "inline-flex min-w-[2rem] flex-col rounded-md px-1 py-0.5 leading-tight",
+          emphasize ? "font-semibold text-slate-800" : "text-slate-700",
+        )}
+        style={style}
+        data-testid={style ? "handedness-metric-tinted" : "handedness-metric-plain"}
+      >
+        <span>{display}</span>
+        {secondary ? <span className="text-[8px] font-normal text-slate-400">{secondary}</span> : null}
+      </span>
+    </td>
+  );
+}
+
+/**
+ * Compact two-row current-season vs-LHP / vs-RHP comparison for expanded batter detail.
+ * Comparative colors use same-hand slate peers only. Scoring uses split* fields.
+ */
+export function HandednessSplitsTable({
+  row,
+  peerStats = null,
+}: {
+  row: Pick<HrDashboardBatter, "handednessSplits" | "pitcherHand" | "splitSide" | "splitStatus" | "splitHandLabel" | "splitAbPerHr" | "splitAtBats" | "splitHomeRuns">;
+  peerStats?: HandednessPeerStats | null;
+}) {
+  const splits = row.handednessSplits;
+  const facing = facingHandSide(row.pitcherHand, row.splitSide);
+  const rows: Array<{ key: "vsLeft" | "vsRight"; label: string; side: HandednessSplitSide | null }> = [
+    { key: "vsLeft", label: "vs LHP", side: splits?.vsLeft ?? null },
+    { key: "vsRight", label: "vs RHP", side: splits?.vsRight ?? null },
+  ];
+
+  return (
+    <div className="w-full min-w-0" data-testid="handedness-splits-table">
+      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-1">
+        <div className="text-[10px] font-black uppercase tracking-wide text-slate-400">Season vs LHP / RHP</div>
+        <div className="text-[9px] text-slate-400">Current season · StatsAPI</div>
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <table className="w-full min-w-[32rem] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-slate-100 bg-slate-50 text-[9px] font-black uppercase tracking-wide text-slate-400">
+              <th className="px-2 py-1.5 font-black">Hand</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">PA</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">AB</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">H</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">HR</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">AB/HR</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">AVG</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">OBP</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">SLG</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">OPS</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">K%</th>
+              <th className="px-1.5 py-1.5 font-black tabular-nums">BB%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ key, label, side }) => {
+              const isFacing = facing === key;
+              const unavailable = !side || side.status === "split_unavailable" || side.atBats == null;
+              const peers = key === "vsLeft" ? peerStats?.vsLeft : peerStats?.vsRight;
+              const ab = side?.atBats ?? null;
+              const pa = side?.plateAppearances ?? null;
+              const hrAb = hrPerAbRate(side);
+              return (
+                <tr
+                  key={key}
+                  data-testid={`handedness-row-${key}`}
+                  data-facing={isFacing ? "true" : "false"}
+                  className={cn(
+                    "border-b border-slate-100 last:border-b-0 text-[11px]",
+                    isFacing ? "bg-sky-50/80" : "bg-white",
+                  )}
+                >
+                  <td className="px-2 py-1.5 whitespace-nowrap">
+                    <span className={cn("font-bold", isFacing ? "text-sky-800" : "text-slate-700")}>{label}</span>
+                    {isFacing ? (
+                      <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-[8px] font-black uppercase tracking-wide text-sky-700">
+                        Today
+                      </span>
+                    ) : null}
+                  </td>
+                  {unavailable ? (
+                    <td colSpan={11} className="px-1.5 py-1.5 text-[11px] text-slate-400">
+                      Split unavailable
+                    </td>
+                  ) : (
+                    <>
+                      <td className="px-1.5 py-1.5 tabular-nums text-slate-700">{formatCount(side.plateAppearances)}</td>
+                      <td className="px-1.5 py-1.5 tabular-nums text-slate-700">{formatCount(side.atBats)}</td>
+                      <td className="px-1.5 py-1.5 tabular-nums text-slate-700">{formatCount(side.hits)}</td>
+                      <td className="px-1.5 py-1.5 tabular-nums font-semibold text-slate-800">{formatCount(side.homeRuns)}</td>
+                      <SplitMetricCell
+                        display={formatAbPerHr(side.abPerHr, side.status)}
+                        value={side.abPerHr}
+                        peer={peers?.abPerHr}
+                        higherBetter={false}
+                        opportunities={ab}
+                        emphasize
+                        secondary={hrAb != null && side.status !== "zero_hr" ? `${(hrAb * 100).toFixed(1)}% HR/AB` : side.status === "zero_hr" ? "0% HR/AB" : null}
+                      />
+                      <SplitMetricCell
+                        display={formatSlashAvg(side.battingAverage)}
+                        value={side.battingAverage}
+                        peer={peers?.battingAverage}
+                        higherBetter
+                        opportunities={ab}
+                      />
+                      <SplitMetricCell
+                        display={formatSlashAvg(side.onBasePercentage)}
+                        value={side.onBasePercentage}
+                        peer={peers?.onBasePercentage}
+                        higherBetter
+                        opportunities={pa}
+                      />
+                      <SplitMetricCell
+                        display={formatSlashAvg(side.sluggingPercentage)}
+                        value={side.sluggingPercentage}
+                        peer={peers?.sluggingPercentage}
+                        higherBetter
+                        opportunities={ab}
+                      />
+                      <SplitMetricCell
+                        display={formatSlashAvg(side.ops)}
+                        value={side.ops}
+                        peer={peers?.ops}
+                        higherBetter
+                        opportunities={pa}
+                        emphasize
+                      />
+                      <SplitMetricCell
+                        display={formatRatePct(side.strikeoutRate)}
+                        value={side.strikeoutRate}
+                        peer={peers?.strikeoutRate}
+                        higherBetter={false}
+                        opportunities={pa}
+                      />
+                      <SplitMetricCell
+                        display={formatRatePct(side.walkRate)}
+                        value={side.walkRate}
+                        peer={peers?.walkRate}
+                        higherBetter
+                        opportunities={pa}
+                      />
+                    </>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {!splits ? (
+        <p className="mt-1 text-[9px] text-slate-400">
+          Dual-hand splits not on this payload yet. They appear after the next HR props generation with hand-split cache data.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** @deprecated Prefer HandednessSplitsTable — kept for any residual single-tile references. */
+export function HandednessHrFrequencyTile({ row }: { row: Pick<HrDashboardBatter, "handednessSplits" | "splitStatus" | "splitHandLabel" | "splitAbPerHr" | "splitAtBats" | "splitHomeRuns" | "pitcherHand" | "splitSide"> }) {
+  return <HandednessSplitsTable row={row} />;
+}
+
 export default function MlbHrProps() {
   usePageSeo(getSeoMeta("mlb-hr-props"));
   // Use the shared hook so HR/K/hit tables and game matchups always read from
@@ -1946,6 +2391,9 @@ export default function MlbHrProps() {
     });
     return sortBatters(rows, batterSortKey, batterSortDirection);
   }, [applyHrFilter, batterGameFilter, batterSearch, batterSortDirection, batterSortKey, batters]);
+
+  /** Same-hand peer distributions for split-table coloring (full current slate, not search-filtered). */
+  const handednessPeerStats = useMemo(() => buildHandednessPeerStats(batters), [batters]);
 
   const visibleBatters = useMemo(
     () => filteredBatters.slice(0, visibleBatterCount),
@@ -2551,6 +2999,9 @@ export default function MlbHrProps() {
                                       </div>
                                       <div>
                                         <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">HR Model Metrics</div>
+                                        <div className="mb-2">
+                                          <HandednessSplitsTable row={row} peerStats={handednessPeerStats} />
+                                        </div>
                                         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                                           {hasHrOdds && (
                                             <MetricTile label="HR Odds">
@@ -2867,7 +3318,13 @@ export default function MlbHrProps() {
                                   {isBvpExpanded && (
                                     <tr>
                                       <td colSpan={10} className="border-b border-slate-100 bg-slate-50 px-2 py-2">
-                                        <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                        <div className="space-y-3">
+                                          <BvpDetailPanel playerId={row.playerId} opposingPitcherId={row.opposingPitcherId} player={row.player} opposingPitcher={row.opposingPitcher} />
+                                          <div>
+                                            <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-slate-400">HR Model Metrics</div>
+                                            <HandednessSplitsTable row={row} peerStats={handednessPeerStats} />
+                                          </div>
+                                        </div>
                                       </td>
                                     </tr>
                                   )}

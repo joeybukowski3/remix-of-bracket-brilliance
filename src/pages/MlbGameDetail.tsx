@@ -27,7 +27,6 @@ import MlbPolymarketMoneylinePanel, { type PanelMlEdge } from "@/components/mlb/
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { MobileModelPreviewAccordion } from "@/components/mlb/MobileModelPreviewAccordion";
 import { ModelPreviewRowList, type ModelPreviewRow } from "@/components/mlb/ModelPreviewRowList";
-import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import MlbValuePill from "@/components/mlb/MlbValuePill";
 import { DEV_MLB_MATCHUP_FIXTURE } from "@/data/mlb/devMatchupFixture";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
