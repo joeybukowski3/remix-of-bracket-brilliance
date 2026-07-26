@@ -28,7 +28,8 @@ import {
   SAMPLE_MINIMUMS,
   buildPercentileLookup,
   lookupPercentile,
-  resolvePercentileTierForDisplay,
+  resolvePercentileDisplay,
+  resolveSampleSize,
   type PercentileDirection,
 } from "@/lib/mlb/percentileColorScale";
 import type { BvpHistoryEntry } from "@/hooks/useMlbBvpHistory";
@@ -90,8 +91,15 @@ function sampleGateForMetric(row: PitcherVsBatterRow, metric: BvpPercentileMetri
   bypassSampleGate: boolean;
 } {
   if (CONTACT_QUALITY_METRICS.has(metric)) {
+    // Priority: metric-specific → BBE → AB → PA (only fields present on the row).
+    const sampleSize = resolveSampleSize({
+      metricSample: null,
+      battedBallEvents: null,
+      atBats: row.atBats ?? null,
+      plateAppearances: null,
+    });
     return {
-      sampleSize: row.atBats ?? null,
+      sampleSize,
       sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
       bypassSampleGate: false,
     };
@@ -126,7 +134,7 @@ function PercentileCell({
   if (value == null || !Number.isFinite(value)) {
     return <span className="text-[11px] text-slate-300">{DASH}</span>;
   }
-  const tier = resolvePercentileTierForDisplay({
+  const resolved = resolvePercentileDisplay({
     value,
     percentile,
     direction,
@@ -134,11 +142,12 @@ function PercentileCell({
     sampleMinimum,
     bypassSampleGate,
   });
-  if (!tier) {
+  if (!resolved.style || !resolved.tier) {
     return (
       <span
         className={cn("inline-block rounded-md px-1.5 py-0.5 text-[11px] tabular-nums text-slate-700", strong ? "font-black" : "font-bold")}
         data-percentile-tier="neutral"
+        data-sample-confidence="none"
       >
         {display}
       </span>
@@ -148,12 +157,13 @@ function PercentileCell({
     <span
       className={cn("inline-block rounded-md px-1.5 py-0.5 text-[11px] tabular-nums", strong ? "font-black" : "font-bold")}
       style={{
-        backgroundColor: tier.style.backgroundColor,
-        color: tier.style.color,
-        border: tier.style.border,
+        backgroundColor: resolved.style.backgroundColor,
+        color: resolved.style.color,
+        border: resolved.style.border,
       }}
-      data-percentile-tier={tier.id}
-      title={`${tier.label} · slate percentile`}
+      data-percentile-tier={resolved.tier.id}
+      data-sample-confidence={resolved.confidence ?? "none"}
+      title={`${resolved.tier.label} · slate percentile${resolved.confidence === "sample-unavailable" ? " · sample unavailable" : resolved.confidence === "small-sample" ? " · small sample" : ""}`}
     >
       {display}
     </span>
@@ -188,7 +198,7 @@ function PercentileColorLegend() {
         </div>
         <div className="shrink-0 space-y-0.5 text-[9px] leading-snug text-slate-400 sm:max-w-[16rem] sm:text-right">
           <p>Colors are percentile-based within the current slate and metric.</p>
-          <p title="Contact-quality cells need enough at-bats before strong green/gold tints apply.">
+          <p title="Full Elite gold needs a qualifying sample. Without sample counts, colors stay muted and never gold.">
             Strong colors require a qualifying sample.
           </p>
         </div>

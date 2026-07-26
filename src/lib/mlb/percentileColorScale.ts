@@ -15,6 +15,9 @@ export type PercentileTierId =
   | "weak"
   | "poor";
 
+/** How trustworthy the sample is for strong visual emphasis. */
+export type SampleConfidence = "qualified" | "small-sample" | "sample-unavailable";
+
 export type PercentileTierStyle = {
   backgroundColor: string;
   color: string;
@@ -30,18 +33,28 @@ export type PercentileTier = {
   style: PercentileTierStyle;
 };
 
+export type PercentileDisplayResult = {
+  tier: PercentileTier | null;
+  confidence: SampleConfidence | null;
+  /** Resolved cell style (already muted/capped when needed). */
+  style: PercentileTierStyle | null;
+};
+
 /**
  * Sample floors for strong (non-neutral) percentile coloring.
- * Missing sample fields never coerce to zero — they block strong color.
+ * Missing sample fields never coerce to zero.
  */
 export const SAMPLE_MINIMUMS = {
-  /** Nearest validated sample for xBA / Hard Hit% / Barrel% (AB when BBE unavailable). */
+  /** Nearest validated sample for xBA / Hard Hit% / Barrel% (BBE → AB → PA). */
   contactQuality: 20,
   /** Season rate metrics (PA when available; AB as nearest fallback). */
   seasonRate: 30,
   /** Batter-vs-pitcher rate coloring (PA or AB). */
   bvpRate: 5,
 } as const;
+
+/** Strongest tier allowed when metric is valid but sample count is unavailable. */
+export const SAMPLE_UNAVAILABLE_MAX_TIER_ID: PercentileTierId = "great";
 
 /**
  * Ordered high → low favorable. Used by cells and legend (same source of truth).
@@ -134,6 +147,11 @@ export const PERCENTILE_TIERS: readonly PercentileTier[] = [
   },
 ] as const;
 
+const TIER_BY_ID = Object.fromEntries(PERCENTILE_TIERS.map((t) => [t.id, t])) as Record<
+  PercentileTierId,
+  PercentileTier
+>;
+
 /** Legend order matches visual ranking: Elite → Poor */
 export const PERCENTILE_TIER_LEGEND = PERCENTILE_TIERS.map((tier) => ({
   id: tier.id,
@@ -141,6 +159,13 @@ export const PERCENTILE_TIER_LEGEND = PERCENTILE_TIERS.map((tier) => ({
   style: tier.style,
   minFavorablePercentile: tier.minFavorablePercentile,
 }));
+
+/** Known-small-sample: value visible, no Elite/Excellent, very subtle neutral tint. */
+export const SMALL_SAMPLE_STYLE: PercentileTierStyle = {
+  backgroundColor: "rgba(148, 163, 184, 0.10)",
+  color: "#475569",
+  border: "1px solid rgba(148, 163, 184, 0.14)",
+};
 
 /**
  * Map a 0–100 percentile (higher = larger raw value) to a visual tier.
@@ -161,7 +186,7 @@ export function getPercentileTier(
 }
 
 /**
- * Whether sample size qualifies for strong tier coloring.
+ * Whether sample size qualifies for full-strength tier coloring.
  * null / undefined / non-finite sample → not sufficient (never treat as 0).
  */
 export function isSampleSufficientForStrongColor(
@@ -174,14 +199,110 @@ export function isSampleSufficientForStrongColor(
 }
 
 /**
+ * Resolve sample count without fabricating. Priority:
+ * 1) metric-specific sample
+ * 2) shared Statcast batted-ball events (BBE)
+ * 3) AB
+ * 4) PA
+ */
+export function resolveSampleSize(sources: {
+  metricSample?: number | null | undefined;
+  battedBallEvents?: number | null | undefined;
+  atBats?: number | null | undefined;
+  plateAppearances?: number | null | undefined;
+}): number | null {
+  const candidates = [
+    sources.metricSample,
+    sources.battedBallEvents,
+    sources.atBats,
+    sources.plateAppearances,
+  ];
+  for (const value of candidates) {
+    if (value == null) continue;
+    const n = Number(value);
+    // Missing stays null; valid zero is a known sample size of 0 (small-sample).
+    if (!Number.isFinite(n) || n < 0) continue;
+    return n;
+  }
+  return null;
+}
+
+export function classifySampleConfidence(
+  sampleSize: number | null | undefined,
+  minimum: number | null | undefined,
+): SampleConfidence {
+  if (sampleSize == null || !Number.isFinite(sampleSize)) return "sample-unavailable";
+  if (minimum == null || !Number.isFinite(minimum) || minimum <= 0) {
+    // No minimum configured → treat known sample as qualified.
+    return "qualified";
+  }
+  return sampleSize >= minimum ? "qualified" : "small-sample";
+}
+
+/** Cap a tier so Elite/Excellent cannot appear when sample is unavailable. */
+export function capTierForSampleUnavailable(tier: PercentileTier): PercentileTier {
+  const maxTier = TIER_BY_ID[SAMPLE_UNAVAILABLE_MAX_TIER_ID];
+  if (tier.minFavorablePercentile > maxTier.minFavorablePercentile) return maxTier;
+  return tier;
+}
+
+/**
+ * Reduce intensity of a tier style for sample-unavailable coloring.
+ * Preserves hue family so strong / average / weak still differentiate.
+ */
+export function muteTierStyle(style: PercentileTierStyle): PercentileTierStyle {
+  return {
+    backgroundColor: reduceBackgroundIntensity(style.backgroundColor, 0.45),
+    color: muteTextColor(style.color),
+    border: "1px solid rgba(148, 163, 184, 0.2)",
+  };
+}
+
+function reduceBackgroundIntensity(color: string, factor: number): string {
+  const rgba = parseCssColor(color);
+  if (!rgba) return `rgba(148, 163, 184, ${0.12 * factor})`;
+  const { r, g, b, a } = rgba;
+  // Blend toward white and lower alpha for a muted wash
+  const blend = 0.55;
+  const nr = Math.round(r + (255 - r) * blend);
+  const ng = Math.round(g + (255 - g) * blend);
+  const nb = Math.round(b + (255 - b) * blend);
+  const na = Math.max(0.08, Math.min(0.55, a * factor + 0.08));
+  return `rgba(${nr}, ${ng}, ${nb}, ${na})`;
+}
+
+function muteTextColor(color: string): string {
+  const rgba = parseCssColor(color);
+  if (!rgba) return "#475569";
+  // Near-white text → slate; dark text stays dark slate-ish
+  const luminance = (0.299 * rgba.r + 0.587 * rgba.g + 0.114 * rgba.b) / 255;
+  return luminance > 0.7 ? "#334155" : "#1e293b";
+}
+
+function parseCssColor(color: string): { r: number; g: number; b: number; a: number } | null {
+  const hex = color.trim().match(/^#([0-9a-f]{6})$/i);
+  if (hex) {
+    const n = parseInt(hex[1], 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255, a: 1 };
+  }
+  const rgba = color.trim().match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+  if (rgba) {
+    return {
+      r: Number(rgba[1]),
+      g: Number(rgba[2]),
+      b: Number(rgba[3]),
+      a: rgba[4] != null ? Number(rgba[4]) : 1,
+    };
+  }
+  return null;
+}
+
+/**
  * Percentile ranks for a population of values (same length as input).
  *
  * Conservative tie handling: percentile = (count of valid values strictly
  * worse/less than this value) / n × 100. Identical values share the same
  * percentile; large top ties do not inflate into Elite.
- *
- * Higher raw value → higher percentile in [0, 100].
- * Null / non-finite inputs yield null. Single finite value → 50.
  */
 export function computePercentileRanks(
   values: ReadonlyArray<number | null | undefined>,
@@ -209,7 +330,6 @@ export function computePercentileRanks(
   while (i < finiteCount) {
     let j = i + 1;
     while (j < finiteCount && indexed[j].value === indexed[i].value) j += 1;
-    // Strictly fewer (worse for higher-is-better ranking base)
     const countStrictlyLess = i;
     const percentile = (countStrictlyLess / finiteCount) * 100;
     for (let k = i; k < j; k += 1) {
@@ -221,10 +341,6 @@ export function computePercentileRanks(
   return result;
 }
 
-/**
- * Build a value → percentile lookup for unique finite values in a population.
- * Useful when many rows share the same metric value.
- */
 export function buildPercentileLookup(
   population: ReadonlyArray<number | null | undefined>,
 ): Map<number, number> {
@@ -247,8 +363,60 @@ export function lookupPercentile(
 }
 
 /**
- * Resolve tier for display: missing metric / missing percentile / insufficient
- * sample → null (neutral cell). Qualifying sample + percentile → tier.
+ * Resolve tier + confidence + display style for a comparative cell.
+ *
+ * - qualified: full percentile styling (Elite gold allowed)
+ * - small-sample: known sample below threshold → subtle neutral, no Elite/Excellent
+ * - sample-unavailable: metric valid, no sample field → muted tier, cap at Great, no Elite gold
+ * - missing metric/percentile: no color
+ */
+export function resolvePercentileDisplay(input: {
+  value: number | null | undefined;
+  percentile: number | null | undefined;
+  direction?: PercentileDirection;
+  /** Pre-resolved sample count (prefer resolveSampleSize). */
+  sampleSize?: number | null | undefined;
+  sampleMinimum?: number | null | undefined;
+  /** Model scores with internal sample protection. */
+  bypassSampleGate?: boolean;
+}): PercentileDisplayResult {
+  const empty: PercentileDisplayResult = { tier: null, confidence: null, style: null };
+  const { value, percentile, direction = "higherBetter" } = input;
+  if (value == null || !Number.isFinite(value)) return empty;
+  if (percentile == null || !Number.isFinite(percentile)) return empty;
+
+  if (input.bypassSampleGate) {
+    const tier = getPercentileTier(percentile, direction);
+    if (!tier) return empty;
+    return { tier, confidence: "qualified", style: tier.style };
+  }
+
+  const minimum = input.sampleMinimum ?? null;
+  const confidence = classifySampleConfidence(input.sampleSize, minimum);
+  const rawTier = getPercentileTier(percentile, direction);
+  if (!rawTier) return empty;
+
+  if (confidence === "qualified") {
+    return { tier: rawTier, confidence, style: rawTier.style };
+  }
+
+  if (confidence === "small-sample") {
+    // Known insufficient sample: no Elite/Excellent paint; keep a single subtle tint.
+    return { tier: rawTier, confidence, style: SMALL_SAMPLE_STYLE };
+  }
+
+  // sample-unavailable: muted hierarchy, never Elite gold, cap at Great
+  const capped = capTierForSampleUnavailable(rawTier);
+  return {
+    tier: capped,
+    confidence: "sample-unavailable",
+    style: muteTierStyle(capped.style),
+  };
+}
+
+/**
+ * @deprecated Prefer resolvePercentileDisplay. Returns tier only; small-sample
+ * and sample-unavailable no longer force null (use the new API for styles).
  */
 export function resolvePercentileTierForDisplay(input: {
   value: number | null | undefined;
@@ -256,19 +424,7 @@ export function resolvePercentileTierForDisplay(input: {
   direction?: PercentileDirection;
   sampleSize?: number | null | undefined;
   sampleMinimum?: number | null | undefined;
-  /** When true, skip sample gate (model scores with internal protection). */
   bypassSampleGate?: boolean;
 }): PercentileTier | null {
-  const { value, percentile, direction = "higherBetter" } = input;
-  if (value == null || !Number.isFinite(value)) return null;
-  if (percentile == null || !Number.isFinite(percentile)) return null;
-
-  if (!input.bypassSampleGate) {
-    const minimum = input.sampleMinimum;
-    if (minimum != null && Number.isFinite(minimum)) {
-      if (!isSampleSufficientForStrongColor(input.sampleSize, minimum)) return null;
-    }
-  }
-
-  return getPercentileTier(percentile, direction);
+  return resolvePercentileDisplay(input).tier;
 }

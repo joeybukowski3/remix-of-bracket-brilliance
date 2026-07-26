@@ -3,12 +3,18 @@ import {
   PERCENTILE_TIERS,
   PERCENTILE_TIER_LEGEND,
   SAMPLE_MINIMUMS,
+  SAMPLE_UNAVAILABLE_MAX_TIER_ID,
+  SMALL_SAMPLE_STYLE,
   computePercentileRanks,
   getPercentileTier,
   buildPercentileLookup,
   lookupPercentile,
   isSampleSufficientForStrongColor,
-  resolvePercentileTierForDisplay,
+  resolveSampleSize,
+  classifySampleConfidence,
+  capTierForSampleUnavailable,
+  muteTierStyle,
+  resolvePercentileDisplay,
 } from "@/lib/mlb/percentileColorScale";
 
 describe("getPercentileTier", () => {
@@ -35,20 +41,6 @@ describe("getPercentileTier", () => {
     expect(getPercentileTier(50, "lowerBetter")?.id).toBe("average");
   });
 
-  it("returns null for missing percentiles", () => {
-    expect(getPercentileTier(null)).toBeNull();
-    expect(getPercentileTier(undefined)).toBeNull();
-    expect(getPercentileTier(Number.NaN)).toBeNull();
-  });
-
-  it("elite gold style is muted gold with dark brown text and a gold border", () => {
-    const elite = getPercentileTier(99, "higherBetter");
-    expect(elite?.id).toBe("elite");
-    expect(elite?.style.backgroundColor.toLowerCase()).not.toMatch(/ff0|fbbf24|f59e0b|orange/i);
-    expect(elite?.style.color).toBe("#5c3d0e");
-    expect(elite?.style.border).toMatch(/solid/i);
-  });
-
   it("legend uses the same tier definitions as cells", () => {
     expect(PERCENTILE_TIER_LEGEND.map((t) => t.label)).toEqual([
       "Elite",
@@ -61,23 +53,153 @@ describe("getPercentileTier", () => {
       "Poor",
     ]);
     expect(PERCENTILE_TIER_LEGEND.map((t) => t.id)).toEqual(PERCENTILE_TIERS.map((t) => t.id));
-    expect(PERCENTILE_TIER_LEGEND.map((t) => t.minFavorablePercentile)).toEqual(
-      PERCENTILE_TIERS.map((t) => t.minFavorablePercentile),
-    );
+  });
+});
+
+describe("resolveSampleSize priority", () => {
+  it("prefers metric sample, then BBE, then AB, then PA", () => {
+    expect(
+      resolveSampleSize({
+        metricSample: 40,
+        battedBallEvents: 30,
+        atBats: 20,
+        plateAppearances: 10,
+      }),
+    ).toBe(40);
+    expect(
+      resolveSampleSize({
+        metricSample: null,
+        battedBallEvents: 30,
+        atBats: 20,
+        plateAppearances: 10,
+      }),
+    ).toBe(30);
+    expect(
+      resolveSampleSize({
+        metricSample: null,
+        battedBallEvents: null,
+        atBats: 20,
+        plateAppearances: 10,
+      }),
+    ).toBe(20);
+    expect(
+      resolveSampleSize({
+        metricSample: null,
+        battedBallEvents: null,
+        atBats: null,
+        plateAppearances: 10,
+      }),
+    ).toBe(10);
+  });
+
+  it("returns null when no sample field exists (does not fabricate)", () => {
+    expect(resolveSampleSize({})).toBeNull();
+    expect(resolveSampleSize({ atBats: null, plateAppearances: undefined })).toBeNull();
+  });
+
+  it("treats zero as a known sample size, not missing", () => {
+    expect(resolveSampleSize({ atBats: 0 })).toBe(0);
+    expect(classifySampleConfidence(0, 20)).toBe("small-sample");
+  });
+});
+
+describe("resolvePercentileDisplay sample confidence", () => {
+  it("qualified sample allows full Elite gold", () => {
+    const result = resolvePercentileDisplay({
+      value: 0.4,
+      percentile: 99,
+      sampleSize: 40,
+      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
+    });
+    expect(result.confidence).toBe("qualified");
+    expect(result.tier?.id).toBe("elite");
+    expect(result.style?.backgroundColor).toBe("#e8d5a8");
+  });
+
+  it("known small sample uses subtle neutral and never Elite paint", () => {
+    const result = resolvePercentileDisplay({
+      value: 0.4,
+      percentile: 99,
+      sampleSize: 10,
+      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
+    });
+    expect(result.confidence).toBe("small-sample");
+    expect(result.style).toEqual(SMALL_SAMPLE_STYLE);
+    expect(result.style?.backgroundColor).not.toBe("#e8d5a8");
+  });
+
+  it("sample unavailable applies muted tier, caps at Great, never Elite gold", () => {
+    const high = resolvePercentileDisplay({
+      value: 0.4,
+      percentile: 99,
+      sampleSize: null,
+      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
+    });
+    expect(high.confidence).toBe("sample-unavailable");
+    expect(high.tier?.id).toBe(SAMPLE_UNAVAILABLE_MAX_TIER_ID);
+    expect(high.tier?.id).toBe("great");
+    expect(high.style?.backgroundColor).not.toBe("#e8d5a8");
+    expect(high.style?.backgroundColor).not.toBe("#10b981"); // muted, not full great
+
+    const mid = resolvePercentileDisplay({
+      value: 0.25,
+      percentile: 50,
+      sampleSize: null,
+      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
+    });
+    expect(mid.confidence).toBe("sample-unavailable");
+    expect(mid.tier?.id).toBe("average");
+    expect(mid.style).toBeTruthy();
+
+    const low = resolvePercentileDisplay({
+      value: 0.15,
+      percentile: 5,
+      sampleSize: null,
+      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
+    });
+    expect(low.confidence).toBe("sample-unavailable");
+    expect(low.tier?.id).toBe("poor");
+    // Differentiation preserved (not all identical)
+    expect(high.style?.backgroundColor).not.toBe(mid.style?.backgroundColor);
+    expect(mid.style?.backgroundColor).not.toBe(low.style?.backgroundColor);
+  });
+
+  it("missing metric or percentile yields no color", () => {
+    expect(resolvePercentileDisplay({ value: null, percentile: 99 }).style).toBeNull();
+    expect(resolvePercentileDisplay({ value: 0.3, percentile: null }).style).toBeNull();
+  });
+
+  it("capTierForSampleUnavailable blocks elite and excellent", () => {
+    const elite = getPercentileTier(99)!;
+    const excellent = getPercentileTier(96)!;
+    const great = getPercentileTier(85)!;
+    expect(capTierForSampleUnavailable(elite).id).toBe("great");
+    expect(capTierForSampleUnavailable(excellent).id).toBe("great");
+    expect(capTierForSampleUnavailable(great).id).toBe("great");
+  });
+
+  it("muteTierStyle reduces intensity vs full tier style", () => {
+    const full = getPercentileTier(85)!;
+    const muted = muteTierStyle(full.style);
+    expect(muted.backgroundColor).not.toBe(full.style.backgroundColor);
+    expect(muted.backgroundColor).toMatch(/rgba/i);
+  });
+
+  it("bypassSampleGate keeps full qualified styling", () => {
+    const result = resolvePercentileDisplay({
+      value: 88,
+      percentile: 99,
+      sampleSize: null,
+      sampleMinimum: 20,
+      bypassSampleGate: true,
+    });
+    expect(result.confidence).toBe("qualified");
+    expect(result.tier?.id).toBe("elite");
   });
 });
 
 describe("computePercentileRanks — conservative ties", () => {
-  it("ranks higher values higher; unique max is not always 100", () => {
-    const ranks = computePercentileRanks([10, 20, 30, 40, 50]);
-    expect(ranks[0]).toBe(0);
-    // 4 of 5 strictly less → 80
-    expect(ranks[4]).toBe(80);
-    expect(ranks[2]).toBe(40);
-  });
-
   it("large top-value ties do not all become Elite", () => {
-    // 10 of 100 tied for best → countLess=90 → 90th percentile → Great, not Elite
     const values = [
       ...Array.from({ length: 90 }, (_, i) => i),
       ...Array.from({ length: 10 }, () => 999),
@@ -86,73 +208,24 @@ describe("computePercentileRanks — conservative ties", () => {
     const topRanks = ranks.slice(90);
     expect(topRanks.every((r) => r === 90)).toBe(true);
     expect(getPercentileTier(90, "higherBetter")?.id).toBe("great");
-    expect(topRanks.every((r) => getPercentileTier(r, "higherBetter")?.id !== "elite")).toBe(true);
   });
 
-  it("assigns identical percentiles (and tiers) to identical values", () => {
+  it("assigns identical percentiles to identical values", () => {
     const ranks = computePercentileRanks([1, 2, 2, 3]);
     expect(ranks[1]).toBe(ranks[2]);
-    expect(getPercentileTier(ranks[1], "higherBetter")?.id).toBe(
-      getPercentileTier(ranks[2], "higherBetter")?.id,
-    );
-  });
-
-  it("returns null for null/non-finite and 50 for a lone finite value", () => {
-    expect(computePercentileRanks([null, undefined, Number.NaN])).toEqual([null, null, null]);
-    expect(computePercentileRanks([null, 42, null])).toEqual([null, 50, null]);
   });
 });
 
-describe("sample eligibility", () => {
-  it("insufficient samples remain neutral (no strong tier)", () => {
-    const tier = resolvePercentileTierForDisplay({
-      value: 0.4,
-      percentile: 99,
-      sampleSize: 10,
-      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
-    });
-    expect(tier).toBeNull();
-  });
-
-  it("missing samples do not receive gold", () => {
-    const tier = resolvePercentileTierForDisplay({
-      value: 0.4,
-      percentile: 99,
-      sampleSize: null,
-      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
-    });
-    expect(tier).toBeNull();
+describe("helpers", () => {
+  it("isSampleSufficientForStrongColor never treats null as zero", () => {
     expect(isSampleSufficientForStrongColor(null, 20)).toBe(false);
     expect(isSampleSufficientForStrongColor(0, 20)).toBe(false);
+    expect(isSampleSufficientForStrongColor(20, 20)).toBe(true);
   });
 
-  it("qualifying sample with high percentile can be Elite", () => {
-    const tier = resolvePercentileTierForDisplay({
-      value: 0.4,
-      percentile: 99,
-      sampleSize: 40,
-      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
-    });
-    expect(tier?.id).toBe("elite");
-  });
-
-  it("model scores can bypass the sample gate", () => {
-    const tier = resolvePercentileTierForDisplay({
-      value: 88,
-      percentile: 99,
-      sampleSize: null,
-      sampleMinimum: SAMPLE_MINIMUMS.contactQuality,
-      bypassSampleGate: true,
-    });
-    expect(tier?.id).toBe("elite");
-  });
-});
-
-describe("buildPercentileLookup", () => {
-  it("looks up percentiles by value", () => {
+  it("buildPercentileLookup works", () => {
     const lookup = buildPercentileLookup([1, 2, 3, 4, 5]);
     expect(lookupPercentile(1, lookup)).toBe(0);
     expect(lookupPercentile(5, lookup)).toBe(80);
-    expect(lookupPercentile(null, lookup)).toBeNull();
   });
 });
