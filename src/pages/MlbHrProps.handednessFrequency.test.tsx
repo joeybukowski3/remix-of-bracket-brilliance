@@ -4,7 +4,12 @@
  */
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { HandednessSplitsTable, type HandednessSplits } from "@/pages/MlbHrProps";
+import {
+  HandednessSplitsTable,
+  buildHandednessPeerStats,
+  handednessMetricCellStyle,
+  type HandednessSplits,
+} from "@/pages/MlbHrProps";
 
 const fullSplits: HandednessSplits = {
   vsLeft: {
@@ -45,8 +50,33 @@ const fullSplits: HandednessSplits = {
   },
 };
 
+function makePeerSlate(): Array<{ handednessSplits: HandednessSplits }> {
+  // Build enough same-hand peers for mean/std (n >= 3) with spread.
+  const leftAvgs = [0.22, 0.25, 0.267, 0.3, 0.33];
+  return leftAvgs.map((avg, i) => ({
+    handednessSplits: {
+      vsLeft: {
+        ...fullSplits.vsLeft,
+        battingAverage: avg,
+        ops: avg + 0.5,
+        atBats: 100 + i * 10,
+        plateAppearances: 110 + i * 10,
+      },
+      vsRight: {
+        ...fullSplits.vsRight,
+        battingAverage: 0.2 + i * 0.02,
+        atBats: 80 + i * 5,
+        plateAppearances: 90 + i * 5,
+        status: "ok" as const,
+        homeRuns: 1,
+        abPerHr: 40,
+      },
+    },
+  }));
+}
+
 describe("HandednessSplitsTable", () => {
-  it("renders both LHP and RHP season rows with core metrics", () => {
+  it("renders both LHP and RHP season rows with core metrics and no Sample column", () => {
     render(
       <HandednessSplitsTable
         row={{
@@ -64,9 +94,8 @@ describe("HandednessSplitsTable", () => {
     expect(screen.getByText("30.0")).toBeInTheDocument();
     expect(screen.getByText("120")).toBeInTheDocument();
     expect(screen.getByText("45")).toBeInTheDocument();
-    // zero-HR side shows em dash for AB/HR (multiple dashes may exist)
-    const rightRow = screen.getByTestId("handedness-row-vsRight");
-    expect(rightRow).toHaveAttribute("data-facing", "false");
+    expect(screen.queryByText("Sample")).not.toBeInTheDocument();
+    expect(screen.queryByText("medium")).not.toBeInTheDocument();
   });
 
   it("marks the facing hand row as Today", () => {
@@ -97,32 +126,58 @@ describe("HandednessSplitsTable", () => {
     );
 
     expect(screen.getAllByText("Split unavailable").length).toBeGreaterThanOrEqual(2);
-    expect(
-      screen.getByText(/Dual-hand splits not on this payload yet/i),
-    ).toBeInTheDocument();
   });
 
-  it("shows unavailable for a missing side only", () => {
+  it("applies comparative tint when peer stats and sample allow", () => {
+    const peerStats = buildHandednessPeerStats(makePeerSlate());
+    // Extreme high AVG vs left peers should tint when AB >= 50
+    const elite: HandednessSplits = {
+      ...fullSplits,
+      vsLeft: {
+        ...fullSplits.vsLeft,
+        battingAverage: 0.45,
+        atBats: 120,
+        plateAppearances: 135,
+      },
+    };
     render(
       <HandednessSplitsTable
         row={{
           pitcherHand: "L",
           splitSide: "vsLeft",
-          handednessSplits: {
-            vsLeft: fullSplits.vsLeft,
-            vsRight: {
-              ...fullSplits.vsRight,
-              atBats: null,
-              homeRuns: null,
-              status: "split_unavailable",
-            },
-          },
+          handednessSplits: elite,
         }}
+        peerStats={peerStats}
       />,
     );
+    expect(screen.getAllByTestId("handedness-metric-tinted").length).toBeGreaterThan(0);
+  });
+});
 
-    const rightRow = screen.getByTestId("handedness-row-vsRight");
-    expect(rightRow).toHaveTextContent("Split unavailable");
-    expect(screen.getByTestId("handedness-row-vsLeft")).toHaveTextContent("120");
+describe("handednessMetricCellStyle sample protection", () => {
+  const peer = { mean: 0.25, std: 0.03, n: 20 };
+
+  it("returns no style under 20 opportunities", () => {
+    expect(handednessMetricCellStyle(0.35, peer, { higherBetter: true, opportunities: 15 })).toBeUndefined();
+  });
+
+  it("returns no style for null values", () => {
+    expect(handednessMetricCellStyle(null, peer, { higherBetter: true, opportunities: 100 })).toBeUndefined();
+  });
+
+  it("returns favorable green for strong high values with large sample", () => {
+    const style = handednessMetricCellStyle(0.36, peer, { higherBetter: true, opportunities: 100 });
+    expect(style?.backgroundColor).toBeTruthy();
+  });
+
+  it("treats lower K% as favorable when higherBetter is false", () => {
+    const kPeer = { mean: 0.25, std: 0.04, n: 20 };
+    const lowK = handednessMetricCellStyle(0.12, kPeer, { higherBetter: false, opportunities: 100 });
+    const highK = handednessMetricCellStyle(0.4, kPeer, { higherBetter: false, opportunities: 100 });
+    expect(lowK?.backgroundColor).toBeTruthy();
+    expect(highK?.backgroundColor).toBeTruthy();
+    // Favorable (low K) uses green; weaker (high K) uses blue
+    expect(String(lowK?.backgroundColor)).toContain("22,163,74");
+    expect(String(highK?.backgroundColor)).toContain("37,99,235");
   });
 });

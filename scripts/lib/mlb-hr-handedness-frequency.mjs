@@ -1,23 +1,42 @@
 /**
  * mlb-hr-handedness-frequency.mjs
  *
- * Pure handedness-specific home-run frequency for the live HR props model.
- * Selects batter season AB/HR against only the opposing starter's throwing
- * hand from the existing batter-hand-splits cache (StatsAPI sitCodes vl/vr).
+ * Handedness matchup component for the live HR props model.
+ * Selects the batter's current-season split against only the opposing
+ * starter's throwing hand (StatsAPI sitCodes vl/vr via hand-split cache).
  *
- * Never combines vs-LHP and vs-RHP. Uses at-bats (not plate appearances).
- * Never fabricates values; never emits Infinity/NaN/negatives.
+ * Scoring is a composite Handedness Matchup Score (not HR-frequency alone):
+ *   HR Rate = HR / AB   (higher better)
+ *   ISO     = SLG - AVG (higher better)
+ *   K Rate  = K / PA    (lower better)
+ *
+ * Never combines vs-LHP and vs-RHP for the score. Never fabricates values;
+ * never emits Infinity/NaN/negatives.
  */
 
 /** Matches hand-split shrinkage sample K so small samples shrink toward neutral. */
 export const HAND_FREQ_SAMPLE_K = 80;
 
-/** Initial live HR Quality Score weight for this component (smallest allowed). */
+/** Live HR Quality Score weight for the handedness matchup component. */
 export const HAND_FREQ_SCORE_WEIGHT = 0.10;
 
-/** Fixed scoring curve for AB-per-HR (lower is better). Not a data fallback. */
-const AB_PER_HR_BEST = 12;
-const AB_PER_HR_WORST = 55;
+/**
+ * Within-component weights for Handedness Matchup Score (sum = 1).
+ * Missing sub-components are dropped and the remainder renormalized.
+ */
+export const MATCHUP_COMPONENT_WEIGHTS = {
+  hrRate: 0.45,
+  iso: 0.35,
+  kRate: 0.20,
+};
+
+/** Fixed scoring anchors (curve constants — not data fallbacks). */
+const HR_RATE_BEST = 1 / 12; // ~0.0833 HR/AB
+const HR_RATE_WORST = 1 / 55; // ~0.0182 HR/AB
+const ISO_BEST = 0.28;
+const ISO_WORST = 0.08;
+const K_RATE_BEST = 0.15; // lower is better
+const K_RATE_WORST = 0.32;
 
 export const SPLIT_STATUS = {
   OK: "ok",
@@ -105,9 +124,10 @@ export function selectHandednessHrFrequency({ pitcherHand = null, batterHandSpli
   const sideKey = splitSideKeyForHand(hand);
   const label = handLabel(hand);
   const splitRecord = batterHandSplits?.splits?.[sideKey] ?? null;
+  const sideMetrics = buildHandednessSplitSide(splitRecord);
   const { atBats, homeRuns } = readSplitAbHr(splitRecord);
 
-  if (atBats == null || homeRuns == null || atBats <= 0 || homeRuns > atBats) {
+  if (sideMetrics.status === SPLIT_STATUS.SPLIT_UNAVAILABLE || atBats == null || homeRuns == null) {
     return {
       splitSide: sideKey,
       splitAtBats: null,
@@ -131,12 +151,12 @@ export function selectHandednessHrFrequency({ pitcherHand = null, batterHandSpli
       splitHandLabel: label,
       displayPrimary: `0 HR in ${formatAb(atBats)} AB`,
       displaySecondary: null,
-      scoreComponent: scoreHandednessFrequency({ atBats, homeRuns: 0, abPerHr: null }),
+      scoreComponent: scoreHandednessMatchup(sideMetrics),
     };
   }
 
-  const abPerHr = atBats / homeRuns;
-  if (!Number.isFinite(abPerHr) || abPerHr < 0) {
+  const abPerHrRounded = sideMetrics.abPerHr;
+  if (abPerHrRounded == null) {
     return {
       splitSide: sideKey,
       splitAtBats: atBats,
@@ -150,7 +170,6 @@ export function selectHandednessHrFrequency({ pitcherHand = null, batterHandSpli
     };
   }
 
-  const abPerHrRounded = round1(abPerHr);
   return {
     splitSide: sideKey,
     splitAtBats: atBats,
@@ -160,7 +179,7 @@ export function selectHandednessHrFrequency({ pitcherHand = null, batterHandSpli
     splitHandLabel: label,
     displayPrimary: `1 HR / ${abPerHrRounded.toFixed(1)} AB`,
     displaySecondary: `${homeRuns} HR in ${formatAb(atBats)} AB`,
-    scoreComponent: scoreHandednessFrequency({ atBats, homeRuns, abPerHr }),
+    scoreComponent: scoreHandednessMatchup(sideMetrics),
   };
 }
 
@@ -168,33 +187,96 @@ function formatAb(atBats) {
   return Number.isInteger(atBats) ? String(atBats) : String(round1(atBats));
 }
 
-/**
- * Deterministic 0–100 score. Lower AB/HR is better. Zero HR uses rate 0.
- * Small samples shrink toward neutral 50 via AB / (AB + K).
- *
- * @returns {number|null} null => omit from weighted score (neutral)
- */
-export function scoreHandednessFrequency({ atBats, homeRuns, abPerHr }) {
-  const ab = toNonNegFinite(atBats);
-  const hr = toNonNegFinite(homeRuns);
-  if (ab == null || hr == null || ab <= 0) return null;
+function scaleHigherBetter(value, worst, best) {
+  if (value == null || !Number.isFinite(value)) return null;
+  if (!(best > worst)) return null;
+  const t = (value - worst) / (best - worst);
+  return clamp(t * 100, 0, 100);
+}
 
-  let rawScore;
-  if (hr === 0) {
-    // No homers in the split: poor raw signal, still sample-shrunk.
-    rawScore = 15;
-  } else {
-    const ratio = Number.isFinite(abPerHr) ? abPerHr : ab / hr;
-    if (!Number.isFinite(ratio) || ratio < 0) return null;
-    // Invert: fewer AB per HR => higher score.
-    const t = (ratio - AB_PER_HR_BEST) / (AB_PER_HR_WORST - AB_PER_HR_BEST);
-    rawScore = clamp(100 - t * 100, 0, 100);
+function scaleLowerBetter(value, best, worst) {
+  // best < worst numerically (e.g. K% 15% better than 32%)
+  if (value == null || !Number.isFinite(value)) return null;
+  if (!(worst > best)) return null;
+  const t = (value - best) / (worst - best);
+  return clamp(100 - t * 100, 0, 100);
+}
+
+/**
+ * Handedness Matchup Score (0–100) from the facing-hand split only.
+ * Composite of HR/AB, ISO (SLG−AVG), and K/PA. Small samples shrink toward 50.
+ *
+ * @param {object|null|undefined} side  buildHandednessSplitSide result or equivalent
+ * @returns {number|null} null => omit from weighted HR score (neutral)
+ */
+export function scoreHandednessMatchup(side) {
+  const ab = toNonNegFinite(side?.atBats);
+  const hr = toNonNegFinite(side?.homeRuns);
+  if (ab == null || hr == null || ab <= 0 || hr > ab) return null;
+
+  const parts = [];
+
+  // HR Rate = HR / AB (higher better). Zero HR is a valid poor power signal.
+  const hrRate = hr / ab;
+  if (Number.isFinite(hrRate) && hrRate >= 0) {
+    const hrScore = hr === 0 ? 12 : scaleHigherBetter(hrRate, HR_RATE_WORST, HR_RATE_BEST);
+    if (hrScore != null) parts.push({ value: hrScore, weight: MATCHUP_COMPONENT_WEIGHTS.hrRate });
   }
 
+  // ISO = SLG - AVG (higher better)
+  const avg = toNonNegFinite(side?.battingAverage);
+  const slg = toNonNegFinite(side?.sluggingPercentage);
+  if (avg != null && slg != null && slg + 1e-12 >= avg) {
+    const iso = slg - avg;
+    const isoScore = scaleHigherBetter(iso, ISO_WORST, ISO_BEST);
+    if (isoScore != null) parts.push({ value: isoScore, weight: MATCHUP_COMPONENT_WEIGHTS.iso });
+  }
+
+  // K Rate = K / PA (lower better)
+  const pa = toNonNegFinite(side?.plateAppearances);
+  const strikeouts = toNonNegFinite(side?.strikeouts);
+  if (pa != null && pa > 0 && strikeouts != null) {
+    const kRate = strikeouts / pa;
+    if (Number.isFinite(kRate) && kRate >= 0 && kRate <= 1) {
+      const kScore = scaleLowerBetter(kRate, K_RATE_BEST, K_RATE_WORST);
+      if (kScore != null) parts.push({ value: kScore, weight: MATCHUP_COMPONENT_WEIGHTS.kRate });
+    }
+  }
+
+  if (parts.length === 0) return null;
+
+  let weightSum = 0;
+  let weighted = 0;
+  for (const part of parts) {
+    if (!Number.isFinite(part.value) || !Number.isFinite(part.weight) || part.weight <= 0) continue;
+    weightSum += part.weight;
+    weighted += part.value * part.weight;
+  }
+  if (weightSum <= 0) return null;
+
+  const rawComposite = weighted / weightSum;
+  if (!Number.isFinite(rawComposite)) return null;
+
   const sampleWeight = ab / (ab + HAND_FREQ_SAMPLE_K);
-  const blended = sampleWeight * rawScore + (1 - sampleWeight) * 50;
+  const blended = sampleWeight * rawComposite + (1 - sampleWeight) * 50;
   if (!Number.isFinite(blended)) return null;
   return round1(clamp(blended, 0, 100));
+}
+
+/**
+ * @deprecated Prefer scoreHandednessMatchup. Kept for older tests that pass AB/HR only.
+ * Maps minimal AB/HR inputs into the matchup scorer (ISO/K omitted → renormalized).
+ */
+export function scoreHandednessFrequency({ atBats, homeRuns, abPerHr }) {
+  return scoreHandednessMatchup({
+    atBats,
+    homeRuns,
+    plateAppearances: null,
+    battingAverage: null,
+    sluggingPercentage: null,
+    strikeouts: null,
+    // abPerHr ignored — derived from AB/HR when present
+  });
 }
 
 /**
@@ -210,7 +292,7 @@ export function toPersistedHandednessFrequencyFields(selected) {
     splitAbPerHr: selected.splitAbPerHr,
     splitStatus: selected.splitStatus,
     splitHandLabel: selected.splitHandLabel,
-    // Score input only; consumers may omit from public UI.
+    // Handedness Matchup Score (0–100); field name retained for payload compatibility.
     splitHrFrequencyScore: selected.scoreComponent,
   };
 }
