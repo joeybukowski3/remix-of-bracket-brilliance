@@ -9,6 +9,7 @@
  *   HR Rate = HR / AB   (higher better)
  *   ISO     = SLG - AVG (higher better)
  *   K Rate  = K / PA    (lower better)
+ *   BB Rate = BB / PA   (higher better)
  *
  * Never combines vs-LHP and vs-RHP for the score. Never fabricates values;
  * never emits Infinity/NaN/negatives.
@@ -25,9 +26,10 @@ export const HAND_FREQ_SCORE_WEIGHT = 0.10;
  * Missing sub-components are dropped and the remainder renormalized.
  */
 export const MATCHUP_COMPONENT_WEIGHTS = {
-  hrRate: 0.45,
-  iso: 0.35,
-  kRate: 0.20,
+  hrRate: 0.40,
+  iso: 0.30,
+  kRate: 0.15,
+  bbRate: 0.15,
 };
 
 /** Fixed scoring anchors (curve constants — not data fallbacks). */
@@ -37,6 +39,8 @@ const ISO_BEST = 0.28;
 const ISO_WORST = 0.08;
 const K_RATE_BEST = 0.15; // lower is better
 const K_RATE_WORST = 0.32;
+const BB_RATE_BEST = 0.15; // higher is better
+const BB_RATE_WORST = 0.05;
 
 export const SPLIT_STATUS = {
   OK: "ok",
@@ -204,7 +208,7 @@ function scaleLowerBetter(value, best, worst) {
 
 /**
  * Handedness Matchup Score (0–100) from the facing-hand split only.
- * Composite of HR/AB, ISO (SLG−AVG), and K/PA. Small samples shrink toward 50.
+ * Composite of HR/AB, ISO (SLG−AVG), K/PA, and BB/PA. Small samples shrink toward 50.
  *
  * @param {object|null|undefined} side  buildHandednessSplitSide result or equivalent
  * @returns {number|null} null => omit from weighted HR score (neutral)
@@ -232,14 +236,24 @@ export function scoreHandednessMatchup(side) {
     if (isoScore != null) parts.push({ value: isoScore, weight: MATCHUP_COMPONENT_WEIGHTS.iso });
   }
 
-  // K Rate = K / PA (lower better)
+  // K Rate = K / PA (lower better) and BB Rate = BB / PA (higher better)
   const pa = toNonNegFinite(side?.plateAppearances);
   const strikeouts = toNonNegFinite(side?.strikeouts);
-  if (pa != null && pa > 0 && strikeouts != null) {
-    const kRate = strikeouts / pa;
-    if (Number.isFinite(kRate) && kRate >= 0 && kRate <= 1) {
-      const kScore = scaleLowerBetter(kRate, K_RATE_BEST, K_RATE_WORST);
-      if (kScore != null) parts.push({ value: kScore, weight: MATCHUP_COMPONENT_WEIGHTS.kRate });
+  const walks = toNonNegFinite(side?.walks);
+  if (pa != null && pa > 0) {
+    if (strikeouts != null) {
+      const kRate = strikeouts / pa;
+      if (Number.isFinite(kRate) && kRate >= 0 && kRate <= 1) {
+        const kScore = scaleLowerBetter(kRate, K_RATE_BEST, K_RATE_WORST);
+        if (kScore != null) parts.push({ value: kScore, weight: MATCHUP_COMPONENT_WEIGHTS.kRate });
+      }
+    }
+    if (walks != null) {
+      const bbRate = walks / pa;
+      if (Number.isFinite(bbRate) && bbRate >= 0 && bbRate <= 1) {
+        const bbScore = scaleHigherBetter(bbRate, BB_RATE_WORST, BB_RATE_BEST);
+        if (bbScore != null) parts.push({ value: bbScore, weight: MATCHUP_COMPONENT_WEIGHTS.bbRate });
+      }
     }
   }
 
@@ -275,6 +289,7 @@ export function scoreHandednessFrequency({ atBats, homeRuns, abPerHr }) {
     battingAverage: null,
     sluggingPercentage: null,
     strikeouts: null,
+    walks: null,
     // abPerHr ignored — derived from AB/HR when present
   });
 }

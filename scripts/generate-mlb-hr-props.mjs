@@ -869,7 +869,7 @@ export function computeBatterHrScore(batter, contexts) {
   // Handedness Matchup Score is a modest add-on (10%). When split data or
   // pitcher hand is missing, splitHrFrequencyScore is null and
   // computeWeightedScore drops the component (neutral / renormalize).
-  // Composite: HR/AB + ISO + K/PA for the facing hand only (see mlb-hr-handedness-frequency.mjs).
+  // Composite: HR/AB + ISO + K/PA + BB/PA for the facing hand only (see mlb-hr-handedness-frequency.mjs).
   return roundNumber(computeWeightedScore([
     { value: blendRawAndPercentile(batter.barrelRate, contexts.barrelValues, 3, 20), weight: 0.22 },
     { value: blendRawAndPercentile(batter.hardHitRate, contexts.hardHitValues, 25, 60), weight: 0.18 },

@@ -229,7 +229,7 @@ describe("handedness matchup score component", () => {
     }
   });
 
-  it("uses only facing-hand metrics (ISO and K rate move the score)", () => {
+  it("uses only facing-hand metrics (ISO, K rate, and BB rate move the score)", () => {
     const weak = scoreHandednessMatchup({
       atBats: 120,
       homeRuns: 2,
@@ -237,6 +237,7 @@ describe("handedness matchup score component", () => {
       battingAverage: 0.22,
       sluggingPercentage: 0.3,
       strikeouts: 45,
+      walks: 4,
     });
     const strong = scoreHandednessMatchup({
       atBats: 120,
@@ -245,9 +246,25 @@ describe("handedness matchup score component", () => {
       battingAverage: 0.3,
       sluggingPercentage: 0.6,
       strikeouts: 20,
+      walks: 20,
     });
     assert.ok(weak != null && strong != null);
     assert.ok(strong > weak);
+  });
+
+  it("higher BB rate improves the matchup score when other inputs match", () => {
+    const base = {
+      atBats: 120,
+      homeRuns: 6,
+      plateAppearances: 140,
+      battingAverage: 0.28,
+      sluggingPercentage: 0.5,
+      strikeouts: 30,
+    };
+    const lowWalks = scoreHandednessMatchup({ ...base, walks: 5 });
+    const highWalks = scoreHandednessMatchup({ ...base, walks: 22 });
+    assert.ok(lowWalks != null && highWalks != null);
+    assert.ok(highWalks > lowWalks);
   });
 
   it("never uses the opposite hand in selection", () => {
@@ -282,6 +299,7 @@ describe("handedness matchup score component", () => {
       battingAverage: 0.2,
       sluggingPercentage: 0.3,
       strikeouts: 40,
+      walks: null,
     });
     assert.equal(result.scoreComponent, leftOnly);
   });
@@ -319,7 +337,10 @@ describe("handedness matchup score component", () => {
   it("uses the approved 10% weight constant and component weights sum to 1", () => {
     assert.equal(HAND_FREQ_SCORE_WEIGHT, 0.10);
     const sum =
-      MATCHUP_COMPONENT_WEIGHTS.hrRate + MATCHUP_COMPONENT_WEIGHTS.iso + MATCHUP_COMPONENT_WEIGHTS.kRate;
+      MATCHUP_COMPONENT_WEIGHTS.hrRate +
+      MATCHUP_COMPONENT_WEIGHTS.iso +
+      MATCHUP_COMPONENT_WEIGHTS.kRate +
+      MATCHUP_COMPONENT_WEIGHTS.bbRate;
     assert.ok(Math.abs(sum - 1) < 1e-9);
   });
 
