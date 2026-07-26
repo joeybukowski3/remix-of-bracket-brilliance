@@ -31,7 +31,7 @@ import { buildHrEditionSelection, buildKEditionSelection } from "./lib/mlb-x-edi
 import { buildDiagnosticRecord, DIAGNOSTIC_OUTCOMES } from "./lib/mlb-x-edition-diagnostics.mjs";
 import { imageKindForMarket, validateImageBundle } from "./lib/mlb-x-image-bundle.mjs";
 import { isPostedReceipt, parseEditionReceiptKey } from "./lib/mlb-x-edition-receipts.mjs";
-import { scrapeKPageRows } from "./lib/mlb-x-k-page-scrape.mjs";
+import { acquireKPageData } from "./lib/mlb-x-k-page-scrape.mjs";
 import { createGitStateStore, STATE_BRANCH } from "./lib/mlb-x-state-store.mjs";
 import { getEtSlateDate } from "./lib/mlb-x-slate-timing.mjs";
 import { resolveEventMode } from "./lib/mlb-x-event-mode.mjs";
@@ -149,12 +149,11 @@ async function main() {
   let kAvailable = false;
   let kArtifactSlateDate = null;
   if (!args.skipKScrape) {
-    const browser = await chromium.launch({ headless: true });
-    try {
-      const page = await browser.newPage({ viewport: { width: 1080, height: 1400 }, deviceScaleFactor: 1 });
-      page.setDefaultTimeout(60000);
-      const pageData = await scrapeKPageRows(page);
-      await page.close();
+    const result = await acquireKPageData({
+      launchBrowser: () => chromium.launch({ headless: true }),
+    });
+    if (result.available) {
+      const pageData = result.pageData;
       kArtifactSlateDate = pageData.date || null;
       const dataFresh = pageData.date === slateDate;
       const enriched = (dataFresh ? pageData.rows : []).map((row) => {
@@ -164,8 +163,8 @@ async function main() {
       kSelection = buildKEditionSelection({ rows: enriched });
       kAvailable = true;
       console.log(`[plan-mlb-x-editions] K: pageDate=${pageData.date || "missing"} dataFresh=${dataFresh} selected=${kSelection.selectedRows.length}`);
-    } finally {
-      await browser.close();
+    } else {
+      console.warn(`[plan-mlb-x-editions] K data scrape failed (non-fatal): ${result.error instanceof Error ? result.error.message : result.error}`);
     }
   }
 
