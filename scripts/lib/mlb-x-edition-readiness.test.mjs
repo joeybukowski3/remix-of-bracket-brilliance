@@ -12,6 +12,7 @@ import {
   easternParts,
   ReadinessStatus,
   resolveEditionReadiness,
+  computeMorningCatchUpCloseAt,
 } from "./mlb-x-edition-readiness.mjs";
 
 const SLATE = "2026-07-21";
@@ -82,12 +83,6 @@ describe("morning edition window", () => {
     assert.equal(r.decision, Decision.POST);
   });
 
-  it("skips after 11:15 ET", () => {
-    const r = resolveEditionReadiness(input({ now: "2026-07-21T15:16:00Z" }));
-    assert.equal(r.decision, Decision.SKIP);
-    assert.equal(r.status, ReadinessStatus.MISSED_WINDOW);
-  });
-
   it("holds the window in EST as well as EDT", () => {
     // 15:00Z in January is 10:00 EST -- same wall clock, different offset.
     const r = resolveEditionReadiness(input({
@@ -96,6 +91,124 @@ describe("morning edition window", () => {
       image: { exists: true, slateDate: "2026-01-21", width: 1200, height: 675 },
     }));
     assert.equal(r.decision, Decision.POST);
+  });
+});
+
+describe("morning edition catch-up stage", () => {
+  // 2026-07-27: GitHub's scheduler delivered no firing at all inside
+  // 09:45-11:15 ET; the first firing that day landed at 11:22 ET. A single
+  // delayed firing must not cost the whole day's morning edition.
+  it("posts as a catch-up at 11:22 ET, the exact 2026-07-27 incident time", () => {
+    const r = resolveEditionReadiness(input({ now: "2026-07-21T15:22:00Z" })); // 11:22 ET
+    assert.equal(r.decision, Decision.POST);
+    assert.equal(r.status, ReadinessStatus.READY_TO_FALLBACK_POST);
+    assert.equal(r.stage, Stage.MORNING_CATCH_UP);
+    assert.ok(r.warnings.includes("MORNING_WINDOW_CATCH_UP"));
+  });
+
+  it("uses the catch-up caption and language mode, never the on-time 'Morning' caption", () => {
+    const k = resolveEditionReadiness(input({ market: "k", now: "2026-07-21T15:22:00Z" }));
+    assert.equal(k.languageMode, LanguageMode.MORNING_CATCH_UP);
+    assert.equal(k.caption, Caption.MORNING_CATCH_UP_K);
+    assert.notEqual(k.caption, Caption.MORNING_K);
+    assert.ok(!/^Morning /.test(k.caption));
+
+    const hr = resolveEditionReadiness(input({ market: "hr", now: "2026-07-21T15:22:00Z" }));
+    assert.equal(hr.languageMode, LanguageMode.MORNING_CATCH_UP);
+    assert.equal(hr.caption, Caption.MORNING_CATCH_UP_HR);
+    assert.notEqual(hr.caption, Caption.MORNING_HR);
+  });
+
+  it("posts in catch-up regardless of lineup confirmation state -- it is still the morning edition, not confirmed", () => {
+    for (const selectedLineupStatus of [null, { total: 5, confirmed: 0 }, { total: 5, confirmed: 5 }]) {
+      const r = resolveEditionReadiness(input({ now: "2026-07-21T15:22:00Z", selectedLineupStatus }));
+      assert.equal(r.decision, Decision.POST);
+      assert.equal(r.confirmationComplete, false);
+    }
+  });
+
+  it("stops the catch-up stage at the 13:00 ET hard ceiling (inclusive close, exclusive miss)", () => {
+    // Boundary checks are minute-granular throughout this module (see the
+    // 09:45/11:15 boundary tests above and etWallClockToIso, which resolves
+    // to the ET minute) -- 13:00 ET is still open, 13:01 ET is a miss.
+    const open = resolveEditionReadiness(input({ now: "2026-07-21T17:00:00Z" })); // 13:00 ET
+    assert.equal(open.decision, Decision.POST);
+    assert.equal(open.stage, Stage.MORNING_CATCH_UP);
+    const closed = resolveEditionReadiness(input({ now: "2026-07-21T17:01:00Z" })); // 13:01 ET
+    assert.equal(closed.decision, Decision.SKIP);
+    assert.equal(closed.status, ReadinessStatus.MISSED_WINDOW);
+    assert.equal(closed.stage, Stage.AFTER_WINDOW);
+  });
+
+  it("stops the catch-up stage once the confirmed edition's own window opens, even well before 13:00 ET", () => {
+    // firstGameTime only 2h14m after 11:16 ET means the confirmed window
+    // (2h20m out) has already opened -- catch-up must yield to the confirmed
+    // edition rather than post stale morning content.
+    const r = resolveEditionReadiness(input({
+      now: "2026-07-21T15:16:00Z", // 11:16 ET
+      firstGameTime: "2026-07-21T17:30:00Z", // first pitch 2h14m later
+    }));
+    assert.equal(r.decision, Decision.SKIP);
+    assert.equal(r.status, ReadinessStatus.MISSED_WINDOW);
+  });
+
+  it("closes at 13:00 ET, not the confirmed-window boundary, for a normal evening slate", () => {
+    // Default firstGameTime is 18:40 ET -- far enough out that the confirmed
+    // window (2h20m before first pitch, ~16:20 ET) never becomes the
+    // binding constraint; the hard clock ceiling governs instead.
+    const r = resolveEditionReadiness(input({ now: "2026-07-21T17:00:00Z" })); // 13:00 ET
+    assert.equal(r.decision, Decision.POST);
+    assert.equal(r.stage, Stage.MORNING_CATCH_UP);
+  });
+
+  it("never posts a catch-up once the first game has already started", () => {
+    const r = resolveEditionReadiness(input({
+      now: "2026-07-21T15:22:00Z", // 11:22 ET
+      firstGameTime: "2026-07-21T15:00:00Z", // first pitch already 22 minutes ago
+    }));
+    assert.equal(r.decision, Decision.SKIP);
+    assert.equal(r.status, ReadinessStatus.MISSED_WINDOW);
+  });
+
+  it("computes the identical deadline mlb-x-edition-audit.mjs uses, via the shared helper", () => {
+    const closeAt = computeMorningCatchUpCloseAt({ now: "2026-07-21T15:22:00Z", firstGameTime: "2026-07-21T22:40:00Z" });
+    assert.equal(closeAt, "2026-07-21T17:00:00.000Z"); // 13:00 ET hard ceiling wins over the far-off confirmed window
+    const open = resolveEditionReadiness(input({ now: closeAt }));
+    assert.equal(open.decision, Decision.POST);
+    const closed = resolveEditionReadiness(input({ now: "2026-07-21T17:01:00Z" })); // one ET minute past closeAt
+    assert.equal(closed.decision, Decision.SKIP);
+  });
+
+  it("evaluates each market's catch-up independently -- a K failure elsewhere cannot suppress HR", () => {
+    const k = resolveEditionReadiness(input({ market: "k", now: "2026-07-21T15:22:00Z" }));
+    const hr = resolveEditionReadiness(input({ market: "hr", now: "2026-07-21T15:22:00Z" }));
+    assert.equal(k.decision, Decision.POST);
+    assert.equal(hr.decision, Decision.POST);
+    // Distinct receipt keys -- nothing about one market's posting outcome is
+    // encoded in, or read from, the other's readiness call.
+    assert.notEqual(k.receiptKey, hr.receiptKey);
+  });
+
+  it("an existing morning receipt blocks a catch-up duplicate, same as it blocks an on-time duplicate", () => {
+    const r = resolveEditionReadiness(input({
+      now: "2026-07-21T15:22:00Z", // 11:22 ET, inside catch-up
+      receipt: { exists: true, outcome: "POSTED", postId: "12345" },
+    }));
+    assert.equal(r.decision, Decision.SKIP);
+    assert.equal(r.status, ReadinessStatus.ALREADY_POSTED);
+    assert.notEqual(r.stage, Stage.MORNING_CATCH_UP);
+  });
+
+  it("leaves the confirmed edition independently eligible after morning catch-up yields to it", () => {
+    const now = "2026-07-21T15:16:00Z"; // 11:16 ET
+    const firstGameTime = "2026-07-21T17:30:00Z"; // first pitch 2h14m later
+    const morning = resolveEditionReadiness(input({ now, firstGameTime }));
+    assert.equal(morning.status, ReadinessStatus.MISSED_WINDOW);
+    const confirmedResult = resolveEditionReadiness(confirmed({
+      now, firstGameTime, selectedLineupStatus: [{ confirmed: true }],
+    }));
+    assert.equal(confirmedResult.decision, Decision.POST);
+    assert.equal(confirmedResult.stage, Stage.PREFERRED);
   });
 });
 
@@ -362,7 +475,8 @@ describe("approved contract shape", () => {
   it("reports the lifecycle stage", () => {
     assert.equal(resolveEditionReadiness(input({ now: "2026-07-21T13:30:00Z" })).stage, Stage.BEFORE_WINDOW);
     assert.equal(resolveEditionReadiness(input()).stage, Stage.MORNING);
-    assert.equal(resolveEditionReadiness(input({ now: "2026-07-21T15:16:00Z" })).stage, Stage.AFTER_WINDOW);
+    assert.equal(resolveEditionReadiness(input({ now: "2026-07-21T15:16:00Z" })).stage, Stage.MORNING_CATCH_UP);
+    assert.equal(resolveEditionReadiness(input({ now: "2026-07-21T17:01:00Z" })).stage, Stage.AFTER_WINDOW);
     assert.equal(resolveEditionReadiness(confirmed({ now: minsOut(130), selectedLineupStatus: [{ confirmed: true }] })).stage, Stage.PREFERRED);
     assert.equal(resolveEditionReadiness(confirmed({ now: minsOut(90), selectedLineupStatus: [{ confirmed: false }] })).stage, Stage.FALLBACK);
   });

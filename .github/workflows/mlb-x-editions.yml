@@ -15,11 +15,15 @@ run-name: MLB X Editions • ${{ github.event_name }} • ${{ github.ref_name }}
 # after any queued run resumes.
 on:
   schedule:
-    # Morning edition: four attempts covering 09:45-11:15 ET. Both EDT (UTC-4)
-    # and EST (UTC-5) candidates are scheduled; the America/New_York-based
-    # readiness module is the sole authority on whether a given firing is
-    # actually inside the window, so an out-of-season candidate is a routine
-    # NOT_DUE/MISSED_WINDOW, not a bug.
+    # Morning edition: seven candidate firings (EDT+EST) meant to land inside
+    # 09:45-11:15 ET. The America/New_York-based readiness module is the sole
+    # authority on whether a given firing is actually inside the window, so
+    # an out-of-season candidate is a routine NOT_DUE/MISSED_WINDOW, not a
+    # bug. On 2026-07-27 GitHub delivered ZERO of these firings inside
+    # 09:45-11:15 ET at all -- the first one that day landed at 11:22 ET --
+    # so resolveEditionReadiness now also opens a catch-up stage through
+    # 13:00 ET (see MORNING_CATCH_UP_CLOSE_ET in mlb-x-edition-readiness.mjs)
+    # rather than treating a late GHA delivery as a full-day loss.
     - cron: "45 13 * * *"  # 09:45 EDT
     - cron: "45 14 * * *"  # 10:45 EDT / 09:45 EST
     - cron: "15 14 * * *"  # 10:15 EDT
@@ -100,6 +104,13 @@ jobs:
       hr_morning_status: ${{ steps.plan.outputs.hr_morning_status }}
       k_confirmed_status: ${{ steps.plan.outputs.k_confirmed_status }}
       hr_confirmed_status: ${{ steps.plan.outputs.hr_confirmed_status }}
+      # Distinguishes e.g. a morning post made during the ordinary 09:45-11:15
+      # ET window (stage=morning) from one recovered after a missed scheduled
+      # firing (stage=morning_catch_up) -- see mlb-x-edition-readiness.mjs.
+      k_morning_stage: ${{ steps.plan.outputs.k_morning_stage }}
+      hr_morning_stage: ${{ steps.plan.outputs.hr_morning_stage }}
+      k_confirmed_stage: ${{ steps.plan.outputs.k_confirmed_stage }}
+      hr_confirmed_stage: ${{ steps.plan.outputs.hr_confirmed_stage }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -158,12 +169,12 @@ jobs:
           echo "## MLB X plan — ${{ steps.plan.outputs.slate_date }}" >> "$GITHUB_STEP_SUMMARY"
           echo "first pitch: ${{ steps.plan.outputs.first_game_time || 'n/a' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Target | Should run | Status |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| K morning | ${{ steps.plan.outputs.k_morning_should_run }} | ${{ steps.plan.outputs.k_morning_status }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| HR morning | ${{ steps.plan.outputs.hr_morning_should_run }} | ${{ steps.plan.outputs.hr_morning_status }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| K confirmed | ${{ steps.plan.outputs.k_confirmed_should_run }} | ${{ steps.plan.outputs.k_confirmed_status }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| HR confirmed | ${{ steps.plan.outputs.hr_confirmed_should_run }} | ${{ steps.plan.outputs.hr_confirmed_status }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Target | Should run | Status | Stage |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| K morning | ${{ steps.plan.outputs.k_morning_should_run }} | ${{ steps.plan.outputs.k_morning_status }} | ${{ steps.plan.outputs.k_morning_stage }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| HR morning | ${{ steps.plan.outputs.hr_morning_should_run }} | ${{ steps.plan.outputs.hr_morning_status }} | ${{ steps.plan.outputs.hr_morning_stage }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| K confirmed | ${{ steps.plan.outputs.k_confirmed_should_run }} | ${{ steps.plan.outputs.k_confirmed_status }} | ${{ steps.plan.outputs.k_confirmed_stage }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| HR confirmed | ${{ steps.plan.outputs.hr_confirmed_should_run }} | ${{ steps.plan.outputs.hr_confirmed_status }} | ${{ steps.plan.outputs.hr_confirmed_stage }} |" >> "$GITHUB_STEP_SUMMARY"
 
   post-k-morning:
     needs: plan
