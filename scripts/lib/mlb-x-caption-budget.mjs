@@ -18,6 +18,11 @@ export const X_CHARACTER_LIMIT = 280;
 /** Edition status wording. Fixed strings -- a poster may not phrase its own. */
 export const EditionSentence = Object.freeze({
   morning: "Morning model card — check confirmed lineups before betting.",
+  // Used only when resolveEditionReadiness reports the morning edition's
+  // MORNING_CATCH_UP stage (posted after the 11:15 ET preferred close, on
+  // recovery from a missed/delayed scheduled run) -- "Morning" would
+  // misdescribe a card that may post as late as 1 PM ET.
+  morning_catch_up: "Early model card — check confirmed lineups before betting.",
   confirmed: "Updated with confirmed lineups.",
   pregame_fallback: "Pregame update using the latest available lineups.",
 });

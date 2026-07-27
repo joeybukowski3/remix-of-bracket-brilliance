@@ -63,6 +63,7 @@ export const PostingStatus = Object.freeze({
 /** Caption register. Drives which fixed string a poster is permitted to use. */
 export const LanguageMode = Object.freeze({
   MORNING: "morning",
+  MORNING_CATCH_UP: "morning_catch_up",
   CONFIRMED: "confirmed",
   PREGAME_FALLBACK: "pregame_fallback",
 });
@@ -71,6 +72,7 @@ export const LanguageMode = Object.freeze({
 export const Stage = Object.freeze({
   BEFORE_WINDOW: "before_window",
   MORNING: "morning",
+  MORNING_CATCH_UP: "morning_catch_up",
   PREFERRED: "preferred",
   FALLBACK: "fallback",
   AFTER_WINDOW: "after_window",
@@ -78,6 +80,25 @@ export const Stage = Object.freeze({
 
 export const MORNING_WINDOW_OPEN_ET = { hour: 9, minute: 45 };
 export const MORNING_WINDOW_CLOSE_ET = { hour: 11, minute: 15 };
+// On 2026-07-27 GitHub's scheduler delivered zero scheduled firings inside
+// 09:45-11:15 ET at all -- the first firing to land that day arrived at
+// 11:22 ET, seven minutes after MORNING_WINDOW_CLOSE_ET, and the hard cutoff
+// below turned that single delayed run into a fully unpublished day. A late
+// GHA firing is not evidence the content is stale; the underlying picks are
+// still the same morning slate. So a miss of the preferred window opens a
+// distinct MORNING_CATCH_UP stage instead of an immediate terminal skip:
+// still a POST decision, still the ordinary morning eligibility rules (no
+// lineup requirement -- see computeMorningCatchUpCloseAt below and its call
+// site), but a separate caption/language register (Caption.MORNING_CATCH_UP_*)
+// so a 12:50 PM post never claims to be a "Morning" read, plus a
+// MORNING_WINDOW_CATCH_UP warning so it's visible in the receipt/audit trail.
+// The catch-up stage itself still closes -- both on a hard ET clock ceiling
+// and, wherever a first pitch time is known, once the confirmed edition's
+// own window opens (CONFIRMED_WINDOW_OPEN_MINUTES below) -- so this never
+// collides with or substitutes for a real lineup-confirmed post. Both this
+// module and mlb-x-edition-audit.mjs compute that combined deadline through
+// the single computeMorningCatchUpCloseAt helper so they cannot drift apart.
+export const MORNING_CATCH_UP_CLOSE_ET = { hour: 13, minute: 0 };
 
 /** Minutes before first pitch. Larger number = earlier. */
 export const CONFIRMED_WINDOW_OPEN_MINUTES = 140; // 2h20m
@@ -98,6 +119,12 @@ export const Caption = Object.freeze({
     "Morning model projections showing the clearest strikeout edges on today's slate. Check final lineups before betting.",
   MORNING_HR:
     "Morning model targets based on the current slate and available prices. Check final lineups before betting.",
+  // Used only in the MORNING_CATCH_UP stage (past 11:15 ET) -- "Morning" is
+  // no longer an accurate description of a post that may land near 1 PM.
+  MORNING_CATCH_UP_K:
+    "Early model projections showing the clearest strikeout edges on today's slate. Check final lineups before betting.",
+  MORNING_CATCH_UP_HR:
+    "Early model targets based on the current slate and available prices. Check final lineups before betting.",
   CONFIRMED_COMPLETE:
     "Updated with confirmed lineups and the latest available market numbers.",
   CONFIRMED_INCOMPLETE:
@@ -176,6 +203,28 @@ function etWallClockToIso(now, timeZone, { hour, minute }) {
   const cur = easternParts(now, timeZone);
   const deltaMinutes = (hour * 60 + minute) - cur.minutesOfDay;
   return new Date(base + deltaMinutes * MS_PER_MINUTE).toISOString();
+}
+
+/**
+ * The single computed deadline for the morning edition's catch-up stage:
+ * the earlier of the hard 13:00 ET ceiling and (when a first pitch time is
+ * known) the moment the confirmed edition's own window opens. Exported so
+ * resolveEditionReadiness and mlb-x-edition-audit.mjs's "is this a real
+ * miss" check always agree on exactly the same instant -- see the
+ * MORNING_CATCH_UP_CLOSE_ET comment above for why this must not drift
+ * between the two call sites.
+ *
+ * Inclusive: a run landing exactly at this instant is still within the
+ * catch-up stage (matches the existing 09:45/11:15 boundary convention --
+ * see the "at the boundary" tests). Only strictly *after* this instant is a
+ * MISSED_WINDOW.
+ */
+export function computeMorningCatchUpCloseAt({ now, timeZone = "America/New_York", firstGameTime = null }) {
+  const hardCeilingMs = new Date(etWallClockToIso(now, timeZone, MORNING_CATCH_UP_CLOSE_ET)).getTime();
+  const firstMs = firstGameTime ? new Date(firstGameTime).getTime() : Number.NaN;
+  if (!Number.isFinite(firstMs)) return new Date(hardCeilingMs).toISOString();
+  const confirmedOpenMs = firstMs - CONFIRMED_WINDOW_OPEN_MINUTES * MS_PER_MINUTE;
+  return new Date(Math.min(hardCeilingMs, confirmedOpenMs)).toISOString();
 }
 
 /**
@@ -283,8 +332,14 @@ export function resolveEditionReadiness(input) {
       return buildResult({ ...common, decision: Decision.WAIT, status: ReadinessStatus.NOT_DUE, stage, nextEligibleAt: windowOpensAt, warnings, blockers, detail });
     }
     if (et.minutesOfDay > closeAt) {
-      stage = Stage.AFTER_WINDOW;
-      return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.MISSED_WINDOW, stage, warnings, blockers, detail });
+      const catchUpCloseAt = computeMorningCatchUpCloseAt({ now, timeZone, firstGameTime });
+      detail.catchUpClosesAt = catchUpCloseAt;
+      if (nowMs > new Date(catchUpCloseAt).getTime()) {
+        stage = Stage.AFTER_WINDOW;
+        return buildResult({ ...common, decision: Decision.SKIP, status: ReadinessStatus.MISSED_WINDOW, stage, warnings, blockers, detail });
+      }
+      stage = Stage.MORNING_CATCH_UP;
+      warnings.push("MORNING_WINDOW_CATCH_UP");
     }
   } else if (edition === "confirmed") {
     if (!firstGameTime) {
@@ -343,16 +398,20 @@ export function resolveEditionReadiness(input) {
 
   // ── Edition policy ───────────────────────────────────────────────────────
   if (edition === "morning") {
-    // No lineup requirement whatsoever: not opposing orders for K, not batting
-    // orders for HR. The caption says to check lineups precisely because this
-    // edition does not claim them.
+    // No lineup requirement whatsoever, in either stage: not opposing orders
+    // for K, not batting orders for HR. The caption says to check lineups
+    // precisely because this edition never claims them -- catch-up inherits
+    // that same rule rather than the confirmed edition's lineup policy below.
+    const isCatchUp = stage === Stage.MORNING_CATCH_UP;
     return buildResult({
       ...common,
       decision: Decision.POST,
-      status: ReadinessStatus.READY_TO_POST,
+      status: isCatchUp ? ReadinessStatus.READY_TO_FALLBACK_POST : ReadinessStatus.READY_TO_POST,
       stage,
-      languageMode: LanguageMode.MORNING,
-      caption: market === "k" ? Caption.MORNING_K : Caption.MORNING_HR,
+      languageMode: isCatchUp ? LanguageMode.MORNING_CATCH_UP : LanguageMode.MORNING,
+      caption: isCatchUp
+        ? (market === "k" ? Caption.MORNING_CATCH_UP_K : Caption.MORNING_CATCH_UP_HR)
+        : (market === "k" ? Caption.MORNING_K : Caption.MORNING_HR),
       confirmationComplete: false,
       warnings, blockers, detail,
     });

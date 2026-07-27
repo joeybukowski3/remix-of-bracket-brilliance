@@ -201,7 +201,11 @@ export function toWorkflowOutputs(plans) {
 export function conciseReason(plan) {
   const r = plan.readiness;
   if (r.status === "READY_TO_POST" || r.status === "READY_TO_FALLBACK_POST") {
-    return `${plan.selectedRows.length} picks; ${r.confirmationComplete ? "confirmed" : "unconfirmed"} lineups`;
+    const base = `${plan.selectedRows.length} picks; ${r.confirmationComplete ? "confirmed" : "unconfirmed"} lineups`;
+    // Distinguishes an on-time morning post from a post recovered after a
+    // missed scheduled firing -- see mlb-x-edition-readiness.mjs's
+    // MORNING_CATCH_UP stage.
+    return r.warnings?.includes("MORNING_WINDOW_CATCH_UP") ? `${base}; morning catch-up` : base;
   }
   if (r.blockers?.length) return `blocked: ${r.blockers.join(",")}`;
   if (r.status === "WAITING_FOR_SELECTED_LINEUPS") {
