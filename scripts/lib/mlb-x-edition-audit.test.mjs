@@ -5,6 +5,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { auditSlate, renderAuditAnnotations, renderAuditSummary } from "./mlb-x-edition-audit.mjs";
+import { computeMorningCatchUpCloseAt } from "./mlb-x-edition-readiness.mjs";
 
 const SLATE = "2026-07-21";
 const FIRST_PITCH = "2026-07-21T22:40:00Z";
@@ -109,9 +110,17 @@ describe("exit code policy", () => {
 });
 
 describe("window closure", () => {
-  it("treats the morning window as closed after 11:15 ET", () => {
-    const open = auditSlate({ slateDate: SLATE, now: "2026-07-21T15:15:00Z", firstGameTime: FIRST_PITCH, readReceipt: () => null });
-    const closed = auditSlate({ slateDate: SLATE, now: "2026-07-21T15:16:00Z", firstGameTime: FIRST_PITCH, readReceipt: () => null });
+  it("still treats the morning window as open through the 13:00 ET catch-up ceiling", () => {
+    // 11:16 ET is past the preferred 11:15 close but still inside
+    // resolveEditionReadiness's catch-up stage -- a missing receipt here is
+    // not yet a real miss (see mlb-x-edition-readiness.mjs's catch-up stage).
+    const open = auditSlate({ slateDate: SLATE, now: "2026-07-21T15:16:00Z", firstGameTime: FIRST_PITCH, readReceipt: () => null });
+    assert.equal(open.editions.find((e) => e.edition === "morning").windowClosed, false);
+  });
+
+  it("treats the morning window as closed after the 13:00 ET catch-up ceiling", () => {
+    const open = auditSlate({ slateDate: SLATE, now: "2026-07-21T17:00:00Z", firstGameTime: FIRST_PITCH, readReceipt: () => null });
+    const closed = auditSlate({ slateDate: SLATE, now: "2026-07-21T17:01:00Z", firstGameTime: FIRST_PITCH, readReceipt: () => null });
     assert.equal(open.editions.find((e) => e.edition === "morning").windowClosed, false);
     assert.equal(closed.editions.find((e) => e.edition === "morning").windowClosed, true);
   });
@@ -127,6 +136,38 @@ describe("window closure", () => {
   it("treats a slate with no first game time as closed for confirmed", () => {
     const report = auditSlate({ slateDate: SLATE, now: MID_MORNING, firstGameTime: null, readReceipt: () => null });
     assert.equal(report.editions.find((e) => e.edition === "confirmed").windowClosed, true);
+  });
+
+  it("uses the exact same computed deadline as resolveEditionReadiness -- not an independent approximation", () => {
+    const now = "2026-07-21T15:22:00Z"; // 11:22 ET, inside catch-up
+    const deadline = computeMorningCatchUpCloseAt({ now, firstGameTime: FIRST_PITCH });
+    // One ET minute either side of the shared deadline (audit is
+    // minute-granular, same as resolveEditionReadiness -- see
+    // etWallClockToIso).
+    const stillOpen = auditSlate({ slateDate: SLATE, now: deadline, firstGameTime: FIRST_PITCH, readReceipt: () => null });
+    const justClosed = auditSlate({
+      slateDate: SLATE,
+      now: new Date(Date.parse(deadline) + 60_000).toISOString(),
+      firstGameTime: FIRST_PITCH,
+      readReceipt: () => null,
+    });
+    assert.equal(stillOpen.editions.find((e) => e.edition === "morning").windowClosed, false);
+    assert.equal(justClosed.editions.find((e) => e.edition === "morning").windowClosed, true);
+  });
+
+  it("reports a missing morning edition as a real miss only once catch-up has closed", () => {
+    // 11:22 ET: past the preferred window, but readiness would still be in
+    // its catch-up stage -- a missing receipt/diagnostic here is not yet a
+    // failure worth alarming on.
+    const duringCatchUp = auditSlate({ slateDate: SLATE, now: "2026-07-21T15:22:00Z", firstGameTime: FIRST_PITCH, readReceipt: () => null });
+    const morningDuring = duringCatchUp.editions.find((e) => e.edition === "morning");
+    assert.equal(morningDuring.posted, false);
+    assert.equal(morningDuring.missed, false);
+
+    const afterCatchUp = auditSlate({ slateDate: SLATE, now: "2026-07-21T17:01:00Z", firstGameTime: FIRST_PITCH, readReceipt: () => null });
+    const morningAfter = afterCatchUp.editions.find((e) => e.edition === "morning");
+    assert.equal(morningAfter.posted, false);
+    assert.equal(morningAfter.missed, true);
   });
 });
 

@@ -73,8 +73,13 @@ describe("split preference ladder", () => {
 describe("edition sentences", () => {
   it("uses the approved wording", () => {
     assert.equal(EditionSentence.morning, "Morning model card — check confirmed lineups before betting.");
+    assert.equal(EditionSentence.morning_catch_up, "Early model card — check confirmed lineups before betting.");
     assert.equal(EditionSentence.confirmed, "Updated with confirmed lineups.");
     assert.equal(EditionSentence.pregame_fallback, "Pregame update using the latest available lineups.");
+  });
+
+  it("never phrases a catch-up post as \"Morning\"", () => {
+    assert.ok(!/^Morning /.test(EditionSentence.morning_catch_up));
   });
 
   it("refuses an unknown language mode rather than inventing wording", () => {
@@ -111,7 +116,7 @@ describe("K edition caption", () => {
   });
 
   it("always retains the edition sentence, link and hashtags", () => {
-    for (const mode of ["morning", "confirmed", "pregame_fallback"]) {
+    for (const mode of ["morning", "morning_catch_up", "confirmed", "pregame_fallback"]) {
       const result = build([...OVERS, ...UNDERS], mode);
       assert.equal(result.skipped, false);
       assert.ok(result.caption.includes(EditionSentence[mode]), `${mode} sentence retained`);
@@ -189,7 +194,7 @@ describe("HR edition caption", () => {
 
   it("retains edition language and link across all modes", () => {
     const rows = [hrRow("Aaron Judge", "+210"), hrRow("Joey Bart", "+450")];
-    for (const mode of ["morning", "confirmed", "pregame_fallback"]) {
+    for (const mode of ["morning", "morning_catch_up", "confirmed", "pregame_fallback"]) {
       const result = build(rows, mode);
       assert.ok(result.caption.includes(EditionSentence[mode]));
       assert.ok(result.caption.includes(HR_CANONICAL_LINK));

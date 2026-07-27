@@ -9,8 +9,7 @@
 import { listEditionTargets } from "./mlb-x-edition-receipts.mjs";
 import {
   CONFIRMED_WINDOW_CLOSE_MINUTES,
-  easternParts,
-  MORNING_WINDOW_CLOSE_ET,
+  computeMorningCatchUpCloseAt,
 } from "./mlb-x-edition-readiness.mjs";
 
 /**
@@ -40,9 +39,14 @@ export const BENIGN_MISS_STATUSES = Object.freeze([
 
 const MS_PER_MINUTE = 60_000;
 
-function morningWindowClosed(now, timeZone) {
-  const et = easternParts(now, timeZone);
-  return et.minutesOfDay > MORNING_WINDOW_CLOSE_ET.hour * 60 + MORNING_WINDOW_CLOSE_ET.minute;
+// Delegates to the exact same computeMorningCatchUpCloseAt deadline
+// resolveEditionReadiness uses for its own catch-up stage (rather than the
+// preferred 11:15 ET close) -- a missing morning edition is only a real
+// miss once the catch-up stage has itself closed, and the two modules must
+// never independently approximate that instant.
+function morningWindowClosed(now, timeZone, firstGameTime) {
+  const closeAt = computeMorningCatchUpCloseAt({ now, timeZone, firstGameTime });
+  return Date.parse(now) > Date.parse(closeAt);
 }
 
 function confirmedWindowClosed(now, firstGameTime) {
@@ -72,7 +76,7 @@ export function auditSlate({
     const posted = Boolean(postId && String(postId).trim());
     const diagnostic = posted ? null : readDiagnostic({ market, edition, slateDate });
     const windowClosed = edition === "morning"
-      ? morningWindowClosed(now, timeZone)
+      ? morningWindowClosed(now, timeZone, firstGameTime)
       : confirmedWindowClosed(now, firstGameTime);
 
     const status = posted ? "POSTED" : diagnostic?.latestOutcome ?? "MISSING";
