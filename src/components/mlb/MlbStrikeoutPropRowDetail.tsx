@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 import type { PitcherVenueSplit, StrikeoutPropDetail } from "@/hooks/useMlbStrikeoutPropDetails";
 import type { KPropsV2ShadowArtifact, KPropsV2ShadowRow } from "@/hooks/useMlbKPropsV2Shadow";
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
@@ -40,6 +41,10 @@ function fmtOutsIp(outs: number | null | undefined) {
   const display = outsToMlbInnings(outs);
   return display ?? DASH;
 }
+/** Emphasized headline stat for a collapsed mobile game row, e.g. "6 K". Leaves DASH unsuffixed. */
+function formatKSuffix(value: string): string {
+  return value === DASH ? DASH : `${value} K`;
+}
 function fmtDate(value: string | null | undefined) {
   if (!value) return DASH;
   const date = new Date(`${value}T12:00:00Z`);
@@ -57,6 +62,48 @@ function TeamCell({ team }: { team: string | null }) {
   );
 }
 
+/** One game's mobile row: a compact collapsed summary (date, opponent, one headline stat) that expands to reveal the rest of that game's stats. */
+interface CollapsibleGameRow {
+  key: string;
+  date: ReactNode;
+  team: ReactNode;
+  primaryValue: ReactNode;
+  details: { label: string; value: ReactNode }[];
+}
+
+function CollapsibleGameRowCard({ row }: { row: CollapsibleGameRow }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-100 bg-white">
+      <button
+        type="button"
+        aria-expanded={isExpanded}
+        onClick={() => setIsExpanded((current) => !current)}
+        className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="w-11 shrink-0 text-[11px] font-semibold text-slate-500">{row.date}</span>
+          <span className="min-w-0 truncate text-[11px] font-semibold text-slate-700">{row.team}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="text-[12px] font-black text-slate-900">{row.primaryValue}</span>
+          <ChevronDown className={cn("h-3.5 w-3.5 text-slate-400 transition-transform", isExpanded && "rotate-180")} />
+        </span>
+      </button>
+      {isExpanded && (
+        <div className="grid gap-1 border-t border-slate-100 bg-slate-50/60 px-2 py-1.5">
+          {row.details.map((detail) => (
+            <div key={detail.label} className="flex min-w-0 items-center justify-between gap-2 text-[11px]">
+              <span className="shrink-0 font-black uppercase tracking-wide text-slate-400">{detail.label}</span>
+              <span className="min-w-0 text-right font-semibold text-slate-700">{detail.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MiniTable({
   title,
   columns,
@@ -67,6 +114,7 @@ function MiniTable({
   headerGroups,
   leadingUngroupedColumns = 0,
   mobileLabels,
+  mobileCollapsibleRows,
 }: {
   title: string;
   columns: string[];
@@ -80,6 +128,8 @@ function MiniTable({
   leadingUngroupedColumns?: number;
   /** Mobile card field labels, when the desktop column headers (e.g. grouped "IP"/"IP") are ambiguous without their group context. Defaults to `columns`. */
   mobileLabels?: string[];
+  /** When provided, mobile renders one compact per-game row (date/opponent/headline stat) that expands independently, instead of the default always-expanded field list. Desktop is unaffected. */
+  mobileCollapsibleRows?: CollapsibleGameRow[];
 }) {
   const cardLabels = mobileLabels ?? columns;
   return (
@@ -154,7 +204,13 @@ function MiniTable({
         </table>
       </div>
       <div className="grid gap-1.5 p-2 sm:hidden">
-        {rows.length ? rows.map((row, index) => (
+        {mobileCollapsibleRows ? (
+          mobileCollapsibleRows.length ? (
+            mobileCollapsibleRows.map((row) => <CollapsibleGameRowCard key={row.key} row={row} />)
+          ) : (
+            <div className="px-2 py-3 text-center text-xs text-slate-400">{emptyMessage}</div>
+          )
+        ) : rows.length ? rows.map((row, index) => (
           <div key={index} className="rounded-lg border border-slate-100 bg-white p-2">
             {cardLabels.map((label, cellIndex) => (
               <div key={`${label}-${cellIndex}`} className="flex min-w-0 items-start justify-between gap-2 py-0.5 text-[11px]">
@@ -495,7 +551,8 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
   const pitcherSummaryRows = getArray(pitcherSummary, "rows").map((row) => getRecord(row)).filter((row): row is Record<string, unknown> => Boolean(row));
   const opponentSummaryRows = getArray(opponentSummary, "rows").map((row) => getRecord(row)).filter((row): row is Record<string, unknown> => Boolean(row));
 
-  const fallbackStartRows: ReactNode[][] = (pitcherSummaryRows.length ? pitcherSummaryRows : detail.pitcherLastFiveStarts.map((start, index) => ({ index, date: start.date, opponent: start.opponent, inningsPitched: start.inningsPitched, strikeouts: start.strikeouts }))).map((start, index) => [
+  const fallbackStartSource = pitcherSummaryRows.length ? pitcherSummaryRows : detail.pitcherLastFiveStarts.map((start, index) => ({ index, date: start.date, opponent: start.opponent, inningsPitched: start.inningsPitched, strikeouts: start.strikeouts }));
+  const fallbackStartRows: ReactNode[][] = fallbackStartSource.map((start, index) => [
     fmtDate(start.date),
     <TeamCell key={`start-opp-${index}`} team={getString(start, "opponent")} />,
     getNumber(start, "outs") != null ? fmtOutsIp(getNumber(start, "outs")) : fmtIp(start.inningsPitched as number | string | null | undefined),
@@ -505,6 +562,24 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     getNumber(start, "innings") != null && getNumber(start, "strikeouts") != null && (getNumber(start, "innings") ?? 0) > 0 ? fmtFixed(((getNumber(start, "strikeouts") ?? 0) * 9) / (getNumber(start, "innings") ?? 1)) : DASH,
     fmtNumber(getNumber(start, "pitchCount")),
   ]);
+  const fallbackStartCollapsibleRows: CollapsibleGameRow[] = fallbackStartSource.map((start, index) => {
+    const battersFaced = getNumber(start, "battersFaced");
+    const strikeouts = getNumber(start, "strikeouts");
+    const innings = getNumber(start, "innings");
+    return {
+      key: `pitcher-fallback-start-${index}`,
+      date: fmtDate(start.date as string | null | undefined),
+      team: <TeamCell team={getString(start, "opponent")} />,
+      primaryValue: formatKSuffix(fmtNumber(strikeouts)),
+      details: [
+        { label: "IP", value: getNumber(start, "outs") != null ? fmtOutsIp(getNumber(start, "outs")) : fmtIp(start.inningsPitched as number | string | null | undefined) },
+        { label: "BF", value: fmtNumber(battersFaced) },
+        { label: "K%", value: fmtRate(battersFaced != null && strikeouts != null && battersFaced > 0 ? strikeouts / battersFaced : null) },
+        { label: "K/9", value: innings != null && strikeouts != null && innings > 0 ? fmtFixed((strikeouts * 9) / innings) : DASH },
+        { label: "Pitch Count", value: fmtNumber(getNumber(start, "pitchCount")) },
+      ],
+    };
+  });
 
   const fallbackStartAvg: ReactNode[][] = [[
     "AVG",
@@ -537,6 +612,26 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
       fmtNumber(start.pitchCount),
     ];
   });
+  const enrichedStartCollapsibleRows: CollapsibleGameRow[] = (enrichedStarts ?? []).map((start, index) => {
+    const hitsPerNine = start.outsRecorded != null && start.outsRecorded > 0 && start.hitsAllowed != null
+      ? (start.hitsAllowed * 27) / start.outsRecorded
+      : null;
+    const strikeoutsPerNine = start.outsRecorded != null && start.outsRecorded > 0 && start.strikeouts != null
+      ? (start.strikeouts * 27) / start.outsRecorded
+      : null;
+    return {
+      key: `pitcher-enriched-start-${index}`,
+      date: fmtDate(start.date),
+      team: <TeamCell team={start.opponentAbbr ?? start.opponent ?? null} />,
+      primaryValue: formatKSuffix(fmtNumber(start.strikeouts)),
+      details: [
+        { label: "IP", value: start.outsRecorded != null ? fmtOutsIp(start.outsRecorded) : fmtIp(start.inningsPitched) },
+        { label: "H/9", value: fmtFixed(hitsPerNine) },
+        { label: "K/9", value: fmtFixed(strikeoutsPerNine) },
+        { label: "Pitch Count", value: fmtNumber(start.pitchCount) },
+      ],
+    };
+  });
   const enrichedStartAvg: ReactNode[][] = enrichedSummary ? [[
     "AVG",
     `${fmtNumber(enrichedSummary.gamesUsed)} used`,
@@ -551,6 +646,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     : ["Date", "Opp", "IP", "K", "BF", "K%", "K/9", "Pitch Count"];
   const startRows = hasEnrichedPitcherStarts ? enrichedStartRows : fallbackStartRows;
   const startAvg = hasEnrichedPitcherStarts ? enrichedStartAvg : fallbackStartAvg;
+  const startCollapsibleRows = hasEnrichedPitcherStarts ? enrichedStartCollapsibleRows : fallbackStartCollapsibleRows;
   const pitcherVenueRows = detail.pitcherVenueSplits
     ? [
       pitcherVenueRow(detail.pitcherVenueSplits.home, "Home"),
@@ -558,7 +654,8 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     ]
     : [];
 
-  const opponentRows: ReactNode[][] = (opponentSummaryRows.length ? opponentSummaryRows : detail.opponentLastFiveGames.map((game, index) => ({ index, date: game.date, opponent: game.opponent, opposingStartingPitcher: game.opposingStartingPitcher, opposingStarterInningsPitched: game.opposingStarterInningsPitched, opposingStarterStrikeouts: game.opposingStarterStrikeouts, teamStrikeouts: game.teamTotalStrikeouts }))).map((game, index) => [
+  const opponentSource = opponentSummaryRows.length ? opponentSummaryRows : detail.opponentLastFiveGames.map((game, index) => ({ index, date: game.date, opponent: game.opponent, opposingStartingPitcher: game.opposingStartingPitcher, opposingStarterInningsPitched: game.opposingStarterInningsPitched, opposingStarterStrikeouts: game.opposingStarterStrikeouts, teamStrikeouts: game.teamTotalStrikeouts }));
+  const opponentRows: ReactNode[][] = opponentSource.map((game, index) => [
     fmtDate(game.date),
     <TeamCell key={`vs-opp-${index}`} team={getString(game, "opponent")} />,
     fmtText(getString(game, "opposingStartingPitcher")),
@@ -566,6 +663,17 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
     fmtNumber(getNumber(game, "opposingStarterStrikeouts")),
     fmtNumber(getNumber(game, "teamStrikeouts")),
   ]);
+  const opponentCollapsibleRows: CollapsibleGameRow[] = opponentSource.map((game, index) => ({
+    key: `opponent-game-${index}`,
+    date: fmtDate(game.date as string | null | undefined),
+    team: <TeamCell team={getString(game, "opponent")} />,
+    primaryValue: formatKSuffix(fmtNumber(getNumber(game, "opposingStarterStrikeouts"))),
+    details: [
+      { label: "Opposing SP", value: fmtText(getString(game, "opposingStartingPitcher")) },
+      { label: "SP IP", value: getNumber(game, "opposingStarterOuts") != null ? fmtOutsIp(getNumber(game, "opposingStarterOuts")) : fmtIp(game.opposingStarterInningsPitched as number | string | null | undefined) },
+      { label: "Game K", value: fmtNumber(getNumber(game, "teamStrikeouts")) },
+    ],
+  }));
 
   const opponentAvg: ReactNode[][] = [[
     "AVG",
@@ -590,6 +698,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
               columns={startColumns}
               rows={startRows}
               footRows={startAvg}
+              mobileCollapsibleRows={startCollapsibleRows}
               emptyMessage="No recent starts available."
             />
             {detail.pitcherVenueSplits && (
@@ -611,6 +720,7 @@ export default function MlbStrikeoutPropRowDetail({ detail, shadowRow = null, sh
             columnWidths={["14%", "12%", "34%", "14%", "12%", "14%"]}
             rows={opponentRows}
             footRows={opponentAvg}
+            mobileCollapsibleRows={opponentCollapsibleRows}
             emptyMessage="No recent games available."
           />
         </div>
