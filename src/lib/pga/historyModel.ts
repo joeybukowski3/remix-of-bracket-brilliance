@@ -1,4 +1,5 @@
 import type { CourseWeightSet, RawPlayerStat } from "@/components/pga/PgaHubShared";
+import { isLowerBetterMetric } from "@/lib/pga/metricDirection";
 
 export type PgaMajorType = "masters" | "pga_championship" | "us_open" | "open_championship";
 export type PgaFinishStatus = "finished" | "missed_cut" | "withdrawn" | "disqualified";
@@ -129,7 +130,6 @@ export type PgaTournamentModelRow = RawPlayerStat & {
 
 const RECENT_WEIGHTS = [24, 20, 16, 13, 10, 8, 5, 4];
 const FOUR_RESULT_WEIGHTS = [40, 30, 20, 10];
-const LOWER_IS_BETTER = new Set<PgaCourseFitMetric>(["bogeyAvoidance"]);
 
 export function normalizePlayerKey(value: string) {
   return value
@@ -359,7 +359,7 @@ export function buildMetricPercentiles(
       const equal = values.filter((candidate) => candidate.value === row.value).length;
       const midRank = less + Math.max(0, equal - 1) / 2;
       let percentile = values.length <= 1 ? 50 : (midRank / (values.length - 1)) * 100;
-      if (LOWER_IS_BETTER.has(metric)) percentile = 100 - percentile;
+      if (isLowerBetterMetric(metric)) percentile = 100 - percentile;
       maps.get(row.key)![metric] = roundOne(clamp(percentile, 0, 100));
     });
   });
