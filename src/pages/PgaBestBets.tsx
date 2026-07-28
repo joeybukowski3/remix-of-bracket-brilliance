@@ -7,8 +7,10 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
 import { assessPgaFreshness } from "@/lib/pga/pgaFreshness";
-import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
+import { ACTIVE_PGA_MODEL_TOURNAMENT } from "@/lib/pga/tournaments";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
+import { PGA_MARKET_LABELS, marketOddsFor } from "@/lib/pga/marketOdds";
+import PgaFieldCoverageNote, { type PgaFieldCoverage } from "@/components/pga/PgaFieldCoverageNote";
 
 type BestBetPick = {
   player: string;
@@ -60,6 +62,7 @@ type BestBetsPayload = {
   article?: Article | null;
   methodologyNotes?: string[];
   dataLimitations?: string[];
+  fieldCoverage?: PgaFieldCoverage | null;
 };
 
 const EMPTY_MESSAGE = "No current card available";
@@ -107,6 +110,42 @@ function formatGeneratedAt(value: string) {
   }).format(date);
 }
 
+/**
+ * Coerce every market array to a usable array before anything renders.
+ *
+ * The render path used `data?.[section.key].map(...)`, where optional chaining
+ * short-circuits on `data` but NOT on the market array -- so a payload that
+ * exists while missing one market threw and blanked the whole page. Legacy
+ * artifacts written before schemaVersion 2 are exactly that shape.
+ *
+ * Normalization is per-market, so one malformed market can never suppress the
+ * valid ones. Valid pick values are passed through untouched; only entries with
+ * no usable player identifier are dropped, since those cannot be keyed or
+ * labeled.
+ */
+export function normalizeBestBetsPayload(raw: unknown): BestBetsPayload | null {
+  if (!raw || typeof raw !== "object") return null;
+  const payload = raw as Partial<BestBetsPayload> & Record<string, unknown>;
+
+  const normalizeMarket = (value: unknown): BestBetPick[] =>
+    Array.isArray(value)
+      ? value.filter(
+          (pick): pick is BestBetPick =>
+            Boolean(pick) && typeof pick === "object" && typeof (pick as BestBetPick).player === "string"
+            && (pick as BestBetPick).player.trim().length > 0,
+        )
+      : [];
+
+  return {
+    ...(payload as BestBetsPayload),
+    outrights: normalizeMarket(payload.outrights),
+    top5: normalizeMarket(payload.top5),
+    top10: normalizeMarket(payload.top10),
+    top20: normalizeMarket(payload.top20),
+    valueBets: Array.isArray(payload.valueBets) ? payload.valueBets : [],
+  };
+}
+
 function isEmpty(payload: BestBetsPayload | null) {
   if (!payload) return true;
   return SECTIONS.every(({ key }) => !payload[key]?.length);
@@ -120,8 +159,28 @@ function normalizeTournamentLabel(value: string | null | undefined) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function OddsBadge({ value }: { value?: string | null }) {
-  if (!value) return null;
+/**
+ * Price for one market, or an explicit unavailable state.
+ *
+ * Renders a neutral chip rather than nothing when there is no price, so a card
+ * without a number reads as complete instead of broken. It must never show
+ * another market's price -- see marketOddsFor.
+ */
+function OddsBadge({ value, marketLabel }: { value?: string | null; marketLabel: string }) {
+  if (!value) {
+    return (
+      <span
+        className="rounded-full border border-dashed border-gray-300 bg-gray-50 px-3 py-1 text-sm font-semibold text-gray-500"
+        data-testid="odds-unavailable"
+        // The visible text omits the market because the card heading already
+        // names it; screen readers get the market explicitly so the chip is
+        // never an unattributed "Price unavailable".
+        aria-label={`${marketLabel} price unavailable`}
+      >
+        Price unavailable
+      </span>
+    );
+  }
   const positive = value.startsWith("+");
   return (
     <span
@@ -130,6 +189,7 @@ function OddsBadge({ value }: { value?: string | null }) {
           ? "rounded-full border border-green-300 bg-green-100 px-3 py-1 text-lg font-bold text-green-800"
           : "rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-lg font-bold text-gray-700"
       }
+      aria-label={`${marketLabel} price ${value}`}
     >
       {value}
     </span>
@@ -199,14 +259,10 @@ function PickCard({
   tierNote: string;
   marketKey: "outrights" | "top5" | "top10" | "top20";
 }) {
-  const oddsValue =
-    marketKey === "outrights"
-      ? pick.odds?.outright
-      : marketKey === "top5"
-        ? pick.odds?.top5 ?? pick.odds?.outright
-        : marketKey === "top10"
-          ? pick.odds?.top10 ?? pick.odds?.outright
-          : pick.odds?.top20 ?? pick.odds?.outright;
+  // Strictly this market's price. The previous nested ternary fell back to the
+  // outright number for every placement market, so a Top-20 card could render
+  // an outright price as though it were a Top-20 price.
+  const oddsValue = marketOddsFor(pick, marketKey);
 
   return (
     <article className="rounded-xl border border-gray-200 border-l-4 border-l-[#166534] bg-white p-4 shadow-sm">
@@ -214,7 +270,7 @@ function PickCard({
         <div>
           <h3 className="text-xl font-semibold tracking-[-0.03em] text-gray-900">{pick.player}</h3>
           <div className="mt-3">
-            <OddsBadge value={oddsValue} />
+            <OddsBadge value={oddsValue} marketLabel={PGA_MARKET_LABELS[marketKey]} />
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">
@@ -287,10 +343,11 @@ function ArticleView({ article }: { article: Article }) {
   );
 }
 
-function DataNotesFooter({ methodologyNotes, dataLimitations, generatedAt }: { methodologyNotes: string[]; dataLimitations: string[]; generatedAt?: string }) {
-  if (!methodologyNotes.length && !dataLimitations.length) return null;
+function DataNotesFooter({ methodologyNotes, dataLimitations, generatedAt, fieldCoverage }: { methodologyNotes: string[]; dataLimitations: string[]; generatedAt?: string; fieldCoverage?: PgaFieldCoverage | null }) {
+  if (!methodologyNotes.length && !dataLimitations.length && !fieldCoverage) return null;
   return (
     <section className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs leading-6 text-gray-600">
+      <PgaFieldCoverageNote coverage={fieldCoverage} className="mb-1.5" />
       {methodologyNotes.length ? (
         <div>
           <span className="font-semibold text-gray-700">Methodology: </span>
@@ -312,13 +369,16 @@ export default function PgaBestBets() {
   usePageSeo(getSeoMeta("pga-best-bets"));
   const scheduleSelection = getPgaScheduleSelection();
   const scheduleTournament = scheduleSelection.currentUpcoming;
+  const [data, setData] = useState<BestBetsPayload | null>(null);
+  // Title falls back to the schedule, then to the artifact -- never to a
+  // legacy featured tournament, which previously could title this page
+  // "RBC Heritage 2026" whenever the artifact was missing.
   const fallbackTournamentName =
     scheduleTournament?.shortName
     || scheduleTournament?.name
-    || FEATURED_PGA_TOURNAMENT.shortName
-    || FEATURED_PGA_TOURNAMENT.name;
-  const fallbackCourseName = scheduleTournament?.courseName || FEATURED_PGA_TOURNAMENT.courseName;
-  const [data, setData] = useState<BestBetsPayload | null>(null);
+    || data?.tournament
+    || "This week's tournament";
+  const fallbackCourseName = scheduleTournament?.courseName || data?.course || "";
   const [loading, setLoading] = useState(true);
   const freshness = useMemo(
     () => assessPgaFreshness(data, {
@@ -357,7 +417,7 @@ export default function PgaBestBets() {
         return response.json();
       })
       .then((json) => {
-        if (!cancelled) setData(json as BestBetsPayload);
+        if (!cancelled) setData(normalizeBestBetsPayload(json));
       })
       .catch(() => {
         if (!cancelled) setData(null);
@@ -409,9 +469,18 @@ export default function PgaBestBets() {
                 placement markets, and odds-context leans into a cleaner betting card for the week.
               </p>
               <div className="mt-3 flex flex-wrap gap-4 text-sm">
-                <Link to="/pga/model" className="font-semibold text-[#166534] hover:underline">
-                  View {visibleTournamentName} model rankings
-                </Link>
+                {/* Only link the model room when it genuinely belongs to the
+                    current schedule event. Otherwise /pga/model resolves to an
+                    archived tournament, and this label would name the wrong one. */}
+                {ACTIVE_PGA_MODEL_TOURNAMENT ? (
+                  <Link to="/pga/model" className="font-semibold text-[#166534] hover:underline">
+                    View {visibleTournamentName} model rankings
+                  </Link>
+                ) : (
+                  <Link to="/pga" className="font-semibold text-[#166534] hover:underline">
+                    View {visibleTournamentName} model rankings
+                  </Link>
+                )}
                 <Link to="/pga/top-40-golf-picks" className="font-semibold text-[#166534] hover:underline">
                   Explore Top 40 golf picks
                 </Link>
@@ -481,25 +550,37 @@ export default function PgaBestBets() {
                 </section>
               ) : null}
 
-              {SECTIONS.map((section) => (
-                <section key={section.key} id={section.key} className="space-y-4 scroll-mt-24">
-                  <div>
-                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">{section.title}</h2>
-                    <p className="mt-1 text-sm text-gray-500">{section.description}</p>
-                  </div>
+              {SECTIONS.map((section) => {
+                // Guaranteed an array by normalizeBestBetsPayload.
+                const picks = data?.[section.key] ?? [];
+                return (
+                  <section key={section.key} id={section.key} className="space-y-4 scroll-mt-24">
+                    <div>
+                      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">{section.title}</h2>
+                      <p className="mt-1 text-sm text-gray-500">{section.description}</p>
+                    </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {data?.[section.key].map((pick) => (
-                      <PickCard
-                        key={`${section.key}-${pick.player}`}
-                        pick={pick}
-                        tierNote={section.tierNote}
-                        marketKey={section.key}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
+                    {picks.length ? (
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {picks.map((pick, pickIndex) => (
+                          <PickCard
+                            // Index included so a duplicated player within one
+                            // market cannot collide on the React key.
+                            key={`${section.key}-${pickIndex}-${pick.player}`}
+                            pick={pick}
+                            tierNote={section.tierNote}
+                            marketKey={section.key}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-6 text-sm text-gray-500">
+                        No qualifying picks in this market this week.
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
 
               {data?.article && payloadMatchesTournament ? (
                 <section id="article" className="space-y-4 scroll-mt-24">
@@ -515,6 +596,7 @@ export default function PgaBestBets() {
                 methodologyNotes={data?.methodologyNotes ?? []}
                 dataLimitations={data?.dataLimitations ?? []}
                 generatedAt={data?.generatedAt}
+                fieldCoverage={data?.fieldCoverage ?? null}
               />
             </>
           )}

@@ -25,6 +25,12 @@ on:
     paths:
       - ".github/workflows/sync-pga-data.yml"
       - "scripts/sync-pga-sheet.mjs"
+      # The rankings generator and the shared modules it depends on were missing
+      # here, so a correctness fix to the ranking math could merge to main
+      # without regenerating the artifacts that fix invalidates.
+      - "scripts/generate-pga-tournament-rankings.mjs"
+      - "scripts/lib/pga-metric-direction.mjs"
+      - "scripts/lib/pga-market-odds.mjs"
       - "scripts/generate-pga-best-bets.mjs"
       - "scripts/run-pga-best-bets-safe.mjs"
       - "scripts/fetch-pga-fedex-standings.mjs"

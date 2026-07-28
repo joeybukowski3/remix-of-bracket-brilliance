@@ -8,6 +8,7 @@ import {
   isPostOpenWindow,
   MAJOR_SWING_WORKLOAD_LIMITATION,
 } from "./lib/pga-post-open-angles.mjs";
+import { PGA_MARKET_KEYS, marketOddsFor } from "./lib/pga-market-odds.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "pga");
@@ -803,15 +804,65 @@ export function pickTournamentData(currentField, currentTournament, nextTourname
   return { source, tournamentData };
 }
 
+/**
+ * Field coverage: how much of the OFFICIAL field the model actually contains.
+ *
+ * The denominator is the official field size, not the model's own row count.
+ * Dividing by tournamentData.rows.length asked "what share of my rows are in
+ * the field?", which is ~100% by construction once non-field rows are removed --
+ * so the gate below could never detect entrants missing from the model. At the
+ * Rocket Classic that reported 100% while 15 of 141 entrants (10.6%) had no
+ * statistics and were silently unpickable.
+ */
+export function computeFieldCoverage(tournamentData, currentField) {
+  const officialPlayers = new Map(
+    (currentField?.players ?? []).map((player) => [normalizeName(player), player]),
+  );
+  const modeledKeys = new Set(
+    (tournamentData?.rows ?? []).map((row) => normalizeName(row.player)),
+  );
+
+  const unmodeledPlayers = [...officialPlayers.entries()]
+    .filter(([key]) => !modeledKeys.has(key))
+    .map(([, player]) => player)
+    .sort((left, right) => left.localeCompare(right));
+
+  const fieldCount = officialPlayers.size;
+  const modeledCount = fieldCount - unmodeledPlayers.length;
+
+  return {
+    fieldCount,
+    modeledCount,
+    unmodeledCount: unmodeledPlayers.length,
+    coveragePct: fieldCount > 0 ? Number(((modeledCount / fieldCount) * 100).toFixed(1)) : 0,
+    unmodeledPlayers,
+    reason: "no current statistics available for these official entrants",
+  };
+}
+
+const MIN_FIELD_COVERAGE = 0.7;
+
 export function prepareTournamentModel(tournamentData, currentField) {
   if (!tournamentData?.rows?.length) return { model: null, reason: "matching tournament model has no rows" };
   const officialPlayers = new Set(currentField.players.map((player) => normalizeName(player)));
   const matchedRows = tournamentData.rows.filter((row) => officialPlayers.has(normalizeName(row.player)));
-  const coverage = matchedRows.length / tournamentData.rows.length;
-  if (coverage < 0.7) {
-    return { model: null, reason: `matching tournament model only contains ${(coverage * 100).toFixed(0)}% official-field players` };
+
+  const coverageDetail = computeFieldCoverage({ rows: matchedRows }, currentField);
+  const coverage = officialPlayers.size > 0 ? coverageDetail.modeledCount / officialPlayers.size : 0;
+  if (coverage < MIN_FIELD_COVERAGE) {
+    // Name the missing entrants so a blocked run is diagnosable without
+    // re-deriving the gap by hand.
+    const names = coverageDetail.unmodeledPlayers.slice(0, 10).join(", ");
+    const overflow = coverageDetail.unmodeledPlayers.length > 10
+      ? ` and ${coverageDetail.unmodeledPlayers.length - 10} more`
+      : "";
+    return {
+      model: null,
+      reason: `matching tournament model covers only ${(coverage * 100).toFixed(0)}% of the ${officialPlayers.size}-player official field; missing ${names}${overflow}`,
+    };
   }
-  return { model: { ...tournamentData, rows: matchedRows }, reason: null };
+
+  return { model: { ...tournamentData, rows: matchedRows }, coverage: coverageDetail, reason: null };
 }
 
 export function canGenerateBestBets({ currentField, tournamentData, apiKey }) {
@@ -854,15 +905,18 @@ export function selectPublishedPicks(pickArrays, { hasOddsApiKey, oddsLookup, fi
   if (!hasOddsApiKey || !oddsAvailable) {
     return { ...pickArrays };
   }
+  // Market keys are the canonical section keys; marketOddsFor maps each to its
+  // odds-payload key. Previously "outright" (singular) was passed here and
+  // happened to work only because the odds payload uses that spelling.
   return {
-    outrights: filterByValueAndOdds(pickArrays.outrights, "outright"),
+    outrights: filterByValueAndOdds(pickArrays.outrights, "outrights"),
     top5: filterByValueAndOdds(pickArrays.top5, "top5"),
     top10: filterByValueAndOdds(pickArrays.top10, "top10"),
     top20: filterByValueAndOdds(pickArrays.top20, "top20"),
   };
 }
 
-const PICK_MARKETS = ["outrights", "top5", "top10", "top20"];
+const PICK_MARKETS = PGA_MARKET_KEYS;
 
 /** Unique union of players across ALL four selected markets, in stable first-seen order. */
 export function collectSelectedPlayers(pickArrays) {
@@ -941,26 +995,59 @@ const UNPRICED_FALLBACK_BULLET =
   "Model-supported target: no market price was available this week, so this case rests on course-weighted model rank rather than the number.";
 
 /**
- * Price for one pick in one specific market, with NO cross-market fallback.
+ * LEGACY, NON-PROBABILISTIC value ordering. Temporary.
  *
- * An outright price is not a Top-5/Top-10/Top-20 price. Falling back to it
- * would let both the article prompt and enforceOddsLanguage treat an unpriced
- * placement market as priced, and publish market-value language about a number
- * that does not exist for that market.
+ * modelProxyScore returns 0-100 "units" from an exponential rank decay; it is
+ * NOT a probability and does not sum to 1 over the field. computeValueEdge then
+ * divides those units by a vig-inclusive implied probability, so the resulting
+ * number has no interpretable scale and is NOT comparable across markets. Its
+ * only sound use is the within-market ordering below, which is scale-invariant.
  *
- * Deliberately independent of filterByValueAndOdds, which keeps its own
- * outright fallback for value ranking -- this function governs only truthful
- * per-market language and prompt construction.
+ * Deliberately left unchanged in this correctness pass: replacing it requires
+ * per-market probabilities and vig removal, which are separate, later work.
+ * Do not present this quantity to readers as an edge.
+ *
+ * Hoisted to module scope (previously closures inside main) purely so the
+ * cross-market odds behavior below is directly testable.
  */
-function marketOddsFor(pick, market) {
-  const odds = pick?.odds;
-  if (!odds) return null;
+function modelProxyScore(rank) {
+  return Math.exp(-0.065 * (rank - 1)) * 100;
+}
 
-  if (market === "outrights") {
-    return odds.outright ?? null;
-  }
+/** Convert an American odds string to a vig-inclusive implied probability. */
+export function toImplied(oddsStr) {
+  if (!oddsStr) return null;
+  const n = parseFloat(String(oddsStr).replace("+", ""));
+  if (!Number.isFinite(n)) return null;
+  return n > 0 ? 100 / (n + 100) : Math.abs(n) / (Math.abs(n) + 100);
+}
 
-  return odds[market] ?? null;
+/** See the caveat above: a legacy ordering ratio, not an edge. */
+export function computeValueEdge(tournamentRank, oddsStr) {
+  const implied = toImplied(oddsStr);
+  if (implied == null || implied <= 0) return -1;
+  return modelProxyScore(tournamentRank) / implied;
+}
+
+/**
+ * Keep only picks that have a real price IN THEIR OWN MARKET, then order them.
+ *
+ * There is NO outright fallback. A placement pick with no placement price is
+ * dropped rather than retained and ranked against an outright number that says
+ * nothing about its market. This can legitimately publish fewer picks on a
+ * partially priced week -- that is the intended, honest outcome.
+ */
+export function filterByValueAndOdds(picks, marketKey) {
+  return (picks ?? [])
+    .map((pick) => {
+      const odds = marketOddsFor(pick, marketKey);
+      if (!odds) return null;
+      return { ...pick, _edge: computeValueEdge(pick.tournamentRank, odds) };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b._edge - a._edge || String(a.player).localeCompare(String(b.player)))
+    // eslint-disable-next-line no-unused-vars
+    .map(({ _edge, ...pick }) => pick);
 }
 
 /**
@@ -1055,13 +1142,32 @@ async function main() {
     return;
   }
 
-  const { model: tournamentData, reason: modelError } = prepareTournamentModel(selection.tournamentData, currentField);
+  const { model: tournamentData, coverage: fieldCoverage, reason: modelError } = prepareTournamentModel(selection.tournamentData, currentField);
   if (modelError) {
     console.warn(`[pga-best-bets] Skipping generation: ${modelError}. Checked ${selection.source} against official current-field.json (${currentField.tournament}).`);
     return;
   }
 
   console.log(`[pga-best-bets] Using ${selection.source} for ${currentField.tournament}.`);
+
+  // Coverage diagnostics. An unexplained gap must never stay invisible: if the
+  // counts disagree, the artifact would understate how much of the field is
+  // unmodeled, so fail rather than publish a misleading disclosure.
+  if (fieldCoverage.fieldCount - fieldCoverage.modeledCount !== fieldCoverage.unmodeledPlayers.length) {
+    throw new Error(
+      `Field-coverage diagnostics are inconsistent: ${fieldCoverage.fieldCount} official entrants minus ` +
+        `${fieldCoverage.modeledCount} modeled should equal ${fieldCoverage.unmodeledPlayers.length} named unmodeled players.`,
+    );
+  }
+  console.log(
+    `::notice title=PGA field coverage::${fieldCoverage.modeledCount} of ${fieldCoverage.fieldCount} official entrants modeled (${fieldCoverage.coveragePct}%); ${fieldCoverage.unmodeledCount} unmodeled.`,
+  );
+  if (fieldCoverage.coveragePct < 95) {
+    console.warn(
+      `::warning title=PGA field coverage below 95%::${fieldCoverage.unmodeledCount} official entrants have no current statistics and cannot be modeled or recommended: ${fieldCoverage.unmodeledPlayers.join(", ")}.`,
+    );
+  }
+
   const summary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 25);
   const previewSummary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 20);
   const tournamentName = tournamentData.tournamentName;
@@ -1116,45 +1222,6 @@ async function main() {
   // Fetch odds first -- skipped entirely in dry-run (never trigger a rate-limited/paid external call during development).
   const oddsLookup = DRY_RUN ? {} : await fetchOdds(oddsApiKey, tournamentName);
   if (DRY_RUN) console.log("[pga-best-bets] dry-run: skipping live odds fetch.");
-
-  // ── Value filtering + re-ranking ─────────────────────────────────────────────
-  // Convert American odds string to implied probability
-  function toImplied(oddsStr) {
-    if (!oddsStr) return null;
-    const n = parseFloat(String(oddsStr).replace("+", ""));
-    if (!Number.isFinite(n)) return null;
-    return n > 0 ? 100 / (n + 100) : Math.abs(n) / (Math.abs(n) + 100);
-  }
-
-  // Model probability proxy: exponential decay over field rank
-  // Rank 1 gets ~100 units, rank 70 gets ~7 units (relative, not absolute %)
-  function modelProxyScore(rank) {
-    return Math.exp(-0.065 * (rank - 1)) * 100;
-  }
-
-  // Value edge: how much does model think player is better than market implies?
-  // Edge > 1.0 = model likes player MORE than market → value bet
-  function computeValueEdge(tournamentRank, oddsStr) {
-    const implied = toImplied(oddsStr);
-    if (implied == null || implied <= 0) return -1;
-    const modelProb = modelProxyScore(tournamentRank);
-    return modelProb / implied;
-  }
-
-  // Filter picks to only those with odds for the relevant market, then sort by value
-  function filterByValueAndOdds(picks, marketKey) {
-    return picks
-      .map((p) => {
-        const odds = p.odds?.[marketKey] ?? p.odds?.outright ?? null;
-        if (!odds) return null;
-        const edge = computeValueEdge(p.tournamentRank, odds);
-        return { ...p, _edge: edge };
-      })
-      .filter(Boolean)
-      .sort((a, b) => b._edge - a._edge)
-      // eslint-disable-next-line no-unused-vars
-      .map(({ _edge, ...pick }) => pick);
-  }
 
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
@@ -1280,6 +1347,9 @@ async function main() {
     // Observed provider outcome, recorded at the source. The safe runner
     // prefers this over inferring Grok health from published pick counts.
     sourceStatus: { grok: grokStatus },
+    // Official-field coverage, so the page can disclose unmodeled entrants
+    // without fetching current-tournament.json for a second time.
+    fieldCoverage,
     methodologyNotes: [
       "Picks are generated from a course-weighted strokes-gained model, cross-checked against the official PGA TOUR field.",
       isPostOpen

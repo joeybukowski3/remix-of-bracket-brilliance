@@ -12,6 +12,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { isLowerBetterMetric } from "@/lib/pga/metricDirection";
 
 export type PgaScheduleFeedEntry = {
   id: string;
@@ -110,7 +111,6 @@ export const CUSTOM_WEIGHT_CONTROLS = [
 ] as const;
 
 type StatKey = (typeof CUSTOM_WEIGHT_CONTROLS)[number]["key"];
-const LOWER_IS_BETTER_STATS = new Set(["trendrank", "bogeyavoidance", "bog", "bogey avoidance"]);
 
 const DEFAULT_CUSTOM_WEIGHT_BASE: CourseWeightSet = {
   sgTotal: 0,
@@ -148,7 +148,7 @@ function isValidPlayerStatsData(value: unknown): value is RawPlayerStat[] {
 }
 
 function isLowerBetterStat(statKey: string) {
-  return LOWER_IS_BETTER_STATS.has(statKey.toLowerCase());
+  return isLowerBetterMetric(statKey);
 }
 
 export function normalizeEventKey(value: string) {

@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import PgaFreshnessStatusPanel, { type PgaFreshnessStatusPanelItem } from "@/components/pga/PgaFreshnessStatusPanel";
-import PgaHistoryModelTable from "@/components/pga/PgaHistoryModelTable";
+import PgaHistoryModelTable, { type PgaRankMode } from "@/components/pga/PgaHistoryModelTable";
 import PgaLatestArticlesCard from "@/components/pga/PgaLatestArticlesCard";
 import PgaPlayerHistoryRefreshNotice from "@/components/pga/PgaPlayerHistoryRefreshNotice";
 import PgaScheduleSidebarCard from "@/components/pga/PgaScheduleSidebarCard";
+import PgaFieldCoverageNote from "@/components/pga/PgaFieldCoverageNote";
 import {
   findCourseWeightEntry,
   getCurrentAndNextEvents,
@@ -15,6 +16,7 @@ import {
 import { usePgaPlayerHistory } from "@/hooks/usePgaPlayerHistory";
 import { assessPgaFreshness, type PgaFreshnessResult } from "@/lib/pga/pgaFreshness";
 import {
+  assignFieldRanks,
   buildCourseFitWeights,
   buildMetricPercentiles,
   calculateCourseFit,
@@ -29,6 +31,7 @@ import {
   selectSpecificMajorHistory,
   type PgaTournamentModelRow,
 } from "@/lib/pga/historyModel";
+import { isLowerBetterMetric } from "@/lib/pga/metricDirection";
 import { SPORTSBOOKS } from "@/lib/sportsbooks";
 
 const BASE_WEIGHTS = { sgTotal: .55, sgApp: .12, sgPutt: .06, sgAtG: .10, sgOTT: .07, drivingAccuracy: .05, bogeyAvoidance: .05 };
@@ -168,6 +171,35 @@ export default function PgaHistoryModel() {
     [currentField, fieldUsable],
   );
 
+  /**
+   * Official entrants with no statistics row. They are absent from every
+   * ranking and can never be recommended, which nothing on the site disclosed.
+   * Derived from the field and the loaded stats rather than fetched separately.
+   */
+  const fieldCoverage = useMemo(() => {
+    if (!fieldUsable || !currentField?.players?.length || !playerStats.length) return null;
+    const modeled = new Set(playerStats.map((player) => normalizePlayerKey(player.player)));
+    const unmodeledPlayers = currentField.players
+      .filter((player) => !modeled.has(normalizePlayerKey(player)))
+      .sort((left, right) => left.localeCompare(right));
+    const fieldCount = currentField.players.length;
+    return {
+      fieldCount,
+      modeledCount: fieldCount - unmodeledPlayers.length,
+      unmodeledCount: unmodeledPlayers.length,
+      coveragePct: Number((((fieldCount - unmodeledPlayers.length) / fieldCount) * 100).toFixed(1)),
+      unmodeledPlayers,
+      reason: "no current statistics available for these official entrants",
+    };
+  }, [currentField, fieldUsable, playerStats]);
+
+  /**
+   * Which rank the table should lead with. Derived from the same condition that
+   * gates field filtering below, so the column's meaning always matches the rows
+   * on screen: field-only shows field ranks, all-players shows tour ranks.
+   */
+  const rankMode: PgaRankMode = fieldOnly && fieldUsable && fieldSet.size > 0 ? "field" : "tour";
+
   const modelRows = useMemo(() => {
     const merged = playerStats.map((player) => {
       const key = normalizePlayerKey(player.player);
@@ -218,6 +250,7 @@ export default function PgaHistoryModel() {
         baseScore,
         modelScore,
         modelRank: 0,
+        fieldRank: null,
         recentResults,
         eventResults,
         specificMajorResults,
@@ -232,10 +265,15 @@ export default function PgaHistoryModel() {
       } satisfies PgaTournamentModelRow;
     });
 
-    return rows
+    const ranked = rows
       .sort((a, b) => b.modelScore - a.modelScore || a.player.localeCompare(b.player))
       .map((row, index) => ({ ...row, modelRank: index + 1 }));
-  }, [playerStats, playerHistoryMap, majorHistoryMap, activeWeights, eventSlug, eventName, event, majorType, isMajor]);
+
+    // Tour rank spans every player with stats; field rank renumbers only this
+    // week's entrants so the strongest player in the field reads as #1 rather
+    // than inheriting a tour number. Display only -- modelScore is untouched.
+    return assignFieldRanks(ranked, fieldUsable ? fieldSet : new Set<string>());
+  }, [playerStats, playerHistoryMap, majorHistoryMap, activeWeights, eventSlug, eventName, event, majorType, isMajor, fieldSet, fieldUsable]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -267,6 +305,7 @@ export default function PgaHistoryModel() {
             warningTitle="PGA data freshness warning"
             cleanMessage={`Field and player-stat metadata are within freshness checks for ${eventName}.`}
           />
+          <PgaFieldCoverageNote coverage={fieldCoverage} className="mb-3 rounded-xl border bg-white p-3 shadow-sm" />
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border bg-white p-3 shadow-sm">
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search player..." className="min-w-52 flex-1 rounded-lg border px-3 py-2 text-sm" />
             <button
@@ -296,7 +335,7 @@ export default function PgaHistoryModel() {
             <div className="py-16 text-center text-sm text-slate-400">Loading tournament model…</div>
           ) : (
             <>
-              <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} />
+              <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} rankMode={rankMode} />
               <PgaPlayerHistoryRefreshNotice lastRefresh={playerHistory?.lastRefresh} />
             </>
           )}
@@ -337,7 +376,7 @@ function buildBaseScores(players: Array<RawPlayerStat & { drivingDistance: numbe
     metrics.forEach((key) => {
       const value = Number(player[key]); const range = ranges.get(key); const metricWeight = BASE_WEIGHTS[key];
       if (!Number.isFinite(value) || !range || range.max === range.min) return;
-      const percentile = key === "bogeyAvoidance" ? ((range.max - value) / (range.max - range.min)) * 100 : ((value - range.min) / (range.max - range.min)) * 100;
+      const percentile = isLowerBetterMetric(key) ? ((range.max - value) / (range.max - range.min)) * 100 : ((value - range.min) / (range.max - range.min)) * 100;
       total += percentile * metricWeight; weight += metricWeight;
     });
     return [normalizePlayerKey(player.player), weight ? total / weight : 50];

@@ -16,7 +16,12 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { selectLocalTarget } from "./lib/pga-field-selection.mjs";
+import {
+  assertMetricDirectionsDeclared,
+  isLowerBetterMetric,
+} from "./lib/pga-metric-direction.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "pga");
@@ -24,7 +29,7 @@ const DATA_DIR = path.join(ROOT, "public", "data", "pga");
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 // Season-long power ranking weights (from PgaHub.tsx)
-const PR_WEIGHTS = {
+export const PR_WEIGHTS = {
   sgTotal: 0.55,
   sgApp: 0.09,
   sgPutt: 0.04,
@@ -37,7 +42,7 @@ const PR_WEIGHTS = {
 };
 
 // Stat keys (in order, matching PgaHubShared)
-const STAT_KEYS = [
+export const STAT_KEYS = [
   "sgTotal",
   "sgOTT",
   "sgApp",
@@ -49,11 +54,14 @@ const STAT_KEYS = [
   "birdieBogeyRatio",
 ];
 
-// Stats where lower is better (lower rank = better)
-const LOWER_IS_BETTER_STATS = new Set(["trendrank"]);
-
+/**
+ * Direction comes from scripts/lib/pga-metric-direction.mjs -- the single
+ * authoritative map. A private copy here previously omitted bogeyAvoidance,
+ * so a 0.14-weighted bogey RATE was normalized higher-is-better and shipped
+ * inverted Power Rankings to production. Never reintroduce a local set.
+ */
 function isLowerBetterStat(statKey) {
-  return LOWER_IS_BETTER_STATS.has(statKey.toLowerCase());
+  return isLowerBetterMetric(statKey);
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -78,7 +86,7 @@ function normalizeEventKey(value) {
     .trim();
 }
 
-function findCourseWeights(courseWeights, tournamentName, courseName) {
+export function findCourseWeights(courseWeights, tournamentName, courseName) {
   const tournamentKey = normalizeEventKey(tournamentName);
   const courseKey = normalizeEventKey(courseName);
 
@@ -105,11 +113,53 @@ function findCourseWeights(courseWeights, tournamentName, courseName) {
 }
 
 /**
- * Rank players using a specific weight set.
- * Mirrors the logic from PgaHubShared.rankPlayers()
+ * Reject any positively weighted metric this ranker cannot actually score.
+ *
+ * Weights arrive from course-weights.json, which is edited independently of
+ * STAT_KEYS. Previously only the intersection of the two was checked, so a
+ * weight on a key absent from STAT_KEYS -- the realistic way a new metric gets
+ * introduced -- was silently dropped: no error, no warning, and the remaining
+ * weights quietly renormalized around it.
+ *
+ * Two distinct failures are reported separately so the fix is obvious:
+ *   - weighted but not a ranking metric  -> add it to STAT_KEYS (and declare it)
+ *   - weighted metric with no direction  -> declare it in the shared map
+ *
+ * Zero-weight keys are ignored: PR_WEIGHTS deliberately carries sgOTT and
+ * drivingAccuracy at 0, and those must stay harmless.
  */
-function rankPlayers(players, weights) {
+export function assertSupportedWeightedMetrics(weights, context = "PGA ranker") {
+  const weighted = Object.keys(weights ?? {}).filter((key) => (weights[key] ?? 0) > 0);
+
+  const unsupported = weighted.filter((key) => !STAT_KEYS.includes(key));
+  if (unsupported.length > 0) {
+    throw new Error(
+      `Unsupported weighted PGA metric(s) ${unsupported.map((k) => `"${k}"`).join(", ")} in ${context}. ` +
+        "The metric carries a positive weight but is not a supported ranking metric, so it would be " +
+        "silently ignored. Add it to STAT_KEYS and declare its direction in " +
+        "scripts/lib/pga-metric-direction.mjs, or remove the weight.",
+    );
+  }
+
+  // Supported metrics must still have a declared direction.
+  assertMetricDirectionsDeclared(weighted, context);
+}
+
+/**
+ * Rank players using a specific weight set.
+ *
+ * Min-max normalization per stat, then a weighted mean over whichever stats a
+ * player actually has. Direction is resolved through the shared metric map, so
+ * this and PgaHubShared.rankPlayers() cannot silently disagree again -- they
+ * did, on bogeyAvoidance, until the direction map was centralized.
+ *
+ * Every stat carrying non-zero weight must have a declared direction; an
+ * undeclared one throws rather than defaulting to higher-is-better.
+ */
+export function rankPlayers(players, weights) {
   if (!players || !players.length) return [];
+
+  assertSupportedWeightedMetrics(weights, "generate-pga-tournament-rankings");
 
   // Calculate ranges for each stat
   const ranges = {};
@@ -120,6 +170,17 @@ function rankPlayers(players, weights) {
     if (values.length > 0) {
       ranges[key] = { min: Math.min(...values), max: Math.max(...values) };
     }
+  });
+
+  // A weighted stat with no usable values contributes nothing and its weight is
+  // silently redistributed by the availableWeightTotal renormalization below.
+  // trendRank has been null for the entire field all season this way. Warn so a
+  // dead factor is visible, but do NOT fail: this is a data-supply problem, not
+  // a correctness defect, and must not break scheduled generation.
+  STAT_KEYS.filter((key) => (weights?.[key] ?? 0) > 0 && !ranges[key]).forEach((key) => {
+    console.warn(
+      `   ⚠ ${key} carries weight ${weights[key]} but has no usable values for any player; its weight is being redistributed.`,
+    );
   });
 
   // Score each player
@@ -393,7 +454,14 @@ async function main() {
   console.log("\n✅ Tournament rankings generated successfully!\n");
 }
 
-main().catch((error) => {
-  console.error("\n❌ Error generating tournament rankings:", error.message);
-  process.exit(1);
-});
+// Matches the direct-run pattern already used by generate-pga-best-bets.mjs and
+// run-pga-best-bets-safe.mjs, so tests can import rankPlayers without the module
+// generating and overwriting artifacts as a side effect of being imported.
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main().catch((error) => {
+    console.error("\n❌ Error generating tournament rankings:", error.message);
+    process.exit(1);
+  });
+}
