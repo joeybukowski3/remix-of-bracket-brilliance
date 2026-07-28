@@ -11,10 +11,11 @@ import {
   getGameCount,
   getPropEdgeTier,
   ModelSummaryHeader,
-  PropScoreBadge,
   TeamLogoText,
 } from "@/components/mlb/MlbPropModelComponents";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
+import { PercentileCell } from "@/components/mlb/MlbPercentileScoreCell";
+import { buildPercentileLookup, lookupPercentile } from "@/lib/mlb/percentileColorScale";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import {
   buildParkSidebarRows,
@@ -371,6 +372,9 @@ export default function MlbStrikeoutProps() {
     return { mainRows: main, lowConfidenceRows: lowConfidence };
   }, [strikeoutDetailRows]);
 
+  /** Player Score percentile lookup for the main table -- ranked rows only (excludes Low Confidence), so the shared 8-tier scale stays stable while the user searches, filters, or sorts. Same scale as Batter vs. Pitcher's Matchup Score. */
+  const kScorePercentileLookup = useMemo(() => buildPercentileLookup(mainRows.map((row) => row.strikeoutMatchupScore)), [mainRows]);
+
   const parkRows = useMemo(() => [...buildParkSidebarRows(games)].sort((a, b) => a.parkFactor - b.parkFactor), [games]);
   const teams = useMemo(() => Array.from(new Set(strikeoutDetailRows.flatMap((row) => [row.team, row.opponent]))).sort(), [strikeoutDetailRows]);
   const gameOptions = useMemo(() => games.map((game) => ({ value: game.gameKey, label: game.matchup })), [games]);
@@ -569,7 +573,13 @@ export default function MlbStrikeoutProps() {
                                     {hasPostedOdds && <span className="ml-1 text-slate-400">O {row.kOddsOver ?? DASH} · U {row.kOddsUnder ?? DASH}</span>}
                                   </span>
                                 )}
-                                <PropScoreBadge score={row.strikeoutMatchupScore} />
+                                <PercentileCell
+                                  value={row.strikeoutMatchupScore}
+                                  display={row.strikeoutMatchupScore.toFixed(1)}
+                                  percentile={lookupPercentile(row.strikeoutMatchupScore, kScorePercentileLookup)}
+                                  strong
+                                  bypassSampleGate
+                                />
                               </div>
                             </div>
                             <span className="pl-[18px] text-[9px] font-bold uppercase tracking-wide text-sky-700">
@@ -595,7 +605,15 @@ export default function MlbStrikeoutProps() {
                                       </span>
                                     </MetricTile>
                                   )}
-                                  <MetricTile label="K Score"><StatScorePill value={row.strikeoutMatchupScore} /></MetricTile>
+                                  <MetricTile label="K Score">
+                                    <PercentileCell
+                                      value={row.strikeoutMatchupScore}
+                                      display={row.strikeoutMatchupScore.toFixed(1)}
+                                      percentile={lookupPercentile(row.strikeoutMatchupScore, kScorePercentileLookup)}
+                                      strong
+                                      bypassSampleGate
+                                    />
+                                  </MetricTile>
                                   <MetricTile label="K%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.pitcherKRate)}%</span></MetricTile>
                                   <MetricTile label="Whiff%"><span className="text-[11px] font-semibold text-slate-700">{fmt(row.pitcherWhiffRate)}%</span></MetricTile>
                                   <MetricTile label="K VS"><StatScorePill value={row.pitcherKVs} /></MetricTile>
@@ -678,7 +696,15 @@ export default function MlbStrikeoutProps() {
                           </span>
                         </td>
                       )}
-                      <td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.strikeoutMatchupScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKVs} /></td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKSkillScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.opponentTeamStrikeoutScore} /></td><td className="hidden border-b border-slate-100 px-2 py-1 font-semibold xl:table-cell">{fmt(row.projectedK9)}</td><td className="hidden border-b border-slate-100 px-2 py-1 font-semibold xl:table-cell">{fmt(row.projectedIP)}</td>
+                      <td className="border-b border-slate-100 px-2 py-1">
+                        <PercentileCell
+                          value={row.strikeoutMatchupScore}
+                          display={row.strikeoutMatchupScore.toFixed(1)}
+                          percentile={lookupPercentile(row.strikeoutMatchupScore, kScorePercentileLookup)}
+                          strong
+                          bypassSampleGate
+                        />
+                      </td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.pitcherWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKVs} /></td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.pitcherKSkillScore} /></td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamKRate)}%</td><td className="border-b border-slate-100 px-2 py-1">{fmt(row.opponentTeamWhiffRate)}%</td><td className="border-b border-slate-100 px-2 py-1"><StatScorePill value={row.opponentTeamStrikeoutScore} /></td><td className="hidden border-b border-slate-100 px-2 py-1 font-semibold xl:table-cell">{fmt(row.projectedK9)}</td><td className="hidden border-b border-slate-100 px-2 py-1 font-semibold xl:table-cell">{fmt(row.projectedIP)}</td>
                       </tr>
                       {showKProjectionV2Debug && (
                         <tr>
