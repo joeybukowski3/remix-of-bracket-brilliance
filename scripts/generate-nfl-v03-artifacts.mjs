@@ -26,13 +26,20 @@ import { validateNflWeeklySourceCache } from "./validate-nfl-weekly-source-cache
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_INPUT_DIR = join(ROOT, "public", "data", "nfl");
 const DEFAULT_OUTPUT_DIR = DEFAULT_INPUT_DIR;
-const WEEKLY_CACHE_DIR = join(ROOT, "data", "nfl", "nflverse", "stats-team-week");
+const DEFAULT_WEEKLY_CACHE_DIR = join(
+  ROOT,
+  "data",
+  "nfl",
+  "nflverse",
+  "stats-team-week"
+);
 
 export function parseArgs(argv) {
   const args = {
     dryRun: false,
     inputDir: DEFAULT_INPUT_DIR,
     outputDir: DEFAULT_OUTPUT_DIR,
+    weeklyCacheDir: DEFAULT_WEEKLY_CACHE_DIR,
     generatedAt: null,
   };
   for (const arg of argv) {
@@ -41,6 +48,8 @@ export function parseArgs(argv) {
       args.inputDir = resolve(arg.slice("--input-dir=".length));
     } else if (arg.startsWith("--output-dir=")) {
       args.outputDir = resolve(arg.slice("--output-dir=".length));
+    } else if (arg.startsWith("--weekly-cache-dir=")) {
+      args.weeklyCacheDir = resolve(arg.slice("--weekly-cache-dir=".length));
     } else if (arg.startsWith("--generated-at=")) {
       args.generatedAt = arg.slice("--generated-at=".length);
     } else {
@@ -71,7 +80,11 @@ function existingPaths() {
   ];
 }
 
-export function loadNflV03Inputs({ inputDir, outputDir }) {
+export function loadNflV03Inputs({
+  inputDir,
+  outputDir,
+  weeklyCacheDir = DEFAULT_WEEKLY_CACHE_DIR,
+}) {
   const teamsJson = readJson(join(inputDir, "teams.json"));
   const seasonInputs = {};
   for (const season of NFL_V03_PERFORMANCE_SEASONS) {
@@ -79,7 +92,7 @@ export function loadNflV03Inputs({ inputDir, outputDir }) {
       games: readJson(join(inputDir, String(season), "games.json")).games,
       results: readJson(join(inputDir, String(season), "results.json")).results,
       weeklyCsvText: NFL_V03_SOURCE_SEASONS.includes(season)
-        ? readFileSync(join(WEEKLY_CACHE_DIR, `stats_team_week_${season}.csv`), "utf8")
+        ? readFileSync(join(weeklyCacheDir, `stats_team_week_${season}.csv`), "utf8")
         : null,
     };
   }
@@ -121,7 +134,9 @@ export function runNflV03ArtifactCli(args, log = console.log) {
   const inputs = loadNflV03Inputs(args);
   const generatedAt = args.generatedAt ?? new Date().toISOString();
   const artifacts = buildNflV03ArtifactSet({ ...inputs, generatedAt });
-  const written = writeNflV03Artifacts(artifacts, args.outputDir, { dryRun: args.dryRun });
+  const written = writeNflV03Artifacts(artifacts, args.outputDir, {
+    dryRun: args.dryRun,
+  });
   for (const summary of artifactSummary(artifacts)) {
     log(
       `[nfl:v03-artifacts] ${summary.path}: ${summary.count} rows${args.dryRun ? " (dry-run)" : ""}`
@@ -133,7 +148,8 @@ export function runNflV03ArtifactCli(args, log = console.log) {
   return { artifacts, written, cacheValidation };
 }
 
-const isCli = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+const isCli =
+  process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 
 if (isCli) {
   try {
