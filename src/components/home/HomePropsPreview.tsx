@@ -12,6 +12,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { usePgaPlayerHistory } from "@/hooks/usePgaPlayerHistory";
+import { isLowerBetterMetric } from "@/lib/pga/metricDirection";
 import { TeamLogoBadge, type HrDashboardBatter, type PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
 import {
   findCourseWeightEntry,
@@ -68,7 +69,7 @@ function buildBaseScores(players: Array<RawPlayerStat & { drivingDistance: numbe
     metrics.forEach((key) => {
       const value = Number(player[key]); const range = ranges.get(key); const metricWeight = BASE_WEIGHTS[key];
       if (!Number.isFinite(value) || !range || range.max === range.min) return;
-      const percentile = key === "bogeyAvoidance"
+      const percentile = isLowerBetterMetric(key)
         ? ((range.max - value) / (range.max - range.min)) * 100
         : ((value - range.min) / (range.max - range.min)) * 100;
       total += percentile * metricWeight; weight += metricWeight;

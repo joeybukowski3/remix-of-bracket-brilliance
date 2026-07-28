@@ -31,6 +31,7 @@ import {
   selectSpecificMajorHistory,
   type PgaTournamentModelRow,
 } from "@/lib/pga/historyModel";
+import { isLowerBetterMetric } from "@/lib/pga/metricDirection";
 import { SPORTSBOOKS } from "@/lib/sportsbooks";
 
 const BASE_WEIGHTS = { sgTotal: .55, sgApp: .12, sgPutt: .06, sgAtG: .10, sgOTT: .07, drivingAccuracy: .05, bogeyAvoidance: .05 };
@@ -368,7 +369,7 @@ function buildBaseScores(players: Array<RawPlayerStat & { drivingDistance: numbe
     metrics.forEach((key) => {
       const value = Number(player[key]); const range = ranges.get(key); const metricWeight = BASE_WEIGHTS[key];
       if (!Number.isFinite(value) || !range || range.max === range.min) return;
-      const percentile = key === "bogeyAvoidance" ? ((range.max - value) / (range.max - range.min)) * 100 : ((value - range.min) / (range.max - range.min)) * 100;
+      const percentile = isLowerBetterMetric(key) ? ((range.max - value) / (range.max - range.min)) * 100 : ((value - range.min) / (range.max - range.min)) * 100;
       total += percentile * metricWeight; weight += metricWeight;
     });
     return [normalizePlayerKey(player.player), weight ? total / weight : 50];
