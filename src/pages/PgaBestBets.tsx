@@ -10,6 +10,7 @@ import { assessPgaFreshness } from "@/lib/pga/pgaFreshness";
 import { ACTIVE_PGA_MODEL_TOURNAMENT } from "@/lib/pga/tournaments";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { marketOddsFor } from "@/lib/pga/marketOdds";
+import PgaFieldCoverageNote, { type PgaFieldCoverage } from "@/components/pga/PgaFieldCoverageNote";
 
 type BestBetPick = {
   player: string;
@@ -61,6 +62,7 @@ type BestBetsPayload = {
   article?: Article | null;
   methodologyNotes?: string[];
   dataLimitations?: string[];
+  fieldCoverage?: PgaFieldCoverage | null;
 };
 
 const EMPTY_MESSAGE = "No current card available";
@@ -336,10 +338,11 @@ function ArticleView({ article }: { article: Article }) {
   );
 }
 
-function DataNotesFooter({ methodologyNotes, dataLimitations, generatedAt }: { methodologyNotes: string[]; dataLimitations: string[]; generatedAt?: string }) {
-  if (!methodologyNotes.length && !dataLimitations.length) return null;
+function DataNotesFooter({ methodologyNotes, dataLimitations, generatedAt, fieldCoverage }: { methodologyNotes: string[]; dataLimitations: string[]; generatedAt?: string; fieldCoverage?: PgaFieldCoverage | null }) {
+  if (!methodologyNotes.length && !dataLimitations.length && !fieldCoverage) return null;
   return (
     <section className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs leading-6 text-gray-600">
+      <PgaFieldCoverageNote coverage={fieldCoverage} className="mb-1.5" />
       {methodologyNotes.length ? (
         <div>
           <span className="font-semibold text-gray-700">Methodology: </span>
@@ -586,6 +589,7 @@ export default function PgaBestBets() {
                 methodologyNotes={data?.methodologyNotes ?? []}
                 dataLimitations={data?.dataLimitations ?? []}
                 generatedAt={data?.generatedAt}
+                fieldCoverage={data?.fieldCoverage ?? null}
               />
             </>
           )}

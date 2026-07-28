@@ -6,6 +6,7 @@ import PgaHistoryModelTable from "@/components/pga/PgaHistoryModelTable";
 import PgaLatestArticlesCard from "@/components/pga/PgaLatestArticlesCard";
 import PgaPlayerHistoryRefreshNotice from "@/components/pga/PgaPlayerHistoryRefreshNotice";
 import PgaScheduleSidebarCard from "@/components/pga/PgaScheduleSidebarCard";
+import PgaFieldCoverageNote from "@/components/pga/PgaFieldCoverageNote";
 import {
   findCourseWeightEntry,
   getCurrentAndNextEvents,
@@ -169,6 +170,28 @@ export default function PgaHistoryModel() {
     [currentField, fieldUsable],
   );
 
+  /**
+   * Official entrants with no statistics row. They are absent from every
+   * ranking and can never be recommended, which nothing on the site disclosed.
+   * Derived from the field and the loaded stats rather than fetched separately.
+   */
+  const fieldCoverage = useMemo(() => {
+    if (!fieldUsable || !currentField?.players?.length || !playerStats.length) return null;
+    const modeled = new Set(playerStats.map((player) => normalizePlayerKey(player.player)));
+    const unmodeledPlayers = currentField.players
+      .filter((player) => !modeled.has(normalizePlayerKey(player)))
+      .sort((left, right) => left.localeCompare(right));
+    const fieldCount = currentField.players.length;
+    return {
+      fieldCount,
+      modeledCount: fieldCount - unmodeledPlayers.length,
+      unmodeledCount: unmodeledPlayers.length,
+      coveragePct: Number((((fieldCount - unmodeledPlayers.length) / fieldCount) * 100).toFixed(1)),
+      unmodeledPlayers,
+      reason: "no current statistics available for these official entrants",
+    };
+  }, [currentField, fieldUsable, playerStats]);
+
   const modelRows = useMemo(() => {
     const merged = playerStats.map((player) => {
       const key = normalizePlayerKey(player.player);
@@ -274,6 +297,7 @@ export default function PgaHistoryModel() {
             warningTitle="PGA data freshness warning"
             cleanMessage={`Field and player-stat metadata are within freshness checks for ${eventName}.`}
           />
+          <PgaFieldCoverageNote coverage={fieldCoverage} className="mb-3 rounded-xl border bg-white p-3 shadow-sm" />
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border bg-white p-3 shadow-sm">
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search player..." className="min-w-52 flex-1 rounded-lg border px-3 py-2 text-sm" />
             <button

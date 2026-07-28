@@ -804,15 +804,65 @@ export function pickTournamentData(currentField, currentTournament, nextTourname
   return { source, tournamentData };
 }
 
+/**
+ * Field coverage: how much of the OFFICIAL field the model actually contains.
+ *
+ * The denominator is the official field size, not the model's own row count.
+ * Dividing by tournamentData.rows.length asked "what share of my rows are in
+ * the field?", which is ~100% by construction once non-field rows are removed --
+ * so the gate below could never detect entrants missing from the model. At the
+ * Rocket Classic that reported 100% while 15 of 141 entrants (10.6%) had no
+ * statistics and were silently unpickable.
+ */
+export function computeFieldCoverage(tournamentData, currentField) {
+  const officialPlayers = new Map(
+    (currentField?.players ?? []).map((player) => [normalizeName(player), player]),
+  );
+  const modeledKeys = new Set(
+    (tournamentData?.rows ?? []).map((row) => normalizeName(row.player)),
+  );
+
+  const unmodeledPlayers = [...officialPlayers.entries()]
+    .filter(([key]) => !modeledKeys.has(key))
+    .map(([, player]) => player)
+    .sort((left, right) => left.localeCompare(right));
+
+  const fieldCount = officialPlayers.size;
+  const modeledCount = fieldCount - unmodeledPlayers.length;
+
+  return {
+    fieldCount,
+    modeledCount,
+    unmodeledCount: unmodeledPlayers.length,
+    coveragePct: fieldCount > 0 ? Number(((modeledCount / fieldCount) * 100).toFixed(1)) : 0,
+    unmodeledPlayers,
+    reason: "no current statistics available for these official entrants",
+  };
+}
+
+const MIN_FIELD_COVERAGE = 0.7;
+
 export function prepareTournamentModel(tournamentData, currentField) {
   if (!tournamentData?.rows?.length) return { model: null, reason: "matching tournament model has no rows" };
   const officialPlayers = new Set(currentField.players.map((player) => normalizeName(player)));
   const matchedRows = tournamentData.rows.filter((row) => officialPlayers.has(normalizeName(row.player)));
-  const coverage = matchedRows.length / tournamentData.rows.length;
-  if (coverage < 0.7) {
-    return { model: null, reason: `matching tournament model only contains ${(coverage * 100).toFixed(0)}% official-field players` };
+
+  const coverageDetail = computeFieldCoverage({ rows: matchedRows }, currentField);
+  const coverage = officialPlayers.size > 0 ? coverageDetail.modeledCount / officialPlayers.size : 0;
+  if (coverage < MIN_FIELD_COVERAGE) {
+    // Name the missing entrants so a blocked run is diagnosable without
+    // re-deriving the gap by hand.
+    const names = coverageDetail.unmodeledPlayers.slice(0, 10).join(", ");
+    const overflow = coverageDetail.unmodeledPlayers.length > 10
+      ? ` and ${coverageDetail.unmodeledPlayers.length - 10} more`
+      : "";
+    return {
+      model: null,
+      reason: `matching tournament model covers only ${(coverage * 100).toFixed(0)}% of the ${officialPlayers.size}-player official field; missing ${names}${overflow}`,
+    };
   }
-  return { model: { ...tournamentData, rows: matchedRows }, reason: null };
+
+  return { model: { ...tournamentData, rows: matchedRows }, coverage: coverageDetail, reason: null };
 }
 
 export function canGenerateBestBets({ currentField, tournamentData, apiKey }) {
@@ -1092,13 +1142,32 @@ async function main() {
     return;
   }
 
-  const { model: tournamentData, reason: modelError } = prepareTournamentModel(selection.tournamentData, currentField);
+  const { model: tournamentData, coverage: fieldCoverage, reason: modelError } = prepareTournamentModel(selection.tournamentData, currentField);
   if (modelError) {
     console.warn(`[pga-best-bets] Skipping generation: ${modelError}. Checked ${selection.source} against official current-field.json (${currentField.tournament}).`);
     return;
   }
 
   console.log(`[pga-best-bets] Using ${selection.source} for ${currentField.tournament}.`);
+
+  // Coverage diagnostics. An unexplained gap must never stay invisible: if the
+  // counts disagree, the artifact would understate how much of the field is
+  // unmodeled, so fail rather than publish a misleading disclosure.
+  if (fieldCoverage.fieldCount - fieldCoverage.modeledCount !== fieldCoverage.unmodeledPlayers.length) {
+    throw new Error(
+      `Field-coverage diagnostics are inconsistent: ${fieldCoverage.fieldCount} official entrants minus ` +
+        `${fieldCoverage.modeledCount} modeled should equal ${fieldCoverage.unmodeledPlayers.length} named unmodeled players.`,
+    );
+  }
+  console.log(
+    `::notice title=PGA field coverage::${fieldCoverage.modeledCount} of ${fieldCoverage.fieldCount} official entrants modeled (${fieldCoverage.coveragePct}%); ${fieldCoverage.unmodeledCount} unmodeled.`,
+  );
+  if (fieldCoverage.coveragePct < 95) {
+    console.warn(
+      `::warning title=PGA field coverage below 95%::${fieldCoverage.unmodeledCount} official entrants have no current statistics and cannot be modeled or recommended: ${fieldCoverage.unmodeledPlayers.join(", ")}.`,
+    );
+  }
+
   const summary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 25);
   const previewSummary = buildSummary(tournamentData, powerRankings, playerStats, courseWeights, 20);
   const tournamentName = tournamentData.tournamentName;
@@ -1278,6 +1347,9 @@ async function main() {
     // Observed provider outcome, recorded at the source. The safe runner
     // prefers this over inferring Grok health from published pick counts.
     sourceStatus: { grok: grokStatus },
+    // Official-field coverage, so the page can disclose unmodeled entrants
+    // without fetching current-tournament.json for a second time.
+    fieldCoverage,
     methodologyNotes: [
       "Picks are generated from a course-weighted strokes-gained model, cross-checked against the official PGA TOUR field.",
       isPostOpen
