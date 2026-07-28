@@ -1,0 +1,563 @@
+{
+  "_meta": {
+    "dataVersion": "fantasy-2026-v2",
+    "engineVersion": "16-0-engine-v8",
+    "generatedAt": "2026-07-28T09:59:22.835Z"
+  },
+  "partA_largeSampleMetrics": {
+    "methodology": "Auto-picked ('user') roster drafted via chooseAutoPick at slot 1, facing the same 11 CPU-strategy rosters from that draft each season, seed varied per season only.",
+    "uniqueDrafts": 100,
+    "seasonsPerRoster": 100,
+    "totalSeasonSeeds": 10000,
+    "averageRegularWins": 8.4961,
+    "regularSeasonRecordDistribution": {
+      "0-14": 0,
+      "1-13": 0,
+      "2-12": 0.0004,
+      "3-11": 0.0023,
+      "4-10": 0.0124,
+      "5-9": 0.0381,
+      "6-8": 0.0883,
+      "7-7": 0.149,
+      "8-6": 0.1976,
+      "9-5": 0.2154,
+      "10-4": 0.1605,
+      "11-3": 0.0904,
+      "12-2": 0.0368,
+      "13-1": 0.0081,
+      "14-0": 0.0007
+    },
+    "qualificationRate": 0.8362,
+    "qualificationRateConfidence95": [
+      0.82882,
+      0.84332
+    ],
+    "topTwoByeRate": 0.3663,
+    "topTwoByeRateConfidence95": [
+      0.35691,
+      0.37579
+    ],
+    "championshipRate": 0.1916,
+    "championshipRateConfidence95": [
+      0.18401,
+      0.19943
+    ],
+    "championshipRateGivenQualified": 0.22913,
+    "championshipRateGivenQualifiedConfidence95": [
+      0.22025,
+      0.23826
+    ],
+    "championshipRateGivenTopTwoBye": 0.2973,
+    "championshipRateGivenTopTwoByeConfidence95": [
+      0.28271,
+      0.31231
+    ],
+    "championshipRateSeedsThreeToSix": 0.17599,
+    "championshipRateSeedsThreeToSixConfidence95": [
+      0.16537,
+      0.18715
+    ],
+    "perfectSixteenZeroRate": 0.0004,
+    "perfectSixteenZeroRateConfidence95": [
+      0.00016,
+      0.00103
+    ],
+    "winlessZeroFourteenRate": 0,
+    "winlessZeroFourteenRateConfidence95": [
+      0,
+      0.00038
+    ],
+    "medianSecondPlaceRecord": "10-4",
+    "medianSecondPlaceWins": 10,
+    "medianSixthPlaceRecord": "7-7",
+    "medianSixthPlaceWins": 7,
+    "userTiebreakerUsageFrequency": 0.706
+  },
+  "partB_focalTeamSymmetryAudit": {
+    "methodology": "Every one of the 12 rosters from each draft is run as the focal ('user') team for many independent season seeds, via the identical simulateSeason entry point, lineup optimizer, player-scoring engine, bye rules, schedule rotation, synthetic standings, and playoff-opponent selection used in production. Roster identity/label (auto-pick vs each of the 9 CPU strategy profiles) is tracked so outcome differences can be attributed to roster construction rather than focal-role bias.",
+    "uniqueDrafts": 40,
+    "focalTeamsPerDraft": 12,
+    "seasonsPerFocalTeam": 50,
+    "totalFocalRuns": 480,
+    "totalSeasonSeeds": 24000,
+    "userDraftedRoster": {
+      "instances": 40,
+      "averageProjectedStrength": 121.967,
+      "averageWeeklyScore": 122.6098,
+      "averageWins": 8.5685,
+      "qualificationRate": 0.851,
+      "topTwoRate": 0.3895,
+      "championshipRate": 0.194
+    },
+    "meanCpuRoster": {
+      "instances": 440,
+      "averageProjectedStrength": 113.8713,
+      "averageWeeklyScore": 114.6003,
+      "averageWins": 6.8759,
+      "qualificationRate": 0.58882,
+      "topTwoRate": 0.13364,
+      "championshipRate": 0.06164
+    },
+    "strongestCpuRoster": {
+      "instances": 40,
+      "averageProjectedStrength": 119.2224,
+      "averageWeeklyScore": 119.9711,
+      "averageWins": 8.033,
+      "qualificationRate": 0.7875,
+      "topTwoRate": 0.274,
+      "championshipRate": 0.134
+    },
+    "weakestCpuRoster": {
+      "instances": 40,
+      "averageProjectedStrength": 108.7693,
+      "averageWeeklyScore": 109.5103,
+      "averageWins": 5.79,
+      "qualificationRate": 0.3835,
+      "topTwoRate": 0.048,
+      "championshipRate": 0.0195
+    },
+    "byCpuStrategyProfile": {
+      "balanced": {
+        "instances": 50,
+        "averageProjectedStrength": 114.6617,
+        "averageWeeklyScore": 115.4538,
+        "averageWins": 7.0716,
+        "qualificationRate": 0.6332,
+        "topTwoRate": 0.1436,
+        "championshipRate": 0.0632
+      },
+      "rb-heavy": {
+        "instances": 47,
+        "averageProjectedStrength": 114.3187,
+        "averageWeeklyScore": 115.0879,
+        "averageWins": 6.946,
+        "qualificationRate": 0.60128,
+        "topTwoRate": 0.14723,
+        "championshipRate": 0.06638
+      },
+      "wr-heavy": {
+        "instances": 48,
+        "averageProjectedStrength": 112.9087,
+        "averageWeeklyScore": 113.6754,
+        "averageWins": 6.6454,
+        "qualificationRate": 0.54708,
+        "topTwoRate": 0.10917,
+        "championshipRate": 0.05542
+      },
+      "early-qb": {
+        "instances": 46,
+        "averageProjectedStrength": 112.1716,
+        "averageWeeklyScore": 112.9871,
+        "averageWins": 6.5317,
+        "qualificationRate": 0.52783,
+        "topTwoRate": 0.10348,
+        "championshipRate": 0.04957
+      },
+      "elite-te": {
+        "instances": 53,
+        "averageProjectedStrength": 113.1072,
+        "averageWeeklyScore": 113.7214,
+        "averageWins": 6.6506,
+        "qualificationRate": 0.54377,
+        "topTwoRate": 0.1083,
+        "championshipRate": 0.04981
+      },
+      "best-player-available": {
+        "instances": 47,
+        "averageProjectedStrength": 114.7494,
+        "averageWeeklyScore": 115.3371,
+        "averageWins": 7.0638,
+        "qualificationRate": 0.62511,
+        "topTwoRate": 0.15787,
+        "championshipRate": 0.06809
+      },
+      "zero-rb": {
+        "instances": 52,
+        "averageProjectedStrength": 112.2607,
+        "averageWeeklyScore": 113.0461,
+        "averageWins": 6.5473,
+        "qualificationRate": 0.53115,
+        "topTwoRate": 0.10423,
+        "championshipRate": 0.04115
+      },
+      "late-qb": {
+        "instances": 49,
+        "averageProjectedStrength": 114.807,
+        "averageWeeklyScore": 115.6379,
+        "averageWins": 7.1612,
+        "qualificationRate": 0.63265,
+        "topTwoRate": 0.16163,
+        "championshipRate": 0.0702
+      },
+      "value-drafter": {
+        "instances": 48,
+        "averageProjectedStrength": 115.9748,
+        "averageWeeklyScore": 116.5778,
+        "averageWins": 7.2929,
+        "qualificationRate": 0.6625,
+        "topTwoRate": 0.17083,
+        "championshipRate": 0.09333
+      }
+    },
+    "strengthDecileControlledComparison": {
+      "1": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 109.007,
+          "averageWeeklyScore": 109.7645,
+          "averageWins": 5.8463,
+          "qualificationRate": 0.39208,
+          "topTwoRate": 0.04708,
+          "championshipRate": 0.01833
+        },
+        "userAutoPickOnly": {
+          "instances": 0,
+          "averageProjectedStrength": null,
+          "averageWeeklyScore": null,
+          "averageWins": null,
+          "qualificationRate": null,
+          "topTwoRate": null,
+          "championshipRate": null
+        },
+        "cpuStrategyOnly": {
+          "instances": 48,
+          "averageProjectedStrength": 109.007,
+          "averageWeeklyScore": 109.7645,
+          "averageWins": 5.8463,
+          "qualificationRate": 0.39208,
+          "topTwoRate": 0.04708,
+          "championshipRate": 0.01833
+        }
+      },
+      "2": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 111.0494,
+          "averageWeeklyScore": 111.9495,
+          "averageWins": 6.3233,
+          "qualificationRate": 0.48708,
+          "topTwoRate": 0.08125,
+          "championshipRate": 0.0375
+        },
+        "userAutoPickOnly": {
+          "instances": 0,
+          "averageProjectedStrength": null,
+          "averageWeeklyScore": null,
+          "averageWins": null,
+          "qualificationRate": null,
+          "topTwoRate": null,
+          "championshipRate": null
+        },
+        "cpuStrategyOnly": {
+          "instances": 48,
+          "averageProjectedStrength": 111.0494,
+          "averageWeeklyScore": 111.9495,
+          "averageWins": 6.3233,
+          "qualificationRate": 0.48708,
+          "topTwoRate": 0.08125,
+          "championshipRate": 0.0375
+        }
+      },
+      "3": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 112.0113,
+          "averageWeeklyScore": 112.5362,
+          "averageWins": 6.4175,
+          "qualificationRate": 0.50583,
+          "topTwoRate": 0.07792,
+          "championshipRate": 0.03458
+        },
+        "userAutoPickOnly": {
+          "instances": 0,
+          "averageProjectedStrength": null,
+          "averageWeeklyScore": null,
+          "averageWins": null,
+          "qualificationRate": null,
+          "topTwoRate": null,
+          "championshipRate": null
+        },
+        "cpuStrategyOnly": {
+          "instances": 48,
+          "averageProjectedStrength": 112.0113,
+          "averageWeeklyScore": 112.5362,
+          "averageWins": 6.4175,
+          "qualificationRate": 0.50583,
+          "topTwoRate": 0.07792,
+          "championshipRate": 0.03458
+        }
+      },
+      "4": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 112.7991,
+          "averageWeeklyScore": 113.7313,
+          "averageWins": 6.6971,
+          "qualificationRate": 0.5475,
+          "topTwoRate": 0.1175,
+          "championshipRate": 0.04167
+        },
+        "userAutoPickOnly": {
+          "instances": 0,
+          "averageProjectedStrength": null,
+          "averageWeeklyScore": null,
+          "averageWins": null,
+          "qualificationRate": null,
+          "topTwoRate": null,
+          "championshipRate": null
+        },
+        "cpuStrategyOnly": {
+          "instances": 48,
+          "averageProjectedStrength": 112.7991,
+          "averageWeeklyScore": 113.7313,
+          "averageWins": 6.6971,
+          "qualificationRate": 0.5475,
+          "topTwoRate": 0.1175,
+          "championshipRate": 0.04167
+        }
+      },
+      "5": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 113.6228,
+          "averageWeeklyScore": 114.1537,
+          "averageWins": 6.7646,
+          "qualificationRate": 0.56333,
+          "topTwoRate": 0.11208,
+          "championshipRate": 0.05583
+        },
+        "userAutoPickOnly": {
+          "instances": 0,
+          "averageProjectedStrength": null,
+          "averageWeeklyScore": null,
+          "averageWins": null,
+          "qualificationRate": null,
+          "topTwoRate": null,
+          "championshipRate": null
+        },
+        "cpuStrategyOnly": {
+          "instances": 48,
+          "averageProjectedStrength": 113.6228,
+          "averageWeeklyScore": 114.1537,
+          "averageWins": 6.7646,
+          "qualificationRate": 0.56333,
+          "topTwoRate": 0.11208,
+          "championshipRate": 0.05583
+        }
+      },
+      "6": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 114.452,
+          "averageWeeklyScore": 115.2138,
+          "averageWins": 7.0017,
+          "qualificationRate": 0.62792,
+          "topTwoRate": 0.12583,
+          "championshipRate": 0.05875
+        },
+        "userAutoPickOnly": {
+          "instances": 0,
+          "averageProjectedStrength": null,
+          "averageWeeklyScore": null,
+          "averageWins": null,
+          "qualificationRate": null,
+          "topTwoRate": null,
+          "championshipRate": null
+        },
+        "cpuStrategyOnly": {
+          "instances": 48,
+          "averageProjectedStrength": 114.452,
+          "averageWeeklyScore": 115.2138,
+          "averageWins": 7.0017,
+          "qualificationRate": 0.62792,
+          "topTwoRate": 0.12583,
+          "championshipRate": 0.05875
+        }
+      },
+      "7": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 115.4265,
+          "averageWeeklyScore": 116.064,
+          "averageWins": 7.2279,
+          "qualificationRate": 0.65917,
+          "topTwoRate": 0.16667,
+          "championshipRate": 0.07625
+        },
+        "userAutoPickOnly": {
+          "instances": 0,
+          "averageProjectedStrength": null,
+          "averageWeeklyScore": null,
+          "averageWins": null,
+          "qualificationRate": null,
+          "topTwoRate": null,
+          "championshipRate": null
+        },
+        "cpuStrategyOnly": {
+          "instances": 48,
+          "averageProjectedStrength": 115.4265,
+          "averageWeeklyScore": 116.064,
+          "averageWins": 7.2279,
+          "qualificationRate": 0.65917,
+          "topTwoRate": 0.16667,
+          "championshipRate": 0.07625
+        }
+      },
+      "8": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 116.8432,
+          "averageWeeklyScore": 117.6214,
+          "averageWins": 7.5204,
+          "qualificationRate": 0.71333,
+          "topTwoRate": 0.20333,
+          "championshipRate": 0.0925
+        },
+        "userAutoPickOnly": {
+          "instances": 1,
+          "averageProjectedStrength": 117.3549,
+          "averageWeeklyScore": 118.718,
+          "averageWins": 8.26,
+          "qualificationRate": 0.82,
+          "topTwoRate": 0.4,
+          "championshipRate": 0.24
+        },
+        "cpuStrategyOnly": {
+          "instances": 47,
+          "averageProjectedStrength": 116.8323,
+          "averageWeeklyScore": 117.598,
+          "averageWins": 7.5047,
+          "qualificationRate": 0.71106,
+          "topTwoRate": 0.19915,
+          "championshipRate": 0.08936
+        }
+      },
+      "9": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 118.3927,
+          "averageWeeklyScore": 119.1768,
+          "averageWins": 7.8487,
+          "qualificationRate": 0.76292,
+          "topTwoRate": 0.24708,
+          "championshipRate": 0.12625
+        },
+        "userAutoPickOnly": {
+          "instances": 2,
+          "averageProjectedStrength": 119.5611,
+          "averageWeeklyScore": 119.768,
+          "averageWins": 8.03,
+          "qualificationRate": 0.79,
+          "topTwoRate": 0.3,
+          "championshipRate": 0.11
+        },
+        "cpuStrategyOnly": {
+          "instances": 46,
+          "averageProjectedStrength": 118.3419,
+          "averageWeeklyScore": 119.1511,
+          "averageWins": 7.8409,
+          "qualificationRate": 0.76174,
+          "topTwoRate": 0.24478,
+          "championshipRate": 0.12696
+        }
+      },
+      "10": {
+        "all": {
+          "instances": 48,
+          "averageProjectedStrength": 121.8554,
+          "averageWeeklyScore": 122.4662,
+          "averageWins": 8.5217,
+          "qualificationRate": 0.8475,
+          "topTwoRate": 0.37083,
+          "championshipRate": 0.185
+        },
+        "userAutoPickOnly": {
+          "instances": 37,
+          "averageProjectedStrength": 122.2217,
+          "averageWeeklyScore": 122.8686,
+          "averageWins": 8.6059,
+          "qualificationRate": 0.85514,
+          "topTwoRate": 0.39405,
+          "championshipRate": 0.1973
+        },
+        "cpuStrategyOnly": {
+          "instances": 11,
+          "averageProjectedStrength": 120.6234,
+          "averageWeeklyScore": 121.1127,
+          "averageWins": 8.2382,
+          "qualificationRate": 0.82182,
+          "topTwoRate": 0.29273,
+          "championshipRate": 0.14364
+        }
+      }
+    }
+  },
+  "partC_cpuStandingsFormula": {
+    "formula": "winProbability = clamp(0.5 + zScore * winProbabilitySlope, minimumWeeklyWinProbability, maximumWeeklyWinProbability), where zScore = (rosterStrength - leagueMeanStrength) / leagueStandardDeviationStrength, computed across that draft's 11 CPU rosters. averageScore = rosterStrength + normal(0, averageScoreNoiseStandardDeviation). The user's own standing uses its REALIZED regularWins/regularLosses/averageWeeklyScore from the same simulated season and the same strength scale (rosterStrength is computed identically for the user and CPU rosters via computeRosterStrength).",
+    "config": {
+      "winProbabilitySlope": 0.12,
+      "minimumWeeklyWinProbability": 0.15,
+      "maximumWeeklyWinProbability": 0.85,
+      "averageScoreNoiseStandardDeviation": 4
+    },
+    "probabilityFloor": 0.15,
+    "probabilityCeiling": 0.85,
+    "leagueAverageReference": "Mean and standard deviation of that draft's own 11 CPU roster strengths (not a fixed global constant).",
+    "cpuRecordDistribution": {
+      "0-14": 79,
+      "1-13": 496,
+      "10-4": 4621,
+      "11-3": 2984,
+      "12-2": 1220,
+      "13-1": 391,
+      "14-0": 88,
+      "2-12": 1266,
+      "3-11": 2729,
+      "4-10": 3839,
+      "5-9": 6741,
+      "6-8": 7878,
+      "7-7": 7832,
+      "8-6": 8086,
+      "9-5": 6750
+    },
+    "playoffCutoffWinsDistribution": {
+      "mean": 7.0786,
+      "median": 7,
+      "min": 5,
+      "max": 10
+    },
+    "topTwoCutoffWinsDistribution": {
+      "mean": 9.7848,
+      "median": 10,
+      "min": 7,
+      "max": 14
+    },
+    "userTiebreakerImpact": 0.706
+  },
+  "partD_playoffValidation": {
+    "staticApproximationConfirmations": {
+      "playoffOpponentsSelectedByPrecomputedStrengthOnly": true,
+      "noOpponentSelectionInspectsRealizedUserScore": true,
+      "noStageMultiplierRemains": true,
+      "cpuPlayersUseSameScoringFunctionAsUser": true,
+      "allNineCpuStartersSummedExactlyOnce": true,
+      "cpuByeReplacementsFollowSameRules": true,
+      "evidenceSource": "Confirmed by src/features/sixteen-zero/tests/cpuOpponents.test.ts (10 tests, all passing) and by static review: OPPONENT_STAGE_SCORE_MULTIPLIERS / OPPONENT_STAGE_TIER_WEIGHTS / OPPONENT_SCORE_CALIBRATION were removed from the codebase in the prior pass and do not exist anywhere in src/ or scripts/."
+    },
+    "playoffSystemIsAnApproximation": "The production playoff system is NOT a full simulated bracket. Playoff opponents for weeks 15/16/17 are chosen once, per season, from a static precomputed roster-strength ranking (selectPlayoffOpponents): strongest CPU for week 17, next-strongest for week 16, an upper-middle CPU for week 15. It does not simulate the other 10 non-user playoff-bracket games, does not reseed based on simulated wildcard-round upsets, and always gives the user the same tier of opponent regardless of which other team would have actually advanced through the bracket.",
+    "fullBracketDeltaEstimate": {
+      "methodology": "For a subsample of Part A qualifying seasons, a full single-elimination 6-team bracket (seeds 1-6 from the same synthetic standings) was reconstructed and every non-user game was actually simulated (same lineup optimizer + scoring engine), including reseeding effects from wildcard-round upsets, instead of using the production static-strength opponent assignment. This is an audit-only estimate; production code was not changed.",
+      "qualifyingSeasonsSampled": 1250,
+      "userChampionshipRateUnderFullBracket": 0.2728,
+      "userChampionshipRateUnderFullBracketConfidence95": [
+        0.24883,
+        0.29816
+      ],
+      "userChampionshipRateUnderProductionApproximationSameSubset": 0.2392,
+      "userChampionshipRateUnderProductionApproximationSameSubsetConfidence95": [
+        0.21637,
+        0.26363
+      ]
+    }
+  }
+}

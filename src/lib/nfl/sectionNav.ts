@@ -92,6 +92,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         description: "Overall, offense and defense ratings for all 32 teams.",
         icon: "📈",
       },
+      {
+        to: "/16-0",
+        label: "16-0 Draft Game",
+        shortLabel: "16-0 Draft",
+        description: "Draft a 17-player fantasy roster and simulate the season. Can you go 16-0?",
+        icon: "🎮",
+        match: "prefix",
+      },
     ],
   },
   {

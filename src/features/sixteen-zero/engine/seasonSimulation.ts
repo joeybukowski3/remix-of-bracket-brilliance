@@ -1,0 +1,262 @@
+import type {
+  PlayoffResult,
+  ScheduleGame,
+  SeasonResult,
+  SimulationPlayer,
+} from "../types";
+import type { DefensePositionRanks } from "./lineupOptimizer";
+import {
+  getEmptyLineupSlots,
+  optimizeLineup,
+  optimizeProjectedStartingRoster,
+} from "./lineupOptimizer";
+import { buildPlayerTierMap, simulateLineupScore } from "./playerScoreSimulation";
+import { determinePlayoffQualification } from "./playoffQualification";
+import { computeRosterStrength, selectPlayoffOpponents } from "./rosterStrength";
+import { SeededRandom } from "./seededRandom";
+
+type SeasonSimulationInput = {
+  /** The user's completed 17-player drafted roster. */
+  roster: readonly SimulationPlayer[];
+  /** The user's draft slot (1-12). */
+  userSlot: number;
+  /** All 12 drafted rosters from the same draft, keyed by slot. */
+  allRosters: Record<number, readonly SimulationPlayer[]>;
+  playerUniverse: readonly SimulationPlayer[];
+  draftedPlayerIds: ReadonlySet<string>;
+  defenseRanks: DefensePositionRanks;
+  opponentNames: readonly string[];
+  seed: string;
+  overrides?: SeasonSimulationOverrides;
+};
+
+export type SeasonSimulationOverrides = {
+  regularOpponentScores?: readonly number[];
+  playoffOpponentScores?: Partial<Record<15 | 16 | 17, number>>;
+  qualification?: {
+    qualified: boolean;
+    seed: 1 | 2 | 3 | 4 | 5 | 6 | null;
+    hasBye: boolean;
+  };
+};
+
+function getGameResult(userRawScore: number, opponentRawScore: number): "W" | "L" {
+  return userRawScore >= opponentRawScore ? "W" : "L";
+}
+
+function overriddenScore(
+  override: number | undefined,
+  computed: { rawScore: number; roundedScore: number },
+) {
+  if (override === undefined) return computed;
+  if (!Number.isFinite(override) || override < 0) {
+    throw new Error("Opponent score overrides must be finite and non-negative.");
+  }
+  return {
+    rawScore: override,
+    roundedScore: Math.round(override * 10) / 10,
+  };
+}
+
+export function simulateSeason({
+  roster,
+  userSlot,
+  allRosters,
+  playerUniverse,
+  draftedPlayerIds,
+  defenseRanks,
+  opponentNames,
+  seed,
+  overrides,
+}: SeasonSimulationInput): SeasonResult {
+  if (opponentNames.length < 17) {
+    throw new Error("Season simulation requires at least 17 opponent names.");
+  }
+  if (draftedPlayerIds.size !== 204) {
+    throw new Error("Season simulation requires all 204 drafted player IDs.");
+  }
+  if (roster.some((player) => !draftedPlayerIds.has(player.id))) {
+    throw new Error("The user roster must be included in the completed draft.");
+  }
+
+  const cpuEntries = Object.entries(allRosters)
+    .map(([slot, cpuRoster]) => ({ slot: Number(slot), roster: cpuRoster }))
+    .filter((entry) => entry.slot !== userSlot);
+  if (cpuEntries.length !== 11) {
+    throw new Error(
+      "Season simulation requires exactly 11 drafted CPU rosters (all 12 league teams minus the user).",
+    );
+  }
+
+  const rootRandom = new SeededRandom(seed).fork("season");
+  const scheduleNames = rootRandom.fork("names").shuffle(opponentNames);
+  const tiers = buildPlayerTierMap(playerUniverse);
+  const temporaryReplacementPool = playerUniverse.filter(
+    (player) => player.active && !draftedPlayerIds.has(player.id),
+  );
+
+  const cpuRosterBySlot = new Map(cpuEntries.map((entry) => [entry.slot, entry.roster]));
+  const cpuStrengths = cpuEntries.map((entry) => ({
+    slot: entry.slot,
+    strength: computeRosterStrength(entry.roster, defenseRanks, temporaryReplacementPool),
+  }));
+  const playoffOpponents = selectPlayoffOpponents(cpuStrengths);
+  const regularSeasonRotation = rootRandom
+    .fork("opponent-rotation")
+    .shuffle(cpuEntries.map((entry) => entry.slot));
+
+  function simulateCpuLineupScore(slot: number, week: number, randomLabel: string) {
+    const cpuRoster = cpuRosterBySlot.get(slot)!;
+    const lineup = optimizeLineup(cpuRoster, week, defenseRanks, {
+      temporaryReplacementPool,
+    });
+    if (getEmptyLineupSlots(lineup).length > 0) {
+      throw new Error(`Unable to form a complete CPU lineup for Week ${week}.`);
+    }
+    return simulateLineupScore(lineup, week, defenseRanks, tiers, rootRandom.fork(randomLabel));
+  }
+
+  const schedule: ScheduleGame[] = [];
+  let regularWins = 0;
+
+  for (let week = 1; week <= 14; week += 1) {
+    const lineup = optimizeLineup(roster, week, defenseRanks, {
+      temporaryReplacementPool,
+    });
+    if (getEmptyLineupSlots(lineup).length > 0) {
+      throw new Error(`Unable to form a complete lineup for Week ${week}.`);
+    }
+    const userScore = simulateLineupScore(
+      lineup,
+      week,
+      defenseRanks,
+      tiers,
+      rootRandom.fork(`user-week-${week}`),
+    );
+    const opponentSlot = regularSeasonRotation[(week - 1) % regularSeasonRotation.length];
+    const computedOpponentScore = simulateCpuLineupScore(
+      opponentSlot,
+      week,
+      `opponent-week-${week}`,
+    );
+    const opponentScore = overriddenScore(
+      overrides?.regularOpponentScores?.[week - 1],
+      computedOpponentScore,
+    );
+    const result = getGameResult(userScore.rawScore, opponentScore.rawScore);
+    if (result === "W") regularWins += 1;
+    schedule.push({
+      fantasyWeek: week,
+      nflWeek: week,
+      opponentName: scheduleNames[week - 1],
+      userScore: userScore.roundedScore,
+      opponentScore: opponentScore.roundedScore,
+      result,
+    });
+  }
+
+  const regularLosses = 14 - regularWins;
+  const averageWeeklyScore =
+    Math.round(
+      (schedule.reduce((total, game) => total + (game.userScore ?? 0), 0) / 14) * 10,
+    ) / 10;
+  const qualification =
+    overrides?.qualification ??
+    determinePlayoffQualification({
+      userWins: regularWins,
+      userLosses: regularLosses,
+      userAverageScore: averageWeeklyScore,
+      cpuStrengths,
+      random: rootRandom.fork("playoff-qualification"),
+    });
+  if (
+    qualification.qualified !== (qualification.seed !== null) ||
+    qualification.hasBye !==
+      (qualification.seed !== null && qualification.seed <= 2)
+  ) {
+    throw new Error("Playoff qualification override is internally inconsistent.");
+  }
+
+  let playoffWins = 0;
+  let playoffLosses = 0;
+  let playoffResult: PlayoffResult = "Missed Playoffs";
+  let nextNameIndex = 14;
+
+  const playPlayoffGame = (week: 15 | 16 | 17, opponentSlot: number) => {
+    const lineup = optimizeLineup(roster, week, defenseRanks, {
+      temporaryReplacementPool,
+    });
+    if (getEmptyLineupSlots(lineup).length > 0) {
+      throw new Error(`Unable to form a complete lineup for Week ${week}.`);
+    }
+    const userScore = simulateLineupScore(
+      lineup,
+      week,
+      defenseRanks,
+      tiers,
+      rootRandom.fork(`user-week-${week}`),
+    );
+    const computedOpponentScore = simulateCpuLineupScore(
+      opponentSlot,
+      week,
+      `opponent-week-${week}`,
+    );
+    const opponentScore = overriddenScore(
+      overrides?.playoffOpponentScores?.[week],
+      computedOpponentScore,
+    );
+    const result = getGameResult(userScore.rawScore, opponentScore.rawScore);
+    schedule.push({
+      fantasyWeek: week,
+      nflWeek: week,
+      opponentName: scheduleNames[nextNameIndex],
+      userScore: userScore.roundedScore,
+      opponentScore: opponentScore.roundedScore,
+      result,
+    });
+    nextNameIndex += 1;
+    if (result === "W") playoffWins += 1;
+    else playoffLosses += 1;
+    return result;
+  };
+
+  if (qualification.qualified) {
+    if (qualification.hasBye) {
+      schedule.push({
+        fantasyWeek: 15,
+        nflWeek: 15,
+        opponentName: "First-Round Bye",
+        userScore: null,
+        opponentScore: null,
+        result: null,
+        isBye: true,
+      });
+    } else if (playPlayoffGame(15, playoffOpponents.week15.slot) === "L") {
+      playoffResult = "Eliminated in First Round";
+    }
+
+    if (playoffLosses === 0) {
+      if (playPlayoffGame(16, playoffOpponents.week16.slot) === "L") {
+        playoffResult = "Eliminated in Semifinal";
+      } else if (playPlayoffGame(17, playoffOpponents.week17.slot) === "L") {
+        playoffResult = "Lost Championship";
+      } else {
+        playoffResult = "League Champion";
+      }
+    }
+  }
+
+  return {
+    schedule,
+    regularWins,
+    regularLosses,
+    playoffWins,
+    playoffLosses,
+    finalWins: regularWins + playoffWins,
+    finalLosses: regularLosses + playoffLosses,
+    averageWeeklyScore,
+    qualification,
+    playoffResult,
+    startingRoster: optimizeProjectedStartingRoster(roster),
+  };
+}

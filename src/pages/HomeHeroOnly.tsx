@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ArrowRight, Trophy } from "lucide-react";
 import { CANONICAL_BASE, usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import SiteShell from "@/components/layout/SiteShell";
@@ -9,7 +10,6 @@ const sports = [
   { id: "nfl", name: "NFL", route: "/nfl/guide", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png" },
   { id: "nba", name: "NBA", route: "/nba", logo: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png", locked: true },
   { id: "pga", name: "PGA", route: "/pga", logo: "/logos/pga.svg" },
-  { id: "world-cup", name: "World Cup", route: "/world-cup", logo: "/logos/wc2026-logo.png" },
 ] as const;
 
 function SportCard({
@@ -17,14 +17,12 @@ function SportCard({
   logo,
   name,
   route,
-  darkBg = false,
   gated = false,
 }: {
   locked?: boolean;
   logo: string;
   name: string;
   route: string;
-  darkBg?: boolean;
   gated?: boolean;
 }) {
   const unavailable = locked || gated;
@@ -36,7 +34,7 @@ function SportCard({
 
   const cardContent = (
     <>
-      <div className={`flex h-[84px] w-full items-center justify-center rounded-[8px] ${darkBg ? "bg-black" : ""}`}>
+      <div className="flex h-[84px] w-full items-center justify-center rounded-[8px]">
         <img
           src={logo}
           alt={`${name} logo`}
@@ -116,11 +114,30 @@ export default function HomeHeroOnly() {
                       logo={sport.logo}
                       name={sport.name}
                       route={sport.route}
-                      darkBg={sport.id === "world-cup"}
                       gated={Boolean("gated" in sport && sport.gated)}
                     />
                   ))}
                 </div>
+                <Link
+                  to="/16-0"
+                  className="group mt-3 flex w-full flex-col items-center gap-3 rounded-[18px] border-2 border-cyan-300/90 bg-cyan-400/15 px-5 py-4 text-center no-underline shadow-[0_0_0_1px_rgba(34,211,238,0.2),0_10px_32px_rgba(34,211,238,0.22)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-cyan-200 hover:bg-cyan-400/22 hover:shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_16px_40px_rgba(34,211,238,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a1a22] sm:flex-row sm:justify-between sm:text-left"
+                  aria-label="Play 16-0 Fantasy Draft: draft a 17-player fantasy team and simulate the season"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-200/50 bg-cyan-300/25">
+                      <Trophy className="h-5 w-5 text-cyan-100" aria-hidden="true" />
+                    </span>
+                    <span>
+                      <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-cyan-200">NFL · Fantasy Football</span>
+                      <span className="block text-base font-black text-white sm:text-lg">16-0 Fantasy Draft</span>
+                      <span className="mt-0.5 block text-[12px] leading-5 text-white/90">Draft a 17-player fantasy team and simulate the season. Can you finish 16-0?</span>
+                    </span>
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-1 self-center rounded-full bg-cyan-300 px-4 py-2 text-[12px] font-black text-[#04141a] shadow-[0_0_16px_rgba(34,211,238,0.55)] transition group-hover:bg-cyan-200">
+                    Play 16-0
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                </Link>
                 <section className="mt-4 w-full rounded-[18px] border border-white/15 bg-white/8 px-4 py-5 backdrop-blur-sm sm:px-5">
                   <h2 className="text-base font-bold text-white sm:text-lg">What You Get at Joe Knows Ball</h2>
                   <div className="mt-4 grid gap-3 text-left md:grid-cols-3">
