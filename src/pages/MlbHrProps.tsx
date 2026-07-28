@@ -12,6 +12,8 @@ import { useMlbPropsData } from "@/hooks/useMlbPropsData";
 import { keyForBvpRow, useMlbBvpHistory } from "@/hooks/useMlbBvpHistory";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
 import { AvgVsPitcherCell } from "@/components/mlb/MlbBvpHistoryPanel";
+import { PercentileCell } from "@/components/mlb/MlbPercentileScoreCell";
+import { buildPercentileLookup, lookupPercentile } from "@/lib/mlb/percentileColorScale";
 import {
   BatterSeasonProfile,
   BatterVsPitcherSummary,
@@ -2335,6 +2337,8 @@ export default function MlbHrProps() {
   const slateSummary = useMemo(() => buildSlateSummary(pitchers, batters, games), [pitchers, batters, games]);
   const pitcherHeat = useMemo(() => buildPitcherHeatRanges(pitchers), [pitchers]);
   const batterHeat = useMemo(() => buildHeatStatRanges(batters), [batters]);
+  /** Player Score percentile lookup for the batters table -- full current slate, not search-filtered, so the shared 8-tier scale stays stable while the user types or sorts. Same scale as Batter vs. Pitcher's Matchup Score. */
+  const hrScorePercentileLookup = useMemo(() => buildPercentileLookup(batters.map((b) => b.hrScore)), [batters]);
   const matchupRows = useMemo(() => buildPitcherVsBatterRows(batters, games, pitchers), [batters, games, pitchers]);
   const batterByBvpKey = useMemo(() => {
     const entries = batters.flatMap((row) => {
@@ -3000,7 +3004,13 @@ export default function MlbHrProps() {
                                       {hasHrOdds && row.hrOddsYes != null ? (
                                         <span className="whitespace-nowrap rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">Y {row.hrOddsYes}</span>
                                       ) : null}
-                                      <StatScorePill value={row.hrScore} />
+                                      <PercentileCell
+                                        value={row.hrScore}
+                                        display={row.hrScore.toFixed(1)}
+                                        percentile={lookupPercentile(row.hrScore, hrScorePercentileLookup)}
+                                        strong
+                                        bypassSampleGate
+                                      />
                                     </div>
                                   </div>
                                   {isBvpExpanded && (
@@ -3241,7 +3251,13 @@ export default function MlbHrProps() {
                                     )}
                                     {/* HR Score */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">
-                                      <StatScorePill value={row.hrScore} />
+                                      <PercentileCell
+                                        value={row.hrScore}
+                                        display={row.hrScore.toFixed(1)}
+                                        percentile={lookupPercentile(row.hrScore, hrScorePercentileLookup)}
+                                        strong
+                                        bypassSampleGate
+                                      />
                                     </td>
                                     {/* Barrel% */}
                                     <td className="border-b border-slate-100 px-1 sm:px-2 py-0.5 sm:py-1">

@@ -1162,6 +1162,16 @@ function MlbSlateAnalyzer({
     return { aligned, marketPrice: pickTeam.yesPrice, pickAbbr };
   }
   const { getTeam } = useTeamWrc();
+  // Collapsed-by-default matchup cards: each card's expanded state is local
+  // to this render session (not persisted), and cards expand independently.
+  const [expandedGamePks, setExpandedGamePks] = useState<Set<number>>(() => new Set());
+  const toggleGameExpanded = (gamePk: number) => {
+    setExpandedGamePks((prev) => {
+      const next = new Set(prev);
+      if (next.has(gamePk)) next.delete(gamePk); else next.add(gamePk);
+      return next;
+    });
+  };
   return (
     <section id="schedule" className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -1220,64 +1230,16 @@ function MlbSlateAnalyzer({
           const cardMlPickColor = cardMlPickAbbr ? getMlbTeamColors(cardMlPickAbbr).primary : null;
           const cardEdgeTierLabel = cardMlEdge && cardMlEdge.pick !== "push" ? getEdgeTierLabel(cardMlEdge.confidence) : null;
 
-          return (
-            <button
-              id={`mlb-game-${game.gamePk}`}
-              key={game.gamePk}
-              type="button"
-              onClick={() => onOpenGame(game.gamePk)}
-              data-pm-edge-team={cardMlPickAbbr ?? ""}
-              data-pm-edge-value={cardPmEdgeLabel}
-              className={cn(
-                "scroll-mt-28 flex w-full flex-col rounded-xl border text-left transition-all hover:shadow-md",
-                statusCategory === "in-progress"
-                  ? "border-green-300 bg-green-50/40 shadow-sm"
-                  : statusCategory === "final"
-                  ? "border-slate-400 bg-slate-50/60 shadow-sm"
-                  : "border-slate-400 bg-white shadow-sm hover:border-blue-300",
-              )}>
+          const isExpanded = expandedGamePks.has(game.gamePk);
+          const comparisonPanelId = `mlb-game-${game.gamePk}-comparison`;
 
-              {/* Top bar */}
-              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold"
-                    style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}>
-                    {game.status}
-                  </span>
-                  {statusCategory === "in-progress" && game.currentInning != null && (
-                    <span className="rounded bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
-                      {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
-                    </span>
-                  )}
-                  {statusCategory === "final" && showScore && (
-                    <span className="text-[9px] font-bold text-slate-400">FINAL</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
-                  <span className="text-[11px] font-semibold text-slate-500">{formatGameTime(game.gameDate)}</span>
-                </div>
-              </div>
-
-              {/* MODEL EDGE — mobile-only prominent summary. Desktop keeps the
-                  categorical "Edge Strength" row lower in the Market Summary
-                  panel (hidden md:flex there) so the label isn't duplicated. */}
-              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2 md:hidden">
-                <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Model Edge</span>
-                {cardMlPickAbbr && cardMlPickColor ? (
-                  <span className="rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: cardMlPickColor }}>
-                    {cardEdgeTierLabel ? `${cardMlPickAbbr} · ${cardEdgeTierLabel}` : cardMlPickAbbr}
-                  </span>
-                ) : cardMlEdge ? (
-                  <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
-                ) : (
-                  <span className="text-[10px] font-semibold text-slate-400">Edge pending</span>
-                )}
-              </div>
-
-              {/* Main content */}
-              <div className="px-4 py-3">
-                {(() => {
+          // Header (always visible), comparison (expand-only) and footer
+          // (always visible) content are computed together so they can
+          // share the same per-game calculations below, then rendered into
+          // three separate regions of the card (collapsible-disclosure
+          // structure requires the outer wrapper to no longer be a single
+          // <button>, since it now contains multiple interactive controls).
+          const { pitcherHeaderContent, comparisonContent, footerContent } = (() => {
                   const mlEdge = detail ? computeModelEdge(detail) : null;
                   const mlPickAbbr = mlEdge && mlEdge.pick !== "push"
                     ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr) : null;
@@ -1484,10 +1446,10 @@ function MlbSlateAnalyzer({
                     );
                   };
 
-                  return (
+                  const pitcherHeaderContent = (
                     <>
                       {/* ── Pitcher headers: Home LEFT, Away RIGHT ── */}
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
                         {/* Home LEFT */}
                         <div className="grid min-w-0 grid-rows-[28px_18px_16px_20px] gap-0.5">
                           <div className="flex h-7 items-center gap-1.5 overflow-hidden">
@@ -1522,10 +1484,14 @@ function MlbSlateAnalyzer({
                           <PitcherPills pi={awayPI} align="right" />
                         </div>
                       </div>
+                    </>
+                  );
 
+                  const comparisonContent = (
+                    <>
                       {/* ── Stat comparison: Season block then L14 block ── */}
                       {/* Shared layout: Home value | Stat label (center) | Away value */}
-                      <div className="mt-2 space-y-2">
+                      <div className="space-y-2">
                         {/* Season block */}
                         <div className="w-full max-w-[320px] mx-auto">
                           <div className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 pb-1 border-b border-slate-200">
@@ -1654,9 +1620,10 @@ function MlbSlateAnalyzer({
                           </div>
                         )}
                       </div>
+                    </>
+                  );
 
-                      {/* ── Model drivers + market summary footer ── */}
-                      {(() => {
+                  const footerContent = (() => {
                         const driverRows = mlEdge
                           ? mlEdge.factors
                               .map((factor) => {
@@ -1687,12 +1654,11 @@ function MlbSlateAnalyzer({
                         const bothReal = isRealOdds(awayAmerican) && isRealOdds(homeAmerican);
 
                         return (
-                          <div className="mt-auto border-t border-slate-100 bg-slate-50/70 px-3 pb-3 pt-2.5">
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.45fr)_minmax(145px,0.75fr)] sm:gap-4">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.45fr)_minmax(150px,0.75fr)] sm:gap-4">
                               <div className="min-w-0">
-                                <div className="mb-2 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Top Model Drivers</div>
+                                <div className="mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Top Model Drivers</div>
                                 {driverRows.length ? (
-                                  <div className="space-y-2">
+                                  <div className="space-y-1">
                                     {driverRows.map((factor) => {
                                       const magnitude = Math.abs(factor.weightedDifference);
                                       const width = Math.min(50, (magnitude / maxContribution) * 50);
@@ -1701,33 +1667,33 @@ function MlbSlateAnalyzer({
                                         : "Even";
                                       const tooltip = `${awayAbbr} ${factor.awayScore} − ${homeAbbr} ${factor.homeScore}; × ${Math.round(factor.weight * 100)}% = ${contributionLabel}`;
                                       return (
-                                        <div key={factor.label} title={tooltip} className="min-w-0">
-                                          <div className="mb-0.5 flex items-center justify-between gap-2">
-                                            <span className="truncate text-[9px] font-semibold text-slate-500">{factor.label}</span>
-                                            <span className="shrink-0 text-[9px] font-extrabold tabular-nums text-slate-700">{contributionLabel}</span>
+                                        <div
+                                          key={factor.label}
+                                          title={tooltip}
+                                          className="grid h-6 grid-cols-[68px_16px_minmax(0,1fr)_16px_54px] items-center gap-1.5"
+                                        >
+                                          <span className="truncate text-[9px] font-semibold text-slate-500">{factor.label}</span>
+                                          <span className="text-center text-[8px] font-bold text-slate-400">{homeAbbr}</span>
+                                          <div className="relative h-2 overflow-hidden rounded-full bg-slate-200/80">
+                                            <div className="absolute inset-y-0 left-1/2 z-10 w-px bg-slate-400/80" />
+                                            {factor.favoredSide === "home" && (
+                                              <div
+                                                className="absolute inset-y-0 right-1/2 rounded-l-full"
+                                                style={{ width: `${width}%`, backgroundColor: homeColor }}
+                                              />
+                                            )}
+                                            {factor.favoredSide === "away" && (
+                                              <div
+                                                className="absolute inset-y-0 left-1/2 rounded-r-full"
+                                                style={{ width: `${width}%`, backgroundColor: awayColor }}
+                                              />
+                                            )}
+                                            {factor.favoredSide === "push" && (
+                                              <div className="absolute left-1/2 top-1/2 z-20 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-500" />
+                                            )}
                                           </div>
-                                          <div className="grid grid-cols-[24px_minmax(0,1fr)_24px] items-center gap-1">
-                                            <span className="text-[8px] font-bold text-slate-400">{homeAbbr}</span>
-                                            <div className="relative h-2.5 overflow-hidden rounded-full bg-slate-200/80">
-                                              <div className="absolute inset-y-0 left-1/2 z-10 w-px bg-slate-400/80" />
-                                              {factor.favoredSide === "home" && (
-                                                <div
-                                                  className="absolute inset-y-0 right-1/2 rounded-l-full"
-                                                  style={{ width: `${width}%`, backgroundColor: homeColor }}
-                                                />
-                                              )}
-                                              {factor.favoredSide === "away" && (
-                                                <div
-                                                  className="absolute inset-y-0 left-1/2 rounded-r-full"
-                                                  style={{ width: `${width}%`, backgroundColor: awayColor }}
-                                                />
-                                              )}
-                                              {factor.favoredSide === "push" && (
-                                                <div className="absolute left-1/2 top-1/2 z-20 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-500" />
-                                              )}
-                                            </div>
-                                            <span className="text-right text-[8px] font-bold text-slate-400">{awayAbbr}</span>
-                                          </div>
+                                          <span className="text-center text-[8px] font-bold text-slate-400">{awayAbbr}</span>
+                                          <span className="justify-self-end whitespace-nowrap text-[9px] font-extrabold tabular-nums text-slate-700">{contributionLabel}</span>
                                         </div>
                                       );
                                     })}
@@ -1739,61 +1705,147 @@ function MlbSlateAnalyzer({
 
                               <div className="border-t border-slate-200 pt-2.5 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
                                 <div className="mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Market Summary</div>
-                                <div className="space-y-1.5">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
-                                    <span className="rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold text-white">{edges.total}</span>
-                                  </div>
-                                  <div className="hidden items-center justify-between gap-3 md:flex" title={ML_EDGE_METHODOLOGY}>
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Edge Strength</span>
+                                <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5">
+                                  <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
+                                  <span className="justify-self-end whitespace-nowrap rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold leading-none text-white">{edges.total}</span>
+
+                                  <div className="hidden md:contents">
+                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400" title={ML_EDGE_METHODOLOGY}>Edge Strength</span>
                                     {mlPickAbbr && mlPickColor ? (
-                                      <span className="rounded-full px-2.5 py-1 text-[9px] font-extrabold text-white" style={{ backgroundColor: mlPickColor }}>
+                                      <span className="justify-self-end whitespace-nowrap rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-none text-white" style={{ backgroundColor: mlPickColor }} title={ML_EDGE_METHODOLOGY}>
                                         {mlPickAbbr} {getEdgeTierLabel(mlEdge!.confidence)}
                                       </span>
                                     ) : mlEdge ? (
-                                      <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold text-slate-500">Even</span>
+                                      <span className="justify-self-end whitespace-nowrap rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold leading-none text-slate-500" title={ML_EDGE_METHODOLOGY}>Even</span>
                                     ) : (
-                                      <span className="text-[10px] font-semibold text-slate-400">—</span>
+                                      <span className="justify-self-end text-[10px] font-semibold text-slate-400" title={ML_EDGE_METHODOLOGY}>—</span>
                                     )}
                                   </div>
-                                  <div className="flex items-center justify-between gap-3">
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket</span>
-                                    {pmAgreement ? (
-                                      <span className={cn(
-                                        "rounded-full px-2.5 py-1 text-[9px] font-extrabold",
-                                        pmAgreement.aligned
-                                          ? "bg-emerald-100 text-emerald-700"
-                                          : "bg-amber-100 text-amber-700",
-                                      )}>
-                                        {pmAgreement.aligned ? "Aligned" : "Contrarian"} · {pmAgreement.pickAbbr} {(pmAgreement.marketPrice * 100).toFixed(0)}¢
-                                      </span>
-                                    ) : (
-                                      <span className="text-[10px] font-semibold text-slate-400">—</span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-start justify-between gap-3">
-                                    <span className="pt-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-400">{bothReal ? "Line" : "Win%"}</span>
-                                    {awayAmerican && homeAmerican ? (
-                                      <div className="text-right text-[9px] font-bold leading-4 text-slate-600">
-                                        <div className={mlPickAbbr === awayAbbr ? "text-slate-900" : undefined}>{awayAbbr} {awayAmerican}</div>
-                                        <div className={mlPickAbbr === homeAbbr ? "text-slate-900" : undefined}>{homeAbbr} {homeAmerican}</div>
-                                      </div>
-                                    ) : (
-                                      <span className="text-[10px] font-semibold text-slate-400">—</span>
-                                    )}
-                                  </div>
+
+                                  <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket</span>
+                                  {pmAgreement ? (
+                                    <span className={cn(
+                                      "justify-self-end whitespace-nowrap rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-none",
+                                      pmAgreement.aligned
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : "bg-amber-100 text-amber-700",
+                                    )}>
+                                      {pmAgreement.aligned ? "Aligned" : "Contrarian"} · {pmAgreement.pickAbbr} {(pmAgreement.marketPrice * 100).toFixed(0)}¢
+                                    </span>
+                                  ) : (
+                                    <span className="justify-self-end text-[10px] font-semibold text-slate-400">—</span>
+                                  )}
+
+                                  <span className="self-start pt-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-400">{bothReal ? "Line" : "Win%"}</span>
+                                  {awayAmerican && homeAmerican ? (
+                                    <div className="justify-self-end text-right text-[9px] font-bold leading-4 text-slate-600">
+                                      <div className={mlPickAbbr === awayAbbr ? "text-slate-900" : undefined}>{awayAbbr} {awayAmerican}</div>
+                                      <div className={mlPickAbbr === homeAbbr ? "text-slate-900" : undefined}>{homeAbbr} {homeAmerican}</div>
+                                    </div>
+                                  ) : (
+                                    <span className="justify-self-end text-[10px] font-semibold text-slate-400">—</span>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                          </div>
                         );
-                      })()}
-                    </>
-                  );
-                })()}
-              </div>
-            </button>
-          );
+                  })();
+
+                  return { pitcherHeaderContent, comparisonContent, footerContent };
+                })();
+
+                return (
+                  <div
+                    id={`mlb-game-${game.gamePk}`}
+                    key={game.gamePk}
+                    data-pm-edge-team={cardMlPickAbbr ?? ""}
+                    data-pm-edge-value={cardPmEdgeLabel}
+                    className={cn(
+                      "scroll-mt-28 flex w-full flex-col rounded-xl border transition-all hover:shadow-md",
+                      statusCategory === "in-progress"
+                        ? "border-green-300 bg-green-50/40 shadow-sm"
+                        : statusCategory === "final"
+                        ? "border-slate-400 bg-slate-50/60 shadow-sm"
+                        : "border-slate-400 bg-white shadow-sm hover:border-blue-300",
+                    )}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenGame(game.gamePk)}
+                      className="flex w-full flex-col text-left"
+                    >
+                      {/* Top bar */}
+                      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+                            style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}>
+                            {game.status}
+                          </span>
+                          {statusCategory === "in-progress" && game.currentInning != null && (
+                            <span className="rounded bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-700">
+                              {game.inningHalf === "top" ? "▲" : "▼"}{game.currentInning}
+                            </span>
+                          )}
+                          {statusCategory === "final" && showScore && (
+                            <span className="text-[9px] font-bold text-slate-400">FINAL</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
+                          <span className="text-[11px] font-semibold text-slate-500">{formatGameTime(game.gameDate)}</span>
+                        </div>
+                      </div>
+
+                      {/* MODEL EDGE — mobile-only prominent summary. Desktop keeps the
+                          categorical "Edge Strength" row lower in the Market Summary
+                          panel (hidden md:flex there) so the label isn't duplicated. */}
+                      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2 md:hidden">
+                        <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Model Edge</span>
+                        {cardMlPickAbbr && cardMlPickColor ? (
+                          <span className="rounded-full px-2.5 py-1 text-[10px] font-extrabold text-white" style={{ backgroundColor: cardMlPickColor }}>
+                            {cardEdgeTierLabel ? `${cardMlPickAbbr} · ${cardEdgeTierLabel}` : cardMlPickAbbr}
+                          </span>
+                        ) : cardMlEdge ? (
+                          <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-extrabold text-slate-500">Even</span>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-slate-400">Edge pending</span>
+                        )}
+                      </div>
+
+                      {/* Pitcher header row — always visible in the collapsed card */}
+                      <div className="px-4 py-3">
+                        {pitcherHeaderContent}
+                      </div>
+                    </button>
+
+                    {/* Season / Last 14 / Home-Away Context — revealed only when expanded */}
+                    {isExpanded && (
+                      <div id={comparisonPanelId} className="px-4 pb-2">
+                        {comparisonContent}
+                      </div>
+                    )}
+
+                    {/* Top Model Drivers + Market Summary — always visible in the collapsed card */}
+                    <button
+                      type="button"
+                      onClick={() => onOpenGame(game.gamePk)}
+                      className="block w-full border-t border-slate-100 bg-slate-50/70 px-3 pb-3 pt-2.5 text-left"
+                    >
+                      {footerContent}
+                    </button>
+
+                    {/* Expand / collapse control */}
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      aria-controls={comparisonPanelId}
+                      onClick={() => toggleGameExpanded(game.gamePk)}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-b-xl border-t border-slate-100 px-4 py-2 text-[11px] font-bold text-blue-700 transition-colors hover:bg-blue-50/70 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500"
+                    >
+                      <span aria-hidden="true" className={cn("inline-block text-[9px] transition-transform", isExpanded && "rotate-180")}>▾</span>
+                      {isExpanded ? "Collapse matchup comparison" : "Expand to show matchup comparison"}
+                    </button>
+                  </div>
+                );
         })}
       </div>
     </section>

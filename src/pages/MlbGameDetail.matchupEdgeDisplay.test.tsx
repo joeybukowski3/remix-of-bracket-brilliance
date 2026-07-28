@@ -154,8 +154,11 @@ describe("Game Matchup Analyzer — mobile MODEL EDGE display", () => {
     // Distinct eyebrow labels: "Model Edge" (new, mobile) vs "Edge Strength" (existing, desktop-only)
     expect(screen.getByText("Model Edge")).toBeInTheDocument();
     const desktopLabel = screen.getByText("Edge Strength");
+    // The desktop-only Edge Strength row is grouped via a "hidden md:contents"
+    // wrapper so its label/value pair still participate directly in the
+    // Market Summary two-column grid on desktop (see matchupFooterPolish tests).
     expect(desktopLabel.closest("div")?.className).toMatch(/hidden/);
-    expect(desktopLabel.closest("div")?.className).toMatch(/md:flex/);
+    expect(desktopLabel.closest("div")?.className).toMatch(/md:contents/);
   });
 
   it("the mobile MODEL EDGE row is gated to mobile only (md:hidden)", () => {

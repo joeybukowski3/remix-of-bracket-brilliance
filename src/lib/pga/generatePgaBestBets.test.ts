@@ -252,7 +252,13 @@ describe("PGA best-bets odds-failure fallback", () => {
     expect(result.top20).toEqual([]);
   });
 
-  it("passes the retained picks to article generation after a total odds failure", () => {
+  it("falls back to deterministic Model Leans -- never Grok-selected picks -- when no live odds are available", () => {
+    // PR A: Grok no longer selects golfers, so a "combined-picks" fixture (the
+    // legacy Grok pick-selection response) has no effect on selection at all.
+    // With no verified odds (dry runs always skip the live odds fetch), the
+    // deterministic pipeline falls back to capped, unpriced Model Leans built
+    // from the field-relative probability model -- ranked here by tournament
+    // rank, so Scottie Scheffler (rank #1) leads every market.
     const root = mkdtempSync(path.join(tmpdir(), "pga-odds-fallback-"));
     const dataDir = path.join(root, "public", "data", "pga");
     mkdirSync(dataDir, { recursive: true });
@@ -272,14 +278,6 @@ describe("PGA best-bets odds-failure fallback", () => {
     writeFileSync(
       fixturePath,
       JSON.stringify({
-        "combined-picks-1": {
-          outrights: [pick("Scottie Scheffler", 1)],
-          top5: [pick("Rory McIlroy", 2)],
-        },
-        "combined-picks-2": {
-          top10: [pick("Collin Morikawa", 3)],
-          top20: [pick("Rory McIlroy", 2)],
-        },
         article: {
           title: "Travelers Championship Model Targets",
           dek: "Model-led card.",
@@ -304,8 +302,8 @@ describe("PGA best-bets odds-failure fallback", () => {
         ],
         {
           cwd: root,
-          // A key is configured, but --dry-run forces an empty odds lookup and
-          // skips the live fetch entirely -- exactly the total-odds-failure shape.
+          // A key is configured, but --dry-run always skips the live odds
+          // fetch entirely -- exactly the no-verified-odds shape.
           env: { ...process.env, GROK_API_KEY: "test-key", ODDS_API_KEY: "test-odds-key" },
         },
       );
@@ -314,13 +312,17 @@ describe("PGA best-bets odds-failure fallback", () => {
       const payload = JSON.parse(readFileSync(path.join(artifactsDir, "dry-run-payload.json"), "utf8"));
       const prompts = JSON.parse(readFileSync(path.join(artifactsDir, "dry-run-prompts.json"), "utf8"));
 
-      // Picks survived the empty lookup instead of being filtered to nothing.
-      expect(payload.outrights.map((p: { player: string }) => p.player)).toEqual(["Scottie Scheffler"]);
-      expect(payload.top10).toHaveLength(1);
-      // Grok succeeded; odds enrichment did not. Status must say so.
+      expect(payload.status).toBe("model-leans-only");
+      expect(payload.recommendations).toEqual([]);
+      // No official recommendations were priced, but the top-ranked player
+      // still surfaces via deterministic Model Leans in every market.
+      expect(payload.outrights.map((p: { player: string }) => p.player)).toContain("Scottie Scheffler");
+      expect(payload.modelLeans.every((lean: Record<string, unknown>) => !("expectedValue" in lean) && !("odds" in lean))).toBe(true);
+      // Grok succeeded; there is no verified market data this week.
       expect(payload.sourceStatus.grok).toBe("available");
+      expect(payload.sourceStatus.odds).toBe("unavailable");
 
-      // The article prompt received the retained picks, not "none generated".
+      // The article prompt received the deterministic lean-derived picks.
       const articlePrompt = prompts.find((p: { label: string }) => p.label === "article")?.prompt ?? "";
       expect(articlePrompt).toContain("Scottie Scheffler");
       expect(articlePrompt).not.toContain("Outright targets: none generated this week.");

@@ -8,7 +8,19 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    include: [
+      "src/**/*.{test,spec}.{ts,tsx}",
+      // PGA Best Bets deterministic value pipeline (PR A) -- these are plain
+      // Vitest suites for pure .mjs modules, explicitly enumerated rather than
+      // globbed under scripts/** because most scripts/**/*.test.mjs files use
+      // node:test (Node's built-in runner), which Vitest cannot collect.
+      "scripts/config/pga-best-bets-config.test.mjs",
+      "scripts/lib/pga-odds-math.test.mjs",
+      "scripts/lib/pga-odds-provider.test.mjs",
+      "scripts/lib/pga-probability-model.test.mjs",
+      "scripts/lib/pga-best-bets-selection.test.mjs",
+      "scripts/lib/pga-best-bets-schema.test.mjs",
+    ],
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
