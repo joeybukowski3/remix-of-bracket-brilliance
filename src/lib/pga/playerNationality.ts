@@ -68,6 +68,8 @@ const SPECIAL_LATIN_REPLACEMENTS: Record<string, string> = {
   þ: "th",
 };
 
+const TWEMOJI_ASSET_BASE = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg";
+
 export function normalizePgaPlayerNationalityKey(player: string): string {
   return player
     .normalize("NFKD")
@@ -87,4 +89,18 @@ export function countryCodeToFlag(countryCode: string): string | null {
   const normalized = countryCode.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(normalized)) return null;
   return normalized.replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
+}
+
+/**
+ * Twemoji image URL for a Unicode flag sequence. This avoids Windows rendering
+ * regional-indicator pairs as visible two-letter codes instead of a flag.
+ */
+export function countryCodeToFlagEmojiUrl(countryCode: string): string | null {
+  const flag = countryCodeToFlag(countryCode);
+  if (!flag) return null;
+  const codePoints = Array.from(flag)
+    .map((character) => character.codePointAt(0)?.toString(16))
+    .filter((value): value is string => Boolean(value));
+  if (codePoints.length !== 2) return null;
+  return `${TWEMOJI_ASSET_BASE}/${codePoints.join("-")}.svg`;
 }
