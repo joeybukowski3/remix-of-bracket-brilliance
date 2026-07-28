@@ -113,6 +113,39 @@ export function findCourseWeights(courseWeights, tournamentName, courseName) {
 }
 
 /**
+ * Reject any positively weighted metric this ranker cannot actually score.
+ *
+ * Weights arrive from course-weights.json, which is edited independently of
+ * STAT_KEYS. Previously only the intersection of the two was checked, so a
+ * weight on a key absent from STAT_KEYS -- the realistic way a new metric gets
+ * introduced -- was silently dropped: no error, no warning, and the remaining
+ * weights quietly renormalized around it.
+ *
+ * Two distinct failures are reported separately so the fix is obvious:
+ *   - weighted but not a ranking metric  -> add it to STAT_KEYS (and declare it)
+ *   - weighted metric with no direction  -> declare it in the shared map
+ *
+ * Zero-weight keys are ignored: PR_WEIGHTS deliberately carries sgOTT and
+ * drivingAccuracy at 0, and those must stay harmless.
+ */
+export function assertSupportedWeightedMetrics(weights, context = "PGA ranker") {
+  const weighted = Object.keys(weights ?? {}).filter((key) => (weights[key] ?? 0) > 0);
+
+  const unsupported = weighted.filter((key) => !STAT_KEYS.includes(key));
+  if (unsupported.length > 0) {
+    throw new Error(
+      `Unsupported weighted PGA metric(s) ${unsupported.map((k) => `"${k}"`).join(", ")} in ${context}. ` +
+        "The metric carries a positive weight but is not a supported ranking metric, so it would be " +
+        "silently ignored. Add it to STAT_KEYS and declare its direction in " +
+        "scripts/lib/pga-metric-direction.mjs, or remove the weight.",
+    );
+  }
+
+  // Supported metrics must still have a declared direction.
+  assertMetricDirectionsDeclared(weighted, context);
+}
+
+/**
  * Rank players using a specific weight set.
  *
  * Min-max normalization per stat, then a weighted mean over whichever stats a
@@ -126,10 +159,7 @@ export function findCourseWeights(courseWeights, tournamentName, courseName) {
 export function rankPlayers(players, weights) {
   if (!players || !players.length) return [];
 
-  assertMetricDirectionsDeclared(
-    STAT_KEYS.filter((key) => (weights?.[key] ?? 0) > 0),
-    "generate-pga-tournament-rankings",
-  );
+  assertSupportedWeightedMetrics(weights, "generate-pga-tournament-rankings");
 
   // Calculate ranges for each stat
   const ranges = {};

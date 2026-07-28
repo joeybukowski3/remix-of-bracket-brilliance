@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
   PR_WEIGHTS,
   STAT_KEYS,
+  assertSupportedWeightedMetrics,
   rankPlayers,
 } from "../../../scripts/generate-pga-tournament-rankings.mjs";
 import { PGA_METRIC_DIRECTION } from "@/lib/pga/metricDirection";
@@ -113,14 +116,15 @@ describe("rankPlayers metric-direction gate", () => {
     expect(() => rankPlayers([baselinePlayer("A")], PR_WEIGHTS)).not.toThrow();
   });
 
-  it("ignores a weight for a key outside STAT_KEYS rather than silently scoring it", () => {
-    // Documents real behavior: STAT_KEYS is the iteration surface, so a weight
-    // on an unlisted metric contributes nothing and never reaches the gate.
-    const ranked = rankPlayers([baselinePlayer("A"), baselinePlayer("B")], {
-      scramblingPercentage: 1,
-      sgTotal: 1,
-    });
-    expect(ranked).toHaveLength(2);
+  it("rejects a positive weight on a key outside STAT_KEYS", () => {
+    // Previously such a weight was silently ignored because STAT_KEYS is the
+    // iteration surface. It now fails loudly -- see the dedicated suite below.
+    expect(() =>
+      rankPlayers([baselinePlayer("A"), baselinePlayer("B")], {
+        scramblingPercentage: 1,
+        sgTotal: 1,
+      }),
+    ).toThrow(/scramblingPercentage/);
   });
 
   it("declares a direction for every stat key the generator iterates", () => {
@@ -142,6 +146,71 @@ describe("rankPlayers metric-direction gate", () => {
         { trendRank: 0.5, sgTotal: 0.5 },
       );
       expect(ranked[0].player).toBe("A");
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("trendRank"));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe("unsupported weighted metrics", () => {
+  it("throws when a positively weighted key is not a supported ranking metric", () => {
+    // Weights come from course-weights.json, edited independently of STAT_KEYS.
+    // Previously such a key was silently ignored and the remaining weights
+    // quietly renormalized around it.
+    expect(() => rankPlayers([baselinePlayer("A")], { scramblingPct: 1 })).toThrow(
+      /Unsupported weighted PGA metric\(s\) "scramblingPct"/,
+    );
+  });
+
+  it("names the calling context in the error", () => {
+    expect(() => rankPlayers([baselinePlayer("A")], { scramblingPct: 1 })).toThrow(
+      /generate-pga-tournament-rankings/,
+    );
+  });
+
+  it("reports every unsupported key at once", () => {
+    expect(() => rankPlayers([baselinePlayer("A")], { scramblingPct: 1, puttsPerRound: 0.2 })).toThrow(
+      /"scramblingPct", "puttsPerRound"/,
+    );
+  });
+
+  it("ignores an unknown key carrying zero weight", () => {
+    // PR_WEIGHTS itself keeps sgOTT and drivingAccuracy at 0; zero-weight keys
+    // must stay harmless.
+    const ranked = rankPlayers(
+      [baselinePlayer("Better", { sgTotal: 2 }), baselinePlayer("Worse", { sgTotal: -1 })],
+      { scramblingPct: 0, sgTotal: 1 },
+    );
+    expect(ranked.map((r) => r.player)).toEqual(["Better", "Worse"]);
+  });
+
+  it("accepts every currently weighted PR metric", () => {
+    expect(() => assertSupportedWeightedMetrics(PR_WEIGHTS, "pr-weights")).not.toThrow();
+  });
+
+  it("accepts every weight set shipped in course-weights.json", () => {
+    // Operational guard: a stricter gate must not block generation for any
+    // event currently configured.
+    const courseWeights = JSON.parse(
+      readFileSync(resolve(process.cwd(), "public/data/pga/course-weights.json"), "utf8"),
+    ) as Array<{ tournament: string; course: string; weights: Record<string, number> }>;
+
+    expect(courseWeights.length).toBeGreaterThan(0);
+    for (const entry of courseWeights) {
+      expect(
+        () => assertSupportedWeightedMetrics(entry.weights, "course-weights"),
+        `${entry.tournament} / ${entry.course}`,
+      ).not.toThrow();
+    }
+  });
+
+  it("still only warns for a declared metric with no usable values", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect(() =>
+        rankPlayers([baselinePlayer("A", { trendRank: null })], { trendRank: 0.5, sgTotal: 0.5 }),
+      ).not.toThrow();
       expect(warn).toHaveBeenCalledWith(expect.stringContaining("trendRank"));
     } finally {
       warn.mockRestore();
