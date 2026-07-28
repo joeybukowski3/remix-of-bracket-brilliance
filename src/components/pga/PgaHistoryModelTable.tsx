@@ -4,7 +4,7 @@ import { normalizePlayerKey, type PgaHistoryResult, type PgaTournamentModelRow }
 import { percentileHeatClass } from "@/lib/pga/pgaHeatColors";
 import { PERCENTILE_TIER_LEGEND } from "@/lib/mlb/percentileColorScale";
 import { buildPgaScorePercentileLookup, getPgaScoreTier } from "@/lib/pga/pgaScoreColorScale";
-import { countryCodeToFlag, getPgaPlayerNationality } from "@/lib/pga/playerNationality";
+import { countryCodeToFlagEmojiUrl, getPgaPlayerNationality } from "@/lib/pga/playerNationality";
 
 export type PgaRankMode = "field" | "tour";
 
@@ -117,10 +117,22 @@ function DesktopColumnWidths({ isMajor }: { isMajor: boolean }) {
 
 function PlayerName({ player, mobile = false }: { player: string; mobile?: boolean }) {
   const nationality = getPgaPlayerNationality(player);
-  const flag = nationality ? countryCodeToFlag(nationality.countryCode) : null;
+  const flagEmojiUrl = nationality ? countryCodeToFlagEmojiUrl(nationality.countryCode) : null;
   return (
     <span className="flex min-w-0 items-center gap-1.5">
-      {flag ? <span className="shrink-0 text-[13px] leading-none" role="img" aria-label={nationality?.countryName}>{flag}</span> : null}
+      {flagEmojiUrl && nationality ? (
+        <>
+          <img
+            src={flagEmojiUrl}
+            alt=""
+            aria-hidden="true"
+            className="h-[13px] w-[13px] shrink-0 object-contain"
+            loading="lazy"
+            decoding="async"
+          />
+          <span className="sr-only">{nationality.countryName}</span>
+        </>
+      ) : null}
       <span className={`${mobile ? "line-clamp-2 whitespace-normal text-[14px] leading-[1.2]" : "truncate whitespace-nowrap text-[12px] leading-tight"} min-w-0 font-medium text-slate-900`}>{player}</span>
     </span>
   );
