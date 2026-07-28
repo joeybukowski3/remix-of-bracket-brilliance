@@ -9,14 +9,31 @@ import {
   MAJOR_SWING_WORKLOAD_LIMITATION,
 } from "./lib/pga-post-open-angles.mjs";
 import { PGA_MARKET_KEYS, marketOddsFor } from "./lib/pga-market-odds.mjs";
+import { CANONICAL_MARKETS } from "./config/pga-best-bets-config.mjs";
+import { fetchProviderOdds } from "./lib/pga-odds-provider.mjs";
+import { computeFieldProbabilities } from "./lib/pga-probability-model.mjs";
+import {
+  applyThresholds,
+  buildCandidateUniverse,
+  buildRecommendationCopy,
+  computePortfolioDiagnostics,
+  priceCandidates,
+  selectRecommendations,
+} from "./lib/pga-best-bets-selection.mjs";
+import {
+  buildModelLeans,
+  buildRecommendationEntry,
+  buildUnavailableArtifact as buildV3UnavailableArtifact,
+  buildV3Artifact,
+  deriveV2Compatibility,
+  deriveV2CompatibilityFromLeans,
+} from "./lib/pga-best-bets-schema.mjs";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.join(ROOT, "public", "data", "pga");
 const OUTPUT_PATH = path.join(DATA_DIR, "best-bets.json");
-const ODDS_OUTPUT_PATH = path.join(DATA_DIR, "pga-odds.json");
 const ARTIFACTS_DIR = path.join(ROOT, "artifacts", "pga-best-bets");
 const API_URL = "https://api.x.ai/v1/chat/completions";
-const ODDS_BASE = "https://api.the-odds-api.com/v4";
 const MODEL = "grok-4-1-fast-non-reasoning";
 const FORCE = process.argv.includes("--force");
 
@@ -97,124 +114,9 @@ function normalizeEventKey(value) {
     .trim();
 }
 
-function formatAmericanOdds(price) {
-  if (typeof price !== "number" || !Number.isFinite(price)) return null;
-  return price > 0 ? `+${price}` : `${price}`;
-}
-
-function impliedProbability(americanOdds) {
-  const n = Number(americanOdds);
-  if (!Number.isFinite(n)) return null;
-  const prob = n > 0 ? 100 / (n + 100) : Math.abs(n) / (Math.abs(n) + 100);
-  return `${(prob * 100).toFixed(1)}%`;
-}
-
-// ─── Odds API ────────────────────────────────────────────────────────────────
-
-async function fetchOdds(oddsApiKey, tournamentName) {
-  if (!oddsApiKey) {
-    console.warn("ODDS_API_KEY not set — skipping odds fetch.");
-    return {};
-  }
-
-  try {
-    // Step 1: find the right sport key
-    const sportsRes = await fetch(`${ODDS_BASE}/sports/?apiKey=${oddsApiKey}`);
-    const sports = await sportsRes.json();
-    const golfSports = sports.filter(
-      (s) => s.group?.toLowerCase().includes("golf") || s.key?.toLowerCase().includes("golf")
-    );
-    console.log("Golf sports found:", golfSports.map((s) => s.key).join(", "));
-
-    // Prefer a sport key that matches the tournament name, fall back to any active golf key
-    const tournamentKey = normalizeEventKey(tournamentName);
-    let sportKey =
-      golfSports.find((s) => normalizeEventKey(s.title).includes(tournamentKey))?.key ??
-      golfSports.find((s) => s.key.includes("pga_championship"))?.key ??
-      golfSports.find((s) => s.key.includes("pga_tour"))?.key ??
-      golfSports.find((s) => s.active)?.key ??
-      null;
-
-    if (!sportKey) {
-      console.warn("No active golf sport key found on The Odds API.");
-      return {};
-    }
-    console.log("Using sport key:", sportKey);
-
-    // Step 2: fetch outright winner odds
-    const outrightRes = await fetch(
-      `${ODDS_BASE}/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us&markets=outrights&oddsFormat=american`
-    );
-    const outrightData = await outrightRes.json();
-
-    // Build odds lookup keyed by normalized player name
-    const oddsLookup = {};
-
-    if (Array.isArray(outrightData)) {
-      // Pick the bookmaker with the most outcomes (typically DraftKings or FanDuel)
-      const event = outrightData[0];
-      if (event?.bookmakers?.length) {
-        const bestBook = event.bookmakers.reduce((best, bk) =>
-          (bk.markets?.[0]?.outcomes?.length ?? 0) > (best.markets?.[0]?.outcomes?.length ?? 0)
-            ? bk
-            : best
-        );
-        console.log("Using bookmaker:", bestBook.title);
-        bestBook.markets?.[0]?.outcomes?.forEach((outcome) => {
-          const key = normalizeName(outcome.name);
-          const lastName = getLastNameKey(outcome.name);
-          const entry = { outright: formatAmericanOdds(outcome.price) };
-          oddsLookup[key] = entry;
-          if (lastName && !oddsLookup[`_last_${lastName}`]) {
-            oddsLookup[`_last_${lastName}`] = entry;
-          }
-        });
-        console.log(`Loaded outright odds for ${Object.keys(oddsLookup).length} players.`);
-      }
-    }
-
-    // Step 3: attempt player prop markets (top 5 / top 10 / top 20)
-    if (Array.isArray(outrightData) && outrightData[0]?.id) {
-      const eventId = outrightData[0].id;
-      for (const market of ["player_top_5_finisher", "player_top_10_finisher", "player_top_20_finisher"]) {
-        const marketKey = market.includes("top_5") ? "top5"
-          : market.includes("top_10") ? "top10"
-          : "top20";
-        try {
-          const propRes = await fetch(
-            `${ODDS_BASE}/sports/${sportKey}/events/${eventId}/odds?apiKey=${oddsApiKey}&regions=us&markets=${market}&oddsFormat=american`
-          );
-          const propData = await propRes.json();
-          if (propData?.bookmakers?.length) {
-            const bestBook = propData.bookmakers[0];
-            bestBook.markets?.[0]?.outcomes?.forEach((outcome) => {
-              const key = normalizeName(outcome.name);
-              const lastName = getLastNameKey(outcome.name);
-              if (oddsLookup[key]) {
-                oddsLookup[key][marketKey] = formatAmericanOdds(outcome.price);
-              }
-              if (lastName && oddsLookup[`_last_${lastName}`]) {
-                oddsLookup[`_last_${lastName}`][marketKey] = formatAmericanOdds(outcome.price);
-              }
-            });
-            console.log(`Loaded ${marketKey} odds.`);
-          }
-        } catch (err) {
-          console.warn(`Could not fetch ${market}:`, err.message);
-        }
-        await new Promise((r) => setTimeout(r, 500));
-      }
-    }
-
-    // Save raw odds for reference
-    writeFileSync(ODDS_OUTPUT_PATH, `${JSON.stringify(oddsLookup, null, 2)}\n`, "utf8");
-    console.log(`Wrote ${ODDS_OUTPUT_PATH}`);
-    return oddsLookup;
-  } catch (err) {
-    console.error("Odds fetch failed:", err.message);
-    return {};
-  }
-}
+// ─── Odds ────────────────────────────────────────────────────────────────────
+// Live odds now come exclusively from fetchProviderOdds (pga-odds-provider.mjs) --
+// a provider-neutral, fail-closed adapter. See buildDeterministicSelection below.
 
 function lookupOdds(oddsLookup, playerName) {
   const key = normalizeName(playerName);
@@ -231,56 +133,12 @@ function attachOddsToPickArray(picks, oddsLookup) {
 
 // ─── Value Bets ──────────────────────────────────────────────────────────────
 
-async function generateValueBets(apiKey, allPicks, oddsLookup) {
-  if (!apiKey && !DRY_RUN) return [];
-
-  // Attach odds to all picks for the value bets prompt
-  const picksWithOdds = {
-    outrights: attachOddsToPickArray(allPicks.outrights, oddsLookup),
-    top5: attachOddsToPickArray(allPicks.top5, oddsLookup),
-    top10: attachOddsToPickArray(allPicks.top10, oddsLookup),
-    top20: attachOddsToPickArray(allPicks.top20, oddsLookup),
-  };
-
-  // Only include players that actually have odds
-  const allPicksFlat = [
-    ...picksWithOdds.outrights.map((p) => ({ ...p, market: "outright" })),
-    ...picksWithOdds.top5.map((p) => ({ ...p, market: "top5" })),
-    ...picksWithOdds.top10.map((p) => ({ ...p, market: "top10" })),
-    ...picksWithOdds.top20.map((p) => ({ ...p, market: "top20" })),
-  ].filter((p) => p.odds && p.odds[p.market === "outright" ? "outright" : p.market]);
-
-  if (!allPicksFlat.length) {
-    console.warn("No odds available for value bets analysis — skipping.");
-    return [];
-  }
-
-  const picksSummary = allPicksFlat
-    .map((p) => {
-      const marketOdds = p.odds[p.market === "outright" ? "outright" : p.market] ?? "N/A";
-      return `player=${p.player} market=${p.market} odds=${marketOdds} tournamentRank=${p.tournamentRank} powerRank=${p.powerRank}`;
-    })
-    .join("\n");
-
-  const prompt = `You are a sharp golf betting analyst identifying value bets. Here are the model picks with their American odds:\n${picksSummary}\n\nIdentify the 3 best value bets where the model ranking significantly outperforms what the odds imply — meaning the player ranks much higher in our model than their odds suggest. Return ONLY a raw JSON array named valueBets with no markdown. Each element has these exact fields: player (string), market (string: outright/top5/top10/top20), americanOdds (string like "+650"), modelRank (number), impliedProbability (string like "13.3%"), modelEdge (string: one sentence explaining why our model likes them more than the market does, referencing specific stat ranks).`;
-
-  try {
-    const result = await callGrokWithRetry(prompt, 3, undefined, "value-bets");
-    const arr = Array.isArray(result) ? result : result?.valueBets;
-    if (!Array.isArray(arr) || !arr.length) return [];
-    return arr.map((v) => ({
-      player: v.player ?? "",
-      market: v.market ?? "",
-      americanOdds: v.americanOdds ?? "N/A",
-      modelRank: Number(v.modelRank ?? 0),
-      impliedProbability: v.impliedProbability ?? impliedProbability(Number((v.americanOdds ?? "0").replace("+", ""))) ?? "N/A",
-      modelEdge: v.modelEdge ?? "",
-    })).filter((v) => v.player && v.modelEdge);
-  } catch (err) {
-    console.error("Value bets generation failed:", err.message);
-    return [];
-  }
-}
+// Grok-authored "value bets" (an LLM asserting its own edge claims over the
+// market) are removed under PR A: expected value now comes exclusively from
+// the deterministic candidate/selection pipeline in
+// scripts/lib/pga-best-bets-selection.mjs. Grok never selects golfers or
+// asserts an edge -- see buildDeterministicSelection and generateArticle's
+// DATA_DISCIPLINE_RULES below.
 
 // ─── Existing helpers (unchanged) ────────────────────────────────────────────
 
@@ -720,51 +578,18 @@ async function generatePreview(apiKey, prompt) {
   }
 }
 
-function validateSectionCount(name, value, expectedCount, rawResponse) {
-  if (!Array.isArray(value) || value.length !== expectedCount) {
-    console.log(`INVALID ${name.toUpperCase()} RESPONSE:\n${rawResponse}\n`);
-    throw new Error(`${name} returned ${Array.isArray(value) ? value.length : 0} picks; expected ${expectedCount}.`);
-  }
-  return validatePickArray(value);
-}
-
 const DATA_DISCIPLINE_RULES = [
   "Only use the player names, ranks, stats, and (when given) odds and post-Open/FedExCup values printed above. Never invent a statistic, an odds price, an injury, a withdrawal, or a player's tournament participation.",
-  "Every player you return MUST come from the model data above -- never a player who isn't listed.",
-  "Cite at least one specific data value from the summary above in each bullet (a rank, a strokes-gained number, a workload round count, a FedExCup rank, etc.) -- do not write a generic claim with no number behind it.",
+  "Every player you write about MUST come from the frozen selection supplied below -- never introduce a player who isn't listed there.",
+  "Cite at least one specific data value from the summary above in each claim (a rank, a strokes-gained number, a workload round count, a FedExCup rank, etc.) -- do not write a generic claim with no number behind it.",
   "If a post-Open/FedExCup context block was NOT provided above, do not mention Open Championship results, Scottish Open participation, workload, or FedExCup standing at all -- leave angles empty rather than guessing.",
 ].join(" ");
 
-async function generateCombinedPicks(apiKey, summary, officialPlayers, postOpenContext) {
-  const contextBlock = postOpenContext ? `\n\n${postOpenContext}` : "";
-  const basePrompt = `You are a sharp data-driven golf betting analyst. Based on this tournament model data:\n${summary}${contextBlock}\n\n${DATA_DISCIPLINE_RULES}\n\nReturn ONLY a raw JSON object with no markdown, no code fences, no explanation. Each pick object has these exact fields: player (string), tournamentRank (number), powerRank (number), topStats (array of exactly 2 strings showing stat=value), bullets (array of 2-4 strings each referencing a specific number from the data, covering course fit and recent-form evidence), risk (one string sentence describing the main risk to this pick), angles (array of 0-3 short strings -- only populate with a post-Open workload/motivation or FedExCup angle when the context block above was provided AND that player's data isn't a "did not play"/"skipped"/"unranked" no-data state; otherwise leave empty).`;
-
-  const prompt1 = `${basePrompt}\n\nReturn an object with exactly two keys:\noutrights: array of 3-5 picks from tournament ranks 2-25 representing the strongest MODEL VALUE outright targets. Do not simply list the shortest-priced favorites -- include at least one player outside the top 3 model ranks whose price (when odds are available) looks generous relative to their rank. For each pick, the bullets must cover why the player can win, their course-fit strength, and recent-form evidence; risk must name the main risk; when odds are available in the summary, one bullet must say plainly whether the price looks like value or not.\ntop5: array of exactly 5 picks from ranks 1-15 where the model rank outperforms what the top-5 market is pricing — players the market is undervaluing relative to their stat profile.`;
-
-  const prompt2 = `${basePrompt}\n\nReturn an object with exactly two keys:\ntop10: array of 4-6 picks from ranks 1-20 with a strong ceiling, reliable tee-to-green stats, course fit, and (when the context block is present) recent contention -- a realistic top-10 path. Each pick's bullets must explain why a top-10 bet is preferable here to betting the player outright (i.e. floor vs. outright variance), and risk must name the main risk.\ntop20: array of 5-8 picks from ranks 5-40 with a high floor: strong cut-making profile, reliable approach/tee-to-green play, and (when available) favorable FedExCup motivation or workload context. Each pick's bullets must explain why the player fits a top-20 market specifically, and risk must name the main risk.`;
-
-  const [result1raw, result2raw] = await Promise.all([
-    callGrokWithRetry(prompt1, 3, (parsed) => {
-      if (!parsed.outrights || !parsed.top5) throw new Error("Missing outrights or top5");
-    }, "combined-picks-1"),
-    callGrokWithRetry(prompt2, 3, (parsed) => {
-      if (!parsed.top10 || !parsed.top20) throw new Error("Missing top10 or top20");
-    }, "combined-picks-2"),
-  ]);
-  // Dry-run with no fixture for a given call resolves to undefined rather
-  // than throwing -- treated the same as "nothing generated" downstream.
-  const result1 = result1raw ?? {};
-  const result2 = result2raw ?? {};
-
-  await new Promise((r) => setTimeout(r, DRY_RUN ? 0 : 1000));
-
-  return {
-    outrights: validatePickArray(result1.outrights, officialPlayers),
-    top5: validatePickArray(result1.top5, officialPlayers),
-    top10: validatePickArray(result2.top10, officialPlayers),
-    top20: validatePickArray(result2.top20, officialPlayers),
-  };
-}
+// Player/market/price selection is frozen deterministically BEFORE any Grok
+// call -- see buildDeterministicSelection in main(). Grok's only remaining
+// role is prose (preview + article) about that frozen selection; it is never
+// asked to choose a golfer, a market, or an EV/value judgement. See PR A's
+// "Grok restriction" requirement.
 
 function getEventIdentifiers(event) {
   return [
@@ -1217,91 +1042,134 @@ async function main() {
     });
   }
 
-  if (!oddsApiKey) console.warn("ODDS_API_KEY is not set. Odds will not be attached.");
+  if (!oddsApiKey) console.warn("ODDS_API_KEY is not set. No verified market prices can be attached this week -- Model Leans only.");
 
-  // Fetch odds first -- skipped entirely in dry-run (never trigger a rate-limited/paid external call during development).
-  const oddsLookup = DRY_RUN ? {} : await fetchOdds(oddsApiKey, tournamentName);
+  // ── Deterministic odds + selection (PR A) ────────────────────────────────
+  // Live odds are fetched, matched, priced, and thresholded entirely before
+  // any Grok call -- Grok never sees an unpriced candidate and never selects
+  // a golfer, a market, or a price. Skipped entirely in dry-run (never
+  // trigger a rate-limited/paid external call during development).
+  const providerResult = DRY_RUN
+    ? {
+        providerKey: "the-odds-api",
+        providerName: "The Odds API",
+        requestedTournament: tournamentName,
+        matchedEventName: null,
+        providerEventId: null,
+        eventStartTime: null,
+        eventMatchStatus: "dry-run-skipped",
+        marketsRequested: [...CANONICAL_MARKETS],
+        marketsAvailable: [],
+        fetchedAt: new Date().toISOString(),
+        quotaDiagnostics: {},
+        errors: ["dry run: live odds fetch skipped"],
+        sportsbookMarkets: [],
+      }
+    : await fetchProviderOdds({
+        apiKey: oddsApiKey,
+        tournamentName,
+        startDate: currentField.startDate ?? null,
+        knownProviderEventId: currentField.tournamentId ?? null,
+      });
   if (DRY_RUN) console.log("[pga-best-bets] dry-run: skipping live odds fetch.");
+
+  const candidateUniverse = buildCandidateUniverse({
+    officialFieldPlayers: currentField.players,
+    modelRows: tournamentData.rows,
+  });
+  const pricedCandidates = priceCandidates(candidateUniverse, {
+    providerResult,
+    officialFieldSize: currentField.players.length,
+  });
+  const thresholdedCandidates = applyThresholds(pricedCandidates);
+  const { recommendations: rawRecommendations, overlapRejections } = selectRecommendations(
+    thresholdedCandidates.filter((candidate) => candidate.status === "qualified"),
+  );
+  const portfolioDiagnostics = computePortfolioDiagnostics(thresholdedCandidates, overlapRejections, rawRecommendations);
+  const recommendations = rawRecommendations.map((candidate) => buildRecommendationEntry(candidate, buildRecommendationCopy(candidate)));
+
+  console.log(
+    `[pga-best-bets] deterministic selection: ${recommendations.length} recommendation(s) from ${portfolioDiagnostics.candidatesCreated} candidate(s) ` +
+      `(${portfolioDiagnostics.candidatesWithExactPrice} priced, event match=${providerResult.eventMatchStatus ?? "unmatched"}).`,
+  );
+
+  const powerByName = buildPlayerMaps(powerRankings, playerStats).powerByName;
+  let bestBetsStatus;
+  let bestBetsReason = null;
+  let modelLeans = [];
+  if (recommendations.length > 0) {
+    bestBetsStatus = "official-best-bets";
+  } else {
+    bestBetsStatus = "model-leans-only";
+    bestBetsReason = providerResult.errors.length
+      ? `Verified exact-market prices were unavailable this week (${providerResult.errors[0]}).`
+      : "No candidate cleared the configured probability/edge/expected-value thresholds this week.";
+    const leanRows = candidateUniverse
+      .filter((candidate) => candidate.market === CANONICAL_MARKETS[0] && candidate.inField && candidate.hasModelData)
+      .map((candidate) => ({ playerKey: candidate.playerKey, rank: candidate.rank, player: candidate.playerName, powerRank: candidate.powerRank }));
+    const fieldProbabilities = computeFieldProbabilities(leanRows.map((row) => ({ playerKey: row.playerKey, rank: row.rank })));
+    // computeFieldProbabilities keys its output {win, top5, top10, top20};
+    // buildModelLeans/CANONICAL_MARKETS use "outright" for that same market --
+    // remap here so a lean's provisionalModelProbability.outright is never
+    // silently undefined (and therefore excluded from every outright lean).
+    modelLeans = buildModelLeans(
+      leanRows.map((row) => {
+        const probability = fieldProbabilities[row.playerKey] ?? {};
+        return {
+          ...row,
+          provisionalModelProbability: {
+            outright: probability.win,
+            top5: probability.top5,
+            top10: probability.top10,
+            top20: probability.top20,
+          },
+        };
+      }),
+    );
+  }
+
+  const picksForArticle = bestBetsStatus === "official-best-bets"
+    ? deriveV2Compatibility(recommendations)
+    : deriveV2CompatibilityFromLeans(modelLeans);
 
   const previewPrompt = `You are writing a concise tournament betting preview for a sports analytics website. Based on this model data for ${tournamentName}: ${previewSummary}. Write three short sections with a bold label and 2-4 sentences each. Section 1 label: "The Tournament" - describe the course, what type of game it rewards, and why this event matters. Section 2 label: "How Our Model Works This Week" - explain the active course weights in plain English, which stat categories are most important at this course and why, referencing the specific weight percentages. Section 3 label: "How We're Approaching the Picks" - explain the tiered betting logic. Return as JSON with fields: tournamentOverview, modelExplainer, pickApproach - each a plain string of 3-4 sentences.`;
 
-  let outrights = [], top5 = [], top10 = [], top20 = [], preview = null, valueBets = [], article = null;
-  let selectedPlayers = [];
-  let researchContext = {};
+  let preview = null;
+  let article = null;
   // "unavailable" = no Grok call was attempted at all (no key, not a dry run).
-  // Set to the real observed outcome below. Never inferred from post-odds-filter
-  // pick counts -- odds enrichment failing is not a Grok failure.
   let grokStatus = "unavailable";
   const waitMs = (ms) => (DRY_RUN ? 0 : ms);
 
+  // Research context + prose, fed ONLY the frozen selection above. Grok is
+  // never given an unpriced candidate to choose from and never asked to pick
+  // a player -- see DATA_DISCIPLINE_RULES and validateArticleRecommendations.
+  const selectedPlayers = collectSelectedPlayers(picksForArticle);
+  const researchContext = buildResearchContext(selectedPlayers, {
+    rounds: roundHistory.rounds,
+    fedexRows: fedexAvailable ? fedexStandings.rows : [],
+    sinceDate: workloadWindowStart,
+    windowStart: workloadWindowStart,
+    windowEnd: currentField.startDate ?? null,
+    modelRows: tournamentData.rows,
+    powerByName,
+  });
+  console.log(`Research context built for ${selectedPlayers.length} selected player(s).`);
+
   if (apiKey || DRY_RUN) {
-    const combined = await generateCombinedPicks(apiKey, summary, currentField.players, postOpenContext);
-    // Measured pre-odds-filter: this is what Grok actually returned and what
-    // survived field validation, independent of any odds enrichment.
-    const grokPicksReturned = ["outrights", "top5", "top10", "top20"]
-      .reduce((total, key) => total + combined[key].length, 0);
-    grokStatus = grokPicksReturned > 0 ? "available" : "invalid-response";
-
-    const pickArrays = {
-      outrights: preparePicksForOutput(combined.outrights, oddsLookup, Boolean(oddsApiKey)),
-      top5: preparePicksForOutput(combined.top5, oddsLookup, Boolean(oddsApiKey)),
-      top10: preparePicksForOutput(combined.top10, oddsLookup, Boolean(oddsApiKey)),
-      top20: preparePicksForOutput(combined.top20, oddsLookup, Boolean(oddsApiKey)),
-    };
-
-    if (oddsApiKey && Object.keys(oddsLookup).length === 0) {
-      console.warn(
-        "::warning title=PGA odds enrichment unavailable::ODDS_API_KEY is configured but the odds lookup returned no usable entries. Publishing model picks without odds instead of dropping them; value filtering is skipped this run.",
-      );
-    }
-
-    ({ outrights, top5, top10, top20 } = selectPublishedPicks(pickArrays, {
-      hasOddsApiKey: Boolean(oddsApiKey),
-      oddsLookup,
-      filterByValueAndOdds,
-    }));
-
-    console.log(`After value filter: outrights=${outrights.length} top5=${top5.length} top10=${top10.length} top20=${top20.length}`);
-
-    // Unpriced picks cannot support price/market-value claims. Applied after
-    // selection so it never changes WHICH players are published, only what may
-    // be said about them.
-    outrights = enforceOddsLanguage(outrights, "outrights");
-    top5 = enforceOddsLanguage(top5, "top5");
-    top10 = enforceOddsLanguage(top10, "top10");
-    top20 = enforceOddsLanguage(top20, "top20");
-
-    // Research context for the UNION of all four selected markets.
-    selectedPlayers = collectSelectedPlayers({ outrights, top5, top10, top20 });
-    researchContext = buildResearchContext(selectedPlayers, {
-      rounds: roundHistory.rounds,
-      fedexRows: fedexAvailable ? fedexStandings.rows : [],
-      sinceDate: workloadWindowStart,
-      windowStart: workloadWindowStart,
-      windowEnd: currentField.startDate ?? null,
-      modelRows: tournamentData.rows,
-      powerByName: buildPlayerMaps(powerRankings, playerStats).powerByName,
-    });
-    console.log(`Research context built for ${selectedPlayers.length} selected player(s).`);
+    grokStatus = "available";
 
     await new Promise((r) => setTimeout(r, waitMs(1500)));
     preview = await generatePreview(apiKey, previewPrompt);
 
     await new Promise((r) => setTimeout(r, waitMs(1500)));
-    if (oddsApiKey || DRY_RUN) {
-      valueBets = await generateValueBets(apiKey, combined, oddsLookup);
-    }
-
-    await new Promise((r) => setTimeout(r, waitMs(1500)));
-    const hasAnyOdds = [outrights, top5, top10, top20].some((list) => list.some((pick) => pick?.odds));
+    const hasAnyOdds = bestBetsStatus === "official-best-bets";
     article = await generateArticle(apiKey, {
       tournamentName,
       courseName,
       startDate: currentField.startDate ?? null,
       fieldSize: currentField.players.length,
       summary: previewSummary,
-      // Frozen selection, all four markets including top5.
-      picks: { outrights, top5, top10, top20 },
+      picks: picksForArticle,
       researchContext,
       hasAnyOdds,
       dataLimitations,
@@ -1328,36 +1196,58 @@ async function main() {
     }
   }
 
-  const payload = {
+  const oddsDiagnostics = {
+    providerKey: providerResult.providerKey,
+    providerName: providerResult.providerName,
+    requestedTournament: providerResult.requestedTournament,
+    matchedEventName: providerResult.matchedEventName,
+    providerEventId: providerResult.providerEventId,
+    eventStartTime: providerResult.eventStartTime,
+    eventMatchStatus: providerResult.eventMatchStatus,
+    marketsRequested: providerResult.marketsRequested,
+    marketsAvailable: providerResult.marketsAvailable,
+    fetchedAt: providerResult.fetchedAt,
+    quotaDiagnostics: providerResult.quotaDiagnostics,
+    errors: providerResult.errors,
+  };
+
+  const sourceStatus = {
+    model: "available",
+    grok: grokStatus,
+    odds: providerResult.matchedEventName ? "available" : "unavailable",
+    article: article?.title ? "available" : "unavailable",
+  };
+
+  const methodologyNotes = [
+    "Recommendations are generated by a deterministic candidate/threshold/portfolio pipeline against verified sportsbook prices; Grok never selects a golfer, a market, or a price -- it only writes prose about the frozen selection.",
+    "Finish probabilities come from a provisional, field-relative model (see probabilityMethod) blended with no-vig market probability; neither component is historically calibrated.",
+    isPostOpen
+      ? "Post-Open Championship, Scottish Open, and FedExCup context is included because this is the tournament immediately following The Open Championship."
+      : "Post-Open Championship / FedExCup context does not apply this week.",
+  ];
+
+  const payload = buildV3Artifact({
     tournament: tournamentName,
+    tournamentId: currentField.tournamentId ?? null,
+    localScheduleId: currentField.localScheduleId ?? null,
     course: courseName,
     generatedAt: new Date().toISOString(),
-    preview,
-    valueBets,
-    outrights,
-    top5,
-    top10,
-    top20,
-    article,
-    // Per-player research classifications, keyed by normalized player name, for
-    // the union of all four selected markets. Consumed by the page so the
-    // frontend renders stored classifications rather than deriving them.
-    researchContext,
-    selectedPlayers,
-    // Observed provider outcome, recorded at the source. The safe runner
-    // prefers this over inferring Grok health from published pick counts.
-    sourceStatus: { grok: grokStatus },
-    // Official-field coverage, so the page can disclose unmodeled entrants
-    // without fetching current-tournament.json for a second time.
+    status: bestBetsStatus,
+    reason: bestBetsReason,
+    sourceStatus,
+    oddsDiagnostics,
+    recommendations: bestBetsStatus === "official-best-bets" ? recommendations : [],
+    modelLeans: bestBetsStatus === "model-leans-only" ? modelLeans : [],
+    portfolioDiagnostics,
     fieldCoverage,
-    methodologyNotes: [
-      "Picks are generated from a course-weighted strokes-gained model, cross-checked against the official PGA TOUR field.",
-      isPostOpen
-        ? "Post-Open Championship, Scottish Open, and FedExCup context is included because this is the tournament immediately following The Open Championship."
-        : "Post-Open Championship / FedExCup context does not apply this week.",
-    ],
+    methodologyNotes,
     dataLimitations,
-  };
+  });
+  payload.preview = preview;
+  payload.article = article;
+  payload.valueBets = [];
+  payload.researchContext = researchContext;
+  payload.selectedPlayers = selectedPlayers;
 
   if (normalizeEventKey(payload.tournament) !== normalizeEventKey(currentField.tournament)) {
     throw new Error(`Refusing to write best-bets.json for ${payload.tournament}; official current field is ${currentField.tournament}.`);
@@ -1371,7 +1261,7 @@ async function main() {
     writeFileSync(payloadPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
     console.log(`[pga-best-bets] dry-run: wrote ${DRY_RUN_PROMPTS.length} prompt(s) to ${promptsPath}`);
     console.log(`[pga-best-bets] dry-run: wrote assembled payload to ${payloadPath}`);
-    console.log(`[pga-best-bets] dry-run: sections -- outrights=${outrights.length} top5=${top5.length} top10=${top10.length} top20=${top20.length} article=${article ? "generated" : "none (no fixture / skipped)"}`);
+    console.log(`[pga-best-bets] dry-run: status=${payload.status} outrights=${payload.outrights.length} top5=${payload.top5.length} top10=${payload.top10.length} top20=${payload.top20.length} article=${article ? "generated" : "none (no fixture / skipped)"}`);
     console.log(`[pga-best-bets] dry-run: ${OUTPUT_PATH} was NOT modified.`);
     return;
   }

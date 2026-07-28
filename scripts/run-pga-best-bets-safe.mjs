@@ -80,11 +80,31 @@ export function buildUnavailableArtifact(field, model, reason = "GROK_UNAVAILABL
   };
 }
 
+/**
+ * V3 artifacts (PR A's deterministic pipeline) already carry their own
+ * status/sourceStatus/schemaVersion computed against the frozen selection --
+ * recomputing status here from a naive 4-market count would silently
+ * downgrade a valid "model-leans-only" artifact (which has EMPTY
+ * outrights/top5/top10/top20 by design) to "unavailable". Only
+ * tournamentId/localScheduleId/course are backfilled from the official field.
+ */
+function finalizeV3Artifact(artifact, field, model) {
+  return {
+    ...artifact,
+    tournamentId: field.tournamentId ?? artifact.tournamentId ?? null,
+    localScheduleId: field.localScheduleId ?? artifact.localScheduleId ?? null,
+    course: artifact.course ?? model.courseName ?? null,
+  };
+}
+
 export function finalizeSuccessfulArtifact(artifact, field, model) {
   if (!artifactMatchesCurrentTournament(artifact, field)) {
     throw new Error(
       `Generated PGA best bets belong to ${artifact?.tournament ?? "an unknown tournament"}; current field is ${field.tournament}.`,
     );
+  }
+  if (artifact?.schemaVersion === 3) {
+    return finalizeV3Artifact(artifact, field, model);
   }
   const counts = Object.fromEntries(
     ["outrights", "top5", "top10", "top20"].map((key) => [key, Array.isArray(artifact[key]) ? artifact[key].length : 0]),
@@ -163,13 +183,16 @@ function main() {
 
   if (previousIsCurrentAndUseful) {
     emitWarning("The provider failed, so the previous valid current-tournament picks were preserved.");
+    // A V3 artifact keeps its own status (official-best-bets/model-leans-only)
+    // rather than being coerced into the legacy available/partial values.
+    const isV3 = previous.schemaVersion === 3;
     writeJson(OUTPUT_PATH, {
       ...previous,
-      schemaVersion: 2,
+      schemaVersion: isV3 ? 3 : 2,
       tournamentId: field.tournamentId ?? previous.tournamentId ?? null,
       localScheduleId: field.localScheduleId ?? previous.localScheduleId ?? null,
-      status: previous.status === "partial" ? "partial" : "available",
-      reason: null,
+      status: isV3 ? previous.status : previous.status === "partial" ? "partial" : "available",
+      reason: isV3 ? previous.reason : null,
       sourceStatus: {
         ...(previous.sourceStatus ?? {}),
         model: "available",

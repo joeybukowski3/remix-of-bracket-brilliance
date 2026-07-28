@@ -150,7 +150,14 @@ export function buildModelLeans(rows, caps = MODEL_LEANS_CAPS) {
   for (const market of CANONICAL_MARKETS) {
     const ranked = [...(rows ?? [])]
       .filter((row) => Number.isFinite(row.provisionalModelProbability?.[market]))
-      .sort((a, b) => b.provisionalModelProbability[market] - a.provisionalModelProbability[market] || a.player.localeCompare(b.player))
+      .sort((a, b) =>
+        b.provisionalModelProbability[market] - a.provisionalModelProbability[market]
+        // Small fields legitimately saturate every player's finish probability
+        // at 1.0 (e.g. top20 is guaranteed in a 3-player field) -- model rank,
+        // not alphabetical order, must break that tie so the strongest player
+        // is never arbitrarily excluded by name.
+        || (a.rank ?? Infinity) - (b.rank ?? Infinity)
+        || a.player.localeCompare(b.player))
       .slice(0, caps[market]);
     for (const row of ranked) {
       perMarket[market].push({

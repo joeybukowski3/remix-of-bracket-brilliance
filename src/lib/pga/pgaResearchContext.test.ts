@@ -398,7 +398,7 @@ describe("per-recommendation odds visibility in the article prompt", () => {
 });
 
 describe("generator end-to-end (dry run, stored fixture)", () => {
-  it("includes top5 in article inputs, persists context, and leaves production data untouched", () => {
+  it("falls back to deterministic Model Leans, persists research context, and leaves production data untouched", () => {
     const repoRoot = process.cwd();
     const productionArtifact = path.join(repoRoot, "public", "data", "pga", "best-bets.json");
     const hashBefore = createHash("sha256").update(readFileSync(productionArtifact)).digest("hex");
@@ -430,15 +430,15 @@ describe("generator end-to-end (dry run, stored fixture)", () => {
     });
     writeJson("fedex-standings.json", { rows: [{ player: "Alpha One", rank: 12, points: 900 }] });
 
-    const mkPick = (player: string) => ({
-      player, tournamentRank: 1, powerRank: 21,
-      topStats: ["SG Total=1.5", "SG APP=0.5"], bullets: ["Strong approach play."],
-      risk: "Variance.", angles: [],
-    });
+    // PR A: Grok no longer selects golfers -- there is no "combined-picks"
+    // fixture anymore. With no ODDS_API_KEY, the deterministic pipeline falls
+    // back to capped, unpriced Model Leans built from tournament rank via the
+    // provisional probability model. A 4-player field with per-market caps of
+    // 2/2/3/3 (outright/top5/top10/top20) means the weakest player (Delta
+    // Four, rank #4) is excluded from every market -- selectedPlayers is the
+    // other three.
     const fixturePath = path.join(root, "fixture.json");
     writeFileSync(fixturePath, JSON.stringify({
-      "combined-picks-1": { outrights: [mkPick("Alpha One")], top5: [mkPick("Charlie Three")] },
-      "combined-picks-2": { top10: [mkPick("Bravo Two")], top20: [mkPick("Delta Four")] },
       article: {
         title: "Test Open Model Targets",
         dek: "Model-led card.",
@@ -449,7 +449,7 @@ describe("generator end-to-end (dry run, stored fixture)", () => {
           { text: "Back Outsider too.", players: ["Outsider Nine"] },
         ],
         playersToApproachCautiously: [
-          { player: "Delta Four", reason: "No tracked rounds." },
+          { player: "Bravo Two", reason: "Missed the cut at the Scottish Open." },
           { player: "Outsider Nine", reason: "Not selected at all." },
         ],
         sections: [
@@ -472,8 +472,13 @@ describe("generator end-to-end (dry run, stored fixture)", () => {
       const prompts = JSON.parse(readFileSync(path.join(artifactsDir, "dry-run-prompts.json"), "utf8"));
       const articlePrompt = prompts.find((p: { label: string }) => p.label === "article")?.prompt ?? "";
 
-      // Top-5 is part of the frozen selection handed to the article.
-      expect(articlePrompt).toContain("Top-5 targets: Charlie Three");
+      // Deterministic Model Leans are part of the frozen selection handed to
+      // the article -- Alpha One (rank #1) and Bravo Two (rank #2) clear the
+      // outright/top5 caps; Charlie Three (rank #3) joins them in top10/top20.
+      expect(payload.status).toBe("model-leans-only");
+      expect(payload.recommendations).toEqual([]);
+      expect(articlePrompt).toContain("Outright targets: Alpha One");
+      expect(articlePrompt).toContain("Top-10 targets: Alpha One (rank #1, odds=UNAVAILABLE); Bravo Two (rank #2, odds=UNAVAILABLE); Charlie Three");
       // Research classifications reach the prompt.
       expect(articlePrompt).toContain("openFinish=TOP_5");
       expect(articlePrompt).toContain("majorSwingWorkload=");
@@ -484,12 +489,16 @@ describe("generator end-to-end (dry run, stored fixture)", () => {
       // With no odds anywhere, price-value language is forbidden outright.
       expect(articlePrompt).toMatch(/NO market prices are available/);
 
-      // Context covers the union of all four markets.
-      expect(payload.selectedPlayers.sort()).toEqual([...players].sort());
-      expect(Object.keys(payload.researchContext)).toHaveLength(4);
+      // Context covers only the players who cleared a Model Leans cap --
+      // Delta Four (weakest rank) is excluded from every market by design.
+      expect(payload.selectedPlayers.sort()).toEqual(["Alpha One", "Bravo Two", "Charlie Three"]);
+      expect(Object.keys(payload.researchContext)).toHaveLength(3);
       expect(payload.researchContext["alpha one"].majorSwingWorkload.bucket).toBe(MajorSwingWorkloadBucket.TWO_ROUNDS);
-      expect(payload.researchContext["delta four"].majorSwingWorkload.bucket).toBe(MajorSwingWorkloadBucket.NO_TRACKED_ROUNDS);
+      expect(payload.researchContext["charlie three"].majorSwingWorkload.bucket).toBe(MajorSwingWorkloadBucket.NO_TRACKED_ROUNDS);
       expect(payload.dataLimitations.join(" ")).toMatch(/does not necessarily mean the player rested/);
+      // Model Leans never carry EV, odds, or price/value language.
+      expect(payload.modelLeans.length).toBeGreaterThan(0);
+      expect(payload.modelLeans.every((lean: Record<string, unknown>) => !("expectedValue" in lean) && !("odds" in lean))).toBe(true);
 
       // Every recommendation line carries an explicit odds marker, and the
       // per-recommendation restriction is stated.
@@ -504,7 +513,7 @@ describe("generator end-to-end (dry run, stored fixture)", () => {
       // Unselected entries are stripped from BOTH structured surfaces; valid
       // entries and the editorial prose survive.
       expect(payload.article.playersToApproachCautiously).toEqual([
-        { player: "Delta Four", reason: "No tracked rounds." },
+        { player: "Bravo Two", reason: "Missed the cut at the Scottish Open." },
       ]);
       expect(payload.article.keyTakeaways).toEqual([
         { text: "Alpha One leads.", players: ["Alpha One"] },
