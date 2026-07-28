@@ -2,12 +2,15 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useJkbTrendRankings, type JkbTrendRanking } from "@/hooks/useJkbTrendRankings";
 import { normalizePlayerKey, type PgaHistoryResult, type PgaTournamentModelRow } from "@/lib/pga/historyModel";
 import { percentileHeatClass } from "@/lib/pga/pgaHeatColors";
-import { buildPercentileLookup, getPercentileTier, PERCENTILE_TIER_LEGEND } from "@/lib/mlb/percentileColorScale";
+import { PERCENTILE_TIER_LEGEND } from "@/lib/mlb/percentileColorScale";
+import { buildPgaScorePercentileLookup, getPgaScoreTier } from "@/lib/pga/pgaScoreColorScale";
+import { countryCodeToFlag, getPgaPlayerNationality } from "@/lib/pga/playerNationality";
 
 export type PgaRankMode = "field" | "tour";
 
 type Props = {
   rows: PgaTournamentModelRow[];
+  scoreComparisonRows: PgaTournamentModelRow[];
   statView: "percentile" | "raw";
   isMajor: boolean;
   eventLabel: string;
@@ -36,33 +39,20 @@ const RECENT_START_COUNT = 5;
 const statKeys = ["sgTotal", "sgApp", "sgPutt", "sgAtG", "drivingAccuracy", "drivingDistance"] as const;
 const statLabels = ["SG Total", "SG App", "SG Putt", "SG ARG", "Drive Acc.", "Drive Dist."];
 
-const INTERNATIONAL_COUNTRY_CODES: Record<string, string> = {
-  adamsvensson: "CA", adriendumontdechassart: "BE", adriensaddier: "FR", aldrichpotgieter: "ZA",
-  alejandrotosti: "AR", camdavis: "AU", christiaanbezuidenhout: "ZA", christolamprecht: "ZA",
-  coreyconners: "CA", emilianogrillo: "AR", erikvanrooyen: "ZA", garrickhiggo: "ZA",
-  haotongli: "CN", harryhall: "GB", hidekimatsuyama: "JP", jespersvensson: "SE",
-  johnparry: "GB", jordansmith: "GB", justinquiban: "PH", karlvilips: "AU", keitanakajima: "JP",
-  kenseihirata: "JP", kevinyu: "TW", kristofferventura: "NO", mackenziehughes: "CA",
-  marcelorozo: "CO", marcopenge: "GB", mattwallace: "GB", matthieupavon: "FR", mattischmid: "DE",
-  nicktaylor: "CA", nicoechavarria: "CO", nicolaihojgaard: "DK", pontusnyholm: "SE",
-  rafaelcampos: "PR", rasmushojgaard: "DK", rasmusneergaardpetersen: "DK", ricohoey: "PH",
-  ryanruffels: "AU", ryohisatsune: "JP", seamuspower: "IE", siwookim: "KR", stefanomazzoli: "IT",
-  stephanjaeger: "DE", sudarshanyellamaraju: "CA", sungjaeim: "KR", takumikanaya: "JP",
-  taylorpendrith: "CA", thorbjornolesen: "DK", zechengdou: "CN",
-};
-
-function countryCodeForPlayer(player: string) {
-  return INTERNATIONAL_COUNTRY_CODES[normalizePlayerKey(player)] ?? "US";
-}
-
-function countryFlag(code: string) {
-  return code.toUpperCase().replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
-}
-
-export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLabel, rankMode = "field" }: Props) {
+export default function PgaHistoryModelTable({
+  rows,
+  scoreComparisonRows,
+  statView,
+  isMajor,
+  eventLabel,
+  rankMode = "field",
+}: Props) {
   const { payload: trendPayload, rankingMap, error: trendError } = useJkbTrendRankings();
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
-  const scorePercentiles = useMemo(() => buildPercentileLookup(rows.map((row) => row.modelScore)), [rows]);
+  const scorePercentiles = useMemo(
+    () => buildPgaScorePercentileLookup(scoreComparisonRows),
+    [scoreComparisonRows],
+  );
 
   return (
     <>
@@ -75,7 +65,7 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
         <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] text-amber-900">JKB Trend Rank is temporarily unavailable; the previous finish-based trend is shown.</div>
       ) : null}
 
-      <ScoreColorLegend />
+      <ScoreColorLegend rankMode={rankMode} />
 
       <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm lg:block">
         <table className="w-full min-w-[1180px] table-fixed text-center text-[12px] leading-tight">
@@ -109,14 +99,14 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
   );
 }
 
-function ScoreColorLegend() {
+function ScoreColorLegend({ rankMode }: { rankMode: PgaRankMode }) {
   return (
     <div className="mb-2 rounded-xl border border-slate-200/80 bg-white/90 px-3 py-2 shadow-sm" data-testid="pga-score-color-legend" aria-label="PGA score color scale legend">
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
         <span className="mr-1 text-[10px] font-bold text-slate-600">Score tiers</span>
-        {PERCENTILE_TIER_LEGEND.map((tier) => <span key={tier.id} className="inline-flex items-center gap-1 whitespace-nowrap text-[10px] font-semibold text-slate-500"><span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: tier.style.backgroundColor, border: tier.style.border }} aria-hidden="true" />{tier.label}</span>)}
+        {PERCENTILE_TIER_LEGEND.map((tier) => <span key={tier.id} className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-[10px] font-semibold text-slate-500"><span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: tier.style.backgroundColor, border: tier.style.border }} aria-hidden="true" />{tier.label}</span>)}
       </div>
-      <p className="mt-1 text-[9px] leading-snug text-slate-400">Colors compare model scores within the golfers currently shown.</p>
+      <p className="mt-1 text-[9px] leading-snug text-slate-400">Colors use the complete {rankMode === "field" ? "official-field" : "all-player"} model population for this view. Search does not change tiers.</p>
     </div>
   );
 }
@@ -126,8 +116,14 @@ function DesktopColumnWidths({ isMajor }: { isMajor: boolean }) {
 }
 
 function PlayerName({ player, mobile = false }: { player: string; mobile?: boolean }) {
-  const code = countryCodeForPlayer(player);
-  return <span className="flex min-w-0 items-center gap-1.5"><span className="shrink-0 text-[13px] leading-none" role="img" aria-label={`${code} flag`}>{countryFlag(code)}</span><span className={`${mobile ? "whitespace-normal text-[14px]" : "truncate whitespace-nowrap text-[12px]"} min-w-0 font-semibold leading-tight text-slate-900`}>{player}</span></span>;
+  const nationality = getPgaPlayerNationality(player);
+  const flag = nationality ? countryCodeToFlag(nationality.countryCode) : null;
+  return (
+    <span className="flex min-w-0 items-center gap-1.5">
+      {flag ? <span className="shrink-0 text-[13px] leading-none" role="img" aria-label={nationality?.countryName}>{flag}</span> : null}
+      <span className={`${mobile ? "line-clamp-2 whitespace-normal text-[14px] leading-[1.2]" : "truncate whitespace-nowrap text-[12px] leading-tight"} min-w-0 font-medium text-slate-900`}>{player}</span>
+    </span>
+  );
 }
 
 function DesktopRow({ row, index, statView, isMajor, rankMode, scorePercentile, trendRanking }: { row: PgaTournamentModelRow; index: number; statView: "percentile" | "raw"; isMajor: boolean; rankMode: PgaRankMode; scorePercentile: number | null; trendRanking: JkbTrendRanking | null; }) {
@@ -135,7 +131,7 @@ function DesktopRow({ row, index, statView, isMajor, rankMode, scorePercentile, 
   const rankDisplay = resolveRankDisplay(row, rankMode);
   return <tr className={`${bg} hover:bg-emerald-50/40`}>
     <td className="border-b border-slate-100 px-1 py-2.5 text-[11px] tabular-nums text-slate-500"><span className="block font-bold text-slate-900">{rankDisplay.primaryValue}</span><span className="block text-[9px] font-medium text-slate-400">{rankDisplay.secondary ? `${rankDisplay.secondary.label} #${rankDisplay.secondary.value}` : rankDisplay.primaryLabel}</span></td>
-    <td className="border-b border-r border-slate-100 px-2 py-2.5 text-left" title={row.player}><PlayerName player={row.player} /></td>
+    <td className="min-w-0 border-b border-r border-slate-100 px-2 py-2.5 text-left" title={row.player}><PlayerName player={row.player} /></td>
     <td className="border-b border-r border-slate-100 px-1 py-2.5"><Score value={row.modelScore} percentile={scorePercentile} /></td>
     {statKeys.map((key, statIndex) => <td key={key} className={`${statIndex === 0 ? "border-l" : ""} border-b border-slate-100 p-0`}>{statView === "percentile" ? <Percentile value={row.displayPercentiles[key] ?? null} /> : <Raw value={raw(row, key)} />}</td>)}
     <td className="border-b border-l border-slate-100 p-0"><Percentile value={row.courseFit} /></td><td className="border-b border-slate-100 px-1 py-1.5"><Trend ranking={trendRanking} direction={row.trend.direction} label={row.trend.label} /></td><td className="border-b border-l border-slate-100 px-1 py-1.5"><FinishStrip values={row.recentResults} count={RECENT_START_COUNT} trendStyle /></td>
@@ -163,7 +159,7 @@ function Finish({ value, trendStyle = false, dense = false }: { value?: PgaHisto
 }
 function Percentile({ value }: { value: number | null | undefined }) { if (value == null) return <div className="flex h-9 items-center justify-center bg-slate-100 text-slate-400">—</div>; return <div className={`flex h-9 items-center justify-center px-0.5 text-[13px] font-bold tabular-nums ${percentileHeatClass(value)}`}>{Math.round(value)}</div>; }
 function Raw({ value }: { value: string }) { return <div className="flex h-9 items-center justify-center px-0.5 text-[12px] font-semibold tabular-nums text-slate-800">{value}</div>; }
-function Score({ value, percentile }: { value: number; percentile: number | null }) { const tier = getPercentileTier(percentile); return <span className="inline-flex min-w-[3.25rem] shrink-0 justify-center rounded-md px-1.5 py-1 text-[11px] font-bold tabular-nums" style={tier ? { backgroundColor: tier.style.backgroundColor, color: tier.style.color, border: tier.style.border } : undefined} data-percentile-tier={tier?.id ?? "neutral"} title={tier ? `${tier.label} · score percentile within golfers shown` : "Score"}>{value.toFixed(1)}</span>; }
+function Score({ value, percentile }: { value: number; percentile: number | null }) { const tier = getPgaScoreTier(value, new Map([[value, percentile ?? Number.NaN]])); return <span className="inline-flex min-w-[3.25rem] shrink-0 justify-center rounded-md px-1.5 py-1 text-[11px] font-bold tabular-nums" style={tier ? { backgroundColor: tier.style.backgroundColor, color: tier.style.color, border: tier.style.border } : undefined} data-percentile-tier={tier?.id ?? "neutral"} title={tier ? `${tier.label} · stable score percentile for the active comparison population` : "Score"}>{value.toFixed(1)}</span>; }
 function Trend({ ranking, direction, label }: { ranking: JkbTrendRanking | null; direction: "up" | "down" | "flat" | "unknown"; label: string; }) { if (ranking?.rank != null) { const sources = Object.entries(ranking.sourceCounts ?? {}).map(([tour, count]) => `${tour}: ${count}`).join(" · "); const title = [`JKB Trend Rank #${ranking.rank}`, `Recent 20: ${signed(ranking.recent20)}`, `Vs baseline: ${signed(ranking.vsBaseline)}`, `${ranking.roundsUsed} rounds`, ranking.confidence === "provisional" ? "Provisional sample" : "Official sample", sources].filter(Boolean).join(" · "); return <div title={title} className="flex flex-col items-center leading-none"><span className="text-[13px] font-black tabular-nums text-cyan-800">#{ranking.rank}{ranking.confidence === "provisional" ? "*" : ""}</span><span className={`mt-0.5 text-[11px] font-bold tabular-nums ${(ranking.vsBaseline ?? 0) > 0.15 ? "text-emerald-700" : (ranking.vsBaseline ?? 0) < -0.15 ? "text-rose-700" : "text-slate-600"}`}>{signed(ranking.recent20)}</span></div>; } const icon = direction === "up" ? "↑" : direction === "down" ? "↓" : direction === "flat" ? "→" : ""; const className = direction === "up" ? "text-emerald-700" : direction === "down" ? "text-rose-700" : "text-slate-600"; return <span className={`whitespace-nowrap text-[12px] font-black ${className}`}>{icon} {label}</span>; }
 function Metric({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border bg-white px-2 py-2"><div className="text-[10px] font-black uppercase text-slate-500">{label}</div><div className="text-[13px] font-black tabular-nums">{value}</div></div>; }
 function PercentileMetric({ label, value, plainValue = false }: { label: string; value: number | null | undefined; plainValue?: boolean }) { const className = value == null ? "pga-heat-missing bg-slate-100 text-slate-500" : percentileHeatClass(value); const display = value == null ? "—" : plainValue ? String(Math.round(value)) : pct(value); return <div className={`rounded-lg border border-white/70 px-2 py-2 font-bold tabular-nums ${className}`}><div className="text-[10px] font-black uppercase opacity-75">{label}</div><div className="text-[13px] font-black">{display}</div></div>; }
