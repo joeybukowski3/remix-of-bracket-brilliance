@@ -1,17 +1,17 @@
 {
-  "date": "2026-07-27",
-  "generatedAt": "2026-07-27T17:21:07.477Z",
+  "date": "2026-07-28",
+  "generatedAt": "2026-07-28T09:59:24.267Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Nationals Park and Great American Ball Park are the primary HR-friendly venues today, with Scherzer facing a Nationals lineup that ranks 1-4 in the model and Cecconi pitching in a park with a 1.25 factor. Rate Field (1.07) and Angel Stadium (1.02) offer secondary boosts, while PNC Park (0.9) and Oracle Park (0.85) suppress power despite strong individual profiles like Valdez and Schmitt.",
-    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and recent HR volume over park factors, which is why Wood, Abrams, and Rice occupy the top three spots despite mixed venue conditions."
+    "slateOverview": "Nationals Park and Great American Ball Park are the two most favorable HR environments today, with WSH-TOR and CIN-CLE both featuring right-handed starters who have surrendered 78 and 54 HR per 1000 PA respectively. Petco Park and loanDepot park are suppressing power, but the model still surfaces Ty France and Griffin Conine because their underlying barrel and pull rates overcome the park penalties. Weather is neutral across the slate.",
+    "modelNote": "The model is overweighting barrel rate and opposing pitcher HR vulnerability, which is why James Wood and CJ Abrams occupy the top two spots despite facing a fly-ball pitcher in a neutral park."
   },
   "bestBets": [
     {
       "player": "James Wood",
       "team": "WSH",
       "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
+      "opposingPitcher": "Shane Bieber",
       "hrScoreRank": 1,
       "topStats": [
         "barrel=22.2%",
@@ -21,8 +21,8 @@
         "barrel=22.2%",
         "HH=59%"
       ],
-      "hrOddsYes": "+230",
-      "marketImpliedProbability": 0.30303030303030304,
+      "hrOddsYes": "+330",
+      "marketImpliedProbability": 0.23255813953488372,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -30,7 +30,7 @@
       "player": "CJ Abrams",
       "team": "WSH",
       "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
+      "opposingPitcher": "Shane Bieber",
       "hrScoreRank": 2,
       "topStats": [
         "barrel=11.5%",
@@ -40,8 +40,8 @@
         "barrel=11.5%",
         "HH=42.8%"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -49,7 +49,7 @@
       "player": "Ben Rice",
       "team": "NYY",
       "opponent": "CWS",
-      "opposingPitcher": "Noah Schultz",
+      "opposingPitcher": "Anthony Kay",
       "hrScoreRank": 3,
       "topStats": [
         "barrel=15.8%",
@@ -59,8 +59,8 @@
         "barrel=15.8%",
         "HH=48.2%"
       ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
+      "hrOddsYes": "+310",
+      "marketImpliedProbability": 0.24390243902439024,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -68,7 +68,47 @@
       "player": "Luis García Jr.",
       "team": "WSH",
       "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
+      "opposingPitcher": "Shane Bieber",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=78.2",
+        "Hard Hit%=45.3"
+      ],
+      "bullets": [
+        "HR score 73.7 (#4)",
+        "Pitcher HR VS 78.2 at park 0.98"
+      ],
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Andrés Chaparro",
+      "team": "WSH",
+      "opponent": "TOR",
+      "opposingPitcher": "Shane Bieber",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=78.2",
+        "Hard Hit%=51.9"
+      ],
+      "bullets": [
+        "HR score 70.7 (#5)",
+        "Pitcher HR VS 78.2 at park 0.98"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Luis García Jr.",
+      "team": "WSH",
+      "opponent": "TOR",
+      "opposingPitcher": "Shane Bieber",
       "hrScoreRank": 4,
       "topStats": [
         "barrel=11.4%",
@@ -78,48 +118,46 @@
         "barrel=11.4%",
         "HH=45.3%"
       ],
-      "hrOddsYes": "+320",
-      "marketImpliedProbability": 0.23809523809523808,
+      "hrOddsYes": "+450",
+      "marketImpliedProbability": 0.18181818181818182,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Esmerlyn Valdez",
-      "team": "PIT",
-      "opponent": "AZ",
-      "opposingPitcher": "Merrill Kelly",
+      "player": "Andrés Chaparro",
+      "team": "WSH",
+      "opponent": "TOR",
+      "opposingPitcher": "Shane Bieber",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=28.6%",
-        "HH=54.3%"
+        "barrel=13%",
+        "HH=51.9%"
       ],
       "bullets": [
-        "barrel=28.6%",
-        "HH=54.3%"
+        "barrel=13%",
+        "HH=51.9%"
       ],
-      "hrOddsYes": "+340",
-      "marketImpliedProbability": 0.22727272727272727,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
+    },
     {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "CLE",
-      "opposingPitcher": "Slade Cecconi",
-      "hrScoreRank": 7,
+      "player": "Ty France",
+      "team": "SD",
+      "opponent": "COL",
+      "opposingPitcher": "Michael Lorenzen",
+      "hrScoreRank": 6,
       "topStats": [
-        "barrel=15.2%",
-        "HH=52.7%"
+        "barrel=11.8%",
+        "HH=50.3%"
       ],
       "bullets": [
-        "barrel=15.2%",
-        "HH=52.7%"
+        "barrel=11.8%",
+        "HH=50.3%"
       ],
-      "hrOddsYes": "+290",
-      "marketImpliedProbability": 0.2564102564102564,
+      "hrOddsYes": "+520",
+      "marketImpliedProbability": 0.16129032258064516,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -127,77 +165,115 @@
       "player": "Yordan Alvarez",
       "team": "HOU",
       "opponent": "LAA",
-      "opposingPitcher": "Walbert Ureña",
-      "hrScoreRank": 8,
+      "opposingPitcher": "Reid Detmers",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=18.8%",
-        "HH=53.4%"
+        "Hard Hit%=53.4",
+        "Pitcher HR VS=44.7"
       ],
       "bullets": [
-        "barrel=18.8%",
-        "HH=53.4%"
+        "HR score 69.3 (#7)",
+        "Pitcher HR VS 44.7 at park 1.02"
       ],
-      "hrOddsYes": "+220",
-      "marketImpliedProbability": 0.3125,
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Casey Schmitt",
-      "team": "SF",
-      "opponent": "MIL",
-      "opposingPitcher": "Brandon Sproat",
-      "hrScoreRank": 9,
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "CLE",
+      "opposingPitcher": "Slade Cecconi",
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=12.3%",
-        "HH=45%"
+        "Pitcher HR VS=53.6",
+        "Hard Hit%=52.7"
       ],
       "bullets": [
-        "barrel=12.3%",
-        "HH=45%"
+        "HR score 68.2 (#8)",
+        "Pitcher HR VS 53.6 at park 1.25"
       ],
-      "hrOddsYes": "+525",
-      "marketImpliedProbability": 0.16,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Heliot Ramos",
-      "team": "SF",
-      "opponent": "MIL",
-      "opposingPitcher": "Brandon Sproat",
-      "hrScoreRank": 15,
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "LAA",
+      "opposingPitcher": "Reid Detmers",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=15.3%",
-        "HH=50%"
+        "barrel=18.8%",
+        "HH=53.4%"
       ],
       "bullets": [
-        "barrel=15.3%",
-        "HH=50%"
+        "barrel=18.8%",
+        "HH=53.4%"
       ],
-      "hrOddsYes": "+575",
-      "marketImpliedProbability": 0.14814814814814814,
+      "hrOddsYes": "+240",
+      "marketImpliedProbability": 0.29411764705882354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Dylan Crews",
-      "team": "WSH",
-      "opponent": "TOR",
-      "opposingPitcher": "Max Scherzer",
-      "hrScoreRank": 24,
+      "player": "Elly De La Cruz",
+      "team": "CIN",
+      "opponent": "CLE",
+      "opposingPitcher": "Slade Cecconi",
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=9.9%",
-        "HH=43.8%"
+        "barrel=15.2%",
+        "HH=52.7%"
       ],
       "bullets": [
-        "barrel=9.9%",
-        "HH=43.8%"
+        "barrel=15.2%",
+        "HH=52.7%"
       ],
-      "hrOddsYes": "+540",
-      "marketImpliedProbability": 0.15625,
+      "hrOddsYes": "+320",
+      "marketImpliedProbability": 0.23809523809523808,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Griffin Conine",
+      "team": "MIA",
+      "opponent": "PHI",
+      "opposingPitcher": "Aaron Nola",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Pitcher HR VS=62.7",
+        "Hard Hit%=55.9"
+      ],
+      "bullets": [
+        "HR score 64.4 (#10)",
+        "Pitcher HR VS 62.7 at park 0.88"
+      ],
+      "hrOddsYes": "+600",
+      "marketImpliedProbability": 0.14285714285714285,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ryan Jeffers",
+      "team": "MIN",
+      "opponent": "KC",
+      "opposingPitcher": "Seth Lugo",
+      "hrScoreRank": 16,
+      "topStats": [
+        "Pitcher HR VS=72.8",
+        "Hard Hit%=41.4"
+      ],
+      "bullets": [
+        "HR score 61.7 (#16)",
+        "Pitcher HR VS 72.8 at park 0.97"
+      ],
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
