@@ -9,7 +9,7 @@ import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
 import { assessPgaFreshness } from "@/lib/pga/pgaFreshness";
 import { ACTIVE_PGA_MODEL_TOURNAMENT } from "@/lib/pga/tournaments";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
-import { marketOddsFor } from "@/lib/pga/marketOdds";
+import { PGA_MARKET_LABELS, marketOddsFor } from "@/lib/pga/marketOdds";
 import PgaFieldCoverageNote, { type PgaFieldCoverage } from "@/components/pga/PgaFieldCoverageNote";
 
 type BestBetPick = {
@@ -166,12 +166,16 @@ function normalizeTournamentLabel(value: string | null | undefined) {
  * without a number reads as complete instead of broken. It must never show
  * another market's price -- see marketOddsFor.
  */
-function OddsBadge({ value }: { value?: string | null }) {
+function OddsBadge({ value, marketLabel }: { value?: string | null; marketLabel: string }) {
   if (!value) {
     return (
       <span
         className="rounded-full border border-dashed border-gray-300 bg-gray-50 px-3 py-1 text-sm font-semibold text-gray-500"
         data-testid="odds-unavailable"
+        // The visible text omits the market because the card heading already
+        // names it; screen readers get the market explicitly so the chip is
+        // never an unattributed "Price unavailable".
+        aria-label={`${marketLabel} price unavailable`}
       >
         Price unavailable
       </span>
@@ -185,6 +189,7 @@ function OddsBadge({ value }: { value?: string | null }) {
           ? "rounded-full border border-green-300 bg-green-100 px-3 py-1 text-lg font-bold text-green-800"
           : "rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-lg font-bold text-gray-700"
       }
+      aria-label={`${marketLabel} price ${value}`}
     >
       {value}
     </span>
@@ -265,7 +270,7 @@ function PickCard({
         <div>
           <h3 className="text-xl font-semibold tracking-[-0.03em] text-gray-900">{pick.player}</h3>
           <div className="mt-3">
-            <OddsBadge value={oddsValue} />
+            <OddsBadge value={oddsValue} marketLabel={PGA_MARKET_LABELS[marketKey]} />
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">
@@ -557,9 +562,11 @@ export default function PgaBestBets() {
 
                     {picks.length ? (
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {picks.map((pick) => (
+                        {picks.map((pick, pickIndex) => (
                           <PickCard
-                            key={`${section.key}-${pick.player}`}
+                            // Index included so a duplicated player within one
+                            // market cannot collide on the React key.
+                            key={`${section.key}-${pickIndex}-${pick.player}`}
                             pick={pick}
                             tierNote={section.tierNote}
                             marketKey={section.key}
