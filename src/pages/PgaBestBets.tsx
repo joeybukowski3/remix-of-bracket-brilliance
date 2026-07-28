@@ -42,6 +42,10 @@ type BestBetsPayload = {
   tournament: string;
   course: string;
   generatedAt: string;
+  // V3 artifacts only (schemaVersion 3). Absent on legacy V2 artifacts,
+  // which must keep rendering exactly as before -- see isModelLeansOnly.
+  status?: string;
+  reason?: string | null;
   preview?: {
     tournamentOverview: string;
     modelExplainer: string;
@@ -99,6 +103,36 @@ const SECTIONS: Array<{
     tierNote: "Top 20: Consistency lean - placement shortlist.",
   },
 ];
+
+/**
+ * Copy used instead of SECTIONS when the artifact's V3 `status` is
+ * "model-leans-only" -- no verified sportsbook price backs any selection,
+ * so none of this copy may say Best Bets, Outright Winners, value, EV,
+ * edge, or sportsbook. See buildModelLeans/deriveV2CompatibilityFromLeans
+ * in scripts/lib/pga-best-bets-schema.mjs for where these entries come from.
+ */
+const MODEL_LEANS_SECTIONS: Record<"outrights" | "top5" | "top10" | "top20", { title: string; description: string; tierNote: string }> = {
+  outrights: {
+    title: "Outright Model Leans",
+    description: "Provisional model context only -- not an official recommendation.",
+    tierNote: "Model Lean: provisional model context, no verified price behind this selection.",
+  },
+  top5: {
+    title: "Top 5 Model Leans",
+    description: "Provisional model context only -- not an official recommendation.",
+    tierNote: "Model Lean: provisional model context, no verified price behind this selection.",
+  },
+  top10: {
+    title: "Top 10 Model Leans",
+    description: "Provisional model context only -- not an official recommendation.",
+    tierNote: "Model Lean: provisional model context, no verified price behind this selection.",
+  },
+  top20: {
+    title: "Top 20 Model Leans",
+    description: "Provisional model context only -- not an official recommendation.",
+    tierNote: "Model Lean: provisional model context, no verified price behind this selection.",
+  },
+};
 
 function formatGeneratedAt(value: string) {
   const date = new Date(value);
@@ -254,10 +288,16 @@ function PickCard({
   pick,
   tierNote,
   marketKey,
+  isModelLean = false,
 }: {
   pick: BestBetPick;
   tierNote: string;
   marketKey: "outrights" | "top5" | "top10" | "top20";
+  // A Model Lean never had a price sought for it -- rendering an odds/
+  // "price unavailable" chip here would imply market context that never
+  // existed. See scripts/lib/pga-best-bets-schema.mjs's
+  // deriveV2CompatibilityFromLeans, which always sets pick.odds to null.
+  isModelLean?: boolean;
 }) {
   // Strictly this market's price. The previous nested ternary fell back to the
   // outright number for every placement market, so a Top-20 card could render
@@ -269,9 +309,20 @@ function PickCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-xl font-semibold tracking-[-0.03em] text-gray-900">{pick.player}</h3>
-          <div className="mt-3">
-            <OddsBadge value={oddsValue} marketLabel={PGA_MARKET_LABELS[marketKey]} />
-          </div>
+          {isModelLean ? (
+            <div className="mt-3">
+              <span
+                className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800"
+                data-testid="model-lean-badge"
+              >
+                Model Lean
+              </span>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <OddsBadge value={oddsValue} marketLabel={PGA_MARKET_LABELS[marketKey]} />
+            </div>
+          )}
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-800">
               Tournament #{pick.tournamentRank}
@@ -340,6 +391,29 @@ function ArticleView({ article }: { article: Article }) {
         <p className="mt-1.5 text-sm leading-7 text-gray-800">{article.conclusion}</p>
       </div>
     </article>
+  );
+}
+
+/**
+ * Shown only when the artifact's V3 `status` is "model-leans-only" -- makes
+ * explicit, in the UI, that no verified sportsbook prices were available and
+ * that nothing below is an official Best Bet, EV figure, or value claim.
+ * Required so a Model Leans week cannot read as a normal Best Bets week.
+ */
+function ModelLeansBanner({ reason }: { reason?: string | null }) {
+  return (
+    <section
+      className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+      data-testid="model-leans-banner"
+    >
+      <div className="font-semibold">Model Leans this week -- no verified sportsbook prices</div>
+      <p className="mt-1.5 leading-6">
+        Verified sportsbook prices were not available for this tournament, so official Best Bets and expected-value
+        calculations could not be produced. Everything below is a provisional Model Lean: deterministic model
+        context only, not an official recommendation, a price, or a value claim.
+      </p>
+      {reason ? <p className="mt-1.5 text-xs text-amber-800/80">{reason}</p> : null}
+    </section>
   );
 }
 
@@ -433,6 +507,9 @@ export default function PgaBestBets() {
 
   const hasContent = useMemo(() => !isEmpty(data), [data]);
   const hasCurrentCard = hasContent && freshness.isUsable;
+  // V3-only. Absent (undefined) on every legacy V2 artifact, so legacy
+  // payloads always take the unchanged, non-leans render path below.
+  const isModelLeansOnly = data?.status === "model-leans-only";
 
   return (
     <SiteShell>
@@ -521,6 +598,8 @@ export default function PgaBestBets() {
                 actualLabel="Current card"
               />
 
+              {isModelLeansOnly ? <ModelLeansBanner reason={data?.reason} /> : null}
+
               {data?.preview && payloadMatchesTournament ? (
                 <section className="space-y-4">
                   <div>
@@ -535,7 +614,7 @@ export default function PgaBestBets() {
                 </section>
               ) : null}
 
-              {Array.isArray(data?.valueBets) && data.valueBets.length ? (
+              {!isModelLeansOnly && Array.isArray(data?.valueBets) && data.valueBets.length ? (
                 <section id="value" className="space-y-4 scroll-mt-24">
                   <div>
                     <h2 className="text-2xl font-semibold tracking-[-0.03em] text-amber-950">Odds Context</h2>
@@ -553,11 +632,15 @@ export default function PgaBestBets() {
               {SECTIONS.map((section) => {
                 // Guaranteed an array by normalizeBestBetsPayload.
                 const picks = data?.[section.key] ?? [];
+                // Model Leans copy replaces Best Bets/Outright Winners/tier
+                // language entirely for a model-leans-only artifact -- see
+                // MODEL_LEANS_SECTIONS.
+                const copy = isModelLeansOnly ? MODEL_LEANS_SECTIONS[section.key] : section;
                 return (
                   <section key={section.key} id={section.key} className="space-y-4 scroll-mt-24">
                     <div>
-                      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">{section.title}</h2>
-                      <p className="mt-1 text-sm text-gray-500">{section.description}</p>
+                      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">{copy.title}</h2>
+                      <p className="mt-1 text-sm text-gray-500">{copy.description}</p>
                     </div>
 
                     {picks.length ? (
@@ -568,8 +651,9 @@ export default function PgaBestBets() {
                             // market cannot collide on the React key.
                             key={`${section.key}-${pickIndex}-${pick.player}`}
                             pick={pick}
-                            tierNote={section.tierNote}
+                            tierNote={copy.tierNote}
                             marketKey={section.key}
+                            isModelLean={isModelLeansOnly}
                           />
                         ))}
                       </div>
