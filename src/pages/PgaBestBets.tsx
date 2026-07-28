@@ -9,6 +9,7 @@ import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
 import { assessPgaFreshness } from "@/lib/pga/pgaFreshness";
 import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
+import { marketOddsFor } from "@/lib/pga/marketOdds";
 
 type BestBetPick = {
   player: string;
@@ -120,8 +121,24 @@ function normalizeTournamentLabel(value: string | null | undefined) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/**
+ * Price for one market, or an explicit unavailable state.
+ *
+ * Renders a neutral chip rather than nothing when there is no price, so a card
+ * without a number reads as complete instead of broken. It must never show
+ * another market's price -- see marketOddsFor.
+ */
 function OddsBadge({ value }: { value?: string | null }) {
-  if (!value) return null;
+  if (!value) {
+    return (
+      <span
+        className="rounded-full border border-dashed border-gray-300 bg-gray-50 px-3 py-1 text-sm font-semibold text-gray-500"
+        data-testid="odds-unavailable"
+      >
+        Price unavailable
+      </span>
+    );
+  }
   const positive = value.startsWith("+");
   return (
     <span
@@ -199,14 +216,10 @@ function PickCard({
   tierNote: string;
   marketKey: "outrights" | "top5" | "top10" | "top20";
 }) {
-  const oddsValue =
-    marketKey === "outrights"
-      ? pick.odds?.outright
-      : marketKey === "top5"
-        ? pick.odds?.top5 ?? pick.odds?.outright
-        : marketKey === "top10"
-          ? pick.odds?.top10 ?? pick.odds?.outright
-          : pick.odds?.top20 ?? pick.odds?.outright;
+  // Strictly this market's price. The previous nested ternary fell back to the
+  // outright number for every placement market, so a Top-20 card could render
+  // an outright price as though it were a Top-20 price.
+  const oddsValue = marketOddsFor(pick, marketKey);
 
   return (
     <article className="rounded-xl border border-gray-200 border-l-4 border-l-[#166534] bg-white p-4 shadow-sm">
