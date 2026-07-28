@@ -18,14 +18,24 @@ export type VarianceProfile = {
   maximumMultiplier: number;
 };
 
+/**
+ * Bust (low-outcome) probabilities were reduced ~20% from their prior values
+ * (elite 0.035->0.028, high-end 0.045->0.036, mid-tier 0.06->0.048, low-tier
+ * 0.085->0.068) to modestly soften how often ordinary low outcomes occur,
+ * applied identically to user and CPU players. Ceiling probabilities and
+ * maximum multipliers are untouched, so ceiling frequency does not increase.
+ * The normal-branch target mean in simulatePlayerScoreDetailed is solved from
+ * these probabilities so the overall expected multiplier stays 1 regardless
+ * of the bust-probability value, preserving each player's existing mean.
+ */
 const TIER_PROFILES: Record<
   PlayerTier,
   Pick<VarianceProfile, "bustProbability" | "ceilingProbability" | "maximumMultiplier">
 > = {
-  elite: { bustProbability: 0.035, ceilingProbability: 0.035, maximumMultiplier: 3.1 },
-  "high-end": { bustProbability: 0.045, ceilingProbability: 0.032, maximumMultiplier: 3.25 },
-  "mid-tier": { bustProbability: 0.06, ceilingProbability: 0.028, maximumMultiplier: 3.5 },
-  "low-tier": { bustProbability: 0.085, ceilingProbability: 0.025, maximumMultiplier: 3.8 },
+  elite: { bustProbability: 0.028, ceilingProbability: 0.035, maximumMultiplier: 3.1 },
+  "high-end": { bustProbability: 0.036, ceilingProbability: 0.032, maximumMultiplier: 3.25 },
+  "mid-tier": { bustProbability: 0.048, ceilingProbability: 0.028, maximumMultiplier: 3.5 },
+  "low-tier": { bustProbability: 0.068, ceilingProbability: 0.025, maximumMultiplier: 3.8 },
 };
 
 export function buildPlayerTierMap(players: readonly SimulationPlayer[]) {

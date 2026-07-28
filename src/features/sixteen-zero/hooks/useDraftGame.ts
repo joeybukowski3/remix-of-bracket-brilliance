@@ -173,6 +173,7 @@ export function useDraftGame() {
         availablePlayers,
         roster,
         round: currentPick.round,
+        overallPick: currentPick.overallPick,
         picksRemainingIncludingCurrent: LEAGUE_CONFIG.rounds - roster.length,
         profile: state.strategies[currentPick.slot] ?? "balanced",
         random: new SeededRandom(state.seed!).fork(`cpu-pick-${currentPick.overallPick}`),

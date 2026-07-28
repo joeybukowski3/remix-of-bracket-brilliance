@@ -1,5 +1,5 @@
 import type { PlayoffQualification } from "../types";
-import { CPU_STANDINGS_CONFIG } from "../data/engineConfig";
+import { CPU_STANDINGS_CONFIG, MINIMUM_BYE_WINS } from "../data/engineConfig";
 import type { CpuRosterStrength } from "./rosterStrength";
 import { SeededRandom } from "./seededRandom";
 
@@ -123,11 +123,15 @@ export function determinePlayoffQualification({
   const standings = buildLeagueStandings(cpuStandings, userStanding);
   let seed = standings.findIndex((standing) => standing.isUser) + 1;
   if (userWins === 14) seed = Math.min(seed, 2);
+  // A top-two seed carries a Week 15 bye; require MINIMUM_BYE_WINS regular-season
+  // wins to hold one. A sub-threshold team that would otherwise land on seed 1
+  // or 2 is pushed to seed 3 instead of losing its playoff spot entirely.
+  if (seed <= 2 && userWins < MINIMUM_BYE_WINS) seed = 3;
   const qualified = seed <= 6;
 
   return {
     qualified,
     seed: qualified ? (seed as 1 | 2 | 3 | 4 | 5 | 6) : null,
-    hasBye: qualified && seed <= 2,
+    hasBye: qualified && seed <= 2 && userWins >= MINIMUM_BYE_WINS,
   };
 }

@@ -7,6 +7,8 @@ import { ResultCard } from "./components/ResultCard";
 import { SeasonSimulation } from "./components/SeasonSimulation";
 import { DEFENSE_POSITION_RANKS, SIMULATION_PLAYERS } from "./data";
 import { OPPONENT_NAMES } from "./data/opponentNames";
+import { computeRosterScoringProfile } from "./engine/rosterScoringProfile";
+import type { RosterScoringProfile } from "./engine/rosterScoringProfile";
 import { simulateSeason } from "./engine/seasonSimulation";
 import { useDraftGame } from "./hooks/useDraftGame";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -19,6 +21,7 @@ export default function SixteenZeroPage() {
   const navigate = useNavigate();
   const [screen, setScreen] = useState<Screen>("landing");
   const [seasonResult, setSeasonResult] = useState<SeasonResult | null>(null);
+  const [scoringProfile, setScoringProfile] = useState<RosterScoringProfile | null>(null);
   const startDraftGame = game.startDraft;
 
   usePageSeo({
@@ -30,6 +33,7 @@ export default function SixteenZeroPage() {
 
   const openSlotSelection = useCallback(() => {
     setSeasonResult(null);
+    setScoringProfile(null);
     setScreen("slot-select");
   }, []);
 
@@ -52,19 +56,28 @@ export default function SixteenZeroPage() {
     ) {
       return;
     }
+    const draftedPlayerIds = new Set(
+      game.selections.map((selection) => selection.playerId),
+    );
     const result = simulateSeason({
       roster: game.userRoster,
       userSlot: game.draftSlot,
       allRosters: game.rosters,
       playerUniverse: SIMULATION_PLAYERS,
-      draftedPlayerIds: new Set(
-        game.selections.map((selection) => selection.playerId),
-      ),
+      draftedPlayerIds,
       defenseRanks: DEFENSE_POSITION_RANKS,
       opponentNames: OPPONENT_NAMES.map((entry) => entry.name),
       seed: game.seed,
     });
     setSeasonResult(result);
+    setScoringProfile(
+      computeRosterScoringProfile(
+        game.userRoster,
+        SIMULATION_PLAYERS,
+        draftedPlayerIds,
+        DEFENSE_POSITION_RANKS,
+      ),
+    );
     setScreen("simulating");
   }, [
     game.draftSlot,
@@ -98,6 +111,7 @@ export default function SixteenZeroPage() {
       <ResultCard
         result={seasonResult}
         draftSlot={game.draftSlot ?? 1}
+        scoringProfile={scoringProfile}
         onDraftAgain={openSlotSelection}
       />
     );

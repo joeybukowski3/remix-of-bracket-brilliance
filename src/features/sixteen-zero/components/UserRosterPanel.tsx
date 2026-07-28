@@ -51,7 +51,7 @@ function assignDraftRoster(roster: readonly SimulationPlayer[]) {
   return { starters, bench: available };
 }
 
-function RosterContents({
+export function RosterContents({
   roster,
   picksRemaining,
 }: {
