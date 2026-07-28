@@ -3,60 +3,37 @@ export type PgaPlayerNationality = {
   countryName: string;
 };
 
-const PLAYER_NATIONALITIES: Record<string, PgaPlayerNationality> = {
-  adamsvensson: { countryCode: "CA", countryName: "Canada" },
-  adriendumontdechassart: { countryCode: "BE", countryName: "Belgium" },
-  adriensaddier: { countryCode: "FR", countryName: "France" },
-  aldrichpotgieter: { countryCode: "ZA", countryName: "South Africa" },
-  alejandrotosti: { countryCode: "AR", countryName: "Argentina" },
-  brookskoepka: { countryCode: "US", countryName: "United States" },
-  camdavis: { countryCode: "AU", countryName: "Australia" },
-  christiaanbezuidenhout: { countryCode: "ZA", countryName: "South Africa" },
-  christolamprecht: { countryCode: "ZA", countryName: "South Africa" },
-  coreyconners: { countryCode: "CA", countryName: "Canada" },
-  emilianogrillo: { countryCode: "AR", countryName: "Argentina" },
-  erikvanrooyen: { countryCode: "ZA", countryName: "South Africa" },
-  garrickhiggo: { countryCode: "ZA", countryName: "South Africa" },
-  haotongli: { countryCode: "CN", countryName: "China" },
-  harryhall: { countryCode: "GB", countryName: "United Kingdom" },
-  hidekimatsuyama: { countryCode: "JP", countryName: "Japan" },
-  jespersvensson: { countryCode: "SE", countryName: "Sweden" },
-  johnparry: { countryCode: "GB", countryName: "United Kingdom" },
-  jordansmith: { countryCode: "GB", countryName: "United Kingdom" },
-  justinquiban: { countryCode: "PH", countryName: "Philippines" },
-  karlvilips: { countryCode: "AU", countryName: "Australia" },
-  keitanakajima: { countryCode: "JP", countryName: "Japan" },
-  kenseihirata: { countryCode: "JP", countryName: "Japan" },
-  kevinyu: { countryCode: "TW", countryName: "Taiwan" },
-  kristofferventura: { countryCode: "NO", countryName: "Norway" },
-  mackenziehughes: { countryCode: "CA", countryName: "Canada" },
-  marcelorozo: { countryCode: "CO", countryName: "Colombia" },
-  marcopenge: { countryCode: "GB", countryName: "United Kingdom" },
-  mattwallace: { countryCode: "GB", countryName: "United Kingdom" },
-  matthieupavon: { countryCode: "FR", countryName: "France" },
-  mattischmid: { countryCode: "DE", countryName: "Germany" },
-  nicktaylor: { countryCode: "CA", countryName: "Canada" },
-  nicoechavarria: { countryCode: "CO", countryName: "Colombia" },
-  nicolaihojgaard: { countryCode: "DK", countryName: "Denmark" },
-  pontusnyholm: { countryCode: "SE", countryName: "Sweden" },
-  rafaelcampos: { countryCode: "PR", countryName: "Puerto Rico" },
-  rasmushojgaard: { countryCode: "DK", countryName: "Denmark" },
-  rasmusneergaardpetersen: { countryCode: "DK", countryName: "Denmark" },
-  ricohoey: { countryCode: "PH", countryName: "Philippines" },
-  ryanruffels: { countryCode: "AU", countryName: "Australia" },
-  ryohisatsune: { countryCode: "JP", countryName: "Japan" },
-  seamuspower: { countryCode: "IE", countryName: "Ireland" },
-  siwookim: { countryCode: "KR", countryName: "South Korea" },
-  stefanomazzoli: { countryCode: "IT", countryName: "Italy" },
-  stephanjaeger: { countryCode: "DE", countryName: "Germany" },
-  sudarshanyellamaraju: { countryCode: "CA", countryName: "Canada" },
-  sungjaeim: { countryCode: "KR", countryName: "South Korea" },
-  takumikanaya: { countryCode: "JP", countryName: "Japan" },
-  taylorpendrith: { countryCode: "CA", countryName: "Canada" },
-  thorbjornolesen: { countryCode: "DK", countryName: "Denmark" },
-  xanderschauffele: { countryCode: "US", countryName: "United States" },
-  zechengdou: { countryCode: "CN", countryName: "China" },
+type PgaNationalityGroup = PgaPlayerNationality & {
+  players: string[];
 };
+
+const PGA_NATIONALITY_GROUPS: PgaNationalityGroup[] = [
+  { countryCode: "AR", countryName: "Argentina", players: ["Alejandro Tosti", "Emiliano Grillo"] },
+  { countryCode: "AT", countryName: "Austria", players: ["Sepp Straka"] },
+  { countryCode: "AU", countryName: "Australia", players: ["Adam Scott", "Cam Davis", "Jason Day", "Karl Vilips", "Min Woo Lee", "Ryan Ruffels"] },
+  { countryCode: "BE", countryName: "Belgium", players: ["Adrien Dumont de Chassart"] },
+  { countryCode: "CA", countryName: "Canada", players: ["A.J. Ewart", "Adam Svensson", "Corey Conners", "Mackenzie Hughes", "Nick Taylor", "Sudarshan Yellamaraju", "Taylor Pendrith"] },
+  { countryCode: "CN", countryName: "China", players: ["Haotong Li", "Zecheng Dou"] },
+  { countryCode: "CO", countryName: "Colombia", players: ["Marcelo Rozo", "Nico Echavarria"] },
+  { countryCode: "DE", countryName: "Germany", players: ["Matti Schmid", "Stephan Jaeger"] },
+  { countryCode: "DK", countryName: "Denmark", players: ["Nicolai Højgaard", "Rasmus Højgaard", "Rasmus Neergaard-Petersen", "Thorbjørn Olesen"] },
+  { countryCode: "FI", countryName: "Finland", players: ["Sami Valimaki"] },
+  { countryCode: "FR", countryName: "France", players: ["Adrien Saddier", "Matthieu Pavon"] },
+  { countryCode: "GB", countryName: "United Kingdom", players: ["Aaron Rai", "Dan Brown", "Harry Hall", "John Parry", "Jordan Smith", "Justin Rose", "Marco Penge", "Matt Fitzpatrick", "Matt Wallace", "Robert MacIntyre", "Rory McIlroy", "Tommy Fleetwood"] },
+  { countryCode: "IE", countryName: "Ireland", players: ["Seamus Power", "Shane Lowry"] },
+  { countryCode: "IT", countryName: "Italy", players: ["Stefano Mazzoli"] },
+  { countryCode: "JP", countryName: "Japan", players: ["Hideki Matsuyama", "Keita Nakajima", "Kensei Hirata", "Ryo Hisatsune", "Takumi Kanaya"] },
+  { countryCode: "KR", countryName: "South Korea", players: ["S.H. Kim", "Si Woo Kim", "Sungjae Im", "Tom Kim"] },
+  { countryCode: "NO", countryName: "Norway", players: ["Kris Ventura", "Kristoffer Reitan", "Kristoffer Ventura", "Viktor Hovland"] },
+  { countryCode: "NZ", countryName: "New Zealand", players: ["Ryan Fox"] },
+  { countryCode: "PH", countryName: "Philippines", players: ["Justin Quiban", "Rico Hoey"] },
+  { countryCode: "PR", countryName: "Puerto Rico", players: ["Rafael Campos"] },
+  { countryCode: "SE", countryName: "Sweden", players: ["Alex Noren", "Jesper Svensson", "Ludvig Åberg", "Pontus Nyholm"] },
+  { countryCode: "TW", countryName: "Taiwan", players: ["Kevin Yu"] },
+  { countryCode: "US", countryName: "United States", players: ["Aaron Wise", "Adam Schenk", "Akshay Bhatia", "Alex Smalley", "Andrew Novak", "Andrew Putnam", "Austin Eckroat", "Austin Smotherman", "Beau Hossler", "Ben Griffin", "Ben James", "Ben Kohles", "Billy Horschel", "Brad Dalke", "Brandt Snedeker", "Brendon Todd", "Brian Campbell", "Brian Harman", "Brice Garnett", "Brooks Koepka", "Bud Cauley", "Cameron Young", "Chad Ramey", "Chandler Blanchet", "Chandler Phillips", "Charley Hoffman", "Chris Gotterup", "Chris Kirk", "Collin Morikawa", "Daniel Azallion", "Daniel Berger", "Danny Walker", "David Ford", "David Lipsky", "Davis Chatfield", "Davis Riley", "Davis Thompson", "Denny McCarthy", "Doug Ghim", "Dylan Wu", "Eric Cole", "Gary Woodland", "Gordon Sargent", "Hank Lebioda", "Harris English", "Hayden Springer", "Isaiah Salinda", "J.J. Spaun", "J.T. Poston", "Jackson Koivun", "Jackson Suber", "Jacob Bridgeman", "Jake Knapp", "Jeffrey Kang", "Jimmy Stanger", "Joe Highsmith", "Joe Hooks", "Joel Dahmen", "John VanDerLaan", "Johnny Keefer", "Jordan Spieth", "Justin Lower", "Keegan Bradley", "Keenan Huskey", "Keith Mitchell", "Kevin Roy", "Kevin Streelman", "Kurt Kitayama", "Lanto Griffin", "Lee Hodges", "Lucas Glover", "Luke Clanton", "Mac Meissner", "Mark Hubbard", "Matt Kuchar", "Matt McCarty", "Maverick McNealy", "Max Greyserman", "Max Homa", "Max McGreevy", "Michael Brennan", "Michael Kim", "Michael Thorbjornsen", "Neal Shipley", "Nick Dunlap", "Patrick Cantlay", "Patrick Fishburn", "Patrick Rodgers", "Patrick Wilkes-Krier", "Patton Kizzire", "Peter Malnati", "Pierceson Coody", "Rickie Fowler", "Ricky Castillo", "Russell Henley", "Ryan Celano", "Ryan Gerard", "Sahith Theegala", "Sam Burns", "Sam Ryder", "Sam Stevens", "Scottie Scheffler", "Steven Fisk", "Taylor Moore", "Tom Hoge", "Tony Finau", "Trace Crowe", "Vince Whaley", "Webb Simpson", "William Jennings", "William Mouw", "Wyndham Clark", "Xander Schauffele", "Zac Blair", "Zach Bauchou"] },
+  { countryCode: "VE", countryName: "Venezuela", players: ["Jhonattan Vegas"] },
+  { countryCode: "ZA", countryName: "South Africa", players: ["Aldrich Potgieter", "Christiaan Bezuidenhout", "Christo Lamprecht", "Erik van Rooyen", "Garrick Higgo"] },
+];
 
 const SPECIAL_LATIN_REPLACEMENTS: Record<string, string> = {
   æ: "ae",
@@ -81,8 +58,18 @@ export function normalizePgaPlayerNationalityKey(player: string): string {
     .trim();
 }
 
+const PLAYER_NATIONALITIES = new Map<string, PgaPlayerNationality>(
+  PGA_NATIONALITY_GROUPS.flatMap(({ players, ...nationality }) =>
+    players.map((player) => [normalizePgaPlayerNationalityKey(player), nationality] as const),
+  ),
+);
+
 export function getPgaPlayerNationality(player: string): PgaPlayerNationality | null {
-  return PLAYER_NATIONALITIES[normalizePgaPlayerNationalityKey(player)] ?? null;
+  return PLAYER_NATIONALITIES.get(normalizePgaPlayerNationalityKey(player)) ?? null;
+}
+
+export function getPgaPlayerNationalityKeys(): string[] {
+  return [...PLAYER_NATIONALITIES.keys()];
 }
 
 export function countryCodeToFlag(countryCode: string): string | null {
