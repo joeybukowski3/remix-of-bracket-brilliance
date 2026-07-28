@@ -1,15 +1,26 @@
 import type {
+  LineupSlot,
+  MatchupBoxScore,
   PlayoffResult,
   ScheduleGame,
   SeasonResult,
   SimulationPlayer,
+  WeeklyLineup,
 } from "../types";
 import type { DefensePositionRanks } from "./lineupOptimizer";
 import {
+  LINEUP_SLOTS,
   getEmptyLineupSlots,
   optimizeLineup,
   optimizeProjectedStartingRoster,
 } from "./lineupOptimizer";
+import {
+  assertDraftIntegrity,
+  assertLineupIntegrity,
+  assertNflMatchupConsistency,
+  assertScoreReconciliation,
+} from "./integrityChecks";
+import { buildMatchupLineupEntries } from "./matchupBoxScore";
 import { buildPlayerTierMap, simulateLineupScore } from "./playerScoreSimulation";
 import { determinePlayoffQualification } from "./playoffQualification";
 import { computeRosterStrength, selectPlayoffOpponents } from "./rosterStrength";
@@ -87,6 +98,7 @@ export function simulateSeason({
       "Season simulation requires exactly 11 drafted CPU rosters (all 12 league teams minus the user).",
     );
   }
+  assertDraftIntegrity(allRosters, draftedPlayerIds);
 
   const rootRandom = new SeededRandom(seed).fork("season");
   const scheduleNames = rootRandom.fork("names").shuffle(opponentNames);
@@ -96,6 +108,10 @@ export function simulateSeason({
   );
 
   const cpuRosterBySlot = new Map(cpuEntries.map((entry) => [entry.slot, entry.roster]));
+  const cpuRosterIdsBySlot = new Map(
+    cpuEntries.map((entry) => [entry.slot, new Set(entry.roster.map((player) => player.id))]),
+  );
+  const userRosterIds = new Set(roster.map((player) => player.id));
   const cpuStrengths = cpuEntries.map((entry) => ({
     slot: entry.slot,
     strength: computeRosterStrength(entry.roster, defenseRanks, temporaryReplacementPool),
@@ -113,7 +129,60 @@ export function simulateSeason({
     if (getEmptyLineupSlots(lineup).length > 0) {
       throw new Error(`Unable to form a complete CPU lineup for Week ${week}.`);
     }
-    return simulateLineupScore(lineup, week, defenseRanks, tiers, rootRandom.fork(randomLabel));
+    const score = simulateLineupScore(lineup, week, defenseRanks, tiers, rootRandom.fork(randomLabel));
+    return { lineup, score };
+  }
+
+  function buildVerifiedBoxScore(
+    userLineup: WeeklyLineup,
+    userSlotScores: Record<LineupSlot, number>,
+    userTeamScore: number,
+    opponentLineup: WeeklyLineup,
+    opponentSlotScores: Record<LineupSlot, number>,
+    opponentTeamScore: number,
+    opponentSlot: number,
+    week: number,
+  ): MatchupBoxScore {
+    const opponentRosterIds = cpuRosterIdsBySlot.get(opponentSlot)!;
+    assertLineupIntegrity(userLineup, userRosterIds, draftedPlayerIds, `Week ${week} user lineup`);
+    assertLineupIntegrity(
+      opponentLineup,
+      opponentRosterIds,
+      draftedPlayerIds,
+      `Week ${week} opponent lineup`,
+    );
+
+    const userEntries = buildMatchupLineupEntries(userLineup, userSlotScores, week, userRosterIds);
+    const opponentEntries = buildMatchupLineupEntries(
+      opponentLineup,
+      opponentSlotScores,
+      week,
+      opponentRosterIds,
+    );
+
+    assertScoreReconciliation(userEntries, userTeamScore, `Week ${week} user score`);
+    assertScoreReconciliation(opponentEntries, opponentTeamScore, `Week ${week} opponent score`);
+
+    for (const slot of LINEUP_SLOTS) {
+      assertNflMatchupConsistency(
+        userEntries.find((entry) => entry.slot === slot)!,
+        userLineup[slot]!,
+        week,
+        `Week ${week} user ${slot}`,
+      );
+      assertNflMatchupConsistency(
+        opponentEntries.find((entry) => entry.slot === slot)!,
+        opponentLineup[slot]!,
+        week,
+        `Week ${week} opponent ${slot}`,
+      );
+    }
+
+    return {
+      userLineup: userEntries,
+      opponentLineup: opponentEntries,
+      opponentRosterSlot: opponentSlot,
+    };
   }
 
   const schedule: ScheduleGame[] = [];
@@ -134,15 +203,13 @@ export function simulateSeason({
       rootRandom.fork(`user-week-${week}`),
     );
     const opponentSlot = regularSeasonRotation[(week - 1) % regularSeasonRotation.length];
-    const computedOpponentScore = simulateCpuLineupScore(
+    const { lineup: opponentLineup, score: computedOpponentScore } = simulateCpuLineupScore(
       opponentSlot,
       week,
       `opponent-week-${week}`,
     );
-    const opponentScore = overriddenScore(
-      overrides?.regularOpponentScores?.[week - 1],
-      computedOpponentScore,
-    );
+    const regularOverride = overrides?.regularOpponentScores?.[week - 1];
+    const opponentScore = overriddenScore(regularOverride, computedOpponentScore);
     const result = getGameResult(userScore.rawScore, opponentScore.rawScore);
     if (result === "W") regularWins += 1;
     schedule.push({
@@ -152,6 +219,19 @@ export function simulateSeason({
       userScore: userScore.roundedScore,
       opponentScore: opponentScore.roundedScore,
       result,
+      boxScore:
+        regularOverride === undefined
+          ? buildVerifiedBoxScore(
+              lineup,
+              userScore.slotScores,
+              userScore.roundedScore,
+              opponentLineup,
+              computedOpponentScore.slotScores,
+              computedOpponentScore.roundedScore,
+              opponentSlot,
+              week,
+            )
+          : undefined,
     });
   }
 
@@ -196,15 +276,13 @@ export function simulateSeason({
       tiers,
       rootRandom.fork(`user-week-${week}`),
     );
-    const computedOpponentScore = simulateCpuLineupScore(
+    const { lineup: opponentLineup, score: computedOpponentScore } = simulateCpuLineupScore(
       opponentSlot,
       week,
       `opponent-week-${week}`,
     );
-    const opponentScore = overriddenScore(
-      overrides?.playoffOpponentScores?.[week],
-      computedOpponentScore,
-    );
+    const playoffOverride = overrides?.playoffOpponentScores?.[week];
+    const opponentScore = overriddenScore(playoffOverride, computedOpponentScore);
     const result = getGameResult(userScore.rawScore, opponentScore.rawScore);
     schedule.push({
       fantasyWeek: week,
@@ -213,6 +291,19 @@ export function simulateSeason({
       userScore: userScore.roundedScore,
       opponentScore: opponentScore.roundedScore,
       result,
+      boxScore:
+        playoffOverride === undefined
+          ? buildVerifiedBoxScore(
+              lineup,
+              userScore.slotScores,
+              userScore.roundedScore,
+              opponentLineup,
+              computedOpponentScore.slotScores,
+              computedOpponentScore.roundedScore,
+              opponentSlot,
+              week,
+            )
+          : undefined,
     });
     nextNameIndex += 1;
     if (result === "W") playoffWins += 1;

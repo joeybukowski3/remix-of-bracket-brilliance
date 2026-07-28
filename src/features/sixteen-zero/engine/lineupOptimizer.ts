@@ -12,7 +12,7 @@ export type DefensePositionRanks = Record<
   Partial<Record<FantasyPosition, number>>
 >;
 
-const LINEUP_SLOTS: LineupSlot[] = [
+export const LINEUP_SLOTS: LineupSlot[] = [
   "QB",
   "RB1",
   "RB2",
