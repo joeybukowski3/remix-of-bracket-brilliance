@@ -14,7 +14,7 @@ import {
   usePgaHubData,
 } from "@/components/pga/PgaHubShared";
 import { usePgaPlayerHistory } from "@/hooks/usePgaPlayerHistory";
-import { assessPgaFreshness, type PgaFreshnessResult } from "@/lib/pga/pgaFreshness";
+import { assessPgaFreshness } from "@/lib/pga/pgaFreshness";
 import {
   assignFieldRanks,
   buildCourseFitWeights,
@@ -32,6 +32,7 @@ import {
   type PgaTournamentModelRow,
 } from "@/lib/pga/historyModel";
 import { isLowerBetterMetric } from "@/lib/pga/metricDirection";
+import { selectPgaScoreComparisonRows } from "@/lib/pga/pgaScoreColorScale";
 import { SPORTSBOOKS } from "@/lib/sportsbooks";
 
 const BASE_WEIGHTS = { sgTotal: .55, sgApp: .12, sgPutt: .06, sgAtG: .10, sgOTT: .07, drivingAccuracy: .05, bogeyAvoidance: .05 };
@@ -66,42 +67,22 @@ export default function PgaHistoryModel() {
 
   useEffect(() => {
     let cancelled = false;
-
     fetch("/data/pga/current-field.json", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((json) => {
-        if (!cancelled) setField(json);
-      })
-      .catch(() => {
-        if (!cancelled) setField(null);
-      })
-      .finally(() => {
-        if (!cancelled) setFieldLoaded(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+      .then((json) => { if (!cancelled) setField(json); })
+      .catch(() => { if (!cancelled) setField(null); })
+      .finally(() => { if (!cancelled) setFieldLoaded(true); });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-
     fetch("/data/pga/player-stats-meta.json", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((json) => {
-        if (!cancelled) setPlayerStatsMeta(json);
-      })
-      .catch(() => {
-        if (!cancelled) setPlayerStatsMeta(null);
-      })
-      .finally(() => {
-        if (!cancelled) setPlayerStatsMetaLoaded(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+      .then((json) => { if (!cancelled) setPlayerStatsMeta(json); })
+      .catch(() => { if (!cancelled) setPlayerStatsMeta(null); })
+      .finally(() => { if (!cancelled) setPlayerStatsMetaLoaded(true); });
+    return () => { cancelled = true; };
   }, []);
 
   const { active, current } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);
@@ -146,12 +127,7 @@ export default function PgaHistoryModel() {
 
   const fieldMatchesEvent = useMemo(() => {
     if (!currentField || !event) return false;
-    const expected = new Set([
-      event.id,
-      event.slug,
-      event.name,
-      event.shortName,
-    ].filter(Boolean).map(normalizeEventIdentity));
+    const expected = new Set([event.id, event.slug, event.name, event.shortName].filter(Boolean).map(normalizeEventIdentity));
     return [currentField.localScheduleId, currentField.tournamentSlug, currentField.tournament]
       .filter(Boolean)
       .map(normalizeEventIdentity)
@@ -171,11 +147,6 @@ export default function PgaHistoryModel() {
     [currentField, fieldUsable],
   );
 
-  /**
-   * Official entrants with no statistics row. They are absent from every
-   * ranking and can never be recommended, which nothing on the site disclosed.
-   * Derived from the field and the loaded stats rather than fetched separately.
-   */
   const fieldCoverage = useMemo(() => {
     if (!fieldUsable || !currentField?.players?.length || !playerStats.length) return null;
     const modeled = new Set(playerStats.map((player) => normalizePlayerKey(player.player)));
@@ -193,11 +164,6 @@ export default function PgaHistoryModel() {
     };
   }, [currentField, fieldUsable, playerStats]);
 
-  /**
-   * Which rank the table should lead with. Derived from the same condition that
-   * gates field filtering below, so the column's meaning always matches the rows
-   * on screen: field-only shows field ranks, all-players shows tour ranks.
-   */
   const rankMode: PgaRankMode = fieldOnly && fieldUsable && fieldSet.size > 0 ? "field" : "tour";
 
   const modelRows = useMemo(() => {
@@ -269,19 +235,18 @@ export default function PgaHistoryModel() {
       .sort((a, b) => b.modelScore - a.modelScore || a.player.localeCompare(b.player))
       .map((row, index) => ({ ...row, modelRank: index + 1 }));
 
-    // Tour rank spans every player with stats; field rank renumbers only this
-    // week's entrants so the strongest player in the field reads as #1 rather
-    // than inheriting a tour number. Display only -- modelScore is untouched.
     return assignFieldRanks(ranked, fieldUsable ? fieldSet : new Set<string>());
   }, [playerStats, playerHistoryMap, majorHistoryMap, activeWeights, eventSlug, eventName, event, majorType, isMajor, fieldSet, fieldUsable]);
 
+  const scoreComparisonRows = useMemo(
+    () => selectPgaScoreComparisonRows(modelRows, rankMode),
+    [modelRows, rankMode],
+  );
+
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return modelRows.filter((row) => {
-      if (fieldOnly && fieldUsable && fieldSet.size && !fieldSet.has(normalizePlayerKey(row.player))) return false;
-      return !query || row.player.toLowerCase().includes(query);
-    });
-  }, [modelRows, fieldOnly, fieldUsable, fieldSet, search]);
+    return scoreComparisonRows.filter((row) => !query || row.player.toLowerCase().includes(query));
+  }, [scoreComparisonRows, search]);
 
   return (
     <SiteShell>
@@ -335,7 +300,7 @@ export default function PgaHistoryModel() {
             <div className="py-16 text-center text-sm text-slate-400">Loading tournament model…</div>
           ) : (
             <>
-              <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} rankMode={rankMode} />
+              <PgaHistoryModelTable rows={filtered} scoreComparisonRows={scoreComparisonRows} statView={statView} isMajor={isMajor} eventLabel={eventName} rankMode={rankMode} />
               <PgaPlayerHistoryRefreshNotice lastRefresh={playerHistory?.lastRefresh} />
             </>
           )}
