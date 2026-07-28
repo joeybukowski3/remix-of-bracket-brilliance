@@ -24,6 +24,7 @@ import {
 import { buildMatchupLineupEntries } from "./matchupBoxScore";
 import { buildPlayerTierMap, simulateLineupScore } from "./playerScoreSimulation";
 import { determinePlayoffQualification } from "./playoffQualification";
+import { MINIMUM_BYE_WINS } from "../data/engineConfig";
 import { computeRosterStrength, selectPlayoffOpponents } from "./rosterStrength";
 import { SeededRandom } from "./seededRandom";
 
@@ -267,6 +268,11 @@ export function simulateSeason({
       (qualification.seed !== null && qualification.seed <= 2)
   ) {
     throw new Error("Playoff qualification override is internally inconsistent.");
+  }
+  if (qualification.hasBye && regularWins < MINIMUM_BYE_WINS) {
+    throw new Error(
+      `Playoff qualification override is invalid: hasBye requires at least ${MINIMUM_BYE_WINS} regular-season wins.`,
+    );
   }
 
   let playoffWins = 0;

@@ -123,6 +123,17 @@ describe("16-0 explicit season result branches", () => {
     expect(result.averageWeeklyScore).toBe(displayedAverage);
   });
 
+  it("rejects a bye override claimed with fewer than 10 user wins", () => {
+    expect(() =>
+      run({
+        regularOpponentScores: [
+          0, 0, 0, 0, 0, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+        ],
+        qualification: { qualified: true, seed: 1, hasBye: true },
+      }, "invalid-bye-override"),
+    ).toThrow(/hasBye requires at least 10 regular-season wins/);
+  });
+
   it("is identical for the same seed, roster, and overrides", () => {
     const overrides = {
       qualification: seedThree,

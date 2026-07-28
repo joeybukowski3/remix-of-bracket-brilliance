@@ -94,3 +94,6 @@ export const CPU_STANDINGS_CONFIG = {
   maximumWeeklyWinProbability: 0.85,
   averageScoreNoiseStandardDeviation: 4,
 } as const;
+
+/** Minimum regular-season wins required to hold a top-two seed / Week 15 bye. */
+export const MINIMUM_BYE_WINS = 10;

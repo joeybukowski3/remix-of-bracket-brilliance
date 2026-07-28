@@ -294,6 +294,73 @@ describe("16-0 season simulation", () => {
     }
   });
 
+  it("never gives a 7-7 user a bye or top-two seed", () => {
+    for (let index = 0; index < 50; index += 1) {
+      const qualification = determinePlayoffQualification({
+        userWins: 7,
+        userLosses: 7,
+        userAverageScore: 110,
+        cpuStrengths: sampleCpuStrengths,
+        random: new SeededRandom(`bye-seven-${index}`),
+      });
+      expect(qualification.hasBye).toBe(false);
+      if (qualification.qualified) {
+        expect(qualification.seed).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
+  it("never gives a 9-5 user a bye or top-two seed", () => {
+    for (let index = 0; index < 50; index += 1) {
+      const qualification = determinePlayoffQualification({
+        userWins: 9,
+        userLosses: 5,
+        userAverageScore: 115,
+        cpuStrengths: sampleCpuStrengths,
+        random: new SeededRandom(`bye-nine-${index}`),
+      });
+      expect(qualification.hasBye).toBe(false);
+      if (qualification.qualified) {
+        expect(qualification.seed).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
+  it("allows a 10-4 user to receive a bye when standings position qualifies", () => {
+    const outcomes = Array.from({ length: 50 }, (_, index) =>
+      determinePlayoffQualification({
+        userWins: 10,
+        userLosses: 4,
+        userAverageScore: 120,
+        cpuStrengths: sampleCpuStrengths,
+        random: new SeededRandom(`bye-ten-${index}`),
+      }),
+    );
+    expect(outcomes.some((qualification) => qualification.hasBye)).toBe(true);
+    outcomes.forEach((qualification) => {
+      if (qualification.hasBye) {
+        expect(qualification.seed).toBeLessThanOrEqual(2);
+      }
+    });
+  });
+
+  it("seeds a sub-10-win qualifier into 3-6, never 1-2", () => {
+    for (let index = 0; index < 50; index += 1) {
+      const qualification = determinePlayoffQualification({
+        userWins: 8,
+        userLosses: 6,
+        userAverageScore: 118,
+        cpuStrengths: sampleCpuStrengths,
+        random: new SeededRandom(`bye-eight-${index}`),
+      });
+      if (qualification.qualified) {
+        expect(qualification.seed).toBeGreaterThanOrEqual(3);
+        expect(qualification.seed).toBeLessThanOrEqual(6);
+        expect(qualification.hasBye).toBe(false);
+      }
+    }
+  });
+
   it("simulates 14 regular-season rows and internally consistent final records", () => {
     const draft = simulateAutomaticDraft(SIMULATION_PLAYERS, 9, "season-draft");
     const result = simulateSeason({
