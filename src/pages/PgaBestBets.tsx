@@ -108,6 +108,42 @@ function formatGeneratedAt(value: string) {
   }).format(date);
 }
 
+/**
+ * Coerce every market array to a usable array before anything renders.
+ *
+ * The render path used `data?.[section.key].map(...)`, where optional chaining
+ * short-circuits on `data` but NOT on the market array -- so a payload that
+ * exists while missing one market threw and blanked the whole page. Legacy
+ * artifacts written before schemaVersion 2 are exactly that shape.
+ *
+ * Normalization is per-market, so one malformed market can never suppress the
+ * valid ones. Valid pick values are passed through untouched; only entries with
+ * no usable player identifier are dropped, since those cannot be keyed or
+ * labeled.
+ */
+export function normalizeBestBetsPayload(raw: unknown): BestBetsPayload | null {
+  if (!raw || typeof raw !== "object") return null;
+  const payload = raw as Partial<BestBetsPayload> & Record<string, unknown>;
+
+  const normalizeMarket = (value: unknown): BestBetPick[] =>
+    Array.isArray(value)
+      ? value.filter(
+          (pick): pick is BestBetPick =>
+            Boolean(pick) && typeof pick === "object" && typeof (pick as BestBetPick).player === "string"
+            && (pick as BestBetPick).player.trim().length > 0,
+        )
+      : [];
+
+  return {
+    ...(payload as BestBetsPayload),
+    outrights: normalizeMarket(payload.outrights),
+    top5: normalizeMarket(payload.top5),
+    top10: normalizeMarket(payload.top10),
+    top20: normalizeMarket(payload.top20),
+    valueBets: Array.isArray(payload.valueBets) ? payload.valueBets : [],
+  };
+}
+
 function isEmpty(payload: BestBetsPayload | null) {
   if (!payload) return true;
   return SECTIONS.every(({ key }) => !payload[key]?.length);
@@ -370,7 +406,7 @@ export default function PgaBestBets() {
         return response.json();
       })
       .then((json) => {
-        if (!cancelled) setData(json as BestBetsPayload);
+        if (!cancelled) setData(normalizeBestBetsPayload(json));
       })
       .catch(() => {
         if (!cancelled) setData(null);
@@ -494,25 +530,35 @@ export default function PgaBestBets() {
                 </section>
               ) : null}
 
-              {SECTIONS.map((section) => (
-                <section key={section.key} id={section.key} className="space-y-4 scroll-mt-24">
-                  <div>
-                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">{section.title}</h2>
-                    <p className="mt-1 text-sm text-gray-500">{section.description}</p>
-                  </div>
+              {SECTIONS.map((section) => {
+                // Guaranteed an array by normalizeBestBetsPayload.
+                const picks = data?.[section.key] ?? [];
+                return (
+                  <section key={section.key} id={section.key} className="space-y-4 scroll-mt-24">
+                    <div>
+                      <h2 className="text-2xl font-semibold tracking-[-0.03em] text-gray-900">{section.title}</h2>
+                      <p className="mt-1 text-sm text-gray-500">{section.description}</p>
+                    </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {data?.[section.key].map((pick) => (
-                      <PickCard
-                        key={`${section.key}-${pick.player}`}
-                        pick={pick}
-                        tierNote={section.tierNote}
-                        marketKey={section.key}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
+                    {picks.length ? (
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {picks.map((pick) => (
+                          <PickCard
+                            key={`${section.key}-${pick.player}`}
+                            pick={pick}
+                            tierNote={section.tierNote}
+                            marketKey={section.key}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-gray-300 bg-white px-4 py-6 text-sm text-gray-500">
+                        No qualifying picks in this market this week.
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
 
               {data?.article && payloadMatchesTournament ? (
                 <section id="article" className="space-y-4 scroll-mt-24">
