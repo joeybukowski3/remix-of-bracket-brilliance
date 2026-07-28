@@ -7,7 +7,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { getPgaScheduleSelection } from "@/lib/pga/pgaSchedule";
 import { assessPgaFreshness } from "@/lib/pga/pgaFreshness";
-import { FEATURED_PGA_TOURNAMENT } from "@/lib/pga/tournaments";
+import { ACTIVE_PGA_MODEL_TOURNAMENT } from "@/lib/pga/tournaments";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { marketOddsFor } from "@/lib/pga/marketOdds";
 
@@ -361,13 +361,16 @@ export default function PgaBestBets() {
   usePageSeo(getSeoMeta("pga-best-bets"));
   const scheduleSelection = getPgaScheduleSelection();
   const scheduleTournament = scheduleSelection.currentUpcoming;
+  const [data, setData] = useState<BestBetsPayload | null>(null);
+  // Title falls back to the schedule, then to the artifact -- never to a
+  // legacy featured tournament, which previously could title this page
+  // "RBC Heritage 2026" whenever the artifact was missing.
   const fallbackTournamentName =
     scheduleTournament?.shortName
     || scheduleTournament?.name
-    || FEATURED_PGA_TOURNAMENT.shortName
-    || FEATURED_PGA_TOURNAMENT.name;
-  const fallbackCourseName = scheduleTournament?.courseName || FEATURED_PGA_TOURNAMENT.courseName;
-  const [data, setData] = useState<BestBetsPayload | null>(null);
+    || data?.tournament
+    || "This week's tournament";
+  const fallbackCourseName = scheduleTournament?.courseName || data?.course || "";
   const [loading, setLoading] = useState(true);
   const freshness = useMemo(
     () => assessPgaFreshness(data, {
@@ -458,9 +461,18 @@ export default function PgaBestBets() {
                 placement markets, and odds-context leans into a cleaner betting card for the week.
               </p>
               <div className="mt-3 flex flex-wrap gap-4 text-sm">
-                <Link to="/pga/model" className="font-semibold text-[#166534] hover:underline">
-                  View {visibleTournamentName} model rankings
-                </Link>
+                {/* Only link the model room when it genuinely belongs to the
+                    current schedule event. Otherwise /pga/model resolves to an
+                    archived tournament, and this label would name the wrong one. */}
+                {ACTIVE_PGA_MODEL_TOURNAMENT ? (
+                  <Link to="/pga/model" className="font-semibold text-[#166534] hover:underline">
+                    View {visibleTournamentName} model rankings
+                  </Link>
+                ) : (
+                  <Link to="/pga" className="font-semibold text-[#166534] hover:underline">
+                    View {visibleTournamentName} model rankings
+                  </Link>
+                )}
                 <Link to="/pga/top-40-golf-picks" className="font-semibold text-[#166534] hover:underline">
                   Explore Top 40 golf picks
                 </Link>

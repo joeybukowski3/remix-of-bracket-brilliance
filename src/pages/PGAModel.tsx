@@ -25,7 +25,7 @@ import {
   storePgaCustomWeights,
   withPermanentPgaPresets,
 } from "@/lib/pga/pgaWeights";
-import { FEATURED_PGA_TOURNAMENT, getFeaturedPgaHubContext, getPgaTournamentBySlug } from "@/lib/pga/tournaments";
+import { FEATURED_PGA_TOURNAMENT, getFeaturedPgaHubContext, getPgaTournamentBySlug, isCurrentModelTournament } from "@/lib/pga/tournaments";
 import { type PgaWeights } from "@/lib/pga/pgaTypes";
 import { getTournamentModelPath, getTournamentPicksPath, type PgaPresetDefinition } from "@/lib/pga/tournamentConfig";
 import { buildPgaModelTableConfig } from "@/lib/pga/tournamentUi";
@@ -311,6 +311,19 @@ export default function PGAModel() {
                   <span>{tournament.shortName || tournament.name}</span>
                 </div>
                 <PgaMainHeader meta={meta} />
+
+                {/* This route falls back to a legacy tournament when the current
+                    schedule event has no generated model room, so an archived
+                    dataset must say so rather than read as this week's model. */}
+                {!isCurrentModelTournament(tournament.slug) && (
+                  <div
+                    role="status"
+                    className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900"
+                  >
+                    Archived event — this is the {tournament.shortName || tournament.name} model, not the current week.{" "}
+                    <a href="/pga" className="underline">View the current tournament model</a>.
+                  </div>
+                )}
 
                 {withheldPlayerCount > 0 && (
                   <div className="rounded-xl border border-border/60 bg-card px-4 py-3 text-xs text-muted-foreground">

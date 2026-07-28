@@ -136,4 +136,20 @@ describe("partial payload rendering", () => {
 
     await waitFor(() => expect(screen.getByText("No current card available")).toBeInTheDocument());
   });
+
+  it("never titles the page with a legacy featured tournament when the artifact is missing", async () => {
+    // The title fallback previously read FEATURED_PGA_TOURNAMENT, which resolves
+    // to an archived event whenever the current one has no registry entry -- so
+    // a failed fetch could title this page "RBC Heritage 2026".
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("no artifact"))));
+    render(
+      <MemoryRouter initialEntries={["/pga/best-bets"]}>
+        <PgaBestBets />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByText("No current card available")).toBeInTheDocument());
+    expect(screen.queryByText(/RBC Heritage/i)).toBeNull();
+    expect(screen.getAllByText(/Genesis Scottish Open/i).length).toBeGreaterThan(0);
+  });
 });

@@ -33,6 +33,33 @@ export const FEATURED_PGA_TOURNAMENT =
       ?? ACTIVE_PGA_BOARD_TOURNAMENT)
   ?? ACTIVE_PGA_BOARD_TOURNAMENT;
 
+/**
+ * The model-room tournament for the CURRENT schedule event, or null.
+ *
+ * Deliberately has NO archived fallback, unlike ACTIVE_PGA_BOARD_TOURNAMENT
+ * above. When the schedule's current event has no entry in the generated
+ * registry, that chain falls through to PGA_TOURNAMENTS.find(featured) and
+ * ultimately PGA_TOURNAMENTS[0] -- so /pga/model silently served the April
+ * "RBC Heritage 2026" dataset while Best Bets linked to it labeled "View
+ * Rocket Classic model rankings".
+ *
+ * Null here means "there is no current model room", which callers must handle
+ * by omitting or redirecting the link rather than substituting another event.
+ * Additive on purpose: changing the fallback of the exports above would alter
+ * global routing, which is a separate change.
+ */
+export const ACTIVE_PGA_MODEL_TOURNAMENT: PgaTournamentConfig | null =
+  getScheduleDrivenTournament(pgaScheduleSelection.currentUpcoming?.slug) ?? null;
+
+/** Slug of the schedule's current event, whether or not a model room exists for it. */
+export const CURRENT_SCHEDULE_TOURNAMENT_SLUG: string | null =
+  pgaScheduleSelection.currentUpcoming?.slug ?? null;
+
+/** True when the supplied tournament is the current schedule event's model room. */
+export function isCurrentModelTournament(slug: string | undefined | null) {
+  return Boolean(slug) && slug === ACTIVE_PGA_MODEL_TOURNAMENT?.slug;
+}
+
 export const NEXT_PGA_TOURNAMENT =
   getScheduleDrivenTournament(pgaScheduleSelection.nextWeek?.slug)
   ?? PGA_TOURNAMENTS.find((tournament) => tournament.featured)
