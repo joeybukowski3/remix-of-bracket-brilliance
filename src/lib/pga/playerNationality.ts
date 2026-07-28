@@ -1,5 +1,3 @@
-import { normalizePlayerKey } from "@/lib/pga/historyModel";
-
 export type PgaPlayerNationality = {
   countryCode: string;
   countryName: string;
@@ -22,7 +20,6 @@ const PLAYER_NATIONALITIES: Record<string, PgaPlayerNationality> = {
   haotongli: { countryCode: "CN", countryName: "China" },
   harryhall: { countryCode: "GB", countryName: "United Kingdom" },
   hidekimatsuyama: { countryCode: "JP", countryName: "Japan" },
-  jespernsvensson: { countryCode: "SE", countryName: "Sweden" },
   jespersvensson: { countryCode: "SE", countryName: "Sweden" },
   johnparry: { countryCode: "GB", countryName: "United Kingdom" },
   jordansmith: { countryCode: "GB", countryName: "United Kingdom" },
@@ -61,8 +58,29 @@ const PLAYER_NATIONALITIES: Record<string, PgaPlayerNationality> = {
   zechengdou: { countryCode: "CN", countryName: "China" },
 };
 
+const SPECIAL_LATIN_REPLACEMENTS: Record<string, string> = {
+  æ: "ae",
+  ð: "d",
+  ł: "l",
+  ø: "o",
+  œ: "oe",
+  ß: "ss",
+  þ: "th",
+};
+
+export function normalizePgaPlayerNationalityKey(player: string): string {
+  return player
+    .normalize("NFKD")
+    .replace(/[æðłøœßþ]/gi, (character) => SPECIAL_LATIN_REPLACEMENTS[character.toLowerCase()] ?? character)
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(jr|sr|ii|iii|iv)\b/g, "")
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
 export function getPgaPlayerNationality(player: string): PgaPlayerNationality | null {
-  return PLAYER_NATIONALITIES[normalizePlayerKey(player)] ?? null;
+  return PLAYER_NATIONALITIES[normalizePgaPlayerNationalityKey(player)] ?? null;
 }
 
 export function countryCodeToFlag(countryCode: string): string | null {
