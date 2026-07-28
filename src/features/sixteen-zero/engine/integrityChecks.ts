@@ -89,6 +89,33 @@ export function assertLineupIntegrity(
 }
 
 /**
+ * Verifies the user and CPU starting lineups for a single matchup share no
+ * player ID, including temporary undrafted replacements. Drafted starters
+ * are already unique by construction (each roster is independent), so any
+ * violation here can only come from both teams independently drawing the
+ * same free agent from the shared temporary-replacement pool.
+ */
+export function assertNoLineupOverlap(
+  userLineup: WeeklyLineup,
+  opponentLineup: WeeklyLineup,
+  label: string,
+): void {
+  const userIds = new Set(
+    LINEUP_SLOTS.map((slot) => userLineup[slot]).filter(
+      (player): player is SimulationPlayer => player !== null,
+    ).map((player) => player.id),
+  );
+  for (const slot of LINEUP_SLOTS) {
+    const opponentPlayer = opponentLineup[slot];
+    if (opponentPlayer && userIds.has(opponentPlayer.id)) {
+      throw new IntegrityError(
+        `${label}: player ${opponentPlayer.name} appears in both the user and CPU starting lineups.`,
+      );
+    }
+  }
+}
+
+/**
  * Verifies the saved player-level scores for a matchup sum (under the same
  * rounding policy the engine already uses) to the stored team total.
  */

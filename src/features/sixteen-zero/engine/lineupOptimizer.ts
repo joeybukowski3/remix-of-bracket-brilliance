@@ -26,6 +26,13 @@ export const LINEUP_SLOTS: LineupSlot[] = [
 
 type LineupOptimizationOptions = {
   temporaryReplacementPool?: readonly SimulationPlayer[];
+  /**
+   * Player IDs to exclude from temporary-replacement selection only (e.g.
+   * IDs already used by the other team's lineup this week). Never affects
+   * normal roster-based slot selection, since each roster's own players are
+   * already unique to that team.
+   */
+  excludeTemporaryReplacementIds?: ReadonlySet<string>;
 };
 
 export function normalizeOpponent(opponent: string | null | undefined) {
@@ -76,6 +83,7 @@ function fillEmptySlotsWithTemporaryReplacements(
   week: number,
   defenseRanks: DefensePositionRanks,
   temporaryReplacementPool: readonly SimulationPlayer[],
+  excludeTemporaryReplacementIds?: ReadonlySet<string>,
 ) {
   const usedIds = new Set(
     Object.values(lineup)
@@ -91,6 +99,7 @@ function fillEmptySlotsWithTemporaryReplacements(
           player.active &&
           player.byeWeek !== week &&
           !usedIds.has(player.id) &&
+          !excludeTemporaryReplacementIds?.has(player.id) &&
           isEligibleForSlot(player, slot),
       )
       .sort(
@@ -157,6 +166,7 @@ export function optimizeLineup(
         week,
         defenseRanks,
         options.temporaryReplacementPool,
+        options.excludeTemporaryReplacementIds,
       )
     : lineup;
 }

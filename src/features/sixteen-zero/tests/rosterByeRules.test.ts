@@ -165,7 +165,7 @@ describe("16-0 two-K/two-DST lineup optimization", () => {
 });
 
 describe("16-0 temporary coverage outcome behavior", () => {
-  it("keeps opponent draws independent of same-bye replacements and can still win", () => {
+  it("keeps opponent draws independent of same-bye replacements outside the affected week, and can still win", () => {
     const fixture = referenceFixture("outcome-independence");
     const week = 6;
     const replacementRoster = withSameBye(
@@ -193,15 +193,23 @@ describe("16-0 temporary coverage outcome behavior", () => {
       opponentNames: names,
       seed: "independent-opponents",
     });
-    expect(
-      depleted.schedule
-        .filter((game) => game.fantasyWeek <= 14)
-        .map((game) => game.opponentScore),
-    ).toEqual(
-      baseline.schedule
-        .filter((game) => game.fantasyWeek <= 14)
-        .map((game) => game.opponentScore),
-    );
+    // Every week except the forced-bye week must be untouched by the user's
+    // roster change. Week `week` itself may legitimately differ: the CPU's
+    // own temporary-replacement pick now excludes any player already in the
+    // user's lineup that week (duplicate-lineup prevention), so if the
+    // user's forced replacements happen to claim a free agent the CPU would
+    // otherwise have drawn, the CPU's pick — and therefore its score — can
+    // change. That is the intended behavior, not a regression.
+    const depletedScores = depleted.schedule
+      .filter((game) => game.fantasyWeek <= 14)
+      .map((game) => game.opponentScore);
+    const baselineScores = baseline.schedule
+      .filter((game) => game.fantasyWeek <= 14)
+      .map((game) => game.opponentScore);
+    depletedScores.forEach((score, index) => {
+      if (index === week - 1) return;
+      expect(score).toEqual(baselineScores[index]);
+    });
 
     const lowOpponent = simulateSeason({
       roster: replacementRoster,

@@ -18,6 +18,7 @@ import {
   assertDraftIntegrity,
   assertLineupIntegrity,
   assertNflMatchupConsistency,
+  assertNoLineupOverlap,
   assertScoreReconciliation,
 } from "./integrityChecks";
 import { buildMatchupLineupEntries } from "./matchupBoxScore";
@@ -121,10 +122,16 @@ export function simulateSeason({
     .fork("opponent-rotation")
     .shuffle(cpuEntries.map((entry) => entry.slot));
 
-  function simulateCpuLineupScore(slot: number, week: number, randomLabel: string) {
+  function simulateCpuLineupScore(
+    slot: number,
+    week: number,
+    randomLabel: string,
+    excludeTemporaryReplacementIds?: ReadonlySet<string>,
+  ) {
     const cpuRoster = cpuRosterBySlot.get(slot)!;
     const lineup = optimizeLineup(cpuRoster, week, defenseRanks, {
       temporaryReplacementPool,
+      excludeTemporaryReplacementIds,
     });
     if (getEmptyLineupSlots(lineup).length > 0) {
       throw new Error(`Unable to form a complete CPU lineup for Week ${week}.`);
@@ -151,6 +158,7 @@ export function simulateSeason({
       draftedPlayerIds,
       `Week ${week} opponent lineup`,
     );
+    assertNoLineupOverlap(userLineup, opponentLineup, `Week ${week} matchup`);
 
     const userEntries = buildMatchupLineupEntries(userLineup, userSlotScores, week, userRosterIds);
     const opponentEntries = buildMatchupLineupEntries(
@@ -202,11 +210,15 @@ export function simulateSeason({
       tiers,
       rootRandom.fork(`user-week-${week}`),
     );
+    const userLineupIds = new Set(
+      LINEUP_SLOTS.map((slot) => lineup[slot]?.id).filter((id): id is string => id !== undefined),
+    );
     const opponentSlot = regularSeasonRotation[(week - 1) % regularSeasonRotation.length];
     const { lineup: opponentLineup, score: computedOpponentScore } = simulateCpuLineupScore(
       opponentSlot,
       week,
       `opponent-week-${week}`,
+      userLineupIds,
     );
     const regularOverride = overrides?.regularOpponentScores?.[week - 1];
     const opponentScore = overriddenScore(regularOverride, computedOpponentScore);
@@ -276,10 +288,14 @@ export function simulateSeason({
       tiers,
       rootRandom.fork(`user-week-${week}`),
     );
+    const userLineupIds = new Set(
+      LINEUP_SLOTS.map((slot) => lineup[slot]?.id).filter((id): id is string => id !== undefined),
+    );
     const { lineup: opponentLineup, score: computedOpponentScore } = simulateCpuLineupScore(
       opponentSlot,
       week,
       `opponent-week-${week}`,
+      userLineupIds,
     );
     const playoffOverride = overrides?.playoffOpponentScores?.[week];
     const opponentScore = overriddenScore(playoffOverride, computedOpponentScore);
