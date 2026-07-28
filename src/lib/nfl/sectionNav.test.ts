@@ -10,6 +10,7 @@ import {
 
 const LIVE_NFL_ROUTES = new Set([
   "/nfl",
+  "/16-0",
   "/nfl/standings",
   "/nfl/schedule",
   "/nfl/matchups",
@@ -23,6 +24,7 @@ describe("NFL section navigation", () => {
   it("contains the major NFL destinations in order", () => {
     expect(NFL_SECTION_NAV_ITEMS.map((item) => item.to)).toEqual([
       "/nfl",
+      "/16-0",
       "/nfl/standings",
       "/nfl/schedule",
       "/nfl/matchups",
@@ -40,6 +42,13 @@ describe("NFL section navigation", () => {
     // Prefix matching must not bleed into the sibling schedule route.
     expect(isNflSectionPathActive("/nfl/schedule", "/nfl/matchups")).toBe(false);
     expect(isNflSectionPathActive("/nfl/matchups", "/nfl/schedule")).toBe(false);
+  });
+
+  it("marks the 16-0 draft game active for its base route and nested routes", () => {
+    expect(getActiveNflSectionCategoryId("/16-0")).toBe("overview");
+    expect(isNflSectionPathActive("/16-0", "/16-0")).toBe(true);
+    expect(isNflSectionPathActive("/16-0/draft", "/16-0")).toBe(true);
+    expect(isNflSectionPathActive("/nfl/standings", "/16-0")).toBe(false);
   });
 
   it("keeps team dashboards grouped under the 2026 guide", () => {

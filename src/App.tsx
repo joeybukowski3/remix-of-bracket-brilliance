@@ -71,6 +71,7 @@ import {
 const queryClient = new QueryClient();
 const routerBase = import.meta.env.BASE_URL === "/" ? undefined : import.meta.env.BASE_URL;
 const NflV03Review = lazy(() => import("./pages/NflV03Review"));
+const SixteenZeroPage = lazy(() => import("./features/sixteen-zero/SixteenZeroPage"));
 
 function LegacyScheduleRedirect() {
   const { gameId = "" } = useParams();
@@ -121,6 +122,14 @@ const App = () => (
           <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/support" element={<Support />} />
+          <Route
+            path="/16-0/*"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading 16-0…</div>}>
+                <SixteenZeroPage />
+              </Suspense>
+            }
+          />
           <Route path="/nfl" element={<NflPlatformLayout />}>
             <Route index element={<NFL />} />
             <Route path="standings" element={<NFLStandings />} />

@@ -96,6 +96,7 @@ describe("NflPlatformLayout", () => {
       renderNflRoute("/nfl");
       const destinations = [
         "Power Ratings",
+        "16-0 Draft Game",
         "Standings by Division",
         "Schedule by Week",
         "Weekly Matchups",
@@ -167,6 +168,15 @@ describe("NflPlatformLayout", () => {
     renderNflRoute("/mlb");
     expect(screen.getByRole("heading", { name: "MLB Page" })).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "NFL sitemap" })).toBeNull();
+  });
+
+  it("links the 16-0 draft game to /16-0 with no duplicate entries", () => {
+    renderNflRoute("/nfl");
+    const links = screen.getAllByRole("link", { name: /16-0 Draft Game/i });
+    expect(links).toHaveLength(1);
+    for (const link of links) {
+      expect(link.getAttribute("href")).toBe("/16-0");
+    }
   });
 
   it("renders the reused NFL logo in the sidebar header", () => {
