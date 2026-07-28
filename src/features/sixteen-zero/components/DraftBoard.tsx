@@ -6,27 +6,23 @@ import { NflTeamLogo } from "./NflTeamLogo";
 
 const PLAYERS_BY_ID = new Map(SIMULATION_PLAYERS.map((player) => [player.id, player]));
 
-type DraftBoardProps = {
+type DraftStatusPanelProps = {
   currentPick: DraftPick | null;
   draftSlot: number;
   isUserOnClock: boolean;
-  recentSelections: DraftSelection[];
-  allSelections: DraftSelection[];
   needsStartingK?: boolean;
   needsStartingDST?: boolean;
   onDraftBestAvailable?: () => void;
 };
 
-export function DraftBoard({
+export function DraftStatusPanel({
   currentPick,
   draftSlot,
   isUserOnClock,
-  recentSelections,
-  allSelections,
   needsStartingK = false,
   needsStartingDST = false,
   onDraftBestAvailable,
-}: DraftBoardProps) {
+}: DraftStatusPanelProps) {
   const showStartingSpecialistWarning =
     currentPick !== null &&
     currentPick.round >= 14 &&
@@ -38,7 +34,7 @@ export function DraftBoard({
   ].filter(Boolean);
 
   return (
-    <aside className="space-y-4">
+    <div className="space-y-4">
       <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 shadow-xl shadow-black/10">
         <p className="text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] font-bold uppercase tracking-[0.2em] text-cyan-300">
           Draft status
@@ -114,64 +110,103 @@ export function DraftBoard({
           </span>
         </div>
       ) : null}
+    </div>
+  );
+}
 
-      <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
-        <h2 className="text-[clamp(0.9375rem,0.85rem+0.3vw,1.125rem)] font-bold text-white">
-          Recent selections
-        </h2>
-        <ol className="mt-3 space-y-2">
-          {recentSelections.length === 0 ? (
-            <li className="text-[clamp(0.75rem,0.7rem+0.15vw,0.875rem)] text-slate-500">
-              The board is about to open.
-            </li>
-          ) : (
-            recentSelections.map((selection) => {
-              const player = PLAYERS_BY_ID.get(selection.playerId);
-              return (
-                <li
-                  key={selection.overallPick}
-                  className="flex items-center gap-2 rounded-lg bg-white/[0.04] px-2.5 py-2"
-                >
-                  <span className="w-7 shrink-0 font-mono text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] text-slate-500">
-                    {selection.overallPick}
-                  </span>
-                  <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[clamp(0.75rem,0.7rem+0.15vw,0.875rem)] font-semibold text-slate-200">
-                    {player ? <NflTeamLogo team={player.team} size={18} /> : null}
-                    <span className="truncate">{player?.name}</span>
-                  </span>
-                  <span className="text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] font-bold text-cyan-300">
-                    {player?.position}
-                  </span>
-                </li>
-              );
-            })
-          )}
+type RecentSelectionsPanelProps = {
+  recentSelections: DraftSelection[];
+  allSelections: DraftSelection[];
+};
+
+export function RecentSelectionsPanel({
+  recentSelections,
+  allSelections,
+}: RecentSelectionsPanelProps) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+      <h2 className="text-[clamp(0.9375rem,0.85rem+0.3vw,1.125rem)] font-bold text-white">
+        Recent selections
+      </h2>
+      <ol className="mt-3 space-y-2">
+        {recentSelections.length === 0 ? (
+          <li className="text-[clamp(0.75rem,0.7rem+0.15vw,0.875rem)] text-slate-500">
+            The board is about to open.
+          </li>
+        ) : (
+          recentSelections.map((selection) => {
+            const player = PLAYERS_BY_ID.get(selection.playerId);
+            return (
+              <li
+                key={selection.overallPick}
+                className="flex items-center gap-2 rounded-lg bg-white/[0.04] px-2.5 py-2"
+              >
+                <span className="w-7 shrink-0 font-mono text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] text-slate-500">
+                  {selection.overallPick}
+                </span>
+                <span className="flex min-w-0 flex-1 items-center gap-1.5 text-[clamp(0.75rem,0.7rem+0.15vw,0.875rem)] font-semibold text-slate-200">
+                  {player ? <NflTeamLogo team={player.team} size={18} /> : null}
+                  <span className="truncate">{player?.name}</span>
+                </span>
+                <span className="text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] font-bold text-cyan-300">
+                  {player?.position}
+                </span>
+              </li>
+            );
+          })
+        )}
+      </ol>
+      <details className="mt-3">
+        <summary className="cursor-pointer text-[clamp(0.75rem,0.7rem+0.15vw,0.875rem)] font-semibold text-slate-400 hover:text-white">
+          Full draft history ({allSelections.length})
+        </summary>
+        <ol className="mt-2 max-h-64 space-y-1 overflow-y-auto pr-1">
+          {[...allSelections].reverse().map((selection) => {
+            const player = PLAYERS_BY_ID.get(selection.playerId);
+            return (
+              <li
+                key={`history-${selection.overallPick}`}
+                className="flex justify-between gap-2 text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] text-slate-400"
+              >
+                <span className="truncate">
+                  {selection.overallPick}. {player?.name}
+                </span>
+                <span className="shrink-0">
+                  T{selection.slot}
+                  {selection.source === "auto" ? " · AUTO" : ""}
+                </span>
+              </li>
+            );
+          })}
         </ol>
-        <details className="mt-3">
-          <summary className="cursor-pointer text-[clamp(0.75rem,0.7rem+0.15vw,0.875rem)] font-semibold text-slate-400 hover:text-white">
-            Full draft history ({allSelections.length})
-          </summary>
-          <ol className="mt-2 max-h-64 space-y-1 overflow-y-auto pr-1">
-            {[...allSelections].reverse().map((selection) => {
-              const player = PLAYERS_BY_ID.get(selection.playerId);
-              return (
-                <li
-                  key={`history-${selection.overallPick}`}
-                  className="flex justify-between gap-2 text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] text-slate-400"
-                >
-                  <span className="truncate">
-                    {selection.overallPick}. {player?.name}
-                  </span>
-                  <span className="shrink-0">
-                    T{selection.slot}
-                    {selection.source === "auto" ? " · AUTO" : ""}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </details>
-      </div>
+      </details>
+    </div>
+  );
+}
+
+type DraftBoardProps = DraftStatusPanelProps & RecentSelectionsPanelProps;
+
+export function DraftBoard({
+  currentPick,
+  draftSlot,
+  isUserOnClock,
+  recentSelections,
+  allSelections,
+  needsStartingK = false,
+  needsStartingDST = false,
+  onDraftBestAvailable,
+}: DraftBoardProps) {
+  return (
+    <aside className="space-y-4">
+      <DraftStatusPanel
+        currentPick={currentPick}
+        draftSlot={draftSlot}
+        isUserOnClock={isUserOnClock}
+        needsStartingK={needsStartingK}
+        needsStartingDST={needsStartingDST}
+        onDraftBestAvailable={onDraftBestAvailable}
+      />
+      <RecentSelectionsPanel recentSelections={recentSelections} allSelections={allSelections} />
     </aside>
   );
 }

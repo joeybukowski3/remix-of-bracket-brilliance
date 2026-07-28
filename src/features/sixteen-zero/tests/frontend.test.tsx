@@ -53,7 +53,7 @@ describe("16-0 no-persistence frontend", () => {
       fireEvent.click(screen.getByRole("button", { name: /start draft from slot/i }));
     });
     expect(screen.getByRole("heading", { level: 1, name: "Available players" })).toBeInTheDocument();
-    expect(screen.getByText(/Your pick: Round 1, Pick 1/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Your pick: Round 1, Pick 1/).length).toBeGreaterThan(0);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 

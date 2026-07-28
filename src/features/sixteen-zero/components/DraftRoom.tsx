@@ -2,9 +2,10 @@ import { SIMULATION_PLAYERS } from "../data";
 import { countRosterPositions } from "../engine/rosterRules";
 import type { ReturnTypeUseDraftGame } from "../hooks/useDraftGame.types";
 import { AvailablePlayersTable } from "./AvailablePlayersTable";
-import { DraftBoard } from "./DraftBoard";
+import { DraftBoard, DraftStatusPanel, RecentSelectionsPanel } from "./DraftBoard";
+import { MobileCollapsibleSection } from "./MobileCollapsibleSection";
 import { SixteenZeroHeader } from "./SixteenZeroHeader";
-import { UserRosterPanel } from "./UserRosterPanel";
+import { RosterContents, UserRosterPanel } from "./UserRosterPanel";
 
 export function DraftRoom({ game }: { game: ReturnTypeUseDraftGame }) {
   const isUserOnClock = game.phase === "user_on_clock";
@@ -56,27 +57,81 @@ export function DraftRoom({ game }: { game: ReturnTypeUseDraftGame }) {
       </div>
 
       <main className="mx-auto grid max-w-[1800px] gap-4 px-3 py-4 sm:px-5 lg:grid-cols-[250px_minmax(0,1fr)_300px]">
-        <DraftBoard
-          currentPick={game.currentPick}
-          draftSlot={game.draftSlot ?? 1}
-          isUserOnClock={isUserOnClock}
-          recentSelections={game.recentSelections}
-          allSelections={game.selections}
-          needsStartingK={userPositionCounts.K === 0}
-          needsStartingDST={userPositionCounts.DST === 0}
-          onDraftBestAvailable={game.draftBestAvailable}
-        />
-        <AvailablePlayersTable
-          players={game.availablePlayers}
-          legalPlayerIds={game.legalPlayerIds}
-          canDraft={isUserOnClock}
-          onDraft={game.draftPlayer}
-        />
+        {/* Desktop-only: original left column (draft status + recent selections stacked), unchanged. */}
+        <div className="hidden lg:block">
+          <DraftBoard
+            currentPick={game.currentPick}
+            draftSlot={game.draftSlot ?? 1}
+            isUserOnClock={isUserOnClock}
+            recentSelections={game.recentSelections}
+            allSelections={game.selections}
+            needsStartingK={userPositionCounts.K === 0}
+            needsStartingDST={userPositionCounts.DST === 0}
+            onDraftBestAvailable={game.draftBestAvailable}
+          />
+        </div>
+
+        {/* Mobile-only: draft status shown first, not collapsible. */}
+        <div className="order-1 lg:hidden">
+          <DraftStatusPanel
+            currentPick={game.currentPick}
+            draftSlot={game.draftSlot ?? 1}
+            isUserOnClock={isUserOnClock}
+            needsStartingK={userPositionCounts.K === 0}
+            needsStartingDST={userPositionCounts.DST === 0}
+            onDraftBestAvailable={game.draftBestAvailable}
+          />
+        </div>
+
+        {/* Shared: available players. Visible at both breakpoints; mobile gets a collapsible header, expanded by default. */}
+        <MobileCollapsibleSection
+          title="Available Players"
+          sectionId="available-players"
+          subtitle={`${game.availablePlayers.length} remaining`}
+          defaultOpen
+          className="order-2 lg:order-none"
+        >
+          <AvailablePlayersTable
+            players={game.availablePlayers}
+            legalPlayerIds={game.legalPlayerIds}
+            canDraft={isUserOnClock}
+            onDraft={game.draftPlayer}
+          />
+        </MobileCollapsibleSection>
+
+        {/* Mobile-only: your roster, collapsible and collapsed by default. */}
+        <MobileCollapsibleSection
+          title="Your Roster"
+          sectionId="your-roster"
+          subtitle={`Roster ${game.userRoster.length}/17`}
+          hideOnDesktop
+          className="order-3"
+        >
+          <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+            <RosterContents roster={game.userRoster} picksRemaining={17 - game.userRoster.length} />
+          </div>
+        </MobileCollapsibleSection>
+
+        {/* Desktop-only: original right column, unchanged. */}
         <UserRosterPanel
           roster={game.userRoster}
           picksRemaining={17 - game.userRoster.length}
           showMobileTrigger={false}
         />
+
+        {/* Mobile-only: recent selections, collapsible and collapsed by default, shown last. */}
+        <MobileCollapsibleSection
+          title="Recent Selections"
+          sectionId="recent-selections"
+          subtitle={draftedPlayer ? `Latest: ${draftedPlayer.name}` : undefined}
+          hideOnDesktop
+          className="order-4"
+        >
+          <RecentSelectionsPanel
+            recentSelections={game.recentSelections}
+            allSelections={game.selections}
+          />
+        </MobileCollapsibleSection>
       </main>
     </div>
   );
