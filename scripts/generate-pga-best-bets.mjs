@@ -27,6 +27,8 @@ import {
   buildV3Artifact,
   deriveV2Compatibility,
   deriveV2CompatibilityFromLeans,
+  sanitizeModelLeansArticle,
+  sanitizeModelLeansPreview,
 } from "./lib/pga-best-bets-schema.mjs";
 
 const ROOT = process.cwd();
@@ -1069,7 +1071,14 @@ async function main() {
         apiKey: oddsApiKey,
         tournamentName,
         startDate: currentField.startDate ?? null,
-        knownProviderEventId: currentField.tournamentId ?? null,
+        // knownProviderEventId must be a previously-verified ID *from this
+        // odds provider* (The Odds API's own event.id), never our PGA Tour
+        // schedule identity (currentField.tournamentId) -- those are
+        // different ID namespaces and would never actually match, silently
+        // no-opping this match tier while looking wired up. We have no
+        // provider-native ID source yet, so this stays null and matching
+        // falls through to normalized-name/date-tolerance below.
+        knownProviderEventId: null,
       });
   if (DRY_RUN) console.log("[pga-best-bets] dry-run: skipping live odds fetch.");
 
@@ -1193,6 +1202,17 @@ async function main() {
           playersToApproachCautiously: article.playersToApproachCautiously.filter((entry) => isSelected(entry.player)),
         };
       }
+    }
+
+    // A model-leans-only week has no verified price behind any recommendation
+    // -- Grok's preview/article prose must never claim odds, a sportsbook, an
+    // edge, or an expected value on it, even though the prompt already
+    // instructs this. Sanitized here as a deterministic, code-enforced
+    // guarantee rather than relying on the LLM to follow instructions.
+    // Priced official-best-bets weeks are never touched by this branch.
+    if (bestBetsStatus === "model-leans-only") {
+      preview = sanitizeModelLeansPreview(preview);
+      article = sanitizeModelLeansArticle(article);
     }
   }
 

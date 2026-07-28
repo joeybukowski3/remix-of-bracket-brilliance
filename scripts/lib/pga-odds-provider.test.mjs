@@ -123,6 +123,28 @@ describe("matchTournamentEvent", () => {
     expect(result.matchMethod).toBe("provider-event-id");
   });
 
+  test("a PGA Tour schedule ID is not treated as a provider event ID: it never matches by id, and falls through to name matching instead of failing or mismatching", () => {
+    // "R2026524" is a real-shaped PGA Tour schedule identity (see
+    // public/data/pga/current-field.json's tournamentId), not anything The
+    // Odds API would ever assign as event.id.
+    const result = matchTournamentEvent([rocketClassic, scottishOpen], {
+      tournamentName: "Rocket Classic",
+      knownProviderEventId: "R2026524",
+    });
+    expect(result.event.id).toBe("evt-rocket-classic");
+    expect(result.matchMethod).not.toBe("provider-event-id");
+    expect(result.matchMethod).toBe("normalized-identity");
+  });
+
+  test("a schedule ID that happens to collide with no event still fails closed when no name matches either", () => {
+    const result = matchTournamentEvent([scottishOpen], {
+      tournamentName: "Rocket Classic",
+      knownProviderEventId: "R2026524",
+    });
+    expect(result.event).toBeNull();
+    expect(result.errors[0]).toMatch(/no event matched/);
+  });
+
   test("ambiguous duplicate names fail closed", () => {
     const duplicate = { ...rocketClassic, id: "evt-rocket-classic-2" };
     const result = matchTournamentEvent([rocketClassic, duplicate], { tournamentName: "Rocket Classic" });

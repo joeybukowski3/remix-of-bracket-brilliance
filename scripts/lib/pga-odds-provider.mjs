@@ -82,6 +82,13 @@ export function withinDateTolerance(commenceTime, startDate, toleranceDays = EVE
  * `events` must already be the full candidate set the caller wants
  * considered (e.g. every event returned across every golf sport key) --
  * this function never itself decides which sport key is "active".
+ *
+ * `config.knownProviderEventId` MUST be an ID in THIS PROVIDER's own
+ * namespace (i.e. a value previously observed in one of `events[].id` from
+ * this exact provider) -- never an internal schedule/tournament identity
+ * (e.g. a PGA Tour schedule ID). The two ID spaces are unrelated; passing
+ * the wrong one never matches, so it silently no-ops rather than erroring,
+ * which can look like a stronger match tier is wired up when it isn't.
  */
 export function matchTournamentEvent(events, config = {}) {
   const {
@@ -350,6 +357,10 @@ function buildUnavailableResult({ providerKey, providerName, requestedTournament
  * markets, using The Odds API. `fetchImpl` defaults to the global `fetch`
  * but MUST be injected with a fixture-backed stub in tests -- this function
  * must never be exercised against the live network in a test run.
+ *
+ * `knownProviderEventId` (see matchTournamentEvent) must be a genuine
+ * previously-observed The-Odds-API event id, not our own schedule/
+ * tournament identity -- pass null unless the caller actually has one.
  */
 export async function fetchProviderOdds({
   apiKey,

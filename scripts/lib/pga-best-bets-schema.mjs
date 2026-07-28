@@ -127,14 +127,86 @@ export function deriveV2CompatibilityFromLeans(modelLeans) {
   return sections;
 }
 
-/** Phrases that assert market/price/value judgement. Model Leans copy must never contain these. */
+/**
+ * Phrases that assert market/price/value judgement. Model Leans copy --
+ * both the deterministic `note` field and any Grok-authored preview/article
+ * prose for a `model-leans-only` week (see sanitizeModelLeansText below) --
+ * must never contain these. /\bvalue\b/i and /\bedge\b/i already subsume
+ * "value at the number" and "edge at the number"; /\bEV\b/ covers the bare
+ * abbreviation, which "expected value" alone would miss.
+ */
 const FORBIDDEN_LEAN_LANGUAGE = [
-  /\bprice\b/i, /\bpriced\b/i, /\bodds\b/i, /\bsportsbook\b/i, /\bmarket value\b/i,
-  /\bmispric\w*/i, /\boverlay\b/i, /\bvalue\b/i, /\bbest bet\b/i, /\bexpected value\b/i, /\bedge\b/i,
+  /\bprice\b/i, /\bpriced\b/i, /\bodds\b/i, /\bsportsbooks?\b/i, /\bmarket value\b/i,
+  /\bmispric\w*/i, /\boverlay\b/i, /\bvalue\b/i, /\bbest bet\b/i, /\bexpected value\b/i, /\bEV\b/, /\bedge\b/i,
 ];
 
 export function containsForbiddenLeanLanguage(text) {
   return FORBIDDEN_LEAN_LANGUAGE.some((pattern) => pattern.test(String(text ?? "")));
+}
+
+const MODEL_LEANS_FALLBACK_SENTENCE =
+  "This is provisional model context only; no verified market data was confirmed for this tournament this week.";
+
+/** Split into sentence-ish chunks, each chunk keeping its trailing punctuation and whitespace. */
+function splitIntoSentences(text) {
+  const matches = String(text ?? "").match(/[^.!?]+[.!?]*(?:\s+|$)/g);
+  return (matches ?? [text]).map((sentence) => sentence.trim()).filter(Boolean);
+}
+
+/**
+ * Deterministically strip any sentence containing forbidden price/value
+ * language from a block of Grok-authored prose. Used ONLY for
+ * `model-leans-only` copy -- priced `official-best-bets` prose is never
+ * passed through this function and keeps its full market-value language.
+ * If every sentence is offending, substitutes one factual fallback
+ * sentence rather than emitting an empty field.
+ */
+export function sanitizeModelLeansText(text, fallback = MODEL_LEANS_FALLBACK_SENTENCE) {
+  if (typeof text !== "string" || !text.trim()) return text;
+  const clean = splitIntoSentences(text).filter((sentence) => !containsForbiddenLeanLanguage(sentence));
+  return clean.length ? clean.join(" ").trim() : fallback;
+}
+
+/**
+ * Sanitizes every Grok-authored preview field for a `model-leans-only`
+ * week. Returns `preview` unchanged if it's null/missing (nothing to
+ * sanitize -- e.g. the preview call itself failed).
+ */
+export function sanitizeModelLeansPreview(preview) {
+  if (!preview) return preview;
+  return {
+    ...preview,
+    tournamentOverview: sanitizeModelLeansText(preview.tournamentOverview),
+    modelExplainer: sanitizeModelLeansText(preview.modelExplainer),
+    pickApproach: sanitizeModelLeansText(preview.pickApproach),
+  };
+}
+
+/**
+ * Sanitizes every Grok-authored article surface for a `model-leans-only`
+ * week: introduction/dek/conclusion and every section's heading+body are
+ * text-sanitized (offending sentences stripped, not the whole field);
+ * keyTakeaways and playersToApproachCautiously entries are DROPPED
+ * entirely when offending, since a short structured claim can't be
+ * partially edited without changing its meaning -- consistent with how
+ * validateArticleRecommendations already drops (never rewrites) an
+ * unselected-player entry.
+ */
+export function sanitizeModelLeansArticle(article) {
+  if (!article) return article;
+  return {
+    ...article,
+    dek: article.dek ? sanitizeModelLeansText(article.dek) : article.dek,
+    introduction: sanitizeModelLeansText(article.introduction),
+    conclusion: sanitizeModelLeansText(article.conclusion),
+    sections: (article.sections ?? []).map((section) => ({
+      ...section,
+      heading: containsForbiddenLeanLanguage(section.heading) ? "Model Context" : section.heading,
+      body: sanitizeModelLeansText(section.body),
+    })),
+    keyTakeaways: (article.keyTakeaways ?? []).filter((takeaway) => !containsForbiddenLeanLanguage(takeaway.text)),
+    playersToApproachCautiously: (article.playersToApproachCautiously ?? []).filter((entry) => !containsForbiddenLeanLanguage(entry.reason)),
+  };
 }
 
 /**
@@ -298,6 +370,36 @@ export function validateV3Artifact(artifact) {
     }
     if (containsForbiddenLeanLanguage(lean.note)) {
       errors.push(`model lean for ${lean.player} contains forbidden price/value language`);
+    }
+  }
+
+  // Defense-in-depth: a model-leans-only week's Grok-authored prose must
+  // have already been sanitized (see sanitizeModelLeansPreview/Article).
+  // Re-checked here so a skipped/bypassed sanitizer call fails validation
+  // instead of silently shipping a value claim next to unpriced leans.
+  if (artifact?.status === "model-leans-only") {
+    const preview = artifact.preview;
+    if (preview) {
+      for (const field of ["tournamentOverview", "modelExplainer", "pickApproach"]) {
+        if (containsForbiddenLeanLanguage(preview[field])) errors.push(`model-leans-only preview.${field} contains forbidden price/value language`);
+      }
+    }
+    const article = artifact.article;
+    if (article) {
+      for (const field of ["dek", "introduction", "conclusion"]) {
+        if (containsForbiddenLeanLanguage(article[field])) errors.push(`model-leans-only article.${field} contains forbidden price/value language`);
+      }
+      for (const section of article.sections ?? []) {
+        if (containsForbiddenLeanLanguage(section.heading) || containsForbiddenLeanLanguage(section.body)) {
+          errors.push(`model-leans-only article section "${section.heading}" contains forbidden price/value language`);
+        }
+      }
+      for (const takeaway of article.keyTakeaways ?? []) {
+        if (containsForbiddenLeanLanguage(takeaway.text)) errors.push("model-leans-only article keyTakeaway contains forbidden price/value language");
+      }
+      for (const entry of article.playersToApproachCautiously ?? []) {
+        if (containsForbiddenLeanLanguage(entry.reason)) errors.push(`model-leans-only article caution entry for ${entry.player} contains forbidden price/value language`);
+      }
     }
   }
 

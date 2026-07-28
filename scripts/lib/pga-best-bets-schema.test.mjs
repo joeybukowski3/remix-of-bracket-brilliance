@@ -9,6 +9,9 @@ import {
   containsForbiddenLeanLanguage,
   deriveV2Compatibility,
   deriveV2CompatibilityFromLeans,
+  sanitizeModelLeansArticle,
+  sanitizeModelLeansPreview,
+  sanitizeModelLeansText,
   validatePortfolioDiagnostics,
   validateV3Artifact,
 } from "./pga-best-bets-schema.mjs";
@@ -90,6 +93,136 @@ describe("containsForbiddenLeanLanguage", () => {
   test("flags price/value/odds language", () => {
     expect(containsForbiddenLeanLanguage("This price looks like value")).toBe(true);
     expect(containsForbiddenLeanLanguage("Strong course fit based on approach play")).toBe(false);
+  });
+
+  test("flags every specifically required blocked term/phrase", () => {
+    const blocked = [
+      "The odds favor him this week.",
+      "Priced through DraftKings and FanDuel.",
+      "Available at most sportsbooks.",
+      "This looks like market value at the number.",
+      "The price is generous here.",
+      "A classic overlay situation.",
+      "The market has this mispriced.",
+      "Mispricing is evident in this line.",
+      "Strong expected value on this pick.",
+      "The EV here is clearly positive.",
+      "There's an edge at the number.",
+    ];
+    for (const text of blocked) expect(containsForbiddenLeanLanguage(text)).toBe(true);
+  });
+
+  test("does not flag ordinary golf analysis prose", () => {
+    expect(containsForbiddenLeanLanguage("Strong approach play and a favorable course fit this week.")).toBe(false);
+    expect(containsForbiddenLeanLanguage("He is even par through two rounds.")).toBe(false);
+  });
+});
+
+describe("sanitizeModelLeansText", () => {
+  test("passes through clean text untouched", () => {
+    const text = "Strong approach play supports this player's course fit.";
+    expect(sanitizeModelLeansText(text)).toBe(text);
+  });
+
+  test("strips only the offending sentence, keeping the rest", () => {
+    const text = "Strong course fit here. The price looks like great value. Recent form is solid.";
+    const result = sanitizeModelLeansText(text);
+    expect(result).not.toMatch(/price|value/i);
+    expect(result).toContain("Strong course fit here.");
+    expect(result).toContain("Recent form is solid.");
+  });
+
+  test("substitutes a factual fallback when every sentence is offending", () => {
+    const result = sanitizeModelLeansText("The odds show great value. This is a clear overlay.");
+    expect(containsForbiddenLeanLanguage(result)).toBe(false);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  test("passes through non-string/empty input unchanged", () => {
+    expect(sanitizeModelLeansText(null)).toBeNull();
+    expect(sanitizeModelLeansText(undefined)).toBeUndefined();
+    expect(sanitizeModelLeansText("")).toBe("");
+  });
+});
+
+describe("sanitizeModelLeansPreview", () => {
+  test("sanitizes all three preview fields", () => {
+    const preview = {
+      tournamentOverview: "A great course. The odds here are generous.",
+      modelExplainer: "SG Approach carries the most weight this week.",
+      pickApproach: "This is priced as clear value against the field.",
+    };
+    const result = sanitizeModelLeansPreview(preview);
+    expect(containsForbiddenLeanLanguage(result.tournamentOverview)).toBe(false);
+    expect(result.modelExplainer).toBe(preview.modelExplainer);
+    expect(containsForbiddenLeanLanguage(result.pickApproach)).toBe(false);
+  });
+
+  test("passes through null preview unchanged", () => {
+    expect(sanitizeModelLeansPreview(null)).toBeNull();
+  });
+});
+
+describe("sanitizeModelLeansArticle", () => {
+  function article(overrides = {}) {
+    return {
+      title: "Weekly Model Context",
+      dek: "A look at this week's field.",
+      introduction: "Solid course fit across the board.",
+      conclusion: "Strong model context this week.",
+      sections: [{ heading: "Overview", body: "Good approach numbers." }],
+      keyTakeaways: [{ text: "Strong course fit.", players: ["A"] }],
+      playersToApproachCautiously: [{ player: "B", reason: "Limited recent form." }],
+      ...overrides,
+    };
+  }
+
+  test("leaves clean prose fully intact", () => {
+    const clean = article();
+    expect(sanitizeModelLeansArticle(clean)).toEqual(clean);
+  });
+
+  test("sanitizes introduction, conclusion, and dek", () => {
+    const result = sanitizeModelLeansArticle(article({
+      dek: "This week's board offers real value.",
+      introduction: "The odds are generous across the field.",
+      conclusion: "A clear overlay on the top play.",
+    }));
+    expect(containsForbiddenLeanLanguage(result.dek)).toBe(false);
+    expect(containsForbiddenLeanLanguage(result.introduction)).toBe(false);
+    expect(containsForbiddenLeanLanguage(result.conclusion)).toBe(false);
+  });
+
+  test("relabels an offending section heading and sanitizes its body", () => {
+    const result = sanitizeModelLeansArticle(article({
+      sections: [{ heading: "Best Value Play", body: "This price looks mispriced relative to the field." }],
+    }));
+    expect(containsForbiddenLeanLanguage(result.sections[0].heading)).toBe(false);
+    expect(containsForbiddenLeanLanguage(result.sections[0].body)).toBe(false);
+  });
+
+  test("drops an offending keyTakeaway entirely rather than rewriting it", () => {
+    const result = sanitizeModelLeansArticle(article({
+      keyTakeaways: [
+        { text: "Strong course fit.", players: ["A"] },
+        { text: "Clear value at this price.", players: ["A"] },
+      ],
+    }));
+    expect(result.keyTakeaways).toEqual([{ text: "Strong course fit.", players: ["A"] }]);
+  });
+
+  test("drops an offending caution entry entirely rather than rewriting it", () => {
+    const result = sanitizeModelLeansArticle(article({
+      playersToApproachCautiously: [
+        { player: "B", reason: "Limited recent form." },
+        { player: "C", reason: "The odds imply real risk here." },
+      ],
+    }));
+    expect(result.playersToApproachCautiously).toEqual([{ player: "B", reason: "Limited recent form." }]);
+  });
+
+  test("passes through null article unchanged", () => {
+    expect(sanitizeModelLeansArticle(null)).toBeNull();
   });
 });
 
@@ -188,6 +321,35 @@ describe("buildV3Artifact / buildUnavailableArtifact", () => {
     const { valid, errors } = validateV3Artifact(artifact);
     expect(valid).toBe(false);
     expect(errors.some((e) => e.includes("must not carry priced recommendations"))).toBe(true);
+  });
+
+  test("rejects a model-leans-only artifact whose preview/article prose contains unsanitized price/value language", () => {
+    const leans = buildModelLeans([{ player: "A", playerKey: "a", rank: 1, powerRank: 1, provisionalModelProbability: { outright: 0.1, top5: 0.3, top10: 0.5, top20: 0.7 } }]);
+    const artifact = buildV3Artifact({ ...baseArgs, status: "model-leans-only", recommendations: [], modelLeans: leans });
+    artifact.preview = { tournamentOverview: "Great course.", modelExplainer: "Fine.", pickApproach: "This looks like real value at the number." };
+    artifact.article = {
+      title: "T", introduction: "Solid field.", conclusion: "Strong context.",
+      sections: [{ heading: "Overview", body: "The odds here are generous." }],
+      keyTakeaways: [], playersToApproachCautiously: [],
+    };
+    const { valid, errors } = validateV3Artifact(artifact);
+    expect(valid).toBe(false);
+    expect(errors.some((e) => e.includes("preview.pickApproach"))).toBe(true);
+    expect(errors.some((e) => e.includes("article section"))).toBe(true);
+  });
+
+  test("accepts a model-leans-only artifact whose prose has already been sanitized", () => {
+    const leans = buildModelLeans([{ player: "A", playerKey: "a", rank: 1, powerRank: 1, provisionalModelProbability: { outright: 0.1, top5: 0.3, top10: 0.5, top20: 0.7 } }]);
+    const artifact = buildV3Artifact({ ...baseArgs, status: "model-leans-only", recommendations: [], modelLeans: leans });
+    artifact.preview = sanitizeModelLeansPreview({ tournamentOverview: "Great course.", modelExplainer: "Fine.", pickApproach: "This looks like real value at the number." });
+    artifact.article = sanitizeModelLeansArticle({
+      title: "T", introduction: "Solid field.", conclusion: "Strong context.",
+      sections: [{ heading: "Overview", body: "The odds here are generous." }],
+      keyTakeaways: [], playersToApproachCautiously: [],
+    });
+    const { valid, errors } = validateV3Artifact(artifact);
+    expect(valid).toBe(true);
+    expect(errors).toEqual([]);
   });
 
   test("every emitted value is JSON-serializable and finite", () => {
