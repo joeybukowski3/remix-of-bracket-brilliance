@@ -277,38 +277,68 @@ function SeasonScheduleSection({ schedule }: { schedule: readonly ScheduleGame[]
 }
 
 function ScoringProfileStrip({ profile }: { profile: RosterScoringProfile }) {
-  const columns: Array<{ label: string; value: number; blurb: string }> = [
+  const columns: Array<{
+    label: string;
+    value: number;
+    blurb: string;
+    icon: string;
+    tileClass: string;
+    labelClass: string;
+    valueClass: string;
+    blurbClass: string;
+  }> = [
     {
       label: "If Everything Went Right",
       value: profile.highSidePPG,
       blurb:
         "It never happens, but this is how your team could have scored if your players consistently reached the strong end of their potential.",
+      icon: "📈",
+      tileClass: "border-emerald-300/70 bg-emerald-50",
+      labelClass: "text-emerald-700",
+      valueClass: "text-emerald-950",
+      blurbClass: "text-emerald-800/80",
     },
     {
       label: "True Average PPG",
       value: profile.baselinePPG,
       blurb: "The projection-based average for the highest-scoring legal version of your roster. No simulation involved.",
+      icon: "⚔️",
+      tileClass: "border-white bg-white shadow-sm",
+      labelClass: "text-slate-500",
+      valueClass: "text-slate-950",
+      blurbClass: "text-slate-600",
     },
     {
       label: "If Everything Went Wrong",
       value: profile.lowSidePPG,
       blurb: "This is the potential downside of your drafted team. When it rains, it pours.",
+      icon: "🗑️",
+      tileClass: "border-rose-300/70 bg-rose-50",
+      labelClass: "text-rose-700",
+      valueClass: "text-rose-950",
+      blurbClass: "text-rose-800/80",
     },
   ];
   return (
     <div
-      className="mt-6 grid gap-3 border-t border-slate-950/10 pt-6 sm:grid-cols-3"
+      className="mt-5 grid gap-3 border-t border-slate-950/10 pt-5 sm:grid-cols-3"
       data-scoring-profile
     >
       {columns.map((column) => (
-        <div key={column.label} className="rounded-xl bg-slate-950/10 px-3 py-3">
-          <p className="text-[0.625rem] font-black uppercase tracking-[0.14em] opacity-70">
+        <div
+          key={column.label}
+          className={`rounded-xl border px-3 py-2.5 text-left ${column.tileClass}`}
+        >
+          <p
+            className={`flex items-center gap-1 text-[0.625rem] font-black uppercase tracking-[0.14em] ${column.labelClass}`}
+          >
+            <span aria-hidden="true">{column.icon}</span>
             {column.label}
           </p>
-          <p className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
+          <p className={`mt-1 text-xl font-black tracking-tight sm:text-2xl ${column.valueClass}`}>
             {column.value.toFixed(1)}
           </p>
-          <p className="mt-1 text-[0.6875rem] leading-snug opacity-70">{column.blurb}</p>
+          <p className={`mt-1 text-[0.6875rem] leading-snug ${column.blurbClass}`}>{column.blurb}</p>
         </div>
       ))}
     </div>
@@ -336,15 +366,15 @@ export function ResultCard({
       <SixteenZeroHeader />
       <main className="mx-auto max-w-5xl px-4 py-10 sm:py-16">
         <section className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/80 shadow-2xl shadow-black/20">
-          <div className={`px-6 py-10 text-center sm:px-10 ${perfectSeason ? "bg-amber-300 text-slate-950" : "bg-cyan-400 text-slate-950"}`}>
-            <Trophy className="mx-auto h-9 w-9" />
-            <p className="mt-4 text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] font-black uppercase tracking-[0.24em] opacity-70">
+          <div className={`px-6 py-9 text-center sm:px-10 sm:py-14 ${perfectSeason ? "bg-amber-300 text-slate-950" : "bg-cyan-400 text-slate-950"}`}>
+            <Trophy className="mx-auto h-8 w-8" />
+            <p className="mt-3 text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] font-black uppercase tracking-[0.24em] opacity-70">
               {result.playoffResult}
             </p>
-            <h1 className="mt-2 text-5xl font-black tracking-[-0.05em] sm:text-7xl">
+            <h1 className="mt-2 text-5xl font-black tracking-[-0.05em] sm:text-6xl">
               {result.finalWins}-{result.finalLosses}
             </h1>
-            <p className="mt-3 text-[clamp(1rem,0.9rem+0.4vw,1.25rem)] font-black">
+            <p className="mt-2 text-[clamp(1rem,0.9rem+0.4vw,1.25rem)] font-black">
               {perfectSeason ? "The perfect fantasy season." : result.playoffResult}
             </p>
             {scoringProfile && <ScoringProfileStrip profile={scoringProfile} />}
