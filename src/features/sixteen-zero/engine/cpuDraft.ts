@@ -11,6 +11,7 @@ import type {
   SimulationPlayer,
 } from "../types";
 import { createSnakeDraftOrder } from "./draftOrder";
+import { URGENCY_SCORE_BOOST, getDraftUrgency, isOverdue } from "./draftRealism";
 import {
   countRosterPositions,
   getLegalDraftCandidates,
@@ -23,6 +24,7 @@ type CpuPickInput = {
   availablePlayers: readonly SimulationPlayer[];
   roster: readonly SimulationPlayer[];
   round: number;
+  overallPick: number;
   picksRemainingIncludingCurrent: number;
   profile: CpuStrategyProfile;
   random: SeededRandom;
@@ -117,16 +119,26 @@ export function chooseCpuPlayer({
   availablePlayers,
   roster,
   round,
+  overallPick,
   picksRemainingIncludingCurrent,
   profile,
   random,
 }: CpuPickInput) {
   const legal = getLegalDraftCandidates(availablePlayers, roster, picksRemainingIncludingCurrent);
   if (legal.length === 0) throw new Error("CPU drafter has no legal candidates.");
+
+  // Hard fall-limit: once a highly-ranked player reaches their latest
+  // reasonable pick, an eligible CPU team must draft from that overdue pool
+  // before any ordinary candidate, overriding only the soft-maximum
+  // preference below (never actual roster legality, which "legal" already
+  // enforces).
+  const overdueLegal = legal.filter((player) => isOverdue(player.consensusOverallRank, overallPick));
+
   const belowSoftMaximum = legal.filter(
     (player) => !isAboveSoftMaximum(roster, player.position),
   );
-  const candidates = belowSoftMaximum.length > 0 ? belowSoftMaximum : legal;
+  const candidates =
+    overdueLegal.length > 0 ? overdueLegal : belowSoftMaximum.length > 0 ? belowSoftMaximum : legal;
   const universeSize = Math.max(...availablePlayers.map((player) => player.consensusOverallRank), 275);
 
   return candidates
@@ -137,13 +149,18 @@ export function chooseCpuPlayer({
       const strategy = strategyValue(player, profile, round);
       const rosterConstruction = constructionValue(player, roster, round);
       const controlledRandomness = Math.max(-1, Math.min(1, random.normal(0, 0.42)));
+      // Soft pressure: nudges a player's score upward as they approach their
+      // latest reasonable pick, reducing (without eliminating) the chance
+      // that lower-ranked players leapfrog them well before the hard limit.
+      const urgency = getDraftUrgency(player.consensusOverallRank, overallPick);
       const score =
         consensus * CPU_DRAFT_WEIGHTS.consensus +
         projection * CPU_DRAFT_WEIGHTS.projection +
         positionalNeed * CPU_DRAFT_WEIGHTS.positionalNeed +
         strategy * CPU_DRAFT_WEIGHTS.strategy +
         rosterConstruction * CPU_DRAFT_WEIGHTS.rosterConstruction +
-        controlledRandomness * CPU_DRAFT_WEIGHTS.randomness;
+        controlledRandomness * CPU_DRAFT_WEIGHTS.randomness +
+        urgency * URGENCY_SCORE_BOOST;
       return { player, score };
     })
     .sort(
@@ -217,6 +234,7 @@ export function simulateAutomaticDraft(
             availablePlayers: available,
             roster,
             round: pick.round,
+            overallPick: pick.overallPick,
             picksRemainingIncludingCurrent,
             profile: strategies[pick.slot],
             random: new SeededRandom(seed).fork(`cpu-pick-${pick.overallPick}`),

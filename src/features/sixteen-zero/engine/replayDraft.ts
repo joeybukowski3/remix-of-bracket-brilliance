@@ -92,6 +92,7 @@ export function replayDeterministicDraft(input: {
         availablePlayers: available,
         roster,
         round: expectedPick.round,
+        overallPick: expectedPick.overallPick,
         picksRemainingIncludingCurrent: picksRemaining,
         profile: strategies[expectedPick.slot],
         random: new SeededRandom(seed).fork(`cpu-pick-${expectedPick.overallPick}`),
