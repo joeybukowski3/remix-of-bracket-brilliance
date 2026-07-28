@@ -1,30 +1,10 @@
-/**
- * Shared 280-character budget fitting for the MLB X captions.
- *
- * Not a new caption system: the caption TEXT still lives in
- * mlb-k-caption-core.mjs and mlb-x-artifact-caption.mjs. This module only
- * decides how many picks fit and in what form, so both cores reduce
- * identically instead of each inventing its own truncation rules.
- *
- * The old behavior hard-failed the whole post once the caption exceeded 280 --
- * measurably at four or more K rows. A six-row edition therefore could not
- * publish at all. Here a caption that does not fit is reduced, never skipped:
- * the attached graphic remains the complete visual card, so the caption only
- * has to carry the largest balanced, unambiguous subset.
- */
-
 export const X_CHARACTER_LIMIT = 280;
 
-/** Edition status wording. Fixed strings -- a poster may not phrase its own. */
 export const EditionSentence = Object.freeze({
-  morning: "Morning model card — check confirmed lineups before betting.",
-  // Used only when resolveEditionReadiness reports the morning edition's
-  // MORNING_CATCH_UP stage (posted after the 11:15 ET preferred close, on
-  // recovery from a missed/delayed scheduled run) -- "Morning" would
-  // misdescribe a card that may post as late as 1 PM ET.
-  morning_catch_up: "Early model card — check confirmed lineups before betting.",
-  confirmed: "Updated with confirmed lineups.",
-  pregame_fallback: "Pregame update using the latest available lineups.",
+  morning: "Lineups not confirmed. Odds may not yet be available.",
+  morning_catch_up: "Lineups not confirmed. Odds may not yet be available.",
+  confirmed: "Updated with confirmed lineups and current market value.",
+  pregame_fallback: "Pregame update using the latest available confirmed lineups.",
 });
 
 export function editionSentenceFor(languageMode) {
@@ -33,15 +13,21 @@ export function editionSentenceFor(languageMode) {
   return sentence;
 }
 
-/**
- * X's weighted character count, not String.length.
- *
- * Every URL is billed at 23 characters regardless of its real length (t.co
- * wrapping), and CJK codepoints cost 2. Measuring with String.length would
- * under-count a long canonical link and let a caption ship that X rejects.
- */
 const URL_PATTERN = /\bhttps?:\/\/\S+|\b(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/\S*)?/gi;
 const T_CO_WEIGHT = 23;
+
+function weighNonUrl(segment) {
+  let total = 0;
+  for (const character of segment) {
+    const code = character.codePointAt(0);
+    const wide = (code >= 0x1100 && code <= 0x115f) || (code >= 0x2e80 && code <= 0xa4cf)
+      || (code >= 0xac00 && code <= 0xd7a3) || (code >= 0xf900 && code <= 0xfaff)
+      || (code >= 0xfe30 && code <= 0xfe6f) || (code >= 0xff00 && code <= 0xff60)
+      || (code >= 0xffe0 && code <= 0xffe6);
+    total += wide ? 2 : 1;
+  }
+  return total;
+}
 
 export function weightedLength(text) {
   if (!text) return 0;
@@ -53,36 +39,13 @@ export function weightedLength(text) {
     total += T_CO_WEIGHT;
     cursor = match.index + match[0].length;
   }
-  total += weighNonUrl(String(text).slice(cursor));
-  return total;
-}
-
-function weighNonUrl(segment) {
-  let total = 0;
-  for (const character of segment) {
-    const code = character.codePointAt(0);
-    // CJK / fullwidth ranges bill as 2 on X.
-    const wide = (code >= 0x1100 && code <= 0x115f) || (code >= 0x2e80 && code <= 0xa4cf)
-      || (code >= 0xac00 && code <= 0xd7a3) || (code >= 0xf900 && code <= 0xfaff)
-      || (code >= 0xfe30 && code <= 0xfe6f) || (code >= 0xff00 && code <= 0xff60)
-      || (code >= 0xffe0 && code <= 0xffe6);
-    total += wide ? 2 : 1;
-  }
-  return total;
+  return total + weighNonUrl(String(text).slice(cursor));
 }
 
 export function fitsBudget(text, limit = X_CHARACTER_LIMIT) {
   return weightedLength(text) <= limit;
 }
 
-/**
- * Candidate (a, b) group sizes in preference order.
- *
- * Largest total first; among equal totals, prefer keeping BOTH categories
- * represented, then the most balanced split. That yields 3+3, then 3+2 / 2+3,
- * then 2+2, and only collapses to a single category when one side is empty or
- * nothing else fits.
- */
 export function candidateSplits(countA, countB, maxPerGroup = 3) {
   const maxA = Math.min(maxPerGroup, Math.max(0, countA));
   const maxB = Math.min(maxPerGroup, Math.max(0, countB));
@@ -92,31 +55,19 @@ export function candidateSplits(countA, countB, maxPerGroup = 3) {
       if (a + b > 0) candidates.push({ a, b });
     }
   }
-  candidates.sort((x, y) => {
-    const byTotal = (y.a + y.b) - (x.a + x.b);
-    if (byTotal !== 0) return byTotal;
-    const bothX = x.a > 0 && x.b > 0 ? 0 : 1;
-    const bothY = y.a > 0 && y.b > 0 ? 0 : 1;
-    if (bothX !== bothY) return bothX - bothY;
-    return Math.abs(x.a - x.b) - Math.abs(y.a - y.b);
+  candidates.sort((left, right) => {
+    const total = (right.a + right.b) - (left.a + left.b);
+    if (total !== 0) return total;
+    const leftSingle = left.a > 0 && left.b > 0 ? 0 : 1;
+    const rightSingle = right.a > 0 && right.b > 0 ? 0 : 1;
+    if (leftSingle !== rightSingle) return leftSingle - rightSingle;
+    return Math.abs(left.a - left.b) - Math.abs(right.a - right.b);
   });
   return candidates;
 }
 
-/**
- * Picks the largest caption that fits.
- *
- * @param {object} params
- * @param {object[]} params.groupA first category rows, already ranked
- * @param {object[]} params.groupB second category rows, already ranked
- * @param {Function} params.render ({ rowsA, rowsB, variant }) -> string
- * @param {any[]}    [params.variants] richest-to-leanest formatting variants
- * @returns {{ ok, caption, rowsA, rowsB, variant, includedCount, omittedCount, diagnostics }}
- */
 export function fitCaption({ groupA = [], groupB = [], render, variants = [null], limit = X_CHARACTER_LIMIT, maxPerGroup = 3 }) {
   const attempted = [];
-  // Largest split first, and within a split the richest formatting that fits,
-  // so picks are preserved ahead of decoration.
   for (const { a, b } of candidateSplits(groupA.length, groupB.length, maxPerGroup)) {
     const rowsA = groupA.slice(0, a);
     const rowsB = groupB.slice(0, b);
@@ -125,16 +76,14 @@ export function fitCaption({ groupA = [], groupB = [], render, variants = [null]
       const length = weightedLength(caption);
       attempted.push({ a, b, variant, length });
       if (length <= limit) {
-        const totalAvailable = groupA.length + groupB.length;
-        const includedCount = rowsA.length + rowsB.length;
         return {
           ok: true,
           caption,
           rowsA,
           rowsB,
           variant,
-          includedCount,
-          omittedCount: totalAvailable - includedCount,
+          includedCount: rowsA.length + rowsB.length,
+          omittedCount: groupA.length + groupB.length - rowsA.length - rowsB.length,
           diagnostics: {
             weightedLength: length,
             includedA: rowsA.length,
@@ -149,8 +98,6 @@ export function fitCaption({ groupA = [], groupB = [], render, variants = [null]
       }
     }
   }
-  // Only reachable when even one pick in the leanest form cannot fit beside
-  // the required elements -- a genuine data problem, not a length problem.
   return {
     ok: false,
     caption: "",
@@ -163,11 +110,8 @@ export function fitCaption({ groupA = [], groupB = [], render, variants = [null]
   };
 }
 
-/** "Sandy Alcantara" -> "S. Alcantara". Never collapses to bare initials. */
 export function compactPlayerName(fullName) {
   const parts = String(fullName ?? "").trim().split(/\s+/).filter(Boolean);
   if (parts.length < 2) return parts[0] ?? "";
-  const last = parts.at(-1);
-  const first = parts[0];
-  return `${first[0]}. ${last}`;
+  return `${parts[0][0]}. ${parts.at(-1)}`;
 }

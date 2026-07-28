@@ -2,23 +2,8 @@
 /**
  * MLB X edition planner.
  *
- * Builds the four frozen edition plans (k-morning, hr-morning, k-confirmed,
- * hr-confirmed) for today's Eastern slate date and writes them to disk for
- * the poster jobs to consume. Lightweight by design: no Vite build, no X API
- * call, no successful receipt write. It reads the automation/mlb-x-state
- * branch (read-only) and inspects any existing image bundle without
- * rendering one.
- *
- * The one deliberate, flagged exception is K market data: there is no
- * server-side JSON artifact for K lines/odds/projections (unlike HR's
- * hr-props-raw.json), so scrapeKPageRows launches a browser against the LIVE
- * production page. See mlb-x-k-page-scrape.mjs for why.
- *
- * Usage:
- *   node scripts/plan-mlb-x-editions.mjs --plan-directory=artifacts/mlb-x-plans
- *     [--image-directory=artifacts] [--state-work-dir=<path>]
- *     [--hr-data-source=production|github|local] [--slate-date=YYYY-MM-DD]
- *     [--live-mode] [--skip-state-sync] [--skip-k-scrape]
+ * Morning editions use model-ranked participants with odds optional. Confirmed
+ * editions use the existing priced value selections and lineup confirmation.
  */
 import { chromium } from "@playwright/test";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -27,7 +12,12 @@ import process from "node:process";
 import { spawnSync } from "node:child_process";
 import { buildConfirmationSnapshot, resolveHrRowFacts, resolveKRowFacts } from "./lib/mlb-x-confirmation-snapshot.mjs";
 import { buildEditionPlans, conciseReason, writePlansAtomically, toWorkflowOutputs } from "./lib/mlb-x-edition-plan.mjs";
-import { buildHrEditionSelection, buildKEditionSelection } from "./lib/mlb-x-edition-selection.mjs";
+import {
+  buildHrConfirmedSelection,
+  buildHrMorningSelection,
+  buildKConfirmedSelection,
+  buildKMorningSelection,
+} from "./lib/mlb-x-edition-selection.mjs";
 import { buildDiagnosticRecord, DIAGNOSTIC_OUTCOMES } from "./lib/mlb-x-edition-diagnostics.mjs";
 import { imageKindForMarket, validateImageBundle } from "./lib/mlb-x-image-bundle.mjs";
 import { isPostedReceipt, parseEditionReceiptKey } from "./lib/mlb-x-edition-receipts.mjs";
@@ -53,21 +43,20 @@ function parseArgs(argv) {
     else if (raw.startsWith("--state-work-dir=")) args.stateWorkDir = raw.slice("--state-work-dir=".length);
     else if (raw.startsWith("--hr-data-source=")) args.hrDataSource = raw.slice("--hr-data-source=".length);
     else if (raw.startsWith("--slate-date=")) args.slateDate = raw.slice("--slate-date=".length);
-    else if (raw.startsWith("--now=")) args.now = raw.slice("--now=".length); // test-only clock override
+    else if (raw.startsWith("--now=")) args.now = raw.slice("--now=".length);
   }
   args.planDirectory = args.planDirectory ?? path.join(ROOT, "artifacts", "mlb-x-plans");
   args.imageDirectory = args.imageDirectory ?? path.join(ROOT, "artifacts");
   args.stateWorkDir = args.stateWorkDir ?? path.join(ROOT, ".mlb-x-state-work");
   args.hrDataSource = args.hrDataSource ?? "production";
-  if (!["production", "github", "local"].includes(args.hrDataSource)) {
-    throw new Error(`Invalid --hr-data-source="${args.hrDataSource}".`);
-  }
+  if (!["production", "github", "local"].includes(args.hrDataSource)) throw new Error(`Invalid --hr-data-source="${args.hrDataSource}".`);
   return args;
 }
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
 }
+
 function toFiniteNumber(value) {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
@@ -91,6 +80,10 @@ function normalizeHrBatter(value) {
     category: normalizeText(value?.category) || undefined,
     lineupStatus: value?.lineupStatus ?? "unknown",
     battingOrder: value?.battingOrder ?? null,
+    barrelRate: toFiniteNumber(value?.barrelRate),
+    hardHitRate: toFiniteNumber(value?.hardHitRate),
+    last7HR: toFiniteNumber(value?.last7HR),
+    last30HR: toFiniteNumber(value?.last30HR),
   };
 }
 
@@ -105,10 +98,19 @@ async function loadHrRawData(source) {
 function writeGithubOutput(pairs) {
   const outputPath = process.env.GITHUB_OUTPUT;
   const lines = Object.entries(pairs).map(([key, value]) => `${key}=${value}`);
-  if (outputPath) {
-    appendFileSync(outputPath, `${lines.join("\n")}\n`);
-  }
+  if (outputPath) appendFileSync(outputPath, `${lines.join("\n")}\n`);
   for (const line of lines) console.log(`[plan-mlb-x-editions] output ${line}`);
+}
+
+function marketSource({ available, selection, artifactSlateDate, artifactGeneratedAt, artifactSources }) {
+  return {
+    available,
+    selectedRows: selection.selectedRows,
+    selectedLineupStatus: selection.selectedLineupStatus,
+    artifactSlateDate,
+    artifactGeneratedAt,
+    artifactSources,
+  };
 }
 
 async function main() {
@@ -117,14 +119,6 @@ async function main() {
   const slateDate = args.slateDate ?? getEtSlateDate(now);
   console.log(`[plan-mlb-x-editions] slateDate=${slateDate} liveMode=${args.liveMode}`);
 
-  // Best-effort readiness preview: a dry-run/diagnostic-only simulated clock
-  // (same resolveEventMode the poster uses) overrides the window/confirmation
-  // -timing `now` used below, but NEVER the slate date above -- that stays
-  // locked to the real clock regardless. A bad or inapplicable simulation_now
-  // never fails the planner (its "always produces a plan" property holds
-  // unconditionally); the poster is the hard CONFIGURATION_ERROR gate for
-  // that. This is a preview only -- shouldRunPoster still requires the
-  // poster's own, separately-computed revalidation to agree before any post.
   const eventMode = resolveEventMode({
     eventName: process.env.GITHUB_EVENT_NAME ?? "",
     dispatchMode: process.env.MLB_X_DISPATCH_MODE ?? null,
@@ -135,23 +129,19 @@ async function main() {
     console.warn(`[plan-mlb-x-editions] simulation_now requested but rejected (${eventMode.reason}); using the real clock`);
   }
   const readinessNow = eventMode.simulated ? new Date(eventMode.simulationNow) : now;
-  if (eventMode.simulated) {
-    console.log(`[plan-mlb-x-editions] SIMULATED TIME: readiness computed against simulation_now=${eventMode.simulationNow} (slate date resolved from the real clock: ${slateDate})`);
-  }
+  if (eventMode.simulated) console.log(`[plan-mlb-x-editions] SIMULATED TIME: readiness computed against simulation_now=${eventMode.simulationNow}`);
 
   const snapshot = await buildConfirmationSnapshot({ date: slateDate, now: readinessNow });
   const firstGameTime = snapshot.timing.earliestGameTime;
   const gamesScheduled = snapshot.timing.gameCount;
   console.log(`[plan-mlb-x-editions] snapshotOk=${snapshot.ok} gamesScheduled=${gamesScheduled} firstGameTime=${firstGameTime ?? "n/a"}`);
 
-  // ── K market data: live scrape (see mlb-x-k-page-scrape.mjs). ────────────
-  let kSelection = { selectedRows: [], selectedLineupStatus: null };
+  let kMorningSelection = { selectedRows: [], selectedLineupStatus: null };
+  let kConfirmedSelection = { selectedRows: [], selectedLineupStatus: null };
   let kAvailable = false;
   let kArtifactSlateDate = null;
   if (!args.skipKScrape) {
-    const result = await acquireKPageData({
-      launchBrowser: () => chromium.launch({ headless: true }),
-    });
+    const result = await acquireKPageData({ launchBrowser: () => chromium.launch({ headless: true }) });
     if (result.available) {
       const pageData = result.pageData;
       kArtifactSlateDate = pageData.date || null;
@@ -160,16 +150,17 @@ async function main() {
         const facts = resolveKRowFacts(snapshot, row);
         return { ...row, isCurrentStarter: facts.isCurrentStarter, gameStarted: facts.gameStarted, opposingLineupConfirmed: facts.opposingLineupConfirmed, gameId: facts.gamePk, pitcherId: facts.starterId };
       });
-      kSelection = buildKEditionSelection({ rows: enriched });
+      kMorningSelection = buildKMorningSelection({ rows: enriched });
+      kConfirmedSelection = buildKConfirmedSelection({ rows: enriched });
       kAvailable = true;
-      console.log(`[plan-mlb-x-editions] K: pageDate=${pageData.date || "missing"} dataFresh=${dataFresh} selected=${kSelection.selectedRows.length}`);
+      console.log(`[plan-mlb-x-editions] K: pageDate=${pageData.date || "missing"} dataFresh=${dataFresh} morning=${kMorningSelection.selectedRows.length} confirmedValue=${kConfirmedSelection.selectedRows.length}`);
     } else {
       console.warn(`[plan-mlb-x-editions] K data scrape failed (non-fatal): ${result.error instanceof Error ? result.error.message : result.error}`);
     }
   }
 
-  // ── HR market data: static JSON, no browser. ──────────────────────────────
-  let hrSelection = { selectedRows: [], selectedLineupStatus: null };
+  let hrMorningSelection = { selectedRows: [], selectedLineupStatus: null };
+  let hrConfirmedSelection = { selectedRows: [], selectedLineupStatus: null };
   let hrAvailable = false;
   let hrArtifactSlateDate = null;
   let hrGeneratedAt = null;
@@ -179,21 +170,17 @@ async function main() {
     hrGeneratedAt = normalizeText(raw?.generatedAt) || null;
     const dateMismatch = Boolean(hrArtifactSlateDate && hrArtifactSlateDate !== slateDate);
     const batters = Array.isArray(raw?.batters) ? raw.batters.map(normalizeHrBatter).filter(Boolean) : [];
-    hrSelection = buildHrEditionSelection({
-      batters: dateMismatch ? [] : batters,
-      isGameStarted: (row) => resolveHrRowFacts(snapshot, row).gameStarted,
-      liveConfirm: (row) => resolveHrRowFacts(snapshot, row).liveConfirmed,
-    });
+    const currentBatters = dateMismatch ? [] : batters;
+    const isGameStarted = (row) => resolveHrRowFacts(snapshot, row).gameStarted;
+    const liveConfirm = (row) => resolveHrRowFacts(snapshot, row).liveConfirmed;
+    hrMorningSelection = buildHrMorningSelection({ batters: currentBatters, isGameStarted });
+    hrConfirmedSelection = buildHrConfirmedSelection({ batters: currentBatters, isGameStarted, liveConfirm });
     hrAvailable = true;
-    console.log(`[plan-mlb-x-editions] HR: rawDate=${hrArtifactSlateDate || "missing"} dateMismatch=${dateMismatch} selected=${hrSelection.selectedRows.length} promoted=${hrSelection.selectedLineupStatus.promotedFromLiveCount}`);
+    console.log(`[plan-mlb-x-editions] HR: rawDate=${hrArtifactSlateDate || "missing"} dateMismatch=${dateMismatch} morning=${hrMorningSelection.selectedRows.length} confirmedValue=${hrConfirmedSelection.selectedRows.length} promoted=${hrConfirmedSelection.selectedLineupStatus.promotedFromLiveCount}`);
   } catch (error) {
     console.warn(`[plan-mlb-x-editions] HR data load failed: ${error instanceof Error ? error.message : error}`);
   }
 
-  // ── Authoritative receipts: read-only. Diagnostics: write-capable, but this
-  // script never calls store.writeReceipt anywhere -- only store.writeDiagnostic,
-  // below, after the plans are built. The receipt (the actual publication
-  // record) has exactly one writer: the poster's runEditionPost. ─────────────
   let readReceipt = () => null;
   let diagnosticStore = null;
   if (!args.skipStateSync) {
@@ -212,89 +199,63 @@ async function main() {
       spawnSync("git", ["-C", args.stateWorkDir, "remote", "add", "origin", remoteUrl]);
     }
     store.sync();
-    // buildEditionPlans calls readReceipt with the pre-built receipt-key
-    // string (e.g. "mlb-k-2026-07-22-morning"), not an object -- parse it back
-    // into the {slateDate, market, edition} shape the git state store expects.
     readReceipt = (receiptKey) => {
       const parsed = parseEditionReceiptKey(receiptKey);
-      if (!parsed) return null;
-      return store.readReceipt(parsed);
+      return parsed ? store.readReceipt(parsed) : null;
     };
-    // Narrowed to writeDiagnostic only -- store.writeReceipt is reachable on
-    // `store` but is never referenced past this point in this file.
     diagnosticStore = { writeDiagnostic: store.writeDiagnostic.bind(store) };
     console.log(`[plan-mlb-x-editions] state branch synced: ${STATE_BRANCH}`);
   }
 
-  // ── Image bundles: inspect only, never render. ────────────────────────────
   const imageBundleFor = (market) => {
-    const kind = imageKindForMarket(market);
-    const result = validateImageBundle({ kind, slateDate, directory: args.imageDirectory });
+    const result = validateImageBundle({ kind: imageKindForMarket(market), slateDate, directory: args.imageDirectory });
     return result.valid ? result : null;
   };
-
   const allowLivePostFlag = normalizeAllowLivePostFlag(process.env.X_ALLOW_LIVE_POST);
   console.log(`[plan-mlb-x-editions] X_ALLOW_LIVE_POST present=${allowLivePostFlag.present} enabled=${allowLivePostFlag.enabled}`);
 
-  const plans = buildEditionPlans({
+  const shared = {
     now: readinessNow,
     slateDate,
     firstGameTime,
     gamesScheduled,
-    markets: {
-      k: {
-        available: kAvailable,
-        selectedRows: kSelection.selectedRows,
-        selectedLineupStatus: kSelection.selectedLineupStatus,
-        artifactSlateDate: kArtifactSlateDate ?? slateDate,
-        artifactGeneratedAt: null,
-        artifactSources: ["live-scrape:https://www.joeknowsball.com/mlb"],
-      },
-      hr: {
-        available: hrAvailable,
-        selectedRows: hrSelection.selectedRows,
-        selectedLineupStatus: hrSelection.selectedLineupStatus,
-        artifactSlateDate: hrArtifactSlateDate ?? slateDate,
-        artifactGeneratedAt: hrGeneratedAt,
-        artifactSources: [`public/data/mlb/hr-props-raw.json (${args.hrDataSource})`],
-      },
-    },
     readReceipt,
     imageBundleFor,
     liveMode: args.liveMode,
     allowLivePost: allowLivePostFlag.enabled,
     credentialsPresent: Boolean(process.env.JKB_X_API_KEY && process.env.JKB_X_API_SECRET && process.env.JKB_X_ACCESS_TOKEN && process.env.JKB_X_ACCESS_SECRET),
-    verifiedAccount: true, // the poster performs the real verification; the planner does not authenticate
-  });
+    verifiedAccount: true,
+  };
 
+  const morningPlans = buildEditionPlans({
+    ...shared,
+    markets: {
+      k: marketSource({ available: kAvailable, selection: kMorningSelection, artifactSlateDate: kArtifactSlateDate ?? slateDate, artifactGeneratedAt: null, artifactSources: ["live-scrape:https://www.joeknowsball.com/mlb"] }),
+      hr: marketSource({ available: hrAvailable, selection: hrMorningSelection, artifactSlateDate: hrArtifactSlateDate ?? slateDate, artifactGeneratedAt: hrGeneratedAt, artifactSources: [`public/data/mlb/hr-props-raw.json (${args.hrDataSource})`] }),
+    },
+  }).filter((plan) => plan.edition === "morning");
+
+  const confirmedPlans = buildEditionPlans({
+    ...shared,
+    markets: {
+      k: marketSource({ available: kAvailable, selection: kConfirmedSelection, artifactSlateDate: kArtifactSlateDate ?? slateDate, artifactGeneratedAt: null, artifactSources: ["live-scrape:https://www.joeknowsball.com/mlb"] }),
+      hr: marketSource({ available: hrAvailable, selection: hrConfirmedSelection, artifactSlateDate: hrArtifactSlateDate ?? slateDate, artifactGeneratedAt: hrGeneratedAt, artifactSources: [`public/data/mlb/hr-props-raw.json (${args.hrDataSource})`] }),
+    },
+  }).filter((plan) => plan.edition === "confirmed");
+
+  const plans = [...morningPlans, ...confirmedPlans];
   for (const plan of plans) {
     console.log(`[plan-mlb-x-editions] ${plan.market}/${plan.edition} status=${plan.readiness.status} shouldRun=${plan.readiness.shouldRunPoster} rows=${plan.selectedRows.length} receiptKey=${plan.readiness.receiptKey}`);
-    if (isPostedReceipt(readReceipt(plan.readiness.receiptKey))) {
-      console.log(`[plan-mlb-x-editions]   already posted`);
-    }
-
-    // Persist a diagnostic for a planner-decided non-post status. Most of
-    // these outcomes (NOT_DUE, MISSED_WINDOW, WAITING_FOR_SELECTED_LINEUPS,
-    // NO_VALID_PICKS, INVALID_SLATE) are decided HERE and the corresponding
-    // poster job never launches (the workflow gates it on should_run), so
-    // this is the only place they can ever be recorded. Best-effort: a
-    // diagnostic-write failure must never fail the plan itself.
+    if (isPostedReceipt(readReceipt(plan.readiness.receiptKey))) console.log("[plan-mlb-x-editions]   already posted");
     if (diagnosticStore && DIAGNOSTIC_OUTCOMES.includes(plan.readiness.status)) {
       try {
         const result = diagnosticStore.writeDiagnostic({
           slateDate: plan.slateDate,
           market: plan.market,
           edition: plan.edition,
-          diagnostic: buildDiagnosticRecord({
-            market: plan.market,
-            edition: plan.edition,
-            slateDate: plan.slateDate,
-            latestOutcome: plan.readiness.status,
-            reason: conciseReason(plan),
-            windowClosesAt: plan.readiness.windowClosesAt ?? null,
-          }),
+          diagnostic: buildDiagnosticRecord({ market: plan.market, edition: plan.edition, slateDate: plan.slateDate, latestOutcome: plan.readiness.status, reason: conciseReason(plan), windowClosesAt: plan.readiness.windowClosesAt ?? null }),
         });
-        if (result.pushed) console.log(`[plan-mlb-x-editions]   diagnostic recorded (transition)`);
+        if (result.pushed) console.log("[plan-mlb-x-editions]   diagnostic recorded (transition)");
       } catch (error) {
         console.warn(`[plan-mlb-x-editions]   diagnostic write failed (non-fatal): ${error instanceof Error ? error.message : error}`);
       }
@@ -302,13 +263,8 @@ async function main() {
   }
 
   writePlansAtomically(plans, args.planDirectory);
-  console.log(`[plan-mlb-x-editions] wrote 4 plans to ${args.planDirectory}`);
-
-  writeGithubOutput({
-    slate_date: slateDate,
-    first_game_time: firstGameTime ?? "",
-    ...toWorkflowOutputs(plans),
-  });
+  console.log(`[plan-mlb-x-editions] wrote ${plans.length} plans to ${args.planDirectory}`);
+  writeGithubOutput({ slate_date: slateDate, first_game_time: firstGameTime ?? "", ...toWorkflowOutputs(plans) });
 }
 
 main().catch((error) => {
