@@ -113,7 +113,10 @@ export type PgaTrendResult = {
 export type PgaTournamentModelRow = RawPlayerStat & {
   baseScore: number;
   modelScore: number;
+  /** Rank across every player with statistics, field member or not. */
   modelRank: number;
+  /** Contiguous rank among this week's field only; null for non-field players. */
+  fieldRank: number | null;
   recentResults: PgaHistoryResult[];
   eventResults: PgaHistoryResult[];
   specificMajorResults: PgaHistoryResult[];
@@ -420,6 +423,42 @@ export function calculateTournamentModelScore(args: {
   }
 
   return availableWeight > 0 ? roundOne(weightedTotal / availableWeight) : 0;
+}
+
+/**
+ * Assign a contiguous rank among this week's field, preserving tour rank.
+ *
+ * modelRank is computed across every player who has statistics, so once the
+ * table is filtered to the tournament field the visible numbers skip: the best
+ * player in the field displayed as "#4" because tour ranks 1-3 belonged to
+ * players who are not entered this week.
+ *
+ * This is a DISPLAY re-index only. modelScore is untouched, ordering is
+ * unchanged, and no model calculation is repeated -- it renumbers the rows the
+ * reader can actually see. Mirrors what enforce-pga-model-field.mjs already
+ * does when it writes current-tournament.json.
+ *
+ * Non-field players get fieldRank null. An empty field set means "no field
+ * filter available", so every row is numbered.
+ */
+export function assignFieldRanks<T extends { player: string; modelScore: number; modelRank: number }>(
+  rows: readonly T[],
+  fieldKeys: ReadonlySet<string>,
+): Array<T & { fieldRank: number | null }> {
+  const inField = (row: T) => fieldKeys.size === 0 || fieldKeys.has(normalizePlayerKey(row.player));
+
+  // Same comparator as the tour ordering, so field rank never contradicts it.
+  const ordered = rows
+    .filter(inField)
+    .slice()
+    .sort((left, right) => right.modelScore - left.modelScore || left.player.localeCompare(right.player));
+
+  const rankByKey = new Map(ordered.map((row, index) => [normalizePlayerKey(row.player), index + 1]));
+
+  return rows.map((row) => ({
+    ...row,
+    fieldRank: inField(row) ? rankByKey.get(normalizePlayerKey(row.player)) ?? null : null,
+  }));
 }
 
 export function scoreRecentResults(results: PgaHistoryResult[]) {

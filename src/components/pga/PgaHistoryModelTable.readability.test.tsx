@@ -35,6 +35,7 @@ function row(overrides: Partial<PgaTournamentModelRow> = {}): PgaTournamentModel
     baseScore: 70,
     modelScore: 82.4,
     modelRank: 1,
+    fieldRank: 1,
     recentResults: [finish(), finish({ finishText: "MC", finishPosition: null, madeCut: false, status: "missed_cut" })],
     eventResults: [finish({ finishText: "3", finishPosition: 3 })],
     specificMajorResults: [],
@@ -66,7 +67,9 @@ describe("PgaHistoryModelTable readability", () => {
     const { container } = renderTable();
     const headers = Array.from(desktopTable(container).querySelectorAll("thead th")).map((th) => th.textContent?.trim());
 
-    ["#", "Player", "Score", "Player Stats", "Model", "Last 5 Starts", "3M Open History", "Fit", "JKB Trend"].forEach((label) => {
+    // "#" became "Rank" when the column started showing both the field rank
+    // (primary) and the tour rank, so the header had to say which is which.
+    ["Rank", "Player", "Score", "Player Stats", "Model", "Last 5 Starts", "3M Open History", "Fit", "JKB Trend"].forEach((label) => {
       expect(headers).toContain(label);
     });
     expect(headers.some((header) => header?.includes("Total"))).toBe(true);
@@ -87,7 +90,9 @@ describe("PgaHistoryModelTable readability", () => {
 
     expect(table.getByText("Sample Golfer")).toBeInTheDocument();
     expect(table.getByText("82.4")).toBeInTheDocument();
+    // Rank cell now carries both numbers: field rank primary, tour rank below.
     expect(table.getByText("1")).toBeInTheDocument();
+    expect(table.getByText("Tour #1")).toBeInTheDocument();
     expect(table.getByText("88")).toBeInTheDocument();
     expect(table.getByText("62")).toBeInTheDocument();
     expect(table.getByText("18")).toBeInTheDocument();

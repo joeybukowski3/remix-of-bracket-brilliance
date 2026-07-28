@@ -34,7 +34,13 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
           <DesktopColumnWidths isMajor={isMajor} />
           <thead>
             <tr className="bg-slate-900 text-[11px] font-black uppercase tracking-[0.08em] text-white">
-              <th rowSpan={2} className="px-1 py-2.5">#</th>
+              <th
+                rowSpan={2}
+                className="px-1 py-2.5"
+                title="Field Rank is the position among this week's entrants. Tour Rank, shown beneath it, is the position among every player with statistics."
+              >
+                Rank
+              </th>
               <th rowSpan={2} className="px-2 py-2.5 text-left">Player</th>
               <th rowSpan={2} className="px-1 py-2.5">Score</th>
               <Group count={6}>Player Stats</Group>
@@ -131,7 +137,12 @@ function DesktopRow({ row, index, statView, isMajor, trendRanking }: {
 
   return (
     <tr className={`${bg} hover:bg-emerald-50/40`}>
-      <td className="border-b border-slate-100 px-1 py-2.5 text-[11px] font-bold tabular-nums text-slate-500">{row.modelRank}</td>
+      <td className="border-b border-slate-100 px-1 py-2.5 text-[11px] tabular-nums text-slate-500">
+        <span className="block font-bold text-slate-900">{row.fieldRank ?? "—"}</span>
+        <span className="block text-[9px] font-medium text-slate-400" title="Rank among every player with statistics">
+          Tour #{row.modelRank}
+        </span>
+      </td>
       <td className="whitespace-nowrap border-b border-r border-slate-100 px-2 py-2.5 text-left text-[13px] font-black text-slate-900" title={row.player}>{row.player}</td>
       <td className="border-b border-r border-slate-100 px-1 py-2.5"><Score value={row.modelScore} /></td>
 
@@ -179,7 +190,9 @@ function MobileCard({ row, statView, isMajor, eventLabel, trendRanking, expanded
         aria-controls={panelId}
         onClick={onToggle}
       >
-        <span className="w-8 shrink-0 text-[11px] font-black tabular-nums text-slate-500">#{row.modelRank}</span>
+        {/* Field rank only in the collapsed row; tour rank lives in the
+            expanded panel so the narrow header stays uncrowded. */}
+        <span className="w-8 shrink-0 text-[11px] font-black tabular-nums text-slate-500">#{row.fieldRank ?? "—"}</span>
         <span className="min-w-0 flex-1 whitespace-normal text-[14px] font-black leading-tight text-slate-900">{row.player}</span>
         <Score value={row.modelScore} />
         <span aria-hidden="true" className="w-4 shrink-0 text-center text-sm font-black text-slate-500">{expanded ? "▲" : "▼"}</span>
@@ -188,6 +201,12 @@ function MobileCard({ row, statView, isMajor, eventLabel, trendRanking, expanded
 
       {expanded ? (
         <div id={panelId} className="border-t border-slate-100 px-3 pb-3">
+          <p className="pt-2 text-[11px] text-slate-500">
+            Field rank <span className="font-bold text-slate-700">#{row.fieldRank ?? "—"}</span> of this week&apos;s
+            entrants · Tour rank <span className="font-bold text-slate-700">#{row.modelRank}</span> of all players with
+            statistics
+          </p>
+
           <MobileSection title="Player Stats">
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
               {statKeys.map((key, index) => (

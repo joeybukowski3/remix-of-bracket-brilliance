@@ -15,6 +15,7 @@ import {
 import { usePgaPlayerHistory } from "@/hooks/usePgaPlayerHistory";
 import { assessPgaFreshness, type PgaFreshnessResult } from "@/lib/pga/pgaFreshness";
 import {
+  assignFieldRanks,
   buildCourseFitWeights,
   buildMetricPercentiles,
   calculateCourseFit,
@@ -218,6 +219,7 @@ export default function PgaHistoryModel() {
         baseScore,
         modelScore,
         modelRank: 0,
+        fieldRank: null,
         recentResults,
         eventResults,
         specificMajorResults,
@@ -232,10 +234,15 @@ export default function PgaHistoryModel() {
       } satisfies PgaTournamentModelRow;
     });
 
-    return rows
+    const ranked = rows
       .sort((a, b) => b.modelScore - a.modelScore || a.player.localeCompare(b.player))
       .map((row, index) => ({ ...row, modelRank: index + 1 }));
-  }, [playerStats, playerHistoryMap, majorHistoryMap, activeWeights, eventSlug, eventName, event, majorType, isMajor]);
+
+    // Tour rank spans every player with stats; field rank renumbers only this
+    // week's entrants so the strongest player in the field reads as #1 rather
+    // than inheriting a tour number. Display only -- modelScore is untouched.
+    return assignFieldRanks(ranked, fieldUsable ? fieldSet : new Set<string>());
+  }, [playerStats, playerHistoryMap, majorHistoryMap, activeWeights, eventSlug, eventName, event, majorType, isMajor, fieldSet, fieldUsable]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
