@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SiteShell from "@/components/layout/SiteShell";
 import PgaFreshnessStatusPanel, { type PgaFreshnessStatusPanelItem } from "@/components/pga/PgaFreshnessStatusPanel";
-import PgaHistoryModelTable from "@/components/pga/PgaHistoryModelTable";
+import PgaHistoryModelTable, { type PgaRankMode } from "@/components/pga/PgaHistoryModelTable";
 import PgaLatestArticlesCard from "@/components/pga/PgaLatestArticlesCard";
 import PgaPlayerHistoryRefreshNotice from "@/components/pga/PgaPlayerHistoryRefreshNotice";
 import PgaScheduleSidebarCard from "@/components/pga/PgaScheduleSidebarCard";
@@ -193,6 +193,13 @@ export default function PgaHistoryModel() {
     };
   }, [currentField, fieldUsable, playerStats]);
 
+  /**
+   * Which rank the table should lead with. Derived from the same condition that
+   * gates field filtering below, so the column's meaning always matches the rows
+   * on screen: field-only shows field ranks, all-players shows tour ranks.
+   */
+  const rankMode: PgaRankMode = fieldOnly && fieldUsable && fieldSet.size > 0 ? "field" : "tour";
+
   const modelRows = useMemo(() => {
     const merged = playerStats.map((player) => {
       const key = normalizePlayerKey(player.player);
@@ -328,7 +335,7 @@ export default function PgaHistoryModel() {
             <div className="py-16 text-center text-sm text-slate-400">Loading tournament model…</div>
           ) : (
             <>
-              <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} />
+              <PgaHistoryModelTable rows={filtered} statView={statView} isMajor={isMajor} eventLabel={eventName} rankMode={rankMode} />
               <PgaPlayerHistoryRefreshNotice lastRefresh={playerHistory?.lastRefresh} />
             </>
           )}

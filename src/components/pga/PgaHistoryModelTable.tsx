@@ -3,18 +3,58 @@ import { useJkbTrendRankings, type JkbTrendRanking } from "@/hooks/useJkbTrendRa
 import { normalizePlayerKey, type PgaHistoryResult, type PgaTournamentModelRow } from "@/lib/pga/historyModel";
 import { percentileHeatClass } from "@/lib/pga/pgaHeatColors";
 
+/**
+ * Which rank leads the rank column.
+ *
+ * Supplied explicitly by the page rather than inferred from whether fieldRank
+ * happens to be null: in all-player mode a non-field row has no field rank, and
+ * inferring from that would make the column silently change meaning per row.
+ */
+export type PgaRankMode = "field" | "tour";
+
 type Props = {
   rows: PgaTournamentModelRow[];
   statView: "percentile" | "raw";
   isMajor: boolean;
   eventLabel: string;
+  rankMode?: PgaRankMode;
 };
+
+/**
+ * Resolve the leading rank and its supporting rank for one row.
+ *
+ * A row must never lead with a dash while it has a valid tour rank -- that was
+ * the all-player-view regression: non-field golfers rendered a bold "—" with
+ * their real rank demoted to 9px grey. Field rank leads only in field mode and
+ * only when the row actually has one.
+ *
+ * The supporting rank is omitted when it would repeat the leading number.
+ */
+function resolveRankDisplay(row: PgaTournamentModelRow, rankMode: PgaRankMode) {
+  const fieldRank = row.fieldRank;
+  const tourRank = row.modelRank;
+  const fieldLeads = rankMode === "field" && fieldRank != null;
+
+  if (fieldLeads) {
+    return {
+      primaryLabel: "Field",
+      primaryValue: fieldRank as number,
+      secondary: tourRank !== fieldRank ? { label: "Tour", value: tourRank } : null,
+    };
+  }
+
+  return {
+    primaryLabel: "Tour",
+    primaryValue: tourRank,
+    secondary: fieldRank != null && fieldRank !== tourRank ? { label: "Field", value: fieldRank } : null,
+  };
+}
 
 const RECENT_START_COUNT = 5;
 const statKeys = ["sgTotal", "sgApp", "sgPutt", "sgAtG", "drivingAccuracy", "drivingDistance"] as const;
 const statLabels = ["SG Total", "SG App", "SG Putt", "SG ARG", "Drive Acc.", "Drive Dist."];
 
-export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLabel }: Props) {
+export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLabel, rankMode = "field" }: Props) {
   const { payload: trendPayload, rankingMap, error: trendError } = useJkbTrendRankings();
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
 
@@ -82,6 +122,7 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
                 index={index}
                 statView={statView}
                 isMajor={isMajor}
+                rankMode={rankMode}
                 trendRanking={rankingMap.get(normalizePlayerKey(row.player)) ?? null}
               />
             ))}
@@ -99,6 +140,7 @@ export default function PgaHistoryModelTable({ rows, statView, isMajor, eventLab
               statView={statView}
               isMajor={isMajor}
               eventLabel={eventLabel}
+              rankMode={rankMode}
               trendRanking={rankingMap.get(normalizePlayerKey(row.player)) ?? null}
               expanded={isExpanded}
               onToggle={() => setExpandedPlayer(isExpanded ? null : row.player)}
@@ -126,21 +168,25 @@ function DesktopColumnWidths({ isMajor }: { isMajor: boolean }) {
   );
 }
 
-function DesktopRow({ row, index, statView, isMajor, trendRanking }: {
+function DesktopRow({ row, index, statView, isMajor, rankMode, trendRanking }: {
   row: PgaTournamentModelRow;
   index: number;
   statView: "percentile" | "raw";
   isMajor: boolean;
+  rankMode: PgaRankMode;
   trendRanking: JkbTrendRanking | null;
 }) {
   const bg = index % 2 ? "bg-slate-50" : "bg-white";
+  const rankDisplay = resolveRankDisplay(row, rankMode);
 
   return (
     <tr className={`${bg} hover:bg-emerald-50/40`}>
       <td className="border-b border-slate-100 px-1 py-2.5 text-[11px] tabular-nums text-slate-500">
-        <span className="block font-bold text-slate-900">{row.fieldRank ?? "—"}</span>
-        <span className="block text-[9px] font-medium text-slate-400" title="Rank among every player with statistics">
-          Tour #{row.modelRank}
+        <span className="block font-bold text-slate-900">{rankDisplay.primaryValue}</span>
+        <span className="block text-[9px] font-medium text-slate-400">
+          {rankDisplay.secondary
+            ? `${rankDisplay.secondary.label} #${rankDisplay.secondary.value}`
+            : rankDisplay.primaryLabel}
         </span>
       </td>
       <td className="whitespace-nowrap border-b border-r border-slate-100 px-2 py-2.5 text-left text-[13px] font-black text-slate-900" title={row.player}>{row.player}</td>
@@ -170,16 +216,18 @@ function DesktopRow({ row, index, statView, isMajor, trendRanking }: {
   );
 }
 
-function MobileCard({ row, statView, isMajor, eventLabel, trendRanking, expanded, onToggle }: {
+function MobileCard({ row, statView, isMajor, eventLabel, rankMode, trendRanking, expanded, onToggle }: {
   row: PgaTournamentModelRow;
   statView: "percentile" | "raw";
   isMajor: boolean;
   eventLabel: string;
+  rankMode: PgaRankMode;
   trendRanking: JkbTrendRanking | null;
   expanded: boolean;
   onToggle: () => void;
 }) {
   const panelId = `pga-player-details-${normalizePlayerKey(row.player)}`;
+  const rankDisplay = resolveRankDisplay(row, rankMode);
 
   return (
     <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -190,9 +238,9 @@ function MobileCard({ row, statView, isMajor, eventLabel, trendRanking, expanded
         aria-controls={panelId}
         onClick={onToggle}
       >
-        {/* Field rank only in the collapsed row; tour rank lives in the
-            expanded panel so the narrow header stays uncrowded. */}
-        <span className="w-8 shrink-0 text-[11px] font-black tabular-nums text-slate-500">#{row.fieldRank ?? "—"}</span>
+        {/* Leading rank only in the collapsed row; the supporting rank lives in
+            the expanded panel so the narrow header stays uncrowded. */}
+        <span className="w-8 shrink-0 text-[11px] font-black tabular-nums text-slate-500">#{rankDisplay.primaryValue}</span>
         <span className="min-w-0 flex-1 whitespace-normal text-[14px] font-black leading-tight text-slate-900">{row.player}</span>
         <Score value={row.modelScore} />
         <span aria-hidden="true" className="w-4 shrink-0 text-center text-sm font-black text-slate-500">{expanded ? "▲" : "▼"}</span>
@@ -202,9 +250,15 @@ function MobileCard({ row, statView, isMajor, eventLabel, trendRanking, expanded
       {expanded ? (
         <div id={panelId} className="border-t border-slate-100 px-3 pb-3">
           <p className="pt-2 text-[11px] text-slate-500">
-            Field rank <span className="font-bold text-slate-700">#{row.fieldRank ?? "—"}</span> of this week&apos;s
-            entrants · Tour rank <span className="font-bold text-slate-700">#{row.modelRank}</span> of all players with
-            statistics
+            Tour rank <span className="font-bold text-slate-700">#{row.modelRank}</span> of all players with statistics
+            {row.fieldRank != null ? (
+              <>
+                {" · "}Field rank <span className="font-bold text-slate-700">#{row.fieldRank}</span> of this week&apos;s
+                entrants
+              </>
+            ) : (
+              <>{" · "}Not in this week&apos;s field</>
+            )}
           </p>
 
           <MobileSection title="Player Stats">

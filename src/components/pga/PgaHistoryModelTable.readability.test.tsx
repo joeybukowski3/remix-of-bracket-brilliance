@@ -34,7 +34,9 @@ function row(overrides: Partial<PgaTournamentModelRow> = {}): PgaTournamentModel
     birdieBogeyRatio: 1.8,
     baseScore: 70,
     modelScore: 82.4,
-    modelRank: 1,
+    // Distinct on purpose: equal ranks are collapsed to avoid printing the same
+    // number twice, so a fixture with both = 1 cannot assert dual-rank display.
+    modelRank: 4,
     fieldRank: 1,
     recentResults: [finish(), finish({ finishText: "MC", finishPosition: null, madeCut: false, status: "missed_cut" })],
     eventResults: [finish({ finishText: "3", finishPosition: 3 })],
@@ -90,9 +92,10 @@ describe("PgaHistoryModelTable readability", () => {
 
     expect(table.getByText("Sample Golfer")).toBeInTheDocument();
     expect(table.getByText("82.4")).toBeInTheDocument();
-    // Rank cell now carries both numbers: field rank primary, tour rank below.
+    // Rank cell carries both numbers: in the default field mode the field rank
+    // leads and the tour rank supports it.
     expect(table.getByText("1")).toBeInTheDocument();
-    expect(table.getByText("Tour #1")).toBeInTheDocument();
+    expect(table.getByText("Tour #4")).toBeInTheDocument();
     expect(table.getByText("88")).toBeInTheDocument();
     expect(table.getByText("62")).toBeInTheDocument();
     expect(table.getByText("18")).toBeInTheDocument();
