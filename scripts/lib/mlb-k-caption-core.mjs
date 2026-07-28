@@ -1,223 +1,59 @@
-/**
- * Pure caption/validation logic for the K props X poster
- * (post-mlb-strikeout-props-to-x.mjs), split out so it's testable without
- * importing the main script (which runs its own main() immediately at
- * module load, since it's a CLI entry point).
- *
- * Direction (OVER/UNDER) and the projection/edge numbers are never
- * recomputed here -- they're scraped directly off the page's own
- * data-k-side/data-k-projected-ks/data-k-projection-edge attributes
- * (see SocialTableK in MlbGameDetail.tsx, which already computes them via
- * getProjectionEdgeInfo), so this module can never silently drift out of
- * sync with what the page itself displays.
- */
+function normalizeText(value) { return typeof value === "string" ? value.trim() : ""; }
+function toFiniteNumber(value) { const parsed = Number(value); return value == null || value === "" || !Number.isFinite(parsed) ? null : parsed; }
+export function isAmericanOdds(value) { return /^[+-]\d+$/.test(normalizeText(value)); }
+export function isPlaceholderText(value) { const v = normalizeText(value).toUpperCase(); return !v || ["TBD","TBA","N/A","NA","NULL","UNKNOWN"].includes(v); }
+export function formatPropLine(value) { const n = toFiniteNumber(value); return n == null || n <= 0 ? "" : Number.isInteger(n) ? n.toFixed(0) : String(n); }
+export function formatSignedEdge(edge) { return edge == null || !Number.isFinite(edge) ? "" : `${edge > 0 ? "+" : ""}${edge.toFixed(1)}`; }
+export function getFavoredOdds(row) { return String(row?.direction ?? "").toLowerCase() === "under" ? row?.oddsUnder : row?.oddsOver; }
+export function formatDateLabel(value) { const raw = normalizeText(value); if (!raw) return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }); const date = new Date(`${raw}T00:00:00`); return Number.isNaN(date.getTime()) ? raw : date.toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
 
-function normalizeText(value) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function toFiniteNumber(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-export function isAmericanOdds(value) {
-  return /^[+-]\d+$/.test(normalizeText(value));
-}
-
-export function isPlaceholderText(value) {
-  const normalized = normalizeText(value).toUpperCase();
-  return !normalized || normalized === "TBD" || normalized === "TBA" || normalized === "N/A" || normalized === "NA" || normalized === "NULL" || normalized === "UNKNOWN";
-}
-
-export function formatPropLine(value) {
-  const number = toFiniteNumber(value);
-  if (number == null || number <= 0) return "";
-  return Number.isInteger(number) ? number.toFixed(0) : String(number);
-}
-
-/** projectedKs - kLine, already signed (positive = OVER, negative = UNDER). Formats with an explicit "+" for positive values; toFixed already carries the "-" for negative ones. */
-export function formatSignedEdge(edge) {
-  if (edge == null || !Number.isFinite(edge)) return "";
-  return `${edge > 0 ? "+" : ""}${edge.toFixed(1)}`;
-}
-
-/** The market price for whichever side the row's own direction favors -- oddsUnder for an UNDER row, oddsOver otherwise. Never mixes the two. */
-export function getFavoredOdds(row) {
-  return row.direction === "under" ? row.oddsUnder : row.oddsOver;
-}
-
-export function formatDateLabel(dateValue) {
-  const raw = normalizeText(dateValue);
-  if (!raw) return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-  const date = new Date(`${raw}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return raw;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-// The page (selectTopSocialKRows) already ranks by absolute edge and caps
-// at 5 rows before this script ever sees them, and filterEligibleKRows
-// already dropped every non-VALID row -- so "rows" here is already 0-5
-// rows, each with a real market line >= the starter threshold (see
-// MIN_ELIGIBLE_K_LINE in kPropStatus.ts), a real projection, and coherent
-// odds. Only a genuine data-integrity problem (a row that slipped through
-// without a usable direction/odds/projection) should block the whole
-// post; there is no product reason to require a minimum of 3 -- 1-2
-// strong edges are still worth posting, and 0 is a clean skip, never a
-// forced/padded table.
 export function validateRows(rows) {
-  if (rows.length < 1) return "Skipping: no eligible K prop rows are available.";
-
-  for (const [index, row] of rows.entries()) {
-    const label = `row ${index + 1}`;
-    if (isPlaceholderText(row.pitcher)) return `Skipping: ${label} pitcher name is missing or a placeholder.`;
-    if (isPlaceholderText(row.team)) return `Skipping: ${label} team is missing or a placeholder.`;
-    if (!Number.isFinite(row.strikeoutScore)) return `Skipping: ${label} K score is missing or invalid.`;
-    if (!formatPropLine(row.kLine)) return `Skipping: ${label} K line is missing.`;
-    if (row.direction !== "over" && row.direction !== "under") return `Skipping: ${label} (${row.pitcher || "unknown"}) has no clear OVER/UNDER direction.`;
-    if (!Number.isFinite(row.projectedKs)) return `Skipping: ${label} projection is missing.`;
-    if (!Number.isFinite(row.projectionEdge)) return `Skipping: ${label} projection edge is missing.`;
-    if (!isAmericanOdds(getFavoredOdds(row))) return `Skipping: ${label} ${row.direction} price is missing.`;
+  if (!rows.length) return "Skipping: no eligible K prop rows are available.";
+  for (const row of rows) {
+    if (isPlaceholderText(row.pitcher) || isPlaceholderText(row.team)) return "Skipping: pitcher identity is missing.";
+    if (!Number.isFinite(row.strikeoutScore) || !Number.isFinite(row.projectedKs)) return "Skipping: model data is missing.";
+    if (!formatPropLine(row.kLine)) return "Skipping: K line is missing.";
+    const direction = String(row.direction ?? "").toLowerCase();
+    if (!["over","under"].includes(direction) || !Number.isFinite(row.projectionEdge) || !isAmericanOdds(getFavoredOdds({ ...row, direction }))) return "Skipping: market data is incomplete.";
   }
-
   return "";
 }
 
 export function buildCaption({ date, rows }) {
-  const rowsError = validateRows(rows);
-  if (rowsError) return { skipped: true, reason: rowsError, caption: "", topProps: [] };
-
-  const topProps = rows;
-  const dateLabel = formatDateLabel(date);
-  const blocks = topProps.map((row, index) => {
-    const directionLabel = row.direction === "under" ? "UNDER" : "OVER";
-    const odds = getFavoredOdds(row);
-    const header = `${index + 1}. ${row.pitcher} (${row.team}) vs ${row.opponent}`;
-    const pickLine = `${directionLabel} ${formatPropLine(row.kLine)} Ks (${odds})`;
-    const projectionLine = `Projection: ${row.projectedKs.toFixed(1)}`;
-    const edgeLine = `Edge: ${formatSignedEdge(row.projectionEdge)}`;
-    return [header, pickLine, projectionLine, edgeLine].join("\n");
-  });
-
-  const caption = [
-    `JoeKnowsBall MLB K Props - ${dateLabel}`,
-    "",
-    ...blocks.flatMap((block, index) => (index === 0 ? [block] : ["", block])),
-    "",
-    "Free Access to Full Table at Link in Bio",
-    "",
-    "#MLB #MLBPicks #Strikeouts #MLBBetting",
-  ].join("\n");
-
-  if (caption.length > 280) {
-    const shortLines = topProps.map((row, index) => {
-      const directionLabel = row.direction === "under" ? "UNDER" : "OVER";
-      const odds = getFavoredOdds(row);
-      return `${index + 1}. ${row.pitcher} ${row.team} — ${directionLabel} ${formatPropLine(row.kLine)} (${odds}) · Edge ${formatSignedEdge(row.projectionEdge)}`;
-    });
-    const shortCaption = [
-      `MLB K Props - ${dateLabel}`,
-      "",
-      ...shortLines,
-      "",
-      "Full table: link in bio",
-      "#MLB #Strikeouts",
-    ].join("\n");
-
-    if (shortCaption.length > 280) {
-      return { skipped: true, reason: `Skipping: generated caption is ${caption.length} characters (and ${shortCaption.length} shortened); expected 280 or fewer.`, caption: "", topProps: [] };
-    }
-    return { skipped: false, reason: "", caption: shortCaption, topProps };
-  }
-
-  return { skipped: false, reason: "", caption, topProps };
+  const error = validateRows(rows);
+  if (error) return { skipped: true, reason: error, caption: "", topProps: [] };
+  const caption = [`MLB K Props - ${formatDateLabel(date)}`, ...rows.map((row, index) => `${index + 1}. ${row.pitcher} ${String(row.direction).toUpperCase()} ${formatPropLine(row.kLine)} (${getFavoredOdds(row)})`), "Full table: link in bio", "#MLB #Strikeouts"].join("\n");
+  return caption.length <= 280 ? { skipped: false, reason: "", caption, topProps: rows } : { skipped: true, reason: "Skipping: caption exceeds 280 characters.", caption: "", topProps: [] };
 }
 
-// ─── Edition captions ────────────────────────────────────────────────────────
-
 import { compactPlayerName, editionSentenceFor, fitCaption, weightedLength } from "./mlb-x-caption-budget.mjs";
-
 export const K_CANONICAL_LINK = "joeknowsball.com/mlb/strikeout-props";
 export const K_HASHTAGS = "#MLB #StrikeoutProps";
 
-/**
- * Edition caption built from FROZEN plan rows.
- *
- * Replaces the old all-or-nothing builder for edition posts: that one skipped
- * the entire post once the caption exceeded 280, which measurably happened at
- * four or more rows, so a 3-over/3-under edition could never publish. Here the
- * pick set is reduced until it fits -- 3+3, then 3+2, then 2+2, and so on --
- * while the title, edition sentence, canonical link and hashtags are always
- * retained. The attached graphic still carries the full board.
- *
- * Nothing is fabricated and no betting line is abbreviated: a row missing a
- * side, line or price is dropped by validateRows before it can reach a caption.
- *
- * @param {object[]} params.rows frozen selected rows
- * @param {string}   params.languageMode morning | confirmed | pregame_fallback
- */
 export function buildKEditionCaption({ rows = [], languageMode, slateDate }) {
-  // selectConfirmedKRows (mlb-k-x-selection-core.mjs) produces direction as
-  // "OVER"/"UNDER" (see getKValueEdgeInfo), but validateRows/getFavoredOdds
-  // above were written against a lowercase "over"/"under" convention. That
-  // mismatch was never exercised in production -- this module was not
-  // actually imported by the K poster before this integration -- and surfaced
-  // only under a real end-to-end dry run against live scraped data, where it
-  // silently rejected every row. Normalized once, at the boundary, rather
-  // than changing validateRows/getFavoredOdds/selectConfirmedKRows.
-  const normalized = rows.map((row) => ({ ...row, direction: String(row?.direction ?? "").toLowerCase() }));
-  const eligible = normalized.filter((row) => !validateRows([row]));
-  if (eligible.length < 1) {
-    return { skipped: true, reason: "Skipping: no eligible K prop rows are available.", caption: "", captionRows: [], diagnostics: null };
-  }
-
-  const overs = eligible.filter((row) => row.direction === "over");
-  const unders = eligible.filter((row) => row.direction === "under");
+  const morning = languageMode === "morning" || languageMode === "morning_catch_up";
   const dateLabel = formatDateLabel(slateDate);
   const sentence = editionSentenceFor(languageMode);
+  const variants = [{ full: true, team: true }, { full: true, team: false }, { full: false, team: false }];
 
-  // Richest to leanest: drop the team tag before ever dropping a pick.
-  const variants = [
-    { name: true, team: true },
-    { name: true, team: false },
-    { name: false, team: false },
-  ];
-
-  const line = (row, variant) => {
-    const who = variant.name ? row.pitcher : compactPlayerName(row.pitcher);
-    const team = variant.team ? ` (${row.team})` : "";
-    const side = row.direction === "under" ? "U" : "O";
-    return `• ${who}${team} ${side}${formatPropLine(row.kLine)} Ks ${getFavoredOdds(row)}`;
-  };
-
-  const render = ({ rowsA, rowsB, variant }) => {
-    const blocks = [];
-    if (rowsA.length) blocks.push("", "Overs", ...rowsA.map((row) => line(row, variant)));
-    if (rowsB.length) blocks.push("", "Unders", ...rowsB.map((row) => line(row, variant)));
-    return [`⚾ MLB K Props — ${dateLabel}`, ...blocks, "", sentence, K_CANONICAL_LINK, K_HASHTAGS].join("\n");
-  };
-
-  const fitted = fitCaption({ groupA: overs, groupB: unders, render, variants });
-  if (!fitted.ok) {
-    return {
-      skipped: true,
-      reason: `Skipping: even a single K pick exceeds the ${280} character budget (weighted ${fitted.diagnostics.weightedLength}).`,
-      caption: "", captionRows: [], diagnostics: fitted.diagnostics,
-    };
+  if (morning) {
+    const eligible = rows.filter((row) => !isPlaceholderText(row?.pitcher) && !isPlaceholderText(row?.team) && toFiniteNumber(row?.strikeoutScore) != null && toFiniteNumber(row?.projectedKs) != null);
+    if (!eligible.length) return { skipped: true, reason: "Skipping: no model-qualified K targets are available.", caption: "", captionRows: [], diagnostics: null };
+    const line = (row, variant) => `• ${variant.full ? row.pitcher : compactPlayerName(row.pitcher)}${variant.team ? ` (${row.team})` : ""} — ${toFiniteNumber(row.projectedKs).toFixed(1)} projected K`;
+    const render = ({ rowsA, variant }) => [`⚾ Top Strikeout Targets — ${dateLabel}`, "", ...rowsA.map((row) => line(row, variant)), "", sentence, K_CANONICAL_LINK, K_HASHTAGS].join("\n");
+    const fitted = fitCaption({ groupA: eligible, groupB: [], render, variants, maxPerGroup: 5 });
+    if (!fitted.ok) return { skipped: true, reason: "Skipping: morning K caption exceeds the character limit.", caption: "", captionRows: [], diagnostics: fitted.diagnostics };
+    return { skipped: false, reason: "", caption: fitted.caption, captionRows: fitted.rowsA, omittedRows: eligible.slice(fitted.rowsA.length), languageMode, diagnostics: { ...fitted.diagnostics, weightedLength: weightedLength(fitted.caption) } };
   }
 
-  return {
-    skipped: false,
-    reason: "",
-    caption: fitted.caption,
-    // Exactly the rows the caption names, for the plan/caption/image check.
-    captionRows: [...fitted.rowsA, ...fitted.rowsB],
-    omittedRows: [
-      ...overs.slice(fitted.rowsA.length),
-      ...unders.slice(fitted.rowsB.length),
-    ],
-    languageMode,
-    diagnostics: { ...fitted.diagnostics, weightedLength: weightedLength(fitted.caption) },
-  };
+  const normalized = rows.map((row) => ({ ...row, direction: String(row?.direction ?? "").toLowerCase() }));
+  const eligible = normalized.filter((row) => !validateRows([row]));
+  if (!eligible.length) return { skipped: true, reason: "Skipping: no eligible K value rows are available.", caption: "", captionRows: [], diagnostics: null };
+  const overs = eligible.filter((row) => row.direction === "over");
+  const unders = eligible.filter((row) => row.direction === "under");
+  const line = (row, variant) => `• ${variant.full ? row.pitcher : compactPlayerName(row.pitcher)}${variant.team ? ` (${row.team})` : ""} ${row.direction === "under" ? "U" : "O"}${formatPropLine(row.kLine)} ${getFavoredOdds(row)}`;
+  const render = ({ rowsA, rowsB, variant }) => [`⚾ Updated Strikeout Props — ${dateLabel}`, ...(rowsA.length ? ["", "Overs", ...rowsA.map((row) => line(row, variant))] : []), ...(rowsB.length ? ["", "Unders", ...rowsB.map((row) => line(row, variant))] : []), "", sentence, K_CANONICAL_LINK, K_HASHTAGS].join("\n");
+  const fitted = fitCaption({ groupA: overs, groupB: unders, render, variants });
+  if (!fitted.ok) return { skipped: true, reason: "Skipping: confirmed K caption exceeds the character limit.", caption: "", captionRows: [], diagnostics: fitted.diagnostics };
+  return { skipped: false, reason: "", caption: fitted.caption, captionRows: [...fitted.rowsA, ...fitted.rowsB], omittedRows: [...overs.slice(fitted.rowsA.length), ...unders.slice(fitted.rowsB.length)], languageMode, diagnostics: { ...fitted.diagnostics, weightedLength: weightedLength(fitted.caption) } };
 }
