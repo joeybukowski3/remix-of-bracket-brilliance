@@ -86,10 +86,12 @@ describe("Game Matchup Analyzer — Top Model Drivers / Market Summary footer al
     const rows = within(card).getAllByText(/Pitcher Quality|Recent Form|Matchup Edge/).map((el) => el.closest("div"));
     expect(rows.length).toBe(3);
     const templates = rows.map((row) => row?.className);
-    // Every driver row shares the same grid template and fixed height class.
+    // Every driver row shares the same grid template and minimum height class.
+    // The bar and result-value columns use minmax(...) (not fixed px) so long
+    // values wrap onto a controlled second line instead of overlapping the bar.
     for (const className of templates) {
-      expect(className).toContain("grid-cols-[68px_16px_minmax(0,1fr)_16px_54px]");
-      expect(className).toContain("h-6");
+      expect(className).toContain("grid-cols-[68px_16px_minmax(0,1fr)_16px_minmax(40px,auto)]");
+      expect(className).toContain("min-h-6");
     }
     expect(driverLabel).toBeInTheDocument();
   });
@@ -117,7 +119,9 @@ describe("Game Matchup Analyzer — Top Model Drivers / Market Summary footer al
 
     const marketWrapper = within(card).getByText("Market Summary").parentElement as HTMLElement;
     const marketSection = within(card).getByText("Market Summary").nextElementSibling as HTMLElement;
-    expect(marketSection.className).toContain("grid-cols-[auto_1fr]");
+    // minmax(0, 1fr) (not a bare 1fr) lets the value column shrink so long
+    // chips (e.g. "Contrarian · CIN 45¢") wrap instead of overflowing the card.
+    expect(marketSection.className).toContain("grid-cols-[auto_minmax(0,1fr)]");
 
     expect(within(marketWrapper).getByText("Total")).toBeInTheDocument();
     const polymarketValue = within(marketSection).getByText("Polymarket").nextElementSibling as HTMLElement;
@@ -132,5 +136,26 @@ describe("Game Matchup Analyzer — Top Model Drivers / Market Summary footer al
     const edgeStrengthLabel = within(marketSection).getByText("Edge Strength");
     expect(edgeStrengthLabel.closest("div")?.className).toContain("hidden");
     expect(edgeStrengthLabel.closest("div")?.className).toContain("md:contents");
+  });
+
+  it("drives the two-column card grid and the footer split off container queries, not viewport breakpoints", () => {
+    computeModelEdgeMock.mockReturnValue(MODEL_EDGE);
+    const card = renderCard();
+
+    // The slate switches to two columns based on its own rendered width
+    // (see .mlb-matchup-grid in index.css), not a `lg:`/`xl:` viewport
+    // breakpoint — those go stale next to the MLB layout's sidebar and
+    // produce compressed cards. Assert the old viewport class is gone.
+    const slate = card.parentElement as HTMLElement;
+    expect(slate.className).toContain("mlb-matchup-grid");
+    expect(slate.className).not.toMatch(/\blg:grid-cols-2\b/);
+    expect(slate.className).not.toMatch(/\bxl:grid-cols-2\b/);
+
+    expect(card.className).toContain("mlb-matchup-card");
+
+    const marketWrapper = within(card).getByText("Market Summary").parentElement as HTMLElement;
+    const footerGrid = marketWrapper.parentElement as HTMLElement;
+    expect(footerGrid.className).toContain("mlb-matchup-footer-grid");
+    expect(footerGrid.className).not.toMatch(/\bsm:grid-cols-\[/);
   });
 });

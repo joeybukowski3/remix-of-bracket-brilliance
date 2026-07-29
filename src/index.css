@@ -378,3 +378,43 @@
     }
   }
 }
+
+/* MLB matchup cards: two columns only once the ACTUAL rendered slate width
+   (not the viewport) has room for both cards. Viewport-based breakpoints
+   (e.g. `lg:`/`xl:`) go stale here because the MLB layout's 224px sidebar
+   appears at `xl` and eats width right as a viewport breakpoint would
+   otherwise flip to two columns, producing compressed cards. Container
+   queries measure the slate's real width so the switch tracks whatever
+   space is actually left after the sidebar. */
+.mlb-matchup-slate {
+  container-type: inline-size;
+  container-name: mlb-matchup-slate;
+}
+
+@container mlb-matchup-slate (min-width: 1150px) {
+  .mlb-matchup-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* Each card also queries its own width so the Top Model Drivers / Market
+   Summary split responds to the card's real size, independent of whether
+   the slate above is in one- or two-column mode. */
+.mlb-matchup-card {
+  container-type: inline-size;
+  container-name: mlb-matchup-card;
+}
+
+@container mlb-matchup-card (min-width: 460px) {
+  .mlb-matchup-footer-grid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(150px, 0.75fr);
+    gap: 1rem;
+  }
+
+  .mlb-matchup-footer-market {
+    border-left-width: 1px;
+    border-top-width: 0;
+    padding-left: 1rem;
+    padding-top: 0;
+  }
+}
