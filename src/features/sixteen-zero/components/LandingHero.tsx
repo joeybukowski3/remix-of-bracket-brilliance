@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateRandomDraftSlot } from "../engine/createLocalRun";
@@ -22,6 +22,7 @@ export function LandingHero({
 }) {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [pickSource, setPickSource] = useState<"manual" | "random" | null>(null);
+  const draftStartedRef = useRef(false);
 
   const handleSelectSlot = (slot: number) => {
     setSelectedSlot(slot);
@@ -33,13 +34,18 @@ export function LandingHero({
     setPickSource("random");
   };
 
-  const handleEnterDraftRoom = () => {
+  // Both hero CTAs share this handler so the two entry points can never drift.
+  // No slot chosen yet falls back to a random valid slot instead of a dead scroll target.
+  const handleStartDraft = useCallback(() => {
+    if (initializing || draftStartedRef.current) return;
+    draftStartedRef.current = true;
+    const slotToStart = selectedSlot ?? generateRandomDraftSlot();
     if (selectedSlot === null) {
-      document.getElementById("draft-setup")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+      setSelectedSlot(slotToStart);
+      setPickSource("random");
     }
-    onStart(selectedSlot);
-  };
+    onStart(slotToStart);
+  }, [initializing, onStart, selectedSlot]);
 
   return (
     <div className="min-h-screen bg-[#06101d] text-white">
@@ -92,7 +98,7 @@ export function LandingHero({
 
               <Button
                 size="lg"
-                onClick={handleEnterDraftRoom}
+                onClick={handleStartDraft}
                 disabled={initializing}
                 className="mt-6 h-14 min-w-48 bg-cyan-400 px-8 text-base font-black text-slate-950 shadow-lg shadow-cyan-400/20 hover:bg-cyan-300"
               >
@@ -113,7 +119,7 @@ export function LandingHero({
         <ProductPreviewSection />
         <FeatureCardsSection />
         <SeasonProgressionSection />
-        <FinalCtaSection onEnterDraftRoom={handleEnterDraftRoom} disabled={initializing} />
+        <FinalCtaSection onEnterDraftRoom={handleStartDraft} disabled={initializing} />
       </main>
 
       <LandingFooter />
