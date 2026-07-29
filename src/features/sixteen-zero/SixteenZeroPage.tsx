@@ -112,6 +112,7 @@ export default function SixteenZeroPage() {
         result={seasonResult}
         draftSlot={game.draftSlot ?? 1}
         scoringProfile={scoringProfile}
+        draftSelections={game.selections}
         onDraftAgain={openSlotSelection}
       />
     );

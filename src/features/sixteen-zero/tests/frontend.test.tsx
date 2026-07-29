@@ -186,6 +186,7 @@ describe("16-0 no-persistence frontend", () => {
       opponentNames: OPPONENT_NAMES.map((entry) => entry.name),
       seed: "schedule-display-season",
       overrides: {
+        regularOpponentScores: Array(14).fill(0),
         qualification: { qualified: true, seed: 1, hasBye: true },
         playoffOpponentScores: { 16: 0, 17: 0 },
       },
