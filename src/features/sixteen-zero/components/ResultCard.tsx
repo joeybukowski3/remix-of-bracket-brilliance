@@ -1,10 +1,76 @@
-import { ChevronDown, CheckCircle2, RotateCcw, Trophy, XCircle } from "lucide-react";
+import { ChevronDown, CheckCircle2, RotateCcw, Trophy, TrendingDown, TrendingUp, XCircle } from "lucide-react";
 import { Fragment, useId, useState } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/ui/Logo";
+import { SIMULATION_PLAYERS } from "../data";
+import { computeDraftPickValueExtremes } from "../engine/draftPickValue";
+import type { DraftPickValue } from "../engine/draftPickValue";
 import type { RosterScoringProfile } from "../engine/rosterScoringProfile";
 import { NflTeamLogo } from "./NflTeamLogo";
 import { SixteenZeroHeader } from "./SixteenZeroHeader";
-import type { LineupSlot, MatchupLineupEntry, ScheduleGame, SeasonResult } from "../types";
+import type {
+  DraftSelection,
+  LineupSlot,
+  MatchupLineupEntry,
+  ScheduleGame,
+  SeasonResult,
+} from "../types";
+
+const SHARE_WATERMARK = "joeknowsball.com/16-0";
+const SEASON_RESULTS_ID = "season-results";
+const STARTING_ROSTER_ID = "starting-roster";
+
+function scrollToSection(event: MouseEvent<HTMLAnchorElement>, id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  event.preventDefault();
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function JumpLinks() {
+  return (
+    <nav aria-label="Jump to section" className="mt-6 flex flex-wrap justify-center gap-2">
+      <a
+        href={`#${SEASON_RESULTS_ID}`}
+        onClick={(event) => scrollToSection(event, SEASON_RESULTS_ID)}
+        className="rounded-full border border-slate-950/20 bg-white/40 px-3 py-1.5 text-[0.75rem] font-black text-slate-950 backdrop-blur transition hover:bg-white/70"
+      >
+        Season Results
+      </a>
+      <a
+        href={`#${STARTING_ROSTER_ID}`}
+        onClick={(event) => scrollToSection(event, STARTING_ROSTER_ID)}
+        className="rounded-full border border-slate-950/20 bg-white/40 px-3 py-1.5 text-[0.75rem] font-black text-slate-950 backdrop-blur transition hover:bg-white/70"
+      >
+        Starting Roster
+      </a>
+    </nav>
+  );
+}
+
+function DraftPickTile({
+  label,
+  icon,
+  pick,
+}: {
+  label: string;
+  icon: ReactNode;
+  pick: DraftPickValue;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-950/15 bg-white/40 px-3 py-2.5 text-left backdrop-blur">
+      <p className="flex items-center gap-1 text-[0.625rem] font-black uppercase tracking-[0.14em] text-slate-700">
+        {icon}
+        {label}
+      </p>
+      <p className="mt-1 truncate text-[0.9375rem] font-black text-slate-950">{pick.playerName}</p>
+      <p className="mt-0.5 text-[0.6875rem] text-slate-700">
+        {pick.team} · Round {pick.round}, Pick {pick.overallPick} · Consensus #{pick.consensusOverallRank}
+      </p>
+    </div>
+  );
+}
 
 const LINEUP_SLOTS: LineupSlot[] = ["QB", "RB1", "RB2", "WR1", "WR2", "TE", "FLEX", "K", "DST"];
 
@@ -162,7 +228,11 @@ function SeasonScheduleSection({ schedule }: { schedule: readonly ScheduleGame[]
   };
 
   return (
-    <section className="border-t border-white/10 p-6 sm:p-10" data-season-schedule>
+    <section
+      id={SEASON_RESULTS_ID}
+      className="border-t border-white/10 p-6 sm:p-10"
+      data-season-schedule
+    >
       <h2 className="text-[clamp(0.9375rem,0.85rem+0.3vw,1.125rem)] font-black text-white">
         Season results
       </h2>
@@ -349,11 +419,13 @@ export function ResultCard({
   result,
   draftSlot,
   scoringProfile,
+  draftSelections,
   onDraftAgain,
 }: {
   result: SeasonResult;
   draftSlot: number;
   scoringProfile?: RosterScoringProfile | null;
+  draftSelections?: readonly DraftSelection[];
   onDraftAgain: () => void;
 }) {
   const perfectSeason =
@@ -361,13 +433,29 @@ export function ResultCard({
     result.finalLosses === 0 &&
     result.playoffResult === "League Champion";
 
+  const pickExtremes = draftSelections
+    ? computeDraftPickValueExtremes(draftSelections, draftSlot, SIMULATION_PLAYERS)
+    : null;
+
   return (
     <div className="min-h-screen bg-[#07111f] text-white">
       <SixteenZeroHeader />
       <main className="mx-auto max-w-5xl px-4 py-10 sm:py-16">
-        <section className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/80 shadow-2xl shadow-black/20">
-          <div className={`px-6 py-9 text-center sm:px-10 sm:py-14 ${perfectSeason ? "bg-amber-300 text-slate-950" : "bg-cyan-400 text-slate-950"}`}>
-            <Trophy className="mx-auto h-8 w-8" />
+        <section
+          className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/80 shadow-2xl shadow-black/20"
+          data-share-card
+        >
+          <div
+            className={`px-6 py-8 text-center sm:px-10 sm:py-12 ${perfectSeason ? "bg-amber-300 text-slate-950" : "bg-cyan-400 text-slate-950"}`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Logo width={96} className="brightness-0" />
+              <span className="text-[0.6875rem] font-black uppercase tracking-[0.24em] opacity-70">
+                JoeKnowsBall
+              </span>
+            </div>
+
+            <Trophy className="mx-auto mt-5 h-8 w-8" />
             <p className="mt-3 text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] font-black uppercase tracking-[0.24em] opacity-70">
               {result.playoffResult}
             </p>
@@ -377,7 +465,37 @@ export function ResultCard({
             <p className="mt-2 text-[clamp(1rem,0.9rem+0.4vw,1.25rem)] font-black">
               {perfectSeason ? "The perfect fantasy season." : result.playoffResult}
             </p>
+
+            <div className="mt-5 grid gap-2.5 sm:grid-cols-3" data-share-facts>
+              <div className="rounded-xl border border-slate-950/15 bg-white/40 px-3 py-2.5 text-left backdrop-blur">
+                <p className="text-[0.625rem] font-black uppercase tracking-[0.14em] text-slate-700">
+                  Draft position
+                </p>
+                <p className="mt-1 text-[0.9375rem] font-black text-slate-950">Pick {draftSlot}</p>
+              </div>
+              {pickExtremes && (
+                <>
+                  <DraftPickTile
+                    label="Best pick"
+                    icon={<TrendingUp className="h-3 w-3" aria-hidden="true" />}
+                    pick={pickExtremes.best}
+                  />
+                  <DraftPickTile
+                    label="Worst pick"
+                    icon={<TrendingDown className="h-3 w-3" aria-hidden="true" />}
+                    pick={pickExtremes.worst}
+                  />
+                </>
+              )}
+            </div>
+
             {scoringProfile && <ScoringProfileStrip profile={scoringProfile} />}
+
+            <JumpLinks />
+
+            <p className="mt-5 text-[0.6875rem] font-bold uppercase tracking-[0.18em] opacity-60">
+              {SHARE_WATERMARK}
+            </p>
           </div>
 
           <div className="grid gap-8 p-6 sm:p-10 lg:grid-cols-[0.9fr_1.1fr]">
@@ -413,7 +531,7 @@ export function ResultCard({
               </Button>
             </div>
 
-            <div>
+            <div id={STARTING_ROSTER_ID}>
               <h2 className="text-[clamp(0.9375rem,0.85rem+0.3vw,1.125rem)] font-black">
                 Starting roster
               </h2>
