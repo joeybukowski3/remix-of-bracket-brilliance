@@ -21,6 +21,7 @@ export default defineConfig({
       "scripts/lib/pga-best-bets-selection.test.mjs",
       "scripts/lib/pga-best-bets-schema.test.mjs",
       "tests/social-cards.test.mjs",
+      "scripts/lib/social-cards/adapters/mlb-daily-card-adapters.test.mjs",
     ],
   },
   resolve: {
