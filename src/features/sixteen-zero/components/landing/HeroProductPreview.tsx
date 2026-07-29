@@ -37,26 +37,20 @@ export function HeroProductPreview() {
 
       <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
         <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">
-          Week 8 matchup
+          Final Record
         </p>
-        <div className="mt-2 flex items-center justify-between text-sm">
-          <span className="font-black text-white">Your Team</span>
-          <span className="font-mono font-black text-cyan-300">142.6</span>
-        </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full w-[55%] rounded-full bg-cyan-400" />
-        </div>
-        <div className="mt-1.5 flex items-center justify-between text-sm text-slate-400">
-          <span>Opponent</span>
-          <span className="font-mono">118.3</span>
-        </div>
+        <p className="mt-1 text-sm font-semibold text-white">
+          11-3 <span className="text-slate-500">— Eliminated in Semifinal</span>
+        </p>
       </div>
 
       <div className="mt-4 flex items-center justify-between rounded-xl border border-amber-300/20 bg-amber-400/5 p-3">
         <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-slate-500">
-          Final record
+          Goal
         </span>
-        <span className="text-2xl font-black tracking-tight text-amber-300">16-0</span>
+        <span className="text-sm font-black tracking-tight text-amber-300">
+          Undefeated Fantasy Dominance
+        </span>
       </div>
     </div>
   );

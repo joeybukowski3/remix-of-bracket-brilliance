@@ -4,7 +4,7 @@ const AVAILABLE_PLAYERS = [
   { name: "Brock Bowers", pos: "TE", proj: "13.8" },
 ];
 
-const ROSTER_PREVIEW = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX"];
+const ROSTER_PREVIEW = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DST"];
 
 const RECENT_PICKS = [
   "Rd 2, Pk 19 — Saquon Barkley, RB",
@@ -61,6 +61,9 @@ export function ProductPreviewSection() {
                 </span>
               ))}
             </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Standard 17-player roster with bench depth
+            </p>
             <p className="mt-4 text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
               Recent Selections
             </p>
@@ -71,28 +74,17 @@ export function ProductPreviewSection() {
             </ul>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
-                Weekly Matchup
-              </p>
-              <div className="mt-3 flex items-center justify-between text-sm">
-                <span className="font-black text-white">Your Team</span>
-                <span className="font-mono font-black text-cyan-300">128.9</span>
-              </div>
-              <div className="mt-1.5 flex items-center justify-between text-sm text-slate-400">
-                <span>Opponent</span>
-                <span className="font-mono">104.2</span>
-              </div>
-            </div>
-            <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400/5 p-5 text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">
-                Final Season Result
-              </p>
-              <p className="mt-1 text-3xl font-black tracking-tight text-amber-300">16-0</p>
-            </div>
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400/5 p-5 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">Goal</p>
+            <p className="mt-2 text-2xl font-black tracking-tight text-amber-300">
+              Undefeated Fantasy Dominance
+            </p>
           </div>
         </div>
+
+        <p className="mt-4 text-center text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+          Built on a standard 12-team PPR format
+        </p>
       </div>
     </section>
   );
