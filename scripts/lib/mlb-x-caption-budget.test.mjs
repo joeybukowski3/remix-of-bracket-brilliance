@@ -72,10 +72,10 @@ describe("split preference ladder", () => {
 
 describe("edition sentences", () => {
   it("uses the approved wording", () => {
-    assert.equal(EditionSentence.morning, "Morning model card — check confirmed lineups before betting.");
-    assert.equal(EditionSentence.morning_catch_up, "Early model card — check confirmed lineups before betting.");
-    assert.equal(EditionSentence.confirmed, "Updated with confirmed lineups.");
-    assert.equal(EditionSentence.pregame_fallback, "Pregame update using the latest available lineups.");
+    assert.equal(EditionSentence.morning, "Lineups not confirmed. Odds may not yet be available.");
+    assert.equal(EditionSentence.morning_catch_up, "Lineups not confirmed. Odds may not yet be available.");
+    assert.equal(EditionSentence.confirmed, "Updated with confirmed lineups and current market value.");
+    assert.equal(EditionSentence.pregame_fallback, "Pregame update using the latest available confirmed lineups.");
   });
 
   it("never phrases a catch-up post as \"Morning\"", () => {
@@ -88,7 +88,11 @@ describe("edition sentences", () => {
 });
 
 describe("K edition caption", () => {
-  const build = (rows, languageMode = "morning") => buildKEditionCaption({ rows, languageMode, slateDate: SLATE });
+  // Defaults to "confirmed" -- most tests below assert side/line/price
+  // rendering and price-based exclusion, which only apply once lineups and
+  // odds exist. Tests that specifically want the morning (odds-optional)
+  // behavior pass languageMode explicitly.
+  const build = (rows, languageMode = "confirmed") => buildKEditionCaption({ rows, languageMode, slateDate: SLATE });
 
   it("fits 3+3 when it can and stays within the weighted budget", () => {
     const result = build([...OVERS, ...UNDERS]);
@@ -135,11 +139,11 @@ describe("K edition caption", () => {
 
   it("prints real sides, lines and prices with no fabrication or truncation", () => {
     const result = build([OVERS[0], UNDERS[0]]);
-    assert.match(result.caption, /Sandy Alcantara.*O4\.5 Ks \+120/);
-    assert.match(result.caption, /Charlie Morton.*U4\.5 Ks -125/);
+    assert.match(result.caption, /Sandy Alcantara.*O4\.5 \+120/);
+    assert.match(result.caption, /Charlie Morton.*U4\.5 -125/);
     // Nothing ambiguous: every printed line carries side, number and price.
     for (const line of result.caption.split("\n").filter((l) => l.startsWith("•"))) {
-      assert.match(line, /[OU]\d+(\.\d+)? Ks [+-]\d+$/, `ambiguous pick line: ${line}`);
+      assert.match(line, /[OU]\d+(\.\d+)? [+-]\d+$/, `ambiguous pick line: ${line}`);
     }
   });
 
@@ -175,10 +179,35 @@ describe("K edition caption", () => {
     assert.ok(result.caption.includes("Overs"));
     assert.ok(!result.caption.includes("Unders"));
   });
+
+  it("morning succeeds with null line, direction and odds -- ranks by model only", () => {
+    const rows = [1, 2, 3].map((i) => ({ pitcher: `Pitcher ${i}`, team: "NYY", strikeoutScore: 70 + i, projectedKs: 6 + i, kLine: null, direction: null, oddsOver: null, oddsUnder: null }));
+    const result = buildKEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    assert.equal(result.skipped, false);
+    assert.equal(result.captionRows.length, 3);
+    assert.ok(result.caption.includes("Top Strikeout Targets"));
+  });
+
+  it("morning never fabricates an Over/Under recommendation when no market line exists", () => {
+    const rows = [{ pitcher: "No Line Guy", team: "NYY", strikeoutScore: 80, projectedKs: 7.2, kLine: null, direction: null }];
+    const result = buildKEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    assert.ok(!/\bOVER\b/i.test(result.caption));
+    assert.ok(!/\bUNDER\b/i.test(result.caption));
+  });
+
+  it("morning caption includes the lineups/odds disclaimer", () => {
+    const rows = [{ pitcher: "Model Guy", team: "NYY", strikeoutScore: 80, projectedKs: 7.2 }];
+    const result = buildKEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    assert.ok(result.caption.includes("Lineups not confirmed. Odds may not yet be available."));
+  });
 });
 
 describe("HR edition caption", () => {
-  const build = (rows, languageMode = "morning") => buildHrEditionCaption({ rows, languageMode, slateDate: SLATE });
+  // Defaults to "confirmed" -- most tests below assert model/longshot
+  // categorization and price-based exclusion, which only apply once odds
+  // exist. Tests that specifically want the morning (odds-optional) behavior
+  // pass languageMode explicitly.
+  const build = (rows, languageMode = "confirmed") => buildHrEditionCaption({ rows, languageMode, slateDate: SLATE });
 
   it("groups model plays and longshots and fits the budget", () => {
     const rows = [
@@ -220,6 +249,20 @@ describe("HR edition caption", () => {
     assert.ok(result.caption.includes("Longshots"));
     assert.ok(result.caption.includes("Top model plays"));
   });
+
+  it("morning succeeds with null odds -- ranks by HR score only", () => {
+    const rows = [1, 2, 3].map((i) => ({ player: `Hitter ${i}`, team: "NYY", hrScore: 70 + i, hrOddsYes: null }));
+    const result = buildHrEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    assert.equal(result.skipped, false);
+    assert.equal(result.captionRows.length, 3);
+    assert.ok(result.caption.includes("Top Home Run Targets"));
+  });
+
+  it("morning caption includes the lineups/odds disclaimer", () => {
+    const rows = [{ player: "Model Hitter", team: "NYY", hrScore: 78 }];
+    const result = buildHrEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    assert.ok(result.caption.includes("Lineups not confirmed. Odds may not yet be available."));
+  });
 });
 
 describe("name compaction", () => {
@@ -239,7 +282,7 @@ describe("HR category fallback is surfaced, never silent", () => {
       { player: "Aaron Judge", team: "NYY", hrOddsYes: "+210", category: "model" },
       { player: "Joey Bart", team: "NYY", hrOddsYes: "+450", category: "longshot" },
     ];
-    const result = buildHrEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    const result = buildHrEditionCaption({ rows, languageMode: "confirmed", slateDate: SLATE });
     assert.equal(result.diagnostics.usedCategoryHeuristic, false);
     assert.equal(result.diagnostics.categoryHeuristicCount, 0);
     assert.deepEqual(result.diagnostics.categoryHeuristicPlayers, []);
@@ -251,7 +294,7 @@ describe("HR category fallback is surfaced, never silent", () => {
       { player: "Joey Bart", team: "NYY", hrOddsYes: "+450" },              // no category
       { player: "Pete Alonso", team: "NYM", hrOddsYes: "+260", category: "model" },
     ];
-    const result = buildHrEditionCaption({ rows, languageMode: "morning", slateDate: SLATE });
+    const result = buildHrEditionCaption({ rows, languageMode: "confirmed", slateDate: SLATE });
     assert.equal(result.diagnostics.usedCategoryHeuristic, true);
     assert.equal(result.diagnostics.categoryHeuristicCount, 2);
     assert.deepEqual(result.diagnostics.categoryHeuristicPlayers.sort(), ["Aaron Judge", "Joey Bart"]);
