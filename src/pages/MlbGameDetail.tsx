@@ -1173,7 +1173,7 @@ function MlbSlateAnalyzer({
     });
   };
   return (
-    <section id="schedule" className="space-y-3">
+    <section id="schedule" className="mlb-matchup-slate space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -1205,8 +1205,9 @@ function MlbSlateAnalyzer({
         <span className="shrink-0 text-xs font-semibold text-slate-400">{games.length} games</span>
       </div>
 
-      {/* 2 cards per row on lg+, 1 on mobile */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      {/* 2 cards per row once the slate itself has room (see mlb-matchup-slate/
+          mlb-matchup-grid container query in index.css), 1 on mobile/narrow desktop */}
+      <div className="mlb-matchup-grid grid grid-cols-1 gap-3">
         {games.map((game) => {
           const detail = detailPreviews[game.gamePk];
           const edges = getSlateEdgeSummary(detail);
@@ -1654,7 +1655,7 @@ function MlbSlateAnalyzer({
                         const bothReal = isRealOdds(awayAmerican) && isRealOdds(homeAmerican);
 
                         return (
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.45fr)_minmax(150px,0.75fr)] sm:gap-4">
+                            <div className="mlb-matchup-footer-grid grid grid-cols-1 gap-3">
                               <div className="min-w-0">
                                 <div className="mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Top Model Drivers</div>
                                 {driverRows.length ? (
@@ -1670,7 +1671,7 @@ function MlbSlateAnalyzer({
                                         <div
                                           key={factor.label}
                                           title={tooltip}
-                                          className="grid h-6 grid-cols-[68px_16px_minmax(0,1fr)_16px_54px] items-center gap-1.5"
+                                          className="grid min-h-6 grid-cols-[68px_16px_minmax(0,1fr)_16px_minmax(40px,auto)] items-center gap-1.5"
                                         >
                                           <span className="truncate text-[9px] font-semibold text-slate-500">{factor.label}</span>
                                           <span className="text-center text-[8px] font-bold text-slate-400">{homeAbbr}</span>
@@ -1693,7 +1694,7 @@ function MlbSlateAnalyzer({
                                             )}
                                           </div>
                                           <span className="text-center text-[8px] font-bold text-slate-400">{awayAbbr}</span>
-                                          <span className="justify-self-end whitespace-nowrap text-[9px] font-extrabold tabular-nums text-slate-700">{contributionLabel}</span>
+                                          <span className="justify-self-end whitespace-nowrap text-right text-[9px] font-extrabold tabular-nums text-slate-700">{contributionLabel}</span>
                                         </div>
                                       );
                                     })}
@@ -1703,20 +1704,20 @@ function MlbSlateAnalyzer({
                                 )}
                               </div>
 
-                              <div className="border-t border-slate-200 pt-2.5 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                              <div className="mlb-matchup-footer-market min-w-0 border-t border-slate-200 pt-2.5">
                                 <div className="mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Market Summary</div>
-                                <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5">
+                                <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5">
                                   <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
-                                  <span className="justify-self-end whitespace-nowrap rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold leading-none text-white">{edges.total}</span>
+                                  <span className="max-w-full justify-self-end whitespace-nowrap rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold leading-none text-white">{edges.total}</span>
 
                                   <div className="hidden md:contents">
                                     <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400" title={ML_EDGE_METHODOLOGY}>Edge Strength</span>
                                     {mlPickAbbr && mlPickColor ? (
-                                      <span className="justify-self-end whitespace-nowrap rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-none text-white" style={{ backgroundColor: mlPickColor }} title={ML_EDGE_METHODOLOGY}>
+                                      <span className="max-w-full justify-self-end whitespace-normal break-words text-right rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-tight text-white" style={{ backgroundColor: mlPickColor }} title={ML_EDGE_METHODOLOGY}>
                                         {mlPickAbbr} {getEdgeTierLabel(mlEdge!.confidence)}
                                       </span>
                                     ) : mlEdge ? (
-                                      <span className="justify-self-end whitespace-nowrap rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold leading-none text-slate-500" title={ML_EDGE_METHODOLOGY}>Even</span>
+                                      <span className="max-w-full justify-self-end whitespace-normal break-words text-right rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold leading-tight text-slate-500" title={ML_EDGE_METHODOLOGY}>Even</span>
                                     ) : (
                                       <span className="justify-self-end text-[10px] font-semibold text-slate-400" title={ML_EDGE_METHODOLOGY}>—</span>
                                     )}
@@ -1725,7 +1726,7 @@ function MlbSlateAnalyzer({
                                   <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket</span>
                                   {pmAgreement ? (
                                     <span className={cn(
-                                      "justify-self-end whitespace-nowrap rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-none",
+                                      "max-w-full justify-self-end whitespace-normal break-words text-right rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-tight",
                                       pmAgreement.aligned
                                         ? "bg-emerald-100 text-emerald-700"
                                         : "bg-amber-100 text-amber-700",
@@ -1738,7 +1739,7 @@ function MlbSlateAnalyzer({
 
                                   <span className="self-start pt-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-400">{bothReal ? "Line" : "Win%"}</span>
                                   {awayAmerican && homeAmerican ? (
-                                    <div className="justify-self-end text-right text-[9px] font-bold leading-4 text-slate-600">
+                                    <div className="max-w-full justify-self-end text-right text-[9px] font-bold leading-4 text-slate-600">
                                       <div className={mlPickAbbr === awayAbbr ? "text-slate-900" : undefined}>{awayAbbr} {awayAmerican}</div>
                                       <div className={mlPickAbbr === homeAbbr ? "text-slate-900" : undefined}>{homeAbbr} {homeAmerican}</div>
                                     </div>
@@ -1761,7 +1762,7 @@ function MlbSlateAnalyzer({
                     data-pm-edge-team={cardMlPickAbbr ?? ""}
                     data-pm-edge-value={cardPmEdgeLabel}
                     className={cn(
-                      "scroll-mt-28 flex w-full flex-col rounded-xl border transition-all hover:shadow-md",
+                      "mlb-matchup-card scroll-mt-28 flex w-full flex-col rounded-xl border transition-all hover:shadow-md",
                       statusCategory === "in-progress"
                         ? "border-green-300 bg-green-50/40 shadow-sm"
                         : statusCategory === "final"
