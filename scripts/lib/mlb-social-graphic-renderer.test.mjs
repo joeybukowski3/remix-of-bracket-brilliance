@@ -222,6 +222,18 @@ describe("deterministic production SVG", () => {
     expect(rendered.map((row) => row.pitcher)).toEqual(["Small Over", "Large Under", "Medium Over", "Fourth", "Fifth"]);
   });
 
+  it("a morning row with no market line renders a neutral model-pick badge, never a fabricated Over/Under or literal 'null'", () => {
+    const rows = fiveKRows();
+    rows[0] = kRow(1, { kLine: undefined, oddsOver: undefined, oddsUnder: undefined, side: undefined, projectionEdge: undefined });
+    const svg = renderMlbSocialSvg({ kind: "k", slateDate: "2026-07-13", rows });
+    const row = firstRowSlice(svg);
+    expect(row).toContain("MODEL PICK");
+    expect(row).not.toMatch(/\bnull\b/);
+    expect(row).not.toContain('fill="#13A66A"'); // not colored as Over
+    expect(row).not.toContain('fill="#1D63B3"'); // not colored as Under
+    expect(row).toContain('fill="#0F1B33"'); // neutral navy badge instead
+  });
+
   it("Over and Under badges use visibly distinct, restrained colors", () => {
     const rows = fiveKRows();
     rows[0] = kRow(1, { side: "OVER", projectionEdge: 1.5 });

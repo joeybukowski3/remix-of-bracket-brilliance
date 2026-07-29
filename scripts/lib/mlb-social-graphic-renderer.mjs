@@ -448,8 +448,11 @@ function renderHomeRunRow(row, index, resolveLogo, top) {
 function renderStrikeoutRow(row, index, resolveLogo, top) {
   const middle = top + SOCIAL_GRAPHIC_GEOMETRY.rowHeight / 2;
   const indicators = new Set(getStrikeoutIndicators(row));
-  const difference = row.projectionDifference;
-  const absoluteDifference = Math.abs(difference);
+  // A morning row (no market strikeout line yet) has recommendedSide=null --
+  // never coerce that into an Over/Under badge or literal "null" text.
+  const hasLine = row.recommendedSide === "OVER" || row.recommendedSide === "UNDER";
+  const difference = hasLine ? row.projectionDifference : null;
+  const absoluteDifference = difference == null ? 0 : Math.abs(difference);
   const isOver = row.recommendedSide === "OVER";
   let svg = rowMetadata("k", row, index);
   if (index % 2 === 0) svg += `<rect x="56" y="${top}" width="1488" height="112" fill="${COLORS.zebra}"/>`;
@@ -465,16 +468,21 @@ function renderStrikeoutRow(row, index, resolveLogo, top) {
   const opponentLine = projectedIP != null ? `vs ${row.opponent || "TBD"}  ·  ${projectedIP.toFixed(1)} IP` : `vs ${row.opponent || "TBD"}`;
   svg += text(200, top + 82, truncateText(opponentLine, 40), { size: 20, weight: 400, fill: COLORS.gray, anchor: "start", tabular: false });
   const badgeX = 577;
-  svg += `<rect x="${badgeX}" y="${middle - 30}" width="166" height="60" rx="12" fill="${isOver ? COLORS.green : COLORS.under}"/>`;
-  svg += triangle(badgeX + 17, middle - 4, isOver ? "up" : "down", 7, "#fff");
-  svg += text(670, middle - 4, `${row.recommendedSide} ${formatMetric(row.marketStrikeoutLine)}`, { size: 23, weight: 800, fill: "#fff" });
-  svg += text(670, middle + 20, row.recommendedOdds ?? "N/A", { size: 16, weight: 600, fill: "rgba(255,255,255,.88)" });
+  svg += `<rect x="${badgeX}" y="${middle - 30}" width="166" height="60" rx="12" fill="${hasLine ? (isOver ? COLORS.green : COLORS.under) : COLORS.navy}"/>`;
+  if (hasLine) {
+    svg += triangle(badgeX + 17, middle - 4, isOver ? "up" : "down", 7, "#fff");
+    svg += text(670, middle - 4, `${row.recommendedSide} ${formatMetric(row.marketStrikeoutLine)}`, { size: 23, weight: 800, fill: "#fff" });
+    svg += text(670, middle + 20, row.recommendedOdds ?? "N/A", { size: 16, weight: 600, fill: "rgba(255,255,255,.88)" });
+  } else {
+    svg += text(670, middle - 4, "MODEL PICK", { size: 23, weight: 800, fill: "#fff" });
+    svg += text(670, middle + 20, "No line yet", { size: 16, weight: 600, fill: "rgba(255,255,255,.88)" });
+  }
   svg += `<text x="880" y="${middle - 6}" font-size="21" font-weight="800" fill="${COLORS.navy}" text-anchor="middle" style="font-variant-numeric:tabular-nums">${escapeXml(formatMetric(row.projectedStrikeouts))}<tspan font-size="12" font-weight="700" fill="${COLORS.gray}"> PROJ</tspan></text>`;
   svg += `<text x="880" y="${middle + 18}" font-size="18" font-weight="700" fill="${COLORS.gray}" text-anchor="middle" style="font-variant-numeric:tabular-nums">${escapeXml(formatMetric(row.marketStrikeoutLine))}<tspan font-size="11" font-weight="700" fill="${COLORS.faint}"> LINE</tspan></text>`;
   const edgeSize = absoluteDifference >= 1.5 ? 38 : absoluteDifference >= 1 ? 32 : 28;
-  const edgeColor = difference > 0 ? COLORS.green : COLORS.negative;
+  const edgeColor = difference == null ? COLORS.gray : difference > 0 ? COLORS.green : COLORS.negative;
   if (indicators.has("projection")) svg += icon("projection", 1008, middle + 11, 30);
-  else svg += triangle(1034, middle - 3, difference > 0 ? "up" : "down", 10, edgeColor);
+  else if (difference != null) svg += triangle(1034, middle - 3, difference > 0 ? "up" : "down", 10, edgeColor);
   svg += text(1136, middle + edgeSize * 0.34, formatProjectionDifference(difference), { size: edgeSize, weight: 800, fill: edgeColor, anchor: "end" });
   const style = scoreStyle(row.kScore, { green: 85, gold: 80, navy: 70 });
   svg += `<rect x="1357" y="${middle - 27}" width="126" height="54" rx="11" fill="${style.fill}"/>`;
