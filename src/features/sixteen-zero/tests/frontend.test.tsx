@@ -39,18 +39,14 @@ describe("16-0 no-persistence frontend", () => {
         <SixteenZeroPage />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("heading", { level: 1, name: "16-0" })).toBeInTheDocument();
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /start draft/i }));
-    });
     expect(
-      screen.getByRole("heading", { level: 1, name: "Pick your draft position" }),
+      screen.getByRole("heading", { level: 1, name: "Can You Build the Perfect Fantasy Team?" }),
     ).toBeInTheDocument();
     await act(async () => {
-      fireEvent.click(screen.getByText("Random draft position"));
+      fireEvent.click(screen.getByRole("button", { name: /^draft position 1$/i }));
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /start draft from slot/i }));
+      fireEvent.click(screen.getByRole("button", { name: /start draft/i }));
     });
     expect(screen.getByRole("heading", { level: 1, name: "Available players" })).toBeInTheDocument();
     expect(screen.getAllByText(/Your pick: Round 1, Pick 1/).length).toBeGreaterThan(0);
