@@ -11,7 +11,8 @@ describe("landing hero results preview", () => {
       </MemoryRouter>,
     );
     expect(screen.queryByText("Draft Room Preview")).not.toBeInTheDocument();
-    expect(screen.getByText("Season Results Preview")).toBeInTheDocument();
+    expect(screen.getByText("Example Season Summary")).toBeInTheDocument();
+    expect(screen.getByText("Sample result · not an actual result")).toBeInTheDocument();
   });
 
   it("shows an 11-3 record and Eliminated in Semifinal with a red X icon", () => {
