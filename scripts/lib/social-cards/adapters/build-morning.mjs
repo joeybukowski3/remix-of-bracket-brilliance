@@ -1,16 +1,20 @@
 /**
  * Morning MLB daily model card adapter.
  *
- * Maps the frozen production HR selection (hr-props-best-bets.json.bestBets,
- * joined to hr-props-raw.json.batters/.games for hrScore/venueSide) and a
- * deterministic top-N-by-existing-score K selection (hr-props-raw.json.pitchers,
- * ordered by the pipeline's own precomputed `kVs`) into the normalized morning
- * card contract consumed by scripts/lib/social-cards/mlb.mjs::normalizeMorning.
+ * HR: maps the frozen production HR selection (hr-props-best-bets.json.bestBets,
+ * joined to hr-props-raw.json.batters/.games for hrScore/venueSide). Preserves
+ * the frozen bestBets order exactly; never reranks, filters, or pads it.
  *
- * Never attaches odds/side/line/edge. Never reranks the frozen HR order. See
- * NOTES-live-adapters.md and docs/social-cards.md for why there is no frozen
- * "best K picks" artifact and why a documented top-N-by-kVs sort is used
- * instead for K rows only.
+ * K: requires an explicit, already-selected K-plan artifact supplied by the
+ * caller (see resolve-source.mjs's optional --k-plan). raw.pitchers is NEVER
+ * read here -- it is the full, unranked production pitcher pool, and no
+ * frozen "already selected" K artifact exists anywhere in this repository
+ * today (see docs/social-cards.md). Building a top-N-by-score ranking from
+ * that pool inside the adapter would be candidate selection, which this
+ * adapter must never perform. When no K-plan is supplied, K rows are
+ * MORNING_K_SOURCE_UNAVAILABLE: generation blocks by default, or produces an
+ * explicit partial preview (empty strikeouts) only when the caller passes
+ * `preview: true`.
  */
 import { deriveMorningSnapshot } from '../mlb.mjs';
 import {
@@ -24,6 +28,7 @@ import { formatEasternClock } from './mlb-time.mjs';
 
 export const MAX_HR_ROWS = 6;
 export const MAX_K_ROWS = 5;
+export const MORNING_K_SOURCE_UNAVAILABLE = 'MORNING_K_SOURCE_UNAVAILABLE';
 
 function mapHomeRuns(bestBets, raw, diagnostics) {
   const gameLookup = buildGameLookup(raw);
@@ -51,43 +56,62 @@ function mapHomeRuns(bestBets, raw, diagnostics) {
   return homeRuns;
 }
 
-function mapStrikeouts(raw, diagnostics) {
+/**
+ * Maps an already-selected, already-ordered K-plan artifact into card rows.
+ * No filtering, no sorting, no ranking, no raw.pitchers fallback -- only a
+ * cap at renderer capacity and a field-shape mapping, exactly like
+ * mapHomeRuns does for the frozen bestBets order above.
+ *
+ * @param {object|null} kPlan  externally supplied { strikeouts: [...] } artifact,
+ *   or null when no K-plan source was supplied to the adapter.
+ * @param {object} raw  parsed hr-props-raw.json -- used ONLY for raw.games
+ *   (venue-side lookup by gameKey), never for raw.pitchers.
+ */
+function mapStrikeouts(kPlan, raw, diagnostics) {
+  if (!kPlan) {
+    diagnostics.warnings.push(MORNING_K_SOURCE_UNAVAILABLE);
+    return [];
+  }
+
   const gameLookup = buildGameLookup(raw);
-  const pitchers = Array.isArray(raw?.pitchers) ? raw.pitchers : [];
+  const rows = Array.isArray(kPlan.strikeouts) ? kPlan.strikeouts : [];
 
-  const starters = pitchers.filter((pitcher) => pitcher?.role === 'starter' && toFiniteNumber(pitcher?.kVs) !== null);
-
-  if (!starters.length) diagnostics.warnings.push('NO_STARTER_K_ROWS_AVAILABLE');
-
-  const sorted = [...starters].sort((left, right) => {
-    const delta = toFiniteNumber(right.kVs) - toFiniteNumber(left.kVs);
-    if (delta !== 0) return delta;
-    return String(left.pitcher ?? '').localeCompare(String(right.pitcher ?? ''), 'en');
-  });
-
-  return sorted.slice(0, MAX_K_ROWS).map((pitcher, index) => ({
-    rank: index + 1,
-    pitcher: pitcher.pitcher,
-    team: pitcher.team,
-    opponent: pitcher.opponent,
-    venueSide: venueSideForRow(pitcher, gameLookup),
-    kScore: toFiniteNumber(pitcher.kVs),
-    projectedK: toFiniteNumber(pitcher.projectedKs),
+  return rows.slice(0, MAX_K_ROWS).map((row, index) => ({
+    rank: row.rank ?? index + 1,
+    pitcher: row.pitcher,
+    team: row.team,
+    opponent: row.opponent,
+    venueSide: row.venueSide ?? venueSideForRow(row, gameLookup),
+    kScore: toFiniteNumber(row.kScore),
+    projectedK: toFiniteNumber(row.projectedK),
   }));
 }
 
 /**
  * @param {object} params
- * @param {object} params.raw       parsed hr-props-raw.json
- * @param {object} params.bestBets  parsed hr-props-best-bets.json
- * @param {string} params.slateDate YYYY-MM-DD
- * @returns {{ data: object, diagnostics: { droppedHomeRuns: Array<object>, warnings: Array<string> } }}
+ * @param {object} params.raw          parsed hr-props-raw.json
+ * @param {object} params.bestBets     parsed hr-props-best-bets.json
+ * @param {object|null} [params.kPlan] parsed, already-validated K-plan artifact
+ *   (see resolve-source.mjs). null when no --k-plan was supplied.
+ * @param {string} params.slateDate    YYYY-MM-DD
+ * @param {boolean} [params.preview]   explicit opt-in to receive a partial card
+ *   (empty strikeouts) when no K-plan is available. Without this, a missing
+ *   K-plan blocks generation entirely.
+ * @returns {{ data: object|null, readiness: object, diagnostics: { droppedHomeRuns: Array<object>, warnings: Array<string> } }}
  */
-export function buildMlbDailyMorningCardInput({ raw, bestBets, slateDate }) {
+export function buildMlbDailyMorningCardInput({ raw, bestBets, kPlan = null, slateDate, preview = false }) {
   const diagnostics = { droppedHomeRuns: [], warnings: [] };
 
   const homeRuns = mapHomeRuns(bestBets, raw, diagnostics);
-  const strikeouts = mapStrikeouts(raw, diagnostics);
+  const strikeouts = mapStrikeouts(kPlan, raw, diagnostics);
+
+  if (!kPlan && !preview) {
+    return {
+      data: null,
+      readiness: { ready: false, reasons: [MORNING_K_SOURCE_UNAVAILABLE] },
+      diagnostics,
+    };
+  }
 
   const gamesModeled = Array.isArray(raw?.games) ? raw.games.length : null;
   if (gamesModeled === null) diagnostics.warnings.push('GAMES_MODELED_UNAVAILABLE');
@@ -118,11 +142,16 @@ export function buildMlbDailyMorningCardInput({ raw, bestBets, slateDate }) {
     slateDate,
     generatedAt: new Date().toISOString(),
     updatedTimeEt: lastRefresh ?? '—',
+    preview: Boolean(preview),
     homeRuns,
     strikeouts,
     snapshot,
     links: { website: 'joeknowsball.com', xHandle: '@_joeknowsball_' },
   };
 
-  return { data, diagnostics };
+  const readiness = kPlan
+    ? { ready: true, reasons: [] }
+    : { ready: false, reasons: [MORNING_K_SOURCE_UNAVAILABLE] };
+
+  return { data, readiness, diagnostics };
 }

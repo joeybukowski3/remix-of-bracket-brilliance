@@ -6,6 +6,14 @@
  * paths and match the requested slate date. Never falls back to
  * scripts/fixtures/* -- a missing or mismatched source is a hard failure,
  * not a silent substitution.
+ *
+ * Also optionally validates a K-plan artifact (an already-selected,
+ * already-ordered set of strikeout rows) when a kPlanPath is supplied. No
+ * such artifact is produced anywhere in this repository yet -- see
+ * docs/social-cards.md for the proposed future schema/producer -- so kPlan
+ * resolves to null unless the caller explicitly supplies one, and the K-plan
+ * artifact's own `edition`/`slateDate` fields are checked the same way the
+ * HR sources are.
  */
 import { existsSync, readFileSync } from 'node:fs';
 
@@ -36,9 +44,12 @@ export function loadJsonFile(filePath, label) {
  * @param {string} params.slateDate  YYYY-MM-DD
  * @param {string} params.rawPath    path to hr-props-raw.json
  * @param {string} params.bestBetsPath  path to hr-props-best-bets.json
- * @returns {{ raw: object, bestBets: object }}
+ * @param {string|null} [params.kPlanPath]  optional path to an already-selected
+ *   K-plan artifact ({ edition, slateDate, strikeouts: [...] }). Omit to leave
+ *   kPlan as null (no source available).
+ * @returns {{ raw: object, bestBets: object, kPlan: object|null }}
  */
-export function resolveMlbDailyCardSource({ edition, slateDate, rawPath, bestBetsPath }) {
+export function resolveMlbDailyCardSource({ edition, slateDate, rawPath, bestBetsPath, kPlanPath = null }) {
   if (!VALID_EDITIONS.has(edition)) {
     throw new Error(`Unknown edition "${edition}". Expected "morning" or "confirmed".`);
   }
@@ -58,5 +69,18 @@ export function resolveMlbDailyCardSource({ edition, slateDate, rawPath, bestBet
     throw new Error(`hr-props-best-bets slate date "${bestBetsDate || 'missing'}" does not match requested slate date "${slateDate}"`);
   }
 
-  return { raw, bestBets };
+  let kPlan = null;
+  if (kPlanPath) {
+    kPlan = loadJsonFile(kPlanPath, 'k-plan');
+    const kPlanEdition = String(kPlan?.edition ?? '');
+    if (kPlanEdition !== edition) {
+      throw new Error(`k-plan edition "${kPlanEdition || 'missing'}" does not match requested edition "${edition}"`);
+    }
+    const kPlanDate = String(kPlan?.slateDate ?? '');
+    if (kPlanDate !== slateDate) {
+      throw new Error(`k-plan slate date "${kPlanDate || 'missing'}" does not match requested slate date "${slateDate}"`);
+    }
+  }
+
+  return { raw, bestBets, kPlan };
 }
