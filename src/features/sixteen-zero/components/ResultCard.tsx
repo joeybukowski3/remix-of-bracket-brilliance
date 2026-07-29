@@ -3,9 +3,9 @@ import { Fragment, useId, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/Logo";
-import { SIMULATION_PLAYERS } from "../data";
-import { computeDraftPickValueExtremes } from "../engine/draftPickValue";
-import type { DraftPickValue } from "../engine/draftPickValue";
+import { DEFENSE_POSITION_RANKS, SIMULATION_PLAYERS } from "../data";
+import { computePickOutcomeExtremes } from "../engine/draftPickValue";
+import type { PickOutcome } from "../engine/draftPickValue";
 import type { RosterScoringProfile } from "../engine/rosterScoringProfile";
 import { NflTeamLogo } from "./NflTeamLogo";
 import { SixteenZeroHeader } from "./SixteenZeroHeader";
@@ -56,7 +56,7 @@ function DraftPickTile({
 }: {
   label: string;
   icon: ReactNode;
-  pick: DraftPickValue;
+  pick: PickOutcome;
 }) {
   return (
     <div className="rounded-xl border border-slate-950/15 bg-white/40 px-3 py-2.5 text-left backdrop-blur">
@@ -66,7 +66,10 @@ function DraftPickTile({
       </p>
       <p className="mt-1 truncate text-[0.9375rem] font-black text-slate-950">{pick.playerName}</p>
       <p className="mt-0.5 text-[0.6875rem] text-slate-700">
-        {pick.team} · Round {pick.round}, Pick {pick.overallPick} · Consensus #{pick.consensusOverallRank}
+        {pick.team} · Round {pick.round}, Pick {pick.overallPick}
+      </p>
+      <p className="mt-0.5 text-[0.6875rem] text-slate-700">
+        Sim {pick.simulatedContributionPPG.toFixed(1)} PPG · Proj {pick.projectedContributionPPG.toFixed(1)} PPG
       </p>
     </div>
   );
@@ -434,7 +437,13 @@ export function ResultCard({
     result.playoffResult === "League Champion";
 
   const pickExtremes = draftSelections
-    ? computeDraftPickValueExtremes(draftSelections, draftSlot, SIMULATION_PLAYERS)
+    ? computePickOutcomeExtremes(
+        draftSelections,
+        draftSlot,
+        SIMULATION_PLAYERS,
+        result.schedule,
+        DEFENSE_POSITION_RANKS,
+      )
     : null;
 
   return (
@@ -476,12 +485,12 @@ export function ResultCard({
               {pickExtremes && (
                 <>
                   <DraftPickTile
-                    label="Best pick"
+                    label="Best Pick This Run"
                     icon={<TrendingUp className="h-3 w-3" aria-hidden="true" />}
                     pick={pickExtremes.best}
                   />
                   <DraftPickTile
-                    label="Worst pick"
+                    label="Worst Pick This Run"
                     icon={<TrendingDown className="h-3 w-3" aria-hidden="true" />}
                     pick={pickExtremes.worst}
                   />
