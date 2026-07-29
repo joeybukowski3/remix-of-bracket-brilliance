@@ -1,10 +1,10 @@
 {
   "date": "2026-07-29",
-  "generatedAt": "2026-07-29T16:00:09.770Z",
+  "generatedAt": "2026-07-29T16:55:18.628Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features a pronounced HR-friendly environment at Dodger Stadium (1.10 PF) and Rate Field (1.07 PF), while Angel Stadium (1.02 PF) and Citi Field (1.06 PF) offer modest boosts. Left-handed pitching dominates the top matchups, with Lauer, Rogers, and Manaea all on the slate, creating platoon advantages for right-handed power bats. Warm, dry conditions across the West Coast and Midwest are expected to keep the ball flying.",
-    "modelNote": "The model is heavily weighting barrel rate, hard-hit rate, and recent HR volume, elevating Alvarez to the top spot due to his elite 18.8% barrel rate and 53.9% hard-hit rate against a righty in a slightly favorable park."
+    "slateOverview": "Today's slate features a handful of hitter-friendly parks with elevated park factors, notably Dodger Stadium (1.1) and Rate Field (1.07), while Comerica Park (0.95) and PNC Park (0.9) suppress power. Pitcher matchups tilt toward opportunity for Alvarez against Rodriguez and Canzone against Lauer, with several lefty-on-lefty or righty-on-righty edges creating platoon advantages.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and recent HR volume over raw park factors, elevating Alvarez to the top spot despite a neutral venue while still rewarding Canzone and Valencia for their elevated barrel and hard-hit marks."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "barrel=18.8%",
         "park=1.02"
       ],
-      "hrOddsYes": "+196",
-      "marketImpliedProbability": 0.33783783783783783,
+      "hrOddsYes": "+175",
+      "marketImpliedProbability": 0.36363636363636365,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -65,40 +65,40 @@
       "hrValueEdge": null
     },
     {
-      "player": "Drake Baldwin",
-      "team": "ATL",
-      "opponent": "NYM",
-      "opposingPitcher": "Sean Manaea",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=56.4",
-        "Hard Hit%=51.2"
-      ],
-      "bullets": [
-        "HR score 67.7 (#4)",
-        "Pitcher HR VS 56.4 at park 1.06"
-      ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "James Wood",
       "team": "WSH",
       "opponent": "TOR",
       "opposingPitcher": "Trey Yesavage",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "Hard Hit%=58.7",
-        "Pitcher HR VS=39.3"
+        "Pitcher HR VS=40.3"
       ],
       "bullets": [
-        "HR score 67.7 (#5)",
-        "Pitcher HR VS 39.3 at park 0.98"
+        "HR score 67.9 (#4)",
+        "Pitcher HR VS 40.3 at park 0.98"
       ],
       "hrOddsYes": "+310",
       "marketImpliedProbability": 0.24390243902439024,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "NYM",
+      "opposingPitcher": "Sean Manaea",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=56.9",
+        "Hard Hit%=51.2"
+      ],
+      "bullets": [
+        "HR score 67.7 (#5)",
+        "Pitcher HR VS 56.9 at park 1.06"
+      ],
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -109,7 +109,7 @@
       "team": "WSH",
       "opponent": "TOR",
       "opposingPitcher": "Trey Yesavage",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "barrel=21.8%",
         "HH=58.7%"
@@ -137,8 +137,8 @@
         "barrel=14%",
         "park=0.98"
       ],
-      "hrOddsYes": "+280",
-      "marketImpliedProbability": 0.2631578947368421,
+      "hrOddsYes": "+285",
+      "marketImpliedProbability": 0.2597402597402597,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,12 +149,12 @@
       "opposingPitcher": "Davis Martin",
       "hrScoreRank": 7,
       "topStats": [
-        "Pitcher HR VS=52.6",
+        "Pitcher HR VS=53.3",
         "Hard Hit%=48.0"
       ],
       "bullets": [
-        "HR score 67.3 (#7)",
-        "Pitcher HR VS 52.6 at park 1.07"
+        "HR score 67.4 (#7)",
+        "Pitcher HR VS 53.3 at park 1.07"
       ],
       "hrOddsYes": "+300",
       "marketImpliedProbability": 0.25,
@@ -208,12 +208,12 @@
       "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 16,
       "topStats": [
-        "Pitcher HR VS=92.4",
+        "Pitcher HR VS=92.3",
         "Hard Hit%=44.2"
       ],
       "bullets": [
         "HR score 61.0 (#16)",
-        "Pitcher HR VS 92.4 at park 1.02"
+        "Pitcher HR VS 92.3 at park 1.02"
       ],
       "hrOddsYes": "+600",
       "marketImpliedProbability": 0.14285714285714285,
@@ -227,12 +227,12 @@
       "opposingPitcher": "Grayson Rodriguez",
       "hrScoreRank": 12,
       "topStats": [
-        "Pitcher HR VS=92.4",
+        "Pitcher HR VS=92.3",
         "Hard Hit%=40.1"
       ],
       "bullets": [
         "HR score 62.3 (#12)",
-        "Pitcher HR VS 92.4 at park 1.02"
+        "Pitcher HR VS 92.3 at park 1.02"
       ],
       "hrOddsYes": "+540",
       "marketImpliedProbability": 0.15625,
