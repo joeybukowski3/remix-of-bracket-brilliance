@@ -6,6 +6,8 @@ const REGULAR_SEASON_WEEKS = 14;
 const DRAFT_VALUE_ADJUSTMENT_DIVISOR = 20;
 const DRAFT_VALUE_ADJUSTMENT_CLAMP = 3;
 
+const WORST_PICK_ELIGIBLE_POSITIONS = new Set(["QB", "RB", "WR", "TE"]);
+
 export type PickOutcome = {
   playerId: string;
   playerName: string;
@@ -96,10 +98,17 @@ export function computePickOutcomeExtremes(
 
   if (outcomes.length === 0) return null;
 
+  const worstEligibleOutcomes = outcomes.filter((outcome) => {
+    const position = playerById.get(outcome.playerId)?.position;
+    return position !== undefined && WORST_PICK_ELIGIBLE_POSITIONS.has(position);
+  });
+
+  if (worstEligibleOutcomes.length === 0) return null;
+
   const best = outcomes.reduce((current, candidate) =>
     candidate.pickOutcomeScore > current.pickOutcomeScore ? candidate : current,
   );
-  const worst = outcomes.reduce((current, candidate) =>
+  const worst = worstEligibleOutcomes.reduce((current, candidate) =>
     candidate.pickOutcomeScore < current.pickOutcomeScore ? candidate : current,
   );
 
