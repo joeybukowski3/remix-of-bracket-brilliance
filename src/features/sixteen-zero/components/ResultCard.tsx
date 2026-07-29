@@ -8,6 +8,7 @@ import { computePickOutcomeExtremes } from "../engine/draftPickValue";
 import type { PickOutcome } from "../engine/draftPickValue";
 import type { RosterScoringProfile } from "../engine/rosterScoringProfile";
 import { NflTeamLogo } from "./NflTeamLogo";
+import { ShareResultsButton } from "./ShareResultsButton";
 import { SixteenZeroHeader } from "./SixteenZeroHeader";
 import type {
   DraftSelection,
@@ -462,6 +463,10 @@ export function ResultCard({
               <span className="text-[0.6875rem] font-black uppercase tracking-[0.24em] opacity-70">
                 JoeKnowsBall
               </span>
+            </div>
+
+            <div className="mt-4 flex justify-center">
+              <ShareResultsButton result={result} bestPick={pickExtremes?.best} />
             </div>
 
             <Trophy className="mx-auto mt-5 h-8 w-8" />
