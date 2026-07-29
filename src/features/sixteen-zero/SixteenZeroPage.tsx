@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DraftRoom } from "./components/DraftRoom";
-import { DraftSlotSelector } from "./components/DraftSlotSelector";
 import { LandingHero } from "./components/LandingHero";
 import { ResultCard } from "./components/ResultCard";
 import { SeasonSimulation } from "./components/SeasonSimulation";
@@ -14,7 +13,7 @@ import { useDraftGame } from "./hooks/useDraftGame";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import type { SeasonResult } from "./types";
 
-type Screen = "landing" | "slot-select" | "draft" | "simulating" | "result";
+type Screen = "landing" | "draft" | "simulating" | "result";
 
 export default function SixteenZeroPage() {
   const game = useDraftGame();
@@ -31,10 +30,10 @@ export default function SixteenZeroPage() {
     path: "/16-0",
   });
 
-  const openSlotSelection = useCallback(() => {
+  const resetToLanding = useCallback(() => {
     setSeasonResult(null);
     setScoringProfile(null);
-    setScreen("slot-select");
+    setScreen("landing");
   }, []);
 
   const startDraft = useCallback(
@@ -101,7 +100,6 @@ export default function SixteenZeroPage() {
     seasonResult,
   ]);
 
-  if (screen === "slot-select") return <DraftSlotSelector onConfirm={startDraft} />;
   if (screen === "draft") return <DraftRoom game={game} />;
   if (screen === "simulating" && seasonResult) {
     return <SeasonSimulation result={seasonResult} onComplete={finishAnimation} />;
@@ -113,13 +111,13 @@ export default function SixteenZeroPage() {
         draftSlot={game.draftSlot ?? 1}
         scoringProfile={scoringProfile}
         draftSelections={game.selections}
-        onDraftAgain={openSlotSelection}
+        onDraftAgain={resetToLanding}
       />
     );
   }
   return (
     <LandingHero
-      onStart={openSlotSelection}
+      onStart={startDraft}
       initializing={game.phase === "initializing"}
     />
   );

@@ -241,4 +241,102 @@ describe("computePickOutcomeExtremes", () => {
   it("returns null when there are no picks for the given slot", () => {
     expect(computePickOutcomeExtremes([], 1, [], [], {})).toBeNull();
   });
+
+  it("ignores a kicker with the lowest outcome score for Worst Pick", () => {
+    const playerK = buildTestPlayer({
+      id: "player-k",
+      position: "K",
+      blendedPPG: 500,
+      consensusOverallRank: 200,
+    });
+    const universe = [...playerUniverse, playerK];
+    const selectionsWithKicker = [
+      ...selections,
+      { overallPick: 150, round: 15, slot: 1, playerId: "player-k", source: "user" as const },
+    ];
+    const schedule = buildSchedule();
+    schedule[0].boxScore!.userLineup.push(buildLineupEntry("player-k", 0));
+
+    const extremes = computePickOutcomeExtremes(selectionsWithKicker, 1, universe, schedule, {})!;
+    expect(extremes).not.toBeNull();
+    expect(extremes.worst.playerId).not.toBe("player-k");
+    expect(extremes.worst.playerId).toBe("player-w");
+  });
+
+  it("ignores a defense with the lowest outcome score for Worst Pick", () => {
+    const playerD = buildTestPlayer({
+      id: "player-d",
+      position: "DST",
+      blendedPPG: 500,
+      consensusOverallRank: 200,
+    });
+    const universe = [...playerUniverse, playerD];
+    const selectionsWithDefense = [
+      ...selections,
+      { overallPick: 150, round: 15, slot: 1, playerId: "player-d", source: "user" as const },
+    ];
+    const schedule = buildSchedule();
+    schedule[0].boxScore!.userLineup.push(buildLineupEntry("player-d", 0));
+
+    const extremes = computePickOutcomeExtremes(selectionsWithDefense, 1, universe, schedule, {})!;
+    expect(extremes).not.toBeNull();
+    expect(extremes.worst.playerId).not.toBe("player-d");
+    expect(extremes.worst.playerId).toBe("player-w");
+  });
+
+  it("keeps Best Pick behavior unchanged when K/DST picks are present", () => {
+    const playerK = buildTestPlayer({
+      id: "player-k",
+      position: "K",
+      blendedPPG: 500,
+      consensusOverallRank: 200,
+    });
+    const universe = [...playerUniverse, playerK];
+    const selectionsWithKicker = [
+      ...selections,
+      { overallPick: 150, round: 15, slot: 1, playerId: "player-k", source: "user" as const },
+    ];
+    const schedule = buildSchedule();
+    schedule[0].boxScore!.userLineup.push(buildLineupEntry("player-k", 0));
+
+    const extremes = computePickOutcomeExtremes(selectionsWithKicker, 1, universe, schedule, {})!;
+    expect(extremes.best.playerId).toBe("player-b");
+  });
+
+  it("returns null instead of falling back to K/DST when no eligible offensive player was drafted", () => {
+    const playerK = buildTestPlayer({
+      id: "player-k",
+      position: "K",
+      blendedPPG: 10,
+      consensusOverallRank: 200,
+    });
+    const playerD = buildTestPlayer({
+      id: "player-d",
+      position: "DST",
+      blendedPPG: 20,
+      consensusOverallRank: 210,
+    });
+    const universe = [playerK, playerD];
+    const kickerOnlySelections = [
+      { overallPick: 150, round: 15, slot: 1, playerId: "player-k", source: "user" as const },
+      { overallPick: 160, round: 16, slot: 1, playerId: "player-d", source: "user" as const },
+    ];
+    const schedule: ScheduleGame[] = [
+      {
+        fantasyWeek: 1,
+        nflWeek: 1,
+        opponentName: "Rivals",
+        userScore: null,
+        opponentScore: null,
+        result: "W",
+        boxScore: {
+          opponentRosterSlot: 2,
+          opponentLineup: [],
+          userLineup: [buildLineupEntry("player-k", 5), buildLineupEntry("player-d", 8)],
+        },
+      },
+    ];
+
+    expect(computePickOutcomeExtremes(kickerOnlySelections, 1, universe, schedule, {})).toBeNull();
+  });
 });

@@ -1,4 +1,4 @@
-import { ChevronDown, CheckCircle2, RotateCcw, Trophy, TrendingDown, TrendingUp, XCircle } from "lucide-react";
+import { ChevronDown, Circle, CheckCircle2, RotateCcw, Trophy, TrendingDown, TrendingUp, XCircle } from "lucide-react";
 import { Fragment, useId, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,18 +31,18 @@ function scrollToSection(event: MouseEvent<HTMLAnchorElement>, id: string) {
 
 function JumpLinks() {
   return (
-    <nav aria-label="Jump to section" className="mt-6 flex flex-wrap justify-center gap-2">
+    <nav aria-label="Jump to section" className="flex flex-wrap justify-center gap-2">
       <a
         href={`#${SEASON_RESULTS_ID}`}
         onClick={(event) => scrollToSection(event, SEASON_RESULTS_ID)}
-        className="rounded-full border border-slate-950/20 bg-white/40 px-3 py-1.5 text-[0.75rem] font-black text-slate-950 backdrop-blur transition hover:bg-white/70"
+        className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[0.75rem] font-black text-white backdrop-blur transition hover:border-cyan-300/40 hover:bg-cyan-400/10 hover:text-cyan-200"
       >
         Season Results
       </a>
       <a
         href={`#${STARTING_ROSTER_ID}`}
         onClick={(event) => scrollToSection(event, STARTING_ROSTER_ID)}
-        className="rounded-full border border-slate-950/20 bg-white/40 px-3 py-1.5 text-[0.75rem] font-black text-slate-950 backdrop-blur transition hover:bg-white/70"
+        className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[0.75rem] font-black text-white backdrop-blur transition hover:border-cyan-300/40 hover:bg-cyan-400/10 hover:text-cyan-200"
       >
         Starting Roster
       </a>
@@ -60,16 +60,16 @@ function DraftPickTile({
   pick: PickOutcome;
 }) {
   return (
-    <div className="rounded-xl border border-slate-950/15 bg-white/40 px-3 py-2.5 text-left backdrop-blur">
-      <p className="flex items-center gap-1 text-[0.625rem] font-black uppercase tracking-[0.14em] text-slate-700">
+    <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left">
+      <p className="flex items-center gap-1 text-[0.625rem] font-black uppercase tracking-[0.14em] text-slate-400">
         {icon}
         {label}
       </p>
-      <p className="mt-1 truncate text-[0.9375rem] font-black text-slate-950">{pick.playerName}</p>
-      <p className="mt-0.5 text-[0.6875rem] text-slate-700">
+      <p className="mt-1 truncate text-[0.9375rem] font-black text-white">{pick.playerName}</p>
+      <p className="mt-0.5 text-[0.6875rem] text-slate-400">
         {pick.team} · Round {pick.round}, Pick {pick.overallPick}
       </p>
-      <p className="mt-0.5 text-[0.6875rem] text-slate-700">
+      <p className="mt-0.5 text-[0.6875rem] text-slate-400">
         Sim {pick.simulatedContributionPPG.toFixed(1)} PPG · Proj {pick.projectedContributionPPG.toFixed(1)} PPG
       </p>
     </div>
@@ -367,35 +367,35 @@ function ScoringProfileStrip({ profile }: { profile: RosterScoringProfile }) {
       blurb:
         "It never happens, but this is how your team could have scored if your players consistently reached the strong end of their potential.",
       icon: "📈",
-      tileClass: "border-emerald-300/70 bg-emerald-50",
-      labelClass: "text-emerald-700",
-      valueClass: "text-emerald-950",
-      blurbClass: "text-emerald-800/80",
+      tileClass: "border-emerald-400/25 bg-emerald-400/10",
+      labelClass: "text-emerald-300",
+      valueClass: "text-emerald-100",
+      blurbClass: "text-emerald-200/70",
     },
     {
       label: "True Average PPG",
       value: profile.baselinePPG,
       blurb: "The projection-based average for the highest-scoring legal version of your roster. No simulation involved.",
       icon: "⚔️",
-      tileClass: "border-white bg-white shadow-sm",
-      labelClass: "text-slate-500",
-      valueClass: "text-slate-950",
-      blurbClass: "text-slate-600",
+      tileClass: "border-white/15 bg-white/[0.05]",
+      labelClass: "text-slate-300",
+      valueClass: "text-white",
+      blurbClass: "text-slate-400",
     },
     {
       label: "If Everything Went Wrong",
       value: profile.lowSidePPG,
       blurb: "This is the potential downside of your drafted team. When it rains, it pours.",
       icon: "🗑️",
-      tileClass: "border-rose-300/70 bg-rose-50",
-      labelClass: "text-rose-700",
-      valueClass: "text-rose-950",
-      blurbClass: "text-rose-800/80",
+      tileClass: "border-rose-400/25 bg-rose-400/10",
+      labelClass: "text-rose-300",
+      valueClass: "text-rose-100",
+      blurbClass: "text-rose-200/70",
     },
   ];
   return (
     <div
-      className="mt-5 grid gap-3 border-t border-slate-950/10 pt-5 sm:grid-cols-3"
+      className="mt-5 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-3"
       data-scoring-profile
     >
       {columns.map((column) => (
@@ -417,6 +417,49 @@ function ScoringProfileStrip({ profile }: { profile: RosterScoringProfile }) {
       ))}
     </div>
   );
+}
+
+type OutcomeTier = {
+  badgeClass: string;
+  panelGradientClass: string;
+  accentTextClass: string;
+  Icon: typeof Trophy;
+};
+
+function getOutcomeTier(result: SeasonResult, perfectSeason: boolean): OutcomeTier {
+  if (perfectSeason || result.playoffResult === "League Champion") {
+    return {
+      badgeClass: "border-amber-300/30 bg-amber-400/10 text-amber-200",
+      panelGradientClass: "from-amber-400/15",
+      accentTextClass: "text-amber-300",
+      Icon: Trophy,
+    };
+  }
+  if (result.playoffResult === "Lost Championship") {
+    return {
+      badgeClass: "border-emerald-300/30 bg-emerald-400/10 text-emerald-200",
+      panelGradientClass: "from-emerald-400/10",
+      accentTextClass: "text-emerald-300",
+      Icon: CheckCircle2,
+    };
+  }
+  if (
+    result.playoffResult === "Eliminated in Semifinal" ||
+    result.playoffResult === "Eliminated in First Round"
+  ) {
+    return {
+      badgeClass: "border-rose-300/30 bg-rose-400/10 text-rose-200",
+      panelGradientClass: "from-rose-400/10",
+      accentTextClass: "text-rose-300",
+      Icon: XCircle,
+    };
+  }
+  return {
+    badgeClass: "border-cyan-300/30 bg-cyan-400/10 text-cyan-200",
+    panelGradientClass: "from-cyan-400/10",
+    accentTextClass: "text-cyan-300",
+    Icon: Circle,
+  };
 }
 
 export function ResultCard({
@@ -447,45 +490,58 @@ export function ResultCard({
       )
     : null;
 
+  const tier = getOutcomeTier(result, perfectSeason);
+
   return (
-    <div className="min-h-screen bg-[#07111f] text-white">
+    <div className="min-h-screen bg-[#050b16] text-white">
       <SixteenZeroHeader />
       <main className="mx-auto max-w-5xl px-4 py-10 sm:py-16">
         <section
-          className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/80 shadow-2xl shadow-black/20"
+          className="overflow-hidden rounded-3xl border border-white/10 bg-[#0a1424] shadow-2xl shadow-black/40"
           data-share-card
         >
-          <div
-            className={`px-6 py-8 text-center sm:px-10 sm:py-12 ${perfectSeason ? "bg-amber-300 text-slate-950" : "bg-cyan-400 text-slate-950"}`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Logo width={96} className="brightness-0" />
-              <span className="text-[0.6875rem] font-black uppercase tracking-[0.24em] opacity-70">
-                JoeKnowsBall
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-slate-950/60 px-6 py-4 sm:px-10">
+            <div className="flex min-w-0 items-center gap-3">
+              <Logo width={52} className="shrink-0 brightness-0 invert" />
+              <div className="min-w-0 leading-tight">
+                <p className="truncate text-sm font-black uppercase tracking-[0.18em] text-white">
+                  JoeKnowsBall
+                </p>
+                <p className="truncate text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-slate-500">
+                  {SHARE_WATERMARK}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2.5 py-1 text-[0.625rem] font-black uppercase tracking-[0.2em] text-cyan-200">
+                16-0
               </span>
             </div>
+            <ShareResultsButton result={result} bestPick={pickExtremes?.best} />
+          </div>
 
-            <div className="mt-4 flex justify-center">
-              <ShareResultsButton result={result} bestPick={pickExtremes?.best} />
-            </div>
-
-            <Trophy className="mx-auto mt-5 h-8 w-8" />
-            <p className="mt-3 text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] font-black uppercase tracking-[0.24em] opacity-70">
+          <div
+            className={`border-b border-white/10 bg-gradient-to-b ${tier.panelGradientClass} to-transparent px-6 py-10 text-center sm:px-10 sm:py-12`}
+          >
+            <tier.Icon className={`mx-auto h-8 w-8 ${tier.accentTextClass}`} aria-hidden="true" />
+            <p
+              className={`mt-3 text-[clamp(0.6875rem,0.63rem+0.15vw,0.8125rem)] font-black uppercase tracking-[0.24em] ${tier.accentTextClass}`}
+            >
               {result.playoffResult}
             </p>
-            <h1 className="mt-2 text-5xl font-black tracking-[-0.05em] sm:text-6xl">
+            <h1 className="mt-2 text-5xl font-black tracking-[-0.05em] text-white sm:text-6xl">
               {result.finalWins}-{result.finalLosses}
             </h1>
-            <p className="mt-2 text-[clamp(1rem,0.9rem+0.4vw,1.25rem)] font-black">
+            <p className="mt-2 text-[clamp(1rem,0.9rem+0.4vw,1.25rem)] font-black text-white">
               {perfectSeason ? "The perfect fantasy season." : result.playoffResult}
             </p>
+          </div>
 
-            <div className="mt-5 grid gap-2.5 sm:grid-cols-3" data-share-facts>
-              <div className="rounded-xl border border-slate-950/15 bg-white/40 px-3 py-2.5 text-left backdrop-blur">
-                <p className="text-[0.625rem] font-black uppercase tracking-[0.14em] text-slate-700">
+          <div className="border-b border-white/10 bg-slate-950/50 px-6 py-8 sm:px-10">
+            <div className="grid gap-2.5 sm:grid-cols-3" data-share-facts>
+              <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left">
+                <p className="text-[0.625rem] font-black uppercase tracking-[0.14em] text-slate-400">
                   Draft position
                 </p>
-                <p className="mt-1 text-[0.9375rem] font-black text-slate-950">Pick {draftSlot}</p>
+                <p className="mt-1 text-[0.9375rem] font-black text-white">Pick {draftSlot}</p>
               </div>
               {pickExtremes && (
                 <>
@@ -504,15 +560,13 @@ export function ResultCard({
             </div>
 
             {scoringProfile && <ScoringProfileStrip profile={scoringProfile} />}
-
-            <JumpLinks />
-
-            <p className="mt-5 text-[0.6875rem] font-bold uppercase tracking-[0.18em] opacity-60">
-              {SHARE_WATERMARK}
-            </p>
           </div>
 
-          <div className="grid gap-8 p-6 sm:p-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="px-6 py-6 sm:px-10">
+            <JumpLinks />
+          </div>
+
+          <div className="grid gap-8 border-t border-white/10 p-6 sm:p-10 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <h2 className="text-[clamp(0.9375rem,0.85rem+0.3vw,1.125rem)] font-black">
                 Season summary
