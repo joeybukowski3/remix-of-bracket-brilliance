@@ -401,7 +401,15 @@ jobs:
     permissions:
       contents: read
     steps:
+      # Explicit ref (not the implicit workflow_run/dispatch default) so the
+      # exact commit checked out is never in doubt: main's current tip,
+      # which by construction already includes the hr-props-raw.json commit
+      # the upstream "Generate MLB Data" workflow just pushed -- that push is
+      # the last action in its job, so it has landed before that workflow
+      # reports "completed" and this job's `if` above allows it to start.
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
@@ -465,7 +473,13 @@ jobs:
     permissions:
       contents: read
     steps:
+      # Same explicit-ref rationale as generate-daily-card-morning above.
+      # This job also fires on the schedule trigger (the 20-minute pregame
+      # cron), where main's current tip is unambiguously correct with no
+      # workflow_run-specific reasoning needed at all.
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
