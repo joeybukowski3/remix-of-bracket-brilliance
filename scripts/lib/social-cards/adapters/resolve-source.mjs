@@ -1,19 +1,16 @@
 /**
  * Live-source resolver for the MLB daily model card adapters.
  *
- * Validates that the two frozen production artifacts the adapters read
- * (hr-props-raw.json, hr-props-best-bets.json) actually exist at the given
- * paths and match the requested slate date. Never falls back to
- * scripts/fixtures/* -- a missing or mismatched source is a hard failure,
- * not a silent substitution.
+ * Validates that the one frozen production artifact the adapters read
+ * (hr-props-raw.json) actually exists at the given path and matches the
+ * requested slate date. Never falls back to scripts/fixtures/* -- a missing
+ * or mismatched source is a hard failure, not a silent substitution.
  *
- * Also optionally validates a K-plan artifact (an already-selected,
- * already-ordered set of strikeout rows) when a kPlanPath is supplied. No
- * such artifact is produced anywhere in this repository yet -- see
- * docs/social-cards.md for the proposed future schema/producer -- so kPlan
- * resolves to null unless the caller explicitly supplies one, and the K-plan
- * artifact's own `edition`/`slateDate` fields are checked the same way the
- * HR sources are.
+ * HR and K row SELECTION no longer happens here or in any adapter -- both
+ * are computed by the shared selectors also used by the website's Social
+ * Media Tables (src/lib/mlb/hrPropSocialSelection.ts,
+ * src/lib/mlb/mlbSocialSelection.ts, src/lib/mlb/kPropValueSorting.ts), from
+ * this same hr-props-raw.json payload. See scripts/generate-social-card-live.ts.
  */
 import { existsSync, readFileSync } from 'node:fs';
 
@@ -43,13 +40,9 @@ export function loadJsonFile(filePath, label) {
  * @param {'morning'|'confirmed'} params.edition
  * @param {string} params.slateDate  YYYY-MM-DD
  * @param {string} params.rawPath    path to hr-props-raw.json
- * @param {string} params.bestBetsPath  path to hr-props-best-bets.json
- * @param {string|null} [params.kPlanPath]  optional path to an already-selected
- *   K-plan artifact ({ edition, slateDate, strikeouts: [...] }). Omit to leave
- *   kPlan as null (no source available).
- * @returns {{ raw: object, bestBets: object, kPlan: object|null }}
+ * @returns {{ raw: object }}
  */
-export function resolveMlbDailyCardSource({ edition, slateDate, rawPath, bestBetsPath, kPlanPath = null }) {
+export function resolveMlbDailyCardSource({ edition, slateDate, rawPath }) {
   if (!VALID_EDITIONS.has(edition)) {
     throw new Error(`Unknown edition "${edition}". Expected "morning" or "confirmed".`);
   }
@@ -63,24 +56,5 @@ export function resolveMlbDailyCardSource({ edition, slateDate, rawPath, bestBet
     throw new Error(`hr-props-raw slate date "${rawDate || 'missing'}" does not match requested slate date "${slateDate}"`);
   }
 
-  const bestBets = loadJsonFile(bestBetsPath, 'hr-props-best-bets');
-  const bestBetsDate = String(bestBets?.date ?? '');
-  if (bestBetsDate !== slateDate) {
-    throw new Error(`hr-props-best-bets slate date "${bestBetsDate || 'missing'}" does not match requested slate date "${slateDate}"`);
-  }
-
-  let kPlan = null;
-  if (kPlanPath) {
-    kPlan = loadJsonFile(kPlanPath, 'k-plan');
-    const kPlanEdition = String(kPlan?.edition ?? '');
-    if (kPlanEdition !== edition) {
-      throw new Error(`k-plan edition "${kPlanEdition || 'missing'}" does not match requested edition "${edition}"`);
-    }
-    const kPlanDate = String(kPlan?.slateDate ?? '');
-    if (kPlanDate !== slateDate) {
-      throw new Error(`k-plan slate date "${kPlanDate || 'missing'}" does not match requested slate date "${slateDate}"`);
-    }
-  }
-
-  return { raw, bestBets, kPlan };
+  return { raw };
 }

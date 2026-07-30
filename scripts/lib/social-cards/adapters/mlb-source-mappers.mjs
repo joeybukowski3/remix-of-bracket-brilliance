@@ -1,8 +1,11 @@
 /**
  * Shared, side-effect-free join helpers for the MLB daily model card live
  * adapters. These only look up and attach already-computed fields from the
- * frozen production artifacts (hr-props-raw.json / hr-props-best-bets.json)
- * -- they never rank, score, or infer anything.
+ * frozen production artifact (hr-props-raw.json) -- they never rank, score,
+ * select, or infer anything. All HR/K row SELECTION happens upstream in the
+ * shared TypeScript selectors (src/lib/mlb/hrPropSocialSelection.ts,
+ * src/lib/mlb/mlbSocialSelection.ts, src/lib/mlb/kPropValueSorting.ts) --
+ * see scripts/generate-social-card-live.ts.
  */
 
 /** @param {{ games?: Array<object> }} raw */
@@ -12,21 +15,6 @@ export function buildGameLookup(raw) {
     if (game?.gameKey) byGameKey.set(String(game.gameKey), game);
   }
   return byGameKey;
-}
-
-export function normalizeJoinKey(player, team, opponent) {
-  return [player, team, opponent]
-    .map((value) => String(value ?? '').trim().toLowerCase())
-    .join('|');
-}
-
-/** @param {{ batters?: Array<object> }} raw */
-export function buildBatterLookup(raw) {
-  const byKey = new Map();
-  for (const batter of raw?.batters ?? []) {
-    byKey.set(normalizeJoinKey(batter.player, batter.team, batter.opponent), batter);
-  }
-  return byKey;
 }
 
 /**
