@@ -23,72 +23,69 @@ node scripts/generate-social-card.mjs --template=mlb_daily_confirmed --input=scr
 
 Fixture mode is network-free and unchanged.
 
-### Live adapters (Phase 1)
+### Live adapters: shared-selector architecture
 
-```bash
-npm run social-card:mlb:morning:live -- --slate-date=2026-07-29                                    # blocks (exit 1): no K-plan supplied
-npm run social-card:mlb:morning:live -- --slate-date=2026-07-29 --preview                          # explicit partial preview: HR rows + empty K section
-npm run social-card:mlb:morning:live -- --slate-date=2026-07-29 --k-plan=path/to/k-plan.json       # full card once a real K-plan artifact exists
-npm run social-card:mlb:confirmed:live -- --slate-date=2026-07-29           # exits non-zero with a blocked-readiness report (see below)
-npm run social-card:mlb:confirmed:live -- --slate-date=2026-07-29 --preview # explicit opt-in, writes a *-preview.* card
+The live daily card shows **the same HR and K picks already shown on the website's Social Media Tables** — not an independently ranked or differently sourced selection. This is achieved by having the card generator import and call the exact same selector functions the website calls, from the exact same `hr-props-raw.json` payload, rather than by re-deriving a selection inside the card adapter:
+
+```
+hr-props-raw.json
+  → filterActiveSlate()          (excludes TBD-starter games -- same as useMlbPropsData())
+  → selectTopSocialHrRows()       (src/lib/mlb/hrPropSocialSelection.ts)
+  → buildPitcherStrikeoutRows()   (src/lib/mlb/mlbSocialSelection.ts)
+  → selectTopSocialKRows()        (src/lib/mlb/kPropValueSorting.ts)
+      ↓                                              ↓
+  SocialTableHR / SocialTableK           scripts/generate-social-card-live.ts
+  (src/pages/MlbGameDetail.tsx)          (build-morning.mjs / build-confirmed.mjs:
+                                           pure field-mapping only, no selection)
 ```
 
-`scripts/generate-social-card-live.mjs` reads real production artifacts, adapts them with `scripts/lib/social-cards/adapters/*`, then hands the result to the **same** `normalizeMorning`/`normalizeConfirmed` + `renderCard` + `writeSocialCard` pipeline fixture mode uses — this CLI never renders or writes anything itself. Flags: `--edition=morning|confirmed` (required), `--slate-date=YYYY-MM-DD` (defaults to today's Eastern date), `--raw=`/`--best-bets=` (override the default `public/data/mlb/hr-props-{raw,best-bets}.json` paths), `--k-plan=` (morning-only, see below), `--output-dir=`, `--preview`.
+- **`selectTopSocialHrRows(batters, { max })`** (`src/lib/mlb/hrPropSocialSelection.ts`) — extracted verbatim from `SocialTableHR`'s previously-inline filter/sort/slice. `SocialTableHR` now calls it with `max: 8`; the card generator calls it with `max: 6`. Same filter (barrel rate ≤25%, at-bats ≥50) and sort (`hrScore` descending) either way — the card's first 6 rows are always the identical prefix of the website's top 8, never a different or re-ranked selection.
+- **`buildPitcherStrikeoutRows(batters, games, pitchers)`** (`src/lib/mlb/mlbSocialSelection.ts`) — extracted verbatim from `src/pages/MlbHrProps.tsx` (which is re-exported there for backward compatibility). Builds one row per pitcher with `strikeoutMatchupScore`, `kLine`, `kOddsOver/Under`, `projectedKs`, and a resolved `kProjectionStatus`. This is a row *builder*, not a selection — every pitcher gets a row.
+- **`selectTopSocialKRows(rows, 5)`** (`src/lib/mlb/kPropValueSorting.ts`, unchanged) — the actual K selection: filters to rows with `resolveKPropStatus(row).status === "VALID"` (a real line + workload-confident projection), ranks by absolute projection-vs-line edge, caps at 5. Both `SocialTableK` and the card generator call this exact function with the exact same candidate rows.
+- **`buildTbdGameKeySet(pitchers, batters)`** (`src/lib/mlb/mlbSocialSelection.ts`, re-exported from `MlbHrProps.tsx`) — both the website's `useMlbPropsData()` hook and the card generator exclude games where a probable pitcher is still `TBD`/`TBA` before running any selection.
 
-#### Source artifacts consumed
+These modules are dependency-free TypeScript (only `import type` references into `MlbHrProps.tsx`, erased at compile time) so they can run in a plain script via `tsx`, not just inside the React app.
 
-- `public/data/mlb/hr-props-raw.json` (written by `scripts/generate-mlb-hr-props.mjs`): `games[]` (`gameKey`, `homeTeam`, `awayTeam`), `pitchers[]` (`gameKey`, `role`, `kVs`, `projectedKs` — the **full, unranked** pitcher pool, never read by the K adapter, see below), `batters[]` (`gameKey`, `hrScore`, `hrOddsYes`).
-- `public/data/mlb/hr-props-best-bets.json`: `bestBets[]`, the pipeline's own deterministic HR selection (`selectDeterministicHrPicks`), currently capped at 5 rows, each carrying a real, already-attached sportsbook price in `hrOddsYes`.
-- **K-plan (`--k-plan=<path>`, optional)**: an already-selected, already-ordered artifact of the shape `{ schemaVersion: 1, edition: "morning", slateDate: "YYYY-MM-DD", source: string, generatedAt: ISO, strikeouts: [{ rank, pitcher, team, opponent, gameKey?, venueSide?, kScore, projectedK }] }`. **No such artifact is produced anywhere in this repository today.** See "Missing upstream K-selection artifact" below for the proposed schema/producer.
+```bash
+npm run social-card:mlb:morning:live -- --slate-date=2026-07-29                     # blocks (exit 1) only if selectTopSocialKRows finds zero VALID rows
+npm run social-card:mlb:morning:live -- --slate-date=2026-07-29 --preview           # if blocked: explicit partial preview (HR rows + empty K section)
+npm run social-card:mlb:confirmed:live -- --slate-date=2026-07-29                   # exits non-zero with a blocked-readiness report (K/values, see below)
+npm run social-card:mlb:confirmed:live -- --slate-date=2026-07-29 --preview         # explicit opt-in, writes a *-preview.* card
+```
 
-`hr-props-raw`/`hr-props-best-bets` must exist at the resolved path and have `.date === --slate-date`; a supplied `--k-plan` must have `.edition === --edition` and `.slateDate === --slate-date`. The resolver (`scripts/lib/social-cards/adapters/resolve-source.mjs`) never falls back to `scripts/fixtures/*` for any of the three.
+`scripts/generate-social-card-live.ts` is a **TypeScript entrypoint run directly via `tsx`** (`tsx` added as a devDependency; the repo had no TS execution runtime for plain scripts before this). It's a real `.ts` file, not compiled or spawned as a second process, so it can `import ... from "@/lib/mlb/..."` with the project's normal path alias exactly like the website does. It resolves the source artifact, replicates the website's TBD filtering, calls the shared selectors above, then hands the already-selected rows to the existing `.mjs` adapters (`build-morning.mjs` / `build-confirmed.mjs`) for pure field-mapping, then to the **same** `normalizeMorning`/`normalizeConfirmed` + `renderCard` + `writeSocialCard` pipeline fixture mode uses. Flags: `--edition=morning|confirmed` (required), `--slate-date=YYYY-MM-DD` (defaults to today's Eastern date), `--raw=` (override the default `public/data/mlb/hr-props-raw.json` path), `--output-dir=`, `--preview`. There is no `--k-plan` or `--best-bets` flag — both were removed; see "What changed" below.
+
+#### Source artifact consumed
+
+- `public/data/mlb/hr-props-raw.json` (written by `scripts/generate-mlb-hr-props.mjs`): `games[]`, `pitchers[]` (`gameKey`, `role`, `kVs`, `kLine`, `kOddsOver/Under`, `projectedKs`), `batters[]` (`gameKey`, `hrScore`, `hrOddsYes`). This is the **only** artifact the live CLI reads — `hr-props-best-bets.json` is no longer consumed by the live card path at all (see below). Must exist at the resolved path and have `.date === --slate-date`; the resolver (`scripts/lib/social-cards/adapters/resolve-source.mjs`) never falls back to `scripts/fixtures/*`.
 
 #### Morning mapping
 
-- **Home runs**: `hr-props-best-bets.json.bestBets`, in its frozen order (never re-ranked), joined to `hr-props-raw.json.batters` by player/team/opponent for `hrScore`, and to `.games` by `gameKey` for `venueSide`. Capped at 6 (renderer cap); production currently emits 5.
-- **Strikeouts**: mapped **only** from the supplied `--k-plan` artifact's `strikeouts[]`, in its supplied order, capped at 5. The adapter performs **no filtering, sorting, ranking, or top-N selection** over `hr-props-raw.json.pitchers` — that field is the full, unranked production pitcher pool and is never read for K candidate selection (it is still read, separately, as a plain count for the `projectedStartingPitchers` snapshot metric below). When no `--k-plan` is supplied, `buildMlbDailyMorningCardInput` returns `{ data: null, readiness: { ready: false, reasons: ["MORNING_K_SOURCE_UNAVAILABLE"] }, diagnostics }` and generation blocks (CLI exits 1), unless `--preview` is also passed, in which case it returns a real card with a genuinely empty strikeout section and `preview: true` — never a fabricated or re-derived K row.
-- **Snapshot**: `gamesModeled` = `games.length`, `projectedStartingPitchers` = `pitchers.length`, `modeledHitters` = `batters.length` (all from the same `hr-props-raw.json` payload; `null` + a diagnostic warning if the array is missing). `highestHrScore`/`highestProjectedK` come from `deriveMorningSnapshot()` over the already-selected/supplied rows above. `lastRefresh`/`updatedTimeEt` are derived from `hr-props-raw.json.generatedAt` via `formatEasternClock()` (`Intl.DateTimeFormat` with `timeZone: "America/New_York"`) — no artifact pre-formats an Eastern clock string.
-
-#### Missing upstream K-selection artifact (blocks full morning cards today)
-
-No file in this repository represents "the selected top K rows for the model card." `hr-props-raw.json.pitchers` is the entire projected-starter pool with a precomputed `kVs`/`projectedKs` per pitcher — reading, filtering, and sorting that field inside the card adapter would be the adapter performing candidate selection, which is out of bounds for this phase (and was the defect corrected in this revision). The only selection logic that exists today, `scripts/lib/mlb-k-x-selection-core.mjs`, is for X-post captions and additionally requires a live Playwright scrape plus a live MLB Stats API confirmation snapshot — both out of scope for a static-artifact adapter.
-
-**Proposed future artifact** (not implemented in this branch): `public/data/mlb/k-props-daily-plan.json`, produced by a small new script (e.g. `scripts/generate-mlb-k-props-daily-plan.mjs`, run alongside/after `generate-mlb-hr-props.mjs` in the same workflow step) that applies the pipeline's own existing top-N-by-`kVs` policy **once, upstream**, and freezes the result:
-
-```json
-{
-  "schemaVersion": 1,
-  "edition": "morning",
-  "slateDate": "2026-07-29",
-  "source": "mlb-k-props-daily-plan-v1",
-  "generatedAt": "2026-07-29T13:15:00.000Z",
-  "strikeouts": [
-    { "rank": 1, "pitcher": "Paul Skenes", "team": "PIT", "opponent": "CIN", "gameKey": "PIT@CIN", "kScore": 92, "projectedK": 7.6 }
-  ]
-}
-```
-
-A confirmed-edition counterpart (`edition: "confirmed"`) with `side`/`line`/`odds`/`edge` per row, sourced from the live confirmation-snapshot infra, would similarly unblock confirmed K rows — see the confirmed section below. Building either producer is explicitly **not** part of this Phase 1 branch; only the consumption/validation glue (`resolveMlbDailyCardSource`'s `--k-plan` handling, `mapStrikeouts` in `build-morning.mjs`) exists here, ready to point at a real producer once one is built.
+- **Home runs**: `selectTopSocialHrRows(batters, { max: 6 })` output, mapped in the selector's order (never re-ranked by the adapter), joined to `.games` by `gameKey` for `venueSide`.
+- **Strikeouts**: `selectTopSocialKRows(buildPitcherStrikeoutRows(batters, games, pitchers), 5)` output, mapped in the selector's order. `kScore` comes from `strikeoutMatchupScore` and `projectedK` from `projectedKs` — the same fields `SocialTableK` displays. The adapter never copies `kLine`/`kOddsOver`/`kOddsUnder`/status fields into the morning output, per the morning display contract (no odds, no line, no Over/Under, no edge). If `selectTopSocialKRows` finds zero VALID rows (e.g. no lines posted yet for anyone on the slate), `buildMlbDailyMorningCardInput` returns `{ data: null, readiness: { ready: false, reasons: ["MORNING_K_ROWS_UNAVAILABLE"] }, diagnostics }` and generation blocks, unless `--preview` is passed, in which case it returns a real card with a genuinely empty strikeout section — never a fabricated row.
+- **Snapshot**: `gamesModeled` = `games.length`, `projectedStartingPitchers` = `pitchers.length`, `modeledHitters` = `batters.length` (all from `hr-props-raw.json`, post-TBD-filter; `null` + a diagnostic warning if the array is missing). `highestHrScore`/`highestProjectedK` come from `deriveMorningSnapshot()` over the selected rows above. `lastRefresh`/`updatedTimeEt` are derived from `hr-props-raw.json.generatedAt` via `formatEasternClock()`.
 
 #### Confirmed mapping and the confirmed-values decision
 
-- **Home runs**: same `bestBets` join as morning, plus `odds` parsed from the already-attached `hrOddsYes` string. A row without a parseable American-odds price is dropped, never fabricated or padded.
-- **Strikeouts and top-level `values[]`: intentionally left empty in Phase 1.** No frozen, already-selected static artifact exists with `side`+`line`+`odds`+`edge` (or player/market/side/line/odds/edge for values) together. Deriving `side`/`edge` from `kLine`/`projectedKs` ourselves would be exactly the "infer betting sides / calculate new edges" this adapter must never do, and the production logic that legitimately does this (`mlb-k-x-selection-core.mjs`) additionally requires a live lineup-confirmation snapshot this adapter doesn't have. `buildMlbDailyConfirmedCardInput` records `CONFIRMED_K_SOURCE_UNAVAILABLE` and `CONFIRMED_VALUES_SOURCE_UNAVAILABLE` in its diagnostics and calls `evaluateConfirmedReadiness(..., { valuesSourceAvailable: false })`.
+- **Home runs**: same `selectTopSocialHrRows(batters, { max: 6 })` selection as morning, plus `odds` parsed from each selected row's already-attached `hrOddsYes` string. A row without a parseable American-odds price is dropped, never fabricated or padded. This replaces the previous `hr-props-best-bets.json.bestBets` source, which was a *different* selection (a separate deterministic model pipeline, capped at 5) than what the website's Social Media Tables actually display — using it made the confirmed card show picks that could legitimately disagree with the website.
+- **Strikeouts and top-level `values[]`: still intentionally left empty.** This is unchanged by the shared-selector migration and remains deliberately conservative: no frozen, already-selected static artifact exists with `side`+`line`+`odds`+`edge` together for the confirmed edition, and building one, or deriving those fields ourselves, is out of scope for this pass. `buildMlbDailyConfirmedCardInput` records `CONFIRMED_K_SOURCE_UNAVAILABLE` and `CONFIRMED_VALUES_SOURCE_UNAVAILABLE` in its diagnostics and calls `evaluateConfirmedReadiness(..., { valuesSourceAvailable: false })`.
 - Result: confirmed generation is **blocked by design** — `buildMlbDailyConfirmedCardInput` returns `{ data: null, readiness, diagnostics }` unless `preview: true` is passed explicitly, in which case it returns the real (HR-only) data with `preview: true`, `publishReady: false`. The CLI mirrors this: without `--preview` it prints the readiness/diagnostics report to stderr and exits 1; with `--preview` it writes a `mlb-daily-confirmed-preview.*` artifact.
-- A future phase that wants a real, ready confirmed card must add either a frozen confirmed K/values artifact upstream, or wire in the live confirmation-snapshot infra (`mlb-x-confirmation-snapshot.mjs`) — out of scope here.
+- A future phase that wants a real, ready confirmed card must add a way to populate confirmed K/values conservatively (e.g. wiring in the live confirmation-snapshot infra, `mlb-x-confirmation-snapshot.mjs`) — out of scope here.
+
+#### What changed from the previous revision
+
+The prior revision of this document proposed a frozen `k-props-daily-plan.json` artifact and a `--k-plan` CLI flag, on the premise that no reusable K-selection function existed anywhere. That premise was wrong: the website's own `SocialTableK` already calls a real, shared, pure, already-tested selector (`selectTopSocialKRows` + `buildPitcherStrikeoutRows`) at render time, computed live from `hr-props-raw.json` — it just wasn't extracted into a Node-importable module yet. This revision extracts it (and the equivalent HR selector) instead of proposing a new frozen-artifact producer. **The `--k-plan` flag, the K-plan artifact concept, and `hr-props-best-bets.json` as an HR source have all been removed** — there is nothing left to build upstream; the live CLI computes the same selection the website computes, on demand.
 
 #### Real-slate example (2026-07-29 Eastern slate, this worktree)
 
-`public/data/mlb/hr-props-raw.json` (16 games, 32 pitchers, 288 batters) + `hr-props-best-bets.json` (5 bestBets), no `--k-plan` supplied (none exists in production yet) →
-morning (non-preview) exits 1 with `MORNING_K_SOURCE_UNAVAILABLE`; with `--preview`, a real card is written with 5 HR rows (Yordan Alvarez 98.8 … Drake Baldwin 67.0) and a genuinely empty strikeout section to `artifacts/social-cards/mlb/2026-07-29/mlb-daily-morning.{json,svg,png}` (`preview: true`).
-Confirmed (non-preview) exits 1 with `INSUFFICIENT_CONFIRMED_K_ROWS`/`INSUFFICIENT_CONFIRMED_VALUE_ROWS`/`CONFIRMED_VALUES_SOURCE_UNAVAILABLE`; with `--preview`, the same 5 HR rows are written (with real odds, e.g. Yordan Alvarez `+175`) alongside empty strikeout/values sections to `mlb-daily-confirmed-preview.{json,svg,png}`.
+`public/data/mlb/hr-props-raw.json` (16 games, 32 pitchers, 288 batters) →
+morning: 6 HR rows (Yordan Alvarez 98.8 … Ben Rice 67.4) and 5 real VALID K rows (ranked by projection-vs-line edge, not raw K score — e.g. Jesús Luzardo first despite a lower K Score than Tarik Skubal, because Luzardo's edge is larger) → `artifacts/social-cards/mlb/2026-07-29/mlb-daily-morning.{json,svg,png}`.
+Confirmed (`--preview`): the same 6 HR rows with real parsed odds (e.g. Yordan Alvarez `+175`), K/values sections empty, `publishReady: false` → `mlb-daily-confirmed-preview.{json,svg,png}`.
 
 Incomplete confirmed previews use `mlb-daily-confirmed-preview.*`, set `preview: true`, `publishReady: false`, and retain machine-readable readiness reasons.
 
 Logo loading first checks local SVG assets under `public/assets/mlb/team-logos/`, then the existing `public/logos/mlb/` path. It never fetches remote assets at render time. Missing assets use a fixed abbreviation fallback. Existing repository logo mappings largely reference ESPN CDN assets, so they are not reused as runtime dependencies. Add locally licensed/approved SVGs incrementally using canonical filenames and aliases in `core.mjs`.
 
-The live HR selector remains capped at five rows. The renderer supports six; changing the production selection policy requires a separate PR.
-
-Future site migration should consume the same normalized JSON in a React card component, run beside legacy Social Media Tables behind a feature flag, validate parity, then retire the legacy tables in a later PR. X integration should first upload dry-run artifacts during the existing confirmed/morning windows and reuse the current leases, receipts, account checks, and duplicate protection.
+Future site migration should consume the same normalized JSON in a React card component displayed directly on the website (rather than the current standalone-artifact CLI flow), validate parity against the Social Media Tables tab, then retire the tab in a later PR now that both already share the same underlying selectors. X integration should first upload dry-run artifacts during the existing confirmed/morning windows and reuse the current leases, receipts, account checks, and duplicate protection.
 
 **Phase 1 boundary**: the live adapters and CLI above only read static production JSON and write local card artifacts. They do not touch `.github/workflows/mlb-x-editions.yml` or any other workflow, do not post to X, do not consume or write leases/receipts, and do not change the website. Wiring a scheduled workflow run and/or a website-facing consumer of these live cards is explicitly future work.
