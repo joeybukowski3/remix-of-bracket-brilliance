@@ -1,5 +1,5 @@
 import type { PitcherStrikeoutTeamRow } from "@/pages/MlbHrProps";
-import { resolveKPropStatus, type KPropStatusInput } from "@/lib/mlb/kPropStatus";
+import { K_PROP_EXCLUDED_STATUSES, resolveKPropStatus, type KPropStatusInput } from "@/lib/mlb/kPropStatus";
 
 export type KPropDirection = "over" | "under" | "neutral";
 
@@ -52,8 +52,25 @@ export function getProjectionEdgeInfo(row: Pick<PitcherStrikeoutTeamRow, "projec
  * "Most Strikeouts" sort: highest projected Ks first. Rows with no
  * projection are never given a fabricated 0 -- they always sort after
  * every row with a real projection, regardless of sort direction.
+ *
+ * Equal projectedKs values are broken deterministically (never left to
+ * whatever order the rows happened to arrive in), same spirit as
+ * sortByAbsoluteProjectionEdge's tie-break chain below, but with its own
+ * fixed order -- always applied regardless of the toggled asc/desc
+ * `direction`, matching how sortByAbsoluteProjectionEdge's own ranking
+ * ignores direction too:
+ *   1. strikeoutMatchupScore, descending
+ *   2. pitcherKSkillScore, descending
+ *   3. opponentTeamStrikeoutScore, descending
+ *   4. pitcher name, ascending (final, stable tie-breaker)
+ * The tie-break fields are optional on T so any caller passing a narrower
+ * row shape still compiles -- a missing tie-break field simply sorts last
+ * among ties at that step, falling through to the next one.
  */
-export function sortByProjectedKs<T extends Pick<PitcherStrikeoutTeamRow, "projectedKs">>(rows: T[], direction: "asc" | "desc" = "desc"): T[] {
+export function sortByProjectedKs<
+  T extends Pick<PitcherStrikeoutTeamRow, "projectedKs"> &
+    Partial<Pick<PitcherStrikeoutTeamRow, "strikeoutMatchupScore" | "pitcherKSkillScore" | "opponentTeamStrikeoutScore" | "pitcher">>
+>(rows: T[], direction: "asc" | "desc" = "desc"): T[] {
   const multiplier = direction === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
     const left = toFiniteOrNull(a.projectedKs);
@@ -61,7 +78,20 @@ export function sortByProjectedKs<T extends Pick<PitcherStrikeoutTeamRow, "proje
     if (left == null && right == null) return 0;
     if (left == null) return 1;
     if (right == null) return -1;
-    return (left - right) * multiplier;
+
+    const projectedKsDiff = (left - right) * multiplier;
+    if (projectedKsDiff !== 0) return projectedKsDiff;
+
+    const matchupScoreDiff = compareDescendingNullsLast(a.strikeoutMatchupScore, b.strikeoutMatchupScore);
+    if (matchupScoreDiff !== 0) return matchupScoreDiff;
+
+    const skillScoreDiff = compareDescendingNullsLast(a.pitcherKSkillScore, b.pitcherKSkillScore);
+    if (skillScoreDiff !== 0) return skillScoreDiff;
+
+    const opponentScoreDiff = compareDescendingNullsLast(a.opponentTeamStrikeoutScore, b.opponentTeamStrikeoutScore);
+    if (opponentScoreDiff !== 0) return opponentScoreDiff;
+
+    return (a.pitcher ?? "").localeCompare(b.pitcher ?? "");
   });
 }
 
@@ -134,4 +164,24 @@ export function sortByAbsoluteProjectionEdge<
 export function selectTopSocialKRows<T extends Pick<PitcherStrikeoutTeamRow, "projectedKs" | "kLine"> & KPropStatusInput>(rows: T[], limit = 5): T[] {
   const valid = rows.filter((row) => getProjectionEdgeInfo(row).isValid && resolveKPropStatus(row).status === "VALID");
   return sortByAbsoluteProjectionEdge(valid).slice(0, limit);
+}
+
+/**
+ * Selects rows for the morning card's "Strikeout Model Leaders" policy:
+ * ranked by highest projected Ks (sortByProjectedKs), never by market edge.
+ * A market line/odds is NOT required -- the morning card never displays
+ * odds, line, side, or edge, so gating this on selectTopSocialKRows's
+ * VALID-only (line + workload-confident projection) requirement would
+ * wrongly hide legitimate projected-K leaders just because no market has
+ * posted for them yet. Still excludes rows the model itself flags as
+ * data-quality-ineligible (K_PROP_EXCLUDED_STATUSES: LOW_CONFIDENCE,
+ * INSUFFICIENT_DATA, INVALID_ODDS, INVALID_WORKLOAD) -- a NO_MARKET row
+ * (real projection, just no line yet) remains eligible, unlike in
+ * selectTopSocialKRows.
+ */
+export function selectTopProjectedKRows<T extends Pick<PitcherStrikeoutTeamRow, "projectedKs" | "kLine"> & KPropStatusInput>(rows: T[], limit = 5): T[] {
+  const eligible = rows.filter(
+    (row) => Number.isFinite(row.projectedKs) && !K_PROP_EXCLUDED_STATUSES.has(resolveKPropStatus(row).status),
+  );
+  return sortByProjectedKs(eligible).slice(0, limit);
 }
