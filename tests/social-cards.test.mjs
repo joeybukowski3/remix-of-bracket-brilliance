@@ -9,6 +9,7 @@ import {
   normalizeMorning,
 } from "../scripts/lib/social-cards/mlb.mjs";
 import { renderCard } from "../scripts/lib/social-cards/render.mjs";
+import { logoMarkup, normalizeTeam } from "../scripts/lib/social-cards/core.mjs";
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(currentFilePath);
@@ -172,6 +173,20 @@ describe("MLB daily cards", () => {
     );
 
     expect(renderCard(normalized)).toContain("ZZZ");
+  });
+
+  it("normalizes short team codes to a key with an existing local logo file, not a long form with none", () => {
+    // Regression guard: KC/TB/SD/SF/CWS previously normalized to KCR/TBR/SDP/SFG/CHW,
+    // none of which have a matching public/logos/mlb/*.svg file (which uses short
+    // codes), silently forcing these five teams onto the generic unbranded fallback.
+    expect(normalizeTeam("KC")).toBe("KC");
+    expect(normalizeTeam("TB")).toBe("TB");
+    expect(normalizeTeam("SD")).toBe("SD");
+    expect(normalizeTeam("SF")).toBe("SF");
+    expect(normalizeTeam("CWS")).toBe("CWS");
+    for (const team of ["KC", "TB", "SD", "SF", "CWS", "ATH", "NYY", "MIN"]) {
+      expect(logoMarkup(team, 0, 0, {})).toContain("data:image/svg+xml;base64,");
+    }
   });
 
   it("uses the documented modeled-hitters source", () => {
