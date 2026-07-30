@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  buildPitcherStrikeoutMatchupRows,
-  buildPitcherStrikeoutRows,
   buildPitcherVsBatterRows,
-  buildTbdGameKeySet,
   buildTbdFootnotes,
   normalizeHrBestBetsPayload,
   normalizeHrDashboardPayload,
   type HrBestBetsPayload,
   type HrDashboardPayload,
 } from "@/pages/MlbHrProps";
+import {
+  buildPitcherStrikeoutMatchupRows,
+  buildPitcherStrikeoutRows,
+  buildTbdGameKeySet,
+} from "@/lib/mlb/mlbSocialSelection";
 import { HR_BRIDGE_RANGE_ARTIFACT_VERSION } from "@/lib/mlb/analytics/hrBridgeModel";
 import {
   parseReferenceRangeArtifact,
