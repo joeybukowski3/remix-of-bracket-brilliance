@@ -13,6 +13,22 @@ run-name: MLB X Editions • ${{ github.event_name }} • ${{ github.ref_name }}
 # the exact publish sequence, and the git-backed receipt on
 # automation/mlb-x-state is re-read under that lease and remains authoritative
 # after any queued run resumes.
+#
+# A fifth, independent publication target -- post-daily-card-morning -- posts
+# one combined home-run/strikeout model card instead of k-morning and
+# hr-morning, whenever the repository variable MLB_DAILY_CARD_MORNING_LIVE is
+# exactly "true". For 'morning-live' dispatches and scheduled/workflow_run
+# firings, it is mutually exclusive with those two jobs by construction (each
+# gate is the other's negation on that same flag) -- it has its own
+# concurrency group, its own lease, and its own structurally distinct receipt
+# namespace (mlb-x/<slate-date>/receipts/daily-card-morning.json), and never
+# touches the confirmed editions or their receipts. The one deliberate
+# exception is workflow_dispatch mode 'morning-dry-run': that mode always
+# runs post-daily-card-morning (so the composite path can be tested without
+# flipping the flag) and always skips post-k-morning/post-hr-morning, a
+# routing decision independent of the flag's current value -- it is still a
+# genuine dry run with no X call and no successful receipt, exactly like
+# every other dry-run mode in this file.
 on:
   schedule:
     # Morning edition: seven candidate firings (EDT+EST) meant to land inside
@@ -178,9 +194,22 @@ jobs:
 
   post-k-morning:
     needs: plan
+    # 'morning-dry-run' is reserved for manually testing the composite daily
+    # card (post-daily-card-morning below) without needing to flip
+    # MLB_DAILY_CARD_MORNING_LIVE first -- this job always sits out that
+    # specific dispatch mode. Outside of that mode, this job is disabled
+    # whenever the flag is enabled ('true'), so scheduled/workflow_run firings
+    # and 'morning-live' dispatches never post both the legacy and composite
+    # morning cards for the same run: this job requires the flag NOT be
+    # 'true'; post-daily-card-morning requires the opposite for those same
+    # two triggers.
     if: |
-      github.event.inputs.mode == 'morning-dry-run' || github.event.inputs.mode == 'morning-live' ||
-      (github.event.inputs.mode == '' && needs.plan.outputs.k_morning_should_run == 'true')
+      github.event.inputs.mode != 'morning-dry-run' &&
+      vars.MLB_DAILY_CARD_MORNING_LIVE != 'true' &&
+      (
+        github.event.inputs.mode == 'morning-live' ||
+        (github.event.inputs.mode == '' && needs.plan.outputs.k_morning_should_run == 'true')
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -238,9 +267,16 @@ jobs:
 
   post-hr-morning:
     needs: plan
+    # Same rationale and same shape as post-k-morning above: always sits out
+    # 'morning-dry-run' (reserved for testing the composite card), and
+    # otherwise disabled whenever MLB_DAILY_CARD_MORNING_LIVE == 'true'.
     if: |
-      github.event.inputs.mode == 'morning-dry-run' || github.event.inputs.mode == 'morning-live' ||
-      (github.event.inputs.mode == '' && needs.plan.outputs.hr_morning_should_run == 'true')
+      github.event.inputs.mode != 'morning-dry-run' &&
+      vars.MLB_DAILY_CARD_MORNING_LIVE != 'true' &&
+      (
+        github.event.inputs.mode == 'morning-live' ||
+        (github.event.inputs.mode == '' && needs.plan.outputs.hr_morning_should_run == 'true')
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -273,6 +309,98 @@ jobs:
           # credential config -- a plain https URL here has no push (or, on
           # a private repo, even read) access. github.token is masked in
           # logs the same as any secret; never echo this URL.
+          MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          MLB_X_DISPATCH_MODE: ${{ github.event.inputs.mode }}
+          MLB_X_SIMULATION_NOW: ${{ github.event.inputs.simulation_now }}
+          X_ALLOW_LIVE_POST: ${{ vars.X_ALLOW_LIVE_POST }}
+          JKB_X_API_KEY: ${{ secrets.JKB_X_API_KEY }}
+          JKB_X_API_SECRET: ${{ secrets.JKB_X_API_SECRET }}
+          JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
+          JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
+
+  # Combined morning daily-card post: one X post carrying both the top home
+  # run targets and the projected strikeout leaders, replacing post-k-morning
+  # and post-hr-morning for the morning slot whenever
+  # MLB_DAILY_CARD_MORNING_LIVE == 'true'. Reuses the SAME morning timing
+  # signal the legacy jobs use (k_morning_should_run / hr_morning_should_run
+  # from `plan`) rather than computing its own -- this is not a new selection
+  # or readiness decision, only a routing switch for which job posts.
+  # Independent concurrency group, independent lease, independent
+  # (structurally distinct) receipt namespace -- see mlb-x-state-store.mjs's
+  # dailyCardReceiptPathFor and mlb-x-daily-card-publication.mjs.
+  #
+  # 'morning-dry-run' is always eligible regardless of the flag -- this is
+  # the one deliberate escape hatch, so the composite path (generation,
+  # validation, caption) can be manually tested end to end before the flag is
+  # ever flipped in production. It is still a genuine dry run: MLB_X_DISPATCH_
+  # MODE=morning-dry-run resolves dryRun=true in resolveEventMode regardless
+  # of this workflow's `if:`, so post-mlb-x-daily-card.mjs still never calls X
+  # and never writes a successful receipt for this mode -- see
+  # mlb-x-event-mode.mjs and mlb-x-daily-card-poster.mjs, neither of which
+  # this fix touches. 'morning-live' is NOT given this escape hatch: it still
+  # requires the flag, so a live-capable dispatch can never bypass it. See the
+  # inverse gate on post-k-morning/post-hr-morning above -- for every trigger
+  # this job shares with them ('morning-live' and the '' schedule/
+  # workflow_run case), the two sides are exact complements of the same flag
+  # check, so they can never both be eligible in the same run.
+  post-daily-card-morning:
+    needs: plan
+    if: |
+      github.event.inputs.mode == 'morning-dry-run' ||
+      (
+        vars.MLB_DAILY_CARD_MORNING_LIVE == 'true' &&
+        (
+          github.event.inputs.mode == 'morning-live' ||
+          (github.event.inputs.mode == '' && (needs.plan.outputs.k_morning_should_run == 'true' || needs.plan.outputs.hr_morning_should_run == 'true'))
+        )
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mlb-x-daily-card-morning
+      cancel-in-progress: false
+    steps:
+      # Explicit ref, same rationale as generate-daily-card-morning above:
+      # the exact commit checked out is never in doubt, and this is never the
+      # implicit workflow_run/dispatch default.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      # Unmodified live CLI, no --preview. Deliberately NOT continue-on-error:
+      # this job posts nothing else, so a generation failure or a genuinely
+      # blocked slate (e.g. zero VALID projected-K rows) must fail this step
+      # and skip "Post daily card morning" below outright -- never a preview
+      # card, never a fixture fallback, never a post from a blocked
+      # generation.
+      - name: Generate morning daily card
+        shell: bash
+        run: |
+          npx tsx scripts/generate-social-card-live.ts \
+            --edition=morning \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            > card-morning-post-stdout.log 2> card-morning-post-stderr.log
+          cat card-morning-post-stdout.log
+          cat card-morning-post-stderr.log >&2
+
+      - name: Post daily card morning
+        run: |
+          node scripts/post-mlb-x-daily-card.mjs \
+            --edition=morning \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --card-result-file=card-morning-post-stdout.log \
+            --lease-directory=artifacts/mlb-x-leases \
+            --state-work-dir=.mlb-x-state-work-daily-card
+        env:
+          # Same separate-clone rationale as every other poster job's
+          # MLB_X_STATE_REMOTE_URL -- never echo this URL.
           MLB_X_STATE_REMOTE_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}

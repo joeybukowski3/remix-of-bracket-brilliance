@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   createGitStateStore,
+  dailyCardReceiptPathFor,
   diagnosticPathFor,
   receiptCommitMessage,
   receiptPathFor,
@@ -296,6 +297,94 @@ describe("resilience", () => {
       const result = store.sync();
       assert.equal(result.syncedRemote, false);
       assert.equal(store.writeReceipt({ ...target("k", "morning"), receipt: receipt("111") }).pushed, true);
+    });
+  });
+});
+
+describe("daily card receipt paths (composite morning card)", () => {
+  it("lives under a receipts/ subpath, structurally distinct from a k/hr edition receipt", () => {
+    const path_ = dailyCardReceiptPathFor({ slateDate: SLATE, target: "daily-card-morning" });
+    assert.equal(path_, "mlb-x/2026-07-21/receipts/daily-card-morning.json");
+    assert.notEqual(path_, receiptPathFor(target("k", "morning")));
+  });
+
+  it("rejects a malformed slate date or an unknown target", () => {
+    assert.throws(() => dailyCardReceiptPathFor({ slateDate: "7/21/26", target: "daily-card-morning" }), /slate date/i);
+    assert.throws(() => dailyCardReceiptPathFor({ slateDate: SLATE, target: "daily-card-confirmed" }), /target/i);
+    assert.throws(() => dailyCardReceiptPathFor({ slateDate: SLATE, target: "k-morning" }), /target/i);
+  });
+
+  it("keeps slates separate", () => {
+    assert.notEqual(
+      dailyCardReceiptPathFor({ slateDate: SLATE, target: "daily-card-morning" }),
+      dailyCardReceiptPathFor({ slateDate: "2026-07-22", target: "daily-card-morning" }),
+    );
+  });
+});
+
+describe("daily card receipt round trip", () => {
+  const dailyTarget = (target = "daily-card-morning") => ({ slateDate: SLATE, target });
+
+  it("creates the receipt on first write and reads it back", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      assert.equal(store.readDailyCardReceipt(dailyTarget()), null);
+      const result = store.writeDailyCardReceipt({ ...dailyTarget(), receipt: receipt("777") });
+      assert.equal(result.pushed, true);
+      assert.equal(result.path, "mlb-x/2026-07-21/receipts/daily-card-morning.json");
+      assert.equal(store.readDailyCardReceipt(dailyTarget()).primaryPostId, "777");
+    });
+  });
+
+  it("does not commit when the receipt is unchanged", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      store.writeDailyCardReceipt({ ...dailyTarget(), receipt: receipt("777") });
+      const again = store.writeDailyCardReceipt({ ...dailyTarget(), receipt: receipt("777") });
+      assert.equal(again.unchanged, true);
+      assert.equal(again.pushed, false);
+    });
+  });
+
+  it("a daily card receipt never appears under a k/hr edition's receipt, and vice versa", () => {
+    withRemote(1, ([store]) => {
+      store.sync();
+      store.writeDailyCardReceipt({ ...dailyTarget(), receipt: receipt("777") });
+      assert.equal(store.readReceipt(target("k", "morning")), null);
+      assert.equal(store.readReceipt(target("hr", "morning")), null);
+      store.writeReceipt({ ...target("k", "morning"), receipt: receipt("k-m") });
+      assert.equal(store.readDailyCardReceipt(dailyTarget()).primaryPostId, "777", "unaffected by an unrelated k/hr write");
+    });
+  });
+
+  it("two runners writing the same daily-card target do not silently clobber each other", () => {
+    withRemote(2, ([a, b]) => {
+      a.sync();
+      b.sync();
+      assert.equal(a.writeDailyCardReceipt({ ...dailyTarget(), receipt: receipt("first") }).pushed, true);
+      const bResult = b.writeDailyCardReceipt({ ...dailyTarget(), receipt: receipt("second") });
+      if (bResult.conflicted) {
+        assert.equal(bResult.existingReceipt.primaryPostId, "first");
+      } else {
+        assert.equal(bResult.pushed, true);
+      }
+      a.sync();
+      const finalReceipt = a.readDailyCardReceipt(dailyTarget());
+      assert.ok(["first", "second"].includes(finalReceipt.primaryPostId));
+      if (bResult.conflicted) {
+        assert.equal(finalReceipt.primaryPostId, "first", "B must not clobber A's receipt");
+      }
+    });
+  });
+
+  it("a queued runner started after publication observes the completed daily-card receipt", () => {
+    withRemote(2, ([publisher, queued]) => {
+      publisher.sync();
+      publisher.writeDailyCardReceipt({ ...dailyTarget(), receipt: receipt("published") });
+      queued.sync();
+      const existing = queued.readDailyCardReceipt(dailyTarget());
+      assert.ok(existing, "queued runner must observe the completed publication");
+      assert.equal(existing.primaryPostId, "published");
     });
   });
 });

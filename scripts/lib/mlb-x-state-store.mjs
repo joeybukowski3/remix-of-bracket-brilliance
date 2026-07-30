@@ -63,6 +63,31 @@ export function receiptCommitMessage({ slateDate, market, edition, postId }) {
   return `chore(mlb-x): record ${market} ${edition} receipt for ${slateDate} [skip ci]\n\npostId=${postId}`;
 }
 
+/**
+ * Publication targets that live outside the market/edition receipt namespace
+ * -- the combined daily model card is not a `k`/`hr` market post, so it gets
+ * its own identifier and its own structurally distinct subpath
+ * (`receipts/`) rather than overloading receiptPathFor's market/edition
+ * validation or colliding with an existing k/hr file name.
+ */
+export const DAILY_CARD_TARGETS = Object.freeze(["daily-card-morning"]);
+
+/** `mlb-x/YYYY-MM-DD/receipts/{target}.json` -- e.g. mlb-x/2026-07-21/receipts/daily-card-morning.json */
+export function dailyCardReceiptPathFor({ slateDate, target }) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(slateDate ?? ""))) {
+    throw new Error(`Malformed slate date "${slateDate}" (expected YYYY-MM-DD).`);
+  }
+  if (!DAILY_CARD_TARGETS.includes(target)) {
+    throw new Error(`Unknown daily card publication target "${target}" (expected one of: ${DAILY_CARD_TARGETS.join(", ")}).`);
+  }
+  return `${STATE_ROOT}/${slateDate}/receipts/${target}.json`;
+}
+
+/** Same [skip ci] convention as receiptCommitMessage. */
+export function dailyCardReceiptCommitMessage({ slateDate, target, postId }) {
+  return `chore(mlb-x): record ${target} receipt for ${slateDate} [skip ci]\n\npostId=${postId}`;
+}
+
 /** `mlb-x/YYYY-MM-DD/diagnostics/{market}-{edition}.json` -- structurally distinct from receiptPathFor. */
 export function diagnosticPathFor({ slateDate, market, edition }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(slateDate ?? ""))) {
@@ -230,6 +255,32 @@ export function createGitStateStore({
     });
   }
 
+  /** Reads the composite daily-card receipt for one target (e.g. "daily-card-morning"). */
+  function readDailyCardReceipt({ slateDate, target }) {
+    return readJsonFile(dailyCardReceiptPathFor({ slateDate, target }));
+  }
+
+  /**
+   * Writes one daily-card receipt and pushes it. Same conflict semantics as
+   * writeReceipt: a competing runner's confirmed publication for THIS target
+   * is never silently overwritten.
+   */
+  function writeDailyCardReceipt({ slateDate, target, receipt }) {
+    const ourId = receipt?.primaryPostId ?? receipt?.postId ?? null;
+    return writeJsonWithRetry({
+      relative: dailyCardReceiptPathFor({ slateDate, target }),
+      value: receipt,
+      commitMessage: dailyCardReceiptCommitMessage({ slateDate, target, postId: ourId ?? "unknown" }),
+      onConflict: (theirs) => {
+        const theirId = theirs?.primaryPostId ?? theirs?.postId ?? null;
+        if (theirs && theirId && ourId && theirId !== ourId) {
+          return { pushed: false, conflicted: true, existingReceipt: theirs };
+        }
+        return null;
+      },
+    });
+  }
+
   function readDiagnostic({ slateDate, market, edition }) {
     return readJsonFile(diagnosticPathFor({ slateDate, market, edition }));
   }
@@ -261,6 +312,7 @@ export function createGitStateStore({
 
   return {
     sync, readReceipt, writeReceipt, readDiagnostic, writeDiagnostic,
-    branch, workDir, receiptPathFor, diagnosticPathFor,
+    readDailyCardReceipt, writeDailyCardReceipt,
+    branch, workDir, receiptPathFor, diagnosticPathFor, dailyCardReceiptPathFor,
   };
 }
