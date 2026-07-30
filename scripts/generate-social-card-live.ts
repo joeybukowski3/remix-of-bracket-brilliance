@@ -3,15 +3,25 @@
  * Live-data MLB daily model card generator.
  *
  * Reads the frozen production artifact (public/data/mlb/hr-props-raw.json),
- * applies the exact same filtering and HR/K selection the website's Social
- * Media Tables use (see src/lib/mlb/hrPropSocialSelection.ts,
- * src/lib/mlb/mlbSocialSelection.ts, src/lib/mlb/kPropValueSorting.ts --
- * imported directly here, not reimplemented), adapts the selected rows into
- * the normalized card contract, then hands the result to the EXISTING
+ * applies the exact same HR filtering/selection the website's Social Media
+ * Tables use (see src/lib/mlb/hrPropSocialSelection.ts,
+ * src/lib/mlb/mlbSocialSelection.ts), adapts the selected rows into the
+ * normalized card contract, then hands the result to the EXISTING
  * normalizer/renderer/writer (scripts/lib/social-cards/{mlb,render,write-social-card}.mjs).
  * This file never renders or writes anything itself, and never selects,
  * ranks, or filters rows on its own -- selection is entirely delegated to
  * the shared TypeScript modules above.
+ *
+ * Morning and confirmed use deliberately different K-selection policies,
+ * both from src/lib/mlb/kPropValueSorting.ts:
+ *   - morning: selectTopProjectedKRows -- "most strikeouts" (highest
+ *     projected Ks), since the morning card never shows odds/line/edge and
+ *     markets may not exist yet.
+ *   - confirmed: selectTopSocialKRows -- "best value" (highest absolute
+ *     projection-vs-market-line edge among VALID rows), matching the
+ *     website's SocialTableK. (Confirmed K rows remain unpopulated in this
+ *     phase for a different reason -- see docs/social-cards.md -- not
+ *     because the selector is unavailable.)
  *
  * A TypeScript entrypoint run directly via `tsx` (not compiled/spawned as a
  * second process) so it can import those `@/lib/mlb/*` modules with the
@@ -22,10 +32,11 @@
  *   npx tsx scripts/generate-social-card-live.ts --edition=confirmed [--preview] [--slate-date=YYYY-MM-DD] [--raw=...]
  *
  * Morning strikeout rows require at least one row to survive
- * selectTopSocialKRows (i.e. a real, currently VALID market line + workload-
- * confident projection somewhere on the slate). Without any, morning
- * generation blocks (exit 1) unless --preview is also passed, in which case
- * a partial card with an empty strikeout section is written.
+ * selectTopProjectedKRows (i.e. a real projection the model doesn't flag as
+ * data-quality-ineligible, somewhere on the slate -- no market line is
+ * required). Without any, morning generation blocks (exit 1) unless
+ * --preview is also passed, in which case a partial card with an empty
+ * strikeout section is written.
  *
  * Confirmed strikeouts/values remain blocked by design in this phase -- see
  * docs/social-cards.md.
@@ -39,7 +50,8 @@ import { resolveMlbDailyCardSource } from './lib/social-cards/adapters/resolve-s
 import { writeSocialCard } from './lib/social-cards/write-social-card.mjs';
 import { buildTbdGameKeySet, buildPitcherStrikeoutRows } from '@/lib/mlb/mlbSocialSelection';
 import { selectTopSocialHrRows } from '@/lib/mlb/hrPropSocialSelection';
-import { selectTopSocialKRows } from '@/lib/mlb/kPropValueSorting';
+import { selectTopProjectedKRows } from '@/lib/mlb/kPropValueSorting';
+import { createRemoteMlbLogoResolver } from './lib/mlb-social-graphic-renderer.mjs';
 import type { HrDashboardBatter, HrDashboardGame, HrDashboardPitcher } from '@/pages/MlbHrProps';
 
 const MAX_HR_ROWS = 6;
@@ -111,7 +123,7 @@ async function main() {
 
   if (edition === 'morning') {
     const kCandidateRows = buildPitcherStrikeoutRows(batters, games, pitchers);
-    const selectedStrikeouts = selectTopSocialKRows(kCandidateRows, MAX_K_ROWS);
+    const selectedStrikeouts = selectTopProjectedKRows(kCandidateRows, MAX_K_ROWS);
 
     const { data, readiness, diagnostics } = buildMlbDailyMorningCardInput({
       raw,
@@ -128,7 +140,16 @@ async function main() {
       process.exitCode = 1;
       return;
     }
-    const result = await writeSocialCard({ template: 'mlb_daily_morning', input: data, outputDir });
+    // Prefetches each selected team's real crest from the same ESPN CDN
+    // source the website itself uses (getEmailTeamLogoUrl /
+    // src/lib/mlb/mlbTeamLogos.ts), with a per-team fallback to the local
+    // placeholder badge on any fetch failure -- same resolver already
+    // proven in production for the HR/K X-post graphics
+    // (mlb-social-graphic-renderer.mjs's writeMlbSocialGraphic).
+    const resolveLogo = await createRemoteMlbLogoResolver({
+      teams: [...data.homeRuns, ...data.strikeouts].map((row: { team: string }) => row.team),
+    });
+    const result = await writeSocialCard({ template: 'mlb_daily_morning', input: data, outputDir, resolveLogo });
     console.log(JSON.stringify(result, null, 2));
     return;
   }
@@ -147,12 +168,16 @@ async function main() {
     return;
   }
 
+  const resolveLogo = await createRemoteMlbLogoResolver({
+    teams: [...data.homeRuns, ...(data.strikeouts ?? [])].map((row: { team: string }) => row.team),
+  });
   const result = await writeSocialCard({
     template: 'mlb_daily_confirmed',
     input: data,
     outputDir,
     preview: args.preview,
     valuesSourceAvailable: false,
+    resolveLogo,
   });
   console.log(JSON.stringify(result, null, 2));
 }
