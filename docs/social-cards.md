@@ -89,3 +89,48 @@ Logo loading first checks local SVG assets under `public/assets/mlb/team-logos/`
 Future site migration should consume the same normalized JSON in a React card component displayed directly on the website (rather than the current standalone-artifact CLI flow), validate parity against the Social Media Tables tab, then retire the tab in a later PR now that both already share the same underlying selectors. X integration should first upload dry-run artifacts during the existing confirmed/morning windows and reuse the current leases, receipts, account checks, and duplicate protection.
 
 **Phase 1 boundary**: the live adapters and CLI above only read static production JSON and write local card artifacts. They do not touch `.github/workflows/mlb-x-editions.yml` or any other workflow, do not post to X, do not consume or write leases/receipts, and do not change the website. Wiring a scheduled workflow run and/or a website-facing consumer of these live cards is explicitly future work.
+
+## Phase 2: workflow-artifact generation
+
+Card generation is wired into the existing `.github/workflows/mlb-x-editions.yml` ("MLB X Editions") workflow as two new, independent jobs. Neither job's `on:` triggers, schedules, concurrency groups, leases, receipts, duplicate protection, or X posting logic were changed — the new jobs are pure additions that nothing else depends on.
+
+### Insertion points
+
+- **`generate-daily-card-morning`** — `needs: plan`. Runs when the upstream `Generate MLB Data` workflow just completed successfully (`workflow_run`, the trigger that fires right after `hr-props-raw.json` is committed to `main`), or on `workflow_dispatch` with `mode: morning-dry-run` / `morning-live` for manual testing. Calls the live CLI once, without `--preview`:
+  ```
+  npx tsx scripts/generate-social-card-live.ts --edition=morning --slate-date="${{ needs.plan.outputs.slate_date }}"
+  ```
+- **`generate-daily-card-confirmed`** — `needs: plan`. Runs when `plan` decided either confirmed X edition (`hr_confirmed_should_run` or `k_confirmed_should_run`) should fire this run — i.e. the confirmed pregame window has actually been reached — or on `workflow_dispatch` with `mode: confirmed-dry-run` / `confirmed-live`. First attempts a full (non-preview) generation; if that exits non-zero it automatically retries once with `--preview`. Confirmed K/values selection has no trustworthy source yet (see above), so in this phase the fallback attempt is expected to run on essentially every invocation and always succeeds with a `-preview.*` artifact rather than failing the step.
+
+Both jobs resolve the slate date exclusively from `needs.plan.outputs.slate_date` (the same America/New_York-based value the X-posting jobs use) — never the runner's UTC clock, and never pass `--slate-date` unset.
+
+### Failure isolation
+
+Each generation step runs with `continue-on-error: true` and captures its own exit code to a step output; a "Report ... summary" step and an "Upload ... artifacts" step both run `if: always()` regardless of that outcome. A card-generation failure therefore cannot fail the job (or the workflow), and can never affect `plan`'s outputs or any of the four X-posting jobs, none of which depend on these new jobs. A genuine setup failure (e.g. `npm ci`) is intentionally *not* swallowed — those steps still fail the job normally, which is the correct signal for an infra problem, not a card-generation readiness problem.
+
+### Artifacts
+
+Uploaded from the CLI's existing output directory, `artifacts/social-cards/mlb/<slate-date>/`, plus the captured stdout/stderr log for that run:
+
+| Artifact name | Contents | Retention |
+| --- | --- | --- |
+| `mlb-daily-card-morning-<slate-date>` | `mlb-daily-morning.{json,svg,png}` (if generated) + `card-morning-stdout.log` / `card-morning-stderr.log` | 14 days |
+| `mlb-daily-card-confirmed-<slate-date>` | `mlb-daily-confirmed.{json,svg,png}` or `mlb-daily-confirmed-preview.{json,svg,png}` (if generated) + `card-confirmed-stdout.log` / `card-confirmed-stderr.log` | 14 days |
+
+`if-no-files-found: warn` so a run where generation failed before writing any card file still uploads its logs without failing the upload step. Generated artifacts are never committed — `artifacts/` is gitignored, matching every other pattern in this repo.
+
+### Workflow summary
+
+Each job appends a `### <edition> card — <slate-date>` block to `$GITHUB_STEP_SUMMARY` via `scripts/report-social-card-generation.mjs` (backed by the small, unit-tested `scripts/lib/social-cards/workflow-summary.mjs`), which parses the live CLI's own JSON result (success on stdout, blocked-readiness report on stderr — the CLI already produces both) rather than re-deriving readiness itself. The block reports: edition, slate date, source path and its embedded `.date`, publish-ready vs. preview-only vs. failed status, readiness reasons, HR/K row counts, and generated filenames.
+
+### Playwright
+
+`writeSocialCard()` launches Chromium directly (`@playwright/test`) to rasterize the PNG. Both new jobs run `npx playwright install --with-deps chromium` — the same single-browser install already used by every other job in this workflow file (`plan` and the four `post-*` jobs) — since GitHub Actions jobs don't share a filesystem or browser cache with each other. No other browsers are installed.
+
+### How to inspect artifacts
+
+From the workflow run's Actions page: **Summary** tab shows the per-edition markdown block described above; the **Artifacts** section at the bottom has the `mlb-daily-card-{morning,confirmed}-<slate-date>` zips containing the JSON/SVG/PNG (when generated) and the raw CLI logs.
+
+### What Phase 2 does not do
+
+Phase 2 only generates and uploads workflow artifacts. It does not publish, post, or otherwise surface any card on the website or on X — no website component consumes these artifacts, and no X-posting job reads or references them. That remains explicitly future work (see "Future site migration" above).
