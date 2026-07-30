@@ -1206,8 +1206,12 @@ function MlbSlateAnalyzer({
         <span className="shrink-0 text-xs font-semibold text-slate-400">{games.length} games</span>
       </div>
 
-      {/* 2 cards per row once the slate itself has room (see mlb-matchup-slate/
-          mlb-matchup-grid container query in index.css), 1 on mobile/narrow desktop */}
+      {/* Responsive card grid: columns are driven by the actual rendered width
+          of this container (auto-fit + minmax), not viewport breakpoints, so
+          it tracks whatever space is left after the sidebar/Polymarket panel.
+          1 column when narrow, 2 at normal desktop widths, 3 only once there's
+          enough width for every card to stay fully readable (see
+          .mlb-matchup-grid in index.css). */}
       <div className="mlb-matchup-grid grid grid-cols-1 gap-3">
         {games.map((game) => {
           const detail = detailPreviews[game.gamePk];
@@ -1247,6 +1251,17 @@ function MlbSlateAnalyzer({
                     ? (mlEdge.pick === "away" ? mlEdge.awayAbbr : mlEdge.homeAbbr) : null;
                   const mlPickColor = mlPickAbbr ? getMlbTeamColors(mlPickAbbr).primary : null;
                   const pmAgreement = getPolymarketAgreement(game.gamePk, mlEdge);
+
+                  // Market Summary figures — used by the header's centered
+                  // Market Summary column, hoisted here (rather than computed
+                  // inside footerContent) since the header is built first.
+                  const awayAbbr = game.away.abbreviation;
+                  const homeAbbr = game.home.abbreviation;
+                  const ml = mlbOdds?.moneylines?.[`${awayAbbr}@${homeAbbr}`];
+                  const awayAmerican = ml?.away?.american ?? null;
+                  const homeAmerican = ml?.home?.american ?? null;
+                  const isRealOdds = (value: string | null) => value != null && /^[+-]\d+$/.test(String(value).trim());
+                  const bothReal = isRealOdds(awayAmerican) && isRealOdds(homeAmerican);
 
                   const awayWrc = getTeam(game.away.abbreviation);
                   const homeWrc = getTeam(game.home.abbreviation);
@@ -1450,10 +1465,12 @@ function MlbSlateAnalyzer({
 
                   const pitcherHeaderContent = (
                     <>
-                      {/* ── Pitcher headers: Home LEFT, Away RIGHT ── */}
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+                      {/* Pitcher headers: Home LEFT, Away RIGHT, Market Summary
+                          centered between them (stacks below the two teams on
+                          narrow cards -- see .mlb-matchup-header-grid in index.css) */}
+                      <div className="mlb-matchup-header-grid gap-2">
                         {/* Home LEFT */}
-                        <div className="grid min-w-0 grid-rows-[28px_18px_16px_20px] gap-0.5">
+                        <div className="mlb-matchup-header-home grid min-w-0 grid-rows-[28px_18px_16px_20px] gap-0.5">
                           <div className="flex h-7 items-center gap-1.5 overflow-hidden">
                             <MlbTeamLogo team={game.home.abbreviation} size={28} />
                             <span className="text-[15px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
@@ -1468,9 +1485,54 @@ function MlbSlateAnalyzer({
                           </span>
                           <PitcherPills pi={homePI} align="left" />
                         </div>
-                        <div className="self-center px-1 pt-7 text-[11px] font-bold text-slate-300">vs</div>
+                        {/* Market Summary -- centered column between the two teams */}
+                        <div className="mlb-matchup-header-summary min-w-0">
+                          <div className="mb-1.5 text-center text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Market Summary</div>
+                          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5">
+                            <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
+                            <span className="max-w-full justify-self-end whitespace-nowrap rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold leading-none text-white">{edges.total}</span>
+
+                            <div className="hidden md:contents">
+                              <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400" title={ML_EDGE_METHODOLOGY}>Edge Strength</span>
+                              {mlPickAbbr && mlPickColor ? (
+                                <span className="max-w-full justify-self-end whitespace-normal break-words text-right rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-tight text-white" style={{ backgroundColor: mlPickColor }} title={ML_EDGE_METHODOLOGY}>
+                                  {mlPickAbbr} {getEdgeTierLabel(mlEdge!.confidence)}
+                                </span>
+                              ) : mlEdge ? (
+                                <span className="max-w-full justify-self-end whitespace-normal break-words text-right rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold leading-tight text-slate-500" title={ML_EDGE_METHODOLOGY}>Even</span>
+                              ) : (
+                                <span className="justify-self-end text-[10px] font-semibold text-slate-400" title={ML_EDGE_METHODOLOGY}>—</span>
+                              )}
+                            </div>
+
+                            <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket</span>
+                            {pmAgreement ? (
+                              <span className={cn(
+                                "max-w-full justify-self-end whitespace-normal break-words text-right rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-tight",
+                                pmAgreement.aligned
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-700",
+                              )}>
+                                {pmAgreement.aligned ? "Aligned" : "Contrarian"} · {pmAgreement.pickAbbr} {(pmAgreement.marketPrice * 100).toFixed(0)}¢
+                              </span>
+                            ) : (
+                              <span className="justify-self-end text-[10px] font-semibold text-slate-400">—</span>
+                            )}
+
+                            <span className="self-start pt-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-400">{bothReal ? "Line" : "Win%"}</span>
+                            {awayAmerican && homeAmerican ? (
+                              <div className="max-w-full justify-self-end text-right text-[9px] font-bold leading-4 text-slate-600">
+                                <div className={mlPickAbbr === awayAbbr ? "text-slate-900" : undefined}>{awayAbbr} {awayAmerican}</div>
+                                <div className={mlPickAbbr === homeAbbr ? "text-slate-900" : undefined}>{homeAbbr} {homeAmerican}</div>
+                              </div>
+                            ) : (
+                              <span className="justify-self-end text-[10px] font-semibold text-slate-400">—</span>
+                            )}
+                          </div>
+                        </div>
+
                         {/* Away RIGHT */}
-                        <div className="grid min-w-0 grid-rows-[28px_18px_16px_20px] justify-items-end gap-0.5 text-right">
+                        <div className="mlb-matchup-header-away grid min-w-0 grid-rows-[28px_18px_16px_20px] justify-items-end gap-0.5 text-right">
                           <div className="flex h-7 max-w-full flex-row-reverse items-center gap-1.5 overflow-hidden">
                             <MlbTeamLogo team={game.away.abbreviation} size={28} />
                             <span className="text-[15px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
@@ -1647,17 +1709,9 @@ function MlbSlateAnalyzer({
                         );
                         const awayColor = getMlbTeamColors(game.away.abbreviation).primary;
                         const homeColor = getMlbTeamColors(game.home.abbreviation).primary;
-                        const awayAbbr = game.away.abbreviation;
-                        const homeAbbr = game.home.abbreviation;
-                        const ml = mlbOdds?.moneylines?.[`${awayAbbr}@${homeAbbr}`];
-                        const awayAmerican = ml?.away?.american ?? null;
-                        const homeAmerican = ml?.home?.american ?? null;
-                        const isRealOdds = (value: string | null) => value != null && /^[+-]\d+$/.test(String(value).trim());
-                        const bothReal = isRealOdds(awayAmerican) && isRealOdds(homeAmerican);
 
                         return (
-                            <div className="mlb-matchup-footer-grid grid grid-cols-1 gap-3">
-                              <div className="min-w-0">
+                            <div className="mlb-matchup-footer min-w-0">
                                 <div className="mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Top Model Drivers</div>
                                 {driverRows.length ? (
                                   <div className="space-y-1">
@@ -1703,52 +1757,6 @@ function MlbSlateAnalyzer({
                                 ) : (
                                   <div className="text-[10px] text-slate-400">Model drivers unavailable.</div>
                                 )}
-                              </div>
-
-                              <div className="mlb-matchup-footer-market min-w-0 border-t border-slate-200 pt-2.5">
-                                <div className="mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Market Summary</div>
-                                <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5">
-                                  <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
-                                  <span className="max-w-full justify-self-end whitespace-nowrap rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold leading-none text-white">{edges.total}</span>
-
-                                  <div className="hidden md:contents">
-                                    <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400" title={ML_EDGE_METHODOLOGY}>Edge Strength</span>
-                                    {mlPickAbbr && mlPickColor ? (
-                                      <span className="max-w-full justify-self-end whitespace-normal break-words text-right rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-tight text-white" style={{ backgroundColor: mlPickColor }} title={ML_EDGE_METHODOLOGY}>
-                                        {mlPickAbbr} {getEdgeTierLabel(mlEdge!.confidence)}
-                                      </span>
-                                    ) : mlEdge ? (
-                                      <span className="max-w-full justify-self-end whitespace-normal break-words text-right rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold leading-tight text-slate-500" title={ML_EDGE_METHODOLOGY}>Even</span>
-                                    ) : (
-                                      <span className="justify-self-end text-[10px] font-semibold text-slate-400" title={ML_EDGE_METHODOLOGY}>—</span>
-                                    )}
-                                  </div>
-
-                                  <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket</span>
-                                  {pmAgreement ? (
-                                    <span className={cn(
-                                      "max-w-full justify-self-end whitespace-normal break-words text-right rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-tight",
-                                      pmAgreement.aligned
-                                        ? "bg-emerald-100 text-emerald-700"
-                                        : "bg-amber-100 text-amber-700",
-                                    )}>
-                                      {pmAgreement.aligned ? "Aligned" : "Contrarian"} · {pmAgreement.pickAbbr} {(pmAgreement.marketPrice * 100).toFixed(0)}¢
-                                    </span>
-                                  ) : (
-                                    <span className="justify-self-end text-[10px] font-semibold text-slate-400">—</span>
-                                  )}
-
-                                  <span className="self-start pt-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-400">{bothReal ? "Line" : "Win%"}</span>
-                                  {awayAmerican && homeAmerican ? (
-                                    <div className="max-w-full justify-self-end text-right text-[9px] font-bold leading-4 text-slate-600">
-                                      <div className={mlPickAbbr === awayAbbr ? "text-slate-900" : undefined}>{awayAbbr} {awayAmerican}</div>
-                                      <div className={mlPickAbbr === homeAbbr ? "text-slate-900" : undefined}>{homeAbbr} {homeAmerican}</div>
-                                    </div>
-                                  ) : (
-                                    <span className="justify-self-end text-[10px] font-semibold text-slate-400">—</span>
-                                  )}
-                                </div>
-                              </div>
                             </div>
                         );
                   })();
@@ -1798,8 +1806,8 @@ function MlbSlateAnalyzer({
                       </div>
 
                       {/* MODEL EDGE — mobile-only prominent summary. Desktop keeps the
-                          categorical "Edge Strength" row lower in the Market Summary
-                          panel (hidden md:flex there) so the label isn't duplicated. */}
+                          categorical "Edge Strength" row in the header's Market Summary
+                          column (hidden md:contents there) so the label isn't duplicated. */}
                       <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2 md:hidden">
                         <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Model Edge</span>
                         {cardMlPickAbbr && cardMlPickColor ? (
@@ -1826,7 +1834,8 @@ function MlbSlateAnalyzer({
                       </div>
                     )}
 
-                    {/* Top Model Drivers + Market Summary — always visible in the collapsed card */}
+                    {/* Top Model Drivers — always visible in the collapsed card (Market
+                        Summary now lives in the header, between the two teams) */}
                     <button
                       type="button"
                       onClick={() => onOpenGame(game.gamePk)}

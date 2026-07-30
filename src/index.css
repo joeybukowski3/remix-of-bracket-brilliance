@@ -379,42 +379,87 @@
   }
 }
 
-/* MLB matchup cards: two columns only once the ACTUAL rendered slate width
-   (not the viewport) has room for both cards. Viewport-based breakpoints
-   (e.g. `lg:`/`xl:`) go stale here because the MLB layout's 224px sidebar
-   appears at `xl` and eats width right as a viewport breakpoint would
-   otherwise flip to two columns, producing compressed cards. Container
-   queries measure the slate's real width so the switch tracks whatever
-   space is actually left after the sidebar. */
+/* MLB matchup cards: column count tracks the ACTUAL rendered width of the
+   grid (not the viewport). Viewport-based breakpoints (e.g. `lg:`/`xl:`) go
+   stale here because the MLB layout's 224px sidebar and the Polymarket
+   panel eat width right as a viewport breakpoint would otherwise flip
+   columns, producing compressed cards. `auto-fit` + `minmax()` sizes off
+   the grid's own box, so it naturally accounts for whatever space is left
+   after the surrounding layout — 1 column when narrow, 2 at normal desktop
+   widths, and a 3rd only once there's enough width for every card to stay
+   fully readable.
+
+   The max of the minmax() MUST stay a flexible `1fr`, not a fixed length.
+   Per the CSS Grid spec, auto-fit's implicit column count is computed using
+   each track's max sizing function whenever that max is definite — so a
+   fixed max (e.g. `640px`) makes the browser count columns as if every
+   track were 640px wide, not the minimum, silently collapsing to fewer
+   columns than the available width actually supports (verified live: a
+   fixed 640px max rendered only 1 column in ~1058px of available width,
+   even though two 460px cards would fit easily). `1fr` keeps the min as the
+   basis for the column count, and the `max-width` below caps how wide the
+   whole grid (and therefore each column) can stretch on very wide screens.
+
+   The minimum is 420px, not the card's ~460px "comfortable" width, because
+   the real available width with the left nav AND the Polymarket sidebar
+   both on screen is only ~930px (verified live at 1920x1080) — a 460px
+   minimum leaves just 930 - (2*460+12) = -2px of slack and collapses back
+   to 1 column. 420px keeps a safe margin (2*420+12 = 852px) for two columns
+   whenever both side panels are present; cards below the card-level 460px
+   container-query threshold simply render Market Summary stacked under the
+   team row instead of the 3-column layout, which is the designed fallback. */
 .mlb-matchup-slate {
   container-type: inline-size;
   container-name: mlb-matchup-slate;
 }
 
-@container mlb-matchup-slate (min-width: 1150px) {
-  .mlb-matchup-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
+.mlb-matchup-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  max-width: 1440px;
+  /* Without this, grid's default `stretch` forces every card in a row to
+     the height of its tallest sibling — so expanding one card's comparison
+     panel stretches the still-collapsed card next to it, leaving a large
+     blank area inside its border. `start` lets each card keep its own
+     natural height while the grid still prevents any row-to-row overlap. */
+  align-items: start;
 }
 
-/* Each card also queries its own width so the Top Model Drivers / Market
-   Summary split responds to the card's real size, independent of whether
-   the slate above is in one- or two-column mode. */
+/* Each card also queries its own width so the header's team/Market Summary
+   split responds to the card's real size, independent of how many columns
+   the grid above is currently rendering. */
 .mlb-matchup-card {
   container-type: inline-size;
   container-name: mlb-matchup-card;
 }
 
-@container mlb-matchup-card (min-width: 460px) {
-  .mlb-matchup-footer-grid {
-    grid-template-columns: minmax(0, 1.45fr) minmax(150px, 0.75fr);
-    gap: 1rem;
-  }
+/* Header: Home | Market Summary | Away. Below the container threshold, the
+   two teams stay side by side (preserving clear team-vs-team hierarchy) and
+   Market Summary drops to its own full-width row underneath; at comfortable
+   card widths it becomes a true 3-column row with Market Summary centered. */
+.mlb-matchup-header-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "home away"
+    "summary summary";
+  align-items: start;
+}
 
-  .mlb-matchup-footer-market {
-    border-left-width: 1px;
-    border-top-width: 0;
-    padding-left: 1rem;
-    padding-top: 0;
+.mlb-matchup-header-home {
+  grid-area: home;
+}
+
+.mlb-matchup-header-away {
+  grid-area: away;
+}
+
+.mlb-matchup-header-summary {
+  grid-area: summary;
+}
+
+@container mlb-matchup-card (min-width: 460px) {
+  .mlb-matchup-header-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(132px, auto) minmax(0, 1fr);
+    grid-template-areas: "home summary away";
   }
 }

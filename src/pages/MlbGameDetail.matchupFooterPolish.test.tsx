@@ -1,8 +1,9 @@
 /**
  * MlbGameDetail.matchupFooterPolish.test.tsx
- * Top Model Drivers + Market Summary footer alignment. Presentation-only:
- * verifies the fixed-column grid structure that keeps driver rows, bar
- * tracks, and market values aligned — not the underlying calculations.
+ * Top Model Drivers (footer) + Market Summary (header, centered between the
+ * two teams) alignment. Presentation-only: verifies the fixed-column grid
+ * structure that keeps driver rows, bar tracks, and market values aligned —
+ * not the underlying calculations.
  */
 import { describe, expect, it, vi } from "vitest";
 import { render, within } from "@testing-library/react";
@@ -138,12 +139,12 @@ describe("Game Matchup Analyzer — Top Model Drivers / Market Summary footer al
     expect(edgeStrengthLabel.closest("div")?.className).toContain("md:contents");
   });
 
-  it("drives the two-column card grid and the footer split off container queries, not viewport breakpoints", () => {
+  it("drives the card grid columns and the header's team/summary split off container queries, not viewport breakpoints", () => {
     computeModelEdgeMock.mockReturnValue(MODEL_EDGE);
     const card = renderCard();
 
-    // The slate switches to two columns based on its own rendered width
-    // (see .mlb-matchup-grid in index.css), not a `lg:`/`xl:` viewport
+    // The grid's column count is driven by its own rendered width (auto-fit +
+    // minmax in .mlb-matchup-grid, index.css), not a `lg:`/`xl:` viewport
     // breakpoint — those go stale next to the MLB layout's sidebar and
     // produce compressed cards. Assert the old viewport class is gone.
     const slate = card.parentElement as HTMLElement;
@@ -153,9 +154,16 @@ describe("Game Matchup Analyzer — Top Model Drivers / Market Summary footer al
 
     expect(card.className).toContain("mlb-matchup-card");
 
+    // Market Summary now lives in the header, centered between the two teams,
+    // driven by the card's own container query (.mlb-matchup-header-grid).
     const marketWrapper = within(card).getByText("Market Summary").parentElement as HTMLElement;
-    const footerGrid = marketWrapper.parentElement as HTMLElement;
-    expect(footerGrid.className).toContain("mlb-matchup-footer-grid");
-    expect(footerGrid.className).not.toMatch(/\bsm:grid-cols-\[/);
+    expect(marketWrapper.className).toContain("mlb-matchup-header-summary");
+    const headerGrid = marketWrapper.parentElement as HTMLElement;
+    expect(headerGrid.className).toContain("mlb-matchup-header-grid");
+
+    // The footer now holds only Top Model Drivers — no more split/second column.
+    const driversWrapper = within(card).getByText("Top Model Drivers").parentElement as HTMLElement;
+    expect(driversWrapper.className).toContain("mlb-matchup-footer");
+    expect(within(driversWrapper).queryByText("Market Summary")).not.toBeInTheDocument();
   });
 });
