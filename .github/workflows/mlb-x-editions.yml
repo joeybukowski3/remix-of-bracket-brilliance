@@ -380,6 +380,169 @@ jobs:
           JKB_X_ACCESS_TOKEN: ${{ secrets.JKB_X_ACCESS_TOKEN }}
           JKB_X_ACCESS_SECRET: ${{ secrets.JKB_X_ACCESS_SECRET }}
 
+  # Phase 2: daily model card generation (artifacts only -- no website change,
+  # no X post, no publication of any kind). Uses the existing live CLI
+  # (scripts/generate-social-card-live.ts) unmodified; this job only resolves
+  # the slate date from `plan`'s own output (never the runner's UTC clock),
+  # runs the CLI, and uploads whatever it produced. A card-generation failure
+  # is isolated at the step level (continue-on-error + captured exit code) so
+  # it can never affect `plan`'s outputs or any X-posting job below, none of
+  # which depend on this job.
+  generate-daily-card-morning:
+    needs: plan
+    if: |
+      needs.plan.result == 'success' &&
+      (
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+        github.event.inputs.mode == 'morning-dry-run' ||
+        github.event.inputs.mode == 'morning-live'
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Explicit ref (not the implicit workflow_run/dispatch default) so the
+      # exact commit checked out is never in doubt: main's current tip,
+      # which by construction already includes the hr-props-raw.json commit
+      # the upstream "Generate MLB Data" workflow just pushed -- that push is
+      # the last action in its job, so it has landed before that workflow
+      # reports "completed" and this job's `if` above allows it to start.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Generate morning daily card
+        id: generate_card
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npx tsx scripts/generate-social-card-live.ts \
+            --edition=morning \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            > card-morning-stdout.log 2> card-morning-stderr.log
+          exit_code=$?
+          set -e
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+          cat card-morning-stdout.log
+          cat card-morning-stderr.log >&2
+
+      - name: Report morning card generation summary
+        if: always()
+        shell: bash
+        run: |
+          node scripts/report-social-card-generation.mjs \
+            --edition=morning \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --source-path=public/data/mlb/hr-props-raw.json \
+            --exit-code="${{ steps.generate_card.outputs.exit_code || '1' }}" \
+            --stdout-file=card-morning-stdout.log \
+            --stderr-file=card-morning-stderr.log \
+            >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload morning card artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-daily-card-morning-${{ needs.plan.outputs.slate_date }}
+          path: |
+            artifacts/social-cards/mlb/${{ needs.plan.outputs.slate_date }}/
+            card-morning-stdout.log
+            card-morning-stderr.log
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Attempts a full (publish-ready) confirmed card first; confirmed K/values
+  # selection has no trustworthy source yet (see docs/social-cards.md), so
+  # this is currently expected to fall back to the explicit --preview path on
+  # every run, which the CLI itself never treats as a failure. Both attempts
+  # are step-isolated the same way as the morning job above.
+  generate-daily-card-confirmed:
+    needs: plan
+    if: |
+      needs.plan.result == 'success' &&
+      (
+        github.event.inputs.mode == 'confirmed-dry-run' || github.event.inputs.mode == 'confirmed-live' ||
+        (github.event.inputs.mode == '' && (needs.plan.outputs.hr_confirmed_should_run == 'true' || needs.plan.outputs.k_confirmed_should_run == 'true'))
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Same explicit-ref rationale as generate-daily-card-morning above.
+      # This job also fires on the schedule trigger (the 20-minute pregame
+      # cron), where main's current tip is unambiguously correct with no
+      # workflow_run-specific reasoning needed at all.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      - name: Generate confirmed daily card (full attempt)
+        id: generate_card_full
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npx tsx scripts/generate-social-card-live.ts \
+            --edition=confirmed \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            > card-confirmed-stdout.log 2> card-confirmed-stderr.log
+          exit_code=$?
+          set -e
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate confirmed daily card (preview fallback)
+        id: generate_card_preview
+        if: steps.generate_card_full.outputs.exit_code != '0'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npx tsx scripts/generate-social-card-live.ts \
+            --edition=confirmed \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --preview \
+            > card-confirmed-stdout.log 2> card-confirmed-stderr.log
+          exit_code=$?
+          set -e
+          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
+          cat card-confirmed-stdout.log
+          cat card-confirmed-stderr.log >&2
+
+      - name: Report confirmed card generation summary
+        if: always()
+        shell: bash
+        run: |
+          FINAL_EXIT="${{ steps.generate_card_preview.outputs.exit_code || steps.generate_card_full.outputs.exit_code || '1' }}"
+          node scripts/report-social-card-generation.mjs \
+            --edition=confirmed \
+            --slate-date="${{ needs.plan.outputs.slate_date }}" \
+            --source-path=public/data/mlb/hr-props-raw.json \
+            --exit-code="${FINAL_EXIT}" \
+            --stdout-file=card-confirmed-stdout.log \
+            --stderr-file=card-confirmed-stderr.log \
+            >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload confirmed card artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-daily-card-confirmed-${{ needs.plan.outputs.slate_date }}
+          path: |
+            artifacts/social-cards/mlb/${{ needs.plan.outputs.slate_date }}/
+            card-confirmed-stdout.log
+            card-confirmed-stderr.log
+          if-no-files-found: warn
+          retention-days: 14
+
   diagnostic:
     needs: plan
     if: github.event.inputs.mode == 'diagnostic-only'
