@@ -58,6 +58,7 @@ import {
 import { formatAvgLike, formatFactor, MLB_DASH } from "@/lib/mlb/mlbFormatters";
 import { getProjectionEdgeInfo, selectTopSocialKRows } from "@/lib/mlb/kPropValueSorting";
 import { resolveKPropStatus } from "@/lib/mlb/kPropStatus";
+import { selectTopSocialHrRows } from "@/lib/mlb/hrPropSocialSelection";
 import { MLB_LEAGUE_AVERAGES } from "@/lib/mlb/mlbLeagueAverages";
 import { buildBreadcrumbSchema } from "@/lib/seo/pgaSeo";
 import { getMlbTeamColors, getStatusBadgeTheme } from "@/lib/mlbTeamColors";
@@ -1899,11 +1900,8 @@ function socialLine(value: number | null | undefined) {
   return Number.isInteger(Number(value)) ? Number(value).toFixed(0) : String(Number(value));
 }
 
-function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
-  const rows = batters
-    .filter((b) => !(b.barrelRate != null && b.barrelRate > 25) && !(b.atBats != null && b.atBats < 50))
-    .slice().sort((a, b) => b.hrScore - a.hrScore)
-    .slice(0, 8);
+export function SocialTableHR({ batters }: { batters: HrDashboardBatter[] }) {
+  const rows = selectTopSocialHrRows(batters, { max: 8 });
 
   function sc(s: number) {
     if (s >= 70) return { bg: "#22c55e", color: "#fff" };
