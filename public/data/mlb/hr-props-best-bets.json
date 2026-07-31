@@ -1,10 +1,10 @@
 {
   "date": "2026-07-31",
-  "generatedAt": "2026-07-31T14:44:44.083Z",
+  "generatedAt": "2026-07-31T16:16:07.467Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Coors Field and Great American Ball Park are the clear power spots today, with park factors of 1.4 and 1.25 respectively, while Sugano and Greene are both getting hit hard by right-handed power. The model is heavily weighting barrel rate and hard-hit rate in these elevated parks, with Rave and Caglianone both posting elite exit velocities against a pitcher allowing 90.7 HR/1000 BF.",
-    "modelNote": "The model is prioritizing park-adjusted barrel rate and recent opposing pitcher HR vulnerability over recent player HR form, which is why Rave ranks first despite zero homers in the last 30 days."
+    "slateOverview": "Coors Field (1.40 PF) and Great American Ball Park (1.25 PF) headline the slate, with Sugano and Greene serving as the primary targets. The Coors trio (Rave, Caglianone) and Valdez in Cincinnati benefit from altitude and short fences, while Alvarez and Wood leverage favorable park factors and recent HR momentum against Eovaldi and Elder.",
+    "modelNote": "The model is prioritizing park-adjusted barrel rates and opposing pitcher HR vulnerability, elevating Rave to the top spot despite zero recent homers due to his elite 35.7% barrel rate and Coors boost."
   },
   "bestBets": [
     {
@@ -18,8 +18,8 @@
         "barrel=35.7%"
       ],
       "bullets": [
-        "park=1.4",
-        "HH=64.3%"
+        "hrScore=76",
+        "barrel=35.7%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -37,11 +37,11 @@
         "barrel=18.6%"
       ],
       "bullets": [
-        "market-implied 29.4%",
-        "HH=53.7%"
+        "hrScore=75.5",
+        "barrel=18.6%"
       ],
-      "hrOddsYes": "+240",
-      "marketImpliedProbability": 0.29411764705882354,
+      "hrOddsYes": "+230",
+      "marketImpliedProbability": 0.30303030303030304,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,15 +52,15 @@
       "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=74.5",
+        "hrScore=74.6",
         "barrel=14.8%"
       ],
       "bullets": [
-        "market-implied 26.0%",
-        "HH=55.2%"
+        "hrScore=74.6",
+        "barrel=14.8%"
       ],
-      "hrOddsYes": "+285",
-      "marketImpliedProbability": 0.2597402597402597,
+      "hrOddsYes": "+300",
+      "marketImpliedProbability": 0.25,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -72,11 +72,11 @@
       "hrScoreRank": 4,
       "topStats": [
         "Hard Hit%=58.5",
-        "Pitcher HR VS=45.9"
+        "Pitcher HR VS=46.1"
       ],
       "bullets": [
         "HR score 72.3 (#4)",
-        "Pitcher HR VS 45.9 at park 1.03"
+        "Pitcher HR VS 46.1 at park 1.03"
       ],
       "hrOddsYes": "+280",
       "marketImpliedProbability": 0.2631578947368421,
@@ -90,12 +90,12 @@
       "opposingPitcher": "Zebby Matthews",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=63.8",
+        "Pitcher HR VS=63.7",
         "Hard Hit%=48.1"
       ],
       "bullets": [
         "HR score 71.8 (#5)",
-        "Pitcher HR VS 63.8 at park 0.93"
+        "Pitcher HR VS 63.7 at park 0.93"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -115,8 +115,8 @@
         "barrel=21.3%"
       ],
       "bullets": [
-        "market-implied 26.3%",
-        "HH=58.5%"
+        "hrScore=72.3",
+        "barrel=21.3%"
       ],
       "hrOddsYes": "+280",
       "marketImpliedProbability": 0.2631578947368421,
@@ -134,8 +134,8 @@
         "barrel=14.8%"
       ],
       "bullets": [
-        "market-implied 22.2%",
-        "HH=48.1%"
+        "hrScore=71.8",
+        "barrel=14.8%"
       ],
       "hrOddsYes": "+350",
       "marketImpliedProbability": 0.2222222222222222,
@@ -153,8 +153,8 @@
         "barrel=25.6%"
       ],
       "bullets": [
-        "market-implied 23.8%",
-        "HH=51.2%"
+        "hrScore=69.8",
+        "barrel=25.6%"
       ],
       "hrOddsYes": "+320",
       "marketImpliedProbability": 0.23809523809523808,
@@ -162,80 +162,80 @@
       "hrValueEdge": null
     },
     {
-      "player": "Eduardo Valencia",
-      "team": "DET",
-      "opponent": "ATH",
-      "opposingPitcher": "Jeffrey Springs",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=60.7",
-        "Hard Hit%=52.9"
-      ],
-      "bullets": [
-        "HR score 66.9 (#7)",
-        "Pitcher HR VS 60.7 at park 0.96"
-      ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Luis García Jr.",
       "team": "WSH",
       "opponent": "ATL",
       "opposingPitcher": "Bryce Elder",
-      "hrScoreRank": 8,
+      "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=45.9",
-        "Pitcher HR VS=45.9"
+        "Pitcher HR VS=46.1",
+        "Hard Hit%=45.9"
       ],
       "bullets": [
-        "HR score 65.0 (#8)",
-        "Pitcher HR VS 45.9 at park 1.03"
+        "HR score 65.2 (#7)",
+        "Pitcher HR VS 46.1 at park 1.03"
       ],
       "hrOddsYes": "+390",
       "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "CWS",
+      "opposingPitcher": "Erick Fedde",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=60.8",
+        "Hard Hit%=50.3"
+      ],
+      "bullets": [
+        "HR score 64.5 (#8)",
+        "Pitcher HR VS 60.8 at park 0.98"
+      ],
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Eduardo Valencia",
-      "team": "DET",
-      "opponent": "ATH",
-      "opposingPitcher": "Jeffrey Springs",
-      "hrScoreRank": 7,
-      "topStats": [
-        "hrScore=66.9",
-        "barrel=17.6%"
-      ],
-      "bullets": [
-        "market-implied 20.0%",
-        "HH=52.9%"
-      ],
-      "hrOddsYes": "+400",
-      "marketImpliedProbability": 0.2,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
       "player": "Luis García Jr.",
       "team": "WSH",
       "opponent": "ATL",
       "opposingPitcher": "Bryce Elder",
-      "hrScoreRank": 8,
+      "hrScoreRank": 7,
       "topStats": [
-        "hrScore=65",
+        "hrScore=65.2",
         "barrel=12.5%"
       ],
       "bullets": [
-        "market-implied 20.4%",
-        "HH=45.9%"
+        "hrScore=65.2",
+        "barrel=12.5%"
       ],
       "hrOddsYes": "+390",
       "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Junior Caminero",
+      "team": "TB",
+      "opponent": "CWS",
+      "opposingPitcher": "Erick Fedde",
+      "hrScoreRank": 8,
+      "topStats": [
+        "hrScore=64.5",
+        "barrel=13.1%"
+      ],
+      "bullets": [
+        "hrScore=64.5",
+        "barrel=13.1%"
+      ],
+      "hrOddsYes": "+255",
+      "marketImpliedProbability": 0.28169014084507044,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -244,14 +244,14 @@
       "team": "SD",
       "opponent": "SF",
       "opposingPitcher": "Carson Whisenhunt",
-      "hrScoreRank": 11,
+      "hrScoreRank": 10,
       "topStats": [
-        "Pitcher HR VS=72.0",
+        "Pitcher HR VS=72.5",
         "Hard Hit%=46.6"
       ],
       "bullets": [
-        "HR score 63.9 (#11)",
-        "Pitcher HR VS 72.0 at park 0.89"
+        "HR score 63.9 (#10)",
+        "Pitcher HR VS 72.5 at park 0.89"
       ],
       "hrOddsYes": "+520",
       "marketImpliedProbability": 0.16129032258064516,
@@ -263,14 +263,14 @@
       "team": "SD",
       "opponent": "SF",
       "opposingPitcher": "Carson Whisenhunt",
-      "hrScoreRank": 17,
+      "hrScoreRank": 16,
       "topStats": [
-        "Pitcher HR VS=72.0",
+        "Pitcher HR VS=72.5",
         "Hard Hit%=49.7"
       ],
       "bullets": [
-        "HR score 62.0 (#17)",
-        "Pitcher HR VS 72.0 at park 0.89"
+        "HR score 62.1 (#16)",
+        "Pitcher HR VS 72.5 at park 0.89"
       ],
       "hrOddsYes": "+480",
       "marketImpliedProbability": 0.1724137931034483,
