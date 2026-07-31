@@ -74,12 +74,16 @@ function FactorRow({
   const isNeutralEdge = edgeMagnitude === 0;
   const awayLeads = factor.weightedDifference > 0;
   const leaderAbbr = awayLeads ? awayAbbr : homeAbbr;
-  const leaderColor = awayLeads ? awayColor : homeColor;
+  const outcomeLabel = isNeutralEdge ? "Even factor" : `${leaderAbbr} advantage`;
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 md:grid md:grid-cols-[1fr_auto] md:items-center md:gap-3">
-      <div className="min-w-0 space-y-1.5">
-        <div className="flex items-center justify-between gap-2">
+    <article
+      className="mlb-factor-row rounded-lg border border-slate-200 bg-white p-3"
+      data-factor-row
+      data-factor-outcome={isNeutralEdge ? "even" : awayLeads ? "away" : "home"}
+    >
+      <div className="mlb-factor-info min-w-0 space-y-1">
+        <div className="flex items-center gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600">
               {FACTOR_ICONS[factor.label] ?? <Target className="h-4 w-4" />}
@@ -91,29 +95,71 @@ function FactorRow({
           </span>
         </div>
         <p className="text-[10px] leading-4 text-slate-500">{factor.description}</p>
-        <div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full rounded-l-full" style={{ width: `${awayPct}%`, backgroundColor: awayColor }} />
-          <div className="h-full rounded-r-full" style={{ width: `${homePct}%`, backgroundColor: homeColor }} />
+      </div>
+
+      <div className="mlb-factor-comparison min-w-0 space-y-1.5">
+        <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-[#031635]">
+          <span className={cn("flex min-w-0 items-center gap-1.5", !isNeutralEdge && awayLeads && "font-extrabold")}>
+            <span className="h-2 w-2 shrink-0 rounded-full ring-1 ring-white" style={{ backgroundColor: awayColor }} aria-hidden="true" />
+            <span>{awayAbbr}</span>
+            <span className={cn("tabular-nums", !isNeutralEdge && !awayLeads && "text-slate-500")}>{factor.awayScore}</span>
+          </span>
+          <span className={cn("flex min-w-0 items-center gap-1.5", !isNeutralEdge && !awayLeads && "font-extrabold")}>
+            <span className={cn("tabular-nums", !isNeutralEdge && awayLeads && "text-slate-500")}>{factor.homeScore}</span>
+            <span>{homeAbbr}</span>
+            <span className="h-2 w-2 shrink-0 rounded-full ring-1 ring-white" style={{ backgroundColor: homeColor }} aria-hidden="true" />
+          </span>
         </div>
-        <div className="flex justify-between text-[9px] font-semibold text-slate-400">
-          <span style={{ color: awayColor }}>{awayAbbr} {factor.awayScore}</span>
-          <span style={{ color: homeColor }}>{homeAbbr} {factor.homeScore}</span>
+        <div
+          className="relative flex h-3 w-full overflow-hidden rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300"
+          role="img"
+          aria-label={`${awayAbbr} ${factor.awayScore}, ${homeAbbr} ${factor.homeScore}. ${outcomeLabel}.`}
+        >
+          <div
+            className={cn("h-full", isNeutralEdge || !awayLeads ? "bg-slate-300" : "bg-sky-600")}
+            data-factor-away-segment
+            style={{ width: `${awayPct}%` }}
+          />
+          <div
+            className={cn("h-full", isNeutralEdge || awayLeads ? "bg-slate-300" : "bg-sky-600")}
+            data-factor-home-segment
+            style={{ width: `${homePct}%` }}
+          />
+          <span className="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white/90 shadow-[0_0_0_1px_rgba(15,23,42,0.12)]" aria-hidden="true" />
         </div>
       </div>
 
-      {/* Edge column -- strong border separates it from the factor bar */}
-      <div className="flex shrink-0 flex-col items-center justify-center gap-0.5 border-t border-[#0f172a]/15 pt-2 md:min-w-[84px] md:border-l md:border-t-0 md:pl-3 md:pt-0">
-        <span className="text-[11px] font-extrabold" style={{ color: isNeutralEdge ? "#64748b" : leaderColor }}>
-          {isNeutralEdge ? "EVEN" : leaderAbbr}
-        </span>
-        <span className="text-[13px] font-extrabold text-[#031635]" title="Model differential">
-          {isNeutralEdge ? "0" : `+${edgeMagnitude}`}
-        </span>
-        <span className="text-[8px] font-semibold uppercase tracking-wide text-slate-400">
-          {isNeutralEdge ? "No advantage" : `${leaderAbbr} advantage`}
-        </span>
+      <div className="mlb-factor-winner">
+        <div className="min-w-0 text-right">
+          <span className={cn("block text-[10px] font-extrabold uppercase tracking-wide", isNeutralEdge ? "text-slate-500" : "text-sky-700")}>
+            {isNeutralEdge ? "EVEN" : `${leaderAbbr} advantage`}
+          </span>
+          <span className="block text-[13px] font-extrabold tabular-nums text-[#031635]" title="Model differential">
+            {isNeutralEdge ? "0" : `+${edgeMagnitude}`}
+          </span>
+          <span className="block text-[8px] font-semibold uppercase tracking-wide text-slate-400">
+            {isNeutralEdge ? "No advantage" : "Factor winner"}
+          </span>
+        </div>
+        {isNeutralEdge ? (
+          <span
+            className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-slate-100 px-1.5 text-[8px] font-extrabold tracking-wide text-slate-600"
+            data-factor-neutral-badge
+            aria-label="Even factor"
+          >
+            EVEN
+          </span>
+        ) : (
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm"
+            data-factor-winner-logo
+            data-team={leaderAbbr}
+          >
+            <MlbTeamLogo team={leaderAbbr} size={28} />
+          </span>
+        )}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -259,7 +305,7 @@ export default function MlbModelEdgeHero({ detail, mlbOdds }: MlbModelEdgeHeroPr
         {/* Factor breakdown + edge column */}
         <div className="order-3 space-y-2">
           <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Factor Breakdown</div>
-          <div className="space-y-2">
+          <div className="mlb-factor-breakdown space-y-2">
             {result.factors.map((factor) => (
               <FactorRow
                 key={factor.label}

@@ -230,7 +230,7 @@ describe("MlbModelEdgeHero — factor breakdown and takeaway", () => {
     const result = computeModelEdge(DETAIL);
     for (const factor of result.factors) {
       const magnitude = Math.round(Math.abs(factor.weightedDifference));
-      const row = screen.getByText(factor.label).closest("div.rounded-lg")!;
+      const row = screen.getByText(factor.label).closest("[data-factor-row]")!;
       const valueEl = row.querySelector('[title="Model differential"]');
       if (magnitude === 0) {
         expect(row).toHaveTextContent("EVEN");
@@ -270,7 +270,7 @@ describe("MlbModelEdgeHero — Edge column semantics", () => {
   it("shows away-team advantage when weightedDifference is positive, magnitude only (no signed +/- on the raw value)", () => {
     computeModelEdgeMock.mockReturnValueOnce(baseResult());
     renderHero();
-    const row = screen.getByText("Pitcher Quality").closest("div.rounded-lg")!;
+    const row = screen.getByText("Pitcher Quality").closest("[data-factor-row]")!;
     expect(row).toHaveTextContent(`${AWAY} advantage`);
     expect(row).toHaveTextContent("+2"); // Math.round(Math.abs(1.5))
     expect(row.textContent).not.toMatch(new RegExp(`${HOME} advantage`));
@@ -279,7 +279,7 @@ describe("MlbModelEdgeHero — Edge column semantics", () => {
   it("shows home-team advantage when weightedDifference is negative", () => {
     computeModelEdgeMock.mockReturnValueOnce(baseResult());
     renderHero();
-    const row = screen.getByText("Lineup Offense").closest("div.rounded-lg")!;
+    const row = screen.getByText("Lineup Offense").closest("[data-factor-row]")!;
     expect(row).toHaveTextContent(`${HOME} advantage`);
     expect(row).toHaveTextContent("+2"); // Math.round(Math.abs(-1.6)) -- magnitude only
     expect(row.textContent).not.toMatch(new RegExp(`${AWAY} advantage`));
@@ -288,7 +288,7 @@ describe("MlbModelEdgeHero — Edge column semantics", () => {
   it("an exact-zero (tied) factor shows EVEN, not a team credited via >= tie-breaking", () => {
     computeModelEdgeMock.mockReturnValueOnce(baseResult());
     renderHero();
-    const row = screen.getByText("Matchup Edge").closest("div.rounded-lg")!;
+    const row = screen.getByText("Matchup Edge").closest("[data-factor-row]")!;
     expect(row).toHaveTextContent("EVEN");
     expect(row.textContent).not.toMatch(new RegExp(`${AWAY} advantage`));
     expect(row.textContent).not.toMatch(new RegExp(`${HOME} advantage`));
@@ -297,11 +297,11 @@ describe("MlbModelEdgeHero — Edge column semantics", () => {
   it("never renders '+0' -- a zero-magnitude factor shows a bare '0'", () => {
     computeModelEdgeMock.mockReturnValueOnce(baseResult());
     renderHero();
-    const tiedRow = screen.getByText("Matchup Edge").closest("div.rounded-lg")!;
+    const tiedRow = screen.getByText("Matchup Edge").closest("[data-factor-row]")!;
     expect(tiedRow.textContent).not.toMatch(/\+0\b/);
     expect(tiedRow).toHaveTextContent("0");
     // Also covers a nonzero signed value that rounds down to a zero display magnitude
-    const roundsToZeroRow = screen.getByText("Recent Form").closest("div.rounded-lg")!;
+    const roundsToZeroRow = screen.getByText("Recent Form").closest("[data-factor-row]")!;
     expect(roundsToZeroRow.textContent).not.toMatch(/\+0\b/);
     expect(roundsToZeroRow).toHaveTextContent("EVEN");
   });
@@ -310,7 +310,7 @@ describe("MlbModelEdgeHero — Edge column semantics", () => {
     computeModelEdgeMock.mockReturnValueOnce(baseResult());
     renderHero();
     for (const label of ["Matchup Edge", "Season Quality"]) {
-      const row = screen.getByText(label).closest("div.rounded-lg")!;
+      const row = screen.getByText(label).closest("[data-factor-row]")!;
       expect(row).toHaveTextContent("No advantage");
       expect(row.textContent).not.toContain(`${AWAY} advantage`);
       expect(row.textContent).not.toContain(`${HOME} advantage`);
@@ -320,7 +320,7 @@ describe("MlbModelEdgeHero — Edge column semantics", () => {
   it("the Edge column's numeric value keeps the accessible 'Model differential' label and never appends %", () => {
     computeModelEdgeMock.mockReturnValueOnce(baseResult());
     renderHero();
-    const row = screen.getByText("Pitcher Quality").closest("div.rounded-lg")!;
+    const row = screen.getByText("Pitcher Quality").closest("[data-factor-row]")!;
     const valueEl = row.querySelector('[title="Model differential"]');
     expect(valueEl).toBeTruthy();
     expect(valueEl?.textContent).not.toMatch(/%/);
@@ -328,6 +328,37 @@ describe("MlbModelEdgeHero — Edge column semantics", () => {
 });
 
 describe("MlbModelEdgeHero — responsive ordering contract", () => {
+  it("renders a contrast-safe comparison track and the canonical winner logo at the row end", () => {
+    computeModelEdgeMock.mockReturnValueOnce(baseResult());
+    renderHero();
+
+    const awayWinnerRow = screen.getByText("Pitcher Quality").closest("[data-factor-row]")!;
+    expect(awayWinnerRow).toHaveAttribute("data-factor-outcome", "away");
+    expect(awayWinnerRow.querySelector("[data-factor-away-segment]")).toHaveClass("bg-sky-600");
+    expect(awayWinnerRow.querySelector("[data-factor-home-segment]")).toHaveClass("bg-slate-300");
+    expect(awayWinnerRow.querySelector("[data-factor-winner-logo]")).toHaveAttribute("data-team", AWAY);
+    expect(awayWinnerRow.querySelector(`img[alt="${AWAY} logo"]`)).toBeInTheDocument();
+
+    const homeWinnerRow = screen.getByText("Lineup Offense").closest("[data-factor-row]")!;
+    expect(homeWinnerRow).toHaveAttribute("data-factor-outcome", "home");
+    expect(homeWinnerRow.querySelector("[data-factor-away-segment]")).toHaveClass("bg-slate-300");
+    expect(homeWinnerRow.querySelector("[data-factor-home-segment]")).toHaveClass("bg-sky-600");
+    expect(homeWinnerRow.querySelector("[data-factor-winner-logo]")).toHaveAttribute("data-team", HOME);
+    expect(homeWinnerRow.querySelector(`img[alt="${HOME} logo"]`)).toBeInTheDocument();
+  });
+
+  it("uses an explicit neutral badge instead of assigning a team logo to an even factor", () => {
+    computeModelEdgeMock.mockReturnValueOnce(baseResult());
+    renderHero();
+    const row = screen.getByText("Matchup Edge").closest("[data-factor-row]")!;
+
+    expect(row).toHaveAttribute("data-factor-outcome", "even");
+    expect(row.querySelector("[data-factor-neutral-badge]")).toHaveAccessibleName("Even factor");
+    expect(row.querySelector("[data-factor-winner-logo]")).not.toBeInTheDocument();
+    expect(row.querySelector("[data-factor-away-segment]")).toHaveClass("bg-slate-300");
+    expect(row.querySelector("[data-factor-home-segment]")).toHaveClass("bg-slate-300");
+  });
+
   it("16. game context is order-1 on mobile and order-2 on desktop; team/pitcher block is order-2 mobile / order-1 desktop", () => {
     const { container } = renderHero();
     const contextRow = screen.getByText(/First Pitch/).closest("div.order-1, div.order-2")!;
