@@ -405,7 +405,7 @@
    both on screen is only ~930px (verified live at 1920x1080) — a 460px
    minimum leaves just 930 - (2*460+12) = -2px of slack and collapses back
    to 1 column. 420px keeps a safe margin (2*420+12 = 852px) for two columns
-   whenever both side panels are present; cards below the card-level 460px
+   whenever both side panels are present; cards below the card-level 450px
    container-query threshold simply render Market Summary stacked under the
    team row instead of the 3-column layout, which is the designed fallback. */
 .mlb-matchup-slate {
@@ -415,7 +415,9 @@
 
 .mlb-matchup-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
-  max-width: 1440px;
+  width: 100%;
+  max-width: 1060px;
+  margin-inline: auto;
   /* Without this, grid's default `stretch` forces every card in a row to
      the height of its tallest sibling — so expanding one card's comparison
      panel stretches the still-collapsed card next to it, leaving a large
@@ -430,9 +432,27 @@
 .mlb-matchup-card {
   container-type: inline-size;
   container-name: mlb-matchup-card;
+  height: fit-content;
 }
 
-/* Header: Home | Market Summary | Away. Below the container threshold, the
+.mlb-matchup-meta {
+  padding: 0.375rem 0.875rem;
+}
+
+.mlb-matchup-body {
+  padding: 0.625rem 0.875rem;
+}
+
+.mlb-matchup-drivers {
+  padding: 0.5rem 0.875rem 0.625rem;
+}
+
+.mlb-matchup-toggle {
+  min-height: 2.125rem;
+  padding: 0.375rem 0.875rem;
+}
+
+/* Header: Away | Market Summary | Home. Below the container threshold, the
    two teams stay side by side (preserving clear team-vs-team hierarchy) and
    Market Summary drops to its own full-width row underneath; at comfortable
    card widths it becomes a true 3-column row with Market Summary centered. */
@@ -440,9 +460,13 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-areas:
-    "home away"
+    "away home"
     "summary summary";
+  width: 100%;
+  max-width: 600px;
+  margin-inline: auto;
   align-items: start;
+  gap: 0.5rem 0.625rem;
 }
 
 .mlb-matchup-header-home {
@@ -455,11 +479,40 @@
 
 .mlb-matchup-header-summary {
   grid-area: summary;
+  width: min(100%, 280px);
+  justify-self: center;
+  border-top: 1px solid rgb(226 232 240 / 0.7);
+  padding-top: 0.5rem;
 }
 
-@container mlb-matchup-card (min-width: 460px) {
+.mlb-matchup-pills {
+  width: 100%;
+  max-width: 134px;
+  grid-template-columns: minmax(52px, 3fr) minmax(60px, 3.5fr);
+}
+
+.mlb-matchup-driver-row {
+  display: grid;
+  min-height: 1.625rem;
+  grid-template-columns:
+    minmax(70px, auto)
+    auto
+    minmax(100px, 1fr)
+    auto
+    minmax(46px, auto);
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+@container mlb-matchup-card (min-width: 450px) {
   .mlb-matchup-header-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(132px, auto) minmax(0, 1fr);
-    grid-template-areas: "home summary away";
+    grid-template-columns: minmax(0, 1fr) minmax(142px, 176px) minmax(0, 1fr);
+    grid-template-areas: "away summary home";
+  }
+
+  .mlb-matchup-header-summary {
+    width: 100%;
+    border-top: 0;
+    padding-top: 0;
   }
 }

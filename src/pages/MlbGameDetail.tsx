@@ -1436,28 +1436,28 @@ function MlbSlateAnalyzer({
 
                     return (
                       <div className={cn(
-                        "grid h-5 grid-cols-[60px_70px] items-center gap-1",
+                        "mlb-matchup-pills grid h-5 items-center gap-1",
                         align === "right" ? "justify-end" : "justify-start",
                       )}>
                         {metric ? (
                           <span
-                            className="inline-flex h-5 w-[60px] items-center justify-center whitespace-nowrap rounded px-1 text-[9px] font-bold tabular-nums"
+                            className="inline-flex h-5 min-w-0 items-center justify-center whitespace-nowrap rounded px-1 text-[9px] font-bold tabular-nums"
                             style={{ backgroundColor: metric.style.bg, color: metric.style.text }}
                           >
                             {metric.label}
                           </span>
                         ) : (
-                          <span aria-hidden="true" className="invisible h-5 w-[60px]">—</span>
+                          <span aria-hidden="true" className="invisible h-5 min-w-0">—</span>
                         )}
                         {pi.pill && pi.s != null ? (
                           <span
-                            className="inline-flex h-5 w-[70px] items-center justify-center whitespace-nowrap rounded px-1 text-[9px] font-bold tabular-nums"
+                            className="inline-flex h-5 min-w-0 items-center justify-center whitespace-nowrap rounded px-1 text-[9px] font-bold tabular-nums"
                             style={{ backgroundColor: pi.pill.bg, color: pi.pill.color }}
                           >
                             {pi.s > 0 ? "+" : ""}{pi.s} {pi.shortLabel}
                           </span>
                         ) : (
-                          <span aria-hidden="true" className="invisible h-5 w-[70px]">—</span>
+                          <span aria-hidden="true" className="invisible h-5 min-w-0">—</span>
                         )}
                       </div>
                     );
@@ -1465,13 +1465,13 @@ function MlbSlateAnalyzer({
 
                   const pitcherHeaderContent = (
                     <>
-                      {/* Pitcher headers: Home LEFT, Away RIGHT, Market Summary
+                      {/* Pitcher headers: Away LEFT, Home RIGHT, Market Summary
                           centered between them (stacks below the two teams on
                           narrow cards -- see .mlb-matchup-header-grid in index.css) */}
-                      <div className="mlb-matchup-header-grid gap-2">
-                        {/* Home LEFT */}
-                        <div className="mlb-matchup-header-home grid min-w-0 grid-rows-[28px_18px_16px_20px] gap-0.5">
-                          <div className="flex h-7 items-center gap-1.5 overflow-hidden">
+                      <div className="mlb-matchup-header-grid">
+                        {/* Home RIGHT */}
+                        <div className="mlb-matchup-header-home grid min-w-0 grid-rows-[28px_18px_16px_20px] justify-items-end gap-0.5 text-right">
+                          <div className="flex h-7 max-w-full flex-row-reverse items-center gap-1.5 overflow-hidden">
                             <MlbTeamLogo team={game.home.abbreviation} size={28} />
                             <span className="text-[15px] font-extrabold text-slate-950">{game.home.abbreviation}</span>
                             <span className="truncate text-[11px] font-semibold text-slate-400">{game.home.record}</span>
@@ -1483,23 +1483,23 @@ function MlbSlateAnalyzer({
                           <span className="block h-4 text-[11px] leading-4 text-slate-400">
                             {detail?.starters.home.record || " "}
                           </span>
-                          <PitcherPills pi={homePI} align="left" />
+                          <PitcherPills pi={homePI} align="right" />
                         </div>
                         {/* Market Summary -- centered column between the two teams */}
                         <div className="mlb-matchup-header-summary min-w-0">
-                          <div className="mb-1.5 text-center text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Market Summary</div>
-                          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5">
+                          <div className="mb-1 text-center text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Market Summary</div>
+                          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
                             <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Total</span>
-                            <span className="max-w-full justify-self-end whitespace-nowrap rounded-full bg-[#031635] px-2.5 py-1 text-[9px] font-extrabold leading-none text-white">{edges.total}</span>
+                            <span className="max-w-full justify-self-end whitespace-nowrap rounded-full bg-[#031635] px-2 py-0.5 text-[9px] font-extrabold leading-tight text-white">{edges.total}</span>
 
                             <div className="hidden md:contents">
                               <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400" title={ML_EDGE_METHODOLOGY}>Edge Strength</span>
                               {mlPickAbbr && mlPickColor ? (
-                                <span className="max-w-full justify-self-end whitespace-normal break-words text-right rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-tight text-white" style={{ backgroundColor: mlPickColor }} title={ML_EDGE_METHODOLOGY}>
+                                <span className="max-w-full justify-self-end whitespace-normal break-words rounded-full px-2 py-0.5 text-right text-[9px] font-extrabold leading-tight text-white" style={{ backgroundColor: mlPickColor }} title={ML_EDGE_METHODOLOGY}>
                                   {mlPickAbbr} {getEdgeTierLabel(mlEdge!.confidence)}
                                 </span>
                               ) : mlEdge ? (
-                                <span className="max-w-full justify-self-end whitespace-normal break-words text-right rounded-full bg-slate-200 px-2.5 py-1 text-[9px] font-extrabold leading-tight text-slate-500" title={ML_EDGE_METHODOLOGY}>Even</span>
+                                <span className="max-w-full justify-self-end whitespace-normal break-words rounded-full bg-slate-200 px-2 py-0.5 text-right text-[9px] font-extrabold leading-tight text-slate-500" title={ML_EDGE_METHODOLOGY}>Even</span>
                               ) : (
                                 <span className="justify-self-end text-[10px] font-semibold text-slate-400" title={ML_EDGE_METHODOLOGY}>—</span>
                               )}
@@ -1508,7 +1508,7 @@ function MlbSlateAnalyzer({
                             <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Polymarket</span>
                             {pmAgreement ? (
                               <span className={cn(
-                                "max-w-full justify-self-end whitespace-normal break-words text-right rounded-full px-2.5 py-1 text-[9px] font-extrabold leading-tight",
+                                "max-w-full justify-self-end whitespace-normal break-words rounded-full px-2 py-0.5 text-right text-[9px] font-extrabold leading-tight",
                                 pmAgreement.aligned
                                   ? "bg-emerald-100 text-emerald-700"
                                   : "bg-amber-100 text-amber-700",
@@ -1519,11 +1519,12 @@ function MlbSlateAnalyzer({
                               <span className="justify-self-end text-[10px] font-semibold text-slate-400">—</span>
                             )}
 
-                            <span className="self-start pt-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-400">{bothReal ? "Line" : "Win%"}</span>
+                            <span className="text-[9px] font-bold uppercase tracking-wide text-slate-400">{bothReal ? "Line" : "Win%"}</span>
                             {awayAmerican && homeAmerican ? (
-                              <div className="max-w-full justify-self-end text-right text-[9px] font-bold leading-4 text-slate-600">
-                                <div className={mlPickAbbr === awayAbbr ? "text-slate-900" : undefined}>{awayAbbr} {awayAmerican}</div>
-                                <div className={mlPickAbbr === homeAbbr ? "text-slate-900" : undefined}>{homeAbbr} {homeAmerican}</div>
+                              <div className="max-w-full justify-self-end whitespace-nowrap text-right text-[9px] font-bold leading-tight text-slate-600">
+                                <span className={mlPickAbbr === awayAbbr ? "text-slate-900" : undefined}>{awayAbbr} {awayAmerican}</span>
+                                <span aria-hidden="true" className="mx-1 text-slate-300">·</span>
+                                <span className={mlPickAbbr === homeAbbr ? "text-slate-900" : undefined}>{homeAbbr} {homeAmerican}</span>
                               </div>
                             ) : (
                               <span className="justify-self-end text-[10px] font-semibold text-slate-400">—</span>
@@ -1531,9 +1532,9 @@ function MlbSlateAnalyzer({
                           </div>
                         </div>
 
-                        {/* Away RIGHT */}
-                        <div className="mlb-matchup-header-away grid min-w-0 grid-rows-[28px_18px_16px_20px] justify-items-end gap-0.5 text-right">
-                          <div className="flex h-7 max-w-full flex-row-reverse items-center gap-1.5 overflow-hidden">
+                        {/* Away LEFT */}
+                        <div className="mlb-matchup-header-away grid min-w-0 grid-rows-[28px_18px_16px_20px] gap-0.5">
+                          <div className="flex h-7 items-center gap-1.5 overflow-hidden">
                             <MlbTeamLogo team={game.away.abbreviation} size={28} />
                             <span className="text-[15px] font-extrabold text-slate-950">{game.away.abbreviation}</span>
                             <span className="truncate text-[11px] font-semibold text-slate-400">{game.away.record}</span>
@@ -1545,7 +1546,7 @@ function MlbSlateAnalyzer({
                           <span className="block h-4 text-[11px] leading-4 text-slate-400">
                             {detail?.starters.away.record || " "}
                           </span>
-                          <PitcherPills pi={awayPI} align="right" />
+                          <PitcherPills pi={awayPI} align="left" />
                         </div>
                       </div>
                     </>
@@ -1554,31 +1555,31 @@ function MlbSlateAnalyzer({
                   const comparisonContent = (
                     <>
                       {/* ── Stat comparison: Season block then L14 block ── */}
-                      {/* Shared layout: Home value | Stat label (center) | Away value */}
+                      {/* Shared layout: Away value | Stat label (center) | Home value */}
                       <div className="space-y-2">
                         {/* Season block */}
                         <div className="w-full max-w-[320px] mx-auto">
                           <div className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 pb-1 border-b border-slate-200">
                             <div className="flex items-center gap-1">
-                              <MlbTeamLogo team={game.home.abbreviation} size={12} />
+                              <MlbTeamLogo team={game.away.abbreviation} size={12} />
                               <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Season</span>
                             </div>
                             <div className="text-center text-[10px] font-bold uppercase tracking-wide text-slate-300 min-w-[72px]">Stat</div>
                             <div className="flex items-center gap-1 justify-end">
                               <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Season</span>
-                              <MlbTeamLogo team={game.away.abbreviation} size={12} />
+                              <MlbTeamLogo team={game.home.abbreviation} size={12} />
                             </div>
                           </div>
                           {rows.filter(r => r.homeSzn !== "—" || r.awaySzn !== "—").map((r) => (
                             <div key={`szn-${r.label}`} className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
                               <div className="flex items-center gap-0.5 min-w-0">
-                                {r.sznAdv === "home" && <span className="text-emerald-500 text-[12px] leading-none shrink-0">✓</span>}
-                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.sznAdv === "home" ? "text-emerald-700" : "text-slate-900")}>{r.homeSzn}</span>
+                                {r.sznAdv === "away" && <span className="text-emerald-500 text-[12px] leading-none shrink-0">✓</span>}
+                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.sznAdv === "away" ? "text-emerald-700" : "text-slate-900")}>{r.awaySzn}</span>
                               </div>
                               <div className="text-center text-[10px] text-slate-400 font-medium min-w-[68px] px-1">{r.label}</div>
                               <div className="flex items-center gap-0.5 justify-end min-w-0">
-                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.sznAdv === "away" ? "text-emerald-700" : "text-slate-900")}>{r.awaySzn}</span>
-                                {r.sznAdv === "away" && <span className="text-emerald-500 text-[12px] leading-none shrink-0">✓</span>}
+                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.sznAdv === "home" ? "text-emerald-700" : "text-slate-900")}>{r.homeSzn}</span>
+                                {r.sznAdv === "home" && <span className="text-emerald-500 text-[12px] leading-none shrink-0">✓</span>}
                               </div>
                             </div>
                           ))}
@@ -1588,25 +1589,25 @@ function MlbSlateAnalyzer({
                         <div className="w-full max-w-[320px] mx-auto">
                           <div className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 pb-1 border-b border-slate-200">
                             <div className="flex items-center gap-1">
-                              <MlbTeamLogo team={game.home.abbreviation} size={12} />
+                              <MlbTeamLogo team={game.away.abbreviation} size={12} />
                               <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Last 14</span>
                             </div>
                             <div className="text-center text-[10px] font-bold uppercase tracking-wide text-slate-300 min-w-[72px]">Stat</div>
                             <div className="flex items-center gap-1 justify-end">
                               <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Last 14</span>
-                              <MlbTeamLogo team={game.away.abbreviation} size={12} />
+                              <MlbTeamLogo team={game.home.abbreviation} size={12} />
                             </div>
                           </div>
                           {rows.filter(r => r.homeL14 !== "—" || r.awayL14 !== "—").map((r) => (
                             <div key={`l14-${r.label}`} className="grid grid-cols-[minmax(0,100px)_auto_minmax(0,100px)] items-center gap-x-2 py-1.5 border-b border-slate-100 last:border-0">
                               <div className="flex items-center gap-0.5 min-w-0">
-                                {r.l14Adv === "home" && <span className="text-emerald-500 text-[11px] leading-none shrink-0">✓</span>}
-                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.l14Adv === "home" ? "text-emerald-700" : "text-slate-700")}>{r.homeL14}</span>
+                                {r.l14Adv === "away" && <span className="text-emerald-500 text-[11px] leading-none shrink-0">✓</span>}
+                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.l14Adv === "away" ? "text-emerald-700" : "text-slate-700")}>{r.awayL14}</span>
                               </div>
                               <div className="text-center text-[10px] text-slate-400 font-medium min-w-[68px] px-1">{r.label}</div>
                               <div className="flex items-center gap-0.5 justify-end min-w-0">
-                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.l14Adv === "away" ? "text-emerald-700" : "text-slate-700")}>{r.awayL14}</span>
-                                {r.l14Adv === "away" && <span className="text-emerald-500 text-[11px] leading-none shrink-0">✓</span>}
+                                <span className={cn("text-[11px] tabular-nums font-bold truncate", r.l14Adv === "home" ? "text-emerald-700" : "text-slate-700")}>{r.homeL14}</span>
+                                {r.l14Adv === "home" && <span className="text-emerald-500 text-[11px] leading-none shrink-0">✓</span>}
                               </div>
                             </div>
                           ))}
@@ -1622,26 +1623,26 @@ function MlbSlateAnalyzer({
 
                             {/* Pitcher ERA delta row */}
                             {(homePitcherEraDelta != null || awayPitcherEraDelta != null) && (() => {
-                              const homeFmt = fmtDelta(homePitcherEraDelta, "ERA", 0.3);
                               const awayFmt = fmtDelta(awayPitcherEraDelta, "ERA", 0.3);
+                              const homeFmt = fmtDelta(homePitcherEraDelta, "ERA", 0.3);
                               return (
                                 <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-1 py-1.5 border-b border-slate-100">
                                   <div className="min-w-0">
-                                    {homeFmt ? (
-                                      <span className={cn("text-[11px] font-bold tabular-nums",
-                                        homeFmt.favorable ? "text-emerald-700" : homeFmt.unfavorable ? "text-blue-700" : "text-slate-500"
-                                      )}>
-                                        {homeFmt.label}
-                                      </span>
-                                    ) : <span className="text-[10px] text-slate-300">—</span>}
-                                  </div>
-                                  <div className="text-center text-[9px] text-slate-300 font-medium px-1 shrink-0">Pitcher ERA</div>
-                                  <div className="min-w-0 text-right">
                                     {awayFmt ? (
                                       <span className={cn("text-[11px] font-bold tabular-nums",
                                         awayFmt.favorable ? "text-emerald-700" : awayFmt.unfavorable ? "text-blue-700" : "text-slate-500"
                                       )}>
                                         {awayFmt.label}
+                                      </span>
+                                    ) : <span className="text-[10px] text-slate-300">—</span>}
+                                  </div>
+                                  <div className="text-center text-[9px] text-slate-300 font-medium px-1 shrink-0">Pitcher ERA</div>
+                                  <div className="min-w-0 text-right">
+                                    {homeFmt ? (
+                                      <span className={cn("text-[11px] font-bold tabular-nums",
+                                        homeFmt.favorable ? "text-emerald-700" : homeFmt.unfavorable ? "text-blue-700" : "text-slate-500"
+                                      )}>
+                                        {homeFmt.label}
                                       </span>
                                     ) : <span className="text-[10px] text-slate-300">—</span>}
                                   </div>
@@ -1651,26 +1652,26 @@ function MlbSlateAnalyzer({
 
                             {/* Team OPS delta row */}
                             {(homeOpsDelta != null || awayOpsDelta != null) && (() => {
-                              const homeFmt = fmtDelta(homeOpsDelta, "OPS", 0.02);
                               const awayFmt = fmtDelta(awayOpsDelta, "OPS", 0.02);
+                              const homeFmt = fmtDelta(homeOpsDelta, "OPS", 0.02);
                               return (
                                 <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-1 py-1.5">
                                   <div className="min-w-0">
-                                    {homeFmt ? (
-                                      <span className={cn("text-[11px] font-bold tabular-nums",
-                                        homeFmt.favorable ? "text-emerald-700" : homeFmt.unfavorable ? "text-blue-700" : "text-slate-500"
-                                      )}>
-                                        {homeFmt.label}
-                                      </span>
-                                    ) : <span className="text-[10px] text-slate-300">—</span>}
-                                  </div>
-                                  <div className="text-center text-[9px] text-slate-300 font-medium px-1 shrink-0">Team OPS</div>
-                                  <div className="min-w-0 text-right">
                                     {awayFmt ? (
                                       <span className={cn("text-[11px] font-bold tabular-nums",
                                         awayFmt.favorable ? "text-emerald-700" : awayFmt.unfavorable ? "text-blue-700" : "text-slate-500"
                                       )}>
                                         {awayFmt.label}
+                                      </span>
+                                    ) : <span className="text-[10px] text-slate-300">—</span>}
+                                  </div>
+                                  <div className="text-center text-[9px] text-slate-300 font-medium px-1 shrink-0">Team OPS</div>
+                                  <div className="min-w-0 text-right">
+                                    {homeFmt ? (
+                                      <span className={cn("text-[11px] font-bold tabular-nums",
+                                        homeFmt.favorable ? "text-emerald-700" : homeFmt.unfavorable ? "text-blue-700" : "text-slate-500"
+                                      )}>
+                                        {homeFmt.label}
                                       </span>
                                     ) : <span className="text-[10px] text-slate-300">—</span>}
                                   </div>
@@ -1712,9 +1713,9 @@ function MlbSlateAnalyzer({
 
                         return (
                             <div className="mlb-matchup-footer min-w-0">
-                                <div className="mb-1.5 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Top Model Drivers</div>
+                                <div className="mb-1 text-[9px] font-extrabold uppercase tracking-[0.14em] text-slate-400">Top Model Drivers</div>
                                 {driverRows.length ? (
-                                  <div className="space-y-1">
+                                  <div className="space-y-0.5">
                                     {driverRows.map((factor) => {
                                       const magnitude = Math.abs(factor.weightedDifference);
                                       const width = Math.min(50, (magnitude / maxContribution) * 50);
@@ -1726,21 +1727,21 @@ function MlbSlateAnalyzer({
                                         <div
                                           key={factor.label}
                                           title={tooltip}
-                                          className="grid min-h-6 grid-cols-[68px_16px_minmax(0,1fr)_16px_minmax(40px,auto)] items-center gap-1.5"
+                                          className="mlb-matchup-driver-row"
                                         >
-                                          <span className="truncate text-[9px] font-semibold text-slate-500">{factor.label}</span>
-                                          <span className="text-center text-[8px] font-bold text-slate-400">{homeAbbr}</span>
-                                          <div className="relative h-2 overflow-hidden rounded-full bg-slate-200/80">
+                                          <span className="truncate text-[10px] font-semibold text-slate-500">{factor.label}</span>
+                                          <span className="text-center text-[9px] font-bold text-slate-400">{awayAbbr}</span>
+                                          <div className="relative h-2.5 overflow-hidden rounded-full bg-slate-200/80">
                                             <div className="absolute inset-y-0 left-1/2 z-10 w-px bg-slate-400/80" />
                                             {factor.favoredSide === "home" && (
                                               <div
-                                                className="absolute inset-y-0 right-1/2 rounded-l-full"
+                                                className="absolute inset-y-0 left-1/2 rounded-r-full"
                                                 style={{ width: `${width}%`, backgroundColor: homeColor }}
                                               />
                                             )}
                                             {factor.favoredSide === "away" && (
                                               <div
-                                                className="absolute inset-y-0 left-1/2 rounded-r-full"
+                                                className="absolute inset-y-0 right-1/2 rounded-l-full"
                                                 style={{ width: `${width}%`, backgroundColor: awayColor }}
                                               />
                                             )}
@@ -1748,8 +1749,8 @@ function MlbSlateAnalyzer({
                                               <div className="absolute left-1/2 top-1/2 z-20 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-500" />
                                             )}
                                           </div>
-                                          <span className="text-center text-[8px] font-bold text-slate-400">{awayAbbr}</span>
-                                          <span className="justify-self-end whitespace-nowrap text-right text-[9px] font-extrabold tabular-nums text-slate-700">{contributionLabel}</span>
+                                          <span className="text-center text-[9px] font-bold text-slate-400">{homeAbbr}</span>
+                                          <span className="justify-self-end whitespace-nowrap text-right text-[10px] font-extrabold tabular-nums text-slate-700">{contributionLabel}</span>
                                         </div>
                                       );
                                     })}
@@ -1784,7 +1785,7 @@ function MlbSlateAnalyzer({
                       className="flex w-full flex-col text-left"
                     >
                       {/* Top bar */}
-                      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
+                      <div className="mlb-matchup-meta flex items-center justify-between gap-3 border-b border-slate-100">
                         <div className="flex items-center gap-2">
                           <span className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold"
                             style={{ backgroundColor: statusTheme.background, color: statusTheme.color }}>
@@ -1799,8 +1800,8 @@ function MlbSlateAnalyzer({
                             <span className="text-[9px] font-bold text-slate-400">FINAL</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
+                        <div className="flex min-w-0 items-center justify-end gap-2">
+                          <span className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400">{game.venue}</span>
                           <span className="text-[11px] font-semibold text-slate-500">{formatGameTime(game.gameDate)}</span>
                         </div>
                       </div>
@@ -1822,7 +1823,7 @@ function MlbSlateAnalyzer({
                       </div>
 
                       {/* Pitcher header row — always visible in the collapsed card */}
-                      <div className="px-4 py-3">
+                      <div className="mlb-matchup-body">
                         {pitcherHeaderContent}
                       </div>
                     </button>
@@ -1839,7 +1840,7 @@ function MlbSlateAnalyzer({
                     <button
                       type="button"
                       onClick={() => onOpenGame(game.gamePk)}
-                      className="block w-full border-t border-slate-100 bg-slate-50/70 px-3 pb-3 pt-2.5 text-left"
+                      className="mlb-matchup-drivers block w-full border-t border-slate-100 bg-slate-50/70 text-left"
                     >
                       {footerContent}
                     </button>
@@ -1850,7 +1851,7 @@ function MlbSlateAnalyzer({
                       aria-expanded={isExpanded}
                       aria-controls={comparisonPanelId}
                       onClick={() => toggleGameExpanded(game.gamePk)}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-b-xl border-t border-slate-100 px-4 py-2 text-[11px] font-bold text-blue-700 transition-colors hover:bg-blue-50/70 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500"
+                      className="mlb-matchup-toggle flex w-full items-center justify-center gap-1.5 rounded-b-xl border-t border-slate-100 text-[11px] font-bold text-blue-700 transition-colors hover:bg-blue-50/70 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-blue-500"
                     >
                       <span aria-hidden="true" className={cn("inline-block text-[9px] transition-transform", isExpanded && "rotate-180")}>▾</span>
                       {isExpanded ? "Collapse matchup comparison" : "Expand to show matchup comparison"}
